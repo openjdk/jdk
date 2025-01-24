@@ -217,11 +217,11 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
 public class ReentrantReadWriteLock
         implements ReadWriteLock, java.io.Serializable {
     private static final long serialVersionUID = -6992448646407690164L;
-    /** Inner class providing readlock */
+    /** @serial Inner class providing readlock */
     private final ReentrantReadWriteLock.ReadLock readerLock;
-    /** Inner class providing writelock */
+    /** @serial Inner class providing writelock */
     private final ReentrantReadWriteLock.WriteLock writerLock;
-    /** Performs all synchronization mechanics */
+    /** @serial Performs all synchronization mechanics */
     final Sync sync;
 
     /**
@@ -713,6 +713,7 @@ public class ReentrantReadWriteLock
      */
     public static class ReadLock implements Lock, java.io.Serializable {
         private static final long serialVersionUID = -5992448646407690164L;
+        /** @serial */
         private final Sync sync;
 
         /**
@@ -927,6 +928,7 @@ public class ReentrantReadWriteLock
      */
     public static class WriteLock implements Lock, java.io.Serializable {
         private static final long serialVersionUID = -4992448646407690164L;
+        /** @serial */
         private final Sync sync;
 
         /**

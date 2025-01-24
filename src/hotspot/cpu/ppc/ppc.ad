@@ -12069,6 +12069,7 @@ instruct branchLoopEndFar(cmpOp cmp, flagsRegSrc crx, label labl) %{
 instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P superklass,
                              iRegPdst tmp_klass, iRegPdst tmp_arrayptr) %{
   match(Set result (PartialSubtypeCheck subklass superklass));
+  predicate(!UseSecondarySupersTable);
   effect(TEMP_DEF result, TEMP tmp_klass, TEMP tmp_arrayptr);
   ins_cost(DEFAULT_COST*10);
 
@@ -12078,6 +12079,30 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
                                      $tmp_klass$$Register, nullptr, $result$$Register);
   %}
   ins_pipe(pipe_class_default);
+%}
+
+// Two versions of partialSubtypeCheck, both used when we need to
+// search for a super class in the secondary supers array. The first
+// is used when we don't know _a priori_ the class being searched
+// for. The second, far more common, is used when we do know: this is
+// used for instanceof, checkcast, and any case where C2 can determine
+// it by constant propagation.
+instruct partialSubtypeCheckVarSuper(iRegPsrc sub, iRegPsrc super, iRegPdst result,
+                                     iRegPdst tempR1, iRegPdst tempR2, iRegPdst tempR3, iRegPdst tempR4,
+                                     flagsRegCR0 cr0, regCTR ctr)
+%{
+  match(Set result (PartialSubtypeCheck sub super));
+  predicate(UseSecondarySupersTable);
+  effect(KILL cr0, KILL ctr, TEMP_DEF result, TEMP tempR1, TEMP tempR2, TEMP tempR3, TEMP tempR4);
+
+  ins_cost(DEFAULT_COST * 10);  // slightly larger than the next version
+  format %{ "partialSubtypeCheck $result, $sub, $super" %}
+  ins_encode %{
+    __ lookup_secondary_supers_table_var($sub$$Register, $super$$Register,
+                                         $tempR1$$Register, $tempR2$$Register, $tempR3$$Register, $tempR4$$Register,
+                                         $result$$Register);
+  %}
+  ins_pipe(pipe_class_memory);
 %}
 
 instruct partialSubtypeCheckConstSuper(rarg3RegP sub, rarg2RegP super_reg, immP super_con, rarg6RegP result,
@@ -12094,9 +12119,9 @@ instruct partialSubtypeCheckConstSuper(rarg3RegP sub, rarg2RegP super_reg, immP 
   ins_encode %{
     u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
     if (InlineSecondarySupersTest) {
-      __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register,
-                                       $tempR1$$Register, $tempR2$$Register, $tempR3$$Register, $tempR4$$Register,
-                                       $result$$Register, super_klass_slot);
+      __ lookup_secondary_supers_table_const($sub$$Register, $super_reg$$Register,
+                                             $tempR1$$Register, $tempR2$$Register, $tempR3$$Register, $tempR4$$Register,
+                                             $result$$Register, super_klass_slot);
     } else {
       address stub = StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot);
       Register r_stub_addr = $tempR1$$Register;

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/vmIntrinsics.hpp"
@@ -1724,9 +1723,9 @@ void VM_Version::get_processor_features() {
       if (ArrayOperationPartialInlineSize > MaxVectorSize) {
         ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
         if (ArrayOperationPartialInlineSize) {
-          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
+          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize=%zd", MaxVectorSize);
         } else {
-          warning("Setting ArrayOperationPartialInlineSize as " INTX_FORMAT, ArrayOperationPartialInlineSize);
+          warning("Setting ArrayOperationPartialInlineSize as %zd", ArrayOperationPartialInlineSize);
         }
       }
     }

@@ -3088,27 +3088,15 @@ public class CSS implements Serializable {
         }
 
         float getValue(boolean w3cLengthUnits) {
-            Hashtable<String, Float> mapping = (w3cLengthUnits) ? w3cLengthMapping : lengthMapping;
-            float scale = 1;
-            if (units != null) {
-                Float scaleFloat = mapping.get(units);
-                if (scaleFloat != null) {
-                    scale = scaleFloat.floatValue();
-                }
-            }
-            return this.value * scale;
-
+            return getValue(value, units, w3cLengthUnits);
         }
 
-        static float getValue(float value, String units, Boolean w3cLengthUnits) {
-            Hashtable<String, Float> mapping = (w3cLengthUnits) ? w3cLengthMapping : lengthMapping;
-            float scale = 1;
-            if (units != null) {
-                Float scaleFloat = mapping.get(units);
-                if (scaleFloat != null) {
-                    scale = scaleFloat.floatValue();
-                }
+        static float getValue(float value, String units, boolean w3cLengthUnits) {
+            if (units == null) {
+                return value;
             }
+            Hashtable<String, Float> mapping = (w3cLengthUnits) ? w3cLengthMapping : lengthMapping;
+            float scale = mapping.getOrDefault(units, 1f);
             return value * scale;
         }
 

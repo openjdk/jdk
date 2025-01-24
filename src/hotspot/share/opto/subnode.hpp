@@ -558,9 +558,9 @@ public:
 // reverse bytes of an integer
 class ReverseBytesINode : public Node {
 public:
-  ReverseBytesINode(Node *c, Node *in1) : Node(c, in1) {}
+  ReverseBytesINode(Node* in) : Node(nullptr, in) {}
   virtual int Opcode() const;
-  const Type *bottom_type() const { return TypeInt::INT; }
+  const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -568,9 +568,9 @@ public:
 // reverse bytes of a long
 class ReverseBytesLNode : public Node {
 public:
-  ReverseBytesLNode(Node *c, Node *in1) : Node(c, in1) {}
+  ReverseBytesLNode(Node* in) : Node(nullptr, in) {}
   virtual int Opcode() const;
-  const Type *bottom_type() const { return TypeLong::LONG; }
+  const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
@@ -578,9 +578,9 @@ public:
 // reverse bytes of an unsigned short / char
 class ReverseBytesUSNode : public Node {
 public:
-  ReverseBytesUSNode(Node *c, Node *in1) : Node(c, in1) {}
+  ReverseBytesUSNode(Node* in1) : Node(nullptr, in1) {}
   virtual int Opcode() const;
-  const Type *bottom_type() const { return TypeInt::CHAR; }
+  const Type* bottom_type() const { return TypeInt::CHAR; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -588,9 +588,9 @@ public:
 // reverse bytes of a short
 class ReverseBytesSNode : public Node {
 public:
-  ReverseBytesSNode(Node *c, Node *in1) : Node(c, in1) {}
+  ReverseBytesSNode(Node* in) : Node(nullptr, in) {}
   virtual int Opcode() const;
-  const Type *bottom_type() const { return TypeInt::SHORT; }
+  const Type* bottom_type() const { return TypeInt::SHORT; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -598,9 +598,9 @@ public:
 // reverse bits of an int
 class ReverseINode : public Node {
 public:
-  ReverseINode(Node *c, Node *in1) : Node(c, in1) {}
+  ReverseINode(Node* in) : Node(nullptr, in) {}
   virtual int Opcode() const;
-  const Type *bottom_type() const { return TypeInt::INT; }
+  const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
@@ -610,9 +610,9 @@ public:
 // reverse bits of a long
 class ReverseLNode : public Node {
 public:
-  ReverseLNode(Node *c, Node *in1) : Node(c, in1) {}
+  ReverseLNode(Node* in) : Node(nullptr, in) {}
   virtual int Opcode() const;
-  const Type *bottom_type() const { return TypeLong::LONG; }
+  const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;

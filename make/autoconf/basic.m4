@@ -84,9 +84,15 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 
   # We get the top-level directory from the supporting wrappers.
   BASIC_WINDOWS_VERIFY_DIR($TOPDIR, source)
+  orig_topdir="$TOPDIR"
   UTIL_FIXUP_PATH(TOPDIR)
   AC_MSG_CHECKING([for top-level directory])
   AC_MSG_RESULT([$TOPDIR])
+  if test "x$TOPDIR" != "x$orig_topdir"; then
+    AC_MSG_WARN([Your top dir was originally represented as $orig_topdir,])
+    AC_MSG_WARN([but after rewriting it became $TOPDIR.])
+    AC_MSG_WARN([This typically means you have characters like space in the path, which can cause all kind of trouble.])
+  fi
   AC_SUBST(TOPDIR)
 
   if test "x$CUSTOM_ROOT" != x; then

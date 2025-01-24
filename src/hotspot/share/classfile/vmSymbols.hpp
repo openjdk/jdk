@@ -125,7 +125,6 @@ class SerializeClosure;
   template(java_security_ProtectionDomain,            "java/security/ProtectionDomain")           \
   template(java_security_SecureClassLoader,           "java/security/SecureClassLoader")          \
   template(java_net_URL,                              "java/net/URL")                             \
-  template(java_net_URLClassLoader,                   "java/net/URLClassLoader")                  \
   template(java_util_jar_Manifest,                    "java/util/jar/Manifest")                   \
   template(java_io_ByteArrayInputStream,              "java/io/ByteArrayInputStream")             \
   template(java_io_Serializable,                      "java/io/Serializable")                     \
@@ -356,6 +355,8 @@ class SerializeClosure;
   template(jdk_internal_foreign_abi_VMStorage_array_signature,       "[Ljdk/internal/foreign/abi/VMStorage;") \
   template(jdk_internal_foreign_abi_VMStorage_array_array_signature, "[[Ljdk/internal/foreign/abi/VMStorage;") \
   template(jdk_internal_foreign_abi_CallConv,                        "jdk/internal/foreign/abi/UpcallLinker$CallRegs") \
+                                                                                                  \
+  template(jdk_internal_foreign_NativeMemorySegmentImpl,             "jdk/internal/foreign/NativeMemorySegmentImpl") \
                                                                                                   \
   /* Support for JVMCI */                                                                         \
   JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
@@ -738,7 +739,6 @@ class SerializeClosure;
   template(runtimeSetup,                                    "runtimeSetup")                                       \
   template(toFileURL_name,                                  "toFileURL")                                          \
   template(toFileURL_signature,                             "(Ljava/lang/String;)Ljava/net/URL;")                 \
-  template(url_array_classloader_void_signature,            "([Ljava/net/URL;Ljava/lang/ClassLoader;)V")          \
                                                                                                                   \
   /* jcmd Thread.dump_to_file */                                                                                  \
   template(jdk_internal_vm_ThreadDumper,           "jdk/internal/vm/ThreadDumper")                                \
