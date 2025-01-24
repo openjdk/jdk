@@ -283,9 +283,7 @@ size_t SerialHeap::max_capacity() const {
 // Return true if any of the following is true:
 // . the allocation won't fit into the current young gen heap
 // . gc locker is occupied (jni critical section)
-// . heap memory is tight -- the most recent previous collection
-//   was a full collection because a partial collection (would
-//   have) failed and is likely to fail again
+// . heap memory is tight
 bool SerialHeap::should_try_older_generation_allocation(size_t word_size) const {
   size_t young_capacity = _young_gen->capacity_before_gc();
   return    (word_size > heap_word_size(young_capacity))
