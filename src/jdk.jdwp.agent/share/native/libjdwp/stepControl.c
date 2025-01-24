@@ -910,7 +910,6 @@ clearStep(jthread thread, StepRequest *step)
         }
 
         if (needsSuspending) {
-            tty_message("clearStep: suspending thread");
             // Don't use threadControl_suspendThread() here. It does a lot of
             // locking, increasing the risk of deadlock issues. None of that
             // locking is needed here.
