@@ -117,11 +117,12 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
 }
 
 void ShenandoahCollectionSet::remove_region(ShenandoahHeapRegion* r) {
-  auto const previous_value = Atomic::cmpxchg(_cset_map + r->affiliation(), char(1), char(0));
+  auto const previous_value = Atomic::cmpxchg(_cset_map + r->index(), char(1), char(0));
   if (previous_value == 1) {
     log_info(gc)("Removed region %zu from collection set", r->index());
     // TODO: All of the accounting and meta data for this collection set
     _region_count--;
+    ShenandoahHeapLocker locker(_heap->lock());
     r->make_regular_bypass();
   }
 }

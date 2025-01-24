@@ -76,9 +76,13 @@ inline bool ShenandoahForwarding::is_forwarded(oop obj) {
 }
 
 inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
-  markWord old_mark = obj->mark();
+  const markWord old_mark = obj->mark();
   if (old_mark.is_forwarded()) {
-    return cast_to_oop(old_mark.clear_lock_bits().to_pointer());
+    if (old_mark.is_self_forwarded()) {
+      return obj;
+    } else {
+      return old_mark.forwardee();
+    }
   }
 
   markWord new_mark = markWord::encode_pointer_as_mark(update);
@@ -86,7 +90,7 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   if (prev_mark == old_mark) {
     return update;
   } else {
-    return cast_to_oop(prev_mark.clear_lock_bits().to_pointer());
+    return prev_mark.forwardee();
   }
 }
 
@@ -94,7 +98,11 @@ inline oop ShenandoahForwarding::try_forward_to_self(oop obj) {
   markWord old_mark = obj->mark();
   if (old_mark.is_forwarded()) {
     // Check if another thread has already changed the forwarding pointer
-    return cast_to_oop(old_mark.clear_lock_bits().to_pointer());
+    if (old_mark.is_self_forwarded()) {
+      return obj;
+    } else {
+      return old_mark.forwardee();
+    }
   }
 
   obj->forward_to_self_atomic(old_mark);
