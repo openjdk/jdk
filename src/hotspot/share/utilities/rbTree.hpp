@@ -251,6 +251,22 @@ public:
     return const_cast<RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->closest_gt(k, mode);
   }
 
+  struct Range {
+    RBNode* start;
+    RBNode* end;
+    Range(RBNode* start, RBNode* end)
+    : start(start), end(end) {}
+  };
+
+  // Return the range [start, end)
+  // where start->key() <= addr < end->key().
+  // Failure to find the range leads to start and/or end being null.
+  Range find_enclosing_range(K addr) {
+    RBNode* start = closest_leq(addr);
+    RBNode* end = closest_gt(addr);
+    return Range(start, end);
+  }
+
   // Finds the node associated with the key
   RBNode* find_node(const K& k);
 
