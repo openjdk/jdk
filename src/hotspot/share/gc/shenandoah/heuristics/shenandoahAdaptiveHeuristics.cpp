@@ -257,10 +257,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
     _start_gc_is_pending = true;
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-    log_info(gc)("Triggering A: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
-#endif
     return true;
   }
 
@@ -276,9 +272,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
       _previous_trigger_declinations = _declined_trigger_count;
       _declined_trigger_count = 0;
       _start_gc_is_pending = true;
-#ifdef KELVIN_DEBUG
-    log_info(gc)("Triggering B: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
-#endif
       return true;
     }
   }
@@ -314,9 +307,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
     _start_gc_is_pending = true;
-#ifdef KELVIN_DEBUG
-    log_info(gc)("Triggering C: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
-#endif
     return true;
   }
 
@@ -331,9 +321,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
     _start_gc_is_pending = true;
-#ifdef KELVIN_DEBUG
-    log_info(gc)("Triggering D: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
-#endif
     return true;
   }
 

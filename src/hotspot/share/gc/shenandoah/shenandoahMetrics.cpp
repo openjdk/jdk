@@ -46,16 +46,8 @@ void ShenandoahMetricsSnapshot::snap_after() {
 
 bool ShenandoahMetricsSnapshot::is_good_progress() {
   // Under the critical threshold?
-#define KELVIN_BETTER_BOTH
-#ifdef KELVIN_BETTER_BOTH
-  ShenandoahFreeSet* free_set = _heap->free_set();
-  size_t free_actual   = free_set->available();
-  // The sum of free_set->capacity() and ->reserved represents capacity of young in generational, heap in non-generational.
-  size_t free_expected = ((free_set->capacity() + free_set->reserved()) / 100) * ShenandoahCriticalFreeThreshold;
-#else
   size_t free_actual   = _heap->free_set()->available();
   size_t free_expected = _heap->max_capacity() / 100 * ShenandoahCriticalFreeThreshold;
-#endif
   bool prog_free = free_actual >= free_expected;
   log_info(gc, ergo)("%s progress for free space: %zu%s, need %zu%s",
                      prog_free ? "Good" : "Bad",

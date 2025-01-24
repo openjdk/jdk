@@ -122,10 +122,6 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
       size_t old_time_elapsed = size_t(old_heuristics->elapsed_cycle_time() * 1000);
       if (old_time_elapsed < ShenandoahMinimumOldTimeMs) {
         // Do not increment _declined_trigger_count when waiting for minimum quantum of Old-gen marking
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-        log_info(gc)("Declining trigger for old-generation marking, count: " SIZE_FORMAT, _declined_trigger_count);
-#endif
         return false;
       }
     }
@@ -150,9 +146,6 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
     _start_gc_is_pending = true;
-#ifdef KELVIN_DEBUG
-    log_info(gc)("Triggering K: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
-#endif
     return true;
   }
 
@@ -166,10 +159,6 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
     _start_gc_is_pending = true;
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-    log_info(gc)("Triggering L: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
-#endif
     return true;
   }
 

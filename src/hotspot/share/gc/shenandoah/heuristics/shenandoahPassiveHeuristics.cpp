@@ -38,10 +38,6 @@ ShenandoahPassiveHeuristics::ShenandoahPassiveHeuristics(ShenandoahSpaceInfo* sp
 bool ShenandoahPassiveHeuristics::should_start_gc() {
   // Never do concurrent GCs.
   _declined_trigger_count++;
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  log_info(gc)("Declining trigger, count: " SIZE_FORMAT, _declined_trigger_count);
-#endif
   return false;
 }
 

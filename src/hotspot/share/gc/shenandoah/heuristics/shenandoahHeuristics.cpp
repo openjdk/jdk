@@ -198,10 +198,6 @@ bool ShenandoahHeuristics::should_start_gc() {
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
     _start_gc_is_pending = true;
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-    log_info(gc)("Triggering H: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
-#endif
     return true;
   }
 
@@ -213,17 +209,10 @@ bool ShenandoahHeuristics::should_start_gc() {
       _previous_trigger_declinations = _declined_trigger_count;
       _declined_trigger_count = 0;
       _start_gc_is_pending = true;
-#ifdef KELVIN_DEBUG
-    log_info(gc)("Triggering I: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
-#endif
       return true;
     }
   }
   _declined_trigger_count++;
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  log_info(gc)("Declining trigger, count: " SIZE_FORMAT, _declined_trigger_count);
-#endif
   return false;
 }
 
@@ -235,10 +224,6 @@ void ShenandoahHeuristics::adjust_penalty(intx step) {
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
          "In range before adjustment: %zd", _gc_time_penalties);
 
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  log_info(gc)("adjusting penalties(%ld): _previous_trigger_declinations is " SIZE_FORMAT, step, _previous_trigger_declinations);
-#endif
   if ((_previous_trigger_declinations < 16) && (step > 0)) {
     // Don't penalize if heuristics are not responsible for a negative outcome.  Allow 16 checks following
     // previous GC for self calibration without penalty.
