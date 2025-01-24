@@ -643,7 +643,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             p = wt.pool;
         }
         else
-            q = (p = ForkJoinPool.common).externalSubmissionQueue();
+            q = (p = ForkJoinPool.common).externalSubmissionQueue(false);
         q.push(this, p, internal);
         return this;
     }
