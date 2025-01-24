@@ -1434,7 +1434,7 @@ public:
   void sub(Register Rd, Register Rn, RegisterOrConstant decrement);
   void subw(Register Rd, Register Rn, RegisterOrConstant decrement);
 
-  void adrp(Register reg1, const Address &dest, uint64_t &byte_offset);
+  void adrp(Register reg1, const Address &dest, uint64_t &byte_offset, bool force_movk = false);
 
   void tableswitch(Register index, jint lowbound, jint highbound,
                    Label &jumptable, Label &jumptable_end, int stride = 1) {
@@ -1473,9 +1473,9 @@ public:
   public:
 
   void ldr_patchable(Register dest, const Address &const_addr) {
-    // Using adrp+ldr for distant addresses (a single PC-relative ldr has a ±1MB limit)
     uint64_t offset;
-    adrp(dest, const_addr, offset);
+    bool force_movk = true; // movk is important if the target can be more than 4GB away
+    adrp(dest, const_addr, offset, force_movk);
     ldr(dest, Address(dest, offset));
   }
 
