@@ -140,7 +140,6 @@ final class PerInterface<M> {
     /*
      * This method is called to throw an Exception when invoke doesn't find the named method.
      */
-    @SuppressWarnings("removal")
     private Object noSuchMethod(String msg, Object resource, String operation,
                                 Object[] params, String[] signature,
                                 Object cookie)
