@@ -4085,7 +4085,7 @@ The AOTCache can be used with the following command-line options:
      - If `AOTMode` is `on`, the JVM will print an error message and exit immediately. This
        mode should be used only as a "fail-fast" debugging aid to check if your command-line
        options are compatible with the AOTCache. An alternative is to run your application with
-       `-XX:AOTMode=auto -Xlog:cds` to see if the AOTCache can be used or not. 
+       `-XX:AOTMode=auto -Xlog:cds` to see if the AOTCache can be used or not.
 
 `-XX:AOTConfiguration:=`*configfile*
 :   Specifies the AOT Configuration file for the JVM to write to or read from.
@@ -4095,7 +4095,7 @@ The AOTCache can be used with the following command-line options:
 `-XX:AOTCache:=`*cachefile*
 :   Specify the location of the AOTCache. The standard extension for *cachefile* is `.aot`.
     If `-XX:AOTCache` is specified but `-XX:AOTMode` is not specified,
-    then `AOTMode` will be given the value of `auto`. 
+    then `AOTMode` will be given the value of `auto`.
 
 `-XX:+AOTClassLinking`
 :   If this options is specified with `-XX:AOTMode=create`, the JVM will perform more
