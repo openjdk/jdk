@@ -162,13 +162,12 @@ public class Threads {
         _list = VMObjectFactory.newObject(ThreadsList.class, threadListField.getValue());
     }
 
-    /** NOTE: this returns objects of type JavaThread, CompilerThread,
-      JvmtiAgentThread, NotificationThread, MonitorDeflationThread,
+    /** NOTE: this returns objects of type JavaThread or one if its subclasses:
+      CompilerThread, JvmtiAgentThread, NotificationThread, MonitorDeflationThread,
       StringDedupThread, AttachListenerThread, DeoptimizeObjectsALotThread and
-      ServiceThread. The latter seven subclasses of the former. Most operations
-      (fetching the top frame, etc.) are only allowed to be performed on
-      a "pure" JavaThread. For this reason, {@link
-      sun.jvm.hotspot.runtime.JavaThread#isJavaThread} has been
+      ServiceThread. Most operations (fetching the top frame, etc.) are only
+      allowed to be performed on a "pure" JavaThread. For this reason,
+      {@link sun.jvm.hotspot.runtime.JavaThread#isJavaThread} has been
       changed from the definition in the VM (which returns true for
       all of these thread types) to return true for JavaThreads and
       false for the seven subclasses. FIXME: should reconsider the
