@@ -8721,7 +8721,7 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
       break;
     // Ternary operations
     case vmIntrinsics::_fma_float16:
-      result = _gvn.transform(new FmaHFNode(control(), fld1, fld2, fld3));
+      result = _gvn.transform(new FmaHFNode(fld1, fld2, fld3));
       break;
     default:
       fatal_unexpected_iid(id);

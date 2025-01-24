@@ -438,7 +438,7 @@ public:
 // fused-multiply-add half-precision float
 class FmaHFNode : public FmaNode {
 public:
-  FmaHFNode(Node* c, Node* in1, Node* in2, Node* in3) : FmaNode(c, in1, in2, in3) {}
+  FmaHFNode(Node* in1, Node* in2, Node* in3) : FmaNode(in1, in2, in3) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return Type::HALF_FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
