@@ -788,10 +788,11 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // equivalent graph. Whether such situations are accidental and possibly
   // avoidable is a topic for future investigation.
   //
-  // In the following, we refer to equivalent memory nodes as (search) roots.
-  // If we do not search for anti-dependences from all roots, it is possible
-  // that we do not discover all relevant anti-dependences. Below are two cases
-  // seen in practice where it is necessary to find the additional roots.
+  // In the following, we refer to equivalent memory nodes as additional
+  // (search) roots. If we do not search for anti-dependences from all roots,
+  // it is possible that we do not discover all relevant anti-dependences.
+  // Below are two cases seen in practice where it is necessary to find the
+  // additional roots.
   //
   // Definitions:
   // - A = all of memory
@@ -883,8 +884,8 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // See the illustrations below for a visual representation of the facts
   // above. Note: the graphs are branches in the dominator tree, and not from
   // the CFG. Observations indicate that it is only necessary to consider Phi
-  // nodes as roots. From the Phi nodes, we then discover other relevant
-  // non-Phi nodes naturally as part of the anti-dependence search.
+  // nodes as additional roots. From the Phi nodes, we then discover other
+  // relevant non-Phi nodes naturally as part of the anti-dependence search.
   //
   // CASE 1
   // +---------------------+
@@ -895,17 +896,15 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // +---------------------+
   //           |
   //           V
-  //        +-----+
-  //        | ... + in-between block (L is live in the whole block)
-  //        +-----+
-  //           |
-  //           V
   //          ...
   //           |
   //           V
   //        +-----+
   //        | ... + in-between block (L is live in the whole block)
   //        +-----+
+  //           |
+  //           V
+  //          ...
   //           |
   //           v
   //     +------------+
@@ -937,9 +936,9 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // | ...               |
   // +-------------------+
   //
-  // Finally, below is the code for finding the roots. We add a guard
+  // Finally, below is the code for finding additional roots. We add a guard
   // (load->in(0) != nullptr) as observations indicate that we only need to
-  // find the roots if the load has an explicit control input.
+  // find additional roots if the load has an explicit control input.
   //
   if (load->in(0) != nullptr) {
     // Walk the relevant blocks from early (inclusive) up to initial_mem_block
@@ -949,7 +948,8 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
       if (b == initial_mem_block && !initial_mem->is_Phi()) {
         // If we are in initial_mem_block, and initial_mem is not itself a Phi,
         // it necessarily means that initial_mem is defined after all Phis in
-        // the block. Therefore, no Phis in the block are roots.
+        // the block. Therefore, no Phis in the block are roots. This
+        // corresponds to CASE 1 and CASE 3 above.
         break;
       }
       // We need to process all memory Phi nodes in the block. LCM may not have
