@@ -850,7 +850,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   //           |
   //           V
   // +-----------------------+
-  // | 5 membar_release <- 7 | early
+  // | 5 membar_release <- 4 | early
   // | ...                   |
   // +-----------------------+
   //
