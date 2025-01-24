@@ -4233,7 +4233,7 @@ public class Attr extends JCTree.Visitor {
             Type type = attribType(tree.deconstructor, env);
             if (type.isRaw() && type.tsym.getTypeParameters().nonEmpty()) {
                 Type inferred = infer.instantiatePatternType(resultInfo.pt, type.tsym);
-                if (inferred == null) {
+                if (inferred == null || inferred.isErroneous()) {
                     log.error(tree.pos(), Errors.PatternTypeCannotInfer);
                 } else {
                     type = inferred;
