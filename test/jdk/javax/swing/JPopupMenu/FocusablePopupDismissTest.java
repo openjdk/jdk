@@ -33,10 +33,12 @@
   * @run main/manual FocusablePopupDismissTest
   */
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 import java.awt.Window;
@@ -98,7 +100,12 @@ public class FocusablePopupDismissTest {
     static List<Window> createTestUI() {
         JFrame frame = new JFrame("FocusablePopupDismissTest");
         JButton button = new JButton("Click me");
-        frame.add(button);
+
+        JPanel wrapper = new JPanel();
+        wrapper.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        wrapper.add(button);
+
+        frame.add(wrapper);
 
         button.addActionListener(e -> {
             JPopupMenu popupMenu = new JPopupMenu();

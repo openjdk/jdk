@@ -42,7 +42,7 @@ import javax.swing.SwingUtilities;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.IllegalComponentStateException;
-import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.util.concurrent.FutureTask;
@@ -93,27 +93,28 @@ public class NestedFocusablePopupTest {
         }
     }
 
-    static Point waitAndGetLocationOnEDT(Component component) throws Exception {
+    static Rectangle waitAndGetOnScreenBoundsOnEDT(Component component) throws Exception {
         waitTillShown(component, 500);
         robot.waitForIdle();
 
-        FutureTask<Point> task = new FutureTask<>(component::getLocationOnScreen);
+        FutureTask<Rectangle> task = new FutureTask<>(()
+                -> new Rectangle(component.getLocationOnScreen(), component.getSize()));
         SwingUtilities.invokeLater(task);
         return task.get(500, TimeUnit.MILLISECONDS);
     }
 
     static void test0() throws Exception {
-        Point frameLocation = waitAndGetLocationOnEDT(frame);
-        robot.mouseMove(frameLocation.x + frame.getWidth() / 2,
-                frameLocation.y + frame.getHeight() / 2);
+        Rectangle frameBounds = waitAndGetOnScreenBoundsOnEDT(frame);
+        robot.mouseMove(frameBounds.x + frameBounds.width / 2,
+                frameBounds.y + frameBounds.height / 2);
 
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
 
-        Point menuLocation = waitAndGetLocationOnEDT(menuWithFocusableItem);
-        robot.mouseMove(menuLocation.x + 5, menuLocation.y + 5);
+        Rectangle menuBounds = waitAndGetOnScreenBoundsOnEDT(menuWithFocusableItem);
+        robot.mouseMove(menuBounds.x + 5, menuBounds.y + 5);
 
-        // give popup some time to disappear (in case of failure)
+        // Give popup some time to disappear (in case of failure)
         robot.waitForIdle();
         robot.delay(200);
 
@@ -125,22 +126,22 @@ public class NestedFocusablePopupTest {
     }
 
     static void test1() throws Exception {
-        Point frameLocation = waitAndGetLocationOnEDT(frame);
-        robot.mouseMove(frameLocation.x + frame.getWidth() / 2,
-                frameLocation.y + frame.getHeight() / 2);
+        Rectangle frameBounds = waitAndGetOnScreenBoundsOnEDT(frame);
+        robot.mouseMove(frameBounds.x + frameBounds.width / 2,
+                frameBounds.y + frameBounds.height / 2);
 
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
 
-        Point menuLocation = waitAndGetLocationOnEDT(menuWithFocusableItem);
-        robot.mouseMove(menuLocation.x + 5, menuLocation.y + 5);
+        Rectangle menuBounds = waitAndGetOnScreenBoundsOnEDT(menuWithFocusableItem);
+        robot.mouseMove(menuBounds.x + 5, menuBounds.y + 5);
         robot.waitForIdle();
         robot.delay(200);
 
-        menuLocation = waitAndGetLocationOnEDT(menuWithNonFocusableItem);
-        robot.mouseMove(menuLocation.x + 5, menuLocation.y + 5);
+        menuBounds = waitAndGetOnScreenBoundsOnEDT(menuWithNonFocusableItem);
+        robot.mouseMove(menuBounds.x + 5, menuBounds.y + 5);
 
-        // give popup some time to disappear (in case of failure)
+        // Give popup some time to disappear (in case of failure)
         robot.waitForIdle();
         robot.delay(200);
 
