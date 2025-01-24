@@ -89,9 +89,6 @@ public final class Integer extends Number
      */
     @Native public static final int   MAX_VALUE = 0x7fffffff;
 
-    private static final int MULT_MIN_10 = Integer.MIN_VALUE / 10;
-    private static final int MULT_MIN_100 = Integer.MIN_VALUE / 100;
-
     /**
      * The {@code Class} instance representing the primitive type
      * {@code int}.
@@ -524,41 +521,30 @@ public final class Integer extends Number
         if (s == null || radix != 10 || (len = (value = s.value()).length) == 0 || !s.isLatin1()) {
             return parseInt0(s, radix);
         }
-        int result = 0, c, digit;
-        boolean inRange;
-        int neg;
-        if ((neg = (c = value[0]) - '-') != 0
-                && neg + 2 != 0 // firstChar != '+'
-        ) {
-            if (inRange = isDigitLatin1(c)) {
-                result = '0' - c;
-            }
-        } else {
-            inRange = len != 1;
-        }
-        int limit = MIN_VALUE + (neg != 0 ? 1 : 0);
+        int fc = value[0];
+        int result = Integer.isDigitLatin1(fc)
+                ? '0' - fc
+                : len != 1 && (fc == '-' || fc == '+')
+                ? 0
+                : 1;  // or any value > 0
         int i = 1;
-        while (inRange
-                && i + 1 < len
-                && (digit = DecimalDigits.digit2(value, i)) != -1
-        ) {
-            // max digits is 19, no need to check inRange (result == MULT_MIN_100 && digit <= (MULT_MIN_100 * 100 - limit))
-            if (inRange = (result >= MULT_MIN_100)) {
-                result = result * 100 - digit;
-                i += 2;
-            }
+        int d;
+        while (i + 1 < len
+                && (d = DecimalDigits.digit2(value, i)) != -1
+                && MIN_VALUE / 100 <= result && result <= 0) {
+            result = result * 100 - d;  // overflow from d => result > 0
+            i += 2;
         }
-        if (inRange && result <= 0) {
-            if (i + 1 == len && isDigitLatin1((c = value[i]))) {
-                digit = c - '0';
-                if (result > MULT_MIN_10 || (result == MULT_MIN_10 && digit <= (MULT_MIN_10 * 10 - limit))) {
-                    result = result * 10 - digit;
-                    i++;
-                }
-            }
-            if (i == len) {
-                return neg != 0 ? -result : result;
-            }
+        if (i < len
+                && Integer.isDigitLatin1(d = value[i])
+                && MIN_VALUE / 10 <= result && result <= 0) {
+            result = result * 10 + '0' - d;  // overflow from '0' - d => result > 0
+            i += 1;
+        }
+        if (i == len
+                & result <= 0
+                & (MIN_VALUE < result || fc == '-')) {
+            return fc == '-' ? result : -result;
         }
         throw NumberFormatException.forInputString(s);
     }
