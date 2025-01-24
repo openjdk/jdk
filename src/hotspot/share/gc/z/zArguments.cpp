@@ -141,10 +141,6 @@ void ZArguments::initialize() {
     FLAG_SET_ERGO_IF_DEFAULT(ZCollectionIntervalMajor, ZCollectionInterval);
   }
 
-  if (FLAG_IS_DEFAULT(ZFragmentationLimit)) {
-    FLAG_SET_DEFAULT(ZFragmentationLimit, 5.0);
-  }
-
   // Set medium page size here because MaxTenuringThreshold may use it.
   ZHeuristics::set_medium_page_size();
 
