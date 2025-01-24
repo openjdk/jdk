@@ -26,25 +26,28 @@
  * @bug     8348212
  * @summary Ensure the warn() phase executes when the compiler is invoked via the API
  * @modules jdk.compiler/com.sun.tools.javac.api
- * @compile TestJavacTask.java TestJavacTaskWithWarning.java
- * @run main TestJavacTaskWithWarning
  */
 
 import com.sun.tools.javac.api.JavacTaskImpl;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
+
+import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
-public class TestJavacTaskWithWarning extends TestJavacTask {
+public class TestJavacTaskWithWarning {
 
-    public static void warningTest() throws IOException {
+    static final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    static final StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null);
+
+    public static void warningTest() throws Exception {
 
         // Create a source file that will generate a warning
         String srcdir = System.getProperty("test.src");
@@ -75,7 +78,7 @@ public class TestJavacTaskWithWarning extends TestJavacTask {
             throw new AssertionError("warning not found in:\n" + buf);
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         try {
             warningTest();
         } finally {
