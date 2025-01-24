@@ -95,9 +95,9 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
   size_t reserved, committed;
   MemTag tag = mtNone;
   auto print_err = [&](const char* str) {
-    log_warning(cds)("summary mismatch, at %s, for %s,"
-                    " diff-reserved: " SSIZE_FORMAT
-                    " diff-committed: " SSIZE_FORMAT
+    log_warning(nmt)("summary mismatch, at %s, for %s,"
+                    " diff-reserved:  %ld "
+                    " diff-committed: %ld"
                     " vms-reserved: "  SIZE_FORMAT
                     " vms-committed: " SIZE_FORMAT,
                     str, NMTUtil::tag_to_name(tag), (ssize_t)reserve_delta, (ssize_t)commit_delta, reserved, committed);
