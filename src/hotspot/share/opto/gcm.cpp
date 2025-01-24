@@ -830,7 +830,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // In this example, initial_mem is 6 Phi, but a critical anti-dependent
   // memory use for the load is 8 membar_release. If we do not consider 7 Phi
   // (which subsumes and overlaps 6 Phi) as a search root, we do not find this
-  // anti dependence and will likely end up scheduling the load too late.
+  // anti-dependence and will likely end up scheduling the load too late.
   //
   // EXAMPLE 2
   // +-----------------------------+
@@ -854,7 +854,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // | ...                   |
   // +-----------------------+
   //
-  // In this next similar example, initial_mem is instead 1 MachProj. We fail
+  // In this next example, initial_mem is instead 1 MachProj. We fail
   // to reach the critical anti-dependent use 5 membar_release because the
   // anti-dependence search starting from 1 MachProj terminates at 4 Phi. We
   // must add 4 Phi as a search root.
@@ -876,9 +876,9 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   //   (Phis execute in parallel at the start of the block by definition).
   //
   // These facts together identify a range where L is certainly live. L can of
-  // course also be live elsewhere both above and below this range. The actual
-  // anti-dependence search later on attempts to expand the range downwards as
-  // far as possible (to allow maximum scheduling flexibility with a low LCA).
+  // course also be live below this range. The actual anti-dependence search
+  // later on attempts to expand the range downwards as far as possible (to
+  // allow maximum scheduling flexibility with a low LCA).
   //
   // See the illustrations below for a visual representation of the facts
   // above. Note: the graphs are branches in the dominator tree, and not from
@@ -914,7 +914,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   //
   // CASE 2
   // +-------------------+
-  // | Phi (a root)      | initial_mem_block (L is live in whole block)
+  // | Phi (a root)      | initial_mem_block (L is live in the whole block)
   // | Phi (initial_mem) |
   // | ...               |
   // +-------------------+
