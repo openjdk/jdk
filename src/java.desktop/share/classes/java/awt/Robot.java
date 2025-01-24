@@ -226,8 +226,7 @@ public class Robot {
     public synchronized void mouseMove(int x, int y) {
         int leastXDiff = Integer.MAX_VALUE;
         int leastYDiff = Integer.MAX_VALUE;
-        int finX = x;
-        int finY = y;
+        int finX, finY;
 
         for (Rectangle screenBounds : allScreenBounds) {
             int closestX = Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width);
