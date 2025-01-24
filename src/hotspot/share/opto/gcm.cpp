@@ -784,9 +784,9 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
 
   // There are rare situations where multiple memory nodes are valid inputs to
   // the load. That is, we could replace the actual memory input to the load
-  // (initial_mem) with any of these nodes and still have a semantically
-  // equivalent graph. Whether such situations are accidental and possibly
-  // avoidable is a topic for future investigation.
+  // (initial_mem) with any of these nodes and still preserve ideal graph
+  // validity. Whether such situations are accidental and possibly avoidable is
+  // a topic for future investigation.
   //
   // In the following, we refer to equivalent memory nodes as additional
   // (search) roots. If we do not search for anti-dependences from all roots,
