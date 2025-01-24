@@ -55,11 +55,21 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
   BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
 
-  JVM_PRECOMPILED_HEADER_EXCLUDE := \
+  ifeq ($(TOOLCHAIN_TYPE), clang)
+    JVM_PRECOMPILED_HEADER_EXCLUDE := \
       sharedRuntimeTrig.cpp \
       sharedRuntimeTrans.cpp \
       $(OPT_SPEED_SRC) \
       #
+  endif
+
+  ifeq ($(call isTargetCpu, ppc64le)+$(TOOLCHAIN_TYPE), true+gcc)
+    JVM_PRECOMPILED_HEADER_EXCLUDE := \
+      sharedRuntimeTrig.cpp \
+      sharedRuntimeTrans.cpp \
+      $(OPT_SPEED_SRC) \
+      #
+  endif
 
   ifeq ($(call isTargetCpu, x86), true)
     # Performance measurements show that by compiling GC related code, we could
