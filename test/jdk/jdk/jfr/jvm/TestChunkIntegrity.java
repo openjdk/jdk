@@ -56,7 +56,7 @@ import jdk.test.lib.jfr.TestClassLoader;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm/timeout=300 jdk.jfr.jvm.TestChunkIntegrity
