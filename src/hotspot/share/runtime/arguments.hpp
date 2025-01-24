@@ -290,7 +290,7 @@ class Arguments : AllStatic {
   static bool create_module_property(const char* prop_name, const char* prop_value, PropertyInternal internal);
   static bool create_numbered_module_property(const char* prop_base_name, const char* prop_value, unsigned int count);
 
-  static int process_patch_mod_option(const char* patch_mod_tail, bool* patch_mod_javabase);
+  static int process_patch_mod_option(const char* patch_mod_tail);
 
   // Aggressive optimization flags.
   static jint set_aggressive_opts_flags();
@@ -325,8 +325,8 @@ class Arguments : AllStatic {
                                  const JavaVMInitArgs *java_tool_options_args,
                                  const JavaVMInitArgs *java_options_args,
                                  const JavaVMInitArgs *cmd_line_args);
-  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, JVMFlagOrigin origin);
-  static jint finalize_vm_init_args(bool patch_mod_javabase);
+  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin origin);
+  static jint finalize_vm_init_args();
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);
 
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore) {
@@ -364,6 +364,8 @@ class Arguments : AllStatic {
   // Return nullptr if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg);
   static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
+
+  static bool internal_module_property_helper(const char* property, bool check_for_cds);
 
  public:
   // Parses the arguments, first phase
@@ -463,9 +465,7 @@ class Arguments : AllStatic {
   static int  PropertyList_readable_count(SystemProperty* pl);
 
   static bool is_internal_module_property(const char* option);
-  static bool is_add_modules_property(const char* key);
-  static unsigned int addmods_count() { return  _addmods_count; }
-  static bool is_module_path_property(const char* key);
+  static bool is_incompatible_cds_internal_module_property(const char* property);
 
   // Miscellaneous System property value getter and setters.
   static void set_dll_dir(const char *value) { _sun_boot_library_path->set_value(value); }
@@ -474,7 +474,7 @@ class Arguments : AllStatic {
   static void set_ext_dirs(char *value)     { _ext_dirs = os::strdup_check_oom(value); }
 
   // Set up the underlying pieces of the boot class path
-  static void add_patch_mod_prefix(const char *module_name, const char *path, bool* patch_mod_javabase);
+  static void add_patch_mod_prefix(const char *module_name, const char *path);
   static void set_boot_class_path(const char *value, bool has_jimage) {
     // During start up, set by os::set_boot_path()
     assert(get_boot_class_path() == nullptr, "Boot class path previously set");

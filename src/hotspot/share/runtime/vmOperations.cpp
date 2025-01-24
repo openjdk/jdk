@@ -368,7 +368,7 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
 
   // Implements the ObjectMonitorsView interface
   void visit(MonitorClosure* closure, JavaThread* thread) override {
-    int64_t key = ObjectMonitor::owner_from(thread);
+    int64_t key = ObjectMonitor::owner_id_from(thread);
     ObjectMonitorLinkedList* list = get_list(key);
     LinkedListIterator<ObjectMonitor*> iter(list != nullptr ? list->head() : nullptr);
     while (!iter.is_empty()) {
@@ -611,12 +611,16 @@ void VM_Exit::doit() {
 
 
 void VM_Exit::wait_if_vm_exited() {
-  if (_vm_exited &&
-      Thread::current_or_null() != _shutdown_thread) {
-    // _vm_exited is set at safepoint, and the Threads_lock is never released
-    // so we will block here until the process dies.
-    Threads_lock->lock();
-    ShouldNotReachHere();
+  if (_vm_exited) {
+    // Need to check for an unattached thread as only attached threads
+    // can acquire the lock.
+    Thread* current = Thread::current_or_null();
+    if (current != nullptr && current != _shutdown_thread) {
+      // _vm_exited is set at safepoint, and the Threads_lock is never released
+      // so we will block here until the process dies.
+      Threads_lock->lock();
+      ShouldNotReachHere();
+    }
   }
 }
 

@@ -1488,4 +1488,12 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         exitHotSpot(status);
         throw JVMCIError.shouldNotReachHere();
     }
+
+    /**
+     * Returns HotSpot's {@code CompileBroker} compilation activity mode which is one of:
+     * {@code stop_compilation = 0}, {@code run_compilation = 1} or {@code shutdown_compilation = 2}
+     */
+    public int getCompilationActivityMode() {
+        return compilerToVm.getCompilationActivityMode();
+    }
 }

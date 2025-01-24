@@ -59,7 +59,7 @@ void NativeInstruction::verify() {
   //  - any address in first page (0x0000 .. 0x0fff)
   //  - odd address (will cause a "specification exception")
   address addr = addr_at(0);
-  if ((addr == 0) || (((unsigned long)addr & ~0x0fff) == 0) || ((intptr_t)addr & 1) != 0) {
+  if ((addr == nullptr) || (((unsigned long)addr & ~0x0fff) == 0) || ((intptr_t)addr & 1) != 0) {
     tty->print_cr(INTPTR_FORMAT ": bad instruction address", p2i(addr));
     fatal("not an instruction address");
   }

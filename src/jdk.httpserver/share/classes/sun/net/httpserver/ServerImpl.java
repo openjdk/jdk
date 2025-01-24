@@ -53,8 +53,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -304,16 +302,8 @@ class ServerImpl {
         logger.log (Level.DEBUG, "context removed: " + context.getPath());
     }
 
-    @SuppressWarnings("removal")
     public InetSocketAddress getAddress() {
-        return AccessController.doPrivileged(
-                new PrivilegedAction<InetSocketAddress>() {
-                    public InetSocketAddress run() {
-                        return
-                            (InetSocketAddress)schan.socket()
-                                .getLocalSocketAddress();
-                    }
-                });
+        return (InetSocketAddress) schan.socket().getLocalSocketAddress();
     }
 
     void addEvent (Event r) {

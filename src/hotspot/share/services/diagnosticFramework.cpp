@@ -587,7 +587,7 @@ GrowableArray<DCmdInfo*>* DCmdFactory::DCmdInfo_list(DCmdSource source ) {
     if (!factory->is_hidden() && (factory->export_flags() & source)) {
       array->append(new DCmdInfo(factory->name(),
                     factory->description(), factory->impact(),
-                    factory->permission(), factory->num_arguments(),
+                    factory->num_arguments(),
                     factory->is_enabled()));
     }
     factory = factory->next();

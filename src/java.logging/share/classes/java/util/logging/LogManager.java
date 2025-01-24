@@ -164,7 +164,7 @@ public class LogManager {
     // LoggerContext for system loggers and user loggers
     private final LoggerContext systemContext = new SystemLoggerContext();
     private final LoggerContext userContext = new LoggerContext();
-    // non final field - make it volatile to make sure that other threads
+    // non-final field - make it volatile to make sure that other threads
     // will see the new value once ensureLogManagerInitialized() has finished
     // executing.
     private volatile Logger rootLogger;
@@ -312,7 +312,6 @@ public class LogManager {
      */
     private boolean initializedCalled = false;
     private volatile boolean initializationDone = false;
-    @SuppressWarnings("removal")
     final void ensureLogManagerInitialized() {
         final LogManager owner = this;
         if (initializationDone || owner != manager) {
@@ -422,15 +421,11 @@ public class LogManager {
         }
     }
 
-    // LoggerContext maps from AppContext
-    private WeakHashMap<Object, LoggerContext> contextsMap = null;
-
     // Returns the LoggerContext for the user code (i.e. application or AppContext).
     // Loggers are isolated from each AppContext.
     private LoggerContext getUserContext() {
-        LoggerContext context = null;
-        // for standalone app, return userContext
-        return context != null ? context : userContext;
+        // return userContext
+        return userContext;
     }
 
     // The system context.
@@ -447,7 +442,7 @@ public class LogManager {
 
     // Find or create a specified logger instance. If a logger has
     // already been created with the given name it is returned.
-    // Otherwise a new logger instance is created and registered
+    // Otherwise, a new logger instance is created and registered
     // in the LogManager global namespace.
     // This method will always return a non-null Logger object.
     // Synchronization is not required here. All synchronization for

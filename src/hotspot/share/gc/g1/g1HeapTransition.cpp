@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public:
       _usage._humongous_used += r->used();
       _usage._humongous_region_count++;
     } else {
-      assert(r->used() == 0, "Expected used to be 0 but it was " SIZE_FORMAT, r->used());
+      assert(r->used() == 0, "Expected used to be 0 but it was %zu", r->used());
     }
     return false;
   }
@@ -109,7 +109,7 @@ static void log_regions(const char* msg, size_t before_length, size_t after_leng
   if (lt.is_enabled()) {
     LogStream ls(lt);
 
-    ls.print("%s regions: " SIZE_FORMAT "->" SIZE_FORMAT "("  SIZE_FORMAT ")",
+    ls.print("%s regions: %zu->%zu(%zu)",
              msg, before_length, after_length, capacity);
     // Not null only if gc+heap+numa at Debug level is enabled.
     if (before_per_node_length != nullptr && after_per_node_length != nullptr) {
@@ -141,12 +141,12 @@ void G1HeapTransition::print() {
     DetailedUsageClosure blk;
     _g1_heap->heap_region_iterate(&blk);
     usage = blk._usage;
-    assert(usage._eden_region_count == 0, "Expected no eden regions, but got " SIZE_FORMAT, usage._eden_region_count);
-    assert(usage._survivor_region_count == after._survivor_length, "Expected survivors to be " SIZE_FORMAT " but was " SIZE_FORMAT,
+    assert(usage._eden_region_count == 0, "Expected no eden regions, but got %zu", usage._eden_region_count);
+    assert(usage._survivor_region_count == after._survivor_length, "Expected survivors to be %zu but was %zu",
            after._survivor_length, usage._survivor_region_count);
-    assert(usage._old_region_count == after._old_length, "Expected old to be " SIZE_FORMAT " but was " SIZE_FORMAT,
+    assert(usage._old_region_count == after._old_length, "Expected old to be %zu but was %zu",
            after._old_length, usage._old_region_count);
-    assert(usage._humongous_region_count == after._humongous_length, "Expected humongous to be " SIZE_FORMAT " but was " SIZE_FORMAT,
+    assert(usage._humongous_region_count == after._humongous_length, "Expected humongous to be %zu but was %zu",
            after._humongous_length, usage._humongous_region_count);
   }
 
@@ -156,17 +156,17 @@ void G1HeapTransition::print() {
 
   log_regions("Survivor", _before._survivor_length, after._survivor_length, survivor_capacity_length_before_gc,
               _before._survivor_length_per_node, after._survivor_length_per_node);
-  log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
+  log_trace(gc, heap)(" Used: %zuK, Waste: %zuK",
                       usage._survivor_used / K, ((after._survivor_length * G1HeapRegion::GrainBytes) - usage._survivor_used) / K);
 
-  log_info(gc, heap)("Old regions: " SIZE_FORMAT "->" SIZE_FORMAT,
+  log_info(gc, heap)("Old regions: %zu->%zu",
                      _before._old_length, after._old_length);
-  log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
+  log_trace(gc, heap)(" Used: %zuK, Waste: %zuK",
                       usage._old_used / K, ((after._old_length * G1HeapRegion::GrainBytes) - usage._old_used) / K);
 
-  log_info(gc, heap)("Humongous regions: " SIZE_FORMAT "->" SIZE_FORMAT,
+  log_info(gc, heap)("Humongous regions: %zu->%zu",
                      _before._humongous_length, after._humongous_length);
-  log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
+  log_trace(gc, heap)(" Used: %zuK, Waste: %zuK",
                       usage._humongous_used / K, ((after._humongous_length * G1HeapRegion::GrainBytes) - usage._humongous_used) / K);
 
   MetaspaceUtils::print_metaspace_change(_before._meta_sizes);

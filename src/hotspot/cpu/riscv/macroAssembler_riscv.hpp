@@ -60,14 +60,14 @@ class MacroAssembler: public Assembler {
   // Note that SP must be updated to the right place before saving/restoring RA and FP
   // because signal based thread suspend/resume could happen asynchronously.
   void enter() {
-    addi(sp, sp, - 2 * wordSize);
+    subi(sp, sp, 2 * wordSize);
     sd(ra, Address(sp, wordSize));
     sd(fp, Address(sp));
     addi(fp, sp, 2 * wordSize);
   }
 
   void leave() {
-    addi(sp, fp, - 2 * wordSize);
+    subi(sp, fp, 2 * wordSize);
     ld(fp, Address(sp));
     ld(ra, Address(sp, wordSize));
     addi(sp, sp, 2 * wordSize);
@@ -323,21 +323,55 @@ class MacroAssembler: public Assembler {
                                      Register tmp1_reg,
                                      Register tmp2_reg,
                                      Label* L_success,
-                                     Label* L_failure);
+                                     Label* L_failure,
+                                     bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register tmp1_reg,
+                                            Register tmp2_reg,
+                                            Label* L_success,
+                                            Label* L_failure,
+                                            bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register tmp1_reg,
+                                           Register tmp2_reg,
+                                           Label* L_success,
+                                           Label* L_failure,
+                                           bool set_cond_codes = false);
+
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
+
+  // Secondary subtype checking
+  void lookup_secondary_supers_table_var(Register sub_klass,
+                                         Register r_super_klass,
+                                         Register result,
+                                         Register tmp1,
+                                         Register tmp2,
+                                         Register tmp3,
+                                         Register tmp4,
+                                         Label *L_success);
 
   void population_count(Register dst, Register src, Register tmp1, Register tmp2);
 
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
-  bool lookup_secondary_supers_table(Register r_sub_klass,
-                                     Register r_super_klass,
-                                     Register result,
-                                     Register tmp1,
-                                     Register tmp2,
-                                     Register tmp3,
-                                     Register tmp4,
-                                     u1 super_klass_slot,
-                                     bool stub_is_near = false);
+  bool lookup_secondary_supers_table_const(Register r_sub_klass,
+                                           Register r_super_klass,
+                                           Register result,
+                                           Register tmp1,
+                                           Register tmp2,
+                                           Register tmp3,
+                                           Register tmp4,
+                                           u1 super_klass_slot,
+                                           bool stub_is_near = false);
 
   void verify_secondary_supers_table(Register r_sub_klass,
                                      Register r_super_klass,
@@ -351,7 +385,8 @@ class MacroAssembler: public Assembler {
                                                Register r_array_index,
                                                Register r_bitmap,
                                                Register result,
-                                               Register tmp1);
+                                               Register tmp,
+                                               bool is_stub = true);
 
   void check_klass_subtype(Register sub_klass,
                            Register super_klass,
@@ -591,9 +626,6 @@ class MacroAssembler: public Assembler {
   }
 
   // Control and status pseudo instructions
-  void rdinstret(Register Rd);                  // read instruction-retired counter
-  void rdcycle(Register Rd);                    // read cycle counter
-  void rdtime(Register Rd);                     // read time
   void csrr(Register Rd, unsigned csr);         // read csr
   void csrw(unsigned csr, Register Rs);         // write csr
   void csrs(unsigned csr, Register Rs);         // set bits in csr
@@ -601,19 +633,23 @@ class MacroAssembler: public Assembler {
   void csrwi(unsigned csr, unsigned imm);
   void csrsi(unsigned csr, unsigned imm);
   void csrci(unsigned csr, unsigned imm);
-  void frcsr(Register Rd);                      // read float-point csr
-  void fscsr(Register Rd, Register Rs);         // swap float-point csr
-  void fscsr(Register Rs);                      // write float-point csr
-  void frrm(Register Rd);                       // read float-point rounding mode
-  void fsrm(Register Rd, Register Rs);          // swap float-point rounding mode
-  void fsrm(Register Rs);                       // write float-point rounding mode
+  void frcsr(Register Rd) { csrr(Rd, CSR_FCSR); }; // read float-point csr
+  void fscsr(Register Rd, Register Rs);            // swap float-point csr
+  void fscsr(Register Rs);                         // write float-point csr
+  void frrm(Register Rd) { csrr(Rd, CSR_FRM); };   // read float-point rounding mode
+  void fsrm(Register Rd, Register Rs);             // swap float-point rounding mode
+  void fsrm(Register Rs);                          // write float-point rounding mode
   void fsrmi(Register Rd, unsigned imm);
   void fsrmi(unsigned imm);
-  void frflags(Register Rd);                    // read float-point exception flags
-  void fsflags(Register Rd, Register Rs);       // swap float-point exception flags
-  void fsflags(Register Rs);                    // write float-point exception flags
+  void frflags(Register Rd) { csrr(Rd, CSR_FFLAGS); }; // read float-point exception flags
+  void fsflags(Register Rd, Register Rs);              // swap float-point exception flags
+  void fsflags(Register Rs);                           // write float-point exception flags
   void fsflagsi(Register Rd, unsigned imm);
   void fsflagsi(unsigned imm);
+  // Requires Zicntr
+  void rdinstret(Register Rd) { csrr(Rd, CSR_INSTRET); }; // read instruction-retired counter
+  void rdcycle(Register Rd)   { csrr(Rd, CSR_CYCLE); };   // read cycle counter
+  void rdtime(Register Rd)    { csrr(Rd, CSR_TIME); };    // read time
 
   // Restore cpu control state after JNI call
   void restore_cpu_control_state_after_jni(Register tmp);
@@ -625,6 +661,17 @@ class MacroAssembler: public Assembler {
   void bgez(Register Rs, const address dest);
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
+
+  void cmov_eq(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_ne(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_le(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_leu(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_ge(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_geu(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_lt(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_ltu(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_gt(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_gtu(Register cmp1, Register cmp2, Register dst, Register src);
 
  public:
   // We try to follow risc-v asm menomics.
@@ -875,10 +922,20 @@ public:
  public:
 
   // arith
-  void add (Register Rd, Register Rn, int64_t increment, Register temp = t0);
-  void addw(Register Rd, Register Rn, int32_t increment, Register temp = t0);
-  void sub (Register Rd, Register Rn, int64_t decrement, Register temp = t0);
-  void subw(Register Rd, Register Rn, int32_t decrement, Register temp = t0);
+  void add (Register Rd, Register Rn, int64_t increment, Register tmp = t0);
+  void sub (Register Rd, Register Rn, int64_t decrement, Register tmp = t0);
+  void addw(Register Rd, Register Rn, int64_t increment, Register tmp = t0);
+  void subw(Register Rd, Register Rn, int64_t decrement, Register tmp = t0);
+
+  void subi(Register Rd, Register Rn, int64_t decrement) {
+    assert(is_simm12(-decrement), "Must be");
+    addi(Rd, Rn, -decrement);
+  }
+
+  void subiw(Register Rd, Register Rn, int64_t decrement) {
+    assert(is_simm12(-decrement), "Must be");
+    addiw(Rd, Rn, -decrement);
+  }
 
 #define INSN(NAME)                                               \
   inline void NAME(Register Rd, Register Rs1, Register Rs2) {    \
@@ -901,19 +958,14 @@ public:
   void andn(Register Rd, Register Rs1, Register Rs2);
   void orn(Register Rd, Register Rs1, Register Rs2);
 
-  // revb
-  void revb_h_h(Register Rd, Register Rs, Register tmp = t0);                           // reverse bytes in halfword in lower 16 bits, sign-extend
-  void revb_w_w(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);      // reverse bytes in lower word, sign-extend
-  void revb_h_h_u(Register Rd, Register Rs, Register tmp = t0);                         // reverse bytes in halfword in lower 16 bits, zero-extend
-  void revb_h_w_u(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);    // reverse bytes in halfwords in lower 32 bits, zero-extend
-  void revb_h_helper(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);  // reverse bytes in upper 16 bits (48:63) and move to lower
-  void revb_h(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);         // reverse bytes in each halfword
-  void revb_w(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);         // reverse bytes in each word
-  void revb(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);          // reverse bytes in doubleword
+  // reverse bytes
+  void revbw(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);  // reverse bytes in lower word, sign-extend
+  void revb(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);  // reverse bytes in doubleword
 
-  void ror_imm(Register dst, Register src, uint32_t shift, Register tmp = t0);
-  void rolw_imm(Register dst, Register src, uint32_t, Register tmp = t0);
-  void andi(Register Rd, Register Rn, int64_t imm, Register tmp = t0);
+  void ror(Register dst, Register src, Register shift, Register tmp = t0);
+  void ror(Register dst, Register src, uint32_t shift, Register tmp = t0);
+  void rolw(Register dst, Register src, uint32_t shift, Register tmp = t0);
+
   void orptr(Address adr, RegisterOrConstant src, Register tmp1 = t0, Register tmp2 = t1);
 
 // Load and Store Instructions
@@ -1141,15 +1193,14 @@ public:
                enum operand_size size,
                Assembler::Aqrl acquire, Assembler::Aqrl release,
                Register result, bool result_as_bool = false);
-  void cmpxchg_weak(Register addr, Register expected,
+  void weak_cmpxchg(Register addr, Register expected,
                     Register new_val,
                     enum operand_size size,
                     Assembler::Aqrl acquire, Assembler::Aqrl release,
                     Register result);
-  void cmpxchg_narrow_value_helper(Register addr, Register expected,
-                                   Register new_val,
+  void cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
                                    enum operand_size size,
-                                   Register tmp1, Register tmp2, Register tmp3);
+                                   Register shift, Register mask, Register aligned_addr);
   void cmpxchg_narrow_value(Register addr, Register expected,
                             Register new_val,
                             enum operand_size size,
@@ -1305,6 +1356,24 @@ public:
   void vector_update_crc32(Register crc, Register buf, Register len,
                            Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
                            Register table0, Register table3);
+  void kernel_crc32_vclmul_fold(Register crc, Register buf, Register len,
+              Register table0, Register table1, Register table2, Register table3,
+              Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
+  void crc32_vclmul_fold_to_16_bytes_vectorsize_32(VectorRegister vx, VectorRegister vy, VectorRegister vt,
+                            VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3, VectorRegister vtmp4);
+  void kernel_crc32_vclmul_fold_vectorsize_32(Register crc, Register buf, Register len,
+                                              Register vclmul_table, Register tmp1, Register tmp2);
+  void crc32_vclmul_fold_16_bytes_vectorsize_16(VectorRegister vx, VectorRegister vt,
+                      VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3, VectorRegister vtmp4,
+                      Register buf, Register tmp, const int STEP);
+  void crc32_vclmul_fold_16_bytes_vectorsize_16_2(VectorRegister vx, VectorRegister vy, VectorRegister vt,
+                      VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3, VectorRegister vtmp4,
+                      Register tmp);
+  void crc32_vclmul_fold_16_bytes_vectorsize_16_3(VectorRegister vx, VectorRegister vy, VectorRegister vt,
+                      VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3, VectorRegister vtmp4,
+                      Register tmp);
+  void kernel_crc32_vclmul_fold_vectorsize_16(Register crc, Register buf, Register len,
+                                              Register vclmul_table, Register tmp1, Register tmp2);
 
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
@@ -1340,7 +1409,8 @@ public:
   void inflate_lo32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
   void inflate_hi32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
 
-  void ctzc_bit(Register Rd, Register Rs, bool isLL = false, Register tmp1 = t0, Register tmp2 = t1);
+  void ctzc_bits(Register Rd, Register Rs, bool isLL = false,
+                 Register tmp1 = t0, Register tmp2 = t1);
 
   void zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);
@@ -1496,16 +1566,16 @@ public:
         sltu(Rt, zr, Rt);
         break;
       case T_CHAR   :
-        zero_extend(Rt, Rt, 16);
+        zext(Rt, Rt, 16);
         break;
       case T_BYTE   :
-        sign_extend(Rt, Rt, 8);
+        sext(Rt, Rt, 8);
         break;
       case T_SHORT  :
-        sign_extend(Rt, Rt, 16);
+        sext(Rt, Rt, 16);
         break;
       case T_INT    :
-        sign_extend(Rt, Rt, 32);
+        sext(Rt, Rt, 32);
         break;
       case T_LONG   : /* nothing to do */        break;
       case T_VOID   : /* nothing to do */        break;
@@ -1520,8 +1590,8 @@ public:
   void double_compare(Register result, FloatRegister Rs1, FloatRegister Rs2, int unordered_result);
 
   // Zero/Sign-extend
-  void zero_extend(Register dst, Register src, int bits);
-  void sign_extend(Register dst, Register src, int bits);
+  void zext(Register dst, Register src, int bits);
+  void sext(Register dst, Register src, int bits);
 
 private:
   void cmp_x2i(Register dst, Register src1, Register src2, Register tmp, bool is_signed = true);

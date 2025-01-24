@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,8 +130,8 @@ const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
   }
 #ifdef ASSERT
   if (required_len > result_len) {
-    warning("outputStream::do_vsnprintf output truncated -- buffer length is " SIZE_FORMAT
-            " bytes but " SIZE_FORMAT " bytes are needed.",
+    warning("outputStream::do_vsnprintf output truncated -- buffer length is %zu"
+            " bytes but %zu bytes are needed.",
             add_cr ? buflen + 1 : buflen, required_len + 1);
   }
 #endif
@@ -387,7 +387,7 @@ void stringStream::write(const char* s, size_t len) {
   }
   const size_t reasonable_max_len = 1 * G;
   if (len >= reasonable_max_len) {
-    assert(false, "bad length? (" SIZE_FORMAT ")", len);
+    assert(false, "bad length? (%zu)", len);
     return;
   }
   size_t write_len = 0;
@@ -875,7 +875,7 @@ intx defaultStream::hold(intx writer_id) {
     if (has_log) {
       _log_file->bol();
       // output a hint where this output is coming from:
-      _log_file->print_cr("<writer thread='" UINTX_FORMAT "'/>", writer_id);
+      _log_file->print_cr("<writer thread='%zu'/>", writer_id);
     }
     _last_writer = writer_id;
   }

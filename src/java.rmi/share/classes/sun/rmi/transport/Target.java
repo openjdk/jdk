@@ -31,7 +31,7 @@ import java.rmi.server.ObjID;
 import java.rmi.server.Unreferenced;
 import java.util.*;
 import sun.rmi.runtime.Log;
-import sun.rmi.runtime.NewThreadAction;
+import sun.rmi.runtime.RuntimeUtil;
 import sun.rmi.server.Dispatcher;
 
 /**
@@ -312,10 +312,10 @@ public final class Target {
              */
             Remote obj = getImpl();
             if (obj instanceof Unreferenced unrefObj) {
-                new NewThreadAction(() -> {
+                RuntimeUtil.newUserThread(() -> {
                     Thread.currentThread().setContextClassLoader(ccl);
                     unrefObj.unreferenced();
-                }, "Unreferenced-" + nextThreadNum++, false, true).run().start();
+                }, "Unreferenced-" + nextThreadNum++, false).start();
                 // REMIND: access to nextThreadNum not synchronized; you care?
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1312,18 +1312,18 @@ public class ModuleDescriptor
      * Creates a module descriptor from its components.
      * The arguments are pre-validated and sets are unmodifiable sets.
      */
-    ModuleDescriptor(String name,
-                     Version version,
-                     Set<Modifier> modifiers,
-                     Set<Requires> requires,
-                     Set<Exports> exports,
-                     Set<Opens> opens,
-                     Set<String> uses,
-                     Set<Provides> provides,
-                     Set<String> packages,
-                     String mainClass,
-                     int hashCode,
-                     boolean unused) {
+    private ModuleDescriptor(String name,
+                             Version version,
+                             Set<Modifier> modifiers,
+                             Set<Requires> requires,
+                             Set<Exports> exports,
+                             Set<Opens> opens,
+                             Set<String> uses,
+                             Set<Provides> provides,
+                             Set<String> packages,
+                             String mainClass,
+                             int hashCode,
+                             boolean unused) {
         this.name = name;
         this.version = version;
         this.rawVersionString = null;

@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.NativeLibraries;
@@ -594,6 +595,11 @@ public interface JavaLangAccess {
      * Returns the virtual thread default scheduler.
      */
     Executor virtualThreadDefaultScheduler();
+
+    /**
+     * Returns a stream of the delayed task schedulers used for virtual threads.
+     */
+    Stream<ScheduledExecutorService> virtualThreadDelayedTaskSchedulers();
 
     /**
      * Creates a new StackWalker

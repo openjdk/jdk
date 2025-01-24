@@ -58,11 +58,6 @@ public class RegistryContext implements Context, Referenceable {
 
     Reference reference = null; // ref used to create this context, if any
 
-    // Environment property that, if set, indicates that a security
-    // manager should be installed (if none is already in place).
-    public static final String SECURITY_MGR =
-            "java.naming.rmi.security.manager";
-
     /**
      * Returns a context for the registry at a given host and port.
      * If "host" is null, uses default host.
@@ -77,9 +72,6 @@ public class RegistryContext implements Context, Referenceable {
         environment = (env == null)
                       ? new Hashtable<String, Object>(5)
                       : (Hashtable<String, Object>) env;
-        if (environment.get(SECURITY_MGR) != null) {
-            installSecurityMgr();
-        }
 
         // chop off '[' and ']' in an IPv6 literal address
         if ((host != null) && (host.charAt(0) == '[')) {
@@ -295,9 +287,6 @@ public class RegistryContext implements Context, Referenceable {
     public Object addToEnvironment(String propName, Object propVal)
             throws NamingException
     {
-        if (propName.equals(SECURITY_MGR)) {
-            installSecurityMgr();
-        }
         return environment.put(propName, propVal);
     }
 
@@ -409,19 +398,6 @@ public class RegistryContext implements Context, Referenceable {
             }
         } catch (RemoteException e) {
             throw (NamingException)wrapRemoteException(e).fillInStackTrace();
-        }
-    }
-
-    /**
-     * Attempts to install a security manager if none is currently in
-     * place.
-     */
-    @SuppressWarnings("removal")
-    private static void installSecurityMgr() {
-
-        try {
-            System.setSecurityManager(new SecurityManager());
-        } catch (Exception e) {
         }
     }
 

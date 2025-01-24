@@ -134,8 +134,7 @@ space is required.
 Even for 32-bit builds, it is recommended to use a 64-bit build machine, and
 instead create a 32-bit target using `--with-target-bits=32`.
 
-Note: The Windows 32-bit x86 port is deprecated and may be removed in a future
-release.
+Note: The 32-bit x86 port is deprecated and may be removed in a future release.
 
 ### Building on aarch64
 
@@ -191,8 +190,7 @@ on different platforms.
 ### Windows
 
 Windows XP is not a supported platform, but all newer Windows should be able to
-build the JDK. (Note: The Windows 32-bit x86 port is deprecated and may be
-removed in a future release.)
+build the JDK.
 
 On Windows, it is important that you pay attention to the instructions in the
 [Special Considerations](#special-considerations).
@@ -682,9 +680,9 @@ At least version 3.2 of GNU Bash must be used.
 
 ### Graphviz and Pandoc
 
-In order to build the full docs (see the `--enable-full-docs`
-configure option) [Graphviz](https://www.graphviz.org) and
-[Pandoc](https://pandoc.org) are required. Any recent versions should
+In order to build man pages and the full docs (see the `--enable-full-docs`
+configure option) [Pandoc](https://pandoc.org) is required. For full docs also
+[Graphviz](https://www.graphviz.org) is required. Any recent versions should
 work. For reference, and subject to change, Oracle builds use Graphviz
 9.0.0 and Pandoc 2.19.2.
 

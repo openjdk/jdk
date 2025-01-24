@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,7 +24,7 @@ import java.util.ListResourceBundle;
 
 /**
  * @author Morten Jorgensen
- * @LastModified: Jan 2022
+ * @LastModified: Nov 2024
  */
 public class ErrorMessages_zh_CN extends ListResourceBundle {
 
@@ -980,8 +980,6 @@ public class ErrorMessages_zh_CN extends ListResourceBundle {
         {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
          "\u5185\u90E8 XSLTC \u9519\u8BEF: translet \u4E2D\u7684\u65B9\u6CD5\u8D85\u8FC7\u4E86 Java \u865A\u62DF\u673A\u7684\u65B9\u6CD5\u957F\u5EA6\u9650\u5236 64 KB\u3002\u8FD9\u901A\u5E38\u662F\u7531\u4E8E\u6837\u5F0F\u8868\u4E2D\u7684\u6A21\u677F\u975E\u5E38\u5927\u9020\u6210\u7684\u3002\u8BF7\u5C1D\u8BD5\u4F7F\u7528\u8F83\u5C0F\u7684\u6A21\u677F\u91CD\u65B0\u6784\u5EFA\u6837\u5F0F\u8868\u3002"
         },
-
-        {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "\u542F\u7528\u4E86 Java \u5B89\u5168\u65F6\uFF0C\u5C06\u7981\u7528\u5BF9\u53CD\u5E8F\u5217\u5316 TemplatesImpl \u7684\u652F\u6301\u3002\u53EF\u4EE5\u901A\u8FC7\u5C06 jdk.xml.enableTemplatesImplDeserialization \u7CFB\u7EDF\u5C5E\u6027\u8BBE\u7F6E\u4E3A true \u6765\u8986\u76D6\u6B64\u8BBE\u7F6E\u3002"},
 
         {ErrorMsg.XPATH_GROUP_LIMIT,
             "JAXP0801001\uFF1A\u7F16\u8BD1\u5668\u9047\u5230\u5305\u542B ''{0}'' \u7EC4\u7684 XPath \u8868\u8FBE\u5F0F\uFF0C\u8BE5\u8868\u8FBE\u5F0F\u8D85\u8FC7\u4E86 ''{2}'' \u8BBE\u7F6E\u7684 ''{1}'' \u9650\u5236\u3002"},

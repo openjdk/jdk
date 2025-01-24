@@ -27,18 +27,15 @@ package com.sun.jmx.mbeanserver;
 
 
 import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
-import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.lang.System.Logger.Level;
-import javax.management.MBeanPermission;
 
 import javax.management.ObjectName;
 import javax.management.loading.PrivateClassLoader;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * This class keeps the list of Class Loaders registered in the MBean Server.
@@ -192,7 +189,6 @@ final class ClassLoaderRepositorySupport
                                final ClassLoader without,
                                final ClassLoader stop)
             throws ClassNotFoundException {
-        ReflectUtil.checkPackageAccess(className);
         final int size = list.length;
         for(int i=0; i<size; i++) {
             try {
@@ -280,20 +276,7 @@ final class ClassLoaderRepositorySupport
     }
 
     public final ClassLoader getClassLoader(ObjectName name) {
-        ClassLoader instance = loadersWithNames.get(name);
-        if (instance != null) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                Permission perm =
-                        new MBeanPermission(instance.getClass().getName(),
-                        null,
-                        name,
-                        "getClassLoader");
-                sm.checkPermission(perm);
-            }
-        }
-        return instance;
+        return loadersWithNames.get(name);
     }
 
 }

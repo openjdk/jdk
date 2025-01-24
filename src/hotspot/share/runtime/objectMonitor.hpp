@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,12 +84,9 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 //
 // ObjectMonitor Layout Overview/Highlights/Restrictions:
 //
-// - The _metadata field must be at offset 0 because the displaced header
-//   from markWord is stored there. We do not want markWord.hpp to include
-//   ObjectMonitor.hpp to avoid exposing ObjectMonitor everywhere. This
-//   means that ObjectMonitor cannot inherit from any other class nor can
-//   it use any virtual member functions. This restriction is critical to
-//   the proper functioning of the VM.
+// - For performance reasons we ensure the _metadata field is located at offset 0,
+//   which in turn means that ObjectMonitor can't inherit from any other class nor use
+//   any virtual member functions.
 // - The _metadata and _owner fields should be separated by enough space
 //   to avoid false sharing due to parallel access by different threads.
 //   This is an advisory recommendation.
@@ -117,11 +114,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 //
 // - See TEST_VM(ObjectMonitor, sanity) gtest for how critical restrictions are
 //   enforced.
-// - Adjacent ObjectMonitors should be separated by enough space to avoid
-//   false sharing. This is handled by the ObjectMonitor allocation code
-//   in synchronizer.cpp. Also see TEST_VM(SynchronizerTest, sanity) gtest.
 //
-// Futures notes:
 // - Separating _owner from the <remaining_fields> by enough space to
 //   avoid false sharing might be profitable. Given that the CAS in
 //   monitorenter will invalidate the line underlying _owner. We want
@@ -132,7 +125,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 //   would make them immune to CAS-based invalidation from the _owner
 //   field.
 //
-// - The _recursions field should be of type int, or int32_t but not
+// - TODO: The _recursions field should be of type int, or int32_t but not
 //   intptr_t. There's no reason to use a 64-bit type for this field
 //   in a 64-bit JVM.
 
@@ -151,7 +144,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // ParkEvent of unblocker thread.
   static ParkEvent* _vthread_unparker_ParkEvent;
 
-  // The sync code expects the metadata field to be at offset zero (0).
+  // Because of frequent access, the the metadata field is at offset zero (0).
   // Enforced by the assert() in metadata_addr().
   // * LM_LIGHTWEIGHT with UseObjectMonitorTable:
   // Contains the _object's hashCode.
@@ -170,7 +163,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static const int64_t ANONYMOUS_OWNER = 1;
   static const int64_t DEFLATER_MARKER = 2;
 
-  int64_t volatile _owner;  // Either tid of owner, NO_OWNER, ANONYMOUS_OWNER or DEFLATER_MARKER.
+  int64_t volatile _owner;  // Either owner_id of owner, NO_OWNER, ANONYMOUS_OWNER or DEFLATER_MARKER.
   volatile uint64_t _previous_owner_tid;  // thread id of the previous owner of the monitor
   // Separate _owner and _next_om on different cache lines since
   // both can have busy multi-threaded access. _previous_owner_tid is only
@@ -284,25 +277,25 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   int64_t   owner_raw() const;
 
   // These methods return the value we set in _owner when acquiring
-  // the monitor with the given thread/vthread (tid).
-  static int64_t owner_from(JavaThread* thread);
-  static int64_t owner_from(oop vthread);
+  // the monitor with the given thread/vthread, AKA owner_id.
+  static int64_t owner_id_from(JavaThread* thread);
+  static int64_t owner_id_from(oop vthread);
 
   // Returns true if owner field == DEFLATER_MARKER and false otherwise.
   bool      owner_is_DEFLATER_MARKER() const;
   // Returns true if 'this' is being async deflated and false otherwise.
   bool      is_being_async_deflated();
-  // Clear _owner field; current value must match thread's tid.
+  // Clear _owner field; current value must match thread's owner_id.
   void      release_clear_owner(JavaThread* thread);
   // Simply set _owner field to new_value; current value must match old_value.
   void      set_owner_from_raw(int64_t old_value, int64_t new_value);
-  // Same as above but uses tid of current as new value.
+  // Same as above but uses owner_id of current as new value.
   void      set_owner_from(int64_t old_value, JavaThread* current);
   // Try to set _owner field to new_value if the current value matches
   // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
   // _owner field. Returns the prior value of the _owner field.
   int64_t   try_set_owner_from_raw(int64_t old_value, int64_t new_value);
-  // Same as above but uses tid of current as new_value.
+  // Same as above but uses owner_id of current as new_value.
   int64_t   try_set_owner_from(int64_t old_value, JavaThread* current);
 
   // Methods to check and set _succ. The successor is the thread selected
@@ -316,11 +309,11 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      clear_successor();
   int64_t   successor() const;
 
-  // Returns true if _owner field == tid of thread, false otherwise.
-  bool has_owner(JavaThread* thread) const { return owner() == owner_from(thread); }
-  // Set _owner field to tid of thread; current value must be NO_OWNER.
+  // Returns true if _owner field == owner_id of thread, false otherwise.
+  bool has_owner(JavaThread* thread) const { return owner() == owner_id_from(thread); }
+  // Set _owner field to owner_id of thread; current value must be NO_OWNER.
   void set_owner(JavaThread* thread) { set_owner_from(NO_OWNER, thread); }
-  // Try to set _owner field from NO_OWNER to tid of thread.
+  // Try to set _owner field from NO_OWNER to owner_id of thread.
   bool try_set_owner(JavaThread* thread) {
     return try_set_owner_from(NO_OWNER, thread) == NO_OWNER;
   }

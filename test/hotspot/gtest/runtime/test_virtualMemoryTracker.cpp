@@ -31,8 +31,7 @@
 //  jtreg-controlled gtests (see test/hotspot/jtreg/gtest/NMTGtests.java)
 
 #include "precompiled.hpp"
-
-#include "memory/virtualspace.hpp"
+#include "memory/memoryReserver.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -93,7 +92,9 @@ public:
   static void test_add_committed_region_adjacent() {
 
     size_t size  = 0x01000000;
-    ReservedSpace rs(size);
+    ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
@@ -167,7 +168,9 @@ public:
   static void test_add_committed_region_adjacent_overlapping() {
 
     size_t size  = 0x01000000;
-    ReservedSpace rs(size);
+    ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
@@ -254,7 +257,10 @@ public:
   static void test_add_committed_region_overlapping() {
 
     size_t size  = 0x01000000;
-    ReservedSpace rs(size);
+
+    ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
@@ -425,7 +431,9 @@ public:
   static void test_remove_uncommitted_region() {
 
     size_t size  = 0x01000000;
-    ReservedSpace rs(size);
+    ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;

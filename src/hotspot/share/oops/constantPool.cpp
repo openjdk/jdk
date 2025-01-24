@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@
 #include "oops/array.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -61,6 +62,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
@@ -330,8 +332,7 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   }
 
   InstanceKlass *ik = pool_holder();
-  if (!(ik->is_shared_boot_class() || ik->is_shared_platform_class() ||
-        ik->is_shared_app_class())) {
+  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
     // Archiving resolved references for classes from non-builtin loaders
     // is not yet supported.
     return nullptr;
@@ -343,12 +344,11 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
     int rr_len = rr->length();
     GrowableArray<bool> keep_resolved_refs(rr_len, rr_len, false);
 
-    ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
-    src_cp->iterate_archivable_resolved_references([&](int rr_index) {
+    iterate_archivable_resolved_references([&](int rr_index) {
       keep_resolved_refs.at_put(rr_index, true);
     });
 
-    objArrayOop scratch_rr = HeapShared::scratch_resolved_references(src_cp);
+    objArrayOop scratch_rr = HeapShared::scratch_resolved_references(this);
     Array<u2>* ref_map = reference_map();
     int ref_map_len = ref_map == nullptr ? 0 : ref_map->length();
     for (int i = 0; i < rr_len; i++) {
@@ -376,45 +376,39 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   return rr;
 }
 
-void ConstantPool::find_required_hidden_classes() {
-  if (_cache == nullptr) {
-    return;
-  }
-
-  ClassLoaderData* loader_data = pool_holder()->class_loader_data();
-  if (loader_data == nullptr) {
-    // These are custom loader classes from the preimage
-    return;
-  }
-
-  if (!SystemDictionaryShared::is_builtin_loader(loader_data)) {
-    // Archiving resolved references for classes from non-builtin loaders
-    // is not yet supported.
-    return;
-  }
-
-  objArrayOop rr = resolved_references();
-  if (rr != nullptr) {
-    iterate_archivable_resolved_references([&](int rr_index) {
-      oop obj = rr->obj_at(rr_index);
-      HeapShared::find_required_hidden_classes_in_object(obj);
-    });
-  }
-}
-
 void ConstantPool::add_dumped_interned_strings() {
-  objArrayOop rr = resolved_references();
-  if (rr != nullptr) {
-    int rr_len = rr->length();
-    for (int i = 0; i < rr_len; i++) {
-      oop p = rr->obj_at(i);
-      if (java_lang_String::is_instance(p) &&
-          !ArchiveHeapWriter::is_string_too_large_to_archive(p)) {
-        HeapShared::add_to_dumped_interned_strings(p);
+  InstanceKlass* ik = pool_holder();
+  if (!ik->is_linked()) {
+    // resolved_references() doesn't exist yet, so we have no resolved CONSTANT_String entries. However,
+    // some static final fields may have default values that were initialized when the class was parsed.
+    // We need to enter those into the CDS archive strings table.
+    for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
+      if (fs.access_flags().is_static()) {
+        fieldDescriptor& fd = fs.field_descriptor();
+        if (fd.field_type() == T_OBJECT) {
+          int offset = fd.offset();
+          check_and_add_dumped_interned_string(ik->java_mirror()->obj_field(offset));
+        }
+      }
+    }
+  } else {
+    objArrayOop rr = resolved_references();
+    if (rr != nullptr) {
+      int rr_len = rr->length();
+      for (int i = 0; i < rr_len; i++) {
+        check_and_add_dumped_interned_string(rr->obj_at(i));
       }
     }
   }
 }
+
+void ConstantPool::check_and_add_dumped_interned_string(oop obj) {
+  if (obj != nullptr && java_lang_String::is_instance(obj) &&
+      !ArchiveHeapWriter::is_string_too_large_to_archive(obj)) {
+    HeapShared::add_to_dumped_interned_strings(obj);
+  }
+}
+
 #endif
 
 #if INCLUDE_CDS
@@ -1266,6 +1260,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
                  cp_index,
                  callee->is_interface() ? "CONSTANT_MethodRef" : "CONSTANT_InterfaceMethodRef",
                  callee->is_interface() ? "CONSTANT_InterfaceMethodRef" : "CONSTANT_MethodRef");
+        // Names are all known to be < 64k so we know this formatted message is not excessively large.
         Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IncompatibleClassChangeError(), "%s", ss.as_string());
         save_and_throw_exception(this_cp, cp_index, tag, CHECK_NULL);
       }

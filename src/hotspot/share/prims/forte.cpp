@@ -92,10 +92,10 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
 vframeStreamForte::vframeStreamForte(JavaThread *jt,
                                      frame fr,
                                      bool stop_at_java_call_stub)
-    : vframeStreamCommon(RegisterMap(jt,
-                                     RegisterMap::UpdateMap::skip,
-                                     RegisterMap::ProcessFrames::skip,
-                                     RegisterMap::WalkContinuation::skip)) {
+    : vframeStreamCommon(jt,
+                         RegisterMap::UpdateMap::skip,
+                         RegisterMap::ProcessFrames::skip,
+                         RegisterMap::WalkContinuation::skip) {
   _reg_map.set_async(true);
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _frame = fr;

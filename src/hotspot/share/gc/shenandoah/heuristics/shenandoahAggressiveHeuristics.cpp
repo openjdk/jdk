@@ -44,7 +44,7 @@ void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(Shena
                                                                            RegionData* data, size_t size,
                                                                            size_t free) {
   for (size_t idx = 0; idx < size; idx++) {
-    ShenandoahHeapRegion* r = data[idx]._region;
+    ShenandoahHeapRegion* r = data[idx].get_region();
     if (r->garbage() > 0) {
       cset->add_region(r);
     }
@@ -52,7 +52,7 @@ void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(Shena
 }
 
 bool ShenandoahAggressiveHeuristics::should_start_gc() {
-  log_info(gc)("Trigger: Start next cycle immediately");
+  log_trigger("Start next cycle immediately");
   return true;
 }
 

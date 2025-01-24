@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@ class GCMemoryManager;
 class G1HeapRegion;
 class MemoryPool;
 class nmethod;
+class PartialArrayStateManager;
 class ReferenceProcessor;
 class STWGCTimer;
 class WorkerThreads;
@@ -360,8 +361,8 @@ private:
   do {                                                                        \
     size_t cur_used_bytes = g1h->used();                                      \
     size_t recal_used_bytes = g1h->recalculate_used();                        \
-    assert(cur_used_bytes == recal_used_bytes, "Used(" SIZE_FORMAT ") is not" \
-           " same as recalculated used(" SIZE_FORMAT ").",                    \
+    assert(cur_used_bytes == recal_used_bytes, "Used(%zu) is not" \
+           " same as recalculated used(%zu).",                    \
            cur_used_bytes, recal_used_bytes);                                 \
   } while (0)
 #else
@@ -807,8 +808,9 @@ public:
   // The concurrent refiner.
   G1ConcurrentRefine* _cr;
 
-  // The parallel task queues
-  G1ScannerTasksQueueSet *_task_queues;
+  // Reusable parallel task queues and partial array manager.
+  G1ScannerTasksQueueSet* _task_queues;
+  PartialArrayStateManager* _partial_array_state_manager;
 
   // ("Weak") Reference processing support.
   //
@@ -873,6 +875,8 @@ public:
 
   G1ScannerTasksQueueSet* task_queues() const;
   G1ScannerTasksQueue* task_queue(uint i) const;
+
+  PartialArrayStateManager* partial_array_state_manager() const;
 
   // Create a G1CollectedHeap.
   // Must call the initialize method afterwards.

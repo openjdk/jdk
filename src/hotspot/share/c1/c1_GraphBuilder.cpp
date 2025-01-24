@@ -41,12 +41,8 @@
 #include "interpreter/bytecode.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/oop.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/vm_version.hpp"
-#include "utilities/bitMap.inline.hpp"
 #include "utilities/checkedCast.hpp"
-#include "utilities/powerOfTwo.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -2121,7 +2117,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 
   if (cha_monomorphic_target != nullptr) {
-    assert(!target->can_be_statically_bound() || target->equals(cha_monomorphic_target), "");
+    assert(!target->can_be_statically_bound() || target == cha_monomorphic_target, "");
     assert(!cha_monomorphic_target->is_abstract(), "");
     if (!cha_monomorphic_target->can_be_statically_bound(actual_recv)) {
       // If we inlined because CHA revealed only a single target method,

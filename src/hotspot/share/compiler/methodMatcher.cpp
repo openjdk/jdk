@@ -219,21 +219,22 @@ bool MethodMatcher::match(Symbol* candidate, Symbol* match, Mode match_mode) con
 
 static MethodMatcher::Mode check_mode(char name[], const char*& error_msg) {
   int match = MethodMatcher::Exact;
+  size_t len = strlen(name);
   if (name[0] == '*') {
-    if (strlen(name) == 1) {
+    if (len == 1) {
       return MethodMatcher::Any;
     }
     match |= MethodMatcher::Suffix;
-    memmove(name, name + 1, strlen(name + 1) + 1);
+    memmove(name, name + 1, len); // Include terminating nul in move.
+    len--;
   }
 
-  size_t len = strlen(name);
   if (len > 0 && name[len - 1] == '*') {
     match |= MethodMatcher::Prefix;
     name[--len] = '\0';
   }
 
-  if (strlen(name) == 0) {
+  if (len == 0) {
     error_msg = "** Not a valid pattern";
     return MethodMatcher::Any;
   }

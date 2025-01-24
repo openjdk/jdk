@@ -335,11 +335,6 @@ public class Introspector {
      */
 
     public static void setBeanInfoSearchPath(String[] path) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertiesAccess();
-        }
         ThreadGroupContext.getContext().getBeanInfoFinder().setPackages(path);
     }
 

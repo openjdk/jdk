@@ -358,7 +358,7 @@ public class FileCredentialsCache extends CredentialsCache
         }
 
         boolean force;
-        String prop = SecurityProperties.privilegedGetOverridable(
+        String prop = SecurityProperties.getOverridableProperty(
                 "jdk.security.krb5.default.initiate.credential");
         if (prop == null) {
             prop = "always-impersonate";
