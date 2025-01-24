@@ -91,13 +91,13 @@ class os::Linux {
   };
 
   static int active_processor_count();
-  static void kernel_version(long* major, long* patch, long* sub);
+  static void kernel_version(long* major, long* minor, long* patch);
 
   // If kernel1 > kernel2 return  1
   // If kernel1 < kernel2 return -1
   // If kernel1 = kernel2 return  0
-  static int kernel_version_compare(long major1, long patch1, long sub1,
-                                    long major2, long patch2, long sub2);
+  static int kernel_version_compare(long major1, long minor1, long patch1,
+                                    long major2, long minor2, long patch2);
 
   // which_logical_cpu=-1 returns accumulated ticks for all cpus.
   static bool get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu);
