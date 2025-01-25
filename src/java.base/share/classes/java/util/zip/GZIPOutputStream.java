@@ -63,6 +63,12 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      * Creates a new output stream with the specified compressor,
      * buffer size and flush mode.
      *
+     * <p>
+     * The given {@link Deflater} will not be closed by this instance. To release
+     * the resources used by {@code def}, an application must explicitly close it
+     * by invoking its {@link Deflater#end end()} or {@link Deflater#close close()}
+     * method.
+     *
      * @param out the output stream
      * @param def the compressor ("deflater")
      * @param size the output buffer size
