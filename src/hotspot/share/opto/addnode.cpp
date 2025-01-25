@@ -1022,7 +1022,7 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r0 = t0->is_long(); // Handy access
   const TypeLong *r1 = t1->is_long();
 
-  if( r0->is_con() && r1->is_con() ){
+  if (r0->is_con() && r1->is_con()) {
     // just XOR them bits.
     return TypeLong::make( r0->get_con() ^ r1->get_con() );
   }
