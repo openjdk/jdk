@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,64 +24,77 @@
  */
 package java.lang.classfile.attribute;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.instruction.CharacterRange;
 
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models a single character range in the {@link CharacterRangeTableAttribute}.
+ * Models a single character range entry in the {@link
+ * CharacterRangeTableAttribute}.
+ * <p>
+ * Each character range entry associates a range of indices in the code array
+ * with a range of character positions in the source file.  A character position
+ * in the source file is represented by a line number and a column number, and
+ * its value is encoded as {@code lineNumber << 10 + columnNumber}.  Note that
+ * column numbers are not the same as byte indices in a column as multibyte
+ * characters may be present in the source file.
  *
+ * Each character range entry includes a
+ * flag which indicates what kind of range is described: statement, assignment,
+ * method call, etc.
+ *
+ * @see CharacterRangeTableAttribute#characterRangeTable()
+ * @see CharacterRange
  * @since 24
  */
 public sealed interface CharacterRangeInfo
         permits UnboundAttribute.UnboundCharacterRangeInfo {
 
     /**
-     * {@return the start of the character range region (inclusive)}  This is
-     * the index into the code array at which the code for this character range
-     * begins.
+     * {@return the start of indices in the code array, inclusive}
+     *
+     * @see CharacterRange#startScope()
      */
     int startPc();
 
     /**
-     * {@return the end of the character range region (exclusive)}  This is the
-     * index into the code array after which the code for this character range
-     * ends.
+     * {@return the end of indices in the code array, exclusive}
+     *
+     * @see CharacterRange#endScope()
      */
     int endPc();
 
     /**
-     * {@return the encoded start of the character range region (inclusive)}
-     * The value is constructed from the line_number/column_number pair as given
-     * by {@code line_number << 10 + column_number}, where the source file is
-     * viewed as an array of (possibly multi-byte) characters.
+     * {@return the encoded start of character positions in the source file,
+     * inclusive}
      */
     int characterRangeStart();
 
     /**
-     * {@return the encoded end of the character range region (exclusive)}.
-     * The value is constructed from the line_number/column_number pair as given
-     * by {@code line_number << 10 + column_number}, where the source file is
-     * viewed as an array of (possibly multi-byte) characters.
+     * {@return the encoded end of character positions in the source file,
+     * exclusive}
      */
     int characterRangeEnd();
 
     /**
+     * {@return the flags of this character range entry}
+     * <p>
      * The value of the flags item describes the kind of range. Multiple flags
      * may be set within flags.
      * <ul>
      * <li>{@link CharacterRange#FLAG_STATEMENT} Range is a Statement
-     * (except ExpressionStatement), StatementExpression {@jls 14.8}, as well as each
-     * VariableDeclaratorId = VariableInitializer of
-     * LocalVariableDeclarationStatement {@jls 14.4} or FieldDeclaration {@jls 8.3} in the
-     * grammar.
-     * <li>{@link CharacterRange#FLAG_BLOCK} Range is a Block in the
-     * grammar.
+     * (except ExpressionStatement), StatementExpression (JLS {@jls 14.8}), as
+     * well as each {@code VariableDeclaratorId = VariableInitializer} of
+     * LocalVariableDeclarationStatement (JLS {@jls 14.4}) or FieldDeclaration
+     * (JLS {@jls 8.3}) in the grammar.
+     * <li>{@link CharacterRange#FLAG_BLOCK} Range is a Block in the grammar.
      * <li>{@link CharacterRange#FLAG_ASSIGNMENT} Range is an assignment
-     * expression - Expression1 AssignmentOperator Expression1 in the grammar as
-     * well as increment and decrement expressions (both prefix and postfix).
+     * expression - {@code Expression1 AssignmentOperator Expression1} in the
+     * grammar as well as increment and decrement expressions (both prefix and
+     * postfix).
      * <li>{@link CharacterRange#FLAG_FLOW_CONTROLLER} An expression
-     * whose value will effect control flow. {@code Flowcon} in the following:
+     * whose value will affect control flow. {@code Flowcon} in the following:
      * <pre>
      * if ( Flowcon ) Statement [else Statement]
      * for ( ForInitOpt ; [Flowcon] ; ForUpdateOpt ) Statement
@@ -131,22 +144,28 @@ public sealed interface CharacterRangeInfo
      * if&lt;cond&gt;, ifnonull, ifnull or goto.
      * </ul>
      * <p>
-     * All bits of the flags item not assigned above are reserved for future use. They should be set to zero in generated class files and should be ignored by Java virtual machine implementations.
+     * All bits of the flags item not assigned above are reserved for future use.
+     * They should be set to zero in generated class files and should be ignored
+     * by Java virtual machine implementations.
      *
-     * @return the flags
      * @see CharacterRange#flags()
      */
     int flags();
 
     /**
-     * {@return a character range description}
-     * @param startPc the start of the bytecode range, inclusive
-     * @param endPc the end of the bytecode range, exclusive
-     * @param characterRangeStart the start of the character range, inclusive,
-     *                            encoded as {@code line_number << 10 + column_number}
-     * @param characterRangeEnd the end of the character range, exclusive,
-     *                          encoded as {@code line_number << 10 + column_number}
-     * @param flags the range flags
+     * {@return a character range entry}
+     *
+     * @apiNote
+     * The created entry cannot be written to a {@link CodeBuilder}.  Use
+     * {@link CodeBuilder#characterRange CodeBuilder::characterRange} instead.
+     *
+     * @param startPc the start of indices in the code array, inclusive
+     * @param endPc the end of indices in the code array, exclusive
+     * @param characterRangeStart the encoded start of character positions in
+     *        the source file, inclusive
+     * @param characterRangeEnd the encoded end of character positions in the
+     *        source file, exclusive
+     * @param flags the flags of this entry
      */
     static CharacterRangeInfo of(int startPc,
                                  int endPc,

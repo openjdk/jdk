@@ -151,7 +151,6 @@ class ScopedVMInitArgs;
 class Arguments : AllStatic {
   friend class VMStructs;
   friend class JvmtiExport;
-  friend class CodeCacheExtensions;
   friend class ArgumentsTest;
   friend class LargeOptionsTest;
  public:
