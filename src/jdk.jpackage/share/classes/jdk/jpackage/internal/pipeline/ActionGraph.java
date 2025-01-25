@@ -29,9 +29,12 @@ import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A directed acyclic (supposedly) graph.
@@ -51,6 +54,14 @@ final class ActionGraph<T> {
     }
 
     List<T> topologicalSort() throws CycleException {
+        return topologicalSort(Optional.empty());
+    }
+
+    List<T> topologicalSort(Comparator<T> sorter) throws CycleException {
+        return topologicalSort(Optional.of(sorter));
+    }
+
+    private List<T> topologicalSort(Optional<Comparator<T>> sorter) throws CycleException {
         final Set<DirectedEdge<T>> edgesCopy = new HashSet<>(edges);
 
         // Kahn's algorithm from https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm
@@ -59,26 +70,24 @@ final class ActionGraph<T> {
         // Empty list that will contain the sorted elements.
         final List<T> L = new ArrayList<>();
 
-        // Set of all nodes with no incoming edge.
-        var S = DirectedEdgeUtils.getNoIncomingEdgeNodes(edgesCopy, HashSet::new);
-
-        do {
-            final Set<T> newS = new HashSet<>();
-
-            for (final var n : S) {
-                L.add(n);
-                for (final var e : DirectedEdgeUtils.getEdgesFrom(n, edgesCopy)) {
-                    edgesCopy.remove(e);
-                    final var m = e.to(); 
-                    if (DirectedEdgeUtils.getEdgesTo(m, edgesCopy).isEmpty()) {
-                        newS.add(m);
-                    }
+        if (sorter.isEmpty()) {
+            // Set of all nodes with no incoming edge.
+            var S = DirectedEdgeUtils.getNoIncomingEdgeNodes(edgesCopy, HashSet::new);
+            do {
+                final var newS = new HashSet<T>();
+                for (final var n : S) {
+                    kahlSortIteration(edgesCopy, n, newS, L);
                 }
+                S = newS;
+            } while(!S.isEmpty());
+        } else {
+            // Set of all nodes with no incoming edge.
+            final var S = DirectedEdgeUtils.getNoIncomingEdgeNodes(edgesCopy, () -> new TreeSet<>(sorter.orElseThrow()));
+            while (!S.isEmpty()) {
+                final var n = S.removeFirst();
+                kahlSortIteration(edgesCopy, n, S, L);
             }
-
-            S = newS;
-
-        } while(!S.isEmpty());
+        }
 
         if (!edgesCopy.isEmpty()) {
             // Graph has at least one cycle.
@@ -86,6 +95,17 @@ final class ActionGraph<T> {
         } else {
             // A topologically sorted order.
             return Collections.unmodifiableList(L);
+        }
+    }
+
+    private static <U> void kahlSortIteration(Set<DirectedEdge<U>> edges, U n, Set<U> S, List<U> L) {
+        L.add(n);
+        for (final var e : DirectedEdgeUtils.getEdgesFrom(n, edges)) {
+            edges.remove(e);
+            final var m = e.to();
+            if (DirectedEdgeUtils.getEdgesTo(m, edges).isEmpty()) {
+                S.add(m);
+            }
         }
     }
 

@@ -26,6 +26,7 @@ package jdk.jpackage.internal.pipeline;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -66,9 +67,14 @@ final class ActionGraphTest {
 
     @ParameterizedTest
     @MethodSource
-    public void testTopologicalSort(List<DirectedEdge<String>> edges, List<String> expectedNodes) throws CycleException {
+    public void testTopologicalSort(Comparator<String> sorter, List<DirectedEdge<String>> edges, List<String> expectedNodes) throws CycleException {
         edges.forEach(this::addEdge);
-        final var actualNodes = graph.topologicalSort();
+        final List<String> actualNodes;
+        if (sorter != null) {
+            actualNodes = graph.topologicalSort(sorter);
+        } else {
+            actualNodes = graph.topologicalSort();
+        }
         assertEquals(expectedNodes, actualNodes);
     }
 
@@ -79,19 +85,22 @@ final class ActionGraphTest {
                 // + <- D <- B <- K <- C
                 //      |
                 //      + <- K
-                new Object[] { List.of(edge(B, A), edge(C, B), edge(D, A), edge(K, D), edge(B, D), edge(K, B), edge(C, K)), List.of(C, K, B, D, A) },
-                
+                new Object[] { null, List.of(edge(B, A), edge(C, B), edge(D, A), edge(K, D), edge(B, D), edge(K, B), edge(C, K)), List.of(C, K, B, D, A) },
+
                 // A <- B <- C <- K
                 // |
                 // + <- D <- B <- K
                 //      |
                 //      + <- K
-                new Object[] { List.of(edge(B, A), edge(C, B), edge(D, A), edge(K, D), edge(B, D), edge(K, B), edge(K, C)), List.of(K, C, B, D, A) },
-                
+                new Object[] { null, List.of(edge(B, A), edge(C, B), edge(D, A), edge(K, D), edge(B, D), edge(K, B), edge(K, C)), List.of(K, C, B, D, A) },
+
                 // D <- C <- B <- A
                 // |
                 // + <- A
-                new Object[] { List.of(edge(A, B), edge(B, C), edge(C, D), edge(A, D)), List.of(A, B, C, D) }
+                new Object[] { null, List.of(edge(A, B), edge(B, C), edge(C, D), edge(A, D)), List.of(A, B, C, D) },
+
+                new Object[] { Comparator.naturalOrder(), List.of(edge(A, L), edge(C, L), edge(B, L), edge(D, L)), List.of(A, B, C, D, L) },
+                new Object[] { Comparator.reverseOrder(), List.of(edge(A, L), edge(C, L), edge(B, L), edge(D, L)), List.of(D, C, B, A, L) }
         );
     }
 

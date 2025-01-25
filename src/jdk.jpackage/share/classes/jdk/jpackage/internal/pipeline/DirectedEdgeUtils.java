@@ -42,61 +42,65 @@ final class DirectedEdgeUtils {
         return getNodes(edges, Optional.empty());
     }
 
-    static <T> Set<T> getNodes(Collection<DirectedEdge<T>> edges, Supplier<Set<T>> collectionCtor) {
-        return getNodes(edges, Optional.of(collectionCtor));
+    @SuppressWarnings("unchecked")
+    static <T, U extends Set<T>> U getNodes(Collection<DirectedEdge<T>> edges, Supplier<U> collectionCtor) {
+        return (U)getNodes(edges, Optional.of(collectionCtor));
     }
 
     static <T> Set<T> getNoIncomingEdgeNodes(Collection<DirectedEdge<T>> edges) {
         return getNoIncomingEdgeNodes(edges, Optional.empty());
     }
 
-    static <T> Set<T> getNoIncomingEdgeNodes(Collection<DirectedEdge<T>> edges, Supplier<Set<T>> collectionCtor) {
-        return getNoIncomingEdgeNodes(edges, Optional.of(collectionCtor));
+    @SuppressWarnings("unchecked")
+    static <T, U extends Set<T>> U getNoIncomingEdgeNodes(Collection<DirectedEdge<T>> edges, Supplier<U> collectionCtor) {
+        return (U)getNoIncomingEdgeNodes(edges, Optional.of(collectionCtor));
     }
-    
+
     static <T> Collection<DirectedEdge<T>> getEdgesTo(T node, Collection<DirectedEdge<T>> edges) {
         return getEdgesTo(node, edges, Optional.empty());
     }
 
-    static <T> Collection<DirectedEdge<T>> getEdgesTo(T node, Collection<DirectedEdge<T>> edges, 
+    static <T> Collection<DirectedEdge<T>> getEdgesTo(T node, Collection<DirectedEdge<T>> edges,
             Supplier<Collection<DirectedEdge<T>>> collectionCtor) {
         return getEdgesTo(node, edges, Optional.of(collectionCtor));
     }
-    
+
     static <T> Collection<DirectedEdge<T>> getEdgesFrom(T node, Collection<DirectedEdge<T>> edges) {
         return getEdgesFrom(node, edges, Optional.empty());
     }
 
-    static <T> Collection<DirectedEdge<T>> getEdgesFrom(T node, Collection<DirectedEdge<T>> edges, 
+    static <T> Collection<DirectedEdge<T>> getEdgesFrom(T node, Collection<DirectedEdge<T>> edges,
             Supplier<Collection<DirectedEdge<T>>> collectionCtor) {
         return getEdgesFrom(node, edges, Optional.of(collectionCtor));
     }
 
-    private static <T> Set<T> getNodes(Collection<DirectedEdge<T>> edges, Optional<Supplier<Set<T>>> collectionCtor) {
+    private static <T, U extends Set<T>> Set<T> getNodes(Collection<DirectedEdge<T>> edges, Optional<Supplier<U>> collectionCtor) {
         return collectToSet(edges.parallelStream().flatMap(DirectedEdge::asStream), collectionCtor);
     }
 
-    private static <T> Collection<DirectedEdge<T>> getEdgesTo(T node, Collection<DirectedEdge<T>> edges, 
+    private static <T> Collection<DirectedEdge<T>> getEdgesTo(T node, Collection<DirectedEdge<T>> edges,
             Optional<Supplier<Collection<DirectedEdge<T>>>> collectionCtor) {
         return filterEdges(node, edges, DirectedEdge::to, collectionCtor);
     }
 
-    private static <T> Collection<DirectedEdge<T>> getEdgesFrom(T node, Collection<DirectedEdge<T>> edges, 
+    private static <T> Collection<DirectedEdge<T>> getEdgesFrom(T node, Collection<DirectedEdge<T>> edges,
             Optional<Supplier<Collection<DirectedEdge<T>>>> collectionCtor) {
         return filterEdges(node, edges, DirectedEdge::from, collectionCtor);
     }
 
-    private static <T> Set<T> getNoIncomingEdgeNodes(Collection<DirectedEdge<T>> edges, Optional<Supplier<Set<T>>> collectionCtor) {
+    private static <T, U extends Set<T>> Set<T> getNoIncomingEdgeNodes(Collection<DirectedEdge<T>> edges, Optional<Supplier<U>> collectionCtor) {
         final Set<T> noIncomingEdgeNodes = getNodes(edges, collectionCtor);
         final var incomingEdgeNodes = edges.parallelStream().map(DirectedEdge::to).collect(toSet());
         noIncomingEdgeNodes.removeAll(incomingEdgeNodes);
         return noIncomingEdgeNodes;
     }
 
-    private static <T> Set<T> collectToSet(Stream<T> stream, Optional<Supplier<Set<T>>> collectionCtor) {
-        return collectionCtor.map(ctor -> stream.collect(toCollection(ctor))).orElseGet(() -> {
+    private static <T, U extends Set<T>> Set<T> collectToSet(Stream<T> stream, Optional<Supplier<U>> collectionCtor) {
+        if (collectionCtor.isEmpty()) {
             return stream.collect(toSet());
-        });
+        } else {
+            return stream.collect(toCollection(collectionCtor.orElseThrow()));
+        }
     }
 
     private static <T> Collection<T> collect(Stream<T> stream, Optional<Supplier<Collection<T>>> collectionCtor) {
@@ -105,7 +109,7 @@ final class DirectedEdgeUtils {
         });
     }
 
-    private static <T> Collection<DirectedEdge<T>> filterEdges(T node, Collection<DirectedEdge<T>> edges, 
+    private static <T> Collection<DirectedEdge<T>> filterEdges(T node, Collection<DirectedEdge<T>> edges,
             Function<DirectedEdge<T>, T> getNode, Optional<Supplier<Collection<DirectedEdge<T>>>> collectionCtor) {
         Objects.requireNonNull(node);
         Objects.requireNonNull(getNode);

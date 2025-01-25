@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -54,7 +55,6 @@ final class ActionPipelineBuilderTest {
         public void execute(TestContext context) throws ActionException {
             LockSupport.parkNanos(Duration.ofMillis(100).toNanos());
             context.sb().append(name());
-            System.out.println(String.format("[%s] append=[%s]; result=[%s]", Thread.currentThread(), name(), context.sb));
         }
     }
 
@@ -76,7 +76,7 @@ final class ActionPipelineBuilderTest {
             dependencies.addAll(List.of(actions));
             return this;
         }
-        
+
         ActionSpec create() {
             return new ActionSpec(action, dependencies, dependent);
         }
@@ -95,7 +95,7 @@ final class ActionPipelineBuilderTest {
     @ParameterizedTest
     @MethodSource("testData")
     public void testParallel(List<ActionSpec> actionSpecs, String expectedString) throws ActionException {
-        testIt(new ForkJoinPool(2), actionSpecs, expectedString);
+        testIt(new ForkJoinPool(4), actionSpecs, expectedString);
     }
 
     private void testIt(ForkJoinPool fjp, List<ActionSpec> actionSpecs, String expectedString) throws ActionException {
@@ -108,9 +108,7 @@ final class ActionPipelineBuilderTest {
 
         final var context = new TestContext(new StringBuffer());
 
-        System.out.println("Execution started");
         builder.create().execute(context);
-        System.out.println("Execution ended");
 
         assertEquals(expectedString, context.sb.toString());
     }
@@ -127,7 +125,12 @@ final class ActionPipelineBuilderTest {
 
                 new Object[] { Stream.of(TestAction.values())
                         .map(ActionPipelineBuilderTest::action)
-                        .map(ActionSpecBuilder::create).toList(), Stream.of(TestAction.values()).map(Enum::name).collect(joining()) }
+                        .map(ActionSpecBuilder::create).toList(), Stream.of(TestAction.values()).map(Enum::name).collect(joining()) },
+
+                new Object[] { Stream.of(TestAction.values())
+                        .sorted(Comparator.reverseOrder())
+                        .map(ActionPipelineBuilderTest::action)
+                        .map(ActionSpecBuilder::create).toList(), Stream.of(TestAction.values()).sorted(Comparator.reverseOrder()).map(Enum::name).collect(joining()) }
         );
     }
 

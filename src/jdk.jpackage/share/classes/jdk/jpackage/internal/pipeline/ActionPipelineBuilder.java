@@ -25,9 +25,10 @@
 
 package jdk.jpackage.internal.pipeline;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +45,9 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
 public final class ActionPipelineBuilder<T extends Context> {
 
     ActionPipelineBuilder() {
-        rootAction = new RootAction<>();
-        actions = new HashSet<>();
-        actions.add(rootAction);
+        actions = new HashMap<>();
         actionGraph = new ActionGraph<>();
+        rootAction = addAction(new RootAction<>());
     }
 
     public final class ActionSpecBuilder {
@@ -76,26 +76,33 @@ public final class ActionPipelineBuilder<T extends Context> {
         }
 
         public ActionPipelineBuilder<T> add() {
-            actionGraph.addEdge(action, validatedDependent());
 
-            actions.add(action);
-            actions.addAll(dependencies);
-            dependencies.forEach(dependency -> {
-                actionGraph.addEdge(dependency, action);
+            final List<SequencedAction<T>> seqDependencies = new ArrayList<>();
+
+            for (final var dependency : dependencies) {
+                seqDependencies.add(addAction(dependency));
+            }
+
+            final var seqAction = addAction(action);
+
+            seqDependencies.forEach(seqDependency -> {
+                actionGraph.addEdge(seqDependency, seqAction);
             });
+
+            actionGraph.addEdge(seqAction, validatedDependent());
 
             return ActionPipelineBuilder.this;
         }
 
-        @SuppressWarnings("unchecked")
-        private Action<T> validatedDependent() {
+        private SequencedAction<T> validatedDependent() {
             if (dependent == null) {
                 return rootAction;
             } else {
-                if (!actions.contains(dependent)) {
+                final var seqDependent = actions.get(dependent);
+                if (seqDependent == null) {
                     throw new IllegalArgumentException("Unknown dependent action");
                 }
-                return dependent;
+                return seqDependent;
             }
         }
 
@@ -120,23 +127,36 @@ public final class ActionPipelineBuilder<T extends Context> {
     }
 
     public Action<T> create() {
-        final List<Action<T>> orderedActions;
+        final List<SequencedAction<T>> orderedActions;
 
         try {
-            orderedActions = actionGraph.topologicalSort();
+            orderedActions = actionGraph.topologicalSort(Comparator.comparing(SequencedAction::seqNumber));
         } catch (CycleException ex) {
             throw new UnsupportedOperationException(ex);
         }
 
         final var dependentActions = orderedActions.stream().map(action -> {
-            final var dependencies = actionGraph.getNodeDependencies(action);
-            return new DependentAction<T>(action, dependencies);
+            final var dependencies = actionGraph.getNodeDependencies(action).stream()
+                    .map(SequencedAction::action).toList();
+            return new DependentAction<T>(action.action, dependencies);
         }).toList();
 
         return new Impl<>(dependentActions, executor);
     }
 
-    private record DependentAction<U extends Context>(Action<U> action, Set<Action<U>> dependencies) {
+    private SequencedAction<T> addAction(Action<T> action) {
+        Objects.requireNonNull(action);
+        var seqAction = actions.get(action);
+        if (seqAction == null) {
+            seqAction = new SequencedAction<>(action, seqNumber++);
+            actions.put(action, seqAction);
+        }
+        return seqAction;
+    }
+
+    private record SequencedAction<U extends Context>(Action<U> action, int seqNumber) {}
+
+    private record DependentAction<U extends Context>(Action<U> action, List<Action<U>> dependencies) {
 
         DependentAction {
             Objects.requireNonNull(action);
@@ -223,9 +243,10 @@ public final class ActionPipelineBuilder<T extends Context> {
         }
     }
 
-    private final Action<T> rootAction;
-    private final Set<Action<T>> actions;
-    private final ActionGraph<Action<T>> actionGraph;
+    private final SequencedAction<T> rootAction;
+    private int seqNumber;
+    private final Map<Action<T>, SequencedAction<T>> actions;
+    private final ActionGraph<SequencedAction<T>> actionGraph;
 
     private Executor executor;
 
