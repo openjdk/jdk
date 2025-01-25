@@ -531,13 +531,13 @@ public final class Integer extends Number
         int d;
         while (i + 1 < len
                 && (d = DecimalDigits.digit2(value, i)) != -1
-                && MIN_VALUE / 100 <= result && result <= 0) {
+                && MIN_VALUE / 100 <= result & result <= 0) {
             result = result * 100 - d;  // overflow from d => result > 0
             i += 2;
         }
         if (i < len
                 && Integer.isDigitLatin1(d = value[i])
-                && MIN_VALUE / 10 <= result && result <= 0) {
+                && MIN_VALUE / 10 <= result & result <= 0) {
             result = result * 10 + '0' - d;  // overflow from '0' - d => result > 0
             i += 1;
         }
