@@ -27,7 +27,6 @@
   @bug 8020443 6899304
   @summary Test to check if the frame is created on the specified GraphicsDevice
   and if getScreenInsets()returns the correct values across multiple monitors.
-  @author Oleg Pekhovskiy
   @library /test/lib
   @build jdk.test.lib.Platform
   @run main MultiScreenInsetsTest
