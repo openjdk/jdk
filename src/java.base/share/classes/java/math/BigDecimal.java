@@ -4257,13 +4257,24 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     private static String scale2(long intCompact) {
-        int lowInt = (int) (intCompact % 100);
-        long highInt = intCompact / 100;
-        int highIntSize = DecimalDigits.stringSize(highInt);
-        byte[] buf = new byte[highIntSize + 3];
-        DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
+        byte[] buf;
+        int highIntSize, small;
+        int int32Compact = (int) intCompact;
+        if (int32Compact == intCompact) {
+            int highInt = int32Compact / 100;
+            small = int32Compact - highInt * 100;
+            highIntSize = DecimalDigits.stringSize(highInt);
+            buf = new byte[highIntSize + 3];
+            DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
+        } else {
+            long highInt = intCompact / 100;
+            small = (int) (intCompact - highInt * 100);
+            highIntSize = DecimalDigits.stringSize(highInt);
+            buf = new byte[highIntSize + 3];
+            DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
+        }
         buf[highIntSize] = '.';
-        DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
+        DecimalDigits.putPairLatin1(buf, highIntSize + 1, small);
         try {
             return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
         } catch (CharacterCodingException cce) {
