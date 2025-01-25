@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,7 @@ public final class ZoneOffset
     public static final ZoneOffset MAX = ZoneOffset.ofTotalSeconds(MAX_SECONDS);
 
     /**
-     * The total offset in seconds.
+     * @serial The total offset in seconds.
      */
     private final int totalSeconds;
     /**
@@ -424,11 +424,17 @@ public final class ZoneOffset
             throw new DateTimeException("Zone offset not in valid range: -18:00 to +18:00");
         }
         if (totalSeconds % (15 * SECONDS_PER_MINUTE) == 0) {
-            return SECONDS_CACHE.computeIfAbsent(totalSeconds, totalSecs -> {
-                ZoneOffset result = new ZoneOffset(totalSecs);
+            Integer totalSecs = totalSeconds;
+            ZoneOffset result = SECONDS_CACHE.get(totalSecs);
+            if (result == null) {
+                result = new ZoneOffset(totalSeconds);
+                var existing = SECONDS_CACHE.putIfAbsent(totalSecs, result);
+                if (existing != null) {
+                    result = existing;
+                }
                 ID_CACHE.putIfAbsent(result.getId(), result);
-                return result;
-            });
+            }
+            return result;
         } else {
             return new ZoneOffset(totalSeconds);
         }

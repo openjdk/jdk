@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,21 +140,56 @@ public sealed interface ClassFile
 
     /**
      * Option describing whether to preserve the original constant pool when
-     * transforming a classfile.  Reusing the constant pool enables significant
-     * optimizations in processing time and minimizes differences between the
-     * original and transformed classfile, but may result in a bigger classfile
-     * when a classfile is significantly transformed.
-     * Default is {@code SHARED_POOL} to preserve the original constant
-     * pool.
+     * transforming a {@code class} file.  Reusing the constant pool enables
+     * significant optimizations in processing time and minimizes differences
+     * between the original and transformed {@code class} files, but may result
+     * in a bigger transformed {@code class} file when many elements of the
+     * original {@code class} file are dropped and many original constant
+     * pool entries become unused.  Default is {@link #SHARED_POOL} to preserve
+     * the original constant pool.
      *
+     * @see ConstantPoolBuilder
+     * @see #build(ClassEntry, ConstantPoolBuilder, Consumer)
+     * @see #transformClass(ClassModel, ClassTransform)
      * @since 24
      */
     enum ConstantPoolSharingOption implements Option {
 
-        /** Preserves the original constant pool when transforming classfile */
+        /**
+         * Preserves the original constant pool when transforming the {@code
+         * class} file.
+         * <p>
+         * These two transformations below are equivalent:
+         * {@snippet lang=java :
+         * ClassModel originalClass = null; // @replace substring=null; replacement=...
+         * ClassDesc resultClassName = null; // @replace substring=null; replacement=...
+         * ClassTransform classTransform = null; // @replace substring=null; replacement=...
+         * var resultOne = ClassFile.of(ConstantPoolSharingOption.SHARED_POOL)
+         *         .transformClass(originalClass, resultClassName, classTransform);
+         * var resultTwo = ClassFile.of().build(resultClassName, ConstantPoolBuilder.of(originalClass),
+         *         clb -> clb.transform(originalClass, classTransform));
+         * }
+         *
+         * @see ConstantPoolBuilder#of(ClassModel) ConstantPoolBuilder::of(ClassModel)
+         */
         SHARED_POOL,
 
-        /** Creates a new constant pool when transforming classfile */
+        /**
+         * Creates a new constant pool when transforming the {@code class} file.
+         * <p>
+         * These two transformations below are equivalent:
+         * {@snippet lang=java :
+         * ClassModel originalClass = null; // @replace substring=null; replacement=...
+         * ClassDesc resultClassName = null; // @replace substring=null; replacement=...
+         * ClassTransform classTransform = null; // @replace substring=null; replacement=...
+         * var resultOne = ClassFile.of(ConstantPoolSharingOption.NEW_POOL)
+         *         .transformClass(originalClass, resultClassName, classTransform);
+         * var resultTwo = ClassFile.of().build(resultClassName, ConstantPoolBuilder.of(),
+         *         clb -> clb.transform(originalClass, classTransform));
+         * }
+         *
+         * @see ConstantPoolBuilder#of() ConstantPoolBuilder::of()
+         */
         NEW_POOL
     }
 
