@@ -113,7 +113,8 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static void initialize(ParMarkBitMap* mbm);
 
   ParCompactionManager(PreservedMarks* preserved_marks,
-                       ReferenceProcessor* ref_processor);
+                       ReferenceProcessor* ref_processor,
+                       uint parallel_gc_threads);
 
   // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }

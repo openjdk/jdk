@@ -40,7 +40,6 @@
 #include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "utilities/checkedCast.hpp"
 
 PSOldGen*               ParCompactionManager::_old_gen = nullptr;
 ParCompactionManager**  ParCompactionManager::_manager_array = nullptr;
@@ -57,8 +56,9 @@ Monitor*                ParCompactionManager::_shadow_region_monitor = nullptr;
 PreservedMarksSet* ParCompactionManager::_preserved_marks_set = nullptr;
 
 ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks,
-                                           ReferenceProcessor* ref_processor)
-  :_partial_array_splitter(_partial_array_state_manager, ParallelScavengeHeap::heap()->workers().max_workers()),
+                                           ReferenceProcessor* ref_processor,
+                                           uint parallel_gc_threads)
+  :_partial_array_splitter(_partial_array_state_manager, parallel_gc_threads),
    _mark_and_push_closure(this, ref_processor) {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
@@ -94,7 +94,8 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   // Create and register the ParCompactionManager(s) for the worker threads.
   for(uint i=0; i<parallel_gc_threads; i++) {
     _manager_array[i] = new ParCompactionManager(_preserved_marks_set->get(i),
-                                                 PSParallelCompact::ref_processor());
+                                                 PSParallelCompact::ref_processor(),
+                                                 parallel_gc_threads);
     marking_stacks()->register_queue(i, _manager_array[i]->marking_stack());
     region_task_queues()->register_queue(i, _manager_array[i]->region_stack());
   }
@@ -125,7 +126,6 @@ void ParCompactionManager::push_objArray(oop obj) {
   objArrayOop obj_array = objArrayOop(obj);
   size_t array_length = obj_array->length();
   size_t initial_chunk_size =
-    // The destination array is unused when processing states.
     _partial_array_splitter.start(&_marking_stack, obj_array, nullptr, array_length);
   follow_array(obj_array, 0, initial_chunk_size);
 }
