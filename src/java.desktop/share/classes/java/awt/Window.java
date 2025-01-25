@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,7 +229,7 @@ public class Window extends Container implements Accessible {
     static boolean systemSyncLWRequests = false;
 
     /**
-     * Focus transfers should be synchronous for lightweight component requests.
+     * @serial Focus transfers should be synchronous for lightweight component requests.
      */
     boolean syncLWRequests = false;
     transient boolean beforeFirstShow = true;
@@ -598,10 +598,7 @@ public class Window extends Container implements Accessible {
         if (owner != null) {
             owner.addOwnedWindow(weakThis);
             if (owner.isAlwaysOnTop()) {
-                try {
-                    setAlwaysOnTop(true);
-                } catch (SecurityException ignore) {
-                }
+                setAlwaysOnTop(true);
             }
         }
 
@@ -1305,10 +1302,7 @@ public class Window extends Container implements Accessible {
     // to insure that it cannot be overridden by client subclasses.
     final void toBack_NoClientCode() {
         if(isAlwaysOnTop()) {
-            try {
-                setAlwaysOnTop(false);
-            }catch(SecurityException e) {
-            }
+            setAlwaysOnTop(false);
         }
         if (visible) {
             WindowPeer peer = (WindowPeer)this.peer;
@@ -2191,10 +2185,7 @@ public class Window extends Container implements Accessible {
         for (WeakReference<Window> ref : ownedWindowArray) {
             Window window = ref.get();
             if (window != null) {
-                try {
-                    window.setAlwaysOnTop(alwaysOnTop);
-                } catch (SecurityException ignore) {
-                }
+                window.setAlwaysOnTop(alwaysOnTop);
             }
         }
     }
@@ -2786,7 +2777,7 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * Window type.
+     * @serial Window type.
      *
      * Synchronization: ObjectLock
      */
@@ -3032,7 +3023,7 @@ public class Window extends Container implements Accessible {
          setModalExclusionType(et); // since 6.0
          boolean aot = f.get("alwaysOnTop", false);
          if(aot) {
-             setAlwaysOnTop(aot); // since 1.5; subject to permission check
+             setAlwaysOnTop(aot);
          }
          shape = (Shape)f.get("shape", null);
          opacity = (Float)f.get("opacity", 1.0f);
@@ -3346,7 +3337,7 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * {@code true} if this Window should appear at the default location,
+     * @serial {@code true} if this Window should appear at the default location,
      * {@code false} if at the current location.
      */
     private volatile boolean locationByPlatform = locationByPlatformProp;

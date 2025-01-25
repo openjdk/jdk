@@ -33,7 +33,7 @@ import jdk.xml.internal.SecuritySupport;
  * @author G. Todd Miller
  * @author Erwin Bolwidt <ejb@klomp.org>
  * @author Morten Jorgensen
- * @LastModified: Nov 2024
+ * @LastModified: Dec 2024
  */
 public final class ErrorMsg {
 
@@ -105,6 +105,7 @@ public final class ErrorMsg {
     public static final String ATTR_VAL_TEMPLATE_ERR = "ATTR_VAL_TEMPLATE_ERR";
     public static final String UNKNOWN_SIG_TYPE_ERR = "UNKNOWN_SIG_TYPE_ERR";
     public static final String DATA_CONVERSION_ERR = "DATA_CONVERSION_ERR";
+    public static final String UNSUPPORTED_EXT_FUNC_ERR = "UNSUPPORTED_EXT_FUNC_ERR";
 
     // JAXP/TrAX error messages
     public static final String NO_TRANSLET_CLASS_ERR = "NO_TRANSLET_CLASS_ERR";

@@ -130,7 +130,7 @@ public class CLDRDisplayNamesTest {
         String displayName = zi.getDisplayName(false, TimeZone.SHORT, Locale.US);
         Locale.setDefault(originalLocale);
         if (!displayName.equals("GMT+05:00")) {
-            System.err.printf("Wrong display name for timezone Etc/GMT-5 : expected GMT+05:00,  Actual " + displayName);
+            System.err.println("Wrong display name for timezone Etc/GMT-5 : expected GMT+05:00,  Actual " + displayName);
             errors++;
         }
 

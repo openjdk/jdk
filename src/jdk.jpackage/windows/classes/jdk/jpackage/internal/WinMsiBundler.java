@@ -333,14 +333,7 @@ public class WinMsiBundler  extends AbstractBundler {
 
             FileAssociation.verify(FileAssociation.fetchFrom(params));
 
-            var serviceInstallerResource = initServiceInstallerResource(params);
-            if (serviceInstallerResource != null) {
-                if (!Files.exists(serviceInstallerResource.getExternalPath())) {
-                    throw new ConfigException(I18N.getString(
-                            "error.missing-service-installer"), I18N.getString(
-                                    "error.missing-service-installer.advice"));
-                }
-            }
+            initServiceInstallerResource(params);
 
             return true;
         } catch (RuntimeException re) {
@@ -407,11 +400,15 @@ public class WinMsiBundler  extends AbstractBundler {
             ensureByMutationFileIsRTF(destFile);
         }
 
-        var serviceInstallerResource = initServiceInstallerResource(params);
-        if (serviceInstallerResource != null) {
-            var serviceInstallerPath = serviceInstallerResource.getExternalPath();
-            params.put(SERVICE_INSTALLER.getID(), new InstallableFile(
-                    serviceInstallerPath, serviceInstallerPath.getFileName()));
+        try {
+            var serviceInstallerResource = initServiceInstallerResource(params);
+            if (serviceInstallerResource != null) {
+                var serviceInstallerPath = serviceInstallerResource.getExternalPath();
+                params.put(SERVICE_INSTALLER.getID(), new InstallableFile(
+                        serviceInstallerPath, serviceInstallerPath.getFileName()));
+            }
+        } catch (ConfigException ex) {
+            throw new PackagerException(ex);
         }
     }
 
@@ -763,7 +760,7 @@ public class WinMsiBundler  extends AbstractBundler {
     }
 
     private static OverridableResource initServiceInstallerResource(
-            Map<String, ? super Object> params) {
+            Map<String, ? super Object> params) throws ConfigException {
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
             // Runtime installer doesn't install launchers,
             // service installer not needed
@@ -781,12 +778,16 @@ public class WinMsiBundler  extends AbstractBundler {
         var result = createResource(null, params)
                 .setPublicName("service-installer.exe")
                 .setSourceOrder(OverridableResource.Source.External);
-        if (result.getResourceDir() == null) {
-            return null;
+        if (result.getResourceDir() != null) {
+            result.setExternal(result.getResourceDir().resolve(result.getPublicName()));
+
+            if (Files.exists(result.getExternalPath())) {
+                return result;
+            }
         }
 
-        return result.setExternal(result.getResourceDir().resolve(
-                result.getPublicName()));
+        throw new ConfigException(I18N.getString("error.missing-service-installer"),
+                I18N.getString("error.missing-service-installer.advice"));
     }
 
     private Path installerIcon;

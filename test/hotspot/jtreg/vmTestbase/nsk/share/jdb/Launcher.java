@@ -137,6 +137,9 @@ public class Launcher extends DebugeeBinder {
                 /* Some tests need more carrier threads than the default provided. */
                 args.add("-R-Djdk.virtualThreadScheduler.parallelism=15");
             }
+            /* Some jdb tests need java.library.path setup for native libraries. */
+            String libpath = System.getProperty("java.library.path");
+            args.add("-R-Djava.library.path=" + libpath);
         }
 
         args.addAll(argumentHandler.enwrapJavaOptions(argumentHandler.getJavaOptions()));

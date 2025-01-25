@@ -43,7 +43,6 @@ import javax.management.DescriptorRead;
 import javax.management.ImmutableDescriptor;
 import javax.management.MBeanAttributeInfo;
 import sun.reflect.misc.MethodUtil;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * Describes an attribute of an open MBean.
@@ -693,7 +692,6 @@ public class OpenMBeanAttributeInfoSupport
         Class<T> c;
         try {
             String className = openType.safeGetClassName();
-            ReflectUtil.checkPackageAccess(className);
             c = cast(Class.forName(className));
         } catch (ClassNotFoundException e) {
             throw new NoClassDefFoundError(e.toString());  // can't happen
@@ -702,8 +700,6 @@ public class OpenMBeanAttributeInfoSupport
         // Look for: public static T valueOf(String)
         Method valueOf;
         try {
-            // It is safe to call this plain Class.getMethod because the class "c"
-            // was checked before by ReflectUtil.checkPackageAccess(openType.safeGetClassName());
             valueOf = c.getMethod("valueOf", String.class);
             if (!Modifier.isStatic(valueOf.getModifiers()) ||
                     valueOf.getReturnType() != c)
@@ -724,8 +720,6 @@ public class OpenMBeanAttributeInfoSupport
         // Look for: public T(String)
         Constructor<T> con;
         try {
-            // It is safe to call this plain Class.getConstructor because the class "c"
-            // was checked before by ReflectUtil.checkPackageAccess(openType.safeGetClassName());
             con = c.getConstructor(String.class);
         } catch (NoSuchMethodException e) {
             con = null;
@@ -763,9 +757,6 @@ public class OpenMBeanAttributeInfoSupport
         Class<?> targetArrayClass;
         try {
             String baseClassName = baseType.safeGetClassName();
-
-            // check access to the provided base type class name and bail out early
-            ReflectUtil.checkPackageAccess(baseClassName);
 
             stringArrayClass =
                 Class.forName(squareBrackets + "Ljava.lang.String;");

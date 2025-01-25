@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4052440 8003267 8062588 8210406 8174269 8327434
+ * @bug 4052440 8003267 8062588 8210406 8174269 8327434 8347841
  * @summary TimeZoneNameProvider tests
  * @library providersrc/foobarutils
  *          providersrc/barprovider
@@ -37,6 +37,7 @@
 import java.text.DateFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
 import java.time.format.TextStyle;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.TimeZone;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import com.bar.TimeZoneNameProviderImpl;
@@ -72,7 +74,9 @@ public class TimeZoneNameProviderTest extends ProviderTest {
     void test1() {
         List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getTimeZoneNameProvider().getAvailableLocales());
         List<Locale> providerLocales = Arrays.asList(tznp.getAvailableLocales());
-        String[] ids = TimeZone.getAvailableIDs();
+        String[] ids = Arrays.stream(TimeZone.getAvailableIDs())
+                .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
+                .toArray(String[]::new);
 
         // Sampling relevant locales
         Stream.concat(Stream.of(Locale.ROOT, Locale.US, Locale.JAPAN), providerLocales.stream()).forEach(target -> {
@@ -176,7 +180,7 @@ public class TimeZoneNameProviderTest extends ProviderTest {
                 df.parse(DISPLAY_NAMES_KYOTO[i]);
             }
         } catch (ParseException pe) {
-            throw new RuntimeException("parse error occured" + pe);
+            throw new RuntimeException("parse error occurred" + pe);
         } finally {
             // restore the reserved locale and time zone
             Locale.setDefault(defaultLocale);
@@ -186,8 +190,8 @@ public class TimeZoneNameProviderTest extends ProviderTest {
 
     void test3() {
         final String[] TZNAMES = {
-            LATIME, PST, PST8PDT, US_PACIFIC,
-            TOKYOTIME, JST, JAPAN,
+            LATIME, PST8PDT, US_PACIFIC,
+            TOKYOTIME, JAPAN,
         };
         for (String tzname : TZNAMES) {
             TimeZone tz = TimeZone.getTimeZone(tzname);
@@ -208,17 +212,13 @@ public class TimeZoneNameProviderTest extends ProviderTest {
     }
 
     final String LATIME = "America/Los_Angeles";
-    final String PST = "PST";
     final String PST8PDT = "PST8PDT";
     final String US_PACIFIC = "US/Pacific";
     final String LATIME_IN_OSAKA =
         tznp.getDisplayName(LATIME, false, TimeZone.LONG, OSAKA);
 
     final String TOKYOTIME = "Asia/Tokyo";
-    final String JST = "JST";
     final String JAPAN = "Japan";
-    final String JST_IN_OSAKA =
-        tznp.getDisplayName(JST, false, TimeZone.LONG, OSAKA);
 
     void aliasTest() {
         // Check that provider's name for a standard id (America/Los_Angeles) is
@@ -228,31 +228,9 @@ public class TimeZoneNameProviderTest extends ProviderTest {
             throw new RuntimeException("Could not get provider's localized name.  result: "+latime+" expected: "+LATIME_IN_OSAKA);
         }
 
-        String pst = TimeZone.getTimeZone(PST).getDisplayName(OSAKA);
-        if (!LATIME_IN_OSAKA.equals(pst)) {
-            throw new RuntimeException("Provider's localized name is not available for an alias ID: "+PST+".  result: "+pst+" expected: "+LATIME_IN_OSAKA);
-        }
-
         String us_pacific = TimeZone.getTimeZone(US_PACIFIC).getDisplayName(OSAKA);
         if (!LATIME_IN_OSAKA.equals(us_pacific)) {
             throw new RuntimeException("Provider's localized name is not available for an alias ID: "+US_PACIFIC+".  result: "+us_pacific+" expected: "+LATIME_IN_OSAKA);
-        }
-
-        // Check that provider's name for an alias id (JST) is
-        // propagated to its standard id and alias ids.
-        String jstime = TimeZone.getTimeZone(JST).getDisplayName(OSAKA);
-        if (!JST_IN_OSAKA.equals(jstime)) {
-            throw new RuntimeException("Could not get provider's localized name.  result: "+jstime+" expected: "+JST_IN_OSAKA);
-        }
-
-        String tokyotime = TimeZone.getTimeZone(TOKYOTIME).getDisplayName(OSAKA);
-        if (!JST_IN_OSAKA.equals(tokyotime)) {
-            throw new RuntimeException("Provider's localized name is not available for a standard ID: "+TOKYOTIME+".  result: "+tokyotime+" expected: "+JST_IN_OSAKA);
-        }
-
-        String japan = TimeZone.getTimeZone(JAPAN).getDisplayName(OSAKA);
-        if (!JST_IN_OSAKA.equals(japan)) {
-            throw new RuntimeException("Provider's localized name is not available for an alias ID: "+JAPAN+".  result: "+japan+" expected: "+JST_IN_OSAKA);
         }
     }
 

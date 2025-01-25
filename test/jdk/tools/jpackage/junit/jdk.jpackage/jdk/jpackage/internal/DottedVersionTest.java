@@ -22,174 +22,224 @@
  */
 package jdk.jpackage.internal;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class DottedVersionTest {
 
-    public DottedVersionTest(boolean greedy) {
-        this.greedy = greedy;
-        if (greedy) {
-            createTestee = DottedVersion::greedy;
-        } else {
-            createTestee = DottedVersion::lazy;
+    public record TestConfig(String input,
+            Function<String, DottedVersion> createVersion, String expectedSuffix,
+            int expectedComponentCount, String expectedToComponent) {
+
+        TestConfig(String input, Type type, int expectedComponentCount, String expectedToComponent) {
+            this(input, type.createVersion, "", expectedComponentCount, expectedToComponent);
+        }
+
+        TestConfig(String input, Type type, int expectedComponentCount) {
+            this(input, type.createVersion, "", expectedComponentCount, input);
+        }
+
+        static TestConfig greedy(String input, int expectedComponentCount, String expectedToComponent) {
+            return new TestConfig(input, Type.GREEDY.createVersion, "", expectedComponentCount, expectedToComponent);
+        }
+
+        static TestConfig greedy(String input, int expectedComponentCount) {
+            return new TestConfig(input, Type.GREEDY.createVersion, "", expectedComponentCount, input);
+        }
+
+        static TestConfig lazy(String input, String expectedSuffix, int expectedComponentCount, String expectedToComponent) {
+            return new TestConfig(input, Type.LAZY.createVersion, expectedSuffix, expectedComponentCount, expectedToComponent);
         }
     }
 
-    @Parameterized.Parameters
-    public static List<Object[]> data() {
-        return List.of(new Object[] { true }, new Object[] { false });
+    @ParameterizedTest
+    @MethodSource
+    public void testValid(TestConfig cfg) {
+        var dv = cfg.createVersion.apply(cfg.input());
+        assertEquals(cfg.expectedSuffix(), dv.getUnprocessedSuffix());
+        assertEquals(cfg.expectedComponentCount(), dv.getComponents().length);
+        assertEquals(cfg.expectedToComponent(), dv.toComponentsString());
     }
 
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
-
-    private static class CtorTester {
-
-        CtorTester(String input, boolean greedy, String expectedSuffix,
-                int expectedComponentCount, String expectedToComponent) {
-            this.input = input;
-            this.greedy = greedy;
-            this.expectedSuffix = expectedSuffix;
-            this.expectedComponentCount = expectedComponentCount;
-            this.expectedToComponent = expectedToComponent;
+    private static List<TestConfig> testValid() {
+        List<TestConfig> data = new ArrayList<>();
+        for (var type : Type.values()) {
+            data.addAll(List.of(
+                    new TestConfig("1.0", type, 2),
+                    new TestConfig("1", type, 1),
+                    new TestConfig("2.20034.045", type, 3, "2.20034.45"),
+                    new TestConfig("2.234.0", type, 3),
+                    new TestConfig("0", type, 1),
+                    new TestConfig("0.1", type, 2),
+                    new TestConfig("9".repeat(1000), type, 1),
+                    new TestConfig("00.0.0", type, 3, "0.0.0")
+            ));
         }
 
-        CtorTester(String input, boolean greedy, int expectedComponentCount,
-                String expectedToComponent) {
-            this(input, greedy, "", expectedComponentCount, expectedToComponent);
-        }
+        data.addAll(List.of(
+                TestConfig.lazy("1.-1", ".-1", 1, "1"),
+                TestConfig.lazy("5.", ".", 1, "5"),
+                TestConfig.lazy("4.2.", ".", 2, "4.2"),
+                TestConfig.lazy("3..2", "..2", 1, "3"),
+                TestConfig.lazy("3......2", "......2", 1, "3"),
+                TestConfig.lazy("2.a", ".a", 1, "2"),
+                TestConfig.lazy("a", "a", 0, ""),
+                TestConfig.lazy("2..a", "..a", 1, "2"),
+                TestConfig.lazy("0a", "a", 1, "0"),
+                TestConfig.lazy("120a", "a", 1, "120"),
+                TestConfig.lazy("120abc", "abc", 1, "120"),
+                TestConfig.lazy(".", ".", 0, ""),
+                TestConfig.lazy("....", "....", 0, ""),
+                TestConfig.lazy(" ", " ", 0, ""),
+                TestConfig.lazy(" 1", " 1", 0, ""),
+                TestConfig.lazy("678. 2", ". 2", 1, "678"),
+                TestConfig.lazy("+1", "+1", 0, ""),
+                TestConfig.lazy("-1", "-1", 0, ""),
+                TestConfig.lazy("-0", "-0", 0, ""),
+                TestConfig.lazy("+0", "+0", 0, "")
+        ));
 
-        CtorTester(String input, boolean greedy, int expectedComponentCount) {
-            this(input, greedy, "", expectedComponentCount, input);
-        }
-
-        static CtorTester greedy(String input, int expectedComponentCount,
-                String expectedToComponent) {
-            return new CtorTester(input, true, "", expectedComponentCount, expectedToComponent);
-        }
-
-        static CtorTester greedy(String input, int expectedComponentCount) {
-            return new CtorTester(input, true, "", expectedComponentCount, input);
-        }
-
-        static CtorTester lazy(String input, String expectedSuffix, int expectedComponentCount,
-                String expectedToComponent) {
-            return new CtorTester(input, false, expectedSuffix, expectedComponentCount,
-                    expectedToComponent);
-        }
-
-        void run() {
-            DottedVersion dv;
-            if (greedy) {
-                dv = DottedVersion.greedy(input);
-            } else {
-                dv = DottedVersion.lazy(input);
-            }
-
-            assertEquals(expectedSuffix, dv.getUnprocessedSuffix());
-            assertEquals(expectedComponentCount, dv.getComponents().length);
-            assertEquals(expectedToComponent, dv.toComponentsString());
-        }
-
-        private final String input;
-        private final boolean greedy;
-        private final String expectedSuffix;
-        private final int expectedComponentCount;
-        private final String expectedToComponent;
+        return data;
     }
 
-    @Test
-    public void testValid() {
-        final List<CtorTester> validStrings = List.of(
-                new CtorTester("1.0", greedy, 2),
-                new CtorTester("1", greedy, 1),
-                new CtorTester("2.20034.045", greedy, 3, "2.20034.45"),
-                new CtorTester("2.234.0", greedy, 3),
-                new CtorTester("0", greedy, 1),
-                new CtorTester("0.1", greedy, 2),
-                new CtorTester("9".repeat(1000), greedy, 1),
-                new CtorTester("00.0.0", greedy, 3, "0.0.0")
+    @ParameterizedTest
+    @MethodSource
+    public void testInvalid(String str) {
+        assertThrowsExactly(IllegalArgumentException.class, () -> new DottedVersion(str));
+    }
+
+    private static Stream<String> testInvalid() {
+        return Stream.of(
+                "1.-1",
+                "5.",
+                "4.2.",
+                "3..2",
+                "2.a",
+                "0a",
+                ".",
+                " ",
+                " 1",
+                "1. 2",
+                "+1",
+                "-1",
+                "-0",
+                "+0"
         );
+    }
 
-        final List<CtorTester> validLazyStrings;
-        if (greedy) {
-            validLazyStrings = Collections.emptyList();
-        } else {
-            validLazyStrings = List.of(
-                    CtorTester.lazy("1.-1", ".-1", 1, "1"),
-                    CtorTester.lazy("5.", ".", 1, "5"),
-                    CtorTester.lazy("4.2.", ".", 2, "4.2"),
-                    CtorTester.lazy("3..2", "..2", 1, "3"),
-                    CtorTester.lazy("3......2", "......2", 1, "3"),
-                    CtorTester.lazy("2.a", ".a", 1, "2"),
-                    CtorTester.lazy("a", "a", 0, ""),
-                    CtorTester.lazy("2..a", "..a", 1, "2"),
-                    CtorTester.lazy("0a", "a", 1, "0"),
-                    CtorTester.lazy("120a", "a", 1, "120"),
-                    CtorTester.lazy("120abc", "abc", 1, "120"),
-                    CtorTester.lazy(".", ".", 0, ""),
-                    CtorTester.lazy("....", "....", 0, ""),
-                    CtorTester.lazy(" ", " ", 0, ""),
-                    CtorTester.lazy(" 1", " 1", 0, ""),
-                    CtorTester.lazy("678. 2", ". 2", 1, "678"),
-                    CtorTester.lazy("+1", "+1", 0, ""),
-                    CtorTester.lazy("-1", "-1", 0, ""),
-                    CtorTester.lazy("-0", "-0", 0, ""),
-                    CtorTester.lazy("+0", "+0", 0, "")
-            );
-        }
-
-        Stream.concat(validStrings.stream(), validLazyStrings.stream()).forEach(CtorTester::run);
+    @ParameterizedTest
+    @EnumSource(Type.class)
+    public void testNull(Type type) {
+        assertThrowsExactly(NullPointerException.class, () -> type.createVersion.apply(null));
     }
 
     @Test
-    public void testNull() {
-        exceptionRule.expect(NullPointerException.class);
-        createTestee.apply(null);
+    public void testEmptyGreedy() {
+        assertThrowsExactly(IllegalArgumentException.class, () -> DottedVersion.greedy(""), "Version may not be empty string");
     }
 
     @Test
-    public void testEmpty() {
-        if (greedy) {
-            exceptionRule.expect(IllegalArgumentException.class);
-            exceptionRule.expectMessage("Version may not be empty string");
-            createTestee.apply("");
-        } else {
-            assertEquals(0, createTestee.apply("").getComponents().length);
-        }
+    public void testEmptyLazy() {
+        assertEquals(0, DottedVersion.lazy("").getComponents().length);
     }
 
-    @Test
-    public void testEquals() {
-        DottedVersion dv = createTestee.apply("1.0");
+    @ParameterizedTest
+    @EnumSource(Type.class)
+    public void testEquals(Type type) {
+        DottedVersion dv = type.createVersion.apply("1.0");
         assertFalse(dv.equals(null));
-        assertFalse(dv.equals(Integer.valueOf(1)));
+        assertFalse(dv.equals(1));
+        assertFalse(dv.equals(dv.toString()));
 
         for (var ver : List.of("3", "3.4", "3.0.0")) {
-            DottedVersion a = createTestee.apply(ver);
-            DottedVersion b = createTestee.apply(ver);
+            DottedVersion a = type.createVersion.apply(ver);
+            DottedVersion b = type.createVersion.apply(ver);
             assertTrue(a.equals(b));
             assertTrue(b.equals(a));
         }
-
-        if (!greedy) {
-            assertTrue(createTestee.apply("3.6+67").equals(createTestee.apply("3.6+67")));
-            assertFalse(createTestee.apply("3.6+67").equals(createTestee.apply("3.6+067")));
-        }
     }
 
-    private final boolean greedy;
-    private final Function<String, DottedVersion> createTestee;
+    @Test
+    public void testEqualsLazy() {
+        assertTrue(DottedVersion.lazy("3.6+67").equals(DottedVersion.lazy("3.6+67")));
+        assertFalse(DottedVersion.lazy("3.6+67").equals(DottedVersion.lazy("3.6+067")));
+    }
+
+    private static List<Object[]> testCompare() {
+        List<Object[]> data = new ArrayList<>();
+        for (var type : Type.values()) {
+            data.addAll(List.of(new Object[][] {
+                { type, "00.0.0", "0", 0 },
+                { type, "00.0.0", "0.000", 0 },
+                { type, "0.035", "0.0035", 0 },
+                { type, "0.035", "0.0035.0", 0 },
+                { type, "1", "1", 0 },
+                { type, "2", "2.0", 0 },
+                { type, "2.00", "2.0", 0 },
+                { type, "1.2.3.4", "1.2.3.4.5", -1 },
+                { type, "1.2.3.4", "1.2.3.4.0.1", -1 },
+                { type, "34", "33", 1 },
+                { type, "34.0.78", "34.1.78", -1 }
+            }));
+        }
+
+        data.addAll(List.of(new Object[][] {
+            { Type.LAZY, "", "1", -1 },
+            { Type.LAZY, "", "0", 0 },
+            { Type.LAZY, "0", "", 0 },
+            { Type.LAZY, "1.2.4-R4", "1.2.4-R5", 0 },
+            { Type.LAZY, "1.2.4.-R4", "1.2.4.R5", 0 },
+            { Type.LAZY, "7+1", "7+4", 0 },
+            { Type.LAZY, "2+14", "2-14", 0 },
+            { Type.LAZY, "23.4.RC4", "23.3.RC10", 1 },
+            { Type.LAZY, "77."  + "9".repeat(1000), "77." + "9".repeat(1000 -1) + "8", 1 },
+        }));
+
+        return data;
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testCompare(Type type, String version1, String version2, int expectedResult) {
+        final int actualResult = compare(type, version1, version2);
+        assertEquals(expectedResult, actualResult);
+
+        final int actualNegateResult = compare(type, version2, version1);
+        assertEquals(actualResult, -1 * actualNegateResult);
+    }
+
+    private int compare(Type type, String x, String y) {
+        int result = DottedVersion.compareComponents(type.createVersion.apply(x), type.createVersion.apply(y));
+
+        if (result < 0) {
+            return -1;
+        }
+
+        if (result > 0) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    public enum Type {
+        GREEDY(DottedVersion::greedy),
+        LAZY(DottedVersion::lazy);
+
+        Type(Function<String, DottedVersion> createVersion) {
+            this.createVersion = createVersion;
+        }
+
+        private final Function<String, DottedVersion> createVersion;
+    }
 }

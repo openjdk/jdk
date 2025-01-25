@@ -42,7 +42,7 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1400m PatchedJDKModuleJlinkTest
+ * @run main/othervm -Xmx1g PatchedJDKModuleJlinkTest
  */
 public class PatchedJDKModuleJlinkTest extends AbstractLinkableRuntimeTest {
 
@@ -97,10 +97,10 @@ public class PatchedJDKModuleJlinkTest extends AbstractLinkableRuntimeTest {
         if (analyzer.getExitValue() == 0) {
             throw new AssertionError("Expected jlink to fail due to patched module!");
         }
-        analyzer.stdoutShouldContain("MyJlinkPatchInteger.class not found in the modules image.");
-        analyzer.stdoutShouldContain("--patch-module is not supported");
+        analyzer.stdoutShouldContain("jlink does not support linking from the run-time image");
+        analyzer.stdoutShouldContain(" when running on a patched runtime with --patch-module");
         // Verify the error message is reasonable
-        analyzer.stdoutShouldNotContain("jdk.tools.jlink.internal.RunImageLinkException");
+        analyzer.stdoutShouldNotContain("IOException");
         analyzer.stdoutShouldNotContain("java.lang.IllegalArgumentException");
     }
 
