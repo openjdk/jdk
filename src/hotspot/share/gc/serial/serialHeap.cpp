@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -219,8 +218,7 @@ ReservedHeapSpace SerialHeap::allocate(size_t alignment) {
                                   "the maximum representable size");
   }
   assert(total_reserved % alignment == 0,
-         "Gen size; total_reserved=" SIZE_FORMAT ", alignment="
-         SIZE_FORMAT, total_reserved, alignment);
+         "Gen size; total_reserved=%zu, alignment=%zu", total_reserved, alignment);
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(total_reserved, alignment);
   size_t used_page_size = heap_rs.page_size();
@@ -400,7 +398,7 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size,
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
           log_warning(gc, ergo)("SerialHeap::mem_allocate_work retries %d times,"
-                                " size=" SIZE_FORMAT " %s", try_count, size, is_tlab ? "(TLAB)" : "");
+                                " size=%zu %s", try_count, size, is_tlab ? "(TLAB)" : "");
     }
   }
 }
@@ -462,7 +460,7 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
     prepare_for_verify();
     Universe::verify("Before GC");
   }
-  gc_prologue(false);
+  gc_prologue();
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
 
   save_marks();
@@ -730,7 +728,7 @@ void SerialHeap::do_full_collection_no_gc_locker(bool clear_all_soft_refs) {
     Universe::verify("Before GC");
   }
 
-  gc_prologue(true);
+  gc_prologue();
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
   CodeCache::on_gc_marking_cycle_start();
   ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
@@ -936,7 +934,7 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
   MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
 }
 
-void SerialHeap::gc_prologue(bool full) {
+void SerialHeap::gc_prologue() {
   // Fill TLAB's and such
   ensure_parsability(true);   // retire TLABs
 
