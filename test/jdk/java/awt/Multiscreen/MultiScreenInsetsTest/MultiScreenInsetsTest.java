@@ -69,7 +69,7 @@ public class MultiScreenInsetsTest {
              * On Windows, undecorated maximized frames are placed over the taskbar.
              * Use a decorated frame instead.
              */
-            if(Platform.isWindows()) {
+            if (Platform.isWindows()) {
                 frame.setUndecorated(false);
             } else {
                 frame.setUndecorated(true);
