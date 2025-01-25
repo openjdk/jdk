@@ -4256,7 +4256,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return buf.toString();
     }
 
-    private String scale2(long intCompact) {
+    private static String scale2(long intCompact) {
         int lowInt = (int) (intCompact % 100);
         long highInt = intCompact / 100;
         int highIntSize = DecimalDigits.stringSize(highInt);
