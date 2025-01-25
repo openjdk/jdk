@@ -88,8 +88,7 @@ public class MultiScreenInsetsTest {
              * On Windows, the top-left corner of an undecorated maximized frame may have negative coordinates (x, y).
              * Adjust the frame bounds accordingly.
              */
-            if (frameBounds.x < bounds.x)
-            {
+            if (frameBounds.x < bounds.x) {
                 frameBounds.width -= (bounds.x - frameBounds.x) * 2;
                 frameBounds.x = bounds.x;
             }
