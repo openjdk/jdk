@@ -36,6 +36,7 @@ public class XorLNodeIdealizationTests {
 
     private static final long CONST_1 = RunInfo.getRandom().nextLong();
     private static final long CONST_2 = RunInfo.getRandom().nextLong();
+    private static final long CONST_POW_2 = Math.abs(1L << RunInfo.getRandom().nextInt());
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -47,16 +48,17 @@ public class XorLNodeIdealizationTests {
                  "test10", "test11", "test12",
                  "test13", "test14", "test15",
                  "test16", "test17",
-                 "testConstXor", "testXorSelf"
+                 "testConstXor", "testXorSelf",
+                 "testMaxPow2","testMaxPow2Folded"
     })
     public void runMethod() {
+        long min = Long.MIN_VALUE;
+        long max = Long.MAX_VALUE;
+
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
         long c = RunInfo.getRandom().nextLong();
         long d = RunInfo.getRandom().nextLong();
-
-        long min = Long.MIN_VALUE;
-        long max = Long.MAX_VALUE;
 
         assertResult(0, 0, 0, 0);
         assertResult(a, b, c, d);
@@ -85,6 +87,8 @@ public class XorLNodeIdealizationTests {
         Asserts.assertEQ(-2023 - a          , test17(a));
         Asserts.assertEQ(CONST_1 ^ CONST_2  , testConstXor());
         Asserts.assertEQ(0L                  , testXorSelf(a));
+        Asserts.assertEQ(interpretedMaxPow2(a, b), testMaxPow2(a, b));
+        Asserts.assertEQ(true, testMaxPow2Folded(a, b));
     }
 
     @Test
@@ -240,5 +244,42 @@ public class XorLNodeIdealizationTests {
     // Checks (x ^ x)  => c (constant folded)
     public long testXorSelf(long x) {
         return x ^ x;
+    }
+
+    // clamp value to [1,CONST_POW_2]
+    @ForceInline
+    private static long forceMinMax(long value) {
+        // equivalent to Math.min(CONST_POW_2, Math.max(value, 1))
+        return 1L + (value & (CONST_POW_2 - 1L));
+    }
+
+    @Test
+    @IR(counts = {IRNode.XOR, "1"})  // must not be constant-folded
+    // checks that add_ring computes correct max on exact powers of 2
+    public boolean testMaxPow2(long x, long y) {
+        x = forceMinMax(x);
+        y = forceMinMax(y);
+        long xor = x ^ y;
+        return xor < CONST_POW_2;
+    }
+
+    @DontCompile
+    public boolean interpretedMaxPow2(long x, long y) {
+        x = forceMinMax(x);
+        y = forceMinMax(y);
+
+        long xor = x ^ y;
+        return xor < CONST_POW_2;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"})
+    public boolean testMaxPow2Folded(long x, long y) {
+        x = forceMinMax(x);
+        y = forceMinMax(y);
+
+        long xor = x ^ y;
+        return xor < (CONST_POW_2*2L);
     }
 }
