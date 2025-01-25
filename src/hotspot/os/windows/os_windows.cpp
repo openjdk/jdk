@@ -24,7 +24,6 @@
 
 // API level must be at least Windows Vista or Server 2008 to use InitOnceExecuteOnce
 
-// no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/nativeInst.hpp"

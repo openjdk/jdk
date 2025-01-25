@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"

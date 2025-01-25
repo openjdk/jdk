@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,21 @@
 
 /**
  * @test
- * @bug 6851214
+ * @bug 6851214 8347841
  * @summary Allow 24:00 as a valid end/start DST time stamp
  * @run main ListTimeZones
  */
 
+import java.time.ZoneId;
 import java.util.*;
+import java.util.function.Predicate;
 
 public class ListTimeZones{
   public static void main(String[] args){
     Date date = new Date();
-    String TimeZoneIds[] = TimeZone.getAvailableIDs();
+    String[] TimeZoneIds = Arrays.stream(TimeZone.getAvailableIDs())
+            .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
+            .toArray(String[]::new);
     for(int i = 0; i < TimeZoneIds.length; i++){
       TimeZone tz = TimeZone.getTimeZone(TimeZoneIds[i]);
       Calendar calendar = new GregorianCalendar(tz);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
