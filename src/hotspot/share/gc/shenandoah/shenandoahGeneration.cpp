@@ -1028,14 +1028,14 @@ size_t ShenandoahGeneration::decrease_capacity(size_t decrement) {
 #ifdef ASSERT
   if (!ShenandoahHeap::heap()->is_full_gc_in_progress()) {
     assert(used_regions_size() >= used(),
-           "Affiliated regions (" PROPERFMT ") must at least hold what is currently used (" PROPERFMT ")",
-           PROPERFMTARGS(used_regions_size()), PROPERFMTARGS(used()));
+           "Affiliated regions (" EXACTFMT ") must at least hold what is currently used (" EXACTFMT ")",
+           EXACTFMTARGS(used_regions_size()), EXACTFMTARGS(used()));
     assert(_used <= _max_capacity,
-           "Cannot use (" PROPERFMT ") more than capacity (" PROPERFMT ")",
-           PROPERFMTARGS(_used), PROPERFMTARGS(_max_capacity));
+           "Cannot use (" EXACTFMT ") more than capacity (" EXACTFMT ")",
+           EXACTFMTARGS(_used), EXACTFMTARGS(_max_capacity));
     assert(used_regions_size() <= _max_capacity,
-           "Affiliated regions (" PROPERFMT ") cannot use more than capacity (" PROPERFMT ")",
-           PROPERFMTARGS(used_regions_size()),PROPERFMTARGS(_max_capacity));
+           "Affiliated regions (" EXACTFMT ") cannot use more than capacity (" EXACTFMT ")",
+           EXACTFMTARGS(used_regions_size()),EXACTFMTARGS(_max_capacity));
   }
 #endif
   return _max_capacity;
