@@ -3468,19 +3468,24 @@ public class ForkJoinPool extends AbstractExecutorService
 
         private void runScheduler(ForkJoinPool p) {
             if (p != null) {
-                boolean idle = false, removedPeriodic = false;
-                long waitTime = 0L, prs;
-                while (((prs = p.runState) & STOP) == 0L) {
-                    if ((prs & SHUTDOWN) != 0L) {
-                        if (!removedPeriodic) {
-                            removedPeriodic = true;
-                            removePeriodicTasks();
-                        }
-                        if (idle && canShutDown() &&
-                            (p.tryTerminate(false, false) & STOP) != 0L)
-                            break;
+                boolean idle = false;
+                int canStop = 0;
+                long waitTime = 0L;
+                for (;;) {
+                    long prs;
+                    if (((prs = p.runState) & STOP) != 0L)
+                        break;
+                    else if ((prs & SHUTDOWN) != 0L &&
+                        (canStop = tryStopOnShutdown(p, canStop)) < 0)
+                        break;
+                    else if (idle) {
+                        Thread.interrupted(); // clear
+                        if (active == 0)
+                            U.park(false, waitTime);
+                        active = 1;
+                        idle = false;
                     }
-                    if (!idle) {
+                    else {
                         int state = active;
                         int hs = processPending(p, heap, heapSize);
                         waitTime = (hs > 0) ? submitReadyTasks(p, heap, hs) : 0L;
@@ -3491,44 +3496,40 @@ public class ForkJoinPool extends AbstractExecutorService
                                 idle = true;
                         }
                     }
-                    else {
-                        idle = false;
-                        Thread.interrupted(); // clear
-                        if (active == 0)
-                            U.park(false, waitTime);
-                        active = 1;
-                    }
                 }
             }
         }
 
         private long submitReadyTasks(ForkJoinPool p, DelayedTask<?>[] h, int hs) {
-            long waitTime = 0L, prs;
-            if (hs > 0 && h != null && h.length > 0 && p != null &&
+            long waitTime = 0L, prs; int s;
+            if ((s = hs) > 0 && h != null && h.length > 0 && p != null &&
                 ((prs = p.runState) & STOP) == 0L) {
-                DelayedTask<?> first;
-                int s = hs;
-                long now = now();
-                while ((first = h[0]) != null) {
-                    boolean cancel = false;
-                    long d = first.when - now;
-                    if (first.nextDelay != 0L && (prs & SHUTDOWN) != 0L)
-                        cancel = true;
-                    else if (d > 0L) {
-                        waitTime = d;
+                for (long now = now();;) {
+                    DelayedTask<?> first; int stat; long d;
+                    if ((first = h[0]) == null)
                         break;
+                    boolean cancel = false;
+                    if ((stat = first.status) >= 0) {
+                        if (first.nextDelay != 0L && (prs & SHUTDOWN) != 0L)
+                            cancel = true;
+                        else if ((d = first.when - now) > 0L) {
+                            waitTime = d;
+                            break;
+                        }
                     }
                     first.heapIndex = -1;
-                    try {
-                        WorkQueue q;
-                        if ((q = p.externalSubmissionQueue(false)) == null)
-                            cancel = true; // terminating
-                        else if (first.status < 0 || cancel)
-                            q.unlockPhase();
-                        else
-                            q.push(first, p, false);
-                    } catch(Error | RuntimeException ex) {
-                        cancel = true;
+                    if (stat >= 0 && !cancel) {
+                        try {
+                            WorkQueue q;
+                            if ((q = p.externalSubmissionQueue(false)) == null)
+                                cancel = true; // terminating
+                            else if (first.status < 0)
+                                q.unlockPhase();
+                            else
+                                q.push(first, p, false);
+                        } catch(Error | RuntimeException ex) {
+                            cancel = true;
+                        }
                     }
                     if (cancel)
                         first.trySetCancelled();
@@ -3554,33 +3555,49 @@ public class ForkJoinPool extends AbstractExecutorService
                     if (t == null)
                         break;
                     for (;;) {
-                        DelayedTask<?> next; int idx, cap, newCap;
-                        boolean cancel = false;
+                        int cap = h.length, idx; DelayedTask<?> next;
                         if ((next = t.nextPending) != null)
                             t.nextPending = null;
                         if ((idx = t.heapIndex) >= 0) {
                             t.heapIndex = -1;
-                            if (idx < s && idx < h.length && h[idx] == t)
+                            if (idx < s && idx < cap && h[idx] == t)
                                 s = heapReplace(h, idx, s);
                         }
-                        else if (t.nextDelay != 0L && p.isShutdown())
-                            cancel = true;
+                        else if (s >= cap || s < 0 || // couldn't resize
+                                 (t.nextDelay != 0L && p.isShutdown()))
+                            t.trySetCancelled();
                         else if (t.status >= 0) {
-                            if (s >= (cap = h.length) &&
-                                (newCap = cap << 1) > cap) {
-                                try {
-                                    heap = h = Arrays.copyOf(heap, newCap);
-                                    cap = h.length;
-                                } catch (Error | RuntimeException ex) {
+                            DelayedTask<?> u; int k, newCap;
+                            while (s > 0 && // clear trailing cancelled tasks
+                                   (u = h[s - 1]) != null && u.status < 0) {
+                                u.heapIndex = -1;
+                                h[--s] = null;
+                            }
+                            if ((k = s++) > 0) { // sift up
+                                for (long d = t.when;;) {
+                                    int pk; DelayedTask<?> par;
+                                    if ((par = h[pk = (k - 1) >>> 1]) == null)
+                                        break;
+                                    if (par.when <= d && par.status >= 0)
+                                        break;
+                                    par.heapIndex = k;
+                                    h[k] = par;
+                                    if ((k = pk) == 0)
+                                        break;
                                 }
                             }
-                            if (s >= cap || cap <= 0)  // can't grow
-                                cancel = true;
-                            else
-                                s = heapAdd(h, s, t);
+                            t.heapIndex = k;
+                            h[k] = t;
+                            if (s >= cap && (newCap = cap << 1) > cap) {
+                                DelayedTask<?>[] a = null;
+                                try {            // try to resize
+                                    a = Arrays.copyOf(heap, newCap);
+                                } catch (Error | RuntimeException ex) {
+                                }
+                                if (a != null)
+                                    cap = (heap = h = a).length;
+                            }
                         }
-                        if (cancel)
-                            t.trySetCancelled();
                         if ((t = next) == null)
                             break;
                     }
@@ -3591,86 +3608,64 @@ public class ForkJoinPool extends AbstractExecutorService
             return s;
         }
 
-        private static int heapAdd(DelayedTask<?>[] h,
-                                   int s, DelayedTask<?> t) {
-            if (s >= 0 && h != null && s < h.length && t != null) {
-                DelayedTask<?> u, par;
-                while (s > 0 && (u = h[s - 1]) != null && u.status < 0) {
-                    u.heapIndex = -1; // clear trailing cancelled tasks
-                    h[--s] = null;
+        private static int heapReplace(DelayedTask<?>[] h, int k, int s) {
+            if (k >= 0 && s > 0 && h != null && s <= h.length) {
+                DelayedTask<?> t = null, u;
+                while (--s > k) { // find uncancelled replacement
+                    if ((u = h[s]) != null) {
+                        h[s] = null;
+                        if (u.status >= 0) {
+                            t = u;
+                            break;
+                        }
+                        u.heapIndex = -1;
+                    }
                 }
-                int k = s++, pk;
-                long d = t.when;
-                while (k > 0 && (par = h[pk = (k - 1) >>> 1]) != null &&
-                       (d < par.when || par.status < 0)) {
-                    par.heapIndex = k;
-                    h[k] = par;
-                    k = pk;
+                if (t != null) {
+                    long d = t.when, rd; int ck, rk; DelayedTask<?> c, r;
+                    while ((ck = (k << 1) + 1) <= s && (c = h[ck]) != null) {
+                        long cw = c.when;
+                        long cd = (c.status < 0) ? Long.MAX_VALUE : cw;
+                        if ((rk = ck + 1) <= s && (r = h[rk]) != null &&
+                            (rd = r.when) < cd && r.status >= 0) {
+                            cd = rd;
+                            c = r;
+                            ck = rk;
+                        }
+                        if (d <= cd)
+                            break;
+                        c.heapIndex = k;
+                        h[k] = c;
+                        k = ck;
+                    }
+                    t.heapIndex = k;
                 }
-                t.heapIndex = k;
                 h[k] = t;
             }
             return s;
         }
 
-        private static int heapReplace(DelayedTask<?>[] h, int k, int s) {
-            if (k >= 0 && s > 0 && h != null && s <= h.length) {
-                int last = s - 1;
-                h[k] = null;
-                if (k == last)
-                    s = last;
-                else {
-                    DelayedTask<?> t = null;
-                    while (s > k) { // find uncancelled replacement
-                        DelayedTask<?> u = h[last];
-                        h[last] = null;
-                        s = last--;
-                        if (u != null) {
-                            if (u.status >= 0) {
-                                t = u;
-                                break;
-                            }
-                            u.heapIndex = -1;
-                        }
-                    }
-                    if (t != null) {
-                        int ck, rk; DelayedTask<?> c, r;
-                        long d = t.when, rd;
-                        while ((ck = (k << 1) + 1) < s && (c = h[ck]) != null) {
-                            long cd = (c.status < 0) ? Long.MAX_VALUE : c.when;
-                            if ((rk = ck + 1) < s && (r = h[rk]) != null &&
-                                r.status >= 0 && (rd = r.when) < cd) {
-                                cd = rd;
-                                c = r;
-                                ck = rk;
-                            }
-                            if (d <= cd)
-                                break;
-                            c.heapIndex = k;
-                            h[k] = c;
-                            k = ck;
-                        }
-                        t.heapIndex = k;
-                        h[k] = t;
-                    }
-                }
-            }
-            return s;
-        }
-
-        private void removePeriodicTasks() {
+        private int tryStopOnShutdown(ForkJoinPool p, int canStop) {
             DelayedTask<?>[] h; int s;
-            if ((s = heapSize) > 0 && (h = heap) != null && h.length >= s) {
-                DelayedTask<?> t; int stat;
-                for (int i = 0; i < s && (t = h[s]) != null; ) {
-                    if ((stat = t.status) < 0 || t.nextDelay != 0L) {
-                        t.heapIndex = -1;
-                        if (stat >= 0)
-                            t.trySetCancelled();
-                        s = heapReplace(h, i, s);
+            if (p != null) {
+                if ((s = heapSize) > 0 && canStop == 0 && (h = heap) != null &&
+                    h.length >= s) {
+                    DelayedTask<?> t; int stat;
+                    for (int i = 0; i < s && (t = h[s]) != null; ) {
+                        if ((stat = t.status) < 0 || t.nextDelay != 0L) {
+                            t.heapIndex = -1;
+                            if (stat >= 0)
+                                t.trySetCancelled();
+                            s = heapReplace(h, i, s);
+                        }
                     }
+                    heapSize = s;
                 }
+                if (s == 0 && active <= 0 &&
+                    (p.tryTerminate(false, false) & STOP) != 0L)
+                    return -1;
             }
+            return 1;
         }
 
         private void cancelAll() {
