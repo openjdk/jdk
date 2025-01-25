@@ -991,7 +991,7 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeInt *r0 = t0->is_int(); // Handy access
   const TypeInt *r1 = t1->is_int();
 
-  if( r0->is_con() && r1->is_con() ){
+  if (r0->is_con() && r1->is_con()) {
     // just XOR them bits.
     return TypeInt::make( r0->get_con() ^ r1->get_con() );
   }
@@ -1001,14 +1001,16 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
   // result of xor can only have bits sets where any of the
   // inputs have bits set. lo can always become 0.
 
-  if ( (r0->_lo >= 0) &&
-      (r0->_hi > 0)  &&
-      (r1->_lo >= 0) &&
-      (r1->_hi > 0) ) {
-    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-    const TypeInt* t1x = TypeInt::make(0, round_down_power_of_2(r0->_hi) + (round_down_power_of_2(r0->_hi) - 1), r0->_widen);
-    const TypeInt* t2x = TypeInt::make(0, round_down_power_of_2(r1->_hi) + (round_down_power_of_2(r1->_hi) - 1), r1->_widen);
-    return t1x->meet(t2x);
+  if (r0->_lo >= 0 && r1->_lo >= 0) {
+      // x ^ y cannot have any bit set that is higher than both the highest bits set in x and y
+      // x cannot have any bit set that is higher than the highest bit set in r0->_hi
+      // y cannot have any bit set that is higher than the highest bit set in r1->_hi
+
+      // note cast to unsigned happens before +1 to avoid signed overflow, and
+      // round_up is safe because high bit is unset (0 <= lo <= hi)
+      juint max = round_up_power_of_2(juint(r0->_hi | r1->_hi) + 1) - 1;
+
+      return TypeInt::make(0, max, MAX2(r0->_widen, r1->_widen));
   }
 
   return TypeInt::INT;        // Any integer, but still no symbols.
@@ -1030,14 +1032,33 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   // result of xor can only have bits sets where any of the
   // inputs have bits set. lo can always become 0.
 
-  if ( (r0->_lo >= 0) &&
-      (r0->_hi > 0)  &&
-      (r1->_lo >= 0) &&
-      (r1->_hi > 0) ) {
-    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-    const TypeLong* t1x = TypeLong::make(0, round_down_power_of_2(r0->_hi) + (round_down_power_of_2(r0->_hi) - 1), r0->_widen);
-    const TypeLong* t2x = TypeLong::make(0, round_down_power_of_2(r1->_hi) + (round_down_power_of_2(r1->_hi) - 1), r1->_widen);
-    return t1x->meet(t2x);
+  if (r0->_lo >= 0 && r1->_lo >= 0) {
+      // x ^ y cannot have any bit set that is higher than both the highest bits set in x and y
+      // x cannot have any bit set that is higher than the highest bit set in r0->_hi
+      // y cannot have any bit set that is higher than the highest bit set in r1->_hi
+
+      // we want to find a value that has all 1 bits everywhere up to and including
+      // the highest bits set in r0->_hi as well as r1->_hi. For this,we can take the next
+      // power of 2 strictly greater than both hi values and subtract 1 from it.
+
+      // Example 1:
+      // r0->_hi =  5 (0b0101)        r1->_hi=1 (0b0001)
+      //    (5|1)+1       = 0b0110
+      //    round_up_pow2 = 0b1000
+      //    -1            = 0b0111 = max
+
+      // Example 2 - this demonstrates need for the +1:
+      // r0->_hi =  4 (0b0100)        r1->_hi=4 (0b0100)
+      //    (4|4)+1       = 0b0101
+      //    round_up_pow2 = 0b1000
+      //    -1            = 0b0111 = max
+      // without the +1, round_up_pow2 would be 0b0100, resulting in 0b0011 as max
+
+      // note cast to unsigned happens before +1 to avoid signed overflow, and
+      // round_up is safe because high bit is unset (0 <= lo <= hi)
+      julong max = round_up_power_of_2(julong(r0->_hi | r1->_hi) + 1) - 1;
+
+      return TypeLong::make(0, max, MAX2(r0->_widen, r1->_widen));
   }
 
   return TypeLong::LONG;      // Any integer, but still no symbols.
