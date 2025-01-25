@@ -4257,20 +4257,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     private String scale2(long intCompact) {
-        boolean negative = intCompact < 0;
-        if (negative) {
-            intCompact = -intCompact;
-        }
         int lowInt = (int) (intCompact % 100);
         long highInt = intCompact / 100;
         int highIntSize = DecimalDigits.stringSize(highInt);
-        if (negative) {
-            highIntSize++;
-        }
         byte[] buf = new byte[highIntSize + 3];
-        if (negative) {
-            buf[0] = '-';
-        }
         DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
         buf[highIntSize] = '.';
         DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
