@@ -67,6 +67,11 @@ function matches(property, regexp) {
     return new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp));
 }
 
+// Select the nodes for which the given property is defined.
+function hasProperty(property) {
+    return new MatcherSelector(new Properties.InvertPropertyMatcher(new Properties.RegexpPropertyMatcher(property, "")));
+}
+
 // Color the selected nodes.
 function colorize(selector, color) {
     var f = new ColorFilter("");

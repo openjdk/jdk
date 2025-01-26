@@ -38,6 +38,9 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     private final Map<String, InputBlock> blocks;
     private final List<InputBlockEdge> blockEdges;
     private final Map<Integer, InputBlock> nodeToBlock;
+    private final Map<Integer, InputLiveRange> liveRanges;
+    private Map<Integer, LivenessInfo> livenessInfo;
+    private Map<Integer, Set<InputNode>> relatedNodes;
     private final boolean isDiffGraph;
     private final InputGraph firstGraph;
     private final InputGraph secondGraph;
@@ -58,6 +61,9 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         nodes = new LinkedHashMap<>();
         edges = new ArrayList<>();
         blocks = new LinkedHashMap<>();
+        liveRanges = new LinkedHashMap<>();
+        livenessInfo = new LinkedHashMap<>();
+        relatedNodes = new LinkedHashMap<>();
         blockEdges = new ArrayList<>();
         nodeToBlock = new LinkedHashMap<>();
         isDiffGraph = firstGraph != null && secondGraph != null;
@@ -304,12 +310,49 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return parentGroup;
     }
 
+    public void addLiveRange(InputLiveRange lrg) {
+        liveRanges.put(lrg.getId(), lrg);
+        relatedNodes.put(lrg.getId(), new HashSet<>());
+    }
+
+    public Collection<InputLiveRange> getLiveRanges() {
+        return Collections.unmodifiableCollection(liveRanges.values());
+    }
+
+    public void addLivenessInfo(InputNode node, LivenessInfo info) {
+        livenessInfo.put(node.getId(), info);
+        if (info.def != null) {
+            relatedNodes.get(info.def).add(node);
+        }
+        if (info.use != null) {
+            for (int lrg : info.use) {
+                relatedNodes.get(lrg).add(node);
+            }
+        }
+        if (info.join != null) {
+            for (int lrg : info.join) {
+                relatedNodes.get(lrg).add(node);
+            }
+        }
+    }
+
+    public LivenessInfo getLivenessInfoForNode(InputNode node) {
+        return livenessInfo.get(node.getId());
+    }
+
+    public Set<InputNode> getRelatedNodes(int liveRangeId) {
+        return relatedNodes.get(liveRangeId);
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Graph ").append(getName()).append(" ").append(getProperties().toString()).append("\n");
         for (InputNode n : nodes.values()) {
             sb.append(n.toString());
+            if (livenessInfo.containsKey(n.getId())) {
+                sb.append(" " + livenessInfo.get(n.getId()).toString());
+            }
             sb.append("\n");
         }
 
@@ -320,6 +363,11 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
         for (InputBlock b : getBlocks()) {
             sb.append(b.toString());
+            sb.append("\n");
+        }
+
+        for (InputLiveRange l : liveRanges.values()) {
+            sb.append(l.toString());
             sb.append("\n");
         }
 

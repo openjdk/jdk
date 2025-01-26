@@ -35,7 +35,10 @@ public class InputBlock {
     private final String name;
     private final InputGraph graph;
     private final Set<InputBlock> successors;
+    private Set<Integer> liveOut;
     private boolean artificial;
+
+    public static final boolean USE_LIVE_RANGE_IDENTIFIERS = true;
 
     @Override
     public int hashCode() {
@@ -70,6 +73,15 @@ public class InputBlock {
             }
         }
 
+        if (this.liveOut.size() != b.liveOut.size()) {
+            return false;
+        }
+        for (int liveRangeId : this.liveOut) {
+            if (!b.liveOut.contains(liveRangeId)) {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -78,6 +90,7 @@ public class InputBlock {
         this.name = name;
         nodes = new ArrayList<>();
         successors = new LinkedHashSet<>(2);
+        liveOut = new HashSet<Integer>(0);
         artificial = false;
     }
 
@@ -97,6 +110,14 @@ public class InputBlock {
         assert graph.getBlock(id) == null : "duplicate : " + node;
         graph.setBlock(node, this);
         nodes.add(node);
+    }
+
+    public void addLiveOut(int liveRangeId) {
+        liveOut.add(liveRangeId);
+    }
+
+    public Set<Integer> getLiveOut() {
+        return Collections.unmodifiableSet(liveOut);
     }
 
     public Set<InputBlock> getSuccessors() {

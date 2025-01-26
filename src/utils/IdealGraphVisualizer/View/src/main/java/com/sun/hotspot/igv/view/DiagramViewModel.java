@@ -26,6 +26,7 @@ package com.sun.hotspot.igv.view;
 
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.*;
+import com.sun.hotspot.igv.data.services.PreProcessor;
 import com.sun.hotspot.igv.data.services.Scheduler;
 import com.sun.hotspot.igv.difference.Difference;
 import com.sun.hotspot.igv.filter.ColorFilter;
@@ -398,6 +399,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             s.schedule(graph);
             graph.ensureNodesInBlocks();
         }
+        PreProcessor p = Lookup.getDefault().lookup(PreProcessor.class);
+        p.preProcess(graph);
         diagram = new Diagram(graph,
                 Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),

@@ -26,6 +26,7 @@ package com.sun.hotspot.igv.difference;
 
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.*;
+import com.sun.hotspot.igv.data.services.PreProcessor;
 import com.sun.hotspot.igv.data.services.Scheduler;
 import java.util.*;
 import org.openide.util.Lookup;
@@ -84,6 +85,8 @@ public class Difference {
             s.schedule(a);
             a.ensureNodesInBlocks();
         }
+        PreProcessor p = Lookup.getDefault().lookup(PreProcessor.class);
+        p.preProcess(a);
     }
 
     private static InputGraph createDiff(InputGraph a, InputGraph b, Set<NodePair> pairs) {
