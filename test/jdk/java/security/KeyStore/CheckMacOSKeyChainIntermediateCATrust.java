@@ -34,8 +34,8 @@ import java.util.stream.StreamSupport;
 import jdk.test.lib.process.ProcessTools;
 
 import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /*
@@ -76,16 +76,19 @@ public class CheckMacOSKeyChainIntermediateCATrust {
 
         String intermediateCASubjectName = "CN=Example Intermediate CA,O=Example,C=US";
         assertThat(containsSubjectName(certificates, intermediateCASubjectName), "Intermediate CA not found " + intermediateCASubjectName, certificates);
+
+        String nonTrustedCASubjectName = "CN=Non Trusted Example CA,O=Example,C=US";
+        assertThat(not(containsSubjectName(certificates, nonTrustedCASubjectName)), "Non trusted CA found " + nonTrustedCASubjectName, certificates);
     }
 
-    @BeforeEach
-    public void setup() {
+    @BeforeAll
+    static void setup() {
         System.out.println("Adding certificates to key chain");
         addCertificatesToKeyChain();
     }
 
-    @AfterEach
-    public void cleanup() {
+    @AfterAll
+    static void cleanup() {
         System.out.println("Cleaning up");
         deleteCertificatesFromKeyChain();
     }
@@ -97,6 +100,15 @@ public class CheckMacOSKeyChainIntermediateCATrust {
         List<String> args = List.of(
                 "/usr/bin/security",
                 "add-trusted-cert",
+                "-k", loginKeyChain,
+                caPath.toString()
+        );
+        executeProcess(args);
+
+        caPath = Path.of("%s/%s".formatted(DIR, "non-trusted-test-ca.pem"));
+        args = List.of(
+                "/usr/bin/security",
+                "add-certificates",
                 "-k", loginKeyChain,
                 caPath.toString()
         );
@@ -120,16 +132,23 @@ public class CheckMacOSKeyChainIntermediateCATrust {
     private static void executeProcess(List<String> params) {
         System.out.println("Command line: " + params);
         try {
-            int exitStatus = ProcessTools.executeProcess(params.toArray(new String[0])).getExitValue();
-            if (exitStatus != 0) {
-                fail("Process started with: " + params + " failed");
-            }
-        } catch (Throwable e) {
-            fail(e.getMessage());
+            ProcessTools.executeProcess(params.toArray(new String[0]))
+                    .shouldHaveExitValue(0);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e);
         }
     }
 
     private static void deleteCertificatesFromKeyChain() {
+        executeProcess(
+                List.of(
+                        "/usr/bin/security",
+                        "delete-certificate",
+                        "-c", "Non Trusted Example CA",
+                        "-t"
+                )
+        );
+
         executeProcess(
                 List.of(
                         "/usr/bin/security",
@@ -147,6 +166,10 @@ public class CheckMacOSKeyChainIntermediateCATrust {
                         "-t"
                 )
         );
+    }
+
+    private static boolean not(boolean condition) {
+        return !condition;
     }
 
     private static boolean containsSubjectName(List<X509Certificate> certificates, String subjectName) {

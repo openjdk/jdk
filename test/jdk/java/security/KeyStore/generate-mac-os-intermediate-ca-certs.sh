@@ -22,4 +22,7 @@ openssl x509 -req \
  -days 3650 \
  -sha256
 
-rm -f root.key test-intermediate-ca.csr intermediate.key test-ca.srl
+openssl genrsa -out non-trusted-root.key 2048
+openssl req -x509 -sha256 -nodes -extensions v3_ca -key non-trusted-root.key -subj "/C=US/O=Example/CN=Non Trusted Example CA" -days 3650 -out non-trusted-test-ca.pem
+
+rm -f non-trusted-root.key root.key test-intermediate-ca.csr intermediate.key test-ca.srl
