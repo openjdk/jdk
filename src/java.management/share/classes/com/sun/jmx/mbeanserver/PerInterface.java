@@ -108,8 +108,7 @@ final class PerInterface<M> {
         final List<MethodAndSig> list = ops.get(operation);
         if (list == null) {
             final String msg = "No such operation: " + operation;
-            return noSuchMethod(msg, resource, operation, params, signature,
-                                cookie);
+            throw new ReflectionException(new NoSuchMethodException(operation + sigString(signature)), msg);
         }
         if (signature == null)
             signature = new String[0];
@@ -131,27 +130,9 @@ final class PerInterface<M> {
                 msg = "Operation " + operation + " exists but not with " +
                         "this signature: " + badSig;
             }
-            return noSuchMethod(msg, resource, operation, params, signature,
-                                cookie);
+            throw new ReflectionException(new NoSuchMethodException(operation + badSig), msg);
         }
         return introspector.invokeM(found.method, resource, params, cookie);
-    }
-
-    /*
-     * This method is called to throw an Exception when invoke doesn't find the named method.
-     */
-    private Object noSuchMethod(String msg, Object resource, String operation,
-                                Object[] params, String[] signature,
-                                Object cookie)
-            throws MBeanException, ReflectionException {
-
-        // Construct the exception that we will throw
-        final NoSuchMethodException nsme =
-            new NoSuchMethodException(operation + sigString(signature));
-        final ReflectionException exception =
-            new ReflectionException(nsme, msg);
-
-        throw exception;
     }
 
     private String sigString(String[] signature) {
