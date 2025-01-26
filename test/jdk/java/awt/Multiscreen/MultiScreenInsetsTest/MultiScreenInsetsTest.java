@@ -41,17 +41,16 @@ import java.awt.Rectangle;
 import java.awt.Toolkit;
 
 import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 
 public class MultiScreenInsetsTest {
     private static final int SIZE = 100;
 
     public static void main(String[] args) throws InterruptedException {
-
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
         if (gds.length < 2) {
-            System.out.println("It's a multi-screen test... skipping!");
-            return;
+            throw new SkippedException("It's a multi-screen test... skipping!");
         }
 
         for (int screen = 0; screen < gds.length; ++screen) {
@@ -92,8 +91,7 @@ public class MultiScreenInsetsTest {
                 frameBounds.width -= (bounds.x - frameBounds.x) * 2;
                 frameBounds.x = bounds.x;
             }
-            if (frameBounds.y < bounds.y)
-            {
+            if (frameBounds.y < bounds.y) {
                 frameBounds.height -= (bounds.y - frameBounds.y) * 2;
                 frameBounds.y = bounds.y;
             }
@@ -112,11 +110,13 @@ public class MultiScreenInsetsTest {
         }
         System.out.println("Test PASSED!");
     }
-    static int getMarginForScaleX(GraphicsConfiguration gc) {
+
+    private static int getMarginForScaleX(GraphicsConfiguration gc) {
         float scaleFactorX = (float) gc.getDefaultTransform().getScaleX();
         return (scaleFactorX % 1 == 0.5) ? 1 : 0;
     }
-    static int getMarginForScaleY(GraphicsConfiguration gc) {
+
+    private static int getMarginForScaleY(GraphicsConfiguration gc) {
         float scaleFactorY = (float) gc.getDefaultTransform().getScaleY();
         return (scaleFactorY % 1 == 0.5) ? 1 : 0;
     }
