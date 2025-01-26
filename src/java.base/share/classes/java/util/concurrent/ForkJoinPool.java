@@ -3389,23 +3389,25 @@ public class ForkJoinPool extends AbstractExecutorService
         private static final long ACTIVE;
         private static final long ADDITIONS;
         private static final long REMOVALS;
-        static final long nanoTimeOrigin;
+        static final long nanoTimeOffset;
         static {
             U = Unsafe.getUnsafe();
             Class<DelayScheduler> klass = DelayScheduler.class;
             ACTIVE = U.objectFieldOffset(klass, "active");
             ADDITIONS = U.objectFieldOffset(klass, "additions");
             REMOVALS = U.objectFieldOffset(klass, "removals");
-            nanoTimeOrigin = System.nanoTime();
+            long ns = System.nanoTime(); // ensure negative to avoid overflow
+            nanoTimeOffset = Long.MIN_VALUE + (ns < 0L ? ns : 0L);
         }
 
-        DelayScheduler(ForkJoinPool p) {
+        DelayScheduler(ForkJoinPool p, String name) {
+            super(name);
             setDaemon(true);
             pool = p;
         }
 
         static final long now() {
-            return System.nanoTime() - nanoTimeOrigin;
+            return nanoTimeOffset + System.nanoTime();
         }
 
         final boolean activate() {
@@ -3479,11 +3481,12 @@ public class ForkJoinPool extends AbstractExecutorService
                         (canStop = tryStopOnShutdown(p, canStop)) < 0)
                         break;
                     else if (idle) {
-                        Thread.interrupted(); // clear
-                        if (active == 0)
-                            U.park(false, waitTime);
-                        active = 1;
                         idle = false;
+                        Thread.interrupted(); // clear
+                        if (active == 0) {
+                            U.park(false, waitTime);
+                            active = 1;
+                        }
                     }
                     else {
                         int state = active;
@@ -3506,9 +3509,9 @@ public class ForkJoinPool extends AbstractExecutorService
                 ((prs = p.runState) & STOP) == 0L) {
                 for (long now = now();;) {
                     DelayedTask<?> first; int stat; long d;
+                    boolean cancel = false;
                     if ((first = h[0]) == null)
                         break;
-                    boolean cancel = false;
                     if ((stat = first.status) >= 0) {
                         if (first.nextDelay != 0L && (prs & SHUTDOWN) != 0L)
                             cancel = true;
@@ -3623,10 +3626,10 @@ public class ForkJoinPool extends AbstractExecutorService
                 }
                 if (t != null) {
                     long d = t.when, rd; int ck, rk; DelayedTask<?> c, r;
-                    while ((ck = (k << 1) + 1) <= s && (c = h[ck]) != null) {
+                    while ((ck = (k << 1) + 1) < s && (c = h[ck]) != null) {
                         long cw = c.when;
                         long cd = (c.status < 0) ? Long.MAX_VALUE : cw;
-                        if ((rk = ck + 1) <= s && (r = h[rk]) != null &&
+                        if ((rk = ck + 1) < s && (r = h[rk]) != null &&
                             (rd = r.when) < cd && r.status >= 0) {
                             cd = rd;
                             c = r;
@@ -3647,25 +3650,21 @@ public class ForkJoinPool extends AbstractExecutorService
 
         private int tryStopOnShutdown(ForkJoinPool p, int canStop) {
             DelayedTask<?>[] h; int s;
-            if (p != null) {
-                if ((s = heapSize) > 0 && canStop == 0 && (h = heap) != null &&
-                    h.length >= s) {
-                    DelayedTask<?> t; int stat;
-                    for (int i = 0; i < s && (t = h[s]) != null; ) {
-                        if ((stat = t.status) < 0 || t.nextDelay != 0L) {
-                            t.heapIndex = -1;
-                            if (stat >= 0)
-                                t.trySetCancelled();
-                            s = heapReplace(h, i, s);
-                        }
+            if ((s = heapSize) > 0 && canStop == 0 && (h = heap) != null &&
+                h.length >= s) { // remove periodic tasks
+                DelayedTask<?> t; int stat;
+                for (int i = 0; i < s && (t = h[s]) != null; ) {
+                    if ((stat = t.status) < 0 || t.nextDelay != 0L) {
+                        t.heapIndex = -1;
+                        if (stat >= 0)
+                            t.trySetCancelled();
+                        s = heapReplace(h, i, s);
                     }
-                    heapSize = s;
                 }
-                if (s == 0 && active <= 0 &&
-                    (p.tryTerminate(false, false) & STOP) != 0L)
-                    return -1;
+                heapSize = s;
             }
-            return 1;
+            return (s == 0 && active <= 0 && p != null &&
+                    (p.tryTerminate(false, false) & STOP) != 0L) ? -1 : 1;
         }
 
         private void cancelAll() {
@@ -3696,10 +3695,11 @@ public class ForkJoinPool extends AbstractExecutorService
         DelayScheduler ds;
         if ((ds = delayScheduler) == null) {
             boolean start = false;
+            String name = poolName + "-delayScheduler";
             long rs = lockRunState();
             try {
                 if ((rs & SHUTDOWN) == 0 && (ds = delayScheduler) == null) {
-                    ds = delayScheduler = new DelayScheduler(this);
+                    ds = delayScheduler = new DelayScheduler(this, name);
                     start = true;
                 }
             } finally {
@@ -3707,7 +3707,6 @@ public class ForkJoinPool extends AbstractExecutorService
             }
             if (start) { // start outside of lock
                 SharedThreadContainer ctr;
-                ds.setName(poolName + "-delayScheduler");
                 if ((ctr = container) != null)
                     ctr.start(ds);
                 else
@@ -3721,11 +3720,11 @@ public class ForkJoinPool extends AbstractExecutorService
                                          long delay, long nextDelay) {
         DelayScheduler ds;
         long when = DelayScheduler.now() + delay;
-        DelayedTask<V> t = new DelayedTask<>(command, callable, this, nextDelay,
-                                             when);
+        DelayedTask<V> t =
+            new DelayedTask<>(command, callable, this, nextDelay, when);
         if ((ds = delayScheduler) == null)
             ds = startDelayScheduler();
-        if (delay <= 0L)
+        if (delay == 0L)
             poolSubmit(true, t);
         else if (ds == null || (runState & SHUTDOWN) != 0L)
             throw new RejectedExecutionException();
@@ -3734,18 +3733,13 @@ public class ForkJoinPool extends AbstractExecutorService
         return t;
     }
 
-    /** Convert and truncate to maximum supported delay value */
-    private static long schedulerDelay(long d, TimeUnit unit) {
-        return Math.min(unit.toNanos(d), (Long.MAX_VALUE >>> 1) - 1);
-    }
-
     public ScheduledFuture<?> schedule(Runnable command,
                                        long delay,
                                        TimeUnit unit) {
         if (command == null || unit == null)
             throw new NullPointerException();
         return sched(command, (Callable<Void>)null,
-                     schedulerDelay(delay, unit), 0L);
+                     (delay <= 0L) ? 0L : unit.toNanos(delay), 0L);
     }
 
     public <V> ScheduledFuture<V> schedule(Callable<V> callable,
@@ -3754,7 +3748,7 @@ public class ForkJoinPool extends AbstractExecutorService
         if (callable == null || unit == null)
             throw new NullPointerException();
         return sched(null, callable,
-                     schedulerDelay(delay, unit), 0L);
+                     (delay <= 0L) ? 0L : unit.toNanos(delay), 0L);
     }
 
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command,
@@ -3766,8 +3760,8 @@ public class ForkJoinPool extends AbstractExecutorService
         if (period <= 0L)
             throw new IllegalArgumentException();
         return sched(command, (Callable<Void>)null,
-                     schedulerDelay(initialDelay, unit),
-                     -schedulerDelay(period, unit));
+                     (initialDelay <= 0L) ? 0L : unit.toNanos(initialDelay),
+                     -unit.toNanos(period));
     }
 
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
@@ -3779,8 +3773,8 @@ public class ForkJoinPool extends AbstractExecutorService
         if (delay <= 0L)
             throw new IllegalArgumentException();
         return sched(command, (Callable<Void>)null,
-                     schedulerDelay(initialDelay, unit),
-                     schedulerDelay(delay, unit));
+                     (initialDelay <= 0L) ? 0L : unit.toNanos(initialDelay),
+                     unit.toNanos(delay));
     }
 
     /**
