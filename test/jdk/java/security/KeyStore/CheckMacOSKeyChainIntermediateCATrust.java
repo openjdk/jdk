@@ -34,8 +34,8 @@ import java.util.stream.StreamSupport;
 import jdk.test.lib.process.ProcessTools;
 
 import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /*
@@ -81,14 +81,14 @@ public class CheckMacOSKeyChainIntermediateCATrust {
         assertThat(not(containsSubjectName(certificates, nonTrustedCASubjectName)), "Non trusted CA found " + nonTrustedCASubjectName, certificates);
     }
 
-    @BeforeAll
-    static void setup() {
+    @BeforeEach
+    void setup() {
         System.out.println("Adding certificates to key chain");
         addCertificatesToKeyChain();
     }
 
-    @AfterAll
-    static void cleanup() {
+    @AfterEach
+    void cleanup() {
         System.out.println("Cleaning up");
         deleteCertificatesFromKeyChain();
     }
