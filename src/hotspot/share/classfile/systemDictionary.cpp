@@ -423,16 +423,6 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
 
   assert(next_name != nullptr, "null superclass for resolving");
   assert(!Signature::is_array(next_name), "invalid superclass name");
-#if INCLUDE_CDS
-  if (CDSConfig::is_dumping_static_archive()) {
-    // Special processing for handling UNREGISTERED shared classes.
-    InstanceKlass* k = SystemDictionaryShared::lookup_super_for_unregistered_class(class_name,
-                           next_name, is_superclass);
-    if (k) {
-      return k;
-    }
-  }
-#endif // INCLUDE_CDS
 
   // If class_name is already loaded, just return the superclass or superinterface.
   // Make sure there's a placeholder for the class_name before resolving.

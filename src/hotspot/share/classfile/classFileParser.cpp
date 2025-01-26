@@ -2126,7 +2126,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   // access_flags, name_index, descriptor_index, attributes_count
   cfs->guarantee_more(8, CHECK_NULL);
 
-  int flags = cfs->get_u2_fast();
+  u2 flags = cfs->get_u2_fast();
   const u2 name_index = cfs->get_u2_fast();
   const int cp_size = cp->length();
   guarantee_property(
