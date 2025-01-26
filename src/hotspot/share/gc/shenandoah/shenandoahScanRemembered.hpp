@@ -936,6 +936,7 @@ private:
   const size_t _regular_group_size;                        // Number of chunks in each group
   const size_t _first_group_chunk_size_b4_rebalance;
   const size_t _num_groups;                        // Number of groups in this configuration
+  size_t _adjusted_num_groups;                     // Rebalancing may coalesce groups
   const size_t _total_chunks;
 
   shenandoah_padding(0);
