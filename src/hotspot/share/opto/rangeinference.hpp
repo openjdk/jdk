@@ -109,6 +109,10 @@ private:
     bool _present; // whether this is an empty set
     TypeIntPrototype<S, U> _data;
 
+    bool empty() const {
+      return !_present;
+    }
+
     static CanonicalizedTypeIntPrototype make_empty() {
       return {false, {}};
     }
@@ -137,16 +141,22 @@ public:
     if (U(srange._lo) == urange._lo) {
       // srange is the same as urange
       assert(U(srange._hi) == urange._hi, "");
+      // The cardinality is (hi - lo + 1), we return the result minus 1
       return urange._hi - urange._lo;
     }
 
     // srange intersects with urange in 2 intervals [srange._lo, urange._hi]
     // and [urange._lo, srange._hi]
+    // The cardinality is (uhi - lo + 1) + (hi - ulo + 1), we return the result
+    // minus 1
     return (urange._hi - U(srange._lo)) + (U(srange._hi) - urange._lo) + 1;
   }
 
+  template <class S, class U>
+  using make_type_t = const Type* (*)(const TypeIntPrototype<S, U>&, int, bool);
+
   template <class CT, class S, class U>
-  static const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(const TypeIntPrototype<S, U>&, int, bool), bool dual);
+  static const Type* int_type_xmeet(const CT* i1, const Type* t2, make_type_t<S, U> make, bool dual);
 
   template <class CT>
   static bool int_type_is_equal(const CT* t1, const CT* t2) {
@@ -159,6 +169,9 @@ public:
   static bool int_type_is_subset(const CT* super, const CT* sub) {
     return super->_lo <= sub->_lo && super->_hi >= sub->_hi &&
            super->_ulo <= sub->_ulo && super->_uhi >= sub->_uhi &&
+           // All bits that are known in super must also be known to be the same
+           // value in sub, &~ (and not) is the same as a set subtraction on bit
+           // sets
            (super->_bits._zeros &~ sub->_bits._zeros) == 0 && (super->_bits._ones &~ sub->_bits._ones) == 0;
   }
 

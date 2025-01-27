@@ -701,7 +701,7 @@ public:
  */
 class TypeInt : public TypeInteger {
   TypeInt(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
-  static const Type* try_make(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
+  static const Type* try_make(const TypeIntPrototype<jint, juint>& t, int widen, bool dual);
 protected:
   virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
 
@@ -719,8 +719,8 @@ public:
 
   static const TypeInt* make(jint lo);
   // must always specify w
-  static const TypeInt* make(jint lo, jint hi, int w);
-  static const Type* try_make(const TypeIntPrototype<jint, juint>& t, int w);
+  static const TypeInt* make(jint lo, jint hi, int widen);
+  static const Type* try_make(const TypeIntPrototype<jint, juint>& t, int widen);
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }
@@ -777,7 +777,7 @@ public:
 // Similar to TypeInt
 class TypeLong : public TypeInteger {
   TypeLong(const TypeIntPrototype<jlong, julong>& t, int w, bool dual);
-  static const Type* try_make(const TypeIntPrototype<jlong, julong>& t, int w, bool dual);
+  static const Type* try_make(const TypeIntPrototype<jlong, julong>& t, int widen, bool dual);
 protected:
   // Do not kill _widen bits.
   virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
@@ -796,8 +796,8 @@ public:
 
   static const TypeLong* make(jlong lo);
   // must always specify w
-  static const TypeLong* make(jlong lo, jlong hi, int w);
-  static const Type* try_make(const TypeIntPrototype<jlong, julong>& t, int w);
+  static const TypeLong* make(jlong lo, jlong hi, int widen);
+  static const Type* try_make(const TypeIntPrototype<jlong, julong>& t, int widen);
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }

@@ -1599,33 +1599,33 @@ const TypeInt* TypeInt::INT;    // 32-bit integers
 const TypeInt* TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
 const TypeInt* TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
 
-TypeInt::TypeInt(const TypeIntPrototype<jint, juint>& t, int w, bool dual)
-  : TypeInteger(Int, t.normalize_widen(w), dual), _lo(t._srange._lo), _hi(t._srange._hi),
+TypeInt::TypeInt(const TypeIntPrototype<jint, juint>& t, int widen, bool dual)
+  : TypeInteger(Int, t.normalize_widen(widen), dual), _lo(t._srange._lo), _hi(t._srange._hi),
     _ulo(t._urange._lo), _uhi(t._urange._hi), _bits(t._bits) {
   DEBUG_ONLY(t.verify_constraints());
 }
 
-const Type* TypeInt::try_make(const TypeIntPrototype<jint, juint>& t, int w, bool dual) {
-  auto new_t = t.canonicalize_constraints();
-  if (!new_t._present) {
+const Type* TypeInt::try_make(const TypeIntPrototype<jint, juint>& t, int widen, bool dual) {
+  auto canonicalized_t = t.canonicalize_constraints();
+  if (canonicalized_t.empty()) {
     return dual ? Type::BOTTOM : Type::TOP;
   }
-  return (new TypeInt(new_t._data, w, dual))->hashcons()->is_int();
+  return (new TypeInt(canonicalized_t._data, widen, dual))->hashcons()->is_int();
 }
 
-const TypeInt* TypeInt::make(jint lo) {
-  juint ulo = lo;
-  return (new TypeInt(TypeIntPrototype<jint, juint>{{lo, lo}, {ulo, ulo}, {~ulo, ulo}},
+const TypeInt* TypeInt::make(jint con) {
+  juint ucon = con;
+  return (new TypeInt(TypeIntPrototype<jint, juint>{{con, con}, {ucon, ucon}, {~ucon, ucon}},
                       WidenMin, false))->hashcons()->is_int();
 }
 
-const TypeInt* TypeInt::make(jint lo, jint hi, int w) {
+const TypeInt* TypeInt::make(jint lo, jint hi, int widen) {
   assert(lo <= hi, "must be legal bounds");
-  return try_make(TypeIntPrototype<jint, juint>{{lo, hi}, {0, max_juint}, {0, 0}}, w)->is_int();
+  return try_make(TypeIntPrototype<jint, juint>{{lo, hi}, {0, max_juint}, {0, 0}}, widen)->is_int();
 }
 
-const Type* TypeInt::try_make(const TypeIntPrototype<jint, juint>& t, int w) {
-  return try_make(t, w, false);
+const Type* TypeInt::try_make(const TypeIntPrototype<jint, juint>& t, int widen) {
+  return try_make(t, widen, false);
 }
 
 bool TypeInt::contains(jint i) const {
@@ -1723,33 +1723,33 @@ const TypeLong* TypeLong::INT;  // 32-bit subrange
 const TypeLong* TypeLong::UINT; // 32-bit unsigned subrange
 const TypeLong* TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
-TypeLong::TypeLong(const TypeIntPrototype<jlong, julong>& t, int w, bool dual)
-  : TypeInteger(Long, t.normalize_widen(w), dual), _lo(t._srange._lo), _hi(t._srange._hi),
+TypeLong::TypeLong(const TypeIntPrototype<jlong, julong>& t, int widen, bool dual)
+  : TypeInteger(Long, t.normalize_widen(widen), dual), _lo(t._srange._lo), _hi(t._srange._hi),
     _ulo(t._urange._lo), _uhi(t._urange._hi), _bits(t._bits) {
   DEBUG_ONLY(t.verify_constraints());
 }
 
-const Type* TypeLong::try_make(const TypeIntPrototype<jlong, julong>& t, int w, bool dual) {
-  auto new_t = t.canonicalize_constraints();
-  if (!new_t._present) {
+const Type* TypeLong::try_make(const TypeIntPrototype<jlong, julong>& t, int widen, bool dual) {
+  auto canonicalized_t = t.canonicalize_constraints();
+  if (canonicalized_t.empty()) {
     return dual ? Type::BOTTOM : Type::TOP;
   }
-  return (new TypeLong(new_t._data, w, dual))->hashcons()->is_long();
+  return (new TypeLong(canonicalized_t._data, widen, dual))->hashcons()->is_long();
 }
 
-const TypeLong* TypeLong::make(jlong lo) {
-  julong ulo = lo;
-  return (new TypeLong(TypeIntPrototype<jlong, julong>{{lo, lo}, {ulo, ulo}, {~ulo, ulo}},
+const TypeLong* TypeLong::make(jlong con) {
+  julong ucon = con;
+  return (new TypeLong(TypeIntPrototype<jlong, julong>{{con, con}, {ucon, ucon}, {~ucon, ucon}},
                        WidenMin, false))->hashcons()->is_long();
 }
 
-const TypeLong* TypeLong::make(jlong lo, jlong hi, int w) {
+const TypeLong* TypeLong::make(jlong lo, jlong hi, int widen) {
   assert(lo <= hi, "must be legal bounds");
-  return try_make(TypeIntPrototype<jlong, julong>{{lo, hi}, {0, max_julong}, {0, 0}}, w)->is_long();
+  return try_make(TypeIntPrototype<jlong, julong>{{lo, hi}, {0, max_julong}, {0, 0}}, widen)->is_long();
 }
 
-const Type* TypeLong::try_make(const TypeIntPrototype<jlong, julong>& t, int w) {
-  return try_make(t, w, false);
+const Type* TypeLong::try_make(const TypeIntPrototype<jlong, julong>& t, int widen) {
+  return try_make(t, widen, false);
 }
 
 bool TypeLong::contains(jlong i) const {

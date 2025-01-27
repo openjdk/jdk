@@ -34,22 +34,28 @@ constexpr juint SMALL_TYPEINT_THRESHOLD = 3;
 template <class T>
 class AdjustResult {
 public:
-  bool _progress;             // whether there is progress compared to the last iteration
-  bool _is_result_consistent; // whether the calculation arrives at contradiction
+  bool _progress; // whether there is progress compared to the last iteration
+  bool _present;  // whether the result is empty, typically due to the calculation arriving at contradiction
   T _result;
+
+  bool empty() const {
+    return !_present;
+  }
 
   static AdjustResult<T> make_empty() {
     return {true, false, {}};
   }
 };
 
-// In the canonical form, [lo, hi] intersects with [ulo, uhi] can result in 2
-// cases:
+// In the canonical form, when intersecting [lo, hi] in the signed domain with
+// [ulo, uhi] in the unsigned domain, there can be 2 cases (see TypeInt in
+// type.hpp for more details):
 // - [lo, hi] is the same as [ulo, uhi], lo and hi are both >= 0 or both < 0.
 // - [lo, hi] is not the same as [ulo, uhi], which results in the intersections
-// being [lo, uhi] and [ulo, hi], lo and uhi are < 0 while ulo and hi are >= 0.
+//   being [lo, uhi] and [ulo, hi], lo and uhi are < 0 while ulo and hi are >= 0.
 // This class deals with each interval with both bounds being >= 0 or < 0 in
-// the signed domain.
+// the signed domain. We call it Simple because a canonicalized TypeIntPrototype
+// may contain 1 or 2 SimpleCanonicalResult.
 template <class U>
 class SimpleCanonicalResult {
   static_assert(std::is_unsigned<U>::value, "bit info should be unsigned");
@@ -57,6 +63,10 @@ public:
   bool _present; // whether this is an empty set
   RangeInt<U> _bounds;
   KnownBits<U> _bits;
+
+  bool empty() const {
+    return !_present;
+  }
 
   static SimpleCanonicalResult<U> make_empty() {
     return {false, {}, {}};
@@ -339,30 +349,33 @@ adjust_bits_from_bounds(const KnownBits<U>& bits, const RangeInt<U>& bounds) {
   return {progress, present, {new_zeros, new_ones}};
 }
 
-// Try to tighten both the bounds and the bits at the same time
-// Iteratively tighten 1 using the other until no progress is made.
-// This function converges because at each iteration, some bits that are
-// unknown is made known. As there are at most 64 bits, the number of
-// iterations should not be larger than 64
+// Try to tighten both the bounds and the bits at the same time.
+// Iteratively tighten one using the other until no progress is made.
+// This function converges because at each iteration, some bits that are unknown
+// are made known. As there are at most 64 bits, the number of iterations should
+// not be larger than 64.
+// This function is called simple because it deals with a SimpleCanonicalResult,
+// and a canonicalization of a TypeIntPrototype may require 1 or 2 calls to this
+// function, one for the non-negative range and one for the negative range.
 template <class U>
 static SimpleCanonicalResult<U>
 canonicalize_constraints_simple(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
-  AdjustResult<KnownBits<U>> nbits = adjust_bits_from_bounds(bits, bounds);
-  if (!nbits._is_result_consistent) {
+  AdjustResult<KnownBits<U>> canonicalized_bits = adjust_bits_from_bounds(bits, bounds);
+  if (canonicalized_bits.empty()) {
     return SimpleCanonicalResult<U>::make_empty();
   }
-  AdjustResult<RangeInt<U>> nbounds{true, true, bounds};
+  AdjustResult<RangeInt<U>> canonicalized_bounds{true, true, bounds};
   // Since bits are derived from bounds in the previous iteration and vice
   // versa, if one does not show progress, the other will also not show
   // progress, so we terminate early
   while (true) {
-    nbounds = adjust_bounds_from_bits(nbounds._result, nbits._result);
-    if (!nbounds._progress || !nbounds._is_result_consistent) {
-      return {nbounds._is_result_consistent, nbounds._result, nbits._result};
+    canonicalized_bounds = adjust_bounds_from_bits(canonicalized_bounds._result, canonicalized_bits._result);
+    if (!canonicalized_bounds._progress || canonicalized_bounds.empty()) {
+      return {canonicalized_bounds._present, canonicalized_bounds._result, canonicalized_bits._result};
     }
-    nbits = adjust_bits_from_bounds(nbits._result, nbounds._result);
-    if (!nbits._progress || !nbits._is_result_consistent) {
-      return {nbits._is_result_consistent, nbounds._result, nbits._result};
+    canonicalized_bits = adjust_bits_from_bounds(canonicalized_bits._result, canonicalized_bounds._result);
+    if (!canonicalized_bits._progress || canonicalized_bits.empty()) {
+      return {canonicalized_bits._present, canonicalized_bounds._result, canonicalized_bits._result};
     }
   }
 }
@@ -420,12 +433,12 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
   auto neg_type = canonicalize_constraints_simple({U(srange._lo), urange._hi}, _bits);
   auto pos_type = canonicalize_constraints_simple({urange._lo, U(srange._hi)}, _bits);
 
-  if (!neg_type._present && !pos_type._present) {
+  if (neg_type.empty() && pos_type.empty()) {
     return CanonicalizedTypeIntPrototype::make_empty();
-  } else if (!neg_type._present) {
+  } else if (neg_type.empty()) {
     return {true, {{S(pos_type._bounds._lo), S(pos_type._bounds._hi)},
                    pos_type._bounds, pos_type._bits}};
-  } else if (!pos_type._present) {
+  } else if (pos_type.empty()) {
     return {true, {{S(neg_type._bounds._lo), S(neg_type._bounds._hi)},
                    neg_type._bounds, neg_type._bits}};
   } else {
@@ -471,12 +484,12 @@ void TypeIntPrototype<S, U>::verify_constraints() const {
   } else {
     RangeInt<U> neg_range{U(_srange._lo), _urange._hi};
     auto neg_bits = adjust_bits_from_bounds(_bits, neg_range);
-    assert(neg_bits._is_result_consistent, "");
+    assert(neg_bits._present, "");
     assert(!adjust_bounds_from_bits(neg_range, neg_bits._result)._progress, "");
 
     RangeInt<U> pos_range{_urange._lo, U(_srange._hi)};
     auto pos_bits = adjust_bits_from_bounds(_bits, pos_range);
-    assert(pos_bits._is_result_consistent, "");
+    assert(pos_bits._present, "");
     assert(!adjust_bounds_from_bits(pos_range, pos_bits._result)._progress, "");
 
     assert((neg_bits._result._zeros & pos_bits._result._zeros) == _bits._zeros &&
@@ -491,7 +504,7 @@ template class TypeIntPrototype<jlong, julong>;
 // Compute the meet of 2 types, when dual is true, we are actually computing the
 // join.
 template <class CT, class S, class U>
-const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(const TypeIntPrototype<S, U>&, int, bool), bool dual) {
+const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2, make_type_t<S, U> make, bool dual) {
   // Perform a fast test for common case; meeting the same types together.
   if (i1 == t2 || t2 == Type::TOP) {
     return i1;
