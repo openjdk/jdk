@@ -2211,6 +2211,19 @@ bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
+// Return true if Vector::rearrange needs preparation of the shuffle argument
+bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
+  switch (elem_bt) {
+    case T_BYTE:  return false;
+    case T_SHORT: return !VM_Version::supports_avx512bw();
+    case T_INT:   return !VM_Version::supports_avx();
+    case T_LONG:  return vlen < 8 && !VM_Version::supports_avx512vl();
+    default:
+      ShouldNotReachHere();
+      return false;
+  }
+}
+
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp) {
   assert(Matcher::is_generic_vector(generic_opnd), "not generic");
   bool legacy = (generic_opnd->opcode() == LEGVEC);
@@ -2762,20 +2775,40 @@ void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
 }
 
 template <class T>
-static inline GrowableArray<jvalue>* vreplicate_imm(BasicType bt, T con, int len) {
-  GrowableArray<jvalue>* val = new GrowableArray<jvalue>(len);
-  jvalue ele;
-  switch (bt) {
-    case T_BYTE:   ele.b = con; break;
-    case T_SHORT:  ele.s = con; break;
-    case T_INT:    ele.i = con; break;
-    case T_LONG:   ele.j = con; break;
-    case T_FLOAT:  ele.f = con; break;
-    case T_DOUBLE: ele.d = con; break;
-    default: ShouldNotReachHere();
-  }
+static inline GrowableArray<jbyte>* vreplicate_imm(BasicType bt, T con, int len) {
+  int size = type2aelembytes(bt) * len;
+  GrowableArray<jbyte>* val = new GrowableArray<jbyte>(size, size, 0);
   for (int i = 0; i < len; i++) {
-    val->append(ele);
+    int offset = i * type2aelembytes(bt);
+    switch (bt) {
+      case T_BYTE: val->at(i) = con; break;
+      case T_SHORT: {
+        jshort c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jshort));
+        break;
+      }
+      case T_INT: {
+        jint c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jint));
+        break;
+      }
+      case T_LONG: {
+        jlong c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jlong));
+        break;
+      }
+      case T_FLOAT: {
+        jfloat c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jfloat));
+        break;
+      }
+      case T_DOUBLE: {
+        jdouble c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jdouble));
+        break;
+      }
+      default: assert(false, "%s", type2name(bt));
+    }
   }
   return val;
 }
@@ -4060,7 +4093,8 @@ instruct loadV(vec dst, memory mem) %{
   ins_cost(125);
   format %{ "load_vector $dst,$mem" %}
   ins_encode %{
-    __ load_vector($dst$$XMMRegister, $mem$$Address, Matcher::vector_length_in_bytes(this));
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ load_vector(bt, $dst$$XMMRegister, $mem$$Address, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4543,10 +4577,9 @@ instruct ReplI_imm(vec dst, immI con) %{
   match(Set dst (Replicate con));
   format %{ "replicateI $dst,$con" %}
   ins_encode %{
-    InternalAddress addr = $constantaddress(Matcher::vector_element_basic_type(this),
-        vreplicate_imm(Matcher::vector_element_basic_type(this), $con$$constant,
-            (VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 4 : 8) : 8) /
-                type2aelembytes(Matcher::vector_element_basic_type(this))));
+    InternalAddress addr = $constantaddress(vreplicate_imm(Matcher::vector_element_basic_type(this), $con$$constant,
+                                                           (VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 4 : 8) : 16) /
+                                                                   type2aelembytes(Matcher::vector_element_basic_type(this))));
     BasicType bt = Matcher::vector_element_basic_type(this);
     int vlen = Matcher::vector_length_in_bytes(this);
     __ load_constant_vector(bt, $dst$$XMMRegister, addr, vlen);
@@ -4684,7 +4717,7 @@ instruct ReplL_imm(vec dst, immL con) %{
   match(Set dst (Replicate con));
   format %{ "replicateL $dst,$con" %}
   ins_encode %{
-    InternalAddress addr = $constantaddress(T_LONG, vreplicate_imm(T_LONG, $con$$constant, 1));
+    InternalAddress addr = $constantaddress(vreplicate_imm(T_LONG, $con$$constant, VM_Version::supports_sse3() ? 1 : 2));
     int vlen = Matcher::vector_length_in_bytes(this);
     __ load_constant_vector(T_LONG, $dst$$XMMRegister, addr, vlen);
   %}
@@ -4766,8 +4799,8 @@ instruct ReplF_imm(vec dst, immF con) %{
   match(Set dst (Replicate con));
   format %{ "replicateF $dst,$con" %}
   ins_encode %{
-    InternalAddress addr = $constantaddress(T_FLOAT, vreplicate_imm(T_FLOAT, $con$$constant,
-        VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 1 : 2) : 2));
+    InternalAddress addr = $constantaddress(vreplicate_imm(T_FLOAT, $con$$constant,
+                                                           VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 1 : 2) : 4));
     int vlen = Matcher::vector_length_in_bytes(this);
     __ load_constant_vector(T_FLOAT, $dst$$XMMRegister, addr, vlen);
   %}
@@ -4843,7 +4876,7 @@ instruct ReplD_imm(vec dst, immD con) %{
   match(Set dst (Replicate con));
   format %{ "replicateD $dst,$con" %}
   ins_encode %{
-    InternalAddress addr = $constantaddress(T_DOUBLE, vreplicate_imm(T_DOUBLE, $con$$constant, 1));
+    InternalAddress addr = $constantaddress(vreplicate_imm(T_DOUBLE, $con$$constant, VM_Version::supports_sse3() ? 1 : 2));
     int vlen = Matcher::vector_length_in_bytes(this);
     __ load_constant_vector(T_DOUBLE, $dst$$XMMRegister, addr, vlen);
   %}
@@ -8840,17 +8873,6 @@ instruct VectorPopulateLIndex(vec dst, rRegL src1, immI_1 src2, vec vtmp) %{
 //-------------------------------- Rearrange ----------------------------------
 
 // LoadShuffle/Rearrange for Byte
-
-instruct loadShuffleB(vec dst) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE);
-  match(Set dst (VectorLoadShuffle dst));
-  format %{ "vector_load_shuffle $dst, $dst" %}
-  ins_encode %{
-    // empty
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct rearrangeB(vec dst, vec shuffle) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE &&
             Matcher::vector_length(n) < 32);
@@ -8917,7 +8939,7 @@ instruct rearrangeB_evex_vbmi(vec dst, vec src, vec shuffle) %{
 
 instruct loadShuffleS(vec dst, vec src, vec vtmp) %{
   predicate(Matcher::vector_element_basic_type(n) == T_SHORT &&
-            Matcher::vector_length(n) <= 16 && !VM_Version::supports_avx512bw()); // NB! aligned with rearrangeS
+            !VM_Version::supports_avx512bw());
   match(Set dst (VectorLoadShuffle src));
   effect(TEMP dst, TEMP vtmp);
   format %{ "vector_load_shuffle $dst, $src\t! using $vtmp as TEMP" %}
@@ -8928,7 +8950,7 @@ instruct loadShuffleS(vec dst, vec src, vec vtmp) %{
     if (UseAVX == 0) {
       assert(vlen_in_bytes <= 16, "required");
       // Multiply each shuffle by two to get byte index
-      __ pmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister);
+      __ movdqu($vtmp$$XMMRegister, $src$$XMMRegister);
       __ psllw($vtmp$$XMMRegister, 1);
 
       // Duplicate to create 2 copies of byte index
@@ -8943,8 +8965,7 @@ instruct loadShuffleS(vec dst, vec src, vec vtmp) %{
       assert(UseAVX > 1 || vlen_in_bytes <= 16, "required");
       int vlen_enc = vector_length_encoding(this);
       // Multiply each shuffle by two to get byte index
-      __ vpmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister, vlen_enc);
-      __ vpsllw($vtmp$$XMMRegister, $vtmp$$XMMRegister, 1, vlen_enc);
+      __ vpsllw($vtmp$$XMMRegister, $src$$XMMRegister, 1, vlen_enc);
 
       // Duplicate to create 2 copies of byte index
       __ vpsllw($dst$$XMMRegister, $vtmp$$XMMRegister,  8, vlen_enc);
@@ -8991,21 +9012,6 @@ instruct rearrangeS_avx(legVec dst, legVec src, vec shuffle, legVec vtmp1, legVe
   ins_pipe( pipe_slow );
 %}
 
-instruct loadShuffleS_evex(vec dst, vec src) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_SHORT &&
-            VM_Version::supports_avx512bw());
-  match(Set dst (VectorLoadShuffle src));
-  format %{ "vector_load_shuffle $dst, $src" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    if (!VM_Version::supports_avx512vl()) {
-      vlen_enc = Assembler::AVX_512bit;
-    }
-    __ vpmovzxbw($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct rearrangeS_evex(vec dst, vec src, vec shuffle) %{
   predicate(Matcher::vector_element_basic_type(n) == T_SHORT &&
             VM_Version::supports_avx512bw());
@@ -9036,7 +9042,7 @@ instruct loadShuffleI(vec dst, vec src, vec vtmp) %{
     // only byte shuffle instruction available on these platforms
 
     // Duplicate and multiply each shuffle by 4
-    __ pmovzxbd($vtmp$$XMMRegister, $src$$XMMRegister);
+    __ movdqu($vtmp$$XMMRegister, $src$$XMMRegister);
     __ pshuflw($vtmp$$XMMRegister, $vtmp$$XMMRegister, 0xA0);
     __ pshufhw($vtmp$$XMMRegister, $vtmp$$XMMRegister, 0xA0);
     __ psllw($vtmp$$XMMRegister, 2);
@@ -9061,18 +9067,6 @@ instruct rearrangeI(vec dst, vec shuffle) %{
   ins_encode %{
     assert(UseSSE >= 4, "required");
     __ pshufb($dst$$XMMRegister, $shuffle$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct loadShuffleI_avx(vec dst, vec src) %{
-  predicate((Matcher::vector_element_basic_type(n) == T_INT || Matcher::vector_element_basic_type(n) == T_FLOAT) &&
-            UseAVX > 0);
-  match(Set dst (VectorLoadShuffle src));
-  format %{ "vector_load_shuffle $dst, $src" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    __ vpmovzxbd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9106,8 +9100,7 @@ instruct loadShuffleL(vec dst, vec src, vec vtmp) %{
     // only double word shuffle instruction available on these platforms
 
     // Multiply each shuffle by two to get double word index
-    __ vpmovzxbq($vtmp$$XMMRegister, $src$$XMMRegister, vlen_enc);
-    __ vpsllq($vtmp$$XMMRegister, $vtmp$$XMMRegister, 1, vlen_enc);
+    __ vpsllq($vtmp$$XMMRegister, $src$$XMMRegister, 1, vlen_enc);
 
     // Duplicate each double word shuffle
     __ vpsllq($dst$$XMMRegister, $vtmp$$XMMRegister, 32, vlen_enc);
@@ -9129,20 +9122,6 @@ instruct rearrangeL(vec dst, vec src, vec shuffle) %{
 
     int vlen_enc = vector_length_encoding(this);
     __ vpermd($dst$$XMMRegister, $shuffle$$XMMRegister, $src$$XMMRegister, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct loadShuffleL_evex(vec dst, vec src) %{
-  predicate(is_double_word_type(Matcher::vector_element_basic_type(n)) && // T_LONG, T_DOUBLE
-            (Matcher::vector_length(n) == 8 || VM_Version::supports_avx512vl()));
-  match(Set dst (VectorLoadShuffle src));
-  format %{ "vector_load_shuffle $dst, $src" %}
-  ins_encode %{
-    assert(UseAVX > 2, "required");
-
-    int vlen_enc = vector_length_encoding(this);
-    __ vpmovzxbq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9755,7 +9734,7 @@ instruct vreverse_reg_gfni(vec dst, vec src, vec xtmp) %{
   ins_encode %{
     int vec_enc = vector_length_encoding(this);
     BasicType bt  = Matcher::vector_element_basic_type(this);
-    InternalAddress addr = $constantaddress(T_LONG, vreplicate_imm(T_LONG, 0x8040201008040201L, 1));
+    InternalAddress addr = $constantaddress(jlong(0x8040201008040201));
     __ vector_reverse_bit_gfni(bt, $dst$$XMMRegister, $src$$XMMRegister, addr, vec_enc,
                                $xtmp$$XMMRegister);
   %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,11 @@ void ClassFileParser::classfile_parse_error(const char* msg, TRAPS) const {
                      msg, _class_name->as_C_string());
 }
 
+// The caller is required/expected to have a ResourceMark in this case.
 void ClassFileParser::classfile_parse_error(const char* msg,
                                             int index,
                                             TRAPS) const {
   assert(_class_name != nullptr, "invariant");
-  ResourceMark rm(THREAD);
   Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_ClassFormatError(),
                      msg, index, _class_name->as_C_string());
 }
@@ -90,6 +90,12 @@ void ClassFileParser::classfile_icce_error(const char* msg,
   ResourceMark rm(THREAD);
   Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IncompatibleClassChangeError(),
                      msg, _class_name->as_klass_external_name(), k->external_name());
+}
+
+void ClassFileParser::classfile_icce_error(const char* msg,
+                                           TRAPS) const {
+  ResourceMark rm(THREAD);
+  Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IncompatibleClassChangeError(), msg);
 }
 
 void ClassFileParser::classfile_ucve_error(const char* msg,

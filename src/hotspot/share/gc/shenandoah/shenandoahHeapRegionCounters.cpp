@@ -147,10 +147,10 @@ static int encode_phase(ShenandoahHeap* heap) {
   if (heap->is_update_refs_in_progress() || heap->is_full_gc_move_in_progress()) {
     return 3;
   }
-  if (heap->is_concurrent_mark_in_progress() || heap->is_full_gc_in_progress()) {
+  if (heap->is_concurrent_mark_in_progress() || heap->is_concurrent_weak_root_in_progress() || heap->is_full_gc_in_progress()) {
     return 1;
   }
-  assert(heap->is_idle(), "What is it doing?");
+  assert(heap->is_idle(), "Unexpected gc_state: %d", heap->gc_state());
   return 0;
 }
 

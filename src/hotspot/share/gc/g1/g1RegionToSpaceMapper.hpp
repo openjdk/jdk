@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
+class ReservedSpace;
 class WorkerThreads;
 
 class G1MappingChangedListener {

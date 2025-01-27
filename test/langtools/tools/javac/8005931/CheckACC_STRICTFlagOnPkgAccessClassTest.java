@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
  * @test
  * @bug 8005931
  * @summary javac doesn't set ACC_STRICT for classes with package access
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @run main CheckACC_STRICTFlagOnPkgAccessClassTest
  */
 

@@ -64,10 +64,6 @@ inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
   return _heap->get_region(new_index - 1);
 }
 
-inline bool ShenandoahHeap::has_forwarded_objects() const {
-  return _gc_state.is_set(HAS_FORWARDED);
-}
-
 inline WorkerThreads* ShenandoahHeap::workers() const {
   return _workers;
 }
@@ -332,6 +328,11 @@ void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
 uint ShenandoahHeap::get_object_age(oop obj) {
   markWord w = obj->mark();
   assert(!w.is_marked(), "must not be forwarded");
+  if (UseObjectMonitorTable) {
+    assert(LockingMode == LM_LIGHTWEIGHT, "Must use LW locking, too");
+    assert(w.age() <= markWord::max_age, "Impossible!");
+    return w.age();
+  }
   if (w.has_monitor()) {
     w = w.monitor()->header();
   } else if (w.is_being_inflated() || w.has_displaced_mark_helper()) {
@@ -366,7 +367,7 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
   // No flickering!
   assert(gen == active_generation(), "Race?");
 
-  switch (_affiliations[index]) {
+  switch (region_affiliation(index)) {
   case ShenandoahAffiliation::FREE:
     // Free regions are in old, young, and global collections
     return true;
@@ -377,25 +378,25 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
     // Old regions are in old and global collections, not in young collections
     return !gen->is_young();
   default:
-    assert(false, "Bad affiliation (%d) for region " SIZE_FORMAT, _affiliations[index], index);
+    assert(false, "Bad affiliation (%d) for region " SIZE_FORMAT, region_affiliation(index), index);
     return false;
   }
 }
 
 inline bool ShenandoahHeap::is_in_young(const void* p) const {
-  return is_in_reserved(p) && (_affiliations[heap_region_index_containing(p)] == ShenandoahAffiliation::YOUNG_GENERATION);
+  return is_in_reserved(p) && (region_affiliation(heap_region_index_containing(p)) == ShenandoahAffiliation::YOUNG_GENERATION);
 }
 
 inline bool ShenandoahHeap::is_in_old(const void* p) const {
-  return is_in_reserved(p) && (_affiliations[heap_region_index_containing(p)] == ShenandoahAffiliation::OLD_GENERATION);
+  return is_in_reserved(p) && (region_affiliation(heap_region_index_containing(p)) == ShenandoahAffiliation::OLD_GENERATION);
 }
 
 inline bool ShenandoahHeap::is_in_old_during_young_collection(oop obj) const {
   return active_generation()->is_young() && is_in_old(obj);
 }
 
-inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(const ShenandoahHeapRegion *r) {
-  return (ShenandoahAffiliation) _affiliations[r->index()];
+inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(const ShenandoahHeapRegion *r) const {
+  return region_affiliation(r->index());
 }
 
 inline void ShenandoahHeap::assert_lock_for_affiliation(ShenandoahAffiliation orig_affiliation,
@@ -414,7 +415,7 @@ inline void ShenandoahHeap::assert_lock_for_affiliation(ShenandoahAffiliation or
   //
   // Note: during full GC, all transitions between states are possible.  During Full GC, we should be in a safepoint.
 
-  if ((orig_affiliation == ShenandoahAffiliation::FREE) || (new_affiliation == ShenandoahAffiliation::FREE)) {
+  if (orig_affiliation == ShenandoahAffiliation::FREE) {
     shenandoah_assert_heaplocked_or_safepoint();
   }
 }
@@ -423,11 +424,11 @@ inline void ShenandoahHeap::set_affiliation(ShenandoahHeapRegion* r, ShenandoahA
 #ifdef ASSERT
   assert_lock_for_affiliation(region_affiliation(r), new_affiliation);
 #endif
-  _affiliations[r->index()] = (uint8_t) new_affiliation;
+  Atomic::store(_affiliations + r->index(), (uint8_t) new_affiliation);
 }
 
-inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(size_t index) {
-  return (ShenandoahAffiliation) _affiliations[index];
+inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(size_t index) const {
+  return (ShenandoahAffiliation) Atomic::load(_affiliations + index);
 }
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {
@@ -445,28 +446,36 @@ inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
   return collection_set()->is_in_loc(p);
 }
 
-inline bool ShenandoahHeap::is_stable() const {
-  return _gc_state.is_clear();
+inline bool ShenandoahHeap::is_idle() const {
+  return _gc_state_changed ? _gc_state.is_clear() : ShenandoahThreadLocalData::gc_state(Thread::current()) == 0;
 }
 
-inline bool ShenandoahHeap::is_idle() const {
-  return _gc_state.is_unset(MARKING | EVACUATION | UPDATEREFS);
+inline bool ShenandoahHeap::has_forwarded_objects() const {
+  return is_gc_state(HAS_FORWARDED);
 }
 
 inline bool ShenandoahHeap::is_concurrent_mark_in_progress() const {
-  return _gc_state.is_set(MARKING);
+  return is_gc_state(MARKING);
 }
 
 inline bool ShenandoahHeap::is_concurrent_young_mark_in_progress() const {
-  return _gc_state.is_set(YOUNG_MARKING);
+  return is_gc_state(YOUNG_MARKING);
 }
 
 inline bool ShenandoahHeap::is_concurrent_old_mark_in_progress() const {
-  return _gc_state.is_set(OLD_MARKING);
+  return is_gc_state(OLD_MARKING);
 }
 
 inline bool ShenandoahHeap::is_evacuation_in_progress() const {
-  return _gc_state.is_set(EVACUATION);
+  return is_gc_state(EVACUATION);
+}
+
+inline bool ShenandoahHeap::is_update_refs_in_progress() const {
+  return is_gc_state(UPDATEREFS);
+}
+
+inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
+  return is_gc_state(WEAK_ROOTS);
 }
 
 inline bool ShenandoahHeap::is_degenerated_gc_in_progress() const {
@@ -481,20 +490,12 @@ inline bool ShenandoahHeap::is_full_gc_move_in_progress() const {
   return _full_gc_move_in_progress.is_set();
 }
 
-inline bool ShenandoahHeap::is_update_refs_in_progress() const {
-  return _gc_state.is_set(UPDATEREFS);
-}
-
 inline bool ShenandoahHeap::is_stw_gc_in_progress() const {
   return is_full_gc_in_progress() || is_degenerated_gc_in_progress();
 }
 
 inline bool ShenandoahHeap::is_concurrent_strong_root_in_progress() const {
   return _concurrent_strong_root_in_progress.is_set();
-}
-
-inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
-  return _gc_state.is_set(WEAK_ROOTS);
 }
 
 template<class T>

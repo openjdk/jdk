@@ -277,18 +277,20 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
-
-  if (is_power_of_2(c - 1)) {
-    __ shift_left(left, exact_log2(c - 1), tmp);
+  juint u_value = (juint)c;
+  if (is_power_of_2(u_value - 1)) {
+    __ shift_left(left, exact_log2(u_value - 1), tmp);
     __ add(tmp, left, result);
     return true;
-  } else if (is_power_of_2(c + 1)) {
-    __ shift_left(left, exact_log2(c + 1), tmp);
+  } else if (is_power_of_2(u_value + 1)) {
+    __ shift_left(left, exact_log2(u_value + 1), tmp);
     __ sub(tmp, left, result);
     return true;
-  } else {
-    return false;
+  } else if (c == -1) {
+    __ negate(left, result);
+    return true;
   }
+  return false;
 }
 
 void LIRGenerator::store_stack_parameter (LIR_Opr item, ByteSize offset_from_sp) {
@@ -777,13 +779,11 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
         }
         case vmIntrinsics::_floatToFloat16: {
           LIR_Opr tmp = new_register(T_FLOAT);
-          __ move(LIR_OprFact::floatConst(-0.0), tmp);
           __ f2hf(src, dst, tmp);
           break;
         }
         case vmIntrinsics::_float16ToFloat: {
           LIR_Opr tmp = new_register(T_FLOAT);
-          __ move(LIR_OprFact::floatConst(-0.0), tmp);
           __ hf2f(src, dst, tmp);
           break;
         }

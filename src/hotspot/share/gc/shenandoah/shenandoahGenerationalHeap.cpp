@@ -180,8 +180,8 @@ void ShenandoahGenerationalHeap::gc_threads_do(ThreadClosure* tcl) const {
 }
 
 void ShenandoahGenerationalHeap::stop() {
-  regulator_thread()->stop();
   ShenandoahHeap::stop();
+  regulator_thread()->stop();
 }
 
 void ShenandoahGenerationalHeap::evacuate_collection_set(bool concurrent) {

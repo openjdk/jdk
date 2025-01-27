@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,8 +123,8 @@ JVMFlag::Error G1MaxNewSizePercentConstraintFunc(uint value, bool verbose) {
 JVMFlag::Error MaxGCPauseMillisConstraintFuncG1(uintx value, bool verbose) {
   if (UseG1GC && FLAG_IS_CMDLINE(MaxGCPauseMillis) && (value >= GCPauseIntervalMillis)) {
     JVMFlag::printError(verbose,
-                        "MaxGCPauseMillis (" UINTX_FORMAT ") must be "
-                        "less than GCPauseIntervalMillis (" UINTX_FORMAT ")\n",
+                        "MaxGCPauseMillis (%zu) must be "
+                        "less than GCPauseIntervalMillis (%zu)\n",
                         value, GCPauseIntervalMillis);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -137,7 +137,7 @@ JVMFlag::Error GCPauseIntervalMillisConstraintFuncG1(uintx value, bool verbose) 
     if (FLAG_IS_CMDLINE(GCPauseIntervalMillis)) {
       if (value < 1) {
         JVMFlag::printError(verbose,
-                            "GCPauseIntervalMillis (" UINTX_FORMAT ") must be "
+                            "GCPauseIntervalMillis (%zu) must be "
                             "greater than or equal to 1\n",
                             value);
         return JVMFlag::VIOLATES_CONSTRAINT;
@@ -152,8 +152,8 @@ JVMFlag::Error GCPauseIntervalMillisConstraintFuncG1(uintx value, bool verbose) 
 
       if (value <= MaxGCPauseMillis) {
         JVMFlag::printError(verbose,
-                            "GCPauseIntervalMillis (" UINTX_FORMAT ") must be "
-                            "greater than MaxGCPauseMillis (" UINTX_FORMAT ")\n",
+                            "GCPauseIntervalMillis (%zu) must be "
+                            "greater than MaxGCPauseMillis (%zu)\n",
                             value, MaxGCPauseMillis);
         return JVMFlag::VIOLATES_CONSTRAINT;
       }

@@ -99,7 +99,8 @@ tier4 = \
     / \
    -:tier1 \
    -:tier2 \
-   -:tier3
+   -:tier3 \
+   :jdk_foreign_stress
 
 ###############################################################################
 #
@@ -385,6 +386,10 @@ jdk_foreign = \
     -java/foreign/TestMatrix.java \
     -java/foreign/TestUpcallStress.java
 
+jdk_foreign_stress = \
+    java/foreign/TestMatrix.java \
+    java/foreign/TestUpcallStress.java
+
 jdk_vector = \
     jdk/incubator/vector
 
@@ -620,7 +625,7 @@ jdk_core_manual_no_input = \
     java/util/Vector/Bug8148174.java \
     com/sun/net/httpserver/simpleserver/CommandLinePortNotSpecifiedTest.java \
     com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java \
-    javax/xml/jaxp/datatype/8033980/GregorianCalAndDurSerDataUtil.java
+    javax/xml/jaxp/datatype/8033980/GregorianCalAndDurSerDataUtil.java 
 
 jdk_security_manual_no_input = \
     :jdk_security_infra \

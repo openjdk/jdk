@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ VerifyLocalVariableTableOnRetransformTest
     private String  fTargetClassName = "DummyClassWithLVT";
     private String  classFileName = fTargetClassName + ".class";
     private boolean fTargetClassSeen;
+    private Throwable transformerException;
 
     /**
      * Constructor for VerifyLocalVariableTableOnRetransformTest.
@@ -109,9 +110,11 @@ VerifyLocalVariableTableOnRetransformTest
         // make an instance to prove the class was really loaded
         Object testInstance = target.newInstance();
 
-        // With this call here, we will see the target class once:
-        // when it gets retransformed.
-        //addTransformerToManager(fInst, new MyObserver(), true);
+        // check for unexpected errors (see JDK-8311534)
+        if (transformerException != null) {
+            transformerException.printStackTrace();
+            throw new RuntimeException("Error in transformer" + transformerException);
+        }
 
         assertTrue(fTargetClassName + " was not seen by transform()",
             fTargetClassSeen);
@@ -247,8 +250,20 @@ VerifyLocalVariableTableOnRetransformTest
             ProtectionDomain    protectionDomain,
             byte[] classfileBuffer) {
 
-            System.out.println(this + ".transform() sees '" + className
-                + "' of " + classfileBuffer.length + " bytes.");
+            // String concatenation can cause LinkageError or ClassCircularityError (see JDK-8311534).
+            // Need to log it for analysis.
+            try {
+                System.out.println(this + ".transform() sees '" + className
+                    + "' of " + classfileBuffer.length + " bytes.");
+            } catch (Throwable t) {
+                // Try to log. Save the error for handling by main thread if the logging fails.
+                try {
+                    t.printStackTrace();
+                } catch (Throwable t1) {
+                    transformerException = t;
+                }
+                return null;
+            }
             if (className.equals(fTargetClassName)) {
                 fTargetClassSeen = true;
 

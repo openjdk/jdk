@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -57,7 +57,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author John Howard (johnh@schemasoft.com)
- * @LastModified: Jan 2022
+ * @LastModified: Dec 2024
  */
 public final class XSLTC {
 
@@ -289,6 +289,10 @@ public final class XSLTC {
         if (_isSecureProcessing && clazz != null && !_externalExtensionFunctions.containsKey(name)) {
             _externalExtensionFunctions.put(name, clazz);
         }
+    }
+
+    boolean hasExtensionClassLoader() {
+        return _extensionClassLoader != null;
     }
 
     /*

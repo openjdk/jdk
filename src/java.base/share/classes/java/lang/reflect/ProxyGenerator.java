@@ -103,7 +103,6 @@ final class ProxyGenerator {
     /**
      * debugging flag for saving generated class files
      */
-    @SuppressWarnings("removal")
     private static final boolean SAVE_GENERATED_FILES =
             Boolean.getBoolean("jdk.proxy.ProxyGenerator.saveGeneratedFiles");
 
