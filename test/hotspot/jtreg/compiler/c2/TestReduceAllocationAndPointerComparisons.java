@@ -30,7 +30,7 @@
  *                   -XX:CompileCommand=dontinline,*TestReduceAllocationAndPointerComparisons*::*
  *                   -XX:-TieredCompilation -Xcomp -server
  *                   compiler.c2.TestReduceAllocationAndPointerComparisons
- * @run main/othervm compiler.c2.TestReduceAllocationAndPointerComparisons
+ * @run main compiler.c2.TestReduceAllocationAndPointerComparisons
  */
 
 package compiler.c2;

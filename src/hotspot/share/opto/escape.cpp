@@ -985,7 +985,7 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
   BoolTest::mask mask = cmp->unique_out()->as_Bool()->_test._test;
 
   // This Phi will merge the result of the Cmps split through the Phi
-  Node* res_phi  = _igvn->transform(PhiNode::make(ophi->in(0), zero, TypeInt::INT));
+  Node* res_phi = PhiNode::make(ophi->in(0), zero, TypeInt::INT);
 
   for (uint i=1; i<ophi->req(); i++) {
     Node* ophi_input = ophi->in(i);
@@ -1011,7 +1011,7 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
   }
 
   // This CMP always compares whether the output of "res_phi" is TRUE as far as the "mask".
-  Node* new_cmp = _igvn->transform(new CmpINode(res_phi, (mask == BoolTest::mask::eq) ? one : zero));
+  Node* new_cmp = _igvn->transform(new CmpINode(_igvn->transform(res_phi), (mask == BoolTest::mask::eq) ? one : zero));
   _igvn->replace_node(cmp, new_cmp);
 }
 
