@@ -254,9 +254,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
                  byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                  byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
-    _previous_trigger_declinations = _declined_trigger_count;
-    _declined_trigger_count = 0;
-    _start_gc_is_pending = true;
+    accept_trigger_with_type(OTHER);
     return true;
   }
 
@@ -269,9 +267,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                    _gc_times_learned + 1, max_learn,
                    byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                    byte_size_in_proper_unit(init_threshold), proper_unit_for_byte_size(init_threshold));
-      _previous_trigger_declinations = _declined_trigger_count;
-      _declined_trigger_count = 0;
-      _start_gc_is_pending = true;
+      accept_trigger_with_type(OTHER);
       return true;
     }
   }
@@ -303,10 +299,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                        byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
                        byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties),
                        byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom));
-    _last_trigger = RATE;
-    _previous_trigger_declinations = _declined_trigger_count;
-    _declined_trigger_count = 0;
-    _start_gc_is_pending = true;
+    accept_trigger_with_type(RATE);
     return true;
   }
 
@@ -317,10 +310,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                  byte_size_in_proper_unit(rate), proper_unit_for_byte_size(rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  _spike_threshold_sd);
-    _last_trigger = SPIKE;
-    _previous_trigger_declinations = _declined_trigger_count;
-    _declined_trigger_count = 0;
-    _start_gc_is_pending = true;
+    accept_trigger_with_type(SPIKE);
     return true;
   }
 
