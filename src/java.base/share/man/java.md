@@ -4032,7 +4032,7 @@ The deployment of the AOTCache is divided into three phases:
 
 -   **Assembly:** We use the AOT Configuration file to produce an AOTCache.
 
--   **Production:** We execut the application with the AOTCache for better
+-   **Production:** We execute the application with the AOTCache for better
     start-up and warm-up performance.
 
 The AOTCache can be used with the following command-line options:
