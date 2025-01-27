@@ -958,37 +958,34 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   // Now create the space.
   ReservedHeapSpace rhs = HeapReserver::reserve(total_reserved, alignment, page_size, AllocateHeapAt);
 
-  if (rhs.is_reserved()) {
-    assert(total_reserved == rhs.size(),    "must be exactly of required size");
-    assert(is_aligned(rhs.base(),alignment),"must be exactly of required alignment");
-
-    assert(markWord::encode_pointer_as_mark(rhs.base()).decode_pointer() == rhs.base(),
-           "area must be distinguishable from marks for mark-sweep");
-    assert(markWord::encode_pointer_as_mark(&rhs.base()[rhs.size()]).decode_pointer() ==
-           &rhs.base()[rhs.size()],
-           "area must be distinguishable from marks for mark-sweep");
-
-    // We are good.
-
-    if (AllocateHeapAt != nullptr) {
-      log_info(gc,heap)("Successfully allocated Java heap at location %s", AllocateHeapAt);
-    }
-
-    if (UseCompressedOops) {
-      CompressedOops::initialize(rhs);
-    }
-
-    Universe::calculate_verify_data((HeapWord*)rhs.base(), (HeapWord*)rhs.end());
-
-    return rhs;
+  if (!rhs.is_reserved()) {
+    vm_exit_during_initialization(
+      err_msg("Could not reserve enough space for %zu KB object heap",
+              total_reserved/K));
   }
 
-  vm_exit_during_initialization(
-    err_msg("Could not reserve enough space for %zuKB object heap",
-            total_reserved/K));
+  assert(total_reserved == rhs.size(),    "must be exactly of required size");
+  assert(is_aligned(rhs.base(),alignment),"must be exactly of required alignment");
 
-  // satisfy compiler
-  ShouldNotReachHere();
+  assert(markWord::encode_pointer_as_mark(rhs.base()).decode_pointer() == rhs.base(),
+      "area must be distinguishable from marks for mark-sweep");
+  assert(markWord::encode_pointer_as_mark(&rhs.base()[rhs.size()]).decode_pointer() ==
+      &rhs.base()[rhs.size()],
+      "area must be distinguishable from marks for mark-sweep");
+
+  // We are good.
+
+  if (AllocateHeapAt != nullptr) {
+    log_info(gc,heap)("Successfully allocated Java heap at location %s", AllocateHeapAt);
+  }
+
+  if (UseCompressedOops) {
+    CompressedOops::initialize(rhs);
+  }
+
+  Universe::calculate_verify_data((HeapWord*)rhs.base(), (HeapWord*)rhs.end());
+
+  return rhs;
 }
 
 OopStorage* Universe::vm_weak() {

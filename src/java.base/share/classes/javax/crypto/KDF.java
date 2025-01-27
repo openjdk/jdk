@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,6 +222,7 @@ public final class KDF {
      *         Java Security Standard Algorithm Names Specification</a> for
      *         information about standard KDF algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
@@ -256,6 +257,7 @@ public final class KDF {
      * @param provider
      *         the provider to use for this key derivation
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
@@ -291,6 +293,7 @@ public final class KDF {
      * @param provider
      *         the provider to use for this key derivation
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
@@ -332,6 +335,7 @@ public final class KDF {
      *         the {@code KDFParameters} used to configure the derivation
      *         algorithm or {@code null} if no parameters are provided
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
@@ -375,6 +379,7 @@ public final class KDF {
      * @param provider
      *         the provider to use for this key derivation
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
@@ -428,6 +433,7 @@ public final class KDF {
      * @param provider
      *         the provider to use for this key derivation
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
