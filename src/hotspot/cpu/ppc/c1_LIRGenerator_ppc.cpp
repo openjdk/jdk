@@ -1109,11 +1109,6 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
                x->profiled_method(), x->profiled_bci());
 }
 
-// Intrinsic for Class::isInstance
-address LIRGenerator::isInstance_entry() {
-  return CAST_FROM_FN_PTR(address, Runtime1::is_instance_of);
-}
-
 
 void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   LIRItem obj(x->obj(), this);
@@ -1132,6 +1127,11 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   __ instanceof(out_reg, obj.result(), x->klass(), tmp1, tmp2, tmp3,
                 x->direct_compare(), patching_info,
                 x->profiled_method(), x->profiled_bci());
+}
+
+// Intrinsic for Class::isInstance
+address LIRGenerator::isInstance_entry() {
+  return CAST_FROM_FN_PTR(address, Runtime1::is_instance_of);
 }
 
 
