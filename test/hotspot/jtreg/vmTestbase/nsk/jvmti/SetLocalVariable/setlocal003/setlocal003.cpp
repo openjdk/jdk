@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
     jlocation loc;
     jint entryCount;
     jvmtiLocalVariableEntry *table;
+    bool is_virtual = env->IsVirtualThread(thr);
     int i;
 
     err = jvmti_env->GetFrameLocation(thr, 1, &mid, &loc);
@@ -74,45 +75,45 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
         if (strcmp(table[i].name, "o") == 0) {
             err = jvmti_env->SetLocalObject(thr, 1,
                 INV_SLOT, (jobject)thr);
-            if (err != JVMTI_ERROR_INVALID_SLOT) {
+            if (err != JVMTI_ERROR_INVALID_SLOT && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
                 printf("(%s) ", table[i].name);
-                printf("Error expected: JVMTI_ERROR_INVALID_SLOT,\n");
+                printf("Error expected: JVMTI_ERROR_INVALID_SLOT or JVMTI_ERROR_OPAQUE_FRAME,\n");
                 printf("\t    actual: %s (%d)\n", TranslateError(err), err);
                 result = STATUS_FAILED;
             }
         } else if (strcmp(table[i].name, "i") == 0) {
             err = jvmti_env->SetLocalInt(thr, 1,
                 INV_SLOT, (jint)0);
-            if (err != JVMTI_ERROR_INVALID_SLOT) {
+            if (err != JVMTI_ERROR_INVALID_SLOT && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
                 printf("(%s) ", table[i].name);
-                printf("Error expected: JVMTI_ERROR_INVALID_SLOT,\n");
+                printf("Error expected: JVMTI_ERROR_INVALID_SLOT or JVMTI_ERROR_OPAQUE_FRAME,\n");
                 printf("\t    actual: %s (%d)\n", TranslateError(err), err);
                 result = STATUS_FAILED;
             }
         } else if (strcmp(table[i].name, "l") == 0) {
             err = jvmti_env->SetLocalLong(thr, 1,
                 INV_SLOT, (jlong)0);
-            if (err != JVMTI_ERROR_INVALID_SLOT) {
+            if (err != JVMTI_ERROR_INVALID_SLOT && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
                 printf("(%s) ", table[i].name);
-                printf("Error expected: JVMTI_ERROR_INVALID_SLOT,\n");
+                printf("Error expected: JVMTI_ERROR_INVALID_SLOT or JVMTI_ERROR_OPAQUE_FRAME,\n");
                 printf("\t    actual: %s (%d)\n", TranslateError(err), err);
                 result = STATUS_FAILED;
             }
         } else if (strcmp(table[i].name, "f") == 0) {
             err = jvmti_env->SetLocalFloat(thr, 1,
                 INV_SLOT, (jfloat)0);
-            if (err != JVMTI_ERROR_INVALID_SLOT) {
+            if (err != JVMTI_ERROR_INVALID_SLOT && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
                 printf("(%s) ", table[i].name);
-                printf("Error expected: JVMTI_ERROR_INVALID_SLOT,\n");
+                printf("Error expected: JVMTI_ERROR_INVALID_SLOT or JVMTI_ERROR_OPAQUE_FRAME,\n");
                 printf("\t    actual: %s (%d)\n", TranslateError(err), err);
                 result = STATUS_FAILED;
             }
         } else if (strcmp(table[i].name, "d") == 0) {
             err = jvmti_env->SetLocalDouble(thr, 1,
                 INV_SLOT, (jdouble)0);
-            if (err != JVMTI_ERROR_INVALID_SLOT) {
+            if (err != JVMTI_ERROR_INVALID_SLOT && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
                 printf("(%s) ", table[i].name);
-                printf("Error expected: JVMTI_ERROR_INVALID_SLOT,\n");
+                printf("Error expected: JVMTI_ERROR_INVALID_SLOT or JVMTI_ERROR_OPAQUE_FRAME,\n");
                 printf("\t    actual: %s (%d)\n", TranslateError(err), err);
                 result = STATUS_FAILED;
             }
