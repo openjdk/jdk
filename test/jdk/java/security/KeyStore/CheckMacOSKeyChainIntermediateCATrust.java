@@ -196,7 +196,7 @@ public class CheckMacOSKeyChainIntermediateCATrust {
         if (!expected) {
             String errMessage = message;
             if (verbose) {
-                errMessage += ", subjects: " + getSubjects(certificates);
+                errMessage += ", subjects: " + String.join(" | ", getSubjects(certificates));
             }
             throw new AssertionError(errMessage);
         }
