@@ -87,7 +87,7 @@ class TestTarg {
     }
 
     private static boolean isCompiled() {
-        return  WB.isMethodCompiled(busyWorkMethod, true) || WB.isMethodCompiled(busyWorkMethod, false);
+        return WB.isMethodCompiled(busyWorkMethod, true) || WB.isMethodCompiled(busyWorkMethod, false);
     }
 
     private static void deoptimizeMethod() {
@@ -136,7 +136,7 @@ public class SingleStepCompilationTest extends TestScaffold {
         super(args);
     }
 
-    public static void main(String[] args)   throws Exception {
+    public static void main(String[] args) throws Exception {
         /*
          * We need to pass some extra args to the debuggee for WhiteBox support and
          * for more consistent compilation behavior.
@@ -211,7 +211,7 @@ public class SingleStepCompilationTest extends TestScaffold {
 
         try {
             addListener(this);
-        } catch (Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
             failure("failure: Could not add listener");
             throw new RuntimeException("SingleStepCompilationTest: failed", ex);
