@@ -3539,7 +3539,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (signum < 0)
                 buf.append('-');
             buf.append(intString)
-                    .insert(insertionPoint + (signum < 0 ? 1 : 0), '.');
+               .insert(insertionPoint + (signum < 0 ? 1 : 0), '.');
         } else { /* We must insert zeros between point and intVal */
             int len = (signum < 0 ? 3 : 2) + scale;
             if (len < 0) {
