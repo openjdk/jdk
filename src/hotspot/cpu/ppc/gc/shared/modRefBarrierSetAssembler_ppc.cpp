@@ -80,8 +80,8 @@ void ModRefBarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register v
                                                 Register tmp1, Register tmp2,
                                                 MacroAssembler::PreservationLevel preservation_level) {
   Label done;
-  __ cmpdi(CCR0, value, 0);
-  __ beq(CCR0, done);         // Use null as-is.
+  __ cmpdi(CR0, value, 0);
+  __ beq(CR0, done);         // Use null as-is.
 
   __ clrrdi(tmp1, value, JNIHandles::tag_size);
   __ ld(value, 0, tmp1);      // Resolve (untagged) jobject.

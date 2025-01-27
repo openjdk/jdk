@@ -103,9 +103,9 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   Label do_null;
   if (do_null_check) {
     __ ld(R0, locals_j_arg_at(offset()));
-    __ cmpdi(CCR0, R0, 0);
+    __ cmpdi(CR0, R0, 0);
     __ li(r, 0);
-    __ beq(CCR0, do_null);
+    __ beq(CR0, do_null);
   }
   __ addir(r, locals_j_arg_at(offset()));
   __ bind(do_null);

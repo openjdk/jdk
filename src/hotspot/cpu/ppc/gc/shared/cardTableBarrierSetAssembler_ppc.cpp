@@ -49,7 +49,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   Label Lskip_loop, Lstore_loop;
 
   __ sldi_(count, count, LogBytesPerHeapOop);
-  __ beq(CCR0, Lskip_loop); // zero length
+  __ beq(CR0, Lskip_loop); // zero length
   __ addi(count, count, -BytesPerHeapOop);
   __ add(count, addr, count);
   // Use two shifts to clear out those low order two bits! (Cannot opt. into 1.)
