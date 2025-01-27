@@ -158,7 +158,7 @@ public class ActionCommand {
             }
         });
 
-        robot.mouseMove(0, 0);
+        robot.mouseMove(100, 0);
         robot.waitForIdle();
         robot.mouseMove(iconPosition.x, iconPosition.y);
         robot.waitForIdle();
