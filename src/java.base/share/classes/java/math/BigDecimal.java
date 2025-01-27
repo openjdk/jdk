@@ -4228,7 +4228,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             buf.append(coeff.charAt(0)); // first character
             if (coeffLen > 1) {          // more to come
                 buf.append('.')
-                        .append(coeff, 1, coeffLen);
+                   .append(coeff, 1, coeffLen);
             }
         } else {                         // Engineering notation
             int sig = (int)(adjusted % 3);
