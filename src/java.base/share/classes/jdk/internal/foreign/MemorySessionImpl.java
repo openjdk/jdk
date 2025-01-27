@@ -260,6 +260,10 @@ public abstract sealed class MemorySessionImpl
             cleanup(); // cleaner interop
         }
 
+        static void cleanup(ResourceCleanup first) {
+            cleanup(first, null);
+        }
+
         static void cleanup(ResourceCleanup first, RuntimeException pendingException) {
             ResourceCleanup current = first;
             while (current != null) {

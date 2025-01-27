@@ -86,6 +86,9 @@ final class ConfinedSession extends MemorySessionImpl {
      * A confined resource list; no races are possible here.
      */
     static final class ConfinedResourceList extends ResourceList {
+        // The first element of the list is pulled into a separate field
+        // which helps escape analysis keep track of the instance, allowing
+        // it to be scalar replaced.
         ResourceCleanup cache;
 
         @Override

@@ -140,7 +140,7 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
                         break;
                     }
                 }
-                cleanup(prev, null);
+                cleanup(prev);
             } else {
                 throw alreadyClosed();
             }
