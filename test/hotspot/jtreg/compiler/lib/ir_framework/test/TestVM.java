@@ -885,7 +885,12 @@ public class TestVM {
 
         // Print execution times
         if (VERBOSE || PRINT_TIMES) {
-            System.out.println(System.lineSeparator() + System.lineSeparator() + "Test execution times:");
+            // Here we are in the test VM, which was spawned by the main jtreg VM. the stdout of the test VM is hidden
+            // unless the Verbose or ReportStdout flag are used. TestFrameworkSocket is used by the parent jtreg
+            // VM and the test VM to communicate. By sending the prints through the TestFrameworkSocket with the
+            // parameter stdout set to true, the parent VM will print the received messages to its stdout, making it
+            // visible to the user.
+            TestFrameworkSocket.write("Test execution times:", PRINT_TIMES_TAG, true);
             for (Map.Entry<Long, String> entry : durations.entrySet()) {
                 TestFrameworkSocket.write(String.format("%-25s%15d ns%n", entry.getValue() + ":", entry.getKey()),
                         PRINT_TIMES_TAG, true);
