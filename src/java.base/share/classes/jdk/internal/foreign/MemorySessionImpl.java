@@ -260,11 +260,7 @@ public abstract sealed class MemorySessionImpl
             cleanup(); // cleaner interop
         }
 
-        static void cleanup(ResourceCleanup first, ResourceCleanup cache) {
-            RuntimeException pendingException = null;
-            if (cache != null) {
-                pendingException = cleanupSingle(cache, pendingException);
-            }
+        static void cleanup(ResourceCleanup first, RuntimeException pendingException) {
             ResourceCleanup current = first;
             while (current != null) {
                 pendingException = cleanupSingle(current, pendingException);
@@ -275,7 +271,7 @@ public abstract sealed class MemorySessionImpl
             }
         }
 
-        private static RuntimeException cleanupSingle(ResourceCleanup resource, RuntimeException pendingException) {
+        static RuntimeException cleanupSingle(ResourceCleanup resource, RuntimeException pendingException) {
             try {
                 resource.cleanup();
             } catch (RuntimeException ex) {

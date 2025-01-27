@@ -107,7 +107,11 @@ final class ConfinedSession extends MemorySessionImpl {
             if (fst != ResourceCleanup.CLOSED_LIST) {
                 ResourceCleanup prev = fst;
                 fst = ResourceCleanup.CLOSED_LIST;
-                cleanup(prev, cache);
+                RuntimeException pendingException = null;
+                if (cache != null) {
+                    pendingException = cleanupSingle(cache, pendingException);
+                }
+                cleanup(prev, pendingException);
             } else {
                 throw alreadyClosed();
             }
