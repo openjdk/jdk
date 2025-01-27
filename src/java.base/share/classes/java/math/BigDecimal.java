@@ -4257,21 +4257,23 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     private static String scale2(long intCompact) {
-        byte[] buf;
-        long highInt = intCompact / 100;
-        int highIntSize;
-        int highInt32 = (int) highInt;
-        if (highInt32 == highInt) {
-            highIntSize = DecimalDigits.stringSize(highInt32);
-            buf = new byte[highIntSize + 3];
-            DecimalDigits.getCharsLatin1(highInt32, highIntSize, buf);
-        } else {
-            highIntSize = DecimalDigits.stringSize(highInt);
-            buf = new byte[highIntSize + 3];
-            DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
+        boolean negative = intCompact < 0;
+        if (negative) {
+            intCompact = -intCompact;
         }
+        int lowInt = (int) (intCompact % 100);
+        long highInt = intCompact / 100;
+        int highIntSize = DecimalDigits.stringSize(highInt);
+        if (negative) {
+            highIntSize++;
+        }
+        byte[] buf = new byte[highIntSize + 3];
+        if (negative) {
+            buf[0] = '-';
+        }
+        DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
         buf[highIntSize] = '.';
-        DecimalDigits.putPairLatin1(buf, highIntSize + 1, Math.abs((int) (intCompact - highInt * 100)));
+        DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
         try {
             return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
         } catch (CharacterCodingException cce) {
