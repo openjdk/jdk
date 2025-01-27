@@ -460,7 +460,7 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
     prepare_for_verify();
     Universe::verify("Before GC");
   }
-  gc_prologue(false);
+  gc_prologue();
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
 
   save_marks();
@@ -728,7 +728,7 @@ void SerialHeap::do_full_collection_no_gc_locker(bool clear_all_soft_refs) {
     Universe::verify("Before GC");
   }
 
-  gc_prologue(true);
+  gc_prologue();
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
   CodeCache::on_gc_marking_cycle_start();
   ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
@@ -934,7 +934,7 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
   MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
 }
 
-void SerialHeap::gc_prologue(bool full) {
+void SerialHeap::gc_prologue() {
   // Fill TLAB's and such
   ensure_parsability(true);   // retire TLABs
 
