@@ -3503,11 +3503,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         // currency fast path
         if (intCompact != INFLATED) {
-            long intCompactAbs = Math.abs(intCompact);
-            if (scale == 2 && (int) intCompact == intCompactAbs) { // intCompact >= 0 intCompact <= Integer.MAX_VALUE
+            if (scale == 2 && intCompact >= 0 && intCompact <= Integer.MAX_VALUE) {
                 return scale2((int) intCompact);
             }
-            return getValueString(signum(), intCompactAbs, scale);
+            return getValueString(signum(), Math.abs(intCompact), scale);
         }
 
         int signum = signum();
@@ -4251,10 +4250,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // the significand as an absolute value
         String coeff;
         if (intCompact != INFLATED) {
-            long intCompactAbs = Math.abs(intCompact);
-            if (scale == 2 && (int) intCompact == intCompactAbs) { // intCompact >= 0 intCompact <= Integer.MAX_VALUE
+            if (scale == 2 && (intCompact >= 0 && intCompact <= Integer.MAX_VALUE)) {
                 return scale2((int) intCompact);
             }
+            long intCompactAbs = Math.abs(intCompact);
             coeffLen = DecimalDigits.stringSize(intCompactAbs);
             signum = signum();
             long adjusted = -(long)scale + (coeffLen -1);
