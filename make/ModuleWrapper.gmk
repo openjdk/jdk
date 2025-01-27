@@ -23,12 +23,15 @@
 # questions.
 #
 
+include MakeFileStart.gmk
+
 ################################################################################
 # This makefile is called from Main.gmk, through a macro in MakeHelpers.gmk
 # and wraps calls to makefiles for specific modules and build phases. Having
 # this wrapper reduces the need for boilerplate code. It also provides
 # opportunity for automatic copying of files to an interim exploded runnable
 # image.
+################################################################################
 
 include CopyFiles.gmk
 
@@ -132,3 +135,7 @@ else
   TARGETS += $(COPY_LIBS_TO_BIN) $(COPY_LIBS_TO_LIB) \
       $(COPY_INCLUDE) $(COPY_CMDS) $(COPY_MAN) $(COPY_CONF) $(LINK_LIBS_TO_LIB)
 endif
+
+################################################################################
+
+include MakeFileEnd.gmk

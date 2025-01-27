@@ -21,10 +21,9 @@
 # questions.
 #
 
-include $(SPEC)
-include MakeBase.gmk
+include MakeFileStart.gmk
 
-default: all
+################################################################################
 
 IDEA_OUTPUT_DIR := $(TESTMAKE_OUTPUTDIR)/verify-idea
 
@@ -47,4 +46,8 @@ TEST_TARGETS += verify-idea
 
 all: $(TEST_TARGETS)
 
-.PHONY: default all verify-idea
+.PHONY: verify-idea
+
+################################################################################
+
+include MakeFileEnd.gmk

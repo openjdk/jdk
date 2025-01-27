@@ -23,6 +23,9 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This file contains helper functions for Init.gmk.
 ################################################################################
@@ -312,3 +315,8 @@ define ReportProfileTimes
     $(BUILD_LOG_PIPE_SIMPLE)
   )
 endef
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

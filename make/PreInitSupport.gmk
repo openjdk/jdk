@@ -23,11 +23,11 @@
 # questions.
 #
 
-##############################################################################
+################################################################################
 # Helper functions for PreInit.gmk, the initial part of initialization before
 # the SPEC file is loaded. Most of these functions provide parsing and setting
 # up make options from the command-line.
-##############################################################################
+################################################################################
 
 # Include the corresponding closed file, if present.
 ifneq ($(CUSTOM_MAKE_DIR), )
@@ -295,3 +295,5 @@ define PrintConfCheckFailed
 	@echo "This behavior may also be changed using CONF_CHECK=<ignore|auto>."
 	@echo ' '
 endef
+
+################################################################################

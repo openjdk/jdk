@@ -23,6 +23,9 @@
 # questions.
 #
 
+include $(TOPDIR)/make/common/MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This file contains helper functions for logging.
 ################################################################################
@@ -128,3 +131,8 @@ MAKE_LOG_VARS = $(foreach v, \
     LOG_PROFILE_TIMES_FILE LOG_FLOW, \
     $v=$($v) \
 )
+
+################################################################################
+
+endif # include guard
+include $(TOPDIR)/make/common/MakeIncludeEnd.gmk

@@ -23,6 +23,8 @@
 # questions.
 #
 
+include MakeFileStart.gmk
+
 ################################################################################
 # Init.gmk sits between PreInit.gmk and Main.gmk when bootstrapping the build.
 # It is called from PreInit.gmk, and its main responsibility is to launch
@@ -197,3 +199,7 @@ post-compare-build:
 	$(call CompareBuildDoComparison)
 
 .PHONY: main on-failure pre-compare-build post-compare-build
+
+################################################################################
+
+include MakeFileEnd.gmk
