@@ -97,7 +97,8 @@ public class MultiScreenInsetsTest {
                 frameBounds.y = bounds.y;
             }
 
-            // Add a margin to compensate for the lost fractional parts when casting to an integer.
+            // Add a margin to compensate for the lost fractional parts
+            // when casting to an integer.
             int marginX = getMarginForScaleX(gc);
             int marginY = getMarginForScaleY(gc);
 
