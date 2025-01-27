@@ -3494,7 +3494,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @see #toString()
      * @see #toEngineeringString()
      */
-    @SuppressWarnings("deprecation")
     public String toPlainString() {
         int scale = this.scale;
         long intCompact = this.intCompact;
@@ -3519,52 +3518,39 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 throw new OutOfMemoryError("too large to fit in a String");
             }
 
-            byte[] buf = new byte[len];
-            str.getBytes(0, str.length(), buf, 0);
-            Arrays.fill(buf, str.length(), len, (byte) '0');
-            return newStringNoRepl(buf);
+            return new StringBuilder(len)
+                    .append(str)
+                    .repeat('0', trailingZeros)
+                    .toString();
         }
 
         return getValueString(signum, unscaledAbsString(), scale);
     }
 
     /* Returns a digit.digit string */
-    @SuppressWarnings("deprecation")
     private static String getValueString(int signum, String intString, int scale) {
         /* Insert decimal point */
+        StringBuilder buf;
         int insertionPoint = intString.length() - scale;
         if (insertionPoint == 0) {  /* Point goes just before intVal */
             return (signum < 0 ? "-0." : "0.").concat(intString);
-        }
-        byte[] buf;
-        if (insertionPoint > 0) { /* Point goes inside intVal */
-            buf = new byte[intString.length() + 1 + (signum < 0 ? 1 : 0)];
-            int off = 0;
-            if (signum < 0) {
-                buf[0] = '-';
-                off = 1;
-            }
-            intString.getBytes(0, insertionPoint, buf, off);
-            off += insertionPoint;
-            buf[off] = '.';
-            intString.getBytes(insertionPoint, intString.length(), buf, off + 1);
+        } else if (insertionPoint > 0) { /* Point goes inside intVal */
+            buf = new StringBuilder();
+            if (signum < 0)
+                buf.append('-');
+            buf.append(intString)
+               .insert(insertionPoint + (signum < 0 ? 1 : 0), '.');
         } else { /* We must insert zeros between point and intVal */
             int len = (signum < 0 ? 3 : 2) + scale;
             if (len < 0) {
                 throw new OutOfMemoryError("too large to fit in a String");
             }
-            buf = new byte[len];
-            int off = 0;
-            if(signum < 0) {
-                buf[0] = '-';
-                off = 1;
-            }
-            buf[off    ] = '0';
-            buf[off + 1] = '.';
-            Arrays.fill(buf, off + 2, off + 2 - insertionPoint, (byte) '0');
-            intString.getBytes(0, intString.length(), buf, off + 2 - insertionPoint);
+            buf = new StringBuilder(len)
+                    .append(signum<0 ? "-0." : "0.")
+                    .repeat('0', -insertionPoint)  // insertionPoint != MIN_VALUE
+                    .append(intString);
         }
-        return newStringNoRepl(buf);
+        return buf.toString();
     }
 
     /**
@@ -4288,7 +4274,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
         buf[highIntSize] = '.';
         DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
-        return newStringNoRepl(buf);
+        try {
+            return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException cce) {
+            throw new AssertionError(cce);
+        }
     }
 
     /**
@@ -4304,14 +4294,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return intCompact != INFLATED
                 ? Long.toString(intCompact)
                 : intVal.toString();
-    }
-
-    private static String newStringNoRepl(byte[] buf) {
-        try {
-            return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
-        } catch (CharacterCodingException cce) {
-            throw new AssertionError(cce);
-        }
     }
 
     /**
