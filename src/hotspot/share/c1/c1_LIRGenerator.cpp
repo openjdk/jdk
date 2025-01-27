@@ -1244,11 +1244,7 @@ void LIRGenerator::do_isInstance(Intrinsic* x) {
     __ null_check(clazz.result(), info);
   }
 
-#ifdef HAVE_PD_C1_IS_INSTANCE_OF_STUB
-  address pd_instanceof_fn = Runtime1::entry_for(C1StubId::is_instance_of_id);
-#else
-  address pd_instanceof_fn = CAST_FROM_FN_PTR(address, Runtime1::is_instance_of);
-#endif
+  address pd_instanceof_fn = isInstance_entry();
   LIR_Opr call_result = call_runtime(clazz.value(), object.value(),
                                      pd_instanceof_fn,
                                      x->type(),
