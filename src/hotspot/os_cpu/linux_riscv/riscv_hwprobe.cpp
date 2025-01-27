@@ -171,7 +171,7 @@ void RiscvHwprobe::add_features_from_query_result() {
     if (os::Linux::kernel_version_compare(major, minor, patch, 6, 8, 5) == -1) {
       LogMessage(os) log;
       if (log.is_info()) {
-        log.info("Linux kernels before 6.9 (current %ld.%ld) have a known bug when using Vector and signals.", major, minor);
+        log.info("Linux kernels before 6.8.5 (current %ld.%ld.%ld) have a known bug when using Vector and signals.", major, minor, patch);
         log.info("Vector not enabled automatically via hwprobe, but can be turned on with -XX:+UseRVV.");
       }
     } else {
