@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ import java.awt.EventQueue;
 import java.awt.Point;
 import java.awt.AWTException;
 import java.awt.event.MouseEvent;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.image.BufferedImage;
@@ -40,7 +38,7 @@ import java.awt.image.BufferedImage;
  * @author Shashidhara Veerabhadraiah (shashidhara.veerabhadraiah@oracle.com)
  * @modules java.desktop/java.awt:open
  * @library /java/awt/patchlib
- * @library /lib/client ../
+ * @library /lib/client /java/awt/TrayIcon
  * @build java.desktop/java.awt.Helper
  * @build ExtendedRobot SystemTrayIconHelper
  * @run main TrayIconPopupClickTest
@@ -50,7 +48,7 @@ public class TrayIconPopupClickTest {
 
     TrayIcon icon;
     ExtendedRobot robot;
-    boolean actionPerformed = false;
+    volatile boolean actionPerformed = false;
 
     public static void main(String[] args) throws Exception {
         if (!SystemTray.isSupported()) {
@@ -89,13 +87,7 @@ public class TrayIconPopupClickTest {
             throw new RuntimeException(e);
         }
 
-        icon.getActionCommand();
-        icon.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                actionPerformed = true;
-            }
-        });
+        icon.addActionListener(e -> actionPerformed = true);
     }
 
     void doTest() throws Exception {
@@ -106,16 +98,16 @@ public class TrayIconPopupClickTest {
 
         robot.mouseMove(iconPosition.x, iconPosition.y);
         robot.waitForIdle();
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(50);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(50);
 
         robot.mouseMove(iconPosition.x, iconPosition.y + 10);
         robot.waitForIdle();
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(50);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(50);
 
         if (!actionPerformed)

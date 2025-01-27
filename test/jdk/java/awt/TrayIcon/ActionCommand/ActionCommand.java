@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,11 @@
  * questions.
  */
 
-import java.awt.*;
+import java.awt.AWTException;
+import java.awt.EventQueue;
+import java.awt.Point;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
 import java.awt.image.BufferedImage;
 
 /*
@@ -32,7 +36,7 @@ import java.awt.image.BufferedImage;
  *          (single clicked, on Mac)
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @modules java.desktop/java.awt:open
- * @library /lib/client ../
+ * @library /lib/client /java/awt/TrayIcon
  * @library /java/awt/patchlib
  * @build java.desktop/java.awt.Helper
  * @build ExtendedRobot SystemTrayIconHelper
@@ -44,13 +48,14 @@ public class ActionCommand {
     TrayIcon icon;
     ExtendedRobot robot;
 
-    boolean actionPerformed = false;
-    Object actionLock = new Object();
-    String actionCommand = null;
+    volatile boolean actionPerformed = false;
+    volatile String actionCommand = null;
+    final Object actionLock = new Object();
+
     static boolean isMacOS = false;
 
     public static void main(String[] args) throws Exception {
-        if (! SystemTray.isSupported()) {
+        if (!SystemTray.isSupported()) {
             System.out.println("SystemTray not supported on the platform under test. " +
                     "Marking the test passed");
         } else {
@@ -95,7 +100,7 @@ public class ActionCommand {
 
             icon.setActionCommand("Sample Command");
 
-            if (! "Sample Command".equals(icon.getActionCommand()))
+            if (!"Sample Command".equals(icon.getActionCommand()))
                 throw new RuntimeException("FAIL: getActionCommand did not return the correct value. " +
                         icon.getActionCommand() + " Expected: Sample Command");
 
@@ -117,7 +122,7 @@ public class ActionCommand {
         actionPerformed = false;
         SystemTrayIconHelper.doubleClick(robot);
 
-        if (! actionPerformed) {
+        if (!actionPerformed) {
             synchronized (actionLock) {
                 try {
                     actionLock.wait(3000);
@@ -125,7 +130,7 @@ public class ActionCommand {
                 }
             }
         }
-        if (! actionPerformed) {
+        if (!actionPerformed) {
             throw new RuntimeException("FAIL: ActionEvent not triggered when TrayIcon is "+(isMacOS? "" : "double ")+"clicked");
         } else if (! "Sample Command".equals(actionCommand)) {
             throw new RuntimeException("FAIL: ActionEvent.getActionCommand did not return the correct " +
@@ -149,7 +154,7 @@ public class ActionCommand {
         actionCommand = null;
         SystemTrayIconHelper.doubleClick(robot);
 
-        if (! actionPerformed) {
+        if (!actionPerformed) {
             synchronized (actionLock) {
                 try {
                     actionLock.wait(3000);
@@ -157,7 +162,7 @@ public class ActionCommand {
                 }
             }
         }
-        if (! actionPerformed) {
+        if (!actionPerformed) {
             throw new RuntimeException("FAIL: ActionEvent not triggered when ActionCommand set to " +
                     "null and then TrayIcon is "+(isMacOS? "" : "double ")+ "clicked");
         } else if (actionCommand != null) {

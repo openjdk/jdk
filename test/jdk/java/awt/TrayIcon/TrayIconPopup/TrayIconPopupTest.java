@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,8 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.awt.*;
-import java.awt.event.*;
+
+import java.awt.AWTException;
+import java.awt.Dialog;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.MenuItem;
+import java.awt.Point;
+import java.awt.PopupMenu;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
 /*
@@ -32,7 +43,7 @@ import java.awt.image.BufferedImage;
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @modules java.desktop/java.awt:open
  * @library /java/awt/patchlib
- * @library /lib/client ../
+ * @library /lib/client /java/awt/TrayIcon
  * @build java.desktop/java.awt.Helper
  * @build ExtendedRobot SystemTrayIconHelper
  * @run main TrayIconPopupTest
@@ -43,8 +54,9 @@ public class TrayIconPopupTest {
     TrayIcon icon;
     ExtendedRobot robot;
 
-    boolean actionPerformed = false;
-    Object actionLock = new Object();
+    volatile boolean actionPerformed = false;
+    final Object actionLock = new Object();
+
     static final int ATTEMPTS = 10;
 
     PopupMenu popup;
@@ -128,15 +140,15 @@ public class TrayIconPopupTest {
 
         robot.mouseMove(iconPosition.x, iconPosition.y);
         robot.waitForIdle();
-        robot.mousePress(InputEvent.BUTTON3_MASK);
+        robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.delay(50);
-        robot.mouseRelease(InputEvent.BUTTON3_MASK);
+        robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
         robot.delay(6000);
 
         robot.mouseMove(window.getLocation().x + 10, window.getLocation().y + 10);
-        robot.mousePress(InputEvent.BUTTON3_MASK);
+        robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.delay(50);
-        robot.mouseRelease(InputEvent.BUTTON3_MASK);
+        robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
 
         int attempts = 0;
         while (!actionPerformed && attempts++ < ATTEMPTS) {

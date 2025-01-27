@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.awt.image.BufferedImage;
  *          or single clicked with button 1 on rest.
  * @modules java.desktop/java.awt:open
  * @library /java/awt/patchlib
- * @library /lib/client ../
+ * @library /lib/client /java/awt/TrayIcon
  * @build java.desktop/java.awt.Helper
  * @build ExtendedRobot SystemTrayIconHelper
  * @run main TrayIconMouseTest
@@ -48,16 +48,18 @@ public class TrayIconMouseTest {
 
     TrayIcon icon;
     ExtendedRobot robot;
-    boolean actionPerformed = false;
-    Object actionLock = new Object();
+
+    volatile boolean actionPerformed = false;
+    final Object actionLock = new Object();
+
     static boolean isMacOS = false;
     static boolean isWinOS = false;
     static boolean isOelOS = false;
     String caption = "Sample Icon";
     int[] buttonTypes = {
-        InputEvent.BUTTON1_MASK,
-        InputEvent.BUTTON2_MASK,
-        InputEvent.BUTTON3_MASK
+        InputEvent.BUTTON1_DOWN_MASK,
+        InputEvent.BUTTON2_DOWN_MASK,
+        InputEvent.BUTTON3_DOWN_MASK
     };
     String[] buttonNames = {
         "BUTTON1",
