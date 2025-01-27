@@ -107,6 +107,7 @@ public class ScreenCaptureRobotTest {
 
     private static void doTest() throws Exception {
         Robot robot = new Robot();
+        robot.mouseMove(0,0);
         robot.waitForIdle();
         robot.delay(500);
 
@@ -115,7 +116,6 @@ public class ScreenCaptureRobotTest {
         Rectangle rect = new Rectangle(point.x + OFFSET, point.y + OFFSET,
                 IMAGE_WIDTH, IMAGE_HEIGHT);
 
-        robot.mouseMove(0,0);
         BufferedImage capturedImage = robot.createScreenCapture(rect);
 
         if (!compareImages(capturedImage, realImage)) {
