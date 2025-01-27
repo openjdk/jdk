@@ -4038,7 +4038,7 @@ The deployment of the AOTCache is divided into three phases:
 The AOTCache can be used with the following command-line options:
 
 `-XX:AOTCache:=`*cachefile*
-:   Specify the location of the AOTCache. The standard extension for *cachefile* is `.aot`.
+:   Specifies the location of the AOTCache. The standard extension for *cachefile* is `.aot`.
     If `-XX:AOTCache` is specified but `-XX:AOTMode` is not specified,
     then `AOTMode` will be given the value of `auto`.
 
