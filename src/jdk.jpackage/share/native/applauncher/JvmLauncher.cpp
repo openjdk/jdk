@@ -259,8 +259,8 @@ private:
 
     int initJvmlLauncherData(JvmlLauncherData* ptr) const {
         // Store path to JLI library just behind JvmlLauncherData header.
-        char dummy = 0;
-        char* curPtr = ptr ? reinterpret_cast<char*>(ptr + 1) : (&dummy + sizeof(JvmlLauncherData));
+        JvmlLauncherData dummy;
+        char* curPtr = reinterpret_cast<char*>((ptr ? ptr : &dummy) + 1);
         {
             const size_t count = sizeof(char)
                     * (jliLibPath.size() + 1 /* trailing zero */);
@@ -305,7 +305,7 @@ private:
         curPtr = copyStrings(envVarValues, ptr,
                             offsetof(JvmlLauncherData, envVarValues), curPtr);
 
-        const size_t bufferSize = curPtr - (ptr ? reinterpret_cast<char*>(ptr) : &dummy);
+        const size_t bufferSize = curPtr - reinterpret_cast<char*>(ptr ? ptr : &dummy);
         if (ptr) {
             LOG_TRACE(tstrings::any() << "Initialized " << bufferSize
                                         << " bytes at " << ptr << " address");
