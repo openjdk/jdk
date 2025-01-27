@@ -224,6 +224,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 }
                 setFigureSelection(selectedFigures);
                 centerSelectedFigures();
+                centerSelectedLiveRanges();
                 validateAll();
             }
         }
@@ -830,6 +831,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         rebuildMainLayer();
         rebuildBlockLayer();
         relayout();
+        setLiveRangeSegmentSelection(model.getSelectedLiveRangeSegments());
         rebuilding = false;
     }
 
@@ -872,6 +874,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         validateAll();
         setFigureSelection(model.getSelectedFigures());
         centerSelectedFigures();
+        centerSelectedLiveRanges();
         rebuilding = false;
     }
 
@@ -1285,6 +1288,26 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     @Override
+    public void addSelectedLiveRanges(Collection<InputLiveRange> liveRanges, boolean showIfHidden) {
+        // TBD: ensure all related nodes are visible.
+        Set<Integer> liveRangeIds = new HashSet<>();
+        for (InputLiveRange liveRange : liveRanges) {
+            liveRangeIds.add(liveRange.getId());
+        }
+        Map<Integer, LiveRangeSegment> representativeSegments = new HashMap<>();
+        for (LiveRangeSegment segment : model.getDiagram().getLiveRangeSegments()) {
+            if (liveRangeIds.contains(segment.getLiveRange().getId())) {
+                representativeSegments.put(segment.getLiveRange().getId(), segment);
+            }
+        }
+        setLiveRangeSegmentSelection(new HashSet<>(representativeSegments.values()));
+        // TBD:
+        // if (showIfHidden) {
+        //     model.showLiveRangeSegments(model.getSelectedLiveRangeSegments());
+        // }
+    }
+
+    @Override
     public void clearSelectedElements() {
         setSelectedObjects(Collections.emptySet());
     }
@@ -1304,6 +1327,31 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                         overallRect = figureRect;
                     } else {
                         overallRect = overallRect.union(figureRect);
+                    }
+                }
+            }
+        }
+        if (overallRect != null) {
+            centerRectangle(overallRect);
+        }
+    }
+
+    @Override
+    public void centerSelectedLiveRanges() {
+        // TODO: double check that this works as intended
+        Set<LiveRangeSegment> selectedLiveRanges = model.getSelectedLiveRangeSegments();
+        Rectangle overallRect = null;
+        for (LiveRangeSegment segment : selectedLiveRanges) {
+            LiveRangeWidget liveRangeWidget = getWidget(segment);
+            if (liveRangeWidget != null) {
+                Rectangle bounds = liveRangeWidget.getBounds();
+                if (bounds != null) {
+                    Point location = liveRangeWidget.getLocation();
+                    Rectangle rect = new Rectangle(location.x, location.y, bounds.width, bounds.height);
+                    if (overallRect == null) {
+                        overallRect = rect;
+                    } else {
+                        overallRect = overallRect.union(rect);
                     }
                 }
             }
@@ -1340,6 +1388,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void setFigureSelection(Set<Figure> list) {
+        super.setSelectedObjects(new HashSet<>(list));
+    }
+
+    private void setLiveRangeSegmentSelection(Set<LiveRangeSegment> list) {
         super.setSelectedObjects(new HashSet<>(list));
     }
 

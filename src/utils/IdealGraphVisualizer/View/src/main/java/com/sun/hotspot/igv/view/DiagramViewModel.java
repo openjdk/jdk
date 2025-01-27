@@ -34,6 +34,7 @@ import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.graph.LiveRangeSegment;
 import com.sun.hotspot.igv.graph.MatcherSelector;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.RangeSliderModel;
@@ -54,6 +55,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private ArrayList<InputGraph> graphs;
     private Set<Integer> hiddenNodes;
     private Set<Integer> selectedNodes;
+    private Set<Integer> selectedLiveRanges;
     private FilterChain filterChain;
     private final FilterChain customFilterChain;
     private final FilterChain filtersOrder;
@@ -233,6 +235,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
         hiddenNodes = new HashSet<>(model.getHiddenNodes());
         selectedNodes = new HashSet<>();
+        selectedLiveRanges = new HashSet<>();
         changed(this);
     }
 
@@ -259,6 +262,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
         hiddenNodes = new HashSet<>();
         selectedNodes = new HashSet<>();
+        selectedLiveRanges = new HashSet<>();
         selectGraph(graph);
     }
 
@@ -327,6 +331,14 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         selectedNodesChangedEvent.fire();
     }
 
+    public Set<Integer> getSelectedLiveRanges() {
+        return selectedLiveRanges;
+    }
+
+    public void setSelectedLiveRanges(Set<Integer> liveRanges) {
+        selectedLiveRanges = liveRanges;
+    }
+
     public void showFigures(Collection<Figure> figures) {
         boolean somethingChanged = false;
         for (Figure f : figures) {
@@ -344,6 +356,16 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         for (Figure f : diagram.getFigures()) {
             if (getSelectedNodes().contains(f.getInputNode().getId())) {
                 result.add(f);
+            }
+        }
+        return result;
+    }
+
+    public Set<LiveRangeSegment> getSelectedLiveRangeSegments() {
+        Set<LiveRangeSegment> result = new HashSet<>();
+        for (LiveRangeSegment segment : diagram.getLiveRangeSegments()) {
+            if (getSelectedLiveRanges().contains(segment.getLiveRange().getId())) {
+                result.add(segment);
             }
         }
         return result;
