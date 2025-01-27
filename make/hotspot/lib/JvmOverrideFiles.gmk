@@ -57,18 +57,18 @@ ifeq ($(call isTargetOs, linux), true)
 
   ifeq ($(TOOLCHAIN_TYPE), clang)
     JVM_PRECOMPILED_HEADER_EXCLUDE := \
-      sharedRuntimeTrig.cpp \
-      sharedRuntimeTrans.cpp \
-      $(OPT_SPEED_SRC) \
-      #
+        sharedRuntimeTrig.cpp \
+        sharedRuntimeTrans.cpp \
+        $(OPT_SPEED_SRC) \
+        #
   endif
 
   ifeq ($(call isTargetCpu, ppc64le)+$(TOOLCHAIN_TYPE), true+gcc)
     JVM_PRECOMPILED_HEADER_EXCLUDE := \
-      sharedRuntimeTrig.cpp \
-      sharedRuntimeTrans.cpp \
-      $(OPT_SPEED_SRC) \
-      #
+        sharedRuntimeTrig.cpp \
+        sharedRuntimeTrans.cpp \
+        $(OPT_SPEED_SRC) \
+        #
   endif
 
   ifeq ($(call isTargetCpu, x86), true)
