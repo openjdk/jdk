@@ -1042,7 +1042,7 @@ Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const Type
   }
 }
 
-bool VectorNode::can_swap_inputs() {
+bool VectorNode::should_swap_inputs() {
   // Must be a binary operation.
   if (req() != 3) {
     return false;
@@ -1052,8 +1052,7 @@ bool VectorNode::can_swap_inputs() {
   // When the mask corresponding to a vector lane is false then
   // the result of the operation is corresponding lane of its first operand.
   //   i.e. RES = VEC1.lanewise(OPER, VEC2, MASK) is semantically equivalent to
-  //        RES = VEC1.BLEND(VEC1.lanewise(OPER, VEC2), MASK)
-  // Here, first operand "VEC1" represents both source and destination vector.
+  //        RES = BLEND(VEC1, VEC1.lanewise(OPER, VEC2), MASK)
   if (is_predicated_vector()) {
     return false;
   }
@@ -1086,6 +1085,8 @@ bool VectorNode::can_swap_inputs() {
     case Op_XorVMask:
 
     case Op_SaturatingAddV:
+      // For non-predicated commutative operations, sort the inputs in
+      // increasing order of node indices.
       if (in(1)->_idx > in(2)->_idx) {
         return true;
       }
@@ -1099,8 +1100,9 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (Matcher::vector_needs_partial_operations(this, vect_type())) {
     return try_to_gen_masked_vector(phase, this, vect_type());
   }
+
   // Sort inputs of commutative non-predicated vector operations to help value numbering.
-  if (can_swap_inputs()) {
+  if (should_swap_inputs()) {
     swap_edges(1, 2);
   }
   return nullptr;

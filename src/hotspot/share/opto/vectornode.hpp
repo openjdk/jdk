@@ -88,7 +88,7 @@ class VectorNode : public TypeNode {
   static bool is_convert_opcode(int opc);
   static bool is_minmax_opcode(int opc);
 
-  bool can_swap_inputs();
+  bool should_swap_inputs();
 
   static bool is_vshift_cnt_opcode(int opc);
 
