@@ -863,6 +863,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             doCFGLayout(visibleFigures, visibleConnections, visibleLiveRangeSegments);
         }
         rebuildConnectionLayer();
+        if (getModel().getShowCFG()) {
+            updateLiveRangeIdsInBlockWidgets();
+        }
 
         updateFigureWidgetLocations(oldVisibleFigureWidgets);
         updateBlockWidgetBounds(oldVisibleBlockWidgets);
@@ -1492,6 +1495,18 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                         !(getModel().getShowCFG() && (block.getInputBlock().isArtificial() || block.getInputBlock().getNodes().isEmpty()));
                 BlockWidget blockWidget = getWidget(block);
                 blockWidget.setVisible(visibleAfter);
+
+                // Update node width for live range layout.
+                int nodeWidth = ClusterNode.EMPTY_BLOCK_LIVE_RANGE_OFFSET;
+                for (InputNode n : block.getInputBlock().getNodes()) {
+                    Figure f = getModel().getDiagram().getFigure(n);
+                    FigureWidget figureWidget = getWidget(f);
+                    if (figureWidget != null && figureWidget.isVisible()) {
+                        nodeWidth = f.getWidth();
+                        break;
+                    }
+                }
+                blockWidget.setNodeWidth(nodeWidth);
             }
         }
     }
@@ -1576,6 +1591,21 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                         blockWidget.setPreferredBounds(bounds);
                     }
                 }
+            }
+        }
+    }
+
+    private void updateLiveRangeIdsInBlockWidgets() {
+        for (Block block : getModel().getDiagram().getBlocks()) {
+            BlockWidget blockWidget = getWidget(block);
+            if (blockWidget != null && blockWidget.isVisible()) {
+                List<Integer> liveRangeIds = new ArrayList<>();
+                for (Integer liveRangeId : block.getLiveRangeIds()) {
+                    if (isVisibleLiveRange(liveRangeId)) {
+                        liveRangeIds.add(liveRangeId);
+                    }
+                }
+                blockWidget.setLiveRangeIds(liveRangeIds);
             }
         }
     }
