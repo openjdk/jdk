@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ private:
     stringStream* _stream = nullptr;
 
   public:
-    IPInlineAttempt() {}
+    IPInlineAttempt() = default;
 
     IPInlineAttempt(InliningResult result) : _result(result) {}
 
@@ -101,8 +101,8 @@ private:
 
     // Finds the node for an inline attempt that occurred inside this inline.
     // If this is a new site, provide the callee otherwise null.
-    // Returned pointer is valid until any at_bci is called with non-null callee.
-    InlinePrinter::IPInlineSite& at_bci(int bci, ciMethod* callee);
+    // Returned reference is valid until any at_bci is called with non-null callee.
+    IPInlineSite& at_bci(int bci, ciMethod* callee);
     // The returned pointer stays valid until InlinePrinter is destructed.
     outputStream* add(InliningResult result);
 

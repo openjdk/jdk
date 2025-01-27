@@ -22,7 +22,7 @@
  *
  */
 
-#include "printinlining.hpp"
+#include "opto/printinlining.hpp"
 #include "opto/callnode.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
