@@ -454,7 +454,7 @@ public class VMProps implements Callable<Map<String, String>> {
     /**
      * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
      *         with the current set of jtreg VM options. For example, false will be returned
-     *         if -XX:-UseCompressedClassPointers is specified, 
+     *         if -XX:-UseCompressedClassPointers is specified,
      */
     protected String vmCDSCanWriteArchivedJavaHeap() {
         return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive()
