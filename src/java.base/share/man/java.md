@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3969,11 +3969,40 @@ archive, you should make sure that the archive is created by at least version
 -   The CDS archive cannot be loaded if any JAR files in the class path or
     module path are modified after the archive is generated.
 
--   If any of the VM options `--upgrade-module-path`, `--patch-module` or
-    `--limit-modules` are specified, CDS is disabled. This means that the
-    JVM will execute without loading any CDS archives. In addition, if
-    you try to create a CDS archive with any of these 3 options specified,
-    the JVM will report an error.
+### Module related options
+
+The following module related options are supported by CDS: `--module-path`, `--module`,
+`--add-modules`, and `--enable-native-access`.
+
+The values for these options (if specified), should be identical when creating and using the
+CDS archive. Otherwise, if there is a mismatch of any of these options, the CDS archive may be
+partially or completely disabled, leading to lower performance.
+
+- If the -XX:+AOTClassLinking options *was* used during CDS archive creation, the CDS archive
+  cannot be used, and the following error message is printed:
+
+  `CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used`
+
+- If the -XX:+AOTClassLinking options *was not* used during CDS archive creation, the CDS archive
+  can be used, but the "archived module graph" feature will be disabled. This can lead to increased
+  start-up time.
+
+To diagnose problems with the above options, you can add `-Xlog:cds` to the application's VM
+arguments. For example, if `--add-modules jdk.jconcole` was specified during archive creation
+and `--add-modules jdk.incubator.vector` is specified during runtime, the following messages will
+be logged:
+
+ `Mismatched values for property jdk.module.addmods`
+
+ `runtime jdk.incubator.vector dump time jdk.jconsole`
+
+ `subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled`
+
+If any of the VM options `--upgrade-module-path`, `--patch-module` or
+`--limit-modules` are specified, CDS is disabled. This means that the
+JVM will execute without loading any CDS archives. In addition, if
+you try to create a CDS archive with any of these 3 options specified,
+the JVM will report an error.
 
 ## Performance Tuning Examples
 

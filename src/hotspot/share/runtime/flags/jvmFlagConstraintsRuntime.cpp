@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/flags/jvmFlagConstraintsRuntime.hpp"
@@ -59,7 +58,7 @@ JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(int value, bool verbose) {
   if (value >= (intx)os::vm_page_size()) {
     JVMFlag::printError(verbose,
                         "ObjectAlignmentInBytes (%d) must be "
-                        "less than page size (" SIZE_FORMAT ")\n",
+                        "less than page size (%zu)\n",
                         value, os::vm_page_size());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
