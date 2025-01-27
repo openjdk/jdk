@@ -3010,7 +3010,7 @@ MergePrimitiveStores::ValueOrder MergePrimitiveStores::find_adjacent_input_value
                              : ValueOrder::Reverse;     // Pattern: [n1 = base >> (shift + memory_size), n2 = base >> shift]
 #else
   return shift_n1 > shift_n2 ? ValueOrder::Platform     // Pattern: [n1 = base >> (shift + memory_size), n2 = base >> shift]
-                             : ValueOrder::NotAdjacent; // TODO: Reverse order in BE machine not tested
+                             : ValueOrder::Reverse;     // Pattern: [n1 = base >> shift, n2 = base >> (shift + memory_size)]
 #endif
 }
 
