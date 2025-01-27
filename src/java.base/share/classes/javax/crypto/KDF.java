@@ -483,7 +483,11 @@ public final class KDF {
      * Derives a key, returned as a {@code SecretKey} object.
      *
      * @param alg
-     *         the algorithm of the resultant {@code SecretKey} object
+     *         the algorithm of the resultant {@code SecretKey} object.
+     *         See the SecretKey Algorithms section in the
+     *         <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+     *         Java Security Standard Algorithm Names Specification</a>
+     *         for information about standard secret key algorithm names.
      * @param derivationSpec
      *         the object describing the inputs to the derivation function
      *
@@ -500,6 +504,7 @@ public final class KDF {
      *
      * @see <a href="#DelayedProviderSelection">Delayed Provider
      *         Selection</a>
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      *
      */
     public SecretKey deriveKey(String alg,
