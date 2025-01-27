@@ -440,7 +440,7 @@ void decode_env::process_options(outputStream* ost) {
   if (strstr(options(), "show-block-comment")) {
     AbstractDisassembler::toggle_show_block_comment();
   }
-  if (strstr(options(), "print_platform_asm")) {
+  if (strstr(options(), "platform-asm")) {
     AbstractDisassembler::toggle_print_platform_asm();
   }
   _optionsParsed = true;
