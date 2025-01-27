@@ -39,7 +39,7 @@ import jdk.test.lib.jfr.GCHelper;
  * @test
  * @bug 8221507
  * @requires vm.hasJFR & vm.gc.Shenandoah
- * @key jfr
+ * @requires vm.flagless
  * @library /test/lib /test/jdk
  * @run main/othervm -Xmx64m -XX:+UnlockExperimentalVMOptions -XX:ShenandoahRegionSize=1m -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational jdk.jfr.event.gc.detailed.TestShenandoahEvacuationInformationEvent
  */

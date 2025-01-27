@@ -111,7 +111,7 @@ private:
 
   bool is_young_gc_safe() const;
 
-  void gc_prologue(bool full);
+  void gc_prologue();
   void gc_epilogue(bool full);
 
 public:
