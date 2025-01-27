@@ -850,6 +850,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
         Set<Figure> visibleFigures = getVisibleFigures();
         Set<Connection> visibleConnections = getVisibleConnections();
+        List<LiveRangeSegment> visibleLiveRangeSegments = getVisibleLiveRangeSegments();
         if (getModel().getShowFreeInteractive()) {
             doFreeInteractiveLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowStableSea()) {
@@ -859,7 +860,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         } else if (getModel().getShowBlocks()) {
             doClusteredLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowCFG()) {
-            doCFGLayout(visibleFigures, visibleConnections);
+            doCFGLayout(visibleFigures, visibleConnections, visibleLiveRangeSegments);
         }
         rebuildConnectionLayer();
 
@@ -922,6 +923,33 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return w1.isVisible() && w2.isVisible();
     }
 
+    private boolean isVisibleBlock(Block b) {
+        BlockWidget bw = getWidget(b);
+        return bw != null && getWidget(b, BlockWidget.class).isVisible();
+    }
+
+    private boolean isVisibleLiveRange(int liveRangeId) {
+        if (!getModel().getShowLiveRanges()) {
+            return false;
+        }
+        Set<InputNode> relatedNodes = getModel().getGraph().getRelatedNodes(liveRangeId);
+        for (InputNode n : relatedNodes) {
+            Figure f = getModel().getDiagram().getFigure(n);
+            FigureWidget fw = getWidget(f);
+            if (isVisibleBlock(f.getBlock()) &&
+                (fw == null || !fw.isVisible())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isVisibleLiveRangeSegment(LiveRangeSegment s) {
+        return isVisibleLiveRange(s.getLiveRange().getId()) &&
+               isVisibleBlock(s.getCluster());
+    }
+
+
     private void doFreeInteractiveLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
         layoutMover = freeInteractiveLayoutManager;
         freeInteractiveLayoutManager.setCutEdges(model.getCutEdges());
@@ -954,10 +982,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         clusterLayoutManager.doLayout(new LayoutGraph(visibleConnections, visibleFigures));
     }
 
-    private void doCFGLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
+    private void doCFGLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections, List<LiveRangeSegment> segments) {
         layoutMover = null;
         HierarchicalCFGLayoutManager cfgLayoutManager = new HierarchicalCFGLayoutManager(getVisibleBlockConnections(), getVisibleBlocks());
         cfgLayoutManager.setCutEdges(model.getCutEdges());
+        cfgLayoutManager.setSegments(new ArrayList<>(segments));
         cfgLayoutManager.doLayout(new LayoutGraph(visibleConnections, visibleFigures));
     }
 
@@ -1507,6 +1536,16 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         }
         return visibleConnections;
+    }
+
+    private List<LiveRangeSegment> getVisibleLiveRangeSegments() {
+        List<LiveRangeSegment> visibleLiveRangeSegments = new ArrayList<>();
+        for (LiveRangeSegment segment : getModel().getDiagram().getLiveRangeSegments()) {
+            if (isVisibleLiveRangeSegment(segment)) {
+                visibleLiveRangeSegments.add(segment);
+            }
+        }
+        return visibleLiveRangeSegments;
     }
 
     private void updateFigureWidgetLocations(Set<FigureWidget> oldVisibleFigureWidgets) {
