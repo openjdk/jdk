@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8049237 8242151
+ * @bug 8049237 8242151 8347841
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  *          jdk.crypto.ec
@@ -114,7 +114,7 @@ public class V3Certificate {
 
         // Validity interval
         Date firstDate = new Date();
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("PST"));
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles"));
         cal.set(2014, 03, 10, 12, 30, 30);
         Date lastDate = cal.getTime();
         CertificateValidity interval = new CertificateValidity(firstDate,

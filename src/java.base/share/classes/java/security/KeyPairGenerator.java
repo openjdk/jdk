@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,12 +113,16 @@ import sun.security.util.Debug;
  * supply their own implementations of key pair generators.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard {@code KeyPairGenerator} algorithms and keysizes in
- * parentheses:
+ * following standard {@code KeyPairGenerator} algorithms. For the "EC"
+ * algorithm, implementations must support the curves in parentheses. For other
+ * algorithms, implementations must support the key sizes in parentheses.
  * <ul>
- * <li>{@code DiffieHellman} (1024, 2048, 4096)</li>
+ * <li>{@code DiffieHellman} (1024, 2048, 3072, 4096)</li>
  * <li>{@code DSA} (1024, 2048)</li>
- * <li>{@code RSA} (1024, 2048, 4096)</li>
+ * <li>{@code EC} (secp256r1, secp384r1)</li>
+ * <li>{@code RSA} (1024, 2048, 3072, 4096)</li>
+ * <li>{@code RSASSA-PSS} (2048, 3072, 4096)</li>
+ * <li>{@code X25519}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
@@ -127,6 +131,7 @@ import sun.security.util.Debug;
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Benjamin Renaud
  * @since 1.1
  *
@@ -153,6 +158,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected KeyPairGenerator(String algorithm) {
         this.algorithm = algorithm;
@@ -165,6 +171,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the standard string name of the algorithm.
      */
     public String getAlgorithm() {
@@ -217,6 +224,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyPairGenerator} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
@@ -276,6 +284,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      *
      * @param provider the string name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyPairGenerator} object
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -316,6 +325,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @param provider the provider.
      *
      * @return the new {@code KeyPairGenerator} object

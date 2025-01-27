@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,12 +321,12 @@ class java_lang_Class : AllStatic {
     set_init_lock(java_class, nullptr);
   }
   static oop  component_mirror(oop java_class);
+  static int component_mirror_offset() { return _component_mirror_offset; }
   static objArrayOop signers(oop java_class);
   static oop  class_data(oop java_class);
   static void set_class_data(oop java_class, oop classData);
   static void set_reflection_data(oop java_class, oop reflection_data);
-
-  static int component_mirror_offset() { return _component_mirror_offset; }
+  static int reflection_data_offset() { return _reflectionData_offset; }
 
   static oop class_loader(oop java_class);
   static void set_module(oop java_class, oop module);
