@@ -4206,7 +4206,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     private String layoutCharsE(boolean sci, String coeff, int coeffLen, long adjusted) {
-        StringBuilder buf = new StringBuilder(32);
+        StringBuilder buf = new StringBuilder(coeffLen + 14);
         int signum = signum();
         if (signum < 0)                  // prefix '-' if negative
             buf.append('-');
