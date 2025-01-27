@@ -1650,17 +1650,6 @@ static void vthread_monitor_waited_event(JavaThread *current, ObjectWaiter* node
   current->frame_anchor()->clear();
 }
 
-void ObjectMonitor::post_monitor_wait(JavaThread *current, jlong millis) {
-  if (JvmtiExport::should_post_monitor_wait()) {
-    JvmtiExport::post_monitor_wait(current, object(), millis);
-
-    // The current thread already owns the monitor and it has not yet
-    // been added to the wait queue so the current thread cannot be
-    // made the successor. This means that the JVMTI_EVENT_MONITOR_WAIT
-    // event handler cannot accidentally consume an unpark() meant for
-    // the ParkEvent associated with this ObjectMonitor.
-  }
-}
 
 // -----------------------------------------------------------------------------
 // Wait/Notify/NotifyAll
@@ -1680,7 +1669,10 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // check for a pending interrupt
   if (interruptible && current->is_interrupted(true) && !HAS_PENDING_EXCEPTION) {
     JavaThreadInObjectWaitState jtiows(current, millis != 0, interruptible);
-    post_monitor_wait(current, millis);
+
+    if (JvmtiExport::should_post_monitor_wait()) {
+      JvmtiExport::post_monitor_wait(current, object(), millis);
+    }
     // post monitor waited event.  Note that this is past-tense, we are done waiting.
     if (JvmtiExport::should_post_monitor_waited()) {
       // Note: 'false' parameter is passed here because the
@@ -1706,8 +1698,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   ContinuationEntry* ce = current->last_continuation();
   bool is_virtual = ce != nullptr && ce->is_virtual_thread();
   if (is_virtual) {
-    if (interruptible) {
-      post_monitor_wait(current, millis);
+    if (interruptible && JvmtiExport::should_post_monitor_wait()) {
+      JvmtiExport::post_monitor_wait(current, object(), millis);
     }
     current->set_current_waiting_monitor(this);
     result = Continuation::try_preempt(current, ce->cont_oop(current));
@@ -1721,8 +1713,14 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   JavaThreadInObjectWaitState jtiows(current, millis != 0, interruptible);
 
   if (!is_virtual) { // it was already set for virtual thread
-    if (interruptible) {
-      post_monitor_wait(current, millis);
+    if (interruptible && JvmtiExport::should_post_monitor_wait()) {
+      JvmtiExport::post_monitor_wait(current, object(), millis);
+
+      // The current thread already owns the monitor and it has not yet
+      // been added to the wait queue so the current thread cannot be
+      // made the successor. This means that the JVMTI_EVENT_MONITOR_WAIT
+      // event handler cannot accidentally consume an unpark() meant for
+      // the ParkEvent associated with this ObjectMonitor.
     }
     current->set_current_waiting_monitor(this);
   }
