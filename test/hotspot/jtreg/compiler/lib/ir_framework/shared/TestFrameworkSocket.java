@@ -126,7 +126,7 @@ public class TestFrameworkSocket implements AutoCloseable {
      * Only called by test VM to write to server socket.
      * <p>
      * The test VM is spawned by the main jtreg VM. The stdout of the test VM is hidden
-     * unless the Verbose or ReportStdout flag are used. TestFrameworkSocket is used by the parent jtreg
+     * unless the Verbose or ReportStdout flag is used. TestFrameworkSocket is used by the parent jtreg
      * VM and the test VM to communicate. By sending the prints through the TestFrameworkSocket with the
      * parameter stdout set to true, the parent VM will print the received messages to its stdout, making it
      * visible to the user.
