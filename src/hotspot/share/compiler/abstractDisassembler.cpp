@@ -393,6 +393,13 @@ void AbstractDisassembler::decode_platform(address start, address end, outputStr
   ost->move_to(28);
   ost->print("%s ", AbstractDisassembler::pd_start_text_command());
   ost->bol();
+  ost->move_to(28);
+  // Set the origin the last 4 digits of the address. This allows a
+  // reader easily to see the correspondence between a memory dump and
+  // the corresponding instructions.
+  ost->print("%s 0x0%04lx", AbstractDisassembler::pd_origin_command(),
+             (unsigned long)(p2i(p) & 0x0ffff));
+  ost->bol();
   while ((p < end) && (p != nullptr)) {
     if (ost->position() == 0) {
       ost->print("%s ", AbstractDisassembler::pd_inline_comment_open());

@@ -3376,6 +3376,8 @@ void nmethod::print_constant_pool(outputStream* st) {
 
 #endif
 
+// Decode this nmethod into a form suitable for input to the platform
+// assembler.
 void nmethod::decode_platform(outputStream* ost) const {
 #if defined(SUPPORT_ABSTRACT_ASSEMBLY)
 
@@ -3398,6 +3400,13 @@ void nmethod::decode_platform(outputStream* ost) const {
   st->print_cr("[MachCode]");
   st->move_to(28);
   st->print("%s", AbstractDisassembler::pd_start_text_command());
+  st->bol();
+  st->move_to(28);
+  // Set the origin the last 4 digits of the address. This allows a
+  // reader easily to see the correspondence between a memory dump and
+  // the corresponding instructions.
+  st->print("%s 0x0%04lx", AbstractDisassembler::pd_origin_command(),
+            (unsigned long)(p2i(p) & 0x0ffff));
   st->bol();
   while ((p < end) && (p != nullptr)) {
     //---<  Block comments for nmethod. Interrupts instruction stream, if any.  >---

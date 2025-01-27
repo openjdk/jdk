@@ -1218,6 +1218,7 @@ void AsmRemarks::clear() {
 
 uint AsmRemarks::print(uint offset, outputStream* strm) const {
   uint count = 0;
+  // Allocate a buffer large anough for any plausible comment prefix.
   char prefix[20] = " ;; ";
   if (AbstractDisassembler::print_platform_asm()) {
     os::snprintf(prefix, sizeof(prefix), " %s%s ",
