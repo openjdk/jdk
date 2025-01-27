@@ -2056,12 +2056,13 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
 
 //------------------------------ Sum & Mask ------------------------------
 
-// Returns a lower bound on the number of trailing zeros in expr.
+// Returns a lower bound on the number of trailing zeros in expr, or -1 if the number
+// cannot be determined.
 static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, BasicType bt) {
   expr = expr->uncast();
   const TypeInteger* type = phase->type(expr)->isa_integer(bt);
   if (type == nullptr) {
-    return 0;
+    return -1;
   }
 
   if (type->is_con()) {
@@ -2078,7 +2079,7 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
   if (expr->Opcode() == Op_LShift(bt)) {
     const TypeInt* rhs_t = phase->type(expr->in(2))->isa_int();
     if (rhs_t == nullptr || !rhs_t->is_con()) {
-      return 0;
+      return -1;
     }
     long shift = rhs_t->get_con();
     assert(shift >= 0 && shift < type2aelembytes(bt) * BitsPerByte,
@@ -2086,7 +2087,7 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
     return shift;
   }
 
-  return 0;
+  return -1;
 }
 
 // Checks whether expr is neutral wrt addition under mask, i.e.
@@ -2103,13 +2104,18 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
 //   (AndL (ConL (_ << #N)) #M)
 // The M and N values must satisfy ((-1 << N) & M) == 0.
 static bool AndIL_is_zero_element_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt) {
-  const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
-  if (mask_t == nullptr) {
+  jint expr_trailing_zeros = AndIL_min_trailing_zeros(phase, expr, bt);
+  if (expr_trailing_zeros < 0) {
     return false;
   }
 
-  jint zeros = AndIL_min_trailing_zeros(phase, expr, bt);
-  return zeros > 0 && ((((jlong)1) << zeros) > mask_t->hi_as_long() && mask_t->lo_as_long() >= 0);
+  const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
+  if (mask_t == nullptr || mask_t->lo_as_long() < 0) {
+    return false;
+  }
+
+  jint mask_bit_width = mask_t->hi_as_long() == 0 ? 0 : (BitsPerLong - count_leading_zeros(mask_t->hi_as_long()));
+  return expr_trailing_zeros >= mask_bit_width;
 }
 
 // Given an expression (AndX (AddX v1 v2) mask)
