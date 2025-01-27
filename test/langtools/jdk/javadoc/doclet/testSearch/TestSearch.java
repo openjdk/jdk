@@ -418,7 +418,7 @@ public class TestSearch extends JavadocTester {
         // Test for search related markup
         checkOutput(fileName, expectedOutput,
                 """
-                    <link rel="stylesheet" type="text/css" href="resource-files/jquery-ui.min.css" title="Style" translate="no">
+                    <link rel="stylesheet" type="text/css" href="resource-files/jquery-ui.min.css">
                     """,
                 """
                     <script type="text/javascript" src="script-files/jquery-3.7.1.min.js"></script>

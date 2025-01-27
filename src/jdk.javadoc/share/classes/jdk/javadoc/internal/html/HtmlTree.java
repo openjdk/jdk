@@ -779,17 +779,13 @@ public class HtmlTree extends Content {
      * @param rel   the relevance of the link: the {@code rel} attribute
      * @param type  the type of link: the {@code type} attribute
      * @param href  the path for the link: the {@code href} attribute
-     * @param title title for the link: the {@code title} attribute
-     * @param translate translate property for the link: the {@code translate} attribute
      * @return the element
      */
-    public static HtmlTree LINK(String rel, String type, String href, String title, String translate) {
+    public static HtmlTree LINK(String rel, String type, String href) {
         return new HtmlTree(HtmlTag.LINK)
                 .put(HtmlAttr.REL, rel)
                 .put(HtmlAttr.TYPE, type)
-                .put(HtmlAttr.HREF, href)
-                .put(HtmlAttr.TITLE, title)
-                .put(HtmlAttr.TRANSLATE, translate);
+                .put(HtmlAttr.HREF, href);
     }
 
     /**

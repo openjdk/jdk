@@ -186,7 +186,7 @@ public class TestStylesheet extends JavadocTester {
                 // Test whether a link to the stylesheet file is inserted properly
                 // in the class documentation.
                 """
-                    <link rel="stylesheet" type="text/css" href="../resource-files/stylesheet.css" title="Style" translate="no">""",
+                    <link rel="stylesheet" type="text/css" href="../resource-files/stylesheet.css">""",
                 """
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
                      an <a id="named_anchor1">anchor_with_id</a>.</div>""");
@@ -200,7 +200,7 @@ public class TestStylesheet extends JavadocTester {
 
         checkOutput("index.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="resource-files/stylesheet.css" title="Style" translate="no">""");
+                    <link rel="stylesheet" type="text/css" href="resource-files/stylesheet.css">""");
 
         checkOutput("resource-files/stylesheet.css", false,
                 """

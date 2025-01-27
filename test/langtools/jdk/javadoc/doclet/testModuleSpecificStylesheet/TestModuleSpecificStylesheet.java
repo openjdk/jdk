@@ -82,22 +82,22 @@ public class TestModuleSpecificStylesheet extends JavadocTester {
 
         checkOutput("ma/module-summary.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../ma/doc-files/spanstyle.css" title="Style" translate="no">""");
+                    <link rel="stylesheet" type="text/css" href="../ma/doc-files/spanstyle.css">""");
 
         checkOutput("ma/pa/package-summary.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../../ma/doc-files/spanstyle.css" title="Style" translate="no">""");
+                    <link rel="stylesheet" type="text/css" href="../../ma/doc-files/spanstyle.css">""");
 
         checkOutput("ma/pa/A.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../../ma/doc-files/spanstyle.css" title="Style" translate="no">""");
+                    <link rel="stylesheet" type="text/css" href="../../ma/doc-files/spanstyle.css">""");
 
         checkOutput("ma/pa/pb/B.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../../../ma/doc-files/spanstyle.css" title="Style" translate="no">""");
+                    <link rel="stylesheet" type="text/css" href="../../../ma/doc-files/spanstyle.css">""");
 
         checkOutput("ma/pa/pb/package-summary.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../../../ma/doc-files/spanstyle.css" title="Style" translate="no">""");
+                    <link rel="stylesheet" type="text/css" href="../../../ma/doc-files/spanstyle.css">""");
     }
 }

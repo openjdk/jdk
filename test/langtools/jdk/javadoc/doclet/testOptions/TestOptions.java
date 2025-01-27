@@ -118,7 +118,7 @@ public class TestOptions extends JavadocTester {
 
         checkOutput("resource-files/custom-stylesheet.css", true, "Custom javadoc style sheet");
         checkOutput("pkg/Foo.html", true, """
-            <link rel="stylesheet" type="text/css" href="../resource-files/custom-stylesheet.css" title="Style" translate="no">""");
+            <link rel="stylesheet" type="text/css" href="../resource-files/custom-stylesheet.css">""");
     }
 
     @Test
@@ -131,7 +131,7 @@ public class TestOptions extends JavadocTester {
 
         checkOutput("resource-files/custom-stylesheet.css", true, "Custom javadoc style sheet");
         checkOutput("pkg/Foo.html", true, """
-            <link rel="stylesheet" type="text/css" href="../resource-files/custom-stylesheet.css" title="Style" translate="no">""");
+            <link rel="stylesheet" type="text/css" href="../resource-files/custom-stylesheet.css">""");
     }
 
     @Test
@@ -149,9 +149,9 @@ public class TestOptions extends JavadocTester {
         checkOutput("resource-files/additional-stylesheet-3.css", true, "Additional javadoc style sheet 3");
         checkOutput("pkg/Foo.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-1.css" title="Style" translate="no">
-                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-2.css" title="Style" translate="no">
-                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-3.css" title="Style" translate="no">""");
+                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-1.css">
+                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-2.css">
+                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-3.css">""");
     }
 
     @Test

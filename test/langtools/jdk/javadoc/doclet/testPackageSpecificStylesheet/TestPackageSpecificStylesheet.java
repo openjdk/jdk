@@ -82,15 +82,15 @@ public class TestPackageSpecificStylesheet extends JavadocTester {
 
         checkOutput("pkg/A.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../pkg/doc-files/spanstyle.css" title="Style" translate="no">""");
+                    <link rel="stylesheet" type="text/css" href="../pkg/doc-files/spanstyle.css">""");
 
         checkOutput("pkg/package-summary.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../pkg/doc-files/spanstyle.css" title="Style" translate="no">""");
+                    <link rel="stylesheet" type="text/css" href="../pkg/doc-files/spanstyle.css">""");
 
         checkOutput("pkg2/B.html", false,
                 """
-                    <link rel="stylesheet" type="text/css" href="../pkg2/doc-files/spanstyle.css" title="Style" translate="no">""");
+                    <link rel="stylesheet" type="text/css" href="../pkg2/doc-files/spanstyle.css">""");
 
     }
 }

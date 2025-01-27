@@ -347,8 +347,7 @@ public class Head extends Content {
 
     private void addStylesheet(HtmlTree head, DocPath stylesheet) {
         head.add(HtmlTree.LINK("stylesheet", "text/css",
-                pathToRoot.resolve(stylesheet).getPath(), "Style",
-                "no"));
+                pathToRoot.resolve(stylesheet).getPath()));
     }
 
     private void addScripts(HtmlTree head) {
