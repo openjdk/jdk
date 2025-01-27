@@ -992,13 +992,14 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeInt *r1 = t1->is_int();
 
   if (r0->is_con() && r1->is_con()) {
-    // just XOR them bits.
+    // Constant fold: (c1 ^ c2) -> c3
     return TypeInt::make( r0->get_con() ^ r1->get_con() );
   }
 
-  // not constants
+  // At least one of the arguments is not constant
 
-  // result of xor can only have bits sets where any of the
+
+  // Result of xor can only have bits sets where any of the
   // inputs have bits set. lo can always become 0.
 
   if (r0->_lo >= 0 && r1->_lo >= 0) {
@@ -1006,7 +1007,7 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
       // x cannot have any bit set that is higher than the highest bit set in r0->_hi
       // y cannot have any bit set that is higher than the highest bit set in r1->_hi
 
-      // note cast to unsigned happens before +1 to avoid signed overflow, and
+      // Note: cast to unsigned happens before +1 to avoid signed overflow, and
       // round_up is safe because high bit is unset (0 <= lo <= hi)
       juint max = round_up_power_of_2(juint(r0->_hi | r1->_hi) + 1) - 1;
 
@@ -1023,13 +1024,13 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r1 = t1->is_long();
 
   if (r0->is_con() && r1->is_con()) {
-    // just XOR them bits.
+    // Constant fold: (c1 ^ c2) -> c3
     return TypeLong::make( r0->get_con() ^ r1->get_con() );
   }
 
-  // not constants
+  // At least one of the arguments is not constant
 
-  // result of xor can only have bits sets where any of the
+  // Result of xor can only have bits sets where any of the
   // inputs have bits set. lo can always become 0.
 
   if (r0->_lo >= 0 && r1->_lo >= 0) {
@@ -1037,7 +1038,7 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
       // x cannot have any bit set that is higher than the highest bit set in r0->_hi
       // y cannot have any bit set that is higher than the highest bit set in r1->_hi
 
-      // we want to find a value that has all 1 bits everywhere up to and including
+      // We want to find a value that has all 1 bits everywhere up to and including
       // the highest bits set in r0->_hi as well as r1->_hi. For this,we can take the next
       // power of 2 strictly greater than both hi values and subtract 1 from it.
 
@@ -1052,9 +1053,9 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
       //    (4|4)+1       = 0b0101
       //    round_up_pow2 = 0b1000
       //    -1            = 0b0111 = max
-      // without the +1, round_up_pow2 would be 0b0100, resulting in 0b0011 as max
+      // Without the +1, round_up_pow2 would be 0b0100, resulting in 0b0011 as max
 
-      // note cast to unsigned happens before +1 to avoid signed overflow, and
+      // Note: cast to unsigned happens before +1 to avoid signed overflow, and
       // round_up is safe because high bit is unset (0 <= lo <= hi)
       julong max = round_up_power_of_2(julong(r0->_hi | r1->_hi) + 1) - 1;
 
