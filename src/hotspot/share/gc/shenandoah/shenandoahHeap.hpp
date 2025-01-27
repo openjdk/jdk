@@ -329,7 +329,7 @@ public:
     EVACUATION_BITPOS = 2,
 
     // Heap is under updating: needs no additional barriers.
-    UPDATEREFS_BITPOS = 3,
+    UPDATE_REFS_BITPOS = 3,
 
     // Heap is under weak-reference/roots processing: needs weak-LRB barriers.
     WEAK_ROOTS_BITPOS  = 4,
@@ -346,7 +346,7 @@ public:
     HAS_FORWARDED = 1 << HAS_FORWARDED_BITPOS,
     MARKING       = 1 << MARKING_BITPOS,
     EVACUATION    = 1 << EVACUATION_BITPOS,
-    UPDATEREFS    = 1 << UPDATEREFS_BITPOS,
+    UPDATE_REFS   = 1 << UPDATE_REFS_BITPOS,
     WEAK_ROOTS    = 1 << WEAK_ROOTS_BITPOS,
     YOUNG_MARKING = 1 << YOUNG_MARKING_BITPOS,
     OLD_MARKING   = 1 << OLD_MARKING_BITPOS
@@ -634,6 +634,7 @@ public:
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
+  void collect_as_vm_thread(GCCause::Cause cause) override;
   void collect(GCCause::Cause cause) override;
   void do_full_collection(bool clear_all_soft_refs) override;
 
