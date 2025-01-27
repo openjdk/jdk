@@ -4037,6 +4037,16 @@ The deployment of the AOTCache is divided into three phases:
 
 The AOTCache can be used with the following command-line options:
 
+`-XX:AOTCache:=`*cachefile*
+:   Specify the location of the AOTCache. The standard extension for *cachefile* is `.aot`.
+    If `-XX:AOTCache` is specified but `-XX:AOTMode` is not specified,
+    then `AOTMode` will be given the value of `auto`.
+
+`-XX:AOTConfiguration:=`*configfile*
+:   Specifies the AOT Configuration file for the JVM to write to or read from.
+    This option can be used only with `-XX:AOTMode=record` and `-XX:AOTMode=create`.
+    The standard extension for *configfile* is `.aotconfig`.
+
 `-XX:+AOTMode:=`*mode*
 :   *mode* must be one of the following: `off`, `record`, `create`, `auto`, or `on`.
 
@@ -4086,16 +4096,6 @@ The AOTCache can be used with the following command-line options:
        mode should be used only as a "fail-fast" debugging aid to check if your command-line
        options are compatible with the AOTCache. An alternative is to run your application with
        `-XX:AOTMode=auto -Xlog:cds` to see if the AOTCache can be used or not.
-
-`-XX:AOTConfiguration:=`*configfile*
-:   Specifies the AOT Configuration file for the JVM to write to or read from.
-    This option can be used only with `-XX:AOTMode=record` and `-XX:AOTMode=create`.
-    The standard extension for *configfile* is `.aotconfig`.
-
-`-XX:AOTCache:=`*cachefile*
-:   Specify the location of the AOTCache. The standard extension for *cachefile* is `.aot`.
-    If `-XX:AOTCache` is specified but `-XX:AOTMode` is not specified,
-    then `AOTMode` will be given the value of `auto`.
 
 `-XX:+AOTClassLinking`
 :   If this options is specified with `-XX:AOTMode=create`, the JVM will perform more
