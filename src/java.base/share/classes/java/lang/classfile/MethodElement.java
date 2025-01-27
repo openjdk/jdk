@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,18 @@ package java.lang.classfile;
 import java.lang.classfile.attribute.*;
 
 /**
- * A marker interface for elements that can appear when traversing
- * a {@link MethodModel} or be presented to a {@link MethodBuilder}.
+ * Marker interface for a member element of a {@link MethodModel}.  Such an
+ * element can appear when traversing a {@link MethodModel} unless otherwise
+ * specified, be supplied to a {@link MethodBuilder}, and be processed by a
+ * {@link MethodTransform}.
+ * <p>
+ * {@link AccessFlags} is the only member element of a method that appear
+ * exactly once during the traversal of a {@link MethodModel}.
  *
+ * @see ClassFileElement##membership Membership Elements
+ * @see ClassElement
+ * @see FieldElement
+ * @see CodeElement
  * @sealedGraph
  * @since 24
  */
