@@ -4431,7 +4431,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         1000000000000000L,     // 15 / 10^15
         10000000000000000L,    // 16 / 10^16
         100000000000000000L,   // 17 / 10^17
-        1000000000000000000L  // 18 / 10^18
+        1000000000000000000L   // 18 / 10^18
     };
 
     private static volatile BigInteger[] BIG_TEN_POWERS_TABLE = {
