@@ -4561,7 +4561,7 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
-  
+
   void dilithium_montmul32() {
     __ sqdmulh(v24, __ T4S, v0, v16);
     __ mulv(v16, __ T4S, v0, v16);
@@ -4611,7 +4611,7 @@ class StubGenerator: public StubCodeGenerator {
     __ shsubv(v22, __ T4S, v26, v22);
     __ shsubv(v23, __ T4S, v27, v23);
   }
-    
+
   void dilithium_add_sub32() {
     __ addv(v24, __ T4S, v0, v16);
     __ addv(v25, __ T4S, v1, v17);
