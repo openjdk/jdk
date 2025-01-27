@@ -568,16 +568,9 @@ bool CDSConfig::are_vm_options_incompatible_with_dumping_heap() {
 
 
 bool CDSConfig::is_dumping_heap() {
-  // heap dump is not supported in dynamic dump
-  if (!is_dumping_static_archive()) {
-    return false;
-  }
-
-  if (are_vm_options_incompatible_with_dumping_heap()) {
-    return false;
-  }
-
-  if (_disable_heap_dumping) {
+  if (!is_dumping_static_archive() // heap dump is not supported in dynamic dump
+      || are_vm_options_incompatible_with_dumping_heap()
+      || _disable_heap_dumping) {
     return false;
   }
 
