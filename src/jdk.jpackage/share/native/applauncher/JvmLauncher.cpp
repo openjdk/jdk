@@ -260,7 +260,7 @@ private:
     int initJvmlLauncherData(JvmlLauncherData* ptr) const {
         // Store path to JLI library just behind JvmlLauncherData header.
         char dummy = 0;
-        char* curPtr = ptr ? reinterpret_cast<char*>(ptr + 1) : &dummy;
+        char* curPtr = ptr ? reinterpret_cast<char*>(ptr + 1) : (&dummy + sizeof(JvmlLauncherData));
         {
             const size_t count = sizeof(char)
                     * (jliLibPath.size() + 1 /* trailing zero */);
