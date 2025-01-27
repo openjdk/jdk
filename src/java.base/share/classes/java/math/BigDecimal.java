@@ -3501,14 +3501,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         long intCompact = this.intCompact;
 
-        // currency fast path
-        if (intCompact != INFLATED) {
-            if (scale == 2 && intCompact >= 0 && intCompact <= Integer.MAX_VALUE) {
-                return scale2((int) intCompact);
-            }
-            return getValueString(signum(), Math.abs(intCompact), scale);
-        }
-
         int signum = signum();
         if (this.scale < 0) { // No decimal point
             if (signum == 0) {
@@ -3525,6 +3517,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     .append(str)
                     .repeat('0', trailingZeros)
                     .toString();
+        }
+
+        // currency fast path
+        if (intCompact != INFLATED) {
+            long intCompactAbs = Math.abs(intCompact);
+            if (scale == 2 && (int) intCompact == intCompactAbs) {
+                return scale2((int) intCompact);
+            }
+            return getValueString(signum(), intCompactAbs, scale);
         }
 
         return getValueString(signum, intVal.abs().toString(), scale);
@@ -4250,10 +4251,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // the significand as an absolute value
         String coeff;
         if (intCompact != INFLATED) {
-            if (scale == 2 && (intCompact >= 0 && intCompact <= Integer.MAX_VALUE)) {
+            long intCompactAbs = Math.abs(intCompact);
+            if (scale == 2 && (int) intCompact == intCompactAbs) {
                 return scale2((int) intCompact);
             }
-            long intCompactAbs = Math.abs(intCompact);
             coeffLen = DecimalDigits.stringSize(intCompactAbs);
             signum = signum();
             long adjusted = -(long)scale + (coeffLen -1);
@@ -4430,7 +4431,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         1000000000000000L,     // 15 / 10^15
         10000000000000000L,    // 16 / 10^16
         100000000000000000L,   // 17 / 10^17
-        1000000000000000000L   // 18 / 10^18
+        1000000000000000000L  // 18 / 10^18
     };
 
     private static volatile BigInteger[] BIG_TEN_POWERS_TABLE = {
