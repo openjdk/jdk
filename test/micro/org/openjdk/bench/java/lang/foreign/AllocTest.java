@@ -64,23 +64,23 @@ public class AllocTest extends CLayouts {
     }
 
     @Benchmark
-    public byte alloc_confined() {
+    public long alloc_confined() {
         try (Arena arena = Arena.ofConfined()) {
-            return arena.allocate(size).get(ValueLayout.JAVA_BYTE, 0L);
+            return arena.allocate(size).address();
         }
     }
 
     @Benchmark
-    public byte alloc_calloc_arena() {
+    public long alloc_calloc_arena() {
         try (CallocArena arena = new CallocArena()) {
-            return arena.allocate(size).get(ValueLayout.JAVA_BYTE, 0L);
+            return arena.allocate(size).address();
         }
     }
 
     @Benchmark
-    public byte alloc_unsafe_arena() {
+    public long alloc_unsafe_arena() {
         try (UnsafeArena arena = new UnsafeArena()) {
-            return arena.allocate(size).get(ValueLayout.JAVA_BYTE, 0L);
+            return arena.allocate(size).address();
         }
     }
 
