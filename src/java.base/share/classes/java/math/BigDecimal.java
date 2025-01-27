@@ -3500,6 +3500,16 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return unscaledString();
 
         long intCompact = this.intCompact;
+
+        // currency fast path
+        if (intCompact != INFLATED) {
+            long intCompactAbs = Math.abs(intCompact);
+            if (scale == 2 && (int) intCompact == intCompactAbs) { // intCompact >= 0 intCompact <= Integer.MAX_VALUE
+                return scale2((int) intCompact);
+            }
+            return getValueString(signum(), intCompactAbs, scale);
+        }
+
         int signum = signum();
         if (this.scale < 0) { // No decimal point
             if (signum == 0) {
@@ -3516,15 +3526,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     .append(str)
                     .repeat('0', trailingZeros)
                     .toString();
-        }
-
-        // currency fast path
-        if (intCompact != INFLATED) {
-            long intCompactAbs = Math.abs(intCompact);
-            if (scale == 2 && (int) intCompact == intCompactAbs) { // intCompact >= 0 intCompact <= Integer.MAX_VALUE
-                return scale2((int) intCompact);
-            }
-            return getValueString(signum, intCompactAbs, scale);
         }
 
         return getValueString(signum, intVal.abs().toString(), scale);
@@ -4240,15 +4241,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *         {@code BigDecimal}
      */
     private String layoutChars(boolean sci) {
-        long intCompact = this.intCompact;
         int scale = this.scale;
         if (scale == 0)                      // zero scale is trivial
             return unscaledString();
 
+        long intCompact = this.intCompact;
+
         int signum, coeffLen;
         // the significand as an absolute value
         String coeff;
-
         if (intCompact != INFLATED) {
             long intCompactAbs = Math.abs(intCompact);
             if (scale == 2 && (int) intCompact == intCompactAbs) { // intCompact >= 0 intCompact <= Integer.MAX_VALUE
