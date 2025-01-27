@@ -358,8 +358,8 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         scene.centerSelectedFigures();
     }
 
-    public void clearSelectedNodes() {
-        scene.clearSelectedNodes();
+    public void clearSelectedElements() {
+        scene.clearSelectedElements();
     }
 
     public Rectangle getSceneBounds() {

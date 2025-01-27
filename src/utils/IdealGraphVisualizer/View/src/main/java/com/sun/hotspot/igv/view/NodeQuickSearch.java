@@ -121,7 +121,7 @@ public class NodeQuickSearch implements SearchProvider {
                             if (theGraph != null) {
                                 editor.getModel().selectGraph(theGraph);
                             }
-                            editor.clearSelectedNodes();
+                            editor.clearSelectedElements();
                             editor.addSelectedNodes(nodeSet, true);
                             editor.centerSelectedNodes();
                             editor.requestActive();
@@ -151,7 +151,7 @@ public class NodeQuickSearch implements SearchProvider {
                                 if (theGraph != null) {
                                     editor.getModel().selectGraph(theGraph);
                                 }
-                                editor.clearSelectedNodes();
+                                editor.clearSelectedElements();
                                 editor.addSelectedNodes(tmpSet, true);
                                 editor.centerSelectedNodes();
                                 editor.requestActive();

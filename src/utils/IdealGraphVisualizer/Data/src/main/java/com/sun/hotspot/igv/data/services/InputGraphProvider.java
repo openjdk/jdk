@@ -40,7 +40,7 @@ public interface InputGraphProvider {
 
     void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden);
 
-    void clearSelectedNodes();
+    void clearSelectedElements();
 
     /**
      * @return an iterator walking forward through the {@link InputGraph}s following the {@link #getGraph()}

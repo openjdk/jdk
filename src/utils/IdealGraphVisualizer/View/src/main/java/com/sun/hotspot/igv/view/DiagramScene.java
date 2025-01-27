@@ -374,7 +374,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 rectangle.height *= -1;
             }
 
-            clearSelectedNodes();
+            clearSelectedElements();
             Set<Object> selectedObjects = new HashSet<>();
             for (Figure f : getModel().getDiagram().getFigures()) {
                 FigureWidget w = getWidget(f);
@@ -1210,7 +1210,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     @Override
     public void handleDoubleClick(Widget w, WidgetAction.WidgetMouseEvent e) {
-        clearSelectedNodes();
+        clearSelectedElements();
     }
 
     private class ConnectionSet {
@@ -1253,7 +1253,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     @Override
-    public void clearSelectedNodes() {
+    public void clearSelectedElements() {
         setSelectedObjects(Collections.emptySet());
     }
 

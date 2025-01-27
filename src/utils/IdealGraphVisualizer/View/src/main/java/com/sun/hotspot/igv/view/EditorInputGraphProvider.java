@@ -73,9 +73,9 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     }
 
     @Override
-    public void clearSelectedNodes() {
+    public void clearSelectedElements() {
         if (editor != null && EditorTopComponent.isOpen(editor)) {
-            editor.clearSelectedNodes();
+            editor.clearSelectedElements();
             editor.requestActive();
         }
     }

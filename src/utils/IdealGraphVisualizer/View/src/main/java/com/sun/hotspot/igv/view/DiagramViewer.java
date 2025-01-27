@@ -79,7 +79,7 @@ public interface DiagramViewer {
 
     void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden);
 
-    void clearSelectedNodes();
+    void clearSelectedElements();
 
     void setInteractionMode(InteractionMode mode);
 
