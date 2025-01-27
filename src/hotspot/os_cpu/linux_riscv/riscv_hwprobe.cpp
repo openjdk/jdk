@@ -165,10 +165,10 @@ void RiscvHwprobe::add_features_from_query_result() {
     VM_Version::ext_C.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_V)) {
-    // Linux signal return bug when using vector with vlen > 128b in pre 6.9.
-    long major, minor;
-    os::Linux::kernel_version(&major, &minor);
-    if (!(major > 6 || (major == 6 && minor >= 9))) {
+    // Linux signal return bug when using vector with vlen > 128b in pre 6.8.5.
+    long major, minor, patch;
+    os::Linux::kernel_version(&major, &minor, &patch);
+    if (os::Linux::kernel_version_compare(major, minor, patch, 6, 8, 5) == -1) {
       LogMessage(os) log;
       if (log.is_info()) {
         log.info("Linux kernels before 6.9 (current %ld.%ld) have a known bug when using Vector and signals.", major, minor);
