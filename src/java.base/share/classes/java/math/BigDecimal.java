@@ -3559,7 +3559,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 buf[0] = '-';
                 off = 1;
             }
-            buf[off] = '0';
+            buf[off    ] = '0';
             buf[off + 1] = '.';
             Arrays.fill(buf, off + 2, off + 2 - insertionPoint, (byte) '0');
             intString.getBytes(0, intString.length(), buf, off + 2 - insertionPoint);
