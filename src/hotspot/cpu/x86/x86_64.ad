@@ -1547,7 +1547,12 @@ void BoxLockNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
 uint BoxLockNode::size(PhaseRegAlloc *ra_) const
 {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
-  return (offset < 0x80) ? 5 : 8; // REX
+  int reg = ra_->get_encode(this);
+  if (reg > 15) {
+    return (offset < 0x80) ? 6 : 9; // REX2
+  } else {
+    return (offset < 0x80) ? 5 : 8; // REX
+  }
 }
 
 //=============================================================================
