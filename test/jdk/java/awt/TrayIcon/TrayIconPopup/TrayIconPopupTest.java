@@ -21,6 +21,9 @@
  * questions.
  */
 
+import jdk.test.lib.Platform;
+import jtreg.SkippedException;
+
 import java.awt.AWTException;
 import java.awt.Dialog;
 import java.awt.EventQueue;
@@ -42,10 +45,17 @@ import java.awt.image.BufferedImage;
  *          right clicked. It uses a JWindow as the parent of the JPopupMenu
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @modules java.desktop/java.awt:open
- * @library /java/awt/patchlib
- * @library /lib/client /java/awt/TrayIcon
- * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @library
+ *          /java/awt/patchlib
+ *          /java/awt/TrayIcon
+ *          /lib/client
+ *          /test/lib
+ * @build
+ *          java.desktop/java.awt.Helper
+ *          jdk.test.lib.Platform
+ *          jtreg.SkippedException
+ *          ExtendedRobot
+ *          SystemTrayIconHelper
  * @run main TrayIconPopupTest
  */
 
@@ -63,9 +73,12 @@ public class TrayIconPopupTest {
     Dialog window;
 
     public static void main(String[] args) throws Exception {
-        if (!SystemTray.isSupported()) {
-            System.out.println("SystemTray not supported on the platform under test. " +
-                    "Marking the test passed");
+        if (Platform.isOnWayland()) {
+            // The current robot implementation does not support
+            // clicking in the system tray area.
+            throw new SkippedException("Skipped on Wayland");
+        } else if (!SystemTray.isSupported()) {
+            throw new SkippedException("SystemTray is not supported on this platform.");
         } else {
             if (System.getProperty("os.name").toLowerCase().startsWith("win"))
                 System.err.println("Test can fail if the icon hides to a tray icons pool " +
