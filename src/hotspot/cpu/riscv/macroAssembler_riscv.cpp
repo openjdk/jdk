@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/compiledIC.hpp"
@@ -1333,22 +1332,11 @@ void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Regist
 
 #undef INSN
 
-
-#define INSN(NAME, CSR)                       \
-  void MacroAssembler::NAME(Register Rd) {    \
-    csrr(Rd, CSR);                            \
-  }
-
-  INSN(rdinstret,  CSR_INSTRET);
-  INSN(rdcycle,    CSR_CYCLE);
-  INSN(rdtime,     CSR_TIME);
-  INSN(frcsr,      CSR_FCSR);
-  INSN(frrm,       CSR_FRM);
-  INSN(frflags,    CSR_FFLAGS);
-
-#undef INSN
-
 void MacroAssembler::csrr(Register Rd, unsigned csr) {
+  // These three are specified in zicntr and are unused.
+  // Before adding use-cases add the appropriate hwprobe and flag.
+  assert(csr != CSR_INSTRET && csr != CSR_CYCLE && csr != CSR_TIME,
+         "Not intended for use without enabling zicntr.");
   csrrs(Rd, csr, x0);
 }
 
@@ -5898,7 +5886,7 @@ void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register t
   fclass_##FLOATSIG(tmp, src);                                                            \
   mv(dst, zr);                                                                            \
   /* check if src is NaN */                                                               \
-  andi(tmp, tmp, fclass_mask::nan);                                                       \
+  andi(tmp, tmp, FClassBits::nan);                                                        \
   bnez(tmp, done);                                                                        \
   FLOATCVT(dst, src);                                                                     \
   bind(done);                                                                             \

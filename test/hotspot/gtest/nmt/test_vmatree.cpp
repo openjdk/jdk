@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/memTracker.hpp"
@@ -836,7 +835,7 @@ TEST_VM_F(NMTVMATreeTest, SetMemTypeOfRegions) {
   Tree::RegionData rd(NCS::StackIndex(), mtNone);
   int count = 0;
   auto dump_and_count_nodes = [&](TNode* n){
-    tty->print_cr(SIZE_FORMAT ",in.type: %d, in.tag: %s, out.type: %d, out.tag: %s" ,
+    tty->print_cr("%zu,in.type: %d, in.tag: %s, out.type: %d, out.tag: %s" ,
     (size_t)n->key(), (int)n->val().in.type(), NMTUtil::tag_to_name(n->val().out.mem_tag()),
     (int)n->val().out.type(), NMTUtil::tag_to_name(n->val().in.mem_tag()));
     count++;

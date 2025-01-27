@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "nmt/regionsTree.hpp"
 
 ReservedMemoryRegion RegionsTree::find_reserved_region(address addr) {

@@ -80,6 +80,7 @@ import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Options;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.file.FileVisitOption.FOLLOW_LINKS;
@@ -109,7 +110,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     private static final Set<JavaFileObject.Kind> SOURCE_OR_CLASS =
         Set.of(JavaFileObject.Kind.SOURCE, JavaFileObject.Kind.CLASS);
 
-    protected boolean symbolFileEnabled;
+    protected boolean symbolFileEnabled = true;
 
     private PathFactory pathFactory = Paths::get;
 
@@ -169,8 +170,12 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     @Override
     public void setContext(Context context) {
         super.setContext(context);
-
         fsInfo = FSInfo.instance(context);
+    }
+
+    @Override
+    protected void applyOptions(Options options) {
+        super.applyOptions(options);
 
         symbolFileEnabled = !options.isSet("ignore.symbol.file");
 

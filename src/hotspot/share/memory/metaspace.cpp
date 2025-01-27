@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -217,7 +216,7 @@ void MetaspaceUtils::print_on(outputStream* out) {
   // Used from all GCs. It first prints out totals, then, separately, the class space portion.
   MetaspaceCombinedStats stats = get_combined_statistics();
   out->print_cr(" Metaspace       "
-                "used "      SIZE_FORMAT "K, "
+                "used %zuK, "
                 "committed %zuK, "
                 "reserved %zuK",
                 stats.used()/K,
@@ -226,7 +225,7 @@ void MetaspaceUtils::print_on(outputStream* out) {
 
   if (Metaspace::using_class_space()) {
     out->print_cr("  class space    "
-                  "used "      SIZE_FORMAT "K, "
+                  "used %zuK, "
                   "committed %zuK, "
                   "reserved %zuK",
                   stats.class_space_stats().used()/K,
@@ -566,7 +565,7 @@ void Metaspace::initialize_class_space(ReservedSpace rs) {
          "%zu != %zu", rs.size(), CompressedClassSpaceSize);
   assert(using_class_space(), "Must be using class space");
 
-  assert(rs.size() == CompressedClassSpaceSize, SIZE_FORMAT " != %zu",
+  assert(rs.size() == CompressedClassSpaceSize, "%zu != %zu",
          rs.size(), CompressedClassSpaceSize);
   assert(is_aligned(rs.base(), Metaspace::reserve_alignment()) &&
          is_aligned(rs.size(), Metaspace::reserve_alignment()),

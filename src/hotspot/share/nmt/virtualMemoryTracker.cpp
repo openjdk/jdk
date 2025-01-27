@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
 #include "nmt/memTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
+#include "runtime/os.hpp"
+#include "utilities/ostream.hpp"
 
 VirtualMemoryTracker* VirtualMemoryTracker::Instance::_tracker = nullptr;
 VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
@@ -96,10 +97,10 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
   MemTag tag = mtNone;
   auto print_err = [&](const char* str) {
     log_warning(nmt)("summary mismatch, at %s, for %s,"
-                    " diff-reserved:  %ld "
+                    " diff-reserved:  %ld"
                     " diff-committed: %ld"
-                    " vms-reserved: "  SIZE_FORMAT
-                    " vms-committed: " SIZE_FORMAT,
+                    " vms-reserved: %zu"
+                    " vms-committed: %zu",
                     str, NMTUtil::tag_to_name(tag), (ssize_t)reserve_delta, (ssize_t)commit_delta, reserved, committed);
   };
 
@@ -156,7 +157,7 @@ bool VirtualMemoryTracker::Instance::remove_uncommitted_region(address addr, siz
 }
 
 bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) {
-  ThreadCritical tc;
+  MemTracker::assert_locked();
   VMATree::SummaryDiff diff = tree()->uncommit_region(addr, size);
   apply_summary_diff(diff);
   return true;
@@ -210,9 +211,9 @@ bool VirtualMemoryTracker::Instance::walk_virtual_memory(VirtualMemoryWalker* wa
 }
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
-  ThreadCritical tc;
+  MemTracker::assert_locked();
   tree()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
-    log_info(nmt)("region in walker vmem, base: " INTPTR_FORMAT " size: " SIZE_FORMAT " , %s, committed: " SIZE_FORMAT,
+    log_info(nmt)("region in walker vmem, base: " INTPTR_FORMAT " size: %zu , %s, committed: %zu",
      p2i(rgn.base()), rgn.size(), rgn.tag_name(), rgn.committed_size());
     if (!walker->do_allocation_site(&rgn))
       return false;
