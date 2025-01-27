@@ -2486,13 +2486,16 @@ class StubGenerator: public StubCodeGenerator {
     // strL is 8-byte aligned
     __ ld(tmpLval, Address(strL));
     __ addi(strL, strL, wordSize);
+
+    // compare first 4 characters
     __ load_long_misaligned(tmpU, Address(strU), tmp, (base_offset % 8) != 0 ? 4 : 8);
     __ addi(strU, strU, wordSize);
     __ inflate_lo32(tmpL, tmpLval);
     __ xorr(tmp, tmpU, tmpL);
     __ bnez(tmp, DIFF);
 
-    __ ld(tmpU, Address(strU));
+    // compare second 4 characters
+    __ load_long_misaligned(tmpU, Address(strU), tmp, (base_offset % 8) != 0 ? 4 : 8);
     __ addi(strU, strU, wordSize);
     __ inflate_hi32(tmpL, tmpLval);
     __ xorr(tmp, tmpU, tmpL);
