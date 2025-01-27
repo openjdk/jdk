@@ -50,6 +50,7 @@ import org.junit.jupiter.api.Test;
 public class CheckMacOSKeyChainIntermediateCATrust {
 
     private static final String DIR = System.getProperty("test.src", ".");
+    static boolean verbose = false; // avoid too verbose output
 
     @Test
     public void test() throws Throwable {
@@ -72,13 +73,20 @@ public class CheckMacOSKeyChainIntermediateCATrust {
         System.out.println("Verifying expected certificates are trusted");
 
         String rootCASubjectName = "CN=Example CA,O=Example,C=US";
-        assertThat(containsSubjectName(certificates, rootCASubjectName), "Root CA not found " + rootCASubjectName, certificates);
+        assertThat(containsSubjectName(certificates, rootCASubjectName),
+                "Root CA not found " + rootCASubjectName, certificates);
 
         String intermediateCASubjectName = "CN=Example Intermediate CA,O=Example,C=US";
-        assertThat(containsSubjectName(certificates, intermediateCASubjectName), "Intermediate CA not found " + intermediateCASubjectName, certificates);
+        assertThat(containsSubjectName(certificates, intermediateCASubjectName),
+                "Intermediate CA not found " + intermediateCASubjectName, certificates);
 
         String nonTrustedCASubjectName = "CN=Non Trusted Example CA,O=Example,C=US";
-        assertThat(not(containsSubjectName(certificates, nonTrustedCASubjectName)), "Non trusted CA found " + nonTrustedCASubjectName, certificates);
+        assertThat(not(containsSubjectName(certificates, nonTrustedCASubjectName)),
+                "Non trusted CA found " + nonTrustedCASubjectName, certificates);
+
+        String nonTrustedIntermediateCASubjectName = "CN=Non Trusted Example Intermediate CA,O=Example,C=US";
+        assertThat(not(containsSubjectName(certificates, nonTrustedIntermediateCASubjectName)),
+                "Non trusted intermediate CA found " + nonTrustedIntermediateCASubjectName, certificates);
     }
 
     @BeforeEach
@@ -186,7 +194,11 @@ public class CheckMacOSKeyChainIntermediateCATrust {
 
     private static void assertThat(boolean expected, String message, List<X509Certificate> certificates) {
         if (!expected) {
-            throw new AssertionError(message + ", subjects: " + getSubjects(certificates));
+            String errMessage = message;
+            if (verbose) {
+                errMessage += ", subjects: " + getSubjects(certificates);
+            }
+            throw new AssertionError(errMessage);
         }
     }
 }
