@@ -66,7 +66,7 @@ record CodesignConfig(Optional<SigningIdentifier> identifier,
                     .entitlements(v.entitlements().orElse(null))
                     .keyChain(v.keyChain().orElse(null));
         }
-        
+
         Builder from(CodesignConfig v) {
             return identifier(v.identifier().orElse(null))
                     .entitlements(v.entitlements().orElse(null))

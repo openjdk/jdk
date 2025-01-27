@@ -34,9 +34,9 @@ record ConditionalAction<T extends Context>(Action<T> action, Predicate<T> predi
         Objects.requireNonNull(action);
         Objects.requireNonNull(predicate);
     }
-    
+
     @Override
-    public void execute(T context) throws ActionException {
+    public void execute(T context) {
         if (predicate.test(context)) {
             action.execute(context);
         }

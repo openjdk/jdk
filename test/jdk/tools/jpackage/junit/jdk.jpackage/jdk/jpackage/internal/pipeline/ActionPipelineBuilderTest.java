@@ -29,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ForkJoinPool;
@@ -52,8 +51,9 @@ final class ActionPipelineBuilderTest {
         L;
 
         @Override
-        public void execute(TestContext context) throws ActionException {
-            LockSupport.parkNanos(Duration.ofMillis(100).toNanos());
+        public void execute(TestContext context) {
+            LockSupport.parkNanos(Duration.ofMillis(10).toNanos());
+            System.out.println(String.format("[%s] result before append: [%s]; append %s", Thread.currentThread(), context.sb(), name()));
             context.sb().append(name());
         }
     }
@@ -87,18 +87,18 @@ final class ActionPipelineBuilderTest {
     }
 
     @ParameterizedTest
-    @MethodSource("testData")
-    public void testSequential(List<ActionSpec> actionSpecs, String expectedString) throws ActionException {
+    @MethodSource("testSequentialData")
+    public void testSequential(List<ActionSpec> actionSpecs, String expectedString) {
         testIt(new ForkJoinPool(1), actionSpecs, expectedString);
     }
 
     @ParameterizedTest
-    @MethodSource("testData")
-    public void testParallel(List<ActionSpec> actionSpecs, String expectedString) throws ActionException {
+    @MethodSource("testParallelData")
+    public void testParallel(List<ActionSpec> actionSpecs, String expectedString) {
         testIt(new ForkJoinPool(4), actionSpecs, expectedString);
     }
 
-    private void testIt(ForkJoinPool fjp, List<ActionSpec> actionSpecs, String expectedString) throws ActionException {
+    private void testIt(ForkJoinPool fjp, List<ActionSpec> actionSpecs, String expectedString) {
         final var builder = new ActionPipelineBuilder<TestContext>();
         builder.executor(fjp);
 
@@ -108,21 +108,30 @@ final class ActionPipelineBuilderTest {
 
         final var context = new TestContext(new StringBuffer());
 
+        System.out.println(String.format("start for %s", expectedString));
         builder.create().execute(context);
 
         assertEquals(expectedString, context.sb.toString());
+        System.out.println("end");
     }
 
-    private static Stream<Object[]> testData() {
-        return Stream.<Object[]>of(
+    private static List<Object[]> testData() {
+        return List.<Object[]>of(
                 new Object[] { List.of(action(A).create()), "A" },
                 new Object[] { List.of(action(B).from(A).create()), "AB" },
 
-                // D <- C <- B <- A
-                // |
-                // + <- A
-                new Object[] { List.of(action(D).create(), action(C).from(B).to(D).create(), action(A).to(B).create(), action(A).to(D).create()), "ABCD" },
+                // D <- C <- B
+                // ^         ^
+                // |         |
+                // +--- A ---+
+                new Object[] { List.of(action(D).create(), action(C).from(B).to(D).create(), action(A).to(B).create(), action(A).to(D).create()), "ABCD" }
+        );
+    }
 
+    private static List<Object[]> testSequentialData() {
+        final var data = new ArrayList<>(testData());
+
+        data.addAll(List.<Object[]>of(
                 new Object[] { Stream.of(TestAction.values())
                         .map(ActionPipelineBuilderTest::action)
                         .map(ActionSpecBuilder::create).toList(), Stream.of(TestAction.values()).map(Enum::name).collect(joining()) },
@@ -131,7 +140,13 @@ final class ActionPipelineBuilderTest {
                         .sorted(Comparator.reverseOrder())
                         .map(ActionPipelineBuilderTest::action)
                         .map(ActionSpecBuilder::create).toList(), Stream.of(TestAction.values()).sorted(Comparator.reverseOrder()).map(Enum::name).collect(joining()) }
-        );
+        ));
+
+        return data;
+    }
+
+    private static List<Object[]> testParallelData() {
+        return testData();
     }
 
     private static ActionSpecBuilder action(TestAction action) {

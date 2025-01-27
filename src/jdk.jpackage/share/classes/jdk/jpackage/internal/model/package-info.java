@@ -25,9 +25,9 @@
 
 /**
  * Classes and interfaces of the internal application packaging model.
- * 
- * Primary entities are: {@link Application}, {@link jdk.jpackage.internal.model.Package}, and {@link Launcher}. 
- * 
+ *
+ * Primary entities are: {@link Application}, {@link jdk.jpackage.internal.model.Package}, and {@link Launcher}.
+ *
  * @apiNote
  * All methods of all interfaces and classes in this package return non-null values unless stated otherwise.
  */

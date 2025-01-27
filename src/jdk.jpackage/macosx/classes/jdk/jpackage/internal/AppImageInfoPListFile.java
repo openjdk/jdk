@@ -43,7 +43,7 @@ import jdk.jpackage.internal.model.DottedVersion;
 /**
  * Mandatory elements of Info.plist file of app image.
  */
-record AppImageInfoPListFile(String bundleIdentifier, String bundleName, String copyright, 
+record AppImageInfoPListFile(String bundleIdentifier, String bundleName, String copyright,
         DottedVersion shortVersion, DottedVersion bundleVersion, String category) {
 
     static final class InvalidPlistFileException extends Exception {
@@ -54,7 +54,7 @@ record AppImageInfoPListFile(String bundleIdentifier, String bundleName, String 
         private static final long serialVersionUID = 1L;
     }
 
-    static AppImageInfoPListFile loadFromInfoPList(Path infoPListFile) 
+    static AppImageInfoPListFile loadFromInfoPList(Path infoPListFile)
             throws IOException, InvalidPlistFileException, SAXException {
         final var doc = initDocumentBuilder().parse(Files.newInputStream(infoPListFile));
 
@@ -79,7 +79,7 @@ record AppImageInfoPListFile(String bundleIdentifier, String bundleName, String 
     private static String getStringValue(Document doc, XPath xPath, String elementName) throws XPathExpressionException {
         // Query for the value of <string> element preceding <key>
         // element with value equal to the value of `elementName`
-        return (String) xPath.evaluate(String.format("//string[preceding-sibling::key = \"%s\"][1]", elementName), 
+        return (String) xPath.evaluate(String.format("//string[preceding-sibling::key = \"%s\"][1]", elementName),
                 doc, XPathConstants.STRING);
     }
 }

@@ -26,24 +26,27 @@
 package jdk.jpackage.internal.pipeline;
 
 import java.util.Objects;
-import java.util.stream.Stream;
 
-record DirectedEdge<T>(T from, T to) {
+record DirectedEdge<T>(T tail, T head) {
 
     DirectedEdge {
-        Objects.requireNonNull(from);
-        Objects.requireNonNull(to);
+        Objects.requireNonNull(tail);
+        Objects.requireNonNull(head);
 
-        if (from.equals(to)) {
-            throw new IllegalArgumentException("Same node");
+        if (tail.equals(head)) {
+            throw new IllegalArgumentException("Loop edge");
         }
     }
-    
-    static <U> DirectedEdge<U> create(U from, U to) {
-        return new DirectedEdge<U>(from, to);
+
+    T from() {
+        return tail;
     }
 
-    Stream<T> asStream() {
-        return Stream.of(from, to);
+    T to() {
+        return head;
+    }
+
+    static <U> DirectedEdge<U> create(U tail, U head) {
+        return new DirectedEdge<>(tail, head);
     }
 }

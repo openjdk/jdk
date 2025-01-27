@@ -25,30 +25,14 @@
 
 package jdk.jpackage.internal.pipeline;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import jdk.jpackage.internal.util.function.ExceptionBox;
+import java.util.concurrent.ForkJoinPool;
 
 public final class ActionPipelineBuilder<T extends Context> {
-
-    ActionPipelineBuilder() {
-        actions = new HashMap<>();
-        actionGraph = new ActionGraph<>();
-        rootAction = addAction(new RootAction<>());
-    }
 
     public final class ActionSpecBuilder {
 
@@ -76,34 +60,19 @@ public final class ActionPipelineBuilder<T extends Context> {
         }
 
         public ActionPipelineBuilder<T> add() {
-
-            final List<SequencedAction<T>> seqDependencies = new ArrayList<>();
-
-            for (final var dependency : dependencies) {
-                seqDependencies.add(addAction(dependency));
+            if (actionGraphBuilder == null) {
+                actionGraphBuilder = new ImmutableDAG.Builder<>();
+                actionGraphBuilder.addEdge(action, Action.rootAction());
+                actionGraphBuilder.canAddEdgeToUnknownNode(false);
+            } else {
+                actionGraphBuilder.addEdge(action, Optional.ofNullable(dependent).orElseGet(Action::rootAction));
             }
 
-            final var seqAction = addAction(action);
-
-            seqDependencies.forEach(seqDependency -> {
-                actionGraph.addEdge(seqDependency, seqAction);
-            });
-
-            actionGraph.addEdge(seqAction, validatedDependent());
+            for (var dependency : dependencies) {
+                actionGraphBuilder.addEdge(dependency, action);
+            }
 
             return ActionPipelineBuilder.this;
-        }
-
-        private SequencedAction<T> validatedDependent() {
-            if (dependent == null) {
-                return rootAction;
-            } else {
-                final var seqDependent = actions.get(dependent);
-                if (seqDependent == null) {
-                    throw new IllegalArgumentException("Unknown dependent action");
-                }
-                return seqDependent;
-            }
         }
 
         private Set<Action<T>> dependencies = new LinkedHashSet<>();
@@ -115,139 +84,41 @@ public final class ActionPipelineBuilder<T extends Context> {
         return new ActionSpecBuilder(action);
     }
 
-    public ActionPipelineBuilder<T> executor(Executor v) {
+    public ActionPipelineBuilder<T> executor(ForkJoinPool v) {
         Objects.requireNonNull(v);
-        executor = v;
+        fjp = v;
         return this;
     }
 
     public ActionPipelineBuilder<T> sequentialExecutor() {
-        executor = Executors.newSingleThreadExecutor();
+        fjp = new ForkJoinPool(1);
         return this;
     }
 
     public Action<T> create() {
-        final List<SequencedAction<T>> orderedActions;
+        final var actionGraph = actionGraphBuilder.create();
 
-        try {
-            orderedActions = actionGraph.topologicalSort(Comparator.comparing(SequencedAction::seqNumber));
-        } catch (CycleException ex) {
-            throw new UnsupportedOperationException(ex);
-        }
+        final var countedCompleterBuilder = new CountedCompleterBuilder<>(actionGraph);
 
-        final var dependentActions = orderedActions.stream().map(action -> {
-            final var dependencies = actionGraph.getNodeDependencies(action).stream()
-                    .map(SequencedAction::action).toList();
-            return new DependentAction<T>(action.action, dependencies);
-        }).toList();
-
-        return new Impl<>(dependentActions, executor);
+        return new WrapperAction<>(countedCompleterBuilder, fjp);
     }
 
-    private SequencedAction<T> addAction(Action<T> action) {
-        Objects.requireNonNull(action);
-        var seqAction = actions.get(action);
-        if (seqAction == null) {
-            seqAction = new SequencedAction<>(action, seqNumber++);
-            actions.put(action, seqAction);
-        }
-        return seqAction;
-    }
+    private record WrapperAction<U extends Context>(CountedCompleterBuilder<U> countedCompleterBuilder,
+            ForkJoinPool fjp) implements Action<U> {
 
-    private record SequencedAction<U extends Context>(Action<U> action, int seqNumber) {}
-
-    private record DependentAction<U extends Context>(Action<U> action, List<Action<U>> dependencies) {
-
-        DependentAction {
-            Objects.requireNonNull(action);
-            Objects.requireNonNull(dependencies);
-            dependencies.forEach(Objects::requireNonNull);
-        }
-    }
-
-    private record RunnableAdapter<U extends Context>(Action<U> action, U context,
-            Optional<CompletableFuture<Void>> dependenciesFuture) implements Runnable {
-
-        RunnableAdapter {
-            Objects.requireNonNull(action);
-            Objects.requireNonNull(context);
-            Objects.requireNonNull(dependenciesFuture);
+        WrapperAction {
+            Objects.requireNonNull(countedCompleterBuilder);
+            Objects.requireNonNull(fjp);
         }
 
         @Override
-        public void run() {
-            try {
-                dependenciesFuture.ifPresent(CompletableFuture::join);
-            } catch (CancellationException|CompletionException ex) {
-                return;
-            }
-
-            try {
-                action.execute(context);
-            } catch (ActionException ex) {
-                throw ExceptionBox.rethrowUnchecked(ex);
-            }
+        public void execute(U context) {
+            final var rootCompleter = countedCompleterBuilder.create(context);
+            fjp.invoke(rootCompleter);
         }
+
     }
 
-    private record Impl<U extends Context>(List<DependentAction<U>> dependentActions, Executor executor) implements Action<U> {
-
-        Impl {
-            Objects.requireNonNull(dependentActions);
-            dependentActions.forEach(Objects::requireNonNull);
-            Objects.requireNonNull(executor);
-        }
-
-        @Override
-        public void execute(U context) throws ActionException {
-            final var rootAction = scheduleActions(context);
-            rootAction.join();
-        }
-
-        private CompletableFuture<Void> scheduleActions(U context) {
-
-            final Map<Action<U>, CompletableFuture<Void>> scheduledActions = new HashMap<>();
-
-            CompletableFuture<Void> rootAction = null;
-            for (final var dependentAction : dependentActions) {
-                final Optional<CompletableFuture<Void>> dependenciesFuture;
-                if (dependentAction.dependencies().isEmpty()) {
-                    dependenciesFuture = Optional.empty();
-                } else {
-                    final var dependencyFutures = dependentAction.dependencies().stream()
-                            .map(scheduledActions::get)
-                            .toArray(CompletableFuture<?>[]::new);
-                    dependenciesFuture = Optional.of(CompletableFuture.allOf(dependencyFutures));
-                }
-
-                final var actionAsRunnable = new RunnableAdapter<>(dependentAction.action(), context, dependenciesFuture);
-
-                rootAction = CompletableFuture.runAsync(actionAsRunnable, executor);
-
-                scheduledActions.put(dependentAction.action(), rootAction);
-            }
-
-            return rootAction;
-        }
-    }
-
-    private static class RootAction<U extends Context> implements Action<U> {
-
-        @Override
-        public void execute(U context) throws ActionException {
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%s(root)", super.toString());
-        }
-    }
-
-    private final SequencedAction<T> rootAction;
-    private int seqNumber;
-    private final Map<Action<T>, SequencedAction<T>> actions;
-    private final ActionGraph<SequencedAction<T>> actionGraph;
-
-    private Executor executor;
-
+    private ImmutableDAG.Builder<Action<T>> actionGraphBuilder;
+    private ForkJoinPool fjp;
 }

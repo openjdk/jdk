@@ -30,9 +30,26 @@ import java.util.function.Predicate;
 @FunctionalInterface
 public interface Action<T extends Context> {
 
-    void execute(T context) throws ActionException;
+    void execute(T context);
 
     static <U extends Context> Action<U> createConditionalAction(Predicate<U> predicate, Action<U> action) {
         return new ConditionalAction<>(action, predicate);
     }
+
+    @SuppressWarnings("unchecked")
+    static <U extends Context> Action<U> rootAction() {
+        return (Action<U>)ROOT_ACTION;
+    }
+
+    static final Action<?> ROOT_ACTION = new Action<>() {
+
+        @Override
+        public void execute(Context context) {
+        }
+
+        @Override
+        public String toString() {
+            return super.toString() + "(root)";
+        }
+    };
 }
