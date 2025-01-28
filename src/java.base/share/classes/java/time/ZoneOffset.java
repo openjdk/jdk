@@ -136,7 +136,7 @@ public final class ZoneOffset
         implements TemporalAccessor, TemporalAdjuster, Comparable<ZoneOffset>, Serializable {
 
     /** Cache of time-zone offset by offset in seconds. */
-    private static final int MINUTES_15_SECONDS = 15 * SECONDS_PER_MINUTE;
+    private static final int SECONDS_PER_QUARTER = 15 * SECONDS_PER_MINUTE;
     private static final AtomicReferenceArray<ZoneOffset> MINUTES_15_CACHE = new AtomicReferenceArray<>(256);
 
     /** Cache of time-zone offset by ID. */
@@ -426,9 +426,9 @@ public final class ZoneOffset
         if (totalSeconds < -MAX_SECONDS || totalSeconds > MAX_SECONDS) {
             throw new DateTimeException("Zone offset not in valid range: -18:00 to +18:00");
         }
-        int minutes15Rem = totalSeconds / MINUTES_15_SECONDS;
-        if (totalSeconds - minutes15Rem * MINUTES_15_SECONDS == 0) {
-            int cacheIndex = minutes15Rem & 0xff;
+        int quarters = totalSeconds / SECONDS_PER_QUARTER;
+        if (totalSeconds - quarters * SECONDS_PER_QUARTER == 0) {
+            int cacheIndex = quarters & 0xff;
             ZoneOffset result = MINUTES_15_CACHE.getOpaque(cacheIndex);
             if (result == null) {
                 result = new ZoneOffset(totalSeconds);
