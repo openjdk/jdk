@@ -54,8 +54,8 @@ void SuperWordVTransformBuilder::build_vector_vtnodes_for_packed_nodes() {
 }
 
 void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
-  for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
-    Node* n = _vloop_analyzer.body().body().at(i);
+  for (uint i = 0; i < _vloop.lpt()->_body.size(); i++) {
+    Node* n = _vloop.lpt()->_body.at(i);
     if (_packset.get_pack(n) != nullptr) { continue; }
 
     VTransformNodePrototype prototype = VTransformNodePrototype::make_from_scalar(n, _vloop_analyzer);
