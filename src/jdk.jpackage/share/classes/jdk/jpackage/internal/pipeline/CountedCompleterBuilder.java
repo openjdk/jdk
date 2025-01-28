@@ -38,12 +38,10 @@ import java.util.stream.StreamSupport;
 
 /**
  * Schedules execution of actions in the given action graph.
- *
- * @param <T> type parameter for {@link Action} class
  */
-final class CountedCompleterBuilder<T extends Context> {
+final class CountedCompleterBuilder {
 
-    CountedCompleterBuilder(ImmutableDAG<Action<T>> actionGraph) {
+    CountedCompleterBuilder(ImmutableDAG<Runnable> actionGraph) {
         this.actionGraph = Objects.requireNonNull(actionGraph);
 
         runOnce = StreamSupport.stream(actionGraph.getNodes().spliterator(), false).filter(node -> {
@@ -51,8 +49,8 @@ final class CountedCompleterBuilder<T extends Context> {
         }).collect(toMap(x -> x, x -> new ActionCompleters()));
     }
 
-    CountedCompleter<Void> create(T context) {
-        final var rootCompleters = createRootCompleters(context);
+    CountedCompleter<Void> create() {
+        final var rootCompleters = createRootCompleters();
         if (rootCompleters.size() == 1) {
             return rootCompleters.get(0);
         } else {
@@ -60,28 +58,21 @@ final class CountedCompleterBuilder<T extends Context> {
         }
     }
 
-    private List<? extends CountedCompleter<Void>> createRootCompleters(T context) {
-        Objects.requireNonNull(context);
-
+    private List<? extends CountedCompleter<Void>> createRootCompleters() {
         final var rootNodes = actionGraph.getNoOutgoingEdges();
 
         return rootNodes.stream().map(rootNode -> {
-            return new ActionCompleter(null, context, rootNode);
+            return new ActionCompleter(null, rootNode);
         }).toList();
     }
 
-    private Optional<ActionCompleters> registerCompleter(Action<T> action, CountedCompleter<Void> completer) {
+    private Optional<ActionCompleters> registerCompleter(Runnable action, CountedCompleter<Void> completer) {
         Objects.requireNonNull(completer);
         final var dependentActions = actionGraph.getHeadsOf(action);
         if (dependentActions.size() <= 1) {
             return Optional.empty();
         } else {
             var completers = runOnce.get(action);
-            if (completers == null) {
-                completers = new ActionCompleters();
-                runOnce.put(action, completers);
-            }
-
             completers.allCompleters().add(completer);
             return Optional.of(completers);
         }
@@ -116,13 +107,12 @@ final class CountedCompleterBuilder<T extends Context> {
 
     private final class ActionCompleter extends DependentComleter {
 
-        ActionCompleter(CountedCompleter<Void> dependentCompleter, T context, Action<T> action) {
+        ActionCompleter(CountedCompleter<Void> dependentCompleter, Runnable action) {
             super(dependentCompleter);
-            this.context = Objects.requireNonNull(context);
             this.action = Objects.requireNonNull(action);
 
             dependencyCompleters = actionGraph.getTailsOf(action).stream().map(dependencyAction -> {
-                return new ActionCompleter(this, context, dependencyAction);
+                return new ActionCompleter(this, dependencyAction);
             }).toList();
 
             actionCompleters = registerCompleter(action, this);
@@ -132,15 +122,13 @@ final class CountedCompleterBuilder<T extends Context> {
         public void compute() {
             if (actionCompleters.map(ActionCompleters::completer).map(ref -> ref.compareAndSet(null, this)).orElse(true)) {
                 super.compute();
-            } else if(actionCompleters.isEmpty()) {
-                tryComplete();
             }
         }
 
         @Override
         public void onCompletion(CountedCompleter<?> caller) {
             if (actionCompleters.map(ac -> ac.isActionCompleter(this)).orElse(true)) {
-                action.execute(context);
+                action.run();
                 actionCompleters.ifPresent(ActionCompleters::complete);
             }
         }
@@ -150,8 +138,7 @@ final class CountedCompleterBuilder<T extends Context> {
             return dependencyCompleters;
         }
 
-        private final T context;
-        private final Action<T> action;
+        private final Runnable action;
         private final List<? extends CountedCompleter<Void>> dependencyCompleters;
         private final Optional<ActionCompleters> actionCompleters;
 
@@ -194,6 +181,6 @@ final class CountedCompleterBuilder<T extends Context> {
         }
     }
 
-    private final ImmutableDAG<Action<T>> actionGraph;
-    private final Map<Action<T>, ActionCompleters> runOnce;
+    private final ImmutableDAG<Runnable> actionGraph;
+    private final Map<Runnable, ActionCompleters> runOnce;
 }

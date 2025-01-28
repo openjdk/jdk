@@ -25,6 +25,7 @@ package jdk.jpackage.internal.pipeline;
 
 import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -33,16 +34,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Consumer;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 final class ActionPipelineBuilderTest {
 
-    record TestContext(StringBuffer sb) implements Context {
-    }
-
-    enum TestAction implements Action<TestContext> {
+    enum TestAction implements Consumer<StringBuffer> {
         A,
         B,
         C,
@@ -51,10 +52,26 @@ final class ActionPipelineBuilderTest {
         L;
 
         @Override
-        public void execute(TestContext context) {
+        public void accept(StringBuffer sb) {
             LockSupport.parkNanos(Duration.ofMillis(10).toNanos());
-            System.out.println(String.format("[%s] result before append: [%s]; append %s", Thread.currentThread(), context.sb(), name()));
-            context.sb().append(name());
+            System.out.println(String.format("[%s] result before append: [%s]; append %s", Thread.currentThread(), sb, name()));
+            sb.append(name());
+        }
+
+        Runnable toRunnable(StringBuffer sb) {
+            return new Runnable () {
+
+                @Override
+                public void run() {
+                    accept(sb);
+                }
+
+                @Override
+                public String toString() {
+                    return TestAction.this.toString();
+                }
+
+            };
         }
     }
 
@@ -88,35 +105,54 @@ final class ActionPipelineBuilderTest {
 
     @ParameterizedTest
     @MethodSource("testSequentialData")
-    public void testSequential(List<ActionSpec> actionSpecs, String expectedString) {
+    public void testSequential(List<ActionSpec> actionSpecs, Object expectedString) {
         testIt(new ForkJoinPool(1), actionSpecs, expectedString);
     }
 
     @ParameterizedTest
     @MethodSource("testParallelData")
-    public void testParallel(List<ActionSpec> actionSpecs, String expectedString) {
+    public void testParallel(List<ActionSpec> actionSpecs, Object expectedString) {
         testIt(new ForkJoinPool(4), actionSpecs, expectedString);
     }
 
-    private void testIt(ForkJoinPool fjp, List<ActionSpec> actionSpecs, String expectedString) {
-        final var builder = new ActionPipelineBuilder<TestContext>();
+    private void testIt(ForkJoinPool fjp, List<ActionSpec> actionSpecs, Object expectedString) {
+        final var builder = new ActionPipelineBuilder();
         builder.executor(fjp);
 
+        final var sb = new StringBuffer();
+
+        final var actionMap = Stream.of(TestAction.values()).collect(Collectors.toMap(x -> x, x -> {
+            return x.toRunnable(sb);
+        }));
+
         actionSpecs.forEach(actionSpec -> {
-            builder.action(actionSpec.action).addDependencies(actionSpec.dependencies).dependent(actionSpec.dependent).add();
+            builder.action(actionMap.get(actionSpec.action))
+                    .addDependencies(actionSpec.dependencies.stream().map(actionMap::get).toList())
+                    .dependent(actionMap.get(actionSpec.dependent))
+                    .add();
         });
 
-        final var context = new TestContext(new StringBuffer());
-
         System.out.println(String.format("start for %s", expectedString));
-        builder.create().execute(context);
 
-        assertEquals(expectedString, context.sb.toString());
+        builder.create().run();
+
+        final var actualString = sb.toString();
+
+        if (expectedString instanceof Pattern expectedRegexp) {
+            assertTrue(expectedRegexp.matcher(actualString).matches(), () -> {
+                return String.format("Regexp %s doesn't match string %s", expectedRegexp, actualString);
+            });
+        } else {
+            assertEquals(expectedString.toString(), actualString);
+        }
+
         System.out.println("end");
     }
 
-    private static List<Object[]> testData() {
-        return List.<Object[]>of(
+    private static List<Object[]> testData(boolean sequential) {
+        final List<Object[]> data = new ArrayList<>();
+
+        data.addAll(List.<Object[]>of(
                 new Object[] { List.of(action(A).create()), "A" },
                 new Object[] { List.of(action(B).from(A).create()), "AB" },
 
@@ -125,28 +161,41 @@ final class ActionPipelineBuilderTest {
                 // |         |
                 // +--- A ---+
                 new Object[] { List.of(action(D).create(), action(C).from(B).to(D).create(), action(A).to(B).create(), action(A).to(D).create()), "ABCD" }
-        );
-    }
+        ));
 
-    private static List<Object[]> testSequentialData() {
-        final var data = new ArrayList<>(testData());
+        final var allValuesRegexp = Pattern.compile(String.format("[%s]{%d}", Stream.of(TestAction.values()).map(Enum::name).collect(joining()), TestAction.values().length));
 
         data.addAll(List.<Object[]>of(
                 new Object[] { Stream.of(TestAction.values())
                         .map(ActionPipelineBuilderTest::action)
-                        .map(ActionSpecBuilder::create).toList(), Stream.of(TestAction.values()).map(Enum::name).collect(joining()) },
+                        .map(ActionSpecBuilder::create).toList(),
+                        sequential ? Stream.of(TestAction.values()).map(Enum::name).collect(joining()) : allValuesRegexp },
 
                 new Object[] { Stream.of(TestAction.values())
                         .sorted(Comparator.reverseOrder())
                         .map(ActionPipelineBuilderTest::action)
-                        .map(ActionSpecBuilder::create).toList(), Stream.of(TestAction.values()).sorted(Comparator.reverseOrder()).map(Enum::name).collect(joining()) }
+                        .map(ActionSpecBuilder::create).toList(),
+                        sequential ? Stream.of(TestAction.values()).sorted(Comparator.reverseOrder()).map(Enum::name).collect(joining()) : allValuesRegexp }
         ));
+
+        // B -> A <- C
+        // ^         ^
+        // |         |
+        // +--- D ---+
+        data.add(new Object[] {
+                List.of(action(A).create(), action(B).from(D).to(A).create(), action(C).from(D).to(A).create()),
+                sequential ? "DCBA" : Pattern.compile("D(BC|CB)A")
+        });
 
         return data;
     }
 
+    private static List<Object[]> testSequentialData() {
+        return testData(true);
+    }
+
     private static List<Object[]> testParallelData() {
-        return testData();
+        return testData(false);
     }
 
     private static ActionSpecBuilder action(TestAction action) {

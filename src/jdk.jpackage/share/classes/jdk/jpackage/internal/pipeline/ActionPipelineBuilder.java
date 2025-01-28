@@ -30,42 +30,43 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.ForkJoinPool;
 
-public final class ActionPipelineBuilder<T extends Context> {
+public final class ActionPipelineBuilder {
 
     public final class ActionSpecBuilder {
 
-        ActionSpecBuilder(Action<T> action) {
+        ActionSpecBuilder(Runnable action) {
             Objects.requireNonNull(action);
             this.action = action;
         }
 
-        public ActionSpecBuilder dependent(Action<T> v) {
+        public ActionSpecBuilder dependent(Runnable v) {
             dependent = v;
             return this;
         }
 
-        public ActionSpecBuilder addDependency(Action<T> v) {
+        public ActionSpecBuilder addDependency(Runnable v) {
             Objects.requireNonNull(v);
             dependencies.add(v);
             return this;
         }
 
-        public ActionSpecBuilder addDependencies(Collection<? extends Action<T>> v) {
+        public ActionSpecBuilder addDependencies(Collection<? extends Runnable> v) {
             Objects.requireNonNull(v);
             v.forEach(Objects::requireNonNull);
             dependencies.addAll(v);
             return this;
         }
 
-        public ActionPipelineBuilder<T> add() {
+        public ActionPipelineBuilder add() {
             if (actionGraphBuilder == null) {
                 actionGraphBuilder = new ImmutableDAG.Builder<>();
-                actionGraphBuilder.addEdge(action, Action.rootAction());
+                actionGraphBuilder.addEdge(action, ROOT_ACTION);
                 actionGraphBuilder.canAddEdgeToUnknownNode(false);
             } else {
-                actionGraphBuilder.addEdge(action, Optional.ofNullable(dependent).orElseGet(Action::rootAction));
+                actionGraphBuilder.addEdge(action, Optional.ofNullable(dependent).orElse(ROOT_ACTION));
             }
 
             for (var dependency : dependencies) {
@@ -75,50 +76,60 @@ public final class ActionPipelineBuilder<T extends Context> {
             return ActionPipelineBuilder.this;
         }
 
-        private Set<Action<T>> dependencies = new LinkedHashSet<>();
-        private Action<T> dependent;
-        private final Action<T> action;
+        private Set<Runnable> dependencies = new LinkedHashSet<>();
+        private Runnable dependent;
+        private final Runnable action;
     }
 
-    public ActionSpecBuilder action(Action<T> action) {
+    public ActionSpecBuilder action(Runnable action) {
         return new ActionSpecBuilder(action);
     }
 
-    public ActionPipelineBuilder<T> executor(ForkJoinPool v) {
+    public ActionPipelineBuilder executor(ForkJoinPool v) {
         Objects.requireNonNull(v);
         fjp = v;
         return this;
     }
 
-    public ActionPipelineBuilder<T> sequentialExecutor() {
+    public ActionPipelineBuilder sequentialExecutor() {
         fjp = new ForkJoinPool(1);
         return this;
     }
 
-    public Action<T> create() {
+    public Runnable create() {
         final var actionGraph = actionGraphBuilder.create();
 
-        final var countedCompleterBuilder = new CountedCompleterBuilder<>(actionGraph);
+        final var rootCompleter = new CountedCompleterBuilder(actionGraph).create();
 
-        return new WrapperAction<>(countedCompleterBuilder, fjp);
+        return new WrapperAction(rootCompleter, fjp);
     }
 
-    private record WrapperAction<U extends Context>(CountedCompleterBuilder<U> countedCompleterBuilder,
-            ForkJoinPool fjp) implements Action<U> {
+    private record WrapperAction(CountedCompleter<Void> rootCompleter, ForkJoinPool fjp) implements Runnable {
 
         WrapperAction {
-            Objects.requireNonNull(countedCompleterBuilder);
+            Objects.requireNonNull(rootCompleter);
             Objects.requireNonNull(fjp);
         }
 
         @Override
-        public void execute(U context) {
-            final var rootCompleter = countedCompleterBuilder.create(context);
+        public void run() {
             fjp.invoke(rootCompleter);
         }
 
     }
 
-    private ImmutableDAG.Builder<Action<T>> actionGraphBuilder;
+    private static final Runnable ROOT_ACTION = new Runnable() {
+
+        @Override
+        public void run() {
+        }
+
+        @Override
+        public String toString() {
+            return super.toString() + "(root)";
+        }
+    };
+
+    private ImmutableDAG.Builder<Runnable> actionGraphBuilder;
     private ForkJoinPool fjp;
 }
