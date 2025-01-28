@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * 4174361 4177484 4197699 4209071 4288792 4328747 4413980 4546637 4623997
  * 4685354 4655637 4683492 4080631 4080631 4167995 4340146 4639407
  * 4652815 4652830 4740554 4936355 4738710 4633646 4846659 4822110 4960642
- * 4973919 4980088 4965624 5013094 5006864 8152077
+ * 4973919 4980088 4965624 5013094 5006864 8152077 8347841
  * @library /java/text/testlib
  * @run junit CalendarRegression
  */
@@ -42,6 +42,8 @@ import java.io.ObjectOutputStream;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -50,6 +52,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
+import java.util.function.Predicate;
 
 import static java.util.Calendar.*;
 
@@ -75,7 +78,9 @@ public class CalendarRegression {
     public void Test4031502() {
         // This bug actually occurs on Windows NT as well, and doesn't
         // require the host zone to be set; it can be set in Java.
-        String[] ids = TimeZone.getAvailableIDs();
+        String[] ids = Arrays.stream(TimeZone.getAvailableIDs())
+                .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
+                .toArray(String[]::new);
         boolean bad = false;
         for (int i = 0; i < ids.length; ++i) {
             TimeZone zone = TimeZone.getTimeZone(ids[i]);
@@ -489,7 +494,7 @@ public class CalendarRegression {
     @Test
     public void Test4096231() {
         TimeZone GMT = TimeZone.getTimeZone("GMT");
-        TimeZone PST = TimeZone.getTimeZone("PST");
+        TimeZone PST = TimeZone.getTimeZone("America/Los_Angeles");
         int sec = 0, min = 0, hr = 0, day = 1, month = 10, year = 1997;
 
         Calendar cal1 = new GregorianCalendar(PST);
@@ -838,7 +843,7 @@ public class CalendarRegression {
         TimeZone saveZone = TimeZone.getDefault();
         boolean fail = false;
         try {
-            TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+            TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
             Calendar cal = Calendar.getInstance();
             long onset = new Date(98, APRIL, 5, 1, 0).getTime() + ONE_HOUR;
             long cease = new Date(98, OCTOBER, 25, 0, 0).getTime() + 2 * ONE_HOUR;
@@ -1163,8 +1168,8 @@ public class CalendarRegression {
     @Test
     public void Test4149677() {
         TimeZone[] zones = {TimeZone.getTimeZone("GMT"),
-            TimeZone.getTimeZone("PST"),
-            TimeZone.getTimeZone("EAT")};
+            TimeZone.getTimeZone("America/Los_Angeles"),
+            TimeZone.getTimeZone("Africa/Addis_Ababa")};
         for (int i = 0; i < zones.length; ++i) {
             GregorianCalendar calendar = new GregorianCalendar(zones[i]);
 
@@ -1197,7 +1202,7 @@ public class CalendarRegression {
     @Test
     public void Test4162587() {
         TimeZone savedTz = TimeZone.getDefault();
-        TimeZone tz = TimeZone.getTimeZone("PST");
+        TimeZone tz = TimeZone.getTimeZone("America/Los_Angeles");
         TimeZone.setDefault(tz);
         GregorianCalendar cal = new GregorianCalendar(tz);
         Date d;
@@ -1511,8 +1516,8 @@ public class CalendarRegression {
      */
     @Test
     public void Test4177484() {
-        TimeZone PST = TimeZone.getTimeZone("PST");
-        TimeZone EST = TimeZone.getTimeZone("EST");
+        TimeZone PST = TimeZone.getTimeZone("America/Los_Angeles");
+        TimeZone EST = TimeZone.getTimeZone("America/Panama");
 
         Calendar cal = Calendar.getInstance(PST, Locale.US);
         cal.clear();
@@ -1770,7 +1775,7 @@ public class CalendarRegression {
         TimeZone savedTimeZone = TimeZone.getDefault();
         try {
             boolean pass = true;
-            String[] IDs = new String[]{"Undefined", "PST", "US/Pacific",
+            String[] IDs = new String[]{"Undefined", "America/Los_Angeles", "US/Pacific",
                 "GMT+3:00", "GMT-01:30"};
             for (int i = 0; i < IDs.length; i++) {
                 TimeZone tz = TimeZone.getTimeZone(IDs[i]);

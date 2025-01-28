@@ -382,26 +382,12 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
+    private static final int LINKER_STACK_SIZE = Integer.getInteger("jdk.internal.foreign.LINKER_STACK_SIZE", 256);
+    private static final BufferStack LINKER_STACK = new BufferStack(LINKER_STACK_SIZE);
+
+    @ForceInline
     public static Arena newBoundedArena(long size) {
-        return new Arena() {
-            final Arena arena = Arena.ofConfined();
-            final SegmentAllocator slicingAllocator = SegmentAllocator.slicingAllocator(arena.allocate(size));
-
-            @Override
-            public Scope scope() {
-                return arena.scope();
-            }
-
-            @Override
-            public void close() {
-                arena.close();
-            }
-
-            @Override
-            public MemorySegment allocate(long byteSize, long byteAlignment) {
-                return slicingAllocator.allocate(byteSize, byteAlignment);
-            }
-        };
+        return LINKER_STACK.pushFrame(size, 8);
     }
 
     public static Arena newEmptyArena() {

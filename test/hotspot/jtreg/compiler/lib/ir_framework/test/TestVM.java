@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static compiler.lib.ir_framework.shared.TestFrameworkSocket.PRINT_TIMES_TAG;
 
 /**
  * This class' main method is called from {@link TestFramework} and represents the so-called "test VM". The class is
@@ -883,9 +885,10 @@ public class TestVM {
 
         // Print execution times
         if (VERBOSE || PRINT_TIMES) {
-            System.out.println(System.lineSeparator() + System.lineSeparator() + "Test execution times:");
+            TestFrameworkSocket.write("Test execution times:", PRINT_TIMES_TAG, true);
             for (Map.Entry<Long, String> entry : durations.entrySet()) {
-                System.out.format("%-10s%15d ns%n", entry.getValue() + ":", entry.getKey());
+                TestFrameworkSocket.write(String.format("%-25s%15d ns%n", entry.getValue() + ":", entry.getKey()),
+                        PRINT_TIMES_TAG, true);
             }
         }
 

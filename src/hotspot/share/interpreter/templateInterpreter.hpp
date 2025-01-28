@@ -88,7 +88,6 @@ class TemplateInterpreter: public AbstractInterpreter {
   friend class InterpreterMacroAssembler;
   friend class TemplateInterpreterGenerator;
   friend class TemplateTable;
-  friend class CodeCacheExtensions;
   // friend class Interpreter;
  public:
 
