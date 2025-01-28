@@ -234,23 +234,22 @@ public class Robot {
         }
 
         for (Rectangle screenBounds : allScreenBounds) {
-            int closestX = Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width-1);
-            int closestY = Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height-1);
+            Point cP = calcClosestPoint(x, y, screenBounds);
 
-            int currXDiff = Math.abs(x - closestX);
-            int currYDiff = Math.abs(y - closestY);
+            int currXDiff = Math.abs(x - cP.x);
+            int currYDiff = Math.abs(y - cP.y);
 
             if ((currXDiff == 0) && (currYDiff == 0)) {
                 peer.mouseMove(x,y);
                 afterEvent();
                 return;
             } if (currXDiff < leastXDiff) {
-                finX1 = closestX;
-                finY1 = closestY;
+                finX1 = cP.x;
+                finY1 = cP.y;
                 leastXDiff = currXDiff;
             } if (currYDiff < leastYDiff) {
-                finX2 = closestX;
-                finY2 = closestY;
+                finX2 = cP.x;
+                finY2 = cP.y;
                 leastYDiff = currYDiff;
             }
         }
@@ -262,6 +261,11 @@ public class Robot {
         }
 
         afterEvent();
+    }
+
+    private Point calcClosestPoint(int x, int y, Rectangle screenBounds) {
+        return new Point(Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width-1),
+                Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height-1));
     }
 
     /**
