@@ -23,9 +23,6 @@
  *
  */
 
-
-#include "precompiled.hpp"
-
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
