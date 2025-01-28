@@ -47,7 +47,7 @@ bool AbstractDisassembler::_show_block_comment = true;
 bool AbstractDisassembler::_print_platform_asm = true;
 
 // Default values for "typical" platform assembler
-PlatformDepAsmStrings AbstractDisassembler::_pd_strings*/ PlatformDepAsmStrings {
+PlatformDepAsmStrings AbstractDisassembler::_pd_strings = PlatformDepAsmStrings {
   /*_hex_prefix*/ "0x",
   /*_comment_prefix*/ "#",
   /*_inline_comment_open*/ "/* ",
