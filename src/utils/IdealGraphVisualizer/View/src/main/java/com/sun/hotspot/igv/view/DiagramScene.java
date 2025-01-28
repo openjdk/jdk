@@ -1491,8 +1491,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             LiveRangeWidget firstSegmentWidget = null;
             LiveRangeWidget nextSegmentWidget = null;
             for (LiveRangeSegment segment : segmentSet) {
-                // Segments are not yet laid out.
-                assert segment.getStartPoint() == null && segment.getEndPoint() == null;
+                segment.setStartPoint(null);
+                segment.setEndPoint(null);
                 LiveRangeWidget segmentWidget =
                     new LiveRangeWidget(segment, this, 0, nextSegmentWidget);
                 segmentWidget.setVisible(false);

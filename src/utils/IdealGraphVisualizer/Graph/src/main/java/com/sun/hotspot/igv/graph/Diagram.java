@@ -49,6 +49,8 @@ public class Diagram {
     // Whether widgets derived from this diagram should be adapted for the
     // control-flow graph view.
     private boolean cfg;
+    // Whether live range drawing is enabled.
+    private boolean liveRanges;
     private final Set<BlockConnection> blockConnections;
 
     public boolean isCFG() {
@@ -57,6 +59,14 @@ public class Diagram {
 
     public void setCFG(boolean cfg) {
         this.cfg = cfg;
+    }
+
+    public boolean isLiveRanges() {
+        return liveRanges;
+    }
+
+    public void setLiveRanges(boolean liveRanges) {
+        this.liveRanges = liveRanges;
     }
 
     public Diagram(InputGraph graph, String nodeText, String shortNodeText,
@@ -249,6 +259,9 @@ public class Diagram {
     }
 
     public List<LiveRangeSegment> getLiveRangeSegments() {
+        if (!isCFG() || !isLiveRanges()) {
+            return new ArrayList<>(0);
+        }
         return Collections.unmodifiableList(liveRangeSegments);
     }
 
