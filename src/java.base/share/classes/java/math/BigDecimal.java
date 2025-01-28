@@ -3520,16 +3520,16 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // currency fast path
         if (intCompact != INFLATED) {
             long intCompactAbs = Math.abs(intCompact);
-            if (scale == 2 && (int) intCompact == intCompactAbs) { // intCompact >= 0 && intCompact <= Integer.MAX_VALUE
+            if (scale == 2 & (int) intCompact == intCompactAbs) { // intCompact >= 0 && intCompact <= Integer.MAX_VALUE
                 return scale2((int) intCompact);
             }
-            return getValueString(signum, DecimalDigits.stringSize(intCompactAbs), intCompactAbs, scale);
+            return getValueString(signum, intCompactAbs, DecimalDigits.stringSize(intCompactAbs), scale);
         }
 
         return getValueString(signum, intVal.abs().toString(), scale);
     }
 
-    private static String getValueString(int signum, int intCompactAbsSize, long intCompactAbs, int scale) {
+    private static String getValueString(int signum, long intCompactAbs, int intCompactAbsSize, int scale) {
         /* Insert decimal point */
         int insertionPoint = intCompactAbsSize - scale;
         byte[] buf;
@@ -4252,8 +4252,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             coeffLen = DecimalDigits.stringSize(intCompactAbs);
             signum = signum();
             long adjusted = -(long)scale + (coeffLen -1);
-            if ((scale >= 0) && (adjusted >= -6)) { // plain number
-                return getValueString(signum, coeffLen, intCompactAbs, scale);
+            if ((scale >= 0) & (adjusted >= -6)) { // plain number
+                return getValueString(signum, intCompactAbs, coeffLen, scale);
             }
             byte[] buf = new byte[coeffLen];
             DecimalDigits.getCharsLatin1(intCompactAbs, buf.length, buf);
