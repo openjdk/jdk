@@ -23,6 +23,7 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
+import compiler.lib.generators.Generators;
 import compiler.lib.ir_framework.*;
 
 /*
@@ -34,9 +35,9 @@ import compiler.lib.ir_framework.*;
  */
 public class XorLNodeIdealizationTests {
 
-    private static final long CONST_1 = RunInfo.getRandom().nextLong();
-    private static final long CONST_2 = RunInfo.getRandom().nextLong();
-    private static final long CONST_POW_2 = Math.abs(1L << RunInfo.getRandom().nextInt());
+    private static final long CONST_1 = Generators.G.longs().next();
+    private static final long CONST_2 = Generators.G.longs().next();
+    private static final long CONST_POW_2 = Math.abs(1L << Generators.G.uniformLongs().next());
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -249,7 +250,8 @@ public class XorLNodeIdealizationTests {
     // clamp value to [1,CONST_POW_2]
     @ForceInline
     private static long forceMinMax(long value) {
-        // equivalent to Math.min(CONST_POW_2, Math.max(value, 1))
+        // Equivalent to Math.min(CONST_POW_2, Math.max(value, 1)).
+        // The bounds do not propagate to the type for longs with min/max
         return 1L + (value & (CONST_POW_2 - 1L));
     }
 

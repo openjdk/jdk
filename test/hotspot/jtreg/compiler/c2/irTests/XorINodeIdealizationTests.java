@@ -23,6 +23,7 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
+import compiler.lib.generators.Generators;
 import compiler.lib.ir_framework.*;
 
 /*
@@ -33,11 +34,11 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.XorINodeIdealizationTests
  */
 public class XorINodeIdealizationTests {
-    private static final int CONST_1 = RunInfo.getRandom().nextInt();
-    private static final int CONST_2 = RunInfo.getRandom().nextInt();
+    private static final int CONST_1 = Generators.G.ints().next();
+    private static final int CONST_2 = Generators.G.ints().next();
     private static final boolean CONST_BOOL_1 = RunInfo.getRandom().nextBoolean();
     private static final boolean CONST_BOOL_2 = RunInfo.getRandom().nextBoolean();
-    private static final int CONST_POW_2 = Math.abs(1 << RunInfo.getRandom().nextInt());
+    private static final int CONST_POW_2 = Math.abs(1 << Generators.G.uniformInts().next());
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -269,8 +270,7 @@ public class XorINodeIdealizationTests {
     // clamp value to [1,CONST_POW_2]
     @ForceInline
     private static int forceMinMax(int value){
-        // equivalent to Math.min(CONST_POW_2, Math.max(value, 1))
-        return 1 + (value & (CONST_POW_2 - 1));
+        return Math.min(CONST_POW_2, Math.max(value, 1));
     }
 
     @Test
