@@ -36,9 +36,8 @@ import jdk.jpackage.test.Annotations.Test;
 /*
  * @test
  * @summary jpackage with -psn
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile ArgumentsFilteringTest.java
  * @requires (os.family == "mac")
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main

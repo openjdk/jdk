@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,9 @@ ALL_MODULES = $(call FindAllModules)
 TARGETS :=
 
 ifneq ($(filter static-libs-image, $(MAKECMDGOALS)), )
-  IMAGE_DEST_DIR=$(STATIC_LIBS_IMAGE_DIR)/lib
+  IMAGE_DEST_DIR = $(STATIC_LIBS_IMAGE_DIR)/lib
 else ifneq ($(filter static-libs-graal-image, $(MAKECMDGOALS)), )
-  IMAGE_DEST_DIR=$(STATIC_LIBS_GRAAL_IMAGE_DIR)/lib
+  IMAGE_DEST_DIR = $(STATIC_LIBS_GRAAL_IMAGE_DIR)/lib
 endif
 
 # Copy JDK static libs to the image.

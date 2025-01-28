@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,8 @@ import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 public class TestPremaster {
 
     public static void main(String[] args) throws Exception {
-        Provider provider = Security.getProvider("SunJCE");
+        Provider provider = Security.getProvider(
+                System.getProperty("test.provider.name", "SunJCE"));
 
         KeyGenerator kg;
 

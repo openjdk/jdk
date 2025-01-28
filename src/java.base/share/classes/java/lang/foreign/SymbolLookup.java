@@ -31,6 +31,7 @@ import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.Restricted;
 import jdk.internal.loader.BuiltinClassLoader;
+import jdk.internal.loader.NativeLibraries;
 import jdk.internal.loader.NativeLibrary;
 import jdk.internal.loader.RawNativeLibraries;
 import jdk.internal.reflect.CallerSensitive;
@@ -256,7 +257,8 @@ public interface SymbolLookup {
             if (Utils.containsNullChars(name)) return Optional.empty();
             JavaLangAccess javaLangAccess = SharedSecrets.getJavaLangAccess();
             // note: ClassLoader::findNative supports a null loader
-            long addr = javaLangAccess.findNative(loader, name);
+            NativeLibraries nativeLibraries = javaLangAccess.nativeLibrariesFor(loader);
+            long addr = nativeLibraries.find(name);
             return addr == 0L ?
                     Optional.empty() :
                     Optional.of(MemorySegment.ofAddress(addr)

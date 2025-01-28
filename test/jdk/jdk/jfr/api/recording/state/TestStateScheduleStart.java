@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import jdk.test.lib.jfr.VoidFunction;
 /**
  * @test
  * @summary Test Recording state
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.state.TestStateScheduleStart
@@ -55,7 +55,7 @@ public class TestStateScheduleStart {
         // Test servers vary too much in performance to make an accurate check.
         // We only check that we don't time out after 20 seconds.
         Instant started = Instant.now();
-        long millis = Duration.between(start, started).toMillis();
+        long millis = start.until(started).toMillis();
         System.out.println("Recording started at " + started + ". Delta millis=" + millis + ", expected about 2000");
 
         verifyIllegalState(() -> r.start(), "double start()");

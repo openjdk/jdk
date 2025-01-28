@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public interface AnnotationMirror {
 
     /**
      * Returns the values of this annotation's elements.
-     * This is returned in the form of a map that associates elements
+     * These are returned in the form of a map that associates elements
      * with their corresponding values.
      * Only those elements with values explicitly present in the
      * annotation are included, not those that are implicitly assuming

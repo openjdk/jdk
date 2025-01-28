@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,11 @@
 // implementation in class Stack assumes that alloc() will terminate the process
 // if the allocation fails.
 
-template <class E, MEMFLAGS F> class StackIterator;
+template <class E, MemTag MT> class StackIterator;
 
 // StackBase holds common data/methods that don't depend on the element type,
 // factored out to reduce template code duplication.
-template <MEMFLAGS F> class StackBase
+template <MemTag MT> class StackBase
 {
 public:
   size_t segment_size()   const { return _seg_size; } // Elements per segment.
@@ -85,11 +85,11 @@ protected:
   size_t       _cache_size;     // Number of segments in the cache.
 };
 
-template <class E, MEMFLAGS F>
-class Stack:  public StackBase<F>
+template <class E, MemTag MT>
+class Stack:  public StackBase<MT>
 {
 public:
-  friend class StackIterator<E, F>;
+  friend class StackIterator<E, MT>;
 
   // Number of elements that fit in 4K bytes minus the size of two pointers
   // (link field and malloc header).
@@ -160,13 +160,13 @@ private:
   E* _cache;      // Segment cache to avoid ping-ponging.
 };
 
-template <class E, MEMFLAGS F>
+template <class E, MemTag MT>
 class StackIterator: public StackObj
 {
 public:
-  StackIterator(Stack<E, F>& stack): _stack(stack) { sync(); }
+  StackIterator(Stack<E, MT>& stack): _stack(stack) { sync(); }
 
-  Stack<E, F>& stack() const { return _stack; }
+  Stack<E, MT>& stack() const { return _stack; }
 
   bool is_empty() const { return _cur_seg == nullptr; }
 
@@ -176,7 +176,7 @@ public:
   void sync(); // Sync the iterator's state to the stack's current state.
 
 private:
-  Stack<E, F>& _stack;
+  Stack<E, MT>& _stack;
   size_t    _cur_seg_size;
   E*        _cur_seg;
   size_t    _full_seg_size;

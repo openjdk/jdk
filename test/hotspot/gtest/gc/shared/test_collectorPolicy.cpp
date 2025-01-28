@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/serialArguments.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/flagSetting.hpp"
@@ -67,7 +66,7 @@ class TestGenCollectorPolicy {
       MinHeapSize = 40 * M;
       FLAG_SET_ERGO(InitialHeapSize, 100 * M);
       FLAG_SET_ERGO(NewSize, 1 * M);
-      FLAG_SET_ERGO(MaxNewSize, 40 * M);
+      FLAG_SET_ERGO(MaxNewSize, 50 * M);
 
       ASSERT_NO_FATAL_FAILURE(setter1->execute());
 
@@ -196,7 +195,7 @@ TEST_OTHER_VM(CollectorPolicy, young_cmd) {
 
   // If NewSize is set on command line, but is larger than the min
   // heap size, it should only be used for initial young size.
-  TestGenCollectorPolicy::SetNewSizeCmd setter_large(40 * M);
-  TestGenCollectorPolicy::CheckYoungInitial checker_large(40 * M);
+  TestGenCollectorPolicy::SetNewSizeCmd setter_large(50 * M);
+  TestGenCollectorPolicy::CheckYoungInitial checker_large(50 * M);
   TestGenCollectorPolicy::TestWrapper::test(&setter_large, &checker_large);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
@@ -114,11 +113,6 @@ void VM_Version::initialize() {
   if (UseVectorizedMismatchIntrinsic) {
     warning("vectorizedMismatch intrinsic is not available on this CPU.");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
-  }
-
-  if ((LockingMode != LM_LEGACY) && (LockingMode != LM_MONITOR)) {
-    warning("Unsupported locking mode for this CPU.");
-    FLAG_SET_DEFAULT(LockingMode, LM_LEGACY);
   }
 
   // Enable error context decoding on known platforms

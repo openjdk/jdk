@@ -58,7 +58,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
         -delayload:winhttp.dll, \
     JDK_LIBS := libjava libjvm, \
     LIBS_linux := $(LIBDL), \
-    LIBS_aix := $(LIBDL),\
+    LIBS_aix := $(LIBDL), \
     LIBS_windows := advapi32.lib delayimp.lib iphlpapi.lib secur32.lib \
         winhttp.lib ws2_32.lib, \
     LIBS_macosx := \

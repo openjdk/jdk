@@ -95,7 +95,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     CFLAGS := $(JVM_CFLAGS) \
         -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock/include \
-        $(addprefix -I,$(GTEST_TEST_SRC)), \
+        $(addprefix -I, $(GTEST_TEST_SRC)), \
     CFLAGS_windows := -EHsc, \
     CFLAGS_macosx := -DGTEST_OS_MAC=1, \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc) \

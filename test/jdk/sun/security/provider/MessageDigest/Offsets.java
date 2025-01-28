@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ public class Offsets {
 
     private static void test(String algorithm, int minOfs, int maxOfs, int minLen, int maxLen) throws Exception {
         Random random = new Random();
-        MessageDigest md = MessageDigest.getInstance(algorithm, "SUN");
+        MessageDigest md = MessageDigest.getInstance(algorithm,
+                            System.getProperty("test.provider.name", "SUN"));
         System.out.println("Testing " + algorithm + "...");
         outOfBounds(md, 16, 0, 32);
         outOfBounds(md, 16, -8, 16);

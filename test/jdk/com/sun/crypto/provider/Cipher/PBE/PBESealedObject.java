@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,9 +80,12 @@ public class PBESealedObject {
         "PBEWithHmacSHA512/256AndAES_256",
     };
 
+    private static final String PROVIDER_NAME =
+                    System.getProperty("test.provider.name", "SunJCE");
+
     public static void main(String[] args) {
         PBESealedObject test = new PBESealedObject();
-        Provider sunjce = Security.getProvider("SunJCE");
+        Provider sunjce = Security.getProvider(PROVIDER_NAME);
 
         if (!test.runAll(sunjce, System.out)) {
             throw new RuntimeException("One or more tests have failed....");
@@ -163,7 +166,7 @@ public class PBESealedObject {
                 return false;
             }
 
-            unsealedKey = (SecretKey) so.getObject(key, "SunJCE");
+            unsealedKey = (SecretKey) so.getObject(key, PROVIDER_NAME);
             return Arrays.equals(unsealedKey.getEncoded(), key.getEncoded());
         } catch (InvalidKeyException ex) {
             if (keyAlgo.endsWith("TRIPLEDES") || keyAlgo.endsWith("AES_256")) {

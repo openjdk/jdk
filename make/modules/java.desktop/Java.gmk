@@ -46,18 +46,6 @@ EXCLUDE_FILES += \
     javax/swing/plaf/nimbus/SpinnerPainter.java \
     javax/swing/plaf/nimbus/SplitPanePainter.java \
     javax/swing/plaf/nimbus/TabbedPanePainter.java \
-    sun/awt/resources/security-icon-bw16.png \
-    sun/awt/resources/security-icon-bw24.png \
-    sun/awt/resources/security-icon-bw32.png \
-    sun/awt/resources/security-icon-bw48.png \
-    sun/awt/resources/security-icon-interim16.png \
-    sun/awt/resources/security-icon-interim24.png \
-    sun/awt/resources/security-icon-interim32.png \
-    sun/awt/resources/security-icon-interim48.png \
-    sun/awt/resources/security-icon-yellow16.png \
-    sun/awt/resources/security-icon-yellow24.png \
-    sun/awt/resources/security-icon-yellow32.png \
-    sun/awt/resources/security-icon-yellow48.png \
     sun/awt/X11/java-icon16.png \
     sun/awt/X11/java-icon24.png \
     sun/awt/X11/java-icon32.png \

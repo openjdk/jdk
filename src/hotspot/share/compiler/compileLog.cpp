@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethod.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileLog.hpp"
@@ -212,7 +211,7 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
       // print/print_cr may need to allocate large stack buffer to format
       // strings, here we use snprintf() and print_raw() instead.
       file->print_raw("<compilation_log thread='");
-      jio_snprintf(buf, buflen, UINTX_FORMAT, log->thread_id());
+      jio_snprintf(buf, buflen, "%zu", log->thread_id());
       file->print_raw(buf);
       file->print_raw_cr("'>");
 

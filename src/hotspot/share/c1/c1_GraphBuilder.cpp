@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_Compilation.hpp"
@@ -41,12 +40,8 @@
 #include "interpreter/bytecode.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/oop.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/vm_version.hpp"
-#include "utilities/bitMap.inline.hpp"
 #include "utilities/checkedCast.hpp"
-#include "utilities/powerOfTwo.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -1389,6 +1384,11 @@ void GraphBuilder::jsr(int dest) {
   // If the bytecodes are strange (jumping out of a jsr block) then we
   // might end up trying to re-parse a block containing a jsr which
   // has already been activated. Watch for this case and bail out.
+  if (next_bci() >= method()->code_size()) {
+    // This can happen if the subroutine does not terminate with a ret,
+    // effectively turning the jsr into a goto.
+    BAILOUT("too-complicated jsr/ret structure");
+  }
   for (ScopeData* cur_scope_data = scope_data();
        cur_scope_data != nullptr && cur_scope_data->parsing_jsr() && cur_scope_data->scope() == scope();
        cur_scope_data = cur_scope_data->parent()) {
@@ -2116,7 +2116,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 
   if (cha_monomorphic_target != nullptr) {
-    assert(!target->can_be_statically_bound() || target->equals(cha_monomorphic_target), "");
+    assert(!target->can_be_statically_bound() || target == cha_monomorphic_target, "");
     assert(!cha_monomorphic_target->is_abstract(), "");
     if (!cha_monomorphic_target->can_be_statically_bound(actual_recv)) {
       // If we inlined because CHA revealed only a single target method,
@@ -3334,6 +3334,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   case vmIntrinsics::_dsin          : // fall through
   case vmIntrinsics::_dcos          : // fall through
   case vmIntrinsics::_dtan          : // fall through
+  case vmIntrinsics::_dtanh         : // fall through
   case vmIntrinsics::_dlog          : // fall through
   case vmIntrinsics::_dlog10        : // fall through
   case vmIntrinsics::_dexp          : // fall through
@@ -3736,6 +3737,9 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
 bool GraphBuilder::try_inline_jsr(int jsr_dest_bci) {
   // Introduce a new callee continuation point - all Ret instructions
   // will be replaced with Gotos to this point.
+  if (next_bci() >= method()->code_size()) {
+    return false;
+  }
   BlockBegin* cont = block_at(next_bci());
   assert(cont != nullptr, "continuation must exist (BlockListBuilder starts a new block after a jsr");
 

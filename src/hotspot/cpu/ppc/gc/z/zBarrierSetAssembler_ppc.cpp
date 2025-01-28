@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "asm/register.hpp"
 #include "code/codeBlob.hpp"
@@ -610,14 +609,14 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, R
 
   // Resolve global handle
   __ ld(dst, 0, dst);
-  __ ld(tmp, load_bad_mask.disp(), load_bad_mask.base());
+  __ ld(tmp, load_bad_mask);
   __ b(check_color);
 
   __ bind(weak_tagged);
 
   // Resolve weak handle
   __ ld(dst, 0, dst);
-  __ ld(tmp, mark_bad_mask.disp(), mark_bad_mask.base());
+  __ ld(tmp, mark_bad_mask);
 
   __ bind(check_color);
   __ and_(tmp, tmp, dst);
@@ -943,6 +942,8 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr(), R3_ARG1);
     } else if (stub->is_atomic()) {
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr(), R3_ARG1);
+    } else if (stub->is_nokeepalive()) {
+      __ call_VM_leaf(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr(), R3_ARG1);
     } else {
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), R3_ARG1);
     }

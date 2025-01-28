@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,8 +270,8 @@ public class LengthCheckTest extends SSLEngineTemplate {
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
-        // Re-enable TLSv1 since test depends on it.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
+        // Re-enable TLSv1 and TLS_RSA_* since test depends on it.
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLS_RSA_*");
 
         List<LengthCheckTest> ccsTests = new ArrayList<>();
 

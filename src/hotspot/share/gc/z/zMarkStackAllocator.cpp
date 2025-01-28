@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/z/zInitialize.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkStackAllocator.hpp"
@@ -43,7 +42,7 @@ ZMarkStackSpace::ZMarkStackSpace()
   const size_t size = ZMarkStackSpaceLimit;
   const uintptr_t addr = (uintptr_t)os::reserve_memory(size, !ExecMem, mtGC);
   if (addr == 0) {
-    log_error_pd(gc, marking)("Failed to reserve address space for mark stacks");
+    ZInitialize::error_d("Failed to reserve address space for mark stacks");
     return;
   }
 
@@ -79,11 +78,11 @@ size_t ZMarkStackSpace::expand_space() {
     // Expansion limit reached. This is a fatal error since we
     // currently can't recover from running out of mark stack space.
     fatal("Mark stack space exhausted. Use -XX:ZMarkStackSpaceLimit=<size> to increase the "
-          "maximum number of bytes allocated for mark stacks. Current limit is " SIZE_FORMAT "M.",
+          "maximum number of bytes allocated for mark stacks. Current limit is %zuM.",
           ZMarkStackSpaceLimit / M);
   }
 
-  log_debug(gc, marking)("Expanding mark stack space: " SIZE_FORMAT "M->" SIZE_FORMAT "M",
+  log_debug(gc, marking)("Expanding mark stack space: %zuM->%zuM",
                          old_size / M, new_size / M);
 
   // Expand
@@ -100,7 +99,7 @@ size_t ZMarkStackSpace::shrink_space() {
 
   if (shrink_size > 0) {
     // Shrink
-    log_debug(gc, marking)("Shrinking mark stack space: " SIZE_FORMAT "M->" SIZE_FORMAT "M",
+    log_debug(gc, marking)("Shrinking mark stack space: %zuM->%zuM",
                            old_size / M, new_size / M);
 
     const uintptr_t shrink_start = _end - shrink_size;

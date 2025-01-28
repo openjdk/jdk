@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,15 @@ package test.astro;
 
 import javax.xml.parsers.SAXParserFactory;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.XMLReader;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.astro.SAX201Test
  * @run testng/othervm test.astro.SAX201Test
  * @summary verify SAX 2.0.1 allows to use null in setters
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class SAX201Test {
     @Test
     public void test() throws Exception {

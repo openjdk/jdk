@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,10 @@ import java.util.stream.StreamSupport;
 import java.util.stream.$Streamtype$Stream;
 #end[streamableType]
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.vm.annotation.ForceInline;
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import jdk.internal.util.ArraysSupport;
@@ -2320,6 +2324,22 @@ public abstract sealed class $Type$Buffer
     // and double will be inserted here
 
 #end[byte]
+
+    @ForceInline
+    @Override
+    int scaleShifts() {
+        return Integer.numberOfTrailingZeros($Fulltype$.BYTES);
+    }
+
+    @ForceInline
+    @Override
+    AbstractMemorySegmentImpl heapSegment(Object base,
+                                          long offset,
+                                          long length,
+                                          boolean readOnly,
+                                          MemorySessionImpl bufferScope) {
+        return SegmentFactories.arrayOf$Type$Segment(base, offset, length, readOnly, bufferScope);
+    }
 
 #if[streamableType]
 

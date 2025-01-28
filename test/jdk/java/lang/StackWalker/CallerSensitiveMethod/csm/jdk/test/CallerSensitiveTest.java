@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.CSM.Result;
 import java.util.function.Supplier;
 
@@ -42,29 +37,11 @@ import java.util.function.Supplier;
  * StackWalker::getCallerClass can't be called from @CallerSensitive method.
  */
 public class CallerSensitiveTest {
-    static final Policy DEFAULT_POLICY = Policy.getPolicy();
     private static final String NON_CSM_CALLER_METHOD = "getCallerClass";
     private static final String REFLECTIVE_GET_CALLER_METHOD = "getCallerClassReflectively";
     private static final String CSM_CALLER_METHOD = "caller";
 
     public static void main(String... args) throws Throwable {
-        boolean sm = false;
-        if (args.length > 0 && args[0].equals("sm")) {
-            sm = true;
-            PermissionCollection perms = new Permissions();
-            perms.add(new RuntimePermission("getStackWalkerWithClassReference"));
-            Policy.setPolicy(new Policy() {
-                @Override
-                public boolean implies(ProtectionDomain domain, Permission p) {
-                    return perms.implies(p) ||
-                        DEFAULT_POLICY.implies(domain, p);
-                }
-            });
-            System.setSecurityManager(new SecurityManager());
-        }
-
-        System.err.format("Test %s security manager.%n",
-                          sm ? "with" : "without");
 
         CallerSensitiveTest cstest = new CallerSensitiveTest();
         // test static call to java.util.CSM::caller and CSM::getCallerClass

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelInitLogger.hpp"
@@ -33,6 +32,7 @@
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcWhen.hpp"
@@ -44,8 +44,8 @@
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/universe.hpp"
-#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
@@ -69,11 +69,11 @@ jint ParallelScavengeHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
   // Layout the reserved space for the generations.
-  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize);
-  ReservedSpace young_rs = heap_rs.last_part(MaxOldSize);
+  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize, GenAlignment);
+  ReservedSpace young_rs = heap_rs.last_part(MaxOldSize, GenAlignment);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
 
-  PSCardTable* card_table = new PSCardTable(heap_rs.region());
+  PSCardTable* card_table = new PSCardTable(_reserved);
   card_table->initialize(old_rs.base(), young_rs.base());
 
   CardTableBarrierSet* const barrier_set = new CardTableBarrierSet(card_table);
@@ -128,6 +128,8 @@ jint ParallelScavengeHeap::initialize() {
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
 
   ParallelInitLogger::print();
+
+  FullGCForwarding::initialize(_reserved);
 
   return JNI_OK;
 }
@@ -397,7 +399,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
     if ((result == nullptr) && (QueuedAllocationWarningCount > 0) &&
         (loop_count % QueuedAllocationWarningCount == 0)) {
       log_warning(gc)("ParallelScavengeHeap::mem_allocate retries %d times", loop_count);
-      log_warning(gc)("\tsize=" SIZE_FORMAT, size);
+      log_warning(gc)("\tsize=%zu", size);
     }
   }
 

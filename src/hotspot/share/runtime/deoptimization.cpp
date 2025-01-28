@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -122,6 +121,10 @@ DeoptimizationScope::~DeoptimizationScope() {
 }
 
 void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
+  if (!nm->can_be_deoptimized()) {
+    return;
+  }
+
   ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
   // If it's already marked but we still need it to be deopted.
@@ -267,7 +270,7 @@ void Deoptimization::UnrollBlock::print() {
   st.print_cr("  size_of_deoptimized_frame = %d", _size_of_deoptimized_frame);
   st.print(   "  frame_sizes: ");
   for (int index = 0; index < number_of_frames(); index++) {
-    st.print(INTX_FORMAT " ", frame_sizes()[index]);
+    st.print("%zd ", frame_sizes()[index]);
   }
   st.cr();
   tty->print_raw(st.freeze());
@@ -316,7 +319,7 @@ static void print_objects(JavaThread* deoptee_thread,
 
     st.print("     object <" INTPTR_FORMAT "> of type ", p2i(sv->value()()));
     k->print_value_on(&st);
-    st.print_cr(" allocated (" SIZE_FORMAT " bytes)", obj->size() * HeapWordSize);
+    st.print_cr(" allocated (%zu bytes)", obj->size() * HeapWordSize);
 
     if (Verbose && k != nullptr) {
       k->oop_print_on(obj(), &st);
@@ -447,7 +450,7 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
   RegisterMap map(chunk->at(0)->register_map());
   bool deoptimized_objects = false;
 
-  bool const jvmci_enabled = JVMCI_ONLY(UseJVMCICompiler) NOT_JVMCI(false);
+  bool const jvmci_enabled = JVMCI_ONLY(EnableJVMCI) NOT_JVMCI(false);
 
   // Reallocate the non-escaping objects and restore their fields.
   if (jvmci_enabled COMPILER2_PRESENT(|| (DoEscapeAnalysis && EliminateAllocations)
@@ -603,9 +606,6 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // where it will be very difficult to figure out what went wrong. Better
   // to die an early death here than some very obscure death later when the
   // trail is cold.
-  // Note: on ia64 this guarantee can be fooled by frames with no memory stack
-  // in that it will fail to detect a problem when there is one. This needs
-  // more work in tiger timeframe.
   guarantee(array->unextended_sp() == unpack_sp, "vframe_array_head must contain the vframeArray to unpack");
 
   int number_of_frames = array->frames();
@@ -1061,7 +1061,7 @@ protected:
   static InstanceKlass* find_cache_klass(Thread* thread, Symbol* klass_name) {
     ResourceMark rm(thread);
     char* klass_name_str = klass_name->as_C_string();
-    InstanceKlass* ik = SystemDictionary::find_instance_klass(thread, klass_name, Handle(), Handle());
+    InstanceKlass* ik = SystemDictionary::find_instance_klass(thread, klass_name, Handle());
     guarantee(ik != nullptr, "%s must be loaded", klass_name_str);
     if (!ik->is_in_error_state()) {
       guarantee(ik->is_initialized(), "%s must be initialized", klass_name_str);
@@ -1666,7 +1666,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
           assert(mon_info->owner()->is_locked(), "object must be locked now");
           assert(obj->mark().has_monitor(), "must be");
           assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
-          assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->owner() == deoptee_thread, "must be");
+          assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->has_owner(deoptee_thread), "must be");
         } else {
           ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
           assert(mon_info->owner()->is_locked(), "object must be locked now");
@@ -1767,7 +1767,7 @@ void Deoptimization::deoptimize_single_frame(JavaThread* thread, frame fr, Deopt
     assert(nm != nullptr, "only compiled methods can deopt");
 
     ttyLocker ttyl;
-    xtty->begin_head("deoptimized thread='" UINTX_FORMAT "' reason='%s' pc='" INTPTR_FORMAT "'",(uintx)thread->osthread()->thread_id(), trap_reason_name(reason), p2i(fr.pc()));
+    xtty->begin_head("deoptimized thread='%zu' reason='%s' pc='" INTPTR_FORMAT "'",(uintx)thread->osthread()->thread_id(), trap_reason_name(reason), p2i(fr.pc()));
     nm->log_identity(xtty);
     xtty->end_head();
     for (ScopeDesc* sd = nm->scope_desc_at(fr.pc()); ; sd = sd->sender()) {
@@ -2136,7 +2136,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 
       char buf[100];
       if (xtty != nullptr) {
-        xtty->begin_head("uncommon_trap thread='" UINTX_FORMAT "' %s",
+        xtty->begin_head("uncommon_trap thread='%zu' %s",
                          os::current_thread_id(),
                          format_trap_request(buf, sizeof(buf), trap_request));
 #if INCLUDE_JVMCI
@@ -2200,7 +2200,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
           }
         }
 #endif
-        st.print(" (@" INTPTR_FORMAT ") thread=" UINTX_FORMAT " reason=%s action=%s unloaded_class_index=%d" JVMCI_ONLY(" debug_id=%d"),
+        st.print(" (@" INTPTR_FORMAT ") thread=%zu reason=%s action=%s unloaded_class_index=%d" JVMCI_ONLY(" debug_id=%d"),
                    p2i(fr.pc()),
                    os::current_thread_id(),
                    trap_reason_name(reason),
@@ -2338,8 +2338,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     }
 
     // Setting +ProfileTraps fixes the following, on all platforms:
-    // 4852688: ProfileInterpreter is off by default for ia64.  The result is
-    // infinite heroic-opt-uncommon-trap/deopt/recompile cycles, since the
+    // The result is infinite heroic-opt-uncommon-trap/deopt/recompile cycles, since the
     // recompile relies on a MethodData* to record heroic opt failures.
 
     // Whether the interpreter is producing MDO data or not, we also need

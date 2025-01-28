@@ -1,0 +1,58 @@
+#
+# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+ifeq ($(_MAKEBASE_GMK), )
+  $(error You must include MakeBase.gmk prior to including DebugInfoUtils.gmk)
+endif
+
+################################################################################
+#
+# Common debuginfo utility functions
+#
+################################################################################
+
+################################################################################
+# Find native debuginfo files in a directory
+#
+# Param 1 - dir to find debuginfo files in
+FindDebuginfoFiles = \
+    $(wildcard $(addprefix $1/*, $(DEBUGINFO_SUFFIXES)) \
+        $(addprefix $1/*/*, $(DEBUGINFO_SUFFIXES)) \
+        $(addprefix $1/*/*/*, $(DEBUGINFO_SUFFIXES)))
+
+# Pick the correct debug info files to copy, either zipped or not.
+ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
+  DEBUGINFO_SUFFIXES += .diz
+else
+  DEBUGINFO_SUFFIXES := .debuginfo .pdb .map
+  # On Macosx, if debug symbols have not been zipped, find all files inside *.dSYM
+  # dirs.
+  ifeq ($(call isTargetOs, macosx), true)
+    $(call FillFindCache, \
+        $(SUPPORT_OUTPUTDIR)/modules_libs $(SUPPORT_OUTPUTDIR)/modules_cmds)
+    FindDebuginfoFiles = \
+        $(if $(wildcard $1), $(call containing, .dSYM/, $(call FindFiles, $1)))
+  endif
+endif

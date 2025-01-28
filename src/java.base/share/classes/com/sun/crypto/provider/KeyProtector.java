@@ -89,7 +89,7 @@ final class KeyProtector {
      */
     static {
         int iterationCount = DEFAULT_ITERATION_COUNT;
-        String ic = SecurityProperties.privilegedGetOverridable(
+        String ic = SecurityProperties.getOverridableProperty(
                 "jdk.jceks.iterationCount");
         if (ic != null && !ic.isEmpty()) {
             try {

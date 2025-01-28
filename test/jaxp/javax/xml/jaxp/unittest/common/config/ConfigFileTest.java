@@ -38,45 +38,15 @@ import javax.xml.transform.TransformerFactory;
  * strict template jaxp-strict.properties.template.
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @modules java.xml/jdk.xml.internal
- * @run driver common.config.ConfigFileTest 0 // verifies jaxp.properties
- * @run driver common.config.ConfigFileTest 1 // verifies jaxp-strict.properties.template
+ *
+ * @run driver common.config.ConfigFileTest 1 // verifies jaxp.properties in JDK 24 and later
+ * @run driver common.config.ConfigFileTest 2 // verifies jaxp-strict.properties.template
  */
-public class ConfigFileTest {
+public class ConfigFileTest extends ImplProperties {
     // system property for custom configuration file
     static final String SP_CONFIG = "java.xml.config.file";
     // target directory
     static String TEST_DIR = System.getProperty("test.classes");
-
-    // properties in the configuration file
-    String[] keys = {
-        "jdk.xml.enableExtensionFunctions",
-        "jdk.xml.overrideDefaultParser",
-        "jdk.xml.jdkcatalog.resolve",
-        "jdk.xml.dtd.support",
-        "jdk.xml.entityExpansionLimit",
-        "jdk.xml.totalEntitySizeLimit",
-        "jdk.xml.maxGeneralEntitySizeLimit",
-        "jdk.xml.maxParameterEntitySizeLimit",
-        "jdk.xml.entityReplacementLimit",
-        "jdk.xml.elementAttributeLimit",
-        "jdk.xml.maxOccurLimit",
-        "jdk.xml.maxElementDepth",
-        "jdk.xml.maxXMLNameLimit",
-        "jdk.xml.xpathExprGrpLimit",
-        "jdk.xml.xpathExprOpLimit",
-        "jdk.xml.xpathTotalOpLimit"};
-
-    // type of properties
-    boolean[] propertyIsFeature ={true, true, false, false, false, false,
-        false, false, false, false, false, false, false, false, false, false};
-
-    // values from jaxp-strict.properties.template
-    String[] strictValues ={"false", "false", "strict", "allow", "2500", "100000",
-        "100000", "15000", "100000", "10000", "5000", "0", "1000", "10", "100", "10000"};
-
-    // values from jaxp.properties, as of JDK 23
-    String[] defaultValues ={"true", "false", "continue", "allow", "64000", "50000000",
-        "0", "1000000", "3000000", "10000", "5000", "0", "1000", "10", "100", "10000"};
 
     public static void main(String args[]) throws Exception {
         new ConfigFileTest().run(args[0]);
@@ -84,12 +54,19 @@ public class ConfigFileTest {
 
     public void run(String index) throws Exception {
         String conf = System.getProperty("java.home") + "/conf/";
-        if (index.equals("0")) {
-            verifyConfig(conf + CONFIG_DEFAULT, defaultValues);
-        } else {
-            Path config = Paths.get(TEST_DIR, CONFIG_STRICT);
-            Files.copy(Paths.get(conf, CONFIG_TEMPLATE_STRICT), config);
-            verifyConfig(config.toString(), strictValues);
+        int i = Integer.parseInt(index);
+        switch (i) {
+            case 0: // JDK 23 and older
+                // add compat template after the JEP
+                break;
+            case 1: // JDK 24
+                verifyConfig(conf + CONFIG_DEFAULT, PROPERTY_VALUE[PROPERTY_VALUE_JDK24]);
+                break;
+            case 2: // strict template, since JDK 23
+                Path configStrict = Paths.get(TEST_DIR, CONFIG_STRICT);
+                Files.copy(Paths.get(conf, CONFIG_TEMPLATE_STRICT), configStrict);
+                verifyConfig(configStrict.toString(), PROPERTY_VALUE[PROPERTY_VALUE_JDK23STRICT]);
+                break;
         }
     }
 
@@ -102,11 +79,11 @@ public class ConfigFileTest {
         System.setProperty(SP_CONFIG, filename);
 
         TransformerFactory tf = TransformerFactory.newInstance();
-        IntStream.range(0, keys.length).forEach(i -> {
-            if (propertyIsFeature[i]) {
-                TestBase.Assert.assertEquals(tf.getFeature(keys[i]), Boolean.parseBoolean(values[i]));
+        IntStream.range(0, PROPERTY_KEYS.length).forEach(i -> {
+            if (PROPERTY_TYPE[i] == PropertyType.BOOLEAN) {
+                TestBase.Assert.assertEquals(tf.getFeature(PROPERTY_KEYS[i]), Boolean.parseBoolean(values[i]));
             } else {
-                TestBase.Assert.assertEquals(tf.getAttribute(keys[i]), values[i]);
+                TestBase.Assert.assertEquals(tf.getAttribute(PROPERTY_KEYS[i]), values[i]);
             }
         });
         System.clearProperty(SP_CONFIG);

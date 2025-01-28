@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8' ?>
 <!DOCTYPE supplementalData SYSTEM '../../common/dtd/ldmlSupplemental.dtd'>
 <!--
-	Copyright © 1991-2022 Unicode, Inc.
+	Copyright © 1991-2024 Unicode, Inc.
 	For terms of use, see http://www.unicode.org/copyright.html
 	SPDX-License-Identifier: Unicode-3.0
 	CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -109,7 +109,7 @@
 		<subgroup type="do40" contains="do01 do32"/>
 		<subgroup type="do41" contains="do02 do17 do21 do31"/>
 		<subgroup type="do42" contains="do08 do11 do12"/>
-		<subgroup type="DZ" contains="dz01 dz02 dz03 dz04 dz05 dz06 dz07 dz08 dz09 dz10 dz11 dz12 dz13 dz14 dz15 dz16 dz17 dz18 dz19 dz20 dz21 dz22 dz23 dz24 dz25 dz26 dz27 dz28 dz29 dz30 dz31 dz32 dz33 dz34 dz35 dz36 dz37 dz38 dz39 dz40 dz41 dz42 dz43 dz44 dz45 dz46 dz47 dz48"/>
+		<subgroup type="DZ" contains="dz01 dz02 dz03 dz04 dz05 dz06 dz07 dz08 dz09 dz10 dz11 dz12 dz13 dz14 dz15 dz16 dz17 dz18 dz19 dz20 dz21 dz22 dz23 dz24 dz25 dz26 dz27 dz28 dz29 dz30 dz31 dz32 dz33 dz34 dz35 dz36 dz37 dz38 dz39 dz40 dz41 dz42 dz43 dz44 dz45 dz46 dz47 dz48 dz49 dz50 dz51 dz52 dz53 dz54 dz55 dz56 dz57 dz58"/>
 		<subgroup type="EC" contains="eca ecb ecc ecd ece ecf ecg ech eci ecl ecm ecn eco ecp ecr ecs ecsd ecse ect ecu ecw ecx ecy ecz"/>
 		<subgroup type="EE" contains="ee37 ee39 ee45 ee50 ee52 ee56 ee60 ee64 ee68 ee71 ee74 ee79 ee81 ee84 ee87"/>
 		<subgroup type="ee37" contains="ee141 ee198 ee245 ee296 ee305 ee338 ee353 ee424 ee431 ee446 ee651 ee653 ee719 ee726 ee784 ee890"/>
@@ -147,7 +147,7 @@
 		<subgroup type="espv" contains="esbi esss esvi"/>
 		<subgroup type="esri" contains="eslo"/>
 		<subgroup type="esvc" contains="esa escs esv"/>
-		<subgroup type="ET" contains="etaa etaf etam etbe etdd etga etha etor etsi etsn etso etti"/>
+		<subgroup type="ET" contains="etaa etaf etam etbe etdd etga etha etor etsi etsn etso etsw etti"/>
 		<subgroup type="FI" contains="fi01 fi02 fi03 fi04 fi05 fi06 fi07 fi08 fi09 fi10 fi11 fi12 fi13 fi14 fi15 fi16 fi17 fi18 fi19"/>
 		<subgroup type="FJ" contains="fjc fje fjn fjr fjw"/>
 		<subgroup type="fjc" contains="fj09 fj10 fj12 fj13 fj14"/>
@@ -171,7 +171,7 @@
 		<subgroup type="frpdl" contains="fr44 fr49 fr53 fr72 fr85"/>
 		<subgroup type="GA" contains="ga1 ga2 ga3 ga4 ga5 ga6 ga7 ga8 ga9"/>
 		<subgroup type="GB" contains="gbeng gbnir gbsct gbwls"/>
-		<subgroup type="gbeng" contains="gbbas gbbbd gbbcp gbbdf gbbdg gbben gbbex gbbir gbbkm gbbne gbbnh gbbns gbbol gbbpl gbbrc gbbrd gbbry gbbst gbbur gbcam gbcbf gbche gbchw gbcld gbcma gbcmd gbcon gbcov gbcry gbdal gbdby gbder gbdev gbdnc gbdor gbdud gbdur gbeal gbenf gbery gbess gbesx gbgat gbgls gbgre gbhal gbham gbhav gbhck gbhef gbhil gbhmf gbhns gbhpl gbhrt gbhrw gbhry gbios gbiow gbisl gbkec gbken gbkhl gbkir gbktt gbkwl gblan gblbh gblce gblds gblec gblew gblin gbliv gblnd gblut gbman gbmdb gbmdw gbmik gbmrt gbnbl gbnel gbnet gbnfk gbngm gbnln gbnsm gbnth gbntt gbnty gbnwm gbnyk gbold gboxf gbply gbpor gbpte gbrcc gbrch gbrdb gbrdg gbric gbrot gbrut gbsaw gbsfk gbsft gbsgc gbshf gbshn gbshr gbskp gbslf gbslg gbsnd gbsol gbsom gbsos gbsry gbste gbsth gbstn gbsts gbstt gbsty gbswd gbswk gbtam gbtfw gbthr gbtob gbtrf gbtwh gbwar gbwbk gbwft gbwgn gbwil gbwkf gbwll gbwlv gbwnd gbwnm gbwok gbwor gbwrl gbwrt gbwsm gbwsx gbyor"/>
+		<subgroup type="gbeng" contains="gbbas gbbbd gbbcp gbbdf gbbdg gbben gbbex gbbir gbbkm gbbne gbbnh gbbns gbbol gbbpl gbbrc gbbrd gbbry gbbst gbbur gbcam gbcbf gbche gbchw gbcld gbcma gbcmd gbcon gbcov gbcry gbdal gbdby gbder gbdev gbdnc gbdor gbdud gbdur gbeal gbenf gbery gbess gbesx gbgat gbgls gbgre gbhal gbham gbhav gbhck gbhef gbhil gbhmf gbhns gbhpl gbhrt gbhrw gbhry gbios gbiow gbisl gbkec gbken gbkhl gbkir gbktt gbkwl gblan gblbh gblce gblds gblec gblew gblin gbliv gblnd gblut gbman gbmdb gbmdw gbmik gbmrt gbnbl gbnel gbnet gbnfk gbngm gbnln gbnnh gbnsm gbntt gbnty gbnwm gbnyk gbold gboxf gbply gbpor gbpte gbrcc gbrch gbrdb gbrdg gbric gbrot gbrut gbsaw gbsfk gbsft gbsgc gbshf gbshn gbshr gbskp gbslf gbslg gbsnd gbsol gbsom gbsos gbsry gbste gbsth gbstn gbsts gbstt gbsty gbswd gbswk gbtam gbtfw gbthr gbtob gbtrf gbtwh gbwar gbwbk gbwft gbwgn gbwil gbwkf gbwll gbwlv gbwnd gbwnh gbwnm gbwok gbwor gbwrl gbwrt gbwsm gbwsx gbyor"/>
 		<subgroup type="gbnir" contains="gbabc gband gbann gbbfs gbccg gbdrs gbfmo gblbc gbmea gbmul gbnmd"/>
 		<subgroup type="gbsct" contains="gbabd gbabe gbagb gbans gbclk gbdgy gbdnd gbeay gbedh gbedu gbeln gbels gberw gbfal gbfif gbglg gbhld gbivc gbmln gbmry gbnay gbnlk gbork gbpkn gbrfw gbsay gbscb gbslk gbstg gbwdu gbwln gbzet"/>
 		<subgroup type="gbwls" contains="gbagy gbbge gbbgw gbcay gbcgn gbcmn gbcrf gbcwy gbden gbfln gbgwn gbmon gbmty gbntl gbnwp gbpem gbpow gbrct gbswa gbtof gbvgl gbwrx"/>
@@ -207,7 +207,7 @@
 		<subgroup type="idka" contains="idkb idki idks idkt idku"/>
 		<subgroup type="idml" contains="idma idmu"/>
 		<subgroup type="idnu" contains="idba idnb idnt"/>
-		<subgroup type="idpp" contains="idpa idpb"/>
+		<subgroup type="idpp" contains="idpa idpb idpd idpe idps idpt"/>
 		<subgroup type="idsl" contains="idgo idsa idsg idsn idsr idst"/>
 		<subgroup type="idsm" contains="idac idbb idbe idja idkr idla idri idsb idss idsu"/>
 		<subgroup type="IE" contains="iec iel iem ieu"/>
@@ -216,17 +216,17 @@
 		<subgroup type="iem" contains="iece ieco ieky ielk ieta iewd"/>
 		<subgroup type="ieu" contains="iecn iedl iemn"/>
 		<subgroup type="IL" contains="ild ilha iljm ilm ilta ilz"/>
-		<subgroup type="IN" contains="inan inap inar inas inbr inch inct indh indl inga ingj inhp inhr injh injk inka inkl inla inld inmh inml inmn inmp inmz innl inor inpb inpy inrj insk intg intn intr inup inut inwb"/>
+		<subgroup type="IN" contains="inan inap inar inas inbr incg inch indh indl inga ingj inhp inhr injh injk inka inkl inla inld inmh inml inmn inmp inmz innl inod inpb inpy inrj insk intn intr ints inuk inup inwb"/>
 		<subgroup type="IQ" contains="iqan iqba iqbb iqbg iqdi iqdq iqka iqki iqkr iqma iqmu iqna iqni iqqa iqsd iqwa"/>
 		<subgroup type="iqkr" contains="iqar iqda iqsu"/>
 		<subgroup type="IR" contains="ir00 ir01 ir02 ir03 ir04 ir05 ir06 ir07 ir08 ir09 ir10 ir11 ir12 ir13 ir14 ir15 ir16 ir17 ir18 ir19 ir20 ir21 ir22 ir23 ir24 ir25 ir26 ir27 ir28 ir29 ir30"/>
 		<subgroup type="IS" contains="is1 is2 is3 is4 is5 is6 is7 is8"/>
 		<subgroup type="is1" contains="isgar ishaf iskjo iskop ismos isrkv issel"/>
 		<subgroup type="is2" contains="isgrn isrkn issdn issvg"/>
-		<subgroup type="is3" contains="isakn isbog isdab iseom isgru ishel ishva issko issnf issty"/>
+		<subgroup type="is3" contains="isakn isbog isdab iseom isgru ishva issko issnf issty"/>
 		<subgroup type="is4" contains="isarn isbol isisa iskal isrhh issdv isstr istal isver"/>
-		<subgroup type="is5" contains="isakh isblo ishut ishuv isskg isssf issss"/>
-		<subgroup type="is6" contains="isaku isdav iseyf isfjl isgry ishrg islan isnor issbh issbt issku isthg istjo"/>
+		<subgroup type="is5" contains="ishug ishuv isskg isskr issss"/>
+		<subgroup type="is6" contains="isaku isdav iseyf isfjl isgry ishrg islan isnor issbt isthg istjo"/>
 		<subgroup type="is7" contains="isfjd isflr ismul isshf isvop"/>
 		<subgroup type="is8" contains="isasa isbla isfla isgog ishru ishve ismyr isrge isrgy issfa isskf issog issol isvem"/>
 		<subgroup type="IT" contains="it21 it23 it25 it32 it34 it36 it42 it45 it52 it55 it57 it62 it65 it67 it72 it75 it77 it78 it82 it88"/>
@@ -260,10 +260,10 @@
 		<subgroup type="KN" contains="knk knn"/>
 		<subgroup type="knk" contains="kn01 kn02 kn03 kn06 kn08 kn09 kn11 kn13 kn15"/>
 		<subgroup type="knn" contains="kn04 kn05 kn07 kn10 kn12"/>
-		<subgroup type="KP" contains="kp01 kp02 kp03 kp04 kp05 kp06 kp07 kp08 kp09 kp10 kp13 kp14"/>
+		<subgroup type="KP" contains="kp01 kp02 kp03 kp04 kp05 kp06 kp07 kp08 kp09 kp10 kp13 kp14 kp15"/>
 		<subgroup type="KR" contains="kr11 kr26 kr27 kr28 kr29 kr30 kr31 kr41 kr42 kr43 kr44 kr45 kr46 kr47 kr48 kr49 kr50"/>
 		<subgroup type="KW" contains="kwah kwfa kwha kwja kwku kwmu"/>
-		<subgroup type="KZ" contains="kzakm kzakt kzala kzalm kzast kzaty kzkar kzkus kzkzy kzman kzpav kzsev kzshy kzvos kzyuz kzzap kzzha"/>
+		<subgroup type="KZ" contains="kz10 kz11 kz15 kz19 kz23 kz27 kz31 kz33 kz35 kz39 kz43 kz47 kz55 kz59 kz61 kz62 kz63 kz71 kz75 kz79"/>
 		<subgroup type="LA" contains="laat labk labl lach laho lakh lalm lalp laou laph lasl lasv lavi lavt laxa laxe laxi laxs"/>
 		<subgroup type="LB" contains="lbak lbas lbba lbbh lbbi lbja lbjl lbna"/>
 		<subgroup type="LC" contains="lc01 lc02 lc03 lc05 lc06 lc07 lc08 lc10 lc11 lc12"/>
@@ -309,7 +309,7 @@
 		<subgroup type="ma12" contains="maaou maoud"/>
 		<subgroup type="MC" contains="mccl mcco mcfo mcga mcje mcla mcma mcmc mcmg mcmo mcmu mcph mcsd mcso mcsp mcsr mcvr"/>
 		<subgroup type="MD" contains="mdan mdba mdbd mdbr mdbs mdca mdcl mdcm mdcr mdcs mdct mdcu mddo mddr mddu mded mdfa mdfl mdga mdgl mdhi mdia mdle mdni mdoc mdor mdre mdri mdsd mdsi mdsn mdso mdst mdsv mdta mdte mdun"/>
-		<subgroup type="ME" contains="me01 me02 me03 me04 me05 me06 me07 me08 me09 me10 me11 me12 me13 me14 me15 me16 me17 me18 me19 me20 me21 me22 me23 me24"/>
+		<subgroup type="ME" contains="me01 me02 me03 me04 me05 me06 me07 me08 me09 me10 me11 me12 me13 me14 me15 me16 me17 me18 me19 me20 me21 me22 me23 me24 me25"/>
 		<subgroup type="MG" contains="mga mgd mgf mgm mgt mgu"/>
 		<subgroup type="MH" contains="mhl mht"/>
 		<subgroup type="mhl" contains="mhall mhebo mheni mhjab mhjal mhkil mhkwa mhlae mhlib mhnmk mhnmu mhron mhuja mhwth"/>
@@ -335,12 +335,7 @@
 		<subgroup type="NI" contains="nian nias nibo nica nici nico nies nigr niji nile nimd nimn nims nimt nins niri nisj"/>
 		<subgroup type="NL" contains="nlaw nlbq1 nlbq2 nlbq3 nlcw nldr nlfl nlfr nlge nlgr nlli nlnb nlnh nlov nlsx nlut nlze nlzh"/>
 		<subgroup type="NO" contains="no03 no11 no15 no18 no21 no22 no30 no34 no38 no42 no46 no50 no54"/>
-		<subgroup type="NP" contains="np1 np2 np3 np4 np5 npp1 npp2 npp3 npp4 npp5 npp6 npp7"/>
-		<subgroup type="np1" contains="npba npja npna"/>
-		<subgroup type="np2" contains="npbh npka npra"/>
-		<subgroup type="np3" contains="npdh npga nplu"/>
-		<subgroup type="np4" contains="npko npme npsa"/>
-		<subgroup type="np5" contains="npma npse"/>
+		<subgroup type="NP" contains="npp1 npp2 npp3 npp4 npp5 npp6 npp7"/>
 		<subgroup type="NR" contains="nr01 nr02 nr03 nr04 nr05 nr06 nr07 nr08 nr09 nr10 nr11 nr12 nr13 nr14"/>
 		<subgroup type="NZ" contains="nzauk nzbop nzcan nzcit nzgis nzhkb nzmbh nzmwt nznsn nzntl nzota nzstl nztas nztki nzwgn nzwko nzwtc"/>
 		<subgroup type="OM" contains="ombj ombs ombu omda omma ommu omsj omss omwu omza omzu"/>
@@ -360,7 +355,7 @@
 		<subgroup type="ph11" contains="phcom phdao phdas phdav phdvo phsar phsco"/>
 		<subgroup type="ph12" contains="phlan phnco phsuk"/>
 		<subgroup type="ph13" contains="phagn phags phdin phsun phsur"/>
-		<subgroup type="ph14" contains="phlas phmag phslu phtaw"/>
+		<subgroup type="ph14" contains="phlas phmgn phmgs phslu phtaw"/>
 		<subgroup type="ph15" contains="phabr phapa phben phifu phkal phmou"/>
 		<subgroup type="ph40" contains="phbtg phcav phlag phque phriz"/>
 		<subgroup type="ph41" contains="phmad phmdc phmdr phplw phrom"/>

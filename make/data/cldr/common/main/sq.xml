@@ -56,6 +56,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bi">bislamisht</language>
 			<language type="bin">binisht</language>
 			<language type="bla">siksikaisht</language>
+			<language type="blo">anisht</language>
 			<language type="bm">bambarisht</language>
 			<language type="bn">bengalisht</language>
 			<language type="bo">tibetisht</language>
@@ -163,6 +164,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">haidaishte jugore</language>
 			<language type="he">hebraisht</language>
 			<language type="hi">indisht</language>
+			<language type="hi_Latn">hindisht (latine)</language>
+			<language type="hi_Latn" alt="variant">hinglisht</language>
 			<language type="hil">hiligajnonisht</language>
 			<language type="hmn">hmongisht</language>
 			<language type="hr">kroatisht</language>
@@ -231,6 +234,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">komisht</language>
 			<language type="kw">kornisht</language>
 			<language type="kwk">kuakualaisht</language>
+			<language type="kxv">kuvisht</language>
 			<language type="ky">kirgizisht</language>
 			<language type="la">latinisht</language>
 			<language type="lad">ladinoisht</language>
@@ -399,6 +403,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sw_CD">suahilishte kongoleze</language>
 			<language type="swb">kamorianisht</language>
 			<language type="syr">siriakisht</language>
+			<language type="szl">silesisht</language>
 			<language type="ta">tamilisht</language>
 			<language type="tce">tatshonishte jugore</language>
 			<language type="te">teluguisht</language>
@@ -441,6 +446,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ve">vendaisht</language>
 			<language type="vec">venetisht</language>
 			<language type="vi">vietnamisht</language>
+			<language type="vmw">makuvaisht</language>
 			<language type="vo">volapykisht</language>
 			<language type="vun">vunxhoisht</language>
 			<language type="wa">ualunisht</language>
@@ -452,6 +458,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">kinezishte vu</language>
 			<language type="xal">kalmikisht</language>
 			<language type="xh">xhosaisht</language>
+			<language type="xnr">kangrisht</language>
 			<language type="xog">sogisht</language>
 			<language type="yav">jangbenisht</language>
 			<language type="ybb">jembaisht</language>
@@ -460,6 +467,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl">nejengatuisht</language>
 			<language type="yue">kantonezisht</language>
 			<language type="yue" alt="menu">kinezishte kantoneze</language>
+			<language type="za">zhuangisht</language>
 			<language type="zgh">tamaziatishte standarde marokene</language>
 			<language type="zh">kinezisht</language>
 			<language type="zh" alt="menu">kinezishte mandarine</language>
@@ -990,7 +998,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="indian">Kalendari Kombëtar Indian</type>
 			<type key="calendar" type="islamic">kalendar islam</type>
 			<type key="calendar" type="islamic-civil">kalendar islam (tabelor, epoka civile)</type>
-			<type key="calendar" type="islamic-rgsa" draft="provisional">kalendar islamik (Arabi Saudite, shikim)</type>
+			<type key="calendar" type="islamic-rgsa">kalendar islamik (Arabi Saudite, shikim)</type>
 			<type key="calendar" type="islamic-tbla">kalendar islam (tabelor, epoka astronomike)</type>
 			<type key="calendar" type="islamic-umalqura">kalendar islam (um al-qura)</type>
 			<type key="calendar" type="iso8601">kalendar ISO-8601</type>
@@ -1612,7 +1620,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">'java' W 'e' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">'java' W 'e' 'muajit' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'java' W 'e' MMMM</dateFormatItem>
 						<dateFormatItem id="yM">M.y</dateFormatItem>
 						<dateFormatItem id="yMd">d.M.y</dateFormatItem>
@@ -2124,6 +2132,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Ora: {0}</regionFormat>
 			<regionFormat type="daylight">Ora verore: {0}</regionFormat>
 			<regionFormat type="standard">Ora standarde: {0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Ora universale e koordinuar</standard>
@@ -2677,9 +2688,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ulanbatar</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Çoibalsan</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Makao</exemplarCity>
 			</zone>
@@ -2910,9 +2918,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Uejk</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankorejxh</exemplarCity>
@@ -3256,13 +3261,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Ora verore e Kinës</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Ora e Çoibalsanit</generic>
-					<standard>Ora standarde e Çoibalsanit</standard>
-					<daylight>Ora verore e Çoibalsanit</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Ora e Ishullit të Krishtlindjeve</standard>
@@ -3511,6 +3509,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Ora e Petropavllovsk-Kamçatkës</generic>
 					<standard>Ora standarde e Petropavllovsk-Kamçatkës</standard>
 					<daylight>Ora verore e Petropavllovsk-Kamçatkës</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Ora e Kazakistanit</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4064,8 +4067,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -4790,14 +4791,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol alt="narrow">SHP</symbol>
 			</currency>
 			<currency type="SLE">
-				<displayName>Leoni i Sierra-Leones</displayName>
-				<displayName count="one">leon i Sierra-Leones</displayName>
-				<displayName count="other">leonë të Sierra-Leones</displayName>
+				<displayName>Leoni i Siera-Leones</displayName>
+				<displayName count="one">leon i Siera-Leones</displayName>
+				<displayName count="other">leonë të Siera-Leones</displayName>
 			</currency>
 			<currency type="SLL">
-				<displayName>Leoni i Sierra-Leones (1964—2022)</displayName>
-				<displayName count="one">leon i Sierra-Leones (1964—2022)</displayName>
-				<displayName count="other">leonë të Sierra-Leones (1964—2022)</displayName>
+				<displayName>Leoni i Siera-Leones (1964–2022)</displayName>
+				<displayName count="one">leon i Siera-Leones (1964–2022)</displayName>
+				<displayName count="other">leonë të Siera-Leones (1964–2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Shilinga somaleze</displayName>
@@ -5741,9 +5742,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} atmosferë</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
-				<displayName>paskalë</displayName>
+				<displayName>paskal</displayName>
 				<unitPattern count="one">{0} paskal</unitPattern>
-				<unitPattern count="other">{0} paskalë</unitPattern>
+				<unitPattern count="other">{0} paskal</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hektopaskal</displayName>
@@ -5977,8 +5978,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-quart-imperial">
 				<displayName>çerekë imperialë</displayName>
-				<unitPattern count="one">{0} çerek imperialë</unitPattern>
+				<unitPattern count="one">{0} çerek imperial</unitPattern>
 				<unitPattern count="other">{0} çerekë imperialë</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>pjesë për miliard</displayName>
+				<unitPattern count="one">{0} pjesë për miliard</unitPattern>
+				<unitPattern count="other">{0} pjesë për miliard</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>net</displayName>
+				<unitPattern count="one">{0} natë</unitPattern>
+				<unitPattern count="other">{0} net</unitPattern>
+				<perUnitPattern>{0}/natë</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>drejtimi kardinal</displayName>
@@ -6241,6 +6253,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} pisk</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} pinch</unitPattern>
 			</unit>
+			<unit type="duration-night">
+				<displayName>net</displayName>
+				<unitPattern count="one">{0} natë</unitPattern>
+				<unitPattern count="other">{0} net</unitPattern>
+				<perUnitPattern>{0}/natë</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>drejtimi</displayName>
 				<coordinateUnitPattern type="east">{0} L</coordinateUnitPattern>
@@ -6255,12 +6273,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} g-forcë</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<displayName>hark-min</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<displayName>hark-sek</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
@@ -6268,7 +6284,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>akër</displayName>
 			</unit>
 			<unit type="concentr-mole">
-				<displayName>molë</displayName>
 				<unitPattern count="one">{0} mol</unitPattern>
 				<unitPattern count="other">{0} molë</unitPattern>
 			</unit>
@@ -6335,7 +6350,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dpi</displayName>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>pika</displayName>
+				<displayName>pikë</displayName>
 				<unitPattern count="one">{0} pikë</unitPattern>
 				<unitPattern count="other">{0} pika</unitPattern>
 			</unit>
@@ -6393,6 +6408,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>piska</displayName>
 				<unitPattern count="one">{0} pisk</unitPattern>
 				<unitPattern count="other">{0} piska</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>net</displayName>
+				<unitPattern count="one">{0} natë</unitPattern>
+				<unitPattern count="other">{0} net</unitPattern>
+				<perUnitPattern>{0}/natë</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>

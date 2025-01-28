@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotConstantPoolResolver.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"
-#include "cds/classPrelinker.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/unregisteredClasses.hpp"
@@ -43,9 +42,11 @@
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -69,9 +70,13 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) :
   log_info(cds)("Parsing %s%s", file,
                 parse_lambda_forms_invokers_only() ? " (lambda form invokers only)" : "");
   if (!_file_input.is_open()) {
-    char errmsg[JVM_MAXPATHLEN];
-    os::lasterror(errmsg, JVM_MAXPATHLEN);
-    vm_exit_during_initialization("Loading classlist failed", errmsg);
+    char reason[JVM_MAXPATHLEN];
+    os::lasterror(reason, JVM_MAXPATHLEN);
+    vm_exit_during_initialization(err_msg("Loading %s %s failed",
+                                          FLAG_IS_DEFAULT(AOTConfiguration) ?
+                                          "classlist" : "AOTConfiguration file",
+                                          file),
+                                  reason);
   }
   _token = _line = nullptr;
   _interfaces = new (mtClass) GrowableArray<int>(10, mtClass);
@@ -105,6 +110,12 @@ ClassListParser::~ClassListParser() {
   delete _indy_items;
   delete _interfaces;
   _instance = nullptr;
+}
+
+void ClassListParser::parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS) {
+  UnregisteredClasses::initialize(CHECK);
+  ClassListParser parser(classlist_path, parse_mode);
+  parser.parse(THREAD);
 }
 
 void ClassListParser::parse(TRAPS) {
@@ -383,6 +394,19 @@ bool ClassListParser::parse_uint_option(const char* option_name, int* value) {
   return false;
 }
 
+objArrayOop ClassListParser::get_specified_interfaces(TRAPS) {
+  const int n = _interfaces->length();
+  if (n == 0) {
+    return nullptr;
+  } else {
+    objArrayOop array = oopFactory::new_objArray(vmClasses::Class_klass(), n, CHECK_NULL);
+    for (int i = 0; i < n; i++) {
+      array->obj_at_put(i, lookup_class_by_id(_interfaces->at(i))->java_mirror());
+    }
+    return array;
+  }
+}
+
 void ClassListParser::print_specified_interfaces() {
   const int n = _interfaces->length();
   jio_fprintf(defaultStream::error_stream(), "Currently specified interfaces[%d] = {\n", n);
@@ -463,7 +487,7 @@ void ClassListParser::check_class_name(const char* class_name) {
     err = "class name too long";
   } else {
     assert(Symbol::max_length() < INT_MAX && len < INT_MAX, "must be");
-    if (!UTF8::is_legal_utf8((const unsigned char*)class_name, (int)len, /*version_leq_47*/false)) {
+    if (!UTF8::is_legal_utf8((const unsigned char*)class_name, len, /*version_leq_47*/false)) {
       err = "class name is not valid UTF8";
     }
   }
@@ -508,7 +532,19 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
     THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
 
-  InstanceKlass* k = UnregisteredClasses::load_class(class_name, _source, CHECK_NULL);
+  ResourceMark rm;
+  char * source_path = os::strdup_check_oom(ClassLoader::uri_to_path(_source));
+  InstanceKlass* specified_super = lookup_class_by_id(_super);
+  Handle super_class(THREAD, specified_super->java_mirror());
+  objArrayOop r = get_specified_interfaces(CHECK_NULL);
+  objArrayHandle interfaces(THREAD, r);
+  InstanceKlass* k = UnregisteredClasses::load_class(class_name, source_path,
+                                                     super_class, interfaces, CHECK_NULL);
+  if (k->java_super() != specified_super) {
+    error("The specified super class %s (id %d) does not match actual super class %s",
+          specified_super->external_name(), _super,
+          k->java_super()->external_name());
+  }
   if (k->local_interfaces()->length() != _interfaces->length()) {
     print_specified_interfaces();
     print_actual_interfaces(k);
@@ -592,9 +628,20 @@ void ClassListParser::resolve_indy(JavaThread* current, Symbol* class_name_symbo
 }
 
 void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
+  if (CDSConfig::is_dumping_invokedynamic()) {
+    // The CP entry for the invokedynamic instruction will be resolved.
+    // No need to do the following.
+    return;
+  }
+
+  // This is an older CDS optimization:
+  // We store a pre-generated version of the lambda proxy class in the AOT cache,
+  // which will be loaded via JVM_LookupLambdaProxyClassFromArchive().
+  // This eliminate dynamic class generation of the proxy class, but we still need to
+  // resolve the CP entry for the invokedynamic instruction, which may result in
+  // generation of LambdaForm classes.
   Handle class_loader(THREAD, SystemDictionary::java_system_loader());
-  Handle protection_domain;
-  Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, protection_domain, true, CHECK);
+  Klass* klass = SystemDictionary::resolve_or_fail(class_name_symbol, class_loader, true, CHECK);
   if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     MetaspaceShared::try_link_class(THREAD, ik);
@@ -717,53 +764,9 @@ InstanceKlass* ClassListParser::lookup_class_by_id(int id) {
   return *klass_ptr;
 }
 
-
-InstanceKlass* ClassListParser::lookup_super_for_current_class(Symbol* super_name) {
-  if (!is_loading_from_source()) {
-    return nullptr;
-  }
-
-  InstanceKlass* k = lookup_class_by_id(super());
-  if (super_name != k->name()) {
-    error("The specified super class %s (id %d) does not match actual super class %s",
-          k->name()->as_klass_external_name(), super(),
-          super_name->as_klass_external_name());
-  }
-  return k;
-}
-
-InstanceKlass* ClassListParser::lookup_interface_for_current_class(Symbol* interface_name) {
-  if (!is_loading_from_source()) {
-    return nullptr;
-  }
-
-  const int n = _interfaces->length();
-  if (n == 0) {
-    error("Class %s implements the interface %s, but no interface has been specified in the input line",
-          _class_name, interface_name->as_klass_external_name());
-    ShouldNotReachHere();
-  }
-
-  int i;
-  for (i=0; i<n; i++) {
-    InstanceKlass* k = lookup_class_by_id(_interfaces->at(i));
-    if (interface_name == k->name()) {
-      return k;
-    }
-  }
-
-  // interface_name is not specified by the "interfaces:" keyword.
-  print_specified_interfaces();
-  error("The interface %s implemented by class %s does not match any of the specified interface IDs",
-        interface_name->as_klass_external_name(), _class_name);
-  ShouldNotReachHere();
-  return nullptr;
-}
-
 InstanceKlass* ClassListParser::find_builtin_class_helper(JavaThread* current, Symbol* class_name_symbol, oop class_loader_oop) {
   Handle class_loader(current, class_loader_oop);
-  Handle protection_domain;
-  return SystemDictionary::find_instance_klass(current, class_name_symbol, class_loader, protection_domain);
+  return SystemDictionary::find_instance_klass(current, class_name_symbol, class_loader);
 }
 
 InstanceKlass* ClassListParser::find_builtin_class(JavaThread* current, const char* class_name) {
@@ -834,6 +837,8 @@ void ClassListParser::parse_constant_pool_tag() {
     case JVM_CONSTANT_InterfaceMethodref:
       preresolve_fmi = true;
       break;
+    case JVM_CONSTANT_InvokeDynamic:
+      preresolve_indy = true;
       break;
     default:
       constant_pool_resolution_warning("Unsupported constant pool index %d: %s (type=%d)",
@@ -843,10 +848,12 @@ void ClassListParser::parse_constant_pool_tag() {
   }
 
   if (preresolve_class) {
-    ClassPrelinker::preresolve_class_cp_entries(THREAD, ik, &preresolve_list);
+    AOTConstantPoolResolver::preresolve_class_cp_entries(THREAD, ik, &preresolve_list);
   }
   if (preresolve_fmi) {
-    ClassPrelinker::preresolve_field_and_method_cp_entries(THREAD, ik, &preresolve_list);
+    AOTConstantPoolResolver::preresolve_field_and_method_cp_entries(THREAD, ik, &preresolve_list);
+  }
+  if (preresolve_indy) {
+    AOTConstantPoolResolver::preresolve_indy_cp_entries(THREAD, ik, &preresolve_list);
   }
 }
-

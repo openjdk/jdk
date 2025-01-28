@@ -1338,6 +1338,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat draft="contributed">Zick vun {0}</regionFormat>
 			<regionFormat type="daylight" draft="contributed">Summerzick vun {0}</regionFormat>
 			<regionFormat type="standard" draft="contributed">Schtandattzick vun {0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity draft="contributed">Honululu</exemplarCity>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity draft="contributed">- weße mer nit -</exemplarCity>
 			</zone>
@@ -1557,9 +1560,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Istanbul">
 				<exemplarCity draft="contributed">Istambul</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity draft="contributed">Honululu</exemplarCity>
 			</zone>
 			<zone type="America/Yakutat">
 				<exemplarCity draft="contributed">Jakutat</exemplarCity>

@@ -1,0 +1,153 @@
+#
+# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+
+include CopyFiles.gmk
+include Execute.gmk
+
+################################################################################
+# This file is responsible for updating the generated sleef source code files
+# that are checked in to the JDK repo, and that are actually used when building.
+# This target needs to be re-run every time the source code of libsleef is
+# updated from upstream.
+################################################################################
+
+ifneq ($(COMPILE_TYPE), cross)
+  $(error Only cross-compilation of libsleef is currently supported)
+endif
+
+ifeq ($(CMAKE), )
+  $(error CMake not found. Please install cmake and rerun configure)
+endif
+
+ifneq ($(OPENJDK_BUILD_OS), linux)
+  $(error This target is only supported on linux)
+endif
+
+SLEEF_SUPPORT_DIR := $(MAKESUPPORT_OUTPUTDIR)/sleef
+SLEEF_SOURCE_BASE_DIR := $(TOPDIR)/src/jdk.incubator.vector/linux/native/libsleef
+SLEEF_SOURCE_DIR := $(SLEEF_SOURCE_BASE_DIR)/upstream
+SLEEF_TARGET_DIR := $(SLEEF_SOURCE_BASE_DIR)/generated
+SLEEF_NATIVE_BUILD_DIR := $(SLEEF_SUPPORT_DIR)/native
+SLEEF_CROSS_BUILD_DIR := $(SLEEF_SUPPORT_DIR)/cross
+
+ifeq ($(OPENJDK_TARGET_CPU), aarch64)
+  CROSS_COMPILATION_FILENAMES := sleefinline_advsimd.h sleefinline_sve.h
+  EXTRA_CROSS_OPTIONS := -DSLEEF_ENFORCE_SVE=TRUE
+else ifeq ($(OPENJDK_TARGET_CPU), riscv64)
+  CROSS_COMPILATION_FILENAMES := sleefinline_rvvm1.h
+  EXTRA_CROSS_OPTIONS := -DSLEEF_ENFORCE_RVVM1=TRUE
+else
+  $(error Unsupported platform)
+endif
+CROSS_COMPILATION_SRC_FILES := $(addprefix $(SLEEF_CROSS_BUILD_DIR)/include/, \
+    $(CROSS_COMPILATION_FILENAMES))
+
+ifeq ($(TOOLCHAIN_TYPE), clang)
+  SLEEF_TOOLCHAIN_TYPE := llvm
+else
+  SLEEF_TOOLCHAIN_TYPE := $(TOOLCHAIN_TYPE)
+endif
+
+SLEEF_CMAKE_FILE := toolchains/$(OPENJDK_TARGET_CPU)-$(SLEEF_TOOLCHAIN_TYPE).cmake
+
+# We need to run CMake twice, first using it to configure the build, and then
+# to actually build; and we need to do this twice, once for a native build
+# and once for the cross-compilation build.
+
+$(eval $(call SetupExecute, sleef_native_config, \
+    INFO := Configuring native sleef build, \
+    OUTPUT_DIR := $(SLEEF_NATIVE_BUILD_DIR), \
+    COMMAND := cd $(SLEEF_SOURCE_DIR) && $(CMAKE) -S . -B \
+        $(SLEEF_NATIVE_BUILD_DIR), \
+))
+
+TARGETS := $(sleef_native_config)
+
+$(eval $(call SetupExecute, sleef_native_build, \
+    INFO := Building native sleef, \
+    DEPS := $(sleef_native_config), \
+    OUTPUT_DIR := $(SLEEF_NATIVE_BUILD_DIR), \
+    COMMAND := cd $(SLEEF_SOURCE_DIR) && $(CMAKE) --build \
+        $(SLEEF_NATIVE_BUILD_DIR) -j, \
+))
+
+TARGETS := $(sleef_native_build)
+
+$(eval $(call SetupExecute, sleef_cross_config, \
+    INFO := Configuring cross-compiling sleef build, \
+    DEPS := $(sleef_native_build), \
+    OUTPUT_DIR := $(SLEEF_CROSS_BUILD_DIR), \
+    COMMAND := cd $(SLEEF_SOURCE_DIR) && $(CMAKE) -S . -B \
+        $(SLEEF_CROSS_BUILD_DIR) \
+        -DCMAKE_C_COMPILER=$(CC) \
+        -DCMAKE_TOOLCHAIN_FILE=$(SLEEF_CMAKE_FILE) \
+        -DNATIVE_BUILD_DIR=$(SLEEF_NATIVE_BUILD_DIR) \
+        -DSLEEF_BUILD_INLINE_HEADERS=TRUE \
+        $(EXTRA_CROSS_OPTIONS), \
+))
+
+TARGETS := $(sleef_cross_config)
+
+$(eval $(call SetupExecute, sleef_cross_build, \
+    INFO := Building cross-compiling sleef, \
+    DEPS := $(sleef_cross_config), \
+    OUTPUT_DIR := $(SLEEF_NATIVE_BUILD_DIR), \
+    COMMAND := cd $(SLEEF_SOURCE_DIR) && $(CMAKE) --build \
+        $(SLEEF_CROSS_BUILD_DIR) -j, \
+))
+
+TARGETS := $(sleef_cross_build)
+
+$(CROSS_COMPILATION_SRC_FILES): $(sleef_cross_build)
+
+# Finally, copy the generated files (and one needed static file) into our
+# target directory.
+
+$(eval $(call SetupCopyFiles, copy_static_sleef_source, \
+    FILES := $(SLEEF_SOURCE_DIR)/src/common/misc.h, \
+    DEST := $(SLEEF_TARGET_DIR), \
+))
+
+TARGETS := $(copy_static_sleef_source)
+
+$(eval $(call SetupCopyFiles, copy_generated_sleef_source, \
+    FILES := $(CROSS_COMPILATION_SRC_FILES), \
+    DEST := $(SLEEF_TARGET_DIR), \
+))
+
+TARGETS := $(copy_generated_sleef_source)
+
+################################################################################
+
+all: $(TARGETS)
+
+.PHONY: all default

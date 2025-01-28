@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamSource;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /**
@@ -44,10 +43,8 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.transform.ptests.ErrorListenerTest
  * @run testng/othervm javax.xml.transform.ptests.ErrorListenerTest
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class ErrorListenerTest implements ErrorListener {
     /**
      * Define ErrorListener's status.
