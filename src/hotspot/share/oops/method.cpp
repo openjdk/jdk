@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -1021,7 +1020,7 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report,
   }
   if ((TraceDeoptimization || LogCompilation) && (xtty != nullptr)) {
     ttyLocker ttyl;
-    xtty->begin_elem("make_not_compilable thread='" UINTX_FORMAT "' osr='%d' level='%d'",
+    xtty->begin_elem("make_not_compilable thread='%zu' osr='%d' level='%d'",
                      os::current_thread_id(), is_osr, comp_level);
     if (reason != nullptr) {
       xtty->print(" reason=\'%s\'", reason);
@@ -1435,7 +1434,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   cp->set_is_for_method_handle_intrinsic();
 
   // decide on access bits:  public or not?
-  int flags_bits = (JVM_ACC_NATIVE | JVM_ACC_SYNTHETIC | JVM_ACC_FINAL);
+  u2 flags_bits = (JVM_ACC_NATIVE | JVM_ACC_SYNTHETIC | JVM_ACC_FINAL);
   bool must_be_static = MethodHandles::is_signature_polymorphic_static(iid);
   if (must_be_static)  flags_bits |= JVM_ACC_STATIC;
   assert((flags_bits & JVM_ACC_PUBLIC) == 0, "do not expose these methods");
