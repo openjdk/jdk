@@ -102,7 +102,7 @@ public class setlocal001 {
         } else {
             checkPoint();
             if (currThread.isVirtual()) {
-                out.println("meth01: skipping results check for virtual thread");
+                out.println("meth02: skipping results check for virtual thread");
                 return; // SetLocal* should return OPAQUE_FRAME for a virtual thread
             }
             if (i1 != 1 || i2 != 1 || i3 != 1 || i4 != 1 || !i5) {
@@ -118,7 +118,7 @@ public class setlocal001 {
         int[] ob2 = null;
         checkPoint();
         if (currThread.isVirtual()) {
-            out.println("meth01: skipping results check for virtual thread");
+            out.println("meth03: skipping results check for virtual thread");
             return; // SetLocalObject for obj1 and obj2 should return OPAQUE_FRAME for a virtual thread
         }
         if (ob1.val != 3 || ob2[2] != 8) {
@@ -131,7 +131,7 @@ public class setlocal001 {
                               char i3, float f, byte i4, boolean b) {
         checkPoint();
         if (currThread.isVirtual()) {
-            out.println("meth01: skipping results check for virtual thread");
+            out.println("meth04: skipping results check for virtual thread");
             return; // SetLocal* should return OPAQUE_FRAME for a virtual thread
         }
         if (i1 != 1 || i2 != 2 || i3 != 3 || i4 != 4 ||

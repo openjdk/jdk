@@ -40,6 +40,15 @@ static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
+static void check_error(jvmtiError err, bool is_virtual, char* var_name) {
+    if (err != JVMTI_ERROR_TYPE_MISMATCH && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
+        printf("(%s) ", var_name);
+        printf("Error: expected: JVMTI_ERROR_TYPE_MISMATCH or JVMTI_ERROR_OPAQUE_FRAME,\n");
+        printf("\t    actual: %s (%d)\n", TranslateError(err), err);
+        result = STATUS_FAILED;
+    }
+}
+
 void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
         jthread thr, jmethodID method, jlocation location) {
     jvmtiError err;
@@ -73,56 +82,33 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
         printf(">>> checking on type mismatch ...\n");
     }
     for (i = 0; i < entryCount; i++) {
+        char* var_name = table[i].name;
+
         if (strlen(table[i].name) != 1) continue;
         if (strcmp(table[i].name, "o") != 0) {
             err = jvmti_env->SetLocalObject(thr, 1,
                 table[i].slot, (jobject)thr);
-            if (err != JVMTI_ERROR_TYPE_MISMATCH && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
-                printf("\"%s\" against SetLocalObject:\n", table[i].name);
-                printf("    expected: JVMTI_ERROR_TYPE_MISMATCHi or JVMTI_ERROR_OPAQUE_FRAME,");
-                printf(" actual: %s (%d)\n", TranslateError(err), err);
-                result = STATUS_FAILED;
-            }
+            check_error(err, is_virtual, var_name);
         }
         if (strcmp(table[i].name, "i") != 0) {
             err = jvmti_env->SetLocalInt(thr, 1,
                 table[i].slot, (jint)0);
-            if (err != JVMTI_ERROR_TYPE_MISMATCH && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
-                printf("\"%s\" against SetLocalInt:\n", table[i].name);
-                printf("    expected: JVMTI_ERROR_TYPE_MISMATCH or JVMTI_ERROR_OPAQUE_FRAME,");
-                printf(" actual: %s (%d)\n", TranslateError(err), err);
-                result = STATUS_FAILED;
-            }
+            check_error(err, is_virtual, var_name);
         }
         if (strcmp(table[i].name, "l") != 0) {
             err = jvmti_env->SetLocalLong(thr, 1,
                 table[i].slot, (jlong)0);
-            if (err != JVMTI_ERROR_TYPE_MISMATCH && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
-                printf("\"%s\" against SetLocalLong:\n", table[i].name);
-                printf("    expected: JVMTI_ERROR_TYPE_MISMATCH or JVMTI_ERROR_OPAQUE_FRAME,");
-                printf(" actual: %s (%d)\n", TranslateError(err), err);
-                result = STATUS_FAILED;
-            }
+            check_error(err, is_virtual, var_name);
         }
         if (strcmp(table[i].name, "f") != 0) {
             err = jvmti_env->SetLocalFloat(thr, 1,
                 table[i].slot, (jfloat)0);
-            if (err != JVMTI_ERROR_TYPE_MISMATCH && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
-                printf("\"%s\" against SetLocalFloat:\n", table[i].name);
-                printf("    expected: JVMTI_ERROR_TYPE_MISMATCH or JVMTI_ERROR_OPAQUE_FRAME,");
-                printf(" actual: %s (%d)\n", TranslateError(err), err);
-                result = STATUS_FAILED;
-            }
+            check_error(err, is_virtual, var_name);
         }
         if (strcmp(table[i].name, "d") != 0) {
             err = jvmti_env->SetLocalDouble(thr, 1,
                 table[i].slot, (jdouble)0);
-            if (err != JVMTI_ERROR_TYPE_MISMATCH && !(is_virtual && err == JVMTI_ERROR_OPAQUE_FRAME)) {
-                printf("\"%s\" against SetLocalDouble:\n", table[i].name);
-                printf("    expected: JVMTI_ERROR_TYPE_MISMATCH or JVMTI_ERROR_OPAQUE_FRAME,");
-                printf(" actual: %s (%d)\n", TranslateError(err), err);
-                result = STATUS_FAILED;
-            }
+            check_error(err, is_virtual, var_name);
         }
     }
 
