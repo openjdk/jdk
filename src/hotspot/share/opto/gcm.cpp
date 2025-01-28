@@ -782,17 +782,20 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   assert(initial_mem_block != nullptr, "sanity");
   assert(initial_mem_block->dominates(early), "invariant");
 
-  // There are rare situations where multiple memory nodes are valid inputs to
-  // the load. That is, we could replace the actual memory input to the load
-  // (initial_mem) with any of these nodes and still preserve ideal graph
-  // validity. Whether such situations are accidental and possibly avoidable is
-  // a topic for future investigation.
+  // There are rare situations where multiple memory nodes represent the same
+  // memory state for a load. That is, we could replace the actual memory input
+  // to the load (initial_mem) with any of these nodes and the ideal graph
+  // would still represent the same program. Whether such situations are
+  // accidental and possibly avoidable is a topic for future investigation. We
+  // first look at two examples of such situations, and then give a more formal
+  // justification.
   //
-  // In the following, we refer to equivalent memory nodes as additional
-  // (search) roots. If we do not search for anti-dependences from all roots,
-  // it is possible that we do not discover all relevant anti-dependences.
-  // Below are two cases seen in practice where it is necessary to find the
-  // additional roots.
+  // In the following, we refer to the set of memory nodes representing the
+  // same memory state of a load as the (search) roots. We refer to this set
+  // with initial_mem removed as the additional (search) roots. If we do not
+  // search for anti-dependences from all roots, it is possible that we do not
+  // discover all relevant anti-dependences. Below are two cases seen in
+  // practice where it is necessary to find the additional roots.
   //
   // Definitions:
   // - A = all of memory
@@ -860,60 +863,65 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // anti-dependence search starting from 1 MachProj terminates at 4 Phi. We
   // must add 4 Phi as a search root.
   //
-  // We now turn to how to identify all search roots. First, a few more
-  // definitions:
-  // - L is live = an anti-dependent store has not yet written to L
-  // - Phi = a memory Phi node that aliases L
-  // - Def = a (non-Phi) memory-defining node (e.g., a store)
+  // We now turn to a more formal definition of search roots and how to
+  // identify them. A search root is a memory node M for which all items below
+  // hold.
+  //   1. M aliases initial_mem.
+  //   2. M is scheduled in a block dominated by initial_mem_block.
+  //   3. If M is scheduled in initial_mem_block, M does not occur before
+  //      initial_mem.
+  //   4. M is scheduled in a block dominating early.
+  //   5. If M is scheduled in early, M occurs before the load.
   //
-  // Facts:
-  // - If L is live, any simultaneously live memory node that can alias L is a
-  //   potential root.
-  // - Roots only reside in blocks dominating the early block.
-  // - L is by definition live just after initial_mem.
-  // - If the initial_mem block strictly dominates the early block, L is
-  //   necessarily live all the way to the start of the early block.
-  // - If initial_mem is a Phi, L is live at the entry of the initial_mem block
-  //   (Phis execute in parallel at the start of the block by definition).
+  // Item 1 ensures M represents the correct part of memory (the load's alias
+  // category). Items 2 and 3 ensure the load's memory state is defined (which
+  // it may not be prior to initial_mem). Items 4 and 5 ensure M occurs before
+  // the earliest point at which we may schedule the load.
   //
-  // These facts together identify a range where L is certainly live. L can of
-  // course also be live below this range. The actual anti-dependence search
-  // later on attempts to expand the range downwards as far as possible (to
-  // allow maximum scheduling flexibility with a low LCA).
+  // Items 3 and 5 call for further elaboration. As we may not have run LCM
+  // yet, we can only reason about the order between Phi and non-Phi memory
+  // nodes. Phis, by definition, execute in parallel at the start of the block,
+  // before any non-Phi nodes. Consequently, if initial_mem is a non-Phi node,
+  // item 3 disallows any roots in initial_mem_block (except initial_mem
+  // itself). Inversely, if initial_mem is a Phi, item 3 permits all memory
+  // nodes in initial_mem_block as roots. Item 5 effectively implies that only
+  // Phis in the early block may be roots, as we do not yet know where the load
+  // will be scheduled.
   //
-  // See the illustrations below for a visual representation of the facts
-  // above. Note: the graphs are branches in the dominator tree, and not from
-  // the CFG. Observations indicate that it is only necessary to consider Phi
+  // Observations indicate that it is only necessary to consider Phi
   // nodes as additional roots. From the Phi nodes, we then discover other
   // relevant non-Phi nodes naturally as part of the anti-dependence search.
   //
+  // To make sense of the definition above, consider the different cases below.
+  // All shown nodes alias initial_mem (item 1). The graphs are
+  // branches in the dominator tree, and not from the CFG.
+  //
   // CASE 1
-  // +---------------------+
-  // | Phi (not a root)    |
-  // | ...                 | initial_mem_block (L is not live at entry)
-  // | Def (initial_mem)   |
-  // | ...                 |
-  // +---------------------+
+  // +-----------------------+
+  // | Phi (not a root)      | initial_mem_block
+  // | Non-Phi (initial_mem) |
+  // +-----------------------+
   //           |
   //           V
   //          ...
   //           |
   //           V
-  //        +-----+
-  //        | ... + in-between block (L is live in the whole block)
-  //        +-----+
+  //    +--------------+
+  //    | Phi (a root) |
+  //    +--------------+
   //           |
   //           V
   //          ...
   //           |
   //           v
-  //     +------------+
-  //     | ...        | early (L is live at entry)
-  //     +------------+
+  // +----------------------+
+  // | Phi (a root)         | early
+  // | Non-Phi (not a root) |
+  // +----------------------+
   //
   // CASE 2
   // +-------------------+
-  // | Phi (a root)      | initial_mem_block (L is live in the whole block)
+  // | Phi (a root)      | initial_mem_block
   // | Phi (initial_mem) |
   // | ...               |
   // +-------------------+
@@ -922,23 +930,20 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // ... (same as CASE 1) ...
   //
   // CASE 3
-  // +---------------------+
-  // | Phi (not a root)    | early = initial_mem_block (L is not live at entry)
-  // | ...                 |
-  // | Def (initial_mem)   |
-  // | ...                 |
-  // +---------------------+
+  // +-------------------------+
+  // | Phi (not a root)        | early = initial_mem_block
+  // | Non-Phi (initial_mem)   |
+  // +-------------------------+
   //
   // CASE 4
   // +-------------------+
-  // | Phi (a root)      | early = initial_mem_block (L is live at entry)
+  // | Phi (a root)      | early = initial_mem_block
   // | Phi (initial_mem) |
-  // | ...               |
   // +-------------------+
   //
-  // Finally, below is the code for finding additional roots. We add a guard
-  // (load->in(0) != nullptr) as observations indicate that we only need to
-  // find additional roots if the load has an explicit control input.
+  // Finally, below is the code for finding the additional roots. We add a
+  // guard (load->in(0) != nullptr) as observations indicate that we only need
+  // to find additional roots if the load has an explicit control input.
   //
   if (load->in(0) != nullptr) {
     // Walk the relevant blocks from early (inclusive) up to initial_mem_block
