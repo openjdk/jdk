@@ -820,7 +820,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                         // Add the entry to the list
                         entries.put(alias, entry);
 
-                    } else if (tag == 3) { // secret-key entry
+                    } else if (tag == 3) { // secret key entry
                         secretKeyCount++;
                         SecretKeyEntry entry = new SecretKeyEntry();
 

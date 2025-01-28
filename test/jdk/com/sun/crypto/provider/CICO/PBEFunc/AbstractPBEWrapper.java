@@ -43,7 +43,7 @@ public abstract class AbstractPBEWrapper {
     protected final String transformation;
 
     /**
-     * the standard name of the requested secret-key algorithm.
+     * the standard name of the requested secret key algorithm.
      */
     protected final String baseAlgo;
 
