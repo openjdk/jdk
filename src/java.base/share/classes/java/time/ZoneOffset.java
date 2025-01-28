@@ -428,11 +428,10 @@ public final class ZoneOffset
         }
         int quarters = totalSeconds / SECONDS_PER_QUARTER;
         if (totalSeconds - quarters * SECONDS_PER_QUARTER == 0) {
-            int cacheIndex = quarters & 0xff;
-            ZoneOffset result = QUARTER_CACHE.getOpaque(cacheIndex);
+            ZoneOffset result = QUARTER_CACHE.getOpaque(quarters & 0xff);
             if (result == null) {
                 result = new ZoneOffset(totalSeconds);
-                var existing = QUARTER_CACHE.compareAndExchange(cacheIndex, null, result);
+                var existing = QUARTER_CACHE.compareAndExchange(quarters & 0xff, null, result);
                 if (existing != null) {
                     result = existing;
                 }
