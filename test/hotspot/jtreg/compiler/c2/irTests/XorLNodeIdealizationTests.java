@@ -37,7 +37,8 @@ public class XorLNodeIdealizationTests {
 
     private static final long CONST_1 = Generators.G.longs().next();
     private static final long CONST_2 = Generators.G.longs().next();
-    private static final long CONST_POW_2 = Math.abs(1L << Generators.G.uniformInts(0,62).next());
+    private static final long CONST_POW_2 = Generators.G.powerOfTwoLongs(0)
+            .restricted(1L, Long.MAX_VALUE).next();
 
     public static void main(String[] args) {
         TestFramework.run();

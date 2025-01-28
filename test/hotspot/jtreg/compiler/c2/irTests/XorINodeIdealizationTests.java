@@ -38,7 +38,8 @@ public class XorINodeIdealizationTests {
     private static final int CONST_2 = Generators.G.ints().next();
     private static final boolean CONST_BOOL_1 = RunInfo.getRandom().nextBoolean();
     private static final boolean CONST_BOOL_2 = RunInfo.getRandom().nextBoolean();
-    private static final int CONST_POW_2 = Math.abs(1 << Generators.G.uniformInts(0, 30).next());
+    private static final int CONST_POW_2 = Generators.G.powerOfTwoInts(0)
+            .restricted(1, Integer.MAX_VALUE).next();
 
     public static void main(String[] args) {
         TestFramework.run();
