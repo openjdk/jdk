@@ -466,6 +466,7 @@ public final class Currency implements Serializable {
     // Returns the set of available Currencies which are lazily initialized
     private static synchronized HashSet<Currency> getCurrencies() {
         if (available == null) {
+            var sysTime = System.currentTimeMillis();
             available = HashSet.newHashSet(256);
 
             // Add simple currencies first
@@ -489,7 +490,7 @@ public final class Currency implements Serializable {
                         SpecialCaseEntry scEntry = specialCasesList.get(index);
 
                         if (scEntry.cutOverTime == Long.MAX_VALUE
-                                || System.currentTimeMillis() < scEntry.cutOverTime) {
+                                || sysTime < scEntry.cutOverTime) {
                             available.add(getInstance(scEntry.oldCurrency,
                                     scEntry.oldCurrencyFraction,
                                     scEntry.oldCurrencyNumericCode));

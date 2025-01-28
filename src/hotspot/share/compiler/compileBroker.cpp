@@ -773,20 +773,6 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
 }
 
 #if defined(ASSERT) && COMPILER2_OR_JVMCI
-// Stress testing. Dedicated threads revert optimizations based on escape analysis concurrently to
-// the running java application.  Configured with vm options DeoptimizeObjectsALot*.
-class DeoptimizeObjectsALotThread : public JavaThread {
-
-  static void deopt_objs_alot_thread_entry(JavaThread* thread, TRAPS);
-  void deoptimize_objects_alot_loop_single();
-  void deoptimize_objects_alot_loop_all();
-
-public:
-  DeoptimizeObjectsALotThread() : JavaThread(&deopt_objs_alot_thread_entry) { }
-
-  bool is_hidden_from_external_view() const      { return true; }
-};
-
 // Entry for DeoptimizeObjectsALotThread. The threads are started in
 // CompileBroker::init_compiler_threads() iff DeoptimizeObjectsALot is enabled
 void DeoptimizeObjectsALotThread::deopt_objs_alot_thread_entry(JavaThread* thread, TRAPS) {
