@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
@@ -424,16 +423,6 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
 
   assert(next_name != nullptr, "null superclass for resolving");
   assert(!Signature::is_array(next_name), "invalid superclass name");
-#if INCLUDE_CDS
-  if (CDSConfig::is_dumping_static_archive()) {
-    // Special processing for handling UNREGISTERED shared classes.
-    InstanceKlass* k = SystemDictionaryShared::lookup_super_for_unregistered_class(class_name,
-                           next_name, is_superclass);
-    if (k) {
-      return k;
-    }
-  }
-#endif // INCLUDE_CDS
 
   // If class_name is already loaded, just return the superclass or superinterface.
   // Make sure there's a placeholder for the class_name before resolving.
