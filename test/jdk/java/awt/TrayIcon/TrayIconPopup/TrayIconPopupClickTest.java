@@ -38,7 +38,6 @@ import java.awt.image.BufferedImage;
  * @key headful
  * @summary Check if a action performed event is received when TrayIcon display
  *          message is clicked on.
- * @author Shashidhara Veerabhadraiah (shashidhara.veerabhadraiah@oracle.com)
  * @modules java.desktop/java.awt:open
  * @library
  *          /java/awt/patchlib
@@ -65,18 +64,22 @@ public class TrayIconPopupClickTest {
             // The current robot implementation does not support
             // clicking in the system tray area.
             throw new SkippedException("Skipped on Wayland");
-        } else if (!SystemTray.isSupported()) {
-            throw new SkippedException("SystemTray is not supported on this platform.");
-        } else {
-            if (System.getProperty("os.name").toLowerCase().startsWith("win"))
-                System.err.println("Test can fail if the icon hides to a tray icons pool " +
-                        "in Windows 7/10, which is behavior by default.\n" +
-                        "Set \"Right mouse click\" -> \"Customize notification icons\" -> " +
-                        "\"Always show all icons and notifications on the taskbar\" true " +
-                        "to avoid this problem. Or change behavior only for Java SE " +
-                        "tray icon.");
-            new TrayIconPopupClickTest().doTest();
         }
+
+        if (!SystemTray.isSupported()) {
+            throw new SkippedException("SystemTray is not supported on this platform.");
+        }
+
+        if (Platform.isWindows()) {
+            System.err.println("Test can fail if the icon hides to a tray icons pool " +
+                    "in Windows 7/10, which is behavior by default.\n" +
+                    "Set \"Right mouse click\" -> \"Customize notification icons\" -> " +
+                    "\"Always show all icons and notifications on the taskbar\" true " +
+                    "to avoid this problem. Or change behavior only for Java SE " +
+                    "tray icon.");
+        }
+
+        new TrayIconPopupClickTest().doTest();
     }
 
     TrayIconPopupClickTest() throws Exception {
@@ -104,7 +107,6 @@ public class TrayIconPopupClickTest {
     }
 
     void doTest() throws Exception {
-
         Point iconPosition = SystemTrayIconHelper.getTrayIconLocation(icon);
         if (iconPosition == null)
             throw new RuntimeException("Unable to find the icon location!");

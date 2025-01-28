@@ -37,7 +37,6 @@ import java.awt.image.BufferedImage;
  * @summary Check the return value of the getActionCommand method
  *          of the ActionEvent triggered when TrayIcon is double clicked
  *          (single clicked, on Mac)
- * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @modules java.desktop/java.awt:open
  * @library
  *          /java/awt/patchlib
@@ -69,25 +68,27 @@ public class ActionCommand {
             // The current robot implementation does not support
             // clicking in the system tray area.
             throw new SkippedException("Skipped on Wayland");
-        } else if (!SystemTray.isSupported()) {
-            throw new SkippedException("SystemTray is not supported on this platform.");
-        } else {
-            if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
-                System.err.println("Test can fail if the icon hides to a tray icons pool " +
-                        "in Windows 7, which is behavior by default.\n" +
-                        "Set \"Right mouse click\" -> \"Customize notification icons\" -> " +
-                        "\"Always show all icons and notifications on the taskbar\" true to " +
-                        "avoid this problem. Or change behavior only for Java SE tray icon " +
-                        "and rerun test.");
-            } else  if (System.getProperty("os.name").toLowerCase().startsWith("mac")){
-                isMacOS = true;
-            } else if (SystemTrayIconHelper.isOel7orLater()) {
-                System.out.println("OEL 7 doesn't support double click in " +
-                        "systray. Skipped");
-                return;
-            }
-            new ActionCommand().doTest();
         }
+
+        if (!SystemTray.isSupported()) {
+            throw new SkippedException("SystemTray is not supported on this platform.");
+        }
+
+        if (Platform.isWindows()) {
+            System.err.println("Test can fail if the icon hides to a tray icons pool " +
+                    "in Windows 7, which is behavior by default.\n" +
+                    "Set \"Right mouse click\" -> \"Customize notification icons\" -> " +
+                    "\"Always show all icons and notifications on the taskbar\" true to " +
+                    "avoid this problem. Or change behavior only for Java SE tray icon " +
+                    "and rerun test.");
+        } else if (Platform.isOSX()){
+            isMacOS = true;
+        } else if (SystemTrayIconHelper.isOel7orLater()) {
+            System.out.println("OEL 7 doesn't support double click in " +
+                    "systray. Skipped");
+            throw new SkippedException("Skipped on OEL 7");
+        }
+        new ActionCommand().doTest();
     }
 
     void doTest() throws Exception {

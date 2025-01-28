@@ -43,7 +43,6 @@ import java.awt.image.BufferedImage;
  * @key headful
  * @summary Check if a JPopupMenu can be displayed when TrayIcon is
  *          right clicked. It uses a JWindow as the parent of the JPopupMenu
- * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @modules java.desktop/java.awt:open
  * @library
  *          /java/awt/patchlib
@@ -77,18 +76,21 @@ public class TrayIconPopupTest {
             // The current robot implementation does not support
             // clicking in the system tray area.
             throw new SkippedException("Skipped on Wayland");
-        } else if (!SystemTray.isSupported()) {
-            throw new SkippedException("SystemTray is not supported on this platform.");
-        } else {
-            if (System.getProperty("os.name").toLowerCase().startsWith("win"))
-                System.err.println("Test can fail if the icon hides to a tray icons pool " +
-                        "in Windows 7, which is behavior by default.\n" +
-                        "Set \"Right mouse click\" -> \"Customize notification icons\" -> " +
-                        "\"Always show all icons and notifications on the taskbar\" true " +
-                        "to avoid this problem. Or change behavior only for Java SE " +
-                        "tray icon.");
-            new TrayIconPopupTest().doTest();
         }
+
+        if (!SystemTray.isSupported()) {
+            throw new SkippedException("SystemTray is not supported on this platform.");
+        }
+
+        if (Platform.isWindows()) {
+            System.err.println("Test can fail if the icon hides to a tray icons pool " +
+                    "in Windows 7, which is behavior by default.\n" +
+                    "Set \"Right mouse click\" -> \"Customize notification icons\" -> " +
+                    "\"Always show all icons and notifications on the taskbar\" true " +
+                    "to avoid this problem. Or change behavior only for Java SE " +
+                    "tray icon.");
+        }
+        new TrayIconPopupTest().doTest();
     }
 
     TrayIconPopupTest() throws Exception {

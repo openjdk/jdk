@@ -82,19 +82,20 @@ public class TrayIconMouseTest {
             // The current robot implementation does not support
             // clicking in the system tray area.
             throw new SkippedException("Skipped on Wayland");
-        } else if (!SystemTray.isSupported()) {
-            throw new SkippedException("SystemTray is not supported on this platform.");
-        } else {
-            String osName = System.getProperty("os.name").toLowerCase();
-            if (osName.startsWith("mac")) {
-                isMacOS = true;
-            } else if (osName.startsWith("win")) {
-                isWinOS = true;
-            } else {
-                isOelOS = SystemTrayIconHelper.isOel7orLater();
-            }
-            new TrayIconMouseTest().doTest();
         }
+
+        if (!SystemTray.isSupported()) {
+            throw new SkippedException("SystemTray is not supported on this platform.");
+        }
+
+        if (Platform.isOSX()) {
+            isMacOS = true;
+        } else if (Platform.isWindows()) {
+            isWinOS = true;
+        } else {
+            isOelOS = SystemTrayIconHelper.isOel7orLater();
+        }
+        new TrayIconMouseTest().doTest();
     }
 
     TrayIconMouseTest() throws Exception {
