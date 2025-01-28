@@ -682,6 +682,7 @@ address generate_ghash_processBlocks() {
   VectorRegister vHigh = VR14;
   VectorRegister vLow = VR15;
   VectorRegister vState = VR16;
+  VectorRegister vPerm = VR17;
   VectorRegister vConstC2 = VR19;
   Label L_end, L_aligned, L_error;
 
@@ -711,6 +712,12 @@ address generate_ghash_processBlocks() {
   #endif
   __ clrldi(blocks, blocks, 32);
   __ mtctr(blocks);
+  __ li(temp1, 0);
+  __ lvsl(loadOrder, temp1);
+  #ifdef VM_LITTLE_ENDIAN
+    __ vspltisb(vTmp12, 0xf);
+    __ vxor(loadOrder, loadOrder, vTmp12);
+  #endif
   // This code performs Karatsuba multiplication in Galois fields to compute the GHASH operation.
   //
   // The Karatsuba method breaks the multiplication of two 128-bit numbers into smaller parts,
@@ -739,23 +746,19 @@ address generate_ghash_processBlocks() {
     __ beq(CCR0, L_aligned);                    // Check if address is aligned (mask lower 4 bits)
     __ li(temp1, 0);
     __ lvx(vHigh, temp1, data);
-    __ lvsl(loadOrder, temp1, data);
+    __ lvsl(vPerm, temp1, data);
     __ addi(data, data, 16);
     __ lvx(vLow, temp1, data);
-    __ vec_perm(vH, vHigh, vLow, loadOrder);
+    __ vec_perm(vHigh, vHigh, vHigh, loadOrder);
+    __ vec_perm(vLow, vLow, vLow, loadOrder);
+    __ vec_perm(vH, vLow, vHigh, vPerm);
     __ subi(data, data, 16);
     __ b(L_end);
     __ bind(L_aligned);
     __ li(temp1, 0);
     __ lvx(vH, temp1, data);
-    __ bind(L_end);
-    __ li(temp1, 0);
-    __ lvsl(loadOrder, temp1);
-    #ifdef VM_LITTLE_ENDIAN
-      __ vspltisb(vTmp12, 0xf);
-      __ vxor(loadOrder, loadOrder, vTmp12);
-    #endif
     __ vec_perm(vH, vH, vH, loadOrder);
+    __ bind(L_end);
     __ vxor(vH, vH, vState);
     // Perform GCM multiplication
     __ vpmsumd(vTmp4, vLowerH, vH);             // L : Lower Half of subkey H
