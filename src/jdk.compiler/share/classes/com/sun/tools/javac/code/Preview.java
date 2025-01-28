@@ -182,7 +182,6 @@ public class Preview {
         } finally {
             deferredLintHandler.pop();
         }
-        markUsesPreview(diagPos);
     }
 
     /**

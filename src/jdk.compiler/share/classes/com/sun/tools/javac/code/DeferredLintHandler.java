@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
@@ -158,7 +159,7 @@ public class DeferredLintHandler {
         if (tree != null && !parsingDeferrals.isEmpty()) {
 
             // Map lexical Deferral's to corresponding declarations
-            new LexicalDeferralMapper(tree).mapLexicalDeferrals();
+            new LexicalDeferralMapper().mapLexicalDeferrals(tree);
 
             // Report any remainders immediately (must be outside the top level declaration)
             Optional.ofNullable(deferralMap.remove(null))
@@ -288,16 +289,10 @@ public class DeferredLintHandler {
     // declaration that contains it and moves it to the corresponding entry in deferralMap.
     private class LexicalDeferralMapper extends TreeScanner {
 
-        private final JCCompilationUnit tree;
-
         private JCTree[] declMap;
         private int currentDeferral;
 
-        LexicalDeferralMapper(JCCompilationUnit tree) {
-            this.tree = tree;
-        }
-
-        void mapLexicalDeferrals() {
+        void mapLexicalDeferrals(JCCompilationUnit tree) {
 
             // Sort lexical deferrals by position so our "online" algorithm works.
             // We also depend on TreeScanner visiting declarations in lexical order.
@@ -323,35 +318,35 @@ public class DeferredLintHandler {
     // TreeScanner methods
 
         @Override
-        public void visitModuleDef(JCModuleDecl tree) {
-            scanDecl(tree, super::visitModuleDef);
+        public void visitModuleDef(JCModuleDecl decl) {
+            scanDecl(decl, super::visitModuleDef);
         }
 
         @Override
-        public void visitPackageDef(JCPackageDecl tree) {
-            scanDecl(tree, super::visitPackageDef);
+        public void visitPackageDef(JCPackageDecl decl) {
+            scanDecl(decl, super::visitPackageDef);
         }
 
         @Override
-        public void visitClassDef(JCClassDecl tree) {
-            scanDecl(tree, super::visitClassDef);
+        public void visitClassDef(JCClassDecl decl) {
+            scanDecl(decl, super::visitClassDef);
         }
 
         @Override
-        public void visitMethodDef(JCMethodDecl tree) {
-            scanDecl(tree, super::visitMethodDef);
+        public void visitMethodDef(JCMethodDecl decl) {
+            scanDecl(decl, super::visitMethodDef);
         }
 
         @Override
-        public void visitVarDef(JCVariableDecl tree) {
-            scanDecl(tree, super::visitVarDef);
+        public void visitVarDef(JCVariableDecl decl) {
+            scanDecl(decl, super::visitVarDef);
         }
 
         private <T extends JCTree> void scanDecl(T decl, Consumer<? super T> recursion) {
 
             // Get the lexical extent of this declaration
-            int minPos = decl.getPreferredPosition();
-            int maxPos = decl.getEndPosition(tree.endPositions);
+            int minPos = TreeInfo.getStartPos(decl);
+            int maxPos = TreeInfo.endPos(decl);
 
             // Skip forward through lexical deferrals until we hit this declaration
             while (true) {

@@ -455,7 +455,7 @@ public class JavaCompiler {
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
         lineDebugInfo = options.isUnset(G_CUSTOM) ||
                         options.isSet(G_CUSTOM, "lines");
-        keepEndPos    = options.isSet(XJCOV) ||
+        genEndPos     = options.isSet(XJCOV) ||
                         context.get(DiagnosticListener.class) != null;
         devVerbose    = options.isSet("dev");
         processPcks   = options.isSet("process.packages");
@@ -520,9 +520,9 @@ public class JavaCompiler {
      */
     public boolean lineDebugInfo;
 
-    /** Switch: should we keep the ending positions around after parsing?
+    /** Switch: should we store the ending positions?
      */
-    public boolean keepEndPos;
+    public boolean genEndPos;
 
     /** Switch: should we debug ignored exceptions
      */
@@ -657,18 +657,15 @@ public class JavaCompiler {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, filename);
                 taskListener.started(e);
                 keepComments = true;
-                keepEndPos = true;
+                genEndPos = true;
             }
-            Parser parser = parserFactory.newParser(content, keepComments(), true,
+            Parser parser = parserFactory.newParser(content, keepComments(), genEndPos,
                                 lineDebugInfo, filename.isNameCompatible("module-info", Kind.SOURCE));
+            deferredLintHandler.enterParsingMode();
             try {
-                deferredLintHandler.enterParsingMode();
                 tree = parser.parseCompilationUnit();
-                deferredLintHandler.exitParsingMode(tree);
-                if (!keepEndPos)
-                    tree.endPositions = new JavacParser.EmptyEndPosTable();
             } finally {
-                deferredLintHandler.exitParsingMode(null);
+                deferredLintHandler.exitParsingMode(tree);
             }
             if (verbose) {
                 log.printVerbose("parsing.done", Long.toString(elapsed(msec)));
@@ -1176,7 +1173,7 @@ public class JavaCompiler {
                 options.put("parameters", "parameters");
                 reader.saveParameterNames = true;
                 keepComments = true;
-                keepEndPos = true;
+                genEndPos = true;
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
                 deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);
