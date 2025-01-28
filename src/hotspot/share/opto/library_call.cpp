@@ -3777,6 +3777,8 @@ bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
   {
     // Trap (but not deoptimize (Action_none)) and continue in the interpreter
     // which will throw IllegalStateException for pin count over/underflow.
+    // No memory changed so far - we can use memory create by reset_memory()
+    // at the beginning of this intrinsic. No need to call reset_memory() again.
     PreserveJVMState pjvms(this);
     set_control(pin_count_over_underflow);
     uncommon_trap(Deoptimization::Reason_intrinsic,

@@ -33,45 +33,45 @@ import jdk.internal.vm.Continuation;
 
 public class TestContinuationPinningAndEA {
 
-  static class FailsEA {
-    final Object o;
+    static class FailsEA {
+        final Object o;
 
-    public FailsEA() throws Throwable {
-      o = new Object();
-      Continuation.pin();
-      Continuation.unpin();
+        public FailsEA() throws Throwable {
+            o = new Object();
+            Continuation.pin();
+            Continuation.unpin();
+        }
     }
-  }
 
-  static class Crashes {
-    final Object o;
+    static class Crashes {
+        final Object o;
 
-    public Crashes() throws Throwable {
-      Continuation.pin();
-      Continuation.unpin();
-      o = new Object();
+        public Crashes() throws Throwable {
+            Continuation.pin();
+            Continuation.unpin();
+            o = new Object();
+        }
     }
-  }
 
-  static void test_FailsEA() throws Throwable {
-    for (int i = 0; i < 10_000; ++i) {
-      new FailsEA();
+    static void test_FailsEA() throws Throwable {
+        for (int i = 0; i < 10_000; ++i) {
+            new FailsEA();
+        }
     }
-  }
 
-  static void test_Crashes() throws Throwable {
-    for (int i = 0; i < 10_000; ++i) {
-      new Crashes();
+    static void test_Crashes() throws Throwable {
+        for (int i = 0; i < 10_000; ++i) {
+            new Crashes();
+        }
     }
-  }
 
-  public static void main(String[] args) throws Throwable {
-    int iterations = 100;
-    for (int i = 0; i < iterations; ++i) {
-      test_FailsEA();
+    public static void main(String[] args) throws Throwable {
+        int iterations = 100;
+        for (int i = 0; i < iterations; ++i) {
+            test_FailsEA();
+        }
+        for (int i = 0; i < iterations; ++i) {
+            test_Crashes();
+        }
     }
-    for (int i = 0; i < iterations; ++i) {
-      test_Crashes();
-    }
-  }
 }
