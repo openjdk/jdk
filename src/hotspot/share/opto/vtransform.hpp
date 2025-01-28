@@ -735,8 +735,6 @@ public:
   virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
   virtual bool is_load_in_loop() const override { return true; }
 
-  LoadNode::ControlDependency control_dependency() const; // TODO rm?
-
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoadVector"; };)
