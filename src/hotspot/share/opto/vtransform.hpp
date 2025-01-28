@@ -65,8 +65,7 @@ typedef int VTransformNodeIDX;
 class VTransform;
 class VTransformNode;
 class VTransformScalarNode;
-class VTransformInputScalarNode;
-class VTransformOutputScalarNode;
+class VTransformOuterNode;
 class VTransformLoopPhiNode;
 class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
@@ -489,8 +488,7 @@ public:
   }
 
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
-  virtual VTransformInputScalarNode* isa_InputScalar() { return nullptr; }
-  virtual VTransformOutputScalarNode* isa_OutputScalar() { return nullptr; }
+  virtual VTransformOuterNode* isa_Outer() { return nullptr; }
   virtual VTransformLoopPhiNode* isa_LoopPhi() { return nullptr; }
   virtual const VTransformLoopPhiNode* isa_LoopPhi() const { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
@@ -539,31 +537,18 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
-// Wrapper node for nodes outside the loop that are inputs to nodes in the loop.
-// Since we want the loop-internal nodes to be able to reference all inputs as vtnodes,
-// we must wrap the inputs that are outside the loop into special vtnodes, too.
-class VTransformInputScalarNode : public VTransformScalarNode {
+// Wrapper node for nodes outside the loop that are inputs and/or outputs for nodes
+// in the loop. Since we want the loop-internal nodes to be able to reference all inputs
+// and outputs as vtnodes, we must wrap them in special vtnodes, too.
+class VTransformOuterNode : public VTransformScalarNode {
 public:
-  VTransformInputScalarNode(VTransform& vtransform, VTransformNodePrototype prototype, Node* n) :
+  VTransformOuterNode(VTransform& vtransform, VTransformNodePrototype prototype, Node* n) :
     VTransformScalarNode(vtransform, prototype, n) {}
-  virtual VTransformInputScalarNode* isa_InputScalar() override { return this; }
+  virtual VTransformOuterNode* isa_Outer() override { return this; }
   virtual bool is_load_in_loop() const override { return false; }
   virtual bool is_load_or_store_in_loop() const override { return false; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { ShouldNotReachHere(); }
-  NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
-};
-
-// Wrapper node for nodes outside the loop that are outputs from nodes in the loop.
-// Since we want the loop-internal nodes to be able to reference all inputs as vtnodes,
-// we must wrap the outputs that are outside the loop into special vtnodes, too.
-class VTransformOutputScalarNode : public VTransformScalarNode {
-public:
-  VTransformOutputScalarNode(VTransform& vtransform, VTransformNodePrototype prototype, Node* n) :
-    VTransformScalarNode(vtransform, prototype, n) {}
-  virtual VTransformOutputScalarNode* isa_OutputScalar() override { return this; }
-  virtual bool is_load_or_store_in_loop() const override { return false; }
-  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { ShouldNotReachHere(); };
-  NOT_PRODUCT(virtual const char* name() const override { return "OutputScalar"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "Outer"; };)
 };
 
 // We want to be able to conveniently find all Phis that belong to the LoopNode.

@@ -48,7 +48,7 @@ void VTransformGraph::optimize(VTransform& vtransform) {
       if (!vtn->is_alive()) { continue; }
       progress |= vtn->optimize(_vloop_analyzer, vtransform);
       if (vtn->outs() == 0 &&
-          !(vtn->isa_OutputScalar() != nullptr ||
+          !(vtn->isa_Outer() != nullptr ||
             vtn->isa_LoopPhi() != nullptr ||
             vtn->is_load_or_store_in_loop())) {
         vtn->mark_dead();
@@ -194,7 +194,7 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
       VTransformNode* use = vtn->out(i);
       // Or is vtn a backedge or one of its transitive defs?
       if (in_loop.test(use->_idx) ||
-          (use->isa_LoopPhi() != nullptr && !vtn->isa_InputScalar())) {
+          (use->isa_LoopPhi() != nullptr && vtn->isa_Outer() == nullptr)) {
         in_loop.set(vtn->_idx);
         break;
       }
@@ -881,8 +881,9 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
       // All uses must be outside loop body, except for the phi.
       for (int i = 0; i < current_red->outs(); i++) {
         VTransformNode* use = current_red->out(i);
+        // TODO is this not a contradiction???
         if (use->isa_LoopPhi() == nullptr &&
-            use->isa_OutputScalar() == nullptr) {
+            use->isa_Outer() == nullptr) {
           // Should not be allowed by SuperWord::mark_reductions
           assert(false, "reduction has use inside loop");
           return false;
@@ -916,7 +917,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   phase->set_ctrl(identity, phase->C->root());
 
   VTransformNodePrototype scalar_prototype = VTransformNodePrototype::make_from_scalar(identity, vloop_analyzer);
-  VTransformNode* vtn_identity = new (vtransform.arena()) VTransformInputScalarNode(vtransform, scalar_prototype, identity);
+  VTransformNode* vtn_identity = new (vtransform.arena()) VTransformOuterNode(vtransform, scalar_prototype, identity);
 
   VTransformNodePrototype vector_prototype = VTransformNodePrototype(first_red->approximate_origin(), -1, vlen, bt, nullptr);
   VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vector_prototype);

@@ -156,7 +156,7 @@ void SuperWordVTransformBuilder::build_outputs() {
         // Create a new one if it does not exist
         if (vtn_use == nullptr) {
           VTransformNodePrototype prototype = VTransformNodePrototype::make_from_scalar(use, _vloop_analyzer);
-          vtn_use = new (_vtransform.arena()) VTransformOutputScalarNode(_vtransform, prototype, use);
+          vtn_use = new (_vtransform.arena()) VTransformOuterNode(_vtransform, prototype, use);
           map_node_to_vtnode(use, vtn_use);
         }
 
@@ -335,7 +335,7 @@ VTransformNode* SuperWordVTransformBuilder::get_vtnode_or_wrap_as_input_scalar(N
 
   assert(!_vloop.in_bb(n), "only nodes outside the loop can be input nodes to the loop");
   VTransformNodePrototype prototype = VTransformNodePrototype::make_from_scalar(n, _vloop_analyzer);
-  vtn = new (_vtransform.arena()) VTransformInputScalarNode(_vtransform, prototype, n);
+  vtn = new (_vtransform.arena()) VTransformOuterNode(_vtransform, prototype, n);
   map_node_to_vtnode(n, vtn);
   return vtn;
 }
