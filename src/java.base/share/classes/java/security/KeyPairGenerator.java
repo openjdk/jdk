@@ -69,7 +69,7 @@ import sun.security.util.Debug;
  * algorithm-independent {@code initialize} methods, it is up to the
  * provider what to do about the algorithm-specific parameters (if any) to be
  * associated with each of the keys. See the
- * {@extlink security_guide_jdk_providers JDK Providers} document for information
+ * {@extLink security_guide_jdk_providers JDK Providers} document for information
  * on the default algorithm-specific parameters used by JDK providers.
  *
  * <li><b>Algorithm-Specific Initialization</b>
