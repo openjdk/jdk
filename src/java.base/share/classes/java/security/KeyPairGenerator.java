@@ -68,10 +68,9 @@ import sun.security.util.Debug;
  * <p>Since no other parameters are specified when you call the above
  * algorithm-independent {@code initialize} methods, it is up to the
  * provider what to do about the algorithm-specific parameters (if any) to be
- * associated with each of the keys. Information about how the <i>Sun</i> prover
- * handles such algorithm-specific parameters can be found in the
- * <a href="https://docs.oracle.com/en/java/javase/11/security/oracle-providers.html">
- *     JDK Providers Documentation</a>.
+ * associated with each of the keys. See the
+ * {@extlink security_guide_jdk_providers JDK Providers} document for information
+ * on the default algorithm-specific parameters used by JDK providers.
  *
  * <li><b>Algorithm-Specific Initialization</b>
  * <p>For situations where a set of algorithm-specific parameters already
