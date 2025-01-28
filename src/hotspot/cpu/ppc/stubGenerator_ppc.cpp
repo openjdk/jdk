@@ -4613,7 +4613,7 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
 
     __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
                                            r_array_base, r_array_length, r_array_index,
-                                           r_bitmap, result, super_klass_index)
+                                           r_bitmap, result, super_klass_index);
     __ blr();
 
     return start;
