@@ -845,7 +845,7 @@ const Type* DivHFNode::Value(PhaseGVN* phase) const {
 
   // If the dividend is a constant zero
   // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
-  // Test TypeF::ZERO is not sufficient as it could be negative zero
+  // Test TypeHF::ZERO is not sufficient as it could be negative zero
 
   if (t1 == TypeH::ZERO && !g_isnan(t2->getf()) && t2->getf() != 0.0) {
     return TypeH::ZERO;
