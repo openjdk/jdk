@@ -124,6 +124,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
       FLAG_SET_ERGO(SuperwordUseVSX, true);
     }
+    if (FLAG_IS_DEFAULT(AlignVector)) {
+      FLAG_SET_ERGO(AlignVector, false);
+    }
   } else {
     if (SuperwordUseVSX) {
       warning("SuperwordUseVSX specified, but needs at least Power8.");
