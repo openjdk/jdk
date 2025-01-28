@@ -85,6 +85,7 @@ import java.time.zone.ZoneRules;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import jdk.internal.vm.annotation.Stable;
 
@@ -135,7 +136,9 @@ public final class ZoneOffset
         implements TemporalAccessor, TemporalAdjuster, Comparable<ZoneOffset>, Serializable {
 
     /** Cache of time-zone offset by offset in seconds. */
-    private static final ConcurrentMap<Integer, ZoneOffset> SECONDS_CACHE = new ConcurrentHashMap<>(16, 0.75f, 4);
+    private static final int MINUTES_15_SECONDS = 15 * SECONDS_PER_MINUTE;
+    private static final AtomicReferenceArray<ZoneOffset> MINUTES_15_CACHE = new AtomicReferenceArray<>(256);
+
     /** Cache of time-zone offset by ID. */
     private static final ConcurrentMap<String, ZoneOffset> ID_CACHE = new ConcurrentHashMap<>(16, 0.75f, 4);
 
@@ -423,12 +426,13 @@ public final class ZoneOffset
         if (totalSeconds < -MAX_SECONDS || totalSeconds > MAX_SECONDS) {
             throw new DateTimeException("Zone offset not in valid range: -18:00 to +18:00");
         }
-        if (totalSeconds % (15 * SECONDS_PER_MINUTE) == 0) {
-            Integer totalSecs = totalSeconds;
-            ZoneOffset result = SECONDS_CACHE.get(totalSecs);
+        int minutes15Rem = totalSeconds / MINUTES_15_SECONDS;
+        if (totalSeconds - minutes15Rem * MINUTES_15_SECONDS == 0) {
+            int cacheIndex = minutes15Rem & 0xff;
+            ZoneOffset result = MINUTES_15_CACHE.getOpaque(cacheIndex);
             if (result == null) {
                 result = new ZoneOffset(totalSeconds);
-                var existing = SECONDS_CACHE.putIfAbsent(totalSecs, result);
+                var existing = MINUTES_15_CACHE.getAndSet(cacheIndex, result);
                 if (existing != null) {
                     result = existing;
                 }
