@@ -260,15 +260,8 @@ void FrameMap::initialize() {
   _caller_save_cpu_regs[23 R18_RESERVED_ONLY(-1)] = r25_opr;
   _caller_save_cpu_regs[24 R18_RESERVED_ONLY(-1)] = r26_opr;
 
-  if (PreserveFramePointer) {
-    if (nof_caller_save_cpu_regs() >= 26 R18_RESERVED_ONLY(-1)) {
-      _caller_save_cpu_regs[25 R18_RESERVED_ONLY(-1)] = r27_opr;
-    }
-  } else {
-    _caller_save_cpu_regs[25 R18_RESERVED_ONLY(-1)] = r29_opr;
-    if (nof_caller_save_cpu_regs() >= 27 R18_RESERVED_ONLY(-1)) {
-      _caller_save_cpu_regs[26 R18_RESERVED_ONLY(-1)] = r27_opr;
-    }
+  if (nof_caller_save_cpu_regs() > 25 R18_RESERVED_ONLY(-1)) {
+    _caller_save_cpu_regs[25 R18_RESERVED_ONLY(-1)] = r27_opr;
   }
 
   for (int i = 0; i < 8; i++) {
