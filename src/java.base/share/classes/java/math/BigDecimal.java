@@ -3499,8 +3499,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (scale == 0)
             return unscaledString();
 
-        long intCompact = this.intCompact;
-
         int signum = signum();
         if (scale < 0) { // No decimal point
             if (signum == 0)
@@ -3517,6 +3515,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     .toString();
         }
 
+        long intCompact = this.intCompact;
         // currency fast path
         if (intCompact != INFLATED) {
             long intCompactAbs = Math.abs(intCompact);
@@ -3533,9 +3532,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         /* Insert decimal point */
         int insertionPoint = intCompactAbsSize - scale;
         byte[] buf;
-        int len;
         if (insertionPoint == 0) {  /* Point goes just before intVal */
-            len = intCompactAbsSize + (signum < 0 ? 3 : 2);
             buf = new byte[intCompactAbsSize + (signum < 0 ? 3 : 2)];
             int off = 0;
             if(signum < 0) {
@@ -3557,11 +3554,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             DecimalDigits.getCharsLatin1(highInt, insertionPoint, buf);
             buf[insertionPoint] = '.';
             int smallStart = DecimalDigits.getCharsLatin1(small, buf.length, buf);
-            if (smallStart > insertionPoint + 1) {
+            if (smallStart > insertionPoint + 1) { // fill zeros
                 Arrays.fill(buf, insertionPoint + 1, smallStart, (byte) '0');
             }
         } else { /* We must insert zeros between point and intVal */
-            len = (signum < 0 ? 3 : 2) + scale;
+            int len = (signum < 0 ? 3 : 2) + scale;
             if (len < 0) {
                 throw new OutOfMemoryError("too large to fit in a String");
             }
