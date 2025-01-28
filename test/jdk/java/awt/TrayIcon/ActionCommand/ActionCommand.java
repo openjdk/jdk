@@ -86,7 +86,7 @@ public class ActionCommand {
         } else if (SystemTrayIconHelper.isOel7orLater()) {
             System.out.println("OEL 7 doesn't support double click in " +
                     "systray. Skipped");
-            throw new SkippedException("Skipped on OEL 7");
+            throw new SkippedException("Skipped on OEL 7+");
         }
         new ActionCommand().doTest();
     }
