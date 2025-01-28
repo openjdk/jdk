@@ -3424,9 +3424,6 @@ void nmethod::decode_platform(outputStream* ost) const {
         st->print(PTR_FORMAT, p2i(p));
         st->print(" %s  ", AbstractDisassembler::pd_inline_comment_close());
         code_comment_column = st->position();
-        if (st->position() > 28) {
-          asm("nop");
-        }
       }
       const_cast<nmethod*>(this)->print_code_comment_on(st, code_comment_column, p, p + 1);
       st->bol();
@@ -3437,9 +3434,6 @@ void nmethod::decode_platform(outputStream* ost) const {
       st->print(PTR_FORMAT, p2i(p));
       st->print(" %s  ", AbstractDisassembler::pd_inline_comment_close());
       code_comment_column = st->position();
-      if (st->position() > 28) {
-        asm("nop");
-      }
       st->print("%s ", AbstractDisassembler::pd_insns_start());
     } else {
       st->print(", ");
