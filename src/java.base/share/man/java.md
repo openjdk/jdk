@@ -4011,7 +4011,7 @@ application is executed. One example is Class Data Sharing (CDS), as described a
 that parses classes ahead of time. AOT optimizations can improve the start-up and
 warm-up performance of Java applications.
 
-The Ahead-of-Time Cache (AOT Cache) is a container introduced in JDK 24 for
+The Ahead-of-Time Cache (AOT cache) is a container introduced in JDK 24 for
 storing artifacts produced by AOT optimizations. The AOT cache currently contains
 Java classes and heap objects. In future JDK releases, the AOT cache may contain additional
 artifacts, such as execution profiles and compiled methods.
