@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,6 +170,8 @@ public class Robot {
         initLegalButtonMask();
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gs = ge.getScreenDevices();
+        allScreenBounds = new Rectangle[gs.length];
+
         for (int i = 0; i < gs.length; i++) {
             allScreenBounds[i] = gs[i].getDefaultConfiguration().getBounds();
         }
@@ -226,8 +228,10 @@ public class Robot {
     public synchronized void mouseMove(int x, int y) {
         int leastXDiff = Integer.MAX_VALUE;
         int leastYDiff = Integer.MAX_VALUE;
-        int finX = x;
-        int finY = y;
+        int finX1 = x;
+        int finY1 = y;
+        int finX2 = x;
+        int finY2 = y;
 
         for (Rectangle screenBounds : allScreenBounds) {
             int closestX = Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width);
@@ -240,20 +244,24 @@ public class Robot {
                 mouseMove(x,y);
                 afterEvent();
                 return;
-            } else if (currXDiff < leastXDiff) {
-                finX = closestX;
-                finY = closestY;
+            } if (currXDiff < leastXDiff) {
+                finX1 = closestX;
+                finY1 = closestY;
                 leastXDiff = currXDiff;
-                leastYDiff = currYDiff;
-            } else if (currYDiff < leastYDiff) {
-                finX = closestX;
-                finY = closestY;
-                leastXDiff = currXDiff;
+            } if (currYDiff < leastYDiff) {
+                finX2 = closestX;
+                finY2 = closestY;
                 leastYDiff = currYDiff;
             }
         }
 
-        peer.mouseMove(finX, finY);
+        if (leastXDiff > leastYDiff) {
+            peer.mouseMove(finX2, finY2);
+        } else {
+            peer.mouseMove(finX1, finY1);
+
+        }
+
         afterEvent();
     }
 

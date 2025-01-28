@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,12 @@
  * questions.
  */
 
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.MouseInfo;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 
 /*
@@ -34,22 +38,44 @@ import java.awt.Robot;
  */
 
 public class MouseMoveOffScreen {
+    private static final Point STARTING_LOC = new Point(200, 200);
     private static final Point OFF_SCREEN_LOC = new Point(20000, 200);
+    private static Rectangle[] r;
 
     public static void main(String[] args) throws Exception {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice[] gs = ge.getScreenDevices();
+        r = new Rectangle[gs.length];
+
+        for (int i = 0; i < gs.length; i++) {
+            r[i] = gs[i].getDefaultConfiguration().getBounds();
+        }
+
+        Point offsc = validateOffScreen(OFF_SCREEN_LOC);
         Robot robot = new Robot();
-        robot.mouseMove(200, 200);
+        robot.mouseMove(STARTING_LOC.x, STARTING_LOC.y);
         robot.delay(500);
-        robot.mouseMove(OFF_SCREEN_LOC.x, OFF_SCREEN_LOC.y);
+        robot.mouseMove(offsc.x, offsc.y);
         robot.delay(500);
 
-        if (MouseInfo.getPointerInfo().getLocation() == null) {
+        Point currLoc = MouseInfo.getPointerInfo().getLocation();
+
+        if (currLoc == null) {
             throw new RuntimeException("Test Failed, getLocation returned null.");
         }
-        Point currLoc = MouseInfo.getPointerInfo().getLocation();
+
         System.out.println("Current mouse location: " + currLoc);
         if (currLoc.equals(OFF_SCREEN_LOC)) {
             throw new RuntimeException("Test Failed, robot moved mouse off screen.");
         }
+    }
+
+    private static Point validateOffScreen(Point p) {
+        for (Rectangle rect : r) {
+            if (rect.contains(p)) {
+                return validateOffScreen(new Point(p.x * 2, p.y));
+            }
+        }
+        return p;
     }
 }
