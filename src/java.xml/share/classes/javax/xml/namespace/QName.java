@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,9 @@ import jdk.xml.internal.SecuritySupport;
  * <strong><em>only</em></strong> the Namespace URI and local part.</p>
  *
  * <p>If not specified, the Namespace URI is set to {@link
- * javax.xml.XMLConstants#NULL_NS_URI XMLConstants.NULL_NS_URI}.
+ * XMLConstants#NULL_NS_URI XMLConstants.NULL_NS_URI}.
  * If not specified, the prefix is set to {@link
- * javax.xml.XMLConstants#DEFAULT_NS_PREFIX
+ * XMLConstants#DEFAULT_NS_PREFIX
  * XMLConstants.DEFAULT_NS_PREFIX}.</p>
  *
  * <p><code>QName</code> is immutable.</p>
@@ -89,13 +89,13 @@ public class QName implements Serializable {
      * and local part.</p>
      *
      * <p>If the Namespace URI is <code>null</code>, it is set to
-     * {@link javax.xml.XMLConstants#NULL_NS_URI
+     * {@link XMLConstants#NULL_NS_URI
      * XMLConstants.NULL_NS_URI}.  This value represents no
      * explicitly defined Namespace as defined by the <a
      * href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">Namespaces
      * in XML</a> specification.  This action preserves compatible
      * behavior with QName 1.0.  Explicitly providing the {@link
-     * javax.xml.XMLConstants#NULL_NS_URI
+     * XMLConstants#NULL_NS_URI
      * XMLConstants.NULL_NS_URI} value is the preferred coding
      * style.</p>
      *
@@ -105,11 +105,11 @@ public class QName implements Serializable {
      * compatible behavior with QName 1.0. </p>
      *
      * <p>When using this constructor, the prefix is set to {@link
-     * javax.xml.XMLConstants#DEFAULT_NS_PREFIX
+     * XMLConstants#DEFAULT_NS_PREFIX
      * XMLConstants.DEFAULT_NS_PREFIX}.</p>
      *
      * <p>The Namespace URI is not validated as a
-     * <a href="http://www.ietf.org/rfc/rfc2396.txt">URI reference</a>.
+     * <a href="https://www.ietf.org/rfc/rfc2396.txt">URI reference</a>.
      * The local part is not validated as a
      * <a href="http://www.w3.org/TR/REC-xml-names/#NT-NCName">NCName</a>
      * as specified in <a href="http://www.w3.org/TR/REC-xml-names/">Namespaces
@@ -134,13 +134,13 @@ public class QName implements Serializable {
      * local part and prefix.</p>
      *
      * <p>If the Namespace URI is <code>null</code>, it is set to
-     * {@link javax.xml.XMLConstants#NULL_NS_URI
+     * {@link XMLConstants#NULL_NS_URI
      * XMLConstants.NULL_NS_URI}.  This value represents no
      * explicitly defined Namespace as defined by the <a
      * href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">Namespaces
      * in XML</a> specification.  This action preserves compatible
      * behavior with QName 1.0.  Explicitly providing the {@link
-     * javax.xml.XMLConstants#NULL_NS_URI
+     * XMLConstants#NULL_NS_URI
      * XMLConstants.NULL_NS_URI} value is the preferred coding
      * style.</p>
      *
@@ -151,12 +151,12 @@ public class QName implements Serializable {
      *
      * <p>If the prefix is <code>null</code>, an
      * <code>IllegalArgumentException</code> is thrown.  Use {@link
-     * javax.xml.XMLConstants#DEFAULT_NS_PREFIX
+     * XMLConstants#DEFAULT_NS_PREFIX
      * XMLConstants.DEFAULT_NS_PREFIX} to explicitly indicate that no
      * prefix is present or the prefix is not relevant.</p>
      *
      * <p>The Namespace URI is not validated as a
-     * <a href="http://www.ietf.org/rfc/rfc2396.txt">URI reference</a>.
+     * <a href="https://www.ietf.org/rfc/rfc2396.txt">URI reference</a>.
      * The local part and prefix are not validated as a
      * <a href="http://www.w3.org/TR/REC-xml-names/#NT-NCName">NCName</a>
      * as specified in <a href="http://www.w3.org/TR/REC-xml-names/">Namespaces
@@ -204,9 +204,9 @@ public class QName implements Serializable {
      * compatible behavior with QName 1.0. </p>
      *
      * <p>When using this constructor, the Namespace URI is set to
-     * {@link javax.xml.XMLConstants#NULL_NS_URI
+     * {@link XMLConstants#NULL_NS_URI
      * XMLConstants.NULL_NS_URI} and the prefix is set to {@link
-     * javax.xml.XMLConstants#DEFAULT_NS_PREFIX
+     * XMLConstants#DEFAULT_NS_PREFIX
      * XMLConstants.DEFAULT_NS_PREFIX}.</p>
      *
      * <p><em>In an XML context, all Element and Attribute names exist
@@ -329,28 +329,14 @@ public class QName implements Serializable {
     }
 
     /**
-     * <p><code>String</code> representation of this
-     * <code>QName</code>.</p>
+     * {@return the string representation of this {@code QName}}
+     * The format is:
+     * <pre> {@code
+     *     {NamespaceURI}LocalPart
+     * }</pre>
+     * If {@code NamespaceURI} is {@code null}, only {@code LocalPart} is returned.
      *
-     * <p>The commonly accepted way of representing a <code>QName</code>
-     * as a <code>String</code> was
-     * <a href="http://jclark.com/xml/xmlns.htm">defined</a>
-     * by James Clark.  Although this is not a <em>standard</em>
-     * specification, it is in common use, e.g. {@link
-     * javax.xml.transform.Transformer#setParameter(String name, Object value)}.
-     * This implementation represents a <code>QName</code> as:
-     * "{" + Namespace URI + "}" + local part.  If the Namespace URI
-     * <code>.equals(XMLConstants.NULL_NS_URI)</code>, only the
-     * local part is returned.  An appropriate use of this method is
-     * for debugging or logging for human consumption.</p>
-     *
-     * <p>Note the prefix value is <strong><em>NOT</em></strong>
-     * returned as part of the <code>String</code> representation.</p>
-     *
-     * <p>This method satisfies the general contract of {@link
-     * java.lang.Object#toString() Object.toString()}.</p>
-     *
-     *  @return <code>String</code> representation of this <code>QName</code>
+     * @apiNote The {@code Prefix} is not returned in the string representation.
      */
     public String toString() {
         if (namespaceURI.equals(XMLConstants.NULL_NS_URI)) {
@@ -361,48 +347,25 @@ public class QName implements Serializable {
     }
 
     /**
-     * <p><code>QName</code> derived from parsing the formatted
-     * <code>String</code>.</p>
+     * {@return a {@code QName} from its string representation}
+     * The string representation must be in the format returned by {@link #toString()}:
+     * <pre> {@code
+     *     {NamespaceURI}LocalPart
+     * }</pre>
+     * Since the {@code Prefix} is not represented in the string form, it will be
+     * set to {@link XMLConstants#DEFAULT_NS_PREFIX XMLConstants.DEFAULT_NS_PREFIX}.
      *
-     * <p>If the <code>String</code> is <code>null</code> or does not conform to
-     * {@link #toString() QName.toString()} formatting, an
-     * <code>IllegalArgumentException</code> is thrown.</p>
-     *
-     * <p><em>The <code>String</code> <strong>MUST</strong> be in the
-     * form returned by {@link #toString() QName.toString()}.</em></p>
-     *
-     * <p>The commonly accepted way of representing a <code>QName</code>
-     * as a <code>String</code> was
-     * <a href="http://jclark.com/xml/xmlns.htm">defined</a>
-     * by James Clark.  Although this is not a <em>standard</em>
-     * specification, it is in common use, e.g. {@link
-     * javax.xml.transform.Transformer#setParameter(String name, Object value)}.
-     * This implementation parses a <code>String</code> formatted
-     * as: "{" + Namespace URI + "}" + local part.  If the Namespace
-     * URI <code>.equals(XMLConstants.NULL_NS_URI)</code>, only the
-     * local part should be provided.</p>
-     *
-     * <p>The prefix value <strong><em>CANNOT</em></strong> be
-     * represented in the <code>String</code> and will be set to
-     * {@link javax.xml.XMLConstants#DEFAULT_NS_PREFIX
-     * XMLConstants.DEFAULT_NS_PREFIX}.</p>
-     *
-     * <p>This method does not do full validation of the resulting
-     * <code>QName</code>.
-     * <p>The Namespace URI is not validated as a
-     * <a href="http://www.ietf.org/rfc/rfc2396.txt">URI reference</a>.
-     * The local part is not validated as a
+     * @apiNote This method does not perform full validation of the resulting
+     * {@code QName}. The {@code NamespaceURI} is not validated as a
+     * <a href="https://www.ietf.org/rfc/rfc2396.txt">URI reference</a>.
+     * The {@code LocalPart} is not validated as a
      * <a href="http://www.w3.org/TR/REC-xml-names/#NT-NCName">NCName</a>
      * as specified in
-     * <a href="http://www.w3.org/TR/REC-xml-names/">Namespaces in XML</a>.</p>
+     * <a href="http://www.w3.org/TR/REC-xml-names/">Namespaces in XML</a>.
      *
-     * @param qNameAsString <code>String</code> representation
-     * of the <code>QName</code>
-     *
-     * @throws IllegalArgumentException When <code>qNameAsString</code> is
-     *   <code>null</code> or malformed
-     *
-     * @return <code>QName</code> corresponding to the given <code>String</code>
+     * @param qNameAsString the string representation of the {@code QName}
+     * @throws IllegalArgumentException if {@code qNameAsString} is {@code null}
+     * or malformed
      * @see #toString() QName.toString()
      */
     public static QName valueOf(String qNameAsString) {
