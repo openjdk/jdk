@@ -245,7 +245,7 @@ void VLoopVPointers::compute_and_cache_vpointers() {
   int pointers_idx = 0;
   _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
     // Placement new: construct directly into the array.
-    // We collect all nodes that are in a pointer expression.
+    // We mark all nodes in the loop that are in a pointer expression.
     ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop, _pointer_expression_nodes);
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
     pointers_idx++;

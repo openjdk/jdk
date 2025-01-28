@@ -514,22 +514,28 @@ private:
   const Type* container_type(Node* n) const;
 };
 
-// Mark all nodes that are part of any VPointer expression.
+// Mark all nodes from the loop that are part of any VPointer expression.
 class PointerExpressionNodes : public MemPointerParserCallback {
 private:
+  const VLoop&     _vloop;
   const VLoopBody& _body;
-  VectorSet _in_pointer_expression;
+  VectorSet        _in_pointer_expression;
 
 public:
-  PointerExpressionNodes(Arena* arena, const VLoopBody& body) :
+  PointerExpressionNodes(Arena* arena,
+                         const VLoop& vloop,
+                         const VLoopBody& body) :
+    _vloop(vloop),
     _body(body),
     _in_pointer_expression(arena) {}
 
   virtual void callback(Node* n) override {
+    if (!_vloop.in_bb(n)) { return; }
     _in_pointer_expression.set(_body.bb_idx(n));
   }
 
   bool contains(const Node* n) const {
+    if (!_vloop.in_bb(n)) { return false; }
     return _in_pointer_expression.test(_body.bb_idx(n));
   }
 };
@@ -564,7 +570,7 @@ public:
                         vloop.estimated_body_length(),
                         vloop.estimated_body_length(),
                         -1),
-    _pointer_expression_nodes(arena, _body) {}
+    _pointer_expression_nodes(arena, _vloop, _body) {}
   NONCOPYABLE(VLoopVPointers);
 
   void compute_vpointers();
