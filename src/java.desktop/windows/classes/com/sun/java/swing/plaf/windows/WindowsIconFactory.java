@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -857,8 +857,7 @@ public class WindowsIconFactory implements Serializable
                         State backgroundState;
                         State state;
                         if (isEnabled(c, null)) {
-                            backgroundState =
-                                (icon != null) ? State.BITMAP : State.NORMAL;
+                            backgroundState = State.NORMAL;
                             state = (type == JRadioButtonMenuItem.class)
                               ? State.BULLETNORMAL
                               : State.CHECKMARKNORMAL;
@@ -878,12 +877,47 @@ public class WindowsIconFactory implements Serializable
                             if (icon == null) {
                                 skin = xp.getSkin(c, part);
                                 skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
+                            } else {
+                                skin = xp.getSkin(c, part);
+                                skin.paintSkin(g, x - 3*OFFSET, y + OFFSET, state);
                             }
                         }
                     }
                 }
                 if (icon != null) {
-                    icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
+                    if (!((AbstractButton)c).isSelected()) {
+                        Part backgroundPart = Part.MP_POPUPCHECKBACKGROUND;
+                        Part part;
+                        if (type == JRadioButtonMenuItem.class) {
+                            part = Part.BP_RADIOBUTTON;
+                        } else {
+                            part = Part.MP_POPUPCHECK;
+                        }
+                        State backgroundState;
+                        State state;
+                        if (isEnabled(c, null)) {
+                            backgroundState = State.NORMAL;
+                            state = (type == JRadioButtonMenuItem.class)
+                                    ? State.BULLETNORMAL
+                                    : State.CHECKMARKNORMAL;
+                        } else {
+                            backgroundState = State.DISABLEDPUSHED;
+                            state =
+                                    (type == JRadioButtonMenuItem.class)
+                                            ? State.BULLETDISABLED
+                                            : State.CHECKMARKDISABLED;
+                        }
+                        XPStyle xp = XPStyle.getXP();
+                        if (xp != null) {
+                            Skin skin;
+                            skin = xp.getSkin(c, backgroundPart);
+                            skin.paintSkin(g, x, y,
+                                    getIconWidth(), getIconHeight(), backgroundState);
+                            skin = xp.getSkin(c, part);
+                            skin.paintSkin(g, x - 2 * OFFSET, y + OFFSET, state);
+                        }
+                    }
+                    icon.paintIcon(c, g, x + 3*OFFSET, y + OFFSET);
                 }
             }
             private static WindowsMenuItemUIAccessor getAccessor(
