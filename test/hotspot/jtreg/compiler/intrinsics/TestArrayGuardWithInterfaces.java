@@ -38,7 +38,7 @@ public class TestArrayGuardWithInterfaces {
     public static interface MyInterface { }
 
     public static int test1(Object obj) {
-        // Should be folded, arrays can never imlement 'MyInterface' 
+        // Should be folded, arrays can never imlement 'MyInterface'
         return Array.getLength((MyInterface)obj);
     }
 
