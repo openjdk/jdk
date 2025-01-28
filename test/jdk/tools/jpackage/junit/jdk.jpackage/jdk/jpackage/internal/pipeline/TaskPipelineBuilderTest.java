@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
@@ -41,9 +42,9 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-final class ActionPipelineBuilderTest {
+final class TaskPipelineBuilderTest {
 
-    enum TestAction implements Consumer<StringBuffer> {
+    enum TestTask implements Consumer<StringBuffer> {
         A,
         B,
         C,
@@ -58,83 +59,84 @@ final class ActionPipelineBuilderTest {
             sb.append(name());
         }
 
-        Runnable toRunnable(StringBuffer sb) {
-            return new Runnable () {
+        Callable<Void> toCallable(StringBuffer sb) {
+            return new Callable<Void> () {
 
                 @Override
-                public void run() {
+                public Void call() {
                     accept(sb);
+                    return null;
                 }
 
                 @Override
                 public String toString() {
-                    return TestAction.this.toString();
+                    return TestTask.this.toString();
                 }
 
             };
         }
     }
 
-    record ActionSpec(TestAction action, List<TestAction> dependencies, TestAction dependent) {
+    record TaskSpec(TestTask task, List<TestTask> dependencies, TestTask dependent) {
     }
 
-    private final static class ActionSpecBuilder {
+    private final static class TaskSpecBuilder {
 
-        ActionSpecBuilder(TestAction action) {
-            this.action = Objects.requireNonNull(action);
+        TaskSpecBuilder(TestTask task) {
+            this.task = Objects.requireNonNull(task);
         }
 
-        ActionSpecBuilder to(TestAction action) {
-            dependent = action;
+        TaskSpecBuilder to(TestTask task) {
+            dependent = task;
             return this;
         }
 
-        ActionSpecBuilder from(TestAction ... actions) {
-            dependencies.addAll(List.of(actions));
+        TaskSpecBuilder from(TestTask ... tasks) {
+            dependencies.addAll(List.of(tasks));
             return this;
         }
 
-        ActionSpec create() {
-            return new ActionSpec(action, dependencies, dependent);
+        TaskSpec create() {
+            return new TaskSpec(task, dependencies, dependent);
         }
 
-        private final TestAction action;
-        private final List<TestAction> dependencies = new ArrayList<>();
-        private TestAction dependent;
+        private final TestTask task;
+        private final List<TestTask> dependencies = new ArrayList<>();
+        private TestTask dependent;
     }
 
     @ParameterizedTest
     @MethodSource("testSequentialData")
-    public void testSequential(List<ActionSpec> actionSpecs, Object expectedString) {
-        testIt(new ForkJoinPool(1), actionSpecs, expectedString);
+    public void testSequential(List<TaskSpec> taskSpecs, Object expectedString) throws Exception {
+        testIt(new ForkJoinPool(1), taskSpecs, expectedString);
     }
 
     @ParameterizedTest
     @MethodSource("testParallelData")
-    public void testParallel(List<ActionSpec> actionSpecs, Object expectedString) {
-        testIt(new ForkJoinPool(4), actionSpecs, expectedString);
+    public void testParallel(List<TaskSpec> taskSpecs, Object expectedString) throws Exception {
+        testIt(new ForkJoinPool(4), taskSpecs, expectedString);
     }
 
-    private void testIt(ForkJoinPool fjp, List<ActionSpec> actionSpecs, Object expectedString) {
-        final var builder = new ActionPipelineBuilder();
+    private void testIt(ForkJoinPool fjp, List<TaskSpec> taskSpecs, Object expectedString) throws Exception {
+        final var builder = new TaskPipelineBuilder();
         builder.executor(fjp);
 
         final var sb = new StringBuffer();
 
-        final var actionMap = Stream.of(TestAction.values()).collect(Collectors.toMap(x -> x, x -> {
-            return x.toRunnable(sb);
+        final var taskMap = Stream.of(TestTask.values()).collect(Collectors.toMap(x -> x, x -> {
+            return x.toCallable(sb);
         }));
 
-        actionSpecs.forEach(actionSpec -> {
-            builder.action(actionMap.get(actionSpec.action))
-                    .addDependencies(actionSpec.dependencies.stream().map(actionMap::get).toList())
-                    .dependent(actionMap.get(actionSpec.dependent))
+        taskSpecs.forEach(taskSpec -> {
+            builder.task(taskMap.get(taskSpec.task))
+                    .addDependencies(taskSpec.dependencies.stream().map(taskMap::get).toList())
+                    .dependent(taskMap.get(taskSpec.dependent))
                     .add();
         });
 
         System.out.println(String.format("start for %s", expectedString));
 
-        builder.create().run();
+        builder.create().call();
 
         final var actualString = sb.toString();
 
@@ -153,29 +155,29 @@ final class ActionPipelineBuilderTest {
         final List<Object[]> data = new ArrayList<>();
 
         data.addAll(List.<Object[]>of(
-                new Object[] { List.of(action(A).create()), "A" },
-                new Object[] { List.of(action(B).from(A).create()), "AB" },
+                new Object[] { List.of(task(A).create()), "A" },
+                new Object[] { List.of(task(B).from(A).create()), "AB" },
 
                 // D <- C <- B
                 // ^         ^
                 // |         |
                 // +--- A ---+
-                new Object[] { List.of(action(D).create(), action(C).from(B).to(D).create(), action(A).to(B).create(), action(A).to(D).create()), "ABCD" }
+                new Object[] { List.of(task(D).create(), task(C).from(B).to(D).create(), task(A).to(B).create(), task(A).to(D).create()), "ABCD" }
         ));
 
-        final var allValuesRegexp = Pattern.compile(String.format("[%s]{%d}", Stream.of(TestAction.values()).map(Enum::name).collect(joining()), TestAction.values().length));
+        final var allValuesRegexp = Pattern.compile(String.format("[%s]{%d}", Stream.of(TestTask.values()).map(Enum::name).collect(joining()), TestTask.values().length));
 
         data.addAll(List.<Object[]>of(
-                new Object[] { Stream.of(TestAction.values())
-                        .map(ActionPipelineBuilderTest::action)
-                        .map(ActionSpecBuilder::create).toList(),
-                        sequential ? Stream.of(TestAction.values()).map(Enum::name).collect(joining()) : allValuesRegexp },
+                new Object[] { Stream.of(TestTask.values())
+                        .map(TaskPipelineBuilderTest::task)
+                        .map(TaskSpecBuilder::create).toList(),
+                        sequential ? Stream.of(TestTask.values()).map(Enum::name).collect(joining()) : allValuesRegexp },
 
-                new Object[] { Stream.of(TestAction.values())
+                new Object[] { Stream.of(TestTask.values())
                         .sorted(Comparator.reverseOrder())
-                        .map(ActionPipelineBuilderTest::action)
-                        .map(ActionSpecBuilder::create).toList(),
-                        sequential ? Stream.of(TestAction.values()).sorted(Comparator.reverseOrder()).map(Enum::name).collect(joining()) : allValuesRegexp }
+                        .map(TaskPipelineBuilderTest::task)
+                        .map(TaskSpecBuilder::create).toList(),
+                        sequential ? Stream.of(TestTask.values()).sorted(Comparator.reverseOrder()).map(Enum::name).collect(joining()) : allValuesRegexp }
         ));
 
         // B -> A <- C
@@ -183,7 +185,7 @@ final class ActionPipelineBuilderTest {
         // |         |
         // +--- D ---+
         data.add(new Object[] {
-                List.of(action(A).create(), action(B).from(D).to(A).create(), action(C).from(D).to(A).create()),
+                List.of(task(A).create(), task(B).from(D).to(A).create(), task(C).from(D).to(A).create()),
                 sequential ? "DCBA" : Pattern.compile("D(BC|CB)A")
         });
 
@@ -198,14 +200,14 @@ final class ActionPipelineBuilderTest {
         return testData(false);
     }
 
-    private static ActionSpecBuilder action(TestAction action) {
-        return new ActionSpecBuilder(action);
+    private static TaskSpecBuilder task(TestTask task) {
+        return new TaskSpecBuilder(task);
     }
 
-    private final static TestAction A = TestAction.A;
-    private final static TestAction B = TestAction.B;
-    private final static TestAction C = TestAction.C;
-    private final static TestAction D = TestAction.D;
-    private final static TestAction K = TestAction.K;
-    private final static TestAction L = TestAction.L;
+    private final static TestTask A = TestTask.A;
+    private final static TestTask B = TestTask.B;
+    private final static TestTask C = TestTask.C;
+    private final static TestTask D = TestTask.D;
+    private final static TestTask K = TestTask.K;
+    private final static TestTask L = TestTask.L;
 }

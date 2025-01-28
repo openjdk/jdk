@@ -30,98 +30,101 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.ForkJoinPool;
 
-public final class ActionPipelineBuilder {
+public final class TaskPipelineBuilder {
 
-    public final class ActionSpecBuilder {
+    public final class TaskSpecBuilder {
 
-        ActionSpecBuilder(Runnable action) {
-            Objects.requireNonNull(action);
-            this.action = action;
+        TaskSpecBuilder(Callable<Void> task) {
+            Objects.requireNonNull(task);
+            this.task = task;
         }
 
-        public ActionSpecBuilder dependent(Runnable v) {
+        public TaskSpecBuilder dependent(Callable<Void> v) {
             dependent = v;
             return this;
         }
 
-        public ActionSpecBuilder addDependency(Runnable v) {
+        public TaskSpecBuilder addDependency(Callable<Void> v) {
             Objects.requireNonNull(v);
             dependencies.add(v);
             return this;
         }
 
-        public ActionSpecBuilder addDependencies(Collection<? extends Runnable> v) {
+        public TaskSpecBuilder addDependencies(Collection<? extends Callable<Void>> v) {
             Objects.requireNonNull(v);
             v.forEach(Objects::requireNonNull);
             dependencies.addAll(v);
             return this;
         }
 
-        public ActionPipelineBuilder add() {
-            if (actionGraphBuilder == null) {
-                actionGraphBuilder = new ImmutableDAG.Builder<>();
-                actionGraphBuilder.addEdge(action, ROOT_ACTION);
-                actionGraphBuilder.canAddEdgeToUnknownNode(false);
+        public TaskPipelineBuilder add() {
+            if (taskGraphBuilder == null) {
+                taskGraphBuilder = new ImmutableDAG.Builder<>();
+                taskGraphBuilder.addEdge(task, ROOT_ACTION);
+                taskGraphBuilder.canAddEdgeToUnknownNode(false);
             } else {
-                actionGraphBuilder.addEdge(action, Optional.ofNullable(dependent).orElse(ROOT_ACTION));
+                taskGraphBuilder.addEdge(task, Optional.ofNullable(dependent).orElse(ROOT_ACTION));
             }
 
             for (var dependency : dependencies) {
-                actionGraphBuilder.addEdge(dependency, action);
+                taskGraphBuilder.addEdge(dependency, task);
             }
 
-            return ActionPipelineBuilder.this;
+            return TaskPipelineBuilder.this;
         }
 
-        private Set<Runnable> dependencies = new LinkedHashSet<>();
-        private Runnable dependent;
-        private final Runnable action;
+        private Set<Callable<Void>> dependencies = new LinkedHashSet<>();
+        private Callable<Void> dependent;
+        private final Callable<Void> task;
     }
 
-    public ActionSpecBuilder action(Runnable action) {
-        return new ActionSpecBuilder(action);
+    public TaskSpecBuilder task(Callable<Void> task) {
+        return new TaskSpecBuilder(task);
     }
 
-    public ActionPipelineBuilder executor(ForkJoinPool v) {
+    public TaskPipelineBuilder executor(ForkJoinPool v) {
         Objects.requireNonNull(v);
         fjp = v;
         return this;
     }
 
-    public ActionPipelineBuilder sequentialExecutor() {
+    public TaskPipelineBuilder sequentialExecutor() {
         fjp = new ForkJoinPool(1);
         return this;
     }
 
-    public Runnable create() {
-        final var actionGraph = actionGraphBuilder.create();
+    public Callable<Void> create() {
+        final var taskGraph = taskGraphBuilder.create();
 
-        final var rootCompleter = new CountedCompleterBuilder(actionGraph).create();
+        final var rootCompleter = new CountedCompleterBuilder(taskGraph).create();
 
-        return new WrapperAction(rootCompleter, fjp);
+        return new WrapperTask(rootCompleter, fjp);
     }
 
-    private record WrapperAction(CountedCompleter<Void> rootCompleter, ForkJoinPool fjp) implements Runnable {
+    private record WrapperTask(CountedCompleter<Void> rootCompleter, ForkJoinPool fjp) implements Callable<Void> {
 
-        WrapperAction {
+        WrapperTask {
             Objects.requireNonNull(rootCompleter);
             Objects.requireNonNull(fjp);
         }
 
         @Override
-        public void run() {
+        public Void call() {
             fjp.invoke(rootCompleter);
+            return null;
         }
 
     }
 
-    private static final Runnable ROOT_ACTION = new Runnable() {
+    private static final Callable<Void> ROOT_ACTION = new Callable<Void>() {
 
         @Override
-        public void run() {
+        public Void call() {
+            return null;
         }
 
         @Override
@@ -130,6 +133,6 @@ public final class ActionPipelineBuilder {
         }
     };
 
-    private ImmutableDAG.Builder<Runnable> actionGraphBuilder;
+    private ImmutableDAG.Builder<Callable<Void>> taskGraphBuilder;
     private ForkJoinPool fjp;
 }

@@ -32,21 +32,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.StreamSupport;
 
 /**
- * Schedules execution of actions in the given action graph.
+ * Schedules execution of tasks in the given task graph.
  */
 final class CountedCompleterBuilder {
 
-    CountedCompleterBuilder(ImmutableDAG<Runnable> actionGraph) {
-        this.actionGraph = Objects.requireNonNull(actionGraph);
+    CountedCompleterBuilder(ImmutableDAG<Callable<Void>> taskGraph) {
+        this.taskGraph = Objects.requireNonNull(taskGraph);
 
-        runOnce = StreamSupport.stream(actionGraph.getNodes().spliterator(), false).filter(node -> {
-            return actionGraph.getHeadsOf(node).size() > 1;
-        }).collect(toMap(x -> x, x -> new ActionCompleters()));
+        runOnce = StreamSupport.stream(taskGraph.getNodes().spliterator(), false).filter(node -> {
+            return taskGraph.getHeadsOf(node).size() > 1;
+        }).collect(toMap(x -> x, x -> new TaskCompleters()));
     }
 
     CountedCompleter<Void> create() {
@@ -59,20 +60,20 @@ final class CountedCompleterBuilder {
     }
 
     private List<? extends CountedCompleter<Void>> createRootCompleters() {
-        final var rootNodes = actionGraph.getNoOutgoingEdges();
+        final var rootNodes = taskGraph.getNoOutgoingEdges();
 
         return rootNodes.stream().map(rootNode -> {
-            return new ActionCompleter(null, rootNode);
+            return new TaskCompleter(null, rootNode);
         }).toList();
     }
 
-    private Optional<ActionCompleters> registerCompleter(Runnable action, CountedCompleter<Void> completer) {
+    private Optional<TaskCompleters> registerCompleter(Callable<Void> task, CountedCompleter<Void> completer) {
         Objects.requireNonNull(completer);
-        final var dependentActions = actionGraph.getHeadsOf(action);
-        if (dependentActions.size() <= 1) {
+        final var dependentTasks = taskGraph.getHeadsOf(task);
+        if (dependentTasks.size() <= 1) {
             return Optional.empty();
         } else {
-            var completers = runOnce.get(action);
+            var completers = runOnce.get(task);
             completers.allCompleters().add(completer);
             return Optional.of(completers);
         }
@@ -93,7 +94,7 @@ final class CountedCompleterBuilder {
             setPendingCount(dependencyCompleters.size());
 
             // ForkJoinPool will execute tasks in the reverse order of how they are scheduled.
-            // Reverse the order in which actions are scheduled to get them executed in the order placed in the dependency list.
+            // Reverse the order in which tasks are scheduled to get them executed in the order placed in the dependency list.
             // Ordering works for sequential execution only.
             dependencyCompleters.reversed().forEach(CountedCompleter::fork);
 
@@ -105,31 +106,35 @@ final class CountedCompleterBuilder {
         private static final long serialVersionUID = 1L;
     }
 
-    private final class ActionCompleter extends DependentComleter {
+    private final class TaskCompleter extends DependentComleter {
 
-        ActionCompleter(CountedCompleter<Void> dependentCompleter, Runnable action) {
+        TaskCompleter(CountedCompleter<Void> dependentCompleter, Callable<Void> task) {
             super(dependentCompleter);
-            this.action = Objects.requireNonNull(action);
+            this.task = Objects.requireNonNull(task);
 
-            dependencyCompleters = actionGraph.getTailsOf(action).stream().map(dependencyAction -> {
-                return new ActionCompleter(this, dependencyAction);
+            dependencyCompleters = taskGraph.getTailsOf(task).stream().map(dependencyTask -> {
+                return new TaskCompleter(this, dependencyTask);
             }).toList();
 
-            actionCompleters = registerCompleter(action, this);
+            taskCompleters = registerCompleter(task, this);
         }
 
         @Override
         public void compute() {
-            if (actionCompleters.map(ActionCompleters::completer).map(ref -> ref.compareAndSet(null, this)).orElse(true)) {
+            if (taskCompleters.map(TaskCompleters::completer).map(ref -> ref.compareAndSet(null, this)).orElse(true)) {
                 super.compute();
             }
         }
 
         @Override
         public void onCompletion(CountedCompleter<?> caller) {
-            if (actionCompleters.map(ac -> ac.isActionCompleter(this)).orElse(true)) {
-                action.run();
-                actionCompleters.ifPresent(ActionCompleters::complete);
+            if (taskCompleters.map(ac -> ac.isTaskCompleter(this)).orElse(true)) {
+                try {
+                    task.call();
+                } catch (Exception ex) {
+                    completeExceptionally(ex);
+                }
+                taskCompleters.ifPresent(TaskCompleters::complete);
             }
         }
 
@@ -138,9 +143,9 @@ final class CountedCompleterBuilder {
             return dependencyCompleters;
         }
 
-        private final Runnable action;
-        private final List<? extends CountedCompleter<Void>> dependencyCompleters;
-        private final Optional<ActionCompleters> actionCompleters;
+        private final transient Callable<Void> task;
+        private final transient List<? extends CountedCompleter<Void>> dependencyCompleters;
+        private final transient Optional<TaskCompleters> taskCompleters;
 
         private static final long serialVersionUID = 1L;
     }
@@ -156,31 +161,31 @@ final class CountedCompleterBuilder {
             return dependencyCompleters;
         }
 
-        private final List<? extends CountedCompleter<Void>> dependencyCompleters;
+        private final transient List<? extends CountedCompleter<Void>> dependencyCompleters;
 
         private static final long serialVersionUID = 1L;
     }
 
-    private record ActionCompleters(AtomicReference<CountedCompleter<Void>> completer,
+    private record TaskCompleters(AtomicReference<CountedCompleter<Void>> completer,
             List<CountedCompleter<Void>> allCompleters) {
 
-        ActionCompleters() {
+        TaskCompleters() {
             this(new AtomicReference<>(), new ArrayList<>());
         }
 
-        boolean isActionCompleter(CountedCompleter<Void> c) {
+        boolean isTaskCompleter(CountedCompleter<Void> c) {
             return c == completer.get();
         }
 
         void complete() {
             allCompleters.forEach(c -> {
-                if (!isActionCompleter(c)) {
+                if (!isTaskCompleter(c)) {
                     c.complete(null);
                 }
             });
         }
     }
 
-    private final ImmutableDAG<Runnable> actionGraph;
-    private final Map<Runnable, ActionCompleters> runOnce;
+    private final ImmutableDAG<Callable<Void>> taskGraph;
+    private final Map<Callable<Void>, TaskCompleters> runOnce;
 }
