@@ -637,7 +637,7 @@ public final class Integer extends Number
             }
         }
         throw NumberFormatException.forCharSequence(s, beginIndex,
-            endIndex, i - (digit < -1 ? 0 : 1));
+            endIndex, i - (digit < -1 ? 0 : 1), radix);
     }
 
     /**

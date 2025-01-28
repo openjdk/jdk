@@ -93,6 +93,22 @@ public class NumberFormatException extends IllegalArgumentException {
                 + s.subSequence(beginIndex, endIndex) + "\"");
     }
 
+    /**
+     * Factory method for making a {@code NumberFormatException}
+     * given the specified input which caused the error.
+     *
+     * <p>When {@code beginIndex} is 0 and {@code endIndex == s.length()}, this method
+     * behaves exactly like {@link #forInputString(String, int)} in error handling,
+     * including the format of thrown exceptions and diagnostic messages.
+     */
+    static NumberFormatException forCharSequence(CharSequence s,
+            int beginIndex, int endIndex, int errorIndex, int radix) {
+        if (s instanceof String && beginIndex == 0 && endIndex == s.length()) {
+            return forInputString((String) s, radix);
+        }
+        return forCharSequence(s, beginIndex, endIndex, errorIndex);
+    }
+
     static NumberFormatException nullInput() {
         return new NumberFormatException("Cannot parse null string");
     }
