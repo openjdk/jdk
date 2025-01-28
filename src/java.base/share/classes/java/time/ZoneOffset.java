@@ -432,7 +432,7 @@ public final class ZoneOffset
             ZoneOffset result = MINUTES_15_CACHE.getOpaque(cacheIndex);
             if (result == null) {
                 result = new ZoneOffset(totalSeconds);
-                var existing = MINUTES_15_CACHE.getAndSet(cacheIndex, result);
+                var existing = MINUTES_15_CACHE.compareAndExchange(cacheIndex, null, result);
                 if (existing != null) {
                     result = existing;
                 }
