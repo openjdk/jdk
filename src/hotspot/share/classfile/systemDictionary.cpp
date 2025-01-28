@@ -502,12 +502,11 @@ static void handle_parallel_super_load(Symbol* name,
                                        TRAPS) {
 
   // The result superk is not used; resolve_with_circularity_detection is called for circularity check only.
-  // This passes true to check_is_superclass even though it might not be the super class in order to perform the
-  // check anyway.
+  // This passes false to check_is_superclass to skip doing the unlikely optimization.
   Klass* superk = SystemDictionary::resolve_with_circularity_detection(name,
                                                                        superclassname,
                                                                        class_loader,
-                                                                       true,
+                                                                       false,
                                                                        CHECK);
 }
 
