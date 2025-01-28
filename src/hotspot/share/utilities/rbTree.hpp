@@ -72,8 +72,8 @@ public:
     bool is_black() const { return (_parent & 0x1) != 0; }
     bool is_red() const { return (_parent & 0x1) == 0; }
 
-    void set_black() { _parent = _parent | 0x1; }
-    void set_red() { _parent = _parent & ~0x1; }
+    void set_black() { _parent |= 0x1; }
+    void set_red() { _parent &= ~0x1; }
 
     RBNode* parent() const { return (RBNode*)(_parent & ~0x1); }
     void set_parent(RBNode* new_parent) {_parent = (_parent & 0x1) | ((uintptr_t)new_parent & ~0x1); }
