@@ -24,7 +24,7 @@
 
 /**
  * @test TestGCLockerEvent
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @requires vm.gc.Serial | vm.gc.Parallel
  * @requires vm.gc != null

@@ -34,8 +34,8 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * <p>
  * The use of a {@code DoubleEntry} is modeled by a {@code double}.  Conversions
  * are through {@link ConstantPoolBuilder#doubleEntry} and {@link #doubleValue()}.
- * In the conversions, all NaN values of the {@code double} may be collapsed
- * into a single {@linkplain Double#NaN "canonical" NaN value}.
+ * In the conversions, all NaN values of the {@code double} may or may not be
+ * collapsed into a single {@linkplain Double#NaN "canonical" NaN value}.
  * <p>
  * A double entry has a {@linkplain #width() width} of {@code 2}, making its
  * subsequent constant pool index valid and unusable.

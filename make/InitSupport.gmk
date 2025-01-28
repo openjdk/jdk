@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,15 @@ ifeq ($(HAS_SPEC), )
   # from the command-line.
   ##############################################################################
 
-  # Make control variables, handled by Init.gmk
-  INIT_CONTROL_VARIABLES += LOG CONF CONF_NAME SPEC JOBS TEST_JOBS CONF_CHECK \
-      COMPARE_BUILD JTREG GTEST MICRO TEST_OPTS TEST_VM_OPTS TEST_DEPS
+  # Essential control variables that are handled by Init.gmk
+  INIT_CONTROL_VARIABLES := LOG CONF CONF_NAME SPEC JOBS CONF_CHECK ALLOW \
+      COMPARE_BUILD
 
-  # All known make control variables
-  MAKE_CONTROL_VARIABLES := $(INIT_CONTROL_VARIABLES) TEST JDK_FILTER SPEC_FILTER
+  # All known make control variables; these are handled in other makefiles
+  MAKE_CONTROL_VARIABLES += JDK_FILTER SPEC_FILTER \
+      TEST TEST_JOBS JTREG GTEST MICRO TEST_OPTS TEST_VM_OPTS TEST_DEPS
+
+  ALL_CONTROL_VARIABLES := $(INIT_CONTROL_VARIABLES) $(MAKE_CONTROL_VARIABLES)
 
   # Define a simple reverse function.
   # Should maybe move to MakeBase.gmk, but we can't include that file now.
@@ -87,8 +90,10 @@ ifeq ($(HAS_SPEC), )
     command_line_variables := $$(strip $$(foreach var, \
         $$(subst \ ,_,$$(MAKEOVERRIDES)), \
         $$(firstword $$(subst =, , $$(var)))))
+    allowed_command_line_variables := $$(strip $$(subst $$(COMMA), , $$(ALLOW)))
     unknown_command_line_variables := $$(strip \
-        $$(filter-out $$(MAKE_CONTROL_VARIABLES), $$(command_line_variables)))
+        $$(filter-out $$(ALL_CONTROL_VARIABLES) $$(allowed_command_line_variables), \
+        $$(command_line_variables)))
     ifneq ($$(unknown_command_line_variables), )
       $$(info Note: Command line contains non-control variables:)
       $$(foreach var, $$(unknown_command_line_variables), $$(info * $$(var)=$$($$(var))))
@@ -211,13 +216,15 @@ ifeq ($(HAS_SPEC), )
                 $$(if $$(findstring $$(CONF), $$(var)), $$(var))))
           endif
           ifneq ($$(filter $$(CONF), $$(matching_confs)), )
+            ifneq ($$(word 2, $$(matching_confs)), )
+              # Don't repeat this output on make restarts caused by including
+              # generated files.
+              ifeq ($$(MAKE_RESTARTS), )
+                $$(info Using exact match for CONF=$$(CONF) (other matches are possible))
+              endif
+            endif
             # If we found an exact match, use that
             matching_confs := $$(CONF)
-            # Don't repeat this output on make restarts caused by including
-            # generated files.
-            ifeq ($$(MAKE_RESTARTS), )
-              $$(info Using exact match for CONF=$$(CONF) (other matches are possible))
-            endif
           endif
         endif
         ifeq ($$(matching_confs), )
