@@ -241,7 +241,7 @@ public class Robot {
             int currYDiff = Math.abs(y - closestY);
 
             if ((currXDiff == 0) && (currYDiff == 0)) {
-                mouseMove(x,y);
+                peer.mouseMove(x,y);
                 afterEvent();
                 return;
             } if (currXDiff < leastXDiff) {
