@@ -428,10 +428,12 @@ public final class ZoneOffset
         }
         int quarters = totalSeconds / SECONDS_PER_QUARTER;
         if (totalSeconds - quarters * SECONDS_PER_QUARTER == 0) {
-            ZoneOffset result = QUARTER_CACHE.getOpaque(quarters & 0xff);
+            // quarters range from -72 to 72, & 0xff maps them to 0-72 and 184-255.
+            int key = quarters & 0xff;
+            ZoneOffset result = QUARTER_CACHE.getOpaque(key);
             if (result == null) {
                 result = new ZoneOffset(totalSeconds);
-                var existing = QUARTER_CACHE.compareAndExchange(quarters & 0xff, null, result);
+                var existing = QUARTER_CACHE.compareAndExchange(key, null, result);
                 if (existing != null) {
                     result = existing;
                 }
