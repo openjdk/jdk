@@ -114,7 +114,7 @@ public class Robot {
     private boolean isAutoWaitForIdle = false;
     private int autoDelay = 0;
     private static int LEGAL_BUTTON_MASK = 0;
-    private static Rectangle screenBounds;
+    private static Rectangle[] allScreenBounds;
 
     private DirectColorModel screenCapCM = null;
 
@@ -168,7 +168,11 @@ public class Robot {
             peer = ((ComponentFactory)toolkit).createRobot(screen);
         }
         initLegalButtonMask();
-        screenBounds = screen.getDefaultConfiguration().getBounds();
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice[] gs = ge.getScreenDevices();
+        for (int i = 0; i < gs.length; i++) {
+            allScreenBounds[i] = gs[i].getDefaultConfiguration().getBounds();
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -220,8 +224,36 @@ public class Robot {
      * @param y         Y position
      */
     public synchronized void mouseMove(int x, int y) {
-        peer.mouseMove(Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width),
-                Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height));
+        int leastXDiff = Integer.MAX_VALUE;
+        int leastYDiff = Integer.MAX_VALUE;
+        int finX = x;
+        int finY = y;
+
+        for (Rectangle screenBounds : allScreenBounds) {
+            int closestX = Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width);
+            int closestY = Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height);
+
+            int currXDiff = Math.abs(x - closestX);
+            int currYDiff = Math.abs(y - closestY);
+
+            if ((currXDiff == 0) && (currYDiff == 0)) {
+                mouseMove(x,y);
+                afterEvent();
+                return;
+            } else if (currXDiff < leastXDiff) {
+                finX = closestX;
+                finY = closestY;
+                leastXDiff = currXDiff;
+                leastYDiff = currYDiff;
+            } else if (currYDiff < leastYDiff) {
+                finX = closestX;
+                finY = closestY;
+                leastXDiff = currXDiff;
+                leastYDiff = currYDiff;
+            }
+        }
+
+        peer.mouseMove(finX, finY);
         afterEvent();
     }
 
