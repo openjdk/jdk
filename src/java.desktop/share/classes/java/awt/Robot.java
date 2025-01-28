@@ -114,7 +114,6 @@ public class Robot {
     private boolean isAutoWaitForIdle = false;
     private int autoDelay = 0;
     private static int LEGAL_BUTTON_MASK = 0;
-    private static Rectangle[] allScreenBounds;
 
     private DirectColorModel screenCapCM = null;
 
@@ -168,13 +167,6 @@ public class Robot {
             peer = ((ComponentFactory)toolkit).createRobot(screen);
         }
         initLegalButtonMask();
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice[] gs = ge.getScreenDevices();
-        allScreenBounds = new Rectangle[gs.length];
-
-        for (int i = 0; i < gs.length; i++) {
-            allScreenBounds[i] = gs[i].getDefaultConfiguration().getBounds();
-        }
     }
 
     @SuppressWarnings("deprecation")
@@ -232,6 +224,14 @@ public class Robot {
         int finY1 = y;
         int finX2 = x;
         int finY2 = y;
+
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice[] gs = ge.getScreenDevices();
+        Rectangle[] allScreenBounds = new Rectangle[gs.length];
+
+        for (int i = 0; i < gs.length; i++) {
+            allScreenBounds[i] = gs[i].getDefaultConfiguration().getBounds();
+        }
 
         for (Rectangle screenBounds : allScreenBounds) {
             int closestX = Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width-1);
