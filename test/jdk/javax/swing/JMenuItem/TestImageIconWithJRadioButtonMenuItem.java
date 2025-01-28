@@ -51,7 +51,7 @@ public class TestImageIconWithJRadioButtonMenuItem {
         If radiobutton is shown, test passes else fails.""";
 
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());        
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         PassFailJFrame.builder()
                 .title("JRadioButtonMenuItem Instructions")
                 .instructions(instructionsText)
@@ -84,4 +84,4 @@ public class TestImageIconWithJRadioButtonMenuItem {
         frame.pack();
         return frame;
     }
-} 
+}
