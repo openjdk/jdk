@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2024, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2025, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -218,6 +218,18 @@ source %{
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
         if (!VM_Version::supports_svebitperm()) {
+          return false;
+        }
+        break;
+      // The "tbl" instruction for two vector table is supported only in Neon and SVE2. Return
+      // false if vector length > 16B but supported SVE version < 2.
+      // For vector length of 16B, generate SVE2 "tbl" instruction if SVE2 is supported, else
+      // generate Neon "tbl" instruction to select from two vectors.
+      // Currently, as we support only vector sizes of 8B and 16B, we disable this operation for
+      // T_LONG and T_DOUBLE on Neon as "mul" does not support 2D arrangement. However, these
+      // types are supported on machines with UseSVE == 2.
+      case Op_SelectFromTwoVector:
+        if (UseSVE < 2 && (type2aelembytes(bt) == 8 || length_in_bytes > 16)) {
           return false;
         }
         break;
@@ -4930,3 +4942,38 @@ BITPERM(vcompressBits, CompressBitsV, sve_bext)
 
 // ----------------------------------- ExpandBitsV ---------------------------------
 BITPERM(vexpandBits, ExpandBitsV, sve_bdep)
+
+// --------------------------------SelectFromTwoVector -----------------------------
+
+instruct vselect_from_two_vectors_SIFNeon(vReg dst, vReg_V17 src1, vReg_V18 src2,
+                                          vReg index, vReg tmp1, vReg tmp2) %{
+  predicate((Matcher::vector_element_basic_type(n) == T_SHORT ||
+            type2aelembytes(Matcher::vector_element_basic_type(n)) == 4) &&
+            (UseSVE < 2 || Matcher::vector_length_in_bytes(n) < 16));
+  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "vselect_from_two_vectors_SIF $dst, $src1, $src2, $index\t# vector (4S/8S/2I/4I/2F/4F). KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    __ select_from_two_vectors_SIFNeon($dst$$FloatRegister, $src1$$FloatRegister,
+                                       $src2$$FloatRegister,$index$$FloatRegister,
+                                       $tmp1$$FloatRegister, $tmp2$$FloatRegister,
+                                       bt, length_in_bytes);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vselect_from_two_vectors(vReg dst, vReg_V17 src1, vReg_V18 src2, vReg index) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
+           (UseSVE == 2 && Matcher::vector_length_in_bytes(n) >= 16));
+  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
+  format %{ "vselect_from_two_vectors $dst, $src1, $src2, $index" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    __ select_from_two_vectors($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister,
+                               $index$$FloatRegister, bt, length_in_bytes);
+  %}
+  ins_pipe(pipe_slow);
+%}
