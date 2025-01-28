@@ -47,25 +47,19 @@ bool AbstractDisassembler::_show_block_comment = true;
 bool AbstractDisassembler::_print_platform_asm = true;
 
 // Default values for "typical" platform assembler
-PlatformDepAsmStrings AbstractDisassembler::_pd_strings = PlatformDepAsmStrings {
-  ._hex_prefix = "0x",
-  ._comment_prefix = "#",
-  ._inline_comment_open = "/* ",
-  ._inline_comment_close = "*/ ",
-  ._origin_command = ".org",
-  ._start_text_command = ".text",
-  ._insns_start = ".byte",
+PlatformDepAsmStrings AbstractDisassembler::_pd_strings*/ PlatformDepAsmStrings {
+  /*_hex_prefix*/ "0x",
+  /*_comment_prefix*/ "#",
+  /*_inline_comment_open*/ "/* ",
+  /*_inline_comment_close*/ "*/ ",
+  /*_origin_command*/ ".org",
+  /*_start_text_command*/ ".text",
+  /*_insns_start*/ ".byte",
 };
 
 // set "true" to see what's in memory bit by bit
 // might prove cumbersome on platforms where instr_len is hard to find out
 bool AbstractDisassembler::_show_bytes         = false;
-
-void AbstractDisassembler::print_pd_comment_prefix(outputStream* st) {
-  if (AbstractDisassembler::print_platform_asm()) {
-    st->print("%s ", pd_comment_prefix());
-  }
-}
 
 // Return #bytes printed. Callers may use that for output alignment.
 // Print instruction address, and offset from blob begin.

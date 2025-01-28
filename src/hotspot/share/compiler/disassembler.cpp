@@ -461,7 +461,7 @@ void decode_env::process_options(outputStream* ost) {
     ost->print_cr("  show-comment       toggle instruction comments,       currently %s", AbstractDisassembler::show_comment()       ? "ON" : "OFF");
     ost->print_cr("  show-block-comment toggle block comments,             currently %s", AbstractDisassembler::show_block_comment() ? "ON" : "OFF");
     ost->print_cr("  align-instr        toggle instruction alignment,      currently %s", AbstractDisassembler::align_instr()        ? "ON" : "OFF");
-    ost->print_cr("  platform-asm       toggle platform asm format         currently %s", AbstractDisassembler::print_platform_asm()        ? "ON" : "OFF");
+    ost->print_cr("  platform-asm       toggle platform asm format         currently %s", AbstractDisassembler::print_platform_asm() ? "ON" : "OFF");
     ost->print_cr("combined options: %s", options());
   }
 }
