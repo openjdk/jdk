@@ -115,6 +115,7 @@ class VM_Version : public Abstract_VM_Version {
   // Zbs Single-bit instructions
   //
   // Zfh Half-Precision Floating-Point instructions
+  // Zfhmin Minimal Half-Precision Floating-Point instructions
   //
   // Zicond Conditional operations
   //
@@ -157,6 +158,7 @@ class VM_Version : public Abstract_VM_Version {
   decl(ext_Zbs         , "Zbs"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbs))         \
   decl(ext_Zcb         , "Zcb"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZcb))         \
   decl(ext_Zfh         , "Zfh"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZfh))         \
+  decl(ext_Zfhmin      , "Zfhmin"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZfhmin))      \
   decl(ext_Zicsr       , "Zicsr"       , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zicntr      , "Zicntr"      , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zifencei    , "Zifencei"    , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
@@ -224,6 +226,7 @@ class VM_Version : public Abstract_VM_Version {
     RV_ENABLE_EXTENSION(UseZbb)                     \
     RV_ENABLE_EXTENSION(UseZbs)                     \
     RV_ENABLE_EXTENSION(UseZcb)                     \
+    RV_ENABLE_EXTENSION(UseZfhmin)                  \
     RV_ENABLE_EXTENSION(UseZic64b)                  \
     RV_ENABLE_EXTENSION(UseZicbom)                  \
     RV_ENABLE_EXTENSION(UseZicbop)                  \
