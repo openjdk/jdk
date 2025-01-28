@@ -717,7 +717,7 @@ public:
   const juint _ulo, _uhi;    // Lower bound, upper bound in the unsigned domain
   const KnownBits<juint> _bits;
 
-  static const TypeInt* make(jint lo);
+  static const TypeInt* make(jint con);
   // must always specify w
   static const TypeInt* make(jint lo, jint hi, int widen);
   static const Type* try_make(const TypeIntPrototype<jint, juint>& t, int widen);
@@ -794,7 +794,7 @@ public:
   const julong _ulo, _uhi;    // Lower bound, upper bound in the unsigned domain
   const KnownBits<julong> _bits;
 
-  static const TypeLong* make(jlong lo);
+  static const TypeLong* make(jlong con);
   // must always specify w
   static const TypeLong* make(jlong lo, jlong hi, int widen);
   static const Type* try_make(const TypeIntPrototype<jlong, julong>& t, int widen);
