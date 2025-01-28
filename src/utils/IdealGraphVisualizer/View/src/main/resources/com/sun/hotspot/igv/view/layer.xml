@@ -46,6 +46,11 @@
             <attr name="position" intvalue="1"/>
             <file name="com-sun-hotspot-igv-view-BlockQuickSearch.instance"/>
         </folder>
+        <folder name="Live Ranges">
+            <attr name="command" stringvalue="l"/>
+            <attr name="position" intvalue="2"/>
+            <file name="com-sun-hotspot-igv-view-LiveRangeQuickSearch.instance"/>
+        </folder>
         <file name="Projects_hidden"/>
     </folder>
     <folder name="Windows2">
