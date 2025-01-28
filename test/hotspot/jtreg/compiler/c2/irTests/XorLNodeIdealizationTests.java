@@ -89,7 +89,7 @@ public class XorLNodeIdealizationTests {
         Asserts.assertEQ(CONST_1 ^ CONST_2  , testConstXor());
         Asserts.assertEQ(0L                  , testXorSelf(a));
         Asserts.assertEQ(interpretedMaxPow2(a, b), testMaxPow2(a, b));
-        Asserts.assertEQ(true, testMaxPow2Folded(a, b));
+        Asserts.assertEQ(true, testMaxPow2Folded(a, b),String.format("assertEquals failed: CONST_POW_2=%d a=%d b=%d", CONST_POW_2,a,b));
     }
 
     @Test
