@@ -166,7 +166,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::verify(
   longest_leaf_path = MAX2(longest_leaf_path_left, longest_leaf_path_right);
 
   assert(shortest_leaf_path <= longest_leaf_path && longest_leaf_path <= shortest_leaf_path * 2,
-         "tree imbalanced, shortest path: " SIZE_FORMAT " longest: " SIZE_FORMAT, shortest_leaf_path, longest_leaf_path);
+         "tree imbalanced, shortest path: %zu longest: %zu", shortest_leaf_path, longest_leaf_path);
   assert(num_black_nodes_left == num_black_nodes_right,
          "number of black nodes in left/right subtree should match");
 
@@ -529,12 +529,12 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::verify_self() {
   const unsigned int maximum_depth = log2i(size() + 1) * 2;
 
   assert(shortest_leaf_path <= longest_leaf_path && longest_leaf_path <= shortest_leaf_path * 2,
-         "tree imbalanced, shortest path: " SIZE_FORMAT " longest: " SIZE_FORMAT,
+         "tree imbalanced, shortest path: %zu longest: %zu",
          shortest_leaf_path, longest_leaf_path);
   assert(tree_depth <= maximum_depth, "rbtree is too deep");
   assert(size() == num_nodes,
-         "unexpected number of nodes in rbtree. expected: " SIZE_FORMAT
-         ", actual: " SIZE_FORMAT, size(), num_nodes);
+         "unexpected number of nodes in rbtree. expected: %zu"
+         ", actual: %zu", size(), num_nodes);
 }
 #endif // ASSERT
 

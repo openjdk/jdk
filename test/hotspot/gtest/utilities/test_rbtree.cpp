@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "testutils.hpp"
@@ -30,7 +29,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/rbTree.hpp"
 #include "utilities/rbTree.inline.hpp"
-#include <cstddef>
 
 
 class RBTreeTest : public testing::Test {
@@ -460,7 +458,7 @@ public:
       node += 1;
     }
 
-    tree.verify_self();
+    verify_it(tree);
 
     node = start;
     for (int i = 0; i < num_nodes; i++) {
@@ -562,7 +560,7 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
     }
   }
   { // Make a very large tree and verify at the end
-  struct Nothing {};
+    struct Nothing {};
     RBTreeCHeap<int, Nothing, Cmp, mtOther> rbtree;
     constexpr int one_hundred_thousand = 100000;
     for (int i = 0; i < one_hundred_thousand; i++) {
