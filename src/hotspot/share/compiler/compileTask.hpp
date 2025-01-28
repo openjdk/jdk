@@ -176,11 +176,18 @@ class CompileTask : public CHeapObj<mtCompiler> {
   Monitor*     lock() const                      { return _lock; }
 
   // See how many threads are waiting for this task. Must have lock to read this.
-  int waiting_for_completion_count() { return _waiting_count; }
+  int waiting_for_completion_count() {
+    assert(_lock->owned_by_self(), "must have lock to use waiting_for_completion_count()");
+    return _waiting_count;
+  }
   // Indicates that a thread is waiting for this task to complete. Must have lock to use this.
-  void inc_waiting_for_completion() { _waiting_count++; }
+  void inc_waiting_for_completion() {
+    assert(_lock->owned_by_self(), "must have lock to use inc_waiting_for_completion()");
+    _waiting_count++;
+  }
   // Indicates that a thread stopped waiting for this task to complete. Must have lock to use this.
   void dec_waiting_for_completion() {
+    assert(_lock->owned_by_self(), "must have lock to use dec_waiting_for_completion()");
     assert(_waiting_count > 0, "waiting count is not positive");
     _waiting_count--;
   }
