@@ -502,6 +502,7 @@ public:
   virtual VTransformLoadVectorNode* isa_LoadVector() { return nullptr; }
   virtual VTransformStoreVectorNode* isa_StoreVector() { return nullptr; }
 
+  // TODO refactor to load/store, and in_loop separately???
   virtual bool is_load_in_loop() const { return false; } // TODO do we need this?
   virtual bool is_load_or_store_in_loop() const { return false; } // TODO do we need this?
   virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const { ShouldNotReachHere(); } // TODO do we need argument?
