@@ -27,7 +27,6 @@ import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_POS_COMPARA
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Port;
 import com.sun.hotspot.igv.layout.Vertex;
-import com.sun.hotspot.igv.layout.Segment;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,13 +50,11 @@ public class LayoutGraph {
                     .thenComparingInt(l -> l.getTo().getRelativePosition().x);
 
     // Registered Graph Components: Links, Vertices, and Port Mappings.
-    // Optionally, live range segments for the CFG view.
     private final Set<Link> links;
     private final SortedSet<Vertex> vertices;
     private final LinkedHashMap<Vertex, Set<Port>> inputPorts;
     private final LinkedHashMap<Vertex, Set<Port>> outputPorts;
     private final LinkedHashMap<Port, Set<Link>> portLinks;
-    private List<Segment> segments;
 
     // Layout Management: LayoutNodes and LayoutLayers
     private final LinkedHashMap<Vertex, LayoutNode> layoutNodes;
@@ -78,7 +75,6 @@ public class LayoutGraph {
         portLinks = new LinkedHashMap<>(links.size());
         inputPorts = new LinkedHashMap<>(links.size());
         outputPorts = new LinkedHashMap<>(links.size());
-        segments = new ArrayList<>();
 
         for (Link link : links) {
             assert link.getFrom() != null;
@@ -449,14 +445,6 @@ public class LayoutGraph {
             outputLinks.addAll(portLinks.getOrDefault(outputPort, Collections.emptySet()));
         }
         return outputLinks;
-    }
-
-    public List<Segment> getSegments() {
-        return segments;
-    }
-
-    public void setSegments(List<? extends Segment> s) {
-        segments = new ArrayList<>(s);
     }
 
     /**

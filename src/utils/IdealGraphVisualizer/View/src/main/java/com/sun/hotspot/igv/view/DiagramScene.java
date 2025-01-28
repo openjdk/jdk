@@ -81,6 +81,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private final LayerWidget mainLayer;
     private final LayerWidget blockLayer;
     private final LayerWidget connectionLayer;
+    private final LayerWidget segmentLayer;
     private final Widget shadowWidget;
     private final Widget pointerWidget;
     private final DiagramViewModel model;
@@ -343,6 +344,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         connectionLayer.setBorder(emptyBorder);
         addChild(connectionLayer);
 
+        segmentLayer = new LayerWidget(this);
+        segmentLayer.setBorder(emptyBorder);
+        addChild(segmentLayer);
+
         mainLayer = new LayerWidget(this);
         mainLayer.setBorder(emptyBorder);
         addChild(mainLayer);
@@ -433,6 +438,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 content.set(newSet, null);
 
                 Set<Integer> nodeSelection = new HashSet<>();
+                Set<Integer> liveRangeSelection = new HashSet<>();
                 for (Object o : newSet) {
                     if (o instanceof Properties.Provider) {
                         final Properties.Provider provider = (Properties.Provider) o;
@@ -445,7 +451,14 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                                 return s;
                             }
                         };
-                        node.setDisplayName(provider.getProperties().get("name"));
+                        String displayName = null;
+                        if (o instanceof Figure || o instanceof Slot) {
+                            displayName = provider.getProperties().get("idx") + " " +
+                                          provider.getProperties().get("name");
+                        } else if (o instanceof LiveRangeSegment) {
+                            displayName = "L" + ((LiveRangeSegment) o).getLiveRange().getId();
+                        }
+                        node.setDisplayName(displayName);
                         content.add(node);
                     }
 
@@ -454,10 +467,14 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                         nodeSelection.add(((Figure) o).getInputNode().getId());
                     } else if (o instanceof Slot) {
                         nodeSelection.addAll(((Slot) o).getSource().getSourceNodesAsSet());
+                    } else if (o instanceof LiveRangeSegment) {
+                        liveRangeSelection.add(((LiveRangeSegment) o).getLiveRange().getId());
                     }
                 }
                 getModel().setSelectedNodes(nodeSelection);
+                getModel().setSelectedLiveRanges(liveRangeSelection);
 
+                // TODO: extend with live ranges?
                 boolean b = selectedCoordinatorListener.isEnabled();
                 selectedCoordinatorListener.setEnabled(false);
                 SelectionCoordinator.getInstance().setSelectedObjects(nodeSelection);
@@ -830,6 +847,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         updateFigureWidths();
         rebuildMainLayer();
         rebuildBlockLayer();
+        rebuildSegmentLayer();
         relayout();
         setLiveRangeSegmentSelection(model.getSelectedLiveRangeSegments());
         rebuilding = false;
@@ -843,11 +861,13 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private void relayout() {
         rebuilding = true;
         Set<FigureWidget> oldVisibleFigureWidgets = getVisibleFigureWidgets();
+        Set<LiveRangeWidget> oldVisibleLiveRangeWidgets = getVisibleLiveRangeWidgets();
         Set<BlockWidget> oldVisibleBlockWidgets = getVisibleBlockWidgets();
 
         updateVisibleFigureWidgets();
         updateNodeHull();
         updateVisibleBlockWidgets();
+        updateVisibleLiveRangeWidgets();
         validateAll();
 
         Set<Figure> visibleFigures = getVisibleFigures();
@@ -867,9 +887,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         rebuildConnectionLayer();
         if (getModel().getShowCFG()) {
             updateLiveRangeIdsInBlockWidgets();
+            repaintLiveRangeWidgets();
         }
 
         updateFigureWidgetLocations(oldVisibleFigureWidgets);
+        updateLiveRangeWidgetLocations(oldVisibleLiveRangeWidgets);
         updateBlockWidgetBounds(oldVisibleBlockWidgets);
         validateAll();
         setFigureSelection(model.getSelectedFigures());
@@ -1289,7 +1311,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     @Override
     public void addSelectedLiveRanges(Collection<InputLiveRange> liveRanges, boolean showIfHidden) {
-        // TBD: ensure all related nodes are visible.
+        // TODO: ensure all related nodes are visible.
         Set<Integer> liveRangeIds = new HashSet<>();
         for (InputLiveRange liveRange : liveRanges) {
             liveRangeIds.add(liveRange.getId());
@@ -1301,7 +1323,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         }
         setLiveRangeSegmentSelection(new HashSet<>(representativeSegments.values()));
-        // TBD:
+        // TODO:
         // if (showIfHidden) {
         //     model.showLiveRangeSegments(model.getSelectedLiveRangeSegments());
         // }
@@ -1455,7 +1477,39 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         newWidgets.clear();
     }
 
-    private Set<FigureWidget> getVisibleFigureWidgets() {
+    private void rebuildSegmentLayer() {
+        segmentLayer.removeChildren();
+        Map<Integer, Set<LiveRangeSegment>> segments = new HashMap<>();
+        for (LiveRangeSegment segment : getModel().getDiagram().getLiveRangeSegments()) {
+            int liveRangeId = segment.getLiveRange().getId();
+            if (!segments.containsKey(liveRangeId)) {
+                segments.put(liveRangeId, new HashSet<>());
+            }
+            segments.get(liveRangeId).add(segment);
+        }
+        for (Set<LiveRangeSegment> segmentSet : segments.values()) {
+            LiveRangeWidget firstSegmentWidget = null;
+            LiveRangeWidget nextSegmentWidget = null;
+            for (LiveRangeSegment segment : segmentSet) {
+                // Segments are not yet laid out.
+                assert segment.getStartPoint() == null && segment.getEndPoint() == null;
+                LiveRangeWidget segmentWidget =
+                    new LiveRangeWidget(segment, this, 0, nextSegmentWidget);
+                segmentWidget.setVisible(false);
+                if (firstSegmentWidget == null) {
+                    firstSegmentWidget = segmentWidget;
+                }
+                addObject(segment, segmentWidget);
+                segmentWidget.getActions().addAction(selectAction);
+                segmentWidget.getActions().addAction(hoverAction);
+                segmentLayer.addChild(segmentWidget);
+                nextSegmentWidget = segmentWidget;
+            }
+            firstSegmentWidget.setNext(nextSegmentWidget);
+        }
+    }
+
+   private Set<FigureWidget> getVisibleFigureWidgets() {
         Set<FigureWidget> visibleFigureWidgets = new HashSet<>();
         for (Figure figure : getModel().getDiagram().getFigures()) {
             FigureWidget figureWidget = getWidget(figure);
@@ -1464,6 +1518,17 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         }
         return visibleFigureWidgets;
+    }
+
+    private Set<LiveRangeWidget> getVisibleLiveRangeWidgets() {
+        Set<LiveRangeWidget> visibleLiveRangeWidgets = new HashSet<>();
+        for (LiveRangeSegment segment : getModel().getDiagram().getLiveRangeSegments()) {
+            LiveRangeWidget liveRangeWidget = getWidget(segment);
+            if (liveRangeWidget != null && liveRangeWidget.isVisible()) {
+                visibleLiveRangeWidgets.add(liveRangeWidget);
+            }
+        }
+        return visibleLiveRangeWidgets;
     }
 
     private Set<BlockWidget> getVisibleBlockWidgets() {
@@ -1484,6 +1549,23 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             FigureWidget figureWidget = getWidget(figure);
             figureWidget.setBoundary(false);
             figureWidget.setVisible(!model.getHiddenNodes().contains(figure.getInputNode().getId()));
+        }
+    }
+
+    private void updateVisibleLiveRangeWidgets() {
+        // TODO: pre-compute visibility for each live range, to avoid
+        // re-computing it for each segment in each live range.
+        for (LiveRangeSegment segment : getModel().getDiagram().getLiveRangeSegments()) {
+            LiveRangeWidget liveRangeWidget = getWidget(segment);
+            boolean visible = true;
+            for (InputNode n : getModel().getDiagram().getInputGraph().getRelatedNodes(segment.getLiveRange().getId())) {
+                FigureWidget f = getWidget(getModel().getDiagram().getFigure(n));
+                if (!f.isVisible()) {
+                    visible = false;
+                    break;
+                }
+            }
+            liveRangeWidget.setVisible(visible);
         }
     }
 
@@ -1514,6 +1596,21 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         } else {
             getModel().getSelectedNodes().removeAll(getModel().getHiddenNodes());
+        }
+    }
+
+    private void updateLiveRangeWidgetLocations(Set<LiveRangeWidget> oldVisibleLiveRangeWidgets) {
+        boolean doAnimation = shouldAnimate();
+        for (LiveRangeSegment segment : getModel().getDiagram().getLiveRangeSegments()) {
+            LiveRangeWidget liveRangeWidget = getWidget(segment);
+            if (liveRangeWidget.isVisible()) {
+                Point location = new Point(segment.getStartPoint());
+                if (doAnimation && oldVisibleLiveRangeWidgets.contains(liveRangeWidget)) {
+                    getSceneAnimator().animatePreferredLocation(liveRangeWidget, location);
+                } else {
+                    liveRangeWidget.setPreferredLocation(location);
+                }
+            }
         }
     }
 
@@ -1551,6 +1648,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 // Update node width for live range layout.
                 int nodeWidth = ClusterNode.EMPTY_BLOCK_LIVE_RANGE_OFFSET;
                 for (InputNode n : block.getInputBlock().getNodes()) {
+                    if (!getModel().getDiagram().hasFigure(n)) {
+                        // n might not be visible (e.g. filtered out).
+                        continue;
+                    }
                     Figure f = getModel().getDiagram().getFigure(n);
                     FigureWidget figureWidget = getWidget(f);
                     if (figureWidget != null && figureWidget.isVisible()) {
@@ -1658,6 +1759,18 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     }
                 }
                 blockWidget.setLiveRangeIds(liveRangeIds);
+            }
+        }
+    }
+
+    private void repaintLiveRangeWidgets() {
+        for (LiveRangeSegment segment : getModel().getDiagram().getLiveRangeSegments()) {
+            LiveRangeWidget liveRangeWidget = getWidget(segment);
+            if (liveRangeWidget.isVisible()) {
+                assert segment.getStartPoint().x == segment.getEndPoint().x;
+                int length = segment.getEndPoint().y - segment.getStartPoint().y;
+                liveRangeWidget.setLength(length);
+                liveRangeWidget.repaint();
             }
         }
     }

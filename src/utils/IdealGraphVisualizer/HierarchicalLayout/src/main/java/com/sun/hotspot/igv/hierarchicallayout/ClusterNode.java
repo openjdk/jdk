@@ -214,6 +214,7 @@ public class ClusterNode implements Vertex {
             Point cur = new Point(n.getPosition());
             cur.translate(startX, startY);
             n.setPosition(cur);
+            minY = Math.min(minY, cur.y);
         }
 
         for (Link e : subEdges) {

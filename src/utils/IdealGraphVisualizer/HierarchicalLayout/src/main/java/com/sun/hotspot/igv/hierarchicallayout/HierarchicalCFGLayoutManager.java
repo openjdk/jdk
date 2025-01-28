@@ -65,27 +65,24 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
         Cluster cluster = clusterNode.getCluster();
         clusterNode.groupSegments();
         LayoutGraph graph = new LayoutGraph(clusterNode.getSubEdges(), clusterNode.getSubNodes());
-        Set<Segment> clusterSegments = new HashSet<>();
-        for (Segment s : segments) {
-            if (s.getCluster().equals(cluster)) {
-                clusterSegments.add(s);
+
+        // Compute list of vertices that are actually laid out.
+        List<Vertex> vertices = new ArrayList<>(cluster.getVertices().size());
+        for (Vertex vertex : cluster.getVertices()) {
+            if (graph.containsVertex(vertex)) { // The vertex is visible.
+                vertices.add(vertex);
             }
         }
-        graph.setSegments(clusterNode.getSubSegments());
-
         int curY = 0;
-        List<Vertex> vertices = new ArrayList<>(cluster.getVertices());
         for (Vertex vertex : vertices) {
-            if (graph.containsVertex(vertex)) {
-                vertex.setPosition(new Point(0, curY));
-                curY += vertex.getSize().height;
-            }
+            vertex.setPosition(new Point(0, curY));
+            curY += vertex.getSize().height;
         }
 
         // If live segments are available, compute their position.
         if (vertices.isEmpty()) {
             int x = ClusterNode.EMPTY_BLOCK_LIVE_RANGE_OFFSET;
-            for (Segment s : graph.getSegments()) {
+            for (Segment s : clusterNode.getSubSegments()) {
                 s.setStartPoint(new Point(x, 0));
                 s.setEndPoint(new Point(x, 0));
                 if (s.isLastOfLiveRange()) {
@@ -98,7 +95,7 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
             int entryY = (int)first.getPosition().getY();
             Vertex last = vertices.get(vertices.size() - 1);
             int exitY = (int)last.getPosition().getY() + (int)last.getSize().getHeight();
-            for (Segment s : graph.getSegments()) {
+            for (Segment s : clusterNode.getSubSegments()) {
                 Vertex start = s.getStart();
                 Vertex end = s.getEnd();
                 int startY = s.getStart() == null ? entryY : (start.getPosition().y + (int)(start.getSize().getHeight() / 2));
