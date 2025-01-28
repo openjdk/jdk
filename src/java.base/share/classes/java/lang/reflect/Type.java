@@ -90,14 +90,45 @@ package java.lang.reflect;
  * Examples include the primitive type {@code int}, the non-generic {@link
  * Object} class, the raw type {@code List}, and the array type {@code int[]}.
  *
+ * @apiNote
+ * The {@code Type} hierarchy follows the design principle outlined below.
+ * <blockquote><a href="https://bracha.org/mirrors.pdf">
+ * Gilad Bracha and David Ungar. <cite>Mirrors: Design Principles for
+ * Meta-level Facilities of Object-Oriented Programming Languages</cite>.
+ * In Proc. of the ACM Conf. on Object-Oriented Programming, Systems,
+ * Languages and Applications, October 2004.
+ * </a></blockquote>
+ * The goal is to represent both types and type arguments present in the current
+ * runtime, such as those returned by core reflection, and those not available
+ * as well.  As a result, no factories were provided for users to easily
+ * construct types due to the different use cases.
+ * <p>
+ * However, this API is troubled with the goal of retrofitting {@link Class}
+ * into the hierarchy; since {@link Class} already represents primitive types,
+ * classes and interfaces that are non-generic or raw, or array types with
+ * the previous types as elements, the new type additions in <a href=
+ * "https://jcp.org/en/jsr/detail?id=14">JSR 14</a> are modeled with the other
+ * four subinterfaces.  This results in inconsistencies; for example, array
+ * types are {@link ##alone Type} if the element is primitive, non-generic, or
+ * raw, but {@link GenericArrayType} if the element is a parameterized type or a
+ * type variable.  In addition, the simple {@code Type} interface does not
+ * provide necessary accessors to access the component type for array types or
+ * the owner type for nested classes or interfaces, making this API less useful.
+ * <p>
+ * The subsequent API modeling annotated uses of type, {@link AnnotatedType},
+ * does not model types not in the current runtime, and provides proper
+ * accessors for array component types and class or interface owner types.
+ *
  * @jls 4.1 The Kinds of Types and Values
  * @jls 4.11 Where Types Are Used
+ * @see java.compiler/javax.lang.model
  * @since 1.5
  */
+@SuppressWarnings("doclint:reference")
 public interface Type {
     /**
      * Returns a string describing this type, including information
-     * about any type parameters.
+     * about any type parameter.
      *
      * @implSpec The default implementation calls {@code toString}.
      *
