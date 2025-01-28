@@ -234,8 +234,8 @@ public class Robot {
         int finY2 = y;
 
         for (Rectangle screenBounds : allScreenBounds) {
-            int closestX = Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width);
-            int closestY = Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height);
+            int closestX = Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width-1);
+            int closestY = Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height-1);
 
             int currXDiff = Math.abs(x - closestX);
             int currYDiff = Math.abs(y - closestY);
@@ -259,7 +259,6 @@ public class Robot {
             peer.mouseMove(finX2, finY2);
         } else {
             peer.mouseMove(finX1, finY1);
-
         }
 
         afterEvent();
