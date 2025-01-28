@@ -3523,14 +3523,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (scale == 2 && (int) intCompact == intCompactAbs) { // intCompact >= 0 && intCompact <= Integer.MAX_VALUE
                 return scale2((int) intCompact);
             }
-            return getValueString(signum(), intCompactAbs, scale);
+            return getValueString(signum, DecimalDigits.stringSize(intCompactAbs), intCompactAbs, scale);
         }
 
         return getValueString(signum, intVal.abs().toString(), scale);
-    }
-
-    private static String getValueString(int signum, long intCompactAbs, int scale) {
-        return getValueString(signum, DecimalDigits.stringSize(intCompactAbs), intCompactAbs, scale);
     }
 
     private static String getValueString(int signum, int intCompactAbsSize, long intCompactAbs, int scale) {
