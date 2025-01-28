@@ -726,28 +726,16 @@ class VTransformLoadVectorNode : public VTransformMemVectorNode {
 private:
   const LoadNode::ControlDependency _control_dependency;
 
-  GrowableArray<Node*> _nodes;
 public:
   // req = 3 -> [ctrl, mem, adr]
   VTransformLoadVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const VPointer& vpointer, const LoadNode::ControlDependency control_dependency) :
     VTransformMemVectorNode(vtransform, prototype, 3, vpointer),
-    _control_dependency(control_dependency),
-    _nodes(vtransform.arena(),
-           vector_length(),
-           vector_length(),
-           nullptr) {}
+    _control_dependency(control_dependency) {}
 
   virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
   virtual bool is_load_in_loop() const override { return true; }
 
   LoadNode::ControlDependency control_dependency() const; // TODO rm?
-
-  void set_nodes(const Node_List* pack) {
-    assert(pack->size() == vector_length(), "must have same length");
-    for (uint k = 0; k < pack->size(); k++) {
-      _nodes.at_put(k, pack->at(k));
-    }
-  }
 
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;

@@ -190,7 +190,6 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
 
     VTransformLoadVectorNode* load;
     load = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, prototype, vector_p, dep);
-    load->set_nodes(pack); // TODO do we still need this?
     vtn = load;
   } else if (p0->is_Store()) {
     const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Store());

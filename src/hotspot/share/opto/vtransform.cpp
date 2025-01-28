@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/vtransform.hpp"
