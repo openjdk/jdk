@@ -135,7 +135,7 @@ public final class ZoneOffset
         extends ZoneId
         implements TemporalAccessor, TemporalAdjuster, Comparable<ZoneOffset>, Serializable {
 
-    /** Cache of time-zone offset by offset in seconds. */
+    /** Cache of time-zone offset by offset in quarters. */
     private static final int SECONDS_PER_QUARTER = 15 * SECONDS_PER_MINUTE;
     private static final AtomicReferenceArray<ZoneOffset> QUARTER_CACHE = new AtomicReferenceArray<>(256);
 
