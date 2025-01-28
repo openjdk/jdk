@@ -37,7 +37,7 @@ public class XorLNodeIdealizationTests {
 
     private static final long CONST_1 = Generators.G.longs().next();
     private static final long CONST_2 = Generators.G.longs().next();
-    private static final long CONST_POW_2 = Math.abs(1L << Generators.G.uniformLongs().next());
+    private static final long CONST_POW_2 = Math.abs(1L << Generators.G.uniformInts(0,62).next());
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -88,8 +88,9 @@ public class XorLNodeIdealizationTests {
         Asserts.assertEQ(-2023 - a          , test17(a));
         Asserts.assertEQ(CONST_1 ^ CONST_2  , testConstXor());
         Asserts.assertEQ(0L                  , testXorSelf(a));
-        Asserts.assertEQ(interpretedMaxPow2(a, b), testMaxPow2(a, b));
-        Asserts.assertEQ(true, testMaxPow2Folded(a, b),String.format("assertEquals failed: CONST_POW_2=%d a=%d b=%d", CONST_POW_2,a,b));
+        String msg = String.format("CONST_POW_2=%d a=%d b=%d", CONST_POW_2, a, b);
+        Asserts.assertEQ(interpretedMaxPow2(a, b), testMaxPow2(a, b), msg);
+        Asserts.assertEQ(true, testMaxPow2Folded(a, b), msg);
     }
 
     @Test

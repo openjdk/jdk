@@ -38,7 +38,7 @@ public class XorINodeIdealizationTests {
     private static final int CONST_2 = Generators.G.ints().next();
     private static final boolean CONST_BOOL_1 = RunInfo.getRandom().nextBoolean();
     private static final boolean CONST_BOOL_2 = RunInfo.getRandom().nextBoolean();
-    private static final int CONST_POW_2 = Math.abs(1 << Generators.G.uniformInts().next());
+    private static final int CONST_POW_2 = Math.abs(1 << Generators.G.uniformInts(0, 30).next());
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -92,8 +92,9 @@ public class XorINodeIdealizationTests {
         Asserts.assertEQ(0                  , testXorSelf(a));
         Asserts.assertEQ(CONST_BOOL_1 ^ CONST_BOOL_2  , testConstXorBool());
         Asserts.assertEQ(false              , testXorSelfBool(d));
-        Asserts.assertEQ(interpretedMaxPow2(a, b), testMaxPow2(a, b));
-        Asserts.assertEQ(true, testMaxPow2Folded(a, b), String.format("assertEquals failed: CONST_POW_2=%d a=%d b=%d", CONST_POW_2,a,b));
+        String msg = String.format("CONST_POW_2=%d a=%d b=%d", CONST_POW_2, a, b);
+        Asserts.assertEQ(interpretedMaxPow2(a, b), testMaxPow2(a, b), msg);
+        Asserts.assertEQ(true, testMaxPow2Folded(a, b), msg);
     }
 
     @Test
