@@ -49,10 +49,6 @@ include $(topdir)/make/BothInitSupport.gmk
 # a configuration. This will define ALL_GLOBAL_TARGETS.
 include $(topdir)/make/Global.gmk
 
-# Targets provided by Init.gmk.
-ALL_INIT_TARGETS := print-modules print-targets print-configuration \
-    print-tests reconfigure pre-compare-build post-compare-build
-
 # CALLED_TARGETS is the list of targets that the user provided,
 # or "default" if unspecified.
 CALLED_TARGETS := $(if $(MAKECMDGOALS), $(MAKECMDGOALS), default)
@@ -64,45 +60,14 @@ CALLED_SPEC_TARGETS := $(filter-out $(ALL_GLOBAL_TARGETS), $(CALLED_TARGETS))
 # external part, e.g. bash completion, is trying to understand our targets),
 # we will skip SPEC location and the sanity checks.
 ifeq ($(CALLED_SPEC_TARGETS), )
-  ONLY_GLOBAL_TARGETS := true
+  SKIP_SPEC := true
 endif
 ifeq ($(findstring p, $(MAKEFLAGS))$(findstring q, $(MAKEFLAGS)), pq)
-  ONLY_GLOBAL_TARGETS := true
+  SKIP_SPEC := true
 endif
 
-ifeq ($(ONLY_GLOBAL_TARGETS), true)
-  ############################################################################
-  # We have only global targets, or are called with -pq.
-  ############################################################################
+ifneq ($(SKIP_SPEC), true)
 
-  ifeq ($(wildcard $(SPEC)), )
-    # If we have no SPEC provided, we will just make a "best effort" target list.
-    # First try to grab any available pre-existing main-targets.gmk.
-    main_targets_file := $(firstword $(wildcard $(build_dir)/*/make-support/main-targets.gmk))
-    ifneq ($(main_targets_file), )
-      # Extract the SPEC that corresponds to this main-targets.gmk file.
-      SPEC := $(patsubst %/make-support/main-targets.gmk, %/spec.gmk, $(main_targets_file))
-    else
-      # None found, pick an arbitrary SPEC for which to generate a file
-      SPEC := $(firstword $(all_spec_files))
-    endif
-  endif
-
-  ifneq ($(wildcard $(SPEC)), )
-    $(eval $(call DefineMainTargets, LAZY, $(SPEC)))
-  else
-    # If we have no configurations we can not provide any main targets.
-    ALL_MAIN_TARGETS :=
-  endif
-
-  ALL_TARGETS := $(sort $(ALL_GLOBAL_TARGETS) $(ALL_MAIN_TARGETS) $(ALL_INIT_TARGETS))
-
-  # Just list all our targets.
-  $(ALL_TARGETS):
-
-  .PHONY: $(ALL_TARGETS)
-
-else
   ############################################################################
   # This is the normal case, we have been called from the command line by the
   # user and we need to call ourself back with a proper SPEC.
@@ -128,6 +93,10 @@ else
   # by all specs, but we approximate this by an arbitrary spec from the list.
   # This will setup ALL_MAIN_TARGETS.
   $(eval $(call DefineMainTargets, FORCE, $(firstword $(SPECS))))
+
+  # Targets provided by Init.gmk.
+  ALL_INIT_TARGETS := print-modules print-targets print-configuration \
+      print-tests reconfigure pre-compare-build post-compare-build
 
   # Separate called targets depending on type.
   INIT_TARGETS := $(filter $(ALL_INIT_TARGETS), $(CALLED_SPEC_TARGETS))
@@ -211,4 +180,37 @@ else
 
   .PHONY: $(ALL_MAIN_TARGETS) $(ALL_INIT_TARGETS)
 
-endif # $(ONLY_GLOBAL_TARGETS)!=true
+else # SKIP_SPEC=true
+
+  ############################################################################
+  # We have only global targets, or are called with -pq.
+  ############################################################################
+
+  ifeq ($(wildcard $(SPEC)), )
+    # If we have no SPEC provided, we will just make a "best effort" target list.
+    # First try to grab any available pre-existing main-targets.gmk.
+    main_targets_file := $(firstword $(wildcard $(build_dir)/*/make-support/main-targets.gmk))
+    ifneq ($(main_targets_file), )
+      # Extract the SPEC that corresponds to this main-targets.gmk file.
+      SPEC := $(patsubst %/make-support/main-targets.gmk, %/spec.gmk, $(main_targets_file))
+    else
+      # None found, pick an arbitrary SPEC for which to generate a file
+      SPEC := $(firstword $(all_spec_files))
+    endif
+  endif
+
+  ifneq ($(wildcard $(SPEC)), )
+    $(eval $(call DefineMainTargets, LAZY, $(SPEC)))
+  else
+    # If we have no configurations we can not provide any main targets.
+    ALL_MAIN_TARGETS :=
+  endif
+
+  ALL_TARGETS := $(sort $(ALL_GLOBAL_TARGETS) $(ALL_MAIN_TARGETS) $(ALL_INIT_TARGETS))
+
+  # Just list all our targets.
+  $(ALL_TARGETS):
+
+  .PHONY: $(ALL_TARGETS)
+
+endif # $(SKIP_SPEC)!=true
