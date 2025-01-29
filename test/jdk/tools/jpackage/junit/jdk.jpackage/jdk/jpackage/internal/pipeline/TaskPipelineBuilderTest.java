@@ -24,6 +24,7 @@
 package jdk.jpackage.internal.pipeline;
 
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -37,7 +38,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -50,17 +50,19 @@ final class TaskPipelineBuilderTest {
         C,
         D,
         K,
-        L;
+        L,
+        M,
+        N;
 
         @Override
         public void accept(StringBuffer sb) {
-            LockSupport.parkNanos(Duration.ofMillis(10).toNanos());
+            LockSupport.parkNanos(Duration.ofMillis(1).toNanos());
             System.out.println(String.format("[%s] result before append: [%s]; append %s", Thread.currentThread(), sb, name()));
             sb.append(name());
         }
 
         Callable<Void> toCallable(StringBuffer sb) {
-            return new Callable<Void> () {
+            return new Callable<> () {
 
                 @Override
                 public Void call() {
@@ -108,7 +110,7 @@ final class TaskPipelineBuilderTest {
     @ParameterizedTest
     @MethodSource("testSequentialData")
     public void testSequential(List<TaskSpec> taskSpecs, Object expectedString) throws Exception {
-        testIt(new ForkJoinPool(1), taskSpecs, expectedString);
+        testIt(null, taskSpecs, expectedString);
     }
 
     @ParameterizedTest
@@ -123,7 +125,7 @@ final class TaskPipelineBuilderTest {
 
         final var sb = new StringBuffer();
 
-        final var taskMap = Stream.of(TestTask.values()).collect(Collectors.toMap(x -> x, x -> {
+        final var taskMap = Stream.of(TestTask.values()).collect(toMap(x -> x, x -> {
             return x.toCallable(sb);
         }));
 
@@ -162,10 +164,15 @@ final class TaskPipelineBuilderTest {
                 // ^         ^
                 // |         |
                 // +--- A ---+
-                new Object[] { List.of(task(D).create(), task(C).from(B).to(D).create(), task(A).to(B).create(), task(A).to(D).create()), "ABCD" }
+                new Object[] { List.of(
+                        task(D).create(),
+                        task(C).from(B).to(D).create(),
+                        task(A).to(B).create(),
+                        task(A).to(D).create()), "ABCD" }
         ));
 
-        final var allValuesRegexp = Pattern.compile(String.format("[%s]{%d}", Stream.of(TestTask.values()).map(Enum::name).collect(joining()), TestTask.values().length));
+        final var allValuesRegexp = Pattern.compile(String.format("[%s]{%d}",
+                Stream.of(TestTask.values()).map(Enum::name).collect(joining()), TestTask.values().length));
 
         data.addAll(List.<Object[]>of(
                 new Object[] { Stream.of(TestTask.values())
@@ -185,8 +192,51 @@ final class TaskPipelineBuilderTest {
         // |         |
         // +--- D ---+
         data.add(new Object[] {
-                List.of(task(A).create(), task(B).from(D).to(A).create(), task(C).from(D).to(A).create()),
+                List.of(task(A).create(),
+                        task(C).from(D).to(A).create(),
+                        task(B).from(D).to(A).create()),
                 sequential ? "DCBA" : Pattern.compile("D(BC|CB)A")
+        });
+        data.add(new Object[] {
+                List.of(task(A).create(),
+                        task(B).from(D).to(A).create(),
+                        task(C).from(D).to(A).create()),
+                sequential ? "DBCA" : Pattern.compile("D(BC|CB)A")
+        });
+
+        // B -> A <- C
+        // ^         ^
+        // |         |
+        // +--- D ---+
+        //      ^
+        //      |
+        //      N
+        data.add(new Object[] {
+                List.of(task(A).create(),
+                        task(C).from(D).to(A).create(),
+                        task(N).to(D).create(),
+                        task(B).from(D).to(A).create()),
+                sequential ? "NDCBA" : Pattern.compile("ND(BC|CB)A")
+        });
+
+        // B -> A <- C
+        // ^         ^
+        // |         |
+        // +--- D ---+
+        //      ^
+        //      |
+        // K -> N <- M
+        // ^         ^
+        // |         |
+        // +--- L ---+
+        data.add(new Object[] {
+                List.of(task(A).create(),
+                        task(C).from(D).to(A).create(),
+                        task(N).to(D).create(),
+                        task(B).from(D).to(A).create(),
+                        task(K).from(L).to(N).create(),
+                        task(M).from(L).to(N).create()),
+                sequential ? "LKMNDCBA" : Pattern.compile("L(KM|MK)ND(BC|CB)A")
         });
 
         return data;
@@ -210,4 +260,6 @@ final class TaskPipelineBuilderTest {
     private final static TestTask D = TestTask.D;
     private final static TestTask K = TestTask.K;
     private final static TestTask L = TestTask.L;
+    private final static TestTask M = TestTask.M;
+    private final static TestTask N = TestTask.N;
 }

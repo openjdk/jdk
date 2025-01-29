@@ -27,10 +27,12 @@ package jdk.jpackage.internal.pipeline;
 import static java.util.stream.Collectors.toCollection;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -90,7 +92,7 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
                 edgeMatrix.set(row, column);
             }
 
-            if (isCyclic(edgeMatrix)) {
+            if (isCyclic(edgeMatrix, null)) {
                 throw new UnsupportedOperationException("Cyclic edges not allowed");
             }
 
@@ -152,8 +154,19 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         }
     }
 
-    Iterable<T> getNodes() {
-        return nodes;
+    /**
+     * Returns topologically ordered nodes of this graph.
+     * <p>
+     * For every directed edge ("tail", "head") from "tail" to "head", "tail" comes before "head".
+     *
+     * @return topologically ordered nodes of this graph
+     */
+    List<T> topologicalSort() {
+        final List<T> result = new ArrayList<>();
+        isCyclic(edgeMatrix, index -> {
+            result.add(nodes.get(index));
+        });
+        return result;
     }
 
     /**
@@ -240,7 +253,7 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         });
     }
 
-    private static boolean isCyclic(BinaryMatrix edgeMatrix) {
+    private static boolean isCyclic(BinaryMatrix edgeMatrix, Consumer<Integer> topologicalOrderAccumulator) {
 
         final var edgeMatrixCopy = new BinaryMatrix(edgeMatrix);
 
@@ -248,10 +261,14 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         // Variable names picked from the algorithm pseudo-code.
 
         // Nodes with no incoming edges.
-        final var S = getNoIncomingEdges(edgeMatrix).mapToObj(Integer::valueOf).collect(toCollection(ArrayList::new));
+        List<Integer> S = getNoIncomingEdges(edgeMatrix).mapToObj(Integer::valueOf).collect(toCollection(ArrayList::new));
 
-        while (!S.isEmpty()) {
-            final var n = S.removeLast();
+        for (var i = 0; i != S.size(); ++i) {
+            final var n = S.get(i);
+
+            if (topologicalOrderAccumulator != null) {
+                topologicalOrderAccumulator.accept(n);
+            }
 
             for (final var e : getOutgoingEdges(n, edgeMatrixCopy).toList()) {
                 e.value(false); // remove the edge
@@ -260,7 +277,22 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
 
                 if (getIncomingEdges(m, edgeMatrixCopy).findAny().isEmpty()) {
                     // No incoming edges to 'm' node.
-                    S.add(m);
+                    if (topologicalOrderAccumulator != null) {
+                        if (i > 0) {
+                            S = S.subList(i, S.size());
+                            i = 0;
+                        }
+
+                        final var insertAtIndex = Math.abs((Collections.binarySearch(S, m) + 1));
+                        if (insertAtIndex == 0) {
+                            S.set(0, m);
+                            i = -1;
+                        } else {
+                            S.add(insertAtIndex, m);
+                        }
+                    } else {
+                        S.add(m);
+                    }
                 }
             }
         }

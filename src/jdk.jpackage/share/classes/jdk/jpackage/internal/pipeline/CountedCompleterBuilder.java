@@ -45,7 +45,7 @@ final class CountedCompleterBuilder {
     CountedCompleterBuilder(ImmutableDAG<Callable<Void>> taskGraph) {
         this.taskGraph = Objects.requireNonNull(taskGraph);
 
-        runOnce = StreamSupport.stream(taskGraph.getNodes().spliterator(), false).filter(node -> {
+        runOnce = StreamSupport.stream(taskGraph.nodes().spliterator(), false).filter(node -> {
             return taskGraph.getHeadsOf(node).size() > 1;
         }).collect(toMap(x -> x, x -> new TaskCompleters()));
     }
@@ -92,11 +92,7 @@ final class CountedCompleterBuilder {
         public void compute() {
             final var dependencyCompleters = dependencyCompleters();
             setPendingCount(dependencyCompleters.size());
-
-            // ForkJoinPool will execute tasks in the reverse order of how they are scheduled.
-            // Reverse the order in which tasks are scheduled to get them executed in the order placed in the dependency list.
-            // Ordering works for sequential execution only.
-            dependencyCompleters.reversed().forEach(CountedCompleter::fork);
+            dependencyCompleters.forEach(CountedCompleter::fork);
 
             tryComplete();
         }

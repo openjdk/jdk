@@ -27,6 +27,7 @@ package jdk.jpackage.internal.pipeline;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -87,22 +88,41 @@ public final class TaskPipelineBuilder {
     }
 
     public TaskPipelineBuilder executor(ForkJoinPool v) {
-        Objects.requireNonNull(v);
         fjp = v;
         return this;
     }
 
     public TaskPipelineBuilder sequentialExecutor() {
-        fjp = new ForkJoinPool(1);
+        fjp = null;
         return this;
     }
 
     public Callable<Void> create() {
         final var taskGraph = taskGraphBuilder.create();
 
-        final var rootCompleter = new CountedCompleterBuilder(taskGraph).create();
+        if (fjp == null) {
+            return new SequentialWrapperTask(taskGraph.topologicalSort());
+        } else {
+            final var rootCompleter = new CountedCompleterBuilder(taskGraph).create();
 
-        return new WrapperTask(rootCompleter, fjp);
+            return new WrapperTask(rootCompleter, fjp);
+        }
+    }
+
+    private record SequentialWrapperTask(List<Callable<Void>> tasks) implements Callable<Void> {
+
+        SequentialWrapperTask {
+            Objects.requireNonNull(tasks);
+        }
+
+        @Override
+        public Void call() throws Exception {
+            for (final var task : tasks) {
+                task.call();
+            }
+            return null;
+        }
+
     }
 
     private record WrapperTask(CountedCompleter<Void> rootCompleter, ForkJoinPool fjp) implements Callable<Void> {
@@ -120,7 +140,7 @@ public final class TaskPipelineBuilder {
 
     }
 
-    private static final Callable<Void> ROOT_ACTION = new Callable<Void>() {
+    private static final Callable<Void> ROOT_ACTION = new Callable<>() {
 
         @Override
         public Void call() {
