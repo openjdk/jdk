@@ -24,7 +24,7 @@
 #
 
 ################################################################################
-# This file contains helper functions for both PreInit.gmk and SpecInit.gmk.
+# This file contains helper functions for both PreInit.gmk and Init.gmk.
 ################################################################################
 
 # Look for a given option in the LOG variable, and if found, set a variable

@@ -2273,7 +2273,7 @@ assignments, like this:
 make COMPARE_BUILD=CONF=--enable-new-hotspot-feature:MAKE=hotspot
 ```
 
-See `make/SpecInitSupport.gmk` for details on how to use `COMPARE_BUILD`.
+See `make/InitSupport.gmk` for details on how to use `COMPARE_BUILD`.
 
 To analyze build performance, run with `LOG=trace` and check
 `$BUILD/build-trace-time.log`. Use `JOBS=1` to avoid parallelism.

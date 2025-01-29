@@ -49,7 +49,7 @@ include $(topdir)/make/BothInitSupport.gmk
 # a configuration. This will define ALL_GLOBAL_TARGETS.
 include $(topdir)/make/Global.gmk
 
-# Targets provided by SpecInit.gmk.
+# Targets provided by Init.gmk.
 ALL_INIT_TARGETS := print-modules print-targets print-configuration \
     print-tests reconfigure pre-compare-build post-compare-build
 
@@ -151,7 +151,7 @@ else
 	  @echo Note: The configuration is not up to date for \
 	      "'$(lastword $(subst /, , $(dir $@)))'."
 	  @( cd $(topdir) && \
-	      $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -f $(topdir)/make/SpecInit.gmk \
+	      $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -f $(topdir)/make/Init.gmk \
 	      SPEC=$@ HAS_SPEC=true ACTUAL_TOPDIR=$(topdir) \
 	      reconfigure )
       else ifeq ($(CONF_CHECK), ignore)
@@ -191,17 +191,17 @@ else
 	, \
 	  ( cd $(topdir) && \
 	  $(foreach spec, $(SPECS), \
-	    $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -j 1 -f $(topdir)/make/SpecInit.gmk \
+	    $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -j 1 -f $(topdir)/make/Init.gmk \
 	        SPEC=$(spec) HAS_SPEC=true $(MAKE_INIT_WITH_SPEC_ARGUMENTS) \
 	        main && \
 	    $(if $(and $(COMPARE_BUILD), $(PARALLEL_TARGETS)), \
-	        $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -f $(topdir)/make/SpecInit.gmk \
+	        $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -f $(topdir)/make/Init.gmk \
 	            SPEC=$(spec) HAS_SPEC=true ACTUAL_TOPDIR=$(topdir) \
 	            COMPARE_BUILD="$(COMPARE_BUILD)" pre-compare-build && \
-	        $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -j 1 -f $(topdir)/make/SpecInit.gmk \
+	        $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -j 1 -f $(topdir)/make/Init.gmk \
 	            SPEC=$(spec) HAS_SPEC=true $(MAKE_INIT_WITH_SPEC_ARGUMENTS) \
 	            COMPARE_BUILD="$(COMPARE_BUILD):NODRYRUN=true" main && \
-	        $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -f $(topdir)/make/SpecInit.gmk \
+	        $(MAKE) $(MFLAGS) $(MAKE_LOG_FLAGS) -r -R -f $(topdir)/make/Init.gmk \
 	            SPEC=$(spec) HAS_SPEC=true ACTUAL_TOPDIR=$(topdir) \
 	            COMPARE_BUILD="$(COMPARE_BUILD):NODRYRUN=true" post-compare-build && \
 	    ) \

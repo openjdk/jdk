@@ -41,7 +41,7 @@ endif
 # up make options from the command-line.
 ##############################################################################
 
-# Essential control variables that are handled by PreInit.gmk or SpecInit.gmk
+# Essential control variables that are handled by PreInit.gmk or Init.gmk
 INIT_CONTROL_VARIABLES := LOG CONF CONF_NAME SPEC JOBS CONF_CHECK ALLOW \
     COMPARE_BUILD
 
