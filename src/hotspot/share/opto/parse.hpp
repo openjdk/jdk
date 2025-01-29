@@ -74,9 +74,10 @@ protected:
                             ciCallProfile& profile,
                             bool& should_delay);
   bool        should_inline(ciMethod* callee_method,
-                     ciMethod* caller_method,
-                     JVMState* caller_jvms,
-                     bool& should_delay, ciCallProfile& profile);
+                            ciMethod* caller_method,
+                            JVMState* caller_jvms,
+                            bool& should_delay,
+                            ciCallProfile& profile);
   bool        should_not_inline(ciMethod* callee_method,
                                 ciMethod* caller_method,
                                 int caller_bci,

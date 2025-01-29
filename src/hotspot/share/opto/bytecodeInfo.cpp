@@ -145,9 +145,8 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
   if(callee_method->interpreter_throwout_count() > InlineThrowCount &&
      size < InlineThrowMaxSize ) {
     if (Verbose) {
-      C->inline_printer()
-          ->record(callee_method, caller_jvms, InliningResult::SUCCESS)
-          ->print("Inlined method with many throws (throws=%d):", callee_method->interpreter_throwout_count());
+      outputStream* stream = C->inline_printer()->record(callee_method, caller_jvms, InliningResult::SUCCESS);
+      stream->print("Inlined method with many throws (throws=%d):", callee_method->interpreter_throwout_count());
     }
     set_msg("many throws");
     return true;
@@ -170,9 +169,8 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
 
     max_inline_size = C->freq_inline_size();
     if (size <= max_inline_size && TraceFrequencyInlining) {
-      C->inline_printer()
-          ->record(callee_method, caller_jvms, InliningResult::SUCCESS)
-          ->print("Inlined frequent method (freq=%lf):", freq);
+      outputStream *stream = C->inline_printer()->record(callee_method, caller_jvms, InliningResult::SUCCESS);
+      stream->print("Inlined frequent method (freq=%lf):", freq);
     }
   } else {
     // Not hot.  Check for medium-sized pre-existing nmethod at cold sites.

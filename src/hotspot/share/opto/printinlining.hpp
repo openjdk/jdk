@@ -39,14 +39,13 @@ enum class InliningResult;
 class InlinePrinter {
 private:
   class IPInlineAttempt {
-  private:
     InliningResult _result;
-    stringStream* _stream = nullptr;
+    stringStream* _stream;
 
   public:
-    IPInlineAttempt() = default;
+    IPInlineAttempt() : _stream(nullptr) {}
 
-    IPInlineAttempt(InliningResult result) : _result(result) {}
+    IPInlineAttempt(InliningResult result) : _result(result), _stream(nullptr) {}
 
     InliningResult result() const { return _result; }
 
