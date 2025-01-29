@@ -626,9 +626,8 @@ AC_DEFUN_ONCE([BASIC_POST_CONFIG_OUTPUT],
   $CHMOD +x $OUTPUTDIR/compare.sh
 
   # Copy the linker wrapper script for AIX' clang and make it executable
-  if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix &&
-     test -e "${TOPDIR}/make/scripts/aix/ld.sh"; then
-    $CP -f "${TOPDIR}/make/scripts/aix/ld.sh" "$OUTPUTDIR/ld.sh"
+  if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
+    $CP -f "$TOPDIR/make/scripts/aix/ld.sh" "$OUTPUTDIR/ld.sh"
     $CHMOD +x "$OUTPUTDIR/ld.sh"
   fi
 ])
