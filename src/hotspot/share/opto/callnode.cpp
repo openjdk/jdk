@@ -1078,27 +1078,35 @@ bool CallStaticJavaNode::cmp( const Node &n ) const {
 
 Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   CallGenerator* cg = generator();
-  if (can_reshape && cg != nullptr) {
-    assert(IncrementalInlineMH, "required");
-    assert(cg->call_node() == this, "mismatch");
-    assert(cg->is_mh_late_inline(), "not virtual");
-
-    // Check whether this MH handle call becomes a candidate for inlining.
-    ciMethod* callee = cg->method();
-    vmIntrinsics::ID iid = callee->intrinsic_id();
-    if (iid == vmIntrinsics::_invokeBasic) {
-      if (in(TypeFunc::Parms)->Opcode() == Op_ConP) {
-        phase->C->prepend_late_inline(cg);
-        set_generator(nullptr);
+  if (cg != nullptr && can_reshape) {
+    if (cg->is_mh_late_inline()) {
+      // Check whether this MH handle call becomes a candidate for inlining.
+      assert(IncrementalInlineMH, "required");
+      assert(cg->call_node() == this, "mismatch");
+      assert(cg->method()->is_method_handle_intrinsic(), "required");
+      ciMethod* callee = cg->method();
+      vmIntrinsics::ID iid = callee->intrinsic_id();
+      if (iid == vmIntrinsics::_invokeBasic) {
+        if (in(TypeFunc::Parms)->Opcode() == Op_ConP) {
+          phase->C->prepend_late_inline(cg);
+          set_generator(nullptr);
+        }
+      } else if (iid == vmIntrinsics::_linkToNative) {
+        // never retry
+      } else {
+        assert(callee->has_member_arg(), "wrong type of call?");
+        if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP) {
+          phase->C->prepend_late_inline(cg);
+          phase->C->inc_number_of_mh_late_inlines();
+          set_generator(nullptr);
+        }
       }
-    } else if (iid == vmIntrinsics::_linkToNative) {
-      // never retry
     } else {
-      assert(callee->has_member_arg(), "wrong type of call?");
-      if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP) {
-        phase->C->prepend_late_inline(cg);
-        set_generator(nullptr);
-      }
+      // TODO: additional checks to ensure the call is actually "inlineable" now
+      assert(IncrementalInline, "required");
+      assert(cg->method()->is_method_handle_intrinsic() == false, "required");
+      phase->C->prepend_late_inline(cg);
+      set_generator(nullptr);
     }
   }
   return CallNode::Ideal(phase, can_reshape);
@@ -1166,39 +1174,45 @@ bool CallDynamicJavaNode::cmp( const Node &n ) const {
 
 Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   CallGenerator* cg = generator();
-  if (can_reshape && cg != nullptr) {
-    assert(IncrementalInlineVirtual, "required");
-    assert(cg->call_node() == this, "mismatch");
-    assert(cg->is_virtual_late_inline(), "not virtual");
+  if (cg != nullptr && can_reshape) {
+    if (cg->is_virtual_late_inline()) {
+      assert(IncrementalInlineVirtual, "required");
+      assert(cg->call_node() == this, "mismatch");
 
-    // Recover symbolic info for method resolution.
-    ciMethod* caller = jvms()->method();
-    ciBytecodeStream iter(caller);
-    iter.force_bci(jvms()->bci());
+      // Recover symbolic info for method resolution.
+      ciMethod* caller = jvms()->method();
+      ciBytecodeStream iter(caller);
+      iter.force_bci(jvms()->bci());
 
-    bool             not_used1;
-    ciSignature*     not_used2;
-    ciMethod*        orig_callee  = iter.get_method(not_used1, &not_used2);  // callee in the bytecode
-    ciKlass*         holder       = iter.get_declared_method_holder();
-    if (orig_callee->is_method_handle_intrinsic()) {
-      assert(_override_symbolic_info, "required");
-      orig_callee = method();
-      holder = method()->holder();
-    }
+      bool             not_used1;
+      ciSignature*     not_used2;
+      ciMethod*        orig_callee  = iter.get_method(not_used1, &not_used2);  // callee in the bytecode
+      ciKlass*         holder       = iter.get_declared_method_holder();
+      if (orig_callee->is_method_handle_intrinsic()) {
+        assert(_override_symbolic_info, "required");
+        orig_callee = method();
+        holder = method()->holder();
+      }
 
-    ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
+      ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
 
-    Node* receiver_node = in(TypeFunc::Parms);
-    const TypeOopPtr* receiver_type = phase->type(receiver_node)->isa_oopptr();
+      Node* receiver_node = in(TypeFunc::Parms);
+      const TypeOopPtr* receiver_type = phase->type(receiver_node)->isa_oopptr();
 
-    int  not_used3;
-    bool call_does_dispatch;
-    ciMethod* callee = phase->C->optimize_virtual_call(caller, klass, holder, orig_callee, receiver_type, true /*is_virtual*/,
-                                                       call_does_dispatch, not_used3);  // out-parameters
-    if (!call_does_dispatch) {
-      // Register for late inlining.
-      cg->set_callee_method(callee);
-      phase->C->prepend_late_inline(cg); // MH late inlining prepends to the list, so do the same
+      int  not_used3;
+      bool call_does_dispatch;
+      ciMethod* callee = phase->C->optimize_virtual_call(caller, klass, holder, orig_callee, receiver_type, true /*is_virtual*/,
+                                                        call_does_dispatch, not_used3);  // out-parameters
+      if (!call_does_dispatch) {
+        // Register for late inlining.
+        cg->set_callee_method(callee);
+        phase->C->prepend_late_inline(cg); // MH late inlining prepends to the list, so do the same
+        set_generator(nullptr);
+      }
+    } else {
+      // TODO: additional checks to ensure the call is "inlineable" now
+      assert(IncrementalInline, "required");
+      phase->C->prepend_late_inline(cg);
       set_generator(nullptr);
     }
   }

@@ -2038,6 +2038,7 @@ bool Compile::inline_incrementally_one() {
   for (int i = 0; i < _late_inlines.length(); i++) {
     _late_inlines_pos = i+1;
     CallGenerator* cg = _late_inlines.at(i);
+    DEBUG_ONLY( bool is_scheduled_for_igvn_before = C->igvn_worklist()->member(cg->call_node()); )
     bool does_dispatch = cg->is_virtual_late_inline() || cg->is_mh_late_inline();
     if (inlining_incrementally() || does_dispatch) { // a call can be either inlined or strength-reduced to a direct call
       cg->do_late_inline();
@@ -2048,6 +2049,10 @@ bool Compile::inline_incrementally_one() {
         _late_inlines_pos = i+1; // restore the position in case new elements were inserted
         print_method(PHASE_INCREMENTAL_INLINE_STEP, 3, cg->call_node());
         break; // process one call site at a time
+      } else /*if (UseNewCode)*/ {
+        assert(C->igvn_worklist()->member(cg->call_node()) == is_scheduled_for_igvn_before,
+               "call node shouldn't be scheduled for IGVN"); // avoid infinite loop
+        cg->call_node()->set_generator(cg);
       }
     } else {
       // Ignore late inline direct calls when inlining is not allowed.
