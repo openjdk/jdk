@@ -121,7 +121,7 @@ public class DisassembleCodeBlobTest {
                     testCase + " : Duplicate disassembly section markers found at lines " + foundDisassemblyLine + " and " + l);
                 foundDisassemblyLine = l;
             }
-            if (line.equals("[Entry Point]") || line.equals("[Verified Entry Point]")) {
+            if (line.contains("[Entry Point]") || line.contains("[Verified Entry Point]")) {
                 Asserts.assertTrue(foundDisassemblyLine != -1,
                     testCase + " : entry point found but [Disassembly] section missing ");
                 foundEntryPointLine = l;
