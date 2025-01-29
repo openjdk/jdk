@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2024, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -307,6 +307,24 @@ source %{
         // For other ops whose vector size is smaller than the max vector size, a
         // full-sized unpredicated operation does not impact the final vector result.
         return false;
+    }
+  }
+
+  float Matcher::cost_for_scalar(int opcode) {
+    return 1;
+  }
+
+  float Matcher::cost_for_vector(int opcode, int vlen, BasicType bt) {
+    return 1;
+  }
+
+  float Matcher::cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order) {
+    if (requires_strict_order) {
+      // Linear: shuffle and reduce
+      return 2 * vlen;
+    } else {
+      // Recursive: shuffle and reduce
+      return 2 * exact_log2(vlen);
     }
   }
 
