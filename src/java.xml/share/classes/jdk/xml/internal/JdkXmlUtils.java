@@ -94,7 +94,9 @@ public class JdkXmlUtils {
     /**
      * The system-default factory
      */
-    private static final SAXParserFactory defaultSAXFactory = getSAXFactory(false);
+    private static class DefaultSAXFactory {
+        private static final SAXParserFactory instance = getSAXFactory(false);
+    }
 
     /**
      * Returns the value.
@@ -322,7 +324,7 @@ public class JdkXmlUtils {
             }
         } else {
             // use the system-default
-            saxFactory = defaultSAXFactory;
+            saxFactory = DefaultSAXFactory.instance;
 
             try {
             reader = saxFactory.newSAXParser().getXMLReader();

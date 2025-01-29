@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ class TypeArrayKlass : public ArrayKlass {
   // Copying
   void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
 
-  jint compute_modifier_flags() const;
+  u2 compute_modifier_flags() const;
 
   // Oop iterators. Since there are no oops in TypeArrayKlasses,
   // these functions only return the size of the object.

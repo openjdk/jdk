@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
@@ -419,6 +418,11 @@ void CDSConfig::check_flag_aliases() {
 
 bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_flag_cmd_line) {
   check_flag_aliases();
+
+  if (!FLAG_IS_DEFAULT(AOTMode)) {
+    // Using any form of the new AOTMode switch enables enhanced optimizations.
+    FLAG_SET_ERGO_IF_DEFAULT(AOTClassLinking, true);
+  }
 
   if (AOTClassLinking) {
     // If AOTClassLinking is specified, enable all AOT optimizations by default.

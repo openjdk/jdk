@@ -24,8 +24,78 @@
  */
 #include <jni.h>
 #include "jni_util.h"
-#define IMGEXTERN
-#include "imageInitIDs.h"
+
+/* BufferedImage ids */
+jfieldID g_BImgRasterID;
+jfieldID g_BImgTypeID;
+jfieldID g_BImgCMID;
+jmethodID g_BImgGetRGBMID;
+jmethodID g_BImgSetRGBMID;
+
+/* Raster ids */
+jfieldID g_RasterWidthID;
+jfieldID g_RasterHeightID;
+jfieldID g_RasterMinXID;
+jfieldID g_RasterMinYID;
+jfieldID g_RasterBaseOriginXID;
+jfieldID g_RasterBaseOriginYID;
+jfieldID g_RasterSampleModelID;
+jfieldID g_RasterDataBufferID;
+jfieldID g_RasterNumDataElementsID;
+jfieldID g_RasterNumBandsID;
+
+jfieldID g_BCRdataID;
+jfieldID g_BCRscanstrID;
+jfieldID g_BCRpixstrID;
+jfieldID g_BCRdataOffsetsID;
+jfieldID g_BCRtypeID;
+jfieldID g_BPRdataID;
+jfieldID g_BPRscanstrID;
+jfieldID g_BPRpixstrID;
+jfieldID g_BPRtypeID;
+jfieldID g_BPRdataBitOffsetID;
+jfieldID g_SCRdataID;
+jfieldID g_SCRscanstrID;
+jfieldID g_SCRpixstrID;
+jfieldID g_SCRdataOffsetsID;
+jfieldID g_SCRtypeID;
+jfieldID g_ICRdataID;
+jfieldID g_ICRscanstrID;
+jfieldID g_ICRpixstrID;
+jfieldID g_ICRdataOffsetsID;
+jfieldID g_ICRtypeID;
+
+/* Color Model ids */
+jfieldID g_CMnBitsID;
+jfieldID g_CMcspaceID;
+jfieldID g_CMnumComponentsID;
+jfieldID g_CMsuppAlphaID;
+jfieldID g_CMisAlphaPreID;
+jfieldID g_CMtransparencyID;
+jfieldID g_CMcsTypeID;
+jfieldID g_CMis_sRGBID;
+jmethodID g_CMgetRGBdefaultMID;
+
+jfieldID g_ICMtransIdxID;
+jfieldID g_ICMmapSizeID;
+jfieldID g_ICMrgbID;
+
+/* Sample Model ids */
+jfieldID g_SMWidthID;
+jfieldID g_SMHeightID;
+jmethodID g_SMGetPixelsMID;
+jmethodID g_SMSetPixelsMID;
+
+/* Single Pixel Packed Sample Model ids */
+jfieldID g_SPPSMmaskArrID;
+jfieldID g_SPPSMmaskOffID;
+jfieldID g_SPPSMnBitsID;
+jfieldID g_SPPSMmaxBitID;
+
+/* Kernel ids */
+jfieldID g_KernelWidthID;
+jfieldID g_KernelHeightID;
+jfieldID g_KernelDataID;
 
 JNIEXPORT void JNICALL
 Java_java_awt_image_BufferedImage_initIDs(JNIEnv *env, jclass cls) {
