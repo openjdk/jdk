@@ -3069,6 +3069,11 @@ JVM_ENTRY(jobject, JVM_GetAndClearReferencePendingList(JNIEnv* env))
   return JNIHandles::make_local(THREAD, ref);
 JVM_END
 
+JVM_ENTRY(jboolean, JVM_HasReferencePendingList(JNIEnv* env))
+  MonitorLocker ml(Heap_lock);
+  return Universe::has_reference_pending_list();
+JVM_END
+
 JVM_ENTRY(void, JVM_WaitForReferencePendingList(JNIEnv* env))
   MonitorLocker ml(Heap_lock);
   while (!Universe::has_reference_pending_list()) {

@@ -341,6 +341,9 @@ JVM_GetSystemPackages(JNIEnv *env);
 JNIEXPORT jobject JNICALL
 JVM_GetAndClearReferencePendingList(JNIEnv *env);
 
+JNIEXPORT jboolean JNICALL
+JVM_HasReferencePendingList(JNIEnv *env);
+
 JNIEXPORT void JNICALL
 JVM_WaitForReferencePendingList(JNIEnv *env);
 
