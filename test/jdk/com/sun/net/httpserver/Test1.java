@@ -37,11 +37,14 @@
 
 import com.sun.net.httpserver.*;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
+
+import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 
@@ -67,8 +70,9 @@ public class Test1 extends Test {
         HttpServer s1 = null;
         HttpsServer s2 = null;
         ExecutorService executor=null;
+        Path smallFilePath = TestUtil.tempFileOfSize(23);
+        Path largeFilePath = TestUtil.tempFileOfSize(2730088);
         try {
-            String root = System.getProperty ("test.src")+ "/docs";
             System.out.print ("Test1: ");
             InetAddress loopback = InetAddress.getLoopbackAddress();
             InetSocketAddress addr = new InetSocketAddress (loopback, 0);
@@ -77,9 +81,9 @@ public class Test1 extends Test {
                 throw new RuntimeException ("should not be httpsserver");
             }
             s2 = HttpsServer.create (addr, 0);
-            HttpHandler h = new FileServerHandler (root);
-            HttpContext c1 = s1.createContext ("/test1", h);
-            HttpContext c2 = s2.createContext ("/test1", h);
+            HttpHandler h = new FileServerHandler (smallFilePath.getParent().toString());
+            HttpContext c1 = s1.createContext ("/", h);
+            HttpContext c2 = s2.createContext ("/", h);
             executor = Executors.newCachedThreadPool();
             s1.setExecutor (executor);
             s2.setExecutor (executor);
@@ -90,14 +94,14 @@ public class Test1 extends Test {
 
             int port = s1.getAddress().getPort();
             int httpsport = s2.getAddress().getPort();
-            test (true, "http", root+"/test1", port, "smallfile.txt", 23);
-            test (true, "http", root+"/test1", port, "largefile.txt", 2730088);
-            test (true, "https", root+"/test1", httpsport, "smallfile.txt", 23);
-            test (true, "https", root+"/test1", httpsport, "largefile.txt", 2730088);
-            test (false, "http", root+"/test1", port, "smallfile.txt", 23);
-            test (false, "http", root+"/test1", port, "largefile.txt", 2730088);
-            test (false, "https", root+"/test1", httpsport, "smallfile.txt", 23);
-            test (false, "https", root+"/test1", httpsport, "largefile.txt", 2730088);
+            test (true, "http", port, smallFilePath);
+            test (true, "http", port, largeFilePath);
+            test (true, "https", httpsport, smallFilePath);
+            test (true, "https", httpsport, largeFilePath);
+            test (false, "http", port, smallFilePath);
+            test (false, "http", port, largeFilePath);
+            test (false, "https", httpsport, smallFilePath);
+            test (false, "https", httpsport, largeFilePath);
             System.out.println ("OK");
         } finally {
             if (s1 != null)
@@ -106,15 +110,17 @@ public class Test1 extends Test {
                 s2.stop(0);
             if (executor != null)
                 executor.shutdown ();
+            Files.delete(smallFilePath);
+            Files.delete(largeFilePath);
         }
     }
 
-    static void test (boolean fixedLen, String protocol, String root, int port, String f, int size) throws Exception {
+    static void test (boolean fixedLen, String protocol, int port, Path filePath) throws Exception {
         URL url = URIBuilder.newBuilder()
                  .scheme(protocol)
                  .loopback()
                  .port(port)
-                 .path("/test1/"+f)
+                 .path("/" + filePath.getFileName())
                  .toURL();
         HttpURLConnection urlc = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
         if (urlc instanceof HttpsURLConnection) {
@@ -143,11 +149,10 @@ public class Test1 extends Test {
         is.close();
         fout.close();
 
-        if (count != size) {
+        if (count != filePath.toFile().length()) {
             throw new RuntimeException ("wrong amount of data returned");
         }
-        String orig = root + "/" + f;
-        assertFilesEqual(Path.of(orig), temp.toPath());
+        assertFilesEqual(filePath, temp.toPath());
         temp.delete();
     }
 

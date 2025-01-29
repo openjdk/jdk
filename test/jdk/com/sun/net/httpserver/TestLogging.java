@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6422914
- * @library /test/lib
+ * @library /test/jdk/java/net/httpclient/lib
+ *          /test/lib
+ * @build jdk.httpclient.test.lib.common.TestUtil
  * @summary change httpserver exception printouts
  * @run main TestLogging
  * @run main/othervm -Djava.net.preferIPv6Addresses=true TestLogging
@@ -32,11 +34,14 @@
 
 import com.sun.net.httpserver.*;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.*;
 import java.util.logging.*;
 import java.io.*;
 import java.net.*;
 
+import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.test.lib.net.URIBuilder;
 
 public class TestLogging extends Test {
@@ -44,10 +49,10 @@ public class TestLogging extends Test {
     public static void main (String[] args) throws Exception {
         HttpServer s1 = null;
         ExecutorService executor=null;
-
+        Path filePath = TestUtil.tempFileOfSize(0xBEEF);
         try {
             System.out.print ("Test9: ");
-            String root = System.getProperty ("test.src")+ "/docs";
+            String root = filePath.getParent().toString();
             InetAddress loopback = InetAddress.getLoopbackAddress();
             InetSocketAddress addr = new InetSocketAddress(loopback, 0);
             Logger logger = Logger.getLogger ("com.sun.net.httpserver");
@@ -58,7 +63,7 @@ public class TestLogging extends Test {
             s1 = HttpServer.create (addr, 0);
             logger.info (root);
             HttpHandler h = new FileServerHandler (root);
-            HttpContext c1 = s1.createContext ("/test1", h);
+            HttpContext c1 = s1.createContext ("/", h);
             executor = Executors.newCachedThreadPool();
             s1.setExecutor (executor);
             s1.start();
@@ -69,7 +74,7 @@ public class TestLogging extends Test {
                 .scheme("http")
                 .loopback()
                 .port(p1)
-                .path("/test1/smallfile.txt")
+                .path("/" + filePath.getFileName().toString())
                 .toURL();
             System.out.println("URL: " + url);
             HttpURLConnection urlc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
@@ -81,7 +86,7 @@ public class TestLogging extends Test {
                 .scheme("http")
                 .loopback()
                 .port(p1)
-                .path("/test1/doesntexist.txt")
+                .path("/doesntexist.txt")
                 .toURLUnchecked();
             System.out.println("URL: " + url);
             urlc = (HttpURLConnection)url.openConnection();
@@ -102,6 +107,7 @@ public class TestLogging extends Test {
             os.close(); is.close(); s.close();
             System.out.println ("OK");
         } finally {
+            Files.delete(filePath);
             if (s1 != null)
                 s1.stop(0);
             if (executor != null)

@@ -35,11 +35,14 @@
 
 import com.sun.net.httpserver.*;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
+
+import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 
@@ -60,16 +63,17 @@ public class Test12 extends Test {
         HttpServer s1 = null;
         HttpsServer s2 = null;
         ExecutorService executor=null;
+        Path smallFilePath = TestUtil.tempFileOfSize(23);
+        Path largeFilePath = TestUtil.tempFileOfSize(2730088);
         try {
-            String root = System.getProperty ("test.src")+ "/docs";
             System.out.print ("Test12: ");
             InetAddress loopback = InetAddress.getLoopbackAddress();
             InetSocketAddress addr = new InetSocketAddress(loopback, 0);
             s1 = HttpServer.create (addr, 0);
             s2 = HttpsServer.create (addr, 0);
-            HttpHandler h = new FileServerHandler (root);
-            HttpContext c1 = s1.createContext ("/test1", h);
-            HttpContext c2 = s2.createContext ("/test1", h);
+            HttpHandler h = new FileServerHandler(smallFilePath.getParent().toString());
+            HttpContext c1 = s1.createContext ("/", h);
+            HttpContext c2 = s2.createContext ("/", h);
             executor = Executors.newCachedThreadPool();
             s1.setExecutor (executor);
             s2.setExecutor (executor);
@@ -81,14 +85,14 @@ public class Test12 extends Test {
             int port = s1.getAddress().getPort();
             int httpsport = s2.getAddress().getPort();
             Runner r[] = new Runner[8];
-            r[0] = new Runner (true, "http", root+"/test1", port, "smallfile.txt", 23);
-            r[1] = new Runner (true, "http", root+"/test1", port, "largefile.txt", 2730088);
-            r[2] = new Runner (true, "https", root+"/test1", httpsport, "smallfile.txt", 23);
-            r[3] = new Runner (true, "https", root+"/test1", httpsport, "largefile.txt", 2730088);
-            r[4] = new Runner (false, "http", root+"/test1", port, "smallfile.txt", 23);
-            r[5] = new Runner (false, "http", root+"/test1", port, "largefile.txt", 2730088);
-            r[6] = new Runner (false, "https", root+"/test1", httpsport, "smallfile.txt", 23);
-            r[7] = new Runner (false, "https", root+"/test1", httpsport, "largefile.txt", 2730088);
+            r[0] = new Runner (true, "http", port, smallFilePath);
+            r[1] = new Runner (true, "http", port, largeFilePath);
+            r[2] = new Runner (true, "https", httpsport, smallFilePath);
+            r[3] = new Runner (true, "https", httpsport, largeFilePath);
+            r[4] = new Runner (false, "http", port, smallFilePath);
+            r[5] = new Runner (false, "http", port, largeFilePath);
+            r[6] = new Runner (false, "https", httpsport, smallFilePath);
+            r[7] = new Runner (false, "https", httpsport, largeFilePath);
             start (r);
             join (r);
             System.out.println ("OK");
@@ -99,6 +103,8 @@ public class Test12 extends Test {
                 s2.stop(0);
             if (executor != null)
                 executor.shutdown ();
+            Files.delete(smallFilePath);
+            Files.delete(largeFilePath);
         }
     }
 
@@ -121,18 +127,14 @@ public class Test12 extends Test {
 
         boolean fixedLen;
         String protocol;
-        String root;
         int port;
-        String f;
-        int size;
+        private final Path filePath;
 
-        Runner (boolean fixedLen, String protocol, String root, int port, String f, int size) {
+        Runner (boolean fixedLen, String protocol, int port, Path filePath) {
             this.fixedLen=fixedLen;
             this.protocol=protocol;
-            this.root=root;
             this.port=port;
-            this.f=f;
-            this.size = size;
+            this.filePath = filePath;
         }
 
         public void run () {
@@ -141,7 +143,7 @@ public class Test12 extends Test {
                           .scheme(protocol)
                           .loopback()
                           .port(port)
-                          .path("/test1/"+f)
+                          .path("/" + filePath.getFileName())
                           .toURL();
                 HttpURLConnection urlc = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
                 if (urlc instanceof HttpsURLConnection) {
@@ -170,11 +172,10 @@ public class Test12 extends Test {
                 is.close();
                 fout.close();
 
-                if (count != size) {
+                if (count != filePath.toFile().length()) {
                     throw new RuntimeException ("wrong amount of data returned");
                 }
-                String orig = root + "/" + f;
-                assertFilesEqual(Path.of(orig), temp.toPath());
+                assertFilesEqual(filePath, temp.toPath());
                 temp.delete();
             } catch (Exception e) {
                 e.printStackTrace();
