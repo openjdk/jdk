@@ -248,25 +248,30 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
                                              rs_align,
                                              page_sz);
 
+  if (!rs.is_reserved()) {
+    // Failed to reserve memory.
+    return nullptr;
+  }
+
   os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
                        rs.size(), page_sz);
 
   MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
 
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
-  if (vspace != nullptr) {
-    if (vspace->expand_by(_reserved_byte_size)) {
-      return vspace;
-    }
+
+  if (!vspace->expand_by(_reserved_byte_size)) {
+    // Failed to commit memory.
+
     delete vspace;
+
     // Release memory reserved in the space.
-    if (rs.is_reserved()) {
-      MemoryReserver::release(rs);
-      rs = {};
-    }
+    MemoryReserver::release(rs);
+
+    return nullptr;
   }
 
-  return nullptr;
+  return vspace;
 }
 
 bool ParallelCompactData::initialize_region_data(size_t heap_size)
@@ -2477,4 +2482,3 @@ void MoveAndUpdateShadowClosure::complete_region(HeapWord* dest_addr, PSParallel
     ParCompactionManager::push_shadow_region_mt_safe(_shadow);
   }
 }
-

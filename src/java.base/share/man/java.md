@@ -4004,6 +4004,110 @@ JVM will execute without loading any CDS archives. In addition, if
 you try to create a CDS archive with any of these 3 options specified,
 the JVM will report an error.
 
+## Ahead-of-Time Cache
+
+The JDK supports ahead-of-time (AOT) optimizations that can be performed before an
+application is executed. One example is Class Data Sharing (CDS), as described above,
+that parses classes ahead of time. AOT optimizations can improve the start-up and
+warm-up performance of Java applications.
+
+The Ahead-of-Time Cache (AOTCache) is a container introduced in JDK 24 for
+storing artifacts produced by AOT optimizations. The AOTCache currently contains
+Java classes and heap objects. The plans is to include other types of artifacts,
+such as execution profiles and compiled methods, in future JDK releases.
+
+An AOTCache is specific to a combination of the following:
+
+-   A particular application (as expressed by `-classpath`, `-jar`, or `--module-path`.)
+-   A particular JDK release.
+-   A particular OS and CPU architecture.
+
+If any of the above changes, you must recreate the AOTCache.
+
+The deployment of the AOTCache is divided into three phases:
+
+-   **Training:** We execute the application with a representative work-load
+    to gather statistical data that tell us what artifacts should be included
+    into the AOTCache. The data are saved in an *AOT Configuration* file.
+
+-   **Assembly:** We use the AOT Configuration file to produce an AOTCache.
+
+-   **Production:** We execute the application with the AOTCache for better
+    start-up and warm-up performance.
+
+The AOTCache can be used with the following command-line options:
+
+`-XX:AOTCache:=`*cachefile*
+:   Specifies the location of the AOTCache. The standard extension for *cachefile* is `.aot`.
+    If `-XX:AOTCache` is specified but `-XX:AOTMode` is not specified,
+    then `AOTMode` will be given the value of `auto`.
+
+`-XX:AOTConfiguration:=`*configfile*
+:   Specifies the AOT Configuration file for the JVM to write to or read from.
+    This option can be used only with `-XX:AOTMode=record` and `-XX:AOTMode=create`.
+    The standard extension for *configfile* is `.aotconfig`.
+
+`-XX:+AOTMode:=`*mode*
+:   *mode* must be one of the following: `off`, `record`, `create`, `auto`, or `on`.
+
+-   `off`: AOTCache is not used.
+
+-   `record`: Execute the application in the Training phase.
+    `-XX:AOTConfiguration=`*configfile* must be specified. The JVM gathers
+     statistical data and stores them into *configfile*.
+
+-   `create`: Perform the Assembly phase. `-XX:AOTConfiguration=`*configfile*
+     and `-XX:AOTCache=`*cachefile*  must be specified. The JVM reads the statistical
+     data from *configfile* and writes the optimization artifacts into *cachefile*.
+     Note that the application itself is not executed in this phase.
+
+-   `auto` or `on`: These modes should be used in the Production phase.
+     If `-XX:AOTCache=`*cachefile* is specified, the JVM tries to
+     load *cachefile* as the AOTCache. Otherwise, the JVM tries to load
+     a *default CDS archive* from the JDK installation directory as the AOTCache.
+
+     The loading of an AOTCache can fail for a number of reasons:
+
+     - You are trying to use the AOTCache with an incompatible application, JDK release,
+       or OS/CPU.
+
+     - The specified AOTCache file does not exist or is not accessible.
+
+     - Incompatible JVM options are used (for example, certain JVMTI options).
+
+       Since AOTCache is an optimization feature, there's no guarantee that it will be
+       compatible with all possible JVM options. See [JEP 483](https://openjdk.org/jeps/483),
+       section **Consistency of training and subsequent runs** for a representitive
+       list of scenarios that may be incompatible with the AOTCache for JDK 24.
+
+       These scenarios usually involve arbitrary modification of classes for diagnostic
+       purposes and are typically not relevant for production environments.
+
+     When the AOTCache fails to load:
+
+     - If `AOTMode` is `auto`, the JVM will continue execution without using the
+       AOTCache. This is the recommended mode for production environments, especially
+       when you may not have complete control of the command-line (e.g., your
+       application's launch script may allow users to inject options to the command-line).
+       This allows your application to function correctly, although sometimes it may not
+       benefit from the AOTCache.
+
+     - If `AOTMode` is `on`, the JVM will print an error message and exit immediately. This
+       mode should be used only as a "fail-fast" debugging aid to check if your command-line
+       options are compatible with the AOTCache. An alternative is to run your application with
+       `-XX:AOTMode=auto -Xlog:cds` to see if the AOTCache can be used or not.
+
+`-XX:+AOTClassLinking`
+:   If this options is specified with `-XX:AOTMode=create`, the JVM will perform more
+    advanced optimizations (such as ahead-of-time resolution of invokedynamic instructions)
+    when creating the AOTCache. As a result, the appication will see further improvements
+    in start-up and warm-up performance.
+
+    Using `-XX:+AOTClassLinking` will impose further restrictions on command-line options
+    that can be used in the Production phase. Please see [JEP 483](https://openjdk.org/jeps/483) for a
+    detailed discussion of `-XX:+AOTClassLinking` and its restrictions.
+
+
 ## Performance Tuning Examples
 
 You can use the Java advanced runtime options to optimize the performance of
