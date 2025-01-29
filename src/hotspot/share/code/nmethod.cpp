@@ -3769,7 +3769,10 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
     const char* label = nmethod_section_label(block_begin);
     if (label != nullptr) {
       stream->bol();
-      stream->print_cr("%s %s", comment_prefix, label);
+      if (AbstractDisassembler::print_platform_asm()) {
+        stream->print("%s ", comment_prefix);
+      }
+      stream->print_cr("%s", label);
     }
   }
 
