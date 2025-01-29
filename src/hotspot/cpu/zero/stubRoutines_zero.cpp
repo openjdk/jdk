@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+=======
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+>>>>>>> master
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +27,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,7 +305,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     volatile Font font;
 
     /**
-     * The font which the peer is currently using.
+     * @serial The font which the peer is currently using.
      * ({@code null} if no peer exists.)
      */
     Font        peerFont;
@@ -508,7 +508,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     Dimension minSize;
 
     /**
-     * Whether or not setMinimumSize has been invoked with a non-null value.
+     * @serial Whether or not setMinimumSize has been invoked with a non-null value.
      */
     boolean minSizeSet;
 
@@ -521,7 +521,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     Dimension prefSize;
 
     /**
-     * Whether or not setPreferredSize has been invoked with a non-null value.
+     * @serial Whether or not setPreferredSize has been invoked with a non-null value.
      */
     boolean prefSizeSet;
 
@@ -533,7 +533,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     Dimension maxSize;
 
     /**
-     * Whether or not setMaximumSize has been invoked with a non-null value.
+     * @serial Whether or not setMaximumSize has been invoked with a non-null value.
      */
     boolean maxSizeSet;
 
@@ -698,12 +698,12 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * Whether the component is packed or not;
+     * @serial Whether the component is packed or not;
      */
     boolean isPacked = false;
 
     /**
-     * Pseudoparameter for direct Geometry API (setLocation, setBounds setSize
+     * @serial Pseudoparameter for direct Geometry API (setLocation, setBounds setSize
      * to signal setBounds what's changing. Should be used under TreeLock.
      * This is only needed due to the inability to change the cross-calling
      * order of public and deprecated methods.
@@ -8290,7 +8290,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * Used to disallow auto-focus-transfer on disposal of the focus owner
+     * @serial Used to disallow auto-focus-transfer on disposal of the focus owner
      * in the process of disposing its parent container.
      */
     private boolean autoFocusTransferOnDisposal = true;
@@ -9234,6 +9234,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     /**
      * The {@code AccessibleContext} associated with this {@code Component}.
+     * @serial
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     protected AccessibleContext accessibleContext = null;
@@ -9290,6 +9291,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         /**
          * A component listener to track show/hide/resize events
          * and convert them to PropertyChange events.
+         * @serial
          */
         @SuppressWarnings("serial") // Not statically typed as Serializable
         protected ComponentListener accessibleAWTComponentHandler = null;
@@ -9297,6 +9299,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         /**
          * A listener to track focus events
          * and convert them to PropertyChange events.
+         * @serial
          */
         @SuppressWarnings("serial") // Not statically typed as Serializable
         protected FocusListener accessibleAWTFocusHandler = null;

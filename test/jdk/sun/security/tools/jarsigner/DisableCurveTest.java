@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class DisableCurveTest {
                 .shouldContain(">>> Signer")
                 .shouldContain("Signature algorithm: SHA384withECDSA, 256-bit EC (secp256r1) key (disabled)")
                 .shouldContain("Warning:")
-                .shouldContain("The EC (secp256r1) signing key has a keysize of 256 which is considered a security risk and is disabled")
+                .shouldContain("The 256-bit EC (secp256r1) signing key is considered a security risk and is disabled")
                 .shouldHaveExitValue(0);
 
         SecurityTools.jarsigner("-verify signeda.jar " +
@@ -84,7 +84,7 @@ public class DisableCurveTest {
                 .shouldContain(">>> Signer")
                 .shouldContain("Signature algorithm: SHA384withECDSA, 256-bit EC (secp256r1) key (weak)")
                 .shouldContain("Warning:")
-                .shouldContain("The EC (secp256r1) signing key has a keysize of 256 which is considered a security risk. This key size will be disabled in a future update")
+                .shouldContain("The 256-bit EC (secp256r1) signing key is considered a security risk. It will be disabled in a future update")
                 .shouldHaveExitValue(0);
 
         SecurityTools.jarsigner("-verify signeda.jar " +
@@ -94,7 +94,7 @@ public class DisableCurveTest {
                 .shouldContain("- Signed by")
                 .shouldContain("Signature algorithm: SHA384withECDSA, 256-bit EC (secp256r1) key (weak)")
                 .shouldContain("jar verified")
-                .shouldContain("The EC (secp256r1) signing key has a keysize of 256 which is considered a security risk. This key size will be disabled in a future update")
+                .shouldContain("The 256-bit EC (secp256r1) signing key is considered a security risk. It will be disabled in a future update")
                 .shouldHaveExitValue(0);
     }
 }

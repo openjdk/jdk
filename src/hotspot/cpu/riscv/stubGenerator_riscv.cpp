@@ -1,6 +1,10 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+<<<<<<< HEAD
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
+=======
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+>>>>>>> master
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +28,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/oopMap.hpp"
@@ -1414,6 +1417,9 @@ class StubGenerator: public StubCodeGenerator {
   void generate_type_check(Register sub_klass,
                            Register super_check_offset,
                            Register super_klass,
+                           Register result,
+                           Register tmp1,
+                           Register tmp2,
                            Label& L_success) {
     assert_different_registers(sub_klass, super_check_offset, super_klass);
 
@@ -1422,7 +1428,7 @@ class StubGenerator: public StubCodeGenerator {
     Label L_miss;
 
     __ check_klass_subtype_fast_path(sub_klass, super_klass, noreg, &L_success, &L_miss, nullptr, super_check_offset);
-    __ check_klass_subtype_slow_path(sub_klass, super_klass, noreg, noreg, &L_success, nullptr);
+    __ check_klass_subtype_slow_path(sub_klass, super_klass, tmp1, tmp2, &L_success, nullptr);
 
     // Fall through on failure!
     __ BIND(L_miss);
@@ -1562,7 +1568,18 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(copied_oop, L_store_element);
 
     __ load_klass(r9_klass, copied_oop);// query the object klass
-    generate_type_check(r9_klass, ckoff, ckval, L_store_element);
+
+    BLOCK_COMMENT("type_check:");
+    generate_type_check(r9_klass, /*sub_klass*/
+                        ckoff,    /*super_check_offset*/
+                        ckval,    /*super_klass*/
+                        x10,      /*result*/
+                        gct1,     /*tmp1*/
+                        gct2,     /*tmp2*/
+                        L_store_element);
+
+    // Fall through on failure!
+
     // ======== end loop ========
 
     // It was a real error; we must depend on the caller to finish the job.
@@ -1571,7 +1588,7 @@ class StubGenerator: public StubCodeGenerator {
     // their number to the caller.
 
     __ sub(count, count_save, count);     // K = partially copied oop count
-    __ xori(count, count, -1);                   // report (-1^K) to caller
+    __ xori(count, count, -1);            // report (-1^K) to caller
     __ beqz(count, L_done_pop);
 
     __ BIND(L_do_card_marks);
@@ -1936,7 +1953,7 @@ class StubGenerator: public StubCodeGenerator {
       __ lwu(sco_temp, Address(dst_klass, sco_offset));
 
       // Smashes t0, t1
-      generate_type_check(scratch_src_klass, sco_temp, dst_klass, L_plain_copy);
+      generate_type_check(scratch_src_klass, sco_temp, dst_klass, noreg, noreg, noreg, L_plain_copy);
 
       // Fetch destination element klass from the ObjArrayKlass header.
       int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
@@ -3017,6 +3034,7 @@ class StubGenerator: public StubCodeGenerator {
       result         = x15,
       r_bitmap       = x16;
 
+<<<<<<< HEAD
     for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
       StubRoutines::_lookup_secondary_supers_table_stubs[slot] = __ pc();
       Label L_success;
@@ -3027,6 +3045,17 @@ class StubGenerator: public StubCodeGenerator {
       __ leave();
       __ ret();
     }
+=======
+    Label L_success;
+    __ enter();
+    __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass, result,
+                                           r_array_base, r_array_length, r_array_index,
+                                           r_bitmap, super_klass_index, /*stub_is_near*/ true);
+    __ leave();
+    __ ret();
+
+    return start;
+>>>>>>> master
   }
 
   // Slow path implementation for UseSecondarySupersTable.

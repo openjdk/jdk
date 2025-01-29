@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -444,8 +444,8 @@ public final class Currency implements Serializable {
     public static Set<Currency> getAvailableCurrencies() {
         synchronized(Currency.class) {
             if (available == null) {
+                var sysTime = System.currentTimeMillis();
                 available = new HashSet<>(256);
-
                 // Add simple currencies first
                 for (char c1 = 'A'; c1 <= 'Z'; c1 ++) {
                     for (char c2 = 'A'; c2 <= 'Z'; c2 ++) {
@@ -467,7 +467,7 @@ public final class Currency implements Serializable {
                             SpecialCaseEntry scEntry = specialCasesList.get(index);
 
                             if (scEntry.cutOverTime == Long.MAX_VALUE
-                                    || System.currentTimeMillis() < scEntry.cutOverTime) {
+                                    || sysTime < scEntry.cutOverTime) {
                                 available.add(getInstance(scEntry.oldCurrency,
                                         scEntry.oldCurrencyFraction,
                                         scEntry.oldCurrencyNumericCode));

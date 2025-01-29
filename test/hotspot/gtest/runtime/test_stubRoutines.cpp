@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/copy.hpp"
 #include "unittest.hpp"

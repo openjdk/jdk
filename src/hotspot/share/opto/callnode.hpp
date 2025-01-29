@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1190,9 +1190,16 @@ public:
 //    2 -   a FastLockNode
 //
 class LockNode : public AbstractLockNode {
+  static const TypeFunc* _lock_type_Type;
 public:
 
-  static const TypeFunc *lock_type() {
+  static inline const TypeFunc* lock_type() {
+    assert(_lock_type_Type != nullptr, "should be initialized");
+    return _lock_type_Type;
+  }
+
+  static void initialize_lock_Type() {
+    assert(_lock_type_Type == nullptr, "should be called once");
     // create input type (domain)
     const Type **fields = TypeTuple::fields(3);
     fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
@@ -1205,7 +1212,7 @@ public:
 
     const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0,fields);
 
-    return TypeFunc::make(domain,range);
+    _lock_type_Type = TypeFunc::make(domain,range);
   }
 
   virtual int Opcode() const;
