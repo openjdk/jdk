@@ -705,10 +705,10 @@ public class FloatingDecimal{
                 i += charLength;
                 if (charLength < decExponent) {
                     charLength = decExponent - charLength;
-                    Arrays.fill(result,i,i+charLength, '0');
+                    Arrays.fill(result,i,i+charLength,'0');
                     i += charLength;
-                    result[i    ] = '.';
-                    result[i + 1] = '0';
+                    result[i++] = '.';
+                    result[i++] = '0';
                     i += 2;
                 } else {
                     result[i++] = '.';
@@ -721,9 +721,8 @@ public class FloatingDecimal{
                     }
                 }
             } else if (decExponent <= 0 && decExponent > -3) {
-                result[i    ] = '0';
-                result[i + 1] = '.';
-                i += 2;
+                result[i++] = '0';
+                result[i++] = '.';
                 if (decExponent != 0) {
                     Arrays.fill(result, i, i-decExponent, '0');
                     i -= decExponent;
