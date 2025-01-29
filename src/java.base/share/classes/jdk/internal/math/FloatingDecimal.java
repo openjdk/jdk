@@ -1553,8 +1553,8 @@ public class FloatingDecimal{
             nSignificantBits = EXP_SHIFT+1;
         }
         binExp -= DoubleConsts.EXP_BIAS;
-        if (fdConverter == null) {
-            fdConverter = new BinaryToASCIIConverter(new byte[20]);
+        if (fdConverter == null || fdConverter == B2AC_POSITIVE_ZERO) {
+            fdConverter = new BinaryToASCIIConverter(new byte[19]);
         }
         // call the routine that actually does all the hard work.
         fdConverter.dtoa(binExp, fractBits, nSignificantBits);
