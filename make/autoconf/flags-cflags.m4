@@ -278,7 +278,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
 [
   # bounds, memory and behavior checking options
-  if test "x$TOOLCHAIN_TYPE" = xgcc; then
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     case $DEBUG_LEVEL in
     release )
       # no adjustment
@@ -517,12 +517,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
         -fvisibility=hidden -fno-strict-aliasing -fno-omit-frame-pointer"
   fi
 
-  if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
-    # clang compiler on aix needs -ffunction-sections
-    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -ftls-model -fno-math-errno -fstack-protector"
-    TOOLCHAIN_CFLAGS_JDK="-ffunction-sections -fsigned-char -fstack-protector"
-  fi
-
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -fstack-protector"
     TOOLCHAIN_CFLAGS_JDK="-fvisibility=hidden -pipe -fstack-protector"
@@ -542,7 +536,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # Restrict the debug information created by Clang to avoid
     # too big object files and speed the build up a little bit
     # (see http://llvm.org/bugs/show_bug.cgi?id=7554)
-    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -flimit-debug-info"
+    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -flimit-debug-info -fstack-protector"
 
     # In principle the stack alignment below is cpu- and ABI-dependent and
     # should agree with values of StackAlignmentInBytes in various
@@ -560,7 +554,13 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
       TOOLCHAIN_CFLAGS_JDK="-pipe"
       TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing" # technically NOT for CXX
     fi
-    TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -fvisibility=hidden"
+
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+      TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -ftls-model -fno-math-errno"
+      TOOLCHAIN_CFLAGS_JDK="-ffunction-sections -fsigned-char"
+    fi
+
+    TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -fvisibility=hidden -fstack-protector"
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # The -utf-8 option sets source and execution character sets to UTF-8 to enable correct
