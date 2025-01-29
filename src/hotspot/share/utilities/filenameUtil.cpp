@@ -22,6 +22,7 @@
  *
  */
 
+#include "jvm.h"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "utilities/filenameUtil.hpp"
