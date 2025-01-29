@@ -507,7 +507,7 @@ public:
   // TODO refactor to load/store, and in_loop separately???
   virtual bool is_load_in_loop() const { return false; } // TODO do we need this?
   virtual bool is_load_or_store_in_loop() const { return false; } // TODO do we need this?
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const { ShouldNotReachHere(); } // TODO do we need argument?
+  virtual const VPointer& vpointer() const { ShouldNotReachHere(); }
 
   virtual bool optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) { return false; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const = 0;
@@ -567,7 +567,7 @@ public:
   }
 
   virtual VTransformMemopScalarNode* isa_MemopScalar() override { return this; }
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return _vpointer; }
+  virtual const VPointer& vpointer() const override { return _vpointer; }
 
   // TODO
   virtual bool is_load_in_loop() const override { return node()->is_Load(); }
@@ -746,7 +746,7 @@ public:
     VTransformVectorNode(vtransform, prototype, req), _vpointer(vpointer) {}
   virtual VTransformMemVectorNode* isa_MemVector() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return true; }
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return _vpointer; }
+  virtual const VPointer& vpointer() const override { return _vpointer; }
 };
 
 class VTransformLoadVectorNode : public VTransformMemVectorNode {

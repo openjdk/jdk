@@ -473,7 +473,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
     for (int i = 0; i < _schedule.length(); i++) {
       VTransformNode* vtn = _schedule.at(i);
       if (vtn->is_load_or_store_in_loop()) {
-        const VPointer& p = vtn->vpointer(vloop_analyzer);
+        const VPointer& p = vtn->vpointer();
         if (p.is_valid()) {
           VTransformVectorNode* vector = vtn->isa_Vector();
           bool is_load = vtn->is_load_in_loop();
@@ -1002,7 +1002,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   // Walk up the memory chain, and ignore any StoreVector that provably
   // does not have any memory dependency.
   // TODO: can we move this elsewhere? Refactor VPointer?
-  const VPointer& load_p = vpointer(apply_state.vloop_analyzer());
+  const VPointer& load_p = vpointer();
   while (mem->is_StoreVector()) {
     VPointer store_p(mem->as_Mem(), apply_state.vloop());
     if (store_p.never_overlaps_with(load_p)) {

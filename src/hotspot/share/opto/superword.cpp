@@ -2540,7 +2540,7 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
     int vw = element_size_in_bytes * vtn->vector_length();
     if (vw > max_aw) {
       max_aw = vw;
-      vpointer = &vtn->vpointer(_vloop_analyzer);
+      vpointer = &vtn->vpointer();
     }
   }
   assert(vpointer != nullptr && max_aw > 0, "found vpointer and aw");
