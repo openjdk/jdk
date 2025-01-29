@@ -91,15 +91,13 @@ public class FloatingDecimal{
     private static final String NAN_REP = "NaN";
     private static final int NAN_LENGTH = NAN_REP.length();
 
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIConverter(false, new byte[]{'0'});
-    private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO = new BinaryToASCIIConverter(true,  new byte[]{'0'});
+    private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIConverter(new byte[]{'0'});
 
     /**
      * A converter which can process single or double precision floating point
      * values into an ASCII <code>String</code> representation.
      */
     public final static class BinaryToASCIIConverter {
-        private final boolean isNegative;
         private int decExponent;
         private int firstDigitIndex;
         private int nDigits;
@@ -121,8 +119,7 @@ public class FloatingDecimal{
         /**
          * Creates a specialized value (positive and negative zeros).
          */
-        BinaryToASCIIConverter(boolean isNegative, byte[] digits){
-            this.isNegative = isNegative;
+        BinaryToASCIIConverter(byte[] digits){
             this.decExponent  = 0;
             this.digits = digits;
             this.firstDigitIndex = 0;
@@ -714,10 +711,6 @@ public class FloatingDecimal{
         private int getChars(byte[] result) {
             assert nDigits <= 19 : nDigits; // generous bound on size of nDigits
             int i = 0;
-            if (isNegative) {
-                result[0] = '-';
-                i = 1;
-            }
             if (decExponent > 0 && decExponent < 8) {
                 // print digits.digits.
                 int charLength = Math.min(nDigits, decExponent);
@@ -1540,6 +1533,7 @@ public class FloatingDecimal{
     public static BinaryToASCIIConverter getBinaryToASCIIConverter(double d) {
         long dBits = Double.doubleToRawLongBits(d);
         boolean isNegative = (dBits&DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
+        assert !isNegative;
         long fractBits = dBits & DoubleConsts.SIGNIF_BIT_MASK;
         int  binExp = (int)( (dBits&DoubleConsts.EXP_BIT_MASK) >> EXP_SHIFT );
         // Discover obvious special cases of NaN and Infinity.
@@ -1554,7 +1548,7 @@ public class FloatingDecimal{
         if ( binExp == 0 ){
             if ( fractBits == 0L ){
                 // not a denorm, just a 0!
-                return isNegative ? B2AC_NEGATIVE_ZERO : B2AC_POSITIVE_ZERO;
+                return B2AC_POSITIVE_ZERO;
             }
             int leadingZeros = Long.numberOfLeadingZeros(fractBits);
             int shift = leadingZeros-(63-EXP_SHIFT);
@@ -1566,7 +1560,7 @@ public class FloatingDecimal{
             nSignificantBits = EXP_SHIFT+1;
         }
         binExp -= DoubleConsts.EXP_BIAS;
-        BinaryToASCIIConverter buf = new BinaryToASCIIConverter(isNegative, new byte[20]);
+        BinaryToASCIIConverter buf = new BinaryToASCIIConverter(new byte[20]);
         // call the routine that actually does all the hard work.
         buf.dtoa(binExp, fractBits, nSignificantBits);
         return buf;
