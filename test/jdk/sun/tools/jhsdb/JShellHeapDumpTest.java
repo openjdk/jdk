@@ -53,6 +53,7 @@ public class JShellHeapDumpTest {
     static Process jShellProcess;
     static boolean doSleep = true; // By default do a short sleep when app starts up
 
+    // Returns false if the attempt should be retried.
     public static boolean launch(String expectedMessage, List<String> toolArgs, boolean allowRetry)
         throws IOException {
 
@@ -102,6 +103,8 @@ public class JShellHeapDumpTest {
         throws IOException {
 
         boolean res = launch(expectedMessage, Arrays.asList(toolArgs), true);
+        // Allow a retry for !doSleep, because the sleep allows the debuggee to stabilize,
+        // making it very unlikely that jmap will fail.
         if (!res && !doSleep) {
             launch(expectedMessage, Arrays.asList(toolArgs), false);
         }
