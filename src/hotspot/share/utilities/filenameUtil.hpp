@@ -37,13 +37,15 @@ private:
   static const size_t HostnameBufferSize = 512;
 
 public:
-  // Caller is responsible for releasing returned filename
-  template<MemTag Tag>
-  static char* make_file_name(const char* file_name, jlong timestamp) {
-    return make_file_name_impl(file_name, timestamp, Tag);
+  // The call returns file name allocated on c heap or resource area.
+  // C_HEAP = true, caller is responsible for releasing returned string
+  // C_HEAP = false, caller is responsible for setting up ResourceMark
+  template<bool C_HEAP, MemTag MT = mtNone>
+  static char* make_file_name(const char* file_name, jlong timestamp = 0) {
+    return make_file_name_impl(file_name, timestamp, C_HEAP, MT);
   }
 private:
-  static char* make_file_name_impl(const char* file_name, jlong timestamp, MemTag tag);
+  static char* make_file_name_impl(const char* file_name, jlong timestamp, bool c_heap, MemTag tag);
   static void get_pid_string(char* buf, size_t buf_len);
   static void get_timestamp_string(char* buf, size_t buf_len, jlong timestamp);
   static void get_hostname_string(char* buf, size_t buf_len);

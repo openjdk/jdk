@@ -31,7 +31,7 @@ const char* const FilenameUtil::TimestampFilenamePlaceholder = "%t";
 const char* const FilenameUtil::TimestampFormat = "%Y-%m-%d_%H-%M-%S";
 const char* const FilenameUtil::HostnameFilenamePlaceholder = "%hn";
 
-char* FilenameUtil::make_file_name_impl(const char* file_name, jlong timestamp, MemTag tag) {
+char* FilenameUtil::make_file_name_impl(const char* file_name, jlong timestamp, bool c_heap, MemTag tag) {
   char* result = nullptr;
 
   // Lets start finding out if we have any %p, %t and/or %hn in the name.
@@ -43,7 +43,13 @@ char* FilenameUtil::make_file_name_impl(const char* file_name, jlong timestamp, 
   int len = strlen(file_name);
   if (pid_opt == nullptr && timestamp_opt == nullptr && hostname_opt == nullptr) {
     // We found no place-holders, return the simple filename
-    return os::strdup_check_oom(file_name, tag);
+    if (c_heap) {
+      return os::strdup_check_oom(file_name, tag);
+    } else {
+      char* buf = NEW_RESOURCE_ARRAY(char, strlen(file_name) + 1);
+      strcpy(buf, file_name);
+      return buf;
+    }
   }
 
   char pid_string[PidBufferSize];
@@ -71,8 +77,11 @@ char* FilenameUtil::make_file_name_impl(const char* file_name, jlong timestamp, 
     result_len += strlen(hostname_string);
   }
   // Allocate the new buffer, size it to hold all we want to put in there +1.
-  result = NEW_C_HEAP_ARRAY(char, result_len + 1, tag);
-
+  if (c_heap) {
+    result = NEW_C_HEAP_ARRAY(char, result_len + 1, tag);
+  } else {
+    result = NEW_RESOURCE_ARRAY(char, result_len + 1);
+  }
   // Assemble the strings
   size_t file_name_pos = 0;
   size_t i = 0;

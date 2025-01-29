@@ -44,7 +44,7 @@ LogFileOutput::LogFileOutput(const char* name, jlong vm_start_time)
       _file_count(DefaultFileCount), _is_default_file_count(true), _archive_name_len(0),
       _rotate_size(DefaultFileSize), _current_size(0), _rotation_semaphore(1) {
   assert(strstr(name, Prefix) == name, "invalid output name '%s': missing prefix: %s", name, Prefix);
-  _file_name = FilenameUtil::make_file_name<mtLogging>(name + strlen(Prefix), vm_start_time);
+  _file_name = FilenameUtil::make_file_name<true, mtLogging>(name + strlen(Prefix), vm_start_time);
 }
 
 const char* LogFileOutput::cur_log_file_name() {
