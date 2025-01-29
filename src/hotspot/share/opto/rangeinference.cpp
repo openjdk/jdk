@@ -24,6 +24,7 @@
 
 #include "opto/rangeinference.hpp"
 #include "opto/type.hpp"
+#include "utilities/intn_t.hpp"
 #include "utilities/tuple.hpp"
 
 // If the cardinality of a TypeInt is below this threshold, use min widen, see
@@ -58,7 +59,7 @@ public:
 // may contain 1 or 2 SimpleCanonicalResult.
 template <class U>
 class SimpleCanonicalResult {
-  static_assert(std::is_unsigned<U>::value, "bit info should be unsigned");
+  static_assert(U(-1) > U(0), "bit info should be unsigned");
 public:
   bool _present; // whether this is an empty set
   RangeInt<U> _bounds;
@@ -84,7 +85,6 @@ public:
 // significant.
 template <class U>
 static U adjust_lo(U lo, const KnownBits<U>& bits) {
-  constexpr size_t W = sizeof(U) * 8;
   // Violation of lo with respects to bits
   // E.g: lo    = 1100
   //      zeros = 0100
@@ -97,7 +97,7 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
   U one_violation = ~lo & bits._ones;
   if (zero_violation == one_violation) {
     // This means lo does not violate bits, it is the result
-    assert(zero_violation == 0, "");
+    assert(zero_violation == U(0), "");
     return lo;
   }
 
@@ -222,10 +222,13 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // Just OR this value with ones to obtain the final result.
 
     // first_violation is the position of the violation counting from the
-    // lowest bit up (0-based), since i == 2, first_difference == 6
-    juint first_violation = W - 1 - count_leading_zeros(one_violation); // 6
+    // highest bit down (0-based), since i == 2, first_difference == 1
+    juint first_violation = count_leading_zeros<U>(one_violation); // 1
     //           0 1 0 0 0 0 0 0
-    U alignment = U(1) << first_violation;
+    // This is the same as U(1) << (W - 1 - first_violation), we avoid using
+    // W so that this can be used with intn_t<n>
+    U alignment = one_violation == U(1) ? U(1)
+                                        : (std::numeric_limits<U>::max() >> (first_violation + 1)) + U(1);
     // This is the first value which have the violated bit being 1, which means
     // that the result should not be smaller than this
     //           1 1 0 0 0 0 0 0
@@ -255,10 +258,12 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // obtain our final result, which is:
     //           1 0 1 0 0 0 1 1
 
-    juint first_violation = W - count_leading_zeros(zero_violation);
+    juint first_violation = count_leading_zeros<U>(zero_violation);
     // This mask out all bits from the first violation
     //           1 1 1 1 1 0 0 0
-    U find_mask = std::numeric_limits<U>::max() << first_violation;
+    // This is the same as max << (W - first_violation), we avoid using W so
+    // that this can be used with intn_t<n>
+    U find_mask = ~(std::numeric_limits<U>::max() >> first_violation);
     //           1 0 0 1 1 1 1 0
     U either = lo | bits._zeros;
     // i is the last bit being 0 in either that stands before the first
@@ -338,14 +343,14 @@ adjust_bits_from_bounds(const KnownBits<U>& bits, const RangeInt<U>& bounds) {
   U mismatch = bounds._lo ^ bounds._hi;
   // Find the first mismatch, all bits before it is the same in bounds._lo and
   // bounds._hi
-  U match_mask = mismatch == 0 ? std::numeric_limits<U>::max()
-                               : ~(std::numeric_limits<U>::max() >> count_leading_zeros(mismatch));
+  U match_mask = mismatch == U(0) ? std::numeric_limits<U>::max()
+                                  : ~(std::numeric_limits<U>::max() >> count_leading_zeros<U>(mismatch));
   // match_mask & bounds._lo is the common prefix, extract zeros and ones from
   // it
   U new_zeros = bits._zeros | (match_mask & ~bounds._lo);
   U new_ones = bits._ones | (match_mask & bounds._lo);
   bool progress = (new_zeros != bits._zeros) || (new_ones != bits._ones);
-  bool present = ((new_zeros & new_ones) == 0);
+  bool present = ((new_zeros & new_ones) == U(0));
   return {progress, present, {new_zeros, new_ones}};
 }
 
@@ -393,7 +398,7 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
   // Trivial contradictions
   if (srange._lo > srange._hi ||
       urange._lo > urange._hi ||
-      (_bits._zeros & _bits._ones) != 0) {
+      (_bits._zeros & _bits._ones) != U(0)) {
     return CanonicalizedTypeIntPrototype::make_empty();
   }
 
@@ -405,19 +410,19 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
     if (S(urange._hi) < srange._lo) {
       // This means that there should be no element in the interval
       // [min_S, S(urange._hi)], tighten urange._hi to max_S
-      urange._hi = std::numeric_limits<S>::max();
+      urange._hi = U(std::numeric_limits<S>::max());
     } else if (S(urange._lo) > srange._hi) {
       // This means that there should be no element in the interval
       // [S(urange._lo), max_S], tighten urange._lo to min_S
-      urange._lo = std::numeric_limits<S>::min();
+      urange._lo = U(std::numeric_limits<S>::min());
     }
   }
 
   if (S(urange._lo) <= S(urange._hi)) {
     // [lo, hi] and [ulo, uhi] represent the same range
-    urange._lo = MAX2<S>(urange._lo, srange._lo);
-    urange._hi = MIN2<S>(urange._hi, srange._hi);
-    if (urange._lo > urange._hi) {
+    urange._lo = U(MAX2(S(urange._lo), srange._lo));
+    urange._hi = U(MIN2(S(urange._hi), srange._hi));
+    if (urange._lo > urange._hi || S(urange._lo) > S(urange._hi)) {
       return CanonicalizedTypeIntPrototype::make_empty();
     }
 
@@ -449,25 +454,25 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
 }
 
 template <class S, class U>
-int TypeIntPrototype<S, U>::normalize_widen(int w) const {
+int TypeIntPrototype<S, U>::normalize_widen(int widen) const {
   // Certain normalizations keep us sane when comparing types.
   // The 'SMALL_TYPEINT_THRESHOLD' covers constants and also CC and its relatives.
-  if (TypeIntHelper::cardinality_from_bounds(_srange, _urange) <= SMALL_TYPEINT_THRESHOLD) {
+  if (TypeIntHelper::cardinality_from_bounds(_srange, _urange) <= U(SMALL_TYPEINT_THRESHOLD)) {
     return Type::WidenMin;
   }
   if (_srange._lo == std::numeric_limits<S>::min() && _srange._hi == std::numeric_limits<S>::max() &&
       _urange._lo == std::numeric_limits<U>::min() && _urange._hi == std::numeric_limits<U>::max() &&
-      _bits._zeros == 0 && _bits._ones == 0) {
+      _bits._zeros == U(0) && _bits._ones == U(0)) {
     // bottom type
     return Type::WidenMax;
   }
-  return w;
+  return widen;
 }
 
 #ifdef ASSERT
 template <class S, class U>
 bool TypeIntPrototype<S, U>::contains(S v) const {
-  U u = v;
+  U u(v);
   return v >= _srange._lo && v <= _srange._hi && u >= _urange._lo && u <= _urange._hi && _bits.is_satisfied_by(u);
 }
 
@@ -476,7 +481,7 @@ template <class S, class U>
 void TypeIntPrototype<S, U>::verify_constraints() const {
   // Assert that the bounds cannot be further tightened
   assert(contains(_srange._lo) && contains(_srange._hi) &&
-         contains(_urange._lo) && contains(_urange._hi), "");
+         contains(S(_urange._lo)) && contains(S(_urange._hi)), "");
 
   // Assert that the bits cannot be further tightened
   if (U(_srange._lo) == _urange._lo) {
@@ -500,6 +505,10 @@ void TypeIntPrototype<S, U>::verify_constraints() const {
 
 template class TypeIntPrototype<jint, juint>;
 template class TypeIntPrototype<jlong, julong>;
+template class TypeIntPrototype<intn_t<1>, uintn_t<1>>;
+template class TypeIntPrototype<intn_t<2>, uintn_t<2>>;
+template class TypeIntPrototype<intn_t<3>, uintn_t<3>>;
+template class TypeIntPrototype<intn_t<4>, uintn_t<4>>;
 
 // Compute the meet of 2 types, when dual is true, we are actually computing the
 // join.

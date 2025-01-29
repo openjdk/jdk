@@ -25,9 +25,8 @@
 #include "opto/rangeinference.hpp"
 #include "opto/type.hpp"
 #include "runtime/os.hpp"
+#include "utilities/intn_t.hpp"
 #include "unittest.hpp"
-
-#include <limits>
 
 template <class U>
 static U uniform_random();
@@ -54,6 +53,56 @@ static void test_canonicalize_constraints_trivial() {
   ASSERT_FALSE(TypeLong::NON_ZERO->contains(jlong(0)));
   ASSERT_TRUE(TypeLong::NON_ZERO->contains(jlong(1)));
   ASSERT_TRUE(TypeLong::NON_ZERO->contains(jlong(-1)));
+}
+
+template <class S, class U>
+static void test_canonicalize_constraints_exhaustive() {
+  {
+    TypeIntPrototype<S, U> t{{S(0), S(0)}, {U(0), U(0)}, {U(-1), U(0)}};
+    auto new_t = t.canonicalize_constraints();
+    ASSERT_TRUE(new_t._present);
+    DEBUG_ONLY(ASSERT_TRUE(t.contains(S(0))));
+    DEBUG_ONLY(ASSERT_FALSE(t.contains(S(1))));
+  }
+  {
+    TypeIntPrototype<S, U> t{{S(0), S(0)}, {U(1), U(1)}, {U(-1), U(0)}};
+    auto new_t = t.canonicalize_constraints();
+    ASSERT_FALSE(new_t._present);
+    DEBUG_ONLY(ASSERT_FALSE(t.contains(S(0))));
+    DEBUG_ONLY(ASSERT_FALSE(t.contains(S(1))));
+  }
+  {
+    TypeIntPrototype<S, U> t{{S(S::min), S(S::max)}, {U(U::min), U(U::max)}, {U(0), U(0)}};
+    auto new_t = t.canonicalize_constraints();
+    ASSERT_TRUE(new_t._present);
+    for (int v = S::min; v <= S::max; v++) {
+      DEBUG_ONLY(ASSERT_TRUE(t.contains(S(v))));
+    }
+  }
+  for (int lo = S::min; lo <= S::max; lo++) {
+    for (int hi = lo; hi <= S::max; hi++) {
+      for (int ulo = U::min; ulo <= U::max; ulo++) {
+        for (int uhi = ulo; uhi <= U::max; uhi++) {
+          for (int zeros = U::min; zeros <= U::max; zeros++) {
+            for (int ones = U::min; ones <= U::max; ones++) {
+              TypeIntPrototype<S, U> t{{S(lo), S(hi)}, {U(ulo), U(uhi)}, {U(zeros), U(ones)}};
+              auto new_t = t.canonicalize_constraints();
+              if (new_t._present) {
+                DEBUG_ONLY(new_t._data.verify_constraints());
+              }
+              for (int v = S::min; v <= S::max; v++) {
+                if (!new_t._present) {
+                  DEBUG_ONLY(ASSERT_FALSE(t.contains(S(v))));
+                } else {
+                  DEBUG_ONLY(ASSERT_EQ(t.contains(S(v)), new_t._data.contains(S(v))));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 template <class S, class U>
@@ -154,6 +203,10 @@ static void test_canonicalize_constraints_random() {
 
 TEST_VM(opto, canonicalize_constraints) {
   test_canonicalize_constraints_trivial();
+  test_canonicalize_constraints_exhaustive<intn_t<1>, uintn_t<1>>();
+  test_canonicalize_constraints_exhaustive<intn_t<2>, uintn_t<2>>();
+  test_canonicalize_constraints_exhaustive<intn_t<3>, uintn_t<3>>();
+  test_canonicalize_constraints_exhaustive<intn_t<4>, uintn_t<4>>();
   test_canonicalize_constraints_simple<jint, juint>();
   test_canonicalize_constraints_simple<jlong, julong>();
   test_canonicalize_constraints_random<jint, juint>();

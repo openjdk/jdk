@@ -67,14 +67,14 @@ public:
  */
 template <class U>
 class KnownBits {
-  static_assert(std::is_unsigned<U>::value, "bit info should be unsigned");
+  static_assert(U(-1) > U(0), "bit info should be unsigned");
 
 public:
   U _zeros;
   U _ones;
 
   bool is_satisfied_by(U v) const {
-    return (v & _zeros) == 0 && (v & _ones) == _ones;
+    return (v & _zeros) == U(0) && (v & _ones) == _ones;
   }
 };
 
@@ -84,8 +84,8 @@ public:
 template <class S, class U>
 class TypeIntPrototype {
 public:
-  static_assert(std::is_signed<S>::value, "");
-  static_assert(std::is_unsigned<U>::value, "");
+  static_assert(S(-1) < S(0), "");
+  static_assert(U(-1) > U(0), "");
   static_assert(sizeof(S) == sizeof(U), "");
 
   RangeInt<S> _srange;
@@ -95,6 +95,9 @@ public:
 private:
   friend class TypeInt;
   friend class TypeLong;
+
+  template <class T1, class T2>
+  friend void test_canonicalize_constraints_exhaustive();
 
   template <class T1, class T2>
   friend void test_canonicalize_constraints_simple();
@@ -134,8 +137,8 @@ public:
   // with the bottom type
   template <class S, class U>
   static U cardinality_from_bounds(const RangeInt<S>& srange, const RangeInt<U>& urange) {
-    static_assert(std::is_signed<S>::value, "");
-    static_assert(std::is_unsigned<U>::value, "");
+    static_assert(S(-1) < S(0), "");
+    static_assert(U(-1) > U(0), "");
     static_assert(sizeof(S) == sizeof(U), "");
 
     if (U(srange._lo) == urange._lo) {
@@ -149,7 +152,7 @@ public:
     // and [urange._lo, srange._hi]
     // The cardinality is (uhi - lo + 1) + (hi - ulo + 1), we return the result
     // minus 1
-    return (urange._hi - U(srange._lo)) + (U(srange._hi) - urange._lo) + 1;
+    return (urange._hi - U(srange._lo)) + (U(srange._hi) - urange._lo) + U(1);
   }
 
   template <class S, class U>
