@@ -2028,7 +2028,7 @@ inline const TypeH* Type::isa_half_float() const {
 }
 
 inline const TypeH* Type::is_half_float_constant() const {
-  assert( _base == HalfFloatCon, "Not a Float" );
+  assert( _base == HalfFloatCon, "Not a HalfFloat" );
   return (TypeH*)this;
 }
 
