@@ -1518,7 +1518,7 @@ public class FloatingDecimal{
      * @param d The double precision value to convert.
      * @return The converter.
      */
-    public static BinaryToASCIIConverter getBinaryToASCIIConverter(double d) {
+    public static BinaryToASCIIConverter getBinaryToASCIIConverter(BinaryToASCIIConverter fdConverter, double d) {
         long dBits = Double.doubleToRawLongBits(d);
         boolean isNegative = (dBits&DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
         assert !isNegative;
@@ -1545,7 +1545,9 @@ public class FloatingDecimal{
             nSignificantBits = EXP_SHIFT+1;
         }
         binExp -= DoubleConsts.EXP_BIAS;
-        BinaryToASCIIConverter fdConverter = new BinaryToASCIIConverter();
+        if (fdConverter == null) {
+            fdConverter = new BinaryToASCIIConverter();
+        }
         // call the routine that actually does all the hard work.
         fdConverter.dtoa(binExp, fractBits, nSignificantBits);
         return fdConverter;
