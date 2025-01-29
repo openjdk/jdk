@@ -2395,20 +2395,6 @@ void ConstantPool::set_on_stack(const bool value) {
   }
 }
 
-// Used for sneakily dumping the CP if an assert fails:
-int ConstantPool::cp_index_after_error(int cp_index) {
-#ifdef ASSERT
-  static int entry = 0;
-  if (entry < 10) {
-    entry++;
-    tty->print("at %d: ", cp_index);
-    print_entry_on(cp_index, tty);
-    print_on(tty);
-  }
-#endif //ASSERT
-  return cp_index;
-}
-
 // Printing
 
 void ConstantPool::print_on(outputStream* st) const {

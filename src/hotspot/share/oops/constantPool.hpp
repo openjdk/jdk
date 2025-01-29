@@ -159,19 +159,6 @@ class SymbolicReference {
     return *this;
   }
 
-  #if 0 //@@REMOVE
-  // pseudo-constructor to create a field or method ref
-  SymbolicReference as_field_or_method_ref(constantTag tag, int klass_index) {
-    assert(tag.is_field_or_method(), "");
-    return as_triple_ref(tag, klass_index);
-  }
-  // pseudo-constructor to create an indy or condy specifier
-  SymbolicReference as_bootstrap_specifier_ref(constantTag tag, int bsme_index) {
-    assert(tag.has_bootstrap(), "");
-    return as_triple_ref(tag, bsme_index);
-  }
-  #endif //@@REMOVE
-
   // pseudo-constructor to create a MethodHandle ref
   SymbolicReference as_method_handle(constantTag tag, int ref_kind, int ref_index) {
     assert(!is_method_handle(), "");
@@ -633,8 +620,7 @@ class ConstantPool : public Metadata {
 
   // Unpacks a name&type pair.  Caller may add more data to the struct.
   SymbolicReference name_and_type_pair_at(int cp_index) {
-    assert(tag_at(cp_index).is_name_and_type(), "Corrupted constant pool"
-           " at %d", cp_index_after_error(cp_index));
+    assert(tag_at(cp_index).is_name_and_type(), "Corrupted constant pool");
     jint bits = *int_at_addr(cp_index);
     int name_index      = extract_low_short_from_int(bits);
     int signature_index = extract_high_short_from_int(bits);
@@ -651,8 +637,7 @@ class ConstantPool : public Metadata {
   }
   SymbolicReference method_handle_ref_at(int cp_index) {
     assert(tag_at(cp_index).is_method_handle() ||
-           tag_at(cp_index).is_method_handle_in_error(), "Corrupted constant pool"
-           " at %d", cp_index_after_error(cp_index));
+           tag_at(cp_index).is_method_handle_in_error(), "Corrupted constant pool");
     jint bits  = *int_at_addr(cp_index);
     int kind   = extract_low_short_from_int(bits);  // mask out unwanted ref_index bits
     int member = extract_high_short_from_int(bits);  // shift out unwanted ref_kind bits
@@ -668,8 +653,7 @@ class ConstantPool : public Metadata {
   // even a name&type.  But for better uniformity we will wrap it up.
   SymbolicReference method_type_ref_at(int cp_index) {
     assert(tag_at(cp_index).is_method_type() ||
-           tag_at(cp_index).is_method_type_in_error(), "Corrupted constant pool"
-           " at %d", cp_index_after_error(cp_index));
+           tag_at(cp_index).is_method_type_in_error(), "Corrupted constant pool");
     int signature_index = *int_at_addr(cp_index);
     auto tag = constantTag(JVM_CONSTANT_MethodType);
     return SymbolicReference(tag, signature_index);
@@ -764,10 +748,10 @@ class ConstantPool : public Metadata {
 
   // Lookup for entries consisting of (name_index, signature_index)
   u2 name_ref_index_at(int cp_index) {
-    return name_and_type_pair_at(cp_index).name_index();
+    return name_and_type_pair_at(cp_index).name_index();//@@KILL
   }
   u2 signature_ref_index_at(int cp_index) {
-    return name_and_type_pair_at(cp_index).signature_index();
+    return name_and_type_pair_at(cp_index).signature_index();//@@KILL
   }
 
   BasicType basic_type_for_signature_at(int cp_index) const;
@@ -876,13 +860,11 @@ private:
   // future by other Java code. These take constant pool indices rather than
   // constant pool cache indices as do the peer methods above.
   SymbolicReference uncached_field_or_method_ref_at(int cp_index) {
-    assert(tag_at(cp_index).is_field_or_method(), "Corrupted constant pool"
-           " at %d", cp_index_after_error(cp_index));
+    assert(tag_at(cp_index).is_field_or_method(), "Corrupted constant pool");
     return uncached_triple_ref_at(cp_index);
   }
   SymbolicReference uncached_bootstrap_specifier_ref_at(int cp_index) {
-    assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool"
-           " at %d", cp_index_after_error(cp_index));
+    assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
     return uncached_triple_ref_at(cp_index);
   }
   // A "triple" reference is a 3-tuple of (x, name, type), where x
@@ -891,8 +873,7 @@ private:
   // using common code.
   SymbolicReference uncached_triple_ref_at(int cp_index) {
     auto tag = tag_at(cp_index);
-    assert(tag.is_field_or_method() || tag.has_bootstrap(), "Corrupted constant pool"
-           " at %d", cp_index_after_error(cp_index));
+    assert(tag.is_field_or_method() || tag.has_bootstrap(), "Corrupted constant pool");
     jint ref_bits = *int_at_addr(cp_index);
     int ki =  extract_low_short_from_int(ref_bits);
     int nti = extract_high_short_from_int(ref_bits);
@@ -1022,8 +1003,6 @@ private:
   int  copy_cpool_bytes(int cpool_size,
                         SymbolHash* tbl,
                         unsigned char *bytes);
-
-  int cp_index_after_error(int cp_index);
 
  public:
   // Verify
