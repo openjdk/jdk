@@ -110,7 +110,7 @@ public class Preview {
         source = Source.instance(context);
         verbose = Lint.instance(context).isEnabled(LintCategory.PREVIEW);
         deferredLintHandler = DeferredLintHandler.instance(context);
-        previewHandler = new MandatoryWarningHandler(log, source, verbose, true);
+        previewHandler = new MandatoryWarningHandler(log, source, true);
         forcePreview = options.isSet("forcePreview");
         majorVersionToSource = initMajorVersionToSourceMap();
     }
@@ -196,10 +196,6 @@ public class Preview {
         Assert.check(isEnabled());
         Assert.check(isPreview(feature));
         markUsesPreview(pos);
-
-        // For preview warnings, even if a warning is suppressed by of @SuppressWarnings("preview"), we
-        // still need the "recompile" note at the end of compilation. To ensure that happens, we invoke
-        // previewHandler.report() in all cases, but with "verbose" set to false if "preview" is suppressed.
         previewHandler.report(pos, feature.isPlural() ?
             LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
             LintWarnings.PreviewFeatureUse(feature.nameFragment()),
@@ -229,7 +225,7 @@ public class Preview {
     }
 
     public void reportPreviewWarning(DiagnosticPosition pos, LintWarning warnKey) {
-        previewHandler.report(pos, warnKey);
+        previewHandler.report(pos, warnKey, verbose);
     }
 
     public boolean usesPreview(JavaFileObject file) {

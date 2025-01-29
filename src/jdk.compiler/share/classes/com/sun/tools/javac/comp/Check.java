@@ -162,14 +162,11 @@ public class Check {
         profile = Profile.instance(context);
         preview = Preview.instance(context);
 
-        boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
-        boolean verboseRemoval = lint.isEnabled(LintCategory.REMOVAL);
-        boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
         boolean enforceMandatoryWarnings = true;
 
-        deprecationHandler = new MandatoryWarningHandler(log, null, verboseDeprecated, enforceMandatoryWarnings, "deprecated");
-        removalHandler = new MandatoryWarningHandler(log, null, verboseRemoval, enforceMandatoryWarnings);
-        uncheckedHandler = new MandatoryWarningHandler(log, null, verboseUnchecked, enforceMandatoryWarnings);
+        deprecationHandler = new MandatoryWarningHandler(log, null, enforceMandatoryWarnings, "deprecated");
+        removalHandler = new MandatoryWarningHandler(log, null, enforceMandatoryWarnings);
+        uncheckedHandler = new MandatoryWarningHandler(log, null, enforceMandatoryWarnings);
 
         deferredLintHandler = DeferredLintHandler.instance(context);
 
@@ -238,17 +235,19 @@ public class Check {
     void warnDeprecated(DiagnosticPosition pos, Symbol sym) {
         if (sym.isDeprecatedForRemoval()) {
             if (!lint.isSuppressed(LintCategory.REMOVAL)) {
+                boolean verbose = lint.isEnabled(LintCategory.REMOVAL);
                 if (sym.kind == MDL) {
-                    removalHandler.report(pos, LintWarnings.HasBeenDeprecatedForRemovalModule(sym));
+                    removalHandler.report(pos, LintWarnings.HasBeenDeprecatedForRemovalModule(sym), verbose);
                 } else {
-                    removalHandler.report(pos, LintWarnings.HasBeenDeprecatedForRemoval(sym, sym.location()));
+                    removalHandler.report(pos, LintWarnings.HasBeenDeprecatedForRemoval(sym, sym.location()), verbose);
                 }
             }
         } else if (!lint.isSuppressed(LintCategory.DEPRECATION)) {
+            boolean verbose = lint.isEnabled(LintCategory.DEPRECATION);
             if (sym.kind == MDL) {
-                deprecationHandler.report(pos, LintWarnings.HasBeenDeprecatedModule(sym));
+                deprecationHandler.report(pos, LintWarnings.HasBeenDeprecatedModule(sym), verbose);
             } else {
-                deprecationHandler.report(pos, LintWarnings.HasBeenDeprecated(sym, sym.location()));
+                deprecationHandler.report(pos, LintWarnings.HasBeenDeprecated(sym, sym.location()), verbose);
             }
         }
     }
@@ -285,7 +284,7 @@ public class Check {
      */
     public void warnUnchecked(DiagnosticPosition pos, LintWarning warnKey) {
         if (!lint.isSuppressed(LintCategory.UNCHECKED))
-            uncheckedHandler.report(pos, warnKey);
+            uncheckedHandler.report(pos, warnKey, lint.isEnabled(LintCategory.UNCHECKED));
     }
 
     /**
