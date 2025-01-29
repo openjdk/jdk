@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6270015
- * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
+ * @library /test/jdk/java/net/httpclient/lib
+ *          /test/lib
+ * @build jdk.httpclient.test.lib.common.TestUtil
+ *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.net.URIBuilder
  * @run main/othervm Test9a
  * @run main/othervm -Djava.net.preferIPv6Addresses=true Test9a
  * @summary Light weight HTTP server
@@ -33,12 +36,15 @@
 
 import com.sun.net.httpserver.*;
 
+import java.nio.file.Path;
 import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
+
+import static jdk.httpclient.test.lib.common.TestUtil.assertFilesEqual;
 
 /* Same as Test1 but requests run in parallel.
  */
@@ -185,7 +191,7 @@ public class Test9a extends Test {
                     error = true;
                 }
                 String orig = root + "/" + f;
-                compare (new File(orig), temp);
+                assertFilesEqual(Path.of(orig), temp.toPath());
                 temp.delete();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -194,26 +200,4 @@ public class Test9a extends Test {
         }
     }
 
-    /* compare the contents of the two files */
-
-    static void compare (File f1, File f2) throws IOException {
-        InputStream i1 = new BufferedInputStream (new FileInputStream(f1));
-        InputStream i2 = new BufferedInputStream (new FileInputStream(f2));
-
-        int c1,c2;
-        try {
-            while ((c1=i1.read()) != -1) {
-                c2 = i2.read();
-                if (c1 != c2) {
-                    throw new RuntimeException ("file compare failed 1");
-                }
-            }
-            if (i2.read() != -1) {
-                throw new RuntimeException ("file compare failed 2");
-            }
-        } finally {
-            i1.close();
-            i2.close();
-        }
-    }
 }
