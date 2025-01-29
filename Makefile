@@ -24,7 +24,7 @@
 #
 
 ###
-### This file is just a very small wrapper needed to run the real make/Init.gmk.
+### This file is just a very small wrapper needed to run the real make/PreInit.gmk.
 ### It also performs some sanity checks on make.
 ###
 
@@ -61,4 +61,4 @@ endif
 topdir := $(strip $(patsubst %/, %, $(dir $(makefile_path))))
 
 # ... and then we can include the real makefile
-include $(topdir)/make/Init.gmk
+include $(topdir)/make/PreInit.gmk

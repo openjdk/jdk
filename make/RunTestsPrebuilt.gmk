@@ -24,7 +24,8 @@
 #
 
 ################################################################################
-# Initial bootstrapping, copied and stripped down from Makefile and Init.gmk
+# Initial bootstrapping, copied and stripped down from Makefile, PreInit.gmk and
+# SpecInit.gmk.
 ################################################################################
 
 # In Cygwin, the MAKE variable gets prepended with the current directory if the

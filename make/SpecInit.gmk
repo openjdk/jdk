@@ -162,7 +162,7 @@ main: $(INIT_TARGETS)
 	        ( exitcode=$$? && \
 	        $(PRINTF) "\nERROR: Build failed for $(TARGET_DESCRIPTION) (exit code $$exitcode) \n" \
 	            $(BUILD_LOG_PIPE_SIMPLE) && \
-	        cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -j 1 -f make/Init.gmk \
+	        cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -j 1 -f make/SpecInit.gmk \
 	            HAS_SPEC=true on-failure ; \
 	        exit $$exitcode ) )
 	    $(call CleanupJavacServer)
