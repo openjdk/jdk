@@ -24,9 +24,11 @@
 #
 
 ################################################################################
-# This is the bootstrapping part of the build. This file is included from the
-# top level Makefile, and is responsible for launching the Main.gmk file with
-# the proper make and the proper make arguments.
+# Init.gmk sits between PreInit.gmk and Main.gmk when bootstrapping the build.
+# It is called from PreInit.gmk, and its main responsibility is to launch
+# Main.gmk with the proper make and the proper make arguments.
+# PreMain.gmk has provided us with a proper SPEC. This allows us to use the
+# value of $(MAKE) for all further make calls.
 ################################################################################
 
 # This must be the first rule
@@ -37,13 +39,9 @@ default:
 # serially, regardless of -j.
 .NOTPARALLEL:
 
-##############################################################################
-# Now we have a spec. This part provides the "main" target that acts as a
-# trampoline to call the Main.gmk with the value of $(MAKE) found in the spec
-# file.
-##############################################################################
-
 include $(SPEC)
+
+include $(TOPDIR)/make/common/MakeBase.gmk
 
 # Our helper functions.
 include $(TOPDIR)/make/InitSupport.gmk
@@ -81,7 +79,7 @@ ifeq ($(OUTPUT_SYNC_SUPPORTED), true)
 endif
 
 ##############################################################################
-# Init targets
+# Init targets. These are handled fully, here and now.
 ##############################################################################
 
 print-modules:
@@ -118,8 +116,10 @@ reconfigure:
 	    CUSTOM_CONFIG_DIR="$(CUSTOM_CONFIG_DIR)" \
 	    $(RECONFIGURE_COMMAND) )
 
+.PHONY: print-modules print-targets print-tests print-configuration reconfigure
+
 ##############################################################################
-# The main target, for delegating into Main.gmk
+# The main target. This will delegate all other targets into Main.gmk.
 ##############################################################################
 
 MAIN_TARGETS := $(SEQUENTIAL_TARGETS) $(PARALLEL_TARGETS) $(COMPARE_BUILD_MAKE)
@@ -198,4 +198,4 @@ post-compare-build:
 	$(call CleanupCompareBuild)
 	$(call CompareBuildDoComparison)
 
-.PHONY: print-targets print-modules reconfigure main on-failure
+.PHONY: main on-failure pre-compare-build post-compare-build

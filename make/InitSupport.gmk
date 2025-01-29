@@ -27,13 +27,6 @@
 # This file contains helper functions for Init.gmk.
 ################################################################################
 
-##############################################################################
-# Helper functions for the 'main' target. These functions assume a single,
-# proper and existing SPEC is included.
-##############################################################################
-
-include $(TOPDIR)/make/common/MakeBase.gmk
-
 # Define basic logging setup
 BUILD_LOG := $(OUTPUTDIR)/build.log
 BUILD_PROFILE_LOG := $(OUTPUTDIR)/build-profile.log

@@ -24,9 +24,10 @@
 #
 
 ################################################################################
-# This is the bootstrapping part of the build. This file is included from the
-# top level Makefile, and is responsible for launching the Main.gmk file with
-# the proper make and the proper make arguments.
+# This file is the earliest part of the build bootstrap process (not counting
+# Makefile that includes it). Its main responsibility is to figure out what
+# configuration to use and pick up the corresponding SPEC file. It will then
+# call Init.gmk with this SPEC for further bootstrapping.
 ################################################################################
 
 # This must be the first rule
@@ -36,10 +37,6 @@ default:
 # Inclusion of this pseudo-target will cause make to execute this file
 # serially, regardless of -j.
 .NOTPARALLEL:
-
-##############################################################################
-# This is the default mode. We have not been recursively called with a SPEC.
-##############################################################################
 
 # Include our helper functions.
 include $(topdir)/make/PreInitSupport.gmk
@@ -69,9 +66,9 @@ endif
 ifneq ($(SKIP_SPEC), true)
 
   ############################################################################
-  # This is the normal case, we have been called from the command line by the
-  # user and we need to call ourself back with a proper SPEC.
-  # We have at least one non-global target, so we need to find a spec file.
+  # This is the common case: we have been called from the command line by the
+  # user with a target that should be delegated to Main.gmk, so we need to
+  # figure out a proper SPEC and call Init.gmk with it.
   ############################################################################
 
   # Basic checks on environment and command line.
@@ -183,7 +180,9 @@ ifneq ($(SKIP_SPEC), true)
 else # SKIP_SPEC=true
 
   ############################################################################
-  # We have only global targets, or are called with -pq.
+  # We have only global targets, or are called with -pq (from command
+  # completion). In this case we might not even have a configuration at all, but
+  # still need to handle the situation gracefully even if there is no SPEC file.
   ############################################################################
 
   ifeq ($(wildcard $(SPEC)), )

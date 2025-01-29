@@ -23,9 +23,11 @@
 # questions.
 #
 
-################################################################################
-# This file contains helper functions for PreInit.gmk.
-################################################################################
+##############################################################################
+# Helper functions for PreInit.gmk, the initial part of initialization before
+# the SPEC file is loaded. Most of these functions provide parsing and setting
+# up make options from the command-line.
+##############################################################################
 
 # COMMA is defined in spec.gmk, but that is not included yet
 COMMA := ,
@@ -34,12 +36,6 @@ COMMA := ,
 ifneq ($(CUSTOM_MAKE_DIR), )
   -include $(CUSTOM_MAKE_DIR)/InitSupport.gmk
 endif
-
-##############################################################################
-# Helper functions for PreInit.gmk, the initial part of initialization before
-# the spec file is loaded. Most of these functions provide parsing and setting
-# up make options from the command-line.
-##############################################################################
 
 # Essential control variables that are handled by PreInit.gmk or Init.gmk
 INIT_CONTROL_VARIABLES := LOG CONF CONF_NAME SPEC JOBS CONF_CHECK ALLOW \
