@@ -962,6 +962,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
         Set<InputNode> relatedNodes = getModel().getGraph().getRelatedNodes(liveRangeId);
         for (InputNode n : relatedNodes) {
+            if (!getModel().getDiagram().hasFigure(n)) {
+                return false;
+            }
             Figure f = getModel().getDiagram().getFigure(n);
             FigureWidget fw = getWidget(f);
             if (isVisibleBlock(f.getBlock()) &&
@@ -1562,6 +1565,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 LiveRangeWidget liveRangeWidget = getWidget(segment);
                 boolean visible = true;
                 for (InputNode n : getModel().getDiagram().getInputGraph().getRelatedNodes(segment.getLiveRange().getId())) {
+                    if (!getModel().getDiagram().hasFigure(n)) {
+                        visible = false;
+                        break;
+                    }
                     FigureWidget f = getWidget(getModel().getDiagram().getFigure(n));
                     if (!f.isVisible()) {
                         visible = false;
