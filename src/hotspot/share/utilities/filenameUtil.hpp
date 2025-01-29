@@ -36,21 +36,17 @@ private:
   static const size_t PidBufferSize = 21;
   static const size_t HostnameBufferSize = 512;
 
-  static jlong _start_time;
-
 public:
-  static void set_start_time(jlong start_time) {
-    _start_time = start_time;
+  // Caller is responsible for releasing returned filename
+  template<MemTag Tag>
+  static char* make_file_name(const char* file_name, jlong timestamp) {
+    return make_file_name_impl(file_name, timestamp, Tag);
   }
-
-  // Caller provides ResourceMark
-  static char* make_file_name(const char* file_name);
-
 private:
-  // Caller provides ResourceMark
-  static char* get_pid_string();
-  static char* get_timestamp_string();
-  static char* get_hostname_string();
-}
+  static char* make_file_name_impl(const char* file_name, jlong timestamp, MemTag tag);
+  static void get_pid_string(char* buf, size_t buf_len);
+  static void get_timestamp_string(char* buf, size_t buf_len, jlong timestamp);
+  static void get_hostname_string(char* buf, size_t buf_len);
+};
 
 #endif // SHARE_UTILITIES_FILENAMEUTIL_HPP

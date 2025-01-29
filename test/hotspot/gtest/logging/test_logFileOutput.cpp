@@ -43,9 +43,6 @@ TEST_VM(LogFileOutput, parse_valid) {
     "filesize=1k", "filesize=1G"
   };
 
-  // Override LogOutput's vm_start time to get predictable file name
-  LogFileOutput::set_file_name_parameters(0);
-
   for (size_t i = 0; i < ARRAY_SIZE(valid_options); i++) {
     ResourceMark rm;
     stringStream ss;

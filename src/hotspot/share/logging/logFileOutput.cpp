@@ -30,22 +30,21 @@
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/filenameUtil.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 const char* const LogFileOutput::Prefix = "file=";
 const char* const LogFileOutput::FileOpenMode = "a";
 const char* const LogFileOutput::FileSizeOptionKey = "filesize";
 const char* const LogFileOutput::FileCountOptionKey = "filecount";
-char        LogFileOutput::_pid_str[PidBufferSize];
-char        LogFileOutput::_vm_start_time_str[StartTimeBufferSize];
 
-LogFileOutput::LogFileOutput(const char* name)
+LogFileOutput::LogFileOutput(const char* name, jlong vm_start_time)
     : LogFileStreamOutput(nullptr), _name(os::strdup_check_oom(name, mtLogging)),
       _file_name(nullptr), _archive_name(nullptr), _current_file(0),
       _file_count(DefaultFileCount), _is_default_file_count(true), _archive_name_len(0),
       _rotate_size(DefaultFileSize), _current_size(0), _rotation_semaphore(1) {
   assert(strstr(name, Prefix) == name, "invalid output name '%s': missing prefix: %s", name, Prefix);
-  _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
+  _file_name = FilenameUtil::make_file_name<mtLogging>(name + strlen(Prefix), vm_start_time);
 }
 
 const char* LogFileOutput::cur_log_file_name() {
@@ -54,17 +53,6 @@ const char* LogFileOutput::cur_log_file_name() {
   } else {
     return _archive_name;
   }
-}
-
-void LogFileOutput::set_file_name_parameters(jlong vm_start_time) {
-  int res = jio_snprintf(_pid_str, sizeof(_pid_str), "%d", os::current_process_id());
-  assert(res > 0, "PID buffer too small");
-
-  struct tm local_time;
-  time_t utc_time = vm_start_time / 1000;
-  os::localtime_pd(&utc_time, &local_time);
-  res = (int)strftime(_vm_start_time_str, sizeof(_vm_start_time_str), TimestampFormat, &local_time);
-  assert(res > 0, "VM start time buffer too small.");
 }
 
 LogFileOutput::~LogFileOutput() {

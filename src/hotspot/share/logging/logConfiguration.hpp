@@ -63,6 +63,7 @@ class LogConfiguration : public AllStatic {
   static UpdateListenerFunction*    _listener_callbacks;
   static size_t                     _n_listener_callbacks;
   static bool                       _async_mode;
+  static jlong                      _vm_start_time;
 
   // Create a new output. Returns null if failed.
   static LogOutput* new_output(const char* name, const char* options, outputStream* errstream);
