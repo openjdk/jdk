@@ -104,7 +104,6 @@ final class DigitList implements Cloneable {
     public int count = 0;
     public char[] digits = new char[MAX_COUNT];
 
-    private FloatingDecimal.BinaryToASCIIConverter fdConverter;
     private byte[] data;
     private RoundingMode roundingMode = RoundingMode.HALF_EVEN;
     private boolean isNegative = false;
@@ -302,11 +301,19 @@ final class DigitList implements Cloneable {
      */
     final void set(boolean isNegative, double source, int maximumDigits, boolean fixedPoint) {
         assert !FloatingDecimal.isExceptional(source);
-        fdConverter = FloatingDecimal.getBinaryToASCIIConverter(fdConverter, source);
-        boolean hasBeenRoundedUp = fdConverter.digitsRoundedUp();
-        boolean valueExactAsDecimal = fdConverter.decimalDigitsExact();
-        byte[] chars = getDataChars(20);
-        int len = fdConverter.getChars(chars);
+        boolean hasBeenRoundedUp = false, valueExactAsDecimal = false;
+        byte[] chars;
+        int len;
+        if (source == 0) {
+            chars = new byte[] {'0'};
+            len = 1;
+        } else {
+            var fdConverter = FloatingDecimal.getBinaryToASCIIConverter(source);
+            hasBeenRoundedUp = fdConverter.digitsRoundedUp();
+            valueExactAsDecimal = fdConverter.decimalDigitsExact();
+            chars = getDataChars(20);
+            len = fdConverter.getChars(chars);
+        }
 
         set(isNegative, chars, len,
             hasBeenRoundedUp, valueExactAsDecimal,

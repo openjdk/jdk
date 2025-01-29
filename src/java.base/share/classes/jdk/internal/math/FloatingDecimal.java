@@ -90,8 +90,6 @@ public class FloatingDecimal{
     private static final String NAN_REP = "NaN";
     private static final int NAN_LENGTH = NAN_REP.length();
 
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIConverter(new byte[]{'0'});
-
     /**
      * A converter which can process single or double precision floating point
      * values into an ASCII <code>String</code> representation.
@@ -109,19 +107,17 @@ public class FloatingDecimal{
         //
 
         // True if the dtoa() binary to decimal conversion was exact.
-        private boolean exactDecimalConversion = false;
+        private boolean exactDecimalConversion;
 
         // True if the result of the binary to decimal conversion was rounded-up
         // at the end of the conversion process, i.e. roundUp() method was called.
-        private boolean decimalDigitsRoundedUp = false;
+        private boolean decimalDigitsRoundedUp;
 
         /**
          * Creates a specialized value (positive and negative zeros).
          */
-        BinaryToASCIIConverter(byte[] digits){
-            this.decExponent  = 0;
-            this.digits = digits;
-            this.firstDigitIndex = 0;
+        BinaryToASCIIConverter(){
+            this.digits = new byte[19];
             this.nDigits = digits.length;
         }
 
@@ -231,8 +227,6 @@ public class FloatingDecimal{
             // reset flags to default values as dtoa() does not always set these
             // flags and a prior call to dtoa() might have set them to incorrect
             // values with respect to the current state.
-            decimalDigitsRoundedUp = false;
-            exactDecimalConversion = false;
 
             // number of significant bits to the right of the point.
             int nTinyBits = Math.max( 0, nFractBits - binExp - 1 );
@@ -553,7 +547,6 @@ public class FloatingDecimal{
                 exactDecimalConversion  = (Bval.cmp( FDBigInteger.ZERO ) == 0);
             }
             this.decExponent = decExp+1;
-            this.firstDigitIndex = 0;
             this.nDigits = ndigit;
             //
             // Last digit gets rounded based on stopping condition.
@@ -702,8 +695,10 @@ public class FloatingDecimal{
          * @return the number of characters written to the result array
          */
         public int getChars(byte[] result) {
+            int nDigits = this.nDigits, decExponent = this.decExponent, firstDigitIndex = this.firstDigitIndex;
             assert nDigits <= 19 : nDigits; // generous bound on size of nDigits
             int i = 0;
+            byte[] digits = this.digits;
             if (decExponent > 0 && decExponent < 8) {
                 // print digits.digits.
                 int charLength = Math.min(nDigits, decExponent);
@@ -1523,7 +1518,7 @@ public class FloatingDecimal{
      * @param d The double precision value to convert.
      * @return The converter.
      */
-    public static BinaryToASCIIConverter getBinaryToASCIIConverter(BinaryToASCIIConverter fdConverter, double d) {
+    public static BinaryToASCIIConverter getBinaryToASCIIConverter(double d) {
         long dBits = Double.doubleToRawLongBits(d);
         boolean isNegative = (dBits&DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
         assert !isNegative;
@@ -1539,10 +1534,7 @@ public class FloatingDecimal{
         // Subtract exponent bias.
         int  nSignificantBits;
         if ( binExp == 0 ){
-            if ( fractBits == 0L ){
-                // not a denorm, just a 0!
-                return B2AC_POSITIVE_ZERO;
-            }
+            assert fractBits != 0L;
             int leadingZeros = Long.numberOfLeadingZeros(fractBits);
             int shift = leadingZeros-(63-EXP_SHIFT);
             fractBits <<= shift;
@@ -1553,9 +1545,7 @@ public class FloatingDecimal{
             nSignificantBits = EXP_SHIFT+1;
         }
         binExp -= DoubleConsts.EXP_BIAS;
-        if (fdConverter == null || fdConverter == B2AC_POSITIVE_ZERO) {
-            fdConverter = new BinaryToASCIIConverter(new byte[19]);
-        }
+        BinaryToASCIIConverter fdConverter = new BinaryToASCIIConverter();
         // call the routine that actually does all the hard work.
         fdConverter.dtoa(binExp, fractBits, nSignificantBits);
         return fdConverter;
