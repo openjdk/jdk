@@ -45,6 +45,7 @@ import java.awt.IllegalComponentStateException;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -93,7 +94,8 @@ public class NestedFocusablePopupTest {
         }
     }
 
-    static Rectangle waitAndGetOnScreenBoundsOnEDT(Component component) throws Exception {
+    static Rectangle waitAndGetOnScreenBoundsOnEDT(Component component)
+            throws InterruptedException, TimeoutException, ExecutionException {
         waitTillShown(component, 500);
         robot.waitForIdle();
 
