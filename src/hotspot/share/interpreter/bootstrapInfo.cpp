@@ -51,9 +51,10 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
     _indy_index(indy_index)
 {
   assert(bss_index != 0, "");
-  _bsm_attr_index = _pool->bootstrap_methods_attribute_index(_bss_index);
-  _name = pool->uncached_name_ref_at(bss_index);
-  _signature = pool->uncached_signature_ref_at(bss_index);
+  auto ref = pool->uncached_bootstrap_specifier_ref_at(bss_index);
+  _bsm_attr_index = ref.bsme_index();
+  _name = ref.name(pool);
+  _signature = ref.signature(pool);
   assert(pool->tag_at(bss_index).has_bootstrap(), "");
   assert(indy_index == -1 || pool->resolved_indy_entry_at(indy_index)->constant_pool_index() == bss_index, "invalid bootstrap specifier index");
   _is_resolved = false;

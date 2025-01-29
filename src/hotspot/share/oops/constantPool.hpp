@@ -77,9 +77,128 @@ public:
   }
 };
 
+class BSMAttributeEntry;
+
+// The components of an indirect CP entry that contains a name and
+// type signature, and maybe other bits of data also.  This struct is
+// cheap to build.  Also, it is cheap to optimize away unused field
+// values within the struct, if the CP query is inlined correctly.
+class SymbolicReference {
+ private:
+  // some of these could be u1, but let's just keep it uniform
+  u2 _tag;                      // tag of the CP node using the name&type
+  u2 _nt_index;                 // index of the name&type being used
+  u2 _name_index;               // index of a name symbol (from name&type)
+  u2 _signature_index;          // index of a signature symbol
+  u2 _third_index;              // klass if any, or bsme, or zero
+  u2 _ref_kind;                 // kind for C_MethodHandle, or zero
+  u2 _ref_index;                // member ref for C_MethodHandle, or zero
+
+  // Note that this structure can pack neatly into a pair of 64-bit registers.
+  // That means it can sometimes be returned by value in a pair of such registers.
+  // What is even nicer, most methods that return this type are inline, which
+  // allows the component values to be transmitted directly to the caller
+  // What is nicest of all is that unused components are never materialized.
+  // In this way one simple API can deliver one component or many, efficiently.
+
+ public:
+  constantTag tag() const       { return constantTag(tag_byte()); }
+  jbyte tag_byte() const        { return (jbyte)_tag; }
+  int name_index() const        { return _name_index; }
+  int signature_index() const   { return _signature_index; }
+  int nt_index() const          { return _nt_index; }
+  bool has_klass() const        { return _third_index != 0 && !has_bsme(); }
+  bool has_bsme() const         { return tag().has_bootstrap(); }
+  int klass_index() const       { assert(has_klass(), ""); return _third_index; }
+  int bsme_index() const        { assert(has_bsme(), "");  return _third_index; }
+
+  // utility methods for mapping index es to metadata items
+  inline Symbol* name(ConstantPool* cp) const;
+  inline Symbol* signature(ConstantPool* cp) const;
+  inline Symbol* klass_name(ConstantPool* cp) const;
+  inline Klass* klass(ConstantPool* cp, TRAPS) const;
+  inline BSMAttributeEntry* bsme(ConstantPool* cp) const;
+  // and a duplicate set for clients holding a CP handle
+  inline Symbol* name(const constantPoolHandle& cp) const;
+  inline Symbol* signature(const constantPoolHandle& cp) const;
+  inline Symbol* klass_name(const constantPoolHandle& cp) const;
+  inline Klass* klass(const constantPoolHandle& cp, TRAPS) const;
+  inline BSMAttributeEntry* bsme(const constantPoolHandle& cp) const;
+
+  // optional methods specific to CONSTANT_MethodHandle
+  bool is_method_handle() const { return _ref_kind != 0; }
+  jbyte ref_kind_byte() const   { return (jbyte)_ref_kind; }
+  int ref_kind() const          { assert(is_method_handle(), "");  return _ref_kind; }
+  int ref_index() const         { assert(is_method_handle(), "");  return _ref_index; }
+
+  // The older pattern provided one combined access method for each
+  // struct field, and again for each context, which led to a
+  // confusing (loose, unstructured, quadratic) API.
+
+ private:
+  friend class ConstantPool;
+
+  // basic constructor to encode a CONSTANT_NameAndType
+  SymbolicReference(constantTag tag, u2 nt_index, u2 name_index, u2 signature_index)
+    : _tag(tag.value()),
+      _nt_index(nt_index), _name_index(name_index), _signature_index(signature_index),
+      // optional parts are filled in later by pseudo-constructors:
+      _third_index(0), _ref_kind(0), _ref_index(0)
+  {
+    assert(tag.value() == JVM_CONSTANT_NameAndType, "");
+  }
+
+  // pseudo-constructor to add a third component (field/method/bsme)
+  SymbolicReference as_triple_ref(constantTag tag, int third_index) {
+    assert(this->tag().is_name_and_type(), "");
+    assert(!has_klass() && !has_bsme(), "");
+    assert(tag.is_field_or_method() || tag.has_bootstrap(), "");
+    _tag = tag.value();
+    _third_index = third_index;
+    assert(has_klass() || has_bsme(), "");
+    return *this;
+  }
+
+  #if 0 //@@REMOVE
+  // pseudo-constructor to create a field or method ref
+  SymbolicReference as_field_or_method_ref(constantTag tag, int klass_index) {
+    assert(tag.is_field_or_method(), "");
+    return as_triple_ref(tag, klass_index);
+  }
+  // pseudo-constructor to create an indy or condy specifier
+  SymbolicReference as_bootstrap_specifier_ref(constantTag tag, int bsme_index) {
+    assert(tag.has_bootstrap(), "");
+    return as_triple_ref(tag, bsme_index);
+  }
+  #endif //@@REMOVE
+
+  // pseudo-constructor to create a MethodHandle ref
+  SymbolicReference as_method_handle(constantTag tag, int ref_kind, int ref_index) {
+    assert(!is_method_handle(), "");
+    assert(tag.is_method_handle(), "");
+    _tag = tag.value();
+    _ref_kind = ref_kind;
+    _ref_index = ref_index;
+    // this->_tag is for the field or method of the MH, leave unchanged
+    assert(is_method_handle(), "");
+    return *this;
+  }
+
+  // constructor for MethodType ref
+  SymbolicReference(constantTag tag, u2 si_only)
+    : SymbolicReference(constantTag(JVM_CONSTANT_NameAndType),
+                        /*nti*/ 0, /*ni*/ 0, si_only)
+  {
+    assert(tag.is_method_type(), "");
+    _tag = tag.value();
+  }
+
+};
+
 // A single entry from a BootstrapMethods (BSM) attribute.
 // It is an overlaid view of two or more consuctive u2 words within the
 // ConstantPool::bsm_attribute_entries array.
+// To its closest friends, a BSMAttributeEntry goes by the name "bsme".
 class BSMAttributeEntry {
  private:
   u2 _bootstrap_method_index;
@@ -431,7 +550,9 @@ class ConstantPool : public Metadata {
     return CPKlassSlot(name_index, resolved_klass_index);
   }
 
-  Symbol* klass_name_at(int cp_index) const;  // Returns the name, w/o resolving.
+  Symbol* klass_name_at(int cp_index) const {
+    return symbol_at(klass_name_index_at(cp_index));
+  }
   int klass_name_index_at(int cp_index) const {
     return klass_slot_at(cp_index).name_index();
   }
@@ -439,7 +560,9 @@ class ConstantPool : public Metadata {
   Klass* resolved_klass_at(int cp_index) const;  // Used by Compiler
 
   // RedefineClasses() API support:
-  Symbol* klass_at_noresolve(int cp_index) { return klass_name_at(cp_index); }
+  Symbol* klass_at_noresolve(int cp_index) {
+    return klass_name_at(cp_index);//@@KILL
+  }
   void temp_unresolved_klass_at_put(int cp_index, int name_index) {
     // Used only during constant pool merging for class redefinition. The resolved klass index
     // will be initialized later by a call to initialize_unresolved_klasses().
@@ -508,52 +631,69 @@ class ConstantPool : public Metadata {
   // or vice versa.
   char* string_at_noresolve(int cp_index);
 
-  jint name_and_type_at(int cp_index) {
-    assert(tag_at(cp_index).is_name_and_type(), "Corrupted constant pool");
-    return *int_at_addr(cp_index);
+  // Unpacks a name&type pair.  Caller may add more data to the struct.
+  SymbolicReference name_and_type_pair_at(int cp_index) {
+    assert(tag_at(cp_index).is_name_and_type(), "Corrupted constant pool"
+           " at %d", cp_index_after_error(cp_index));
+    jint bits = *int_at_addr(cp_index);
+    int name_index      = extract_low_short_from_int(bits);
+    int signature_index = extract_high_short_from_int(bits);
+    int nt_index        = cp_index;
+    auto tag = constantTag(JVM_CONSTANT_NameAndType);
+    return SymbolicReference(tag, nt_index, name_index, signature_index);
   }
 
   int method_handle_ref_kind_at(int cp_index) {
-    assert(tag_at(cp_index).is_method_handle() ||
-           tag_at(cp_index).is_method_handle_in_error(), "Corrupted constant pool");
-    return extract_low_short_from_int(*int_at_addr(cp_index));  // mask out unwanted ref_index bits
+    return method_handle_ref_at(cp_index).ref_kind();//@@KILL
   }
   int method_handle_index_at(int cp_index) {
-    assert(tag_at(cp_index).is_method_handle() ||
-           tag_at(cp_index).is_method_handle_in_error(), "Corrupted constant pool");
-    return extract_high_short_from_int(*int_at_addr(cp_index));  // shift out unwanted ref_kind bits
+    return method_handle_ref_at(cp_index).ref_index();//@@KILL
   }
+  SymbolicReference method_handle_ref_at(int cp_index) {
+    assert(tag_at(cp_index).is_method_handle() ||
+           tag_at(cp_index).is_method_handle_in_error(), "Corrupted constant pool"
+           " at %d", cp_index_after_error(cp_index));
+    jint bits  = *int_at_addr(cp_index);
+    int kind   = extract_low_short_from_int(bits);  // mask out unwanted ref_index bits
+    int member = extract_high_short_from_int(bits);  // shift out unwanted ref_kind bits
+    auto mref  = uncached_field_or_method_ref_at(member);
+    auto tag   = constantTag(JVM_CONSTANT_MethodHandle);
+    return mref.as_method_handle(tag, kind, member);
+  }
+
   int method_type_index_at(int cp_index) {
+    return method_type_ref_at(cp_index).signature_index();//@@KILL
+  }
+  // CONSTANT_MethodType is very simple.  It has only a signature, not
+  // even a name&type.  But for better uniformity we will wrap it up.
+  SymbolicReference method_type_ref_at(int cp_index) {
     assert(tag_at(cp_index).is_method_type() ||
-           tag_at(cp_index).is_method_type_in_error(), "Corrupted constant pool");
-    return *int_at_addr(cp_index);
+           tag_at(cp_index).is_method_type_in_error(), "Corrupted constant pool"
+           " at %d", cp_index_after_error(cp_index));
+    int signature_index = *int_at_addr(cp_index);
+    auto tag = constantTag(JVM_CONSTANT_MethodType);
+    return SymbolicReference(tag, signature_index);
   }
 
   // Derived queries:
   Symbol* method_handle_name_ref_at(int cp_index) {
-    int member = method_handle_index_at(cp_index);
-    return uncached_name_ref_at(member);
+    return method_handle_ref_at(cp_index).name(this);//@@KILL
   }
   Symbol* method_handle_signature_ref_at(int cp_index) {
-    int member = method_handle_index_at(cp_index);
-    return uncached_signature_ref_at(member);
+    return method_handle_ref_at(cp_index).signature(this);//@@KILL
   }
   u2 method_handle_klass_index_at(int cp_index) {
-    int member = method_handle_index_at(cp_index);
-    return uncached_klass_ref_index_at(member);
+    return method_handle_ref_at(cp_index).klass_index();//@@KILL
   }
   Symbol* method_type_signature_at(int cp_index) {
-    int sym = method_type_index_at(cp_index);
-    return symbol_at(sym);
+    return method_type_ref_at(cp_index).signature(this);//@@KILL
   }
 
   u2 bootstrap_name_and_type_ref_index_at(int cp_index) {
-    assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
-    return extract_high_short_from_int(*int_at_addr(cp_index));
+    return uncached_bootstrap_specifier_ref_at(cp_index).nt_index();//@@KILL
   }
   u2 bootstrap_methods_attribute_index(int cp_index) {
-    assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
-    return extract_low_short_from_int(*int_at_addr(cp_index));
+    return uncached_bootstrap_specifier_ref_at(cp_index).bsme_index();//@@KILL
   }
   BSMAttributeEntry* bsm_attribute_entry(int bsm_attribute_index) {
     int offset = bsm_attribute_offsets()->at(bsm_attribute_index);
@@ -565,7 +705,7 @@ class ConstantPool : public Metadata {
   }
   // convenience method, to perform a common extra indirection via CP entry:
   BSMAttributeEntry* bootstrap_methods_attribute_entry(int cp_index) {
-    return bsm_attribute_entry(bootstrap_methods_attribute_index(cp_index));
+    return uncached_bootstrap_specifier_ref_at(cp_index).bsme(this);//@@KILL
   }
 
   // Compare BSM attribute entries between two CPs
@@ -593,31 +733,49 @@ class ConstantPool : public Metadata {
   // There are also "uncached" versions which do not adjust the operand index; see below.
 
   // Lookup for entries consisting of (klass_index, name_and_type index)
-  Klass* klass_ref_at(int which, Bytecodes::Code code, TRAPS);
-  Symbol* klass_ref_at_noresolve(int which, Bytecodes::Code code);
+  //@@ see above, to merge next 4 into Klass/Symbol resolver
+  Klass* klass_ref_at(int which, Bytecodes::Code code, TRAPS) {
+    return from_bytecode_ref_at(which, code).klass(this, THREAD);//@@KILL
+  }
+  Symbol* klass_ref_at_noresolve(int which, Bytecodes::Code code) {
+    return from_bytecode_ref_at(which, code).klass_name(this);//@@KILL
+  }
   Symbol* name_ref_at(int which, Bytecodes::Code code) {
-    int name_index = name_ref_index_at(name_and_type_ref_index_at(which, code));
-    return symbol_at(name_index);
+    return from_bytecode_ref_at(which, code).name(this);//@@KILL
   }
   Symbol* signature_ref_at(int which, Bytecodes::Code code) {
-    int signature_index = signature_ref_index_at(name_and_type_ref_index_at(which, code));
-    return symbol_at(signature_index);
+    return from_bytecode_ref_at(which, code).signature(this);//@@KILL
   }
 
-  u2 klass_ref_index_at(int which, Bytecodes::Code code);
-  u2 name_and_type_ref_index_at(int which, Bytecodes::Code code);
+  u2 klass_ref_index_at(int which, Bytecodes::Code code) {
+    return from_bytecode_ref_at(which, code).klass_index();//@@KILL
+  }
+  u2 name_and_type_ref_index_at(int which, Bytecodes::Code code) {
+    return from_bytecode_ref_at(which, code).nt_index();//@@KILL
+  }
 
-  constantTag tag_ref_at(int cp_cache_index, Bytecodes::Code code);
+  constantTag tag_ref_at(int which, Bytecodes::Code code) {
+    return tag_at(to_cp_index(which, code));
+  }
 
   int to_cp_index(int which, Bytecodes::Code code);
 
   bool is_resolved(int which, Bytecodes::Code code);
 
   // Lookup for entries consisting of (name_index, signature_index)
-  u2 name_ref_index_at(int cp_index);            // ==  low-order jshort of name_and_type_at(cp_index)
-  u2 signature_ref_index_at(int cp_index);       // == high-order jshort of name_and_type_at(cp_index)
+  u2 name_ref_index_at(int cp_index) {
+    return name_and_type_pair_at(cp_index).name_index();
+  }
+  u2 signature_ref_index_at(int cp_index) {
+    return name_and_type_pair_at(cp_index).signature_index();
+  }
 
   BasicType basic_type_for_signature_at(int cp_index) const;
+  //@@KILL, unused
+
+  SymbolicReference from_bytecode_ref_at(int which, Bytecodes::Code code) {
+    return uncached_triple_ref_at(to_cp_index(which, code));
+  }
 
   // Resolve string constants (to prevent allocation during compilation)
   void resolve_string_constants(TRAPS) {
@@ -717,17 +875,44 @@ private:
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
   // future by other Java code. These take constant pool indices rather than
   // constant pool cache indices as do the peer methods above.
-  Symbol* uncached_klass_ref_at_noresolve(int cp_index);
+  SymbolicReference uncached_field_or_method_ref_at(int cp_index) {
+    assert(tag_at(cp_index).is_field_or_method(), "Corrupted constant pool"
+           " at %d", cp_index_after_error(cp_index));
+    return uncached_triple_ref_at(cp_index);
+  }
+  SymbolicReference uncached_bootstrap_specifier_ref_at(int cp_index) {
+    assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool"
+           " at %d", cp_index_after_error(cp_index));
+    return uncached_triple_ref_at(cp_index);
+  }
+  // A "triple" reference is a 3-tuple of (x, name, type), where x
+  // is the index of a klass or a bootstrap attribute entry.
+  // Since the CP node structure is identical, we treat "triples"
+  // using common code.
+  SymbolicReference uncached_triple_ref_at(int cp_index) {
+    auto tag = tag_at(cp_index);
+    assert(tag.is_field_or_method() || tag.has_bootstrap(), "Corrupted constant pool"
+           " at %d", cp_index_after_error(cp_index));
+    jint ref_bits = *int_at_addr(cp_index);
+    int ki =  extract_low_short_from_int(ref_bits);
+    int nti = extract_high_short_from_int(ref_bits);
+    return name_and_type_pair_at(nti).as_triple_ref(tag, ki);
+  }
+  Symbol* uncached_klass_ref_at_noresolve(int cp_index) {
+    return uncached_field_or_method_ref_at(cp_index).klass_name(this);//@@KILL
+  }
   Symbol* uncached_name_ref_at(int cp_index) {
-    int name_index = name_ref_index_at(uncached_name_and_type_ref_index_at(cp_index));
-    return symbol_at(name_index);
+    return uncached_triple_ref_at(cp_index).name(this);//@@KILL
   }
   Symbol* uncached_signature_ref_at(int cp_index) {
-    int signature_index = signature_ref_index_at(uncached_name_and_type_ref_index_at(cp_index));
-    return symbol_at(signature_index);
+    return uncached_triple_ref_at(cp_index).signature(this);//@@KILL
   }
-  u2 uncached_klass_ref_index_at(int cp_index);
-  u2 uncached_name_and_type_ref_index_at(int cp_index);
+  u2 uncached_klass_ref_index_at(int cp_index) {
+    return uncached_field_or_method_ref_at(cp_index).klass_index();//@@KILL
+  }
+  u2 uncached_name_and_type_ref_index_at(int cp_index) {
+    return uncached_triple_ref_at(cp_index).nt_index();//@@KILL
+  }
 
   // Sharing
   int pre_resolve_shared_klasses(TRAPS);
@@ -838,6 +1023,8 @@ private:
                         SymbolHash* tbl,
                         unsigned char *bytes);
 
+  int cp_index_after_error(int cp_index);
+
  public:
   // Verify
   void verify_on(outputStream* st);
@@ -864,5 +1051,39 @@ private:
   inline oop resolved_reference_from_indy(int index) const;
   inline oop resolved_reference_from_method(int index) const;
 };
+
+// These inlines are closely coupled to the CP, and deserve to be here.
+
+inline Symbol* SymbolicReference::name(ConstantPool* cp) const {
+  return cp->symbol_at(name_index());
+}
+inline Symbol* SymbolicReference::signature(ConstantPool* cp) const {
+  return cp->symbol_at(signature_index());
+}
+inline Symbol* SymbolicReference::klass_name(ConstantPool* cp) const {
+  return cp->klass_at_noresolve(klass_index());
+}
+inline Klass* SymbolicReference::klass(ConstantPool* cp, TRAPS) const {
+  return cp->klass_at(klass_index(), THREAD);
+}
+inline BSMAttributeEntry* SymbolicReference::bsme(ConstantPool* cp) const {
+  return cp->bsm_attribute_entry(bsme_index());
+}
+
+inline Symbol* SymbolicReference::name(const constantPoolHandle& cp) const {
+  return name(cp());
+}
+inline Symbol* SymbolicReference::signature(const constantPoolHandle& cp) const {
+  return signature(cp());
+}
+inline Symbol* SymbolicReference::klass_name(const constantPoolHandle& cp) const {
+  return klass_name(cp());
+}
+inline Klass* SymbolicReference::klass(const constantPoolHandle& cp, TRAPS) const {
+  return klass(cp(), THREAD);
+}
+inline BSMAttributeEntry* SymbolicReference::bsme(const constantPoolHandle& cp) const {
+  return bsme(cp());
+}
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

@@ -88,14 +88,14 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
   case Bytecodes::_putstatic       : // fall through
   case Bytecodes::_getfield        : // fall through
   case Bytecodes::_putfield        : {
-    int index_old = s_old->get_index_u2();
-    int index_new = s_new->get_index_u2();
+    auto old_ref = old_cp->from_bytecode_ref_at(s_old->get_index_u2(), c_old);
+    auto new_ref = new_cp->from_bytecode_ref_at(s_new->get_index_u2(), c_new);
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.
-    if ((old_cp->klass_ref_at_noresolve(index_old, c_old) != new_cp->klass_ref_at_noresolve(index_new, c_old)) ||
-        (old_cp->name_ref_at(index_old, c_old) != new_cp->name_ref_at(index_new, c_old)) ||
-        (old_cp->signature_ref_at(index_old, c_old) != new_cp->signature_ref_at(index_new, c_old)))
+    if ((old_ref.klass_name(old_cp) != new_ref.klass_name(new_cp)) ||
+        (old_ref.name(old_cp)       != new_ref.name(new_cp)) ||
+        (old_ref.signature(old_cp)  != new_ref.signature(new_cp)))
       return false;
     break;
   }
@@ -103,38 +103,32 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
   case Bytecodes::_invokespecial   : // fall through
   case Bytecodes::_invokestatic    : // fall through
   case Bytecodes::_invokeinterface : {
-    int index_old = s_old->get_index_u2();
-    int index_new = s_new->get_index_u2();
+    auto old_ref = old_cp->from_bytecode_ref_at(s_old->get_index_u2(), c_old);
+    auto new_ref = new_cp->from_bytecode_ref_at(s_new->get_index_u2(), c_new);
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.
-    if ((old_cp->klass_ref_at_noresolve(index_old, c_old) != new_cp->klass_ref_at_noresolve(index_new, c_old)) ||
-        (old_cp->name_ref_at(index_old, c_old) != new_cp->name_ref_at(index_new, c_old)) ||
-        (old_cp->signature_ref_at(index_old, c_old) != new_cp->signature_ref_at(index_new, c_old)))
+    if ((old_ref.klass_name(old_cp) != new_ref.klass_name(new_cp)) ||
+        (old_ref.name(old_cp)       != new_ref.name(new_cp)) ||
+        (old_ref.signature(old_cp)  != new_ref.signature(new_cp)))
       return false;
     break;
   }
   case Bytecodes::_invokedynamic: {
     // Encoded indy index, should be negative
-    int index_old = s_old->get_index_u4();
-    int index_new = s_new->get_index_u4();
+    auto old_ref = old_cp->from_bytecode_ref_at(s_old->get_index_u4(), c_old);
+    auto new_ref = new_cp->from_bytecode_ref_at(s_new->get_index_u4(), c_new);
 
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.
     // Currently needs encoded indy_index
-    if ((old_cp->name_ref_at(index_old, c_old) != new_cp->name_ref_at(index_new, c_old)) ||
-        (old_cp->signature_ref_at(index_old, c_old) != new_cp->signature_ref_at(index_new, c_old)))
+    if ((old_ref.name(old_cp)       != new_ref.name(new_cp)) ||
+        (old_ref.signature(old_cp)  != new_ref.signature(new_cp)))
       return false;
 
-    int cpi_old = old_cp->cache()->resolved_indy_entry_at(index_old)->constant_pool_index();
-    int cpi_new = new_cp->cache()->resolved_indy_entry_at(index_new)->constant_pool_index();
-    if ((old_cp->uncached_name_ref_at(cpi_old) != new_cp->uncached_name_ref_at(cpi_new)) ||
-        (old_cp->uncached_signature_ref_at(cpi_old) != new_cp->uncached_signature_ref_at(cpi_new)))
-      return false;
-
-    auto bsme_old = old_cp->bootstrap_methods_attribute_entry(cpi_old);
-    auto bsme_new = new_cp->bootstrap_methods_attribute_entry(cpi_new);
+    auto bsme_old = old_ref.bsme(old_cp);
+    auto bsme_new = new_ref.bsme(new_cp);
     int bsm_old = bsme_old->bootstrap_method_index();
     int bsm_new = bsme_new->bootstrap_method_index();
     if (!pool_constants_same(bsm_old, bsm_new, old_cp, new_cp))

@@ -257,13 +257,16 @@ void CallInfo::print() {
 // Implementation of LinkInfo
 
 LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, Bytecodes::Code code, TRAPS) {
+  SymbolicReference ref = pool->from_bytecode_ref_at(index, code);
+  // FIXME: consider copying this struct bitwise into the LinkInfo
+
    // resolve klass
-  _resolved_klass = pool->klass_ref_at(index, code, CHECK);
+  _resolved_klass = ref.klass(pool, CHECK);
 
   // Get name, signature, and static klass
-  _name          = pool->name_ref_at(index, code);
-  _signature     = pool->signature_ref_at(index, code);
-  _tag           = pool->tag_ref_at(index, code);
+  _name          = ref.name(pool);
+  _signature     = ref.signature(pool);
+  _tag           = ref.tag();
   _current_klass = pool->pool_holder();
   _current_method = current_method;
 
@@ -273,13 +276,15 @@ LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, const methodHandle
 }
 
 LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, Bytecodes::Code code, TRAPS) {
+  SymbolicReference ref = pool->from_bytecode_ref_at(index, code);
+
    // resolve klass
-  _resolved_klass = pool->klass_ref_at(index, code, CHECK);
+  _resolved_klass = ref.klass(pool, CHECK);
 
   // Get name, signature, and static klass
-  _name          = pool->name_ref_at(index, code);
-  _signature     = pool->signature_ref_at(index, code);
-  _tag           = pool->tag_ref_at(index, code);
+  _name          = ref.name(pool);
+  _signature     = ref.signature(pool);
+  _tag           = ref.tag();
   _current_klass = pool->pool_holder();
   _current_method = methodHandle();
 
@@ -649,7 +654,7 @@ Method* LinkResolver::resolve_method_statically(Bytecodes::Code code,
   if (code == Bytecodes::_invokedynamic) {
     Klass* resolved_klass = vmClasses::MethodHandle_klass();
     Symbol* method_name = vmSymbols::invoke_name();
-    Symbol* method_signature = pool->signature_ref_at(index, code);
+    Symbol* method_signature = pool->from_bytecode_ref_at(index, code).signature(pool);
     Klass*  current_klass = pool->pool_holder();
     LinkInfo link_info(resolved_klass, method_name, method_signature, current_klass);
     return resolve_method(link_info, code, THREAD);

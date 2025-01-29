@@ -3674,14 +3674,11 @@ JVM_ENTRY(jobjectArray, JVM_GetEnclosingMethodInfo(JNIEnv *env, jclass ofClass))
   dest->obj_at_put(0, enc_k->java_mirror());
   int encl_method_method_idx = ik->enclosing_method_method_index();
   if (encl_method_method_idx != 0) {
-    Symbol* sym = ik->constants()->symbol_at(
-                        extract_low_short_from_int(
-                          ik->constants()->name_and_type_at(encl_method_method_idx)));
+    auto nt = ik->constants()->name_and_type_pair_at(encl_method_method_idx);
+    Symbol* sym = nt.name(ik->constants());
     Handle str = java_lang_String::create_from_symbol(sym, CHECK_NULL);
     dest->obj_at_put(1, str());
-    sym = ik->constants()->symbol_at(
-              extract_high_short_from_int(
-                ik->constants()->name_and_type_at(encl_method_method_idx)));
+    sym = nt.signature(ik->constants());
     str = java_lang_String::create_from_symbol(sym, CHECK_NULL);
     dest->obj_at_put(2, str());
   }

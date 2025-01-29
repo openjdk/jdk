@@ -228,14 +228,13 @@ void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
   } else if (tag.is_unresolved_klass()) {
     st->print_cr(" %s", constants->klass_at_noresolve(cp_index)->as_quoted_ascii());
   } else if (tag.is_method_type()) {
-    int i2 = constants->method_type_index_at(cp_index);
-    st->print(" <MethodType> %d", i2);
-    st->print_cr(" %s", constants->symbol_at(i2)->as_quoted_ascii());
+    auto ref = constants->method_type_ref_at(cp_index);
+    st->print(" <MethodType> %d", ref.signature_index());
+    st->print_cr(" %s", ref.signature(constants)->as_quoted_ascii());
   } else if (tag.is_method_handle()) {
-    int kind = constants->method_handle_ref_kind_at(cp_index);
-    int i2 = constants->method_handle_index_at(cp_index);
-    st->print(" <MethodHandle of kind %d index at %d>", kind, i2);
-    print_field_or_method(i2, st);
+    auto ref = constants->method_handle_ref_at(cp_index);
+    st->print(" <MethodHandle of kind %d index at %d>", ref.ref_kind(), ref.ref_index());
+    print_field_or_method(ref.ref_index(), st);
   } else if (tag.is_dynamic_constant()) {
     print_dynamic(cp_index, st);
     if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_DYNAMIC)) {
@@ -261,9 +260,10 @@ void BytecodePrinter::print_field_or_method(int cp_index, outputStream* st) {
     return;
   }
 
-  Symbol* name = constants->uncached_name_ref_at(cp_index);
-  Symbol* signature = constants->uncached_signature_ref_at(cp_index);
-  Symbol* klass = constants->klass_name_at(constants->uncached_klass_ref_index_at(cp_index));
+  auto ref = constants->uncached_field_or_method_ref_at(cp_index);
+  Symbol* name      = ref.name(constants);
+  Symbol* signature = ref.signature(constants);
+  Symbol* klass     = ref.klass_name(constants);
   const char* sep = (tag.is_field() ? ":" : "");
   st->print_cr(" %d <%s.%s%s%s> ", cp_index, klass->as_C_string(), name->as_C_string(), sep, signature->as_C_string());
 }
@@ -282,11 +282,11 @@ void BytecodePrinter::print_dynamic(int cp_index, outputStream* st) {
     return;
   }
 
-  int bsm = constants->bootstrap_methods_attribute_index(cp_index);
-  st->print(" bsm=%d", bsm);
+  auto ref = constants->uncached_bootstrap_specifier_ref_at(cp_index);
+  st->print(" bsm=%d", ref.bsme(constants)->bootstrap_method_index());
 
-  Symbol* name = constants->uncached_name_ref_at(cp_index);
-  Symbol* signature = constants->uncached_signature_ref_at(cp_index);
+  Symbol* name = ref.name(constants);
+  Symbol* signature = ref.signature(constants);
   const char* sep = tag.is_dynamic_constant() ? ":" : "";
   st->print_cr(" %d <%s%s%s>", cp_index, name->as_C_string(), sep, signature->as_C_string());
 }

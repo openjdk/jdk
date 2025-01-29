@@ -873,7 +873,7 @@ void ClassFileParser::verify_constantvalue(const ConstantPool* const cp,
     constantvalue_index, CHECK);
 
   const constantTag value_type = cp->tag_at(constantvalue_index);
-  switch(cp->basic_type_for_signature_at(signature_index)) {
+  switch (Signature::basic_type(cp->symbol_at(signature_index))) {
     case T_LONG: {
       guarantee_property(value_type.is_long(),
                          "Inconsistent constant value type in class file %s",
@@ -1457,7 +1457,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
       }
     }
 
-    const BasicType type = cp->basic_type_for_signature_at(signature_index);
+    const BasicType type = Signature::basic_type(cp->symbol_at(signature_index));
 
     // Update number of static oop fields.
     if (is_static && is_reference_type(type)) {

@@ -865,42 +865,6 @@ bool ConstantPool::is_resolved(int index, Bytecodes::Code code) {
   }
 }
 
-u2 ConstantPool::uncached_name_and_type_ref_index_at(int cp_index)  {
-  if (tag_at(cp_index).has_bootstrap()) {
-    u2 pool_index = bootstrap_name_and_type_ref_index_at(cp_index);
-    assert(tag_at(pool_index).is_name_and_type(), "");
-    return pool_index;
-  }
-  assert(tag_at(cp_index).is_field_or_method(), "Corrupted constant pool");
-  assert(!tag_at(cp_index).has_bootstrap(), "Must be handled above");
-  jint ref_index = *int_at_addr(cp_index);
-  return extract_high_short_from_int(ref_index);
-}
-
-u2 ConstantPool::name_and_type_ref_index_at(int index, Bytecodes::Code code) {
-  return uncached_name_and_type_ref_index_at(to_cp_index(index, code));
-}
-
-constantTag ConstantPool::tag_ref_at(int which, Bytecodes::Code code) {
-  // which may be either a Constant Pool index or a rewritten index
-  int pool_index = which;
-  assert(cache() != nullptr, "'index' is a rewritten index so this class must have been rewritten");
-  pool_index = to_cp_index(which, code);
-  return tag_at(pool_index);
-}
-
-u2 ConstantPool::uncached_klass_ref_index_at(int cp_index) {
-  assert(tag_at(cp_index).is_field_or_method(), "Corrupted constant pool");
-  jint ref_index = *int_at_addr(cp_index);
-  return extract_low_short_from_int(ref_index);
-}
-
-u2 ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
-  assert(code != Bytecodes::_invokedynamic,
-            "an invokedynamic instruction does not have a klass");
-  return uncached_klass_ref_index_at(to_cp_index(index, code));
-}
-
 void ConstantPool::verify_constant_pool_resolve(const constantPoolHandle& this_cp, Klass* k, TRAPS) {
   if (!(k->is_instance_klass() || k->is_objArray_klass())) {
     return;  // short cut, typeArray klass is always accessible
@@ -910,44 +874,9 @@ void ConstantPool::verify_constant_pool_resolve(const constantPoolHandle& this_c
 }
 
 
-u2 ConstantPool::name_ref_index_at(int cp_index) {
-  jint ref_index = name_and_type_at(cp_index);
-  return extract_low_short_from_int(ref_index);
-}
-
-
-u2 ConstantPool::signature_ref_index_at(int cp_index) {
-  jint ref_index = name_and_type_at(cp_index);
-  return extract_high_short_from_int(ref_index);
-}
-
-
-Klass* ConstantPool::klass_ref_at(int which, Bytecodes::Code code, TRAPS) {
-  return klass_at(klass_ref_index_at(which, code), THREAD);
-}
-
-Symbol* ConstantPool::klass_name_at(int cp_index) const {
-  return symbol_at(klass_slot_at(cp_index).name_index());
-}
-
-Symbol* ConstantPool::klass_ref_at_noresolve(int which, Bytecodes::Code code) {
-  jint ref_index = klass_ref_index_at(which, code);
-  return klass_at_noresolve(ref_index);
-}
-
-Symbol* ConstantPool::uncached_klass_ref_at_noresolve(int cp_index) {
-  jint ref_index = uncached_klass_ref_index_at(cp_index);
-  return klass_at_noresolve(ref_index);
-}
-
 char* ConstantPool::string_at_noresolve(int cp_index) {
   return unresolved_string_at(cp_index)->as_C_string();
 }
-
-BasicType ConstantPool::basic_type_for_signature_at(int cp_index) const {
-  return Signature::basic_type(symbol_at(cp_index));
-}
-
 
 void ConstantPool::resolve_string_constants_impl(const constantPoolHandle& this_cp, TRAPS) {
   for (int index = 1; index < this_cp->length(); index++) { // Index 0 is unused
@@ -2464,6 +2393,20 @@ void ConstantPool::set_on_stack(const bool value) {
       _flags &= (u2)(~_on_stack);
     }
   }
+}
+
+// Used for sneakily dumping the CP if an assert fails:
+int ConstantPool::cp_index_after_error(int cp_index) {
+#ifdef ASSERT
+  static int entry = 0;
+  if (entry < 10) {
+    entry++;
+    tty->print("at %d: ", cp_index);
+    print_entry_on(cp_index, tty);
+    print_on(tty);
+  }
+#endif //ASSERT
+  return cp_index;
 }
 
 // Printing
