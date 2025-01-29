@@ -151,7 +151,7 @@ final class DigitList implements Cloneable {
     /**
      * Appends a digit to the list, extending the list when necessary.
      */
-    void append(char digit) {
+    public void append(char digit) {
         if (count == digits.length) {
             char[] data = new char[count + 100];
             System.arraycopy(digits, 0, data, 0, count);
@@ -354,7 +354,7 @@ final class DigitList implements Cloneable {
                         ++leadingZerosAfterDecimal;
                 }
                 if (nonZeroDigitSeen) {
-                    digits[count++] =  c;
+                    digits[count++] = c;
                 }
             }
         }
