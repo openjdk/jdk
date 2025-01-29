@@ -83,7 +83,7 @@ public class TestZoneOffset extends AbstractTest {
     }
 
     @Test
-    public void test() throws Exception {
+    public void test_quarter_cache() throws Exception {
         for (int hour = -18; hour < 18; hour++) {
             for (int minutes = 0; minutes < 60; minutes += 15) {
                 int totalSeconds = hour * 3600 + minutes * 60;
