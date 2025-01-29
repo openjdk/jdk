@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,6 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.PushHandler;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -67,7 +65,7 @@ public class ServerPush {
 
     @BeforeTest
     public void setup() throws Exception {
-        tempFile = TestUtil.getAFile(FILE_SIZE);
+        tempFile = TestUtil.tempFileOfSize(FILE_SIZE);
         server = new Http2TestServer(false, 0);
         server.addHandler(new PushHandler(tempFile, LOOPS), "/");
         System.out.println("Using temp file:" + tempFile);

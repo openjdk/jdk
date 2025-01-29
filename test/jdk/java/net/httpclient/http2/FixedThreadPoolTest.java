@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ public class FixedThreadPoolTest {
         System.err.printf("streamTest %b to %s\n" , secure, uri);
 
         HttpClient client = getClient();
-        Path src = TestUtil.getAFile(FILESIZE * 4);
+        Path src = TestUtil.tempFileOfSize(FILESIZE * 4);
         HttpRequest req = HttpRequest.newBuilder(uri)
                                      .POST(BodyPublishers.ofFile(src))
                                      .build();
@@ -236,7 +236,7 @@ public class FixedThreadPoolTest {
         // Do loops asynchronously
 
         CompletableFuture[] responses = new CompletableFuture[LOOPS];
-        final Path source = TestUtil.getAFile(FILESIZE);
+        final Path source = TestUtil.tempFileOfSize(FILESIZE);
         HttpRequest request = HttpRequest.newBuilder(uri)
                                          .POST(BodyPublishers.ofFile(source))
                                          .build();

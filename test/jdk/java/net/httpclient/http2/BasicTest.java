@@ -198,7 +198,7 @@ public class BasicTest {
         System.err.printf("streamTest %b to %s\n" , secure, uri);
 
         HttpClient client = getClient();
-        Path src = TestUtil.getAFile(FILESIZE * 4);
+        Path src = TestUtil.tempFileOfSize(FILESIZE * 4);
         HttpRequest req = HttpRequest.newBuilder(uri)
                                      .POST(BodyPublishers.ofFile(src))
                                      .build();
@@ -265,7 +265,7 @@ public class BasicTest {
         // Do loops asynchronously
 
         CompletableFuture[] responses = new CompletableFuture[LOOPS];
-        final Path source = TestUtil.getAFile(FILESIZE);
+        final Path source = TestUtil.tempFileOfSize(FILESIZE);
         HttpRequest request = HttpRequest.newBuilder(uri)
                                          .POST(BodyPublishers.ofFile(source))
                                          .build();
