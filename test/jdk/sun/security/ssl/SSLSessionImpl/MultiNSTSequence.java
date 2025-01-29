@@ -115,8 +115,8 @@ public class MultiNSTSequence {
         }
 
         TLSBase.Server server = new TLSBase.Server();
-
-        System.out.println("------  Initial connection");
+        server.serverLatch.await();
+        System.out.println("------  Server ready, starting initial client.");
         TLSBase.Client initial = new TLSBase.Client();
 
         SSLSession initialSession = initial.connect().getSession();

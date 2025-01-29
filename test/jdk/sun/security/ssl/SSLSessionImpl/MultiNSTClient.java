@@ -127,8 +127,8 @@ public class MultiNSTClient {
         }
 
         TLSBase.Server server = new TLSBase.Server();
-
-        System.out.println("------  Start connection");
+        server.serverLatch.await();
+        System.out.println("------  Server ready, starting original client.");
         TLSBase.Client initial = new TLSBase.Client();
         SSLSession initialSession = initial.connect().getSession();
         System.out.println("id = " + hex.formatHex(initialSession.getId()));
