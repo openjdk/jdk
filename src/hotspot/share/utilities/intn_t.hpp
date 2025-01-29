@@ -47,9 +47,10 @@ public:
   explicit constexpr intn_t(int v) : _v(v) {}
   constexpr intn_t() : _v(0) {}
   constexpr intn_t(const intn_t&) = default;
+  constexpr intn_t& operator=(const intn_t&) = default;
   explicit constexpr intn_t(uintn_t<n> v);
 
-  operator int() const {
+  constexpr operator int() const {
     int shift = 32 - n;
     return int(_v << shift) >> shift;
   }
@@ -87,8 +88,9 @@ public:
   explicit constexpr uintn_t(int v) : _v(v) {}
   constexpr uintn_t() : _v(0) {}
   constexpr uintn_t(const uintn_t&) = default;
+  constexpr uintn_t& operator=(const uintn_t&) = default;
   explicit constexpr uintn_t(intn_t<n> v) : _v(v._v) {}
-  operator uint() const { return _v & _mask; }
+  constexpr operator uint() const { return _v & _mask; }
 
   constexpr static int min = 0;
   constexpr static int max = _mask;
