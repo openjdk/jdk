@@ -290,7 +290,7 @@ public class DeferredLintHandler {
     private class LexicalDeferralMapper extends TreeScanner {
 
         private JCTree[] declMap;
-        private int currentDeferral;
+        private int nextDeferral;
 
         void mapLexicalDeferrals(JCCompilationUnit tree) {
 
@@ -300,7 +300,7 @@ public class DeferredLintHandler {
 
             // Initialize our mapping table
             declMap = new JCTree[parsingDeferrals.size()];
-            currentDeferral = 0;
+            nextDeferral = 0;
 
             // Scan declarations and map lexical deferrals to them
             try {
@@ -348,34 +348,39 @@ public class DeferredLintHandler {
             int minPos = TreeInfo.getStartPos(decl);
             int maxPos = TreeInfo.endPos(decl);
 
-            // Skip forward through lexical deferrals until we hit this declaration
-            while (true) {
+            // Find those lexical deferrals that overlap this declaration and map them
+            int numMatches = 0;
+            while (nextDeferral + numMatches < parsingDeferrals.size()) {
 
-                // We can stop scanning once we pass the last lexical deferral
-                if (currentDeferral >= parsingDeferrals.size()) {
-                    throw new ShortCircuitException();
+                // Where is this declaration relative to the next lexical deferral?
+                Deferral deferral = parsingDeferrals.get(nextDeferral + numMatches);
+                int relativePosition = deferral.compareToRange(minPos, maxPos);
+
+                // If it's before it, then this declaration overlaps nothing in the list. This only
+                // happens with the initial declarations; after that, declarations always stay ahead.
+                // Keep recursing forward through the source code.
+                if (relativePosition > 0) {
+                    break;
                 }
 
-                // Get the deferral currently under consideration
-                Deferral deferral = parsingDeferrals.get(currentDeferral);
-
-                // Is its position prior to this declaration?
-                int relativePosition = deferral.compareToRange(minPos, maxPos);
+                // If it's after it, advance through the deferral list until we catch up with it
                 if (relativePosition < 0) {
-                    currentDeferral++;      // already past it
+                    Assert.check(numMatches == 0);
+                    nextDeferral++;
                     continue;
                 }
 
-                // Is its position after this declaration?
-                if (relativePosition > 0) {
-                    break;                  // stop for now; a subsequent declaration might match
-                }
+                // The deferral is contained within this declaration, so map it to the declaration,
+                // and continue doing so for all immediately following deferrals that also match.
+                // Note, this declaration may not be the innermost containing declaration; if not,
+                // the narrower declaration(s) that follow will overwrite and correct the mapping.
+                declMap[nextDeferral + numMatches] = decl;
+                numMatches++;
+            }
 
-                // Deferral's position is within this declaration - we should map it.
-                // Note this declaration may not be the innermost containing declaration,
-                // but if not, that's OK: the narrower declaration will follow and overwrite.
-                declMap[currentDeferral] = decl;
-                break;
+            // Have we mapped all of the lexical deferrals? If so don't bother going any further.
+            if (nextDeferral >= parsingDeferrals.size()) {
+                throw new ShortCircuitException();
             }
 
             // Recurse
