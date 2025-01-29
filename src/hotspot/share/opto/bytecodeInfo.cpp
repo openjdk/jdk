@@ -169,7 +169,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
 
     max_inline_size = C->freq_inline_size();
     if (size <= max_inline_size && TraceFrequencyInlining) {
-      outputStream *stream = C->inline_printer()->record(callee_method, caller_jvms, InliningResult::SUCCESS);
+      outputStream* stream = C->inline_printer()->record(callee_method, caller_jvms, InliningResult::SUCCESS);
       stream->print("Inlined frequent method (freq=%lf):", freq);
     }
   } else {
