@@ -42,7 +42,8 @@ default:
 ##############################################################################
 
 # Include our helper functions.
-include $(topdir)/make/InitSupport.gmk
+include $(topdir)/make/PreInitSupport.gmk
+include $(topdir)/make/BothInitSupport.gmk
 
 # Here are "global" targets, i.e. targets that can be executed without having
 # a configuration. This will define ALL_GLOBAL_TARGETS.

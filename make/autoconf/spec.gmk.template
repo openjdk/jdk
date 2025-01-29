@@ -137,7 +137,7 @@ SOURCE_DATE := @SOURCE_DATE@
 ISO_8601_FORMAT_STRING := @ISO_8601_FORMAT_STRING@
 
 ifneq ($(SOURCE_DATE), updated)
-  # For "updated" source date value, these are set in InitSupport.gmk
+  # For "updated" source date value, these are set in SpecInitSupport.gmk
   export SOURCE_DATE_EPOCH := $(SOURCE_DATE)
   SOURCE_DATE_ISO_8601 := @SOURCE_DATE_ISO_8601@
 endif

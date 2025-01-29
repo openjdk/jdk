@@ -46,7 +46,8 @@ default:
 include $(SPEC)
 
 # Our helper functions.
-include $(TOPDIR)/make/InitSupport.gmk
+include $(TOPDIR)/make/SpecInitSupport.gmk
+include $(TOPDIR)/make/BothInitSupport.gmk
 
 # Parse COMPARE_BUILD (for makefile development)
 $(eval $(call ParseCompareBuild))
