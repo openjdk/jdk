@@ -85,15 +85,16 @@ public class TestZoneOffset extends AbstractTest {
 
     @Test
     public void test_quarter_cache() throws Exception {
-        for (int hour = -18; hour < 18; hour++) {
-            for (int minutes = 0; minutes < 60; minutes += 15) {
-                int totalSeconds = hour * 3600 + minutes * 60;
-                var offset0 = ZoneOffset.ofTotalSeconds(totalSeconds);
-                var offset1 = ZoneOffset.ofTotalSeconds(totalSeconds);
-                var offset2 = ZoneOffset.ofTotalSeconds(totalSeconds);
-                assertSame(offset0, offset1);
-                assertSame(offset1, offset2);
-            }
+        // [-18:00, +18:00]
+        int quarter = 15 * 60;
+        int start = -18 * 3600,
+            end   =  18 * 3600;
+        for (int totalSeconds = start; totalSeconds <= end; totalSeconds += quarter) {
+            var offset0 = ZoneOffset.ofTotalSeconds(totalSeconds);
+            var offset1 = ZoneOffset.ofTotalSeconds(totalSeconds);
+            var offset2 = ZoneOffset.ofTotalSeconds(totalSeconds);
+            assertSame(offset0, offset1);
+            assertSame(offset1, offset2);
         }
     }
 
