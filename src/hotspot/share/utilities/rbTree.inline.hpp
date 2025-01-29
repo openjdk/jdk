@@ -26,9 +26,9 @@
 #define SHARE_UTILITIES_RBTREE_INLINE_HPP
 
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/rbTree.hpp"
-#include <utility> // for std::swap
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::replace_child(
@@ -186,11 +186,11 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::verify(
 #endif // ASSERT
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
-RBTree<K, V, COMPARATOR, ALLOCATOR>::find_node(const K& k) {
+inline const typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
+RBTree<K, V, COMPARATOR, ALLOCATOR>::find_node(const K& key) const {
   RBNode* curr = _root;
   while (curr != nullptr) {
-    const int key_cmp_k = COMPARATOR::cmp(k, curr->key());
+    const int key_cmp_k = COMPARATOR::cmp(key, curr->key());
 
     if (key_cmp_k == 0) {
       return curr;
@@ -206,19 +206,19 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::find_node(const K& k) {
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
-RBTree<K, V, COMPARATOR, ALLOCATOR>::insert_node(const K& k, const V& v) {
+RBTree<K, V, COMPARATOR, ALLOCATOR>::insert_node(const K& key, const V& val) {
   RBNode* curr = _root;
   if (curr == nullptr) { // Tree is empty
-    _root = allocate_node(k, v);
+    _root = allocate_node(key, val);
     return _root;
   }
 
   RBNode* parent = nullptr;
   while (curr != nullptr) {
-    const int key_cmp_k = COMPARATOR::cmp(k, curr->key());
+    const int key_cmp_k = COMPARATOR::cmp(key, curr->key());
 
     if (key_cmp_k == 0) {
-      curr->_value = v;
+      curr->_value = val;
       return curr;
     }
 
@@ -231,10 +231,10 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::insert_node(const K& k, const V& v) {
   }
 
   // Create and insert new node
-  RBNode* node = allocate_node(k, v);
+  RBNode* node = allocate_node(key, val);
   node->set_parent(parent);
 
-  const int key_cmp_k = COMPARATOR::cmp(k, parent->key());
+  const int key_cmp_k = COMPARATOR::cmp(key, parent->key());
   if (key_cmp_k < 0) {
     parent->_left = node;
   } else {
@@ -450,8 +450,8 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(RBNode* node) {
 
     if (_root == node) _root = curr;
 
-    std::swap(curr->_left, node->_left);
-    std::swap(curr->_parent, node->_parent); // Swaps parent and color
+    swap(curr->_left, node->_left);
+    swap(curr->_parent, node->_parent); // Swaps parent and color
 
     // If node is curr's parent, parent and right pointers become invalid
     if (node->_right == curr) {
@@ -459,7 +459,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(RBNode* node) {
       node->set_parent(curr);
       curr->_right = node;
     } else {
-      std::swap(curr->_right, node->_right);
+      swap(curr->_right, node->_right);
       node->parent()->replace_child(curr, node);
       curr->_right->set_parent(curr);
     }
@@ -497,9 +497,9 @@ template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 template <typename F>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_range_in_order(const K& from, const K& to, F f) {
   assert(COMPARATOR::cmp(from, to) <= 0, "from must be less or equal to to");
-  RBNode* curr = closest_gt(from, BoundMode::INCLUSIVE);
+  RBNode* curr = closest_geq(from);
   if (curr == nullptr) return;
-  RBNode* end = closest_gt(to, BoundMode::INCLUSIVE);
+  RBNode* end = closest_geq(to);
 
   while (curr != nullptr && curr != end) {
     f(curr);

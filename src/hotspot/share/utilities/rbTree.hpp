@@ -76,11 +76,11 @@ public:
     void set_red() { _parent &= ~0x1; }
 
     RBNode* parent() const { return (RBNode*)(_parent & ~0x1); }
-    void set_parent(RBNode* new_parent) {_parent = (_parent & 0x1) | ((uintptr_t)new_parent & ~0x1); }
+    void set_parent(RBNode* new_parent) { _parent = (_parent & 0x1) | (uintptr_t)new_parent; }
 
-    RBNode(const K& k, const V& v DEBUG_ONLY(COMMA bool visited))
+    RBNode(const K& key, const V& val DEBUG_ONLY(COMMA bool visited))
         : _parent(0), _left(nullptr), _right(nullptr),
-          _key(k), _value(v) DEBUG_ONLY(COMMA _visited(visited)) {}
+          _key(key), _value(val) DEBUG_ONLY(COMMA _visited(visited)) {}
 
     bool is_right_child() const {
       return parent() != nullptr && parent()->_right == this;
@@ -115,11 +115,11 @@ private:
   RBNode* _root;
   DEBUG_ONLY(bool _expected_visited);
 
-  RBNode* allocate_node(const K& k, const V& v) {
+  RBNode* allocate_node(const K& key, const V& val) {
     void* node_place = _allocator.allocate(sizeof(RBNode));
     assert(node_place != nullptr, "rb-tree allocator must exit on failure");
     _num_nodes++;
-    return new (node_place) RBNode(k, v DEBUG_ONLY(COMMA _expected_visited));
+    return new (node_place) RBNode(key, val DEBUG_ONLY(COMMA _expected_visited));
   }
 
   void free_node(RBNode* node) {
@@ -139,7 +139,7 @@ private:
 
 
   // If the node with key k already exist, the value is updated instead.
-  RBNode* insert_node(const K& k, const V& v);
+  RBNode* insert_node(const K& key, const V& val);
 
   void fix_insert_violations(RBNode* node);
 
@@ -160,15 +160,15 @@ public:
 
   // Inserts a node with the given k/v into the tree,
   // if the key already exist, the value is updated instead.
-  void upsert(const K& k, const V& v) {
-    RBNode* node = insert_node(k, v);
+  void upsert(const K& key, const V& val) {
+    RBNode* node = insert_node(key, val);
     fix_insert_violations(node);
   }
 
   // Removes the node with the given key from the tree if it exists.
   // Returns true if the node was successfully removed, false otherwise.
-  bool remove(const K& k) {
-    RBNode* node = find_node(k);
+  bool remove(const K& key) {
+    RBNode* node = find_node(key);
     if (node == nullptr){
       return false;
     }
@@ -196,17 +196,13 @@ public:
     _root = nullptr;
   }
 
-  // Alters behaviour of closest_(leq/gt) functions to include/exclude the exact value
-  enum BoundMode : uint8_t { EXCLUSIVE, INCLUSIVE };
-
   // Finds the node with the closest key <= the given key
-  // Change mode to EXCLUSIVE to not include node matching key
-  RBNode* closest_leq(const K& key, BoundMode mode = INCLUSIVE) {
+  const RBNode* closest_leq(const K& key) const {
     RBNode* candidate = nullptr;
     RBNode* pos = _root;
     while (pos != nullptr) {
       const int cmp_r = COMPARATOR::cmp(pos->key(), key);
-      if (mode == INCLUSIVE && cmp_r == 0) { // Exact match
+      if (cmp_r == 0) { // Exact match
         candidate = pos;
         break; // Can't become better than that.
       }
@@ -222,13 +218,29 @@ public:
   }
 
   // Finds the node with the closest key > the given key
-  // Change mode to INCLUSIVE to include node matching key
-  RBNode* closest_gt(const K& key, BoundMode mode = EXCLUSIVE) {
+  const RBNode* closest_gt(const K& key) const {
     RBNode* candidate = nullptr;
     RBNode* pos = _root;
     while (pos != nullptr) {
       const int cmp_r = COMPARATOR::cmp(pos->key(), key);
-      if (mode == INCLUSIVE && cmp_r == 0) { // Exact match
+      if (cmp_r > 0) {
+        // Found a match, try to find a better one.
+        candidate = pos;
+        pos = pos->_left;
+      } else {
+        pos = pos->_right;
+      }
+    }
+    return candidate;
+  }
+
+  // Finds the node with the closest key >= the given key
+  const RBNode* closest_geq(const K& key) const {
+    RBNode* candidate = nullptr;
+    RBNode* pos = _root;
+    while (pos != nullptr) {
+      const int cmp_r = COMPARATOR::cmp(pos->key(), key);
+      if (cmp_r == 0) { // Exact match
         candidate = pos;
         break; // Can't become better than that.
       }
@@ -243,12 +255,19 @@ public:
     return candidate;
   }
 
-  const RBNode* closest_leq(const K& k, BoundMode mode = INCLUSIVE) const {
-    return const_cast<RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->closest_leq(k, mode);
+  RBNode* closest_leq(const K& key) {
+    return const_cast<RBNode*>(
+        static_cast<const RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->closest_leq(key));
   }
 
-  const RBNode* closest_gt(const K& k, BoundMode mode = EXCLUSIVE) const {
-    return const_cast<RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->closest_gt(k, mode);
+  RBNode* closest_gt(const K& key) {
+    return const_cast<RBNode*>(
+        static_cast<const RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->closest_gt(key));
+  }
+
+  RBNode* closest_geq(const K& key) {
+    return const_cast<RBNode*>(
+        static_cast<const RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->closest_geq(key));
   }
 
   struct Range {
@@ -261,17 +280,18 @@ public:
   // Return the range [start, end)
   // where start->key() <= addr < end->key().
   // Failure to find the range leads to start and/or end being null.
-  Range find_enclosing_range(K addr) {
-    RBNode* start = closest_leq(addr);
-    RBNode* end = closest_gt(addr);
+  Range find_enclosing_range(K key) {
+    RBNode* start = closest_leq(key);
+    RBNode* end = closest_gt(key);
     return Range(start, end);
   }
 
   // Finds the node associated with the key
-  RBNode* find_node(const K& k);
+  const RBNode* find_node(const K& key) const;
 
-  const RBNode* find_node(const K& k) const {
-    return const_cast<RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->find_node(k);
+  RBNode* find_node(const K& key) {
+    return const_cast<RBNode*>(
+        static_cast<const RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->find_node(key));
   }
 
   // Finds the value associated with the key
