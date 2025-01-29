@@ -194,16 +194,22 @@ void FrameMap::initialize() {
   map_register(i, r25); r25_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, r26); r26_opr = LIR_OprFact::single_cpu(i); i++;
 
+  // r27 is allocated conditionally. With compressed oops it holds
+  // the heapbase value and is not visible to the allocator.
+  bool preserve_rheapbase = i >= nof_caller_save_cpu_regs();
+  if (!preserve_rheapbase) {
+    map_register(i, r27); r27_opr = LIR_OprFact::single_cpu(i); i++; // rheapbase
+  }
+
   if(!PreserveFramePointer) {
     map_register(i, r29); r29_opr = LIR_OprFact::single_cpu(i); i++;
   }
 
-  // r27 is allocated conditionally. With compressed oops it holds
-  // the heapbase value and is not visible to the allocator.
-  map_register(i, r27); r27_opr = LIR_OprFact::single_cpu(i); i++; // rheapbase
-
   // The unallocatable registers are at the end
 
+  if (preserve_rheapbase) {
+    map_register(i, r27); r27_opr = LIR_OprFact::single_cpu(i); i++; // rheapbase
+  }
   map_register(i, r28); r28_opr = LIR_OprFact::single_cpu(i); i++; // rthread
   if(PreserveFramePointer) {
     map_register(i, r29); r29_opr = LIR_OprFact::single_cpu(i); i++; // rfp
