@@ -112,16 +112,20 @@ inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj)) {
-      // Corner case: when evacuation fails, there are objects in collection
-      // set that are not really forwarded. We can still go and try and update them
-      // (uselessly) to simplify the common path.
-      shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-      shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
+    if (in_collection_set(obj) && obj->is_forwarded()) {
+      if (obj->is_self_forwarded()) {
+        obj->unset_self_forwarded();
+      } else {
+        // Corner case: when evacuation fails, there are objects in collection
+        // set that are not really forwarded. We can still go and try and update them
+        // (uselessly) to simplify the common path.
+        shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
+        oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+        // shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
-      // Unconditionally store the update: no concurrent updates expected.
-      RawAccess<IS_NOT_NULL>::oop_store(p, fwd);
+        // Unconditionally store the update: no concurrent updates expected.
+        RawAccess<IS_NOT_NULL>::oop_store(p, fwd);
+      }
     }
   }
 }
@@ -131,21 +135,32 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj)) {
-      // Corner case: when evacuation fails, there are objects in collection
-      // set that are not really forwarded. We can still go and try CAS-update them
-      // (uselessly) to simplify the common path.
-      shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-      shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
+    if (in_collection_set(obj) && obj->is_forwarded()) {
+      if (obj->is_self_forwarded()) {
+        // Everything in the collection set should be forwarded (either to itself,
+        // or to somewhere else). Not sure if we want to clear self-forwarded headers
+        // here or later, after we take the failed region out of the collection set.
+        obj->unset_self_forwarded();
+      } else {
+        // Corner case: when evacuation fails, there are objects in collection
+        // set that are not really forwarded. We can still go and try CAS-update them
+        // (uselessly) to simplify the common path.
+        shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
+        oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+        shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
-      // Sanity check: we should not be updating the cset regions themselves,
-      // unless we are recovering from the evacuation failure.
-      shenandoah_assert_not_in_cset_loc_except(p, !is_in(p) || cancelled_gc());
+        // Sanity check: we should not be updating the cset regions themselves,
+        // unless we are recovering from the evacuation failure.
+        //
+        // We _might_ be updating regions in the cset if there was an evacuation
+        // failure. Objects that could not be evacuated will be self forwarded and
+        // may hold references to objects that _were_ successfully evacuated.
+        // shenandoah_assert_not_in_cset_loc_except(p, !is_in(p) || cancelled_gc());
 
-      // Either we succeed in updating the reference, or something else gets in our way.
-      // We don't care if that is another concurrent GC update, or another mutator update.
-      atomic_update_oop(fwd, p, obj);
+        // Either we succeed in updating the reference, or something else gets in our way.
+        // We don't care if that is another concurrent GC update, or another mutator update.
+        atomic_update_oop(fwd, p, obj);
+      }
     }
   }
 }

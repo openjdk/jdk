@@ -1323,7 +1323,17 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     // _oom_evac_handler.handle_out_of_memory_during_evacuation();
     ShenandoahForwarding::try_forward_to_self(p);
 
-    collection_set()->remove_region(heap_region_containing(p));
+    // Leave the region in the collection set. Other threads may still be able to evacuate
+    // objects (and we may yet still be able to allocate from this region). Update references
+    // looks for objects in the collection set to find forwarding pointers. Some objects in
+    // this region may still be evacuated and still need to have references to them updated.
+    //
+    // However, we must still indicate that this region contains objects that were not evacuated
+    // because we cannot simply obliterate this region now.
+    ShenandoahHeapRegion* r = heap_region_containing(p);
+    r->set_has_evacuation_failures(true);
+
+    // collection_set()->remove_region(heap_region_containing(p));
 
     return ShenandoahBarrierSet::resolve_forwarded(p);
   }
@@ -1371,7 +1381,11 @@ void ShenandoahHeap::trash_cset_regions() {
   ShenandoahHeapRegion* r;
   set->clear_current_index();
   while ((r = set->next()) != nullptr) {
-    r->make_trash();
+    if (r->has_evacuation_failures()) {
+      r->make_regular_allocation(r->affiliation());
+    } else {
+      r->make_trash();
+    }
   }
   collection_set()->clear();
 }
@@ -2408,7 +2422,7 @@ private:
     while (r != nullptr) {
       HeapWord* update_watermark = r->get_update_watermark();
       assert (update_watermark >= r->bottom(), "sanity");
-      if (r->is_active() && !r->is_cset()) {
+      if (r->is_active() || r->is_cset()) {
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
         if (ShenandoahPacing) {
           _heap->pacer()->report_update_refs(pointer_delta(update_watermark, r->bottom()));

@@ -81,7 +81,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
 #ifdef SHENANDOAH_CENSUS_NOISE
   , _youth(0)
 #endif // SHENANDOAH_CENSUS_NOISE
-  {
+  , _has_evacuation_failures(false) {
 
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
          "invalid space boundaries");
@@ -109,6 +109,11 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
       set_state(_regular);
     case _regular:
     case _pinned:
+      return;
+    case _cset:
+      assert(has_evacuation_failures(), "Can only become regular region if there were evacuation failures");
+      set_has_evacuation_failures(false);
+      set_state(_regular);
       return;
     default:
       report_illegal_transition("regular allocation");
@@ -142,10 +147,10 @@ void ShenandoahHeapRegion::make_affiliated_maybe() {
 
 void ShenandoahHeapRegion::make_regular_bypass() {
   shenandoah_assert_heaplocked();
-  // assert (!Universe::is_fully_initialized() ||
-  //         ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-  //         ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
-  //         "Only for STW GC or when Universe is initializing (CDS)");
+  assert (!Universe::is_fully_initialized() ||
+          ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+          ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
+          "Only for STW GC or when Universe is initializing (CDS)");
   reset_age();
   auto cur_state = state();
   switch (cur_state) {
@@ -300,6 +305,7 @@ void ShenandoahHeapRegion::make_cset() {
 
 void ShenandoahHeapRegion::make_trash() {
   shenandoah_assert_heaplocked();
+  assert(!has_evacuation_failures(), "Should not have evacuation failures");
   reset_age();
   switch (state()) {
     case _humongous_start:

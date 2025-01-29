@@ -266,6 +266,8 @@ private:
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
+  bool _has_evacuation_failures;
+
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
 
@@ -476,6 +478,14 @@ public:
   }
 
   CENSUS_NOISE(void clear_youth() { _youth = 0; })
+
+  void set_has_evacuation_failures(bool value) {
+    _has_evacuation_failures = value;
+  }
+
+  bool has_evacuation_failures() const {
+    return _has_evacuation_failures;
+  }
 
 private:
   void decrement_humongous_waste() const;
