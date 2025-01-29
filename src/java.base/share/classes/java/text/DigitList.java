@@ -104,7 +104,6 @@ final class DigitList implements Cloneable {
     public int count = 0;
     public char[] digits = new char[MAX_COUNT];
 
-    private FloatingDecimal.BinaryToASCIIConverter fdConverter;
     private byte[] data;
     private RoundingMode roundingMode = RoundingMode.HALF_EVEN;
     private boolean isNegative = false;
@@ -309,7 +308,7 @@ final class DigitList implements Cloneable {
             chars = new byte[] {'0'};
             len = 1;
         } else {
-            fdConverter = FloatingDecimal.getBinaryToASCIIConverter(fdConverter, source);
+            var fdConverter = FloatingDecimal.getBinaryToASCIIConverter(source);
             hasBeenRoundedUp = fdConverter.digitsRoundedUp();
             valueExactAsDecimal = fdConverter.decimalDigitsExact();
             chars = getDataChars(20);
