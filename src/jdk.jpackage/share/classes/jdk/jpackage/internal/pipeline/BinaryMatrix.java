@@ -58,6 +58,23 @@ final class BinaryMatrix {
         this.values = Optional.ofNullable(values).orElseGet(() -> new BitSet(size));
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(columns, rows, values);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        BinaryMatrix other = (BinaryMatrix) obj;
+        return columns == other.columns && rows == other.rows && Objects.equals(values, other.values);
+    }
+
     interface Cursor {
         int row();
 

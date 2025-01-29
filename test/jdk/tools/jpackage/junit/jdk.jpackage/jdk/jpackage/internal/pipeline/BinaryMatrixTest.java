@@ -24,16 +24,21 @@
 package jdk.jpackage.internal.pipeline;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -156,6 +161,8 @@ final class BinaryMatrixTest {
 
                 final var split = getSpliterator(matrix);
                 assertEquals(expected, readSelection(split::forEachRemaining));
+
+                assertThrows(NoSuchElementException.class, it::next);
             }
         }
 
@@ -246,6 +253,133 @@ final class BinaryMatrixTest {
                 SelectionTest.createColumn(3, 2, 2),
                 SelectionTest.createColumn(3, 2, 12)
         );
+    }
+
+    record SetValueTest(MatrixSpec matrixSpec, int row, int column, Boolean expected) {
+
+        static SetValueTest create(int rows, int columns, String encodedMatrixData, int row, int column, boolean expected) {
+            return new SetValueTest(new MatrixSpec(rows, columns, encodedMatrixData), row, column, expected);
+        }
+
+        static SetValueTest create(int rows, int columns, int row, int column) {
+            return new SetValueTest(new MatrixSpec(rows, columns), row, column, null);
+        }
+
+        void test() {
+            final var matrix = matrixSpec.createMatrix();
+            final var matrixCopy = matrixSpec.createMatrix();
+            if (expected == null) {
+                assertThrows(IndexOutOfBoundsException.class, () -> matrix.set(row, column));
+                assertEquals(matrixCopy, matrix);
+
+                assertThrows(IndexOutOfBoundsException.class, () -> matrix.set(row, column, true));
+                assertEquals(matrixCopy, matrix);
+
+                assertThrows(IndexOutOfBoundsException.class, () -> matrix.set(row, column, false));
+                assertEquals(matrixCopy, matrix);
+
+                assertThrows(IndexOutOfBoundsException.class, () -> matrix.unset(row, column));
+                assertEquals(matrixCopy, matrix);
+
+                assertThrows(IndexOutOfBoundsException.class, () -> matrix.isSet(row, column));
+                assertEquals(matrixCopy, matrix);
+            } else {
+                assertEquals(expected, matrix.isSet(row, column));
+
+                matrix.set(row, column, expected);
+                assertEquals(expected, matrix.isSet(row, column));
+                assertEquals(matrixCopy, matrix);
+
+                if (expected) {
+                    matrix.set(row, column);
+                } else {
+                    matrix.unset(row, column);
+                }
+                assertEquals(expected, matrix.isSet(row, column));
+                assertEquals(matrixCopy, matrix);
+
+                matrix.set(row, column, !expected);
+                assertNotEquals(expected, matrix.isSet(row, column));
+                assertNotEquals(matrixCopy, matrix);
+
+                if (expected) {
+                    matrix.set(row, column);
+                } else {
+                    matrix.unset(row, column);
+                }
+                assertEquals(expected, matrix.isSet(row, column));
+                assertEquals(matrixCopy, matrix);
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testSetValue(SetValueTest testSpec) {
+        testSpec.test();
+    }
+
+    private static List<SetValueTest> testSetValue() {
+        final List<SetValueTest> data = new ArrayList<>();
+
+        data.addAll(List.of(
+                SetValueTest.create(1, 1, "0", 0, 0, false),
+                SetValueTest.create(1, 1, "1", 0, 0, true),
+
+                SetValueTest.create(3, 2, -1, 0),
+                SetValueTest.create(3, 2, 3, 0),
+                SetValueTest.create(3, 2, 12, 0),
+
+                SetValueTest.create(3, 2, 0, -1),
+                SetValueTest.create(3, 2, 0, 2),
+                SetValueTest.create(3, 2, 0, 12),
+
+                SetValueTest.create(3, 2, 3, 2)
+        ));
+
+        final var matrixData = new boolean[3][5];
+        matrixData[0] = new boolean[] { false, true, false, true, true };
+        matrixData[1] = new boolean[] { true, false, true, false, true };
+        matrixData[2] = new boolean[] { false, false, true, false, false };
+
+        final var sb = new StringBuilder();
+        for (int i = 0; i != 3; ++i) {
+            for (int j = 0; j != 5; ++j) {
+                sb.append(matrixData[i][j] ? '1' : '0');
+            }
+        }
+
+        final var encodedMatrixData = sb.toString();
+        for (int i = 0; i != 3; ++i) {
+            for (int j = 0; j != 5; ++j) {
+                data.add(SetValueTest.create(3, 5, encodedMatrixData, i, j, matrixData[i][j]));
+            }
+        }
+
+        return data;
+    }
+
+    @Test
+    public void testEquals() {
+        final var matrixSpec = new MatrixSpec(2, 3, "001" + "101");
+
+        final var a = matrixSpec.createMatrix();
+        final var b = matrixSpec.createMatrix();
+
+        assertTrue(a.equals(b));
+        assertTrue(a.equals(a));
+        assertFalse(a.equals(null));
+        assertFalse(a.equals(matrixSpec));
+    }
+
+    @Test
+    public void testHashCode() {
+        final var matrixSpec2x3 = new MatrixSpec(2, 3);
+
+        assertEquals(matrixSpec2x3.createMatrix().hashCode(), matrixSpec2x3.createMatrix().hashCode());
+
+        final var matrixSpec3x2 = new MatrixSpec(3, 2);
+        assertNotEquals(matrixSpec2x3.createMatrix().hashCode(), matrixSpec3x2.createMatrix().hashCode());
     }
 
     private static List<Boolean> conv(int... values) {

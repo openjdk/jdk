@@ -247,7 +247,7 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         // Use Kahn's algorithm from https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm to find cyclic edges
         // Variable names picked from the algorithm pseudo-code.
 
-        // Set of all nodes with no incoming edge.
+        // Nodes with no incoming edges.
         final var S = getNoIncomingEdges(edgeMatrix).mapToObj(Integer::valueOf).collect(toCollection(ArrayList::new));
 
         while (!S.isEmpty()) {
