@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import java.util.ListResourceBundle;
 import org.testng.annotations.Test;
 
 public class MigrationCheck {
+
+    // Auth
 
     @Test
     public void testAuth() throws Exception {
@@ -107,6 +109,28 @@ public class MigrationCheck {
                                 new sun.security.util.resources.auth_zh_TW());
     }
 
+    // Security
+
+    @Test
+    public void testSecurity() throws Exception {
+        checkResourcesMigration(new sun.security.util.Resources(),
+                new sun.security.util.resources.security());
+    }
+
+    @Test
+    public void testSecurity_de() throws Exception {
+        checkResourcesMigration(new sun.security.util.Resources_de(),
+                new sun.security.util.resources.security_de());
+    }
+
+    @Test
+    public void testSecurity_es() throws Exception {
+        checkResourcesMigration(new sun.security.util.Resources_es(),
+                new sun.security.util.resources.security_es());
+    }
+
+    // ResourcesMgr
+
     @Test
     public void testResourcesMgrSecurityDefault() throws Exception {
         checkResourcesMgrSecurity(new sun.security.util.Resources());
@@ -116,6 +140,8 @@ public class MigrationCheck {
     public void testResourcesMgrAuthDefault() throws Exception {
         checkResourcesMgrAuth(new sun.security.util.AuthResources());
     }
+
+    // Helper methods
 
     private static void checkResourcesMigration(ListResourceBundle fromRes,
                                                 ListResourceBundle toRes) {
