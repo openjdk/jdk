@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package jdk.httpclient.test.lib.common;
 
 import java.io.*;
 import java.nio.file.*;
-import java.util.Arrays;
 
 public class TestUtil {
 
@@ -54,31 +53,30 @@ public class TestUtil {
         }
     }
 
-    public static Void compareFiles(Path path1, Path path2) {
-        //System.err.printf("Comparing %s and %s\n", path1.toString(), path2.toString());
-        try {
-            long size1 = Files.size(path1);
-            long size2 = Files.size(path2);
-            if (size1 != size2) {
-                String msg = "File sizes do not match " +
-                        Long.toString(size1) + "/" + Long.toString(size2);
-                throw new RuntimeException(msg);
+    public static void assertFilesEqual(Path f1, Path f2) {
+        try (InputStream s1 = new BufferedInputStream(Files.newInputStream(f1));
+             InputStream s2 = new BufferedInputStream(Files.newInputStream(f2))) {
+            for (long i = 0; ; i++) {
+                int c1 = s1.read();
+                int c2 = s2.read();
+                String message = null;
+                if (c1 == -1 && c2 == -1) {
+                    break;
+                } else if (c1 == -1) {
+                    message = String.format("At index %d, `%s` reached EOF, while `%s` did not", i, f1, f2);
+                } else if (c2 == -1) {
+                    message = String.format("At index %d, `%s` reached EOF, while `%s` did not", i, f2, f1);
+                } else if (c1 != c2) {
+                    message = String.format(
+                            "At index %d, `%s` has `%s`, while `%s` has `%s`",
+                            i, f1, Character.toString(c1), f2, Character.toString(c2));
+                }
+                if (message != null) {
+                    throw new AssertionError(message);
+                }
             }
-            compareContents(path1, path2);
-            return null;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    static void compareContents(Path path1, Path path2) {
-        try {
-            byte[] b1 = Files.readAllBytes(path1);
-            byte[] b2 = Files.readAllBytes(path2);
-            if (!Arrays.equals(b1, b2))
-                throw new RuntimeException ("Files do not match");
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,11 @@ import java.util.List;
 import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static jdk.httpclient.test.lib.common.TestUtil.assertFilesEqual;
 
 @Test
 public class BasicTest {
@@ -184,10 +184,6 @@ public class BasicTest {
         }
     }
 
-    static Void compareFiles(Path path1, Path path2) {
-        return TestUtil.compareFiles(path1, path2);
-    }
-
     static Path tempFile() {
         return TestUtil.tempFile();
     }
@@ -216,7 +212,7 @@ public class BasicTest {
                     return resp.body();
                 });
         response.join();
-        compareFiles(src, dest);
+        assertFilesEqual(src, dest);
         System.err.println("streamTest: DONE");
     }
 
@@ -279,7 +275,8 @@ public class BasicTest {
                 .thenApply(resp -> {
                     System.out.printf("Resp status %d body size %d\n",
                                       resp.statusCode(), resp.body().toFile().length());
-                    return compareFiles(resp.body(), source);
+                    assertFilesEqual(resp.body(), source);
+                    return null;
                 });
             Thread.sleep(100);
         }

@@ -39,10 +39,11 @@ import java.nio.file.*;
 import java.util.concurrent.*;
 import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static jdk.httpclient.test.lib.common.TestUtil.assertFilesEqual;
+
 import org.testng.annotations.Test;
 
 @Test
@@ -142,10 +143,6 @@ public class FixedThreadPoolTest {
         }
     }
 
-    static Void compareFiles(Path path1, Path path2) {
-        return TestUtil.compareFiles(path1, path2);
-    }
-
     static Path tempFile() {
         return TestUtil.tempFile();
     }
@@ -174,7 +171,7 @@ public class FixedThreadPoolTest {
                     return resp.body();
                 });
         response.join();
-        compareFiles(src, dest);
+        assertFilesEqual(src, dest);
         System.err.println("DONE");
     }
 
@@ -249,7 +246,8 @@ public class FixedThreadPoolTest {
                 .thenApply(resp -> {
                     System.out.printf("Resp status %d body size %d\n",
                                       resp.statusCode(), resp.body().toFile().length());
-                    return compareFiles(resp.body(), source);
+                    assertFilesEqual(resp.body(), source);
+                    return null;
                 });
         }
         CompletableFuture.allOf(responses).join();
