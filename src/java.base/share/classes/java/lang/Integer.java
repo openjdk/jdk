@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static java.lang.Character.digit;
+import static java.lang.StringConcatHelper.newArray;
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
@@ -431,11 +432,11 @@ public final class Integer extends Number
     public static String toString(int i) {
         int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
-            byte[] buf = new byte[size];
+            byte[] buf = newArray(size);
             DecimalDigits.getCharsLatin1(i, size, buf);
             return new String(buf, LATIN1);
         } else {
-            byte[] buf = new byte[size * 2];
+            byte[] buf = newArray(size << 1);
             DecimalDigits.getCharsUTF16(i, size, buf);
             return new String(buf, UTF16);
         }
