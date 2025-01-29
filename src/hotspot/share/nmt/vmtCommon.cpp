@@ -110,6 +110,9 @@ public:
   SnapshotThreadStackWalker() {}
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
+    if (MemTracker::NmtVirtualMemoryLocker::is_safe_to_use()) {
+      assert_lock_strong(NmtVirtualMemory_lock);
+    }
     if (rgn->mem_tag() == mtThreadStack) {
       address stack_bottom = rgn->thread_stack_uncommitted_bottom();
       address committed_start;

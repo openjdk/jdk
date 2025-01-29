@@ -51,7 +51,8 @@ void ThreadStackTracker::new_thread_stack(void* base, size_t size, const NativeC
   assert(base != nullptr, "Should have been filtered");
   align_thread_stack_boundaries_inward(base, size);
 
-  MemTracker::record_virtual_memory_reserve((address)base, size, stack, mtThreadStack);
+  MemTracker::NmtVirtualMemoryLocker nvml;
+  VirtualMemoryTracker::Instance::add_reserved_region((address)base, size, stack, mtThreadStack);
   _thread_count++;
 }
 

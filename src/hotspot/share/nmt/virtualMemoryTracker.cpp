@@ -211,7 +211,7 @@ bool VirtualMemoryTracker::Instance::walk_virtual_memory(VirtualMemoryWalker* wa
 }
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
-  MemTracker::assert_locked();
+  MemTracker::NmtVirtualMemoryLocker nvml;
   tree()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
     log_info(nmt)("region in walker vmem, base: " INTPTR_FORMAT " size: %zu , %s, committed: %zu",
      p2i(rgn.base()), rgn.size(), rgn.tag_name(), rgn.committed_size());
