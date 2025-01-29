@@ -138,7 +138,7 @@ $(eval $(call SetupVariable,JIB_JAR,OPTIONAL))
 # CreateNewSpec.
 HAS_SPEC :=
 include $(TOPDIR)/make/PreInitSupport.gmk
-include $(TOPDIR)/make/BothInitSupport.gmk
+include $(TOPDIR)/make/common/LogUtils.gmk
 
 $(eval $(call CheckDeprecatedEnvironment))
 $(eval $(call CheckInvalidMakeFlags))
