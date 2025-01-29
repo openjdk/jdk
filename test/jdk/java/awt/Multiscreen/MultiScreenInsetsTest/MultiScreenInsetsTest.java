@@ -45,6 +45,8 @@ import jtreg.SkippedException;
 
 public class MultiScreenInsetsTest {
     private static final int SIZE = 100;
+    // Allow a margin tolerance of 1 pixel due to scaling
+    private static final int MARGIN_TOLERANCE = 1;
 
     public static void main(String[] args) throws InterruptedException {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -97,29 +99,14 @@ public class MultiScreenInsetsTest {
                 frameBounds.y = bounds.y;
             }
 
-            // Add a margin to compensate for the lost fractional parts
-            // when casting to an integer.
-            int marginX = getMarginForScaleX(gc);
-            int marginY = getMarginForScaleY(gc);
-
             if (bounds.x + insets.left != frameBounds.x
                 || bounds.y + insets.top != frameBounds.y
-                || bounds.width - insets.right - insets.left + marginX != frameBounds.width
-                || bounds.height - insets.bottom - insets.top + marginY != frameBounds.height) {
+                || Math.abs((bounds.width - insets.right - insets.left) - frameBounds.width) > MARGIN_TOLERANCE
+                || Math.abs((bounds.height - insets.bottom - insets.top) - frameBounds.height) > MARGIN_TOLERANCE) {
                 throw new RuntimeException("Test FAILED! Wrong screen #" +
                                            screen + " insets: " + insets);
             }
         }
         System.out.println("Test PASSED!");
-    }
-
-    private static int getMarginForScaleX(GraphicsConfiguration gc) {
-        float scaleFactorX = (float) gc.getDefaultTransform().getScaleX();
-        return (scaleFactorX % 1 == 0.5) ? 1 : 0;
-    }
-
-    private static int getMarginForScaleY(GraphicsConfiguration gc) {
-        float scaleFactorY = (float) gc.getDefaultTransform().getScaleY();
-        return (scaleFactorY % 1 == 0.5) ? 1 : 0;
     }
 }
