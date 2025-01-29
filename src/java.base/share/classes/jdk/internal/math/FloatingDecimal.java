@@ -1554,7 +1554,7 @@ public class FloatingDecimal{
         }
         binExp -= DoubleConsts.EXP_BIAS;
         if (fdConverter == null) {
-            fdConverter = new BinaryToASCIIConverter(new byte[19]);
+            fdConverter = new BinaryToASCIIConverter(new byte[20]);
         }
         // call the routine that actually does all the hard work.
         fdConverter.dtoa(binExp, fractBits, nSignificantBits);
