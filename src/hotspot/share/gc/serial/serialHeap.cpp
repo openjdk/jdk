@@ -95,6 +95,7 @@ SerialHeap::SerialHeap() :
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
     _young_manager(nullptr),
     _old_manager(nullptr),
+    _is_heap_almost_full(false),
     _eden_pool(nullptr),
     _survivor_pool(nullptr),
     _old_pool(nullptr) {
@@ -282,13 +283,12 @@ size_t SerialHeap::max_capacity() const {
 // Return true if any of the following is true:
 // . the allocation won't fit into the current young gen heap
 // . gc locker is occupied (jni critical section)
-// . heap memory is tight -- the most recent previous collection
-//   was a full collection because a partial collection (would
-//   have) failed and is likely to fail again
+// . heap memory is tight
 bool SerialHeap::should_try_older_generation_allocation(size_t word_size) const {
   size_t young_capacity = _young_gen->capacity_before_gc();
   return    (word_size > heap_word_size(young_capacity))
-         || GCLocker::is_active_and_needs_gc();
+         || GCLocker::is_active_and_needs_gc()
+         || _is_heap_almost_full;
 }
 
 HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
@@ -950,6 +950,19 @@ void SerialHeap::gc_epilogue(bool full) {
 
   _young_gen->gc_epilogue(full);
   _old_gen->gc_epilogue();
+
+  if (_is_heap_almost_full) {
+    // Reset the emergency state if eden is empty after a young/full gc
+    if (_young_gen->eden()->is_empty()) {
+      _is_heap_almost_full = false;
+    }
+  } else {
+    if (full && !_young_gen->eden()->is_empty()) {
+      // Usually eden should be empty after a full GC, so heap is probably too
+      // full now; entering emergency state.
+      _is_heap_almost_full = true;
+    }
+  }
 
   MetaspaceCounters::update_performance_counters();
 };

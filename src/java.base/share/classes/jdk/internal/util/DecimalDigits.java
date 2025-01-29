@@ -62,7 +62,7 @@ public final class DecimalDigits {
     private static final short[] DIGITS;
 
     static {
-        short[] digits = new short[10 * 10];
+        short[] digits = new short[128];
 
         for (int i = 0; i < 10; i++) {
             short hi = (short) (i + '0');
@@ -394,7 +394,7 @@ public final class DecimalDigits {
      * @param v to convert
      */
     public static void putPair(char[] buf, int charPos, int v) {
-        int packed = DIGITS[v];
+        int packed = DIGITS[v & 0x7f];
         buf[charPos    ] = (char) (packed & 0xFF);
         buf[charPos + 1] = (char) (packed >> 8);
     }
@@ -407,7 +407,7 @@ public final class DecimalDigits {
      * @param v to convert
      */
     public static void putPairLatin1(byte[] buf, int charPos, int v) {
-        int packed = DIGITS[v];
+        int packed = DIGITS[v & 0x7f];
         putCharLatin1(buf, charPos, packed & 0xFF);
         putCharLatin1(buf, charPos + 1, packed >> 8);
     }
@@ -420,7 +420,7 @@ public final class DecimalDigits {
      * @param v to convert
      */
     public static void putPairUTF16(byte[] buf, int charPos, int v) {
-        int packed = DIGITS[v];
+        int packed = DIGITS[v & 0x7f];
         putCharUTF16(buf, charPos, packed & 0xFF);
         putCharUTF16(buf, charPos + 1, packed >> 8);
     }
