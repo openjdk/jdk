@@ -3867,3 +3867,46 @@ JVM_END
 JVM_LEAF(jboolean, JVM_PrintWarningAtDynamicAgentLoad(void))
   return (EnableDynamicAgentLoading && !FLAG_IS_CMDLINE(EnableDynamicAgentLoading)) ? JNI_TRUE : JNI_FALSE;
 JVM_END
+
+
+/* jdk.internal.misc.VM */
+
+JVM_ENTRY(jlong, VM_GetCPUFeatures(JNIEnv* env))
+  return VM_Version::features();
+JVM_END
+
+JVM_ENTRY(jstring, VM_GetCPUFeaturesString(JNIEnv* env))
+//  char buf[1024];
+//  VM_Version::insert_features_names(buf, sizeof(buf), VM_Version::_features_names);
+//  const char* features = os::strdup(buf);
+  const char* features = VM_Version::features_string(); // FIXME: enumerate cpu feature only
+  ThreadToNativeFromVM ttn(thread);
+  jstring features_string = env->NewStringUTF(features);
+  return features_string;
+JVM_END
+
+JVM_ENTRY(jboolean, VM_IsIntelCPU(JNIEnv* env))
+#ifdef X86
+  return VM_Version::is_intel();
+#else
+  return JNI_FALSE;
+#endif
+JVM_END
+
+#define CC (char*)  /*cast a literal from (const char*)*/
+#define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
+
+static JNINativeMethod jdk_internal_misc_VM_methods[] = {
+    {CC "getCPUFeatures",       CC "()J", FN_PTR(VM_GetCPUFeatures)},
+    {CC "getCPUFeaturesString", CC "()Ljava/lang/String;", FN_PTR(VM_GetCPUFeaturesString)},
+    {CC "isIntelCPU",           CC "()Z", FN_PTR(VM_IsIntelCPU)},
+};
+
+#undef CC
+#undef FN_PTR
+
+JVM_ENTRY(void, JVM_RegisterMiscVMMethods(JNIEnv* env, jclass vsclass))
+  ThreadToNativeFromVM ttnfv(thread);
+  int ok = env->RegisterNatives(vsclass, jdk_internal_misc_VM_methods, sizeof(jdk_internal_misc_VM_methods)/sizeof(JNINativeMethod));
+  guarantee(ok == 0, "register jdk.internal.misc.VM natives");
+JVM_END
