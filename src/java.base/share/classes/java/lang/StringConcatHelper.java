@@ -555,9 +555,6 @@ final class StringConcatHelper {
      */
     @ForceInline
     static byte[] newArray(int length) {
-        if (length < 0) {
-            throw new OutOfMemoryError("Overflow: String length out of range");
-        }
         return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, length);
     }
 
