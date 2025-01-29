@@ -137,7 +137,7 @@ void FilenameUtil::get_timestamp_string(char* buf, size_t buf_len, jlong timesta
   struct tm local_time;
   time_t utc_time = timestamp / 1000;
   os::localtime_pd(&utc_time, &local_time);
-  int res = (int)strftime(buf, sizeof(buf), TimestampFormat, &local_time);
+  size_t res = strftime(buf, buf_len, TimestampFormat, &local_time);
   assert(res > 0, "VM start time buffer too small.");
 }
 
