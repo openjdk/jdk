@@ -308,7 +308,7 @@ final class DigitList implements Cloneable {
             chars = new char[] {'0'};
             len = 1;
         } else {
-            var fdConverter = FloatingDecimal.getBinaryToASCIIConverter(source);
+            var fdConverter = new FloatingDecimal.BinaryToASCIIConverter(source);
             hasBeenRoundedUp = fdConverter.digitsRoundedUp();
             valueExactAsDecimal = fdConverter.decimalDigitsExact();
             chars = getDataChars(20);

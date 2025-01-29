@@ -96,8 +96,8 @@ public class FloatingDecimal{
     public final static class BinaryToASCIIConverter {
         private int decExponent;
         private int firstDigitIndex;
-        private int nDigits;
-        private final char[] digits;
+        private final char[] digits = new char[19];
+        private int nDigits = digits.length;
 
         //
         // The fields below provide additional information about the result of
@@ -115,9 +115,35 @@ public class FloatingDecimal{
         /**
          * Creates a specialized value (positive and negative zeros).
          */
-        BinaryToASCIIConverter(){
-            this.digits = new char[19];
-            this.nDigits = digits.length;
+        public BinaryToASCIIConverter(double d){
+            long dBits = Double.doubleToRawLongBits(d);
+            boolean isNegative = (dBits&DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
+            assert !isNegative;
+            long fractBits = dBits & DoubleConsts.SIGNIF_BIT_MASK;
+            int  binExp = (int)( (dBits&DoubleConsts.EXP_BIT_MASK) >> EXP_SHIFT );
+            // Discover obvious special cases of NaN and Infinity.
+            if ( binExp == (int)(DoubleConsts.EXP_BIT_MASK>>EXP_SHIFT) ) {
+                assert false;
+            }
+            // Finish unpacking
+            // Normalize denormalized numbers.
+            // Insert assumed high-order bit for normalized numbers.
+            // Subtract exponent bias.
+            int  nSignificantBits;
+            if ( binExp == 0 ){
+                assert fractBits != 0L;
+                int leadingZeros = Long.numberOfLeadingZeros(fractBits);
+                int shift = leadingZeros-(63-EXP_SHIFT);
+                fractBits <<= shift;
+                binExp = 1 - shift;
+                nSignificantBits =  64-leadingZeros; // recall binExp is  - shift count.
+            } else {
+                fractBits |= FRACT_HOB;
+                nSignificantBits = EXP_SHIFT+1;
+            }
+            binExp -= DoubleConsts.EXP_BIAS;
+            // call the routine that actually does all the hard work.
+            dtoa(binExp, fractBits, nSignificantBits);
         }
 
         /**
@@ -1506,46 +1532,6 @@ public class FloatingDecimal{
 
     public static boolean isExceptional(double d) {
         return Double.isNaN(d) || Double.isInfinite(d);
-    }
-
-    /**
-     * Returns a <code>BinaryToASCIIConverter</code> for a <code>double</code>.
-     * The returned object is a <code>ThreadLocal</code> variable of this class.
-     *
-     * @param d The double precision value to convert.
-     * @return The converter.
-     */
-    public static BinaryToASCIIConverter getBinaryToASCIIConverter(double d) {
-        long dBits = Double.doubleToRawLongBits(d);
-        boolean isNegative = (dBits&DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
-        assert !isNegative;
-        long fractBits = dBits & DoubleConsts.SIGNIF_BIT_MASK;
-        int  binExp = (int)( (dBits&DoubleConsts.EXP_BIT_MASK) >> EXP_SHIFT );
-        // Discover obvious special cases of NaN and Infinity.
-        if ( binExp == (int)(DoubleConsts.EXP_BIT_MASK>>EXP_SHIFT) ) {
-            assert false;
-        }
-        // Finish unpacking
-        // Normalize denormalized numbers.
-        // Insert assumed high-order bit for normalized numbers.
-        // Subtract exponent bias.
-        int  nSignificantBits;
-        if ( binExp == 0 ){
-            assert fractBits != 0L;
-            int leadingZeros = Long.numberOfLeadingZeros(fractBits);
-            int shift = leadingZeros-(63-EXP_SHIFT);
-            fractBits <<= shift;
-            binExp = 1 - shift;
-            nSignificantBits =  64-leadingZeros; // recall binExp is  - shift count.
-        } else {
-            fractBits |= FRACT_HOB;
-            nSignificantBits = EXP_SHIFT+1;
-        }
-        binExp -= DoubleConsts.EXP_BIAS;
-        BinaryToASCIIConverter fdConverter = new BinaryToASCIIConverter();
-        // call the routine that actually does all the hard work.
-        fdConverter.dtoa(binExp, fractBits, nSignificantBits);
-        return fdConverter;
     }
 
     @SuppressWarnings("fallthrough")
