@@ -25,7 +25,6 @@
 
 package jdk.internal.math;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.regex.*;
 
@@ -124,16 +123,6 @@ public class FloatingDecimal{
             this.digits = digits;
             this.firstDigitIndex = 0;
             this.nDigits = digits.length;
-        }
-
-        /**
-         * Converts a floating point value into an ASCII <code>String</code>.
-         * @return The value converted to a <code>String</code>.
-         */
-        public String toJavaFormatString() {
-            byte[] buffer = new byte[26];
-            int len = getChars(buffer);
-            return new String(buffer, 0, len, StandardCharsets.ISO_8859_1);
         }
 
         /**
@@ -708,7 +697,11 @@ public class FloatingDecimal{
                 61,
         };
 
-        private int getChars(byte[] result) {
+        /**
+         * Converts a floating point value into an byte array
+         * @return the number of characters written to the result array
+         */
+        public int getChars(byte[] result) {
             assert nDigits <= 19 : nDigits; // generous bound on size of nDigits
             int i = 0;
             if (decExponent > 0 && decExponent < 8) {
@@ -1530,7 +1523,7 @@ public class FloatingDecimal{
      * @param d The double precision value to convert.
      * @return The converter.
      */
-    public static BinaryToASCIIConverter getBinaryToASCIIConverter(double d) {
+    public static BinaryToASCIIConverter getBinaryToASCIIConverter(BinaryToASCIIConverter fdConverter, double d) {
         long dBits = Double.doubleToRawLongBits(d);
         boolean isNegative = (dBits&DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
         assert !isNegative;
@@ -1560,10 +1553,12 @@ public class FloatingDecimal{
             nSignificantBits = EXP_SHIFT+1;
         }
         binExp -= DoubleConsts.EXP_BIAS;
-        BinaryToASCIIConverter buf = new BinaryToASCIIConverter(new byte[20]);
+        if (fdConverter == null) {
+            fdConverter = new BinaryToASCIIConverter(new byte[19]);
+        }
         // call the routine that actually does all the hard work.
-        buf.dtoa(binExp, fractBits, nSignificantBits);
-        return buf;
+        fdConverter.dtoa(binExp, fractBits, nSignificantBits);
+        return fdConverter;
     }
 
     @SuppressWarnings("fallthrough")
