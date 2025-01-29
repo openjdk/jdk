@@ -60,6 +60,9 @@ public class MultiScreenInsetsTest {
             GraphicsConfiguration gc = gd.getDefaultConfiguration();
             Rectangle bounds = gc.getBounds();
             Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+            System.out.println("Screen #" + screen);
+            System.out.println("Screen Bounds: " + bounds);
+            System.out.println("Insets: " + insets);
 
             Frame frame = new Frame(gc);
             frame.setLocation(bounds.x + (bounds.width - SIZE) / 2,
@@ -83,6 +86,8 @@ public class MultiScreenInsetsTest {
             Thread.sleep(2000);
 
             Rectangle frameBounds = frame.getBounds();
+            System.out.println("Frame bounds: " + frameBounds);
+
             frame.dispose();
 
             /*
@@ -98,6 +103,7 @@ public class MultiScreenInsetsTest {
                 frameBounds.height -= (bounds.y - frameBounds.y) * 2;
                 frameBounds.y = bounds.y;
             }
+            System.out.println("Adjusted Frame bounds: " + frameBounds);
 
             if (bounds.x + insets.left != frameBounds.x
                 || bounds.y + insets.top != frameBounds.y
