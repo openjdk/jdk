@@ -83,7 +83,11 @@ public final class bug6298940 {
                 throw new RuntimeException("Mnemonic didn't fire an action");
             }
         } finally {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 }
