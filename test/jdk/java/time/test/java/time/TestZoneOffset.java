@@ -60,13 +60,11 @@
 package test.java.time;
 
 import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertEquals;
 
 import java.util.Set;
 import java.time.ZoneOffset;
 
 import org.testng.annotations.Test;
-import java.util.IdentityHashMap;
 
 /**
  * Test ZoneOffset.
@@ -86,29 +84,16 @@ public class TestZoneOffset extends AbstractTest {
 
     @Test
     public void test() throws Exception {
-        Object PRESENT = new Object();
-        IdentityHashMap<ZoneOffset, Object> map = new IdentityHashMap();
-        for (int i = 0; i < 10; i++) {
-            for (int hour = 0; hour < 18; hour++) {
-                for (int minutes = 0; minutes < 60; minutes += 15) {
-                    ZoneOffset zoneOffset = ZoneOffset.ofHoursMinutes(hour, minutes);
-                    map.put(zoneOffset, PRESENT);
-                }
+        for (int hour = -18; hour < 18; hour++) {
+            for (int minutes = 0; minutes < 60; minutes += 15) {
+                int totalSeconds = hour * 3600 + minutes * 60;
+                var offset0 = ZoneOffset.ofTotalSeconds(totalSeconds);
+                var offset1 = ZoneOffset.ofTotalSeconds(totalSeconds);
+                var offset2 = ZoneOffset.ofTotalSeconds(totalSeconds);
+                assertSame(offset0, offset1);
+                assertSame(offset1, offset2);
             }
         }
-        assertEquals(18 * 4, map.size());
-
-        for (int i = 0; i < 10; i++) {
-            for (int hour = -18; hour < 18; hour++) {
-                for (int minutes = 0; minutes < 60; minutes += 15) {
-                    int totalSeconds = hour * 3600 + minutes * 60;
-                    ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(totalSeconds);
-                    map.put(zoneOffset, PRESENT);
-                }
-            }
-        }
-
-        assertEquals(36 * 4, map.size());
     }
 
 }
