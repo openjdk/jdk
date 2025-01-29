@@ -879,7 +879,7 @@ public class WindowsIconFactory implements Serializable
                                 skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
                             } else {
                                 skin = xp.getSkin(c, part);
-                                skin.paintSkin(g, x - 3*OFFSET, y + OFFSET, state);
+                                skin.paintSkin(g, x - 3 * OFFSET, y + OFFSET, state);
                             }
                         }
                     }
@@ -917,7 +917,7 @@ public class WindowsIconFactory implements Serializable
                             skin.paintSkin(g, x - 2 * OFFSET, y + OFFSET, state);
                         }
                     }
-                    icon.paintIcon(c, g, x + 3*OFFSET, y + OFFSET);
+                    icon.paintIcon(c, g, x + 3 * OFFSET, y + OFFSET);
                 }
             }
             private static WindowsMenuItemUIAccessor getAccessor(

@@ -44,10 +44,10 @@ public class TestImageIconWithJRadioButtonMenuItem {
 
     private static final String instructionsText = """
         Two JRadioButtonMenuItem will be shown.
-        One JRadioButtonMenuItem is with imageIcon and
-        another one without imageicon.
-        Verify that for JRadioButtonMenuItem with imageicon,
-        radiobutton is been shown alongside the imageicon.
+        One JRadioButtonMenuItem is with image icon and
+        another one without image icon.
+        Verify that for JRadioButtonMenuItem with image icon,
+        radiobutton is been shown alongside the image icon.
         If radiobutton is shown, test passes else fails.""";
 
     public static void main(String[] args) throws Exception {
