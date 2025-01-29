@@ -106,6 +106,8 @@ void CompileTask::initialize(int compile_id,
   _comp_level = comp_level;
   _num_inlined_bytecodes = 0;
 
+  _waiting_count = 0;
+
   _is_complete = false;
   _is_success = false;
 
