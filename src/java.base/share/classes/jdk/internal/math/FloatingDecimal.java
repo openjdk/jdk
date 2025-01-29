@@ -709,7 +709,6 @@ public class FloatingDecimal{
                     i += charLength;
                     result[i++] = '.';
                     result[i++] = '0';
-                    i += 2;
                 } else {
                     result[i++] = '.';
                     if (charLength < nDigits) {
