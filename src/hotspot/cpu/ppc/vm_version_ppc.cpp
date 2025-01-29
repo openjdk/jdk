@@ -124,9 +124,6 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
       FLAG_SET_ERGO(SuperwordUseVSX, true);
     }
-    if (FLAG_IS_DEFAULT(AlignVector)) {
-      FLAG_SET_ERGO(AlignVector, false);
-    }
   } else {
     if (SuperwordUseVSX) {
       warning("SuperwordUseVSX specified, but needs at least Power8.");
@@ -134,6 +131,9 @@ void VM_Version::initialize() {
     }
   }
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_ERGO(AlignVector, false);
+  }
 
   if (PowerArchitecturePPC64 >= 9) {
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstructionsPPC64)) {
