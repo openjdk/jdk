@@ -28,7 +28,6 @@ package jdk.internal.math;
 import java.util.Arrays;
 import java.util.regex.*;
 
-import jdk.internal.util.DecimalDigits;
 /**
  * A class for converting between ASCII and decimal representations of a single
  * or double precision floating point number. Most conversions are provided via
