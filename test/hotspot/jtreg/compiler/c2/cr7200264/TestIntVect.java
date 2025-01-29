@@ -410,12 +410,12 @@ public class TestIntVect {
 
     }
 
-    // Not vectorized: simple addition not profitable, see JDK-8307516. NOTE:
-    // This check does not document the _desired_ behavior of the system but
-    // the current behavior (no vectorization)
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_I, "= 0",
-                   IRNode.STORE_VECTOR,  "= 0" })
+    @IR(counts = { IRNode.LOAD_VECTOR_I,    "> 0",
+                   IRNode.ADD_VI,           "> 0" ,
+                   IRNode.ADD_REDUCTION_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Reduction moved out of loop, use vector accumulator.
     int test_sum(int[] a1) {
         int sum = 0;
         for (int i = 0; i < a1.length; i+=1) {
