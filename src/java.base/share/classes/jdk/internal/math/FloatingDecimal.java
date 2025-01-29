@@ -98,7 +98,7 @@ public class FloatingDecimal{
         private int decExponent;
         private int firstDigitIndex;
         private int nDigits;
-        private final byte[] digits;
+        private final char[] digits;
 
         //
         // The fields below provide additional information about the result of
@@ -117,7 +117,7 @@ public class FloatingDecimal{
          * Creates a specialized value (positive and negative zeros).
          */
         BinaryToASCIIConverter(){
-            this.digits = new byte[19];
+            this.digits = new char[19];
             this.nDigits = digits.length;
         }
 
@@ -183,12 +183,12 @@ public class FloatingDecimal{
                     ivalue /= 10;
                 }
                 while ( ivalue != 0){
-                    digits[digitno--] = (byte)(c+'0');
+                    digits[digitno--] = (char)(c+'0');
                     decExponent++;
                     c = ivalue%10;
                     ivalue /= 10;
                 }
-                digits[digitno] = (byte)(c+'0');
+                digits[digitno] = (char)(c+'0');
             } else {
                 // same algorithm as above (same bugs, too )
                 // but using long arithmetic.
@@ -200,12 +200,12 @@ public class FloatingDecimal{
                     lvalue /= 10L;
                 }
                 while ( lvalue != 0L ){
-                    digits[digitno--] = (byte)(c+'0');
+                    digits[digitno--] = (char)(c+'0');
                     decExponent++;
                     c = (int)(lvalue%10L);
                     lvalue /= 10;
                 }
-                digits[digitno] = (byte)(c+'0');
+                digits[digitno] = (char)(c+'0');
             }
             this.decExponent = decExponent+1;
             this.firstDigitIndex = digitno;
@@ -404,7 +404,7 @@ public class FloatingDecimal{
                         // oops. Usually ignore leading zero.
                         decExp--;
                     } else {
-                        digits[ndigit++] = (byte)('0' + q);
+                        digits[ndigit++] = (char)('0' + q);
                     }
                     //
                     // HACK! Java spec sez that we always have at least
@@ -432,7 +432,7 @@ public class FloatingDecimal{
                             low = true;
                             high = true;
                         }
-                        digits[ndigit++] = (byte)('0' + q);
+                        digits[ndigit++] = (char)('0' + q);
                     }
                     lowDigitDifference = (b<<1) - tens;
                     exactDecimalConversion  = (b == 0);
@@ -458,7 +458,7 @@ public class FloatingDecimal{
                         // oops. Usually ignore leading zero.
                         decExp--;
                     } else {
-                        digits[ndigit++] = (byte)('0' + q);
+                        digits[ndigit++] = (char)('0' + q);
                     }
                     //
                     // HACK! Java spec sez that we always have at least
@@ -486,7 +486,7 @@ public class FloatingDecimal{
                             low = true;
                             high = true;
                         }
-                        digits[ndigit++] = (byte)('0' + q);
+                        digits[ndigit++] = (char)('0' + q);
                     }
                     lowDigitDifference = (b<<1) - tens;
                     exactDecimalConversion  = (b == 0);
@@ -519,7 +519,7 @@ public class FloatingDecimal{
                     // oops. Usually ignore leading zero.
                     decExp--;
                 } else {
-                    digits[ndigit++] = (byte)('0' + q);
+                    digits[ndigit++] = (char)('0' + q);
                 }
                 //
                 // HACK! Java spec sez that we always have at least
@@ -536,7 +536,7 @@ public class FloatingDecimal{
                     Mval = Mval.multBy10(); //Mval = Mval.mult( 10 );
                     low  = (Bval.cmp( Mval ) < 0);
                     high = tenSval.addAndCmp(Bval,Mval)<=0;
-                    digits[ndigit++] = (byte)('0' + q);
+                    digits[ndigit++] = (char)('0' + q);
                 }
                 if ( high && low ){
                     Bval = Bval.leftShift(1);
@@ -589,7 +589,7 @@ public class FloatingDecimal{
                 }
                 // else fall through.
             }
-            digits[i] = (byte) (q + 1);
+            digits[i] = (char) (q + 1);
             decimalDigitsRoundedUp = true;
         }
 
@@ -694,11 +694,11 @@ public class FloatingDecimal{
          * Converts a floating point value into an byte array
          * @return the number of characters written to the result array
          */
-        public int getChars(byte[] result) {
+        public int getChars(char[] result) {
             int nDigits = this.nDigits, decExponent = this.decExponent, firstDigitIndex = this.firstDigitIndex;
             assert nDigits <= 19 : nDigits; // generous bound on size of nDigits
             int i = 0;
-            byte[] digits = this.digits;
+            char[] digits = this.digits;
             if (decExponent > 0 && decExponent < 8) {
                 // print digits.digits.
                 int charLength = Math.min(nDigits, decExponent);
@@ -706,7 +706,7 @@ public class FloatingDecimal{
                 i += charLength;
                 if (charLength < decExponent) {
                     charLength = decExponent - charLength;
-                    Arrays.fill(result,i,i+charLength, (byte) '0');
+                    Arrays.fill(result,i,i+charLength, '0');
                     i += charLength;
                     result[i    ] = '.';
                     result[i + 1] = '0';
@@ -726,7 +726,7 @@ public class FloatingDecimal{
                 result[i + 1] = '.';
                 i += 2;
                 if (decExponent != 0) {
-                    Arrays.fill(result, i, i-decExponent, (byte) '0');
+                    Arrays.fill(result, i, i-decExponent, '0');
                     i -= decExponent;
                 }
                 System.arraycopy(digits, firstDigitIndex, result, i, nDigits);
@@ -750,15 +750,15 @@ public class FloatingDecimal{
                 }
                 // decExponent has 1, 2, or 3, digits
                 if (e <= 9) {
-                    result[i++] = (byte) (e + '0');
+                    result[i++] = (char) (e + '0');
                 } else if (e <= 99) {
-                    DecimalDigits.putPairLatin1(result, i, e);
-                    i += 2;
+                    result[i++] = (char) (e / 10 + '0');
+                    result[i++] = (char) (e % 10 + '0');
                 } else {
-                    result[i++] = (byte) (e / 100 + '0');
+                    result[i++] = (char) (e / 100 + '0');
                     e %= 100;
-                    DecimalDigits.putPairLatin1(result, i, e);
-                    i += 2;
+                    result[i++] = (char) (e / 10 + '0');
+                    result[i++] = (char) (e % 10 + '0');
                 }
             }
             return i;
