@@ -189,7 +189,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public void setShowLiveRanges(boolean b) {
         showLiveRanges = b;
-        diagram.setLiveRanges(b);
         diagramChangedEvent.fire();
     }
 
@@ -441,7 +440,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
                 Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
                 Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
         diagram.setCFG(getShowCFG());
-        diagram.setLiveRanges(getShowLiveRanges());
         filterChain.applyInOrder(diagram, filtersOrder);
         if (graph.isDiffGraph()) {
             ColorFilter f = new ColorFilter("");
