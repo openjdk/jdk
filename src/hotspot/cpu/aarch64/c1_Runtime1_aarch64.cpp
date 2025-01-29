@@ -260,7 +260,7 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
 
   for (int i = 0; i < FrameMap::nof_cpu_regs; i++) {
     Register r = as_Register(i);
-    if (r == rthread || (i <= 29 && i != rscratch1->encoding() && i != rscratch2->encoding())) {
+    if (r == rthread || (i < 28 && i != rscratch1->encoding() && i != rscratch2->encoding())) {
       int sp_offset = cpu_reg_save_offsets[i];
       oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset),
                                 r->as_VMReg());
