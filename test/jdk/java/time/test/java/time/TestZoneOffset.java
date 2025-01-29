@@ -60,11 +60,13 @@
 package test.java.time;
 
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertEquals;
 
 import java.util.Set;
 import java.time.ZoneOffset;
 
 import org.testng.annotations.Test;
+import java.util.IdentityHashMap;
 
 /**
  * Test ZoneOffset.
@@ -80,6 +82,33 @@ public class TestZoneOffset extends AbstractTest {
     @Test
     public void test_factory_ofTotalSecondsSame() {
         assertSame(ZoneOffset.ofTotalSeconds(0), ZoneOffset.UTC);
+    }
+
+    @Test
+    public void test() throws Exception {
+        Object PRESENT = new Object();
+        IdentityHashMap<ZoneOffset, Object> map = new IdentityHashMap();
+        for (int i = 0; i < 10; i++) {
+            for (int hour = 0; hour < 18; hour++) {
+                for (int minutes = 0; minutes < 60; minutes += 15) {
+                    ZoneOffset zoneOffset = ZoneOffset.ofHoursMinutes(hour, minutes);
+                    map.put(zoneOffset, PRESENT);
+                }
+            }
+        }
+        assertEquals(18 * 4, map.size());
+
+        for (int i = 0; i < 10; i++) {
+            for (int hour = -18; hour < 18; hour++) {
+                for (int minutes = 0; minutes < 60; minutes += 15) {
+                    int totalSeconds = hour * 3600 + minutes * 60;
+                    ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(totalSeconds);
+                    map.put(zoneOffset, PRESENT);
+                }
+            }
+        }
+
+        assertEquals(36 * 4, map.size());
     }
 
 }
