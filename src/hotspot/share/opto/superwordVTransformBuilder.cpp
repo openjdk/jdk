@@ -62,8 +62,11 @@ void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
     VTransformScalarNode* vtn = nullptr;
     if (n->is_Phi()) {
       vtn = new (_vtransform.arena()) VTransformLoopPhiNode(_vtransform, prototype, n->as_Phi());
+    } else if (n->is_Load() || n->is_Store()) {
+      const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(n->as_Mem());
+      vtn = new (_vtransform.arena()) VTransformMemopScalarNode(_vtransform, prototype, n, scalar_p);
     } else {
-      vtn = new (_vtransform.arena()) VTransformScalarNode(_vtransform, prototype, n);
+      vtn = new (_vtransform.arena()) VTransformDataScalarNode(_vtransform, prototype, n);
     }
     map_node_to_vtnode(n, vtn);
   }

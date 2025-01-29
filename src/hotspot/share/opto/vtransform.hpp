@@ -65,6 +65,8 @@ typedef int VTransformNodeIDX;
 class VTransform;
 class VTransformNode;
 class VTransformScalarNode;
+class VTransformDataScalarNode;
+class VTransformMemopScalarNode;
 class VTransformOuterNode;
 class VTransformLoopPhiNode;
 class VTransformVectorNode;
@@ -488,6 +490,8 @@ public:
   }
 
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
+  virtual VTransformDataScalarNode* isa_DataScalar() { return nullptr; }
+  virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
   virtual VTransformOuterNode* isa_Outer() { return nullptr; }
   virtual VTransformLoopPhiNode* isa_LoopPhi() { return nullptr; }
   virtual const VTransformLoopPhiNode* isa_LoopPhi() const { return nullptr; }
@@ -528,13 +532,47 @@ public:
     VTransformNode(vtransform, prototype, n->req()), _node(n) {}
   Node* node() const { return _node; }
   virtual VTransformScalarNode* isa_Scalar() override { return this; }
+
+  // TODO - make scalar virtual?
   virtual bool is_load_in_loop() const override { return _node->is_Load(); }
   virtual bool is_load_or_store_in_loop() const override { return _node->is_Load() || _node->is_Store(); }
-  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return vloop_analyzer.vpointers().vpointer(node()->as_Mem()); }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "Scalar"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+class VTransformDataScalarNode : public VTransformScalarNode {
+public:
+  VTransformDataScalarNode(VTransform& vtransform, VTransformNodePrototype prototype, Node* n) :
+    VTransformScalarNode(vtransform, prototype, n)
+  {
+    assert(!node()->is_Load() && !node()->is_Store() && !node()->is_Phi(), "must be data node");
+  }
+
+  virtual bool is_load_in_loop() const override { return false; }
+  virtual bool is_load_or_store_in_loop() const override { return false; }
+
+  NOT_PRODUCT(virtual const char* name() const override { return "DataScalar"; };)
+};
+
+class VTransformMemopScalarNode : public VTransformScalarNode {
+private:
+  const VPointer _vpointer;
+public:
+  VTransformMemopScalarNode(VTransform& vtransform, VTransformNodePrototype prototype, Node* n, const VPointer& vpointer) :
+    VTransformScalarNode(vtransform, prototype, n), _vpointer(vpointer)
+  {
+    assert(node()->is_Load() || node()->is_Store(), "must be memop");
+  }
+
+  virtual VTransformMemopScalarNode* isa_MemopScalar() override { return this; }
+  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return _vpointer; }
+
+  // TODO
+  virtual bool is_load_in_loop() const override { return node()->is_Load(); }
+  virtual bool is_load_or_store_in_loop() const override { return true; }
+  NOT_PRODUCT(virtual const char* name() const override { return "MemopScalar"; };)
 };
 
 // Wrapper node for nodes outside the loop that are inputs and/or outputs for nodes
@@ -548,14 +586,17 @@ public:
   virtual bool is_load_in_loop() const override { return false; }
   virtual bool is_load_or_store_in_loop() const override { return false; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { ShouldNotReachHere(); }
-  NOT_PRODUCT(virtual const char* name() const override { return "Outer"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "Outer"; })
 };
 
 // We want to be able to conveniently find all Phis that belong to the LoopNode.
 class VTransformLoopPhiNode : public VTransformScalarNode {
 public:
   VTransformLoopPhiNode(VTransform& vtransform, VTransformNodePrototype prototype, PhiNode* n) :
-    VTransformScalarNode(vtransform, prototype, n) {}
+    VTransformScalarNode(vtransform, prototype, n)
+  {
+    assert(node()->is_Phi(), "must be phi");
+  }
   virtual VTransformLoopPhiNode* isa_LoopPhi() override { return this; }
   virtual const VTransformLoopPhiNode* isa_LoopPhi() const override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
