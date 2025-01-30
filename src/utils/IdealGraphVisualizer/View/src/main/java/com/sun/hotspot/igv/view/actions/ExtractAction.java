@@ -48,7 +48,7 @@ import org.openide.util.NbBundle.Messages;
 })
 @Messages({
         "CTL_ExtractAction=Extract",
-        "HINT_ExtractAction=Extract current set of selected nodes or live ranges"
+        "HINT_ExtractAction=Extract selected nodes and live ranges"
 })
 public final class ExtractAction extends ModelAwareAction {
 
