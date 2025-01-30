@@ -26,6 +26,7 @@ package com.sun.hotspot.igv.view.widgets;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
+import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.LiveRangeSegment;
 import com.sun.hotspot.igv.util.DoubleClickAction;
 import com.sun.hotspot.igv.util.DoubleClickHandler;
@@ -33,11 +34,12 @@ import com.sun.hotspot.igv.util.PropertiesConverter;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.view.DiagramScene;
 import com.sun.hotspot.igv.view.DiagramViewModel;
-
 import java.awt.*;
 import java.util.HashSet;
 import java.util.Set;
-
+import javax.swing.JPopupMenu;
+import org.netbeans.api.visual.action.ActionFactory;
+import org.netbeans.api.visual.action.PopupMenuProvider;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
@@ -46,7 +48,7 @@ import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.nodes.Sheet;
 
-public class LiveRangeWidget extends Widget implements Properties.Provider, DoubleClickHandler {
+public class LiveRangeWidget extends Widget implements Properties.Provider, PopupMenuProvider, DoubleClickHandler {
 
     private final LiveRangeSegment liveRangeSegment;
     private final DiagramScene scene;
@@ -71,6 +73,7 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Doub
         this.next = next;
 
         getActions().addAction(new DoubleClickAction(this));
+        getActions().addAction(ActionFactory.createPopupMenuAction(this));
 
         updateClientArea();
 
@@ -154,6 +157,23 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Doub
         if (next != null) {
             next.setHighlighted(enable);
         }
+    }
+
+    @Override
+    public JPopupMenu getPopupMenu(Widget widget, Point point) {
+        JPopupMenu menu = scene.createPopupMenu();
+        menu.addSeparator();
+        int liveRangeId = liveRangeSegment.getLiveRange().getId();
+        Diagram diagram = this.scene.getModel().getDiagram();
+        InputGraph graph = diagram.getInputGraph();
+        for (InputNode node : graph.getDefNodes(liveRangeId)) {
+            menu.add(scene.createGotoAction(diagram.getFigure(node)));
+        }
+        menu.addSeparator();
+        for (InputNode node : graph.getUseNodes(liveRangeId)) {
+            menu.add(scene.createGotoAction(diagram.getFigure(node)));
+        }
+        return menu;
     }
 
     @Override
