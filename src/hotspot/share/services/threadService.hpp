@@ -489,6 +489,7 @@ class JavaThreadInObjectWaitState : public JavaThreadStatusChanger {
  public:
   JavaThreadInObjectWaitState(JavaThread *java_thread, bool timed, bool interruptible) :
     JavaThreadStatusChanger(java_thread,
+                            // This helper should do nothing when interruptible == false, so we set active = false.
                             interruptible ? (timed ? JavaThreadStatus::IN_OBJECT_WAIT_TIMED : JavaThreadStatus::IN_OBJECT_WAIT)
                                           : java_lang_Thread::get_thread_status(java_thread->threadObj())) {
     if (is_alive() && interruptible) { // non-interruptible is not active

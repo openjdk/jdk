@@ -1650,7 +1650,6 @@ static void vthread_monitor_waited_event(JavaThread *current, ObjectWaiter* node
   current->frame_anchor()->clear();
 }
 
-
 // -----------------------------------------------------------------------------
 // Wait/Notify/NotifyAll
 //
