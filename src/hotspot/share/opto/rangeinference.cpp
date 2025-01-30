@@ -224,11 +224,10 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // first_violation is the position of the violation counting from the
     // highest bit down (0-based), since i == 2, first_difference == 1
     juint first_violation = count_leading_zeros<U>(one_violation); // 1
+    //           1 0 0 0 0 0 0 0
+    U highest_bit = (std::numeric_limits<U>::max() >> 1) + U(1);
     //           0 1 0 0 0 0 0 0
-    // This is the same as U(1) << (W - 1 - first_violation), we avoid using
-    // W so that this can be used with intn_t<n>
-    U alignment = one_violation == U(1) ? U(1)
-                                        : (std::numeric_limits<U>::max() >> (first_violation + 1)) + U(1);
+    U alignment = highest_bit >> first_violation;
     // This is the first value which have the violated bit being 1, which means
     // that the result should not be smaller than this
     //           1 1 0 0 0 0 0 0
@@ -261,8 +260,6 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     juint first_violation = count_leading_zeros<U>(zero_violation);
     // This mask out all bits from the first violation
     //           1 1 1 1 1 0 0 0
-    // This is the same as max << (W - first_violation), we avoid using W so
-    // that this can be used with intn_t<n>
     U find_mask = ~(std::numeric_limits<U>::max() >> first_violation);
     //           1 0 0 1 1 1 1 0
     U either = lo | bits._zeros;
