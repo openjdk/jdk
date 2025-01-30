@@ -857,7 +857,8 @@ public class WindowsIconFactory implements Serializable
                         State backgroundState;
                         State state;
                         if (isEnabled(c, null)) {
-                            backgroundState = State.NORMAL;
+                            backgroundState =
+                                (icon != null) ? State.BITMAP : State.NORMAL;
                             state = (type == JRadioButtonMenuItem.class)
                               ? State.BULLETNORMAL
                               : State.CHECKMARKNORMAL;
@@ -875,11 +876,7 @@ public class WindowsIconFactory implements Serializable
                             skin.paintSkin(g, x, y,
                                 getIconWidth(), getIconHeight(), backgroundState);
                             skin = xp.getSkin(c, part);
-                            if (icon == null) {
-                                skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
-                            } else {
-                                skin.paintSkin(g, x - 3 * OFFSET, y + OFFSET, state);
-                            }
+                            skin.paintSkin(g, x - OFFSET, y + OFFSET, state);
                         }
                     }
                 }
