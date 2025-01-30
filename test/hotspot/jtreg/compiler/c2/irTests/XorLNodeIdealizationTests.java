@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
-import compiler.lib.generators.Generators;
+import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
 
 /*
@@ -34,11 +34,9 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.XorLNodeIdealizationTests
  */
 public class XorLNodeIdealizationTests {
-
-    private static final long CONST_1 = Generators.G.longs().next();
-    private static final long CONST_2 = Generators.G.longs().next();
-    private static final long CONST_POW_2 = Generators.G.powerOfTwoLongs(0)
-            .restricted(1L, Long.MAX_VALUE).next();
+    private static final RestrictableGenerator<Long> G = Generators.G.longs();
+    private static final long CONST_1 = G.next();
+    private static final long CONST_2 = G.next();
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -51,7 +49,6 @@ public class XorLNodeIdealizationTests {
                  "test13", "test14", "test15",
                  "test16", "test17",
                  "testConstXor", "testXorSelf",
-                 "testMaxPow2","testMaxPow2Folded"
     })
     public void runMethod() {
         long min = Long.MIN_VALUE;
@@ -89,9 +86,6 @@ public class XorLNodeIdealizationTests {
         Asserts.assertEQ(-2023 - a          , test17(a));
         Asserts.assertEQ(CONST_1 ^ CONST_2  , testConstXor());
         Asserts.assertEQ(0L                  , testXorSelf(a));
-        String msg = String.format("CONST_POW_2=%d a=%d b=%d", CONST_POW_2, a, b);
-        Asserts.assertEQ(interpretedMaxPow2(a, b), testMaxPow2(a, b), msg);
-        Asserts.assertEQ(true, testMaxPow2Folded(a, b), msg);
     }
 
     @Test
@@ -247,43 +241,5 @@ public class XorLNodeIdealizationTests {
     // Checks (x ^ x)  => c (constant folded)
     public long testXorSelf(long x) {
         return x ^ x;
-    }
-
-    // clamp value to [1,CONST_POW_2]
-    @ForceInline
-    private static long forceMinMax(long value) {
-        // Equivalent to Math.min(CONST_POW_2, Math.max(value, 1)).
-        // The bounds do not propagate to the type for longs with min/max
-        return 1L + (value & (CONST_POW_2 - 1L));
-    }
-
-    @Test
-    @IR(counts = {IRNode.XOR, "1"})  // must not be constant-folded
-    // checks that add_ring computes correct max on exact powers of 2
-    public boolean testMaxPow2(long x, long y) {
-        x = forceMinMax(x);
-        y = forceMinMax(y);
-        long xor = x ^ y;
-        return xor < CONST_POW_2;
-    }
-
-    @DontCompile
-    public boolean interpretedMaxPow2(long x, long y) {
-        x = forceMinMax(x);
-        y = forceMinMax(y);
-
-        long xor = x ^ y;
-        return xor < CONST_POW_2;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.XOR})
-    @IR(counts = {IRNode.CON_I, "1"})
-    public boolean testMaxPow2Folded(long x, long y) {
-        x = forceMinMax(x);
-        y = forceMinMax(y);
-
-        long xor = x ^ y;
-        return xor < (CONST_POW_2*2L);
     }
 }

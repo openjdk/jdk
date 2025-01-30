@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
-import compiler.lib.generators.Generators;
+import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
 
 /*
@@ -34,45 +34,41 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.XorINodeIdealizationTests
  */
 public class XorINodeIdealizationTests {
-    private static final int CONST_1 = Generators.G.ints().next();
-    private static final int CONST_2 = Generators.G.ints().next();
-    private static final boolean CONST_BOOL_1 = RunInfo.getRandom().nextBoolean();
-    private static final boolean CONST_BOOL_2 = RunInfo.getRandom().nextBoolean();
-    private static final int CONST_POW_2 = Generators.G.powerOfTwoInts(0)
-            .restricted(1, Integer.MAX_VALUE).next();
+    private static final RestrictableGenerator<Integer> G = Generators.G.ints();
+    private static final int CONST_1 = G.next();
+    private static final int CONST_2 = G.next();
+
+
 
     public static void main(String[] args) {
         TestFramework.run();
     }
 
     @Run(test = {"test1", "test2", "test3",
-                 "test4", "test5", "test6",
-                 "test7", "test8", "test9",
-                 "test10", "test11", "test12",
-                 "test13", "test14", "test15",
-                 "test16", "test17",
-                 "testConstXor", "testXorSelf",
-                 "testConstXorBool", "testXorSelfBool",
-                 "testMaxPow2","testMaxPow2Folded"
-
+            "test4", "test5", "test6",
+            "test7", "test8", "test9",
+            "test10", "test11", "test12",
+            "test13", "test14", "test15",
+            "test16", "test17",
+            "testConstXor", "testXorSelf"
     })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
         int c = RunInfo.getRandom().nextInt();
-        boolean d = RunInfo.getRandom().nextBoolean();
+        int d = RunInfo.getRandom().nextInt();
 
         int min = Integer.MIN_VALUE;
         int max = Integer.MAX_VALUE;
 
-        assertResult(0, 0, 0, false);
+        assertResult(0, 0, 0, 0);
         assertResult(a, b, c, d);
-        assertResult(min, min, min, false);
-        assertResult(max, max, max, true);
+        assertResult(min, min, min, min);
+        assertResult(max, max, max, max);
     }
 
     @DontCompile
-    public void assertResult(int a, int b, int c, boolean d) {
+    public void assertResult(int a, int b, int c, int d) {
         Asserts.assertEQ(b - a              , test1(a, b));
         Asserts.assertEQ(a - b              , test2(a, b));
         Asserts.assertEQ(b - a              , test3(a, b));
@@ -89,14 +85,11 @@ public class XorINodeIdealizationTests {
         Asserts.assertEQ(~a                 , test14(a));
         Asserts.assertEQ(~a                 , test15(a));
         Asserts.assertEQ((~a + b) + (~a | c), test16(a, b, c));
-        Asserts.assertEQ(CONST_1 ^ CONST_2  , testConstXor());
-        Asserts.assertEQ(0                  , testXorSelf(a));
-        Asserts.assertEQ(CONST_BOOL_1 ^ CONST_BOOL_2  , testConstXorBool());
-        Asserts.assertEQ(false              , testXorSelfBool(d));
-        String msg = String.format("CONST_POW_2=%d a=%d b=%d", CONST_POW_2, a, b);
-        Asserts.assertEQ(interpretedMaxPow2(a, b), testMaxPow2(a, b), msg);
-        Asserts.assertEQ(true, testMaxPow2Folded(a, b), msg);
+        Asserts.assertEQ(-2023 - a          , test17(a));
+        Asserts.assertEQ(CONST_1 ^ CONST_2, testConstXor());
+        Asserts.assertEQ(0, testXorSelf(a));
     }
+
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.ADD})
@@ -240,7 +233,7 @@ public class XorINodeIdealizationTests {
     @Test
     @IR(failOn = {IRNode.XOR})
     @IR(counts = {IRNode.CON_I, "1"})
-    // Checks (c ^c)  => c (constant folded)
+    // Checks (c1 ^ c2)  => c3 (constant folded)
     public int testConstXor() {
         return CONST_1 ^ CONST_2;
     }
@@ -251,6 +244,23 @@ public class XorINodeIdealizationTests {
     // Checks (x ^ x)  => c (constant folded)
     public int testXorSelf(int x) {
         return x ^ x;
+    }
+
+    private static final boolean CONST_BOOL_1 = RunInfo.getRandom().nextBoolean();
+    private static final boolean CONST_BOOL_2 = RunInfo.getRandom().nextBoolean();
+
+    @Run(test={
+            "testConstXorBool", "testXorSelfBool"
+    })
+    public void runBooleanTests() {
+        assertBooleanResult(true);
+        assertBooleanResult(false);
+    }
+
+    @DontCompile
+    public void assertBooleanResult(boolean b){
+        Asserts.assertEQ(CONST_BOOL_1 ^ CONST_BOOL_2, testConstXorBool());
+        Asserts.assertEQ(false, testXorSelfBool(b));
     }
 
     @Test
@@ -269,40 +279,78 @@ public class XorINodeIdealizationTests {
         return x ^ x;
     }
 
-    // clamp value to [1,CONST_POW_2]
-    @ForceInline
-    private static int forceMinMax(int value){
-        return Math.min(CONST_POW_2, Math.max(value, 1));
+    private static final Range RANGE_1;
+    private static final Range RANGE_2;
+    private static final int XOR_MAX_OF_RANGES;
+
+    static {
+        var r1 = RANGE_1 = Range.generate(G);
+        var r2 = RANGE_2 = Range.generate(G);
+        if (r1.lo() >= 0 && r2.lo() >= 0 && r1.hi() != 0 && r2.hi() != 0) {
+            XOR_MAX_OF_RANGES = Integer.highestOneBit(r1.hi() | r2.hi() * 2) - 1;
+        } else {
+            XOR_MAX_OF_RANGES = Integer.MAX_VALUE;
+        }
     }
 
-    @Test
-    @IR(counts = {IRNode.XOR, "1"}) // must not be constant-folded
-    // checks that add_ring computes correct max on exact powers of 2
-    public boolean testMaxPow2(int x, int y) {
-        x = forceMinMax(x);
-        y = forceMinMax(y);
+    @Run(test = {
+            "testFoldableXor", "testXorConstRange"
+    })
+    public void runRangeTests() {
+        var rand1 = G.restricted(RANGE_1.lo(), RANGE_1.hi());
+        var rand2 = G.restricted(RANGE_2.lo(), RANGE_2.hi());
 
-        long xor = x ^ y;
-        return xor < CONST_POW_2;
+        for (int i = 0; i < 100; i++) {
+            checkXor(rand1.next(), rand2.next());
+        }
+        checkXor(RANGE_1.hi(), RANGE_2.hi());
+        checkXor(RANGE_1.lo(), RANGE_2.lo());
     }
 
     @DontCompile
-    public boolean interpretedMaxPow2(int x, int y) {
-        x = forceMinMax(x);
-        y = forceMinMax(y);
+    public void checkXor(int a, int b) {
+        Asserts.assertEQ(true, testFoldableXor(a, b));
+        Asserts.assertEQ(RANGE_1.clamp(a) ^ RANGE_2.clamp(b), testXorConstRange(a, b));
+    }
 
-        long xor = x ^ y;
-        return xor < CONST_POW_2;
+    @Test
+    public int testXorConstRange(int x, int y) {
+        x = RANGE_1.clamp(x);
+        y = RANGE_2.clamp(y);
+
+        return x ^ y;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR})
     @IR(counts = {IRNode.CON_I, "1"})
-    public boolean testMaxPow2Folded(int x, int y) {
-        x = forceMinMax(x);
-        y = forceMinMax(y);
+    public boolean testFoldableXor(int x, int y) {
+        x = RANGE_1.clamp(x);
+        y = RANGE_2.clamp(y);
+        var xor = x ^ y;
+        return xor <= XOR_MAX_OF_RANGES;
+    }
 
-        long xor = x ^ y;
-        return xor < (CONST_POW_2*2L);
+    record Range(int lo, int hi) {
+        Range {
+            if (lo > hi) {
+                throw new IllegalArgumentException("lo > hi");
+            }
+        }
+
+        int clamp(int v) {
+            return Math.min(hi, Math.max(v, lo));
+        }
+
+        static Range generate(Generator<Integer> g) {
+            var a = g.next();
+            var b = g.next();
+            if (a > b) {
+                var tmp = a;
+                a = b;
+                b = tmp;
+            }
+            return new Range(a, b);
+        }
     }
 }
