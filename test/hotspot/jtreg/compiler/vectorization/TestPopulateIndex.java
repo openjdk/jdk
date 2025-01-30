@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,14 +81,14 @@ public class TestPopulateIndex {
     @IR(counts = {IRNode.POPULATE_INDEX, "> 0"})
     public void exprWithIndex1() {
         for (int i = 0; i < count; i++) {
-            dst[i] = src[i] * (i & 7);
+            dst[i] = src[i] * (i | 7);
         }
         checkResultExprWithIndex1();
     }
 
     public void checkResultExprWithIndex1() {
         for (int i = 0; i < count; i++) {
-            int expected = src[i] * (i & 7);
+            int expected = src[i] * (i | 7);
             if (dst[i] != expected) {
                 throw new RuntimeException("Invalid result: dst[" + i + "] = " + dst[i] + " != " + expected);
             }
@@ -109,6 +109,24 @@ public class TestPopulateIndex {
             float expected = i * i  + 100;
             if (f[i] != expected) {
                 throw new RuntimeException("Invalid result: f[" + i + "] = " + f[i] + " != " + expected);
+            }
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.POPULATE_INDEX, "= 0"}) // disabled by sum-under-mask optimization.
+    public void exprWithIndex3() {
+        for (int i = 0; i < count; i++) {
+            dst[i] = src[i] * (i & 7);
+        }
+        checkResultExprWithIndex3();
+    }
+
+    public void checkResultExprWithIndex3() {
+        for (int i = 0; i < count; i++) {
+            int expected = src[i] * (i & 7);
+            if (dst[i] != expected) {
+                throw new RuntimeException("Invalid result: dst[" + i + "] = " + dst[i] + " != " + expected);
             }
         }
     }
