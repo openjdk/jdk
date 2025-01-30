@@ -48,21 +48,14 @@ public:
   }
 };
 
-// In the canonical form, when intersecting [lo, hi] in the signed domain with
-// [ulo, uhi] in the unsigned domain, there can be 2 cases (see TypeInt in
-// type.hpp for more details):
-// - [lo, hi] is the same as [ulo, uhi], lo and hi are both >= 0 or both < 0.
-// - [lo, hi] is not the same as [ulo, uhi], which results in the intersections
-//   being [lo, uhi] and [ulo, hi], lo and uhi are < 0 while ulo and hi are >= 0.
-// This class deals with each interval with both bounds being >= 0 or < 0 in
-// the signed domain. We call it Simple because a canonicalized TypeIntPrototype
-// may contain 1 or 2 SimpleCanonicalResult.
+// This is the result of canonicalizing a simple interval (see TypeInt at
+// type.hpp)
 template <class U>
 class SimpleCanonicalResult {
   static_assert(U(-1) > U(0), "bit info should be unsigned");
 public:
-  bool _present; // whether this is an empty set
-  RangeInt<U> _bounds;
+  bool _present;       // whether this is an empty set
+  RangeInt<U> _bounds; // The bounds must be in the same half of the integer domain (see TypeInt)
   KnownBits<U> _bits;
 
   bool empty() const {
@@ -82,7 +75,8 @@ public:
 // bit refers to the highest bit (the MSB), the last bit refers to the lowest
 // bit (the LSB), a bit comes before (being higher than) another if it is more
 // significant, and a bit comes after (being lower than) another if it is less
-// significant.
+// significant. For a value n with w bits, we denote n[0] the first (highest)
+// bit of n, n[1] the second bit, ..., n[w - 1] the last (lowest) bit of n.
 template <class U>
 static U adjust_lo(U lo, const KnownBits<U>& bits) {
   // Violation of lo with respects to bits
@@ -92,7 +86,7 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
   // zero_violation = 0100, i.e the second bit should be zero, but it is 1 in
   // lo. Similarly, one_violation = 0001, i.e the last bit should be one, but
   // it is 0 in lo. These make lo not satisfy the bit constraints, which
-  // results in us having to find the smallest value that satisfies bits
+  // results in us having to find the smallest value that satisfies bits.
   U zero_violation = lo & bits._zeros;
   U one_violation = ~lo & bits._ones;
   if (zero_violation == one_violation) {
@@ -103,11 +97,12 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
 
   /*
   1. Intuition:
-  Call res the lowest value not smaller than lo that satisfies bits, consider
-  the first bit in res that is different from the corresponding bit in lo,
-  since res is larger than lo the bit must be 0 in lo and 1 in res. Since res
-  must satisify bits the bit must be 0 in zeros. Finally, as res should be the
-  smallest value, this bit should be the last one possible.
+  Call r the lowest value not smaller than lo that satisfies bits, consider the
+  first bit in r that is different from the corresponding bit in lo:
+    - Since r is larger than lo the bit must be 0 in lo and 1 in r
+    - Since r must satisify bits the bit must be 0 in zeros
+    - Since r should be the smallest value, this bit should be the lowest one
+      possible
 
   E.g:      1 2 3 4 5 6
        lo = 1 0 0 1 1 0
@@ -123,79 +118,110 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
   if both x1 and x2 satisfy bits, x2 would be closer to our true result.
 
   2. Formality:
-  Call i the largest value such that (with v[0] being the first bit of v, v[1]
-  being the second bit of v and so on):
+  Call i the largest bit index such that:
 
-  - lo[x] satisfies bits for 0 <= x < i
-  - zeros[i] = 0
-  - lo[i] = 0
+  - lo[x] satisfies bits for 0 <= x < i (2.1)
+  - zeros[i] = 0                        (2.2)
+  - lo[i] = 0                           (2.3)
 
   Consider v:
 
-  - v[x] = lo[x], for 0 <= x < i
-  - v[i] = 1
-  - v[x] = ones[x], for j > i
+  - v[x] = lo[x], for 0 <= x < i        (2.4)
+  - v[i] = 1                            (2.5)
+  - v[x] = ones[x], for x > i           (2.6)
 
   We will prove that v is the smallest value not smaller than lo that
   satisfies bits.
 
-  Call r the smallest value not smaller than lo that satisfies bits.
+  Call r the smallest value not smaller than lo that satisfies bits. Since lo
+  does not satisfy bits, lo < r (2.7)
 
   a. Firstly, we prove that r <= v:
 
-  Trivially, lo < v since lo[i] < v[i] and lo[x] == v[x] for x < i.
+    Trivially, lo < v since:
+      lo[x] = v[x], for 0 <= x < i (according to 2.4)
+      lo[i] < v[i] (according to 2.3 and 2.5, lo[i] == 0 < v[i] == 1)
+      bits at x > i have lower significance, and are thus irrelevant
 
-  As established above, the first (i + 1) bits of v satisfy bits.
-  The remaining bits satisfy zeros, since any bit x > i such that zeros[x] == 1, v[x] == ones[x] == 0
-  They also satisfy ones, since any bit j > i such that ones[x] == 1, v[x] == ones[x] == 1
+    As established above, the first (i + 1) bits of v satisfy bits.
+    The remaining bits satisfy zeros, since any bit x > i such that zeros[x] == 1,
+      v[x] == ones[x] == 0 (according to 2.6, we assume bits is not contradictory here)
+    They also satisfy ones, since any bit j > i such that ones[x] == 1, v[x] == ones[x] == 1 (according to 2.6)
 
-  As a result, v > lo and v satisfies bits since all of its bits satisfy bits. Which
-  means r <= v since r is the smallest such value.
+    As a result, v > lo and v satisfies bits since all of its bits satisfy bits. Which
+    means r <= v since r is the smallest such value.
 
-  b. Secondly, we prove that r >= v. Suppose r < v:
+  b. Secondly, we prove that r == v. Suppose r < v:
 
-  Since r < v, there must be a bit position j that:
+    Since r < v, there must be a bit position j that:
 
-  r[j] == 0, v[j] == 1
-  r[x] == v[x], for x < j
+    r[j] == 0               (2.b.1)
+    v[j] == 1               (2.b.2)
+    r[x] == v[x], for x < j (2.b.3)
 
-  - If j < i
-  r[j] == 0, v[j] == lo[j] == 1
-  r[x] == v[x] == lo[x], for x < j
+    - If j < i
+      r[j] == 0 (according to 2.b.1)
+      v[j] == lo[j] (according to 2.4 because j < i)
+      v[j] == 1 (according to 2.b.2)
+      r[x] == v[x], for x < j (according to 2.b.3)
+      v[x] == lo[x], for x < j (according to 2,4 because j < i)
 
-  This means r < lo, which contradicts that r >= lo
+      This means that:
+      r[j] == 0
+      lo[j] == 1
+      r[x] == lo[x], for x < j
 
-  - If j == i
-  This means that lo[i] == r[i]. Call k the bit position such that:
+      Which leads to r < lo, which contradicts that r >= lo
 
-  r[k] == 1, lo[k] == 0
-  r[x] == lo[x], for x < k
+    - If j == i
+      Since lo[i] == 0 (according to 2.3) and r[i] == 0 (according to 2.b.1),
+      we have lo[i] == r[i]. Since r > lo (according to 2.7), there must exist
+      a bit index k such that:
 
-  k > i since r[x] == lo[x], for x <= i
-  lo[x] satisfies bits for 0 <= x < k
-  zeros[k] == 0
-  This contradicts the assumption that i being the largest value satisfying such conditions.
+      r[k] == 1
+      lo[k] == 0
+      r[x] == lo[x], for x < k
 
-  - If j > i:
-  ones[j] == v[j] == 1, which contradicts that r satisfies bits.
+      Then, since we have:
+      r[x] == v[x], for x < i (according to 2.b.3 because j == i)
+      v[x] == lo[x], for x < i (according to 2.4)
+      r[j] == 0 (according to 2.b.1)
+      lo[j] == 0 (according to 2.3)
 
-  All cases lead to contradictions, which mean r < v is incorrect, which means
-  that r >= v.
+      this leads to: r[x] == lo[x], for x <= i
+      while r[k] == 1 != lo[k] == 0, we can conclude that k > i
 
-  As a result, r == v, which means the value v having the above form is the
-  lowest value not smaller than lo that satisfies bits.
+      However, since:
+      lo[x] satisfies bits for 0 <= x < k (because r satisfies bits and lo[x] == r[x] for 0 <= x < k)
+      zeros[k] == 0 (because r[k] == 1, which means zeros[k] != 1 because r satisfies bits)
+      lo[k] == 0 (the definition of k above)
 
-  Our objective now is to find the largest value i that satisfies:
-  - lo[x] satisfies bits for 0 <= x < i
-  - zeros[i] = 0
-  - lo[i] = 0
+      This contradicts the assumption that i is the largest bit index satisfying such conditions.
 
-  Call j the largest value such that lo[x] satisfies bits for 0 <= x < j. This
-  means that j is the smallest value such that lo[j] does not satisfy bits. We
-  call this the first violation. i then can be computed as the largest value
-  <= j such that:
+    - If j > i
+      ones[j] == v[j] (according to 2.6 since j > i)
+      v[j] == 1 (according to 2.b.2)
+      r[j] == 0 (according to 2.b.1)
 
-  zeros[i] == lo[i] == 0
+      This means that r[j] == 0 and ones[j] == 1, this contradicts the assumption that r
+      satisfies bits.
+
+    All cases lead to contradictions, which mean r < v is incorrect, which means
+    that r == v, which means the value v having the above form is the
+    lowest value not smaller than lo that satisfies bits.
+
+  3. Conclusion
+    Our objective now is to find the largest value i that satisfies:
+    - lo[x] satisfies bits for 0 <= x < i
+    - zeros[i] = 0
+    - lo[i] = 0
+
+    Call j the largest value such that lo[x] satisfies bits for 0 <= x < j. This
+    means that j is the smallest value such that lo[j] does not satisfy bits. We
+    call this the first violation. i then can be computed as the largest value
+    <= j such that:
+
+    zeros[i] == lo[i] == 0
   */
 
   // The algorithm depends on whether the first violation violates zeros or
@@ -356,9 +382,8 @@ adjust_bits_from_bounds(const KnownBits<U>& bits, const RangeInt<U>& bounds) {
 // This function converges because at each iteration, some bits that are unknown
 // are made known. As there are at most 64 bits, the number of iterations should
 // not be larger than 64.
-// This function is called simple because it deals with a SimpleCanonicalResult,
-// and a canonicalization of a TypeIntPrototype may require 1 or 2 calls to this
-// function, one for the non-negative range and one for the negative range.
+// This function is called simple because it deals with a simple intervals (see
+// TypeInt at type.hpp).
 template <class U>
 static SimpleCanonicalResult<U>
 canonicalize_constraints_simple(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
@@ -415,8 +440,11 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
     }
   }
 
+  // Now [srange._lo, jint(urange._hi)] and [jint(urange._lo), srange._hi] are
+  // both simple intervals (as defined in TypeInt at type.hpp), we process them
+  // separately and combine the results
   if (S(urange._lo) <= S(urange._hi)) {
-    // [lo, hi] and [ulo, uhi] represent the same range
+    // The 2 simple intervals should be tightened to the same result
     urange._lo = U(MAX2(S(urange._lo), srange._lo));
     urange._hi = U(MIN2(S(urange._hi), srange._hi));
     if (urange._lo > urange._hi || S(urange._lo) > S(urange._hi)) {
@@ -428,10 +456,7 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
                             type._bounds, type._bits}};
   }
 
-  // [lo, hi] intersects with [ulo, uhi] in 2 ranges:
-  // [lo, uhi], which consists of negative values
-  // [ulo, hi] which consists of non-negative values
-  // We process these 2 separately and combine the results
+  // The 2 simple intervals can be tightened into 2 separate results
   auto neg_type = canonicalize_constraints_simple({U(srange._lo), urange._hi}, _bits);
   auto pos_type = canonicalize_constraints_simple({urange._lo, U(srange._hi)}, _bits);
 

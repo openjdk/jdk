@@ -589,28 +589,30 @@ public:
 /**
  * Definition:
  *
- * A TypeInt represents a set of jint values. An jint v is an element of a
- * TypeInt iff:
+ * A TypeInt represents a set of non-empty jint values. A jint v is an element
+ * of a TypeInt iff:
  *
  * v >= _lo && v <= _hi && juint(v) >= _ulo && juint(v) <= _uhi && _bits.is_satisfied_by(v)
  *
- * Multiple set of parameters can represent the same set.
+ * Multiple sets of parameters can represent the same set.
  * E.g: consider 2 TypeInt t1, t2
  *
- * t1._lo = 2, t1._hi = 7, t1._ulo = 0, t1._uhi = 5, t1._bits._zeros = 0x0, t1._bits._ones = 0x1
+ * t1._lo = 2, t1._hi = 7, t1._ulo = 0, t1._uhi = 5, t1._bits._zeros = 0x00000000, t1._bits._ones = 0x1
  * t2._lo = 3, t2._hi = 5, t2._ulo = 3, t2._uhi = 5, t2._bits._zeros = 0xFFFFFFF8, t2._bits._ones = 0x1
  *
  * Then, t1 and t2 both represent the set {3, 5}. We can also see that the
- * constraints of t2 are optimal. I.e there exists no TypeInt t3 which also
- * represents {3, 5} such that:
+ * constraints of t2 are tightest possible. I.e there exists no TypeInt t3
+ * which also represents {3, 5} such that:
  *
  * t3._lo > t2._lo || t3._hi < t2._hi || t3._ulo > t2._ulo || t3._uhi < t2._uhi ||
- *     (t3._bits._zeros & t2._bis._zeros) != t3._bits._zeros || (t3._bits._ones & t2._bits._ones) != t3._bits._ones
+ *     (t3._bits._zeros &~ t2._bis._zeros) != 0 || (t3._bits._ones &~ t2._bits._ones) != 0
  *
- * The last 2 conditions mean that the bits in t3._bits._zeros is not a subset
- * of those in t2._bits._zeros, the same applies to _bits._ones
+ * The 5-th condition mean that the subtraction of the bitsets represented by
+ * t3._bits._zeros and t2._bits._zeros is not empty, which means that the
+ * bits in t3._bits._zeros is not a subset of those in t2._bits._zeros, the
+ * same applies to _bits._ones
  *
- * As a result, every TypeInt is canonicalized to its optimal form upon
+ * As a result, every TypeInt is canonicalized to its tightest form upon
  * construction. This makes it easier to reason about them in optimizations.
  * E.g a TypeInt t with t._lo < 0 will definitely contain negative values. It
  * also makes it trivial to determine if a TypeInt instance is a subset of
@@ -618,40 +620,46 @@ public:
  *
  * Lemmas:
  *
- * 1. Since every TypeInt instance is canonicalized, all the bounds must also
- * be elements of such TypeInt. Or else, we can tighten the bounds by narrowing
- * it by one, which contradicts the assumption of the TypeInt being canonical.
+ * 1. Since every TypeInt instance is non-empty and canonicalized, all the
+ *   bounds must also be elements of such TypeInt. Or else, we can tighten the
+ *   bounds by narrowing it by one, which contradicts the assumption of the
+ *   TypeInt being canonical.
  *
- * 2. _lo <= jint(_ulo)
- *    _lo <= _hi
- *    _lo <= jint(_uhi)
- *    _ulo <= juint(_lo)
- *    _ulo <= _uhi
- *    _ulo <= juint(_hi)
- *    _hi >= jint(_uhi)
- *    _hi >= _lo
- *    _hi >= jint(_ulo)
- *    _hi >= jint(_uhi)
- *    _uhi >= juint(_hi)
- *    _uhi >= juint(_lo)
- *    _uhi >= _ulo
+ * 2.
+ *   2.1.  _lo <= jint(_ulo)
+ *   2.2.  _lo <= _hi
+ *   2.3.  _lo <= jint(_uhi)
+ *   2.4.  _ulo <= juint(_lo)
+ *   2.5.  _ulo <= juint(_hi)
+ *   2.6.  _ulo <= _uhi
+ *   2.7.  _hi >= _lo
+ *   2.8.  _hi >= jint(_ulo)
+ *   2.9.  _hi >= jint(_uhi)
+ *   2.10. _uhi >= juint(_lo)
+ *   2.11. _uhi >= _ulo
+ *   2.12. _uhi >= juint(_hi)
  *
  *   Proof of lemma 2:
  *
- *   _lo <= jint(_ulo):
- *   According the lemma 1, _ulo is an element of the TypeInt, so in the signed
- *   domain, it must not be less than the smallest element of that TypeInt, which
- *   is _lo. Which means that _lo <= _ulo in the signed domain, or in a more
- *   programmatical way, _lo <= jint(_ulo).
+ *   2.1. _lo <= jint(_ulo):
+ *     According the lemma 1, _ulo is an element of the TypeInt, so in the
+ *     signed domain, it must not be less than the smallest element of that
+ *     TypeInt, which is _lo. Which means that _lo <= _ulo in the signed
+ *     domain, or in a more programmatical way, _lo <= jint(_ulo).
+ *   2.2. _lo <= _hi:
+ *     According the lemma 1, _hi is an element of the TypeInt, so in the
+ *     signed domain, it must not be less than the smallest element of that
+ *     TypeInt, which is _lo. Which means that _lo <= _hi.
+ *
  *   The other inequalities can be proved in a similar manner.
  *
  * 3. Either _lo == jint(_ulo) and _hi == jint(_uhi), or all elements of a
- * TypeInt lie in the intervals [_lo, jint(_uhi)] or [jint(_ulo), _hi] (note
- * that these intervals are disjoint in this case).
+ *   TypeInt lie in the intervals [_lo, jint(_uhi)] or [jint(_ulo), _hi] (note
+ *   that these intervals are disjoint in this case).
  *
  *   Proof of lemma 3:
- *   We have a preliminary: For 2 jint value x, y such that they are both >= 0
- *   or both < 0. Then:
+ *   Lemma 3.1: For 2 jint value x, y such that they are both >= 0 or both < 0.
+ *   Then:
  *
  *   x <= y iff juint(x) <= juint(y)
  *   I.e. x <= y in the signed domain iff x <= y in the unsigned domain
@@ -660,16 +668,24 @@ public:
  *
  *   For a TypeInt t, there are 3 possible cases:
  *
- *   a. t._lo >= 0. Since 0 <= t._lo <= jint(t._ulo) (lemma 2), we have:
+ *   a. t._lo >= 0, we have:
  *
- *     juint(t._lo) <= juint(jint(t._ulo)) == t._ulo <= juint(t._lo)
+ *     0 <= t_lo <= jint(t._ulo)           (lemma 2.1)
+ *     juint(t._lo) <= juint(jint(t._ulo)) (lemma 3.1)
+ *                  == t._ulo              (juint(jint(v)) == v with juint v)
+ *                  <= juint(t._lo)        (lemma 2.4)
  *
  *     Which means that t._lo == jint(t._ulo).
  *
- *     Furthermore, 0 <= t._lo <= t._hi and 0 <= t._lo <= jint(t._uhi) (lemma 2),
- *     since t._hi >= jint(t._uhi), we have:
+ *     Furthermore,
  *
- *     juint(t._hi) >= juint(jint(t._uhi)) == t._uhi >= juint(t._hi)
+ *     0 <= t._lo <= t._hi                 (lemma 2.2)
+ *     0 <= t._lo <= jint(t._uhi)          (lemma 2.3)
+ *     t._hi >= jint(t._uhi)               (lemma 2.9)
+ *
+ *     juint(t._hi) >= juint(jint(t._uhi)) (lemma 3.1)
+ *                  == t._uhi              (juint(jint(v)) == v with juint v)
+ *                  >= juint(t._hi)        (lemma 2.12)
  *
  *     Which means that t._hi = jint(t._uhi)
  *
@@ -677,11 +693,12 @@ public:
  *
  *   c. t._lo < 0, t._hi >= 0.
  *
- *     Since t._ulo <= juint(t._hi), we must have jint(t._ulo) >= 0 because all
- *     negative values is larger than all positive values in the unsigned domain.
+ *     Since t._ulo <= juint(t._hi) (lemma 2.5), we must have jint(t._ulo) >= 0
+ *     because all negative values is larger than all non-negative values in the
+ *     unsigned domain.
  *
- *     Since t._uhi >= juint(t._lo), we must have jint(t._uhi) < 0, similar to the
- *     reasoning above.
+ *     Since t._uhi >= juint(t._lo) (lemma 2.10), we must have jint(t._uhi) < 0
+ *     similar to the reasoning above.
  *
  *     In this case, all elements of t belongs to either [t._lo, jint(t._uhi)] or
  *     [jint(t._ulo), t._hi].
@@ -695,9 +712,18 @@ public:
  *     Unsigned:
  *                                 0--------ulo==========hi----------lo=========uhi---------
  *
- *   This property is useful for our analysis of TypeInt values. Additionally, it
- *   can be seen that _lo and jint(_uhi) are both < 0 or both >= 0, and the same
- *   applies to jint(_ulo) and _hi.
+ *   This property is useful for our analysis of TypeInt values. Additionally,
+ *   it can be seen that _lo and jint(_uhi) are both < 0 or both >= 0, and the
+ *   same applies to jint(_ulo) and _hi.
+ *
+ *   We call [_lo, jint(_uhi)] and [jint(_ulo), _hi] "simple intervals". Then,
+ *   a TypeInt consists of 2 simple intervals, each of which has its bounds
+ *   being both >= 0 or both < 0. If both simple intervals lie in the same half
+ *   of the integer domain, they must be the same (i.e _lo == jint(_ulo) and
+ *   _hi == jint(_uhi)). Otherwise, [_lo, jint(_uhi)] must lie in the negative
+ *   half and [jint(_ulo), _hi] must lie in the non-negative half of the signed
+ *   domain (equivalently, [_lo, jint(_uhi)] must lie in the upper half and
+ *   [jint(_ulo), _hi] must lie in the lower half of the unsigned domain).
  */
 class TypeInt : public TypeInteger {
   TypeInt(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
