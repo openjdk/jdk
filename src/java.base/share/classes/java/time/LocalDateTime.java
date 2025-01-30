@@ -71,6 +71,7 @@ import static java.time.LocalTime.NANOS_PER_MINUTE;
 import static java.time.LocalTime.NANOS_PER_SECOND;
 import static java.time.LocalTime.SECONDS_PER_DAY;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
+import static jdk.internal.util.DateTimeHelper.formatTo;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -95,9 +96,6 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.time.zone.ZoneRules;
 import java.util.Objects;
-
-import jdk.internal.access.JavaTimeAccess;
-import jdk.internal.access.SharedSecrets;
 
 /**
  * A date-time without a time-zone in the ISO-8601 calendar system,
@@ -1969,18 +1967,10 @@ public final class LocalDateTime
     @Override
     public String toString() {
         var buf = new StringBuilder(29);
-        formatTo(buf);
+        formatTo(buf, this);
         return buf.toString();
     }
 
-    /**
-     * Prints the toString result to the given buf, avoiding extra string allocations.
-     */
-    void formatTo(StringBuilder buf) {
-        date.formatTo(buf);
-        buf.append('T');
-        time.formatTo(buf);
-    }
 
     //-----------------------------------------------------------------------
     /**
@@ -2020,13 +2010,5 @@ public final class LocalDateTime
         LocalDate date = LocalDate.readExternal(in);
         LocalTime time = LocalTime.readExternal(in);
         return LocalDateTime.of(date, time);
-    }
-
-    static {
-        SharedSecrets.setJavaTimeAccess(new JavaTimeAccess() {
-            public void formatTo(StringBuilder buf, LocalDateTime timeToFormat) {
-                timeToFormat.formatTo(buf);
-            }
-        });
     }
 }

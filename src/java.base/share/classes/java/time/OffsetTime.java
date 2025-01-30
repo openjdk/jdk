@@ -68,6 +68,7 @@ import static java.time.LocalTime.SECONDS_PER_DAY;
 import static java.time.temporal.ChronoField.NANO_OF_DAY;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoUnit.NANOS;
+import static jdk.internal.util.DateTimeHelper.formatTo;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -1400,7 +1401,7 @@ public final class OffsetTime
     public String toString() {
         var offsetStr = offset.toString();
         var buf = new StringBuilder(18 + offsetStr.length());
-        time.formatTo(buf);
+        formatTo(buf, time);
         return buf.append(offsetStr).toString();
     }
 

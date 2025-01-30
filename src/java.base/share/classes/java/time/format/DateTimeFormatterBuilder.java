@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.ERA;
+import static jdk.internal.util.DateTimeHelper.formatTo;
 
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
@@ -163,8 +164,6 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * @since 1.8
  */
 public final class DateTimeFormatterBuilder {
-    private static final JavaTimeAccess JTA = SharedSecrets.getJavaTimeAccess();
-
     /**
      * Query for a time-zone that is region-only.
      */
@@ -3852,7 +3851,7 @@ public final class DateTimeFormatterBuilder {
             if (hi > 0) {
                 buf.append('+').append(hi);
             }
-            JTA.formatTo(buf, ldt);
+            formatTo(buf, ldt);
             if (ldt.getSecond() == 0 && inNano == 0) {
                 buf.append(":00");
             }
@@ -3864,7 +3863,7 @@ public final class DateTimeFormatterBuilder {
             long lo = zeroSecs % SECONDS_PER_10000_YEARS;
             LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, inNano, ZoneOffset.UTC);
             int pos = buf.length();
-            JTA.formatTo(buf, ldt);
+            formatTo(buf, ldt);
             if (ldt.getSecond() == 0 && inNano == 0) {
                 buf.append(":00");
             }

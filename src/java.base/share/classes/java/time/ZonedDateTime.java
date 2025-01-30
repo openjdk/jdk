@@ -64,6 +64,7 @@ package java.time;
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
+import static jdk.internal.util.DateTimeHelper.formatTo;
 
 import java.io.DataOutput;
 import java.io.IOException;
@@ -2222,7 +2223,7 @@ public final class ZonedDateTime
             length += zoneStr.length() + 2;
         }
         var buf = new StringBuilder(length);
-        dateTime.formatTo(buf);
+        formatTo(buf, dateTime);
         buf.append(offsetStr);
         if (zoneStr != null) {
             buf.append('[').append(zoneStr).append(']');

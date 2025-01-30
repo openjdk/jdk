@@ -80,7 +80,6 @@ public class SharedSecrets {
     private static JavaNetUriAccess javaNetUriAccess;
     private static JavaNetURLAccess javaNetURLAccess;
     private static JavaNioAccess javaNioAccess;
-    private static JavaTimeAccess javaTimeAccess;
     private static JavaUtilCollectionAccess javaUtilCollectionAccess;
     private static JavaUtilConcurrentTLRAccess javaUtilConcurrentTLRAccess;
     private static JavaUtilConcurrentFJPAccess javaUtilConcurrentFJPAccess;
@@ -154,21 +153,6 @@ public class SharedSecrets {
 
     public static void setJavaLangAccess(JavaLangAccess jla) {
         javaLangAccess = jla;
-    }
-
-    public static JavaTimeAccess getJavaTimeAccess() {
-        var access = javaTimeAccess;
-        if (access == null) {
-            // Ensure LocalDateTime is initialized; we know that this class
-            // provides the shared secret
-            ensureClassInitialized(java.time.LocalDateTime.class);
-            access = javaTimeAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaTimeAccess(JavaTimeAccess javaTimeAccess) {
-        SharedSecrets.javaTimeAccess = javaTimeAccess;
     }
 
     public static JavaLangAccess getJavaLangAccess() {
