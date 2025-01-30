@@ -23,12 +23,22 @@
  */
 package com.sun.hotspot.igv.view.widgets;
 
+import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.graph.LiveRangeSegment;
+import com.sun.hotspot.igv.util.DoubleClickAction;
+import com.sun.hotspot.igv.util.DoubleClickHandler;
 import com.sun.hotspot.igv.util.PropertiesConverter;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.view.DiagramScene;
+import com.sun.hotspot.igv.view.DiagramViewModel;
+
 import java.awt.*;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
 import org.openide.nodes.AbstractNode;
@@ -36,7 +46,7 @@ import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.nodes.Sheet;
 
-public class LiveRangeWidget extends Widget implements Properties.Provider {
+public class LiveRangeWidget extends Widget implements Properties.Provider, DoubleClickHandler {
 
     private final LiveRangeSegment liveRangeSegment;
     private final DiagramScene scene;
@@ -59,6 +69,8 @@ public class LiveRangeWidget extends Widget implements Properties.Provider {
         this.scene = scene;
         this.length = length;
         this.next = next;
+
+        getActions().addAction(new DoubleClickAction(this));
 
         updateClientArea();
 
@@ -142,6 +154,18 @@ public class LiveRangeWidget extends Widget implements Properties.Provider {
         if (next != null) {
             next.setHighlighted(enable);
         }
+    }
+
+    @Override
+    public void handleDoubleClick(Widget w, WidgetAction.WidgetMouseEvent e) {
+        DiagramViewModel model = this.scene.getModel();
+        Set<Integer> nodes = new HashSet<>();
+        InputGraph graph = model.getDiagram().getInputGraph();
+        int liveRangeId = liveRangeSegment.getLiveRange().getId();
+        for (InputNode node : graph.getRelatedNodes(liveRangeId)) {
+            nodes.add(node.getId());
+        }
+        model.showOnly(nodes);
     }
 
     @Override
