@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "nmt/vmatree.hpp"
 #include "utilities/globalDefinitions.hpp"
