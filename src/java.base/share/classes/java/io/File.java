@@ -1518,7 +1518,7 @@ public class File
      * virtual machine with special privileges that allow it to execute files
      * that are not marked executable.
      *
-     * <p>An invocation of this method of the form {@code file.setExcutable(arg)}
+     * <p>An invocation of this method of the form {@code file.setExecutable(arg)}
      * behaves in exactly the same way as the invocation
      *
      * {@snippet lang=java :
