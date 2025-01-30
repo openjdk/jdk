@@ -26,16 +26,17 @@
  * @bug 8087112
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
- * @build jdk.httpclient.test.lib.common.TestUtil
- *        jdk.httpclient.test.lib.http2.Http2TestServer
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.httpclient.test.lib.http2.Http2TestExchange
  *        jdk.httpclient.test.lib.http2.Http2EchoHandler
+ *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors BasicTest
  */
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.*;
 import javax.net.ssl.*;
 import java.net.http.HttpClient;
@@ -56,7 +57,7 @@ import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
-import static jdk.httpclient.test.lib.common.TestUtil.assertFilesEqual;
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFile;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
@@ -219,7 +220,7 @@ public class BasicTest {
                     return resp.body();
                 });
         response.join();
-        assertFilesEqual(src, dest);
+        assertFileContentsEqual(src, dest);
         System.err.println("streamTest: DONE");
     }
 
@@ -282,7 +283,11 @@ public class BasicTest {
                 .thenApply(resp -> {
                     System.out.printf("Resp status %d body size %d\n",
                                       resp.statusCode(), resp.body().toFile().length());
-                    assertFilesEqual(resp.body(), source);
+                    try {
+                        assertFileContentsEqual(resp.body(), source);
+                    } catch (IOException exception) {
+                        throw new UncheckedIOException(exception);
+                    }
                     return null;
                 });
             Thread.sleep(100);

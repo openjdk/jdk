@@ -23,6 +23,11 @@
 
 package jdk.test.lib;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.Objects;
@@ -604,6 +609,39 @@ public class Asserts {
 
         if (stringsAreDifferent) {
             fail(messageBuilder.toString());
+        }
+    }
+
+    /**
+     * Asserts that contents of two files are equal.
+     *
+     * @param f1 The path of the first file to compare
+     * @param f2 The path of the second file to compare
+     * @throws RuntimeException on mismatch
+     * @throws IOException on I/O failures
+     */
+    public static void assertFileContentsEqual(Path f1, Path f2) throws IOException {
+        try (InputStream s1 = new BufferedInputStream(Files.newInputStream(f1));
+             InputStream s2 = new BufferedInputStream(Files.newInputStream(f2))) {
+            for (long i = 0; ; i++) {
+                int c1 = s1.read();
+                int c2 = s2.read();
+                String message = null;
+                if (c1 == -1 && c2 == -1) {
+                    break;
+                } else if (c1 == -1) {
+                    message = String.format("At index %d, `%s` reached EOF, while `%s` did not", i, f1, f2);
+                } else if (c2 == -1) {
+                    message = String.format("At index %d, `%s` reached EOF, while `%s` did not", i, f2, f1);
+                } else if (c1 != c2) {
+                    message = String.format(
+                            "At index %d, `%s` has `%s`, while `%s` has `%s`",
+                            i, f1, Character.toString(c1), f2, Character.toString(c2));
+                }
+                if (message != null) {
+                    fail(message);
+                }
+            }
         }
     }
 
