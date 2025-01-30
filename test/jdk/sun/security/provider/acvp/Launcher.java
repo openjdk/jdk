@@ -27,7 +27,6 @@ import jdk.test.lib.artifacts.ArtifactResolverException;
 import jdk.test.lib.json.JSONValue;
 import jtreg.SkippedException;
 
-import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.security.Provider;
@@ -47,11 +46,11 @@ import java.util.zip.ZipFile;
 /// Download zip archive, for instance -
 /// https://github.com/usnistgov/ACVP-Server/archive/refs/tags/v1.1.0.38.zip
 ///
-/// The zip archive is either put on to artifactory server or
+/// The zip archive is either hosted on artifactory server or
 /// specified with local path to the test.
 /// The test looks for test data files in archive listed with `TEST_FILES`.
 ///
-/// The tests are currently compatible with ACVP version 1.1.0.38.
+/// These tests are currently compatible with ACVP version 1.1.0.38.
 ///
 /// Set the `test.acvp.alg` test property to only test the specified algorithm.
 ///
@@ -82,10 +81,9 @@ public class Launcher {
 
     private static final Provider PROVIDER;
 
-    // Version of ACVP test vector
-    private static final String ACVP_BUNDLE_VERSION = "1.1.0.38";
     private static final String ACVP_BUNDLE_LOC = "jpg.tests.jdk";
     private static final String ACVP_BUNDLE_NAME = "ACVP-Server";
+    private static final String ACVP_BUNDLE_VERSION = "1.1.0.38";
     // Zip archive entry name, do not update to use File.separator
     private static final String[] TEST_FILES = {
             "gen-val/json-files/ML-DSA-keyGen-FIPS204/internalProjection.json",
@@ -115,8 +113,8 @@ public class Launcher {
 
     public static void main(String[] args) throws Exception {
 
-        Path dataPath = fetchACVPServerTests(ACVP_SERVER_TESTS.class);
-        System.out.println("Data path: " + dataPath);
+        Path archivePath = fetchACVPServerTests(ACVP_SERVER_TESTS.class);
+        System.out.println("Data path: " + archivePath);
 
         if (PROVIDER != null) {
             System.out.println("Provider: " + PROVIDER.getName());
@@ -126,7 +124,7 @@ public class Launcher {
         }
 
         // Read test data files from zip archive
-        try (ZipFile zf = new ZipFile(dataPath.toFile())) {
+        try (ZipFile zf = new ZipFile(archivePath.toFile())) {
             for (String testFile : TEST_FILES) {
                 // Zip archive entry name, do not update to use File.separator
                 String fullEntryName = ACVP_BUNDLE_NAME + "-" + ACVP_BUNDLE_VERSION + "/" + testFile;
