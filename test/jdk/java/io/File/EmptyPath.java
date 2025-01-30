@@ -142,19 +142,8 @@ public class EmptyPath {
 
     @Test
     @Order(1)
-    @DisabledOnOs({OS.WINDOWS})
-    public void lengthUnix() throws IOException {
-        assertTrue(f.length() > 0);
-    }
-
-    // Note: On Windows, File.length() can return zero when run in a
-    // scratch directory.
-    @Test
-    @Order(1)
-    @EnabledOnOs({OS.WINDOWS})
-    public void lengthWindows() throws IOException {
-        long len = f.length();
-        assertTrue(len > 0 || (len == 0 && Files.size(f.toPath()) == 0));
+    public void length() throws IOException {
+        assertEquals(f.length(), Files.size(f.toPath()));
     }
 
     @Test
