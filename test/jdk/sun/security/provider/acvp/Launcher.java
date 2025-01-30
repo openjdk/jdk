@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,13 +20,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import jdk.test.lib.artifacts.Artifact;
+import jdk.test.lib.artifacts.ArtifactResolver;
+import jdk.test.lib.artifacts.ArtifactResolverException;
 import jdk.test.lib.json.JSONValue;
 import jtreg.SkippedException;
 
-import java.nio.file.Files;
+import java.io.File;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.security.Provider;
 import java.security.Security;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /*
  * @test
@@ -37,12 +44,14 @@ import java.security.Security;
 
 /// This test runs on `internalProjection.json`-style files generated
 /// by NIST's ACVP Server. See [https://github.com/usnistgov/ACVP-Server].
+/// Download zip archive, for instance -
+/// https://github.com/usnistgov/ACVP-Server/archive/refs/tags/v1.1.0.38.zip
 ///
-/// The files are either put into the `data` directory or another
-/// directory specified by the `test.acvp.data` test property.
-/// The test walks through the directory recursively and looks for
-/// file names equal to or ending with `internalProjection.json` and
-/// runs tests on them.
+/// The zip archive is either put on to artifactory server or
+/// specified with local path to the test.
+/// The test looks for test data files in archive listed with `TEST_FILES`.
+///
+/// The tests are currently compatible with ACVP version 1.1.0.38.
 ///
 /// Set the `test.acvp.alg` test property to only test the specified algorithm.
 ///
@@ -58,18 +67,34 @@ import java.security.Security;
 /// [https://github.com/usnistgov/ACVP?tab=readme-ov-file#supported-algorithms].
 ///
 /// Example:
+///
+/// Run locally with ArtifactResolver
 /// ```
-/// jtreg -Dtest.acvp.provider=SunJCE \
-///       -Dtest.acvp.alg=ML-KEM \
-///       -Dtest.acvp.data=/path/to/json-files/ \
-///       -jdk:/path/to/jdk Launcher.java
+/// jtreg -Djdk.test.lib.artifacts.ACVP-Server=<path-to-archive-file>
 /// ```
+/// OR host the zip archive on artifactory server.
+///
+
 public class Launcher {
 
     private static final String ONLY_ALG
             = System.getProperty("test.acvp.alg");
 
     private static final Provider PROVIDER;
+
+    // Version of ACVP test vector
+    private static final String ACVP_BUNDLE_VERSION = "1.1.0.38";
+    private static final String ACVP_BUNDLE_LOC = "jpg.tests.jdk";
+    private static final String ACVP_BUNDLE_NAME = "ACVP-Server";
+    private static final String JSON_FILES = "gen-val" + File.separator + "json-files";
+    private static final String JSON_DATA_FILE = "internalProjection.json";
+    private static final String[] TEST_FILES = {
+            JSON_FILES + File.separator + "ML-DSA-keyGen-FIPS204" + File.separator + JSON_DATA_FILE,
+            JSON_FILES + File.separator + "ML-DSA-sigGen-FIPS204" + File.separator + JSON_DATA_FILE,
+            JSON_FILES + File.separator + "ML-DSA-sigVer-FIPS204" + File.separator + JSON_DATA_FILE,
+            JSON_FILES + File.separator + "ML-KEM-encapDecap-FIPS203" + File.separator + JSON_DATA_FILE,
+            JSON_FILES + File.separator + "ML-KEM-keyGen-FIPS203" + File.separator + JSON_DATA_FILE
+    };
 
     private static int count = 0;
     private static int invalidTest = 0;
@@ -91,10 +116,7 @@ public class Launcher {
 
     public static void main(String[] args) throws Exception {
 
-        var testDataProp = System.getProperty("test.acvp.data");
-        Path dataPath = testDataProp != null
-                ? Path.of(testDataProp)
-                : Path.of(System.getProperty("test.src"), "data");
+        Path dataPath = fetchACVPServerTests(ACVP_SERVER_TESTS.class);
         System.out.println("Data path: " + dataPath);
 
         if (PROVIDER != null) {
@@ -104,11 +126,18 @@ public class Launcher {
             System.out.println("Algorithm: " + ONLY_ALG);
         }
 
-        try (var stream = Files.walk(dataPath)) {
-            stream.filter(Files::isRegularFile)
-                    .filter(p -> p.getFileName().toString()
-                            .endsWith("internalProjection.json"))
-                    .forEach(Launcher::run);
+        // Read test data files from zip archive
+        try (ZipFile zf = new ZipFile(dataPath.toFile())) {
+            for (String testFile : TEST_FILES) {
+                String fullEntryName = ACVP_BUNDLE_NAME + "-" + ACVP_BUNDLE_VERSION + File.separator + testFile;
+                System.out.println("Find and test with: " + fullEntryName);
+                ZipEntry ze = zf.getEntry(fullEntryName);
+                if (ze != null) {
+                    run(zf.getInputStream(ze));
+                } else {
+                    throw new RuntimeException("Entry not found: " + fullEntryName);
+                }
+            }
         }
 
         if (count > 0) {
@@ -121,11 +150,11 @@ public class Launcher {
         }
     }
 
-    static void run(Path test) {
+    static void run(InputStream test) {
         try {
             JSONValue kat;
-            try {
-                kat = JSONValue.parse(Files.readString(test));
+            try (test) {
+                kat = JSONValue.parse(new String(test.readAllBytes()));
             } catch (Exception e) {
                 System.out.println("Warning: cannot parse " + test + ". Skipped");
                 invalidTest++;
@@ -135,7 +164,6 @@ public class Launcher {
             if (ONLY_ALG != null && !alg.equals(ONLY_ALG)) {
                 return;
             }
-            System.out.println(">>> Testing " + test + "...");
             switch (alg) {
                 case "ML-DSA" -> {
                     ML_DSA_Test.run(kat, PROVIDER);
@@ -159,5 +187,29 @@ public class Launcher {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static Path fetchACVPServerTests(Class<?> clazz) {
+        try {
+            return ArtifactResolver.resolve(clazz).entrySet().stream()
+                    .findAny().get().getValue();
+        } catch (ArtifactResolverException e) {
+            Throwable cause = e.getCause();
+            if (cause == null) {
+                throw new SkippedException("Cannot resolve artifact, "
+                        + "please check if JIB jar is present in classpath.", e);
+            }
+
+            throw new SkippedException("Fetch artifact failed: " + clazz, e);
+        }
+    }
+
+    @Artifact(
+            organization = ACVP_BUNDLE_LOC,
+            name = ACVP_BUNDLE_NAME,
+            revision = ACVP_BUNDLE_VERSION,
+            extension = "zip",
+            unpack = false)
+    private static class ACVP_SERVER_TESTS {
     }
 }
