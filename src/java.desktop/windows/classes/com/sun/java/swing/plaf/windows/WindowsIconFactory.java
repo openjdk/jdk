@@ -874,11 +874,10 @@ public class WindowsIconFactory implements Serializable
                             skin =  xp.getSkin(c, backgroundPart);
                             skin.paintSkin(g, x, y,
                                 getIconWidth(), getIconHeight(), backgroundState);
+                            skin = xp.getSkin(c, part);
                             if (icon == null) {
-                                skin = xp.getSkin(c, part);
                                 skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
                             } else {
-                                skin = xp.getSkin(c, part);
                                 skin.paintSkin(g, x - 3 * OFFSET, y + OFFSET, state);
                             }
                         }
