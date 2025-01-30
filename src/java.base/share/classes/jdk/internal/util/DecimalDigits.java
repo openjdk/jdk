@@ -178,8 +178,7 @@ public final class DecimalDigits {
         ) {
             return -1;
         }
-        return ((d & 0xF) << 3) + ((d & 0xF) << 1)  // (d & 0xF) * 10
-                + (d >> 8);
+        return (d & 0xF) * 10 + (d >> 8);
     }
 
     /**
