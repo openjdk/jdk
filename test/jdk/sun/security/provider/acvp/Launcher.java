@@ -86,14 +86,13 @@ public class Launcher {
     private static final String ACVP_BUNDLE_VERSION = "1.1.0.38";
     private static final String ACVP_BUNDLE_LOC = "jpg.tests.jdk";
     private static final String ACVP_BUNDLE_NAME = "ACVP-Server";
-    private static final String JSON_FILES = "gen-val" + File.separator + "json-files";
-    private static final String JSON_DATA_FILE = "internalProjection.json";
+    // Zip archive entry name, do not update to use File.separator
     private static final String[] TEST_FILES = {
-            JSON_FILES + File.separator + "ML-DSA-keyGen-FIPS204" + File.separator + JSON_DATA_FILE,
-            JSON_FILES + File.separator + "ML-DSA-sigGen-FIPS204" + File.separator + JSON_DATA_FILE,
-            JSON_FILES + File.separator + "ML-DSA-sigVer-FIPS204" + File.separator + JSON_DATA_FILE,
-            JSON_FILES + File.separator + "ML-KEM-encapDecap-FIPS203" + File.separator + JSON_DATA_FILE,
-            JSON_FILES + File.separator + "ML-KEM-keyGen-FIPS203" + File.separator + JSON_DATA_FILE
+            "gen-val/json-files/ML-DSA-keyGen-FIPS204/internalProjection.json",
+            "gen-val/json-files/ML-DSA-sigGen-FIPS204/internalProjection.json",
+            "gen-val/json-files/ML-DSA-sigVer-FIPS204/internalProjection.json",
+            "gen-val/json-files/ML-KEM-encapDecap-FIPS203/internalProjection.json",
+            "gen-val/json-files/ML-KEM-keyGen-FIPS203/internalProjection.json"
     };
 
     private static int count = 0;
@@ -129,7 +128,8 @@ public class Launcher {
         // Read test data files from zip archive
         try (ZipFile zf = new ZipFile(dataPath.toFile())) {
             for (String testFile : TEST_FILES) {
-                String fullEntryName = ACVP_BUNDLE_NAME + "-" + ACVP_BUNDLE_VERSION + File.separator + testFile;
+                // Zip archive entry name, do not update to use File.separator
+                String fullEntryName = ACVP_BUNDLE_NAME + "-" + ACVP_BUNDLE_VERSION + "/" + testFile;
                 System.out.println("Find and test with: " + fullEntryName);
                 ZipEntry ze = zf.getEntry(fullEntryName);
                 if (ze != null) {
