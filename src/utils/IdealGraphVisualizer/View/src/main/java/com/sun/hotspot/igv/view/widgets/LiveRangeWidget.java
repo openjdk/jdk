@@ -27,6 +27,7 @@ import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.graph.Diagram;
+import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.LiveRangeSegment;
 import com.sun.hotspot.igv.util.DoubleClickAction;
 import com.sun.hotspot.igv.util.DoubleClickHandler;
@@ -34,6 +35,7 @@ import com.sun.hotspot.igv.util.PropertiesConverter;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.view.DiagramScene;
 import com.sun.hotspot.igv.view.DiagramViewModel;
+
 import java.awt.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -161,11 +163,18 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
 
     @Override
     public JPopupMenu getPopupMenu(Widget widget, Point point) {
-        JPopupMenu menu = scene.createPopupMenu();
-        menu.addSeparator();
-        int liveRangeId = liveRangeSegment.getLiveRange().getId();
         Diagram diagram = this.scene.getModel().getDiagram();
         InputGraph graph = diagram.getInputGraph();
+        int liveRangeId = liveRangeSegment.getLiveRange().getId();
+
+        JPopupMenu menu = scene.createPopupMenu();
+        menu.addSeparator();
+        Set<Figure> figures = new HashSet<>();
+        for (InputNode node : graph.getRelatedNodes(liveRangeId)) {
+            figures.add((diagram.getFigure(node)));
+        }
+        menu.add(scene.createGotoAction("Select definer and user nodes", figures));
+        menu.addSeparator();
         for (InputNode node : graph.getDefNodes(liveRangeId)) {
             menu.add(scene.createGotoAction(diagram.getFigure(node)));
         }

@@ -608,6 +608,20 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return action;
     }
 
+    public Action createGotoAction(String name, Set<Figure> figures) {
+        Action action = new AbstractAction(name) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setFigureSelection(figures);
+                model.showFigures(model.getSelectedFigures());
+                centerSelectedFigures();
+            }
+        };
+
+        action.setEnabled(true);
+        return action;
+    }
+
     private void clearObjects() {
         Set<Object> objectSet = new HashSet<>(getObjects());
         for (Object object : objectSet) {
