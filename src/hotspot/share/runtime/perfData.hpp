@@ -245,6 +245,18 @@ enum CounterNS {
  * UsePerfData, a product flag set to true by default. This flag may
  * be removed from the product in the future.
  *
+ * There are possible shutdown races between counter uses and counter
+ * destruction code. Normal shutdown happens with taking VM_Exit safepoint
+ * operation, so in the vast majority of uses this is not an issue. On the
+ * paths where a concurrent access can still happen when VM is at safepoint,
+ * use the following pattern to coordinate with shutdown:
+ *
+ * {
+ *   GlobalCounter::CriticalSection cs(Thread::current());
+ *   if (PerfDataManager::has_PerfData()) {
+ *     <update-counter>
+ *   }
+ * }
  */
 class PerfData : public CHeapObj<mtInternal> {
 
