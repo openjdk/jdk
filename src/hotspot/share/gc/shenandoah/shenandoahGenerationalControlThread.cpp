@@ -87,9 +87,6 @@ void ShenandoahGenerationalControlThread::run_service() {
     // This control loop iteration has seen this much allocation.
     const size_t allocs_seen = reset_allocs_seen();
 
-    // Check if we have seen a new target for soft max heap size.
-    const bool soft_max_changed = heap->check_soft_max_changed();
-
     // Choose which GC mode to run in. The block below should select a single mode.
     set_gc_mode(none);
     ShenandoahGC::ShenandoahDegenPoint degen_point = ShenandoahGC::_degenerated_unset;
@@ -142,43 +139,23 @@ void ShenandoahGenerationalControlThread::run_service() {
       // We should only be here if the regulator requested a cycle or if
       // there is an old generation mark in progress.
       if (cause == GCCause::_shenandoah_concurrent_gc) {
-        if (_requested_generation == OLD && heap->old_generation()->is_doing_mixed_evacuations()) {
-          // If a request to start an old cycle arrived while an old cycle was running, but _before_
-          // it chose any regions for evacuation we don't want to start a new old cycle. Rather, we want
-          // the heuristic to run a young collection so that we can evacuate some old regions.
-          assert(!heap->is_concurrent_old_mark_in_progress(), "Should not be running mixed collections and concurrent marking");
-          generation = YOUNG;
-        } else {
-          generation = _requested_generation;
-        }
+        assert(!(_requested_generation == OLD && heap->old_generation()->is_doing_mixed_evacuations()),
+               "Old heuristic should not request cycles while it waits for mixed evacuations");
+        generation = _requested_generation;
 
         // preemption was requested or this is a regular cycle
-        set_gc_mode(default_mode);
-
-        // Don't start a new old marking if there is one already in progress
-        if (generation == OLD && heap->is_concurrent_old_mark_in_progress()) {
-          set_gc_mode(servicing_old);
-        }
+        set_gc_mode(generation == OLD ? servicing_old : default_mode);
 
         if (generation == GLOBAL) {
           heap->set_unload_classes(global_heuristics->should_unload_classes());
         } else {
           heap->set_unload_classes(false);
         }
-      } else if (heap->is_concurrent_old_mark_in_progress() || heap->is_prepare_for_old_mark_in_progress()) {
-        // Nobody asked us to do anything, but we have an old-generation mark or old-generation preparation for
-        // mixed evacuation in progress, so resume working on that.
-        log_info(gc)("Resume old GC: marking is%s in progress, preparing is%s in progress",
-                     heap->is_concurrent_old_mark_in_progress() ? "" : " NOT",
-                     heap->is_prepare_for_old_mark_in_progress() ? "" : " NOT");
-
-        cause = GCCause::_shenandoah_concurrent_gc;
-        generation = OLD;
-        set_gc_mode(servicing_old);
-        heap->set_unload_classes(false);
       }
     }
 
+    // TODO: eventually, this thread should only be here if there is something to do.
+    // assert(gc_requested, "Nobody asked for this");
     const bool gc_requested = (gc_mode() != none);
     assert (!gc_requested || cause != GCCause::_no_gc, "GC cause should be set");
 

@@ -621,13 +621,26 @@ void ShenandoahOldHeuristics::evaluate_triggers(size_t first_old_region, size_t 
 }
 
 bool ShenandoahOldHeuristics::should_start_gc() {
-  // Cannot start a new old-gen GC until previous one has finished.
-  //
-  // Future refinement: under certain circumstances, we might be more sophisticated about this choice.
-  // For example, we could choose to abandon the previous old collection before it has completed evacuations.
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (!_old_generation->can_start_gc() || heap->collection_set()->has_old_regions()) {
+
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (_old_generation->is_doing_mixed_evacuations()) {
+    // Do not try to start an old cycle if we are waiting for old regions to be evacuated (we need
+    // a young cycle for this). Note that the young heuristic has a feature to expedite old evacuations.
+    // Future refinement: under certain circumstances, we might be more sophisticated about this choice.
+    // For example, we could choose to abandon the previous old collection before it has completed evacuations.
+    log_debug(gc)("Not starting an old cycle because we are waiting for mixed evacuations");
     return false;
+  }
+
+  // If we are preparing to mark old, or if we are already marking old, then try to continue that work.
+  if (_old_generation->is_concurrent_mark_in_progress()) {
+    log_trigger("Resume marking old");
+    return true;
+  }
+
+  if (_old_generation->is_preparing_for_mark()) {
+    log_trigger("Resume preparing to mark old");
+    return true;
   }
 
   if (_cannot_expand_trigger) {
