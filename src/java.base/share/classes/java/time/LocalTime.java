@@ -69,7 +69,6 @@ import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.SECOND_OF_DAY;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoUnit.NANOS;
-import static jdk.internal.util.DateTimeHelper.formatTo;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -92,6 +91,8 @@ import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
+
+import jdk.internal.util.DateTimeHelper;
 
 /**
  * A time without a time-zone in the ISO-8601 calendar system,
@@ -1631,7 +1632,7 @@ public final class LocalTime
     @Override
     public String toString() {
         var buf = new StringBuilder(18);
-        formatTo(buf, this);
+        DateTimeHelper.formatTo(buf, this);
         return buf.toString();
     }
 

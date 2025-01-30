@@ -64,7 +64,6 @@ package java.time;
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
-import static jdk.internal.util.DateTimeHelper.formatTo;
 
 import java.io.DataOutput;
 import java.io.IOException;
@@ -91,6 +90,8 @@ import java.time.zone.ZoneOffsetTransition;
 import java.time.zone.ZoneRules;
 import java.util.List;
 import java.util.Objects;
+
+import jdk.internal.util.DateTimeHelper;
 
 /**
  * A date-time with a time-zone in the ISO-8601 calendar system,
@@ -2223,7 +2224,7 @@ public final class ZonedDateTime
             length += zoneStr.length() + 2;
         }
         var buf = new StringBuilder(length);
-        formatTo(buf, dateTime);
+        DateTimeHelper.formatTo(buf, dateTime);
         buf.append(offsetStr);
         if (zoneStr != null) {
             buf.append('[').append(zoneStr).append(']');

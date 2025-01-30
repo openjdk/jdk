@@ -68,7 +68,6 @@ import static java.time.LocalTime.SECONDS_PER_DAY;
 import static java.time.temporal.ChronoField.NANO_OF_DAY;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoUnit.NANOS;
-import static jdk.internal.util.DateTimeHelper.formatTo;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -92,6 +91,8 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.time.zone.ZoneRules;
 import java.util.Objects;
+
+import jdk.internal.util.DateTimeHelper;
 
 /**
  * A time with an offset from UTC/Greenwich in the ISO-8601 calendar system,
@@ -1401,7 +1402,7 @@ public final class OffsetTime
     public String toString() {
         var offsetStr = offset.toString();
         var buf = new StringBuilder(18 + offsetStr.length());
-        formatTo(buf, time);
+        DateTimeHelper.formatTo(buf, time);
         return buf.append(offsetStr).toString();
     }
 

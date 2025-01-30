@@ -73,7 +73,6 @@ import static java.time.temporal.ChronoField.ERA;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.PROLEPTIC_MONTH;
 import static java.time.temporal.ChronoField.YEAR;
-import static jdk.internal.util.DateTimeHelper.formatTo;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -103,6 +102,8 @@ import java.time.zone.ZoneRules;
 import java.util.Objects;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+
+import jdk.internal.util.DateTimeHelper;
 
 /**
  * A date without a time-zone in the ISO-8601 calendar system,
@@ -2149,7 +2150,7 @@ public final class LocalDate
     @Override
     public String toString() {
         var buf = new StringBuilder(10);
-        formatTo(buf, this);
+        DateTimeHelper.formatTo(buf, this);
         return buf.toString();
     }
 

@@ -71,7 +71,6 @@ import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.ERA;
-import static jdk.internal.util.DateTimeHelper.formatTo;
 
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
@@ -122,6 +121,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.util.DateTimeHelper;
 import jdk.internal.util.DecimalDigits;
 
 import sun.text.spi.JavaTimeDateTimePatternProvider;
@@ -3849,7 +3849,7 @@ public final class DateTimeFormatterBuilder {
             if (hi > 0) {
                 buf.append('+').append(hi);
             }
-            formatTo(buf, ldt);
+            DateTimeHelper.formatTo(buf, ldt);
             if (ldt.getSecond() == 0 && inNano == 0) {
                 buf.append(":00");
             }
@@ -3861,7 +3861,7 @@ public final class DateTimeFormatterBuilder {
             long lo = zeroSecs % SECONDS_PER_10000_YEARS;
             LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, inNano, ZoneOffset.UTC);
             int pos = buf.length();
-            formatTo(buf, ldt);
+            DateTimeHelper.formatTo(buf, ldt);
             if (ldt.getSecond() == 0 && inNano == 0) {
                 buf.append(":00");
             }
