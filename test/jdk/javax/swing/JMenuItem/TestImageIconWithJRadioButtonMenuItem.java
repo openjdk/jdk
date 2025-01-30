@@ -40,9 +40,11 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.UIManager;
 
+import java.io.File;
+
 public class TestImageIconWithJRadioButtonMenuItem {
 
-    private static final String instructionsText = """
+    private static final String INSTRUCTIONS = """
         Two JRadioButtonMenuItem will be shown.
         One JRadioButtonMenuItem is with image icon and
         another one without image icon.
@@ -54,7 +56,7 @@ public class TestImageIconWithJRadioButtonMenuItem {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         PassFailJFrame.builder()
                 .title("JRadioButtonMenuItem Instructions")
-                .instructions(instructionsText)
+                .instructions(INSTRUCTIONS)
                 .rows(10)
                 .columns(40)
                 .testUI(TestImageIconWithJRadioButtonMenuItem::doTest)
@@ -63,10 +65,11 @@ public class TestImageIconWithJRadioButtonMenuItem {
     }
 
     public static JFrame doTest() {
-        String imgPath1 = "./duke.gif";
+        String imgDir = System.getProperty("test.src", ".");
+        String imgPath = imgDir + File.separator + "duke.gif";
 
         JFrame frame = new JFrame("RadioButtonWithImageIcon");
-        ImageIcon imageIcon1 = new ImageIcon(imgPath1);
+        ImageIcon imageIcon1 = new ImageIcon(imgPath);
         AbstractButton button1 = new JRadioButtonMenuItem("JRadioButtonMenuItem 1",
                 imageIcon1);
         button1.setSelected(true);

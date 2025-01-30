@@ -885,7 +885,7 @@ public class WindowsIconFactory implements Serializable
                     }
                 }
                 if (icon != null) {
-                    if (!((AbstractButton)c).isSelected()) {
+                    if (!((AbstractButton) c).isSelected()) {
                         Part backgroundPart = Part.MP_POPUPCHECKBACKGROUND;
                         Part part;
                         if (type == JRadioButtonMenuItem.class) {
