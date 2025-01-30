@@ -32,8 +32,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountedCompleter;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 
 public final class TaskPipelineBuilder {
 
@@ -65,10 +67,10 @@ public final class TaskPipelineBuilder {
         public TaskPipelineBuilder add() {
             if (taskGraphBuilder == null) {
                 taskGraphBuilder = new ImmutableDAG.Builder<>();
-                taskGraphBuilder.addEdge(task, ROOT_ACTION);
+                taskGraphBuilder.addEdge(task, ROOT_TASK);
                 taskGraphBuilder.canAddEdgeToUnknownNode(false);
             } else {
-                taskGraphBuilder.addEdge(task, Optional.ofNullable(dependent).orElse(ROOT_ACTION));
+                taskGraphBuilder.addEdge(task, Optional.ofNullable(dependent).orElse(ROOT_TASK));
             }
 
             for (var dependency : dependencies) {
@@ -87,25 +89,25 @@ public final class TaskPipelineBuilder {
         return new TaskSpecBuilder(task);
     }
 
-    public TaskPipelineBuilder executor(ForkJoinPool v) {
-        fjp = v;
+    public TaskPipelineBuilder executor(Executor v) {
+        executor = v;
         return this;
     }
 
     public TaskPipelineBuilder sequentialExecutor() {
-        fjp = null;
+        executor = null;
         return this;
     }
 
     public Callable<Void> create() {
         final var taskGraph = taskGraphBuilder.create();
 
-        if (fjp == null) {
-            return new SequentialWrapperTask(taskGraph.topologicalSort());
+        if (executor == null) {
+            final var tasks = taskGraph.topologicalSort();
+            // Don't run the root task as it is NOP.
+            return new SequentialWrapperTask(tasks.subList(0, tasks.size() - 1));
         } else {
-            final var rootCompleter = new CountedCompleterBuilder(taskGraph).create();
-
-            return new WrapperTask(rootCompleter, fjp);
+            return new ParallelWrapperTask(taskGraph, executor);
         }
     }
 
@@ -125,34 +127,80 @@ public final class TaskPipelineBuilder {
 
     }
 
-    private record WrapperTask(CountedCompleter<Void> rootCompleter, ForkJoinPool fjp) implements Callable<Void> {
+    private record ParallelWrapperTask(ImmutableDAG<Callable<Void>> taskGraph, Executor executor) implements Callable<Void> {
 
-        WrapperTask {
-            Objects.requireNonNull(rootCompleter);
-            Objects.requireNonNull(fjp);
+        ParallelWrapperTask {
+            Objects.requireNonNull(taskGraph);
+            Objects.requireNonNull(executor);
         }
 
         @Override
-        public Void call() {
-            fjp.invoke(rootCompleter);
+        public Void call() throws Exception {
+
+            final var taskFutures = new CompletableFuture<?>[taskGraph.nodes().size()];
+
+            CompletableFuture<?> lastFuture = null;
+
+            // Schedule tasks in the order they should be executed: dependencies before dependents.
+            for (final var task : taskGraph.topologicalSort()) {
+                final var taskIndex = taskGraph.nodes().indexOf(task);
+
+                final var dependencyTaskFutures = ImmutableDAG.getIncomingEdges(taskIndex, taskGraph.edgeMatrix())
+                        .map(BinaryMatrix.Cursor::row)
+                        .map(dependencyTaskIndex -> {
+                            return taskFutures[dependencyTaskIndex];
+                        }).toArray(CompletableFuture<?>[]::new);
+
+                if (dependencyTaskFutures.length == 0) {
+                    lastFuture = CompletableFuture.runAsync(toRunnable(task), executor);
+                } else {
+                    lastFuture = CompletableFuture.allOf(dependencyTaskFutures);
+                    if (task != ROOT_TASK) {
+                        lastFuture = lastFuture.thenRun(toRunnable(task));
+                    }
+                }
+
+                taskFutures[taskIndex] = lastFuture;
+            }
+
+            try {
+                lastFuture.get();
+            } catch (ExecutionException ee) {
+                if (ee.getCause() instanceof Exception ex) {
+                    throw ex;
+                } else {
+                    throw ee;
+                }
+            }
+
             return null;
+        }
+
+        private static Runnable toRunnable(Callable<Void> callable) {
+            return () -> {
+                try {
+                    callable.call();
+                } catch (Error er) {
+                    throw er;
+                } catch (RuntimeException ex) {
+                    throw ex;
+                } catch (Throwable t) {
+                    throw new CompletionException(t);
+                }
+            };
         }
 
     }
 
-    private static final Callable<Void> ROOT_ACTION = new Callable<>() {
+    private static final Callable<Void> ROOT_TASK = new Callable<>() {
 
         @Override
         public Void call() {
-            return null;
-        }
-
-        @Override
-        public String toString() {
-            return super.toString() + "(root)";
+            // Should never get called.
+            throw new UnsupportedOperationException();
         }
     };
 
     private ImmutableDAG.Builder<Callable<Void>> taskGraphBuilder;
-    private ForkJoinPool fjp;
+    private Executor executor;
 }

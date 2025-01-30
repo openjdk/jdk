@@ -26,14 +26,49 @@ package jdk.jpackage.internal.pipeline;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 final class ImmutableDAGTest {
+
+    @Test
+    public void testInvalidCtorArgs() {
+        final var matrix1x2 = new BinaryMatrix(1, 2);
+        final var nodes = ImmutableDAG.Nodes.<String>ofList(List.of(A, B));
+
+        assertThrows(IllegalArgumentException.class, () -> new ImmutableDAG(matrix1x2, nodes));
+
+        final var matrix3x3 = new BinaryMatrix(3, 3);
+        assertThrows(IllegalArgumentException.class, () -> new ImmutableDAG(matrix3x3, nodes));
+    }
+
+    @Test
+    public void testNodesToList() {
+        final var nodes = ImmutableDAG.Nodes.<String>ofList(List.of(A, B));
+
+        assertEquals(2, nodes.size());
+
+        assertEquals(A, nodes.get(0));
+        assertEquals(B, nodes.get(1));
+        assertThrows(IndexOutOfBoundsException.class, () -> nodes.get(2));
+
+        assertEquals(0, nodes.indexOf(A));
+        assertEquals(1, nodes.indexOf(B));
+        assertThrows(NoSuchElementException.class, () -> nodes.indexOf(C));
+
+        final var copy = new ArrayList<String>();
+        for (var n : nodes) {
+            copy.add(n);
+        }
+        assertEquals(copy, List.of(A, B));
+    }
 
     @ParameterizedTest
     @MethodSource
@@ -77,9 +112,9 @@ final class ImmutableDAGTest {
                 new Object[] { List.of(edge(A, B), edge(C, D)), List.of(A, C) },
 
                 // A <- B
-                // |    ^
+                // ^    ^
                 // |    |
-                // + <- D <- L
+                // + -- D <- L
                 //      |
                 //      + <- C
                 new Object[] { List.of(edge(B, A), edge(D, B), edge(D, A), edge(C, D), edge(L, D)), List.of(C, L) },
@@ -181,6 +216,124 @@ final class ImmutableDAGTest {
         assertEquals(graph.getTailsOf(L), List.of(C));
     }
 
+    @Test
+    public void testSome2() {
+        // B -> A <- C
+        // ^         ^
+        // |         |
+        // +--- D ---+
+        //      ^
+        //      |
+        // K -> N <- M <- P
+        // ^         ^
+        // |    O    |
+        // |    ^    |
+        // |    |    |
+        // +--- L ---+
+        //
+
+        final var graphBuilder = ImmutableDAG.<String>build();
+
+        graphBuilder.addEdge(edge(B, A));
+        graphBuilder.addEdge(edge(C, A));
+        graphBuilder.addEdge(edge(D, B));
+        graphBuilder.addEdge(edge(D, C));
+        graphBuilder.addEdge(edge(N, D));
+        graphBuilder.addEdge(edge(M, N));
+        graphBuilder.addEdge(edge(K, N));
+        graphBuilder.addEdge(edge(L, K));
+        graphBuilder.addEdge(edge(L, M));
+        graphBuilder.addEdge(edge(P, M));
+        graphBuilder.addEdge(edge(L, O));
+
+        final var graph = graphBuilder.create();
+
+        assertEquals(graph.getNoIncomingEdges(), List.of(L, P));
+        assertEquals(graph.getNoOutgoingEdges(), List.of(A, O));
+
+        assertEquals(graph.getHeadsOf(A), List.of());
+        assertEquals(graph.getTailsOf(A), List.of(B, C));
+        assertEquals(graph.getAllHeadsOf(A), List.of());
+        assertEquals(graph.getAllTailsOf(A), List.of(B, C, D, N, M, K, L, P));
+
+        assertEquals(graph.getHeadsOf(B), List.of(A));
+        assertEquals(graph.getTailsOf(B), List.of(D));
+        assertEquals(graph.getAllHeadsOf(B), List.of(A));
+        assertEquals(graph.getAllTailsOf(B), List.of(D, N, M, K, L, P));
+
+        assertEquals(graph.getHeadsOf(C), List.of(A));
+        assertEquals(graph.getTailsOf(C), List.of(D));
+        assertEquals(graph.getAllHeadsOf(C), List.of(A));
+        assertEquals(graph.getAllTailsOf(C), List.of(D, N, M, K, L, P));
+
+        assertEquals(graph.getHeadsOf(D), List.of(B, C));
+        assertEquals(graph.getTailsOf(D), List.of(N));
+        assertEquals(graph.getAllHeadsOf(D), List.of(B, A, C));
+        assertEquals(graph.getAllTailsOf(D), List.of(N, M, K, L, P));
+
+        assertEquals(graph.getHeadsOf(K), List.of(N));
+        assertEquals(graph.getTailsOf(K), List.of(L));
+        assertEquals(graph.getAllHeadsOf(K), List.of(B, A, C, D, N));
+        assertEquals(graph.getAllTailsOf(K), List.of(L));
+
+        assertEquals(graph.getHeadsOf(L), List.of(M, K, O));
+        assertEquals(graph.getTailsOf(L), List.of());
+        assertEquals(graph.getAllHeadsOf(L), List.of(B, A, C, D, N, M, K, O));
+        assertEquals(graph.getAllTailsOf(L), List.of());
+
+        assertEquals(graph.getHeadsOf(M), List.of(N));
+        assertEquals(graph.getTailsOf(M), List.of(L, P));
+        assertEquals(graph.getAllHeadsOf(M), List.of(B, A, C, D, N));
+        assertEquals(graph.getAllTailsOf(M), List.of(L, P));
+
+        assertEquals(graph.getHeadsOf(N), List.of(D));
+        assertEquals(graph.getTailsOf(N), List.of(M, K));
+        assertEquals(graph.getAllHeadsOf(N), List.of(B, A, C, D));
+        assertEquals(graph.getAllTailsOf(N), List.of(M, K, L, P));
+
+        assertEquals(graph.getHeadsOf(O), List.of());
+        assertEquals(graph.getTailsOf(O), List.of(L));
+        assertEquals(graph.getAllHeadsOf(O), List.of());
+        assertEquals(graph.getAllTailsOf(O), List.of(L));
+
+        assertEquals(graph.getHeadsOf(P), List.of(M));
+        assertEquals(graph.getTailsOf(P), List.of());
+        assertEquals(graph.getAllHeadsOf(P), List.of(B, A, C, D, N, M));
+        assertEquals(graph.getAllTailsOf(P), List.of());
+    }
+
+    @Test
+    public void testEmptyBuilder() {
+        assertThrows(UnsupportedOperationException.class, ImmutableDAG.<String>build()::create);
+    }
+
+    @Test
+    public void testBuilder() {
+        final var graphBuilder = ImmutableDAG.<String>build();
+
+        graphBuilder.canAddEdgeToUnknownNode(false);
+        assertThrows(UnsupportedOperationException.class, () -> graphBuilder.addEdge(edge(A, B)));
+        assertThrows(UnsupportedOperationException.class, graphBuilder::create);
+
+        graphBuilder.canAddEdgeToUnknownNode(true);
+        graphBuilder.addEdge(edge(A, B));
+        assertNodesEquals(graphBuilder.create().nodes(), A, B);
+
+        graphBuilder.canAddEdgeToUnknownNode(false);
+        graphBuilder.addEdge(edge(A, B));
+        assertNodesEquals(graphBuilder.create().nodes(), A, B);
+
+        graphBuilder.addEdge(edge(C, A));
+        assertNodesEquals(graphBuilder.create().nodes(), A, B, C);
+
+        assertThrows(UnsupportedOperationException.class, () -> graphBuilder.addEdge(edge(B, D)));
+        assertNodesEquals(graphBuilder.create().nodes(), A, B, C);
+    }
+
+    private static void assertNodesEquals(ImmutableDAG.Nodes<String> actual, String... expected) {
+        assertEquals(List.of(expected), StreamSupport.stream(actual.spliterator(), false).toList());
+    }
+
     private static ImmutableDAG<String> create(Collection<DirectedEdge<String>> edges) {
         final var graphBuilder = ImmutableDAG.<String>build();
         edges.forEach(graphBuilder::addEdge);
@@ -195,5 +348,10 @@ final class ImmutableDAGTest {
     private final static String B = "B";
     private final static String C = "C";
     private final static String D = "D";
+    private final static String K = "K";
     private final static String L = "L";
+    private final static String M = "M";
+    private final static String N = "N";
+    private final static String O = "O";
+    private final static String P = "P";
 }

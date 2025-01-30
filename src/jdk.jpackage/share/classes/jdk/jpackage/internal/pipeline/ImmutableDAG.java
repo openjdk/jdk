@@ -32,7 +32,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -84,6 +87,10 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         }
 
         ImmutableDAG<U> create() {
+            if (nodes.isEmpty()) {
+                throw new UnsupportedOperationException("No edges");
+            }
+
             final var nodesAdapter = Nodes.ofList(this.nodes);
             final var edgeMatrix = new BinaryMatrix(nodes.size());
             for (final var edge : edges) {
@@ -169,6 +176,14 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         return result;
     }
 
+    List<T> getAllHeadsOf(T node) {
+        return getAllNodesOf(node, true);
+    }
+
+    List<T> getAllTailsOf(T node) {
+        return getAllNodesOf(node, false);
+    }
+
     /**
      * Gets the list of nodes that are heads of the edges sharing the same tail,
      * which is the given node.
@@ -233,21 +248,44 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         return getNoOutgoingEdges(edgeMatrix).mapToObj(nodes::get).toList();
     }
 
-    private static Stream<BinaryMatrix.Cursor> getOutgoingEdges(int node, BinaryMatrix edgeMatrix) {
+    private List<T> getAllNodesOf(T node, boolean heads) {
+        final Set<Integer> nodeIndexes = new TreeSet<>();
+        traverseNodes(nodes.indexOf(node), edgeMatrix, heads, nodeIndex -> {
+            return nodeIndexes.add(nodeIndex);
+        });
+
+        return nodeIndexes.stream().map(nodes::get).toList();
+    }
+
+    static void traverseNodes(int nodeIndex, BinaryMatrix edgeMatrix, boolean heads, Function<Integer, Boolean> nodeAccumulator) {
+        final Stream<Integer> nodes;
+        if (heads) {
+            nodes = getOutgoingEdges(nodeIndex, edgeMatrix).map(BinaryMatrix.Cursor::column);
+        } else {
+            nodes = getIncomingEdges(nodeIndex, edgeMatrix).map(BinaryMatrix.Cursor::row);
+        }
+        nodes.forEach(n -> {
+            if (nodeAccumulator.apply(n)) {
+                traverseNodes(n, edgeMatrix, heads, nodeAccumulator);
+            }
+        });
+    }
+
+    static Stream<BinaryMatrix.Cursor> getOutgoingEdges(int node, BinaryMatrix edgeMatrix) {
         return edgeMatrix.getRowAsStream(node).filter(BinaryMatrix.Cursor::value);
     }
 
-    private static Stream<BinaryMatrix.Cursor> getIncomingEdges(int node, BinaryMatrix edgeMatrix) {
+    static Stream<BinaryMatrix.Cursor> getIncomingEdges(int node, BinaryMatrix edgeMatrix) {
         return edgeMatrix.getColumnAsStream(node).filter(BinaryMatrix.Cursor::value);
     }
 
-    private static IntStream getNoIncomingEdges(BinaryMatrix edgeMatrix) {
+    static IntStream getNoIncomingEdges(BinaryMatrix edgeMatrix) {
         return IntStream.range(0, edgeMatrix.getColumnCount()).filter(column -> {
             return getIncomingEdges(column, edgeMatrix).findAny().isEmpty();
         });
     }
 
-    private static IntStream getNoOutgoingEdges(BinaryMatrix edgeMatrix) {
+    static IntStream getNoOutgoingEdges(BinaryMatrix edgeMatrix) {
         return IntStream.range(0, edgeMatrix.getRowCount()).filter(row -> {
             return getOutgoingEdges(row, edgeMatrix).findAny().isEmpty();
         });
@@ -290,6 +328,9 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
                         } else {
                             S.add(insertAtIndex, m);
                         }
+                    } else if (i > 0) {
+                        S.set(i, m);
+                        i--;
                     } else {
                         S.add(m);
                     }
