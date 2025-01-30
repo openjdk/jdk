@@ -1,10 +1,6 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
-<<<<<<< HEAD
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
-=======
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
->>>>>>> master
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -3034,28 +3030,16 @@ class StubGenerator: public StubCodeGenerator {
       result         = x15,
       r_bitmap       = x16;
 
-<<<<<<< HEAD
     for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
       StubRoutines::_lookup_secondary_supers_table_stubs[slot] = __ pc();
       Label L_success;
       __ enter();
-      __ lookup_secondary_supers_table(r_sub_klass, r_super_klass, result,
-                                       r_array_base, r_array_length, r_array_index,
-                                       r_bitmap, slot, /*stub_is_near*/true);
+      __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass, result,
+                                             r_array_base, r_array_length, r_array_index,
+                                             r_bitmap, slot, /*stub_is_near*/true);
       __ leave();
       __ ret();
     }
-=======
-    Label L_success;
-    __ enter();
-    __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass, result,
-                                           r_array_base, r_array_length, r_array_index,
-                                           r_bitmap, super_klass_index, /*stub_is_near*/ true);
-    __ leave();
-    __ ret();
-
-    return start;
->>>>>>> master
   }
 
   // Slow path implementation for UseSecondarySupersTable.
