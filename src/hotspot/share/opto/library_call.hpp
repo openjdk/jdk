@@ -106,6 +106,10 @@ class LibraryCallKit : public GraphKit {
   void push_result() {
     // Push the result onto the stack.
     if (!stopped() && result() != nullptr) {
+      if (result()->is_top()) {
+        assert(false, "Can't determine return value.");
+        C->record_method_not_compilable("Can't determine return value.");
+      }
       BasicType bt = result()->bottom_type()->basic_type();
       push_node(bt, result());
     }

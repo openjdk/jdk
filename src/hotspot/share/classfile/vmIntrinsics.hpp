@@ -575,23 +575,23 @@ class methodHandle;
    do_name(chacha20Block_name,                                 "implChaCha20Block")                                         \
    do_signature(chacha20Block_signature, "([I[B)I")                                                                    \
                                                                                                                         \
-  /* support for com.sun.crypto.provider.ML_DSA */                                                                      \
-  do_class(sun_security_provider_ML_DSA,      "sun/security/provider/ML_DSA")                                       \
+  /* support for sun.security.provider.ML_DSA */                                                                        \
+ do_class(sun_security_provider_ML_DSA,      "sun/security/provider/ML_DSA")                                            \
    do_signature(IaII_signature, "([II)I")                                                                               \
    do_signature(IaIaI_signature, "([I[I)I")                                                                             \
    do_signature(IaIaIaI_signature, "([I[I[I)I")                                                                         \
    do_signature(IaIaIaIII_signature, "([I[I[III)I")                                                                     \
-  do_intrinsic(_dilithiumAlmostNtt, sun_security_provider_ML_DSA, dilithiumAlmostNtt_name, IaIaI_signature, F_S)      \
+  do_intrinsic(_dilithiumAlmostNtt, sun_security_provider_ML_DSA, dilithiumAlmostNtt_name, IaIaI_signature, F_S)        \
    do_name(dilithiumAlmostNtt_name,                            "implDilithiumAlmostNtt")                                \
-  do_intrinsic(_dilithiumAlmostInverseNtt, sun_security_provider_ML_DSA,                                              \
+  do_intrinsic(_dilithiumAlmostInverseNtt, sun_security_provider_ML_DSA,                                                \
                 dilithiumAlmostInverseNtt_name, IaIaI_signature, F_S)                                                   \
    do_name(dilithiumAlmostInverseNtt_name,                     "implDilithiumAlmostInverseNtt")                         \
-  do_intrinsic(_dilithiumNttMult, sun_security_provider_ML_DSA, dilithiumNttMult_name, IaIaIaI_signature, F_S)        \
+  do_intrinsic(_dilithiumNttMult, sun_security_provider_ML_DSA, dilithiumNttMult_name, IaIaIaI_signature, F_S)          \
    do_name(dilithiumNttMult_name,                              "implDilithiumNttMult")                                  \
-  do_intrinsic(_dilithiumMontMulByConstant, sun_security_provider_ML_DSA,                                             \
+  do_intrinsic(_dilithiumMontMulByConstant, sun_security_provider_ML_DSA,                                               \
                 dilithiumMontMulByConstant_name, IaII_signature, F_S)                                                   \
    do_name(dilithiumMontMulByConstant_name,                    "implDilithiumMontMulByConstant")                        \
-  do_intrinsic(_dilithiumDecomposePoly, sun_security_provider_ML_DSA,                                                 \
+  do_intrinsic(_dilithiumDecomposePoly, sun_security_provider_ML_DSA,                                                   \
                 dilithiumDecomposePoly_name, IaIaIaIII_signature, F_S)                                                  \
    do_name(dilithiumDecomposePoly_name,                    "implDilithiumDecomposePoly")                                \
                                                                                                                         \

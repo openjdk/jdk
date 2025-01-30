@@ -851,6 +851,7 @@ public class Attr extends JCTree.Visitor {
      *  @see VarSymbol#setLazyConstValue
      */
     public Object attribLazyConstantValue(Env<AttrContext> env,
+                                      Env<AttrContext> enclosingEnv,
                                       JCVariableDecl variable,
                                       Type type) {
 
@@ -859,6 +860,7 @@ public class Attr extends JCTree.Visitor {
 
         final JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
         try {
+            doQueueScanTreeAndTypeAnnotateForVarInit(variable, enclosingEnv);
             Type itype = attribExpr(variable.init, env, type);
             if (variable.isImplicitlyTyped()) {
                 //fixup local variable type
@@ -1282,11 +1284,7 @@ public class Attr extends JCTree.Visitor {
                 }
             }
         } else {
-            if (tree.init != null) {
-                // Field initializer expression need to be entered.
-                annotate.queueScanTreeAndTypeAnnotate(tree.init, env, tree.sym, tree.pos());
-                annotate.flush();
-            }
+            doQueueScanTreeAndTypeAnnotateForVarInit(tree, env);
         }
 
         VarSymbol v = tree.sym;
@@ -1336,6 +1334,17 @@ public class Attr extends JCTree.Visitor {
         }
         finally {
             chk.setLint(prevLint);
+        }
+    }
+
+    private void doQueueScanTreeAndTypeAnnotateForVarInit(JCVariableDecl tree, Env<AttrContext> env) {
+        if (tree.init != null &&
+            (tree.mods.flags & Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED) == 0 &&
+            env.info.scope.owner.kind != MTH && env.info.scope.owner.kind != VAR) {
+            tree.mods.flags |= Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED;
+            // Field initializer expression need to be entered.
+            annotate.queueScanTreeAndTypeAnnotate(tree.init, env, tree.sym, tree.pos());
+            annotate.flush();
         }
     }
 

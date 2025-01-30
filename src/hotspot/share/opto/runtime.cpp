@@ -2116,6 +2116,7 @@ void OptoRuntime::initialize_types() {
   _bigIntegerShift_Type               = make_bigIntegerShift_Type();
   _vectorizedMismatch_Type            = make_vectorizedMismatch_Type();
   _ghash_processBlocks_Type           = make_ghash_processBlocks_Type();
+  _chacha20Block_Type                 = make_chacha20Block_Type();
 
   _dilithiumAlmostNtt_Type            = make_dilithiumAlmostNtt_Type();
   _dilithiumAlmostInverseNtt_Type     = make_dilithiumAlmostInverseNtt_Type();
@@ -2123,7 +2124,6 @@ void OptoRuntime::initialize_types() {
   _dilithiumMontMulByConstant_Type    = make_dilithiumMontMulByConstant_Type();
   _dilithiumDecomposePoly_Type        = make_dilithiumDecomposePoly_Type();
 
-  _chacha20Block_Type                 = make_chacha20Block_Type();
   _base64_encodeBlock_Type            = make_base64_encodeBlock_Type();
   _base64_decodeBlock_Type            = make_base64_decodeBlock_Type();
   _string_IndexOf_Type                = make_string_IndexOf_Type();
