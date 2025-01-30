@@ -814,6 +814,12 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
         DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler);
         nm->maybe_print_nmethod(directive);
         DirectivesStack::release(directive);
+
+        // Since this compilation didn't pass through the broker it wasn't logged yet.
+        if (PrintCompilation) {
+          ttyLocker ttyl;
+          CompileTask::print(tty, nm, "(hosted JVMCI compilation)");
+        }
       }
 
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();

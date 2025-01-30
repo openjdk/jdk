@@ -62,7 +62,7 @@ public final class DecimalDigits {
     private static final short[] DIGITS;
 
     static {
-        short[] digits = new short[10 * 10];
+        short[] digits = new short[128];
 
         for (int i = 0; i < 10; i++) {
             short hi = (short) (i + '0');
@@ -336,6 +336,70 @@ public final class DecimalDigits {
     }
 
     /**
+     * This is a variant of {@link DecimalDigits#getCharsUTF16(long, int, byte[])}, but for
+     * UTF-16 coder.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, UTF16-coded.
+     * @return index of the most significant digit or minus sign, if present
+     */
+    public static int getChars(long i, int index, char[] buf) {
+        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
+        long q;
+        int charPos = index;
+
+        boolean negative = (i < 0);
+        if (!negative) {
+            i = -i;
+        }
+
+        // Get 2 digits/iteration using longs until quotient fits into an int
+        while (i < Integer.MIN_VALUE) {
+            q = i / 100;
+            charPos -= 2;
+            putPair(buf, charPos, (int)((q * 100) - i));
+            i = q;
+        }
+
+        // Get 2 digits/iteration using ints
+        int q2;
+        int i2 = (int)i;
+        while (i2 <= -100) {
+            q2 = i2 / 100;
+            charPos -= 2;
+            putPair(buf, charPos, (q2 * 100) - i2);
+            i2 = q2;
+        }
+
+        // We know there are at most two digits left at this point.
+        if (i2 <= -10) {
+            charPos -= 2;
+            putPair(buf, charPos, -i2);
+        } else {
+            buf[--charPos] = (char) ('0' - i2);
+        }
+
+        if (negative) {
+            buf[--charPos] = '-';
+        }
+        return charPos;
+    }
+
+    /**
+     * Insert the 2-chars integer into the buf as 2 decimal digit ASCII chars,
+     * only least significant 16 bits of {@code v} are used.
+     * @param buf byte buffer to copy into
+     * @param charPos insert point
+     * @param v to convert
+     */
+    public static void putPair(char[] buf, int charPos, int v) {
+        int packed = DIGITS[v & 0x7f];
+        buf[charPos    ] = (char) (packed & 0xFF);
+        buf[charPos + 1] = (char) (packed >> 8);
+    }
+
+    /**
      * Insert the 2-bytes integer into the buf as 2 decimal digit ASCII bytes,
      * only least significant 16 bits of {@code v} are used.
      * @param buf byte buffer to copy into
@@ -343,7 +407,7 @@ public final class DecimalDigits {
      * @param v to convert
      */
     public static void putPairLatin1(byte[] buf, int charPos, int v) {
-        int packed = DIGITS[v];
+        int packed = DIGITS[v & 0x7f];
         putCharLatin1(buf, charPos, packed & 0xFF);
         putCharLatin1(buf, charPos + 1, packed >> 8);
     }
@@ -356,7 +420,7 @@ public final class DecimalDigits {
      * @param v to convert
      */
     public static void putPairUTF16(byte[] buf, int charPos, int v) {
-        int packed = DIGITS[v];
+        int packed = DIGITS[v & 0x7f];
         putCharUTF16(buf, charPos, packed & 0xFF);
         putCharUTF16(buf, charPos + 1, packed >> 8);
     }
