@@ -546,8 +546,7 @@ int G1BarrierSetC2::estimate_stub_size() const {
     size += cb.insts_size();
   }
 
-  // Add slop to avoid expansion during emit_stubs.
-  return size + PhaseOutput::MAX_inst_size;
+  return size;
 }
 
 void G1BarrierSetC2::emit_stubs(CodeBuffer& cb) const {

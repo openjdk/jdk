@@ -1361,10 +1361,8 @@ CodeBuffer* PhaseOutput::init_buffer() {
 
   int pad_req   = NativeCall::byte_size();
 
-  // Despite the name "stub", GC barrier stubs are emitted into
-  // the insn section, and should be counted in code_req.
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  code_req += bs->estimate_stub_size();
+  stub_req += bs->estimate_stub_size();
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   // class HandlerImpl is platform-specific and defined in the *.ad files.
