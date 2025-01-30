@@ -1,10 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
-<<<<<<< HEAD
  * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
-=======
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
->>>>>>> master
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4599,21 +4595,13 @@ void generate_lookup_secondary_supers_table_stub() {
       r_bitmap       = R11_scratch1,
       result         = R8_ARG6;
 
-<<<<<<< HEAD
     for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
       StubRoutines::_lookup_secondary_supers_table_stubs[slot] = __ pc();
-      __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                       r_array_base, r_array_length, r_array_index,
-                                       r_bitmap, result, slot);
+      __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                             r_array_base, r_array_length, r_array_index,
+                                             r_bitmap, result, slot);
       __ blr();
     }
-=======
-    __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
-                                           r_array_base, r_array_length, r_array_index,
-                                           r_bitmap, result, super_klass_index);
-    __ blr();
->>>>>>> master
-
   }
 
   // Slow path implementation for UseSecondarySupersTable.
