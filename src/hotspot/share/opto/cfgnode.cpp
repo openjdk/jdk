@@ -439,12 +439,14 @@ void RegionNode::set_loop_status(RegionNode::LoopStatus status) {
   _loop_status = status;
 }
 
-#ifdef ASSERT
-void RegionNode::verify_can_be_irreducible_entry() const {
-  assert(loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry, "must be marked irreducible");
-  assert(!is_Loop(), "LoopNode cannot be irreducible loop entry");
+// A Region can only be an irreducible entry if:
+// - It is marked as "maybe irreducible entry". Any other loop status would guarantee
+//   that it is never an irreducible loop entry.
+// - It is not a LoopNode, those are guaranteed to be reducible loop entries.
+bool RegionNode::can_be_irreducible_entry() const {
+  return loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry &&
+         !is_Loop();
 }
-#endif //ASSERT
 
 void RegionNode::try_clean_mem_phis(PhaseIterGVN* igvn) {
   // Incremental inlining + PhaseStringOpts sometimes produce:
