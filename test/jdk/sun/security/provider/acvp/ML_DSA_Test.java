@@ -79,20 +79,6 @@ public class ML_DSA_Test {
         }
     }
 
-    static String h2h(String in) {
-        return switch (in) {
-            case "SHA2-512/224" -> "SHA-512/224";
-            case "SHA2-512/256" -> "SHA-512/256";
-            case "SHA2-224" -> "SHA-224";
-            case "SHA2-256" -> "SHA-256";
-            case "SHA2-384" -> "SHA-384";
-            case "SHA2-512" -> "SHA-512";
-            case "SHAKE-128" -> "SHAKE128";
-            case "SHAKE-256" -> "SHAKE256";
-            default -> in;
-        };
-    }
-
     static void sigGenTest(JSONValue kat, Provider p) throws Exception {
         var s = p == null
                 ? Signature.getInstance("ML-DSA")
@@ -113,8 +99,7 @@ public class ML_DSA_Test {
                 var cstr = c.get("context");
                 var ctxt = cstr == null ? new byte[0] : toByteArray(cstr.asString());
                 var hashAlg = c.get("hashAlg").asString();
-                var preHash = hashAlg.equals("none") ? null : h2h(hashAlg);
-                if (preHash != null || ctxt.length != 0) {
+                if (!hashAlg.equals("none") || ctxt.length != 0) {
                     continue; // Not supported
                 }
                 System.out.print(Integer.parseInt(c.get("tcId").asString()) + " ");
@@ -156,8 +141,7 @@ public class ML_DSA_Test {
                 var cstr = c.get("context");
                 var ctxt = cstr == null ? new byte[0] : toByteArray(cstr.asString());
                 var hashAlg = c.get("hashAlg").asString();
-                var preHash = hashAlg.equals("none") ? null : h2h(hashAlg);
-                if (preHash != null || ctxt.length != 0) {
+                if (!hashAlg.equals("none") || ctxt.length != 0) {
                     continue; // Not supported
                 }
                 System.out.print(c.get("tcId").asString() + " ");
