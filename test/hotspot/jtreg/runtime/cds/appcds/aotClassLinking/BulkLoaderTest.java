@@ -239,7 +239,7 @@ class BulkLoaderTestApp {
         // to BadOldClassA should be removed from the archived constant pool.
         Class c = BadOldClassA.class;
         Object n = new Object();
-        if (c.isInstance(n)) { // Note that type-testing BadOldClassA here neither links nor initailizes it.
+        if (c.isInstance(n)) { // Note that type-testing BadOldClassA here neither links nor initializes it.
             throw new RuntimeException("Must not succeed");
         }
 
