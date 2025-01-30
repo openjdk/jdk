@@ -32,6 +32,9 @@
  * @run main/manual TestImageIconWithJRadioButtonMenuItem
  */
 
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -46,8 +49,8 @@ public class TestImageIconWithJRadioButtonMenuItem {
 
     private static final String INSTRUCTIONS = """
         Two JRadioButtonMenuItem will be shown.
-        One JRadioButtonMenuItem is with image icon and
-        another one without image icon.
+        One JRadioButtonMenuItem is with image icon of a red square
+        and another one without image icon.
         Verify that for JRadioButtonMenuItem with image icon,
         radiobutton is been shown alongside the image icon.
         If radiobutton is shown, test passes else fails.""";
@@ -65,11 +68,14 @@ public class TestImageIconWithJRadioButtonMenuItem {
     }
 
     public static JFrame doTest() {
-        String imgDir = System.getProperty("test.src", ".");
-        String imgPath = imgDir + File.separator + "duke.gif";
+        BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+        Graphics g = img.getGraphics();
+        g.setColor(Color.red);
+        g.fillRect(0, 0, img.getWidth(), img.getHeight());
+        g.dispose();
 
         JFrame frame = new JFrame("RadioButtonWithImageIcon");
-        ImageIcon imageIcon1 = new ImageIcon(imgPath);
+        ImageIcon imageIcon1 = new ImageIcon(img);
         AbstractButton button1 = new JRadioButtonMenuItem("JRadioButtonMenuItem 1",
                 imageIcon1);
         button1.setSelected(true);
