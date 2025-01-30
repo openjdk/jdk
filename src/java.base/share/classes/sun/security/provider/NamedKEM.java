@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
-import java.util.Objects;
 
 /// A base class for all `KEM` implementations that can be
 /// configured with a named parameter set. See [NamedKeyPairGenerator]
@@ -51,12 +50,15 @@ public abstract class NamedKEM implements KEMSpi {
 
     private final String fname; // family name
     private final String[] pnames; // allowed parameter set name (at least one)
+    private final NamedKeyFactory fac;
 
     /// Creates a new `NamedKEM` object.
     ///
     /// @param fname the family name
+    /// @param fac the `KeyFactory` used to translate foreign keys and
+    ///         perform key validation
     /// @param pnames the standard parameter set names, at least one is needed.
-    protected NamedKEM(String fname, String... pnames) {
+    protected NamedKEM(String fname, NamedKeyFactory fac, String... pnames) {
         if (fname == null) {
             throw new AssertionError("fname cannot be null");
         }
@@ -65,6 +67,7 @@ public abstract class NamedKEM implements KEMSpi {
         }
         this.fname = fname;
         this.pnames = pnames;
+        this.fac = fac;
     }
 
     @Override
@@ -76,8 +79,7 @@ public abstract class NamedKEM implements KEMSpi {
                     "The " + fname + " algorithm does not take any parameters");
         }
         // translate also check the key
-        var nk = (NamedX509Key) new NamedKeyFactory(fname, pnames)
-                .engineTranslateKey(publicKey);
+        var nk = (NamedX509Key) fac.engineTranslateKey(publicKey);
         var pk = nk.getRawBytes();
         return getKeyConsumerImpl(this, nk.getParams(), pk,
                 implCheckPublicKey(nk.getParams().getName(), pk), secureRandom);
@@ -92,9 +94,8 @@ public abstract class NamedKEM implements KEMSpi {
                     "The " + fname + " algorithm does not take any parameters");
         }
         // translate also check the key
-        var nk = (NamedPKCS8Key) new NamedKeyFactory(fname, pnames)
-                .engineTranslateKey(privateKey);
-        var sk = nk.getRawBytes();
+        var nk = (NamedPKCS8Key) fac.engineTranslateKey(privateKey);
+        var sk = nk.getExpanded();
         return getKeyConsumerImpl(this, nk.getParams(), sk,
                 implCheckPrivateKey(nk.getParams().getName(), sk), null);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import java.security.spec.NamedParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
-import java.util.Objects;
 
 /// A base class for all `KeyFactory` implementations that can be
 /// configured with a named parameter set. See [NamedKeyPairGenerator]
@@ -58,7 +57,7 @@ import java.util.Objects;
 ///
 /// When reading from a RAW format, it needs enough info to derive the
 /// parameter set name.
-public class NamedKeyFactory extends KeyFactorySpi {
+public abstract class NamedKeyFactory extends KeyFactorySpi {
 
     private final String fname; // family name
     private final String[] pnames; // allowed parameter set name (at least one)
@@ -129,24 +128,16 @@ public class NamedKeyFactory extends KeyFactorySpi {
             }
         } else if (keySpec instanceof RawKeySpec rks) {
             if (pnames.length == 1) {
-                var bytes = rks.getKeyArr();
-                try {
-                    return new NamedPKCS8Key(fname, pnames[0], bytes);
-                } finally {
-                    Arrays.fill(bytes, (byte) 0);
-                }
+                var raw = rks.getKeyArr();
+                return new NamedPKCS8Key(fname, pnames[0], raw, implGenAlt(pnames[0], raw));
             } else {
                 throw new InvalidKeySpecException("Parameter set name unavailable");
             }
         } else if (keySpec instanceof EncodedKeySpec espec
                 && espec.getFormat().equalsIgnoreCase("RAW")) {
             if (pnames.length == 1) {
-                var bytes = espec.getEncoded();
-                try {
-                    return new NamedPKCS8Key(fname, pnames[0], bytes);
-                } finally {
-                    Arrays.fill(bytes, (byte) 0);
-                }
+                var raw = espec.getEncoded();
+                return new NamedPKCS8Key(fname, pnames[0], raw, implGenAlt(pnames[0], raw));
             } else {
                 throw new InvalidKeySpecException("Parameter set name unavailable");
             }
@@ -157,7 +148,7 @@ public class NamedKeyFactory extends KeyFactorySpi {
 
     private PrivateKey fromPKCS8(byte[] bytes)
             throws InvalidKeyException, InvalidKeySpecException {
-        var k = new NamedPKCS8Key(fname, bytes);
+        var k = new NamedPKCS8Key(fname, bytes, this::implGenAlt);
         checkName(k.getParams().getName());
         return k;
     }
@@ -260,9 +251,10 @@ public class NamedKeyFactory extends KeyFactorySpi {
                         name = checkName(kAlg);
                     }
                 }
+                var raw = key.getEncoded();
                 return key instanceof PrivateKey
-                        ? new NamedPKCS8Key(fname, name, key.getEncoded())
-                        : new NamedX509Key(fname, name, key.getEncoded());
+                        ? new NamedPKCS8Key(fname, name, raw, implGenAlt(name, raw))
+                        : new NamedX509Key(fname, name, raw);
             } else {
                 throw new InvalidKeyException("Unsupported key type: " + key.getClass());
             }
@@ -285,4 +277,12 @@ public class NamedKeyFactory extends KeyFactorySpi {
             throw new InvalidKeyException("Unsupported key format: " + key.getFormat());
         }
     }
+
+    /// User-defined function to generate the alternative key inside
+    /// a [NamedPKCS8Key].
+    ///
+    /// This method will be called when the key factory is constructing
+    /// a private key. If the input `key` is a seed, the expanded key must
+    /// be returned. If `key` is in expanded format, `null` must be returned.
+    protected abstract byte[] implGenAlt(String name, byte[] key);
 }

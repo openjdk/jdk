@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 8340327
+ * @bug 8340327 8347938 8347941
  * @modules java.base/sun.security.ec.ed
  *          java.base/sun.security.ec.point
  *          java.base/sun.security.jca
  *          java.base/sun.security.provider
+ *          java.base/sun.security.util
  * @library /test/lib
  */
 
@@ -40,7 +41,10 @@ import sun.security.jca.JCAUtil;
 import sun.security.provider.NamedKeyFactory;
 import sun.security.provider.NamedKeyPairGenerator;
 import sun.security.provider.NamedSignature;
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
 
+import java.io.IOException;
 import java.security.*;
 import java.security.spec.EdDSAParameterSpec;
 import java.security.spec.NamedParameterSpec;
@@ -66,11 +70,11 @@ public class NamedEdDSA {
 
     public static class EdDSASignature extends NamedSignature {
         public EdDSASignature() {
-            super("EdDSA", "Ed25519", "Ed448");
+            super("EdDSA", new EdDSAKeyFactory(), "Ed25519", "Ed448");
         }
 
         protected EdDSASignature(String pname) {
-            super("EdDSA", pname);
+            super("EdDSA", new EdDSAKeyFactory(pname), pname);
         }
 
         public static class Ed25519 extends EdDSASignature {
@@ -87,7 +91,11 @@ public class NamedEdDSA {
 
         @Override
         public byte[] implSign(String name, byte[] sk, Object sk2, byte[] msg, SecureRandom sr) throws SignatureException {
-            return getOps(name).sign(plain, sk, msg);
+            try {
+                return getOps(name).sign(plain, new DerValue(sk).getOctetString(), msg);
+            } catch (IOException e) {
+                throw new SignatureException(e);
+            }
         }
 
         @Override
@@ -120,6 +128,11 @@ public class NamedEdDSA {
             public Ed448() {
                 super("Ed448");
             }
+        }
+
+        @Override
+        protected byte[] implGenAlt(String name, byte[] key) {
+            return null;
         }
     }
 
@@ -157,7 +170,9 @@ public class NamedEdDSA {
             // set the high-order bit of the encoded point
             byte msb = (byte) (point.isXOdd() ? 0x80 : 0);
             encodedPoint[encodedPoint.length - 1] |= msb;
-            return new byte[][] { encodedPoint, sk };
+            return new byte[][] {
+                    encodedPoint,
+                    new DerOutputStream().putOctetString(sk).toByteArray()};
         }
 
         private static void swap(byte[] arr, int i, int j) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.SignatureSpi;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.Objects;
 
 /// A base class for all `Signature` implementations that can be
 /// configured with a named parameter set. See [NamedKeyPairGenerator]
@@ -51,6 +50,7 @@ public abstract class NamedSignature extends SignatureSpi {
 
     private final String fname; // family name
     private final String[] pnames; // allowed parameter set name (at least one)
+    private final NamedKeyFactory fac;
 
     private final ByteArrayOutputStream bout = new ByteArrayOutputStream();
 
@@ -65,8 +65,10 @@ public abstract class NamedSignature extends SignatureSpi {
     /// Creates a new `NamedSignature` object.
     ///
     /// @param fname the family name
+    /// @param fac the `KeyFactory` used to translate foreign keys and
+    ///         perform key validation
     /// @param pnames the standard parameter set names, at least one is needed.
-    protected NamedSignature(String fname, String... pnames) {
+    protected NamedSignature(String fname, NamedKeyFactory fac, String... pnames) {
         if (fname == null) {
             throw new AssertionError("fname cannot be null");
         }
@@ -75,13 +77,13 @@ public abstract class NamedSignature extends SignatureSpi {
         }
         this.fname = fname;
         this.pnames = pnames;
+        this.fac = fac;
     }
 
     @Override
     protected void engineInitVerify(PublicKey publicKey) throws InvalidKeyException {
         // translate also check the key
-        var nk = (NamedX509Key) new NamedKeyFactory(fname, pnames)
-                .engineTranslateKey(publicKey);
+        var nk = (NamedX509Key) fac.engineTranslateKey(publicKey);
         name = nk.getParams().getName();
         pubKey = nk.getRawBytes();
         pk2 = implCheckPublicKey(name, pubKey);
@@ -92,10 +94,9 @@ public abstract class NamedSignature extends SignatureSpi {
     @Override
     protected void engineInitSign(PrivateKey privateKey) throws InvalidKeyException {
         // translate also check the key
-        var nk = (NamedPKCS8Key) new NamedKeyFactory(fname, pnames)
-                .engineTranslateKey(privateKey);
+        var nk = (NamedPKCS8Key) fac.engineTranslateKey(privateKey);
         name = nk.getParams().getName();
-        secKey = nk.getRawBytes();
+        secKey = nk.getExpanded();
         sk2 = implCheckPrivateKey(name, secKey);
         pubKey = null;
         bout.reset();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,7 @@ public final class ML_KEM {
     /*
     Main internal algorithms from Section 6 of specification
      */
-    protected ML_KEM_KeyPair generateKemKeyPair(byte[] kem_d, byte[] kem_z) {
+    protected ML_KEM_KeyPair generateKemKeyPair(byte[] kem_d_z) {
         MessageDigest mlKemH;
         try {
             mlKemH = MessageDigest.getInstance(HASH_H_NAME);
@@ -227,7 +227,7 @@ public final class ML_KEM {
         }
 
         //Generate K-PKE keys
-        var kPkeKeyPair = generateK_PkeKeyPair(kem_d);
+        var kPkeKeyPair = generateK_PkeKeyPair(kem_d_z);
         //encaps key = kPke encryption key
         byte[] encapsKey = kPkeKeyPair.publicKey.keyBytes;
 
@@ -246,7 +246,7 @@ public final class ML_KEM {
             // This should never happen.
             throw new RuntimeException(e);
         }
-        System.arraycopy(kem_z, 0, decapsKey,
+        System.arraycopy(kem_d_z, 32, decapsKey,
             kPkePrivateKey.length + encapsKey.length + 32, 32);
 
         return new ML_KEM_KeyPair(
@@ -367,10 +367,11 @@ public final class ML_KEM {
             throw new RuntimeException(e);
         }
 
-        mlKemG.update(seed);
+        mlKemG.update(seed, 0, 32);
         mlKemG.update((byte)mlKem_k);
 
         var rhoSigma = mlKemG.digest();
+        mlKemG.reset();
         var rho = Arrays.copyOfRange(rhoSigma, 0, 32);
         var sigma = Arrays.copyOfRange(rhoSigma, 32, 64);
         Arrays.fill(rhoSigma, (byte)0);

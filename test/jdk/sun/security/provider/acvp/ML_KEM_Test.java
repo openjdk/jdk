@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import com.sun.crypto.provider.ML_KEM_Impls;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.json.JSONValue;
 import jdk.test.lib.security.FixedSecureRandom;
@@ -71,7 +72,9 @@ public class ML_KEM_Test {
                 var pk = f.getKeySpec(kp.getPublic(), EncodedKeySpec.class).getEncoded();
                 var sk = f.getKeySpec(kp.getPrivate(), EncodedKeySpec.class).getEncoded();
                 Asserts.assertEqualsByteArray(toByteArray(c.get("ek").asString()), pk);
-                Asserts.assertEqualsByteArray(toByteArray(c.get("dk").asString()), sk);
+                Asserts.assertEqualsByteArray(
+                        toByteArray(c.get("dk").asString()),
+                        ML_KEM_Impls.seedToExpandedPrivate(pname, sk));
             }
             System.out.println();
         }

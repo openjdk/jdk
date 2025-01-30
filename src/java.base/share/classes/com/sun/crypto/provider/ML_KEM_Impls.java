@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,12 @@ import javax.crypto.DecapsulateException;
 
 public final class ML_KEM_Impls {
 
+    public static byte[] seedToExpandedPrivate(String pname, byte[] seed) {
+        return new ML_KEM(pname).generateKemKeyPair(seed)
+                .decapsulationKey()
+                .keyBytes();
+    }
+
     public sealed static class KPG
         extends NamedKeyPairGenerator permits KPG2, KPG3, KPG5 {
 
@@ -51,22 +57,16 @@ public final class ML_KEM_Impls {
 
         @Override
         protected byte[][] implGenerateKeyPair(String name, SecureRandom random) {
-            byte[] seed = new byte[32];
+            byte[] seedAndZ = new byte[64];
             var r = random != null ? random : JCAUtil.getDefSecureRandom();
-            r.nextBytes(seed);
-            byte[] z = new byte[32];
-            r.nextBytes(z);
+            r.nextBytes(seedAndZ);
 
             ML_KEM mlKem = new ML_KEM(name);
             ML_KEM.ML_KEM_KeyPair kp;
-            try {
-                kp = mlKem.generateKemKeyPair(seed, z);
-            } finally {
-                Arrays.fill(seed, (byte)0);
-                Arrays.fill(z, (byte)0);
-            }
-            return new byte[][] {
+            kp = mlKem.generateKemKeyPair(seedAndZ);
+            return new byte[][]{
                     kp.encapsulationKey().keyBytes(),
+                    seedAndZ,
                     kp.decapsulationKey().keyBytes()
             };
         }
@@ -96,6 +96,15 @@ public final class ML_KEM_Impls {
         }
         public KF(String name) {
             super("ML-KEM", name);
+        }
+
+        @Override
+        protected byte[] implGenAlt(String name, byte[] key) {
+            if (key.length == 64) {
+                return seedToExpandedPrivate(name, key);
+            } else {
+                return null;
+            }
         }
     }
 
@@ -183,11 +192,11 @@ public final class ML_KEM_Impls {
         }
 
         public K() {
-            super("ML-KEM", "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024");
+            super("ML-KEM", new KF(), "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024");
         }
 
         public K(String name) {
-            super("ML-KEM", name);
+            super("ML-KEM", new KF(name), name);
         }
     }
 

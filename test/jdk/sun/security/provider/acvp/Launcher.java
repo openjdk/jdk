@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.Security;
  * @bug 8342442 8345057
  * @library /test/lib
  * @modules java.base/sun.security.provider
+ *          java.base/com.sun.crypto.provider
  */
 
 /// This test runs on `internalProjection.json`-style files generated

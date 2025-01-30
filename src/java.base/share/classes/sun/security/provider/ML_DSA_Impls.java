@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,16 @@
 package sun.security.provider;
 
 import sun.security.jca.JCAUtil;
+
 import java.security.*;
 import java.security.SecureRandom;
-import java.util.Arrays;
 
 public class ML_DSA_Impls {
+
+    public static byte[] seedToExpandedPrivate(String pname, byte[] seed) {
+        var impl = new ML_DSA(name2int(pname));
+        return impl.skEncode(impl.generateKeyPairInternal(seed).privateKey());
+    }
 
     public enum Version {
         DRAFT, FINAL
@@ -75,15 +80,11 @@ public class ML_DSA_Impls {
             r.nextBytes(seed);
             ML_DSA mlDsa = new ML_DSA(name2int(name));
             ML_DSA.ML_DSA_KeyPair kp = mlDsa.generateKeyPairInternal(seed);
-            try {
-                return new byte[][]{
-                        mlDsa.pkEncode(kp.publicKey()),
-                        mlDsa.skEncode(kp.privateKey())
-                };
-            } finally {
-                kp.privateKey().destroy();
-                Arrays.fill(seed, (byte)0);
-            }
+            return new byte[][]{
+                    mlDsa.pkEncode(kp.publicKey()),
+                    seed,
+                    mlDsa.skEncode(kp.privateKey())
+            };
         }
     }
 
@@ -112,6 +113,15 @@ public class ML_DSA_Impls {
         public KF(String name) {
             super("ML-DSA", name);
         }
+
+        @Override
+        protected byte[] implGenAlt(String name, byte[] key) {
+            if (key.length == 32) {
+                return seedToExpandedPrivate(name, key);
+            } else {
+                return null;
+            }
+        }
     }
 
     public final static class KF2 extends KF {
@@ -134,10 +144,10 @@ public class ML_DSA_Impls {
 
     public sealed static class SIG extends NamedSignature permits SIG2, SIG3, SIG5 {
         public SIG() {
-            super("ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
+            super("ML-DSA", new KF(), "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
         }
         public SIG(String name) {
-            super("ML-DSA", name);
+            super("ML-DSA", new KF(name), name);
         }
 
         @Override

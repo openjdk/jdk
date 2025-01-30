@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.pkcs;
 
-import sun.security.util.DerInputStream;
 import sun.security.util.DerValue;
 import sun.security.x509.AlgorithmId;
 
@@ -39,6 +38,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
+import java.util.function.BiFunction;
 
 /// Represents a private key from an algorithm family that is specialized
 /// with a named parameter set.
@@ -50,6 +50,21 @@ import java.util.Arrays;
 /// identifier in the PKCS #8 encoding of the key is always a single OID derived
 /// from the parameter set name.
 ///
+/// Besides the [PKCS8Key#key] field, this class might contain an optional
+/// alternative key stored in [#alt].
+///
+/// 1. If there is only `key`, there is only one private key encoding.
+/// 2. If both `key` and `alt` exist. `key` is used in encoding,
+///    and `alt` is used in calculation.
+///
+/// This allows ML-KEM or ML-DSA to encode the seed used in key pair
+/// generation as the private key. In this case, `alt` will be the
+/// expanded key as described in the FIPS documents. If the seed is
+/// lost, `key` will be the expanded key and `alt` will be null.
+///
+/// For algorithms that do not have this "alternative" key format,
+/// only `key` will be included and `alt` must be `null`.
+///
 /// @see sun.security.provider.NamedKeyPairGenerator
 public final class NamedPKCS8Key extends PKCS8Key {
     @Serial
@@ -57,42 +72,49 @@ public final class NamedPKCS8Key extends PKCS8Key {
 
     private final String fname;
     private final transient NamedParameterSpec paramSpec;
-    private final byte[] rawBytes;
+    private final byte[] alt;
 
     private transient boolean destroyed = false;
 
-    /// Ctor from family name, parameter set name, raw key bytes.
-    /// Key bytes won't be cloned, caller must relinquish ownership
-    public NamedPKCS8Key(String fname, String pname, byte[] rawBytes) {
+    /// Ctor from raw key bytes.
+    ///
+    /// `rawBytes` and `alt` won't be cloned, caller
+    /// must relinquish ownership.
+    ///
+    /// @param fname family name
+    /// @param pname parameter set name
+    /// @param rawBytes raw key bytes
+    /// @param alt alternative key format, can be `null`.
+    public NamedPKCS8Key(String fname, String pname, byte[] rawBytes, byte[] alt) {
         this.fname = fname;
         this.paramSpec = new NamedParameterSpec(pname);
+        this.alt = alt;
         try {
             this.algid = AlgorithmId.get(pname);
         } catch (NoSuchAlgorithmException e) {
             throw new ProviderException(e);
         }
-        this.rawBytes = rawBytes;
-
-        DerValue val = new DerValue(DerValue.tag_OctetString, rawBytes);
-        try {
-            this.key = val.toByteArray();
-        } finally {
-            val.clear();
-        }
+        this.key = rawBytes;
     }
 
-    /// Ctor from family name, and PKCS #8 bytes
-    public NamedPKCS8Key(String fname, byte[] encoded) throws InvalidKeyException {
+    /// Ctor from family name and PKCS #8 encoding
+    ///
+    /// @param fname family name
+    /// @param encoded PKCS #8 encoding. It is copied so caller can modify
+    ///     it after the method call.
+    /// @param genAlt a function that is able to calculate the alternative
+    ///     key from raw key inside `encoded`. In the case of seed/expanded,
+    ///     the function will calculate expanded from seed. If it recognizes
+    ///     the input being already the expanded key, it must return `null`.
+    ///     If there is no alternative key format, `getAlt` must be `null`.
+    public NamedPKCS8Key(String fname, byte[] encoded,
+            BiFunction<String, byte[], byte[]> genAlt) throws InvalidKeyException {
         super(encoded);
         this.fname = fname;
-        try {
-            paramSpec = new NamedParameterSpec(algid.getName());
-            if (algid.getEncodedParams() != null) {
-                throw new InvalidKeyException("algorithm identifier has params");
-            }
-            rawBytes = new DerInputStream(key).getOctetString();
-        } catch (IOException e) {
-            throw new InvalidKeyException("Cannot parse input", e);
+        this.alt = genAlt == null ? null : genAlt.apply(algid.getName(), this.key);
+        paramSpec = new NamedParameterSpec(algid.getName());
+        if (algid.getEncodedParams() != null) {
+            throw new InvalidKeyException("algorithm identifier has params");
         }
     }
 
@@ -106,7 +128,23 @@ public final class NamedPKCS8Key extends PKCS8Key {
     /// Returns the reference to the internal key. Caller must not modify
     /// the content or keep a reference.
     public byte[] getRawBytes() {
-        return rawBytes;
+        return key;
+    }
+
+    /// Returns the reference to the key that will be used in computations
+    /// inside `NamedKEM` or `NamedSignature` between `alt` (if exists)
+    /// and `key`.
+    ///
+    /// This method currently simply chooses the longer one, where it is the
+    /// expanded format. If the key used in computations is not the longer
+    /// one for an algorithm, consider adding overridable methods to
+    /// `NamedKEM` and `NamedSignature` to extract it.
+    public byte[] getExpanded() {
+        if (alt == null) {
+            return key;
+        } else {
+            return alt.length > key.length ? alt : key;
+        }
     }
 
     @Override
@@ -128,8 +166,10 @@ public final class NamedPKCS8Key extends PKCS8Key {
 
     @Override
     public void destroy() throws DestroyFailedException {
-        Arrays.fill(rawBytes, (byte)0);
         Arrays.fill(key, (byte)0);
+        if (alt != null) {
+            Arrays.fill(alt, (byte)0);
+        }
         if (encodedKey != null) {
             Arrays.fill(encodedKey, (byte)0);
         }
