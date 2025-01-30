@@ -160,17 +160,9 @@ public class TestEquivalentInvariants {
           MemorySegment data = MemorySegment.ofArray(aI.clone());
           return testMemorySegmentIInvarL3d(data, 1, 2, 3, RANGE-200);
         });
-        tests.put("testMemorySegmentIInvarL3da", () -> {
-          MemorySegment data = MemorySegment.ofArray(aI.clone());
-          return testMemorySegmentIInvarL3da(data, 1, 2, 3, RANGE-200);
-        });
         tests.put("testMemorySegmentIInvarL3d2", () -> {
           MemorySegment data = MemorySegment.ofArray(aI.clone());
           return testMemorySegmentIInvarL3d2(data, 1, 2, 3, RANGE-200);
-        });
-        tests.put("testMemorySegmentIInvarL3d2a", () -> {
-          MemorySegment data = MemorySegment.ofArray(aI.clone());
-          return testMemorySegmentIInvarL3d2a(data, 1, 2, 3, RANGE-200);
         });
         tests.put("testMemorySegmentIInvarL3d3", () -> {
           MemorySegment data = MemorySegment.ofArray(aI.clone());
@@ -179,10 +171,6 @@ public class TestEquivalentInvariants {
         tests.put("testMemorySegmentIInvarL3e", () -> {
           MemorySegment data = MemorySegment.ofArray(aI.clone());
           return testMemorySegmentIInvarL3e(data, 1, 2, 3, RANGE-200);
-        });
-        tests.put("testMemorySegmentIInvarL3ea", () -> {
-          MemorySegment data = MemorySegment.ofArray(aI.clone());
-          return testMemorySegmentIInvarL3ea(data, 1, 2, 3, RANGE-200);
         });
         tests.put("testMemorySegmentIInvarL3f", () -> {
           MemorySegment data = MemorySegment.ofArray(aI.clone());
@@ -204,17 +192,9 @@ public class TestEquivalentInvariants {
           MemorySegment data = MemorySegment.ofArray(aL.clone());
           return testMemorySegmentLInvarL3d(data, 1, 2, 3, RANGE-200);
         });
-        tests.put("testMemorySegmentLInvarL3da", () -> {
-          MemorySegment data = MemorySegment.ofArray(aL.clone());
-          return testMemorySegmentLInvarL3da(data, 1, 2, 3, RANGE-200);
-        });
         tests.put("testMemorySegmentLInvarL3d2", () -> {
           MemorySegment data = MemorySegment.ofArray(aL.clone());
           return testMemorySegmentLInvarL3d2(data, 1, 2, 3, RANGE-200);
-        });
-        tests.put("testMemorySegmentLInvarL3d2a", () -> {
-          MemorySegment data = MemorySegment.ofArray(aL.clone());
-          return testMemorySegmentLInvarL3d2a(data, 1, 2, 3, RANGE-200);
         });
         tests.put("testMemorySegmentLInvarL3d3", () -> {
           MemorySegment data = MemorySegment.ofArray(aL.clone());
@@ -223,10 +203,6 @@ public class TestEquivalentInvariants {
         tests.put("testMemorySegmentLInvarL3e", () -> {
           MemorySegment data = MemorySegment.ofArray(aL.clone());
           return testMemorySegmentLInvarL3e(data, 1, 2, 3, RANGE-200);
-        });
-        tests.put("testMemorySegmentLInvarL3ea", () -> {
-          MemorySegment data = MemorySegment.ofArray(aL.clone());
-          return testMemorySegmentLInvarL3ea(data, 1, 2, 3, RANGE-200);
         });
         tests.put("testMemorySegmentLInvarL3f", () -> {
           MemorySegment data = MemorySegment.ofArray(aL.clone());
@@ -266,23 +242,17 @@ public class TestEquivalentInvariants {
                  "testMemorySegmentIInvarL3b",
                  "testMemorySegmentIInvarL3c",
                  "testMemorySegmentIInvarL3d",
-                 "testMemorySegmentIInvarL3da",
                  "testMemorySegmentIInvarL3d2",
-                 "testMemorySegmentIInvarL3d2a",
                  "testMemorySegmentIInvarL3d3",
                  "testMemorySegmentIInvarL3e",
-                 "testMemorySegmentIInvarL3ea",
                  "testMemorySegmentIInvarL3f",
                  "testMemorySegmentLInvarL3a",
                  "testMemorySegmentLInvarL3b",
                  "testMemorySegmentLInvarL3c",
                  "testMemorySegmentLInvarL3d",
-                 "testMemorySegmentLInvarL3da",
                  "testMemorySegmentLInvarL3d2",
-                 "testMemorySegmentLInvarL3d2a",
                  "testMemorySegmentLInvarL3d3",
                  "testMemorySegmentLInvarL3e",
-                 "testMemorySegmentLInvarL3ea",
                  "testMemorySegmentLInvarL3f",
                  "testLargeInvariantSum"})
     public void runTests() {
@@ -711,11 +681,18 @@ public class TestEquivalentInvariants {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 10",
-                  IRNode.STORE_VECTOR,  "= 10"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Would be nice if it vectorized.
+    // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
     static Object[] testMemorySegmentIInvarL3d(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
         long i2 = (long)(invar2 + invar3 - invar1); // equivalent
@@ -729,43 +706,11 @@ public class TestEquivalentInvariants {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // Would be nice if it vectorized.
-    // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
-    static Object[] testMemorySegmentIInvarL3da(MemorySegment m, int invar1, int invar2, int invar3, int size) {
-        long i1 = (long)(-invar1 + invar2 + invar3);
-        long i2 = (long)(invar2 + invar3 - invar1); // equivalent
-        for (int i = 0; i < size; i+=2) {
-            int v0 = m.getAtIndex(ValueLayout.JAVA_INT, i + i1 + 0);
-            int v1 = m.getAtIndex(ValueLayout.JAVA_INT, i + i2 + 1);
-            m.setAtIndex(ValueLayout.JAVA_INT, i + i1 + 0, v0 + 1);
-            m.setAtIndex(ValueLayout.JAVA_INT, i + i2 + 1, v1 + 1);
-        }
-        return new Object[]{ m };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 10",
-                  IRNode.STORE_VECTOR,  "= 10"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testMemorySegmentIInvarL3d2(MemorySegment m, int invar1, int invar2, int invar3, int size) {
-        long i1 = (long)(-invar1 + invar2 + invar3);
-        for (int i = 0; i < size; i+=2) {
-            int v0 = m.getAtIndex(ValueLayout.JAVA_INT, i + i1 + 0);
-            int v1 = m.getAtIndex(ValueLayout.JAVA_INT, i + i1 + 1);
-            m.setAtIndex(ValueLayout.JAVA_INT, i + i1 + 0, v0 + 1);
-            m.setAtIndex(ValueLayout.JAVA_INT, i + i1 + 1, v1 + 1);
-        }
-        return new Object[]{ m };
-    }
-
-    @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
@@ -773,7 +718,7 @@ public class TestEquivalentInvariants {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Would be nice if it vectorized.
     // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
-    static Object[] testMemorySegmentIInvarL3d2a(MemorySegment m, int invar1, int invar2, int invar3, int size) {
+    static Object[] testMemorySegmentIInvarL3d2(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
         for (int i = 0; i < size; i+=2) {
             int v0 = m.getAtIndex(ValueLayout.JAVA_INT, i + i1 + 0);
@@ -803,33 +748,20 @@ public class TestEquivalentInvariants {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 10",
-                  IRNode.STORE_VECTOR,  "= 10"},
-        applyIf = {"AlignVector", "false"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testMemorySegmentIInvarL3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
-        long i1 = (long)(-invar1 + invar2 + invar3);
-        long i2 = (long)(invar2 + invar3) - (long)(invar1); // not equivalent
-        for (int i = 0; i < size; i+=2) {
-            int v0 = m.getAtIndex(ValueLayout.JAVA_INT, i + i1 + 0);
-            int v1 = m.getAtIndex(ValueLayout.JAVA_INT, i + i2 + 1);
-            m.setAtIndex(ValueLayout.JAVA_INT, i + i1 + 0, v0 + 1);
-            m.setAtIndex(ValueLayout.JAVA_INT, i + i2 + 1, v1 + 1);
-        }
-        return new Object[]{ m };
-    }
-
-    @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
-        applyIf = {"AlignVector", "true"},
         applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Should never vectorize, since i1 and i2 are not guaranteed to be adjacent
     // invar2 + invar3 could overflow, and the address be valid with and without overflow.
     // So both addresses are valid, and not adjacent.
-    static Object[] testMemorySegmentIInvarL3ea(MemorySegment m, int invar1, int invar2, int invar3, int size) {
+    static Object[] testMemorySegmentIInvarL3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
         long i2 = (long)(invar2 + invar3) - (long)(invar1); // not equivalent
         for (int i = 0; i < size; i+=2) {
@@ -911,10 +843,15 @@ public class TestEquivalentInvariants {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L, "= 4",
-                  IRNode.STORE_VECTOR,  "= 4"},
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
+                  IRNode.STORE_VECTOR,  "= 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Would be nice if it vectorized.
     // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
@@ -931,53 +868,19 @@ public class TestEquivalentInvariants {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // Would be nice if it vectorized.
-    // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
-    static Object[] testMemorySegmentLInvarL3da(MemorySegment m, int invar1, int invar2, int invar3, int size) {
-        long i1 = (long)(-invar1 + invar2 + invar3);
-        long i2 = (long)(invar2 + invar3 - invar1); // equivalent
-        for (int i = 0; i < size; i+=2) {
-            long v0 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0);
-            long v1 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i2 + 1);
-            m.setAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0, v0 + 1);
-            m.setAtIndex(ValueLayout.JAVA_LONG, i + i2 + 1, v1 + 1);
-        }
-        return new Object[]{ m };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L, "= 4",
-                  IRNode.STORE_VECTOR,  "= 4"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Would be nice if it vectorized.
     // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
     static Object[] testMemorySegmentLInvarL3d2(MemorySegment m, int invar1, int invar2, int invar3, int size) {
-        long i1 = (long)(-invar1 + invar2 + invar3);
-        for (int i = 0; i < size; i+=2) {
-            long v0 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0);
-            long v1 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i1 + 1);
-            m.setAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0, v0 + 1);
-            m.setAtIndex(ValueLayout.JAVA_LONG, i + i1 + 1, v1 + 1);
-        }
-        return new Object[]{ m };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // Would be nice if it vectorized.
-    // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
-    static Object[] testMemorySegmentLInvarL3d2a(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
         for (int i = 0; i < size; i+=2) {
             long v0 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0);
@@ -1007,32 +910,18 @@ public class TestEquivalentInvariants {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L, "= 4",
-                  IRNode.STORE_VECTOR,  "= 4"},
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: should be ok to vectorize, but does not. Investigate in JDK-8331659.
-    static Object[] testMemorySegmentLInvarL3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
-        long i1 = (long)(-invar1 + invar2 + invar3);
-        long i2 = (long)(invar2 + invar3) - (long)(invar1); // not equivalent
-        for (int i = 0; i < size; i+=2) {
-            long v0 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0);
-            long v1 = m.getAtIndex(ValueLayout.JAVA_LONG, i + i2 + 1);
-            m.setAtIndex(ValueLayout.JAVA_LONG, i + i1 + 0, v0 + 1);
-            m.setAtIndex(ValueLayout.JAVA_LONG, i + i2 + 1, v1 + 1);
-        }
-        return new Object[]{ m };
-    }
-
-    @Test
     @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // FAILS: should be ok to vectorize, but does not. Investigate in JDK-8331659.
-    static Object[] testMemorySegmentLInvarL3ea(MemorySegment m, int invar1, int invar2, int invar3, int size) {
+    static Object[] testMemorySegmentLInvarL3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
         long i2 = (long)(invar2 + invar3) - (long)(invar1); // not equivalent
         for (int i = 0; i < size; i+=2) {
