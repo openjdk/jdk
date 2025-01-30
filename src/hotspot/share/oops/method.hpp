@@ -517,7 +517,7 @@ public:
   bool is_synchronized() const                   { return access_flags().is_synchronized();}
   bool is_native() const                         { return access_flags().is_native();      }
   bool is_abstract() const                       { return access_flags().is_abstract();    }
-  bool is_synthetic() const                      { return access_flags().is_synthetic();   }
+  bool is_synthetic() const                      { return access_flags().is_synthetic() || constMethod()->has_synthetic_attribute();   }
 
   // returns true if contains only return operation
   bool is_empty_method() const;

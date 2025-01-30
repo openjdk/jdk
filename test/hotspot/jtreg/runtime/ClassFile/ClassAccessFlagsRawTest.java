@@ -27,12 +27,14 @@
  * @bug 8291360
  * @summary Test getting a class's raw access flags using java.lang.Class API
  * @modules java.base/java.lang:open
+ * @library /test/lib
  * @compile classAccessFlagsRaw.jcod
  * @run main/othervm ClassAccessFlagsRawTest
  */
 
 import java.lang.reflect.*;
 import java.util.Set;
+import jdk.test.lib.Asserts;
 
 public class ClassAccessFlagsRawTest {
 
@@ -41,10 +43,9 @@ public class ClassAccessFlagsRawTest {
     public static void testIt(String className, int expectedResult) throws Exception {
         Class<?> testClass = Class.forName(className);
         int flags = (int)m.invoke(testClass);
-        if (flags != expectedResult) {
-            throw new RuntimeException(
-                "expected 0x" + Integer.toHexString(expectedResult) + ", got 0x" + Integer.toHexString(flags) + " for class " + className);
-        }
+        Asserts.assertTrue(flags == expectedResult,
+                           "expected 0x" + Integer.toHexString(expectedResult) +
+                           ", got 0x" + Integer.toHexString(flags) + " for class " + className);
     }
 
     public static void main(String argv[]) throws Throwable {
@@ -54,6 +55,7 @@ public class ClassAccessFlagsRawTest {
 
         testIt("SUPERset", 0x21);  // ACC_SUPER 0x20 + ACC_PUBLIC 0x1
         testIt("SUPERnotset", Modifier.PUBLIC);
+        testIt("SYNTHETICset", 0x0001); // ACC_SYNTHETIC 0x1000 + ACC_PUBLIC 0x1
 
         // Test that primitive should return ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC.
         int[] arr = new int[3];
