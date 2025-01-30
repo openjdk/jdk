@@ -107,7 +107,7 @@ public class ScreenCaptureRobotTest {
 
     private static void doTest() throws Exception {
         Robot robot = new Robot();
-        robot.mouseMove(0,0);
+        robot.mouseMove(0, 0);
         robot.waitForIdle();
         robot.delay(500);
 
