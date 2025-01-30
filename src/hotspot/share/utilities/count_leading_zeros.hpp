@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_COUNT_LEADING_ZEROS_HPP
 #define SHARE_UTILITIES_COUNT_LEADING_ZEROS_HPP
 
+#include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
