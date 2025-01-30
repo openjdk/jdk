@@ -63,7 +63,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private InputGraph cachedInputGraph;
     private final ChangedEvent<DiagramViewModel> diagramChangedEvent = new ChangedEvent<>(this);
     private final ChangedEvent<DiagramViewModel> graphChangedEvent = new ChangedEvent<>(this);
-    private final ChangedEvent<DiagramViewModel> selectedNodesChangedEvent = new ChangedEvent<>(this);
+    // This event signals a change in the selection of nodes and/or live ranges.
+    private final ChangedEvent<DiagramViewModel> selectedElementsChangedEvent = new ChangedEvent<>(this);
     private final ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent = new ChangedEvent<>(this);
     private ChangedListener<InputGraph> titleChangedListener = g -> {};
     private boolean showFreeInteractive;
@@ -274,8 +275,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         return graphChangedEvent;
     }
 
-    public ChangedEvent<DiagramViewModel> getSelectedNodesChangedEvent() {
-        return selectedNodesChangedEvent;
+    public ChangedEvent<DiagramViewModel> getSelectedElementsChangedEvent() {
+        return selectedElementsChangedEvent;
     }
 
     public ChangedEvent<DiagramViewModel> getHiddenNodesChangedEvent() {
@@ -328,7 +329,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             }
         }
         setColors(colors);
-        selectedNodesChangedEvent.fire();
+        selectedElementsChangedEvent.fire();
     }
 
     public Set<Integer> getSelectedLiveRanges() {
@@ -337,6 +338,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public void setSelectedLiveRanges(Set<Integer> liveRanges) {
         selectedLiveRanges = liveRanges;
+        selectedElementsChangedEvent.fire();
     }
 
     public void showFigures(Collection<Figure> figures) {

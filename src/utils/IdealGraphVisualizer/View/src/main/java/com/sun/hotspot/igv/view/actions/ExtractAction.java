@@ -23,6 +23,11 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.view.DiagramViewModel;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
@@ -43,7 +48,7 @@ import org.openide.util.NbBundle.Messages;
 })
 @Messages({
         "CTL_ExtractAction=Extract",
-        "HINT_ExtractAction=Extract current set of selected nodes"
+        "HINT_ExtractAction=Extract current set of selected nodes or live ranges"
 })
 public final class ExtractAction extends ModelAwareAction {
 
@@ -64,11 +69,19 @@ public final class ExtractAction extends ModelAwareAction {
 
     @Override
     public void performAction(DiagramViewModel model) {
-        model.showOnly(model.getSelectedNodes());
+        Set<Integer> nodes = new HashSet<>(model.getSelectedNodes());
+        InputGraph graph = model.getDiagram().getInputGraph();
+        for (int liveRangeId : model.getSelectedLiveRanges()) {
+            for (InputNode node : graph.getRelatedNodes(liveRangeId)) {
+                nodes.add(node.getId());
+            }
+        }
+        model.showOnly(nodes);
     }
 
     @Override
     public boolean isEnabled(DiagramViewModel model) {
-        return model != null && !model.getSelectedNodes().isEmpty();
+        return model != null &&
+               !(model.getSelectedNodes().isEmpty() && model.getSelectedLiveRanges().isEmpty());
     }
 }
