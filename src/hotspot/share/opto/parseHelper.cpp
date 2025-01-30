@@ -164,8 +164,10 @@ void Parse::array_store_check() {
   // cast array_klass to EXACT array and uncommon-trap if the cast fails.
   // Make constant out of the inexact array klass, but use it only if the cast
   // succeeds.
-  if (MonomorphicArrayCheck && !too_many_traps(Deoptimization::Reason_array_check) && !tak->klass_is_exact()
-      && tak->isa_aryklassptr()) {
+  if (MonomorphicArrayCheck &&
+      !too_many_traps(Deoptimization::Reason_array_check) &&
+      !tak->klass_is_exact() &&
+      tak->isa_aryklassptr()) {
       // Regarding the fourth condition in the if-statement from above:
       //
       // If the compiler has determined that the type of array 'ary' (represented
@@ -220,7 +222,7 @@ void Parse::array_store_check() {
   int element_klass_offset = in_bytes(ObjArrayKlass::element_klass_offset());
   Node* p2 = basic_plus_adr(array_klass, array_klass, element_klass_offset);
   Node* a_e_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p2, tak));
-  assert(StressReflectiveCode || array_klass->is_Con() == a_e_klass->is_Con(), "a constant array type must come with a constant element type");
+  assert(array_klass->is_Con() == a_e_klass->is_Con() || StressReflectiveCode, "a constant array type must come with a constant element type");
 
   // Check (the hard way) and throw if not a subklass.
   // Result is ignored, we just need the CFG effects.
