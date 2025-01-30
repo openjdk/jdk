@@ -54,16 +54,28 @@ template <class U>
 class SimpleCanonicalResult {
   static_assert(U(-1) > U(0), "bit info should be unsigned");
 public:
-  bool _present;       // whether this is an empty set
-  RangeInt<U> _bounds; // The bounds must be in the same half of the integer domain (see TypeInt)
-  KnownBits<U> _bits;
+  const bool _present;       // whether this is an empty set
+  const RangeInt<U> _bounds; // The bounds must be in the same half of the integer domain (see TypeInt)
+  const KnownBits<U> _bits;
+
+  SimpleCanonicalResult(bool present, const RangeInt<U>& bounds, const KnownBits<U>& bits)
+    : _present(present), _bounds(bounds), _bits(bits) {
+    if (!present) {
+      return;
+    }
+    // Do some verification
+    assert(bits.is_satisfied_by(bounds._lo) && bits.is_satisfied_by(bounds._hi), "must be canonical");
+    // 0b1000...
+    constexpr U mid_point = (std::numeric_limits<U>::max() >> 1) + U(1);
+    assert((bounds._lo < mid_point) == (bounds._hi < mid_point), "must be a simple interval");
+  }
 
   bool empty() const {
     return !_present;
   }
 
   static SimpleCanonicalResult<U> make_empty() {
-    return {false, {}, {}};
+    return SimpleCanonicalResult(false, {}, {});
   }
 };
 
@@ -251,7 +263,7 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // highest bit down (0-based), since i == 2, first_difference == 1
     juint first_violation = count_leading_zeros(one_violation); // 1
     //           1 0 0 0 0 0 0 0
-    U highest_bit = (std::numeric_limits<U>::max() >> 1) + U(1);
+    constexpr U highest_bit = (std::numeric_limits<U>::max() >> 1) + U(1);
     //           0 1 0 0 0 0 0 0
     U alignment = highest_bit >> first_violation;
     // This is the first value which have the violated bit being 1, which means
@@ -398,11 +410,11 @@ canonicalize_constraints_simple(const RangeInt<U>& bounds, const KnownBits<U>& b
   while (true) {
     canonicalized_bounds = adjust_bounds_from_bits(canonicalized_bounds._result, canonicalized_bits._result);
     if (!canonicalized_bounds._progress || canonicalized_bounds.empty()) {
-      return {canonicalized_bounds._present, canonicalized_bounds._result, canonicalized_bits._result};
+      return SimpleCanonicalResult<U>(canonicalized_bounds._present, canonicalized_bounds._result, canonicalized_bits._result);
     }
     canonicalized_bits = adjust_bits_from_bounds(canonicalized_bits._result, canonicalized_bounds._result);
     if (!canonicalized_bits._progress || canonicalized_bits.empty()) {
-      return {canonicalized_bits._present, canonicalized_bounds._result, canonicalized_bits._result};
+      return SimpleCanonicalResult<U>(canonicalized_bits._present, canonicalized_bounds._result, canonicalized_bits._result);
     }
   }
 }
