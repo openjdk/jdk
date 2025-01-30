@@ -356,8 +356,7 @@ public class DeferredLintHandler {
                 Deferral deferral = parsingDeferrals.get(nextDeferral + numMatches);
                 int relativePosition = deferral.compareToRange(minPos, maxPos);
 
-                // If it's before it, then this declaration overlaps nothing in the list. This only
-                // happens with the initial declarations; after that, declarations always stay ahead.
+                // If it's before it, then this declaration overlaps nothing else in the list.
                 // Keep recursing forward through the source code.
                 if (relativePosition > 0) {
                     break;
