@@ -84,6 +84,8 @@ public interface DiagramViewer {
 
     void addSelectedLiveRanges(Collection<InputLiveRange> liveRanges, boolean showIfHidden);
 
+    void addSelectedElements(Collection<InputNode> nodes, Collection<InputLiveRange> liveRanges, boolean showIfHidden);
+
     void clearSelectedElements();
 
     void setInteractionMode(InteractionMode mode);

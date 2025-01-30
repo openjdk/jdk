@@ -315,6 +315,10 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         relatedNodes.put(lrg.getId(), new HashSet<>());
     }
 
+    public InputLiveRange getLiveRange(int liveRangeId) {
+        return liveRanges.get(liveRangeId);
+    }
+
     public Collection<InputLiveRange> getLiveRanges() {
         return Collections.unmodifiableCollection(liveRanges.values());
     }

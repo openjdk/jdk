@@ -849,7 +849,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         rebuildBlockLayer();
         rebuildSegmentLayer();
         relayout();
-        setLiveRangeSegmentSelection(model.getSelectedLiveRangeSegments());
         rebuilding = false;
     }
 
@@ -894,7 +893,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         updateLiveRangeWidgetLocations(oldVisibleLiveRangeWidgets);
         updateBlockWidgetBounds(oldVisibleBlockWidgets);
         validateAll();
-        setFigureSelection(model.getSelectedFigures());
+        setElementSelection(model.getSelectedFigures(),
+                            model.getSelectedLiveRangeSegments());
         centerSelectedFigures();
         centerSelectedLiveRanges();
         rebuilding = false;
@@ -1294,27 +1294,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     }
 
-    @Override
-    public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {
-        Set<Integer> nodeIds = new HashSet<>(model.getSelectedNodes());
-        for (InputNode inputNode : nodes) {
-            nodeIds.add(inputNode.getId());
-        }
-        Set<Figure> selectedFigures = new HashSet<>();
-        for (Figure figure : model.getDiagram().getFigures()) {
-            if (nodeIds.contains(figure.getInputNode().getId())) {
-                selectedFigures.add(figure);
-            }
-        }
-        setFigureSelection(selectedFigures);
-        if (showIfHidden) {
-            model.showFigures(model.getSelectedFigures());
-        }
-    }
-
-    @Override
-    public void addSelectedLiveRanges(Collection<InputLiveRange> liveRanges, boolean showIfHidden) {
-        // TODO: ensure all related nodes are visible.
+    private Set<LiveRangeSegment> liveRangeSegmentSet(Collection<InputLiveRange> liveRanges) {
         Set<Integer> liveRangeIds = new HashSet<>();
         for (InputLiveRange liveRange : liveRanges) {
             liveRangeIds.add(liveRange.getId());
@@ -1325,11 +1305,44 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 representativeSegments.put(segment.getLiveRange().getId(), segment);
             }
         }
-        setLiveRangeSegmentSelection(new HashSet<>(representativeSegments.values()));
-        // TODO:
-        // if (showIfHidden) {
-        //     model.showLiveRangeSegments(model.getSelectedLiveRangeSegments());
-        // }
+        return new HashSet<>(representativeSegments.values());
+    }
+
+    private Set<Figure> figureSet(Collection<InputNode> nodes) {
+        Set<Integer> nodeIds = new HashSet<>(model.getSelectedNodes());
+        for (InputNode inputNode : nodes) {
+            nodeIds.add(inputNode.getId());
+        }
+        Set<Figure> selectedFigures = new HashSet<>();
+        for (Figure figure : model.getDiagram().getFigures()) {
+            if (nodeIds.contains(figure.getInputNode().getId())) {
+                selectedFigures.add(figure);
+            }
+        }
+        return selectedFigures;
+    }
+
+    @Override
+    public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {
+        setFigureSelection(figureSet(nodes));
+        if (showIfHidden) {
+            model.showFigures(model.getSelectedFigures());
+        }
+    }
+
+    @Override
+    public void addSelectedLiveRanges(Collection<InputLiveRange> liveRanges, boolean showIfHidden) {
+        setLiveRangeSegmentSelection(liveRangeSegmentSet(liveRanges));
+    }
+
+    @Override
+    public void addSelectedElements(Collection<InputNode> nodes,
+                                    Collection<InputLiveRange> liveRanges,
+                                    boolean showIfHidden) {
+        setElementSelection(figureSet(nodes), liveRangeSegmentSet(liveRanges));
+        if (showIfHidden) {
+            model.showFigures(model.getSelectedFigures());
+        }
     }
 
     @Override
@@ -1418,6 +1431,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     private void setLiveRangeSegmentSelection(Set<LiveRangeSegment> list) {
         super.setSelectedObjects(new HashSet<>(list));
+    }
+
+    private void setElementSelection(Set<Figure> figures, Set<LiveRangeSegment> segments) {
+        Set<Object> elements = new HashSet<>(figures);
+        elements.addAll(segments);
+        super.setSelectedObjects(elements);
     }
 
     @Override

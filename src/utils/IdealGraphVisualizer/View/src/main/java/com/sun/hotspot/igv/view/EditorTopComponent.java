@@ -359,6 +359,12 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         scene.addSelectedLiveRanges(liveRanges, showIfHidden);
     }
 
+    public void addSelectedElements(Collection<InputNode> nodes,
+                                    Collection<InputLiveRange> liveRanges,
+                                    boolean showIfHidden) {
+        scene.addSelectedElements(nodes, liveRanges, showIfHidden);
+    }
+
     public void centerSelectedNodes() {
         scene.centerSelectedFigures();
     }
@@ -460,7 +466,11 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         for (Figure figure : getModel().getSelectedFigures()) {
             selectedNodes.add(figure.getInputNode());
         }
-        etc.addSelectedNodes(selectedNodes, false);
+        Set<InputLiveRange> selectedLiveRanges = new HashSet<>();
+        for (int liveRangeId : getModel().getSelectedLiveRanges()) {
+            selectedLiveRanges.add(getModel().getGraph().getLiveRange(liveRangeId));
+        }
+        etc.addSelectedElements(selectedNodes, selectedLiveRanges, false);
         model.setGlobalSelection(GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected(), false);
         model.setCutEdges(CutEdgesAction.get(CutEdgesAction.class).isSelected(), false);
         etc.resetUndoRedo();
