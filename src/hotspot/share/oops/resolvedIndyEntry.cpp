@@ -28,17 +28,18 @@
 #include "oops/resolvedIndyEntry.hpp"
 
 u2 ResolvedIndyEntry::name_index(ConstantPool* cp) const {
-  int nti = cp->uncached_name_and_type_ref_index_at(constant_pool_index());
-  return cp->name_ref_index_at(nti);
+  auto indy = cp->uncached_bootstrap_specifier_ref_at(constant_pool_index());
+  return indy.name_index();
 }
 
 u2 ResolvedIndyEntry::signature_index(ConstantPool* cp) const {
-  int nti = cp->uncached_name_and_type_ref_index_at(constant_pool_index());
-  return cp->signature_ref_index_at(nti);
+  auto indy = cp->uncached_bootstrap_specifier_ref_at(constant_pool_index());
+  return indy.signature_index();
 }
 
 u2 ResolvedIndyEntry::bsme_index(ConstantPool* cp) const {
-  return cp->bootstrap_methods_attribute_index(constant_pool_index());
+  auto indy = cp->uncached_bootstrap_specifier_ref_at(constant_pool_index());
+  return indy.bsme_index();
 }
 
 bool ResolvedIndyEntry::check_no_old_or_obsolete_entry() {

@@ -76,7 +76,7 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
   case Bytecodes::_instanceof     : {
     int cpi_old = s_old->get_index_u2();
     int cpi_new = s_new->get_index_u2();
-    if (old_cp->klass_at_noresolve(cpi_old) != new_cp->klass_at_noresolve(cpi_new))
+    if (old_cp->klass_name_at(cpi_old) != new_cp->klass_name_at(cpi_new))
         return false;
     if (c_old == Bytecodes::_multianewarray &&
         *(jbyte*)(s_old->bcp() + 3) != *(jbyte*)(s_new->bcp() + 3))
@@ -289,27 +289,24 @@ bool MethodComparator::pool_constants_same(const int cpi_old, const int cpi_new,
     if (strcmp(old_cp->string_at_noresolve(cpi_old),
                new_cp->string_at_noresolve(cpi_new)) != 0)
       return false;
-  } else if (tag_old.is_klass() || tag_old.is_unresolved_klass()) {
-    // tag_old should be klass - 4881222
-    if (! (tag_new.is_unresolved_klass() || tag_new.is_klass()))
-      return false;
-    if (old_cp->klass_at_noresolve(cpi_old) !=
-        new_cp->klass_at_noresolve(cpi_new))
+  } else if (tag_old.is_klass_or_reference() && tag_new.is_klass_or_reference()) {
+    if (old_cp->klass_name_at(cpi_old) != new_cp->klass_name_at(cpi_new))
       return false;
   } else if (tag_old.is_method_type() && tag_new.is_method_type()) {
-    int mti_old = old_cp->method_type_index_at(cpi_old);
-    int mti_new = new_cp->method_type_index_at(cpi_new);
-    if ((old_cp->symbol_at(mti_old) != new_cp->symbol_at(mti_new)))
+    auto old_ref = old_cp->method_type_ref_at(cpi_old);
+    auto new_ref = new_cp->method_type_ref_at(cpi_new);
+    if (old_ref.signature(old_cp) != new_ref.signature(new_cp))
       return false;
   } else if (tag_old.is_method_handle() && tag_new.is_method_handle()) {
-    if (old_cp->method_handle_ref_kind_at(cpi_old) !=
-        new_cp->method_handle_ref_kind_at(cpi_new))
+    auto old_ref = old_cp->method_handle_ref_at(cpi_old);
+    auto new_ref = new_cp->method_handle_ref_at(cpi_new);
+    if (old_ref.ref_kind() != new_ref.ref_kind())
       return false;
-    int mhi_old = old_cp->method_handle_index_at(cpi_old);
-    int mhi_new = new_cp->method_handle_index_at(cpi_new);
-    if ((old_cp->uncached_klass_ref_at_noresolve(mhi_old) != new_cp->uncached_klass_ref_at_noresolve(mhi_new)) ||
-        (old_cp->uncached_name_ref_at(mhi_old) != new_cp->uncached_name_ref_at(mhi_new)) ||
-        (old_cp->uncached_signature_ref_at(mhi_old) != new_cp->uncached_signature_ref_at(mhi_new)))
+    auto old_mh = old_cp->uncached_field_or_method_ref_at(old_ref.ref_index());
+    auto new_mh = new_cp->uncached_field_or_method_ref_at(new_ref.ref_index());
+    if ((old_mh.klass_name(old_cp) != new_mh.klass_name(new_cp)) ||
+        (old_mh.name(old_cp)       != new_mh.name(new_cp)) ||
+        (old_mh.signature(old_cp)  != new_mh.signature(new_cp)))
       return false;
   } else {
     return false;  // unknown tag

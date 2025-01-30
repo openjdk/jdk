@@ -36,13 +36,9 @@
 inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Compiler
   guarantee(tag_at(which).is_klass(), "Corrupted constant pool"
             DEBUG_ONLY(" [%d]" COMMA which));
-  // Must do an acquire here in case another thread resolved the klass
-  // behind our back, lest we later load stale values thru the oop.
   CPKlassSlot kslot = klass_slot_at(which);
   assert(tag_at(kslot.name_index()).is_symbol(), "sanity");
-
-  Klass** adr = resolved_klasses()->adr_at(kslot.resolved_klass_index());
-  return Atomic::load_acquire(adr);
+  return resolved_klass_at_acquire(kslot.resolved_klass_index());
 }
 
 inline ResolvedFieldEntry* ConstantPool::resolved_field_entry_at(int field_index) {

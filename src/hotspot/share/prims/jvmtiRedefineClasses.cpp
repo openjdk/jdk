@@ -441,11 +441,12 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     // this is an indirect CP entry so it needs special handling
     case JVM_CONSTANT_NameAndType:
     {
-      int name_ref_i = scratch_cp->name_ref_index_at(scratch_i);
+      auto nt = scratch_cp->name_and_type_pair_at(scratch_i);
+      int name_ref_i = nt.name_index();
       int new_name_ref_i = find_or_append_indirect_entry(scratch_cp, name_ref_i, merge_cp_p,
                                                          merge_cp_length_p);
 
-      int signature_ref_i = scratch_cp->signature_ref_index_at(scratch_i);
+      int signature_ref_i = nt.signature_index();
       int new_signature_ref_i = find_or_append_indirect_entry(scratch_cp, signature_ref_i,
                                                               merge_cp_p, merge_cp_length_p);
 
@@ -478,11 +479,12 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     case JVM_CONSTANT_InterfaceMethodref: // fall through
     case JVM_CONSTANT_Methodref:
     {
-      int klass_ref_i = scratch_cp->uncached_klass_ref_index_at(scratch_i);
+      auto ref = scratch_cp->uncached_field_or_method_ref_at(scratch_i);
+      int klass_ref_i = ref.klass_index();
       int new_klass_ref_i = find_or_append_indirect_entry(scratch_cp, klass_ref_i,
                                                           merge_cp_p, merge_cp_length_p);
 
-      int name_and_type_ref_i = scratch_cp->uncached_name_and_type_ref_index_at(scratch_i);
+      int name_and_type_ref_i = ref.nt_index();
       int new_name_and_type_ref_i = find_or_append_indirect_entry(scratch_cp, name_and_type_ref_i,
                                                           merge_cp_p, merge_cp_length_p);
 
@@ -529,7 +531,8 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     // this is an indirect CP entry so it needs special handling
     case JVM_CONSTANT_MethodType:
     {
-      int ref_i = scratch_cp->method_type_index_at(scratch_i);
+      auto ref = scratch_cp->method_type_ref_at(scratch_i);
+      int ref_i = ref.signature_index();
       int new_ref_i = find_or_append_indirect_entry(scratch_cp, ref_i, merge_cp_p,
                                                     merge_cp_length_p);
       if (new_ref_i != ref_i) {
@@ -548,8 +551,9 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     // this is an indirect CP entry so it needs special handling
     case JVM_CONSTANT_MethodHandle:
     {
-      int ref_kind = scratch_cp->method_handle_ref_kind_at(scratch_i);
-      int ref_i = scratch_cp->method_handle_index_at(scratch_i);
+      auto ref = scratch_cp->method_handle_ref_at(scratch_i);
+      int ref_kind = ref.ref_kind();
+      int ref_i = ref.ref_index();
       int new_ref_i = find_or_append_indirect_entry(scratch_cp, ref_i, merge_cp_p,
                                                     merge_cp_length_p);
       if (new_ref_i != ref_i) {
@@ -569,12 +573,14 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     case JVM_CONSTANT_Dynamic:  // fall through
     case JVM_CONSTANT_InvokeDynamic:
     {
+      auto ref = scratch_cp->uncached_bootstrap_specifier_ref_at(scratch_i);
+
       // Index of the bootstrap specifier in the BSM data arrays
-      int old_bsme_i = scratch_cp->bootstrap_methods_attribute_index(scratch_i);
+      int old_bsme_i = ref.bsme_index();
       int new_bsme_i = find_or_append_bsm_data(scratch_cp, old_bsme_i, merge_cp_p,
                                                merge_cp_length_p);
       // The bootstrap method NameAndType_info index
-      int old_ref_i = scratch_cp->bootstrap_name_and_type_ref_index_at(scratch_i);
+      int old_ref_i = ref.nt_index();
       int new_ref_i = find_or_append_indirect_entry(scratch_cp, old_ref_i, merge_cp_p,
                                                     merge_cp_length_p);
       if (new_bsme_i != old_bsme_i) {

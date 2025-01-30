@@ -130,17 +130,23 @@ int Bytecode_invoke::size_of_parameters() const {
 
 
 Symbol* Bytecode_member_ref::klass() const {
-  return constants()->klass_ref_at_noresolve(index(), _code);
+  auto cp = constants();
+  auto bc = _code;
+  return cp->from_bytecode_ref_at(index(), bc).klass_name(cp);
 }
 
 
 Symbol* Bytecode_member_ref::name() const {
-  return constants()->name_ref_at(index(), Bytecodes::java_code(_code));
+  auto cp = constants();
+  auto bc = Bytecodes::java_code(_code);  //why is this different?
+  return cp->from_bytecode_ref_at(index(), bc).name(cp);
 }
 
 
 Symbol* Bytecode_member_ref::signature() const {
-  return constants()->signature_ref_at(index(), _code);
+  auto cp = constants();
+  auto bc = _code;
+  return cp->from_bytecode_ref_at(index(), bc).signature(cp);
 }
 
 

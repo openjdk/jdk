@@ -273,9 +273,10 @@ static void print_klass_name(outputStream *os, Symbol *klass) {
 static void print_method_name(outputStream *os, Method* method, int cp_index, Bytecodes::Code bc) {
   ResourceMark rm;
   ConstantPool* cp  = method->constants();
-  Symbol* klass     = cp->klass_ref_at_noresolve(cp_index, bc);
-  Symbol* name      = cp->name_ref_at(cp_index, bc);
-  Symbol* signature = cp->signature_ref_at(cp_index, bc);
+  auto          ref = cp->from_bytecode_ref_at(cp_index, bc);
+  Symbol* klass     = ref.klass_name(cp);
+  Symbol* name      = ref.name(cp);
+  Symbol* signature = ref.signature(cp);
 
   print_klass_name(os, klass);
   os->print(".%s(", name->as_C_string());
@@ -289,16 +290,19 @@ static void print_method_name(outputStream *os, Method* method, int cp_index, By
 static void print_field_and_class(outputStream *os, Method* method, int cp_index, Bytecodes::Code bc) {
   ResourceMark rm;
   ConstantPool* cp = method->constants();
-  Symbol* klass    = cp->klass_ref_at_noresolve(cp_index, bc);
-  Symbol *name     = cp->name_ref_at(cp_index, bc);
+  auto         ref = cp->from_bytecode_ref_at(cp_index, bc);
+  Symbol* klass    = ref.klass_name(cp);
+  Symbol* name     = ref.name(cp);
   print_klass_name(os, klass);
   os->print(".%s", name->as_C_string());
 }
 
 // Returns the name of the field that is described at constant pool
 // index cp_index in the constant pool of method 'method'.
+// careful: it is a CP cache index, not really a cp_index
 static char const* get_field_name(Method* method, int cp_index, Bytecodes::Code bc) {
-  Symbol* name = method->constants()->name_ref_at(cp_index, bc);
+  ConstantPool* cp = method->constants();
+  Symbol* name = cp->from_bytecode_ref_at(cp_index, bc).name(cp);
   return name->as_C_string();
 }
 
@@ -968,10 +972,10 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
     case Bytecodes::_getfield: {
       // Find out the type of the field accessed.
       int cp_index = Bytes::get_native_u2(code_base + pos);
+      // careful: it is a CP cache index, not really a cp_index
       ConstantPool* cp = _method->constants();
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
-      int type_index = cp->signature_ref_index_at(name_and_type_index);
-      Symbol* signature = cp->symbol_at(type_index);
+      auto ref = cp->from_bytecode_ref_at(cp_index, code);
+      Symbol* signature = ref.signature(cp);
       // Simulate the bytecode: pop the address, push the 'value' loaded
       // from the field.
       stack->pop(1 - Bytecodes::depth(code));
@@ -982,10 +986,10 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
     case Bytecodes::_putstatic:
     case Bytecodes::_putfield: {
       int cp_index = Bytes::get_native_u2(code_base + pos);
+      // careful: it is a CP cache index, not really a cp_index
       ConstantPool* cp = _method->constants();
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
-      int type_index = cp->signature_ref_index_at(name_and_type_index);
-      Symbol* signature = cp->symbol_at(type_index);
+      auto ref = cp->from_bytecode_ref_at(cp_index, code);
+      Symbol* signature = ref.signature(cp);
       BasicType bt = Signature::basic_type(signature);
       stack->pop(type2size[bt] - Bytecodes::depth(code) - 1);
       break;
@@ -998,6 +1002,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
     case Bytecodes::_invokedynamic: {
       ConstantPool* cp = _method->constants();
       int cp_index;
+      // careful: it is a CP cache index, not really a cp_index
 
       if (code == Bytecodes::_invokedynamic) {
         cp_index = ((int) Bytes::get_native_u4(code_base + pos));
@@ -1005,9 +1010,8 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
         cp_index = Bytes::get_native_u2(code_base + pos);
       }
 
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
-      int type_index = cp->signature_ref_index_at(name_and_type_index);
-      Symbol* signature = cp->symbol_at(type_index);
+      auto ref = cp->from_bytecode_ref_at(cp_index, code);
+      Symbol* signature = ref.signature(cp);
 
       if ((code != Bytecodes::_invokestatic) && (code != Bytecodes::_invokedynamic)) {
         // Pop receiver.
@@ -1132,28 +1136,27 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
       return 3;
     case Bytecodes::_putfield: {
         int cp_index = Bytes::get_native_u2(code_base + pos);
+        // careful: it is a CP cache index, not really a cp_index
         ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
-        int type_index = cp->signature_ref_index_at(name_and_type_index);
-        Symbol* signature = cp->symbol_at(type_index);
+        auto ref = cp->from_bytecode_ref_at(cp_index, code);
+        Symbol* signature = ref.signature(cp);
         BasicType bt = Signature::basic_type(signature);
         return type2size[bt];
       }
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokeinterface: {
-        int cp_index = Bytes::get_native_u2(code_base+ pos);
+        int cp_index = Bytes::get_native_u2(code_base + pos);
+        // careful: it is a CP cache index, not really a cp_index
         ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
-        int name_index = cp->name_ref_index_at(name_and_type_index);
-        Symbol* name = cp->symbol_at(name_index);
+        auto ref = cp->from_bytecode_ref_at(cp_index, code);
+        Symbol* signature = ref.signature(cp);
+        Symbol* name      = ref.name(cp);
 
         // Assume the call of a constructor can never cause a NullPointerException
         // (which is true in Java). This is mainly used to avoid generating wrong
         // messages for NullPointerExceptions created explicitly by new in Java code.
         if (name != vmSymbols::object_initializer_name()) {
-          int     type_index = cp->signature_ref_index_at(name_and_type_index);
-          Symbol* signature  = cp->symbol_at(type_index);
           // The 'this' parameter was null. Return the slot of it.
           return ArgumentSizeComputer(signature).size();
         } else {
@@ -1414,11 +1417,7 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
       os->print("Cannot exit synchronized block"); break;
     case Bytecodes::_getfield: {
         int cp_index = Bytes::get_native_u2(code_base + pos);
-        ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
-        int name_index = cp->name_ref_index_at(name_and_type_index);
-        Symbol* name = cp->symbol_at(name_index);
-        os->print("Cannot read field \"%s\"", name->as_C_string());
+        os->print("Cannot read field \"%s\"", get_field_name(_method, cp_index, code));
       } break;
     case Bytecodes::_putfield: {
         int cp_index = Bytes::get_native_u2(code_base + pos);

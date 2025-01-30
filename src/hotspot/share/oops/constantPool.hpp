@@ -135,6 +135,12 @@ class SymbolicReference {
   // struct field, and again for each context, which led to a
   // confusing (loose, unstructured, quadratic) API.
 
+  SymbolicReference()
+    : _tag(constantTag().value()),
+      _nt_index(0), _name_index(0), _signature_index(0),
+      _third_index(0), _ref_kind(0), _ref_index(0)
+  { }
+
  private:
   friend class ConstantPool;
 
@@ -415,6 +421,17 @@ class ConstantPool : public Metadata {
   void allocate_resolved_klasses(ClassLoaderData* loader_data, int num_klasses, TRAPS);
   void initialize_unresolved_klasses(ClassLoaderData* loader_data, TRAPS);
 
+  // Correct access to resolved_klasses:
+  Klass* resolved_klass_at_acquire(int resolved_klass_index) const {
+    // NOT: return resolved_klasses()->at(resolved_klass_index);
+    return resolved_klasses()->at_acquire(resolved_klass_index);
+    // Must do an acquire here in case another thread resolved the klass
+    // behind our back, lest we later load stale values thru the oop.
+  }
+  void resolved_klass_release_at_put(int resolved_klass_index, Klass* klass) const {
+    resolved_klasses()->release_at_put(resolved_klass_index, klass);
+  }
+
   // Assembly code support
   static ByteSize tags_offset()         { return byte_offset_of(ConstantPool, _tags); }
   static ByteSize cache_offset()        { return byte_offset_of(ConstantPool, _cache); }
@@ -561,9 +578,6 @@ class ConstantPool : public Metadata {
   Klass* resolved_klass_at(int cp_index) const;  // Used by Compiler
 
   // RedefineClasses() API support:
-  Symbol* klass_at_noresolve(int cp_index) {
-    return klass_name_at(cp_index);//@@KILL
-  }
   void temp_unresolved_klass_at_put(int cp_index, int name_index) {
     // Used only during constant pool merging for class redefinition. The resolved klass index
     // will be initialized later by a call to initialize_unresolved_klasses().
@@ -650,12 +664,6 @@ class ConstantPool : public Metadata {
     return SymbolicReference(nt_tag, nt_index, name_index, signature_index);
   }
 
-  int method_handle_ref_kind_at(int cp_index) {
-    return method_handle_ref_at(cp_index).ref_kind();//@@KILL
-  }
-  int method_handle_index_at(int cp_index) {
-    return method_handle_ref_at(cp_index).ref_index();//@@KILL
-  }
   SymbolicReference method_handle_ref_at(int cp_index) {
     assert_valid_tag(cp_index, is_method_handle_or_error());
     jint bits  = *int_at_addr(cp_index);
@@ -666,9 +674,6 @@ class ConstantPool : public Metadata {
     return mref.as_method_handle(tag, kind, member);
   }
 
-  int method_type_index_at(int cp_index) {
-    return method_type_ref_at(cp_index).signature_index();//@@KILL
-  }
   // CONSTANT_MethodType is very simple.  It has only a signature, not
   // even a name&type.  But for better uniformity we will wrap it up.
   SymbolicReference method_type_ref_at(int cp_index) {
@@ -678,26 +683,6 @@ class ConstantPool : public Metadata {
     return SymbolicReference(tag, signature_index);
   }
 
-  // Derived queries:
-  Symbol* method_handle_name_ref_at(int cp_index) {
-    return method_handle_ref_at(cp_index).name(this);//@@KILL
-  }
-  Symbol* method_handle_signature_ref_at(int cp_index) {
-    return method_handle_ref_at(cp_index).signature(this);//@@KILL
-  }
-  u2 method_handle_klass_index_at(int cp_index) {
-    return method_handle_ref_at(cp_index).klass_index();//@@KILL
-  }
-  Symbol* method_type_signature_at(int cp_index) {
-    return method_type_ref_at(cp_index).signature(this);//@@KILL
-  }
-
-  u2 bootstrap_name_and_type_ref_index_at(int cp_index) {
-    return uncached_bootstrap_specifier_ref_at(cp_index).nt_index();//@@KILL
-  }
-  u2 bootstrap_methods_attribute_index(int cp_index) {
-    return uncached_bootstrap_specifier_ref_at(cp_index).bsme_index();//@@KILL
-  }
   BSMAttributeEntry* bsm_attribute_entry(int bsm_attribute_index) {
     int offset = bsm_attribute_offsets()->at(bsm_attribute_index);
     return BSMAttributeEntry::entry_at_offset(bsm_attribute_entries(), offset);
@@ -705,10 +690,6 @@ class ConstantPool : public Metadata {
   int bsm_attribute_count() const {
     if (bsm_attribute_offsets() == nullptr)  return 0;  // just in case
     return bsm_attribute_offsets()->length();
-  }
-  // convenience method, to perform a common extra indirection via CP entry:
-  BSMAttributeEntry* bootstrap_methods_attribute_entry(int cp_index) {
-    return uncached_bootstrap_specifier_ref_at(cp_index).bsme(this);//@@KILL
   }
 
   // Compare BSM attribute entries between two CPs
@@ -724,39 +705,6 @@ class ConstantPool : public Metadata {
   // Shrink the BSM data arrays to a smaller array with new_len length
   void shrink_bsm_data(int new_len, TRAPS);
 
-  // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,
-  // name_and_type_ref_index_at) all expect to be passed indices obtained
-  // directly from the bytecode.
-  // If the indices are meant to refer to fields or methods, they are
-  // actually rewritten indices that point to entries in their respective structures
-  // i.e. ResolvedMethodEntries or ResolvedFieldEntries.
-  // The routine to_cp_index manages the adjustment
-  // of these values back to constant pool indices.
-
-  // There are also "uncached" versions which do not adjust the operand index; see below.
-
-  // Lookup for entries consisting of (klass_index, name_and_type index)
-  //@@ see above, to merge next 4 into Klass/Symbol resolver
-  Klass* klass_ref_at(int which, Bytecodes::Code code, TRAPS) {
-    return from_bytecode_ref_at(which, code).klass(this, THREAD);//@@KILL
-  }
-  Symbol* klass_ref_at_noresolve(int which, Bytecodes::Code code) {
-    return from_bytecode_ref_at(which, code).klass_name(this);//@@KILL
-  }
-  Symbol* name_ref_at(int which, Bytecodes::Code code) {
-    return from_bytecode_ref_at(which, code).name(this);//@@KILL
-  }
-  Symbol* signature_ref_at(int which, Bytecodes::Code code) {
-    return from_bytecode_ref_at(which, code).signature(this);//@@KILL
-  }
-
-  u2 klass_ref_index_at(int which, Bytecodes::Code code) {
-    return from_bytecode_ref_at(which, code).klass_index();//@@KILL
-  }
-  u2 name_and_type_ref_index_at(int which, Bytecodes::Code code) {
-    return from_bytecode_ref_at(which, code).nt_index();//@@KILL
-  }
-
   constantTag tag_ref_at(int which, Bytecodes::Code code) {
     return tag_at(to_cp_index(which, code));
   }
@@ -765,20 +713,18 @@ class ConstantPool : public Metadata {
 
   bool is_resolved(int which, Bytecodes::Code code);
 
-  // Lookup for entries consisting of (name_index, signature_index)
-  u2 name_ref_index_at(int cp_index) {
-    return name_and_type_pair_at(cp_index).name_index();//@@KILL
-  }
-  u2 signature_ref_index_at(int cp_index) {
-    return name_and_type_pair_at(cp_index).signature_index();//@@KILL
-  }
-
-  BasicType basic_type_for_signature_at(int cp_index) const;
-  //@@KILL, unused
+  // The following method expects to be passed indices obtained
+  // directly from the bytecode.
+  // If the indices are meant to refer to fields or methods, they are
+  // actually rewritten indices that point to entries in their respective structures
+  // i.e. ResolvedMethodEntries or ResolvedFieldEntries.
+  // The routine to_cp_index manages the adjustment
+  // of these values back to constant pool indices.
 
   SymbolicReference from_bytecode_ref_at(int which, Bytecodes::Code code) {
     return uncached_triple_ref_at(to_cp_index(which, code));
   }
+  // There are also "uncached" versions which do not adjust the operand index; see below.
 
   // Resolve string constants (to prevent allocation during compilation)
   void resolve_string_constants(TRAPS) {
@@ -902,21 +848,6 @@ private:
     int nti = extract_high_short_from_int(ref_bits);
     auto ntp = name_and_type_pair_at(nti, allow_malformed);
     return ntp.as_triple_ref(tag, ki);
-  }
-  Symbol* uncached_klass_ref_at_noresolve(int cp_index) {
-    return uncached_field_or_method_ref_at(cp_index).klass_name(this);//@@KILL
-  }
-  Symbol* uncached_name_ref_at(int cp_index) {
-    return uncached_triple_ref_at(cp_index).name(this);//@@KILL
-  }
-  Symbol* uncached_signature_ref_at(int cp_index) {
-    return uncached_triple_ref_at(cp_index).signature(this);//@@KILL
-  }
-  u2 uncached_klass_ref_index_at(int cp_index) {
-    return uncached_field_or_method_ref_at(cp_index).klass_index();//@@KILL
-  }
-  u2 uncached_name_and_type_ref_index_at(int cp_index) {
-    return uncached_triple_ref_at(cp_index).nt_index();//@@KILL
   }
 
   // Sharing
@@ -1066,7 +997,7 @@ inline Symbol* SymbolicReference::signature(ConstantPool* cp) const {
   return cp->symbol_at(signature_index());
 }
 inline Symbol* SymbolicReference::klass_name(ConstantPool* cp) const {
-  return cp->klass_at_noresolve(klass_index());
+  return cp->klass_name_at(klass_index());
 }
 inline Klass* SymbolicReference::klass(ConstantPool* cp, TRAPS) const {
   return cp->klass_at(klass_index(), THREAD);

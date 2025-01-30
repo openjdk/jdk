@@ -1319,9 +1319,8 @@ void GenerateOopMap::print_current_state(outputStream   *os,
     case Bytecodes::_invokeinterface: {
       int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2();
       ConstantPool* cp      = method()->constants();
-      int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx, currentBC->code());
-      int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
-      Symbol* signature     = cp->symbol_at(signatureIdx);
+      SymbolicReference ref = cp->from_bytecode_ref_at(idx, currentBC->code());
+      Symbol* signature     = ref.signature(cp);
       os->print("%s", signature->as_C_string());
     }
     default:
@@ -1932,10 +1931,8 @@ int GenerateOopMap::copy_cts(CellTypeState *dst, CellTypeState *src) {
 
 void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci, Bytecodes::Code bc) {
   // Dig up signature for field in constant pool
-  ConstantPool* cp     = method()->constants();
-  int nameAndTypeIdx     = cp->name_and_type_ref_index_at(idx, bc);
-  int signatureIdx       = cp->signature_ref_index_at(nameAndTypeIdx);
-  Symbol* signature      = cp->symbol_at(signatureIdx);
+  ConstantPool* cp  = method()->constants();
+  Symbol* signature = cp->from_bytecode_ref_at(idx, bc).signature(cp);
 
   CellTypeState temp[4];
   CellTypeState *eff  = signature_to_effect(signature, bci, temp);
@@ -1958,8 +1955,8 @@ void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci, Bytec
 
 void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci, Bytecodes::Code bc) {
  // Dig up signature for field in constant pool
-  ConstantPool* cp  = _method->constants();
-  Symbol* signature   = cp->signature_ref_at(idx, bc);
+  ConstantPool* cp  = method()->constants();
+  Symbol* signature = cp->from_bytecode_ref_at(idx, bc).signature(cp);
 
   // Parse method signature
   CellTypeState out[4];

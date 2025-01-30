@@ -1833,13 +1833,14 @@ Method* JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
     return nullptr;
   }
 
-  int holder_index = cpool->klass_ref_index_at(index, bc);
+  auto mref = cpool->from_bytecode_ref_at(index, bc);
+  int holder_index = mref.klass_index();
   bool holder_is_accessible;
   Klass* holder = get_klass_by_index_impl(cpool, holder_index, holder_is_accessible, accessor);
 
   // Get the method's name and signature.
-  Symbol* name_sym = cpool->name_ref_at(index, bc);
-  Symbol* sig_sym  = cpool->signature_ref_at(index, bc);
+  Symbol* name_sym = mref.name(cpool);
+  Symbol* sig_sym  = mref.signature(cpool);
 
   if (cpool->has_preresolution()
       || ((holder == vmClasses::MethodHandle_klass() || holder == vmClasses::VarHandle_klass()) &&

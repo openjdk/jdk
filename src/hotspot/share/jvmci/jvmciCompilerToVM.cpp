@@ -748,7 +748,8 @@ C2V_VMENTRY_NULL(jobject, lookupConstantInPool, (JNIEnv* env, jobject, ARGUMENT_
     if (obj == nullptr) {
       return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
     }
-    BasicType bt = Signature::basic_type(cp->uncached_signature_ref_at(cp_index));
+    SymbolicReference condy = cp->uncached_bootstrap_specifier_ref_at(cp_index);
+    BasicType bt = Signature::basic_type(condy.signature(cp));
     if (!is_reference_type(bt)) {
       if (!is_java_primitive(bt)) {
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_ILLEGAL());
@@ -890,29 +891,34 @@ C2V_END
 
 C2V_VMENTRY_0(jint, bootstrapArgumentIndexAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint cpi, jint index))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  return cp->bootstrap_methods_attribute_entry(cpi)->argument_index(index);
+  BSMAttributeEntry* bsme = cp->uncached_bootstrap_specifier_ref_at(cpi).bsme(cp);
+  return bsme->argument_index(index);
 C2V_END
 
 C2V_VMENTRY_0(jint, lookupNameAndTypeRefIndexInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index, jint opcode))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  return cp->name_and_type_ref_index_at(index, (Bytecodes::Code)opcode);
+  SymbolicReference ref = cp->from_bytecode_ref_at(index, (Bytecodes::Code)opcode);
+  return ref.nt_index();
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, lookupNameInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint which, jint opcode))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  JVMCIObject sym = JVMCIENV->create_string(cp->name_ref_at(which, (Bytecodes::Code)opcode), JVMCI_CHECK_NULL);
+  SymbolicReference ref = cp->from_bytecode_ref_at(which, (Bytecodes::Code)opcode);
+  JVMCIObject sym = JVMCIENV->create_string(ref.name(cp), JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(sym);
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, lookupSignatureInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint which, jint opcode))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  JVMCIObject sym = JVMCIENV->create_string(cp->signature_ref_at(which, (Bytecodes::Code)opcode), JVMCI_CHECK_NULL);
+  SymbolicReference ref = cp->from_bytecode_ref_at(which, (Bytecodes::Code)opcode);
+  JVMCIObject sym = JVMCIENV->create_string(ref.signature(cp), JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(sym);
 C2V_END
 
 C2V_VMENTRY_0(jint, lookupKlassRefIndexInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index, jint opcode))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  return cp->klass_ref_index_at(index, (Bytecodes::Code)opcode);
+  SymbolicReference ref = cp->from_bytecode_ref_at(index, (Bytecodes::Code)opcode);
+  return ref.klass_index();
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, resolveTypeInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
@@ -984,12 +990,13 @@ C2V_VMENTRY_NULL(jobject, resolveFieldInPool, (JNIEnv* env, jobject, ARGUMENT_PA
   methodHandle mh(THREAD, UNPACK_PAIR(Method, method));
 
   Bytecodes::Code bc = (Bytecodes::Code) (((int) opcode) & 0xFF);
-  int holder_index = cp->klass_ref_index_at(index, bc);
+  SymbolicReference ref = cp->from_bytecode_ref_at(index, bc);
+  int holder_index = ref.klass_index();
   if (!cp->tag_at(holder_index).is_klass() && !THREAD->can_call_java()) {
     // If the holder is not resolved in the constant pool and the current
     // thread cannot call Java, return null. This avoids a Java call
     // in LinkInfo to load the holder.
-    Symbol* klass_name = cp->klass_ref_at_noresolve(index, bc);
+    Symbol* klass_name = ref.klass_name(cp);
     return nullptr;
   }
 
@@ -1715,8 +1722,9 @@ C2V_END
 
 C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  Klass* holder = cp->klass_ref_at(index, Bytecodes::_invokehandle, CHECK);
-  Symbol* name = cp->name_ref_at(index, Bytecodes::_invokehandle);
+  SymbolicReference ref = cp->from_bytecode_ref_at(index, Bytecodes::_invokehandle);
+  Klass* holder = ref.klass(cp, CHECK);
+  Symbol* name = ref.name(cp);
   if (MethodHandles::is_signature_polymorphic_name(holder, name)) {
     CallInfo callInfo;
     LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, Bytecodes::_invokehandle, CHECK);
@@ -1735,7 +1743,7 @@ C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMEN
 
     Klass* resolved_klass = link_info.resolved_klass();
 
-    Symbol* name_sym = cp->name_ref_at(index, Bytecodes::_invokehandle);
+    Symbol* name_sym = cp->from_bytecode_ref_at(index, Bytecodes::_invokehandle).name(cp);
 
     vmassert(MethodHandles::is_method_handle_invoke_name(resolved_klass, name_sym), "!");
     vmassert(MethodHandles::is_signature_polymorphic_name(resolved_klass, name_sym), "!");

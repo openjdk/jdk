@@ -419,8 +419,9 @@ class CompileReplay : public StackObj {
         pool_index = cp->resolved_indy_entry_at(index)->constant_pool_index();
       } else if (bytecode.is_invokehandle()) {
 #ifdef ASSERT
-        Klass* holder = cp->klass_ref_at(index, bytecode.code(), CHECK_NULL);
-        Symbol* name = cp->name_ref_at(index, bytecode.code());
+        auto ref = cp->from_bytecode_ref_at(index, bytecode.code());
+        Klass* holder = ref.klass(cp, CHECK_NULL);
+        Symbol* name  = ref.name(cp);
         assert(MethodHandles::is_signature_polymorphic_name(holder, name), "");
 #endif
         ResolvedMethodEntry* method_entry = cp->cache()->set_method_handle(index, callInfo);

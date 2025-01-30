@@ -1263,10 +1263,12 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
   // While we are here, take a quick look at the index info:
   int bsme_index = -1;
   // FIXME: use a BootstrapInfo record to simplify this logic
+  SymbolicReference indy;
   if (0 < bss_index_in_pool &&
       bss_index_in_pool < caller->constants()->length() &&
       caller->constants()->tag_at(bss_index_in_pool).has_bootstrap()) {
-    bsme_index = caller->constants()->bootstrap_methods_attribute_index(bss_index_in_pool);
+    indy = caller->constants()->uncached_bootstrap_specifier_ref_at(bss_index_in_pool);
+    bsme_index = indy.bsme_index();
   }
   if (bsme_index < 0 || (caller->constants()->bsm_attribute_entry(bsme_index)->argument_count()
                          != index_info->int_at(0))) {
@@ -1289,16 +1291,16 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
           }
         case -3:  // name
           {
-            assert(bss_index_in_pool > 0, "");
-            Symbol* name = caller->constants()->name_ref_at(bss_index_in_pool, Bytecodes::_invokedynamic);
+            assert(indy.tag().has_bootstrap(), "");
+            Symbol* name = indy.name(caller->constants());
             Handle str = java_lang_String::create_from_symbol(name, CHECK);
             pseudo_arg = str();
             break;
           }
         case -2:  // type
           {
-            assert(bss_index_in_pool > 0, "");
-            Symbol* type = caller->constants()->signature_ref_at(bss_index_in_pool, Bytecodes::_invokedynamic);
+            assert(indy.tag().has_bootstrap(), "");
+            Symbol* type = indy.signature(caller->constants());
             Handle th;
             if (type->char_at(0) == JVM_SIGNATURE_FUNC) {
               th = SystemDictionary::find_method_handle_type(type, caller, CHECK);

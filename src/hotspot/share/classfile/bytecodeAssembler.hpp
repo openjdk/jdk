@@ -104,12 +104,19 @@ class BytecodeCPEntry {
     bcpe._u.name_and_type.type_index = type;
     return bcpe;
   }
+  static BytecodeCPEntry name_and_type(const SymbolicReference& ref) {
+    assert(ref.tag().is_name_and_type(), "");
+    return name_and_type(ref.name_index(), ref.signature_index());
+  }
 
   static BytecodeCPEntry methodref(u2 class_index, u2 nat) {
     BytecodeCPEntry bcpe(METHODREF);
     bcpe._u.methodref.class_index = class_index;
     bcpe._u.methodref.name_and_type_index = nat;
     return bcpe;
+  }
+  static BytecodeCPEntry methodref(const SymbolicReference& ref) {
+    return methodref(ref.klass_index(), ref.nt_index());
   }
 
   static bool equals(BytecodeCPEntry const& e0, BytecodeCPEntry const& e1) {

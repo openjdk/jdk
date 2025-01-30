@@ -535,26 +535,27 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
 
 void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii, TRAPS) {
   // Caller needs to allocate ResourceMark.
-  int type_index = pool->bootstrap_name_and_type_ref_index_at(cp_index);
-  int name_index = pool->name_ref_index_at(type_index);
+  auto indy = pool->uncached_bootstrap_specifier_ref_at(cp_index);
+  int name_index = indy.name_index();
   cii->add_item(pool->symbol_at(name_index)->as_C_string());
-  int sig_index = pool->signature_ref_index_at(type_index);
+  int sig_index = indy.signature_index();
   cii->add_item(pool->symbol_at(sig_index)->as_C_string());
-  auto bsme = pool->bootstrap_methods_attribute_entry(cp_index);
+  auto bsme = indy.bsme(pool);
   int argc = bsme->argument_count();;
   if (argc > 0) {
     for (int arg_i = 0; arg_i < argc; arg_i++) {
       int arg = bsme->argument_index(arg_i);
       jbyte tag = pool->tag_at(arg).value();
       if (tag == JVM_CONSTANT_MethodType) {
-        cii->add_item(pool->method_type_signature_at(arg)->as_C_string());
+        auto ref = pool->method_type_ref_at(arg);
+        cii->add_item(ref.signature(pool)->as_C_string());
       } else if (tag == JVM_CONSTANT_MethodHandle) {
-        cii->add_ref_kind(pool->method_handle_ref_kind_at(arg));
-        int callee_index = pool->method_handle_klass_index_at(arg);
-        Klass* callee = pool->klass_at(callee_index, CHECK);
+        auto ref = pool->method_handle_ref_at(arg);
+        cii->add_ref_kind(ref.ref_kind());
+        Klass* callee = ref.klass(pool, CHECK);  // use ref.klass_name here?
         cii->add_item(callee->name()->as_C_string());
-        cii->add_item(pool->method_handle_name_ref_at(arg)->as_C_string());
-        cii->add_item(pool->method_handle_signature_ref_at(arg)->as_C_string());
+        cii->add_item(ref.name(pool)->as_C_string());
+        cii->add_item(ref.signature(pool)->as_C_string());
       } else {
         ShouldNotReachHere();
       }

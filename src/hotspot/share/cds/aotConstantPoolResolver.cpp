@@ -64,10 +64,8 @@ bool AOTConstantPoolResolver::is_resolution_deterministic(ConstantPool* cp, int 
     return resolved_klass != nullptr && is_class_resolution_deterministic(cp->pool_holder(), resolved_klass);
   } else if (cp->tag_at(cp_index).is_invoke_dynamic()) {
     return is_indy_resolution_deterministic(cp, cp_index);
-  } else if (cp->tag_at(cp_index).is_field() ||
-             cp->tag_at(cp_index).is_method() ||
-             cp->tag_at(cp_index).is_interface_method()) {
-    int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
+  } else if (cp->tag_at(cp_index).is_field_or_method()) {
+    int klass_cp_index = cp->uncached_field_or_method_ref_at(cp_index).klass_index();
     if (!cp->tag_at(klass_cp_index).is_klass()) {
       // Not yet resolved
       return false;
@@ -283,13 +281,14 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
     return;
   }
 
-  int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
+  int klass_cp_index = cp->uncached_field_or_method_ref_at(cp_index).klass_index();
   if (find_loaded_class(THREAD, cp(), klass_cp_index) == nullptr) {
     // Do not resolve any field/methods from a class that has not been loaded yet.
     return;
   }
 
-  Klass* resolved_klass = cp->klass_ref_at(raw_index, bc, CHECK);
+  auto fmiref = cp->from_bytecode_ref_at(raw_index, bc);
+  Klass* resolved_klass = fmiref.klass(cp, CHECK);
 
   switch (bc) {
   case Bytecodes::_getfield:
@@ -314,8 +313,8 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
   if (log_is_enabled(Trace, cds, resolve)) {
     ResourceMark rm(THREAD);
     bool resolved = cp->is_resolved(raw_index, bc);
-    Symbol* name = cp->name_ref_at(raw_index, bc);
-    Symbol* signature = cp->signature_ref_at(raw_index, bc);
+    Symbol* name      = fmiref.name(cp);
+    Symbol* signature = fmiref.signature(cp);
     log_trace(cds, resolve)("%s %s [%3d] %s -> %s.%s:%s",
                             (resolved ? "Resolved" : "Failed to resolve"),
                             Bytecodes::name(bc), cp_index, ik->external_name(),
@@ -410,14 +409,14 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_signature(ConstantPool* c
   return !exclude;
 }
 
-bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mt_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
+bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPool* cp, BSMAttributeEntry* bsme, int arg_i) {
+  int mt_index = bsme->argument_index(arg_i);
   if (!cp->tag_at(mt_index).is_method_type()) {
     // malformed class?
     return false;
   }
 
-  Symbol* sig = cp->method_type_signature_at(mt_index);
+  Symbol* sig = cp->method_type_ref_at(mt_index).signature(cp);
   if (log_is_enabled(Debug, cds, resolve)) {
     ResourceMark rm;
     log_debug(cds, resolve)("Checking MethodType for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
@@ -426,14 +425,14 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPo
   return check_methodtype_signature(cp, sig);
 }
 
-bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mh_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
+bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, BSMAttributeEntry* bsme, int arg_i) {
+  int mh_index = bsme->argument_index(arg_i);
   if (!cp->tag_at(mh_index).is_method_handle()) {
     // malformed class?
     return false;
   }
 
-  Symbol* sig = cp->method_handle_signature_ref_at(mh_index);
+  Symbol* sig = cp->method_handle_ref_at(mh_index).signature(cp);
   if (log_is_enabled(Debug, cds, resolve)) {
     ResourceMark rm;
     log_debug(cds, resolve)("Checking MethodType of MethodHandle for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
@@ -452,12 +451,13 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
     return false;
   }
 
-  int bsms_attribute_index = cp->bootstrap_methods_attribute_index(cp_index);
-  int bsm = cp->bsm_attribute_entry(bsms_attribute_index)->bootstrap_method_index();
-  int bsm_ref = cp->method_handle_index_at(bsm);
-  Symbol* bsm_name = cp->uncached_name_ref_at(bsm_ref);
-  Symbol* bsm_signature = cp->uncached_signature_ref_at(bsm_ref);
-  Symbol* bsm_klass = cp->klass_name_at(cp->uncached_klass_ref_index_at(bsm_ref));
+  auto indy = cp->uncached_bootstrap_specifier_ref_at(cp_index);
+  auto bsme = indy.bsme(cp);
+  auto bsmh = bsme->bootstrap_method(cp);
+  Symbol* bsm_name      = bsmh.name(cp);
+  Symbol* bsm_signature = bsmh.signature(cp);
+  Symbol* bsm_klass     = bsmh.klass_name(cp);
+  Symbol* factory_type_sig = indy.signature(cp);
 
   // We currently support only StringConcatFactory::makeConcatWithConstants() and LambdaMetafactory::metafactory()
   // We should mark the allowed BSMs in the JDK code using a private annotation.
@@ -471,7 +471,6 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
                              "Ljava/lang/String;"
                              "[Ljava/lang/Object;"
                             ")Ljava/lang/invoke/CallSite;")) {
-    Symbol* factory_type_sig = cp->uncached_signature_ref_at(cp_index);
     if (log_is_enabled(Debug, cds, resolve)) {
       ResourceMark rm;
       log_debug(cds, resolve)("Checking StringConcatFactory callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
@@ -523,7 +522,6 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
      *                                In simple use cases this is the same as
      *                                {@code interfaceMethodType}.
      */
-    Symbol* factory_type_sig = cp->uncached_signature_ref_at(cp_index);
     if (log_is_enabled(Debug, cds, resolve)) {
       ResourceMark rm;
       log_debug(cds, resolve)("Checking indy callsite signature [%d]: %s", cp_index, factory_type_sig->as_C_string());
@@ -533,24 +531,24 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
       return false;
     }
 
-    int arg_count = cp->bsm_attribute_entry(bsms_attribute_index)->argument_count();
+    int arg_count = bsme->argument_count();
     if (arg_count != 3) {
       // Malformed class?
       return false;
     }
 
     // interfaceMethodType
-    if (!check_lambda_metafactory_methodtype_arg(cp, bsms_attribute_index, 0)) {
+    if (!check_lambda_metafactory_methodtype_arg(cp, bsme, 0)) {
       return false;
     }
 
     // implementation
-    if (!check_lambda_metafactory_methodhandle_arg(cp, bsms_attribute_index, 1)) {
+    if (!check_lambda_metafactory_methodhandle_arg(cp, bsme, 1)) {
       return false;
     }
 
     // dynamicMethodType
-    if (!check_lambda_metafactory_methodtype_arg(cp, bsms_attribute_index, 2)) {
+    if (!check_lambda_metafactory_methodtype_arg(cp, bsme, 2)) {
       return false;
     }
 

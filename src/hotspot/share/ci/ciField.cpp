@@ -79,14 +79,13 @@ ciField::ciField(ciInstanceKlass* klass, int index, Bytecodes::Code bc) :
   assert(klass->get_instanceKlass()->is_linked(), "must be linked before using its constant-pool");
 
   constantPoolHandle cpool(THREAD, klass->get_instanceKlass()->constants());
+  SymbolicReference  ref = cpool->from_bytecode_ref_at(index, bc);
 
   // Get the field's name, signature, and type.
-  Symbol* name  = cpool->name_ref_at(index, bc);
+  Symbol* name  = ref.name(cpool);
   _name = ciEnv::current(THREAD)->get_symbol(name);
 
-  int nt_index = cpool->name_and_type_ref_index_at(index, bc);
-  int sig_index = cpool->signature_ref_index_at(nt_index);
-  Symbol* signature = cpool->symbol_at(sig_index);
+  Symbol* signature = ref.signature(cpool);
   _signature = ciEnv::current(THREAD)->get_symbol(signature);
 
   BasicType field_type = Signature::basic_type(signature);
@@ -97,6 +96,7 @@ ciField::ciField(ciInstanceKlass* klass, int index, Bytecodes::Code bc) :
     bool ignore;
     // This is not really a class reference; the index always refers to the
     // field's type signature, as a symbol.  Linkage checks do not apply.
+    int sig_index = ref.signature_index();
     _type = ciEnv::current(THREAD)->get_klass_by_index(cpool, sig_index, ignore, klass);
   } else {
     _type = ciType::make(field_type);
@@ -108,7 +108,7 @@ ciField::ciField(ciInstanceKlass* klass, int index, Bytecodes::Code bc) :
   //
   // Note: we actually create a ciInstanceKlass for this klass,
   // even though we may not need to.
-  int holder_index = cpool->klass_ref_index_at(index, bc);
+  int holder_index = ref.klass_index();
   bool holder_is_accessible;
 
   ciKlass* generic_declared_holder = ciEnv::current(THREAD)->get_klass_by_index(cpool, holder_index,

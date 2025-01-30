@@ -226,7 +226,7 @@ void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
   } else if (tag.is_klass()) {
     st->print_cr(" %s", constants->resolved_klass_at(cp_index)->external_name());
   } else if (tag.is_unresolved_klass()) {
-    st->print_cr(" %s", constants->klass_at_noresolve(cp_index)->as_quoted_ascii());
+    st->print_cr(" %s", constants->klass_name_at(cp_index)->as_quoted_ascii());
   } else if (tag.is_method_type()) {
     auto ref = constants->method_type_ref_at(cp_index);
     st->print(" <MethodType> %d", ref.signature_index());
