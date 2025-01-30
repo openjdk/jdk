@@ -30,7 +30,6 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm ReinitDigest
- * @run main/othervm -Djava.security.manager=allow ReinitDigest sm
  */
 import java.security.MessageDigest;
 import java.security.Provider;

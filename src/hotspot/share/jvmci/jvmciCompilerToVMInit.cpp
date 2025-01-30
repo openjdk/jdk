@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-// no precompiled headers
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -54,6 +53,8 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
 
+int CompilerToVM::Data::oopDesc_klass_offset_in_bytes;
+int CompilerToVM::Data::arrayOopDesc_length_offset_in_bytes;
 
 int CompilerToVM::Data::Klass_vtable_start_offset;
 int CompilerToVM::Data::Klass_vtable_length_offset;
@@ -147,6 +148,9 @@ int CompilerToVM::Data::data_section_item_alignment;
 JVMTI_ONLY( int* CompilerToVM::Data::_should_notify_object_alloc; )
 
 void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
+  oopDesc_klass_offset_in_bytes = oopDesc::klass_offset_in_bytes();
+  arrayOopDesc_length_offset_in_bytes = arrayOopDesc::length_offset_in_bytes();
+
   Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
   Klass_vtable_length_offset = in_bytes(Klass::vtable_length_offset());
 

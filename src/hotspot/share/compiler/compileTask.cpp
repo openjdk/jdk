@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compileLog.hpp"
@@ -106,6 +105,8 @@ void CompileTask::initialize(int compile_id,
   JVMCI_ONLY(_blocking_jvmci_compile_state = nullptr;)
   _comp_level = comp_level;
   _num_inlined_bytecodes = 0;
+
+  _waiting_count = 0;
 
   _is_complete = false;
   _is_success = false;

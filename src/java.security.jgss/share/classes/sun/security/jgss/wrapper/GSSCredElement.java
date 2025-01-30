@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.security.jgss.wrapper;
 import org.ietf.jgss.*;
 import java.lang.ref.Cleaner;
 import java.security.Provider;
-import sun.security.jgss.GSSUtil;
 import sun.security.jgss.spi.GSSCredentialSpi;
 import sun.security.jgss.spi.GSSNameSpi;
 
@@ -44,24 +43,6 @@ public class GSSCredElement implements GSSCredentialSpi {
     final long pCred; // Pointer to the gss_cred_id_t structure
     private GSSNameElement name;
     private final GSSLibStub cStub;
-
-    // Perform the necessary ServicePermission check on this cred
-    @SuppressWarnings("removal")
-    void doServicePermCheck() throws GSSException {
-        if (GSSUtil.isKerberosMech(cStub.getMech())) {
-            if (System.getSecurityManager() != null) {
-                if (isInitiatorCredential()) {
-                    String tgsName = Krb5Util.getTGSName(name);
-                    Krb5Util.checkServicePermission(tgsName, "initiate");
-                }
-                if (isAcceptorCredential() &&
-                    name != GSSNameElement.DEF_ACCEPTOR) {
-                    String krbName = name.getKrbName();
-                    Krb5Util.checkServicePermission(krbName, "accept");
-                }
-            }
-        }
-    }
 
     // Construct delegation cred using the actual context mech and srcName
     // Warning: called by NativeUtil.c
@@ -81,12 +62,10 @@ public class GSSCredElement implements GSSCredentialSpi {
 
         if (name != null) { // Could be GSSNameElement.DEF_ACCEPTOR
             this.name = name;
-            doServicePermCheck();
             pCred = cStub.acquireCred(this.name.pName, lifetime, usage);
         } else {
             pCred = cStub.acquireCred(0, lifetime, usage);
             this.name = new GSSNameElement(cStub.getCredName(pCred), cStub);
-            doServicePermCheck();
         }
 
         cleanable = Krb5Util.cleaner.register(this, disposerFor(cStub, pCred));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "ci/ciCallSite.hpp"
 #include "ci/ciObjArray.hpp"
@@ -933,6 +932,9 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
 
   // Make the hot call:
   JVMState* new_jvms = _if_hit->generate(kit.sync_jvms());
+  if (kit.failing()) {
+    return nullptr;
+  }
   if (new_jvms == nullptr) {
     // Inline failed, so make a direct call.
     assert(_if_hit->is_inline(), "must have been a failed inline");
@@ -1260,6 +1262,9 @@ JVMState* PredicatedIntrinsicGenerator::generate(JVMState* jvms) {
       PreserveJVMState pjvms(&kit);
       // Generate intrinsic code:
       JVMState* new_jvms = _intrinsic->generate(kit.sync_jvms());
+      if (kit.failing()) {
+        return nullptr;
+      }
       if (new_jvms == nullptr) {
         // Intrinsic failed, use normal compilation path for this predicate.
         slow_region->add_req(kit.control());

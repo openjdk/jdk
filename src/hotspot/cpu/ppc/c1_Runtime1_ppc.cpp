@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -64,7 +63,8 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result,
 
   address return_pc = call_c(entry_point);
 
-  reset_last_Java_frame();
+  // Last java sp can be null when the RT call was preempted
+  reset_last_Java_frame(false /* check_last_java_sp */);
 
   // Check for pending exceptions.
   {
@@ -257,6 +257,11 @@ void Runtime1::initialize_pd() {
   frame_size_in_bytes = align_up(sp_offset, frame::alignment_in_bytes);
 }
 
+uint Runtime1::runtime_blob_current_thread_offset(frame f) {
+  // On PPC virtual threads don't save the JavaThread* in their context (e.g. C1 stub frames).
+  ShouldNotCallThis();
+  return 0;
+}
 
 OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address target, bool has_argument) {
   // Make a frame and preserve the caller's caller-save registers.
@@ -597,10 +602,9 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       { // Support for uint StubRoutine::partial_subtype_check( Klass sub, Klass super );
         const Register sub_klass = R5,
                        super_klass = R4,
-                       temp1_reg = R6,
-                       temp2_reg = R0;
-        __ check_klass_subtype_slow_path(sub_klass, super_klass, temp1_reg, temp2_reg); // returns with CR0.eq if successful
-        __ crandc(CCR0, Assembler::equal, CCR0, Assembler::equal); // failed: CR0.ne
+                       temp1_reg = R6;
+        __ check_klass_subtype_slow_path(sub_klass, super_klass, temp1_reg, noreg);
+        // Result is in CR0.
         __ blr();
       }
       break;

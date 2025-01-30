@@ -42,7 +42,7 @@ ifeq ($(call isTargetOs, macosx), true)
   PROJECT_FILE_NAME := hotspot.xcodeproj
 
   COMPILE_COMMAND_FILE := $(OUTPUTDIR)/compile_commands.json
-  LINKER_FLAGS_FILE := $(MAKESUPPORT_OUTPUTDIR)/compile-commands/jvm-ldflags.txt
+  LINKER_FLAGS_FILE := $(MAKESUPPORT_OUTPUTDIR)/compile-commands/LIBRARY_hotspot_variant-server_libjvm_libjvm-ldflags.txt
 
   $(eval $(call SetupJavaCompilation, BUILD_PROJECT_CREATOR, \
       TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
@@ -60,7 +60,7 @@ ifeq ($(call isTargetOs, macosx), true)
     XCODE_PROJ_DEBUG_OPTION := -d
   endif
 
-  XCODE_PROJ_VARDEPS := $(WORKSPACE_ROOT) $(IDE_OUTPUTDIR) \
+  XCODE_PROJ_VARDEPS := $(TOPDIR) $(IDE_OUTPUTDIR) \
       $(PROJECT_MAKER_DIR)/data $(COMPILE_COMMAND_FILE) $(LINKER_FLAGS_FILE)
   XCODE_PROJ_VARDEPS_FILE := $(call DependOnVariable, XCODE_PROJ_VARDEPS, \
     $(TOOLS_OUTPUTDIR)/xcodeproj.vardeps)
@@ -70,7 +70,7 @@ ifeq ($(call isTargetOs, macosx), true)
       DEPS := $(BUILD_PROJECT_CREATOR) $(COMPILE_COMMAND_FILE) \
           $(LINKER_FLAGS_FILE) $(XCODE_PROJ_VARDEPS_FILE), \
       OUTPUT_DIR := $(TOOLS_OUTPUTDIR), \
-      COMMAND := $(PROJECT_CREATOR_TOOL) $(WORKSPACE_ROOT) $(IDE_OUTPUTDIR) \
+      COMMAND := $(PROJECT_CREATOR_TOOL) $(TOPDIR) $(IDE_OUTPUTDIR) \
           $(PROJECT_MAKER_DIR)/data $(COMPILE_COMMAND_FILE) \
           $(LINKER_FLAGS_FILE) $(XCODE_PROJ_DEBUG_OPTION), \
   ))

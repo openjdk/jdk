@@ -36,12 +36,11 @@ import static jdk.jpackage.test.WindowsHelper.killAppLauncherProcess;
  * @bug 8340311
  * @summary Test that jpackage windows app launcher doesn't create child process
  *          if `win.norestart` property is set in the corresponding .cfg file
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @requires os.family == "windows"
  * @build jdk.jpackage.test.*
  * @build WinNoRestartTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinNoRestartTest
  */

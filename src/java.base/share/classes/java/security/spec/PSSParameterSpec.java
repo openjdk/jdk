@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,6 +140,7 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      *         getMGFParameters().
      * @param saltLen      the length of salt in bytes
      * @param trailerField the value of the trailer field
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws    NullPointerException if {@code mdName}, or {@code mgfName}
      *         is null
      * @throws    IllegalArgumentException if {@code saltLen} or

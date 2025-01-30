@@ -1100,14 +1100,14 @@ public final class DateTimeFormatterBuilder {
      * During parsing, the text must match a known zone or offset.
      * There are two types of zone ID, offset-based, such as '+01:30' and
      * region-based, such as 'Europe/London'. These are parsed differently.
-     * If the parse starts with '+', '-', 'UT', 'UTC' or 'GMT', then the parser
-     * expects an offset-based zone and will not match region-based zones.
-     * The offset ID, such as '+02:30', may be at the start of the parse,
-     * or prefixed by  'UT', 'UTC' or 'GMT'. The offset ID parsing is
-     * equivalent to using {@link #appendOffset(String, String)} using the
-     * arguments 'HH:MM:ss' and the no offset string '0'.
-     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser cannot
-     * match a following offset ID, then {@link ZoneOffset#UTC} is selected.
+     * If the parse starts with '+' or '-', then the parser expects an
+     * offset-based zone and will not match region-based zones. The offset
+     * ID parsing is equivalent to using {@link #appendOffset(String, String)}
+     * using the arguments 'HH:MM:ss' and the no offset string '0'.
+     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser can
+     * match a following offset, then a region-based zone with the parsed
+     * offset will be returned, or else if the parser cannot match a following
+     * offset, then {@link ZoneOffset#UTC} is selected.
      * In all other cases, the list of known region-based zones is used to
      * find the longest available match. If no match is found, and the parse
      * starts with 'Z', then {@code ZoneOffset.UTC} is selected.
@@ -1121,9 +1121,9 @@ public final class DateTimeFormatterBuilder {
      *   "UTC"                     -- ZoneId.of("UTC")
      *   "GMT"                     -- ZoneId.of("GMT")
      *   "+01:30"                  -- ZoneOffset.of("+01:30")
-     *   "UT+01:30"                -- ZoneOffset.of("+01:30")
-     *   "UTC+01:30"               -- ZoneOffset.of("+01:30")
-     *   "GMT+01:30"               -- ZoneOffset.of("+01:30")
+     *   "UT+01:30"                -- ZoneId.of("UT+01:30")
+     *   "UTC+01:30"               -- ZoneId.of("UTC+01:30")
+     *   "GMT+01:30"               -- ZoneId.of("GMT+01:30")
      * </pre>
      *
      * @return this, for chaining, not null
@@ -1138,8 +1138,7 @@ public final class DateTimeFormatterBuilder {
      * Appends the time-zone region ID, such as 'Europe/Paris', to the formatter,
      * rejecting the zone ID if it is a {@code ZoneOffset}.
      * <p>
-     * This appends an instruction to format/parse the zone ID to the builder
-     * only if it is a region-based ID.
+     * This appends an instruction to format only region-based zone IDs to the builder.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
      * to querying the temporal with {@link TemporalQueries#zoneId()}.
@@ -1151,14 +1150,14 @@ public final class DateTimeFormatterBuilder {
      * During parsing, the text must match a known zone or offset.
      * There are two types of zone ID, offset-based, such as '+01:30' and
      * region-based, such as 'Europe/London'. These are parsed differently.
-     * If the parse starts with '+', '-', 'UT', 'UTC' or 'GMT', then the parser
-     * expects an offset-based zone and will not match region-based zones.
-     * The offset ID, such as '+02:30', may be at the start of the parse,
-     * or prefixed by  'UT', 'UTC' or 'GMT'. The offset ID parsing is
-     * equivalent to using {@link #appendOffset(String, String)} using the
-     * arguments 'HH:MM:ss' and the no offset string '0'.
-     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser cannot
-     * match a following offset ID, then {@link ZoneOffset#UTC} is selected.
+     * If the parse starts with '+' or '-', then the parser expects an
+     * offset-based zone and will not match region-based zones. The offset
+     * ID parsing is equivalent to using {@link #appendOffset(String, String)}
+     * using the arguments 'HH:MM:ss' and the no offset string '0'.
+     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser can
+     * match a following offset, then a region-based zone with the parsed
+     * offset will be returned, or else if the parser cannot match a following
+     * offset, then {@link ZoneOffset#UTC} is selected.
      * In all other cases, the list of known region-based zones is used to
      * find the longest available match. If no match is found, and the parse
      * starts with 'Z', then {@code ZoneOffset.UTC} is selected.
@@ -1172,9 +1171,9 @@ public final class DateTimeFormatterBuilder {
      *   "UTC"                     -- ZoneId.of("UTC")
      *   "GMT"                     -- ZoneId.of("GMT")
      *   "+01:30"                  -- ZoneOffset.of("+01:30")
-     *   "UT+01:30"                -- ZoneOffset.of("+01:30")
-     *   "UTC+01:30"               -- ZoneOffset.of("+01:30")
-     *   "GMT+01:30"               -- ZoneOffset.of("+01:30")
+     *   "UT+01:30"                -- ZoneId.of("UT+01:30")
+     *   "UTC+01:30"               -- ZoneId.of("UTC+01:30")
+     *   "GMT+01:30"               -- ZoneId.of("GMT+01:30")
      * </pre>
      * <p>
      * Note that this method is identical to {@code appendZoneId()} except
@@ -1209,14 +1208,14 @@ public final class DateTimeFormatterBuilder {
      * During parsing, the text must match a known zone or offset.
      * There are two types of zone ID, offset-based, such as '+01:30' and
      * region-based, such as 'Europe/London'. These are parsed differently.
-     * If the parse starts with '+', '-', 'UT', 'UTC' or 'GMT', then the parser
-     * expects an offset-based zone and will not match region-based zones.
-     * The offset ID, such as '+02:30', may be at the start of the parse,
-     * or prefixed by  'UT', 'UTC' or 'GMT'. The offset ID parsing is
-     * equivalent to using {@link #appendOffset(String, String)} using the
-     * arguments 'HH:MM:ss' and the no offset string '0'.
-     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser cannot
-     * match a following offset ID, then {@link ZoneOffset#UTC} is selected.
+     * If the parse starts with '+' or '-', then the parser expects an
+     * offset-based zone and will not match region-based zones. The offset
+     * ID parsing is equivalent to using {@link #appendOffset(String, String)}
+     * using the arguments 'HH:MM:ss' and the no offset string '0'.
+     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser can
+     * match a following offset, then a region-based zone with the parsed
+     * offset will be returned, or else if the parser cannot match a following
+     * offset, then {@link ZoneOffset#UTC} is selected.
      * In all other cases, the list of known region-based zones is used to
      * find the longest available match. If no match is found, and the parse
      * starts with 'Z', then {@code ZoneOffset.UTC} is selected.
@@ -1230,9 +1229,9 @@ public final class DateTimeFormatterBuilder {
      *   "UTC"                     -- ZoneId.of("UTC")
      *   "GMT"                     -- ZoneId.of("GMT")
      *   "+01:30"                  -- ZoneOffset.of("+01:30")
-     *   "UT+01:30"                -- ZoneOffset.of("UT+01:30")
-     *   "UTC+01:30"               -- ZoneOffset.of("UTC+01:30")
-     *   "GMT+01:30"               -- ZoneOffset.of("GMT+01:30")
+     *   "UT+01:30"                -- ZoneId.of("UT+01:30")
+     *   "UTC+01:30"               -- ZoneId.of("UTC+01:30")
+     *   "GMT+01:30"               -- ZoneId.of("GMT+01:30")
      * </pre>
      * <p>
      * Note that this method is identical to {@code appendZoneId()} except

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
@@ -104,7 +103,7 @@ void JfrThreadLocal::initialize_main_thread(JavaThread* jt) {
   assert(Thread::is_starting_thread(jt), "invariant");
   assert(jt->threadObj() == nullptr, "invariant");
   assert(jt->jfr_thread_local()->_jvm_thread_id == 0, "invariant");
-  jt->jfr_thread_local()->_jvm_thread_id = 1;
+  jt->jfr_thread_local()->_jvm_thread_id = ThreadIdentifier::initial();
 }
 
 static void send_java_thread_start_event(JavaThread* jt) {

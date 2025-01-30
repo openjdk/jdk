@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -186,6 +185,7 @@ address StubRoutines::_array_partition  = nullptr;
 address StubRoutines::_cont_thaw          = nullptr;
 address StubRoutines::_cont_returnBarrier = nullptr;
 address StubRoutines::_cont_returnBarrierExc = nullptr;
+address StubRoutines::_cont_preempt_stub = nullptr;
 
 address StubRoutines::_upcall_stub_exception_handler = nullptr;
 address StubRoutines::_upcall_stub_load_target = nullptr;

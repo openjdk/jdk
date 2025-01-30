@@ -26,6 +26,7 @@
 #define SHARE_NMT_NMTUSAGE_HPP
 
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 struct NMTUsagePair {

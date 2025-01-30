@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.concurrent.ConcurrentHashMap;
@@ -213,63 +211,57 @@ public final class Currency implements Serializable {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
     private static void initStatic() {
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public Void run() {
-                try {
-                    try (InputStream in = getClass().getResourceAsStream("/java/util/currency.data")) {
-                        if (in == null) {
-                            throw new InternalError("Currency data not found");
-                        }
-                        DataInputStream dis = new DataInputStream(new BufferedInputStream(in));
-                        if (dis.readInt() != MAGIC_NUMBER) {
-                            throw new InternalError("Currency data is possibly corrupted");
-                        }
-                        formatVersion = dis.readInt();
-                        if (formatVersion != VALID_FORMAT_VERSION) {
-                            throw new InternalError("Currency data format is incorrect");
-                        }
-                        dataVersion = dis.readInt();
-                        mainTable = readIntArray(dis, A_TO_Z * A_TO_Z);
-                        int scCount = dis.readInt();
-                        specialCasesList = readSpecialCases(dis, scCount);
-                        int ocCount = dis.readInt();
-                        otherCurrenciesList = readOtherCurrencies(dis, ocCount);
-                    }
-                } catch (IOException e) {
-                    throw new InternalError(e);
-                }
 
-                // look for the properties file for overrides
-                String propsFile = System.getProperty("java.util.currency.data");
-                if (propsFile == null) {
-                    propsFile = StaticProperty.javaHome() + File.separator + "lib" +
-                        File.separator + "currency.properties";
+        try {
+            try (InputStream in = Currency.class.getResourceAsStream("/java/util/currency.data")) {
+                if (in == null) {
+                    throw new InternalError("Currency data not found");
                 }
-                try {
-                    File propFile = new File(propsFile);
-                    if (propFile.exists()) {
-                        Properties props = new Properties();
-                        try (FileReader fr = new FileReader(propFile)) {
-                            props.load(fr);
-                        }
-                        Pattern propertiesPattern =
-                                Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*" +
-                                        "(\\d+)\\s*,?\\s*(\\d{4}-\\d{2}-\\d{2}T\\d{2}:" +
-                                        "\\d{2}:\\d{2})?");
-                        List<CurrencyProperty> currencyEntries
-                                = getValidCurrencyData(props, propertiesPattern);
-                        currencyEntries.forEach(Currency::replaceCurrencyData);
-                    }
-                } catch (IOException e) {
-                    CurrencyProperty.info("currency.properties is ignored"
-                            + " because of an IOException", e);
+                DataInputStream dis = new DataInputStream(new BufferedInputStream(in));
+                if (dis.readInt() != MAGIC_NUMBER) {
+                    throw new InternalError("Currency data is possibly corrupted");
                 }
-                return null;
+                formatVersion = dis.readInt();
+                if (formatVersion != VALID_FORMAT_VERSION) {
+                    throw new InternalError("Currency data format is incorrect");
+                }
+                dataVersion = dis.readInt();
+                mainTable = readIntArray(dis, A_TO_Z * A_TO_Z);
+                int scCount = dis.readInt();
+                specialCasesList = readSpecialCases(dis, scCount);
+                int ocCount = dis.readInt();
+                otherCurrenciesList = readOtherCurrencies(dis, ocCount);
             }
-        });
+        } catch (IOException e) {
+            throw new InternalError(e);
+        }
+
+        // look for the properties file for overrides
+        String propsFile = System.getProperty("java.util.currency.data");
+        if (propsFile == null) {
+            propsFile = StaticProperty.javaHome() + File.separator + "lib" +
+                File.separator + "currency.properties";
+        }
+        try {
+            File propFile = new File(propsFile);
+            if (propFile.exists()) {
+                Properties props = new Properties();
+                try (FileReader fr = new FileReader(propFile)) {
+                    props.load(fr);
+                }
+                Pattern propertiesPattern =
+                        Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*" +
+                                "(\\d+)\\s*,?\\s*(\\d{4}-\\d{2}-\\d{2}T\\d{2}:" +
+                                "\\d{2}:\\d{2})?");
+                List<CurrencyProperty> currencyEntries
+                        = getValidCurrencyData(props, propertiesPattern);
+                currencyEntries.forEach(Currency::replaceCurrencyData);
+            }
+        } catch (IOException e) {
+            CurrencyProperty.info("currency.properties is ignored"
+                    + " because of an IOException", e);
+        }
     }
 
     /**
@@ -452,8 +444,8 @@ public final class Currency implements Serializable {
     public static Set<Currency> getAvailableCurrencies() {
         synchronized(Currency.class) {
             if (available == null) {
+                var sysTime = System.currentTimeMillis();
                 available = new HashSet<>(256);
-
                 // Add simple currencies first
                 for (char c1 = 'A'; c1 <= 'Z'; c1 ++) {
                     for (char c2 = 'A'; c2 <= 'Z'; c2 ++) {
@@ -475,7 +467,7 @@ public final class Currency implements Serializable {
                             SpecialCaseEntry scEntry = specialCasesList.get(index);
 
                             if (scEntry.cutOverTime == Long.MAX_VALUE
-                                    || System.currentTimeMillis() < scEntry.cutOverTime) {
+                                    || sysTime < scEntry.cutOverTime) {
                                 available.add(getInstance(scEntry.oldCurrency,
                                         scEntry.oldCurrencyFraction,
                                         scEntry.oldCurrencyNumericCode));
@@ -494,10 +486,7 @@ public final class Currency implements Serializable {
                 }
             }
         }
-
-        @SuppressWarnings("unchecked")
-        Set<Currency> result = (Set<Currency>) available.clone();
-        return result;
+        return new HashSet<>(available);
     }
 
     /**

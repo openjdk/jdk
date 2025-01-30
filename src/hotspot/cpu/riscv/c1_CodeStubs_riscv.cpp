@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -42,9 +41,7 @@
 void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   InternalAddress safepoint_pc(__ pc() - __ offset() + safepoint_offset());
-  __ relocate(safepoint_pc.rspec(), [&] {
-    __ la(t0, safepoint_pc.target());
-  });
+  __ la(t0, safepoint_pc);
   __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
 
   assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
@@ -318,7 +315,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
                   relocInfo::static_call_type);
   address call = __ reloc_call(resolve);
   if (call == nullptr) {
-    ce->bailout("trampoline stub overflow");
+    ce->bailout("reloc call address stub overflow");
     return;
   }
   ce->add_call_info_here(info());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ import java.awt.Toolkit;
 
 import java.awt.event.KeyEvent;
 
-import java.security.AccessController;
-
 import javax.swing.plaf.ComponentUI;
 import javax.swing.border.Border;
 
@@ -55,7 +53,6 @@ import java.util.Locale;
 
 import sun.awt.SunToolkit;
 import sun.awt.OSInfo;
-import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2;
 import java.util.HashMap;
 import java.util.Objects;
@@ -292,8 +289,6 @@ public class UIManager implements Serializable
      */
     private static String makeSwingPropertiesFilename() {
         String sep = File.separator;
-        // No need to wrap this in a doPrivileged as it's called from
-        // a doPrivileged.
         String javaHome = System.getProperty("java.home");
         if (javaHome == null) {
             javaHome = "<java.home undefined>";
@@ -446,9 +441,7 @@ public class UIManager implements Serializable
      * @see #getInstalledLookAndFeels
      * @throws NullPointerException if {@code infos} is {@code null}
      */
-    public static void setInstalledLookAndFeels(LookAndFeelInfo[] infos)
-        throws SecurityException
-    {
+    public static void setInstalledLookAndFeels(LookAndFeelInfo[] infos) {
         maybeInitialize();
         LookAndFeelInfo[] newInfos = new LookAndFeelInfo[infos.length];
         System.arraycopy(infos, 0, newInfos, 0, infos.length);
@@ -652,9 +645,7 @@ public class UIManager implements Serializable
      * @see #getCrossPlatformLookAndFeelClassName
      */
     public static String getSystemLookAndFeelClassName() {
-        @SuppressWarnings("removal")
-        String systemLAF = AccessController.doPrivileged(
-                             new GetPropertyAction("swing.systemlaf"));
+        String systemLAF = System.getProperty("swing.systemlaf");
         if (systemLAF != null) {
             return systemLAF;
         }
@@ -693,9 +684,7 @@ public class UIManager implements Serializable
      * @see #getSystemLookAndFeelClassName
      */
     public static String getCrossPlatformLookAndFeelClassName() {
-        @SuppressWarnings("removal")
-        String laf = AccessController.doPrivileged(
-                             new GetPropertyAction("swing.crossplatformlaf"));
+        String laf = System.getProperty("swing.crossplatformlaf");
         if (laf != null) {
             return laf;
         }
@@ -1272,7 +1261,6 @@ public class UIManager implements Serializable
         }
     }
 
-    @SuppressWarnings("removal")
     private static Properties loadSwingProperties()
     {
         /* Don't bother checking for Swing properties if untrusted, as
@@ -1284,46 +1272,38 @@ public class UIManager implements Serializable
         else {
             final Properties props = new Properties();
 
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Object>() {
-                public Object run() {
-                    if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
-                        props.put(defaultLAFKey, getSystemLookAndFeelClassName());
-                    }
+            if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
+                props.put(defaultLAFKey, getSystemLookAndFeelClassName());
+            }
 
-                    try {
-                        File file = new File(makeSwingPropertiesFilename());
+            try {
+                File file = new File(makeSwingPropertiesFilename());
 
-                        if (file.exists()) {
-                            // InputStream has been buffered in Properties
-                            // class
-                            try (FileInputStream ins = new FileInputStream(file)) {
-                                props.load(ins);
-                            }
-                        }
+                if (file.exists()) {
+                    // InputStream has been buffered in Properties
+                    // class
+                    try (FileInputStream ins = new FileInputStream(file)) {
+                        props.load(ins);
                     }
-                    catch (Exception e) {
-                        // No such file, or file is otherwise non-readable.
-                    }
-
-                    // Check whether any properties were overridden at the
-                    // command line.
-                    checkProperty(props, defaultLAFKey);
-                    checkProperty(props, auxiliaryLAFsKey);
-                    checkProperty(props, multiplexingLAFKey);
-                    checkProperty(props, installedLAFsKey);
-                    checkProperty(props, disableMnemonicKey);
-                    // Don't care about return value.
-                    return null;
                 }
-            });
+            }
+            catch (Exception e) {
+                // No such file, or file is otherwise non-readable.
+            }
+
+            // Check whether any properties were overridden at the
+            // command line.
+            checkProperty(props, defaultLAFKey);
+            checkProperty(props, auxiliaryLAFsKey);
+            checkProperty(props, multiplexingLAFKey);
+            checkProperty(props, installedLAFsKey);
+            checkProperty(props, disableMnemonicKey);
+
             return props;
         }
     }
 
     private static void checkProperty(Properties props, String key) {
-        // No need to do catch the SecurityException here, this runs
-        // in a doPrivileged.
         String value = System.getProperty(key);
         if (value != null) {
             props.put(key, value);

@@ -220,6 +220,7 @@ public class TypeEnter implements Completer {
             chk.checkImportedPackagesObservable(toplevel);
             toplevel.namedImportScope.finalizeScope();
             toplevel.starImportScope.finalizeScope();
+            toplevel.moduleImportScope.finalizeScope();
         } catch (CompletionFailure cf) {
             chk.completionError(toplevel.pos(), cf);
         } finally {
@@ -331,7 +332,7 @@ public class TypeEnter implements Completer {
                 throw new Abort();
             }
             importAll(make.at(tree.pos()).Import(make.Select(make.QualIdent(javaLang.owner), javaLang), false),
-                javaLang, env);
+                javaLang, env, false);
 
             List<JCTree> defs = tree.getTypeDecls();
             boolean isImplicitClass = !defs.isEmpty() &&
@@ -341,7 +342,7 @@ public class TypeEnter implements Completer {
                 doModuleImport(make.ModuleImport(make.QualIdent(syms.java_base)));
                 if (peekTypeExists(syms.ioType.tsym)) {
                     doImport(make.Import(make.Select(make.QualIdent(syms.ioType.tsym),
-                            names.asterisk), true));
+                            names.asterisk), true), false);
                 }
             }
         }
@@ -413,7 +414,7 @@ public class TypeEnter implements Completer {
                 if (imp instanceof JCModuleImport mimp) {
                     doModuleImport(mimp);
                 } else {
-                    doImport((JCImport) imp);
+                    doImport((JCImport) imp, false);
                 }
             }
         }
@@ -438,7 +439,7 @@ public class TypeEnter implements Completer {
             annotate.annotateLater(tree.annotations, env, env.toplevel.packge, tree.pos());
         }
 
-        private void doImport(JCImport tree) {
+        private void doImport(JCImport tree, boolean fromModuleImport) {
             JCFieldAccess imp = tree.qualid;
             Name name = TreeInfo.name(imp);
 
@@ -450,16 +451,20 @@ public class TypeEnter implements Completer {
             if (name == names.asterisk) {
                 // Import on demand.
                 chk.checkCanonical(imp.selected);
-                if (tree.staticImport)
+                if (tree.staticImport) {
+                    Assert.check(!fromModuleImport);
                     importStaticAll(tree, p, env);
-                else
-                    importAll(tree, p, env);
+                } else {
+                    importAll(tree, p, env, fromModuleImport);
+                }
             } else {
                 // Named type import.
                 if (tree.staticImport) {
+                    Assert.check(!fromModuleImport);
                     importNamedStatic(tree, p, name, localEnv);
                     chk.checkCanonical(imp.selected);
                 } else {
+                    Assert.check(!fromModuleImport);
                     Type importedType = attribImportType(imp, localEnv);
                     Type originalType = importedType.getOriginalType();
                     TypeSymbol c = originalType.hasTag(CLASS) ? originalType.tsym : importedType.tsym;
@@ -506,7 +511,7 @@ public class TypeEnter implements Completer {
                         JCImport nestedImport = make.at(tree.pos)
                                 .Import(make.Select(make.QualIdent(pkg), names.asterisk), false);
 
-                        doImport(nestedImport);
+                        doImport(nestedImport, true);
                     }
 
                     for (RequiresDirective requires : currentModule.requires) {
@@ -542,8 +547,13 @@ public class TypeEnter implements Completer {
          */
         private void importAll(JCImport imp,
                                final TypeSymbol tsym,
-                               Env<AttrContext> env) {
-            env.toplevel.starImportScope.importAll(types, tsym.members(), typeImportFilter, imp, cfHandler);
+                               Env<AttrContext> env,
+                               boolean fromModuleImport) {
+            StarImportScope targetScope =
+                    fromModuleImport ? env.toplevel.moduleImportScope
+                                     : env.toplevel.starImportScope;
+
+            targetScope.importAll(types, tsym.members(), typeImportFilter, imp, cfHandler);
         }
 
         /** Import all static members of a class or package on demand.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/c2_CodeStubs.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "runtime/objectMonitor.hpp"
@@ -55,7 +54,7 @@ void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
 
 int C2EntryBarrierStub::max_size() const {
   // 4 bytes for alignment
-  return 3 * NativeInstruction::instruction_size + 4 + 4;
+  return 4 * NativeInstruction::instruction_size + 4 + 4;
 }
 
 void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
@@ -63,6 +62,7 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   // emits auipc + jalr for address inside code cache
   __ far_call(StubRoutines::method_entry_barrier());
 
+  // emits auipc + jr assuming continuation is not near
   __ j(continuation());
 
   // make guard value 4-byte aligned so that it can be accessed atomically

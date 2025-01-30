@@ -228,7 +228,7 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
     oop forwardee;
     markWord m = obj->mark();
     if (m.is_forwarded()) {
-      forwardee = m.forwardee();
+      forwardee = obj->forwardee(m);
     } else {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }

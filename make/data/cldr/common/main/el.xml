@@ -70,6 +70,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bin">Μπίνι</language>
 			<language type="bkm">Κομ</language>
 			<language type="bla">Σικσίκα</language>
+			<language type="blo">Ανίι</language>
 			<language type="bm">Μπαμπάρα</language>
 			<language type="bn">Βεγγαλικά</language>
 			<language type="bo">Θιβετιανά</language>
@@ -296,6 +297,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">Κόμι</language>
 			<language type="kw">Κορνουαλικά</language>
 			<language type="kwk">Κουακουάλα</language>
+			<language type="kxv">Κούβι</language>
 			<language type="ky">Κιργιζικά</language>
 			<language type="la">Λατινικά</language>
 			<language type="lad">Λαδίνο</language>
@@ -306,8 +308,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">Λεζγκικά</language>
 			<language type="lg">Γκάντα</language>
 			<language type="li">Λιμβουργιανά</language>
+			<language type="lij">Λιγουριανά</language>
 			<language type="lil">Λιλουέτ</language>
 			<language type="lkt">Λακότα</language>
+			<language type="lmo">Λομβαρδικά</language>
 			<language type="ln">Λινγκάλα</language>
 			<language type="lo">Λαοτινά</language>
 			<language type="lol">Μόνγκο</language>
@@ -501,6 +505,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">Κομοριανά</language>
 			<language type="syc">Κλασικά Συριακά</language>
 			<language type="syr">Συριακά</language>
+			<language type="szl">Σιλεσικά</language>
 			<language type="ta">Ταμιλικά</language>
 			<language type="tce">Νότια Τουτσόνε</language>
 			<language type="te">Τελούγκου</language>
@@ -550,7 +555,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">Ουζμπεκικά</language>
 			<language type="vai">Βάι</language>
 			<language type="ve">Βέντα</language>
+			<language type="vec">Βενετικά</language>
 			<language type="vi">Βιετναμικά</language>
+			<language type="vmw">Μακούα</language>
 			<language type="vo">Βολαπιούκ</language>
 			<language type="vot">Βότικ</language>
 			<language type="vun">Βούντζο</language>
@@ -564,6 +571,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">Κινεζικά Γου</language>
 			<language type="xal">Καλμίκ</language>
 			<language type="xh">Κόσα</language>
+			<language type="xnr">Κάνγκρι</language>
 			<language type="xog">Σόγκα</language>
 			<language type="yao">Γιάο</language>
 			<language type="yap">Γιαπίζ</language>
@@ -1243,7 +1251,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -2576,6 +2584,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat type="daylight">Θερινή ώρα ({0})</regionFormat>
 			<regionFormat type="standard">Χειμερινή ώρα ({0})</regionFormat>
 			<fallbackFormat>[{1} ({0})]</fallbackFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Χονολουλού</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Συντονισμένη Παγκόσμια Ώρα</standard>
@@ -3313,9 +3324,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ουλάν Μπατόρ</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Τσοϊμπαλσάν</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Μακάο</exemplarCity>
 			</zone>
@@ -3712,9 +3720,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>Νόμε</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Χονολουλού</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Άνκορατζ</exemplarCity>
 			</zone>
@@ -4066,13 +4071,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Θερινή ώρα Κίνας</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Ώρα Τσοϊμπαλσάν</generic>
-					<standard>Χειμερινή ώρα Τσοϊμπαλσάν</standard>
-					<daylight>Θερινή ώρα Τσοϊμπαλσάν</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Ώρα Νήσου Χριστουγέννων</standard>
@@ -4336,6 +4334,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">Ώρα Καμτσάτκα</generic>
 					<standard draft="contributed">Χειμερινή ώρα Πετροπαβλόβσκ-Καμτσάτσκι</standard>
 					<daylight draft="contributed">Θερινή ώρα Πετροπαβλόβσκ-Καμτσάτσκι</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Ώρα Καζακστάν</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4874,8 +4877,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 τρισ'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -6605,9 +6606,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} καρατίων</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender>neuter</gender>
 				<displayName>χιλιοστόγραμμα ανά δεκατόλιτρο</displayName>
 				<unitPattern count="one">{0} χιλιοστόγραμμο ανά δεκατόλιτρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} χιλιοστόγραμμο ανά δεκατόλιτρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} χιλιοστόγραμμου ανά δεκατόλιτρο</unitPattern>
 				<unitPattern count="other">{0} χιλιοστόγραμμα ανά δεκατόλιτρο</unitPattern>
+				<unitPattern count="other" case="accusative">{0} χιλιοστόγραμμα ανά δεκατόλιτρο</unitPattern>
+				<unitPattern count="other" case="genitive">{0} χιλιοστόγραμμων ανά δεκατόλιτρο</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<gender>neuter</gender>
@@ -6789,10 +6795,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} kilobit</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 			</unit>
 			<unit type="digital-bit">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 			</unit>
 			<unit type="duration-century">
 				<gender>masculine</gender>
@@ -6815,7 +6821,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} δεκαετιών</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<unitPattern count="one">{0} έτος</unitPattern>
 				<unitPattern count="one" case="accusative">{0} έτος</unitPattern>
 				<unitPattern count="one" case="genitive">{0} έτους</unitPattern>
@@ -6835,7 +6841,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} τέταρτων</unitPattern>
 			</unit>
 			<unit type="duration-month">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<unitPattern count="one">{0} μήνας</unitPattern>
 				<unitPattern count="one" case="accusative">{0} μήνα</unitPattern>
 				<unitPattern count="one" case="genitive">{0} μήνα</unitPattern>
@@ -6874,7 +6880,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} ημερών</unitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<unitPattern count="one">{0} ώρα</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ώρα</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ώρας</unitPattern>
@@ -6976,9 +6982,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} βολτ</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
+				<gender>feminine</gender>
 				<displayName>χιλιοθερμίδες</displayName>
 				<unitPattern count="one">{0} χιλιοθερμίδα</unitPattern>
+				<unitPattern count="one" case="accusative">{0} χιλιοθερμίδα</unitPattern>
+				<unitPattern count="one" case="genitive">{0} χιλιοθερμίδας</unitPattern>
 				<unitPattern count="other">{0} χιλιοθερμίδες</unitPattern>
+				<unitPattern count="other" case="accusative">{0} χιλιοθερμίδες</unitPattern>
+				<unitPattern count="other" case="genitive">{0} χιλιοθερμίδων</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<gender>feminine</gender>
@@ -7300,8 +7311,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} σκανδιναβικών μιλίων</unitPattern>
 			</unit>
 			<unit type="length-point">
+				<gender>feminine</gender>
 				<unitPattern count="one">{0} στιγμή</unitPattern>
+				<unitPattern count="one" case="accusative">{0} στιγμή</unitPattern>
+				<unitPattern count="one" case="genitive">{0} στιγμής</unitPattern>
 				<unitPattern count="other">{0} στιγμές</unitPattern>
+				<unitPattern count="other" case="accusative">{0} στιγμές</unitPattern>
+				<unitPattern count="other" case="genitive">{0} στιγμών</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>ακτίνες του Ήλιου</displayName>
@@ -7490,9 +7506,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ίπποι</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>neuter</gender>
 				<displayName>χιλιοστόμετρα στήλης υδραργύρου</displayName>
 				<unitPattern count="one">{0} χιλιοστόμετρο στήλης υδραργύρου</unitPattern>
+				<unitPattern count="one" case="accusative">{0} χιλιοστόμετρο στήλης υδραργύρου</unitPattern>
+				<unitPattern count="one" case="genitive">{0} χιλιοστομέτρου στήλης υδραργύρου</unitPattern>
 				<unitPattern count="other">{0} χιλιοστόμετρα στήλης υδραργύρου</unitPattern>
+				<unitPattern count="other" case="accusative">{0} χιλιοστόμετρα στήλης υδραργύρου</unitPattern>
+				<unitPattern count="other" case="genitive">{0} χιλιοστόμετρων στήλης υδραργύρου</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>λίβρες ανά τετραγωνική ίντσα</displayName>
@@ -7598,9 +7619,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} κόμβοι</unitPattern>
 			</unit>
 			<unit type="speed-beaufort">
+				<gender>neuter</gender>
 				<displayName>μποφόρ</displayName>
 				<unitPattern count="one">{0} μποφόρ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μποφόρ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μποφόρ</unitPattern>
 				<unitPattern count="other">{0} μποφόρ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μποφόρ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μποφόρ</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<gender>masculine</gender>
@@ -7877,6 +7903,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>αγγλοσαξονικά τέταρτα του γαλονιού</displayName>
 				<unitPattern count="one">{0} αγγλοσαξονικό τέταρτο του γαλονιού</unitPattern>
 				<unitPattern count="other">{0} αγγλοσαξονικά τέταρτα του γαλονιού</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<gender>neuter</gender>
+				<displayName>φως</displayName>
+				<unitPattern count="one">{0} φως</unitPattern>
+				<unitPattern count="one" case="accusative">{0} φως</unitPattern>
+				<unitPattern count="one" case="genitive">φωτός</unitPattern>
+				<unitPattern count="other">{0} φως</unitPattern>
+				<unitPattern count="other" case="accusative">{0} φως</unitPattern>
+				<unitPattern count="other" case="genitive">{0} φωτός</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>neuter</gender>
+				<displayName>μέρη στο δισεκατομμύριο</displayName>
+				<unitPattern count="one">{0} μέρος στο δισεκατομμύριο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μέρος στο δισεκατομμύριο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μέρους στο δισεκατομμύριο</unitPattern>
+				<unitPattern count="other">{0} μέρη στο δισεκατομμύριο</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μέρη στο δισεκατομμύριο</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μερών στο δισεκατομμύριο</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>feminine</gender>
+				<displayName>νύχτες</displayName>
+				<unitPattern count="one">{0} νύχτα</unitPattern>
+				<unitPattern count="one" case="accusative">{0} νύχτα</unitPattern>
+				<unitPattern count="one" case="genitive">{0} νύχτας</unitPattern>
+				<unitPattern count="other">{0} νύχτες</unitPattern>
+				<unitPattern count="other" case="accusative">{0} νύχτες</unitPattern>
+				<unitPattern count="other" case="genitive">{0} νυχτών</unitPattern>
+				<perUnitPattern>{0}/νύχτα</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>σημεία ορίζοντα</displayName>
@@ -8606,6 +8663,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} αγγλ. τέτ. γαλ.</unitPattern>
 				<unitPattern count="other">{0} αγγλ. τέτ. γαλ.</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>φως</displayName>
+				<unitPattern count="one">{0} φως</unitPattern>
+				<unitPattern count="other">{0} φως</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>μέρη/δισεκατομμύριο</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>νύχτ.</displayName>
+				<unitPattern count="one">{0} νύχτ.</unitPattern>
+				<unitPattern count="other">{0} νύχτ.</unitPattern>
+				<perUnitPattern>{0}/νύχτ.</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>σημείο</displayName>
 				<coordinateUnitPattern type="east">{0} Α</coordinateUnitPattern>
@@ -8696,7 +8767,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>°</displayName>
 			</unit>
 			<unit type="angle-arc-minute">
-				<displayName draft="contributed">′</displayName>
+				<displayName>′</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
@@ -8755,7 +8826,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mpg</displayName>
 			</unit>
 			<unit type="digital-petabyte">
-				<displayName draft="contributed">PB</displayName>
+				<displayName>PB</displayName>
 			</unit>
 			<unit type="duration-year">
 				<displayName>έτ.</displayName>
@@ -8898,7 +8969,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>γρ.</displayName>
 			</unit>
 			<unit type="mass-ton">
-				<displayName draft="contributed">τ. ΗΠΑ</displayName>
+				<displayName>τ. ΗΠΑ</displayName>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>λβ</displayName>
@@ -8907,16 +8978,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>oz t</displayName>
 			</unit>
 			<unit type="mass-carat">
-				<displayName draft="contributed">κρτ</displayName>
+				<displayName>κρτ</displayName>
 			</unit>
 			<unit type="mass-dalton">
-				<displayName draft="contributed">Da</displayName>
+				<displayName>Da</displayName>
 			</unit>
 			<unit type="mass-earth-mass">
-				<displayName draft="contributed">M⊕</displayName>
+				<displayName>M⊕</displayName>
 			</unit>
 			<unit type="mass-solar-mass">
-				<displayName draft="contributed">M☉</displayName>
+				<displayName>M☉</displayName>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -8965,7 +9036,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>°F</displayName>
 			</unit>
 			<unit type="volume-cubic-yard">
-				<displayName draft="contributed">yd³</displayName>
+				<displayName>yd³</displayName>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>λίτρο</displayName>
@@ -8983,24 +9054,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} μ. κύπ.</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
-				<displayName draft="contributed">ακρ πδ</displayName>
+				<displayName>ακρ πδ</displayName>
 			</unit>
 			<unit type="volume-quart">
-				<displayName draft="contributed">τέτ. γαλ.</displayName>
+				<displayName>τέτ. γαλ.</displayName>
 			</unit>
 			<unit type="volume-pint">
-				<displayName draft="contributed">πντ</displayName>
+				<displayName>πντ</displayName>
 			</unit>
 			<unit type="volume-barrel">
-				<displayName draft="contributed">βρλ</displayName>
+				<displayName>βρλ</displayName>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
-				<displayName draft="contributed">αγγλ. κ.φρ.</displayName>
-				<unitPattern count="one" draft="contributed">{0} αγγλ. κ.φρ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} αγγλ. κ.φρ.</unitPattern>
+				<displayName>αγγλ. κ.φρ.</displayName>
+				<unitPattern count="one">{0} αγγλ. κ.φρ.</unitPattern>
+				<unitPattern count="other">{0} αγγλ. κ.φρ.</unitPattern>
 			</unit>
 			<unit type="volume-dram">
-				<displayName draft="contributed">δρ. όγκου</displayName>
+				<displayName>δρ. όγκου</displayName>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>φώς</displayName>
+				<unitPattern count="one">{0} φως</unitPattern>
+				<unitPattern count="other">{0} φως</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>νύχτ.</displayName>
+				<unitPattern count="one">{0} νύχτ.</unitPattern>
+				<unitPattern count="other">{0} νύχτ.</unitPattern>
+				<perUnitPattern>{0}/νύχτ.</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>σημεία</displayName>

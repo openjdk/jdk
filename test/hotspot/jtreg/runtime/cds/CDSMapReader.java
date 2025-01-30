@@ -38,7 +38,7 @@ This is a simple parser for parsing the output of
 The map file contains patterns like this for the heap objects:
 
 ======================================================================
-0x00000000ffe00000: @@ Object (0xffe00000) java.lang.String
+0x00000000ffe00000: @@ Object (0xffe00000) java.lang.String ""
  - klass: 'java/lang/String' 0x0000000800010220
  - fields (3 words):
  - private 'hash' 'I' @12  0 (0x00000000)
@@ -149,11 +149,11 @@ public class CDSMapReader {
 
     // (one address)
     // 0x00000007ffc00000: @@ Object java.lang.String
-    static Pattern objPattern1 = Pattern.compile("^0x([0-9a-f]+): @@ Object (.*)");
+    static Pattern objPattern1 = Pattern.compile("^0x([0-9a-f]+): @@ Object ([^ ]*)");
 
     // (two addresses)
     // 0x00000007ffc00000: @@ Object (0xfff80000) java.lang.String
-    static Pattern objPattern2 = Pattern.compile("^0x([0-9a-f]+): @@ Object [(]0x([0-9a-f]+)[)] (.*)");
+    static Pattern objPattern2 = Pattern.compile("^0x([0-9a-f]+): @@ Object [(]0x([0-9a-f]+)[)] ([^ ]*)");
 
     //  - klass: 'java/lang/String' 0x0000000800010290
     static Pattern instanceObjKlassPattern = Pattern.compile("^ - klass: '([^']+)' 0x([0-9a-f]+)");

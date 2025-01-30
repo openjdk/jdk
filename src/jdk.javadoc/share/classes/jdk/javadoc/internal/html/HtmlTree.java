@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -779,15 +779,13 @@ public class HtmlTree extends Content {
      * @param rel   the relevance of the link: the {@code rel} attribute
      * @param type  the type of link: the {@code type} attribute
      * @param href  the path for the link: the {@code href} attribute
-     * @param title title for the link: the {@code title} attribute
      * @return the element
      */
-    public static HtmlTree LINK(String rel, String type, String href, String title) {
+    public static HtmlTree LINK(String rel, String type, String href) {
         return new HtmlTree(HtmlTag.LINK)
                 .put(HtmlAttr.REL, rel)
                 .put(HtmlAttr.TYPE, type)
-                .put(HtmlAttr.HREF, href)
-                .put(HtmlAttr.TITLE, title);
+                .put(HtmlAttr.HREF, href);
     }
 
     /**
@@ -1048,54 +1046,15 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Creates an HTML {@code SUP} element with the given content.
+     * Creates an HTML {@code SUP} element with the given style and content.
      *
+     * @param style the style
      * @param body  the content
      * @return the element
      */
-    public static HtmlTree SUP(Content body) {
+    public static HtmlTree SUP(HtmlStyle style, Content body) {
         return new HtmlTree(HtmlTag.SUP)
-                .add(body);
-    }
-
-    /**
-     * Creates an HTML {@code TD} element with the given style and some content.
-     *
-     * @param style the style
-     * @param body  the content
-     * @return the element
-     */
-    public static HtmlTree TD(HtmlStyle style, Content body) {
-        return new HtmlTree(HtmlTag.TD)
                 .setStyle(style)
-                .add(body);
-    }
-
-    /**
-     * Creates an HTML {@code TH} element with the given style and scope, and some content.
-     *
-     * @param style the style
-     * @param scope the value for the {@code scope} attribute
-     * @param body  the content
-     * @return the element
-     */
-    public static HtmlTree TH(HtmlStyle style, String scope, Content body) {
-        return new HtmlTree(HtmlTag.TH)
-                .setStyle(style)
-                .put(HtmlAttr.SCOPE, scope)
-                .add(body);
-    }
-
-    /**
-     * Creates an HTML {@code TH} element with the given scope, and some content.
-     *
-     * @param scope the value for the {@code scope} attribute
-     * @param body  the content
-     * @return the element
-     */
-    public static HtmlTree TH(String scope, Content body) {
-        return new HtmlTree(HtmlTag.TH)
-                .put(HtmlAttr.SCOPE, scope)
                 .add(body);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,10 @@ import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.BindingInterpreter.LoadFunc;
 import jdk.internal.foreign.abi.BindingInterpreter.StoreFunc;
 
-import java.lang.foreign.*;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -37,9 +40,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_INT_UNALIGNED;
-import static java.lang.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
+import static java.lang.foreign.ValueLayout.*;
 
 /**
  * The binding operators defined in the Binding class can be combined into argument and return value processing 'recipes'.

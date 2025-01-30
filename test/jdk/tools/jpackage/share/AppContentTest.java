@@ -33,8 +33,8 @@ import java.util.Collection;
 import java.util.List;
 import static java.util.stream.Collectors.joining;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.IOUtils;
-import jdk.jpackage.test.Functional.ThrowingFunction;
+import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.test.JPackageCommand;
 
 
@@ -45,13 +45,10 @@ import jdk.jpackage.test.JPackageCommand;
 /*
  * @test
  * @summary jpackage with --app-content option
- * @library ../helpers
- * @library /test/lib
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build AppContentTest
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @modules java.base/jdk.internal.util
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppContentTest
  */
@@ -68,7 +65,7 @@ public class AppContentTest {
     // In particular, random files should be placed in "Contents/Resources" folder
     // otherwise "codesign" will fail to sign.
     // Need to prepare arguments for `--app-content` accordingly.
-    private final static boolean copyInResources = TKit.isOSX();
+    private static final boolean copyInResources = TKit.isOSX();
 
     private final List<String> testPathArgs;
 
@@ -151,7 +148,7 @@ public class AppContentTest {
             var srcPath = TKit.TEST_SRC_ROOT.resolve(appContentPath);
             var dstPath = appContentArg.resolve(srcPath.getFileName());
             Files.createDirectories(dstPath.getParent());
-            IOUtils.copyRecursive(srcPath, dstPath);
+            FileUtils.copyRecursive(srcPath, dstPath);
             return appContentArg;
         }
 

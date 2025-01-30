@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+
+    <xs:annotation>
+        <xs:documentation>
+         This is the XML Schema Inline Phrasal support module for XHTML
+         $Id: xhtml-inlphras-1.xsd,v 1.4 2005/09/26 22:54:53 ahby Exp $
+    </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+    </xs:annotation>
+    <xs:annotation>
+        <xs:documentation>
+      Inline Phrasal.
+      This module declares the elements and their attributes used to
+      support inline-level phrasal markup.
+      This is the XML Schema Inline Phrasal module for XHTML
+
+        * abbr, acronym, cite, code, dfn, em, kbd, q, samp, strong, var
+
+      $Id: xhtml-inlphras-1.xsd,v 1.4 2005/09/26 22:54:53 ahby Exp $
+    </xs:documentation>
+        <xs:documentation source="http://www.w3.org/TR/xhtml-modularization/abstract_modules.html#s_textmodule"/>
+    </xs:annotation>
+    <xs:attributeGroup name="xhtml.abbr.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.abbr.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.abbr.type" mixed="true">
+        <xs:group ref="xhtml.abbr.content"/>
+        <xs:attributeGroup ref="xhtml.abbr.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.acronym.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.acronym.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.acronym.type" mixed="true">
+        <xs:group ref="xhtml.acronym.content"/>
+        <xs:attributeGroup ref="xhtml.acronym.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.cite.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.cite.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.cite.type" mixed="true">
+        <xs:group ref="xhtml.cite.content"/>
+        <xs:attributeGroup ref="xhtml.cite.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.code.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.code.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.code.type" mixed="true">
+        <xs:group ref="xhtml.code.content"/>
+        <xs:attributeGroup ref="xhtml.code.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.dfn.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.dfn.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.dfn.type" mixed="true">
+        <xs:group ref="xhtml.dfn.content"/>
+        <xs:attributeGroup ref="xhtml.dfn.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.em.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.em.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.em.type" mixed="true">
+        <xs:group ref="xhtml.em.content"/>
+        <xs:attributeGroup ref="xhtml.em.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.kbd.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.kbd.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.kbd.type" mixed="true">
+        <xs:group ref="xhtml.kbd.content"/>
+        <xs:attributeGroup ref="xhtml.kbd.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.samp.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.samp.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.samp.type" mixed="true">
+        <xs:group ref="xhtml.samp.content"/>
+        <xs:attributeGroup ref="xhtml.samp.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.strong.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.strong.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.strong.type" mixed="true">
+        <xs:group ref="xhtml.strong.content"/>
+        <xs:attributeGroup ref="xhtml.strong.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.var.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.var.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.var.type" mixed="true">
+        <xs:group ref="xhtml.var.content"/>
+        <xs:attributeGroup ref="xhtml.var.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.q.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attribute name="cite" type="xh11d:URI"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.q.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.q.type" mixed="true">
+        <xs:group ref="xhtml.q.content"/>
+        <xs:attributeGroup ref="xhtml.q.attlist"/>
+    </xs:complexType>
+</xs:schema>

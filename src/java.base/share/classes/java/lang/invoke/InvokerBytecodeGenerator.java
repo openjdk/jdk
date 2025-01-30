@@ -248,7 +248,7 @@ class InvokerBytecodeGenerator {
             return ClassFile.of().build(classEntry, pool, new Consumer<>() {
                 @Override
                 public void accept(ClassBuilder clb) {
-                    clb.withFlags(ACC_ABSTRACT | ACC_SUPER)
+                    clb.withFlags(ACC_FINAL | ACC_SUPER)
                        .withSuperclass(INVOKER_SUPER_DESC)
                        .with(SourceFileAttribute.of(clb.constantPool().utf8Entry(SOURCE_PREFIX + name)));
                     config.accept(clb);
@@ -526,7 +526,9 @@ class InvokerBytecodeGenerator {
     // Suppress method in backtraces displayed to the user, mark this method as
     // a compiled LambdaForm, then either force or prohibit inlining.
     public static final RuntimeVisibleAnnotationsAttribute LF_DONTINLINE_ANNOTATIONS = RuntimeVisibleAnnotationsAttribute.of(HIDDEN, LF_COMPILED, DONTINLINE);
+    public static final RuntimeVisibleAnnotationsAttribute LF_DONTINLINE_PROFILE_ANNOTATIONS = RuntimeVisibleAnnotationsAttribute.of(HIDDEN, LF_COMPILED, DONTINLINE, INJECTEDPROFILE);
     public static final RuntimeVisibleAnnotationsAttribute LF_FORCEINLINE_ANNOTATIONS = RuntimeVisibleAnnotationsAttribute.of(HIDDEN, LF_COMPILED, FORCEINLINE);
+    public static final RuntimeVisibleAnnotationsAttribute LF_FORCEINLINE_PROFILE_ANNOTATIONS = RuntimeVisibleAnnotationsAttribute.of(HIDDEN, LF_COMPILED, FORCEINLINE, INJECTEDPROFILE);
 
     /**
      * Generate an invoker method for the passed {@link LambdaForm}.
@@ -586,7 +588,11 @@ class InvokerBytecodeGenerator {
                                     if (PROFILE_GWT) {
                                         assert(name.arguments[0] instanceof Name n &&
                                                 n.refersTo(MethodHandleImpl.class, "profileBoolean"));
-                                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(INJECTEDPROFILE)));
+                                        if (lambdaForm.forceInline) {
+                                            mb.with(LF_FORCEINLINE_PROFILE_ANNOTATIONS);
+                                        } else {
+                                            mb.with(LF_DONTINLINE_PROFILE_ANNOTATIONS);
+                                        }
                                     }
                                     onStack = emitSelectAlternative(cob, name, lambdaForm.names[i+1]);
                                     i++;  // skip MH.invokeBasic of the selectAlternative result

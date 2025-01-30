@@ -21,12 +21,7 @@
 
 package com.sun.org.apache.xml.internal.utils.res;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ListResourceBundle;
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 
 /**
  * The default (english) resource bundle.

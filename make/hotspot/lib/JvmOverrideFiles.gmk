@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,10 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
     # Need extra inlining to collapse shared marking code into the hot marking loop
     BUILD_LIBJVM_shenandoahMark.cpp_CXXFLAGS := --param inline-unit-growth=1000
   endif
+  # disable lto in g1ParScanThreadState because of special inlining/flattening used there
+  ifeq ($(call check-jvm-feature, link-time-opt), true)
+    BUILD_LIBJVM_g1ParScanThreadState.cpp_CXXFLAGS := -fno-lto
+  endif
 endif
 
 LIBJVM_FDLIBM_COPY_OPT_FLAG := $(CXX_O_FLAG_NONE)
@@ -48,15 +52,23 @@ ifneq ($(FDLIBM_CFLAGS), )
 endif
 
 ifeq ($(call isTargetOs, linux), true)
-  BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := -DNO_PCH $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
-  BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := -DNO_PCH $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
+  BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
+  BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
 
   ifeq ($(TOOLCHAIN_TYPE), clang)
     JVM_PRECOMPILED_HEADER_EXCLUDE := \
-	sharedRuntimeTrig.cpp \
-	sharedRuntimeTrans.cpp \
+        sharedRuntimeTrig.cpp \
+        sharedRuntimeTrans.cpp \
         $(OPT_SPEED_SRC) \
-	#
+        #
+  endif
+
+  ifeq ($(call isTargetCpu, ppc64le)+$(TOOLCHAIN_TYPE), true+gcc)
+    JVM_PRECOMPILED_HEADER_EXCLUDE := \
+        sharedRuntimeTrig.cpp \
+        sharedRuntimeTrans.cpp \
+        $(OPT_SPEED_SRC) \
+        #
   endif
 
   ifeq ($(call isTargetCpu, x86), true)

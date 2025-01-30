@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
-import java.security.AccessController;
 import java.util.Arrays;
 import sun.awt.geom.PathConsumer2D;
 import static sun.java2d.marlin.MarlinUtils.logInfo;
@@ -40,7 +39,6 @@ import sun.java2d.ReentrantContextProviderTL;
 import sun.java2d.pipe.AATileGenerator;
 import sun.java2d.pipe.Region;
 import sun.java2d.pipe.RenderingEngine;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Marlin RendererEngine implementation (derived from Pisces)
@@ -1119,10 +1117,8 @@ public final class DMarlinRenderingEngine extends RenderingEngine
         USE_THREAD_LOCAL = MarlinProperties.isUseThreadLocal();
 
         // Soft reference by default:
-        @SuppressWarnings("removal")
-        final String refType = AccessController.doPrivileged(
-                            new GetPropertyAction("sun.java2d.renderer.useRef",
-                            "soft"));
+        final String refType = System.getProperty("sun.java2d.renderer.useRef",
+                            "soft");
         switch (refType) {
             default:
             case "soft":
@@ -1300,7 +1296,6 @@ public final class DMarlinRenderingEngine extends RenderingEngine
      * Get the RendererContext instance dedicated to the current thread
      * @return RendererContext instance
      */
-    @SuppressWarnings({"unchecked"})
     static RendererContext getRendererContext() {
         final RendererContext rdrCtx = RDR_CTX_PROVIDER.acquire();
         if (DO_MONITORS) {

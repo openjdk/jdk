@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6856415 8154212 8154470
+ * @bug 8154212 8154470
  * @summary Miscellaneous tests, Exceptions
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -65,45 +65,6 @@ public class MiscTests extends TestHelper {
         }
     }
 
-    /**
-     * 6856415: Checks to ensure that proper exceptions are thrown by java
-     */
-    static void test6856415() throws IOException {
-
-        final String mainClass = "Foo6856415";
-
-        List<String> scratch = new ArrayList<>();
-        scratch.add("public class Foo6856415 {");
-        scratch.add("public static void main(String... args) {");
-        scratch.add("java.security.Provider p = new sun.security.pkcs11.SunPKCS11();");
-        scratch.add("java.security.Security.insertProviderAt(p, 1);");
-        scratch.add("}");
-        scratch.add("}");
-        createFile(new File(mainClass + ".java"), scratch);
-
-        compile(mainClass + ".java",
-                "--add-modules=jdk.crypto.cryptoki",
-                "--add-exports=jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED");
-
-        File testJar = new File("Foo.jar");
-        testJar.delete();
-        String jarArgs[] = {
-            (debug) ? "cvfe" : "cfe",
-            testJar.getAbsolutePath(),
-            mainClass,
-            mainClass + ".class"
-        };
-        createJar(jarArgs);
-
-        TestResult tr = doExec(javaCmd,
-                "-Djava.security.manager", "-jar", testJar.getName(), "foo.bak");
-        if (!tr.contains("java.security.AccessControlException:" +
-                " access denied (\"java.lang.RuntimePermission\"" +
-                " \"accessClassInPackage.sun.security.pkcs11\")")) {
-            System.out.println(tr);
-        }
-    }
-
     static void testJLDEnv() {
         final Map<String, String> envToSet = new HashMap<>();
         envToSet.put("_JAVA_LAUNCHER_DEBUG", "true");
@@ -123,7 +84,6 @@ public class MiscTests extends TestHelper {
 
     public static void main(String... args) throws IOException {
         testWithClassPathSetViaProperty();
-        test6856415();
         testJLDEnv();
         if (testExitValue != 0) {
             throw new Error(testExitValue + " tests failed");
