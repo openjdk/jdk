@@ -24,16 +24,16 @@
 package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.view.DiagramViewModel;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import org.openide.util.HelpCtx;
-import org.openide.util.actions.CallableSystemAction;
 
 
-public abstract class ExpandAdjacentAction extends CallableSystemAction {
+public abstract class ExpandAdjacentAction extends ModelAwareAction {
 
     protected void expandFigures(Function<Figure, List<Figure>> getAdjacentFigures) {
         EditorTopComponent editor = EditorTopComponent.getActive();
@@ -47,9 +47,12 @@ public abstract class ExpandAdjacentAction extends CallableSystemAction {
         }
     }
 
-    public abstract void performAction();
-
     public abstract String getName();
+
+    @Override
+    public boolean isEnabled(DiagramViewModel model) {
+        return model != null && !model.getSelectedNodes().isEmpty();
+    }
 
     @Override
     public HelpCtx getHelpCtx() {

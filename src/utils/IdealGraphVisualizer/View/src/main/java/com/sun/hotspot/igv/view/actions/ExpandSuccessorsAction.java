@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.view.actions;
 
 import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.view.DiagramViewModel;
 
 /**
  *
@@ -32,12 +33,17 @@ import com.sun.hotspot.igv.graph.Figure;
 public final class ExpandSuccessorsAction extends ExpandAdjacentAction {
 
     @Override
-    public void performAction() {
+    public void performAction(DiagramViewModel model) {
         expandFigures(Figure::getSuccessors);
     }
 
     @Override
     public String getName() {
         return "Expand Below";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Expand successors of current set of selected nodes";
     }
 }

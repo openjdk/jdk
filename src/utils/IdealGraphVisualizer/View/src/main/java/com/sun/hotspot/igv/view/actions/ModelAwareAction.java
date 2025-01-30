@@ -37,8 +37,6 @@ public abstract class ModelAwareAction extends ContextAction<DiagramViewModel> {
         putValue(Action.SHORT_DESCRIPTION, getDescription());
     }
 
-    protected abstract String iconResource();
-
     protected abstract String getDescription();
 
     public abstract String getName();
