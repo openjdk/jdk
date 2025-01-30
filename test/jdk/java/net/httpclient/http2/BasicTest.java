@@ -24,9 +24,14 @@
 /*
  * @test
  * @bug 8087112
- * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
+ * @library /test/jdk/java/net/httpclient/lib
+ *          /test/lib
+ * @build jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.httpclient.test.lib.http2.Http2TestExchange
+ *        jdk.httpclient.test.lib.http2.Http2EchoHandler
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors BasicTest
  */
 
@@ -44,17 +49,23 @@ import java.util.concurrent.*;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
+
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static jdk.httpclient.test.lib.common.TestUtil.assertFilesEqual;
+import static jdk.test.lib.Utils.createTempFile;
+import static jdk.test.lib.Utils.createTempFileOfSize;
 
 @Test
 public class BasicTest {
+
+    private static final String TEMP_FILE_PREFIX =
+            HttpClient.class.getPackageName() + '-' + BasicTest.class.getSimpleName() + '-';
+
     static int httpPort, httpsPort;
     static Http2TestServer httpServer, httpsServer;
     static HttpClient client = null;
@@ -184,10 +195,6 @@ public class BasicTest {
         }
     }
 
-    static Path tempFile() {
-        return TestUtil.tempFile();
-    }
-
     static final String SIMPLE_STRING = "Hello world Goodbye world";
 
     static final int LOOPS = 13;
@@ -198,7 +205,7 @@ public class BasicTest {
         System.err.printf("streamTest %b to %s\n" , secure, uri);
 
         HttpClient client = getClient();
-        Path src = TestUtil.tempFileOfSize(FILESIZE * 4);
+        Path src = createTempFileOfSize(TEMP_FILE_PREFIX, null, FILESIZE * 4);
         HttpRequest req = HttpRequest.newBuilder(uri)
                                      .POST(BodyPublishers.ofFile(src))
                                      .build();
@@ -265,12 +272,12 @@ public class BasicTest {
         // Do loops asynchronously
 
         CompletableFuture[] responses = new CompletableFuture[LOOPS];
-        final Path source = TestUtil.tempFileOfSize(FILESIZE);
+        final Path source = createTempFileOfSize(TEMP_FILE_PREFIX, null, FILESIZE);
         HttpRequest request = HttpRequest.newBuilder(uri)
                                          .POST(BodyPublishers.ofFile(source))
                                          .build();
         for (int i = 0; i < LOOPS; i++) {
-            responses[i] = client.sendAsync(request, BodyHandlers.ofFile(tempFile()))
+            responses[i] = client.sendAsync(request, BodyHandlers.ofFile(createTempFile(TEMP_FILE_PREFIX, null)))
                 //.thenApply(resp -> compareFiles(resp.body(), source));
                 .thenApply(resp -> {
                     System.out.printf("Resp status %d body size %d\n",

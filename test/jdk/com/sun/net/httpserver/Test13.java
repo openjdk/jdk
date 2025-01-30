@@ -27,7 +27,9 @@
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
  * @build jdk.httpclient.test.lib.common.TestUtil
+ *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.net.URIBuilder
  * @run main/othervm Test13
  * @run main/othervm -Djava.net.preferIPv6Addresses=true Test13
  * @summary Light weight HTTP server
@@ -43,11 +45,11 @@ import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
 
-import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 
 import static jdk.httpclient.test.lib.common.TestUtil.assertFilesEqual;
+import static jdk.test.lib.Utils.createTempFileOfSize;
 
 /* basic http/s connectivity test
  * Tests:
@@ -55,6 +57,9 @@ import static jdk.httpclient.test.lib.common.TestUtil.assertFilesEqual;
  */
 
 public class Test13 extends Test {
+
+    private static final String TEMP_FILE_PREFIX =
+            HttpServer.class.getPackageName() + '-' + Test13.class.getSimpleName() + '-';
 
     static SSLContext ctx;
 
@@ -66,7 +71,7 @@ public class Test13 extends Test {
         HttpServer s1 = null;
         HttpsServer s2 = null;
         ExecutorService executor=null;
-        Path filePath = TestUtil.tempFileOfSize(23);
+        Path filePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 23);
         Logger l = Logger.getLogger ("com.sun.net.httpserver");
         Handler ha = new ConsoleHandler();
         ha.setLevel(Level.ALL);

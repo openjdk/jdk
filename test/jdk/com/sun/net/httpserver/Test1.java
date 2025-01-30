@@ -27,7 +27,9 @@
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
  * @build jdk.httpclient.test.lib.common.TestUtil
+ *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.net.URIBuilder
  * @run main/othervm Test1
  * @run main/othervm -Djava.net.preferIPv6Addresses=true Test1
  * @run main/othervm -Dsun.net.httpserver.maxReqTime=10 Test1
@@ -44,11 +46,11 @@ import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
 
-import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 
 import static jdk.httpclient.test.lib.common.TestUtil.assertFilesEqual;
+import static jdk.test.lib.Utils.createTempFileOfSize;
 
 /* basic http/s connectivity test
  * Tests:
@@ -64,14 +66,17 @@ import static jdk.httpclient.test.lib.common.TestUtil.assertFilesEqual;
 
 public class Test1 extends Test {
 
+    private static final String TEMP_FILE_PREFIX =
+            HttpServer.class.getPackageName() + '-' + Test1.class.getSimpleName() + '-';
+
     static SSLContext ctx;
 
     public static void main (String[] args) throws Exception {
         HttpServer s1 = null;
         HttpsServer s2 = null;
         ExecutorService executor=null;
-        Path smallFilePath = TestUtil.tempFileOfSize(23);
-        Path largeFilePath = TestUtil.tempFileOfSize(2730088);
+        Path smallFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 23);
+        Path largeFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 2730088);
         try {
             System.out.print ("Test1: ");
             InetAddress loopback = InetAddress.getLoopbackAddress();

@@ -24,60 +24,11 @@
 package jdk.httpclient.test.lib.common;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-
-import static java.lang.System.lineSeparator;
 
 public final class TestUtil {
 
-    // Using `user.dir` to take avoid disk space issues
-    public static final Path TEMP_FILE_ROOT = Path.of(System.getProperty("user.dir"));
-
-    private static final CharSequence TEMP_FILE_CONTENT = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
     private TestUtil() {}
-
-    public static Path tempFileOfSize(long size) {
-        if (size < 0) {
-            throw new IllegalArgumentException("file size cannot be negative: " + size);
-        }
-        Path path = tempFile();
-        try (var stream = Files.newBufferedWriter(path, StandardCharsets.US_ASCII);
-             var writer = new PrintWriter(stream)) {
-
-            // Write indexed lines
-            long remainingSize = size;
-            long lineSize = /* index: */ 8 + /* separator: */ 1 + TEMP_FILE_CONTENT.length() + lineSeparator().length();
-            int index = 0;
-            while (remainingSize >= lineSize) {
-                writer.format("%08x", index++);
-                writer.append('|');
-                writer.append(TEMP_FILE_CONTENT);
-                writer.append(lineSeparator());
-                remainingSize -= lineSize;
-            }
-
-            // Fill in the remaining bytes that doesn't fit into an indexed line
-            if (remainingSize > 0) {
-                CharSequence subSequence = TEMP_FILE_CONTENT.subSequence(0, Math.toIntExact(remainingSize));
-                writer.append(subSequence);
-            }
-
-        } catch (IOException exception) {
-            String message = String.format("failed populating temporary file of size %d: `%s`", size, path);
-            throw new UncheckedIOException(message, exception);
-        }
-        return path;
-    }
-
-    public static Path tempFile() {
-        try {
-            return Files.createTempFile(TEMP_FILE_ROOT, "TestUtil_tmp_", "_HTTPClient");
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
 
     public static void assertFilesEqual(Path f1, Path f2) {
         try (InputStream s1 = new BufferedInputStream(Files.newInputStream(f1));

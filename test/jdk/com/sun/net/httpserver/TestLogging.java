@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug 6422914
- * @library /test/jdk/java/net/httpclient/lib
- *          /test/lib
- * @build jdk.httpclient.test.lib.common.TestUtil
+ * @library /test/lib
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.net.URIBuilder
  * @summary change httpserver exception printouts
  * @run main TestLogging
  * @run main/othervm -Djava.net.preferIPv6Addresses=true TestLogging
@@ -41,15 +41,19 @@ import java.util.logging.*;
 import java.io.*;
 import java.net.*;
 
-import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.test.lib.net.URIBuilder;
 
+import static jdk.test.lib.Utils.createTempFileOfSize;
+
 public class TestLogging extends Test {
+
+    private static final String TEMP_FILE_PREFIX =
+            HttpServer.class.getPackageName() + '-' + TestLogging.class.getSimpleName() + '-';
 
     public static void main (String[] args) throws Exception {
         HttpServer s1 = null;
         ExecutorService executor=null;
-        Path filePath = TestUtil.tempFileOfSize(0xBEEF);
+        Path filePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 0xBEEF);
         try {
             System.out.print ("Test9: ");
             String root = filePath.getParent().toString();

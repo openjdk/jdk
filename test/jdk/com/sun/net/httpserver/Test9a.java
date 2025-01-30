@@ -27,6 +27,7 @@
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
  * @build jdk.httpclient.test.lib.common.TestUtil
+ *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.net.URIBuilder
  * @run main/othervm Test9a
@@ -43,16 +44,19 @@ import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
 
-import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 
 import static jdk.httpclient.test.lib.common.TestUtil.assertFilesEqual;
+import static jdk.test.lib.Utils.createTempFileOfSize;
 
 /* Same as Test1 but requests run in parallel.
  */
 
 public class Test9a extends Test {
+
+    private static final String TEMP_FILE_PREFIX =
+            HttpServer.class.getPackageName() + '-' + Test9a.class.getSimpleName() + '-';
 
     static SSLContext serverCtx;
     static volatile SSLContext clientCtx = null;
@@ -61,8 +65,8 @@ public class Test9a extends Test {
     public static void main (String[] args) throws Exception {
         HttpsServer server = null;
         ExecutorService executor=null;
-        Path smallFilePath = TestUtil.tempFileOfSize(23);
-        Path largeFilePath = TestUtil.tempFileOfSize(2730088);
+        Path smallFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 23);
+        Path largeFilePath = createTempFileOfSize(TEMP_FILE_PREFIX, null, 2730088);
         try {
             System.out.print ("Test9a: ");
             InetAddress loopback = InetAddress.getLoopbackAddress();
