@@ -2080,10 +2080,7 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
     if (rhs_t == nullptr || !rhs_t->is_con()) {
       return -1;
     }
-    long shift = rhs_t->get_con();
-    assert(shift >= 0 && shift < type2aelembytes(bt) * BitsPerByte,
-           "shift amount should have been masked already: %ld", shift);
-    return shift;
+    return rhs_t->get_con() & (type2aelembytes(bt) * BitsPerByte - 1);
   }
 
   return -1;
