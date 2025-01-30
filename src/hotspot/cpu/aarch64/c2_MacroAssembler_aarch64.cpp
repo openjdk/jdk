@@ -2078,7 +2078,7 @@ void C2_MacroAssembler::reduce_mul_integral_gt128b(Register dst, BasicType bt, R
                                                    FloatRegister vsrc,
                                                    unsigned vector_length_in_bytes,
                                                    FloatRegister vtmp1, FloatRegister vtmp2,
-                                                   PRegister pgtmp1, PRegister pgtmp2) {
+                                                   PRegister pgtmp) {
   assert(vector_length_in_bytes > FloatRegister::neon_vl, "ASIMD impl should be used instead");
   assert(vector_length_in_bytes <= FloatRegister::sve_vl_max, "unsupported vector length");
   assert(is_power_of_2(vector_length_in_bytes), "unsupported vector length");
@@ -2086,13 +2086,11 @@ void C2_MacroAssembler::reduce_mul_integral_gt128b(Register dst, BasicType bt, R
   BLOCK_COMMENT("reduce_mul_integral_gt128b {");
   while (vector_length_in_bytes > FloatRegister::neon_vl) {
     unsigned vector_length = vector_length_in_bytes / type2aelembytes(bt);
-    sve_gen_mask_imm(pgtmp1, bt, vector_length);
-    sve_gen_mask_imm(pgtmp2, bt, vector_length / 2);
-    sve_not(pgtmp1, pgtmp1, pgtmp2);
-    // Shuffle the upper half elements of the register to the right. The actual data type does not
-    // matter: a contiguous set of elements is moved and its size is a multiple of D RegVariant.
-    sve_compact(vtmp1, D, vsrc, pgtmp1);
-    sve_mul(vsrc, elemType_to_regVariant(bt), pgtmp2, vtmp1);
+    sve_gen_mask_imm(pgtmp, bt, vector_length / 2);
+    // Shuffle the upper half elements of the register to the right.
+    sve_movprfx(vtmp1, vsrc);
+    sve_ext(vtmp1, vsrc, vector_length_in_bytes / 2);
+    sve_mul(vsrc, elemType_to_regVariant(bt), pgtmp, vtmp1);
     vector_length_in_bytes = vector_length_in_bytes / 2;
   }
 
@@ -2138,8 +2136,7 @@ void C2_MacroAssembler::reduce_mul_fp_le128b(FloatRegister dst, BasicType bt, Fl
 // instructions are used.
 void C2_MacroAssembler::reduce_mul_fp_gt128b(FloatRegister dst, BasicType bt, FloatRegister fsrc,
                                              FloatRegister vsrc, unsigned vector_length_in_bytes,
-                                             FloatRegister vtmp, PRegister pgtmp1,
-                                             PRegister pgtmp2) {
+                                             FloatRegister vtmp, PRegister pgtmp) {
   assert(vector_length_in_bytes > FloatRegister::neon_vl, "ASIMD impl should be used instead");
   assert(vector_length_in_bytes <= FloatRegister::sve_vl_max, "unsupported vector length");
   assert(is_power_of_2(vector_length_in_bytes), "unsupported vector length");
@@ -2147,13 +2144,11 @@ void C2_MacroAssembler::reduce_mul_fp_gt128b(FloatRegister dst, BasicType bt, Fl
   BLOCK_COMMENT("reduce_mul_fp_gt128b {");
   while (vector_length_in_bytes > FloatRegister::neon_vl) {
     unsigned vector_length = vector_length_in_bytes / type2aelembytes(bt);
-    sve_gen_mask_imm(pgtmp1, bt, vector_length);
-    sve_gen_mask_imm(pgtmp2, bt, vector_length / 2);
-    sve_not(pgtmp1, pgtmp1, pgtmp2);
-    // Shuffle the upper half elements of the register to the right. The actual data type does not
-    // matter: a contiguous set of elements is moved and its size is a multiple of D RegVariant.
-    sve_compact(vtmp, D, vsrc, pgtmp1);
-    sve_fmul(vsrc, elemType_to_regVariant(bt), pgtmp2, vtmp);
+    // Shuffle the upper half elements of the register to the right.
+    sve_gen_mask_imm(pgtmp, bt, vector_length / 2);
+    sve_movprfx(vtmp, vsrc);
+    sve_ext(vtmp, vsrc, vector_length_in_bytes / 2);
+    sve_fmul(vsrc, elemType_to_regVariant(bt), pgtmp, vtmp);
     vector_length_in_bytes = vector_length_in_bytes / 2;
   }
 
