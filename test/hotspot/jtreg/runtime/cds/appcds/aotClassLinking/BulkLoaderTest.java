@@ -236,10 +236,10 @@ class BulkLoaderTestApp {
     static void checkOldClasses() throws Exception {
         // Resolve BadOldClassA from the constant pool without linking it.
         // implNote: BadOldClassA will be excluded, so any resolved refereces
-        // to BadOldClassA should be removed from the constant pool.
+        // to BadOldClassA should be removed from the archived constant pool.
         Class c = BadOldClassA.class;
         Object n = new Object();
-        if (c.isInstance(n)) {
+        if (c.isInstance(n)) { // Note that type-testing BadOldClassA here neither links nor initailizes it.
             throw new RuntimeException("Must not succeed");
         }
 
