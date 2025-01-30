@@ -202,12 +202,18 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static OopHandle& vthread_cxq_head() { return _vthread_cxq_head; }
   static ParkEvent* vthread_unparker_ParkEvent() { return _vthread_unparker_ParkEvent; }
 
+  #define OM_PERFDATA_OP(f, op_str)                 \
+    do {                                            \
+      if (ObjectMonitor::_sync_ ## f != nullptr) {  \
+        ObjectMonitor::_sync_ ## f->op_str;         \
+      }                                             \
+    } while (0)
+
   // Only perform a PerfData operation if the PerfData object has been
   // allocated and if the PerfDataManager has not freed the PerfData
   // objects which can happen at normal VM shutdown. Additionally, we
   // have to enter the critical section to resolve the deletion races.
-  //
-  #define OM_PERFDATA_OP(f, op_str)                 \
+  #define OM_PERFDATA_SAFE_OP(f, op_str)            \
     do {                                            \
       if (ObjectMonitor::_sync_ ## f != nullptr) {  \
         GlobalCounter::CriticalSection cs(Thread::current()); \
