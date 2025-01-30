@@ -34,7 +34,9 @@
 #include <assert.h>
 #include <jni.h>
 #include <jvm.h>
+#ifndef _BSDONLY_SOURCE
 #include <alloca.h>
+#endif
 #include <signal.h>
 #include <string.h>
 #include <sys/mman.h>

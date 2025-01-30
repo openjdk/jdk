@@ -22,7 +22,7 @@
  *
  */
 
-#ifndef _WINDOWS
+#if !defined(_WINDOWS) && !defined(_BSDONLY_SOURCE)
 #include "alloca.h"
 #endif
 #include "asm/macroAssembler.hpp"

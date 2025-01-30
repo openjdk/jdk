@@ -31,7 +31,9 @@
 // globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
 
+#ifndef _BSDONLY_SOURCE
 #include <alloca.h>
+#endif
 #include <ctype.h>
 #include <inttypes.h>
 #include <string.h>
