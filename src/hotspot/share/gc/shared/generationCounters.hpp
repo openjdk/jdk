@@ -50,8 +50,8 @@ class GenerationCounters: public CHeapObj<mtGC> {
 
  public:
   GenerationCounters(const char* name, int ordinal, int spaces,
-                   size_t min_capacity, size_t max_capacity,
-                   size_t curr_capacity);
+                     size_t min_capacity, size_t max_capacity,
+                     size_t curr_capacity);
 
   ~GenerationCounters();
 

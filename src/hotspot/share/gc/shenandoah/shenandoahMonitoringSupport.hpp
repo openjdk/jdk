@@ -29,7 +29,6 @@
 #include "memory/allocation.hpp"
 #include "runtime/task.hpp"
 
-class GenerationCounters;
 class HSpaceCounters;
 class ShenandoahHeap;
 class CollectorCounters;

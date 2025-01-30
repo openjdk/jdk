@@ -28,7 +28,6 @@
 #include "memory/allocation.hpp"
 
 class EpsilonGenerationCounters;
-class GenerationCounters;
 class EpsilonSpaceCounters;
 class EpsilonHeap;
 
