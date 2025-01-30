@@ -252,7 +252,7 @@ class BulkLoaderTestApp {
             c.newInstance();
             throw new RuntimeException("Must not succeed");
         } catch (VerifyError e) {
-            System.out.println("Caught VerifyError for BadOldClassA: " + e);
+            System.out.println("Caught VerifyError for BadOldClassB: " + e);
         }
     }
 }
