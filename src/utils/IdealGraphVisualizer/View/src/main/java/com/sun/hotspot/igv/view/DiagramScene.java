@@ -435,11 +435,28 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     return;
                 }
 
-                content.set(newSet, null);
+                // Remove duplicate live range segments (i.e. segments that
+                // represent the same live range in different basic blocks).
+                Set<Object> newUnique = new HashSet<>();
+                Set<Integer> visitedLiveRanges = new HashSet<>();
+                for (Object o : newSet) {
+                    if (o instanceof Properties.Provider &&
+                        o instanceof LiveRangeSegment) {
+                        int liveRangeId = ((LiveRangeSegment) o).getLiveRange().getId();
+                        if (!visitedLiveRanges.contains(liveRangeId)) {
+                            newUnique.add(o);
+                            visitedLiveRanges.add(liveRangeId);
+                        }
+                    } else {
+                        newUnique.add(o);
+                    }
+                }
+
+                content.set(newUnique, null);
 
                 Set<Integer> nodeSelection = new HashSet<>();
                 Set<Integer> liveRangeSelection = new HashSet<>();
-                for (Object o : newSet) {
+                for (Object o : newUnique) {
                     if (o instanceof Properties.Provider) {
                         final Properties.Provider provider = (Properties.Provider) o;
                         AbstractNode node = new AbstractNode(Children.LEAF) {

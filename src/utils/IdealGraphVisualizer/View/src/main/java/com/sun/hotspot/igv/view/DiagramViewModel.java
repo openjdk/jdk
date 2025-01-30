@@ -117,6 +117,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void setShowFreeInteractive(boolean enable) {
         showFreeInteractive = enable;
         if (enable) {
+            selectedLiveRanges.clear();
             diagramChangedEvent.fire();
         }
     }
@@ -128,6 +129,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void setShowStableSea(boolean enable) {
         showStableSea = enable;
         if (enable) {
+            selectedLiveRanges.clear();
             diagramChangedEvent.fire();
         }
     }
@@ -139,6 +141,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void setShowSea(boolean enable) {
         showSea = enable;
         if (enable) {
+            selectedLiveRanges.clear();
             diagramChangedEvent.fire();
         }
     }
@@ -150,6 +153,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void setShowBlocks(boolean enable) {
         showBlocks = enable;
         if (enable) {
+            selectedLiveRanges.clear();
             diagramChangedEvent.fire();
         }
     }
@@ -190,6 +194,9 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public void setShowLiveRanges(boolean b) {
         showLiveRanges = b;
+        if (!showLiveRanges) {
+            selectedLiveRanges.clear();
+        }
         diagramChangedEvent.fire();
     }
 
