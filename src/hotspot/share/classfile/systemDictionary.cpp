@@ -447,7 +447,7 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
 
     // Must check ClassCircularity before resolving next_name (superclass or interface).
     PlaceholderEntry* probe = PlaceholderTable::get_entry(class_name, loader_data);
-    if (probe && probe->check_seen_thread(THREAD, PlaceholderTable::DETECT_CIRCULARITY)) {
+    if (probe != nullptr && probe->check_seen_thread(THREAD, PlaceholderTable::DETECT_CIRCULARITY)) {
         log_circularity_error(class_name, probe);
         throw_circularity_error = true;
     }
