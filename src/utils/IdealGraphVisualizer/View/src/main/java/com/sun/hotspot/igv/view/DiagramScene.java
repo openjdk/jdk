@@ -1659,7 +1659,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 blockWidget.setVisible(visibleAfter);
 
                 // Update node width for live range layout.
-                int nodeWidth = ClusterNode.EMPTY_BLOCK_LIVE_RANGE_OFFSET;
+                int nodeWidth = ClusterNode.EMPTY_BLOCK_LIVE_RANGE_X_OFFSET;
                 for (InputNode n : block.getInputBlock().getNodes()) {
                     if (!getModel().getDiagram().hasFigure(n)) {
                         // n might not be visible (e.g. filtered out).

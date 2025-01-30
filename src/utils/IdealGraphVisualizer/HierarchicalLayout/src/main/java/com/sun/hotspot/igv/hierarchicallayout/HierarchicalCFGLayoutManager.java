@@ -81,10 +81,11 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
 
         // If live segments are available, compute their position.
         if (vertices.isEmpty()) {
-            int x = ClusterNode.EMPTY_BLOCK_LIVE_RANGE_OFFSET;
+            int x = ClusterNode.EMPTY_BLOCK_LIVE_RANGE_X_OFFSET;
+            final int y = ClusterNode.EMPTY_BLOCK_LIVE_RANGE_Y_OFFSET;
             for (Segment s : clusterNode.getSubSegments()) {
-                s.setStartPoint(new Point(x, 0));
-                s.setEndPoint(new Point(x, 0));
+                s.setStartPoint(new Point(x, y));
+                s.setEndPoint(new Point(x, y));
                 if (s.isLastOfLiveRange()) {
                     x += s.getCluster().getLiveRangeSeparation();
                 }

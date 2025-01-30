@@ -52,7 +52,8 @@ public class ClusterNode implements Vertex {
     private final int headerVerticalSpace;
     private final Dimension emptySize;
 
-    public static final int EMPTY_BLOCK_LIVE_RANGE_OFFSET = 20;
+    public static final int EMPTY_BLOCK_LIVE_RANGE_X_OFFSET = 20;
+    public static final int EMPTY_BLOCK_LIVE_RANGE_Y_OFFSET = 6;
 
     public ClusterNode(Cluster cluster, String name, int headerVerticalSpace, Dimension emptySize) {
         this.subNodes = new HashSet<>();
@@ -165,7 +166,7 @@ public class ClusterNode implements Vertex {
             maxX += cluster.getLiveRangeSeparation();
         }
         if (subNodes.isEmpty()) {
-            maxX += ClusterNode.EMPTY_BLOCK_LIVE_RANGE_OFFSET;
+            maxX += ClusterNode.EMPTY_BLOCK_LIVE_RANGE_X_OFFSET;
         }
 
         size = new Dimension(maxX - minX, maxY - minY + headerVerticalSpace);
@@ -175,7 +176,6 @@ public class ClusterNode implements Vertex {
             n.setPosition(new Point(n.getPosition().x - minX,
                                     n.getPosition().y - minY + headerVerticalSpace));
         }
-        // FIXME: nodeOffset does not exist anymore, do we need to normalize segment coordinates?
 
         for (Link l : subEdges) {
             List<Point> points = new ArrayList<>(l.getControlPoints());
