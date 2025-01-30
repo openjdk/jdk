@@ -81,6 +81,12 @@ class constantTag {
   bool is_method_type_in_error() const {
     return _tag == JVM_CONSTANT_MethodTypeInError;
   }
+  bool is_method_handle_or_error() const {
+    return is_method_handle() || is_method_handle_in_error();
+  }
+  bool is_method_type_or_error() const {
+    return is_method_type() || is_method_type_in_error();
+  }
 
   bool is_dynamic_constant_in_error() const {
     return _tag == JVM_CONSTANT_DynamicInError;
@@ -98,6 +104,7 @@ class constantTag {
 
   bool is_klass_reference() const   { return is_klass_index() || is_unresolved_klass(); }
   bool is_klass_or_reference() const{ return is_klass() || is_klass_reference(); }
+  bool is_string_or_index() const   { return is_string() || is_string_index(); }
   bool is_field_or_method() const   { return is_field() || is_method() || is_interface_method(); }
   bool is_symbol() const            { return is_utf8(); }
 
@@ -111,6 +118,7 @@ class constantTag {
             _tag == JVM_CONSTANT_DynamicInError ||
             _tag == JVM_CONSTANT_InvokeDynamic);
   }
+  bool has_name_and_type() const    { return is_field_or_method() || has_bootstrap(); }
 
   bool is_loadable_constant() const {
     return ((_tag >= JVM_CONSTANT_Integer && _tag <= JVM_CONSTANT_String) ||

@@ -112,7 +112,7 @@ class SymbolicReference {
   int klass_index() const       { assert(has_klass(), ""); return _third_index; }
   int bsme_index() const        { assert(has_bsme(), "");  return _third_index; }
 
-  // utility methods for mapping index es to metadata items
+  // utility methods for mapping indexes to metadata items
   inline Symbol* name(ConstantPool* cp) const;
   inline Symbol* signature(ConstantPool* cp) const;
   inline Symbol* klass_name(ConstantPool* cp) const;
@@ -145,13 +145,17 @@ class SymbolicReference {
       // optional parts are filled in later by pseudo-constructors:
       _third_index(0), _ref_kind(0), _ref_index(0)
   {
-    assert(tag.value() == JVM_CONSTANT_NameAndType, "");
   }
 
   // pseudo-constructor to add a third component (field/method/bsme)
   SymbolicReference as_triple_ref(constantTag tag, int third_index) {
-    assert(this->tag().is_name_and_type(), "");
-    assert(!has_klass() && !has_bsme(), "");
+    // Note about asserts here:  The caller must be confident that
+    // the given tag is indeed appropriate to a field/method/bsm
+    // reference.  More indirect items should not be rechecked.
+    // Indeed, the BSM attribute index or the klass index or
+    // the name-and-type index might possibly be erroneous if
+    // this method is being used early in classfile parsing.
+    assert(!has_klass() && !has_bsme(), "not already a triple");
     assert(tag.is_field_or_method() || tag.has_bootstrap(), "");
     _tag = tag.value();
     _third_index = third_index;
@@ -206,10 +210,16 @@ class BSMAttributeEntry {
   int argument_index(int n)    const { assert((uint)n < _argument_count, "oob");
                                        return argument_indexes()[n];
                                      }
+
+  // utility methods for mapping BSM index to the metadata item
+  inline SymbolicReference bootstrap_method(ConstantPool* cp) const;
+  // and a duplicate for clients holding a CP handle
+  inline SymbolicReference bootstrap_method(const constantPoolHandle& cp) const;
+
  private:
   // how to locate one of these inside a packed u2 data array:
   static BSMAttributeEntry* entry_at_offset(Array<u2>* entries, int offset) {
-    assert(0 <= offset && offset+2 < entries->length(), "oob-1");
+    assert(0 <= offset && offset+2 <= entries->length(), "oob-1");
     // do not bother to copy u2 data; just overlay the struct within the array
     BSMAttributeEntry* bsme = (BSMAttributeEntry*) entries->adr_at(offset);
     assert(offset+2+bsme->argument_count() <= entries->length(), "oob-2");
@@ -308,6 +318,11 @@ class ConstantPool : public Metadata {
     return (jdouble*) &base()[cp_index];
   }
   static void check_and_add_dumped_interned_string(oop obj);
+
+  #define assert_valid_tag(cp_index, expr)                             \
+    assert(tag_at(cp_index).expr,                                      \
+           "Corrupted constant pool"                                   \
+           " [%d]: tag=%d", cp_index, tag_at(cp_index).value())
 
   ConstantPool(Array<u1>* tags);
   ConstantPool();
@@ -529,8 +544,7 @@ class ConstantPool : public Metadata {
   }
 
   CPKlassSlot klass_slot_at(int cp_index) const {
-    assert(tag_at(cp_index).is_unresolved_klass() || tag_at(cp_index).is_klass(),
-           "Corrupted constant pool");
+    assert_valid_tag(cp_index, is_klass_or_reference());
     int value = *int_at_addr(cp_index);
     int name_index = extract_high_short_from_int(value);
     int resolved_klass_index = extract_low_short_from_int(value);
@@ -557,30 +571,30 @@ class ConstantPool : public Metadata {
   }
 
   jint int_at(int cp_index) const {
-    assert(tag_at(cp_index).is_int(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, is_int());
     return *int_at_addr(cp_index);
   }
 
   jlong long_at(int cp_index) {
-    assert(tag_at(cp_index).is_long(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, is_long());
     // return *long_at_addr(cp_index);
     u8 tmp = Bytes::get_native_u8((address)&base()[cp_index]);
     return *((jlong*)&tmp);
   }
 
   jfloat float_at(int cp_index) {
-    assert(tag_at(cp_index).is_float(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, is_float());
     return *float_at_addr(cp_index);
   }
 
   jdouble double_at(int cp_index) {
-    assert(tag_at(cp_index).is_double(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, is_double());
     u8 tmp = Bytes::get_native_u8((address)&base()[cp_index]);
     return *((jdouble*)&tmp);
   }
 
   Symbol* symbol_at(int cp_index) const {
-    assert(tag_at(cp_index).is_utf8(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, is_utf8());
     return *symbol_at_addr(cp_index);
   }
 
@@ -599,7 +613,7 @@ class ConstantPool : public Metadata {
   // only called when we are sure a string entry is already resolved (via an
   // earlier string_at call.
   oop resolved_string_at(int cp_index) {
-    assert(tag_at(cp_index).is_string(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, is_string());
     // Must do an acquire here in case another thread resolved the klass
     // behind our back, lest we later load stale values thru the oop.
     // we might want a volatile_obj_at in ObjArrayKlass.
@@ -608,7 +622,7 @@ class ConstantPool : public Metadata {
   }
 
   Symbol* unresolved_string_at(int cp_index) {
-    assert(tag_at(cp_index).is_string(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, is_string());
     return *symbol_at_addr(cp_index);
   }
 
@@ -619,14 +633,21 @@ class ConstantPool : public Metadata {
   char* string_at_noresolve(int cp_index);
 
   // Unpacks a name&type pair.  Caller may add more data to the struct.
-  SymbolicReference name_and_type_pair_at(int cp_index) {
-    assert(tag_at(cp_index).is_name_and_type(), "Corrupted constant pool");
-    jint bits = *int_at_addr(cp_index);
+  SymbolicReference name_and_type_pair_at(int cp_index,
+                                          bool allow_malformed = false) {
+    if (allow_malformed && !tag_at(cp_index).is_name_and_type()) {
+      // This path is used only in CP validation phases of the classfile parser.
+      // We could make a separate function for it, but common code seems better.
+      constantTag invalid;
+      return SymbolicReference(invalid, cp_index, 0, 0);
+    }
+    assert_valid_tag(cp_index, is_name_and_type());
+    jint bits           = *int_at_addr(cp_index);
     int name_index      = extract_low_short_from_int(bits);
     int signature_index = extract_high_short_from_int(bits);
     int nt_index        = cp_index;
-    auto tag = constantTag(JVM_CONSTANT_NameAndType);
-    return SymbolicReference(tag, nt_index, name_index, signature_index);
+    auto nt_tag         = constantTag(JVM_CONSTANT_NameAndType);
+    return SymbolicReference(nt_tag, nt_index, name_index, signature_index);
   }
 
   int method_handle_ref_kind_at(int cp_index) {
@@ -636,8 +657,7 @@ class ConstantPool : public Metadata {
     return method_handle_ref_at(cp_index).ref_index();//@@KILL
   }
   SymbolicReference method_handle_ref_at(int cp_index) {
-    assert(tag_at(cp_index).is_method_handle() ||
-           tag_at(cp_index).is_method_handle_in_error(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, is_method_handle_or_error());
     jint bits  = *int_at_addr(cp_index);
     int kind   = extract_low_short_from_int(bits);  // mask out unwanted ref_index bits
     int member = extract_high_short_from_int(bits);  // shift out unwanted ref_kind bits
@@ -652,8 +672,7 @@ class ConstantPool : public Metadata {
   // CONSTANT_MethodType is very simple.  It has only a signature, not
   // even a name&type.  But for better uniformity we will wrap it up.
   SymbolicReference method_type_ref_at(int cp_index) {
-    assert(tag_at(cp_index).is_method_type() ||
-           tag_at(cp_index).is_method_type_in_error(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, is_method_type_or_error());
     int signature_index = *int_at_addr(cp_index);
     auto tag = constantTag(JVM_CONSTANT_MethodType);
     return SymbolicReference(tag, signature_index);
@@ -860,24 +879,29 @@ private:
   // future by other Java code. These take constant pool indices rather than
   // constant pool cache indices as do the peer methods above.
   SymbolicReference uncached_field_or_method_ref_at(int cp_index) {
-    assert(tag_at(cp_index).is_field_or_method(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, is_field_or_method());
     return uncached_triple_ref_at(cp_index);
   }
   SymbolicReference uncached_bootstrap_specifier_ref_at(int cp_index) {
-    assert(tag_at(cp_index).has_bootstrap(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, has_bootstrap());
     return uncached_triple_ref_at(cp_index);
   }
   // A "triple" reference is a 3-tuple of (x, name, type), where x
   // is the index of a klass or a bootstrap attribute entry.
   // Since the CP node structure is identical, we treat "triples"
   // using common code.
-  SymbolicReference uncached_triple_ref_at(int cp_index) {
+  // The allow_malformed option is only used by the classfile
+  // parser's early validation logic.  It suppresses certain
+  // asserts that are normally done.
+  SymbolicReference uncached_triple_ref_at(int cp_index,
+                                           bool allow_malformed = false) {
     auto tag = tag_at(cp_index);
-    assert(tag.is_field_or_method() || tag.has_bootstrap(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, has_name_and_type());
     jint ref_bits = *int_at_addr(cp_index);
     int ki =  extract_low_short_from_int(ref_bits);
     int nti = extract_high_short_from_int(ref_bits);
-    return name_and_type_pair_at(nti).as_triple_ref(tag, ki);
+    auto ntp = name_and_type_pair_at(nti, allow_malformed);
+    return ntp.as_triple_ref(tag, ki);
   }
   Symbol* uncached_klass_ref_at_noresolve(int cp_index) {
     return uncached_field_or_method_ref_at(cp_index).klass_name(this);//@@KILL
@@ -909,12 +933,12 @@ private:
 
   // Used while constructing constant pool (only by ClassFileParser)
   jint klass_index_at(int cp_index) {
-    assert(tag_at(cp_index).is_klass_index(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, is_klass_index());
     return *int_at_addr(cp_index);
   }
 
   jint string_index_at(int cp_index) {
-    assert(tag_at(cp_index).is_string_index(), "Corrupted constant pool");
+    assert_valid_tag(cp_index, is_string_index());
     return *int_at_addr(cp_index);
   }
 
@@ -1029,6 +1053,8 @@ private:
   inline int resolved_indy_entries_length() const;
   inline oop resolved_reference_from_indy(int index) const;
   inline oop resolved_reference_from_method(int index) const;
+
+  #undef assert_valid_tag
 };
 
 // These inlines are closely coupled to the CP, and deserve to be here.
@@ -1063,6 +1089,13 @@ inline Klass* SymbolicReference::klass(const constantPoolHandle& cp, TRAPS) cons
 }
 inline BSMAttributeEntry* SymbolicReference::bsme(const constantPoolHandle& cp) const {
   return bsme(cp());
+}
+
+inline SymbolicReference BSMAttributeEntry::bootstrap_method(ConstantPool* cp) const {
+  return cp->method_handle_ref_at(bootstrap_method_index());
+}
+inline SymbolicReference BSMAttributeEntry::bootstrap_method(const constantPoolHandle& cp) const {
+  return bootstrap_method(cp());
 }
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

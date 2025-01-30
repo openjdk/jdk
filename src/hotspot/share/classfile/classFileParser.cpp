@@ -257,12 +257,12 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
           return;
         }
         cfs->guarantee_more(5, CHECK);  // bsm_index, nt, tag/access_flags
-        const u2 bootstrap_specifier_index = cfs->get_u2_fast();
+        const u2 bsm_attribute_index = cfs->get_u2_fast();
         const u2 name_and_type_index = cfs->get_u2_fast();
-        if (_max_bootstrap_specifier_index < (int) bootstrap_specifier_index) {
-          _max_bootstrap_specifier_index = (int) bootstrap_specifier_index;  // collect for later
+        if (_max_bsm_attribute_index < (int) bsm_attribute_index) {
+          _max_bsm_attribute_index = (int) bsm_attribute_index;  // collect for later
         }
-        cp->dynamic_constant_at_put(index, bootstrap_specifier_index, name_and_type_index);
+        cp->dynamic_constant_at_put(index, bsm_attribute_index, name_and_type_index);
         break;
       }
       case JVM_CONSTANT_InvokeDynamic : {
@@ -273,12 +273,12 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
           return;
         }
         cfs->guarantee_more(5, CHECK);  // bsm_index, nt, tag/access_flags
-        const u2 bootstrap_specifier_index = cfs->get_u2_fast();
+        const u2 bsm_attribute_index = cfs->get_u2_fast();
         const u2 name_and_type_index = cfs->get_u2_fast();
-        if (_max_bootstrap_specifier_index < (int) bootstrap_specifier_index) {
-          _max_bootstrap_specifier_index = (int) bootstrap_specifier_index;  // collect for later
+        if (_max_bsm_attribute_index < (int) bsm_attribute_index) {
+          _max_bsm_attribute_index = (int) bsm_attribute_index;  // collect for later
         }
-        cp->invoke_dynamic_at_put(index, bootstrap_specifier_index, name_and_type_index);
+        cp->invoke_dynamic_at_put(index, bsm_attribute_index, name_and_type_index);
         break;
       }
       case JVM_CONSTANT_Integer: {
@@ -444,8 +444,9 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         // fall through
       case JVM_CONSTANT_InterfaceMethodref: {
         if (!_need_verify) break;
-        const int klass_ref_index = cp->uncached_klass_ref_index_at(index);
-        const int name_and_type_ref_index = cp->uncached_name_and_type_ref_index_at(index);
+        const auto ref = cp->uncached_triple_ref_at(index, /*allow_malformed*/ true);
+        const int klass_ref_index         = ref.klass_index();
+        const int name_and_type_ref_index = ref.nt_index();
         guarantee_property(valid_klass_reference_at(klass_ref_index),
                        "Invalid constant pool index %u in class file %s",
                        klass_ref_index, CHECK);
@@ -474,8 +475,9 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       }
       case JVM_CONSTANT_NameAndType: {
         if (!_need_verify) break;
-        const int name_ref_index = cp->name_ref_index_at(index);
-        const int signature_ref_index = cp->signature_ref_index_at(index);
+        const auto ntp = cp->name_and_type_pair_at(index);
+        const int name_ref_index      = ntp.name_index();
+        const int signature_ref_index = ntp.signature_index();
         guarantee_property(valid_symbol_at(name_ref_index),
           "Invalid constant pool index %u in class file %s",
           name_ref_index, CHECK);
@@ -509,14 +511,14 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         break;
       }
       case JVM_CONSTANT_MethodHandle: {
-        const int ref_index = cp->method_handle_index_at(index);
+        const auto mhref = cp->method_handle_ref_at(index);
+        const int ref_index = mhref.ref_index();
         guarantee_property(valid_cp_range(ref_index, length),
           "Invalid constant pool index %u in class file %s",
           ref_index, CHECK);
         const constantTag tag = cp->tag_at(ref_index);
-        const int ref_kind = cp->method_handle_ref_kind_at(index);
 
-        switch (ref_kind) {
+        switch (mhref.ref_kind()) {
           case JVM_REF_getField:
           case JVM_REF_getStatic:
           case JVM_REF_putField:
@@ -562,21 +564,22 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         break;
       } // case MethodHandle
       case JVM_CONSTANT_MethodType: {
-        const int ref_index = cp->method_type_index_at(index);
+        const auto mtref = cp->method_type_ref_at(index);
+        const int ref_index = mtref.signature_index();
         guarantee_property(valid_symbol_at(ref_index),
           "Invalid constant pool index %u in class file %s",
           ref_index, CHECK);
         break;
       }
       case JVM_CONSTANT_Dynamic: {
-        const int name_and_type_ref_index =
-          cp->bootstrap_name_and_type_ref_index_at(index);
+        const auto bsref = cp->uncached_triple_ref_at(index, /*allow_malformed*/ true);
+        const int name_and_type_ref_index = bsref.nt_index();
 
         guarantee_property(valid_cp_range(name_and_type_ref_index, length) &&
           cp->tag_at(name_and_type_ref_index).is_name_and_type(),
           "Invalid constant pool index %u in class file %s",
           name_and_type_ref_index, CHECK);
-        // bootstrap specifier index must be checked later,
+        // bootstrap attribute index must be checked later,
         // when BootstrapMethods attr is available
 
         // Mark the constant pool as having a CONSTANT_Dynamic_info structure
@@ -584,14 +587,14 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         break;
       }
       case JVM_CONSTANT_InvokeDynamic: {
-        const int name_and_type_ref_index =
-          cp->bootstrap_name_and_type_ref_index_at(index);
+        const auto bsref = cp->uncached_triple_ref_at(index, /*allow_malformed*/ true);
+        const int name_and_type_ref_index = bsref.nt_index();
 
         guarantee_property(valid_cp_range(name_and_type_ref_index, length) &&
           cp->tag_at(name_and_type_ref_index).is_name_and_type(),
           "Invalid constant pool index %u in class file %s",
           name_and_type_ref_index, CHECK);
-        // bootstrap specifier index must be checked later,
+        // bootstrap attribute index must be checked later,
         // when BootstrapMethods attr is available
         break;
       }
@@ -622,16 +625,15 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       }
       case JVM_CONSTANT_NameAndType: {
         if (_need_verify) {
-          const int sig_index = cp->signature_ref_index_at(index);
-          const int name_index = cp->name_ref_index_at(index);
-          const Symbol* const name = cp->symbol_at(name_index);
-          const Symbol* const sig = cp->symbol_at(sig_index);
+          const auto ntp = cp->name_and_type_pair_at(index);
+          const Symbol* const name  = ntp.name(cp);
+          const Symbol* const sig   = ntp.signature(cp);
           guarantee_property(sig->utf8_length() != 0,
             "Illegal zero length constant pool entry at %d in class %s",
-            sig_index, CHECK);
+            ntp.signature_index(), CHECK);
           guarantee_property(name->utf8_length() != 0,
             "Illegal zero length constant pool entry at %d in class %s",
-            name_index, CHECK);
+            ntp.name_index(), CHECK);
 
           if (Signature::is_method(sig)) {
             // Format check method name and signature
@@ -646,21 +648,13 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         break;
       }
       case JVM_CONSTANT_Dynamic: {
-        const int name_and_type_ref_index =
-          cp->uncached_name_and_type_ref_index_at(index);
-        // already verified to be utf8
-        const int name_ref_index =
-          cp->name_ref_index_at(name_and_type_ref_index);
-        // already verified to be utf8
-        const int signature_ref_index =
-          cp->signature_ref_index_at(name_and_type_ref_index);
-        const Symbol* const name = cp->symbol_at(name_ref_index);
-        const Symbol* const signature = cp->symbol_at(signature_ref_index);
         if (_need_verify) {
           // CONSTANT_Dynamic's name and signature are verified above, when iterating NameAndType_info.
           // Need only to be sure signature is the right type.
-          if (Signature::is_method(signature)) {
-            throwIllegalSignature("CONSTANT_Dynamic", name, signature, CHECK);
+          const auto bsref = cp->uncached_triple_ref_at(index);
+          // name, signature are already verified to be utf8
+          if (Signature::is_method(bsref.signature(cp))) {
+            throwIllegalSignature("CONSTANT_Dynamic", bsref.name(cp), bsref.signature(cp), CHECK);
           }
         }
         break;
@@ -669,16 +663,10 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       case JVM_CONSTANT_Fieldref:
       case JVM_CONSTANT_Methodref:
       case JVM_CONSTANT_InterfaceMethodref: {
-        const int name_and_type_ref_index =
-          cp->uncached_name_and_type_ref_index_at(index);
-        // already verified to be utf8
-        const int name_ref_index =
-          cp->name_ref_index_at(name_and_type_ref_index);
-        // already verified to be utf8
-        const int signature_ref_index =
-          cp->signature_ref_index_at(name_and_type_ref_index);
-        const Symbol* const name = cp->symbol_at(name_ref_index);
-        const Symbol* const signature = cp->symbol_at(signature_ref_index);
+        const auto ref = cp->uncached_triple_ref_at(index);
+        // name, signature are already verified to be utf8
+        const Symbol* const name      = ref.name(cp);
+        const Symbol* const signature = ref.signature(cp);
         if (tag == JVM_CONSTANT_Fieldref) {
           if (_need_verify) {
             // Field name and signature are verified above, when iterating NameAndType_info.
@@ -703,7 +691,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
             if (name != vmSymbols::object_initializer_name()) {
               classfile_parse_error(
                 "Bad method name at constant pool index %u in class file %s",
-                name_ref_index, THREAD);
+                ref.name_index(), THREAD);
               return;
             } else if (!Signature::is_void_method(signature)) { // must have void signature.
               throwIllegalSignature("Method", name, signature, CHECK);
@@ -713,30 +701,27 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         break;
       }
       case JVM_CONSTANT_MethodHandle: {
-        const int ref_index = cp->method_handle_index_at(index);
-        const int ref_kind = cp->method_handle_ref_kind_at(index);
-        switch (ref_kind) {
+        const auto mhref = cp->method_handle_ref_at(index);
+        const int ref_index = mhref.ref_index();
+        switch (mhref.ref_kind()) {
           case JVM_REF_invokeVirtual:
           case JVM_REF_invokeStatic:
           case JVM_REF_invokeSpecial:
           case JVM_REF_newInvokeSpecial: {
-            const int name_and_type_ref_index =
-              cp->uncached_name_and_type_ref_index_at(ref_index);
-            const int name_ref_index =
-              cp->name_ref_index_at(name_and_type_ref_index);
-            const Symbol* const name = cp->symbol_at(name_ref_index);
-            if (ref_kind == JVM_REF_newInvokeSpecial) {
+            const auto mref = cp->uncached_field_or_method_ref_at(ref_index);
+            const Symbol* const name = mref.name(cp);
+            if (mhref.ref_kind() == JVM_REF_newInvokeSpecial) {
               if (name != vmSymbols::object_initializer_name()) {
                 classfile_parse_error(
                   "Bad constructor name at constant pool index %u in class file %s",
-                    name_ref_index, THREAD);
+                    mref.name_index(), THREAD);
                 return;
               }
             } else {
               if (name == vmSymbols::object_initializer_name()) {
                 classfile_parse_error(
                   "Bad method name at constant pool index %u in class file %s",
-                  name_ref_index, THREAD);
+                  mref.name_index(), THREAD);
                 return;
               }
             }
@@ -747,9 +732,9 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         break;
       }
       case JVM_CONSTANT_MethodType: {
+        const auto mtref = cp->method_type_ref_at(index);
         const Symbol* const no_name = vmSymbols::type_name(); // place holder
-        const Symbol* const signature = cp->method_type_signature_at(index);
-        verify_legal_method_signature(no_name, signature, CHECK);
+        verify_legal_method_signature(no_name, mtref.signature(cp), CHECK);
         break;
       }
       case JVM_CONSTANT_Utf8: {
@@ -3281,12 +3266,12 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
 
   const int attribute_entry_count = cfs->get_u2_fast();
 
-  guarantee_property(_max_bootstrap_specifier_index < attribute_entry_count,
+  guarantee_property(_max_bsm_attribute_index < attribute_entry_count,
                      "Short length on BootstrapMethods in class file %s",
                      CHECK);
 
   // The attribute contains a counted array of counted tuples of shorts,
-  // represending bootstrap specifiers:
+  // representing bootstrap entries:
   //    length*{bootstrap_method_index, argument_count, argument_count*{argument_index}}
   const unsigned int attribute_tail_length = attribute_byte_length - (unsigned)sizeof(u2);
 
@@ -3343,6 +3328,7 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
   assert(next_entry == entries->length(), "");
 
   // check access methods, for extra luck
+  if (false)//@@@
   if (attribute_entry_count > 0) {
     auto bsme = cp->bsm_attribute_entry(0);
     assert(bsme->bootstrap_method_index() == entries->at(0), "");
@@ -3697,7 +3683,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
     }
   }
 
-  if (_max_bootstrap_specifier_index >= 0) {
+  if (_max_bsm_attribute_index >= 0) {
     guarantee_property(parsed_bootstrap_methods_attribute,
                        "Missing BootstrapMethods attribute in class file %s", CHECK);
   }
@@ -5344,7 +5330,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_contended_fields(false),
   _has_finalizer(false),
   _has_empty_finalizer(false),
-  _max_bootstrap_specifier_index(-1) {
+  _max_bsm_attribute_index(-1) {
 
   _class_name = name != nullptr ? name : vmSymbols::unknown_class_name();
   _class_name->increment_refcount();

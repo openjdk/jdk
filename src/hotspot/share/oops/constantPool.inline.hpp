@@ -34,7 +34,8 @@
 #include "runtime/atomic.hpp"
 
 inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Compiler
-  guarantee(tag_at(which).is_klass(), "Corrupted constant pool");
+  guarantee(tag_at(which).is_klass(), "Corrupted constant pool"
+            DEBUG_ONLY(" [%d]" COMMA which));
   // Must do an acquire here in case another thread resolved the klass
   // behind our back, lest we later load stale values thru the oop.
   CPKlassSlot kslot = klass_slot_at(which);

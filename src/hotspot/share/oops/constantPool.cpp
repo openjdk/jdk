@@ -1592,6 +1592,8 @@ void ConstantPool::resize_bsm_data(int delta_len, int delta_size, TRAPS) {
 
   // Copy the old array data.  We do not need to change any offsets.
   if (have_old) {
+    guarantee(min_offs_len > 0 && min_data_len > 0,
+              "must have something to copy %d/%d", min_offs_len, min_data_len);
     Copy::conjoint_memory_atomic(old_offs->adr_at(0),
                                  new_offs->adr_at(0),
                                  min_offs_len * sizeof(u4));
@@ -1636,9 +1638,20 @@ void ConstantPool::shrink_bsm_data(int new_len, TRAPS) {
   }
   assert(new_len < old_len, "shrunken bsm_data array must be smaller");
 
-  int new_data_len = bsm_attribute_offsets()->at(new_len);  //offset
-  int old_data_len = bsm_attribute_entries()->length();     //length
   int delta_len    = new_len      - old_len;
+
+  int old_data_len = bsm_attribute_entries()->length();     //length
+  int new_data_len = 0;
+  if (new_len > 0) {
+    // This is tricky: we cannot trust any offset or data at new_len or beyond.
+    // So, work forward from the last valid BSM entry.
+    int last_bsme_offset = bsm_attribute_offsets()->at(new_len - 1);
+    int last_bsme_header = sizeof(BSMAttributeEntry) / sizeof(u2);
+    assert(last_bsme_header == 2, "bsm+argc");
+    new_data_len = (last_bsme_offset + last_bsme_header +
+                    bsm_attribute_entry(new_len - 1)->argument_count());
+  }
+
   int delta_size   = new_data_len - old_data_len;
 
   resize_bsm_data(delta_len, delta_size, CHECK);
@@ -2525,7 +2538,8 @@ void ConstantPool::print_entry_on(const int cp_index, outputStream* st) {
       }
       break;
     default:
-      ShouldNotReachHere();
+      // print something, because this is for debugging
+      st->print("? (tag=%d)", tag_at(cp_index).value());
       break;
   }
   st->cr();

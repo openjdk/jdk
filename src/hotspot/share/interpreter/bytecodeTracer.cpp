@@ -307,10 +307,11 @@ void BytecodePrinter::print_invokedynamic(int indy_index, int cp_index, outputSt
 
 // cp_index: must be the cp_index of a JVM_CONSTANT_{Dynamic, DynamicInError, InvokeDynamic}
 void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
-  assert(constants()->tag_at(cp_index).has_bootstrap(), "must be");
-  int bsm = constants()->bootstrap_methods_attribute_index(cp_index);
+  const auto indy = constants()->uncached_bootstrap_specifier_ref_at(cp_index);
+  const auto bsme = indy.bsme(constants());
+  const auto bsmh = bsme->bootstrap_method(constants());
   const char* ref_kind = "";
-  switch (constants()->method_handle_ref_kind_at(bsm)) {
+  switch (bsmh.ref_kind()) {
   case JVM_REF_getField         : ref_kind = "REF_getField"; break;
   case JVM_REF_getStatic        : ref_kind = "REF_getStatic"; break;
   case JVM_REF_putField         : ref_kind = "REF_putField"; break;
@@ -323,8 +324,7 @@ void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
   default                       : ShouldNotReachHere();
   }
   st->print("  BSM: %s", ref_kind);
-  print_field_or_method(constants()->method_handle_index_at(bsm), st);
-  auto bsme = constants()->bootstrap_methods_attribute_entry(cp_index);
+  print_field_or_method(bsmh.ref_index(), st);
   int argc = bsme->argument_count();;
   st->print("  arguments[%d] = {", argc);
   if (argc > 0) {
