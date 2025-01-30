@@ -4920,7 +4920,11 @@ instruct loadConF(fRegF dst, immF con) %{
   %}
 
   ins_encode %{
-    __ flw(as_FloatRegister($dst$$reg), $constantaddress($con));
+      if (MacroAssembler::can_fp_imm_load($con$$constant)) {
+        __ fli_s(as_FloatRegister($dst$$reg), $con$$constant);
+      } else {
+        __ flw(as_FloatRegister($dst$$reg), $constantaddress($con));
+      }
   %}
 
   ins_pipe(fp_load_constant_s);
@@ -4950,7 +4954,11 @@ instruct loadConD(fRegD dst, immD con) %{
   %}
 
   ins_encode %{
-    __ fld(as_FloatRegister($dst$$reg), $constantaddress($con));
+      if (MacroAssembler::can_dp_imm_load($con$$constant)) {
+        __ fli_d(as_FloatRegister($dst$$reg), $con$$constant);
+      } else {
+        __ fld(as_FloatRegister($dst$$reg), $constantaddress($con));
+      }
   %}
 
   ins_pipe(fp_load_constant_d);
