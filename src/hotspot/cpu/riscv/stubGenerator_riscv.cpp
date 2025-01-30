@@ -3034,9 +3034,9 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_lookup_secondary_supers_table_stubs[slot] = __ pc();
       Label L_success;
       __ enter();
-      __ lookup_secondary_supers_table(r_sub_klass, r_super_klass, result,
-                                       r_array_base, r_array_length, r_array_index,
-                                       r_bitmap, slot, /*stub_is_near*/true);
+      __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass, result,
+                                             r_array_base, r_array_length, r_array_index,
+                                             r_bitmap, slot, /*stub_is_near*/true);
       __ leave();
       __ ret();
     }
