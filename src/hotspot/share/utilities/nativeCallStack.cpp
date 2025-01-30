@@ -115,5 +115,4 @@ void NativeCallStack::print_on(outputStream* out) const {
     print_frame(out, _stack[i]);
     out->cr();
   }
-  out->cr();
 }
