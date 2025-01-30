@@ -35,11 +35,12 @@ import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.misc.CDS;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
+
+import static jdk.internal.misc.Unsafe.getUnsafe;
 
 import static java.lang.Character.digit;
 import static java.lang.String.COMPACT_STRINGS;
@@ -461,14 +462,13 @@ public final class Long extends Number
      * @return  a string representation of the argument in base&nbsp;10.
      */
     public static String toString(long i) {
-        Unsafe UNSAFE = Unsafe.getUnsafe();
         int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
-            byte[] buf = (byte[]) UNSAFE.allocateUninitializedArray(byte.class, size);
+            byte[] buf = (byte[]) getUnsafe().allocateUninitializedArray(byte.class, size);
             DecimalDigits.getCharsLatin1(i, size, buf);
             return new String(buf, LATIN1);
         } else {
-            byte[] buf = (byte[]) UNSAFE.allocateUninitializedArray(byte.class, size << 1);
+            byte[] buf = (byte[]) getUnsafe().allocateUninitializedArray(byte.class, size << 1);
             DecimalDigits.getCharsUTF16(i, size, buf);
             return new String(buf, UTF16);
         }

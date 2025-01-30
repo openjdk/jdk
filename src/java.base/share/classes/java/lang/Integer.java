@@ -27,7 +27,6 @@
 package java.lang;
 
 import jdk.internal.misc.CDS;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
@@ -40,6 +39,8 @@ import java.lang.constant.ConstantDesc;
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 import java.util.Optional;
+
+import static jdk.internal.misc.Unsafe.getUnsafe;
 
 import static java.lang.Character.digit;
 import static java.lang.String.COMPACT_STRINGS;
@@ -431,14 +432,13 @@ public final class Integer extends Number
      */
     @IntrinsicCandidate
     public static String toString(int i) {
-        Unsafe UNSAFE = Unsafe.getUnsafe();
         int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
-            byte[] buf = (byte[]) UNSAFE.allocateUninitializedArray(byte.class, size);
+            byte[] buf = (byte[]) getUnsafe().allocateUninitializedArray(byte.class, size);
             DecimalDigits.getCharsLatin1(i, size, buf);
             return new String(buf, LATIN1);
         } else {
-            byte[] buf = (byte[]) UNSAFE.allocateUninitializedArray(byte.class, size << 1);
+            byte[] buf = (byte[]) getUnsafe().allocateUninitializedArray(byte.class, size << 1);
             DecimalDigits.getCharsUTF16(i, size, buf);
             return new String(buf, UTF16);
         }
