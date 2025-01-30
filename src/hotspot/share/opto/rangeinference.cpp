@@ -223,7 +223,7 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
 
     // first_violation is the position of the violation counting from the
     // highest bit down (0-based), since i == 2, first_difference == 1
-    juint first_violation = count_leading_zeros<U>(one_violation); // 1
+    juint first_violation = count_leading_zeros(one_violation); // 1
     //           1 0 0 0 0 0 0 0
     U highest_bit = (std::numeric_limits<U>::max() >> 1) + U(1);
     //           0 1 0 0 0 0 0 0
@@ -257,7 +257,7 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // obtain our final result, which is:
     //           1 0 1 0 0 0 1 1
 
-    juint first_violation = count_leading_zeros<U>(zero_violation);
+    juint first_violation = count_leading_zeros(zero_violation);
     // This mask out all bits from the first violation
     //           1 1 1 1 1 0 0 0
     U find_mask = ~(std::numeric_limits<U>::max() >> first_violation);
@@ -341,7 +341,7 @@ adjust_bits_from_bounds(const KnownBits<U>& bits, const RangeInt<U>& bounds) {
   // Find the first mismatch, all bits before it is the same in bounds._lo and
   // bounds._hi
   U match_mask = mismatch == U(0) ? std::numeric_limits<U>::max()
-                                  : ~(std::numeric_limits<U>::max() >> count_leading_zeros<U>(mismatch));
+                                  : ~(std::numeric_limits<U>::max() >> count_leading_zeros(mismatch));
   // match_mask & bounds._lo is the common prefix, extract zeros and ones from
   // it
   U new_zeros = bits._zeros | (match_mask & ~bounds._lo);

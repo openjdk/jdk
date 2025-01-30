@@ -50,7 +50,7 @@ public:
   constexpr intn_t& operator=(const intn_t&) = default;
   explicit constexpr intn_t(uintn_t<n> v);
 
-  constexpr operator int() const {
+  explicit constexpr operator int() const {
     int shift = 32 - n;
     return int(_v << shift) >> shift;
   }
@@ -60,15 +60,14 @@ public:
   static_assert(min < max, "");
 
   constexpr bool operator==(intn_t o) const { return (_v & _mask) == (o._v & _mask); }
-  constexpr bool operator<(intn_t o) const {
-    // Shift the highest bit of intn_t to the highest bit of the int representation
-    int shift = 32 - n;
-    return int(_v << shift) < int(o._v << shift);
-  }
-  constexpr bool operator>(intn_t o) const { return o < *this; }
-  constexpr bool operator<=(intn_t o) const { return !(o < *this); }
-  constexpr bool operator>=(intn_t o) const { return !(*this < o); }
+  constexpr bool operator<(intn_t o) const { return int(*this) < int(o); }
+  constexpr bool operator>(intn_t o) const { return int(*this) > int(o); }
+  constexpr bool operator<=(intn_t o) const { return int(*this) <= int(o); }
+  constexpr bool operator>=(intn_t o) const { return int(*this) >= int(o); }
 };
+
+template <unsigned int n>
+unsigned count_leading_zeros(uintn_t<n>);
 
 template <unsigned int n>
 class uintn_t {
@@ -81,8 +80,7 @@ private:
 
   friend class intn_t<n>;
 
-  template <class T>
-  friend unsigned count_leading_zeros(T);
+  friend unsigned count_leading_zeros<n>(uintn_t<n>);
 
 public:
   explicit constexpr uintn_t(int v) : _v(v) {}
@@ -90,18 +88,18 @@ public:
   constexpr uintn_t(const uintn_t&) = default;
   constexpr uintn_t& operator=(const uintn_t&) = default;
   explicit constexpr uintn_t(intn_t<n> v) : _v(v._v) {}
-  constexpr operator uint() const { return _v & _mask; }
+  explicit constexpr operator uint() const { return _v & _mask; }
 
   constexpr static int min = 0;
   constexpr static int max = _mask;
   static_assert(min < max, "");
 
   constexpr bool operator==(uintn_t o) const { return (_v & _mask) == (o._v & _mask); }
-  constexpr bool operator!=(uintn_t o) const { return !(*this == o); }
+  constexpr bool operator!=(uintn_t o) const { return (_v & _mask) != (o._v & _mask); }
   constexpr bool operator<(uintn_t o) const { return (_v & _mask) < (o._v & _mask); }
-  constexpr bool operator>(uintn_t o) const { return o < *this; }
-  constexpr bool operator<=(uintn_t o) const { return !(o < *this); }
-  constexpr bool operator>=(uintn_t o) const { return !(*this < o); }
+  constexpr bool operator>(uintn_t o) const { return (_v & _mask) > (o._v & _mask); }
+  constexpr bool operator<=(uintn_t o) const { return (_v & _mask) <= (o._v & _mask); }
+  constexpr bool operator>=(uintn_t o) const { return (_v & _mask) >= (o._v & _mask); }
   constexpr uintn_t operator+(uintn_t o) const { return uintn_t(_v + o._v); }
   constexpr uintn_t operator-(uintn_t o) const { return uintn_t(_v - o._v); }
   constexpr uintn_t operator&(uintn_t o) const { return uintn_t(_v & o._v); }
@@ -135,24 +133,9 @@ public:
 
 }
 
-template <>
-inline unsigned count_leading_zeros<uintn_t<1>>(uintn_t<1> v) {
-  return count_leading_zeros<unsigned int>(v._v & uintn_t<1>::_mask) - (32 - 1);
-}
-
-template <>
-inline unsigned count_leading_zeros<uintn_t<2>>(uintn_t<2> v) {
-  return count_leading_zeros<unsigned int>(v._v & uintn_t<2>::_mask) - (32 - 2);
-}
-
-template <>
-inline unsigned count_leading_zeros<uintn_t<3>>(uintn_t<3> v) {
-  return count_leading_zeros<unsigned int>(v._v & uintn_t<3>::_mask) - (32 - 3);
-}
-
-template <>
-inline unsigned count_leading_zeros<uintn_t<4>>(uintn_t<4> v) {
-  return count_leading_zeros<unsigned int>(v._v & uintn_t<4>::_mask) - (32 - 4);
+template <unsigned int n>
+inline unsigned count_leading_zeros(uintn_t<n> v) {
+  return count_leading_zeros<unsigned int>(v._v & uintn_t<n>::_mask) - (32 - n);
 }
 
 #endif // SHARE_UTILITIES_INTN_T_HPP
