@@ -1918,7 +1918,7 @@ bool Matcher::match_rule_supported(int opcode) {
 
     case Op_ConvHF2F:
     case Op_ConvF2HF:
-      return UseZfh;
+      return UseZfh || UseZfhmin;
   }
 
   return true; // Per default match rules are supported.
@@ -2364,7 +2364,7 @@ encode %{
     Label miss;
     Label done;
     __ check_klass_subtype_slow_path(sub_reg, super_reg, temp_reg, result_reg,
-                                     nullptr, &miss);
+                                     nullptr, &miss, /*set_cond_codes*/ true);
     if ($primary) {
       __ mv(result_reg, zr);
     } else {
@@ -4920,7 +4920,11 @@ instruct loadConF(fRegF dst, immF con) %{
   %}
 
   ins_encode %{
-    __ flw(as_FloatRegister($dst$$reg), $constantaddress($con));
+      if (MacroAssembler::can_fp_imm_load($con$$constant)) {
+        __ fli_s(as_FloatRegister($dst$$reg), $con$$constant);
+      } else {
+        __ flw(as_FloatRegister($dst$$reg), $constantaddress($con));
+      }
   %}
 
   ins_pipe(fp_load_constant_s);
@@ -4950,7 +4954,11 @@ instruct loadConD(fRegD dst, immD con) %{
   %}
 
   ins_encode %{
-    __ fld(as_FloatRegister($dst$$reg), $constantaddress($con));
+      if (MacroAssembler::can_dp_imm_load($con$$constant)) {
+        __ fli_d(as_FloatRegister($dst$$reg), $con$$constant);
+      } else {
+        __ fld(as_FloatRegister($dst$$reg), $constantaddress($con));
+      }
   %}
 
   ins_pipe(fp_load_constant_d);
@@ -6482,9 +6490,9 @@ instruct addP_reg_imm(iRegPNoSp dst, iRegP src1, immLAdd src2) %{
 
   ins_encode %{
     // src2 is imm, so actually call the addi
-    __ add(as_Register($dst$$reg),
-           as_Register($src1$$reg),
-           $src2$$constant);
+    __ addi(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            $src2$$constant);
   %}
 
   ins_pipe(ialu_reg_imm);
@@ -6513,9 +6521,9 @@ instruct addL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
 
   ins_encode %{
     // src2 is imm, so actually call the addi
-    __ add(as_Register($dst$$reg),
-           as_Register($src1$$reg),
-           $src2$$constant);
+    __ addi(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            $src2$$constant);
   %}
 
   ins_pipe(ialu_reg_imm);
@@ -6546,9 +6554,9 @@ instruct subI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immISub src2) %{
 
   ins_encode %{
     // src2 is imm, so actually call the addiw
-    __ subw(as_Register($dst$$reg),
-            as_Register($src1$$reg),
-            $src2$$constant);
+    __ subiw(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             $src2$$constant);
   %}
 
   ins_pipe(ialu_reg_imm);
@@ -6577,9 +6585,9 @@ instruct subL_reg_imm(iRegLNoSp dst, iRegL src1, immLSub src2) %{
 
   ins_encode %{
     // src2 is imm, so actually call the addi
-    __ sub(as_Register($dst$$reg),
-           as_Register($src1$$reg),
-           $src2$$constant);
+    __ subi(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            $src2$$constant);
   %}
 
   ins_pipe(ialu_reg_imm);
@@ -7348,7 +7356,7 @@ instruct isInfiniteF_reg_reg(iRegINoSp dst, fRegF src)
   format %{ "isInfinite $dst, $src" %}
   ins_encode %{
     __ fclass_s(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::inf);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::FClassBits::inf);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7363,7 +7371,7 @@ instruct isInfiniteD_reg_reg(iRegINoSp dst, fRegD src)
   format %{ "isInfinite $dst, $src" %}
   ins_encode %{
     __ fclass_d(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::inf);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::FClassBits::inf);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7378,7 +7386,7 @@ instruct isFiniteF_reg_reg(iRegINoSp dst, fRegF src)
   format %{ "isFinite $dst, $src" %}
   ins_encode %{
     __ fclass_s(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::finite);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::FClassBits::finite);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7393,7 +7401,7 @@ instruct isFiniteD_reg_reg(iRegINoSp dst, fRegD src)
   format %{ "isFinite $dst, $src" %}
   ins_encode %{
     __ fclass_d(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::finite);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::FClassBits::finite);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -10019,15 +10027,43 @@ instruct CallLeafNoFPDirect(method meth)
 
 instruct partialSubtypeCheck(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 super, iRegP_R12 tmp, rFlagsReg cr)
 %{
+  predicate(!UseSecondarySupersTable);
   match(Set result (PartialSubtypeCheck sub super));
   effect(KILL tmp, KILL cr);
 
-  ins_cost(11 * DEFAULT_COST);
+  ins_cost(20 * DEFAULT_COST);
   format %{ "partialSubtypeCheck $result, $sub, $super\t#@partialSubtypeCheck" %}
 
   ins_encode(riscv_enc_partial_subtype_check(sub, super, tmp, result));
 
   opcode(0x1); // Force zero of result reg on hit
+
+  ins_pipe(pipe_class_memory);
+%}
+
+// Two versions of partialSubtypeCheck, both used when we need to
+// search for a super class in the secondary supers array. The first
+// is used when we don't know _a priori_ the class being searched
+// for. The second, far more common, is used when we do know: this is
+// used for instanceof, checkcast, and any case where C2 can determine
+// it by constant propagation.
+
+instruct partialSubtypeCheckVarSuper(iRegP_R14 sub, iRegP_R10 super, iRegP_R15 result,
+                                     iRegP_R11 tmpR11, iRegP_R12 tmpR12, iRegP_R13 tmpR13,
+                                     iRegP_R16 tmpR16, rFlagsReg cr)
+%{
+  predicate(UseSecondarySupersTable);
+  match(Set result (PartialSubtypeCheck sub super));
+  effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16, KILL cr);
+
+  ins_cost(10 * DEFAULT_COST);  // slightly larger than the next version
+  format %{ "partialSubtypeCheck $result, $sub, $super" %}
+
+  ins_encode %{
+    __ lookup_secondary_supers_table_var($sub$$Register, $super$$Register, $result$$Register,
+                                         $tmpR11$$Register, $tmpR12$$Register, $tmpR13$$Register,
+                                         $tmpR16$$Register, nullptr /*L_success*/);
+  %}
 
   ins_pipe(pipe_class_memory);
 %}
@@ -10039,16 +10075,16 @@ instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP 
   match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
   effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16, KILL cr);
 
-  ins_cost(7 * DEFAULT_COST); // needs to be less than competing nodes
+  ins_cost(5 * DEFAULT_COST); // needs to be less than competing nodes
   format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
 
   ins_encode %{
     bool success = false;
     u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
     if (InlineSecondarySupersTest) {
-      success = __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register, $result$$Register,
-                                                 $tmpR11$$Register, $tmpR12$$Register, $tmpR13$$Register,
-                                                 $tmpR16$$Register, super_klass_slot);
+      success = __ lookup_secondary_supers_table_const($sub$$Register, $super_reg$$Register, $result$$Register,
+                                                       $tmpR11$$Register, $tmpR12$$Register, $tmpR13$$Register,
+                                                       $tmpR16$$Register, super_klass_slot);
     } else {
       address call = __ reloc_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
       success = (call != nullptr);
@@ -10058,22 +10094,6 @@ instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP 
       return;
     }
   %}
-
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct partialSubtypeCheckVsZero(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 super, iRegP_R12 tmp,
-                                   immP0 zero, rFlagsReg cr)
-%{
-  match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
-  effect(KILL tmp, KILL result);
-
-  ins_cost(11 * DEFAULT_COST);
-  format %{ "partialSubtypeCheck $result, $sub, $super == 0\t#@partialSubtypeCheckVsZero" %}
-
-  ins_encode(riscv_enc_partial_subtype_check(sub, super, tmp, result));
-
-  opcode(0x0); // Don't zero result reg on hit
 
   ins_pipe(pipe_class_memory);
 %}
