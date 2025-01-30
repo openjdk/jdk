@@ -4597,9 +4597,9 @@ void generate_lookup_secondary_supers_table_stub() {
 
     for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
       StubRoutines::_lookup_secondary_supers_table_stubs[slot] = __ pc();
-      __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                       r_array_base, r_array_length, r_array_index,
-                                       r_bitmap, result, slot);
+      __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                             r_array_base, r_array_length, r_array_index,
+                                             r_bitmap, result, slot);
       __ blr();
     }
   }
