@@ -1261,6 +1261,8 @@
         declare_type(CompilerThread, JavaThread)                          \
         declare_type(StringDedupThread, JavaThread)                       \
         declare_type(AttachListenerThread, JavaThread)                    \
+        DEBUG_ONLY(COMPILER2_OR_JVMCI_PRESENT(                            \
+          declare_type(DeoptimizeObjectsALotThread, JavaThread)))         \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
                                                                           \

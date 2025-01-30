@@ -46,7 +46,6 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.httpclient.test.lib.common.ServerNameMatcher;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -70,8 +69,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class HttpClientSNITest {
     private static final String RESP_BODY_TEXT = "hello world";
 
-    private static SSLContext sslContext;
-
     private static final class Handler implements HttpTestHandler {
 
         @Override
@@ -83,12 +80,6 @@ public class HttpClientSNITest {
                 os.write(respBody);
             }
         }
-    }
-
-    @BeforeAll
-    static void beforeAll() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        assertNotNull(sslContext, "could not create a SSLContext");
     }
 
     /*
@@ -104,9 +95,11 @@ public class HttpClientSNITest {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void testRequestToIPLiteralHost(final boolean sniConfiguredOnClient) throws Exception {
+        final SSLContext sslContext = new SimpleSSLContext().get();
+        assertNotNull(sslContext, "could not create a SSLContext");
         final String expectedSNI = "non-dns-resolvable.foo.bar.localhost";
         final ServerNameMatcher matcher = new ServerNameMatcher(expectedSNI);
-        final HttpTestServer server = createServer(matcher);
+        final HttpTestServer server = createServer(matcher, sslContext);
         try {
             final HttpClient.Builder builder = HttpClient.newBuilder().sslContext(sslContext);
             if (sniConfiguredOnClient) {
@@ -156,10 +149,12 @@ public class HttpClientSNITest {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void testRequestResolvedHostName(final boolean sniConfiguredOnClient) throws Exception {
+        final SSLContext sslContext = new SimpleSSLContext().get();
+        assertNotNull(sslContext, "could not create a SSLContext");
         final String resolvedHostName = InetAddress.getLoopbackAddress().getHostName();
         final String expectedSNI = resolvedHostName;
         final ServerNameMatcher matcher = new ServerNameMatcher(expectedSNI);
-        final HttpTestServer server = createServer(matcher);
+        final HttpTestServer server = createServer(matcher, sslContext);
         try {
             final HttpClient.Builder builder = HttpClient.newBuilder().sslContext(sslContext);
             if (sniConfiguredOnClient) {
@@ -190,7 +185,8 @@ public class HttpClientSNITest {
     /*
      * Creates a HttpsServer configured to use the given SNIMatcher
      */
-    private static HttpTestServer createServer(final SNIMatcher matcher) throws Exception {
+    private static HttpTestServer createServer(final SNIMatcher matcher,
+                                               final SSLContext sslContext) throws Exception {
         final InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         final int backlog = 0;
         final HttpsServer httpsServer = HttpsServer.create(addr, backlog);

@@ -243,7 +243,6 @@ void TemplateInterpreterGenerator::generate_all() {
   set_entry_points_for_all_bytes();
 
   // installation of code in other places in the runtime
-  // (ExcutableCodeManager calls not needed to copy the entries)
   set_safepoints_for_all_bytes();
 
   { CodeletMark cm(_masm, "deoptimization entry points");

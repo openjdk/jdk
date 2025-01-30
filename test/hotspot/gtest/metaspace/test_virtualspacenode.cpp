@@ -375,7 +375,7 @@ public:
       const bool do_commit = IntRange(100).random_value() >= 50;
       if (do_commit) {
 
-        //LOG("c " SIZE_FORMAT "," SIZE_FORMAT, r.start(), r.end());
+        //LOG("c %zu,%zu", r.start(), r.end());
 
         bool rc = false;
         {
@@ -395,7 +395,7 @@ public:
 
       } else {
 
-        //LOG("u " SIZE_FORMAT "," SIZE_FORMAT, r.start(), r.end());
+        //LOG("u %zu,%zu", r.start(), r.end());
 
         {
           MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);

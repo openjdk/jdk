@@ -88,10 +88,10 @@ const char* WorkerDataArrayTest<size_t>::format_summary(
   size_t min, double avg, size_t max, size_t diff, size_t sum, size_t workers) {
 
   stringStream out;
-  out.print(" Min: " SIZE_FORMAT
-            ", Avg: %4.1lf, Max: " SIZE_FORMAT
-            ", Diff: " SIZE_FORMAT ", Sum: " SIZE_FORMAT
-            ", Workers: " SIZE_FORMAT "\n",
+  out.print(" Min: %zu"
+            ", Avg: %4.1lf, Max: %zu"
+            ", Diff: %zu, Sum: %zu"
+            ", Workers: %zu\n",
             min, avg, max, diff, sum, workers);
   return out.as_string();
 }
@@ -104,7 +104,7 @@ const char* WorkerDataArrayTest<double>::format_summary(
   out.print(" Min: %4.2lf"
             ", Avg: %4.2lf, Max: %4.2lf"
             ", Diff: %4.2lf, Sum: %4.2lf"
-            ", Workers: " SIZE_FORMAT "\n",
+            ", Workers: %zu\n",
             min, avg, max, diff, sum, workers);
   return out.as_string();
 }
