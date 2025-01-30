@@ -23,6 +23,7 @@
 
 package jdk.jpackage.internal.pipeline;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.Test;
@@ -43,10 +45,10 @@ final class ImmutableDAGTest {
         final var matrix1x2 = new BinaryMatrix(1, 2);
         final var nodes = ImmutableDAG.Nodes.<String>ofList(List.of(A, B));
 
-        assertThrows(IllegalArgumentException.class, () -> new ImmutableDAG(matrix1x2, nodes));
+        assertThrows(IllegalArgumentException.class, () -> new ImmutableDAG<>(matrix1x2, nodes));
 
         final var matrix3x3 = new BinaryMatrix(3, 3);
-        assertThrows(IllegalArgumentException.class, () -> new ImmutableDAG(matrix3x3, nodes));
+        assertThrows(IllegalArgumentException.class, () -> new ImmutableDAG<>(matrix3x3, nodes));
     }
 
     @Test
@@ -302,9 +304,90 @@ final class ImmutableDAGTest {
         assertEquals(graph.getAllTailsOf(P), List.of());
     }
 
+    @ParameterizedTest
+    @MethodSource
+    public void testTopologicalSort(List<DirectedEdge<Integer>> edges, int[] expectedNodes) {
+
+        final var nodes = edges.stream().map(edge -> {
+            return Stream.of(edge.tail(), edge.head());
+        }).flatMap(x -> x).sorted().distinct().toList();
+
+        System.out.println(String.format("%s", ImmutableDAG.create(edges, nodes).topologicalSort()));
+        assertArrayEquals(expectedNodes, ImmutableDAG.create(edges, nodes).topologicalSort().stream().mapToInt(x -> x).toArray());
+    }
+
+    private static List<Object[]> testTopologicalSort() {
+        return List.<Object[]>of(
+                new Object[] { List.of(
+                        edge(11, 15),
+                        edge(12, 16),
+                        edge(13, 17),
+                        edge(14, 15),
+                        edge(14, 16),
+                        edge(14, 17),
+                        edge(14, 18)), IntStream.rangeClosed(11, 18).toArray()
+                },
+
+                new Object[] { List.of(
+                        edge(5, 2),
+                        edge(5, 0),
+                        edge(4, 0),
+                        edge(2, 3),
+                        edge(3, 1)), new int[] {4, 5, 0, 2, 3, 1}
+                },
+
+                new Object[] { List.of(
+                        edge(0, 1),
+                        edge(0, 4),
+                        edge(0, 7),
+                        edge(0, 14),
+                        edge(1, 5),
+                        edge(2, 3),
+                        edge(2, 5),
+                        edge(2, 6),
+                        edge(3, 10),
+                        edge(4, 5),
+                        edge(4, 8),
+                        edge(5, 9),
+                        edge(6, 10),
+                        edge(7, 8),
+                        edge(7, 11),
+                        edge(10, 13),
+                        edge(11, 12),
+                        edge(13, 16),
+                        edge(14, 15)), IntStream.rangeClosed(0, 16).toArray()
+                },
+
+                new Object[] { List.of(
+                        edge(0, 2),
+                        edge(0, 4),
+                        edge(1, 4),
+                        edge(1, 5),
+                        edge(2, 5),
+                        edge(3, 2)), new int[] {0, 1, 3, 2, 4, 5}
+                },
+
+                new Object[] { List.of(
+                        edge(0, 1),
+                        edge(0, 2),
+                        edge(1, 3),
+                        edge(2, 3),
+                        edge(3, 4)), IntStream.rangeClosed(0, 4).toArray()
+                },
+
+                new Object[] { List.of(
+                        edge(1, 2),
+                        edge(1, 3),
+                        edge(2, 4),
+                        edge(3, 4),
+                        edge(4, 5)), IntStream.rangeClosed(1, 5).toArray()
+                }
+        );
+    }
+
     @Test
     public void testEmptyBuilder() {
-        assertThrows(UnsupportedOperationException.class, ImmutableDAG.<String>build()::create);
+        assertThrows(IllegalArgumentException.class, ImmutableDAG.<String>build()::create);
     }
 
     @Test
@@ -313,7 +396,7 @@ final class ImmutableDAGTest {
 
         graphBuilder.canAddEdgeToUnknownNode(false);
         assertThrows(UnsupportedOperationException.class, () -> graphBuilder.addEdge(edge(A, B)));
-        assertThrows(UnsupportedOperationException.class, graphBuilder::create);
+        assertThrows(IllegalArgumentException.class, graphBuilder::create);
 
         graphBuilder.canAddEdgeToUnknownNode(true);
         graphBuilder.addEdge(edge(A, B));
@@ -340,8 +423,8 @@ final class ImmutableDAGTest {
         return graphBuilder.create();
     }
 
-    private static DirectedEdge<String> edge(String from, String to) {
-        return DirectedEdge.create(from, to);
+    private static <T> DirectedEdge<T> edge(T tail, T head) {
+        return DirectedEdge.create(tail, head);
     }
 
     private final static String A = "A";

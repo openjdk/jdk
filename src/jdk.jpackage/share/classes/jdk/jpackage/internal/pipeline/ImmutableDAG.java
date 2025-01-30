@@ -27,6 +27,7 @@ package jdk.jpackage.internal.pipeline;
 import static java.util.stream.Collectors.toCollection;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -87,23 +88,7 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         }
 
         ImmutableDAG<U> create() {
-            if (nodes.isEmpty()) {
-                throw new UnsupportedOperationException("No edges");
-            }
-
-            final var nodesAdapter = Nodes.ofList(this.nodes);
-            final var edgeMatrix = new BinaryMatrix(nodes.size());
-            for (final var edge : edges) {
-                final int row = nodes.indexOf(edge.tail());
-                final int column = nodes.indexOf(edge.head());
-                edgeMatrix.set(row, column);
-            }
-
-            if (isCyclic(edgeMatrix, null)) {
-                throw new UnsupportedOperationException("Cyclic edges not allowed");
-            }
-
-            return new ImmutableDAG<>(edgeMatrix, nodesAdapter);
+            return ImmutableDAG.create(edges, nodes);
         }
 
         private boolean canAddEdgeToUnknownNode = true;
@@ -115,7 +100,6 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         int size();
         int indexOf(U node);
         U get(int index);
-
 
         static <V> Nodes<V> ofList(List<V> list) {
             return new Nodes<>() {
@@ -159,6 +143,25 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         if (edgeMatrix.getColumnCount() != nodes.size()) {
             throw new IllegalArgumentException("Matrix must have number of columns equal to the number of nodes");
         }
+    }
+
+    static <U> ImmutableDAG<U> create(Collection<DirectedEdge<U>> edges, List<U> nodes) {
+        return create(edges, Nodes.ofList(nodes));
+    }
+
+    static <U> ImmutableDAG<U> create(Collection<DirectedEdge<U>> edges, Nodes<U> nodes) {
+        final var edgeMatrix = new BinaryMatrix(nodes.size());
+        for (final var edge : edges) {
+            final int row = nodes.indexOf(edge.tail());
+            final int column = nodes.indexOf(edge.head());
+            edgeMatrix.set(row, column);
+        }
+
+        if (isCyclic(edgeMatrix, null)) {
+            throw new UnsupportedOperationException("Cyclic edges not allowed");
+        }
+
+        return new ImmutableDAG<>(edgeMatrix, nodes);
     }
 
     /**
@@ -323,12 +326,16 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
 
                         final var insertAtIndex = Math.abs((Collections.binarySearch(S, m) + 1));
                         if (insertAtIndex == 0) {
-                            S.set(0, m);
-                            i = -1;
+                            if (i == -1) {
+                                S.add(0, m);
+                            } else {
+                                S.set(0, m);
+                                i = -1;
+                            }
                         } else {
                             S.add(insertAtIndex, m);
                         }
-                    } else if (i > 0) {
+                    } else if (i >= 0) {
                         S.set(i, m);
                         i--;
                     } else {
