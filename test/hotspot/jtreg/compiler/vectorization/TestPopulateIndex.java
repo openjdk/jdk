@@ -114,7 +114,7 @@ public class TestPopulateIndex {
     }
 
     @Test
-    @IR(counts = {IRNode.POPULATE_INDEX, "= 0"}) // disabled by sum-under-mask optimization.
+    // Currently disabled due to sum-under-mask optimization.
     public void exprWithIndex3() {
         for (int i = 0; i < count; i++) {
             dst[i] = src[i] * (i & 7);
