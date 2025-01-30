@@ -104,7 +104,7 @@ final class DigitList implements Cloneable {
     public int count = 0;
     public char[] digits = new char[MAX_COUNT];
 
-    private char[] data;
+    private byte[] data;
     private RoundingMode roundingMode = RoundingMode.HALF_EVEN;
     private boolean isNegative = false;
 
@@ -302,10 +302,10 @@ final class DigitList implements Cloneable {
     final void set(boolean isNegative, double source, int maximumDigits, boolean fixedPoint) {
         assert !FloatingDecimal.isExceptional(source);
         boolean hasBeenRoundedUp = false, valueExactAsDecimal = false;
-        char[] chars;
+        byte[] chars;
         int len;
         if (source == 0) {
-            chars = new char[] {'0'};
+            chars = new byte[] {'0'};
             len = 1;
         } else {
             var fdConverter = new FloatingDecimal.BinaryToASCIIConverter(source);
@@ -327,7 +327,7 @@ final class DigitList implements Cloneable {
      * @param valueExactAsDecimal whether or not collected digits provide
      * an exact decimal representation of the value.
      */
-    private void set(boolean isNegative, char[] source, int len,
+    private void set(boolean isNegative, byte[] source, int len,
                      boolean roundedUp, boolean valueExactAsDecimal,
                      int maximumDigits, boolean fixedPoint) {
 
@@ -341,7 +341,7 @@ final class DigitList implements Cloneable {
         boolean nonZeroDigitSeen = false;
 
         for (int i = 0; i < len; ) {
-            char c = source[i++];
+            byte c = source[i++];
             if (c == '.') {
                 decimalAt = count;
             } else if (c == 'e' || c == 'E') {
@@ -354,7 +354,7 @@ final class DigitList implements Cloneable {
                         ++leadingZerosAfterDecimal;
                 }
                 if (nonZeroDigitSeen) {
-                    digits[count++] = c;
+                    digits[count++] = (char) c;
                 }
             }
         }
@@ -653,13 +653,14 @@ final class DigitList implements Cloneable {
      * @param fixedPoint If true, then maximumDigits is the maximum
      * fractional digits to be converted.  If false, total digits.
      */
+    @SuppressWarnings("deprecation")
     final void set(boolean isNegative, BigDecimal source, int maximumDigits, boolean fixedPoint) {
         String s = source.toString();
         extendDigits(s.length());
 
         int len = s.length();
-        char[] chars = getDataChars(len);
-        s.getChars(0, len, chars, 0);
+        byte[] chars = getDataChars(len);
+        s.getBytes(0, len, chars, 0);
 
         set(isNegative, chars, len,
             false, true,
@@ -756,8 +757,8 @@ final class DigitList implements Cloneable {
         return true;
     }
 
-    private static final int parseInt(char[] str, int offset, int strLen) {
-        char c;
+    private static final int parseInt(byte[] str, int offset, int strLen) {
+        byte c;
         boolean positive = true;
         if ((c = str[offset]) == '-') {
             positive = false;
@@ -811,9 +812,9 @@ final class DigitList implements Cloneable {
         }
     }
 
-    private final char[] getDataChars(int length) {
+    private final byte[] getDataChars(int length) {
         if (data == null || data.length < length) {
-            data = new char[length];
+            data = new byte[length];
         }
         return data;
     }
