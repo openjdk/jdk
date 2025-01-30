@@ -2106,28 +2106,28 @@ void C2_MacroAssembler::reduce_mul_fp_le128b(FloatRegister dst, BasicType bt, Fl
   bool isQ = vector_length_in_bytes == 16;
 
   BLOCK_COMMENT("reduce_mul_fp_le128b {");
-  switch (bt) {
-  case T_FLOAT:
-    fmuls(dst, fsrc, vsrc);
-    ins(vtmp, S, vsrc, 0, 1);
-    fmuls(dst, dst, vtmp);
-    if (isQ) {
-      ins(vtmp, S, vsrc, 0, 2);
-      fmuls(dst, dst, vtmp);
-      ins(vtmp, S, vsrc, 0, 3);
-      fmuls(dst, dst, vtmp);
+    switch(bt) {
+      case T_FLOAT:
+        fmuls(dst, fsrc, vsrc);
+        ins(vtmp, S, vsrc, 0, 1);
+        fmuls(dst, dst, vtmp);
+        if (isQ) {
+          ins(vtmp, S, vsrc, 0, 2);
+          fmuls(dst, dst, vtmp);
+          ins(vtmp, S, vsrc, 0, 3);
+          fmuls(dst, dst, vtmp);
+         }
+        break;
+      case T_DOUBLE:
+        assert(isQ, "unsupported");
+        fmuld(dst, fsrc, vsrc);
+        ins(vtmp, D, vsrc, 0, 1);
+        fmuld(dst, dst, vtmp);
+        break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
     }
-    break;
-  case T_DOUBLE:
-    assert(isQ, "unsupported");
-    fmuld(dst, fsrc, vsrc);
-    ins(vtmp, D, vsrc, 0, 1);
-    fmuld(dst, dst, vtmp);
-    break;
-  default:
-    assert(false, "unsupported");
-    ShouldNotReachHere();
-  }
   BLOCK_COMMENT("} reduce_mul_fp_le128b");
 }
 
