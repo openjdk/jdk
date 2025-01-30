@@ -50,6 +50,11 @@ ParMarkBitMap::initialize(MemRegion covered_region)
                                              rs_align,
                                              page_sz);
 
+  if (!rs.is_reserved()) {
+    // Failed to reserve memory for the bitmap,
+    return false;
+  }
+
   const size_t used_page_sz = rs.page_size();
   os::trace_page_sizes("Mark Bitmap", raw_bytes, raw_bytes,
                        rs.base(), rs.size(), used_page_sz);
@@ -57,25 +62,24 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
 
   _virtual_space = new PSVirtualSpace(rs, page_sz);
-  if (_virtual_space != nullptr && _virtual_space->expand_by(_reserved_byte_size)) {
-    _heap_start = covered_region.start();
-    _heap_size = covered_region.word_size();
-    BitMap::bm_word_t* map = (BitMap::bm_word_t*)_virtual_space->reserved_low_addr();
-    _beg_bits = BitMapView(map, bits);
-    return true;
+
+  if (!_virtual_space->expand_by(_reserved_byte_size)) {
+    // Failed to commit memory for the bitmap.
+
+    delete _virtual_space;
+
+    // Release memory reserved in the space.
+    MemoryReserver::release(rs);
+
+    return false;
   }
 
-  _heap_start = nullptr;
-  _heap_size = 0;
-  if (_virtual_space != nullptr) {
-    delete _virtual_space;
-    _virtual_space = nullptr;
-    // Release memory reserved in the space.
-    if (rs.is_reserved()) {
-      MemoryReserver::release(rs);
-    }
-  }
-  return false;
+  _heap_start = covered_region.start();
+  _heap_size = covered_region.word_size();
+  BitMap::bm_word_t* map = (BitMap::bm_word_t*)_virtual_space->reserved_low_addr();
+  _beg_bits = BitMapView(map, bits);
+
+  return true;
 }
 
 #ifdef ASSERT

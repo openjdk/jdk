@@ -173,9 +173,6 @@ class StringConcat : public ResourceObj {
     assert(!_control.contains(ctrl), "only push once");
     _control.push(ctrl);
   }
-  bool has_control(Node* ctrl) {
-    return _control.contains(ctrl);
-  }
   void add_constructor(Node* init) {
     assert(!_constructors.contains(init), "only push once");
     _constructors.push(init);
@@ -410,66 +407,7 @@ Node_List PhaseStringOpts::collect_toString_calls() {
   return string_calls;
 }
 
-PhaseStringOpts::ProcessAppendResult PhaseStringOpts::process_append_candidate(CallStaticJavaNode* cnode,
-                                                                               StringConcat* sc,
-                                                                               ciMethod* m,
-                                                                               ciSymbol* string_sig,
-                                                                               ciSymbol* int_sig,
-                                                                               ciSymbol* char_sig) {
-  if (cnode->method() != nullptr && !cnode->method()->is_static() &&
-      cnode->method()->holder() == m->holder() &&
-      cnode->method()->name() == ciSymbols::append_name() &&
-      (cnode->method()->signature()->as_symbol() == string_sig ||
-       cnode->method()->signature()->as_symbol() == char_sig ||
-       cnode->method()->signature()->as_symbol() == int_sig)) {
-    if (sc->has_control(cnode)) {
-      return ProcessAppendResult::AppendWasAdded;
-    }
-    sc->add_control(cnode);
-    Node* arg = cnode->in(TypeFunc::Parms + 1);
-    if (arg == nullptr || arg->is_top()) {
-#ifndef PRODUCT
-      if (PrintOptimizeStringConcat) {
-        tty->print("giving up because the call is effectively dead");
-        cnode->jvms()->dump_spec(tty);
-        tty->cr();
-      }
-#endif
-      return ProcessAppendResult::AbortOptimization;
-    }
-
-    if (cnode->method()->signature()->as_symbol() == int_sig) {
-      sc->push_int(arg);
-    } else if (cnode->method()->signature()->as_symbol() == char_sig) {
-      sc->push_char(arg);
-    } else if (arg->is_Proj() && arg->in(0)->is_CallStaticJava()) {
-      CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
-      if (csj->method() != nullptr &&
-          csj->method()->intrinsic_id() == vmIntrinsics::_Integer_toString &&
-          arg->outcnt() == 1) {
-        // _control is the list of StringBuilder calls nodes which
-        // will be replaced by new String code after this optimization.
-        // Integer::toString() call is not part of StringBuilder calls
-        // chain. It could be eliminated only if its result is used
-        // only by this SB calls chain.
-        // Another limitation: it should be used only once because
-        // it is unknown that it is used only by this SB calls chain
-        // until all related SB calls nodes are collected.
-        assert(arg->unique_out() == cnode, "sanity");
-        sc->add_control(csj);
-        sc->push_int(csj->in(TypeFunc::Parms));
-      } else {
-        sc->push_string(arg);
-      }
-    } else {
-      sc->push_string(arg);
-    }
-    return ProcessAppendResult::AppendWasAdded;
-  }
-  return ProcessAppendResult::CandidateIsNotAppend;
-}
-
-// Recognize fluent-chain and non-fluent uses of StringBuilder/Buffer. They are either explicit usages
+// Recognize a fluent-chain of StringBuilder/Buffer. They are either explicit usages
 // of them or the legacy bytecodes of string concatenation prior to JEP-280. eg.
 //
 // String result = new StringBuilder()
@@ -478,17 +416,18 @@ PhaseStringOpts::ProcessAppendResult PhaseStringOpts::process_append_candidate(C
 //   .append(123)
 //   .toString(); // "foobar123"
 //
-// Fluent-chains are recognized by walking upwards along the receivers, starting from toString().
-// Once the allocation of the StringBuilder has been reached, DU pairs are examined to find the
-// constructor and non-fluent uses of the StringBuilder such as in this example:
+// PS: Only a certain subset of constructor and append methods are acceptable.
+// The criterion is that the length of argument is easy to work out in this phrase.
+// It will drop complex cases such as Object.
 //
+// Since it walks along the receivers of fluent-chain, it will give up if the codeshape is
+// not "fluent" enough. eg.
 //   StringBuilder sb = new StringBuilder();
 //   sb.append("foo");
 //   sb.toString();
 //
-// PS: Only a certain subset of constructor and append methods are acceptable.
-// The criterion is that the length of argument is easy to work out in this phrase.
-// It will drop complex cases such as Object.
+// The receiver of toString method is the result of Allocation Node(CheckCastPP).
+// The append method is overlooked. It will fail at validate_control_flow() test.
 //
 StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
   ciMethod* m = call->method();
@@ -527,7 +466,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
     if (cnode == nullptr) {
       alloc = recv->isa_Allocate();
       if (alloc == nullptr) {
-        return nullptr;
+        break;
       }
       // Find the constructor call
       Node* result = alloc->result_cast();
@@ -539,7 +478,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
           alloc->jvms()->dump_spec(tty); tty->cr();
         }
 #endif
-        return nullptr;
+        break;
       }
       Node* constructor = nullptr;
       for (SimpleDUIterator i(result); i.has_next(); i.next()) {
@@ -550,10 +489,6 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
             use->method()->name() == ciSymbols::object_initializer_name() &&
             use->method()->holder() == m->holder()) {
           // Matched the constructor.
-          if (constructor != nullptr) {
-            // The constructor again. We must only process it once.
-            continue;
-          }
           ciSymbol* sig = use->method()->signature()->as_symbol();
           if (sig == ciSymbols::void_method_signature() ||
               sig == ciSymbols::int_void_signature() ||
@@ -607,16 +542,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
             }
 #endif
           }
-        } else if (use != nullptr) {
-          if (process_append_candidate(use, sc, m, string_sig, int_sig, char_sig) == ProcessAppendResult::AbortOptimization) {
-            // We must abort if process_append_candidate tells us to...
-            return nullptr;
-          }
-          // ...but we do not care if we really found an append or not:
-          // - If we found an append, that's perfect. Nothing further to do.
-          // - If this is a call to an unrelated method, validate_mem_flow() (and validate_control_flow())
-          //   will later check if this call prevents the optimization. So nothing to do here.
-          // We will continue to look for the constructor (if not found already) and appends.
+          break;
         }
       }
       if (constructor == nullptr) {
@@ -627,7 +553,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
           alloc->jvms()->dump_spec(tty); tty->cr();
         }
 #endif
-        return nullptr;
+        break;
       }
 
       // Walked all the way back and found the constructor call so see
@@ -642,23 +568,62 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       } else {
         return nullptr;
       }
-    } else {
-      ProcessAppendResult result = process_append_candidate(cnode, sc, m, string_sig, int_sig, char_sig);
-
-      if (result == ProcessAppendResult::AbortOptimization) {
-        return nullptr;
-      } else if (result == ProcessAppendResult::CandidateIsNotAppend) {
-        // some unhandled signature
+    } else if (cnode->method() == nullptr) {
+      break;
+    } else if (!cnode->method()->is_static() &&
+               cnode->method()->holder() == m->holder() &&
+               cnode->method()->name() == ciSymbols::append_name() &&
+               (cnode->method()->signature()->as_symbol() == string_sig ||
+                cnode->method()->signature()->as_symbol() == char_sig ||
+                cnode->method()->signature()->as_symbol() == int_sig)) {
+      sc->add_control(cnode);
+      Node* arg = cnode->in(TypeFunc::Parms + 1);
+      if (arg == nullptr || arg->is_top()) {
 #ifndef PRODUCT
         if (PrintOptimizeStringConcat) {
-          tty->print("giving up because encountered unexpected signature ");
-          cnode->tf()->dump();
-          tty->cr();
-          cnode->in(TypeFunc::Parms + 1)->dump();
+          tty->print("giving up because the call is effectively dead");
+          cnode->jvms()->dump_spec(tty); tty->cr();
         }
 #endif
-        return nullptr;
+        break;
       }
+      if (cnode->method()->signature()->as_symbol() == int_sig) {
+        sc->push_int(arg);
+      } else if (cnode->method()->signature()->as_symbol() == char_sig) {
+        sc->push_char(arg);
+      } else {
+        if (arg->is_Proj() && arg->in(0)->is_CallStaticJava()) {
+          CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
+          if (csj->method() != nullptr &&
+              csj->method()->intrinsic_id() == vmIntrinsics::_Integer_toString &&
+              arg->outcnt() == 1) {
+            // _control is the list of StringBuilder calls nodes which
+            // will be replaced by new String code after this optimization.
+            // Integer::toString() call is not part of StringBuilder calls
+            // chain. It could be eliminated only if its result is used
+            // only by this SB calls chain.
+            // Another limitation: it should be used only once because
+            // it is unknown that it is used only by this SB calls chain
+            // until all related SB calls nodes are collected.
+            assert(arg->unique_out() == cnode, "sanity");
+            sc->add_control(csj);
+            sc->push_int(csj->in(TypeFunc::Parms));
+            continue;
+          }
+        }
+        sc->push_string(arg);
+      }
+      continue;
+    } else {
+      // some unhandled signature
+#ifndef PRODUCT
+      if (PrintOptimizeStringConcat) {
+        tty->print("giving up because encountered unexpected signature ");
+        cnode->tf()->dump(); tty->cr();
+        cnode->in(TypeFunc::Parms + 1)->dump();
+      }
+#endif
+      break;
     }
   }
   return nullptr;

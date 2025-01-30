@@ -2038,7 +2038,8 @@ class StubGenerator: public StubCodeGenerator {
   void generate_type_check(Register sub_klass,
                            Register super_check_offset,
                            Register super_klass,
-                           Register temp,
+                           Register temp1,
+                           Register temp2,
                            Label& L_success) {
     assert_different_registers(sub_klass, super_check_offset, super_klass);
 
@@ -2046,9 +2047,9 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_miss;
 
-    __ check_klass_subtype_fast_path(sub_klass, super_klass, temp, R0, &L_success, &L_miss, nullptr,
+    __ check_klass_subtype_fast_path(sub_klass, super_klass, temp1, temp2, &L_success, &L_miss, nullptr,
                                      super_check_offset);
-    __ check_klass_subtype_slow_path(sub_klass, super_klass, temp, R0, &L_success);
+    __ check_klass_subtype_slow_path(sub_klass, super_klass, temp1, temp2, &L_success);
 
     // Fall through on failure!
     __ bind(L_miss);
@@ -2078,8 +2079,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register R10_oop   = R10_ARG8;     // actual oop copied
     const Register R11_klass = R11_scratch1; // oop._klass
     const Register R12_tmp   = R12_scratch2;
-
-    const Register R2_minus1 = R2;
+    const Register R2_tmp    = R2;
 
     //__ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
@@ -2117,7 +2117,6 @@ class StubGenerator: public StubCodeGenerator {
     Label load_element, store_element, store_null, success, do_epilogue;
     __ or_(R9_remain, R5_count, R5_count); // Initialize loop index, and test it.
     __ li(R8_offset, 0);                   // Offset from start of arrays.
-    __ li(R2_minus1, -1);
     __ bne(CCR0, load_element);
 
     // Empty array: Nothing to do.
@@ -2145,7 +2144,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ addi(R8_offset, R8_offset, heapOopSize);   // Step to next offset.
-    __ add_(R9_remain, R2_minus1, R9_remain);     // Decrement the count.
+    __ addic_(R9_remain, R9_remain, -1);          // Decrement the count.
     __ beq(CCR0, success);
 
     // ======== loop entry is here ========
@@ -2165,7 +2164,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ load_klass(R11_klass, R10_oop); // Query the object klass.
 
-    generate_type_check(R11_klass, R6_ckoff, R7_ckval, R12_tmp,
+    generate_type_check(R11_klass, R6_ckoff, R7_ckval, R12_tmp, R2_tmp,
                         // Branch to this on success:
                         store_element);
     // ======== end loop ========
@@ -2499,7 +2498,7 @@ class StubGenerator: public StubCodeGenerator {
       int sco_offset = in_bytes(Klass::super_check_offset_offset());
       __ lwz(sco_temp, sco_offset, dst_klass);
       generate_type_check(src_klass, sco_temp, dst_klass,
-                          temp, L_disjoint_plain_copy);
+                          temp, /* temp */ R10_ARG8, L_disjoint_plain_copy);
 
       // Fetch destination element klass from the ObjArrayKlass header.
       int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
@@ -4457,9 +4456,9 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
       r_bitmap       = R11_scratch1,
       result         = R8_ARG6;
 
-    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                     r_array_base, r_array_length, r_array_index,
-                                     r_bitmap, result, super_klass_index);
+    __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                           r_array_base, r_array_length, r_array_index,
+                                           r_bitmap, result, super_klass_index);
     __ blr();
 
     return start;
