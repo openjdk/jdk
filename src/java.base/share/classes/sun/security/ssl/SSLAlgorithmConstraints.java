@@ -208,6 +208,13 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         }
 
         if (permitted) {
+            if (algorithm.equals("SHA1withRSA")
+                || algorithm.equals("rsa_pkcs1_sha1")) {
+                System.err.printf(
+                        "------ Got %s with %s%n",
+                        algorithm, primitives.stream().findFirst().get());
+            }
+
             permitted = tlsDisabledAlgConstraints.permits(
                                     primitives, algorithm, parameters);
         }
@@ -261,6 +268,13 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         }
 
         if (permitted) {
+            if (algorithm.equals("SHA1withRSA")
+                || algorithm.equals("rsa_pkcs1_sha1")) {
+                System.err.printf(
+                        "------ Got %s with %s%n",
+                        algorithm, primitives.stream().findFirst().get());
+            }
+
             permitted = tlsDisabledAlgConstraints.permits(
                                     primitives, algorithm, key, parameters);
         }
