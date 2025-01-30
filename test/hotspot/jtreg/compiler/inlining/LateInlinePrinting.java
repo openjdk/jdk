@@ -76,7 +76,7 @@ public class LateInlinePrinting {
             "-XX:+PrintCompilation",
             "-XX:CompileCommand=compileonly,compiler.inlining.LateInlinePrinting$TestLateInlining::test1",
             "-XX:CompileCommand=compileonly,compiler.inlining.LateInlinePrinting$TestLateInlining::test2",
-            "-XX:CompileCommand=quiet", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining", "-XX:+AlwaysIncrementalInline",
+            "-XX:CompileCommand=quiet", "-XX:+PrintInlining", "-XX:+AlwaysIncrementalInline",
             "-XX:CompileCommand=dontinline,compiler.inlining.LateInlinePrinting$TestLateInlining::testFailInline",
             TestLateInlining.class.getName()
         );
