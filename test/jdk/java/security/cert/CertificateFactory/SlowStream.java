@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,67 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 6813340
+ * @summary X509Factory should not depend on is.available()==0
+ * @run main/othervm SlowStream
+ */
+
 import java.io.*;
 import java.security.cert.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
-class SlowStreamReader {
-
+public class SlowStream {
     public static void main(String[] args) throws Exception {
-        CertificateFactory factory = CertificateFactory.getInstance("X.509");
-        if (factory.generateCertificates(System.in).size() != 5) {
-            throw new Exception("Not all certs read");
-        }
-    }
-}
+        final var outputStream = new PipedOutputStream();
+        final var inputStream = new PipedInputStream(outputStream);
 
-class SlowStreamWriter {
-    public static void main(String[] args) throws Exception {
-        for (int i=0; i<5; i++) {
-            FileInputStream fin = new FileInputStream(new File(new File(
-                    System.getProperty("test.src", "."), "openssl"), "pem"));
-            byte[] buffer = new byte[4096];
-            while (true) {
-                int len = fin.read(buffer);
-                if (len < 0) break;
-                System.out.write(buffer, 0, len);
+        final var failed = new AtomicBoolean(false);
+        final var exception = new AtomicReference<Exception>();
+
+        final var writer = new Thread(() -> {
+            try {
+                for (int i = 0; i < 5; i++) {
+                    final var fin = new FileInputStream(new File(new File(
+                            System.getProperty("test.src", "."), "openssl"), "pem"));
+                    final byte[] buffer = new byte[4096];
+                    while (true) {
+                        int len = fin.read(buffer);
+                        if (len < 0) break;
+                        outputStream.write(buffer, 0, len);
+                    }
+                    Thread.sleep(2000);
+                }
+                outputStream.close();
+            } catch (final Exception e) {
+                failed.set(true);
+                exception.set(e);
             }
-            Thread.sleep(2000);
+        });
+
+        final var reader = new Thread(() -> {
+            try {
+                final var factory = CertificateFactory.getInstance("X.509");
+                if (factory.generateCertificates(inputStream).size() != 5) {
+                    throw new Exception("Not all certs read");
+                }
+                inputStream.close();
+            } catch (final Exception e) {
+                failed.set(true);
+                exception.set(e);
+            }
+        });
+
+        writer.start();
+        reader.start();
+
+        writer.join();
+        reader.join();
+
+        if (failed.get()) {
+            throw exception.get();
         }
     }
 }
