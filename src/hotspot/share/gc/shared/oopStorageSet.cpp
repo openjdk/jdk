@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "utilities/debug.hpp"
@@ -81,6 +80,25 @@ OopStorage* OopStorageSet::get_storage(E id) {
 template OopStorage* OopStorageSet::get_storage(StrongId);
 template OopStorage* OopStorageSet::get_storage(WeakId);
 template OopStorage* OopStorageSet::get_storage(Id);
+
+bool OopStorageSet::print_containing(const void* addr, outputStream* st) {
+  if (addr != nullptr) {
+    const void* aligned_addr = align_down(addr, alignof(oop));
+    for (OopStorage* storage : Range<Id>()) {
+      // Check for null for extra safety: might get here while handling error
+      // before storage initialization.
+      if ((storage != nullptr) && storage->print_containing((oop*) aligned_addr, st)) {
+        if (aligned_addr != addr) {
+          st->print_cr(" (unaligned)");
+        } else {
+          st->cr();
+        }
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 #ifdef ASSERT
 

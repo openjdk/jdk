@@ -33,6 +33,7 @@
  * @run junit/othervm/timeout=2500 -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:MaxNodeLimit=20000
  *                                 -XX:-VerifyDependencies
+ *                                 -XX:CompileCommand=memlimit,*.*,0 
  *                                 -esa -DBigArityTest.ITERATION_COUNT=1
  *                                 test.java.lang.invoke.BigArityTest
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
-#include "code/codeBlob.hpp"
+#include "classfile/javaClasses.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/disassembler.hpp"
@@ -169,10 +168,10 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   __ block_comment("} restore_callee_saved_regs ");
 }
 
-static const int upcall_stub_code_base_size = 1024;
+static const int upcall_stub_code_base_size = 1200;
 static const int upcall_stub_size_per_arg = 16;
 
-address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
+address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
@@ -281,7 +280,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("{ on_entry");
   __ vzeroupper();
   __ lea(c_rarg0, Address(rsp, frame_data_offset));
-  __ movptr(c_rarg1, (intptr_t)receiver);
   // stack already aligned
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::on_entry)));
   __ movptr(r15_thread, rax);
@@ -297,12 +295,10 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
-  __ block_comment("{ receiver ");
-  __ get_vm_result(j_rarg0, r15_thread);
-  __ block_comment("} receiver ");
-
-  __ mov_metadata(rbx, entry);
-  __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx); // just in case callee is deoptimized
+  __ block_comment("{ load target ");
+  __ movptr(j_rarg0, (intptr_t)receiver);
+  __ call(RuntimeAddress(StubRoutines::upcall_stub_load_target())); // puts target Method* in rbx
+  __ block_comment("} load target ");
 
   __ push_cont_fastpath();
 
@@ -377,7 +373,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
 #ifndef PRODUCT
   stringStream ss;
-  ss.print("upcall_stub_%s", entry->signature()->as_C_string());
+  ss.print("upcall_stub_%s", signature->as_C_string());
   const char* name = _masm->code_string(ss.freeze());
 #else // PRODUCT
   const char* name = "upcall_stub";

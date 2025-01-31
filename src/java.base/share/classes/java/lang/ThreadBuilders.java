@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.ContinuationSupport;
 
 /**
@@ -178,7 +179,7 @@ class ThreadBuilders {
         public Thread unstarted(Runnable task) {
             Objects.requireNonNull(task);
             String name = nextThreadName();
-            var thread = new Thread(group, name, characteristics(), task, stackSize, null);
+            var thread = new Thread(group, name, characteristics(), task, stackSize);
             if (daemonChanged)
                 thread.daemon(daemon);
             if (priority != 0)
@@ -273,15 +274,9 @@ class ThreadBuilders {
      * Base ThreadFactory implementation.
      */
     private abstract static class BaseThreadFactory implements ThreadFactory {
-        private static final VarHandle COUNT;
-        static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                COUNT = l.findVarHandle(BaseThreadFactory.class, "count", long.class);
-            } catch (Exception e) {
-                throw new InternalError(e);
-            }
-        }
+        private static final VarHandle COUNT = MhUtil.findVarHandle(
+                MethodHandles.lookup(), "count", long.class);
+
         private final String name;
         private final int characteristics;
         private final UncaughtExceptionHandler uhe;
@@ -358,7 +353,7 @@ class ThreadBuilders {
         public Thread newThread(Runnable task) {
             Objects.requireNonNull(task);
             String name = nextThreadName();
-            Thread thread = new Thread(group, name, characteristics(), task, stackSize, null);
+            Thread thread = new Thread(group, name, characteristics(), task, stackSize);
             if (daemonChanged)
                 thread.daemon(daemon);
             if (priority != 0)

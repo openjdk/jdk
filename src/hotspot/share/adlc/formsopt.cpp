@@ -169,10 +169,16 @@ int RegisterForm::words_for_regs() { return (_reg_ctr + 31) >> 5; }
 int RegisterForm::RegMask_Size() {
   // The array of Register Mask bits should be large enough to cover
   // all the machine registers and all parameters that need to be passed
-  // on the stack (stack registers) up to some interesting limit.
-  // Add a few (3 words == 96 bits) for incoming & outgoing arguments to calls.
-  // Round up to the next doubleword size.
-  return (words_for_regs() + 3 + 1) & ~1;
+  // on the stack (stack registers) up to some interesting limit.  Methods
+  // that need more parameters will NOT be compiled.  On Intel, the limit
+  // is something like 90+ parameters.
+  // - Add a few (3 words == 96 bits) for incoming & outgoing arguments to
+  //   calls.
+  // - Round up to the next doubleword size.
+  // - Add one more word to accommodate a reasonable number of stack locations
+  //   in the register mask regardless of how much slack is created by rounding.
+  //   This was found necessary after adding 16 new registers for APX.
+  return (words_for_regs() + 3 + 1 + 1) & ~1;
 }
 
 void RegisterForm::dump() {                  // Debug printer

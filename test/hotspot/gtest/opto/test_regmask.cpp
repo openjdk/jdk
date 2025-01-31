@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/chaitin.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/regmask.hpp"

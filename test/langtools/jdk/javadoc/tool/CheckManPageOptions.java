@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ public class CheckManPageOptions {
     }
 
     Path findDefaultFile() {
-        return findRootDir().resolve("src/jdk.javadoc/share/man/javadoc.1");
+        return findRootDir().resolve("src/jdk.javadoc/share/man/javadoc.md");
     }
 
     Path findRootDir() {
@@ -264,29 +264,32 @@ public class CheckManPageOptions {
         var list = new ArrayList<String>();
         // In the Markdown man page, options are defined in one of two forms:
         // 1. options delegated to javac appear in lines of the form
-        //      -   `-...
+        //      * <span id="...">`-...</span>
         // 2. options implemented by the tool or doclet appear in lines of the form
-        //      `-...`
+        //      <span id="...">`-...</span>
 
-        Pattern p1 = Pattern.compile("\\R-   `-.*");
-        Pattern p2 = Pattern.compile("\\R`-.*");
+        Pattern p1 = Pattern.compile("\\R* <span id=\"[^\"]+\">`-.*</span>");
+        Pattern p2 = Pattern.compile("\\R<span id=\"[^\"]+\">`-.*</span>");
         Pattern outer = Pattern.compile("(" + p1.pattern() + "|" + p2.pattern() + ")");
         Matcher outerMatcher = outer.matcher(page);
 
         // In the defining areas, option names are represented as follows:
-        //      `OPTION`
-        // where OPTION is the shortest string not containing whitespace or colon
-        Pattern inner = Pattern.compile("\\s`([^:`]+)");
+        //      `OPTION` or `OPTION`
+        // where OPTION is the shortest string not containing whitespace or colon,
+        // and in which all '-' characters are escaped with a single backslash.
+        Pattern inner = Pattern.compile("[>\\s]`(-[^ :]+?)(:|`)");
 
         while (outerMatcher.find()) {
             String lines = outerMatcher.group();
-            out.println("found:" + lines + "\n");
+            out.println("found:" + lines);
 
             Matcher innerMatcher = inner.matcher(lines);
             while (innerMatcher.find()) {
                 String option = innerMatcher.group(1);
+                out.println("  found option:" + option);
                 list.add(option);
             }
+            out.println();
         }
 
         return list;

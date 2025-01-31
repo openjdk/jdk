@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import sun.security.action.GetBooleanAction;
 import sun.security.util.*;
 import sun.security.pkcs.PKCS9Attribute;
 
@@ -64,8 +63,8 @@ public class AVA implements DerEncoder {
     // See CR 6391482: if enabled this flag preserves the old but incorrect
     // PrintableString encoding for DomainComponent. It may need to be set to
     // avoid breaking preexisting certificates generated with sun.security APIs.
-    private static final boolean PRESERVE_OLD_DC_ENCODING = GetBooleanAction
-            .privilegedGetProperty("com.sun.security.preserveOldDCEncoding");
+    private static final boolean PRESERVE_OLD_DC_ENCODING =
+            Boolean.getBoolean("com.sun.security.preserveOldDCEncoding");
 
     /**
      * DEFAULT format allows both RFC1779 and RFC2253 syntax and

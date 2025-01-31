@@ -108,12 +108,9 @@ abstract class P11Key implements Key, Length {
      *
      */
     static {
-        PrivilegedAction<String> getKeyExtractionProp =
-                () -> System.getProperty(
-                        "sun.security.pkcs11.disableKeyExtraction", "false");
-        @SuppressWarnings("removal")
         String disableKeyExtraction =
-                AccessController.doPrivileged(getKeyExtractionProp);
+                System.getProperty(
+                        "sun.security.pkcs11.disableKeyExtraction", "false");
         DISABLE_NATIVE_KEYS_EXTRACTION =
                 "true".equalsIgnoreCase(disableKeyExtraction);
     }
@@ -238,6 +235,19 @@ abstract class P11Key implements Key, Length {
                     ", and NSS token keys" : "keys"));
         }
         return new KeyRep(type, getAlgorithm(), format, getEncodedInternal());
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException("P11Key not directly deserializable");
     }
 
     public String toString() {

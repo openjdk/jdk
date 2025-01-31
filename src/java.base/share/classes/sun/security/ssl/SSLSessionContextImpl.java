@@ -36,8 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
-import sun.security.action.GetIntegerAction;
-import sun.security.action.GetPropertyAction;
 import sun.security.util.Cache;
 
 
@@ -324,10 +322,10 @@ final class SSLSessionContextImpl implements SSLSessionContext {
 
             // Property for Session Cache state
             if (server) {
-                st = GetPropertyAction.privilegedGetProperty(
+                st = System.getProperty(
                         "jdk.tls.server.enableSessionTicketExtension", "true");
             } else {
-                st = GetPropertyAction.privilegedGetProperty(
+                st = System.getProperty(
                         "jdk.tls.client.enableSessionTicketExtension", "true");
             }
 
@@ -337,7 +335,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
 
             // Property for Session Ticket Timeout.  The value can be changed
             // by SSLSessionContext.setSessionTimeout(int)
-            String s = GetPropertyAction.privilegedGetProperty(
+            String s = System.getProperty(
                     "jdk.tls.server.sessionTicketTimeout");
             if (s != null) {
                 try {
@@ -364,7 +362,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
                 }
             }
 
-            int defaultCacheLimit = GetIntegerAction.privilegedGetProperty(
+            int defaultCacheLimit = Integer.getInteger(
                     "javax.net.ssl.sessionCacheSize", DEFAULT_MAX_CACHE_SIZE);
 
             if (defaultCacheLimit >= 0) {

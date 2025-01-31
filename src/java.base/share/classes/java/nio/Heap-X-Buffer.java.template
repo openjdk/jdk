@@ -28,6 +28,10 @@
 package java.nio;
 
 import java.lang.foreign.MemorySegment;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.vm.annotation.ForceInline;
 import java.util.Objects;
 
 /**
@@ -735,6 +739,23 @@ class Heap$Type$Buffer$RW$
 
 #end[char]
 
+#if[byte]
+    @ForceInline
+    @Override
+    int scaleShifts() {
+        return 0;
+    }
+
+    @ForceInline
+    @Override
+    AbstractMemorySegmentImpl heapSegment(Object base,
+                                          long offset,
+                                          long length,
+                                          boolean readOnly,
+                                          MemorySessionImpl bufferScope) {
+        return SegmentFactories.arrayOf$Type$Segment(base, offset, length, readOnly, bufferScope);
+    }
+#end[byte]
 
 #if[!byte]
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,7 @@ class Void {
      * The {@code Class} object representing the pseudo-type corresponding to
      * the keyword {@code void}.
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Void> TYPE = (Class<Void>) Class.getPrimitiveClass("void");
+    public static final Class<Void> TYPE = Class.getPrimitiveClass("void");
 
     /*
      * The Void class cannot be instantiated.

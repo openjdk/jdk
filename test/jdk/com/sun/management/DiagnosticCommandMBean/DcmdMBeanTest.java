@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     7150256
+ * @bug     7150256 8338603
  * @summary Basic Test for the DiagnosticCommandMBean
  * @author  Frederic Parain, Shanliang JIANG
  *
@@ -68,9 +68,13 @@ public class DcmdMBeanTest {
             System.out.println("Description:" + info.getDescription());
             MBeanOperationInfo[] opInfo = info.getOperations();
             System.out.println("Operations:");
+            int operationFailures = 0;
             for (int i = 0; i < opInfo.length; i++) {
-                printOperation(opInfo[i]);
+                operationFailures += printOperation(opInfo[i]);
                 System.out.println("\n@@@@@@\n");
+            }
+            if (operationFailures > 0) {
+                throw new RuntimeException("FAILED.  " + operationFailures + " operations found with non-standard parameter types.");
             }
         } finally {
             try {
@@ -83,7 +87,12 @@ public class DcmdMBeanTest {
         System.out.println("Test passed");
     }
 
-    static void printOperation(MBeanOperationInfo info) {
+    /**
+     * Print an Operation, and check for any non-standard parameter types.
+     * Return the number of failed parameters, so the caller can signal to fail the test.
+     */
+    static int printOperation(MBeanOperationInfo info) {
+        int failures = 0;
         System.out.println("Name: "+info.getName());
         System.out.println("Description: "+info.getDescription());
         System.out.println("Return Type: "+info.getReturnType());
@@ -100,8 +109,16 @@ public class DcmdMBeanTest {
                     Descriptor desc3 =
                             (Descriptor)desc2.getFieldValue(desc2.getFieldNames()[j]);
                     for(int k=0; k<desc3.getFieldNames().length; k++) {
-                        System.out.println("\t\t\t"+desc3.getFieldNames()[k]+"="
-                                           +desc3.getFieldValue(desc3.getFieldNames()[k]));
+                        String fieldName3 = desc3.getFieldNames()[k];
+                        Object fieldValue3 = desc3.getFieldValue(fieldName3);
+                        System.out.print("\t\t\t" + fieldName3 + "=" + fieldValue3);
+                        if (fieldName3.equals("dcmd.arg.type")) {
+                            if (!isPublicType((String) fieldValue3)) {
+                                System.out.print("\t** FAILED ** not a standard type");
+                                failures++;
+                            }
+                        }
+                        System.out.println();
                     }
                 }
             } else {
@@ -109,5 +126,22 @@ public class DcmdMBeanTest {
                         +desc.getFieldValue(desc.getFieldNames()[i]));
             }
         }
+        return failures;
+    }
+
+    // Knowledge of the implementation-dependent types in DiagnosticCommandImpl, seen by applications/users
+    // (see the DiagnosticCommandMBean Descriptor, field "dcmd.arg.type").
+    private static final String [] publicTypes = new String [] { "INT", "STRING", "BOOLEAN", "STRING SET", "MEMORY SIZE", "NANOTIME" };
+
+    private static final boolean isPublicType(String typeName) {
+        if (typeName == null) {
+            return false;
+        }
+        for (String t : publicTypes) {
+            if (typeName.equals(t)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

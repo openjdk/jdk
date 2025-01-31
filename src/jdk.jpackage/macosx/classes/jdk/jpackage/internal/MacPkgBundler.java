@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,8 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
+import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.XmlUtils;
 
 public class MacPkgBundler extends MacBaseInstallerBundler {
 
@@ -267,7 +269,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.preparing-distribution-dist"), f.toAbsolutePath().toString()));
 
-        IOUtils.createXml(f, xml -> {
+        XmlUtils.createXml(f, xml -> {
             xml.writeStartElement("installer-gui-script");
             xml.writeAttribute("minSpecVersion", "1");
 
@@ -452,7 +454,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             source = appLocation;
             dest = newRoot.resolve(appLocation.getFileName());
         }
-        IOUtils.copyRecursive(source, dest);
+        FileUtils.copyRecursive(source, dest);
 
         return newRoot.toString();
     }

@@ -99,7 +99,6 @@ public class DefaultCloseOperation extends JPanel {
 
         CloseOpFrame testFrame = new CloseOpFrame();
         testFrame.setLocationRelativeTo(null);
-        PassFailJFrame.addTestWindow(testFrame);
 
         add(new JLabel("JFrame Default Close Operation:"));
         frameCloseOp = new JComboBox<>();
@@ -127,7 +126,6 @@ public class DefaultCloseOperation extends JPanel {
 
         testDialog = new CloseOpDialog(testFrame);
         testDialog.setLocationRelativeTo(null);
-        PassFailJFrame.addTestWindow(testDialog);
 
         add(new JLabel("JDialog Default Close Operation:"));
         dialogCloseOp = new JComboBox<>();

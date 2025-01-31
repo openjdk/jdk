@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -54,15 +56,28 @@ import static java.net.Proxy.NO_PROXY;
  * @bug 8230526
  * @summary Verifies that PlainProxyConnections are cached and reused properly. We do this by
  *          verifying that the remote address of the HTTP exchange (on the fake proxy server)
- *          is always the same InetSocketAddress.
- * @modules jdk.httpserver
- * @run main/othervm -Djdk.tracePinnedThreads=full PlainProxyConnectionTest
- * @author danielfuchs
+ *          is always the same InetSocketAddress. Logging verbosity is increased to aid in
+ *          diagnosis of intermittent failures.
+ * @library /test/lib
+ *          /test/jdk/java/net/httpclient/lib
+ * @run main/othervm -Djdk.tracePinnedThreads=full
+ *      -Djdk.httpclient.HttpClient.log=headers,requests,trace
+ *      -Djdk.internal.httpclient.debug=true
+ *      PlainProxyConnectionTest
  */
 public class PlainProxyConnectionTest {
 
+    // Increase logging verbosity to troubleshoot intermittent failures
+    static {
+        HttpServerAdapters.enableServerLogging();
+    }
+
     static final String RESPONSE = "<html><body><p>Hello World!</body></html>";
-    static final String PATH = "/foo/";
+
+    // Adding some salt to the path to avoid other parallel running tests mistakenly connect to our test server
+    private static final String PATH = String.format(
+            "/%s-%d", PlainProxyConnectionTest.class.getSimpleName(), PlainProxyConnectionTest.class.hashCode());
+
     static final ConcurrentLinkedQueue<InetSocketAddress> connections = new ConcurrentLinkedQueue<>();
     private static final AtomicInteger IDS = new AtomicInteger();
 

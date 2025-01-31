@@ -392,6 +392,9 @@ static void         (*fp_g_object_set)(gpointer object,
                                        ...);
 
 static gboolean (*fp_g_main_context_iteration)(GMainContext *context, gboolean may_block);
+static GMainContext *(*fp_g_main_context_default)();
+static gboolean (*fp_g_main_context_is_owner)(GMainContext* context);
+
 static gboolean (*fp_g_str_has_prefix)(const gchar *str, const gchar *prefix);
 static gchar** (*fp_g_strsplit)(const gchar *string, const gchar *delimiter,
            gint max_tokens);

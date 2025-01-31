@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -227,9 +226,9 @@ static traceid method_id(KlassPtr klass, MethodPtr method) {
 }
 
 template <typename T>
-static s4 get_flags(const T* ptr) {
+static u2 get_flags(const T* ptr) {
   assert(ptr != nullptr, "invariant");
-  return ptr->access_flags().get_flags();
+  return ptr->access_flags().as_unsigned_short();
 }
 
 // Same as JVM_GetClassModifiers
@@ -484,6 +483,9 @@ static void do_primitives() {
 static void do_unloading_klass(Klass* klass) {
   assert(klass != nullptr, "invariant");
   assert(_subsystem_callback != nullptr, "invariant");
+  if (klass->is_instance_klass() && InstanceKlass::cast(klass)->is_scratch_class()) {
+    return;
+  }
   if (JfrKlassUnloading::on_unload(klass)) {
     _subsystem_callback->do_artifact(klass);
   }
@@ -965,7 +967,7 @@ static int write_method(JfrCheckpointWriter* writer, MethodPtr method, bool leak
   writer->write(artifact_id(klass));
   writer->write(mark_symbol(method->name(), leakp));
   writer->write(mark_symbol(method->signature(), leakp));
-  writer->write(static_cast<u2>(get_flags(method)));
+  writer->write(get_flags(method));
   writer->write(get_visibility(method));
   return 1;
 }

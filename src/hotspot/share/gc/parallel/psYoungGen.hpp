@@ -31,6 +31,8 @@
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/parallel/spaceCounters.hpp"
 
+class ReservedSpace;
+
 class PSYoungGen : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class ParallelScavengeHeap;

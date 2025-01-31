@@ -26,7 +26,88 @@
  * @summary Test virtual thread with monitor enter/exit
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
+ * @build LockingMode
  * @run junit/othervm --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ */
+
+/*
+ * @test id=LM_LEGACY
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @build LockingMode
+ * @run junit/othervm -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ */
+
+/*
+ * @test id=LM_LIGHTWEIGHT
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @build LockingMode
+ * @run junit/othervm -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ */
+
+/*
+ * @test id=Xint-LM_LEGACY
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @build LockingMode
+ * @run junit/othervm -Xint -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ */
+
+/*
+ * @test id=Xint-LM_LIGHTWEIGHT
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @build LockingMode
+ * @run junit/othervm -Xint -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ */
+
+/*
+ * @test id=Xcomp-LM_LEGACY
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @build LockingMode
+ * @run junit/othervm -Xcomp -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ */
+
+/*
+ * @test id=Xcomp-LM_LIGHTWEIGHT
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @build LockingMode
+ * @run junit/othervm -Xcomp -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ */
+
+/*
+ * @test id=Xcomp-TieredStopAtLevel1-LM_LEGACY
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @build LockingMode
+ * @run junit/othervm -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ */
+
+/*
+ * @test id=Xcomp-TieredStopAtLevel1-LM_LIGHTWEIGHT
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @build LockingMode
+ * @run junit/othervm -Xcomp -XX:TieredStopAtLevel=1 -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ */
+
+/*
+ * @test id=Xcomp-noTieredCompilation-LM_LEGACY
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @build LockingMode
+ * @run junit/othervm -Xcomp -XX:-TieredCompilation -XX:LockingMode=1 --enable-native-access=ALL-UNNAMED MonitorEnterExit
+ */
+
+/*
+ * @test id=Xcomp-noTieredCompilation-LM_LIGHTWEIGHT
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @build LockingMode
+ * @run junit/othervm -Xcomp -XX:-TieredCompilation -XX:LockingMode=2 --enable-native-access=ALL-UNNAMED MonitorEnterExit
  */
 
 import java.time.Duration;
@@ -48,23 +129,22 @@ import jdk.test.lib.thread.VThreadScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.api.condition.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
 
 class MonitorEnterExit {
+    static final int MAX_VTHREAD_COUNT = 4 * Runtime.getRuntime().availableProcessors();
     static final int MAX_ENTER_DEPTH = 256;
 
     @BeforeAll
     static void setup() {
-        // need >=2 carriers for testing pinning when main thread is a virtual thread
-        if (Thread.currentThread().isVirtual()) {
-            VThreadRunner.ensureParallelism(2);
-        }
+        // need >=2 carriers for tests that pin
+        VThreadRunner.ensureParallelism(2);
     }
 
     /**
@@ -151,6 +231,53 @@ class MonitorEnterExit {
     }
 
     /**
+     * Test monitor reenter when there are other threads blocked trying to enter.
+     */
+    @Test
+    @DisabledIf("LockingMode#isLegacy")
+    void testReenterWithContention() throws Exception {
+        var lock = new Object();
+        VThreadRunner.run(() -> {
+            List<Thread> threads = new ArrayList<>();
+            testReenter(lock, 0, threads);
+
+            // wait for threads to terminate
+            for (Thread vthread : threads) {
+                vthread.join();
+            }
+        });
+    }
+
+    private void testReenter(Object lock, int depth, List<Thread> threads) throws Exception {
+        if (depth < MAX_ENTER_DEPTH) {
+            synchronized (lock) {
+                assertTrue(Thread.holdsLock(lock));
+
+                // start platform or virtual thread that blocks waiting to enter
+                var started = new CountDownLatch(1);
+                ThreadFactory factory = ThreadLocalRandom.current().nextBoolean()
+                        ? Thread.ofPlatform().factory()
+                        : Thread.ofVirtual().factory();
+                var thread = factory.newThread(() -> {
+                    started.countDown();
+                    synchronized (lock) {
+                        /* do nothing */
+                    }
+                });
+                thread.start();
+
+                // wait for thread to start and block
+                started.await();
+                await(thread, Thread.State.BLOCKED);
+                threads.add(thread);
+
+                // test reenter
+                testReenter(lock, depth + 1, threads);
+            }
+        }
+    }
+
+    /**
      * Test monitor enter when pinned.
      */
     @Test
@@ -197,13 +324,7 @@ class MonitorEnterExit {
      */
     @Test
     void testContendedEnterWhenPinnedHeldByVirtualThread() throws Exception {
-        // need at least two carrier threads
-        int previousParallelism = VThreadRunner.ensureParallelism(2);
-        try {
-            VThreadRunner.run(this::testEnterWithContentionWhenPinned);
-        } finally {
-            VThreadRunner.setParallelism(previousParallelism);
-        }
+        VThreadRunner.run(this::testEnterWithContentionWhenPinned);
     }
 
     /**
@@ -232,6 +353,79 @@ class MonitorEnterExit {
 
         // check thread entered monitor
         assertTrue(entered.get());
+    }
+
+    /**
+     * Test that blocking waiting to enter a monitor releases the carrier.
+     */
+    @Test
+    @DisabledIf("LockingMode#isLegacy")
+    void testReleaseWhenBlocked() throws Exception {
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
+        try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+
+            var lock = new Object();
+
+            // thread enters monitor
+            var started = new CountDownLatch(1);
+            var vthread1 = factory.newThread(() -> {
+                started.countDown();
+                synchronized (lock) {
+                }
+            });
+
+            try {
+                synchronized (lock) {
+                    // start thread and wait for it to block
+                    vthread1.start();
+                    started.await();
+                    await(vthread1, Thread.State.BLOCKED);
+
+                    // carrier should be released, use it for another thread
+                    var executed = new AtomicBoolean();
+                    var vthread2 = factory.newThread(() -> {
+                        executed.set(true);
+                    });
+                    vthread2.start();
+                    vthread2.join();
+                    assertTrue(executed.get());
+                }
+            } finally {
+                vthread1.join();
+            }
+        }
+    }
+
+    /**
+     * Test lots of virtual threads blocked waiting to enter a monitor. If the number
+     * of virtual threads exceeds the number of carrier threads this test will hang if
+     * carriers aren't released.
+     */
+    @Test
+    @DisabledIf("LockingMode#isLegacy")
+    void testManyBlockedThreads() throws Exception {
+        Thread[] vthreads = new Thread[MAX_VTHREAD_COUNT];
+        var lock = new Object();
+        synchronized (lock) {
+            for (int i = 0; i < MAX_VTHREAD_COUNT; i++) {
+                var started = new CountDownLatch(1);
+                var vthread = Thread.ofVirtual().start(() -> {
+                    started.countDown();
+                    synchronized (lock) {
+                    }
+                });
+                // wait for thread to start and block
+                started.await();
+                await(vthread, Thread.State.BLOCKED);
+                vthreads[i] = vthread;
+            }
+        }
+
+        // cleanup
+        for (int i = 0; i < MAX_VTHREAD_COUNT; i++) {
+            vthreads[i].join();
+        }
     }
 
     /**

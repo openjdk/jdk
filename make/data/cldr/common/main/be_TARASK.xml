@@ -1546,13 +1546,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="provisional">Летні час Кітаю</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic draft="provisional">Час Чайбалсану</generic>
-					<standard draft="provisional">Змоўчны час Чайбалсану</standard>
-					<daylight draft="provisional">Летні час Чайбалсану</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard draft="provisional">Час вострава Раства</standard>

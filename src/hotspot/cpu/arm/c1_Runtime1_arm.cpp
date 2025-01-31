@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_LIRAssembler.hpp"
@@ -251,6 +250,10 @@ void StubAssembler::restore_live_registers_without_return() {
 void Runtime1::initialize_pd() {
 }
 
+uint Runtime1::runtime_blob_current_thread_offset(frame f) {
+  Unimplemented();
+  return 0;
+}
 
 OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address target, bool has_argument) {
   OopMap* oop_map = save_live_registers(sasm);

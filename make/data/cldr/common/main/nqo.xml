@@ -26,11 +26,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ast">ߊߛߑߕߎߙߌߞߊ߲</language>
 			<language type="az">ߊߖߍߙߑߓߊߦߌߖߊߞߊ߲</language>
 			<language type="az" alt="short">ߊߖߋߙߌߞߊ߲</language>
+			<language type="bal">ߓߊߟߎߗߌߞߊ߲</language>
 			<language type="bas">ߓߛߊߞߊ߲</language>
 			<language type="be">ߓߌߟߏߙߎ߳ߛߌߞߊ߲</language>
 			<language type="bem">ߓߋ߲ߓߊߞߊ߲</language>
+			<language type="bew">ߓߋߕߊߥߌߞߊ߲</language>
 			<language type="bez">ߓߋߣߊߞߊ߲</language>
 			<language type="bg">ߓߌߟߑߜ߭ߊߙߌߞߊ߲</language>
+			<language type="blo">ߊߣߌ߯ߞߊ߲</language>
 			<language type="bm">ߒߞߏ ߡߊߟߌ</language>
 			<language type="bn">ߓߍ߲ߜ߭ߊߟߌߞߊ߲</language>
 			<language type="bo">ߕߌߓߋߕߌߞߊ߲</language>
@@ -195,6 +198,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="or">ߏߖߊߞߊ߲</language>
 			<language type="os">ߏߛߍߕߌߞߊ߲</language>
 			<language type="pa">ߔߍ߲ߖߊߓߌߞߊ߲</language>
+			<language type="pap">ߔߊߔߌߦߊߡߊ߲ߕߏߞߊ߲</language>
 			<language type="pcm">ߖߋ߬ߟߌ߬ߓߊߟߊ߫ ߔߌߘߑߜ߭ߍ߲ߞߊ߲</language>
 			<language type="pl">ߔߟߏߣߍߞߊ߲</language>
 			<language type="prg">ߔߎߙߛߌߞߊ߲</language>
@@ -217,6 +221,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="saq">ߛߊ߲ߓߙߎߞߊ߲</language>
 			<language type="sat">ߛߊ߲ߕߊߟߌߞߊ߲</language>
 			<language type="sbp">ߌߛߊ߲ߜ߭ߎߞߊ߲</language>
+			<language type="scn">ߛߌߛߟߌߦߊߞߊ߲</language>
 			<language type="sd">ߛߌ߲ߘߌߞߊ߲</language>
 			<language type="se">ߛߋߡߌ߫ ߕߟߋ߬ߓߐ߬ߞߊ߲</language>
 			<language type="seh">ߛߌߛߋߣߊߞߊ߲</language>
@@ -242,6 +247,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tg">ߕߊߖߞߌߞߊ߲</language>
 			<language type="th">ߕߊߦߌߞߊ߲</language>
 			<language type="ti">ߕߜ߭ߌߙߌߢߊߞߊ߲</language>
+			<language type="tig">ߕߌߜ߭ߙߋߞߊ߲</language>
 			<language type="tk">ߕߎߙߞߌߡߍߣߌߞߊ߲</language>
 			<language type="to">ߕߏ߲ߖ߭ߌߞߊ߲</language>
 			<language type="tr">ߕߙߎߞߌߞߊ߲</language>
@@ -254,6 +260,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ur">ߎߙߘߎߞߊ߲</language>
 			<language type="uz">ߎߖ߭ߑߓߋߞߌߞߊ߲</language>
 			<language type="vai">ߒߝ߭ߊߦߌ߲ߞߊ߲</language>
+			<language type="vec">ߝ߭ߣߋߛߌߦߊߞߊ߲</language>
 			<language type="vi">ߝ߭ߌߦߋߕߌߣߊߡߌߞߊ߲</language>
 			<language type="vo">ߝ߭ߏߟߊߔߎߞߊ߲</language>
 			<language type="vun">ߝ߭ߎߖߏߞߊ߲</language>
@@ -952,17 +959,312 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="era">
+				<displayName>ߕߎ߬ߡߊ</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>ߕߎ߬ߡߊ</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>ߕߎ߬ߡߊ</displayName>
+			</field>
+			<field type="year">
+				<displayName>ߛߊ߲߭</displayName>
+				<relative type="-1">ߛߊߙߏ߲߬</relative>
+				<relative type="0">ߢߌ߬ߣߊ߲߬</relative>
+				<relative type="1">ߛߊ߲߬ߘߐ߫</relative>
+			</field>
+			<field type="year-short">
+				<displayName>ߛߊ߲߭</displayName>
+				<relative type="-1">ߛߊ߲߬ ߕߊ߬ߡߌ߲߬ߣߍ߲</relative>
+				<relative type="0">ߢߌ߬ߣߊ߲߬</relative>
+				<relative type="1">ߛߊ߲߬ߘߐ</relative>
+			</field>
+			<field type="year-narrow">
+				<displayName>ߛߊ߲߭</displayName>
+				<relative type="-1">ߛߊ߲߬ߘߐ߫</relative>
+				<relative type="0">ߢߌ߬ߣߊ߲߬</relative>
+				<relative type="1">ߛߊ߲߬ߘߐ߫</relative>
+			</field>
+			<field type="quarter">
+				<displayName>ߣߊ߯ߣߌ߲ߢߐ߲߮</displayName>
+			</field>
+			<field type="month">
+				<displayName>ߞߊߙߏ</displayName>
+				<relative type="-1">ߞߊߙߏ߫ ߕߊ߬ߡߌ߲߬ߣߍ߲</relative>
+				<relative type="0">ߞߊߙߏ ߣߌ߲߬</relative>
+				<relative type="1">ߞߊߙߏ߫ ߣߊ߬ߕߐ</relative>
+			</field>
+			<field type="month-short">
+				<displayName>ߞߊߙߏ</displayName>
+				<relative type="-1">ߞߊߙߏ߫ ߕߊߡߌ߲߬ߣߍ߲</relative>
+				<relative type="0">ߞߊߙߏ ߣߌ߲߬</relative>
+				<relative type="1">ߞߊߙߏ߫ ߣߊ߬ߕߐ</relative>
+			</field>
+			<field type="month-narrow">
+				<displayName>ߞߊߙߏ</displayName>
+				<relative type="-1">ߞߊߙߏ߫ ߕߊ߬ߡߌ߲߬ߣߍ߲</relative>
+				<relative type="0">ߞߊߙߏ ߣߌ߲߬</relative>
+				<relative type="1">ߞߊߙߏ߫ ߣߊ߬ߕߐ</relative>
+			</field>
+			<field type="week">
+				<displayName>ߟߐ߯ߕߍ</displayName>
+				<relative type="-1">ߟߐ߯ߕߍ߫ ߕߊ߬ߡߌ߲߬ߣߍ߲</relative>
+				<relative type="0">ߟߐ߯ߕߍ ߣߌ߲߬</relative>
+				<relative type="1">ߟߐ߯ߕߍ߫ ߣߊ߬ߕߐ</relative>
+			</field>
+			<field type="week-short">
+				<relative type="-1">ߟߐ߯ߕߍ߫ ߕߊ߬ߡߌ߲߬ߣߍ߲</relative>
+				<relative type="0">ߟߐ߯ߕߍ ߣߌ߲߬</relative>
+				<relative type="1">ߟߐ߯ߕߍ߫ ߣߊ߬ߕߐ</relative>
+				<relativePeriod>ߞߊ߬ ߓߐ߫ ߟߐ߯ߕߍ߫ {0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<relative type="-1">ߟߐ߯ߕߍ߫ ߕߊ߬ߡߌ߲߬ߣߍ߲</relative>
+				<relative type="0">ߟߐ߯ߕߍ ߣߌ߲߬</relative>
+				<relative type="1">ߟߐ߯ߕߍ߫ ߣߊ߬ߕߐ</relative>
+				<relativePeriod>ߞߊ߬ߓߐ߫ ߟߐ߯ߕߍ {0}</relativePeriod>
+			</field>
+			<field type="day">
+				<displayName>ߟߏ߲</displayName>
+				<relative type="-1">ߞߎߣߎ߲߬</relative>
+				<relative type="0">ߓߌ߬</relative>
+				<relative type="1">ߛߌߣߌ߲߫</relative>
+			</field>
+			<field type="day-short">
+				<displayName>ߟߏ߲</displayName>
+				<relative type="-1">ߞߎߣߎ߲߬</relative>
+				<relative type="0">ߓߌ߬</relative>
+				<relative type="1">ߛߌߣߌ߲߫</relative>
+			</field>
+			<field type="day-narrow">
+				<displayName>ߟߏ߲</displayName>
+				<relative type="-1">ߞߎߣߎ߲߬</relative>
+				<relative type="0">ߓߌ߬</relative>
+				<relative type="1">ߛߌߣߌ߲߫</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">ߊ߬ ߟߐ߯ߕߍ߫ {0} ߟߋ߫ ߣߌ߲߬</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="weekday">
+				<displayName>ߟߐ߯ߕߍ ߟߏ߲ ߠߎ߬</displayName>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>ߛ/ߥ</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>ߛ/ߥ</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>ߛ/ߥ</displayName>
+			</field>
+			<field type="hour">
+				<displayName>ߕߎ߬ߡߊ߬ߙߋ߲</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName>ߕ.</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName>ߕ.</displayName>
+			</field>
+			<field type="minute">
+				<displayName>ߡߌ߬ߛߍ߲</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName>ߡ.</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName>ߡ.</displayName>
+			</field>
+			<field type="second">
+				<displayName>ߝߌ߬ߟߊ߲</displayName>
+			</field>
+			<field type="second-short">
+				<displayName>ߝ.</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName>ߝ.</displayName>
+			</field>
+			<field type="zone">
+				<displayName>ߝߊ߲߬ߕߙߊ߬ ߕߎߡߊ</displayName>
+			</field>
+		</fields>
 		<timeZoneNames>
 			<gmtFormat>ߜ߭ߕߖ{0}</gmtFormat>
 			<gmtZeroFormat>ߜ߭ߕߖ</gmtZeroFormat>
 			<regionFormat>{0} ߕߎ߬ߡߊ</regionFormat>
 			<regionFormat type="daylight">{0} ߕߎ߬ߡߊ߬-ߦߟߍߡߊ߲</regionFormat>
 			<regionFormat type="standard">{0} ߕߎ߬ߡߊ߬-ߦߟߍߡߊ߲ߓߊߟߌ</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>ߖߊ߯ߓߊ߫ ߕߎߡߘߊ߫ ߘߏ߲߬ߖߟߎ߬ߡߊ߬ߣߍ߲</standard>
+				</long>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity>ߛߏ߫ ߟߐ߲ߓߊߟߌ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Andorra">
+				<exemplarCity>ߊ߲ߘߏߙߋ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity>ߘߎ߬ߓߊߦߌ߬</exemplarCity>
+			</zone>
+			<zone type="Asia/Kabul">
+				<exemplarCity>ߞߊߓߎߟ</exemplarCity>
+			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity>ߊ߲ߕߌߜ߭ߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity>ߊ߲ߜ߭ߌߟߊ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity>ߕߌߙߣߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity>ߦߙߋߝ߭ߊ߲߫</exemplarCity>
+			</zone>
 			<zone type="Africa/Luanda">
 				<exemplarCity>ߟߎߥߊ߲ߘߊ߫</exemplarCity>
 			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity>ߙߏߕߋߙߊ߫</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Palmer">
+				<exemplarCity>ߔߊߟߑߡߍߙ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Troll">
+				<exemplarCity>ߕߙߏߟ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity>ߛߏߥߊ߫</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity>ߡߊߥߑߛߐ߲߫</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Davis">
+				<exemplarCity>ߘߊߝ߭ߌߛ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity>ߝ߭ߏߛߑߕߏߞ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity>ߞߊߛߋߦߌ߫ ߕߎ߬ߡߊ߬ߘߊ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity>ߘߎߡߐ߲-ߎߙߑߝ߭ߌߟ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity>ߡߞߑߡߎߙߑߘߏ߫</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity>ߙߌߦߏ߫ ߜ߭ߊߟߟߋߜ߭ߐߛ</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity>ߡߊ߲ߘߏߖ߭ߊ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity>ߛߊ߲߫ ߖߎߥߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity>ߎߛߑߥߦߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity>ߟߊ ߙߌߦߏߖߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity>ߛߊ߲߫ ߟߎߥߌߛ</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity>ߞߕߊߡߊߙߑߞߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Salta">
+				<exemplarCity>ߛߊߟߑߕߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity>ߖߎߖߎߦߌ߫</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity>ߕߞߎߡߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity>ߞߐߙߑߘߏߓߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity>ߓߌߦߣߏߛߍߙ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pago_Pago">
+				<exemplarCity>ߔߊߜ߭ߏ߫ ߡߏߜ߭ߏ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity>ߝ߭ߌߦߍߣ</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity>ߔߍߙߕ</exemplarCity>
+			</zone>
+			<zone type="Australia/Eucla">
+				<exemplarCity>ߋߞߑߟߊ߫</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity>ߘߊߙߑߥߌ߲߫</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity>ߊߘߋߟߊߦߘ</exemplarCity>
+			</zone>
+			<zone type="Australia/Broken_Hill">
+				<exemplarCity>ߓߑߙߏߞߍ߲߫ ߤߌߟ</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity>ߡߋߟߑߓߎߙߣ</exemplarCity>
+			</zone>
+			<zone type="Australia/Hobart">
+				<exemplarCity>ߤߏߓߊߙߕ</exemplarCity>
+			</zone>
+			<zone type="Australia/Lindeman">
+				<exemplarCity>ߟߌ߲ߘߋߡߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity>ߛߌߘߑߣߋ߫</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity>ߓߑߙߌߛߑߓߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Macquarie">
+				<exemplarCity>ߡߞߊߙߌ߫</exemplarCity>
+			</zone>
+			<zone type="Australia/Lord_Howe">
+				<exemplarCity>ߟߐߙߘ ߤߏߥߋ߫</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity>ߊߙߎߓߊ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Mariehamn">
+				<exemplarCity>ߡߊߙߌߤߊߡ</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity>ߓߊߞߎ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Sarajevo">
+				<exemplarCity>ߛߙߊߖ߭ߋߝ߭ߏ߫</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity>ߓߊߙߑߓߘ</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity>ߘߞߊ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity>ߓߑߙߎߞߑߛߍߟ</exemplarCity>
+			</zone>
 			<zone type="Africa/Ouagadougou">
 				<exemplarCity>ߥߜ߭ߊ߬ߘߜ߭ߎ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Sofia">
+				<exemplarCity>ߛߏߝߌߦߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity>ߓߤߊߙߍ߲߫</exemplarCity>
 			</zone>
 			<zone type="Africa/Bujumbura">
 				<exemplarCity>ߓߎߖ߭ߎ߲ߓߎߙߊ߫</exemplarCity>
@@ -970,8 +1272,155 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Porto-Novo">
 				<exemplarCity>ߔߐߙߑߕߏ߫-ߣߝ߭ߏ߫</exemplarCity>
 			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity>ߛߍ߲-ߓߊߙߕߑߤߟߋߡߌ߫</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity>ߓߍߙ߸ߡߎߘߍߛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Brunei">
+				<exemplarCity>ߓߙߎߣߋߦߌ߫</exemplarCity>
+			</zone>
+			<zone type="America/La_Paz">
+				<exemplarCity>ߟߊ ߔߊߖ߭</exemplarCity>
+			</zone>
+			<zone type="America/Kralendijk">
+				<exemplarCity>ߞߑߙߊߟߊ߲ߘߌߖߞ</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity>ߋߙߎߣߔߋ</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity>ߙߌߦߏ߫ ߓߑߙߊ߲ߞߏ߫</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity>ߔߐߙߑߕߏ߫ ߝ߭ߋߟߏ߫</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity>ߓߏߥߊ߫ ߝ߭ߌߛߑߕߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity>ߡߣߊߥߐߛ</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity>ߞߎߦߌߦߓߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Santarem">
+				<exemplarCity>ߛߊ߲ߕߊߙߍߡ</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity>ߞߊ߲ߔߏ߫ ߜ߭ߑߙߊ߲ߘ</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity>ߓߟߋߡ</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity>ߊߙߊߜ߭ߎߥߊߦߌߣߊ߫ ߕߎ߬ߡߊ߬ߘߊ</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity>ߛߊ߲ߔߊߥߟߏ߫</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity>ߓߊߤߌߦߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Fortaleza">
+				<exemplarCity>ߝߐߙߑߕߊߟߋߖ߭ߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity>ߡߊߛߋߦߏ߫</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity>ߙߋߛߌߝ</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity>ߣߐߙߐ߲ߤߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity>ߣߊߛߊߥߏ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Thimphu">
+				<exemplarCity>ߕߌ߲ߔߎ߫</exemplarCity>
+			</zone>
 			<zone type="Africa/Gaborone">
 				<exemplarCity>ߜ߭ߊߓߏߙߐߣ</exemplarCity>
+			</zone>
+			<zone type="Europe/Minsk">
+				<exemplarCity>ߡߌ߲ߛߞ</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity>ߓߋߟߋߌߖ߭ߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity>ߘߊߥߎߛߐ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity>ߥߌߕߋߤߐߙߛ</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity>ߌߣߎߝ߭ߌߞ</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity>ߝ߭ߊ߲ߞߎߝ߭ߍߙ</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>ߝߐߙߕ ߣߋߟߑߛߐ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity>ߘߊߥߎߛߐ߲߫ ߞߙߌߞ</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity>ߞߙߌߛߑߕߐ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity>ߋߘߑߡߐ߲ߕߐ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity>ߛߥߌߝ ߞߎߙߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity>ߞߊ߲ߓߙߌߘߖ ߓߊߦ</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity>ߙߋߖ߭ߌߣߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity>ߥߌ߲ߣߌߔߋߜ߭</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity>ߙߋߖ߭ߏߟߎߕ</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity>ߙߊ߲ߞߌ߲߫ ߌ߲ߟߍߕ</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity>ߊߕߌߞߏߞߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity>ߕߏߙߏ߲ߕߏ߫</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity>ߌߞߊߟߎߦߌߕ</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity>ߡߐ߲ߞߑߕߐ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity>ߤߊߟߌߝߊߞߛ</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity>ߜ߭ߏߛߋ߫ ߕߌ߲</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity>ߜ߭ߑߟߊߛ ߕߌ߲</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity>ߓߑߟߊ߲ߛ-ߛߊߓߑߟߐ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity>ߛߍ߲-ߖ߭ߊ߲ ߕߋ ߕߍߚ-ߣߋߝ߭</exemplarCity>
+			</zone>
+			<zone type="Indian/Cocos">
+				<exemplarCity>ߞߏߞߏߛ</exemplarCity>
 			</zone>
 			<zone type="Africa/Kinshasa">
 				<exemplarCity>ߞߌ߲ߛߊߛߊ߫</exemplarCity>
@@ -985,20 +1434,89 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Brazzaville">
 				<exemplarCity>ߓߙߖ߭ߊߝ߭ߌߟ</exemplarCity>
 			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity>ߖ߭ߎߙߌߞ</exemplarCity>
+			</zone>
 			<zone type="Africa/Abidjan">
 				<exemplarCity>ߊߓߌߖߊ߲߬</exemplarCity>
+			</zone>
+			<zone type="Pacific/Rarotonga">
+				<exemplarCity>ߙߊߙߏߕߏ߲ߜ߭ߊ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity>ߍߛߑߕߍߙ</exemplarCity>
+			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>ߔߎ߲ߕߊ߫ ߊߙߋߣߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Santiago">
+				<exemplarCity>ߛߊ߲ߕߌߦߊߜ߭ߏ߫</exemplarCity>
 			</zone>
 			<zone type="Africa/Douala">
 				<exemplarCity>ߘߎߥߟߊ߫</exemplarCity>
 			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity>ߎߙߎ߲ߞߌ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Shanghai">
+				<exemplarCity>ߛߊ߲ߜ߭ߊߦߌ߫</exemplarCity>
+			</zone>
+			<zone type="America/Bogota">
+				<exemplarCity>ߓߜ߭ߏߕߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity>ߞߏߛߑߕߊߙߌߞߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity>ߤߝ߭ߊߣߊ߫</exemplarCity>
+			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>ߜߦߋߞߎ߲߫-ߝߙߌߛߌ߫</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity>ߞߎߙߛߊߥߏ߫</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity>ߞߙߌߛߑߡߊߛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Nicosia">
+				<exemplarCity>ߣߌߞߏߛߌߦߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>ߝߡߊߜ߭ߎߛߑߕߊ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity>ߔߙߊߜ߭</exemplarCity>
+			</zone>
+			<zone type="Europe/Busingen">
+				<exemplarCity>ߓߎߛߍ߲ߜ߭ߍ߲߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity>ߓߍߙߑߟߍ߲߫</exemplarCity>
 			</zone>
 			<zone type="Africa/Djibouti">
 				<exemplarCity>ߖߌߓߎߕߌ߫</exemplarCity>
 			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity>ߞߏߔߋߣߊߜ߭</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity>ߘߏߡߋߣߌߞ</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity>ߛߊ߲ߕߏ-ߘߏߡߌ߲ߜ߭</exemplarCity>
+			</zone>
 			<zone type="Africa/Algiers">
 				<exemplarCity>ߊߟߑߖ߭ߋ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity>ߜ߭ߟߊߔߊߜ߭ߐߛ</exemplarCity>
+			</zone>
+			<zone type="America/Guayaquil">
+				<exemplarCity>ߜ߭ߎߥߦߊߞߌߟ</exemplarCity>
+			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity>ߕߊߟߌ߲ߣ</exemplarCity>
 			</zone>
 			<zone type="Africa/Cairo">
 				<exemplarCity>ߞߍ߯ߙ</exemplarCity>
@@ -1009,14 +1527,80 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Asmera">
 				<exemplarCity>ߊߛߑߡߙߊ߫</exemplarCity>
 			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity>ߞߣߊߙߌ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity>ߛߋߥߎߕߊ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Madrid">
+				<exemplarCity>ߡߊߘߙߌߘ</exemplarCity>
+			</zone>
 			<zone type="Africa/Addis_Ababa">
 				<exemplarCity>ߊ߬ߘߌ߫ ߛߊ߬ߓߋߓߊ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Helsinki">
+				<exemplarCity>ߤߍߟߑߛߌ߲ߞߌ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fiji">
+				<exemplarCity>ߝߖߌ߫</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Stanley">
+				<exemplarCity>ߛߑߕߊ߲ߟߋߦ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Truk">
+				<exemplarCity>ߗߎ߯ߞ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Ponape">
+				<exemplarCity>ߝߏ߲ߔߋߦߌ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kosrae">
+				<exemplarCity>ߞߐߛ.ߙߊ߫</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity>ߝߊߙߏߋ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Paris">
+				<exemplarCity>ߔߊ߬ߙߌ߫</exemplarCity>
 			</zone>
 			<zone type="Africa/Libreville">
 				<exemplarCity>ߟߌߓߙߋߝ߭ߌߟ</exemplarCity>
 			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight>ߓߙߌߕߊ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+				<exemplarCity>ߟߐ߲ߘߙߍߛ</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity>ߜ߭ߙߋߣߘߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity>ߕߓߌߟߛߌ߫</exemplarCity>
+			</zone>
+			<zone type="America/Cayenne">
+				<exemplarCity>ߞߊߦߑߣߋ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Guernsey">
+				<exemplarCity>ߜ߭ߍߙߑߣߛߋߦ</exemplarCity>
+			</zone>
 			<zone type="Africa/Accra">
 				<exemplarCity>ߊߞߙߊ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Gibraltar">
+				<exemplarCity>ߖ߭ߌߓߙߊߟߑߕߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity>ߕߎߟߋ߫</exemplarCity>
+			</zone>
+			<zone type="America/Godthab">
+				<exemplarCity>ߣߎ߯ߞ</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity>ߌߕߕߏߞߞߏߙߑߕߏߙߑߟߜߕ</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity>ߘߊ߲ߡߊߙߞߛߑߤߊߝ߭ߣ</exemplarCity>
 			</zone>
 			<zone type="Africa/Banjul">
 				<exemplarCity>ߓߊ߲ߖߎߟ</exemplarCity>
@@ -1024,20 +1608,170 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Conakry">
 				<exemplarCity>ߞߐߣߊߞߙߌ߫</exemplarCity>
 			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity>ߜ߭ߑߥߊߘߌߟߎߔ</exemplarCity>
+			</zone>
 			<zone type="Africa/Malabo">
 				<exemplarCity>ߡߟߊߓߏ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity>ߊߕߍߣ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity>ߞߐ߰ߘߎ߮ ߖ߭ߐߙߑߖ߭ߌߟߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity>ߜ߭ߊ߬ߕߌ߬ߡߊ߬ߟߊ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guam">
+				<exemplarCity>ߜ߭ߎߥߊ߲߫</exemplarCity>
 			</zone>
 			<zone type="Africa/Bissau">
 				<exemplarCity>ߓߌߛߊߥߏ߫</exemplarCity>
 			</zone>
+			<zone type="America/Guyana">
+				<exemplarCity>ߜ߭ߎߦߣߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity>ߤߐ߲ߜ߭ ߞߐ߲ߜ߭</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity>ߕߋߜ߭ߎߛߌߜ߭ߊߟߑߔߊ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Zagreb">
+				<exemplarCity>ߗ߭ߊߜ߭ߙߍߓ</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity>ߔߐߙߕ-ߏ-ߔߑߙߍ߲ߛ</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity>ߓߎߘߊߓߍߛߕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity>ߖߞߊߙߑߕߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Pontianak">
+				<exemplarCity>ߔߐ߲ߕߌߦߊߣߊߞ</exemplarCity>
+			</zone>
+			<zone type="Asia/Makassar">
+				<exemplarCity>ߡߞߊߛߊߙ</exemplarCity>
+			</zone>
+			<zone type="Asia/Jayapura">
+				<exemplarCity>ߖߦߊߔߎߙߊ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight>ߌߙߑߟߊ߲ߘ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</daylight>
+				</long>
+				<exemplarCity>ߘߎߓߑߟߍ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity>ߖ߭ߋߙߎߖ߭ߊߟߍߡ</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity>ߡߊ߲߫ ߕߌ߲</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity>ߞߊߟߑߞߎߕߊ߫</exemplarCity>
+			</zone>
 			<zone type="Indian/Chagos">
 				<exemplarCity>ߛߊߜ߭ߐߛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity>ߓߊߜ߭ߑߘߊߘ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity>ߕߤߋߙߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Reykjavik">
+				<exemplarCity>ߙߋߦߑߞߌߦߊߝ߭ߍߞ</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity>ߙߐߡ</exemplarCity>
+			</zone>
+			<zone type="Europe/Jersey">
+				<exemplarCity>ߖߋߙߑߛߌ߫</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity>ߖߡߊߦߌߞߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity>ߊߡߡߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity>ߕߏߞߌߦߏ߫</exemplarCity>
 			</zone>
 			<zone type="Africa/Nairobi">
 				<exemplarCity>ߣߊߦߙߏߓߌ߫</exemplarCity>
 			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity>ߓߌߗߍߞ</exemplarCity>
+			</zone>
+			<zone type="Asia/Phnom_Penh">
+				<exemplarCity>ߔߑߣߐ߲߫ ߔߍ߲߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>ߞߊ߲ߕߐ߲߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kiritimati">
+				<exemplarCity>ߞߙߌߕߌߡߊߕߌ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tarawa">
+				<exemplarCity>ߕߙߊߥߊ߫</exemplarCity>
+			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>ߞߐߡߐ߯ߙ</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity>ߛߍ߲-ߞߙߌߛߑߕߐߝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Pyongyang">
+				<exemplarCity>ߔߌߦߐ߲ߜ߭ߦߊ߲ߜ߭</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity>ߛߋߎߟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity>ߞߎߥߍߦߌߕ</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity>ߞߊߦߌߡߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity>ߊߞߑߕߊߥߎ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity>ߏߙߊߟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>ߊߕߌߙߊߎ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity>ߊߞߑߕߏߓߌ߲ߛߞ</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>ߞߏߛߑߕߣߊߦ</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity>ߞߖ߭ߌߟߏߙߑߘߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity>ߊߟߑߡߊ ߊߕߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity>ߝ߭ߌߦߍߕߌߣߊߡ</exemplarCity>
+			</zone>
+			<zone type="Asia/Beirut">
+				<exemplarCity>ߓߋߦߌߙߎߕ</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity>ߛߍ-ߟߎߥߌߛ</exemplarCity>
+			</zone>
+			<zone type="Europe/Vaduz">
+				<exemplarCity>ߝ߭߮ߊߘߎߖ߭</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity>ߞߏߟߏ߲ߓߏ߫</exemplarCity>
 			</zone>
 			<zone type="Africa/Monrovia">
 				<exemplarCity>ߡߏ߬ߙߏߝ߭ߌߦߊ߫</exemplarCity>
@@ -1045,26 +1779,125 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Maseru">
 				<exemplarCity>ߡߊߛߋߙߎ߫</exemplarCity>
 			</zone>
+			<zone type="Europe/Vilnius">
+				<exemplarCity>ߝ߭ߌߟߑߣߌߦߎߛ</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity>ߟߎߞߑߛߊ߲ߓߎߙߜ߭</exemplarCity>
+			</zone>
+			<zone type="Europe/Riga">
+				<exemplarCity>ߙߌߜ߭ߊ߫</exemplarCity>
+			</zone>
 			<zone type="Africa/Tripoli">
 				<exemplarCity>ߕߙߌߔߟߌ߫ ( ߟߓߌ߫ )</exemplarCity>
 			</zone>
 			<zone type="Africa/Casablanca">
 				<exemplarCity>ߞߛߊߓߎߟߊ߲ߞߊ߫</exemplarCity>
 			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity>ߡߏߣߊߞߏ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity>ߗߛߌߣߊߥ</exemplarCity>
+			</zone>
+			<zone type="Europe/Podgorica">
+				<exemplarCity>ߔߏߘߜ߭ߢߙߌߞߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Marigot">
+				<exemplarCity>ߡߊߙߌߜ߭ߐߕ</exemplarCity>
+			</zone>
 			<zone type="Indian/Antananarivo">
 				<exemplarCity>ߊ߲ߕߣߊߣߊߙߌߝ߭ߏ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity>ߞߑߥߖߊߟߋߦߌ߲߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Majuro">
+				<exemplarCity>ߡߊߖߎߙߏ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Skopje">
+				<exemplarCity>ߛߑߞߏߔߑߖߋ߫</exemplarCity>
 			</zone>
 			<zone type="Africa/Bamako">
 				<exemplarCity>ߓߡߊ߬ߞߐ߫</exemplarCity>
 			</zone>
+			<zone type="Asia/Rangoon">
+				<exemplarCity>ߙߊ߲ߜ߭ߎ߲߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity>ߤߏߝ߭ߘ</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity>ߎߟߊ߲ߓߊߕߐߙ</exemplarCity>
+			</zone>
+			<zone type="Asia/Macau">
+				<exemplarCity>ߡߞߊߥߏ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Saipan">
+				<exemplarCity>ߛߍ߲ߔߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity>ߡߊߙߑߕߣߌߞ</exemplarCity>
+			</zone>
 			<zone type="Africa/Nouakchott">
 				<exemplarCity>ߣߎߥߊߞߑߛߐߕ</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity>ߡߐ߲ߕߛߑߚߊߕ</exemplarCity>
+			</zone>
+			<zone type="Europe/Malta">
+				<exemplarCity>ߡߊߟߑߕ</exemplarCity>
 			</zone>
 			<zone type="Indian/Mauritius">
 				<exemplarCity>ߡߏߙߌߛ</exemplarCity>
 			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity>ߡߊߟߑߘߌߝ߭</exemplarCity>
+			</zone>
 			<zone type="Africa/Blantyre">
 				<exemplarCity>ߓߑߟߊ߲ߕߌ߯ߙ</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity>ߕߌߖߎߥߣߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity>ߤߋߙߑߡߏߛߌߟߏ߫</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>ߛߌߦߎߘߊߘ ߖߎߥߊߙߋ߫</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity>ߡߖ߭ߊߕߑߟߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity>ߛߌߤߎߥߊߤߎ߫</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity>ߓߊߤߌߦߊ ߘߋ߬ ߓߊ߲ߘߋߙߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Ojinaga">
+				<exemplarCity>ߏߖߌߣߜ߭ߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity>ߡߐ߲ߕߋߚߋߦ</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity>ߡߍߞߛߌߞߏ߫</exemplarCity>
+			</zone>
+			<zone type="America/Matamoros">
+				<exemplarCity>ߡߕߊߡߙߏߛ</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity>ߡߋߙߌߘߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity>ߞߊ߲ߞߎ߲߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuala_Lumpur">
+				<exemplarCity>ߞߎߥߟߊ ߟߎ߲ߔߎߙ</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuching">
+				<exemplarCity>ߞߎߗߌ߲ߜ߭</exemplarCity>
 			</zone>
 			<zone type="Africa/Maputo">
 				<exemplarCity>ߡߊߔߎߕߏ߫</exemplarCity>
@@ -1072,17 +1905,203 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Windhoek">
 				<exemplarCity>ߥߌ߲ߘߐߞ</exemplarCity>
 			</zone>
+			<zone type="Pacific/Noumea">
+				<exemplarCity>ߣߎߡߋߦߊ߫</exemplarCity>
+			</zone>
 			<zone type="Africa/Niamey">
 				<exemplarCity>ߢߊߡߋ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Norfolk">
+				<exemplarCity>ߣߐߙߑߝߐߟߞ</exemplarCity>
 			</zone>
 			<zone type="Africa/Lagos">
 				<exemplarCity>ߟߋߜ߭ߐߛ</exemplarCity>
 			</zone>
+			<zone type="America/Managua">
+				<exemplarCity>ߡߣߊߜ߭ߎߥߊ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity>ߊߡߛߑߕߍߙߑߘߊߡ</exemplarCity>
+			</zone>
+			<zone type="Europe/Oslo">
+				<exemplarCity>ߏߛߑߟߏ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity>ߞߊߕߑߡߊ߲ߘߎ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Nauru">
+				<exemplarCity>ߣߊߥߙߎ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Niue">
+				<exemplarCity>ߣߌߦߎߋ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity>ߗߕߊߡ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Auckland">
+				<exemplarCity>ߏߞߑߟߊ߲ߘ</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity>ߡߊߛߑߞߊߕ</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity>ߔߣߊߡߊ߬</exemplarCity>
+			</zone>
+			<zone type="America/Lima">
+				<exemplarCity>ߟߌߡߊ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tahiti">
+				<exemplarCity>ߕߊߤߕߌ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity>ߡߊߙߞߌߛ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Gambier">
+				<exemplarCity>ߜ߭ߊ߲ߓߌߦߋߙ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Port_Moresby">
+				<exemplarCity>ߡߏߙߍߛߑߓߌ߫ ߘߊ߲ߞߊ߲</exemplarCity>
+			</zone>
+			<zone type="Pacific/Bougainville">
+				<exemplarCity>ߓߎߜ߭ߍ߲ߝ߭ߌߟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Manila">
+				<exemplarCity>ߡߊߣߌߟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity>ߞߙߊߛߌ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity>ߝ߭ߊߙߑߛߏߝ߭ߌ߫</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity>ߡߌߞߋߟߐ߲߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity>ߔߌߕߞߍߙߣ</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity>ߔߐߙߕ-ߏ-ߙߌߞߏ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity>ߜ߭ߊߖ߭ߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Hebron">
+				<exemplarCity>ߤߋߓߑߙߐ߲߫</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity>ߊߗ߭ߏߙߍߛ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Madeira">
+				<exemplarCity>ߡߊߘߍߙ</exemplarCity>
+			</zone>
+			<zone type="Europe/Lisbon">
+				<exemplarCity>ߟߌߛߑߓߐ߲߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity>ߔߟߊߏߛ</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity>ߊߛߎ߲ߛߌߦߐ߲߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity>ߞߕߊߙ</exemplarCity>
+			</zone>
 			<zone type="Indian/Reunion">
 				<exemplarCity>ߙߋߣߌߦߐ߲߫</exemplarCity>
 			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity>ߓߎߞߊߙߍߛ</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity>ߓߍߟߑߜ߭ߙߊߘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity>ߞߊߟߌߣߌ߲ߜ߭ߙߊߘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity>ߡߏߛߑߞߎ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity>ߝ߭ߏߟߜ߭ߏߜ߭ߙߊߘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>ߛߙߊߕߐߝ߭</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>ߊߛߑߕߙߊߞߑߤߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>ߎߟߌߦߊߣߏߝ߭ߑߛߞ</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>ߞߌߙߐߝ߭</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity>ߛߡߊߙߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity>ߦߋߞߊߕߋߙߌ߲ߓߎߙߜ߭</exemplarCity>
+			</zone>
+			<zone type="Asia/Omsk">
+				<exemplarCity>ߏߡߑߛߞ</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity>ߣߝ߭ߏߞߛߓߌߙߑߛߞߌ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>ߓߊߙߑߣߐߟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>ߕߏߡߑߛߞ</exemplarCity>
+			</zone>
+			<zone type="Asia/Novokuznetsk">
+				<exemplarCity>ߣߝ߭ߏߞߎߖ߭ߣߍߕߑߛߞߌ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity>ߞߙߊߛߑߟߏߦߑߦߊߙߑߛߞߌ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity>ߌߙߑߞߎߕߑߘߞߌ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity>ߗߌߕߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity>ߦߊߞߎߕߑߛߞ</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity>ߝ߭ߑߟߊߘߌߝ߭ߏߛߑߕߐߞ</exemplarCity>
+			</zone>
+			<zone type="Asia/Khandyga">
+				<exemplarCity>ߞ߭ߊ߲ߘߌߜ߭ߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity>ߛߞߊߟߌߣ</exemplarCity>
+			</zone>
+			<zone type="Asia/Ust-Nera">
+				<exemplarCity>ߎߛߕ-ߣߋߙߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Magadan">
+				<exemplarCity>ߡߜ߭ߊߘߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity>ߛߙߋߘߑߣߏߞߐߟߌߡߑߛߞߌ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity>ߞߊ߲ߦߑߗߊߕߑߞߌ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity>ߊߣߊߘߌߙ</exemplarCity>
+			</zone>
 			<zone type="Africa/Kigali">
 				<exemplarCity>ߞߌߜ߭ߊߟߌ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity>ߙߌߦߊߘ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guadalcanal">
+				<exemplarCity>ߜ߭ߎߥߘߊߟߑߞߣߊߟ</exemplarCity>
 			</zone>
 			<zone type="Indian/Mahe">
 				<exemplarCity>ߡߊߤߋ߫</exemplarCity>
@@ -1090,11 +2109,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Khartoum">
 				<exemplarCity>ߞߊߙߑߕߎߡ</exemplarCity>
 			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity>ߛߑߕߏߞߐߟߡ</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity>ߛߍ߲ߜ߭ߊߔߎߙ</exemplarCity>
+			</zone>
 			<zone type="Atlantic/St_Helena">
 				<exemplarCity>ߛߍ߲ߕ ߤߋߟߍߣ</exemplarCity>
 			</zone>
+			<zone type="Europe/Ljubljana">
+				<exemplarCity>ߟߑߖߎߓߑߖߣߊ߫</exemplarCity>
+			</zone>
+			<zone type="Arctic/Longyearbyen">
+				<exemplarCity>ߟߐ߲ߜ߭ߌߋߦߊߙߑߓߌߦߍ߲߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Bratislava">
+				<exemplarCity>ߓߑߙߊߕߌߛߑߟߝ߭ߊ߫</exemplarCity>
+			</zone>
 			<zone type="Africa/Freetown">
 				<exemplarCity>ߝߙߌߕߐ߲߬</exemplarCity>
+			</zone>
+			<zone type="Europe/San_Marino">
+				<exemplarCity>ߛߍ߲-ߡߊߙߌߦߏ߫</exemplarCity>
 			</zone>
 			<zone type="Africa/Dakar">
 				<exemplarCity>ߘߊ߬ߞߊ߯ߙߎ߫</exemplarCity>
@@ -1102,14 +2139,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Mogadishu">
 				<exemplarCity>ߡߏߜ߭ߊߘߌߛߏ߫</exemplarCity>
 			</zone>
+			<zone type="America/Paramaribo">
+				<exemplarCity>ߔߙߊߡߊߙߌߓߏ߫</exemplarCity>
+			</zone>
 			<zone type="Africa/Juba">
 				<exemplarCity>ߖߎߓߊ߫</exemplarCity>
 			</zone>
 			<zone type="Africa/Sao_Tome">
 				<exemplarCity>ߛߊߏ-ߕߏߡߋ߫</exemplarCity>
 			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity>ߛߊߟߑߝ߭ߊߘߐߙ</exemplarCity>
+			</zone>
+			<zone type="America/Lower_Princes">
+				<exemplarCity>ߟߏߥߍ ߔߑߙߍ߲ߛ ߞߊߙߑߕߋ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity>ߘߡߊߛ</exemplarCity>
+			</zone>
 			<zone type="Africa/Mbabane">
 				<exemplarCity>ߒߓߊߓߊߣ</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity>ߜ߭ߑߙߊ߲ߘ ߕߎߙߞ</exemplarCity>
 			</zone>
 			<zone type="Africa/Ndjamena">
 				<exemplarCity>ߒߖߊߡߋߣߊ߫</exemplarCity>
@@ -1120,14 +2172,179 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Lome">
 				<exemplarCity>ߟߏߡߋ߫</exemplarCity>
 			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity>ߓߊ߲ߞߐߞ</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity>ߘߎߛߊ߲ߓߋ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fakaofo">
+				<exemplarCity>ߝߞߊߏߝߏ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Dili">
+				<exemplarCity>ߘߟߌ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity>ߊߛߑߜ߭ߊߓߊߕ</exemplarCity>
+			</zone>
 			<zone type="Africa/Tunis">
 				<exemplarCity>ߕߎߣߌߛ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tongatapu">
+				<exemplarCity>ߕߏ߲ߜ߭ߕߊߔߎ߫</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity>ߌߛߑߕߊ߲ߓߎߟ</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity>ߔߐߙߕ ߊߛߑߔߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Funafuti">
+				<exemplarCity>ߝߎߣߊߝߎߕߌ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Taipei">
+				<exemplarCity>ߕߊߦߌߔߋ߫</exemplarCity>
 			</zone>
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>ߘߊ߯ߙ-ߛߊ߬ߟߊ߯ߡ</exemplarCity>
 			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity>ߞߌߦߍߝ߭</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>ߛߌ߲ߝߋߙߔߏߟ</exemplarCity>
+			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>ߞߊ߲ߔߟߊ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity>ߡߌߘߑߥߊߦ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity>ߥߊߞߋ߫</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity>ߊߘߊߞ</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity>ߣߏߡߋ߫</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity>ߊ߲ߞߏߙߊߖ߭</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity>ߦߊߞߎߕߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Sitka">
+				<exemplarCity>ߛߌߕߑߞߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity>ߖߎߣߋߥߏ߫</exemplarCity>
+			</zone>
+			<zone type="America/Metlakatla">
+				<exemplarCity>ߡߋߕߑߟߞߊߦߑߟߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity>ߟߐߛ ߊ߲ߖ߭ߋߟߍߛ</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity>ߓߎߥߊߛ</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity>ߝߏߋߣߌߞߛ</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity>ߘߊ߲ߝ߭ߍߙ</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity>ߓߋߦߎߟߊ߫ (ߞߐ߰ߘߎ߮ ߘߊߞߏߕߊ߫)</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity>ߣߋߥ ߛߊߟߋߡ (ߞߐ߰ߘߎ߮ ߘߊߞߏߕߊ߫)</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity>ߛߊ߲ߕߙߌ߫ (ߞߐ߰ߘߎ߮ ߘߊߞߏߕߊ߫)</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity>ߛߌߞߊߜ߭ߏ߫</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity>ߡߋߣߏߡߌ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity>ߝ߭ߍ߲ߛߊ߲߫ [ߌ߲ߘߌߦߣߊ߫]</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity>ߔߋߕߍߙߛߑߓߎߙߜ߭ [ߌ߲ߘߌߦߣߊ߫]</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity>ߕߍߟ ߛߕߌ߫ [ߌ߲ߘߌߦߣߊ߫]</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity>ߞߑߣߏߞߛ [ߌ߲ߘߌߦߣߊ߫]</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity>ߥߌߣߡߊߞ [ߌ߲ߘߌߦߣߊ߫]</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity>ߡߊߙߌ߲ߜ߭ߏ߫ [ߌ߲ߘߌߦߣߊ߫]</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity>ߌ߲ߘߌߦߊߣߊߔߏߟߌߛ</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity>ߟߎߦߌߛߝ߭ߌߟ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity>ߝ߭ߋߝ߭ߊߦ [ߌ߲ߘߌߦߣߊ߫]</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity>ߡߐ߲ߕߌߛߋߟߏ߬ [ߞߊ߲ߕߎߞߌ߫]</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity>ߘߋߕߙߏߥߊ</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity>ߣߋߥ ߦߐߙߞ</exemplarCity>
+			</zone>
+			<zone type="America/Montevideo">
+				<exemplarCity>ߡߐ߲ߕߋߝ߭ߌߘߋߥߏ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity>ߛߡߊߙߑߞߊ߲ߘ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity>ߕߊߛߗߑߞߍ߲ߕ</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity>ߝ߭ߊߕߌߞߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity>ߛߍ߲-ߝ߭ߍ߲ߛߊ߲߫</exemplarCity>
+			</zone>
+			<zone type="America/Caracas">
+				<exemplarCity>ߞߙߊߞߊߛ</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity>ߕߏߙߑߕߏߟߊ߫</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>ߛߍ߲-ߕߏߡߊߛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity>ߤߐ߯-ߗߌ-ߡߌ߲-ߘߎ߱</exemplarCity>
+			</zone>
+			<zone type="Pacific/Efate">
+				<exemplarCity>ߋߝߊߕߋ߫</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wallis">
+				<exemplarCity>ߥߊߟߟߌߛ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Apia">
+				<exemplarCity>ߊߔߌߦߊ߫</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity>ߊߘߍ߲߫</exemplarCity>
 			</zone>
 			<zone type="Indian/Mayotte">
 				<exemplarCity>ߡߊߦߐߕ</exemplarCity>
@@ -1141,6 +2358,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Harare">
 				<exemplarCity>ߤߙߊߙߋ߫</exemplarCity>
 			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>ߊߝߑߜ߭ߊߣߌߛߑߕߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
 			<metazone type="Africa_Central">
 				<long>
 					<standard>ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߊ߲ߓߊ߲ ߕߎ߬ߡߊ߬ߙߋ߲ ߢߊߓߘߍ</standard>
@@ -1163,6 +2385,161 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߟߋ߬ߓߋ ߕߟߋ߬ߡߊ߬ ߕߎߡߊߙߋ߲</daylight>
 				</long>
 			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>ߊߟߊߛߑߞߊ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߊߟߊߛߑߞߊ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߊߟߊߛߑߞߊ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>ߊߡߊߖ߭ߏ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߊߡߊߖ߭ߏߣ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߊߡߊߖ߭ߏ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic>ߊߡߋߙߌߞߌ߬ ߕߊ߲ߓߊ߲ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߞߐ߰ߘߎ߮ ߊߡߋߙߌߞߌ߬ ߕߎ߬ߡߘߊ߬ ߕߊ߲ߓߊ߲߫ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߞߐ߰ߘߎ߮ ߊߡߋߙߌߞߌ߬ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic>ߞߐ߰ߘߎ߰ ߊߡߋߙߌߞߌ߬ ߕߟߋ߬ߓߐ߬ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߞߐ߰ߘߎ߰ ߊߡߋߙߌߞߌ߬ ߕߟߋ߬ߓߐ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߞߐ߰ߘߎ߰ ߊߡߋߙߌߞߌ߬ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic>ߞߙߎ߬ߞߊ߲߬ߠߊ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߞߙߎ߬ߞߊ߲߬ߠߊ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߞߙߎ߬ߞߊ߲߬ߠߊ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic>ߞߐ߰ߘߎ߰ ߊߡߋߙߌߞߌ߬ ߣߌ߫ ߖߐ߫ ߟߌ߲ߓߊ߲ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߞߐ߰ߘߎ߰ ߊߡߋߙߌߞߌ߬ ߣߌ߫ ߖߐ߫ ߟߌ߲ߓߊ߲ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߞߐ߰ߘߎ߰ ߊߡߋߙߌߞߌ߬ ߣߌ߫ ߖߐ߫ ߟߌ߲ߓߊ߲ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>ߊߔߌߦߊ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߊߔߌߦߊ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߊߔߌߦߊ߫ ߕߟߋ߬ߡߊ߬ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic>ߊߙߊߓߎߟߊ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߊߙߊߓߎߟߊ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߊߙߊߓߎߟߊ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ ߛߎߡߊ߲ߘߊ߲ߕߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>ߊߙߑߖ߭ߊ߲ߕߌ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߊߙߑߖ߭ߊ߲ߕߌ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߊߙߑߖ߭ߊ߲ߕߌ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>ߕߟߋ߬ߓߋ ߊߙߑߖ߭ߊ߲ߕߌ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߕߟߋ߬ߓߋ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߕߟߋ߬ߓߋ ߊߙߑߖ߭ߊ߲ߕߌ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic>ߊߙߑߡߋߣߌ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߊߙߑߡߋߣߌ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߊߙߑߡߋߣߌ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ ߛߎߡߊ߲ߘߊ߲ߕߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>ߟߌ߲ߓߊ߲-ߡߊ߲ߞߊ߲ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߟߌ߲ߓߊ߲-ߡߊ߲ߞߊ߲ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߟߌ߲ߓߊ߲-ߡߊ߲ߞߊ߲ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>ߕߍߡߟߊ ߏߛߑߕߙߊߟߌ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߕߍߡߟߊ ߏߛߑߕߙߊߟߌ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߕߍߡߟߊ ߏߛߑߕߙߊߟߌ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>ߏߛߑߕߙߊߟߌ߫ ߕߟߋ߬ߓߋ߬-ߕߍߡߟߊ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߏߛߑߕߙߊߟߌ߫ ߕߟߋ߬ߓߋ߬-ߕߍߡߟߊ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߏߛߑߕߙߊߟߌ߫ ߕߟߋ߬ߓߋ߬-ߕߍߡߟߊ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>ߕߟߋ߬ߓߐ ߏߛߑߕߙߊߟߌ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߕߟߋ߬ߓߐ ߏߛߑߕߙߊߟߌ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߕߟߋ߬ߓߐ ߏߛߑߕߙߊߟߌ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>ߕߟߋ߬ߓߋ ߏߛߑߕߙߊߟߌ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߕߟߋ߬ߓߋ ߏߛߑߕߙߊߟߌ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߕߟߋ߬ߓߋ ߏߛߑߕߙߊߟߌ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic>ߊߖ߭ߍߙߑߓߊߦߑߖߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߊߖ߭ߍߙߑߓߊߦߑߖߊ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߊߖ߭ߍߙߑߓߊߦߑߖߊ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ ߛߎߡߊ߲ߘߊ߲ߕߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>ߊߗ߭ߐߙߛ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߊߗ߭ߐߙߛ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߊߗ߭ߐߙߛ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic>ߓߊ߲ߜ߭ߑߟߊߘߍߛ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߓߊ߲ߜ߭ߑߟߊߘߍߛ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߓߊ߲ߜ߭ߑߟߊߘߍߛ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>ߓߎߕߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>ߓߏߟߝ߭ߌ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>ߓߙߋߖ߭ߟߌߟߊ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߓߙߋߖ߭ߟߌߟߊ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߓߙߋߖ߭ߟߌߟߊ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>ߓߙߎߣߋߦߌ߫ ߘߊߙߎߛߑߛߟߊߡ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
 					<generic>ߜߙߋߞߎ߲߫-ߝߙߌߛߌ߫ ߕߎ߬ߡߊ߬ߙߋ߲</generic>
@@ -1170,9 +2547,160 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>ߜߙߋߞߎ߲߫-ߝߙߌߛߌ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߊߙߋ߲</daylight>
 				</long>
 			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>ߛ߭ߊߡߏߙߏ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>ߗߕߊߡ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߗߕߊߡ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߗߕߊߡ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>ߛߟߌ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߛߟߌ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߛߟߌ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic>ߛߌߣ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߛߌߣ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߛߌߣ ߕߟߋ߬ߡߊ߬ ߕߎ߬ߡߊ߬ߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>ߞߑߙߌߛߑߡߊߛ ߕߌ߲ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>ߞߏߞߏߛ ߕߌ߲ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>ߞߐߟߐ߲ߓߌ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߞߐߟߐ߲ߓߌ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߞߐߟߐ߲ߓߌ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic>ߞߏߞ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߞߏߞ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߞߏߞ ߕߟߋ߬ߡߊ߬ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>ߞߎ߳ߓߊ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߞߎ߳ߓߊ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߞߎ߱ߓߊ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>ߘߊߝ߭ߌߛ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>ߘߎߡߐ߲-ߘߎߙߑߝ߭ߌߟ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard>ߕߟߋ߬ߓߐ ߕߌߡߐߙ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>ߌߛߑߟߊ߲ߘ ߕߌ߲ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߌߛߑߟߊ߲ߘ ߕߌ߲ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߌߛߑߟߊ߲ߘ ߕߌ߲ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>ߌߞߑߥߊߘߐߙ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>ߕߍߡߊ߫ ߋߙߐߔߎ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߕߍߡߊ߫ ߋߙߐߔߎ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߕߍߡߊ߫ ߋߙߐߔߎ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>ߕߟߋ߬ߓߐ ߋߙߐߔߎ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߕߟߋ߬ߓߐ ߋߙߐߔߎ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߕߟߋ߬ߓߐ ߋߙߐߔߎ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard>ߞߊߟߌߣߌ߲ߜ߭ߙߊߘ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>ߕߟߋ߬ߓߋ ߋߙߐߔߎ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߕߟߋ߬ߓߋ ߋߙߐߔߎ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߕߟߋ߬ߓߋ ߋߙߐߔߎ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>ߝߊߟߞߑߟߊ߲ߘ ߕߌ߲ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߝߊߟߞߑߟߊ߲ߘ ߕߌ߲ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߝߊߟߞߑߟߊ߲ߘ ߕߌ߲ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic>ߝߖߌ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߝߖߌ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߝߖߌ߫ ߕߟߋ߬ߡߊ߬ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard>ߝߊ߬ߙߊ߲߬ߛߌ߬ ߜ߭ߎߦߣߊ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
 			<metazone type="French_Southern">
 				<long>
 					<standard>ߐߛߑߕߙߊߟߌ߫ ߘߎ߰ߞߟߏ ߣߌ߫ ߝߊ߬ߙߊ߲߬ߛߌ߫ ߊ߲ߕߊߙߑߕߌߞ ߕߎ߬ߡߊ߬ߙߋ</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>ߜ߭ߟߊߔߊߜ߭ߐߛ ߕߎ߬ߡߊ߬ߘߊ߫</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard>ߜ߭ߊ߲ߓߌߦߍߙ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic>ߖ߭ߐߙߑߖ߭ߌ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߖ߭ߐߙߑߖ߭ߌ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߖ߭ߐߙߑߖ߭ߌ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ ߛߎߡߊ߲ߘߊ߲ߕߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>ߖ߭ߌߟߑߓߍߙߕ ߕߌ߲ ߕߎ߬ߡߊ߬ߘߊ</standard>
 				</long>
 			</metazone>
 			<metazone type="GMT">
@@ -1180,9 +2708,185 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>ߜ߭ߙߋߣߍߕ ߕߎ߬ߡߊ߬ߘߊ</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>ߕߟߋ߬ߓߐ ߜ߭ߌߙߌ߲ߟߊ߲ߘ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߕߟߋ߬ߓߐ ߜ߭ߌߙߌ߲ߟߊ߲ߘ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߕߟߋ߬ߓߐ ߜ߭ߌߙߌ߲ߟߊ߲ߘ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>ߕߟߋ߬ߓߋ ߜ߭ߌߙߌ߲ߟߊ߲ߘ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߕߟߋ߬ߓߋ ߜ߭ߌߙߌ߲ߟߊ߲ߘ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߕߟߋ߬ߓߋ ߜ߭ߌߙߌ߲ߟߊ߲ߘ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard>ߖߌߘߏ߮ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>ߜ߭ߎߦߣߊ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>ߤߥߊߦ - ߊߟߋߦߎߕߌߦߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߤߥߊߦ - ߊߟߋߦߎߕߌߦߊ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߤߥߊߦ - ߊߟߋߦߎߕߌߦߊ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic>ߤߐ߲ߜ߭ ߞߐ߲ߜ߭ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߤߐ߲ߜ߭ ߞߐ߲ߜ߭ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߤߐ߲ߜ߭ ߞߐ߲ߜ߭ ߕߟߋ߬ߡߊ߬ ߕߎ߬ߡߊ߬ߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>ߤߏߝ߭ߘ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߤߏߝ߭ߘ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߤߏߝ߭ߘ ߕߟߋ߬ߡߊ߬ ߕߎ߬ߡߊ߬ߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard>ߤߌ߲ߘߌ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+				</long>
+			</metazone>
 			<metazone type="Indian_Ocean">
 				<long>
 					<standard>ߍ߲ߘߎ߫ ߟߌ߲ߓߊ߲ߘߎ߯ ߕߎ߬ߡߊ߬ߙߋ߲</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard>ߤߌ߲ߘߏ߫ ߛߌߣ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>ߕߍߡߊ߫ ߍ߲ߘߋߣߏߛߌ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>ߕߟߋ߬ߓߐ ߍ߲ߘߋߣߏߛߌ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>ߕߟߋ߬ߓߋ ߍ߲ߘߋߣߏߛߌ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>ߌߙߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߌߙߊ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߌߙߊ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>ߌߙߑߞߎߕߑߛߞ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߌߙߑߞߎߕߑߛߞ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߌߙߑߞߎߕߑߛߞ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic>ߌߛߌ߬ߙߊ߬ߦߌߟߊ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߌߛߌ߬ߙߊ߬ߦߌߟߊ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߌߛߌ߬ߙߊ߬ߦߌߟߊ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ ߛߎߡߊ߲ߘߊ߲ߕߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic>ߖ߭ߊߔߐ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߖ߭ߊߔߐ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߖ߭ߊߔߐ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎ߬ߡߊ߬ߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>ߞߖ߭ߊߞߌߛߑߕߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard>ߕߟߋ߬ߓߐ ߞߖ߭ߊߞߌߛߑߕߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard>ߕߟߋ߬ߓߋ ߞߖ߭ߊߞߌߛߑߕߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>ߞߏߙߋ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߞߏߙߋ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߞߏߙߋ߫ ߕߟߋ߬ߡߊ߬ ߕߎ߬ߡߊ߬ߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard>ߞߏߛߑߙߊ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>ߞߙߊߛߑߣߏߦߌߦߊߙߑߛߞ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߞߙߊߛߑߣߏߦߌߦߊߙߑߛߞ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߞߙߊߛߑߣߏߦߌߦߊߙߑߛߞ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>ߜ߭ߌߙߑߜ߭ߌߛߑߕߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard>ߌߛߑߟߊ߲ߘ ߞߍ߬ߙߍ߲߬ߘߍ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>ߟߐߙߘ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߟߐߙߘ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߟߐߙߘ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>ߡߜ߭ߊߘߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߡߜ߭ߊߘߊ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߡߜ߭ߊߘߊ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>ߡߊߟߍߘߎ߯ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard>ߡߊߟߑߘߌߝ߭ ߕߌ߲ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>ߡߊߙߞߌߛߊߛ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>ߡߊߙߑߛߊߟ ߕߌ߲ ߕߎ߬ߡߊ߬ߘߊ</standard>
 				</long>
 			</metazone>
 			<metazone type="Mauritius">
@@ -1192,14 +2896,338 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>ߡߏߙߌߛ ߕߟߋ߬ߡߊ߬ ߕߎߡߊߙߋ߲</daylight>
 				</long>
 			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>ߡߊߥߑߛߐ߲߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>ߖߐ߫ ߟߌ߲ߓߊ߲ ߡߍ߲ߞߛߌߞߌ߬ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߖߐ߫ ߟߌ߲ߓߊ߲ ߡߍ߲ߞߛߌߞߌ߬ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߖߐ߫ ߟߌ߲ߓߊ߲ ߡߍ߲ߞߛߌߞߌ߬ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>ߎߟߊ߲ߓߕߐߙ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߎߟߊ߲ߓߕߐߙ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߎߟߊ߲ߓߕߐߙ ߕߟߋ߬ߡߊ߬ ߕߎ߬ߡߊ߬ߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>ߡߏߛߑߞߎ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߡߏߛߑߞߎ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߡߏߛߑߞߎ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>ߡߌߦߊߣߑߡߊߙ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard>ߣߊߥߙߎ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard>ߣߋߔߊߟ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic>ߞߊߟߌߘߏߣߌ߫ ߞߎߘߊ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߞߊߟߌߘߏߣߌ߫ ߞߎߘߊ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߞߊߟߌߘߏߣߌ߫ ߞߎߘߊ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic>ߣߌߦߎ-ߖ߭ߋߟߊ߲ߘ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߣߌߦߎ-ߖ߭ߋߟߊ߲ߘ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߣߌߦߎ-ߖ߭ߋߟߊ߲ߘ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>ߝߎ߲ߘߑߟߊ߲ߘ ߞߎߘߊ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߝߎ߲ߘߑߟߊ߲ߘ ߞߎߘߊ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߝߎ߲ߘߑߟߊ߲ߘ ߞߎߘߊ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard>ߣߌߦߋ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic>ߣߐߙ ߝߐߟߞ ߕߌ߲ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߣߐߙ ߝߐߟߞ ߕߌ߲ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߣߐߙ ߝߐߟߞ ߕߌ߲ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>ߝߍߙߑߣߊ߲ߘߏ߫ ߘߋ߬ ߣߏߙߏ߲ߤߊ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߝߍߙߑߣߊ߲ߘߏ߫ ߘߋ߬ ߣߏߙߏ߲ߤߊ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߝߍߙߑߣߊ߲ߘߏ߫ ߘߋ߬ ߣߏߙߏ߲ߤߊ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>ߣߝ߭ߏߛߓߌߙߑߛߞ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߣߝ߭ߏߛߓߌߙߑߛߞ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߣߝ߭ߏߛߓߌߙߑߛߞ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>ߏߡߑߛߞ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߏߡߑߛߞ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߏߡߑߛߞ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic>ߔߊߞߌߛߑߕߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߔߊߞߌߛߑߕߊ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߔߊߞߌߛߑߕߊ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard>ߔߟߊߐߛ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard>ߔߊߓߎߥߊ߫ ߖߌ߬ߣߍ߬ ߞߎߘߊ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>ߔߙߊߜ߭ߎߥߋ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߔߙߊߜ߭ߎߥߋ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߔߙߊߜ߭ߎߥߋ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>ߔߋߙߎ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߔߋߙߎ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߔߋߙߎ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>ߝߟߌߔߌ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߝߟߌߔߌ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߝߟߌߔߌ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>ߝߏߣߌߞߛ ߕߌ߲ ߠߎ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>ߛߍ߲-ߔߌߦߍߙ-ߋ-ߡߌߞߋߟߐ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߛߍ߲-ߔߌߦߍߙ-ߋ-ߡߌߞߋߟߐ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߛߍ߲-ߔߌߦߍߙ-ߋ-ߡߌߞߋߟߐ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard>ߔߌߕߑߞߍߙߣ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard>ߔߏ߲ߔߍ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>ߔߌߦߐ߲ߜ߭ߦߊ߲ߜ߭ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>ߙߋߣߌߦߐ߲߫ ߕߎ߬ߡߊ߬ߙߋ߲</standard>
 				</long>
 			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>ߙߏߕߋߙߊ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>ߛߊߞߑߤߊߟߌߣ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߛߊߞߑߤߊߟߌߣ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߛߊߞߑߤߊߟߌߣ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic>ߛߊߡߏߥߊ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߛߊߡߏߥߊ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߛߊߡߏߥߊ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
 			<metazone type="Seychelles">
 				<long>
 					<standard>ߛߋߦߌߛߌߟ ߕߎ߬ߡߊ߬ߙߋ߲</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>ߛߍ߲ߜ߭ߊߔߎߙ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>ߛߟߏ߬ߡߣߊ߬ ߕߌ߲ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>ߥߙߏ߬ߘߎ߮ ߖ߭ߐߙߑߖ߭ߌߟߊ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>ߛߎߙߌߣߊߡ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>ߛߦߏߥߊ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard>ߕߊߤߕߌ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>ߕߊߦߌߔߋ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߕߊߦߌߔߋ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߕߊߦߌߔߋ߫ ߕߟߋ߬ߡߊ߬ ߕߎ߬ߡߊ߬ߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard>ߕߊߖߞߌߛߑߕߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard>ߕߏߞߋߟߏ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic>ߕߏ߲ߜ߭ߊ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߕߏ߲ߜ߭ߊ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߕߏ߲ߜ߭ߊ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard>ߗߎߞ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic>ߕߎߙߞߌߡߋߣߌߛߑߕߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߕߎߙߞߌߡߋߣߌߛߑߕߊ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߕߎߙߞߑߡߋߣߌߛߑߕߊ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard>ߕߎߝ߭ߊߟߎ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>ߎ߳ߙߑߜ߭ߋߦߌ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߎ߳ߙߑߜ߭ߋߦߌ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߎ߳ߙߑߜ߭ߋߦߌ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic>ߏߖ߭ߑߓߊߞߌߛߑߕߊ߲߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߏߖ߭ߑߓߊߞߌߛߑߕߊ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߏߖ߭ߑߓߊߞߌߛߑߕߊ߲߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic>ߝ߭ߊߣߎߥߊߕߎ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߝ߭ߊߣߎߥߊߕߎ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߝ߭ߊߣߎߥߊߕߎ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>ߝ߭ߣߋߖ߭ߎߦߋߟߊ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>ߝ߭ߟߊߘߑߝ߭ߏߛߑߕߏߞ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߝ߭ߟߊߘߑߝ߭ߏߛߑߕߏߞ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߝ߭ߟߊߘߑߝ߭ߏߛߑߕߏߞ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>ߝ߭ߏߟߑߜ߭ߏߜ߭ߙߊߘ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߝ߭ߏߟߑߜ߭ߏߜ߭ߙߊߘ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߝ߭ߏߟߑߜ߭ߏߜ߭ߙߊߘ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>ߝ߭ߐߛߑߕߐߞ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>ߥߊߞ ߕߌ߲ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard>ߥߊߟߌߛ ߣߌ߫ ߝߕߎߣߊ߫ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>ߦߊߞߎߕߑߛߞߌ߫ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߦߊߞߎߕߑߛߞߌ߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߦߊߞߎߕߑߛߞߌ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>ߦߋߞߊߕߋߙߌ߲ߓߎߙߜ߭ ߕߎ߬ߡߊ߬ߘߊ</generic>
+					<standard>ߦߋߞߊߕߋߙߌ߲ߓߎߙߜ߭ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
+					<daylight>ߦߋߞߊߕߋߙߌ߲ߓߎߙߜ߭ ߕߟߋ߬ߡߊ߬ ߕߎߡߘߊ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>ߦߎߞߐ߲߫ ߕߎ߬ߡߘߊ߬ ߛߎߡߊ߲ߘߊ߲ߕߊ</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -1212,7 +3240,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<symbols numberSystem="latn">
 			<group>،</group>
 		</symbols>
+		<symbols numberSystem="nkoo">
+			<group>،</group>
+		</symbols>
 		<currencies>
+			<currency type="AED">
+				<displayName>ߊߙߊߓߎߟߊ߫ ߡߊ߲߬ߛߊ߬ߙߋ߬ߠߊ ߟߊߘߍ߬ߣߍ߲ ߘߌ߬ߙߑߤߊߡ</displayName>
+				<displayName count="other">ߊߙߊߓߎߟߊ߫ ߡߊ߲߬ߛߊ߬ߙߋ߬ߠߊ ߟߊߘߍ߬ߣߍ߲ ߘߌ߬ߙߑߤߊߡ</displayName>
+				<symbol draft="contributed">ߊߐߘ</symbol>
+			</currency>
+			<currency type="AFN">
+				<displayName>ߊߝߎߜ߭ߊߣߌߛߑߕߊ߲߫ ߊߝߑߜ߭ߊߣߌߛ</displayName>
+				<displayName count="other">ߊߝߎߜ߭ߊߣߌߛߑߕߊ߲߫ ߊߝߑߜ߭ߊߣߌߛ</displayName>
+				<symbol draft="contributed">ߊߝߊ</symbol>
+			</currency>
+			<currency type="ALL">
+				<displayName>ߊߟߑߓߊߣߌ߫ ߟߍߞ</displayName>
+				<displayName count="other">ߊߟߑߓߊߣߌ߫ ߟߍߞ</displayName>
+				<symbol draft="contributed">ߊߟߟ</symbol>
+			</currency>
+			<currency type="AMD">
+				<displayName>ߊߙߑߡߋߣߌ߫ ߘߌ߬ߙߑߤߊߡ</displayName>
+				<displayName count="other">ߊߙߑߡߋߣߌ߫ ߘߌ߬ߙߑߤߊߡ</displayName>
+				<symbol draft="contributed">ߊߡߘ</symbol>
+			</currency>
+			<currency type="ANG">
+				<displayName>ߞߎߙߊߛߊߥߏ߫ ߊ߲ߕߌ߫ ߝߑߟߏߙߌ߲ߛ</displayName>
+				<displayName count="other">ߞߎߙߊߛߊߥߏ߫ ߊ߲ߕߌ߫ ߝߑߟߏߙߌ߲ߛ</displayName>
+				<symbol draft="contributed">ߊ߲ߕߝ</symbol>
+			</currency>
 			<currency type="AOA">
 				<displayName>ߊ߲ߜ߭ߏߟߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߊ߲ߖ߭ߊ</displayName>
 				<symbol draft="contributed">ߊ߲ߜ߭ߎ</symbol>
@@ -1229,26 +3285,164 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ߊ߲ߜ߭ߏߟߊ߫ ߞߎߥߊߖ߭ߊ ߝߊ߲߬ߞߊߘߏ߲߬ߣߍ߲ ( ߁߉߉߅–߁߉߉߉ )</displayName>
 				<symbol draft="contributed">ߊߜ߭ߝ</symbol>
 			</currency>
+			<currency type="ARS">
+				<displayName>ߊߙߑߖ߭ߊ߲ߕߌ߲߫ ߔߋߛߏ</displayName>
+				<displayName count="other">ߊߙߑߖ߭ߊ߲ߕߌ߲߫ ߔߋߛߏ</displayName>
+				<symbol draft="contributed">ߊߖ߭ߔ</symbol>
+			</currency>
+			<currency type="AUD">
+				<displayName>ߐߛߑߕߙߊߟߌ߫ ߘߟߊ</displayName>
+				<displayName count="other">ߐߛߑߕߙߊߟߌ߫ ߘߟߊ</displayName>
+				<symbol draft="contributed">$ߐ</symbol>
+			</currency>
+			<currency type="AWG">
+				<displayName>ߊߙߎߓߊ߫ ߝߑߟߏߙߌ߲ߛ</displayName>
+				<displayName count="other">ߊߙߎߓߊ߫ ߝߑߟߏߙߌ߲ߛ</displayName>
+				<symbol draft="contributed">ߊߥߖ߭</symbol>
+			</currency>
+			<currency type="AZN">
+				<displayName>ߊߖߍߙߑߓߊߦߌߖߊ߲߫ ߊߗ߭ߋߙߌ</displayName>
+				<displayName count="other">ߊߖߍߙߑߓߊߦߌߖߊ߲߫ ߊߗ߭ߋߙߌ</displayName>
+				<symbol draft="contributed">ߊߖߣ</symbol>
+			</currency>
+			<currency type="BAM">
+				<displayName>ߓߐߛߑߣߌ߫ ߍߙߑߗ߭ߋߜ߭ߏߝ߭ߌߣ ߡߊߙߞ ߝߊ߬ߟߋ߲߬ߕߊ</displayName>
+				<displayName count="other">ߓߐߛߑߣߌ߫ ߍߙߑߗ߭ߋߜ߭ߏߝ߭ߌߣ ߡߊߙߞ ߝߊ߬ߟߋ߲߬ߕߊ</displayName>
+				<symbol draft="contributed">ߓߍߡ</symbol>
+			</currency>
+			<currency type="BBD">
+				<displayName>ߓߊߙߑߓߊߘߐߛ ߘߟߊ</displayName>
+				<displayName count="other">ߓߊߙߑߓߊߘߐߛ ߘߟߊ</displayName>
+				<symbol draft="contributed">ߓߓߘ</symbol>
+			</currency>
+			<currency type="BDT">
+				<displayName>ߓߊ߲ߜ߭ߑߟߊߘߍߛ ߕߞߊ</displayName>
+				<displayName count="other">ߓߊ߲ߜ߭ߑߟߊߘߍߛ ߕߞߊ</displayName>
+				<symbol draft="contributed">ߓߘߕ</symbol>
+			</currency>
+			<currency type="BGN">
+				<displayName>ߓߎ߳ߟߑߜ߭ߊߙߌ߫ ߟߍߝ߭</displayName>
+				<displayName count="other">ߓߎ߳ߟߑߜ߭ߊߙߌ߫ ߟߍߝ߭</displayName>
+				<symbol draft="contributed">ߓߜ߭ߟ</symbol>
+			</currency>
+			<currency type="BHD">
+				<displayName>ߓߤߊ߬ߙߊߦߌߣ ߘߌ߬ߣߊߙ</displayName>
+				<displayName count="other">ߓߤߊ߬ߙߊߦߌߣ ߘߌ߬ߣߊߙ</displayName>
+				<symbol draft="contributed">ߓߤߘ</symbol>
+			</currency>
 			<currency type="BIF">
 				<displayName>ߓߎߙߎ߲ߘߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߓߙߝ</symbol>
+			</currency>
+			<currency type="BMD">
+				<displayName>ߓߍߙߑߡߎߘߊ߫ ߘߟߊ</displayName>
+				<displayName count="other">ߓߍߙߑߡߎߘߊ߫ ߘߟߊ</displayName>
+				<symbol draft="contributed">ߓߡߘ</symbol>
+			</currency>
+			<currency type="BND">
+				<displayName>ߓߙߎߣߌ߫ ߘߟߊ</displayName>
+				<displayName count="other">ߓߙߎߣߌ߫ ߘߟߊ</displayName>
+				<symbol draft="contributed">ߓߣߘ</symbol>
+			</currency>
+			<currency type="BOB">
+				<displayName>ߓߏߟߝ߭ߌ߫ ߓߏߟߝ߭ߌߦߊߣߏ߬</displayName>
+				<displayName count="other">ߓߏߟߝ߭ߌ߫ ߓߏߟߝ߭ߌߦߊߣߏ߬</displayName>
+				<symbol draft="contributed">ߓߏߓ</symbol>
+			</currency>
+			<currency type="BRL">
+				<displayName>ߓߙߋߖ߭ߌߟ ߙߋߦߊߟ</displayName>
+				<displayName count="other">ߓߙߋߖ߭ߌߟ ߙߋߦߊߟ</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName>ߓߤߊߡߊߛ ߘߟߊ</displayName>
+				<displayName count="other">ߓߤߊߡߊߛ ߘߟߊ</displayName>
+				<symbol draft="contributed">ߓߛߘ</symbol>
+			</currency>
+			<currency type="BTN">
+				<displayName>ߓߎߕߊ߲߫ ߒߜ߭ߎߟߑߕߙߎߡ</displayName>
+				<displayName count="other">ߓߎߕߊ߲߫ ߒߜ߭ߎߟߑߕߙߎߡ</displayName>
+				<symbol draft="contributed">ߓߕߒ</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>ߓߐߛߎߥߣߊߞߊ ߟߎ߬ ߟߊ߫ ߔߎߟߊ</displayName>
 				<symbol draft="contributed">ߓߥߔ</symbol>
 				<symbol alt="narrow" draft="contributed">ߔ</symbol>
 			</currency>
+			<currency type="BYN">
+				<displayName>ߓߌߟߏߙߌߛ ߙߓߎߟ</displayName>
+				<displayName count="other">ߓߌߟߏߙߌߛ ߙߓߎߟ</displayName>
+				<symbol draft="contributed">ߓߌߙ</symbol>
+			</currency>
+			<currency type="BZD">
+				<displayName>ߓߙߋߖ߭ߌߟ ߘߟߊ</displayName>
+				<displayName count="other">ߓߙߋߖ߭ߌߟ ߘߟߊ</displayName>
+			</currency>
 			<currency type="CDF">
 				<displayName>ߞߏ߲߬ߜ߭ߏ߬ߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߞߝ</symbol>
+			</currency>
+			<currency type="CHF">
+				<displayName>ߛߎߥߌߛ ߝߊߙߊ߲</displayName>
+				<displayName count="other">ߛߎߥߌߛ ߝߊߙߊ߲</displayName>
+				<symbol draft="contributed">ߛߥߝ</symbol>
+			</currency>
+			<currency type="CLP">
+				<displayName>ߛ߭ߟߌ߫ ߔߋߛߏ</displayName>
+				<displayName count="other">ߛ߭ߟߌ߫ ߔߋߛߏ</displayName>
+				<symbol draft="contributed">ߛߟߔ</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>ߛߌߣ ߦߎߥߊߣ (ߝߊ߲߬ߕߙߊ ߖߌߘߊ)</displayName>
+				<displayName count="other">ߛߌߣ ߦߎߥߊߣ (ߝߊ߲߬ߕߙߊ ߖߌߘߊ)</displayName>
+				<symbol draft="contributed">ߛߦߤ</symbol>
+			</currency>
+			<currency type="CNY">
+				<displayName>ߦߎߥߊߣ ߙߊ߲ߡߌ߲ߓߌ߫</displayName>
+				<displayName count="other">ߦߎߥߊߣ ߙߊ߲ߡߌ߲ߓߌ߫</displayName>
+				<symbol draft="contributed">ߛߣߦ</symbol>
+			</currency>
+			<currency type="COP">
+				<displayName>ߞߐߟߐ߲ߓߌ߫ ߔߋߛߏ</displayName>
+				<displayName count="other">ߞߐߟߐ߲ߓߌ߫ ߔߋߛߏ</displayName>
+				<symbol draft="contributed">ߞߐߔ</symbol>
+			</currency>
+			<currency type="CRC">
+				<displayName>ߞߐߛߑߕߊߙߌߞߊ߫ ߞߐߟߐߣ</displayName>
+				<displayName count="other">ߞߐߛߑߕߊߙߌߞߊ߫ ߞߐߟߐߣ</displayName>
+				<symbol draft="contributed">ߞߙߞ</symbol>
+			</currency>
+			<currency type="CUC">
+				<displayName>ߞߎ߳ߓߊ߫ ߔߋߛߏ߫ ߝߊ߬ߟߋ߲߬ߕߊ</displayName>
+				<displayName count="other">ߞߎ߳ߓߊ߫ ߔߋߛߏ߫ ߝߊ߬ߟߋ߲߬ߕߊ</displayName>
+				<symbol draft="contributed">ߞߎ߳ߞ</symbol>
+			</currency>
+			<currency type="CUP">
+				<displayName>ߞߎ߳ߓߊ߫ ߔߋߛߏ߫߫</displayName>
+				<displayName count="other">ߞߎ߳ߓߊ߫ ߔߋߛߏ߫߫</displayName>
+				<symbol draft="contributed">ߞߎ߳ߔ</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>ߜߙߋߞߎ߲߫ ߝߙߌߛߌߞߊ ߟߎ߬ ߍߛߑߞߎߘߐߛ</displayName>
 				<symbol draft="contributed">ߍߛߞ</symbol>
 			</currency>
+			<currency type="CZK">
+				<displayName>ߗߋߞߏߛߟߏߝ߭ߊߞߌ߫ ߞߎߙߐߣ</displayName>
+				<displayName count="other">ߗߋߞߏߛߟߏߝ߭ߊߞߌ߫ ߞߎߙߐߣ</displayName>
+				<symbol draft="contributed">ߗߞߞ</symbol>
+			</currency>
 			<currency type="DJF">
 				<displayName>ߖߌߓߎߕߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߖߓߝ</symbol>
+			</currency>
+			<currency type="DKK">
+				<displayName>ߘߊߣߌߡߊߙߞ ߞߎߙߐߣ</displayName>
+				<displayName count="other">ߘߊߣߌߡߊߙߞ ߞߎߙߐߣ</displayName>
+				<symbol draft="contributed">ߘߞߞ</symbol>
+			</currency>
+			<currency type="DOP">
+				<displayName>ߘߏߡߣߌߞ ߞߊ߲ߓߍ߲ ߔߋߛߏ</displayName>
+				<displayName count="other">ߘߏߡߣߌߞ ߞߊ߲ߓߍ߲ ߔߋߛߏ</displayName>
+				<symbol draft="contributed">ߘߏߔ</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>ߊߟߌߖ߭ߋߙߌߞߊ ߟߎ߬ ߟߊ߫ ߘߌ߬ߣߊ߯ߙߌ</displayName>
@@ -1266,6 +3460,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ߋߗߏߔߌߞߊ ߟߎ߬ ߟߊ߫ ߓߌߙߑߛ</displayName>
 				<symbol draft="contributed">ߋߗߓ</symbol>
 			</currency>
+			<currency type="EUR">
+				<displayName>ߋߙߏ</displayName>
+				<displayName count="other">ߋߙߏ</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName>ߝߖߌ߫ ߘߟߊ</displayName>
+				<displayName count="other">ߝߖߌ߫ ߘߟߊ</displayName>
+				<symbol draft="contributed">$ ߝߖ</symbol>
+			</currency>
+			<currency type="FKP">
+				<displayName>ߝߊߟߞߑߟߊ߲ߘ ߌߛߑߟߊ߲ߘ ߔߐߣߌ߬</displayName>
+				<displayName count="other">ߝߊߟߞߑߟߊ߲ߘ ߌߛߑߟߊ߲ߘ ߔߐߣߌ߬</displayName>
+				<symbol draft="contributed">ߝߞߔ</symbol>
+			</currency>
+			<currency type="GBP">
+				<displayName>ߡߊ߬ߛߊ߬ߟߊ߫-ߘߍ߬ߣߍ߲ ߔߐߣߌ߬</displayName>
+				<displayName count="other">ߡߊ߬ߛߊ߬ߟߊ߫-ߘߍ߬ߣߍ߲ ߔߐߣߌ߬</displayName>
+			</currency>
+			<currency type="GEL">
+				<displayName>ߖ߭ߐߙߑߖߌ߫ ߟߊߙߌ</displayName>
+				<displayName count="other">ߖ߭ߐߙߑߖߌ߫ ߟߊߙߌ</displayName>
+				<symbol draft="contributed">ߖ߭ߐߟ</symbol>
+			</currency>
 			<currency type="GHC">
 				<displayName>ߛߘߌ</displayName>
 				<displayName count="other">ߜ߭ߊ߯ߣߊ߫ ߛߘߌ ( ߁߉߆߇–߂߀߀߇ )</displayName>
@@ -1274,6 +3491,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ߜ߭ߊ߯ߣߊ߫ ߛߘߌ</displayName>
 				<displayName count="other">ߜ߭ߊ߯ߣߞߊ ߟߎ߬ ߛߘߌ</displayName>
 				<symbol draft="contributed">ߜ߭ߛߘ</symbol>
+			</currency>
+			<currency type="GIP">
+				<displayName>ߖ߭ߌߓߑߙߊߟߑߕߊ߫ ߔߐߣߌ߬</displayName>
+				<displayName count="other">ߖ߭ߌߓߑߙߊߟߑߕߊ߫ ߔߐߣߌ߬</displayName>
+				<symbol draft="contributed">ߖ߭ߓߔ£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>ߜ߭ߊ߲ߓߌߞߊ ߟߎ߬ ߟߊ߫ ߘߟߊߛߌ߫</displayName>
@@ -1292,6 +3514,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ߕߍߡߊߓߊ߲߮ ߖߌ߬ߣߍ߬ߞߊ ߟߎ߬ ߟߊ߫ ߋߞߥߋߟߋ</displayName>
 				<symbol draft="contributed">ߕߖߋ</symbol>
 			</currency>
+			<currency type="GTQ">
+				<displayName>ߜ߭ߎߥߊߕߋߡߟߊ߫ ߞߋߕߑߗ߭ߊߟ</displayName>
+				<displayName count="other">ߜ߭ߎߥߊߕߋߡߟߊ߫ ߞߋߕߑߗ߭ߊߟ</displayName>
+				<symbol draft="contributed">ߜ߭ߕߞ</symbol>
+			</currency>
 			<currency type="GWE">
 				<displayName>ߖߌߣߍ߫ ߓߌߛߊߥߏߞߊ ߟߎ߬ ߟߊ߫ ߍߛߑߞߎߘߐߛ</displayName>
 				<symbol draft="contributed">ߖߓߍ</symbol>
@@ -1300,14 +3527,136 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ߖߌߣߍ߫ ߓߌߛߊߥߏߞߊ ߟߎ߬ ߟߊ߫ ߔߋߖ߭ߏ</displayName>
 				<symbol draft="contributed">ߖߓߔ</symbol>
 			</currency>
+			<currency type="GYD">
+				<displayName>ߜ߭ߎ߳ߦߊߣ ߘߟߊ</displayName>
+				<displayName count="other">ߜ߭ߎ߳ߦߊߣ ߘߟߊ</displayName>
+				<symbol draft="contributed">ߜ߭ߎ߳ߘ</symbol>
+			</currency>
+			<currency type="HKD">
+				<displayName>ߤߐ߲ߞߐ߲߫ ߘߟߊ</displayName>
+				<displayName count="other">ߤߐ߲ߞߐ߲߫ ߘߟߊ</displayName>
+				<symbol draft="contributed">ߤߞߘ</symbol>
+			</currency>
+			<currency type="HNL">
+				<displayName>ߤߐ߲ߘߎߙߊ߫ ߟߋ߲ߔߌߙߊ</displayName>
+				<displayName count="other">ߤߐ߲ߘߎߙߊ߫ ߟߋ߲ߔߌߙߊ</displayName>
+				<symbol draft="contributed">ߤߘߟ</symbol>
+			</currency>
+			<currency type="HRK">
+				<displayName>ߞߙߏߥߊߛߌ߫ ߞߎߣߊ߬</displayName>
+				<displayName count="other">ߞߙߏߥߊߛߌ߫ ߞߎߣߊ߬</displayName>
+				<symbol draft="contributed">ߞߛߞ</symbol>
+			</currency>
+			<currency type="HTG">
+				<displayName>ߤߊߦߕߌ߫ ߜ߭ߎߙߑߘ</displayName>
+				<displayName count="other">ߤߊߦߕߌ߫ ߜ߭ߎߙߑߘ</displayName>
+				<symbol draft="contributed">ߤߕߜ߭</symbol>
+			</currency>
+			<currency type="HUF">
+				<displayName>ߢߐ߲ߜ߭ߙߌ߫ ߝߏߙߍ߲ߕ</displayName>
+				<displayName count="other">ߢߐ߲ߜ߭ߙߌ߫ ߝߏߙߍ߲ߕ</displayName>
+				<symbol draft="contributed">ߤߜ߭ߝ</symbol>
+			</currency>
+			<currency type="IDR">
+				<displayName>ߍ߲ߘߣߏߛߌ߫ ߙߎߔߌ</displayName>
+				<displayName count="other">ߍ߲ߘߣߏߛߌ߫ ߙߎߔߌ</displayName>
+				<symbol draft="contributed">ߍ߲ߘߙ</symbol>
+			</currency>
+			<currency type="ILS">
+				<displayName>ߌߛߑߙߊߍߟ ߛߌߞߍߟ ߞߎߘߊ</displayName>
+				<displayName count="other">ߌߛߑߙߊߍߟ ߛߌߞߍߟ ߞߎߘߊ</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>ߤߌ߲ߘߎ߬ ߙߎߔߌ</displayName>
+				<displayName count="other">ߤߌ߲ߘߎ߬ ߙߎߔߌ</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName>ߌߙߊߞߌ߬ ߘߌ߬ߣߊߙ</displayName>
+				<displayName count="other">ߌߙߊߞߌ߬ ߘߌ߬ߣߊߙ</displayName>
+				<symbol draft="contributed">ߌߞߘ</symbol>
+			</currency>
+			<currency type="IRR">
+				<displayName>ߌߙߊ߲߫ ߙߌ߬ߦߊߟ</displayName>
+				<displayName count="other">ߌߙߊ߲߫ ߙߌ߬ߦߊߟ</displayName>
+				<symbol draft="contributed">ߌߙߙ</symbol>
+			</currency>
+			<currency type="ISK">
+				<displayName>ߌߛߑߟߊ߲ߘ ߞߎߙߐߣ</displayName>
+				<displayName count="other">ߌߛߑߟߊ߲ߘ ߞߎߙߐߣ</displayName>
+				<symbol draft="contributed">ߌߛߞ</symbol>
+			</currency>
+			<currency type="JMD">
+				<displayName>ߖߡߊߦߌߞ ߘߟߊ</displayName>
+				<displayName count="other">ߖߡߊߦߌߞ ߘߟߊ</displayName>
+				<symbol draft="contributed">ߖߡߘ</symbol>
+			</currency>
+			<currency type="JOD">
+				<displayName>ߖߐߙߑߘߊߣߌ߫ ߘߌ߬ߣߊߙ</displayName>
+				<displayName count="other">ߖߐߙߑߘߊߣߌ߫ ߘߌ߬ߣߊߙ</displayName>
+				<symbol draft="contributed">ߖߐߘ</symbol>
+			</currency>
+			<currency type="JPY">
+				<displayName>ߣߌߔߐ߲߫ ߦߍߣ</displayName>
+				<displayName count="other">ߣߌߔߐ߲߫ ߦߍߣ</displayName>
+				<symbol draft="contributed">ߗ߭ߔߦ</symbol>
+			</currency>
 			<currency type="KES">
 				<displayName>ߝߋߣߌߦߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
 				<symbol draft="contributed">ߞߋߛ</symbol>
+			</currency>
+			<currency type="KGS">
+				<displayName>ߞߌߙߜ߭ߌߛߑߕߊ߲߫ ߛߐߡ</displayName>
+				<displayName count="other">ߞߌߙߜ߭ߌߛߑߕߊ߲߫ ߛߐߡ</displayName>
+				<symbol draft="contributed">ߞߜ߭ߛ</symbol>
+			</currency>
+			<currency type="KHR">
+				<displayName>ߞߊ߲ߓߐߘߑߖ ߙߌߦߍߟ</displayName>
+				<displayName count="other">ߞߊ߲ߓߐߘߑߖ ߙߌߦߍߟ</displayName>
+				<symbol draft="contributed">ߞߓߙ</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>ߞߐߡ߲߯ߙߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߞߡߝ</symbol>
 				<symbol alt="narrow" draft="contributed">ߝߛ</symbol>
+			</currency>
+			<currency type="KPW">
+				<displayName>ߞߐ߬ߘߎ߮-ߞߏߙߋ߫ ߥߐߣ</displayName>
+				<displayName count="other">ߞߐ߬ߘߎ߮-ߞߏߙߋ߫ ߥߐߣ</displayName>
+				<symbol draft="contributed">ߞߞߥ</symbol>
+			</currency>
+			<currency type="KRW">
+				<displayName>ߥߙߏ߬ߘߎ߮-ߞߏߙߋ߫ ߥߐߣ</displayName>
+				<displayName count="other">ߥߙߏ߬ߘߎ߮-ߞߏߙߋ߫ ߥߐߣ</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName>ߞߎ߬ߥߍߕ ߘߌ߬ߣߊߙ</displayName>
+				<displayName count="other">ߞߎ߬ߥߍߕ ߘߌ߬ߣߊߙ</displayName>
+				<symbol draft="contributed">ߞߥߘ</symbol>
+			</currency>
+			<currency type="KYD">
+				<displayName>ߞߊߦߌߡߊ߲߫ ߌߛߑߟߊ߲ߘ ߘߟߊ</displayName>
+				<displayName count="other">ߞߊߦߌߡߊ߲߫ ߌߛߑߟߊ߲ߘ ߘߟߊ</displayName>
+				<symbol draft="contributed">ߞߌߘ</symbol>
+			</currency>
+			<currency type="KZT">
+				<displayName>ߞߗ߭ߊߞߌߛߑߕߊ߲߫ ߕߊ߲ߖ߭</displayName>
+				<displayName count="other">ߞߗ߭ߊߞߌߛߑߕߊ߲߫ ߕߊ߲ߖ߭</displayName>
+				<symbol draft="contributed">ߞߗ߭ߕ</symbol>
+			</currency>
+			<currency type="LAK">
+				<displayName>ߟߊߏߕߌ߫ ߞߌߔ</displayName>
+				<displayName count="other">ߟߊߏߕߌ߫ ߞߌߔ</displayName>
+				<symbol draft="contributed">ߟߊߞ</symbol>
+			</currency>
+			<currency type="LBP">
+				<displayName>ߟߌߓߊ߲߫ ߔߐߣߌ߬</displayName>
+				<displayName count="other">ߟߌߓߊ߲߫ ߔߐߣߌ߬</displayName>
+				<symbol draft="contributed">ߟߓ£</symbol>
+			</currency>
+			<currency type="LKR">
+				<displayName>ߛߙߌ߫ ߟߊ߲ߞߊ߫ ߙߎߔߌ</displayName>
+				<displayName count="other">ߛߙߌ߫ ߟߊ߲ߞߊ߫ ߙߎߔߌ</displayName>
+				<symbol draft="contributed">ߟߞߙ</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>ߟߌߓߋߙߌߦߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊߙ</displayName>
@@ -1331,6 +3680,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ߡߊ߬ߙߐ߬ߞߎߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߡߙߝ</symbol>
 			</currency>
+			<currency type="MDL">
+				<displayName>ߝߐߟߑߘߊߝ߭ߌ߫ ߟߋ߳</displayName>
+				<displayName count="other">ߝߐߟߑߘߊߝ߭ߌ߫ ߟߋ߳</displayName>
+				<symbol draft="contributed">ߡߘߟ</symbol>
+			</currency>
 			<currency type="MGA">
 				<displayName>ߡߘߊߜ߭ߊߛߑߞߊ߯ߙߌߞߊ ߟߎ߬ ߟߊ߫ ߊߙߌߦߊߙߌ</displayName>
 				<symbol draft="contributed">ߡߘߙ</symbol>
@@ -1340,9 +3694,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ߡߘߊߜ߭ߊߑߞߊ߯ߙߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߡߘߝ</symbol>
 			</currency>
+			<currency type="MKD">
+				<displayName>ߡߊߛߋߘߏߣߌ߫ ߘߋߣߊߙ</displayName>
+				<displayName count="other">ߡߊߛߋߘߏߣߌ߫ ߘߋߣߊߙ</displayName>
+				<symbol draft="contributed">ߡߞߘ</symbol>
+			</currency>
 			<currency type="MLF">
 				<displayName>ߡߊߟߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߡߝ</symbol>
+			</currency>
+			<currency type="MMK">
+				<displayName>ߡߌߦߊ߲ߡߊߙ ߞߌߦߊߕ</displayName>
+				<displayName count="other">ߡߌߦߊ߲ߡߊߙ ߞߌߦߊߕ</displayName>
+				<symbol draft="contributed">ߡߡߞ</symbol>
+			</currency>
+			<currency type="MNT">
+				<displayName>ߡߐ߲ߜ߭ߐߟߌ߫ ߕߎߜ߭ߙߌߞ</displayName>
+				<displayName count="other">ߡߐ߲ߜ߭ߐߟߌ߫ ߕߎߜ߭ߙߌߞ</displayName>
+				<symbol draft="contributed">ߡߣߕ</symbol>
+			</currency>
+			<currency type="MOP">
+				<displayName>ߡߞߊߥߏ߫ ߔߕߊߞߊ߫</displayName>
+				<displayName count="other">ߡߞߊߥߏ߫ ߔߕߊߞߊ߫</displayName>
+				<symbol draft="contributed">ߡߏߔ</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>ߡߏߙߌߕߊߣߌߞߊ ߟߎ߬ ߟߊ߫ ߎ߬ߜ߭ߌߦߊ ( ߁߉߇߃–߂߀߁߇ )</displayName>
@@ -1357,9 +3731,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol draft="contributed">ߡߙߔ</symbol>
 				<symbol alt="narrow" draft="contributed">ߙߛ</symbol>
 			</currency>
+			<currency type="MVR">
+				<displayName>ߡߊߟߑߘߝ߭ߌ߫ ߙߎߝߌߦߊ</displayName>
+				<displayName count="other">ߡߊߟߑߘߝ߭ߌ߫ ߙߎߝߌߦߊ</displayName>
+				<symbol draft="contributed">ߡߝ߭ߙ</symbol>
+			</currency>
 			<currency type="MWK">
 				<displayName>ߡߟߊߥߌߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߛߊ</displayName>
 				<symbol draft="contributed">ߡߟߞ</symbol>
+			</currency>
+			<currency type="MXN">
+				<displayName>ߡߍߞߑߛߌߞ ߔߋߛߏ</displayName>
+				<displayName count="other">ߡߍߞߑߛߌߞ ߔߋߛߏ</displayName>
+				<symbol draft="contributed">ߡߞ$</symbol>
+			</currency>
+			<currency type="MYR">
+				<displayName>ߡߊߟߍߘߎ߯ ߙߌ߲ߖ߭ߌ</displayName>
+				<displayName count="other">ߡߊߟߍߘߎ߯ ߙߌ߲ߖ߭ߌ</displayName>
+				<symbol draft="contributed">ߡߦߙ</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>ߡߏߖ߭ߊ߲ߓߞߌߞߊ ߟߎ߬ ߟߊ߫ ߍߛߑߞߎߘߏߛ</displayName>
@@ -1382,14 +3771,103 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ߖߋ߬ߟߌ߬ߓߊ߬ߞߊ ߟߎ߬ ߟߊ߫ ߣߍߙߊ</displayName>
 				<symbol draft="contributed">ߖߣ</symbol>
 			</currency>
+			<currency type="NIO">
+				<displayName>ߣߌߞߙߊߜ߭ߎߥߊ߫ ߞߐߙߑߘߏߓߊ߫ ߏߙߏ߫</displayName>
+				<displayName count="other">ߣߌߞߙߊߜ߭ߎߥߊ߫ ߞߐߙߑߘߏߓߊ߫ ߏߙߏ߫</displayName>
+				<symbol draft="contributed">ߣߌߏ</symbol>
+			</currency>
+			<currency type="NOK">
+				<displayName>ߣߐߙߑߝ߭ߍߛ ߞߎߙߐߣ</displayName>
+				<displayName count="other">ߣߐߙߑߝ߭ߍߛ ߞߎߙߐߣ</displayName>
+				<symbol draft="contributed">ߣߐߞ</symbol>
+			</currency>
+			<currency type="NPR">
+				<displayName>ߣߋߔߊߟ ߙߎߔߌ</displayName>
+				<displayName count="other">ߣߋߔߊߟ ߙߎߔߌ</displayName>
+				<symbol draft="contributed">ߣߔߙ</symbol>
+			</currency>
+			<currency type="NZD">
+				<displayName>ߣߌߦߎߖ߭ߌߟߊ߲ߘߌ߫ ߘߟߊ</displayName>
+				<displayName count="other">ߣߌߦߎߖ߭ߌߟߊ߲ߘߌ߫ ߘߟߊ</displayName>
+				<symbol draft="contributed">$ߣߖ߭</symbol>
+			</currency>
+			<currency type="OMR">
+				<displayName>ߏߡߊߣ ߙߌ߬ߦߊߟ</displayName>
+				<displayName count="other">ߏߡߊߣ ߙߌ߬ߦߊߟ</displayName>
+				<symbol draft="contributed">ߏߡߙ</symbol>
+			</currency>
+			<currency type="PAB">
+				<displayName>ߔߣߊߡߊ߫ ߓߊߟߑߓߏߥߊ߫</displayName>
+				<displayName count="other">ߔߣߊߡߊ߫ ߓߊߟߑߓߏߥߊ߫</displayName>
+				<symbol draft="contributed">ߔߊߓ</symbol>
+			</currency>
+			<currency type="PEN">
+				<displayName>ߔߋߙߎ߫ ߛߐߟ</displayName>
+				<displayName count="other">ߔߋߙߎ߫ ߛߐߟ</displayName>
+				<symbol draft="contributed">ߔߋߛ</symbol>
+			</currency>
+			<currency type="PGK">
+				<displayName>ߔߊߔߎߥߊ߫ ߖߌ߬ߣߍ߬ ߞߎߘߊ߫ ߞߌߣߊ</displayName>
+				<displayName count="other">ߔߊߔߎߥߊ߫ ߖߌ߬ߣߍ߬ ߞߎߘߊ߫ ߞߌߣߊ</displayName>
+				<symbol draft="contributed">ߔߖߞ</symbol>
+			</currency>
+			<currency type="PHP">
+				<displayName>ߝߟߌߔߌߣ ߔߋߛߏ</displayName>
+				<displayName count="other">ߝߟߌߔߌߣ ߔߋߛߏ</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName>ߔߊߞߌߛߑߕߊ߲߫ ߙߎߔߌ</displayName>
+				<displayName count="other">ߔߊߞߌߛߑߕߊ߲߫ ߙߎߔߌ</displayName>
+				<symbol draft="contributed">ߔߞߙ</symbol>
+			</currency>
+			<currency type="PLN">
+				<displayName>ߔߏߟߐߢ ߗ߭ߑߟߏߕߌ߫</displayName>
+				<displayName count="other">ߔߏߟߐߢ ߗ߭ߑߟߏߕߌ߫</displayName>
+				<symbol draft="contributed">ߔߟߗ߭</symbol>
+			</currency>
+			<currency type="PYG">
+				<displayName>ߔߙߊߜ߭ߏߦߋ߫ ߜ߭ߎߙߊߣߊߛ</displayName>
+				<displayName count="other">ߔߙߊߜ߭ߏߦߋ߫ ߜ߭ߎߙߊߣߊߛ</displayName>
+				<symbol draft="contributed">ߔߙߜ߭</symbol>
+			</currency>
+			<currency type="QAR">
+				<displayName>ߞߕߊߙ ߙߌ߬ߦߊߟ</displayName>
+				<displayName count="other">ߞߕߊߙ ߙߌ߬ߦߊߟ</displayName>
+				<symbol draft="contributed">ߞߊߙ</symbol>
+			</currency>
 			<currency type="RHD">
 				<displayName>ߖ߭ߌ߲ߓߊߓߏߦߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ</displayName>
 				<symbol draft="contributed">ߖ߭ߓߘ</symbol>
+			</currency>
+			<currency type="RON">
+				<displayName>ߙߎߡߊߣߌ߫ ߟߋ߳</displayName>
+				<displayName count="other">ߙߎߡߊߣߌ߫ ߟߋ߳</displayName>
+				<symbol draft="contributed">ߙߎߟ</symbol>
+			</currency>
+			<currency type="RSD">
+				<displayName>ߛߍߙߑߓߌ߫ ߘߋߣߊߙ</displayName>
+				<displayName count="other">ߛߍߙߑߓߌ߫ ߘߋߣߊߙ</displayName>
+				<symbol draft="contributed">ߙߛߘ</symbol>
+			</currency>
+			<currency type="RUB">
+				<displayName>ߌ߬ߙߌ߬ߛߌ߫ ߙߎߓߎߟ</displayName>
+				<displayName count="other">ߌ߬ߙߌ߬ߛߌ߫ ߙߎߓߎߟ</displayName>
+				<symbol draft="contributed">ߌߎߙ</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>ߙߎߥߊ߲ߘߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߙߥߝ</symbol>
 				<symbol alt="narrow" draft="contributed">ߝߙ</symbol>
+			</currency>
+			<currency type="SAR">
+				<displayName>ߛߎ߰ߘߎ߬ߟߊ߫ ߙߌ߬ߦߊߟ</displayName>
+				<displayName count="other">ߛߎ߰ߘߎ߬ߟߊ߫ ߙߌ߬ߦߊߟ</displayName>
+				<symbol draft="contributed">ߛߊߙ</symbol>
+			</currency>
+			<currency type="SBD">
+				<displayName>ߛߟߏ߬ߡߣߊ߬ ߕߌ߲ ߠߎ߬ ߘߟߊ</displayName>
+				<displayName count="other">ߛߟߏ߬ߡߣߊ߬ ߕߌ߲ ߠߎ߬ ߘߟߊ</displayName>
+				<symbol draft="contributed">ߛߓߘ</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>ߛߋߦߌߛߍߟߌߞߊ ߟߎ߬ ߟߊ߫ ߙߎߔߌ</displayName>
@@ -1407,6 +3885,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ߛߎ߬ߘ߲ߊ߬ߞߊ ߟߊ߫ ߔߐߣߌ߬ ( ߁߉߅߆–߂߀߀߇ )</displayName>
 				<symbol draft="contributed">ߛߘߔ</symbol>
 			</currency>
+			<currency type="SEK">
+				<displayName>ߛߎߥߍߘ ߞߎߙߐߣ</displayName>
+				<displayName count="other">ߛߎߥߍߘ ߞߎߙߐߣ</displayName>
+				<symbol draft="contributed">ߛߥߞ</symbol>
+			</currency>
+			<currency type="SGD">
+				<displayName>ߛߍ߲ߜ߭ߊߔߎߙ ߘߟߊ</displayName>
+				<displayName count="other">ߛߍ߲ߜ߭ߊߔߎߙ ߘߟߊ</displayName>
+				<symbol draft="contributed">ߛߜ߭ߘ</symbol>
+			</currency>
 			<currency type="SHP">
 				<displayName>ߛߍ߲ߕ ߤߌߟߋߣߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
 				<symbol draft="contributed">ߛߤߔ</symbol>
@@ -1417,10 +3905,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="SLL">
 				<displayName>ߛߙߊ߬ߟߏ߲߬ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬ - 1964-2022</displayName>
+				<symbol draft="contributed">ߛߟߟ</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>ߛߏߡߊߟߌߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
 				<symbol draft="contributed">ߛߡߛ</symbol>
+			</currency>
+			<currency type="SRD">
+				<displayName>ߛߎߙߌߣߊߡߍߛ ߘߟߊ</displayName>
+				<displayName count="other">ߛߎߙߌߣߊߡߍߛ ߘߟߊ</displayName>
+				<symbol draft="contributed">ߛߎߘ</symbol>
 			</currency>
 			<currency type="SSP">
 				<displayName>ߛߎ߬ߘߊ߲߬ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
@@ -1435,17 +3929,63 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol draft="contributed">ߛߔߘ</symbol>
 				<symbol alt="narrow" draft="contributed">ߛߓ</symbol>
 			</currency>
+			<currency type="SYP">
+				<displayName>ߛߌ߯ߙߌ߫ ߔߐߣߌ߬</displayName>
+				<displayName count="other">ߛߌ߯ߙߌ߫ ߔߐߣߌ߬</displayName>
+				<symbol draft="contributed">ߛߌߔ</symbol>
+			</currency>
 			<currency type="SZL">
 				<displayName>ߛߑߥߊߕߣߞߊ ߟߎ߬ ߟߌߟߊ߲ߖ߭ߋߣߌߛ</displayName>
 				<symbol draft="contributed">ߛߖ߭ߟ</symbol>
+			</currency>
+			<currency type="THB">
+				<displayName>ߕߊߦߌߘߎ߯ ߓߊߘ</displayName>
+				<displayName count="other">ߕߊߦߌߘߎ߯ ߓߊߘ</displayName>
+				<symbol draft="contributed">ߕߘߓ</symbol>
+			</currency>
+			<currency type="TJS">
+				<displayName>ߕߊߖߞߌߛߑߕߊ߲߫ ߛߡߏߣߌ</displayName>
+				<displayName count="other">ߕߊߖߞߌߛߑߕߊ߲߫ ߛߡߏߣߌ</displayName>
+				<symbol draft="contributed">ߕߖߛ</symbol>
+			</currency>
+			<currency type="TMT">
+				<displayName>ߕߎߙߑߞߌߡߋߣߌߛߑߕߊ߲߫ ߡߣߊ߫ ߞߎߘߊ</displayName>
+				<displayName count="other">ߕߎߙߑߞߌߡߋߣߌߛߑߕߊ߲߫ ߡߣߊ߫ ߞߎߘߊ</displayName>
+				<symbol draft="contributed">ߕߡߕ</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>ߕߎߣߛߌߞߊ ߟߎ߬ ߟߊ߫ ߘߌ߬ߣߊ߯ߙ</displayName>
 				<symbol draft="contributed">ߕߣߘ</symbol>
 			</currency>
+			<currency type="TOP">
+				<displayName>ߕߏ߲ߜ߭ߊ߲߫ ߓߊ߲ߜ߭ߊ߫</displayName>
+				<displayName count="other">ߕߏ߲ߜ߭ߊ߲߫ ߓߊ߲ߜ߭ߊ߫</displayName>
+				<symbol draft="contributed">ߕߏߔ</symbol>
+			</currency>
+			<currency type="TRY">
+				<displayName>ߕߎߙߑߞߌ߫ ߟߌߙߊ߬</displayName>
+				<displayName count="other">ߕߎߙߑߞߌ߫ ߟߌߙߊ߬</displayName>
+				<symbol draft="contributed">ߕߎߟ</symbol>
+				<symbol alt="variant" draft="contributed">ߟߕ</symbol>
+			</currency>
+			<currency type="TTD">
+				<displayName>ߕߙߌߘߊߘ ߣߌ߫ ߕߏߓߊߜ߭ߏ߫ ߘߟߊ</displayName>
+				<displayName count="other">ߕߙߌߘߊߘ ߣߌ߫ ߕߏߓߊߜ߭ߏ߫ ߘߟߊ</displayName>
+				<symbol draft="contributed">ߕߕߘ</symbol>
+			</currency>
+			<currency type="TWD">
+				<displayName>ߕߊߦߌߥߊ߲߫ ߘߟߊ߫ ߞߎߘߊ</displayName>
+				<displayName count="other">ߕߊߦߌߥߊ߲߫ ߘߟߊ߫ ߞߎߘߊ</displayName>
+				<symbol draft="contributed">ߕߥߘ</symbol>
+			</currency>
 			<currency type="TZS">
 				<displayName>ߕߊ߲ߖ߭ߊ߯ߣߌߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
 				<symbol draft="contributed">ߕߖ߭ߛ</symbol>
+			</currency>
+			<currency type="UAH">
+				<displayName>ߌߞߑߙߍߣ ߤߙߌߝ߭ߣߌߦߊߛ</displayName>
+				<displayName count="other">ߌߞߑߙߍߣ ߤߙߌߝ߭ߣߌߦߊߛ</displayName>
+				<symbol draft="contributed">ߌߞߤ</symbol>
 			</currency>
 			<currency type="UGS">
 				<displayName>ߎߜ߭ߊ߲ߘߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭ ( ߁߉߆߆–߁߉߈߇ )</displayName>
@@ -1455,13 +3995,66 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ߎߜ߭ߊ߲ߘߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
 				<symbol draft="contributed">ߎߜ߭ߛ</symbol>
 			</currency>
+			<currency type="USD">
+				<displayName>ߊߡߋߙߌߞߌ߬߬ ߞߊ߬ߝߏ߫ ߘߍ߬ߣߍ߲ ߘߟߊ</displayName>
+				<displayName count="other">ߊߡߋߙߌߞߌ߬߬ ߞߊ߬ߝߏ߫ ߘߍ߬ߣߍ߲ ߘߟߊ</displayName>
+				<symbol draft="contributed">ߊߞߘ$</symbol>
+			</currency>
+			<currency type="UYU">
+				<displayName>ߎ߳ߜ߭ߋߦߌ߫ ߔߋߛߏ</displayName>
+				<displayName count="other">ߎ߳ߜ߭ߋߦߌ߫ ߔߋߛߏ</displayName>
+				<symbol draft="contributed">ߎ߳ߔ</symbol>
+			</currency>
+			<currency type="UZS">
+				<displayName>ߎߗ߭ߑߓߋߞߌߛߑߕߊ߲߫ ߛߎߡ</displayName>
+				<displayName count="other">ߎߗ߭ߑߓߋߞߌߛߑߕߊ߲߫ ߛߎߡ</displayName>
+				<symbol draft="contributed">ߎߗ߭ߛ</symbol>
+			</currency>
+			<currency type="VES">
+				<displayName>ߝ߭ߣߋߗ߭ߎߦߋߟߊ߫ ߓߏߟߌߝ߭ߊߙ</displayName>
+				<displayName count="other">ߝ߭ߣߋߗ߭ߎߦߋߟߊ߫ ߓߏߟߌߝ߭ߊߙ</displayName>
+				<symbol draft="contributed">ߝ߭ߋߓ</symbol>
+			</currency>
+			<currency type="VND">
+				<displayName>ߝ߭ߌߦߍߕߑߣߊߡ ߘߐ߲ߜ߭</displayName>
+				<displayName count="other">ߝ߭ߌߦߍߕߑߣߊߡ ߘߐ߲ߜ߭</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName>ߝ߭ߊߣߎߦߊߕߎ߫ ߝ߭ߊߕߎ</displayName>
+				<displayName count="other">ߝ߭ߊߣߎߦߊߕߎ߫ ߝ߭ߊߕߎ</displayName>
+				<symbol draft="contributed">ߝ߭ߕߝ߭</symbol>
+			</currency>
+			<currency type="WST">
+				<displayName>ߛߊߡߏߥߊ߲߫ ߕߟߊ</displayName>
+				<displayName count="other">ߛߊߡߏߥߊ߲߫ ߕߟߊ</displayName>
+				<symbol draft="contributed">$ߥߛ</symbol>
+			</currency>
 			<currency type="XAF">
 				<displayName>ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߊ߲ߓߊ߲ ߠߎ߬ ߝߊߙߊ߲߫ ߛߍߝߊ</displayName>
 				<symbol draft="contributed">ߝߛߝ</symbol>
 			</currency>
+			<currency type="XCD">
+				<displayName>ߛߍߕ ߟߎߛߌߦߊ߫</displayName>
+				<displayName count="other">ߛߍߕ ߟߎߛߌߦߊ߫</displayName>
+				<symbol draft="contributed">ߛߟߘ</symbol>
+			</currency>
 			<currency type="XOF">
 				<displayName>ߝߊߙߊ߲߫ ߛߍߝߊ</displayName>
 				<symbol draft="contributed">߾</symbol>
+			</currency>
+			<currency type="XPF">
+				<displayName>ߝߑߙߊ߲߫ ߛߍߝߊ</displayName>
+				<displayName count="other">ߝߑߙߊ߲߫ ߛߍߝߊ</displayName>
+				<symbol draft="contributed">߾ ߝߛߝ</symbol>
+			</currency>
+			<currency type="XXX">
+				<displayName>ߝߊ߬ߘߊ߲߬ߞߊ߫ ߟߐ߲ߓߊߟߌ</displayName>
+				<displayName count="other">ߝߊ߬ߘߊ߲߬ߞߊ߫ ߟߐ߲ߓߊߟߌ</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName>ߦߡߊߣߌ߲߫ ߙߌ߬ߦߊߟ</displayName>
+				<displayName count="other">ߦߡߊߣߌ߲߫ ߙߌ߬ߦߊߟ</displayName>
+				<symbol draft="contributed">ߦߡߙ</symbol>
 			</currency>
 			<currency type="ZAR">
 				<displayName>ߥߙߏ߬ߘߎ߮ ߝߘߊ߬ߝߌ߲߬ߠߞߊ ߟߎ߬ ߟߊ߫ ߙߊ߲ߘ</displayName>
