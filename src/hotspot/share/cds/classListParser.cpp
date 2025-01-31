@@ -512,9 +512,9 @@ void ClassListParser::constant_pool_resolution_warning(const char* msg, ...) {
 // This function is used for loading classes for customized class loaders
 // during archive dumping.
 InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS) {
-#if !(defined(_LP64) && (defined(LINUX) || defined(__APPLE__) || defined(_WINDOWS)))
+#if !(defined(_LP64) && (defined(LINUX) || defined(__APPLE__) || defined(_WINDOWS) || defined(_ALLBSD_SOURCE)))
   // The only supported platforms are: (1) Linux/64-bit and (2) Solaris/64-bit and
-  // (3) MacOSX/64-bit and (4) Windowss/64-bit
+  // (3) MacOSX/64-bit and (4) Windowss/64-bit and (5) BSD/64-bit
   // This #if condition should be in sync with the areCustomLoadersSupportedForCDS
   // method in test/lib/jdk/test/lib/Platform.java.
   error("AppCDS custom class loaders not supported on this platform");

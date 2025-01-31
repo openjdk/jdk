@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#ifdef _ALLBSD_SOURCE
+#ifdef __APPLE__
 #include <sys/attr.h>
 #include <sys/clonefile.h>
 #endif
@@ -150,7 +150,7 @@ class UnixConstants {
     static final int PREFIX_AT_REMOVEDIR = 00;
 #endif
 
-#ifdef _ALLBSD_SOURCE
+#ifdef __APPLE__
     // flags used with clonefile
     static final int PREFIX_CLONE_NOFOLLOW = CLONE_NOFOLLOW;
     static final int PREFIX_CLONE_NOOWNERCOPY = CLONE_NOOWNERCOPY;
@@ -168,7 +168,7 @@ class UnixConstants {
     static final int PREFIX_FSOPT_NOFOLLOW = 00;
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) || (defined(_BSDONLY_SOURCE) && !defined(__OpenBSD__))
     // advice flags used with posix_fadvise(2)
     static final int PREFIX_POSIX_FADV_SEQUENTIAL = POSIX_FADV_SEQUENTIAL;
     static final int PREFIX_POSIX_FADV_NOREUSE    = POSIX_FADV_NOREUSE;

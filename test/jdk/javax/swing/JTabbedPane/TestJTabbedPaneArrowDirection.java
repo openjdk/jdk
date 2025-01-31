@@ -38,7 +38,7 @@ import javax.swing.UIManager;
  * @bug 8225220
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @summary JTabbedPane arrow should point to left or right direction
  *          when tab layout policy is set to SCROLL_TAB_LAYOUT and tab
  *          placement is set to either TOP or BOTTOM

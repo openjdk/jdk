@@ -23,7 +23,7 @@
 
 /* @test
  * @summary Test probing content type simultaneously from multiple threads.
- * @requires os.family == "linux"
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @build ParallelProbes SimpleFileTypeDetector
  * @run main/othervm ParallelProbes 10
  */

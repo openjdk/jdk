@@ -25,7 +25,7 @@
   @test
   @bug 6348035
   @summary F10 should bring down menu even if keystroke target is disabled
-  @requires (os.family == "linux")
+  @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
   @key headful
   @run main DisabledTargetF10
 */

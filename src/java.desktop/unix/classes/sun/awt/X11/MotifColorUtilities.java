@@ -635,7 +635,8 @@ class MotifColorUtilities {
 
 
     static void loadSystemColors(int[] systemColors) {
-        if (OSInfo.getOSType() == OSInfo.OSType.LINUX) { // Load motif default colors on Linux.
+        if (OSInfo.getOSType() == OSInfo.OSType.LINUX
+            || OSInfo.getOSType() == OSInfo.OSType.BSD) { // Load motif default colors on Linux.
             loadMotifDefaultColors(systemColors);
         }
         else

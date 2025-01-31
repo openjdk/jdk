@@ -41,7 +41,7 @@ JAVA="$TESTJAVA/bin/java"
 
 OS=`uname -s`
 case "$OS" in
-    Darwin | AIX )
+    Darwin | AIX | *BSD )
       FS='/'
       SEP=':' ;;
     Linux )

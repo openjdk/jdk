@@ -32,7 +32,7 @@ import javax.swing.UIManager;
 /*
  * @test
  * @bug 4913368
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @summary Test repainting when entering an empty directory w/ GTK LAF
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame

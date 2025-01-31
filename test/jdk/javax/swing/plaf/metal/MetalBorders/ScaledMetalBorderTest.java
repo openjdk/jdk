@@ -68,7 +68,7 @@ import javax.swing.UIManager;
  * scales correctly without any distortions by checking the midpoints and
  * corners of the border.
  *
- * @requires (os.family == "mac" | os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd" | os.family == "mac")
  * @run main/othervm -Dsun.java2d.uiScale=1 ScaledMetalBorderTest
  * @run main/othervm -Dsun.java2d.uiScale=2 ScaledMetalBorderTest
  */

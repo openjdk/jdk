@@ -72,6 +72,16 @@
 #ifndef __OpenBSD__
 # include <ucontext.h>
 #endif
+#ifdef __FreeBSD__
+# include <sys/sysctl.h>
+# include <sys/procctl.h>
+#ifndef PROC_STACKGAP_STATUS
+#define PROC_STACKGAP_STATUS	18
+#endif
+#ifndef PROC_STACKGAP_DISABLE
+#define PROC_STACKGAP_DISABLE	0x0002
+#endif
+#endif /* __FreeBSD__ */
 
 #if !defined(__APPLE__) && !defined(__NetBSD__)
 # include <pthread_np.h>
@@ -406,6 +416,55 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV || sig == SIGBUS) {
       address addr = (address) info->si_addr;
+#ifdef __FreeBSD__
+      /*
+       * Determine whether the kernel stack guard pages have been disabled
+       */
+      int status = 0;
+      int ret = procctl(P_PID, getpid(), PROC_STACKGAP_STATUS, &status);
+
+      /*
+       * Check if the call to procctl(2) failed or the stack guard is not
+       * disabled.  Either way, we'll then attempt a workaround.
+       */
+      if (ret == -1 || !(status & PROC_STACKGAP_DISABLE)) {
+          /*
+           * Try to work around the problems caused on FreeBSD where the kernel
+           * may place guard pages above JVM guard pages and prevent the Java
+           * thread stacks growing into the JVM guard pages.  The work around
+           * is to determine how many such pages there may be and round down the
+           * fault address so that tests of whether it is in the JVM guard zone
+           * succeed.
+           *
+           * Note that this is a partial workaround at best since the normally
+           * the JVM could then unprotect the reserved area to allow a critical
+           * section to complete.  This is not possible if the kernel has
+           * placed guard pages below the reserved area.
+           *
+           * This also suffers from the problem that the
+           * security.bsd.stack_guard_page sysctl is dynamic and may have
+           * changed since the stack was allocated.  This is likely to be rare
+           * in practice though.
+           *
+           * What this does do is prevent the JVM crashing on FreeBSD and
+           * instead throwing a StackOverflowError when infinite recursion
+           * is attempted, which is the expected behaviour.  Due to it's
+           * limitations though, objects may be in unexpected states when
+           * this occurs.
+           *
+           * A better way to avoid these problems is either to be on a new
+           * enough version of FreeBSD (one that has PROC_STACKGAP_CTL) or set
+           * security.bsd.stack_guard_page to zero.
+           */
+          int guard_pages = 0;
+          size_t size = sizeof(guard_pages);
+          if (sysctlbyname("security.bsd.stack_guard_page",
+                           &guard_pages, &size, NULL, 0) == 0 &&
+              guard_pages > 0) {
+            addr -= guard_pages * os::vm_page_size();
+          }
+      }
+#endif
 
       // check if fault address is within thread stack
       if (thread->is_in_full_stack(addr)) {
@@ -648,6 +707,7 @@ void os::Bsd::init_thread_fpu_state(void) {
 
 juint os::cpu_microcode_revision() {
   juint result = 0;
+#ifdef __APPLE__
   char data[8];
   size_t sz = sizeof(data);
   int ret = sysctlbyname("machdep.cpu.microcode_version", data, &sz, nullptr, 0);
@@ -655,6 +715,11 @@ juint os::cpu_microcode_revision() {
     if (sz == 4) result = *((juint*)data);
     if (sz == 8) result = *((juint*)data + 1); // upper 32-bits
   }
+#else
+  // FIXME: Add an implementation for *BSD
+  //        FreeBSD can potentially do this per the cpuupdate of
+  //        devcpu-data ports.
+#endif
   return result;
 }
 

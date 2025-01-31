@@ -36,7 +36,7 @@ import java.awt.FileDialog;
  * @test
  * @bug 4934185
  * @summary JCK1.5-runtime-interactive: XToolkit FileDialog does not work as expected
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/othervm/manual -Dsun.awt.disableGtkFileDialogs=true RegexpFilterTest

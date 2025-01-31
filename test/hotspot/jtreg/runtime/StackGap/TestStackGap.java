@@ -26,7 +26,7 @@
  * @summary Linux kernel stack guard should not cause segfaults on x86-32
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @requires os.family == "linux"
+ * @requires os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd"
  * @compile T.java
  * @run main/native TestStackGap
  */

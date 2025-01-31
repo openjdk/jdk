@@ -47,7 +47,7 @@ import jtreg.SkippedException;
  * @test
  * @bug 6492108 8160755
  * @key headful
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @summary Verifies that the background is painted the same for
  *          JTextArea, JTextPane, and JEditorPane.
  * @library /javax/swing/regtesthelpers /test/lib

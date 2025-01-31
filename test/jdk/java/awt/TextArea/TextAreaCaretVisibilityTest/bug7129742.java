@@ -31,7 +31,7 @@
  * @key headful
  * @bug 7129742
  * @summary Focus in non-editable TextArea is not shown on Linux.
- * @requires os.family == "linux"
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @modules java.desktop/sun.awt
  *          java.desktop/java.awt.peer
  *          java.desktop/sun.awt.X11:open

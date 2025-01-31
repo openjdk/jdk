@@ -35,7 +35,7 @@ public class Zombies {
 
     static final String os = System.getProperty("os.name");
 
-    static final String TrueCommand = os.contains("OS X")?
+    static final String TrueCommand = (os.contains("OS X") || os.contains("BSD")) ?
         "/usr/bin/true" : "/bin/true";
 
     public static void main(String[] args) throws Throwable {

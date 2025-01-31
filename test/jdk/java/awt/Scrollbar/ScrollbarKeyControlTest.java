@@ -24,7 +24,7 @@
 /*
   @test
   @bug 4943277
-  @requires (os.family == "linux")
+  @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
   @summary XAWT: Scrollbar can't be controlled by keyboard
   @key headful
 */
@@ -51,7 +51,8 @@ public class ScrollbarKeyControlTest implements AdjustmentListener, KeyListener 
     Frame frame;
 
     public static void main(String[] args) throws Exception {
-        if (!System.getProperty("os.name").startsWith("Linux")) {
+        if (!System.getProperty("os.name").startsWith("Linux")
+            && !System.getProperty("os.name").endsWith("BSD")) {
             System.out.println("This test is for XAWT only.");
             return;
         }

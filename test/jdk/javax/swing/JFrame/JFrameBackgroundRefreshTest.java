@@ -46,7 +46,7 @@ import javax.swing.SwingUtilities;
  * @key headful
  * @bug 8187759
  * @summary Test to check if JFrame background is refreshed in Linux.
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd)
  * @run main JFrameBackgroundRefreshTest
  */
 

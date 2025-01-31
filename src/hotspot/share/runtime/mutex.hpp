@@ -29,7 +29,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/semaphore.hpp"
 
-#if defined(LINUX) || defined(AIX) || defined(BSD)
+#if defined(LINUX) || defined(AIX) || defined(_ALLBSD_SOURCE)
 # include "mutex_posix.hpp"
 #else
 # include OS_HEADER(mutex)

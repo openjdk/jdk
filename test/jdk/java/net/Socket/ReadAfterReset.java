@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @requires (os.family == "linux" | os.family == "mac")
+ * @requires (os.family == "linux" | os.family == "mac" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @bug 8203937
  * @summary Test reading bytes from a socket after the connection has been
  *          reset by the peer

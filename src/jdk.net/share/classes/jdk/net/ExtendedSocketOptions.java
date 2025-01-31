@@ -406,6 +406,7 @@ public final class ExtendedSocketOptions {
                 case MACOS -> newInstance("jdk.net.MacOSXSocketOptions");
                 case WINDOWS -> newInstance("jdk.net.WindowsSocketOptions");
                 case AIX -> newInstance("jdk.net.AIXSocketOptions");
+                case BSD -> newInstance("jdk.net.BsdSocketOptions");
                 default -> new PlatformSocketOptions();
             };
         }

@@ -51,11 +51,31 @@ closeSafely(int fd)
     return (fd == -1) ? 0 : close(fd);
 }
 
-static int
-isAsciiDigit(char c)
+#if defined(_BSDONLY_SOURCE)
+/*
+ * Quoting POSIX: "If a multi-threaded process calls fork(), the new
+ * process shall contain a replica of the calling thread and its entire
+ * address space, possibly including the states of mutexes and other
+ * resources. Consequently, to avoid errors, the child process may only
+ * execute async-signal-safe operations until such time as one of the exec
+ * functions is called."
+ *
+ * opendir and readir are not async-signal-safe and can deadlock when
+ * called after fork or vfork (and before exec) so use closefrom syscall
+ * which is safe to call after forking.
+ */
+int
+closeDescriptors(void)
 {
-  return c >= '0' && c <= '9';
+#if defined(__FreeBSD__)
+    closefrom(FAIL_FILENO + 1);
+#else
+    int err;
+    RESTARTABLE(closefrom(FAIL_FILENO + 1), err);
+#endif
+    return 1;
 }
+#else
 
 #if defined(_AIX)
   /* AIX does not understand '/proc/self' - it requires the real process ID */
@@ -65,6 +85,12 @@ isAsciiDigit(char c)
 #else
   #define FD_DIR "/proc/self/fd"
 #endif
+
+static int
+isAsciiDigit(char c)
+{
+  return c >= '0' && c <= '9';
+}
 
 static int
 closeDescriptors(void)
@@ -103,6 +129,7 @@ closeDescriptors(void)
 
     return 1;
 }
+#endif /* _BSDONLY_SOURCE */
 
 static int
 moveDescriptor(int fd_from, int fd_to)

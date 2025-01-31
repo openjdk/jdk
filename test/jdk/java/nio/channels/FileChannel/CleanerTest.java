@@ -24,7 +24,7 @@
 /* @test
  * @bug 8147615
  * @summary Test whether an unreferenced FileChannel is actually cleaned
- * @requires (os.family == "linux") | (os.family == "mac") | (os.family == "aix")
+ * @requires (os.family == "linux") | (os.family == "mac") | (os.family == "aix") | (os.family == "freebsd") | (os.family == "netbsd") | (os.family == "openbsd")
  * @library /test/lib
  * @build jdk.test.lib.util.FileUtils CleanerTest
  * @modules java.management java.base/sun.nio.ch:+open

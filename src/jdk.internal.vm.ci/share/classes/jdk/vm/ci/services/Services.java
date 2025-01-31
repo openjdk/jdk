@@ -351,6 +351,7 @@ public final class Services {
             case LINUX: return "Linux";
             case MACOS: return "Mac OS X";
             case AIX: return "AIX";
+            case BSD: return "BSD";
             case WINDOWS: {
                 String osName = System.getProperty("os.name");
                 if (osName.startsWith("Windows")) {

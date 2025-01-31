@@ -48,8 +48,12 @@ private:
   bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava);
 public:
 
+#if defined(__APPLE__) || defined(__OpenBSD__)
   static Thread *aarch64_get_thread_helper() {
     return Thread::current();
   }
+#else
+  static Thread *aarch64_get_thread_helper();
+#endif
 
 #endif // OS_CPU_BSD_AARCH64_JAVATHREAD_BSD_AARCH64_HPP

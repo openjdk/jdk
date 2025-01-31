@@ -25,6 +25,9 @@
 #if !defined(_WINDOWS) && !defined(_BSDONLY_SOURCE)
 #include "alloca.h"
 #endif
+#ifdef _BSDONLY_SOURCE
+#include <stdlib.h>
+#endif
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"

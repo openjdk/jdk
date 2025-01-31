@@ -77,7 +77,8 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
      * Currently uses hardcoded values
      */
     private int getDefaultDimension() {
-        if (OSInfo.getOSType() == OSInfo.OSType.LINUX) {
+        if (OSInfo.getOSType() == OSInfo.OSType.LINUX
+            || OSInfo.getOSType() == OSInfo.OSType.BSD) {
             return DEFAULT_WIDTH_LINUX;
         } else {
             return DEFAULT_WIDTH_SOLARIS;

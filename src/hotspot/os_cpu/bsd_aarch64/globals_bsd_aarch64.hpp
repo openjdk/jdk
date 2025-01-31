@@ -41,4 +41,9 @@ define_pd_global(uintx,JVMInvokeMethodSlack,     8192);
 // Used on 64 bit platforms for UseCompressedOops base address
 define_pd_global(uintx,HeapBaseMinAddress,       2*G);
 
+#ifndef __APPLE__
+class Thread;
+extern __thread Thread *aarch64_currentThread;
+#endif
+
 #endif // OS_CPU_BSD_AARCH64_GLOBALS_BSD_AARCH64_HPP

@@ -34,7 +34,7 @@ import jtreg.SkippedException;
  * @test
  * @bug 6260659
  * @summary File Name set programmatically in FileDialog is overridden during navigation, XToolkit
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @library /java/awt/regtesthelpers
  * @library /test/lib
  * @build PassFailJFrame

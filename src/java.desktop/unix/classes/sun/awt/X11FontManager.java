@@ -666,7 +666,7 @@ public final class X11FontManager extends FcFontManager {
         if (fontConfigDirs == null) {
             return;
         }
-        if (FontUtilities.isLinux) {
+        if (FontUtilities.isLinux || FontUtilities.isBSD) {
             fontConfigDirs.add(jreLibDirName+File.separator+"oblique-fonts");
         }
         fontdirs = fontConfigDirs.toArray(new String[0]);
@@ -686,7 +686,8 @@ public final class X11FontManager extends FcFontManager {
          * and do the best we can.
          */
         FontConfiguration mFontConfig = new MFontConfiguration(this);
-        if ((FontUtilities.isLinux && !mFontConfig.foundOsSpecificFile())) {
+        if ((FontUtilities.isLinux && !mFontConfig.foundOsSpecificFile()) ||
+            (FontUtilities.isBSD && !mFontConfig.foundOsSpecificFile())) {
             FcFontConfiguration fcFontConfig =
                 new FcFontConfiguration(this);
             if (fcFontConfig.init()) {

@@ -36,6 +36,8 @@ class os::Bsd {
   // mach_absolute_time
   static mach_timebase_info_data_t _timebase_info;
   static volatile uint64_t         _max_abstime;
+#else
+  static int (*_getcpuclockid)(pthread_t, clockid_t *);
 #endif
 
   static GrowableArray<int>* _cpu_to_node;

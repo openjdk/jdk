@@ -87,7 +87,7 @@ public final class Numpad1KeyTyped extends FocusAdapter implements KeyListener {
             robot.keyRelease(KeyEvent.VK_HOME);
             robot.waitForIdle();
 
-            if (Platform.isLinux()) {
+            if (Platform.isLinux() || Platform.isBSD()) {
                 // Press but don't release NumLock
                 robot.keyPress(KeyEvent.VK_NUM_LOCK);
             }
@@ -112,7 +112,7 @@ public final class Numpad1KeyTyped extends FocusAdapter implements KeyListener {
             }
             System.out.println("Test PASSED");
         } finally {
-            if (Platform.isLinux()) {
+            if (Platform.isLinux() || Platform.isBSD()) {
                 // "release" + "press and release" NumLock to disable numlock
                 robot.keyRelease(KeyEvent.VK_NUM_LOCK);
                 robot.keyPress(KeyEvent.VK_NUM_LOCK);

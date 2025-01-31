@@ -145,6 +145,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
 
     static boolean isBSD() {
         return (OSInfo.getOSType() == OSInfo.OSType.LINUX ||
+                OSInfo.getOSType() == OSInfo.OSType.BSD ||
                 OSInfo.getOSType() == OSInfo.OSType.MACOSX);
     }
 

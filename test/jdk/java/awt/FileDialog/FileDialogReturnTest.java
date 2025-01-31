@@ -39,7 +39,7 @@ import jtreg.SkippedException;
  * @test
  * @bug 6260676
  * @summary FileDialog.setDirectory() does not work properly, XToolkit
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux") | (os.family == "freebsd") | (os.family == "netbsd") | (os.family == "openbsd")
  * @library /java/awt/regtesthelpers
  * @library /test/lib
  * @build PassFailJFrame

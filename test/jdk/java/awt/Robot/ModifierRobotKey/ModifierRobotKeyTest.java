@@ -71,7 +71,7 @@ public class ModifierRobotKeyTest extends KeyAdapter {
 
     public ModifierRobotKeyTest() throws Exception {
         String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("os x") || os.contains("linux")) {
+        if (os.contains("os x") || os.contains("linux") || os.contains("bsd")) {
             modifierKeys =  new int[3];
             modifierKeys[0] = KeyEvent.VK_SHIFT;
             modifierKeys[1] = KeyEvent.VK_CONTROL;

@@ -40,7 +40,7 @@ import javax.swing.JFileChooser;
 /*
  * @test
  * @bug 8323670 8307091 8240690
- * @requires os.family == "mac" | os.family == "linux"
+ * @requires os.family == "mac" | os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd"
  * @summary Verifies thread-safety of BasicDirectoryModel (JFileChooser)
  * @run main/othervm -Djava.awt.headless=true ConcurrentModification
  */

@@ -26,6 +26,7 @@
 #ifndef SUN_NIO_CH_SCTP_H
 #define SUN_NIO_CH_SCTP_H
 
+#if defined(__linux__)
 #include <stdint.h>
 #include <linux/types.h>
 #include <sys/socket.h>
@@ -277,6 +278,19 @@ typedef int sctp_freepaddrs_func(struct sockaddr *addrs);
 typedef int sctp_bindx_func(int sd, struct sockaddr *addrs, int addrcnt, int flags);
 typedef int sctp_peeloff_func(int sock, sctp_assoc_t id);
 
+#elif defined(__FreeBSD__)
+
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/sctp.h>
+#include <netinet/sctp_peeloff.h>
+#include <netinet/sctp_uio.h>
+#include "jni.h"
+
+#endif /* __linux__ */
+
+#ifndef __FreeBSD__
 
 extern sctp_getladdrs_func* nio_sctp_getladdrs;
 extern sctp_freeladdrs_func* nio_sctp_freeladdrs;
@@ -284,6 +298,17 @@ extern sctp_getpaddrs_func* nio_sctp_getpaddrs;
 extern sctp_freepaddrs_func* nio_sctp_freepaddrs;
 extern sctp_bindx_func* nio_sctp_bindx;
 extern sctp_peeloff_func* nio_sctp_peeloff;
+
+#else
+
+#define nio_sctp_getladdrs     sctp_getladdrs
+#define nio_sctp_freeladdrs    sctp_freeladdrs
+#define nio_sctp_getpaddrs     sctp_getpaddrs
+#define nio_sctp_freepaddrs    sctp_freepaddrs
+#define nio_sctp_bindx         sctp_bindx
+#define nio_sctp_peeloff       sctp_peeloff
+
+#endif
 
 extern jint sctpHandleSocketError(JNIEnv *env, jint errorValue);
 extern jint sctpHandleSocketErrorWithMessage(JNIEnv *env, jint errorValue, const char* message);

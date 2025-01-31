@@ -25,7 +25,7 @@
  * @test
  * @bug 4772857
  * @summary Unit test for Charset.defaultCharset
- * @requires os.family == "linux"
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @library /test/lib
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.Asserts

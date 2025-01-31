@@ -2473,7 +2473,7 @@ WB_END
 // Checks that the library libfile has the noexecstack bit set.
 WB_ENTRY(jboolean, WB_CheckLibSpecifiesNoexecstack(JNIEnv* env, jobject o, jstring libfile))
   jboolean ret = false;
-#ifdef LINUX
+#if defined(LINUX) || defined(_BSDONLY_SOURCE)
   // Can't be in VM when we call JNI.
   ThreadToNativeFromVM ttnfv(thread);
   const char* lf = env->GetStringUTFChars(libfile, nullptr);

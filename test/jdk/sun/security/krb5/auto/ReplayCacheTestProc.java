@@ -326,7 +326,7 @@ public class ReplayCacheTestProc {
     // returns true if native lib is available in running platform
     // macOS uses Heimdal and Windows has no native lib
     private static boolean isNativeLibAvailable() throws Exception {
-        return !Platform.isOSX() && !Platform.isWindows()
+        return !Platform.isOSX() && !Platform.isWindows() && !Platform.isBSD()
                 && acceptor("N", "sanity").waitFor() == 0;
     }
 

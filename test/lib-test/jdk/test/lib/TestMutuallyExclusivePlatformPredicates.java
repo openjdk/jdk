@@ -47,7 +47,7 @@ public class TestMutuallyExclusivePlatformPredicates {
     private static enum MethodGroup {
         ARCH("isAArch64", "isARM", "isRISCV64", "isPPC", "isS390x", "isX64", "isX86"),
         BITNESS("is32bit", "is64bit"),
-        OS("isAix", "isLinux", "isOSX", "isWindows"),
+        OS("isAix", "isBSD", "isLinux", "isOSX", "isWindows"),
         VM_TYPE("isClient", "isServer", "isMinimal", "isZero", "isEmbedded"),
         MODE("isInt", "isMixed", "isComp"),
         IGNORED("isEmulatedClient", "isDebugBuild", "isFastDebugBuild", "isMusl",

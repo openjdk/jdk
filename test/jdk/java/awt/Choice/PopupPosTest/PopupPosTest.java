@@ -26,7 +26,7 @@
   @key headful
   @bug 5044150
   @summary Tests that pupup doesn't popdown if no space to display under
-  @requires (os.family == "linux")
+  @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
   @run main PopupPosTest
 */
 

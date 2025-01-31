@@ -388,7 +388,11 @@ parseAddress(const char *address, struct addrinfo **result) {
          * pass hostname == NULL to getaddrinfo.
          */
         hints.ai_family = allowOnlyIPv4 ? AF_INET : AF_INET6;
+#if defined(__OpenBSD__) || defined(__NetBSD__)
+        hints.ai_flags |= AI_PASSIVE;
+#else
         hints.ai_flags |= AI_PASSIVE | (allowOnlyIPv4 ? 0 : AI_V4MAPPED | AI_ALL);
+#endif
         address = NULL;
     }
 

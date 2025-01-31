@@ -109,10 +109,10 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 }())
 
 
-#if defined(_LP64) && defined(__APPLE__)
+#if defined(_LP64) && defined(_ALLBSD_SOURCE)
 #define JLONG_FORMAT          "%ld"
 #define JLONG_FORMAT_W(width) "%" #width "ld"
-#endif // _LP64 && __APPLE__
+#endif // _LP64 && _ALLBSD_SOURCE
 
 #define THREAD_LOCAL __thread
 

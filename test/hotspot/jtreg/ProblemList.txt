@@ -30,7 +30,7 @@
 #   as to why they are here and use a label:
 #     generic-all   Problems on all platforms
 #     generic-ARCH  Where ARCH is one of: x64, i586, ppc64, ppc64le, s390x etc.
-#     OSNAME-all    Where OSNAME is one of: linux, windows, macosx, aix
+#     OSNAME-all    Where OSNAME is one of: linux, windows, macosx, aix, freebsd
 #     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. macosx-x64
 #     OSNAME-REV    Specific on to one OSNAME and REV, e.g. macosx-10.7.4
 #
@@ -129,7 +129,7 @@ containers/docker/TestJcmdWithSideCar.java 8341518 linux-x64
 
 # :hotspot_serviceability
 
-serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 macosx-x64,macosx-aarch64
+serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 macosx-x64,macosx-aarch64,freebsd-all
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all

@@ -42,8 +42,10 @@
 #endif
 #include <sys/time.h>
 
-#if defined(__linux__) || defined(_ALLBSD_SOURCE)
+#if defined(__linux__) || defined(MACOSX)
 #include <sys/xattr.h>
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
+#include <sys/extattr.h>
 #endif
 
 /* For POSIX-compliant getpwuid_r */
@@ -178,7 +180,7 @@ static jfieldID attrs_st_mtime_nsec;
 static jfieldID attrs_st_ctime_sec;
 static jfieldID attrs_st_ctime_nsec;
 
-#if defined(_DARWIN_FEATURE_64_BIT_INODE) || defined(__linux__)
+#if defined(_DARWIN_FEATURE_64_BIT_INODE) || defined(__linux__) || defined(__FreeBSD__)
 static jfieldID attrs_st_birthtime_sec;
 #endif
 #if defined(__linux__) // Linux has nsec granularity if supported
@@ -302,7 +304,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     attrs_st_ctime_nsec = (*env)->GetFieldID(env, clazz, "st_ctime_nsec", "J");
     CHECK_NULL_RETURN(attrs_st_ctime_nsec, 0);
 
-#if defined(_DARWIN_FEATURE_64_BIT_INODE) || defined(__linux__)
+#if defined(_DARWIN_FEATURE_64_BIT_INODE) || defined(__linux__) || defined(__FreeBSD__)
     attrs_st_birthtime_sec = (*env)->GetFieldID(env, clazz, "st_birthtime_sec", "J");
     CHECK_NULL_RETURN(attrs_st_birthtime_sec, 0);
 #endif
@@ -375,7 +377,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* supports file birthtime */
 
-#ifdef _DARWIN_FEATURE_64_BIT_INODE
+#if defined(_DARWIN_FEATURE_64_BIT_INODE) || defined(__FreeBSD__)
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_BIRTHTIME;
 #endif
 #if defined(__linux__)
@@ -614,7 +616,7 @@ static void copy_stat_attributes(JNIEnv* env, struct stat* buf, jobject attrs) {
     (*env)->SetLongField(env, attrs, attrs_st_mtime_sec, (jlong)buf->st_mtime);
     (*env)->SetLongField(env, attrs, attrs_st_ctime_sec, (jlong)buf->st_ctime);
 
-#ifdef _DARWIN_FEATURE_64_BIT_INODE
+#if defined(_DARWIN_FEATURE_64_BIT_INODE) || defined(__FreeBSD__)
     // birthtime_available defaults to 'false'; on Darwin, it is always true
     (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec, (jlong)buf->st_birthtime);
     (*env)->SetBooleanField(env, attrs, attrs_birthtime_available, (jboolean)JNI_TRUE);
@@ -1373,19 +1375,21 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_fgetxattr0(JNIEnv* env, jclass clazz,
     jint fd, jlong nameAddress, jlong valueAddress, jint valueLen)
 {
-    size_t res = -1;
+    ssize_t res = -1;
     const char* name = jlong_to_ptr(nameAddress);
     void* value = jlong_to_ptr(valueAddress);
 
 #ifdef __linux__
     res = fgetxattr(fd, name, value, valueLen);
-#elif defined(_ALLBSD_SOURCE)
+#elif defined(MACOSX)
     res = fgetxattr(fd, name, value, valueLen, 0, 0);
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
+    res = extattr_get_fd(fd, EXTATTR_NAMESPACE_USER, name, value, (size_t)valueLen);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
 
-    if (res == (size_t)-1)
+    if (res == (ssize_t)-1)
         throwUnixException(env, errno);
     return (jint)res;
 }
@@ -1400,8 +1404,10 @@ Java_sun_nio_fs_UnixNativeDispatcher_fsetxattr0(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = fsetxattr(fd, name, value, valueLen, 0);
-#elif defined(_ALLBSD_SOURCE)
+#elif defined(MACOSX)
     res = fsetxattr(fd, name, value, valueLen, 0, 0);
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
+    res = extattr_set_fd(fd, EXTATTR_NAMESPACE_USER, name, value, (size_t)valueLen);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1419,8 +1425,10 @@ Java_sun_nio_fs_UnixNativeDispatcher_fremovexattr0(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = fremovexattr(fd, name);
-#elif defined(_ALLBSD_SOURCE)
+#elif defined(MACOSX)
     res = fremovexattr(fd, name, 0);
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
+    res = extattr_delete_fd(fd, EXTATTR_NAMESPACE_USER, name);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1433,18 +1441,20 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_flistxattr(JNIEnv* env, jclass clazz,
     jint fd, jlong listAddress, jint size)
 {
-    size_t res = -1;
+    ssize_t res = -1;
     char* list = jlong_to_ptr(listAddress);
 
 #ifdef __linux__
     res = flistxattr(fd, list, (size_t)size);
-#elif defined(_ALLBSD_SOURCE)
+#elif defined(MACOSX)
     res = flistxattr(fd, list, (size_t)size, 0);
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
+    res = extattr_list_fd(fd, EXTATTR_NAMESPACE_USER, list, (size_t)size);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
 
-    if (res == (size_t)-1)
+    if (res == (ssize_t)-1)
         throwUnixException(env, errno);
     return (jint)res;
 }

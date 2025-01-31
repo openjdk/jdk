@@ -1595,6 +1595,7 @@ public class PSPrinterJob extends RasterPrinterJob {
         }
 
         if (OSInfo.getOSType() == OSInfo.OSType.LINUX ||
+            OSInfo.getOSType() == OSInfo.OSType.BSD ||
                 OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
             execCmd = new String[ncomps];
             execCmd[n++] = "/usr/bin/lpr";

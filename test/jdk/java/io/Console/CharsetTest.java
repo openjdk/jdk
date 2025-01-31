@@ -33,7 +33,7 @@ import jdk.test.lib.process.ProcessTools;
  * @bug 8264208 8265918
  * @summary Tests Console.charset() method. "expect" command in Windows/Cygwin
  *          does not work as expected. Ignoring tests on Windows.
- * @requires (os.family == "linux") | (os.family == "mac")
+ * @requires (os.family == "linux" | os.family == "mac" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @library /test/lib
  * @run main CharsetTest en_US.ISO8859-1 ISO-8859-1
  * @run main CharsetTest en_US.US-ASCII US-ASCII

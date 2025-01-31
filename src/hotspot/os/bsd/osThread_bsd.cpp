@@ -30,7 +30,7 @@
 
 OSThread::OSThread()
   : _thread_id(
-#ifdef __APPLE__
+#ifdef _ALLBSD_SOURCE
         0
 #else
         nullptr

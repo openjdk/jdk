@@ -53,7 +53,7 @@ import jdk.test.lib.util.ModuleInfoWriter;
  * and checks that sun.tools.ProcessHelper.getMainClass(pid) method returns a correct main class.
  *
  * @requires vm.flagless
- * @requires os.family == "linux"
+ * @requires (os.family == "linux" | os.family == "freebsd")
  * @modules jdk.jcmd/sun.tools.common:+open
  *          java.base/jdk.internal.module
  * @library /test/lib

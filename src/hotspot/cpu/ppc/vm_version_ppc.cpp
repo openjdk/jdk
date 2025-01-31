@@ -38,7 +38,10 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#ifndef _ALLBSD_SOURCE
 #include <sys/sysinfo.h>
+#endif
+
 #if defined(_AIX)
 #include "os_aix.hpp"
 #include <libperfstat.h>

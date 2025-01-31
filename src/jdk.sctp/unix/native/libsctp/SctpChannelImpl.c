@@ -332,11 +332,11 @@ void handlePeerAddrChange
         case SCTP_ADDR_MADE_PRIM :
             event = sun_nio_ch_sctp_PeerAddrChange_SCTP_ADDR_MADE_PRIM;
             break;
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
         case SCTP_ADDR_CONFIRMED :
             event = sun_nio_ch_sctp_PeerAddrChange_SCTP_ADDR_CONFIRMED;
             break;
-#endif  /* __linux__ */
+#endif  /* __linux__ || _ALLBSD_SOURCE */
     }
 
     addressObj = SockAddrToInetSocketAddress(env, (struct sockaddr*)&spc->spc_aaddr);
@@ -446,13 +446,13 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
             } else if (errno == EINTR) {
                 return IOS_INTERRUPTED;
 
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
             } else if (errno == ENOTCONN) {
                 /* ENOTCONN when EOF reached */
                 rv = 0;
                 /* there will be no control data */
                 msg->msg_controllen = 0;
-#endif /* __linux__ */
+#endif /* __linux__ || _ALLBSD_SOURCE */
 
             } else {
                 sctpHandleSocketError(env, errno);

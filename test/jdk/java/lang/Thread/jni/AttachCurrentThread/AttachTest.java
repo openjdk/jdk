@@ -25,7 +25,7 @@
  * @test
  * @bug 8287982
  * @summary Test native threads attaching to the VM with JNI AttachCurrentThread
- * @requires (os.family == "linux" | os.family == "mac")
+ * @requires (os.family == "linux" | os.family == "mac" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @library /test/lib
  * @compile ExplicitAttach.java
  * @run main AttachTest ExplicitAttach 1
@@ -36,7 +36,7 @@
 /**
  * @test
  * @summary Test native threads attaching implicitly to the VM by means of an upcall
- * @requires (os.family == "linux" | os.family == "mac") & (sun.arch.data.model == "64")
+ * @requires (os.family == "linux" | os.family == "mac" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd") & (sun.arch.data.model == "64")
  * @library /test/lib
  * @compile ImplicitAttach.java
  * @run main AttachTest --enable-native-access=ALL-UNNAMED ImplicitAttach 1

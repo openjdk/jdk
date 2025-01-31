@@ -39,6 +39,7 @@ class PlatformProps {
     static final boolean TARGET_OS_IS_MACOS   = "@@OPENJDK_TARGET_OS@@" == "macos";
     static final boolean TARGET_OS_IS_WINDOWS = "@@OPENJDK_TARGET_OS@@" == "windows";
     static final boolean TARGET_OS_IS_AIX     = "@@OPENJDK_TARGET_OS@@" == "aix";
+    static final boolean TARGET_OS_IS_BSD     = "@@OPENJDK_TARGET_OS@@" == "bsd";
 
     // The Architecture value for the current architecture
     static final String CURRENT_ARCH_STRING = "@@OPENJDK_TARGET_CPU@@";

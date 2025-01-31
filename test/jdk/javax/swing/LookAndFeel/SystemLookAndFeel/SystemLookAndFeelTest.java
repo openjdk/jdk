@@ -51,7 +51,7 @@ public class SystemLookAndFeelTest {
             expLAF = "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
         } else if (os.contains("macos")) {
             expLAF = "com.apple.laf.AquaLookAndFeel";
-        } else if (os.contains("linux")) {
+        } else if (os.contains("linux") || os.contains("bsd")) {
             /*
              * The implementation keys off the following desktop setting to
              * decide if GTK is an appropriate system L&F.

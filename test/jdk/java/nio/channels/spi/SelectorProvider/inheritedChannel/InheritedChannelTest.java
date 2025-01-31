@@ -25,7 +25,7 @@
  * @test
  * @bug 4673940 4930794 8211842 6914801
  * @summary Unit tests for inetd feature
- * @requires (os.family == "linux" | os.family == "mac")
+ * @requires (os.family == "linux" | os.family == "mac" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @library /test/lib
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.Asserts

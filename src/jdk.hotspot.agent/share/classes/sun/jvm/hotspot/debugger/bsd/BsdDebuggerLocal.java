@@ -111,6 +111,18 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
                                 throws DebuggerException;
     public static native int  getAddressSize() ;
 
+    @Override
+    public native String demangle(String sym);
+
+    public native long findLibPtrByAddress0(long pc);
+
+    @Override
+    public Address findLibPtrByAddress(Address pc) {
+      long ptr = findLibPtrByAddress0(pc.asLongValue());
+      return (ptr == 0L) ? null
+                         : new BsdAddress(this, ptr);
+    }
+
     // Note on Bsd threads are really processes. When target process is
     // attached by a serviceability agent thread, only that thread can do
     // ptrace operations on the target. This is because from kernel's point
