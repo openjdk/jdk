@@ -4341,6 +4341,203 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // ChaCha20 block function.  This version parallelizes 4 quarter
+  // round operations at a time.  It uses 16 SIMD registers to
+  // produce 4 blocks of key stream.
+  //
+  // state (int[16]) = c_rarg0
+  // keystream (byte[256]) = c_rarg1
+  // return - number of bytes of keystream (always 256)
+  address generate_chacha20Block_qrpar() {
+    Label L_Q_twoRounds, L_Q_cc20_const;
+    // The constant data is broken into two 128-bit segments to be loaded
+    // onto FloatRegisters.  The first 128 bits are a counter add overlay
+    // that adds +1/+0/+0/+0 to the vectors holding replicated state[12].
+    // The second 128-bits is a table constant used for 8-bit left rotations.
+	// on 32-bit lanes within a SIMD register.
+    __ BIND(L_Q_cc20_const);
+    __ emit_int64(0x0000000000000001UL);
+    __ emit_int64(0x0000000000000000UL);
+    __ emit_int64(0x0605040702010003UL);
+    __ emit_int64(0x0E0D0C0F0A09080BUL);
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::chacha20Block_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register state = c_rarg0;
+    const Register keystream = c_rarg1;
+    const Register loopCtr = r10;
+    const Register tmpAddr = r11;
+
+    const FloatRegister aState = v0;
+    const FloatRegister bState = v1;
+    const FloatRegister cState = v2;
+    const FloatRegister dState = v3;
+    const FloatRegister a1Vec = v4;
+    const FloatRegister b1Vec = v5;
+    const FloatRegister c1Vec = v6;
+    const FloatRegister d1Vec = v7;
+	// Skip the callee-saved registers v8 - v15
+    const FloatRegister a2Vec = v16;
+    const FloatRegister b2Vec = v17;
+    const FloatRegister c2Vec = v18;
+    const FloatRegister d2Vec = v19;
+    const FloatRegister a3Vec = v20;
+    const FloatRegister b3Vec = v21;
+    const FloatRegister c3Vec = v22;
+    const FloatRegister d3Vec = v23;
+    const FloatRegister a4Vec = v24;
+    const FloatRegister b4Vec = v25;
+    const FloatRegister c4Vec = v26;
+    const FloatRegister d4Vec = v27;
+    const FloatRegister scratch = v28;
+    const FloatRegister addMask = v29;
+    const FloatRegister lrot8Tbl = v30;
+
+    // Load the initial state in the first 4 quadword registers,
+    // then copy the initial state into the next 4 quadword registers
+    // that will be used for the working state.
+#if 0
+    __ ldrq(aState, Address(state, 0));
+    __ ldrq(bState, Address(state, 16));
+    __ ldrq(cState, Address(state, 32));
+    __ ldrq(dState, Address(state, 48));
+#endif
+	__ ld1(aState, bState, cState, dState, __ T16B, Address(state));
+
+    // Load the index register for 2 constant 128-bit data fields.
+	// The first represents the +1/+0/+0/+0 add mask.  The second is
+	// the 8-bit left rotation.
+    __ adr(tmpAddr, L_Q_cc20_const);
+    __ ldpq(addMask, lrot8Tbl, Address(tmpAddr));
+
+    __ mov(a1Vec, __ T16B, aState);
+    __ mov(b1Vec, __ T16B, bState);
+    __ mov(c1Vec, __ T16B, cState);
+    __ mov(d1Vec, __ T16B, dState);
+
+    __ mov(a2Vec, __ T16B, aState);
+    __ mov(b2Vec, __ T16B, bState);
+    __ mov(c2Vec, __ T16B, cState);
+    __ addv(d2Vec, __ T4S, d1Vec, addMask);
+
+    __ mov(a3Vec, __ T16B, aState);
+    __ mov(b3Vec, __ T16B, bState);
+    __ mov(c3Vec, __ T16B, cState);
+    __ addv(d3Vec, __ T4S, d2Vec, addMask);
+
+    __ mov(a4Vec, __ T16B, aState);
+    __ mov(b4Vec, __ T16B, bState);
+    __ mov(c4Vec, __ T16B, cState);
+    __ addv(d4Vec, __ T4S, d3Vec, addMask);
+
+    // Set up the 10 iteration loop
+    __ mov(loopCtr, 10);
+    __ BIND(L_Q_twoRounds);
+
+    // The first set of operations on the vectors covers the first 4 quarter
+    // round operations:
+    //  Qround(state, 0, 4, 8,12)
+    //  Qround(state, 1, 5, 9,13)
+    //  Qround(state, 2, 6,10,14)
+    //  Qround(state, 3, 7,11,15)
+	__ cc20_quarter_round(a1Vec, b1Vec, c1Vec, d1Vec, scratch, lrot8Tbl);
+	__ cc20_quarter_round(a2Vec, b2Vec, c2Vec, d2Vec, scratch, lrot8Tbl);
+	__ cc20_quarter_round(a3Vec, b3Vec, c3Vec, d3Vec, scratch, lrot8Tbl);
+	__ cc20_quarter_round(a4Vec, b4Vec, c4Vec, d4Vec, scratch, lrot8Tbl);
+
+    // Shuffle the b1Vec/c1Vec/d1Vec to reorganize the state vectors to
+    // diagonals. The a1Vec does not need to change orientation.
+	__ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, true);
+	__ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, true);
+	__ cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, true);
+	__ cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, true);
+
+    // The second set of operations on the vectors covers the second 4 quarter
+    // round operations, now acting on the diagonals:
+    //  Qround(state, 0, 5,10,15)
+    //  Qround(state, 1, 6,11,12)
+    //  Qround(state, 2, 7, 8,13)
+    //  Qround(state, 3, 4, 9,14)
+	__ cc20_quarter_round(a1Vec, b1Vec, c1Vec, d1Vec, scratch, lrot8Tbl);
+	__ cc20_quarter_round(a2Vec, b2Vec, c2Vec, d2Vec, scratch, lrot8Tbl);
+	__ cc20_quarter_round(a3Vec, b3Vec, c3Vec, d3Vec, scratch, lrot8Tbl);
+	__ cc20_quarter_round(a4Vec, b4Vec, c4Vec, d4Vec, scratch, lrot8Tbl);
+
+    // Before we start the next iteration, we need to perform shuffles
+    // on the b/c/d vectors to move them back to columnar organizations
+    // from their current diagonal orientation.
+	__ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, false);
+	__ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, false);
+	__ cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, false);
+	__ cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, false);
+
+    // Decrement and iterate
+    __ sub(loopCtr, loopCtr, 1);
+    __ cbnz(loopCtr, L_Q_twoRounds);
+
+    // Once the counter reaches zero, we fall out of the loop
+    // and need to add the initial state back into the working state
+    // represented by the a/b/c/d1Vec registers.  This is destructive
+    // on the dState register but we no longer will need it.
+    __ addv(a1Vec, __ T4S, a1Vec, aState);
+    __ addv(b1Vec, __ T4S, b1Vec, bState);
+    __ addv(c1Vec, __ T4S, c1Vec, cState);
+    __ addv(d1Vec, __ T4S, d1Vec, dState);
+
+    __ addv(a2Vec, __ T4S, a2Vec, aState);
+    __ addv(b2Vec, __ T4S, b2Vec, bState);
+    __ addv(c2Vec, __ T4S, c2Vec, cState);
+    __ addv(dState, __ T4S, dState, addMask);
+    __ addv(d2Vec, __ T4S, d2Vec, dState);
+
+    __ addv(a3Vec, __ T4S, a3Vec, aState);
+    __ addv(b3Vec, __ T4S, b3Vec, bState);
+    __ addv(c3Vec, __ T4S, c3Vec, cState);
+    __ addv(dState, __ T4S, dState, addMask);
+    __ addv(d3Vec, __ T4S, d3Vec, dState);
+
+    __ addv(a4Vec, __ T4S, a4Vec, aState);
+    __ addv(b4Vec, __ T4S, b4Vec, bState);
+    __ addv(c4Vec, __ T4S, c4Vec, cState);
+    __ addv(dState, __ T4S, dState, addMask);
+    __ addv(d4Vec, __ T4S, d4Vec, dState);
+
+    // Now write the final state back to the result buffer
+#if 0
+    __ stpq(a1Vec, b1Vec, Address(keystream, 0));
+    __ stpq(c1Vec, d1Vec, Address(keystream, 32));
+
+    __ stpq(a2Vec, b2Vec, Address(keystream, 64));
+    __ stpq(c2Vec, d2Vec, Address(keystream, 96));
+
+    __ stpq(a3Vec, b3Vec, Address(keystream, 128));
+    __ stpq(c3Vec, d3Vec, Address(keystream, 160));
+
+    __ stpq(a4Vec, b4Vec, Address(keystream, 192));
+    __ stpq(c4Vec, d4Vec, Address(keystream, 224));
+#endif
+	__ st1(a1Vec, b1Vec, c1Vec, d1Vec, __ T16B, __ post(keystream, 64));
+	__ st1(a2Vec, b2Vec, c2Vec, d2Vec, __ T16B, __ post(keystream, 64));
+	__ st1(a3Vec, b3Vec, c3Vec, d3Vec, __ T16B, __ post(keystream, 64));
+	__ st1(a4Vec, b4Vec, c4Vec, d4Vec, __ T16B, __ post(keystream, 64));
+
+    __ mov(r0, 256);             // Return length of output keystream
+    __ leave();
+    __ ret(lr);
+
+    #undef SHIFT_LANES
+    #undef FOUR_QTR_ROUND
+
+    return start;
+  }
+
+
+
+
   // ChaCha20 block function.  This version parallelizes by loading
   // individual 32-bit state elements into vectors for four blocks
   // (e.g. all four blocks' worth of state[0] in one register, etc.)
@@ -8866,7 +9063,8 @@ class StubGenerator: public StubCodeGenerator {
 #endif // COMPILER2
 
     if (UseChaCha20Intrinsics) {
-      StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
+      StubRoutines::_chacha20Block = generate_chacha20Block_qrpar();
+      //StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
     }
 
     if (UseBASE64Intrinsics) {
