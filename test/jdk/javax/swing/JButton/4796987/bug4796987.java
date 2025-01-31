@@ -122,9 +122,6 @@ public class bug4796987 {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(200, 200);
 
-        JButton button = new JButton();
-        button.setBorder(null);
-
         panel = new JPanel(new BorderLayout(50, 50));
         panel.add(getButton(), BorderLayout.CENTER);
         panel.add(button1 = getButton(), BorderLayout.WEST);
