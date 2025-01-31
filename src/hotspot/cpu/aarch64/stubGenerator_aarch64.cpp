@@ -4354,7 +4354,7 @@ class StubGenerator: public StubCodeGenerator {
     // onto SIMD registers.  The first 128 bits are a counter add overlay
     // that adds +1/+0/+0/+0 to the vectors holding replicated state[12].
     // The second 128-bits is a table constant used for 8-bit left rotations.
-	// on 32-bit lanes within a SIMD register.
+    // on 32-bit lanes within a SIMD register.
     __ BIND(L_Q_cc20_const);
     __ emit_int64(0x0000000000000001UL);
     __ emit_int64(0x0000000000000000UL);
@@ -4380,7 +4380,7 @@ class StubGenerator: public StubCodeGenerator {
     const FloatRegister b1Vec = v5;
     const FloatRegister c1Vec = v6;
     const FloatRegister d1Vec = v7;
-	// Skip the callee-saved registers v8 - v15
+    // Skip the callee-saved registers v8 - v15
     const FloatRegister a2Vec = v16;
     const FloatRegister b2Vec = v17;
     const FloatRegister c2Vec = v18;
@@ -4400,11 +4400,11 @@ class StubGenerator: public StubCodeGenerator {
     // Load the initial state in the first 4 quadword registers,
     // then copy the initial state into the next 4 quadword registers
     // that will be used for the working state.
-	__ ld1(aState, bState, cState, dState, __ T16B, Address(state));
+    __ ld1(aState, bState, cState, dState, __ T16B, Address(state));
 
     // Load the index register for 2 constant 128-bit data fields.
-	// The first represents the +1/+0/+0/+0 add mask.  The second is
-	// the 8-bit left rotation.
+    // The first represents the +1/+0/+0/+0 add mask.  The second is
+    // the 8-bit left rotation.
     __ adr(tmpAddr, L_Q_cc20_const);
     __ ldpq(addMask, lrot8Tbl, Address(tmpAddr));
 
@@ -4438,17 +4438,17 @@ class StubGenerator: public StubCodeGenerator {
     //  Qround(state, 1, 5, 9,13)
     //  Qround(state, 2, 6,10,14)
     //  Qround(state, 3, 7,11,15)
-	__ cc20_quarter_round(a1Vec, b1Vec, c1Vec, d1Vec, scratch, lrot8Tbl);
-	__ cc20_quarter_round(a2Vec, b2Vec, c2Vec, d2Vec, scratch, lrot8Tbl);
-	__ cc20_quarter_round(a3Vec, b3Vec, c3Vec, d3Vec, scratch, lrot8Tbl);
-	__ cc20_quarter_round(a4Vec, b4Vec, c4Vec, d4Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a1Vec, b1Vec, c1Vec, d1Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a2Vec, b2Vec, c2Vec, d2Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a3Vec, b3Vec, c3Vec, d3Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a4Vec, b4Vec, c4Vec, d4Vec, scratch, lrot8Tbl);
 
     // Shuffle the b1Vec/c1Vec/d1Vec to reorganize the state vectors to
     // diagonals. The a1Vec does not need to change orientation.
-	__ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, true);
-	__ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, true);
-	__ cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, true);
-	__ cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, true);
+    __ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, true);
+    __ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, true);
+    __ cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, true);
+    __ cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, true);
 
     // The second set of operations on the vectors covers the second 4 quarter
     // round operations, now acting on the diagonals:
@@ -4456,18 +4456,18 @@ class StubGenerator: public StubCodeGenerator {
     //  Qround(state, 1, 6,11,12)
     //  Qround(state, 2, 7, 8,13)
     //  Qround(state, 3, 4, 9,14)
-	__ cc20_quarter_round(a1Vec, b1Vec, c1Vec, d1Vec, scratch, lrot8Tbl);
-	__ cc20_quarter_round(a2Vec, b2Vec, c2Vec, d2Vec, scratch, lrot8Tbl);
-	__ cc20_quarter_round(a3Vec, b3Vec, c3Vec, d3Vec, scratch, lrot8Tbl);
-	__ cc20_quarter_round(a4Vec, b4Vec, c4Vec, d4Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a1Vec, b1Vec, c1Vec, d1Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a2Vec, b2Vec, c2Vec, d2Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a3Vec, b3Vec, c3Vec, d3Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a4Vec, b4Vec, c4Vec, d4Vec, scratch, lrot8Tbl);
 
     // Before we start the next iteration, we need to perform shuffles
     // on the b/c/d vectors to move them back to columnar organizations
     // from their current diagonal orientation.
-	__ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, false);
-	__ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, false);
-	__ cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, false);
-	__ cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, false);
+    __ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, false);
+    __ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, false);
+    __ cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, false);
+    __ cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, false);
 
     // Decrement and iterate
     __ sub(loopCtr, loopCtr, 1);
@@ -4501,17 +4501,14 @@ class StubGenerator: public StubCodeGenerator {
     __ addv(d4Vec, __ T4S, d4Vec, dState);
 
     // Write the final state back to the result buffer
-	__ st1(a1Vec, b1Vec, c1Vec, d1Vec, __ T16B, __ post(keystream, 64));
-	__ st1(a2Vec, b2Vec, c2Vec, d2Vec, __ T16B, __ post(keystream, 64));
-	__ st1(a3Vec, b3Vec, c3Vec, d3Vec, __ T16B, __ post(keystream, 64));
-	__ st1(a4Vec, b4Vec, c4Vec, d4Vec, __ T16B, __ post(keystream, 64));
+    __ st1(a1Vec, b1Vec, c1Vec, d1Vec, __ T16B, __ post(keystream, 64));
+    __ st1(a2Vec, b2Vec, c2Vec, d2Vec, __ T16B, __ post(keystream, 64));
+    __ st1(a3Vec, b3Vec, c3Vec, d3Vec, __ T16B, __ post(keystream, 64));
+    __ st1(a4Vec, b4Vec, c4Vec, d4Vec, __ T16B, __ post(keystream, 64));
 
     __ mov(r0, 256);             // Return length of output keystream
     __ leave();
     __ ret(lr);
-
-    #undef SHIFT_LANES
-    #undef FOUR_QTR_ROUND
 
     return start;
   }
