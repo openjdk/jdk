@@ -436,13 +436,14 @@ bool RegionNode::are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist) 
 
 void RegionNode::set_loop_status(RegionNode::LoopStatus status) {
   assert(loop_status() == RegionNode::LoopStatus::NeverIrreducibleEntry, "why set our status again?");
+  assert(status != RegionNode::LoopStatus::MaybeIrreducibleEntry || !is_Loop(), "LoopNode is never irreducible entry.");
   _loop_status = status;
 }
 
 // A Region can only be an irreducible entry if:
 // - It is marked as "maybe irreducible entry". Any other loop status would guarantee
 //   that it is never an irreducible loop entry.
-// - It is not a LoopNode, those are guaranteed to be reducible loop entries.
+// - And it is not a LoopNode, those are guaranteed to be reducible loop entries.
 bool RegionNode::can_be_irreducible_entry() const {
   return loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry &&
          !is_Loop();
