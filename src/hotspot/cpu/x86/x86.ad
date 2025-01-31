@@ -1610,13 +1610,9 @@ bool Matcher::match_rule_supported(int opcode) {
       break;
     case Op_CopySignD:
     case Op_CopySignF:
-      if (UseAVX < 3 || !is_LP64)  {
+      if (UseAVX < 1 || !is_LP64)  {
         return false;
       }
-      if (!VM_Version::supports_avx512vl()) {
-        return false;
-      }
-      break;
 #ifndef _LP64
     case Op_AddReductionVF:
     case Op_AddReductionVD:
@@ -6711,53 +6707,96 @@ instruct signumV_reg_evex(vec dst, vec src, vec zero, vec one, kReg ktmp1) %{
   ins_pipe( pipe_slow );
 %}
 
-// ---------------------------------------
-// For copySign use 0xE4 as writemask for vpternlog
-// Desired Truth Table: A -> xmm0 bit, B -> xmm1 bit, C -> xmm2 bit
-// C (xmm2) is set to 0x7FFFFFFF
-// Wherever xmm2 is 0, we want to pick from B (sign)
-// Wherever xmm2 is 1, we want to pick from A (src)
+// ----------------------------------------------------------------------
+// We are using bitwise ternary logic insturction VPTERNLOG which can
+// absorb complex binary expressions involving 3 boolean variables.
 //
-// A B C Result
-// 0 0 0 0
-// 0 0 1 0
-// 0 1 0 1
-// 0 1 1 0
-// 1 0 0 0
-// 1 0 1 1
-// 1 1 0 1
-// 1 1 1 1
+// For copySign we set the truth table value as 0xE4.
+// First column of truth table represents magnitude, second column
+// represents sign operand while the third column is a conditional
+// operand with fixed value of 0x7FFFFFFF.
 //
-// Result going from high bit to low bit is 0x11100100 = 0xe4
-// ---------------------------------------
+// Whenever condition bit is 1 corresponding magnitude bit gets selected
+// else corresponding sign bit is picked.
+// Our condition mask is such that apart for sign bit i.e. MSB bit all
+// other bits are set to 1, this ensures that all the bits of result
+// apart from MSB bit are copied from magnitude operand while sign bit
+// is borrowed from sign operand.
+//
+// Magnitude Sign Condition Result
+// 0          0       0       0
+// 0          0       1       0
+// 0          1       0       1
+// 0          1       1       0
+// 1          0       0       0
+// 1          0       1       1
+// 1          1       0       1
+// 1          1       1       1
+//
+// ----------------------------------------------------------------------
 
 #ifdef _LP64
-instruct copySignF_reg(regF dst, regF src, regF tmp1, rRegI tmp2) %{
+instruct copySignF_reg(regF dst, regF src, regF xtmp1) %{
+  predicate(VM_Version::supports_avx512vl());
   match(Set dst (CopySignF dst src));
-  effect(TEMP tmp1, TEMP tmp2);
-  format %{ "CopySignF $dst, $src\t! using $tmp1 and $tmp2 as TEMP" %}
+  effect(TEMP xtmp1);
+  format %{ "CopySignF $dst, $src\t! using $xtmp1 as TEMP" %}
   ins_encode %{
-    __ movl($tmp2$$Register, 0x7FFFFFFF);
-    __ movdl($tmp1$$XMMRegister, $tmp2$$Register);
-    __ vpternlogd($dst$$XMMRegister, 0xE4, $src$$XMMRegister, $tmp1$$XMMRegister, Assembler::AVX_128bit);
+    __ vpcmpeqd($xtmp1$$XMMRegister, $xtmp1$$XMMRegister, $xtmp1$$XMMRegister, Assembler::AVX_128bit);
+    __ vpsrld($xtmp1$$XMMRegister, $xtmp1$$XMMRegister, 1, Assembler::AVX_128bit);
+    __ vpternlogd($dst$$XMMRegister, 0xE4, $src$$XMMRegister, $xtmp1$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct copySignD_imm(regD dst, regD src, regD tmp1, rRegL tmp2, immD zero) %{
+instruct copySignD_imm(regD dst, regD src, regD xtmp1, immD zero) %{
+  predicate(VM_Version::supports_avx512vl());
   match(Set dst (CopySignD dst (Binary src zero)));
   ins_cost(100);
-  effect(TEMP tmp1, TEMP tmp2);
-  format %{ "CopySignD  $dst, $src\t! using $tmp1 and $tmp2 as TEMP" %}
+  effect(TEMP xtmp1);
+  format %{ "CopySignD  $dst, $src\t! using $xtmp1 as TEMP" %}
   ins_encode %{
-    __ mov64($tmp2$$Register, 0x7FFFFFFFFFFFFFFF);
-    __ movq($tmp1$$XMMRegister, $tmp2$$Register);
-    __ vpternlogq($dst$$XMMRegister, 0xE4, $src$$XMMRegister, $tmp1$$XMMRegister, Assembler::AVX_128bit);
+    __ vpcmpeqd($xtmp1$$XMMRegister, $xtmp1$$XMMRegister, $xtmp1$$XMMRegister, Assembler::AVX_128bit);
+    __ vpsrlq($xtmp1$$XMMRegister, $xtmp1$$XMMRegister, 1, Assembler::AVX_128bit);
+    __ vpternlogq($dst$$XMMRegister, 0xE4, $src$$XMMRegister, $xtmp1$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}
 
 #endif // _LP64
+
+instruct copySignF_reg_avx(regF dst, regF src, regF xtmp1, regF xtmp2) %{
+  predicate(!VM_Version::supports_avx512vl());
+  match(Set dst (CopySignF dst src));
+  effect(TEMP_DEF dst,TEMP xtmp1, TEMP xtmp2);
+  format %{ "CopySignF $dst, $src\t! using $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    __ vpcmpeqd($xtmp1$$XMMRegister, $xtmp1$$XMMRegister, $xtmp1$$XMMRegister, Assembler::AVX_128bit);
+    __ vpsrld($xtmp2$$XMMRegister, $xtmp1$$XMMRegister, 1, Assembler::AVX_128bit);
+    __ vpxor($xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $xtmp1$$XMMRegister, Assembler::AVX_128bit);
+    __ vandps($xtmp1$$XMMRegister, $xtmp1$$XMMRegister, $src$$XMMRegister, Assembler::AVX_128bit);
+    __ vandps($xtmp2$$XMMRegister, $xtmp2$$XMMRegister, $dst$$XMMRegister, Assembler::AVX_128bit);
+    __ vpor($dst$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, Assembler::AVX_128bit);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct copySignD_imm_avx(regD dst, regD src, regD xtmp1, regD xtmp2, immD zero) %{
+  predicate(!VM_Version::supports_avx512vl());
+  match(Set dst (CopySignD dst (Binary src zero)));
+  ins_cost(100);
+  effect(TEMP_DEF dst,TEMP xtmp1, TEMP xtmp2);
+  format %{ "CopySignD  $dst, $src\t! using $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    __ vpcmpeqq($xtmp1$$XMMRegister, $xtmp1$$XMMRegister, $xtmp1$$XMMRegister, Assembler::AVX_128bit);
+    __ vpsrlq($xtmp2$$XMMRegister, $xtmp1$$XMMRegister, 1, Assembler::AVX_128bit);
+    __ vpxor($xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $xtmp1$$XMMRegister, Assembler::AVX_128bit);
+    __ vandpd($xtmp1$$XMMRegister, $xtmp1$$XMMRegister, $src$$XMMRegister, Assembler::AVX_128bit);
+    __ vandpd($xtmp2$$XMMRegister, $xtmp2$$XMMRegister, $dst$$XMMRegister, Assembler::AVX_128bit);
+    __ vpor($dst$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, Assembler::AVX_128bit);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 //----------------------------- CompressBits/ExpandBits ------------------------
 
