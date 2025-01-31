@@ -26,7 +26,8 @@
  * @bug 4796987
  * @key headful
  * @requires (os.family == "windows")
- * @summary XP Only: JButton.setBorderPainted() does not work with XP L&F
+ * @summary Verify JButton.setBorderPainted(false) removes border
+ *      for Windows visual styles (Windows XP and later)
  * @library ../../regtesthelpers
  * @build Util
  * @run main bug4796987
