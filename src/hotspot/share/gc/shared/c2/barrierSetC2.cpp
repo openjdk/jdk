@@ -1045,7 +1045,6 @@ bool BarrierSetC2::is_allocation(const Node* node) {
   if (fast_mach->ideal_Opcode() != Op_LoadP) {
     return false;
   }
-  const TypePtr* const adr_type = nullptr;
   intptr_t offset;
   const Node* const base = get_base_and_offset(fast_mach, offset);
   if (base == nullptr || !base->is_Mach() || !is_concrete(offset)) {
