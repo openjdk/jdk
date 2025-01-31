@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,17 @@ import javax.imageio.ImageIO;
  * @bug 8342098
  * @summary Verify that the image captured from the screen using a Robot
  * and the source image are same.
+ * @requires os.family == "mac"
+ * @run main/othervm ScreenCaptureRobotTest
+ */
+
+/*
+ * @test
+ * @key headful
+ * @bug 8342098
+ * @summary Verify that the image captured from the screen using a Robot
+ * and the source image are same.
+ * @requires os.family != "mac"
  * @run main/othervm -Dsun.java2d.uiScale=1 ScreenCaptureRobotTest
  */
 public class ScreenCaptureRobotTest {
@@ -96,6 +107,7 @@ public class ScreenCaptureRobotTest {
 
     private static void doTest() throws Exception {
         Robot robot = new Robot();
+        robot.mouseMove(0, 0);
         robot.waitForIdle();
         robot.delay(500);
 

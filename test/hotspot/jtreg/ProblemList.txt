@@ -77,6 +77,8 @@ compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
 compiler/interpreter/Test6833129.java 8335266 generic-i586
 
+compiler/arguments/TestCodeEntryAlignment.java 8349102 generic-all
+
 #############################################################################
 
 # :hotspot_gc

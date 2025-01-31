@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6936350 8347841
+ * @bug 6936350 8347841 8347955
  * @summary Test case for TimeZone.observesDaylightTime()
  */
 
@@ -35,7 +35,7 @@ import static java.util.GregorianCalendar.*;
 public class DaylightTimeTest {
     private static final int ONE_HOUR = 60 * 60 * 1000; // one hour
     private static final int INTERVAL = 24 * ONE_HOUR;  // one day
-    private static final String[] ZONES = Arrays.stream(TimeZone.getAvailableIDs())
+    private static final String[] ZONES = TimeZone.availableIDs()
             .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
             .toArray(String[]::new);
     private static int errors = 0;
