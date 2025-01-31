@@ -28,8 +28,6 @@
 #include "memory/allocation.hpp"
 #include "runtime/perfDataTypes.hpp"
 
-class VirtualSpace;
-
 // A GenerationCounter is a holder class for performance counters
 // that track a generation
 
@@ -57,6 +55,5 @@ class GenerationCounters: public CHeapObj<mtGC> {
   void update_all(size_t curr_capacity);
 
   const char* name_space() const        { return _name_space; }
-
 };
 #endif // SHARE_GC_SHARED_GENERATIONCOUNTERS_HPP
