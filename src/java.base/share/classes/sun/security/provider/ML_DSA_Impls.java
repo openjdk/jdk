@@ -80,11 +80,15 @@ public class ML_DSA_Impls {
             r.nextBytes(seed);
             ML_DSA mlDsa = new ML_DSA(name2int(name));
             ML_DSA.ML_DSA_KeyPair kp = mlDsa.generateKeyPairInternal(seed);
-            return new byte[][]{
-                    mlDsa.pkEncode(kp.publicKey()),
-                    seed,
-                    mlDsa.skEncode(kp.privateKey())
-            };
+            try {
+                return new byte[][]{
+                        mlDsa.pkEncode(kp.publicKey()),
+                        seed,
+                        mlDsa.skEncode(kp.privateKey())
+                };
+            } finally {
+                kp.privateKey().destroy();
+            }
         }
     }
 
