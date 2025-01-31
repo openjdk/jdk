@@ -37,7 +37,7 @@ private:
   static const size_t HostnameBufferSize = 512;
 
 public:
-  // The call returns file name allocated on c heap or resource area.
+  // The call returns expanded file name allocated on c heap or resource area.
   // C_HEAP = true, caller is responsible for releasing returned string
   // C_HEAP = false, caller is responsible for setting up ResourceMark
   template<bool C_HEAP, MemTag MT = mtNone>

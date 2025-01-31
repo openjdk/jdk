@@ -41,13 +41,13 @@ char* FilenameUtil::make_file_name_impl(const char* file_name, jlong timestamp, 
   const char* timestamp_opt = strstr(file_name, TimestampFilenamePlaceholder);
   const char* hostname_opt = strstr(file_name, HostnameFilenamePlaceholder);
 
-  int len = strlen(file_name);
+  size_t len = strlen(file_name);
   if (pid_opt == nullptr && timestamp_opt == nullptr && hostname_opt == nullptr) {
     // We found no place-holders, return the simple filename
     if (c_heap) {
       return os::strdup_check_oom(file_name, tag);
     } else {
-      char* buf = NEW_RESOURCE_ARRAY(char, strlen(file_name) + 1);
+      char* buf = NEW_RESOURCE_ARRAY(char, len + 1);
       strcpy(buf, file_name);
       return buf;
     }
@@ -58,7 +58,7 @@ char* FilenameUtil::make_file_name_impl(const char* file_name, jlong timestamp, 
   char hostname_string[HostnameBufferSize];
 
   // At least one of the place-holders were found in the file_name
-  size_t result_len =  len;
+  size_t result_len = len;
   if (pid_opt != nullptr) {
     get_pid_string(pid_string, sizeof(pid_string));
     result_len -= strlen(PidFilenamePlaceholder);
@@ -129,7 +129,7 @@ char* FilenameUtil::make_file_name_impl(const char* file_name, jlong timestamp, 
 }
 
 void FilenameUtil::get_pid_string(char* buf, size_t buf_len) {
-  int res = jio_snprintf(buf, sizeof(buf), "%d", os::current_process_id());
+  int res = jio_snprintf(buf, buf_len, "%d", os::current_process_id());
   assert(res > 0, "PID buffer too small");
 }
 
