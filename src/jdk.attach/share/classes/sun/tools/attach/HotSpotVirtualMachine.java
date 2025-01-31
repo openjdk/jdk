@@ -345,7 +345,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         public final static String STREAMING = "streaming";
 
         private int ver;
-		private Map<String, String> options = new HashMap<>();
+        private Map<String, String> options = new HashMap<>();
 
         OperationProperties(int ver) {
             this.ver = ver;
@@ -356,11 +356,11 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         }
 
         void setOption(String name, String value) {
-			options.put(name, value);
+            options.put(name, value);
         }
 
         String options() {
-			return options.entrySet().stream()
+            return options.entrySet().stream()
                           .map(e -> e.getKey() + "=" + e.getValue())
                           .collect(Collectors.joining(","));
         }

@@ -59,35 +59,35 @@ public class StreamingOutputTest {
         } finally {
             LingeredApp.stopApp(app);
         }
-		
-		verify(clientStreaming, vmStreaming, app.getProcessStdout());
-		
+        
+        verify(clientStreaming, vmStreaming, app.getProcessStdout());
+        
         System.out.println("Testing: end");
         System.out.println();
-	}
-	
+    }
+    
     private static void attach(LingeredApp app, boolean clientStreaming, boolean vmStreaming) throws Exception {
         HotSpotVirtualMachine vm = (HotSpotVirtualMachine)VirtualMachine.attach(String.valueOf(app.getPid()));
         try {
-			try (BufferedReader replyReader = new BufferedReader(
-			        new InputStreamReader(vm.setFlag("HeapDumpPath", "the_path")))) {
-				System.out.println("vm.setFlag reply:");
+            try (BufferedReader replyReader = new BufferedReader(
+                    new InputStreamReader(vm.setFlag("HeapDumpPath", "the_path")))) {
+                System.out.println("vm.setFlag reply:");
                 String line;
                 while ((line = replyReader.readLine()) != null) {
                     System.out.println("setFlag reply: " + line);
                 }
-			}
+            }
         } finally {
             vm.detach();
         }
     }
 
-	private static void verify(boolean clientStreaming, boolean vmStreaming, String out) throws Exception {
-		System.out.println("Target VM output:");
-		System.out.println(out);
-		String expected = "executing command setflag, streaming output: " + (clientStreaming ? "1" : "0");
-		if (!out.contains(expected)) {
-			throw new Exception("VM did not logged expected '" + expected + "'");
-		}
-	}
+    private static void verify(boolean clientStreaming, boolean vmStreaming, String out) throws Exception {
+        System.out.println("Target VM output:");
+        System.out.println(out);
+        String expected = "executing command setflag, streaming output: " + (clientStreaming ? "1" : "0");
+        if (!out.contains(expected)) {
+            throw new Exception("VM did not logged expected '" + expected + "'");
+        }
+    }
 }

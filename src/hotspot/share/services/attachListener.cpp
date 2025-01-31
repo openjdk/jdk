@@ -54,7 +54,7 @@
 //
 // To support streaming output platform implementation need to implement AttachOperation::get_reply_writer() method
 // and ctor allow_streaming argument should be set to true.
-// 
+//
 // Initially attachStream works in buffered mode.
 // To switch to the streaming mode attach command handler need to call attachStream::set_result().
 // The method flushes buffered output and consequent printing goes directly to ReplyWriter.
@@ -357,7 +357,7 @@ static void thread_dump(AttachOperation* op, attachStream* out) {
 // dispatch to the diagnostic commands used for serviceability functions.
 static void jcmd(AttachOperation* op, attachStream* out) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
-  
+
   // All the supplied jcmd arguments are stored as a single
   // string (op->arg(0)). This is parsed by the Dcmd framework.
 
