@@ -26,13 +26,6 @@
 ifndef _FIND_TESTS_GMK
 _FIND_TESTS_GMK := 1
 
-# This makefile can be called directly to just trigger generation of the cache
-# makefile. If so, SPEC and MakeBase.gmk need to be included.
-ifeq ($(FINDTESTS_STAND_ALONE), true)
-  include $(SPEC)
-  include MakeBase.gmk
-endif
-
 # Make sure this variable is not lazy evaled.
 ALL_NAMED_TESTS :=
 

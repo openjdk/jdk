@@ -31,7 +31,7 @@ include $(SPEC)
 include MakeBase.gmk
 include Execute.gmk
 include JdkNativeCompilation.gmk
-include ToolsJdk.gmk
+include $(TOPDIR)/make/ToolsJdk.gmk
 
 ################################################################################
 # This file is responsible for extracting the x11 native struct offsets to

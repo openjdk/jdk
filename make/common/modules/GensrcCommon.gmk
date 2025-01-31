@@ -25,7 +25,7 @@
 
 include Execute.gmk
 include TextFileProcessing.gmk
-include ToolsJdk.gmk
+include $(TOPDIR)/make/ToolsJdk.gmk
 
 ################################################################################
 # Sets up a rule that creates a version.properties file in the gensrc output

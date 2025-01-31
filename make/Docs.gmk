@@ -30,11 +30,11 @@ include MakeBase.gmk
 include CopyFiles.gmk
 include Execute.gmk
 include Modules.gmk
-include ModuleTools.gmk
 include ProcessMarkdown.gmk
-include ToolsJdk.gmk
-include ZipArchive.gmk
 include TextFileProcessing.gmk
+include ZipArchive.gmk
+include $(TOPDIR)/make/ModuleTools.gmk
+include $(TOPDIR)/make/ToolsJdk.gmk
 
 # This is needed to properly setup DOCS_MODULES.
 $(eval $(call ReadImportMetaData))

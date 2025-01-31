@@ -187,7 +187,15 @@ endif
 ################################################################################
 # Include module specific build settings
 
--include Jmod.gmk
+THIS_SNIPPET := modules/$(MODULE)/Jmod.gmk
+
+ifneq ($(wildcard $(THIS_SNIPPET)), )
+  include MakeSnippetStart.gmk
+
+  include $(THIS_SNIPPET)
+
+  include MakeSnippetEnd.gmk
+endif
 
 # Set main class
 ifneq ($(JMOD_FLAGS_main_class), )

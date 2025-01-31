@@ -23,19 +23,17 @@
 # questions.
 #
 
+MAKEBASE_INCLUDED := true
+
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # MakeBase provides the core functionality needed and used by all makefiles. It
 # should be included by all makefiles. MakeBase provides essential
 # functionality for named parameter functions, variable dependency, tool
 # execution, logging and fixpath functionality.
 ################################################################################
-
-ifndef _MAKEBASE_GMK
-_MAKEBASE_GMK := 1
-
-ifeq ($(wildcard $(SPEC)), )
-  $(error MakeBase.gmk needs SPEC set to a proper spec.gmk)
-endif
 
 # By defining this pseudo target, make will automatically remove targets
 # if their recipe fails so that a rebuild is automatically triggered on the
@@ -312,7 +310,5 @@ ExecuteWithLog = \
 
 ################################################################################
 
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, common/MakeBase.gmk))
-
-endif # _MAKEBASE_GMK
+include MakeIncludeEnd.gmk
+endif # include guard

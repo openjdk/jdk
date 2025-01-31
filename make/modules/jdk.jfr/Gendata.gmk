@@ -25,8 +25,8 @@
 
 ################################################################################
 
-include ToolsHotspot.gmk
 include Execute.gmk
+include $(TOPDIR)/make/ToolsHotspot.gmk
 
 JFR_SRCDIR := $(TOPDIR)/src/hotspot/share/jfr/metadata
 JFR_DATA_OUTPUTDIR := $(OUTPUTDIR)/jdk/modules/jdk.jfr/jdk/jfr/internal/types
