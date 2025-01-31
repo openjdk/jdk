@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assumptions.abort;
 
 /*
  * @test
- * @bug 8344908
+ * @bug 8258246
  * @summary verify that when locating resources, the URLClassPath can function properly
  *          when classpath elements contain Unicode characters with two, three or four
  *          byte UTF-8 encodings
