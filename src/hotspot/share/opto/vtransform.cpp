@@ -194,7 +194,7 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
       VTransformNode* use = vtn->out(i);
       // Or is vtn a backedge or one of its transitive defs?
       if (in_loop.test(use->_idx) ||
-          (use->isa_LoopPhi() != nullptr && vtn->isa_Outer() == nullptr)) {
+          use->isa_LoopPhi() != nullptr) {
         in_loop.set(vtn->_idx);
         break;
       }
@@ -210,6 +210,7 @@ float VTransformGraph::cost() const {
   }
 #endif
 
+  // TODO Arena for vector set in_loop and is_not_before_loop
   VectorSet in_loop;
   mark_vtnodes_in_loop(in_loop);
 
