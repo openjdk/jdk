@@ -243,10 +243,12 @@ final class TaskPipelineBuilderTest {
             }));
 
             taskSpecs.forEach(taskSpec -> {
-                builder.task(taskMap.get(taskSpec.task))
-                        .addDependencies(taskSpec.dependencies.stream().map(taskMap::get).toList())
-                        .dependent(taskMap.get(taskSpec.dependent))
-                        .add();
+                final var taskBuilder = builder.task(taskMap.get(taskSpec.task))
+                        .addDependencies(taskSpec.dependencies.stream().map(taskMap::get).toList());
+                if (taskSpec.dependent != null) {
+                    taskBuilder.addDependent(taskMap.get(taskSpec.dependent));
+                }
+                taskBuilder.add();
             });
 
             if (expectedAnyFailures.isEmpty()) {

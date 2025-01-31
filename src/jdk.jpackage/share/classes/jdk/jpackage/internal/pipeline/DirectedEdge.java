@@ -27,9 +27,9 @@ package jdk.jpackage.internal.pipeline;
 
 import java.util.Objects;
 
-record DirectedEdge<T>(T tail, T head) {
+public record DirectedEdge<T>(T tail, T head) {
 
-    DirectedEdge {
+    public DirectedEdge {
         Objects.requireNonNull(tail);
         Objects.requireNonNull(head);
 
@@ -38,15 +38,15 @@ record DirectedEdge<T>(T tail, T head) {
         }
     }
 
-    T from() {
+    public T from() {
         return tail;
     }
 
-    T to() {
+    public T to() {
         return head;
     }
 
-    static <U> DirectedEdge<U> create(U tail, U head) {
+    public static <U> DirectedEdge<U> create(U tail, U head) {
         return new DirectedEdge<>(tail, head);
     }
 }

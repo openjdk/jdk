@@ -312,7 +312,6 @@ final class ImmutableDAGTest {
             return Stream.of(edge.tail(), edge.head());
         }).flatMap(x -> x).sorted().distinct().toList();
 
-        System.out.println(String.format("%s", ImmutableDAG.create(edges, nodes).topologicalSort()));
         assertArrayEquals(expectedNodes, ImmutableDAG.create(edges, nodes).topologicalSort().stream().mapToInt(x -> x).toArray());
     }
 
@@ -391,26 +390,25 @@ final class ImmutableDAGTest {
     }
 
     @Test
-    public void testBuilder() {
+    public void testSingleNodeBuilder() {
         final var graphBuilder = ImmutableDAG.<String>build();
+        graphBuilder.addNode(A);
+        assertNodesEquals(graphBuilder.create().nodes(), A);
+    }
 
-        graphBuilder.canAddEdgeToUnknownNode(false);
-        assertThrows(UnsupportedOperationException.class, () -> graphBuilder.addEdge(edge(A, B)));
-        assertThrows(IllegalArgumentException.class, graphBuilder::create);
-
-        graphBuilder.canAddEdgeToUnknownNode(true);
-        graphBuilder.addEdge(edge(A, B));
+    @Test
+    public void testIsolatedNodesBuilder() {
+        final var graphBuilder = ImmutableDAG.<String>build();
+        graphBuilder.addNode(A);
+        graphBuilder.addNode(B);
         assertNodesEquals(graphBuilder.create().nodes(), A, B);
+        assertEquals(graphBuilder.create().getNoOutgoingEdges(), List.of(A, B));
+        assertEquals(graphBuilder.create().getNoIncomingEdges(), List.of(A, B));
 
-        graphBuilder.canAddEdgeToUnknownNode(false);
-        graphBuilder.addEdge(edge(A, B));
-        assertNodesEquals(graphBuilder.create().nodes(), A, B);
-
-        graphBuilder.addEdge(edge(C, A));
+        graphBuilder.addEdge(edge(A, C));
         assertNodesEquals(graphBuilder.create().nodes(), A, B, C);
-
-        assertThrows(UnsupportedOperationException.class, () -> graphBuilder.addEdge(edge(B, D)));
-        assertNodesEquals(graphBuilder.create().nodes(), A, B, C);
+        assertEquals(graphBuilder.create().getNoOutgoingEdges(), List.of(B, C));
+        assertEquals(graphBuilder.create().getNoIncomingEdges(), List.of(A, B));
     }
 
     private static void assertNodesEquals(ImmutableDAG.Nodes<String> actual, String... expected) {

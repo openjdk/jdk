@@ -57,33 +57,22 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
 
     final static class Builder<U> {
 
+        Builder<U> addNode(U node) {
+            Objects.requireNonNull(node);
+            if (!nodes.contains(node)) {
+                nodes.add(node);
+            }
+            return this;
+        }
+
         Builder<U> addEdge(U tail, U head) {
             return addEdge(DirectedEdge.create(tail, head));
         }
 
         Builder<U> addEdge(DirectedEdge<U> edge) {
-
-            final var newTailNode = !nodes.contains(edge.tail());
-            final var newHeadNode = !nodes.contains(edge.head());
-
-            if (newHeadNode && !canAddEdgeToUnknownNode) {
-                throw new UnsupportedOperationException("Can not add edge to unknown node");
-            }
-
-            if (newTailNode) {
-                nodes.add(edge.tail());
-            }
-
-            if (newHeadNode) {
-                nodes.add(edge.head());
-            }
-
+            addNode(edge.tail());
+            addNode(edge.head());
             edges.add(edge);
-            return this;
-        }
-
-        Builder<U> canAddEdgeToUnknownNode(boolean v) {
-            canAddEdgeToUnknownNode = v;
             return this;
         }
 
@@ -91,7 +80,6 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
             return ImmutableDAG.create(edges, nodes);
         }
 
-        private boolean canAddEdgeToUnknownNode = true;
         private final List<U> nodes = new ArrayList<>();
         private final List<DirectedEdge<U>> edges = new ArrayList<>();
     }

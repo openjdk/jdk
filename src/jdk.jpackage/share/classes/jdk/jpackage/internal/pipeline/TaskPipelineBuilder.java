@@ -26,11 +26,8 @@
 package jdk.jpackage.internal.pipeline;
 
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -39,54 +36,49 @@ import java.util.concurrent.Executor;
 
 public final class TaskPipelineBuilder {
 
-    public final class TaskSpecBuilder {
+    public final class TaskBuilder extends TaskSpecBuilder<Callable<Void>> {
 
-        TaskSpecBuilder(Callable<Void> task) {
-            Objects.requireNonNull(task);
-            this.task = task;
+        TaskBuilder(Callable<Void> task) {
+            super(task);
         }
 
-        public TaskSpecBuilder dependent(Callable<Void> v) {
-            dependent = v;
+        @Override
+        public TaskBuilder addDependent(Callable<Void> v) {
+            super.addDependent(v);
             return this;
         }
 
-        public TaskSpecBuilder addDependency(Callable<Void> v) {
-            Objects.requireNonNull(v);
-            dependencies.add(v);
+        @Override
+        public TaskBuilder addDependency(Callable<Void> v) {
+            super.addDependency(v);
             return this;
         }
 
-        public TaskSpecBuilder addDependencies(Collection<? extends Callable<Void>> v) {
-            Objects.requireNonNull(v);
-            v.forEach(Objects::requireNonNull);
-            dependencies.addAll(v);
+        @Override
+        public TaskBuilder addDependencies(Collection<? extends Callable<Void>> v) {
+            super.addDependencies(v);
+            return this;
+        }
+
+        @Override
+        public TaskBuilder addDependents(Collection<? extends Callable<Void>> v) {
+            super.addDependents(v);
             return this;
         }
 
         public TaskPipelineBuilder add() {
-            if (taskGraphBuilder == null) {
-                taskGraphBuilder = new ImmutableDAG.Builder<>();
-                taskGraphBuilder.addEdge(task, ROOT_TASK);
-                taskGraphBuilder.canAddEdgeToUnknownNode(false);
+            final var links = createLinks();
+            if (links.isEmpty()) {
+                return addTask(task());
             } else {
-                taskGraphBuilder.addEdge(task, Optional.ofNullable(dependent).orElse(ROOT_TASK));
+                links.forEach(TaskPipelineBuilder.this::linkTasks);
+                return TaskPipelineBuilder.this;
             }
-
-            for (var dependency : dependencies) {
-                taskGraphBuilder.addEdge(dependency, task);
-            }
-
-            return TaskPipelineBuilder.this;
         }
-
-        private Set<Callable<Void>> dependencies = new LinkedHashSet<>();
-        private Callable<Void> dependent;
-        private final Callable<Void> task;
     }
 
-    public TaskSpecBuilder task(Callable<Void> task) {
-        return new TaskSpecBuilder(task);
+    public TaskBuilder task(Callable<Void> task) {
+        return new TaskBuilder(task);
     }
 
     public TaskPipelineBuilder executor(Executor v) {
@@ -99,13 +91,25 @@ public final class TaskPipelineBuilder {
         return this;
     }
 
+    public TaskPipelineBuilder addTask(Callable<Void> task) {
+        taskGraphBuilder.addNode(task);
+        return this;
+    }
+
+    public TaskPipelineBuilder linkTasks(Callable<Void> tail, Callable<Void> head) {
+        return linkTasks(DirectedEdge.create(tail, head));
+    }
+
+    public TaskPipelineBuilder linkTasks(DirectedEdge<Callable<Void>> edge) {
+        taskGraphBuilder.addEdge(edge);
+        return this;
+    }
+
     public Callable<Void> create() {
         final var taskGraph = taskGraphBuilder.create();
-
         if (executor == null) {
             final var tasks = taskGraph.topologicalSort();
-            // Don't run the root task as it is NOP.
-            return new SequentialWrapperTask(tasks.subList(0, tasks.size() - 1));
+            return new SequentialWrapperTask(tasks);
         } else {
             return new ParallelWrapperTask(taskGraph, executor);
         }
@@ -155,9 +159,7 @@ public final class TaskPipelineBuilder {
                     lastFuture = CompletableFuture.runAsync(toRunnable(task), executor);
                 } else {
                     lastFuture = CompletableFuture.allOf(dependencyTaskFutures);
-                    if (task != ROOT_TASK) {
-                        lastFuture = lastFuture.thenRun(toRunnable(task));
-                    }
+                    lastFuture = lastFuture.thenRun(toRunnable(task));
                 }
 
                 taskFutures[taskIndex] = lastFuture;
@@ -192,15 +194,6 @@ public final class TaskPipelineBuilder {
 
     }
 
-    private static final Callable<Void> ROOT_TASK = new Callable<>() {
-
-        @Override
-        public Void call() {
-            // Should never get called.
-            throw new UnsupportedOperationException();
-        }
-    };
-
-    private ImmutableDAG.Builder<Callable<Void>> taskGraphBuilder;
+    private final ImmutableDAG.Builder<Callable<Void>> taskGraphBuilder = new ImmutableDAG.Builder<>();
     private Executor executor;
 }
