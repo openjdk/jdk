@@ -317,7 +317,7 @@ public class MergeLoadBench {
     public void getCharBV(Blackhole BH) {
         long sum = 0;
         for (int i = 0; i < longs.length; i++) {
-            char c = (char) CHAR_B.get(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2);
+            char c = (char) CHAR_B.get(bytes4, i * 2);
             sum += c;
         }
         BH.consume(sum);
