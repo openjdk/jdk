@@ -78,7 +78,7 @@ public class TestPopulateIndex {
     }
 
     @Test
-    @IR(counts = {IRNode.POPULATE_INDEX, "> 0"})
+    // Does not vectorize, possibly because the OrI is pushed through the Phi, see also JDK-8348096.
     public void exprWithIndex1() {
         for (int i = 0; i < count; i++) {
             dst[i] = src[i] * (i | 7);
@@ -114,7 +114,10 @@ public class TestPopulateIndex {
     }
 
     @Test
-    // Currently disabled due to sum-under-mask optimization.
+    // Does not vectorize: due to sum-under-mask optimization.
+    // (i+0) & 7, (i+1) & 7 ... (i+8) & 7 ....  -> PopulateIndex
+    // becomes
+    // (i+0) & 7, (i+1) & 7 ... (i+0) & 7 .... -> pattern broken
     public void exprWithIndex3() {
         for (int i = 0; i < count; i++) {
             dst[i] = src[i] * (i & 7);
