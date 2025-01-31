@@ -253,6 +253,38 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+template<class S, class U>
+static S calc_xor_max(const S hi_0, const S hi_1) {
+  assert(hi_0 >= 0, "must be non-negative");
+  assert(hi_1 >= 0, "must be non-negative");
+
+  // x ^ y cannot have any bit set that is higher than both the highest bits set in x and y
+  // x cannot have any bit set that is higher than the highest bit set in r0->_hi
+  // y cannot have any bit set that is higher than the highest bit set in r1->_hi
+
+  // We want to find a value that has all 1 bits everywhere up to and including
+  // the highest bits set in r0->_hi as well as r1->_hi. For this,we can take the next
+  // power of 2 strictly greater than both hi values and subtract 1 from it.
+
+  // Example 1:
+  // r0->_hi =  5 (0b0101)        r1->_hi=1 (0b0001)
+  //    (5|1)+1       = 0b0110
+  //    round_up_pow2 = 0b1000
+  //    -1            = 0b0111 = max
+
+  // Example 2 - this demonstrates need for the +1:
+  // r0->_hi =  4 (0b0100)        r1->_hi=4 (0b0100)
+  //    (4|4)+1       = 0b0101
+  //    round_up_pow2 = 0b1000
+  //    -1            = 0b0111 = max
+  // Without the +1, round_up_pow2 would be 0b0100, resulting in 0b0011 as max
+
+  // Note: cast to unsigned happens before +1 to avoid signed overflow, and
+  // round_up is safe because high bit is unset (0 <= lo <= hi)
+
+  return round_up_power_of_2(U(hi_0 | hi_1) + 1) - 1 ;
+}
+
 //------------------------------MaxNode----------------------------------------
 // Max (or min) of 2 values.  Included with the ADD nodes because it inherits
 // all the behavior of addition on a ring.
@@ -429,5 +461,8 @@ public:
   int max_opcode() const { return Op_MaxD; }
   int min_opcode() const { return Op_MinD; }
 };
+
+template<class S, class U> S calc_xor_max(const S hi_0, const S hi_1);
+
 
 #endif // SHARE_OPTO_ADDNODE_HPP

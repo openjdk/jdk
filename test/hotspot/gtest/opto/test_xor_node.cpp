@@ -25,8 +25,6 @@
 #include "opto/addnode.hpp"
 #include "unittest.hpp"
 
-template<class S, class U> S calc_xor_max(const S hi_0, const S hi_1);
-
 jint calc_max(const jint hi_0, const jint hi_1) {
   return calc_xor_max<jint, juint>(hi_0, hi_1);
 }
