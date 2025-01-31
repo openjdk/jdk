@@ -940,7 +940,7 @@ public class TestEquivalentInvariants {
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-  // With AlignVector (strict alignment requirements): we cannot prove that the invariants are alignable -> no vectorization.
+    // With AlignVector (strict alignment requirements): we cannot prove that the invariants are alignable -> no vectorization.
     static Object[] testMemorySegmentLInvarL3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
         long i2 = (long)(invar2 + invar3) - (long)(invar1); // not equivalent
