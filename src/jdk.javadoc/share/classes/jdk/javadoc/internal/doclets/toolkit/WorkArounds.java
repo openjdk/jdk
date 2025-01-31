@@ -396,34 +396,6 @@ public class WorkArounds {
         return compilerOptions.isSet("accessInternalAPI");
     }
 
-    /**
-     * Returns a map containing {@code jdk.internal.javac.PreviewFeature.JEP} element values associated with the
-     * {@code jdk.internal.javac.PreviewFeature.Feature} enum constant identified by {@code feature}.
-     *
-     * This method uses internal javac features (although only reflectively).
-     *
-     * @param feature the name of the PreviewFeature.Feature enum value
-     * @return the map of PreviewFeature.JEP annotation element values, or an empty map
-     */
-    public Map<String, Object> getJepInfo(String feature) {
-        TypeElement featureType = elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.Feature");
-        TypeElement jepType = elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.JEP");
-        var featureVar = featureType.getEnclosedElements().stream()
-                .filter(e -> feature.equals(e.getSimpleName().toString())).findFirst();
-        if (featureVar.isPresent()) {
-            for (AnnotationMirror anno : featureVar.get().getAnnotationMirrors()) {
-                if (anno.getAnnotationType().asElement().equals(jepType)) {
-                    return anno.getElementValues().entrySet()
-                            .stream()
-                            .collect(Collectors.toMap(
-                                    e -> e.getKey().getSimpleName().toString(),
-                                    e -> e.getValue().getValue()));
-                }
-            }
-        }
-        return Map.of();
-    }
-
     /*
      * If a similar query is ever added to javax.lang.model, use that instead.
      */
