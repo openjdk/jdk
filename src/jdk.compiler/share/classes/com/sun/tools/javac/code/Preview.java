@@ -197,8 +197,8 @@ public class Preview {
         Assert.check(isPreview(feature));
         markUsesPreview(pos);
         previewHandler.report(pos, feature.isPlural() ?
-            LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
-            LintWarnings.PreviewFeatureUse(feature.nameFragment()),
+                LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
+                LintWarnings.PreviewFeatureUse(feature.nameFragment()),
             lint.isEnabled(LintCategory.PREVIEW));
     }
 
