@@ -301,7 +301,8 @@ test-prebuilt:
         # are always found and parsed, call FindTests.gmk stand alone once
         # before calling RunTests.gmk.
 	@cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -f make/common/FindTests.gmk \
-	    SPEC=$(SPEC) FINDTESTS_STAND_ALONE=true
+	    SPEC=$(SPEC) FINDTESTS_STAND_ALONE=true \
+	    GENERATE_FIND_TESTS_FILE=true
 	@cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -f make/RunTests.gmk run-test \
 	    TEST="$(TEST)"
 

@@ -47,6 +47,12 @@ include $(TOPDIR)/make/common/MakeBase.gmk
 include $(TOPDIR)/make/InitSupport.gmk
 include $(TOPDIR)/make/common/LogUtils.gmk
 
+# Force early generation of module-deps.gmk and find-tests.gmk
+GENERATE_MODULE_DEPS_FILE := true
+include $(TOPDIR)/make/common/Modules.gmk
+GENERATE_FIND_TESTS_FILE := true
+include $(TOPDIR)/make/common/FindTests.gmk
+
 # Parse COMPARE_BUILD (for makefile development)
 $(eval $(call ParseCompareBuild))
 
