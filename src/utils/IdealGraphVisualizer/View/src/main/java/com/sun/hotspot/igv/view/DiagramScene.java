@@ -622,6 +622,33 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return action;
     }
 
+    public Action createGotoLiveRangeAction(String name, Set<LiveRangeSegment> segments) {
+        Action action = new AbstractAction(name) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setLiveRangeSegmentSelection(segments);
+                centerSelectedLiveRanges();
+            }
+        };
+
+        action.setEnabled(true);
+        return action;
+    }
+
+    public Action createGotoLiveRangeAction(InputLiveRange liveRange) {
+        String name = "L" + liveRange.getId();
+        Action action = new AbstractAction(name) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setLiveRangeSegmentSelection(liveRangeSegmentSet(Collections.singleton(liveRange)));
+                centerSelectedLiveRanges();
+            }
+        };
+
+        action.setEnabled(true);
+        return action;
+    }
+
     private void clearObjects() {
         Set<Object> objectSet = new HashSet<>(getObjects());
         for (Object object : objectSet) {
@@ -1325,7 +1352,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     }
 
-    private Set<LiveRangeSegment> liveRangeSegmentSet(Collection<InputLiveRange> liveRanges) {
+    public Set<LiveRangeSegment> liveRangeSegmentSet(Collection<InputLiveRange> liveRanges) {
         Set<Integer> liveRangeIds = new HashSet<>();
         for (InputLiveRange liveRange : liveRanges) {
             liveRangeIds.add(liveRange.getId());

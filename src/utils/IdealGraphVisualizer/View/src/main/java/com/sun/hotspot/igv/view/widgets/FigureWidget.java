@@ -23,9 +23,13 @@
  */
 package com.sun.hotspot.igv.view.widgets;
 
+import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.InputLiveRange;
+import com.sun.hotspot.igv.data.LivenessInfo;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.graph.LiveRangeSegment;
 import com.sun.hotspot.igv.graph.Slot;
 import com.sun.hotspot.igv.util.DoubleClickAction;
 import com.sun.hotspot.igv.util.DoubleClickHandler;
@@ -316,6 +320,48 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         build(menu, getFigure(), this, false, diagramScene);
         menu.addSeparator();
         build(menu, getFigure(), this, true, diagramScene);
+
+        if (diagramScene.getModel().getShowCFG() &&
+            diagramScene.getModel().getShowLiveRanges()) {
+            InputGraph graph = diagramScene.getModel().getGraph();
+            LivenessInfo l = graph.getLivenessInfoForNode(getFigure().getInputNode());
+            if (l != null) {
+                Set<InputLiveRange> liveRanges = new HashSet<>();
+                if (l.def != null) {
+                    liveRanges.add(graph.getLiveRange(l.def));
+                }
+                if (l.use != null) {
+                    for (int use : l.use) {
+                        liveRanges.add(graph.getLiveRange(use));
+                    }
+                }
+                if (l.join != null) {
+                    for (int join : l.join) {
+                        liveRanges.add(graph.getLiveRange(join));
+                    }
+                }
+                if (!liveRanges.isEmpty()) {
+                    Set<LiveRangeSegment> segments = diagramScene.liveRangeSegmentSet(liveRanges);
+                    menu.addSeparator();
+                    menu.add(diagramScene.createGotoLiveRangeAction("Select live ranges", segments));
+                    menu.addSeparator();
+                    if (l.def != null) {
+                        menu.add(diagramScene.createGotoLiveRangeAction(graph.getLiveRange(l.def)));
+                    }
+                    menu.addSeparator();
+                    if (l.use != null) {
+                        for (int use : l.use) {
+                            menu.add(diagramScene.createGotoLiveRangeAction(graph.getLiveRange(use)));
+                        }
+                    }
+                    if (l.join != null) {
+                        for (int join : l.join) {
+                            menu.add(diagramScene.createGotoLiveRangeAction(graph.getLiveRange(join)));
+                        }
+                    }
+                }
+            }
+        }
 
         return menu;
     }
