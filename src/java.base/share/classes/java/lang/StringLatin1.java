@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -715,7 +715,7 @@ final class StringLatin1 {
     static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4) {
         assert index >= 0 && index + 3 < length(val) : "Trusted caller missed bounds check";
         // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
-        long offset = (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
+        long offset = Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
         UNSAFE.putByte(val, offset    , (byte)(c1));
         UNSAFE.putByte(val, offset + 1, (byte)(c2));
         UNSAFE.putByte(val, offset + 2, (byte)(c3));
@@ -725,7 +725,7 @@ final class StringLatin1 {
     static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4, int c5) {
         assert index >= 0 && index + 4 < length(val) : "Trusted caller missed bounds check";
         // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
-        long offset  = (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
+        long offset = Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
         UNSAFE.putByte(val, offset    , (byte)(c1));
         UNSAFE.putByte(val, offset + 1, (byte)(c2));
         UNSAFE.putByte(val, offset + 2, (byte)(c3));
