@@ -36,7 +36,6 @@ class VirtualSpace;
 class GenerationCounters: public CHeapObj<mtGC> {
   friend class VMStructs;
 
- protected:
   PerfVariable*      _current_size;
 
   // Constant PerfData types don't need to retain a reference.

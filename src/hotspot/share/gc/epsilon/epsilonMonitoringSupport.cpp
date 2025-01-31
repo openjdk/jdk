@@ -91,7 +91,7 @@ public:
   {};
 
   void update_all() {
-    _current_size->set_value(_heap->capacity());
+    GenerationCounters::update_all(_heap->capacity());
   }
 };
 
