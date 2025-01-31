@@ -25,9 +25,8 @@
 
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.PackagerException;
-import jdk.jpackage.internal.model.WinMsiPackage;
+import static jdk.jpackage.internal.model.ConfigException.rethrowConfigException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -55,11 +54,13 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.model.WinMsiPackage;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import static jdk.jpackage.internal.model.ConfigException.rethrowConfigException;
 
 /**
  * WinMsiBundler
@@ -205,29 +206,11 @@ public class WinMsiBundler  extends AbstractBundler {
     private void prepareProto(WinMsiPackage pkg, BuildEnv env, Path msiOutputDir) throws
             PackagerException, IOException {
 
-        AppImageLayout appImageLayout;
+        final var taskPipeline = WinPackagingPipeline.build().excludeDirFromCopying(msiOutputDir).create();
 
-        // we either have an application image or need to build one
-        if (pkg.app().runtimeBuilder().isPresent()) {
-            // Runtime builder is present, build app image.
-            WinAppImageBuilder.build()
-                    .excludeDirFromCopying(msiOutputDir)
-                    .create(pkg.app()).execute(env);
-            appImageLayout = pkg.appImageLayout().resolveAt(env.appImageDir());
-        } else {
-            Path srcAppImageDir = pkg.predefinedAppImage().orElseGet(() -> {
-                // No predefined app image and no runtime builder.
-                // This should be runtime packaging.
-                if (pkg.isRuntimeInstaller()) {
-                    return env.appImageDir();
-                } else {
-                    // Can't create app image without runtime builder.
-                    throw new UnsupportedOperationException();
-                }
-            });
+        taskPipeline.execute(env, pkg, msiOutputDir);
 
-            appImageLayout = pkg.appImageLayout().resolveAt(srcAppImageDir);
-        }
+        final AppImageLayout appImageLayout = taskPipeline.analyzeAppImageDir(env, pkg).resolvedImagelayout();
 
         // Configure installer icon
         if (appImageLayout instanceof RuntimeLayout runtimeLayout) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,32 @@
 
 package jdk.jpackage.internal;
 
-public class WinAppBundler extends AppImageBundler {
-    public WinAppBundler() {
-        setAppImageSupplier((params, output) -> {
-            // Order is important!
-            var app = WinFromParams.APPLICATION.fetchFrom(params);
-            var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
-            WinPackagingPipeline.build()
-                    .excludeDirFromCopying(output.getParent())
-                    .create().execute(BuildEnv.withAppImageDir(env, output), app);
-        });
+import java.nio.file.Path;
+import java.util.Objects;
+import java.util.Optional;
+import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.ApplicationLayout;
+
+record AppImageInfo(AppImageLayout imageLayout, Path path) {
+
+    AppImageInfo {
+        Objects.requireNonNull(imageLayout);
+        Objects.requireNonNull(path);
+    }
+
+    AppImageLayout resolvedImagelayout() {
+        return imageLayout.resolveAt(path);
+    }
+
+    Optional<ApplicationLayout> asResolvedApplicationLayout() {
+        return asApplicationLayout().map(v -> v.resolveAt(path));
+    }
+
+    Optional<ApplicationLayout> asApplicationLayout() {
+        if (imageLayout instanceof ApplicationLayout layout) {
+            return Optional.of(layout);
+        } else {
+            return Optional.empty();
+        }
     }
 }
