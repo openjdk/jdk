@@ -38,13 +38,12 @@ import java.util.stream.Stream;
  * @bug 8066859
  * @summary An adaptation of OOMEInAQS test for StampedLocks
  * @requires vm.gc.G1
+ * @requires !(vm.graal.enabled & vm.compMode == "Xcomp")
  * @run main/othervm -XX:+UseG1GC -XX:-UseGCOverheadLimit -Xmx48M -XX:-UseTLAB OOMEInStampedLock
  */
 
 public class OOMEInStampedLock extends Thread {
-    // Intentionaly non-final to avoid EA of the threads array in main which can cause this test to
-    // fail in Xcomp mode.
-    static int NTHREADS = 3;
+    static final int NTHREADS = 3;
     static final int NREPS = 100;
     // statically allocate
     static final StampedLock stampedLock = new StampedLock();

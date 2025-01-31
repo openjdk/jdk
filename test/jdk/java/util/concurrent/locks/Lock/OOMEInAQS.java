@@ -39,13 +39,12 @@ import java.util.stream.Stream;
  * @bug 8066859
  * @summary Check that AQS-based locks, conditions, and CountDownLatches do not fail when encountering OOME
  * @requires vm.gc.G1
+ * @requires !(vm.graal.enabled & vm.compMode == "Xcomp")
  * @run main/othervm -XX:+UseG1GC -XX:-UseGCOverheadLimit -Xmx48M -XX:-UseTLAB OOMEInAQS
  */
 
 public class OOMEInAQS extends Thread {
-    // Intentionaly non-final to avoid EA of the threads array in main which can cause this test to
-    // fail in Xcomp mode.
-    static int NTHREADS = 2; // intentionally not a scalable test; > 2 is very slow
+    static final int NTHREADS = 2; // intentionally not a scalable test; > 2 is very slow
     static final int NREPS = 100;
     // statically allocate
     static final ReentrantLock mainLock = new ReentrantLock();
