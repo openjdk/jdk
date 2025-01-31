@@ -229,22 +229,6 @@ public final class ParseUtil {
         return sb.toString();
     }
 
-    public static URL fileToEncodedURL(File file)
-        throws MalformedURLException
-    {
-        String path = file.getAbsolutePath();
-        path = ParseUtil.encodePath(path);
-        if (!path.startsWith("/")) {
-            path = "/" + path;
-        }
-        if (!path.endsWith("/") && file.isDirectory()) {
-            path = path + "/";
-        }
-        @SuppressWarnings("deprecation")
-        var result = new URL("file", "", path);
-        return result;
-    }
-
     public static java.net.URI toURI(URL url) {
         String protocol = url.getProtocol();
         String auth = url.getAuthority();

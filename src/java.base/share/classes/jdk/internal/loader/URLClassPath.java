@@ -239,7 +239,7 @@ public class URLClassPath {
     private static URL toFileURL(String s) {
         try {
             File f = new File(s).getCanonicalFile();
-            return ParseUtil.fileToEncodedURL(f);
+            return f.toPath().toUri().toURL();
         } catch (IOException e) {
             return null;
         }
