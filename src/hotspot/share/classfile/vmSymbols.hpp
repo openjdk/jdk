@@ -306,6 +306,7 @@ class SerializeClosure;
   template(jdk_internal_vm_annotation_JvmtiMountTransition_signature,  "Ljdk/internal/vm/annotation/JvmtiMountTransition;")  \
                                                                                                   \
   template(java_lang_ref_SoftReference_signature,         "Ljava/lang/ref/SoftReference;")        \
+  template(java_security_ProtectionDomain_signature,      "Ljava/security/ProtectionDomain;")     \
                                                                                                   \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \

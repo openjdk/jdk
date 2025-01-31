@@ -236,11 +236,12 @@ public final class Class<T> implements java.io.Serializable,
      * This constructor is not used and prevents the default constructor being
      * generated.
      */
-    private Class(ClassLoader loader, Class<?> arrayComponentType) {
+    private Class(ClassLoader loader, Class<?> arrayComponentType, ProtectionDomain pd) {
         // Initialize final field for classLoader.  The initialization value of non-null
         // prevents future JIT optimizations from assuming this final field is null.
         classLoader = loader;
         componentType = arrayComponentType;
+        protectionDomain = pd;
     }
 
     /**
@@ -2696,17 +2697,8 @@ public final class Class<T> implements java.io.Serializable,
         return true;
     }
 
-    /**
-     * Returns the {@code ProtectionDomain} of this class.
-     *
-     * @return the ProtectionDomain of this class
-     *
-     * @see java.security.ProtectionDomain
-     * @since 1.2
-     */
-    public ProtectionDomain getProtectionDomain() {
-        return protectionDomain();
-    }
+    @Stable
+    private transient final ProtectionDomain protectionDomain;
 
     /** Holder for the protection domain returned when the internal domain is null */
     private static class Holder {
@@ -2718,20 +2710,21 @@ public final class Class<T> implements java.io.Serializable,
         }
     }
 
-    // package-private
-    ProtectionDomain protectionDomain() {
-        ProtectionDomain pd = getProtectionDomain0();
-        if (pd == null) {
+    /**
+     * Returns the {@code ProtectionDomain} of this class.
+     *
+     * @return the ProtectionDomain of this class
+     *
+     * @see java.security.ProtectionDomain
+     * @since 1.2
+     */
+    public ProtectionDomain getProtectionDomain() {
+        if (protectionDomain == null) {
             return Holder.allPermDomain;
         } else {
-            return pd;
+            return protectionDomain;
         }
     }
-
-    /**
-     * Returns the ProtectionDomain of this class.
-     */
-    private native ProtectionDomain getProtectionDomain0();
 
     /*
      * Returns the Class object for the named primitive type. Type parameter T
