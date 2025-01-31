@@ -2524,6 +2524,13 @@ bool FileMapInfo::validate_aot_class_linking() {
       log_error(cds)("CDS archive has aot-linked classes. It cannot be used with -Djava.security.manager=%s.", prop);
       return false;
     }
+
+#if INCLUDE_JVMTI 
+    if (Arguments::jdwp_agent_is_specified()) {
+      log_error(cds)("CDS archive has aot-linked classes. It cannot be used with JDWP agent");
+      return false;
+    }
+#endif
   }
 
   return true;
