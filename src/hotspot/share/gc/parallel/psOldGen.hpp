@@ -33,6 +33,8 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
+class ReservedSpace;
+
 class PSOldGen : public CHeapObj<mtGC> {
   friend class VMStructs;
  private:

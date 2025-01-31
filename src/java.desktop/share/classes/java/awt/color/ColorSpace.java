@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,12 +100,12 @@ public abstract class ColorSpace implements Serializable {
     private static final long serialVersionUID = -409452704308689724L;
 
     /**
-     * One of the {@code ColorSpace} type constants.
+     * @serial One of the {@code ColorSpace} type constants.
      */
     private final int type;
 
     /**
-     * The number of components in the color space.
+     * @serial The number of components in the color space.
      */
     private final int numComponents;
 

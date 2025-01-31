@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
@@ -32,8 +31,8 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "runtime/atomic.hpp"
 #include "nmt/memTracker.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/copy.hpp"
 
 ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedSpace space, char* heap_base) :
@@ -186,7 +185,7 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::next() {
 
 void ShenandoahCollectionSet::print_on(outputStream* out) const {
   out->print_cr("Collection Set: Regions: "
-                SIZE_FORMAT ", Garbage: " SIZE_FORMAT "%s, Live: " SIZE_FORMAT "%s, Used: " SIZE_FORMAT "%s", count(),
+                "%zu, Garbage: %zu%s, Live: %zu%s, Used: %zu%s", count(),
                 byte_size_in_proper_unit(garbage()), proper_unit_for_byte_size(garbage()),
                 byte_size_in_proper_unit(live()),    proper_unit_for_byte_size(live()),
                 byte_size_in_proper_unit(used()),    proper_unit_for_byte_size(used()));

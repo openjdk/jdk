@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -611,12 +610,16 @@ void VM_Exit::doit() {
 
 
 void VM_Exit::wait_if_vm_exited() {
-  if (_vm_exited &&
-      Thread::current_or_null() != _shutdown_thread) {
-    // _vm_exited is set at safepoint, and the Threads_lock is never released
-    // so we will block here until the process dies.
-    Threads_lock->lock();
-    ShouldNotReachHere();
+  if (_vm_exited) {
+    // Need to check for an unattached thread as only attached threads
+    // can acquire the lock.
+    Thread* current = Thread::current_or_null();
+    if (current != nullptr && current != _shutdown_thread) {
+      // _vm_exited is set at safepoint, and the Threads_lock is never released
+      // so we will block here until the process dies.
+      Threads_lock->lock();
+      ShouldNotReachHere();
+    }
   }
 }
 
