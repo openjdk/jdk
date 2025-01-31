@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
@@ -215,26 +214,54 @@ void MetaspaceShared::dump_loaded_classes(const char* file_name, TRAPS) {
   }
 }
 
-static bool shared_base_too_high(char* specified_base, char* aligned_base, size_t cds_max) {
-  if (specified_base != nullptr && aligned_base < specified_base) {
-    // SharedBaseAddress is very high (e.g., 0xffffffffffffff00) so
-    // align_up(SharedBaseAddress, MetaspaceShared::core_region_alignment()) has wrapped around.
-    return true;
-  }
-  if (max_uintx - uintx(aligned_base) < uintx(cds_max)) {
-    // The end of the archive will wrap around
-    return true;
+// If p is not aligned, move it up to the next address that's aligned with alignment.
+// If this is not possible (because p is too high), return nullptr. Example:
+//     p = 0xffffffffffff0000, alignment= 0x10000    => return nullptr.
+static char* align_up_or_null(char* p, size_t alignment) {
+  assert(p != nullptr, "sanity");
+  if (is_aligned(p, alignment)) {
+    return p;
   }
 
-  return false;
+  char* down = align_down(p, alignment);
+  if (max_uintx - uintx(down) < uintx(alignment)) {
+    // Run out of address space to align up.
+    return nullptr;
+  }
+
+  char* aligned = align_up(p, alignment);
+  assert(aligned >= p, "sanity");
+  assert(aligned != nullptr, "sanity");
+  return aligned;
+}
+
+static bool shared_base_too_high(char* specified_base, char* aligned_base, size_t cds_max) {
+  // Caller should have checked if align_up_or_null( returns nullptr (comparing specified_base
+  // with nullptr is UB).
+  assert(aligned_base != nullptr, "sanity");
+  assert(aligned_base >= specified_base, "sanity");
+
+  if (max_uintx - uintx(aligned_base) < uintx(cds_max)) {
+    // Not enough address space to hold an archive of cds_max bytes from aligned_base.
+    return true;
+  } else {
+    return false;
+  }
 }
 
 static char* compute_shared_base(size_t cds_max) {
   char* specified_base = (char*)SharedBaseAddress;
-  char* aligned_base = align_up(specified_base, MetaspaceShared::core_region_alignment());
+  size_t alignment = MetaspaceShared::core_region_alignment();
   if (UseCompressedClassPointers) {
-    aligned_base = align_up(specified_base, Metaspace::reserve_alignment());
+    alignment = MAX2(alignment, Metaspace::reserve_alignment());
   }
+
+  if (SharedBaseAddress == 0) {
+    // Special meaning of -XX:SharedBaseAddress=0 -> Always map archive at os-selected address.
+    return specified_base;
+  }
+
+  char* aligned_base = align_up_or_null(specified_base, alignment);
 
   if (aligned_base != specified_base) {
     log_info(cds)("SharedBaseAddress (" INTPTR_FORMAT ") aligned up to " INTPTR_FORMAT,
@@ -242,7 +269,9 @@ static char* compute_shared_base(size_t cds_max) {
   }
 
   const char* err = nullptr;
-  if (shared_base_too_high(specified_base, aligned_base, cds_max)) {
+  if (aligned_base == nullptr) {
+    err = "too high";
+  } else if (shared_base_too_high(specified_base, aligned_base, cds_max)) {
     err = "too high";
   } else if (!shared_base_valid(aligned_base)) {
     err = "invalid for this platform";
@@ -250,12 +279,15 @@ static char* compute_shared_base(size_t cds_max) {
     return aligned_base;
   }
 
+  // Arguments::default_SharedBaseAddress() is hard-coded in cds_globals.hpp. It must be carefully
+  // picked that (a) the align_up() below will always return a valid value; (b) none of
+  // the following asserts will fail.
   log_warning(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is %s. Reverted to " INTPTR_FORMAT,
                    p2i((void*)SharedBaseAddress), err,
                    p2i((void*)Arguments::default_SharedBaseAddress()));
 
   specified_base = (char*)Arguments::default_SharedBaseAddress();
-  aligned_base = align_up(specified_base, MetaspaceShared::core_region_alignment());
+  aligned_base = align_up(specified_base, alignment);
 
   // Make sure the default value of SharedBaseAddress specified in globals.hpp is sane.
   assert(!shared_base_too_high(specified_base, aligned_base, cds_max), "Sanity");
@@ -265,7 +297,7 @@ static char* compute_shared_base(size_t cds_max) {
 
 void MetaspaceShared::initialize_for_static_dump() {
   assert(CDSConfig::is_dumping_static_archive(), "sanity");
-  log_info(cds)("Core region alignment: " SIZE_FORMAT, core_region_alignment());
+  log_info(cds)("Core region alignment: %zu", core_region_alignment());
   // The max allowed size for CDS archive. We use this to limit SharedBaseAddress
   // to avoid address space wrap around.
   size_t cds_max;
@@ -284,9 +316,12 @@ void MetaspaceShared::initialize_for_static_dump() {
   SharedBaseAddress = (size_t)_requested_base_address;
 
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
-  _symbol_rs = MemoryReserver::reserve(symbol_rs_size, mtClassShared);
+  _symbol_rs = MemoryReserver::reserve(symbol_rs_size,
+                                       os::vm_allocation_granularity(),
+                                       os::vm_page_size(),
+                                       mtClassShared);
   if (!_symbol_rs.is_reserved()) {
-    log_error(cds)("Unable to reserve memory for symbols: " SIZE_FORMAT " bytes.", symbol_rs_size);
+    log_error(cds)("Unable to reserve memory for symbols: %zu bytes.", symbol_rs_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
   _symbol_region.init(&_symbol_rs, &_symbol_vs);
@@ -769,7 +804,7 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
   if (HAS_PENDING_EXCEPTION) {
     if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
       log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
-                     SIZE_FORMAT "M", MaxHeapSize/M);
+                     "%zuM", MaxHeapSize/M);
       MetaspaceShared::writing_error();
     } else {
       log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
@@ -798,15 +833,15 @@ void MetaspaceShared::adjust_heap_sizes_for_dumping() {
   julong max_heap_size = (julong)(4 * G);
 
   if (MinHeapSize > max_heap_size) {
-    log_debug(cds)("Setting MinHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", MinHeapSize/M);
+    log_debug(cds)("Setting MinHeapSize to 4G for CDS dumping, original size = %zuM", MinHeapSize/M);
     FLAG_SET_ERGO(MinHeapSize, max_heap_size);
   }
   if (InitialHeapSize > max_heap_size) {
-    log_debug(cds)("Setting InitialHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", InitialHeapSize/M);
+    log_debug(cds)("Setting InitialHeapSize to 4G for CDS dumping, original size = %zuM", InitialHeapSize/M);
     FLAG_SET_ERGO(InitialHeapSize, max_heap_size);
   }
   if (MaxHeapSize > max_heap_size) {
-    log_debug(cds)("Setting MaxHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", MaxHeapSize/M);
+    log_debug(cds)("Setting MaxHeapSize to 4G for CDS dumping, original size = %zuM", MaxHeapSize/M);
     FLAG_SET_ERGO(MaxHeapSize, max_heap_size);
   }
 }
@@ -1082,7 +1117,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   FileMapInfo* dynamic_mapinfo = nullptr;
 
   if (static_mapinfo != nullptr) {
-    log_info(cds)("Core region alignment: " SIZE_FORMAT, static_mapinfo->core_region_alignment());
+    log_info(cds)("Core region alignment: %zu", static_mapinfo->core_region_alignment());
     dynamic_mapinfo = open_dynamic_archive();
 
     // First try to map at the requested address
@@ -1236,9 +1271,9 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
     }
 #endif // ASSERT
 
-    log_info(cds)("Reserved archive_space_rs [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (" SIZE_FORMAT ") bytes",
+    log_info(cds)("Reserved archive_space_rs [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (%zu) bytes",
                    p2i(archive_space_rs.base()), p2i(archive_space_rs.end()), archive_space_rs.size());
-    log_info(cds)("Reserved class_space_rs   [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (" SIZE_FORMAT ") bytes",
+    log_info(cds)("Reserved class_space_rs   [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (%zu) bytes",
                    p2i(class_space_rs.base()), p2i(class_space_rs.end()), class_space_rs.size());
 
     if (MetaspaceShared::use_windows_memory_mapping()) {
@@ -1467,8 +1502,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   size_t class_space_size = CompressedClassSpaceSize;
   assert(CompressedClassSpaceSize > 0 &&
          is_aligned(CompressedClassSpaceSize, class_space_alignment),
-         "CompressedClassSpaceSize malformed: "
-         SIZE_FORMAT, CompressedClassSpaceSize);
+         "CompressedClassSpaceSize malformed: %zu", CompressedClassSpaceSize);
 
   const size_t ccs_begin_offset = align_up(archive_space_size, class_space_alignment);
   const size_t gap_size = ccs_begin_offset - archive_space_size;
@@ -1478,7 +1512,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   guarantee(archive_space_size < max_encoding_range_size - class_space_alignment, "Archive too large");
   if ((archive_space_size + gap_size + class_space_size) > max_encoding_range_size) {
     class_space_size = align_down(max_encoding_range_size - archive_space_size - gap_size, class_space_alignment);
-    log_info(metaspace)("CDS initialization: reducing class space size from " SIZE_FORMAT " to " SIZE_FORMAT,
+    log_info(metaspace)("CDS initialization: reducing class space size from %zu to %zu",
         CompressedClassSpaceSize, class_space_size);
     FLAG_SET_ERGO(CompressedClassSpaceSize, class_space_size);
   }
@@ -1600,8 +1634,8 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
 
   mapinfo->set_is_mapped(false);
   if (mapinfo->core_region_alignment() != (size_t)core_region_alignment()) {
-    log_info(cds)("Unable to map CDS archive -- core_region_alignment() expected: " SIZE_FORMAT
-                  " actual: " SIZE_FORMAT, mapinfo->core_region_alignment(), core_region_alignment());
+    log_info(cds)("Unable to map CDS archive -- core_region_alignment() expected: %zu"
+                  " actual: %zu", mapinfo->core_region_alignment(), core_region_alignment());
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
@@ -1770,7 +1804,7 @@ void MetaspaceShared::print_on(outputStream* st) {
     address static_top = (address)_shared_metaspace_static_top;
     address top = (address)MetaspaceObj::shared_metaspace_top();
     st->print("[" PTR_FORMAT "-" PTR_FORMAT "-" PTR_FORMAT "), ", p2i(base), p2i(static_top), p2i(top));
-    st->print("size " SIZE_FORMAT ", ", top - base);
+    st->print("size %zu, ", top - base);
     st->print("SharedBaseAddress: " PTR_FORMAT ", ArchiveRelocationMode: %d.", SharedBaseAddress, ArchiveRelocationMode);
   } else {
     st->print("CDS archive(s) not mapped");

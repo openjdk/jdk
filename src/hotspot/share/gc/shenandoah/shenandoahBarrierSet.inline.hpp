@@ -420,7 +420,7 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
   char gc_state = ShenandoahThreadLocalData::gc_state(Thread::current());
   if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
     arraycopy_evacuation(src, count);
-  } else if ((gc_state & ShenandoahHeap::UPDATEREFS) != 0) {
+  } else if ((gc_state & ShenandoahHeap::UPDATE_REFS) != 0) {
     arraycopy_update(src, count);
   }
 
