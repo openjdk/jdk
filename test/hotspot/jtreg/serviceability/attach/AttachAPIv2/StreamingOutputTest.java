@@ -59,13 +59,13 @@ public class StreamingOutputTest {
         } finally {
             LingeredApp.stopApp(app);
         }
-        
+
         verify(clientStreaming, vmStreaming, app.getProcessStdout());
-        
+
         System.out.println("Testing: end");
         System.out.println();
     }
-    
+
     private static void attach(LingeredApp app, boolean clientStreaming, boolean vmStreaming) throws Exception {
         HotSpotVirtualMachine vm = (HotSpotVirtualMachine)VirtualMachine.attach(String.valueOf(app.getPid()));
         try {
