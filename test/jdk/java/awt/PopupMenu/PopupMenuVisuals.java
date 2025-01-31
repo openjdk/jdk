@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class PopupMenuVisuals {
          If following conditions are met:
           - Menu is disabled
           - Menu has caption 'Popup menu' (only applicable for linux)
-          - Menu items don't show shortcuts
+          - Menu items don't show shortcuts (except on MacOS)
 
          Click Pass else click Fail.""";
 
@@ -81,7 +81,7 @@ public class PopupMenuVisuals {
 
         //Get things going.  Request focus, set size, et cetera
         frame = new Frame("PopupMenuVisuals");
-        frame.setSize (200,200);
+        frame.setSize(200,200);
         frame.validate();
 
         frame.add(b);
