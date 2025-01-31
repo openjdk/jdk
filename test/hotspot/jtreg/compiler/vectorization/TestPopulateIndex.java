@@ -118,6 +118,7 @@ public class TestPopulateIndex {
     // (i+0) & 7, (i+1) & 7 ... (i+8) & 7 ....  -> PopulateIndex
     // becomes
     // (i+0) & 7, (i+1) & 7 ... (i+0) & 7 .... -> pattern broken
+    // See JDK-8349128.
     public void exprWithIndex3() {
         for (int i = 0; i < count; i++) {
             dst[i] = src[i] * (i & 7);
