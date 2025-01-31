@@ -59,6 +59,7 @@ import org.openide.awt.UndoRedo;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Sheet;
+import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
@@ -608,8 +609,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return action;
     }
 
-    public Action createGotoAction(String name, Set<Figure> figures) {
-        Action action = new AbstractAction(name) {
+    public Action createGotoNodesAction(String name, Set<Figure> figures) {
+        String iconResource = "com/sun/hotspot/igv/view/images/selectNodes.png";
+        Action action = new AbstractAction(name, new ImageIcon(ImageUtilities.loadImage(iconResource))) {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setFigureSelection(figures);
@@ -623,7 +625,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     public Action createGotoLiveRangeAction(String name, Set<LiveRangeSegment> segments) {
-        Action action = new AbstractAction(name) {
+        String iconResource = "com/sun/hotspot/igv/view/images/selectLiveRanges.png";
+        Action action = new AbstractAction(name, new ImageIcon(ImageUtilities.loadImage(iconResource))) {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setLiveRangeSegmentSelection(segments);
@@ -637,7 +640,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     public Action createGotoLiveRangeAction(InputLiveRange liveRange) {
         String name = "L" + liveRange.getId();
-        Action action = new AbstractAction(name) {
+        String iconResource = "com/sun/hotspot/igv/view/images/liveRange.png";
+        Action action = new AbstractAction(name, new ImageIcon(ImageUtilities.loadImage(iconResource))) {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setLiveRangeSegmentSelection(liveRangeSegmentSet(Collections.singleton(liveRange)));

@@ -173,7 +173,7 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
         for (InputNode node : graph.getRelatedNodes(liveRangeId)) {
             figures.add((diagram.getFigure(node)));
         }
-        menu.add(scene.createGotoAction("Select nodes", figures));
+        menu.add(scene.createGotoNodesAction("Select nodes", figures));
         menu.addSeparator();
         for (InputNode node : graph.getDefNodes(liveRangeId)) {
             menu.add(scene.createGotoAction(diagram.getFigure(node)));
