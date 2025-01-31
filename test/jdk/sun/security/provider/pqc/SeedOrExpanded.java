@@ -45,6 +45,7 @@ import sun.security.util.ObjectIdentifier;
 import javax.crypto.KEM;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
@@ -89,9 +90,21 @@ public class SeedOrExpanded {
         var f = KeyFactory.getInstance(alg);
         var sk1 = f.generatePrivate(new PKCS8EncodedKeySpec(kseed));
         var sk2 = f.generatePrivate(new PKCS8EncodedKeySpec(kexpanded));
+        var sk3 = f.translateKey(new PrivateKey() {
+            public String getAlgorithm() { return alg; }
+            public String getFormat() { return "RAW"; }
+            public byte[] getEncoded() { return seed.clone(); }
+        });
+        var sk4 = f.translateKey(new PrivateKey() {
+            public String getAlgorithm() { return alg; }
+            public String getFormat() { return "RAW"; }
+            public byte[] getEncoded() { return ex.clone(); }
+        });
         // Key factory never tries to reformat keys
         Asserts.assertEqualsByteArray(sk1.getEncoded(), kseed);
         Asserts.assertEqualsByteArray(sk2.getEncoded(), kexpanded);
+        Asserts.assertEqualsByteArray(sk3.getEncoded(), kseed);
+        Asserts.assertEqualsByteArray(sk4.getEncoded(), kexpanded);
 
         // Key using
 
