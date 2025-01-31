@@ -31,7 +31,6 @@
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/perfDataTypes.hpp"
 #include "utilities/checkedCast.hpp"
 
 class ObjectMonitor;
@@ -201,26 +200,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   static OopHandle& vthread_cxq_head() { return _vthread_cxq_head; }
   static ParkEvent* vthread_unparker_ParkEvent() { return _vthread_unparker_ParkEvent; }
-
-  // Only perform a PerfData operation if the PerfData object has been
-  // allocated and if the PerfDataManager has not freed the PerfData
-  // objects which can happen at normal VM shutdown.
-  //
-  #define OM_PERFDATA_OP(f, op_str)                 \
-    do {                                            \
-      if (ObjectMonitor::_sync_ ## f != nullptr &&  \
-          PerfDataManager::has_PerfData()) {        \
-        ObjectMonitor::_sync_ ## f->op_str;         \
-      }                                             \
-    } while (0)
-
-  static PerfCounter * _sync_ContendedLockAttempts;
-  static PerfCounter * _sync_FutileWakeups;
-  static PerfCounter * _sync_Parks;
-  static PerfCounter * _sync_Notifications;
-  static PerfCounter * _sync_Inflations;
-  static PerfCounter * _sync_Deflations;
-  static PerfLongVariable * _sync_MonExtant;
 
   static int Knob_SpinLimit;
 
