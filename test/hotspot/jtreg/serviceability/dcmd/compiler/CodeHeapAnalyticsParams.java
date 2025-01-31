@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
 
 /*
  * @test CodeHeapAnalyticsParams
+ * @bug 8225388
  * @summary Test the Compiler.CodeHeap_Analytics command
  * @requires vm.flagless
  * @library /test/lib
@@ -38,7 +39,8 @@ public class CodeHeapAnalyticsParams {
     public static void main(String args[]) throws Exception {
         PidJcmdExecutor executor = new PidJcmdExecutor();
         executor.execute("Compiler.CodeHeap_Analytics all 1").shouldHaveExitValue(0);
-        executor.execute("Compiler.CodeHeap_Analytics all 0").shouldHaveExitValue(1);
-        executor.execute("Compiler.CodeHeap_Analytics all k").shouldHaveExitValue(1);
+        // invalid argument should report exception, and don't crash
+        executor.execute("Compiler.CodeHeap_Analytics all 0").shouldContain("IllegalArgumentException");
+        executor.execute("Compiler.CodeHeap_Analytics all k").shouldContain("IllegalArgumentException");
     }
 }
