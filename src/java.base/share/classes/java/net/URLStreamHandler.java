@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
 import sun.net.util.IPAddressUtil;
+
+import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.filterHostName;
 
 /**
  * The abstract class {@code URLStreamHandler} is the common
@@ -205,8 +208,8 @@ public abstract class URLStreamHandler {
                         host = nhost.substring(0,ind+1);
                         if (!IPAddressUtil.
                             isIPv6LiteralAddress(host.substring(1, ind))) {
-                            throw new IllegalArgumentException(
-                                "Invalid host: "+ host);
+                            throwException(IllegalArgumentException.class, "Invalid host%s",
+                                           filterHostName(host).prefixWith(": "));
                         }
 
                         port = -1 ;
@@ -219,13 +222,13 @@ public abstract class URLStreamHandler {
                                         nhost.length(), 10);
                                 }
                             } else {
-                                throw new IllegalArgumentException(
-                                    "Invalid authority field: " + authority);
+                                throwException(IllegalArgumentException.class, "Invalid authority field%s",
+                                               filterHostName(authority).prefixWith(": "));
                             }
                         }
                     } else {
-                        throw new IllegalArgumentException(
-                            "Invalid authority field: " + authority);
+                        throwException(IllegalArgumentException.class, "Invalid authority field%s",
+                                       filterHostName(authority).prefixWith(": "));
                     }
                 } else {
                     ind = host.indexOf(':');

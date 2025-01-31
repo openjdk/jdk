@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,16 +184,26 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
 {
     int size;
     char *buf;
-    const char *format = "%s: %s";
     const char *error_string = gai_strerror(gai_error);
     if (error_string == NULL)
         error_string = "unknown error";
+    int enhancedExceptions = getEnhancedExceptionsAllowed(env);
 
-    size = strlen(format) + strlen(hostname) + strlen(error_string) + 2;
+    if (enhancedExceptions) {
+        size = strlen(hostname);
+    } else {
+        size = strlen(ENH_DISABLED_MSG) + 1;
+    }
+    size += strlen(error_string) + 3;
+
     buf = (char *) malloc(size);
     if (buf) {
         jstring s;
-        snprintf(buf, size, format, hostname, error_string);
+        if (enhancedExceptions) {
+            snprintf(buf, size, "%s: %s", hostname, error_string);
+        } else {
+            snprintf(buf, size, " %s %s", error_string, ENH_DISABLED_MSG);
+        }
         s = JNU_NewStringPlatform(env, buf);
         if (s != NULL) {
             jobject x = JNU_NewObjectByName(env,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import java.nio.charset.CodingErrorAction;
 import java.util.HexFormat;
 
 import sun.nio.cs.UTF_8;
+import static jdk.internal.util.Exceptions.filterHostName;
+import static jdk.internal.util.Exceptions.throwURISyntaxException;
 
 /**
  * A class that contains useful routines common to sun.net.www
@@ -502,8 +504,8 @@ public final class ParseUtil {
     {
         if (scheme != null) {
             if (path != null && !path.isEmpty() && path.charAt(0) != '/')
-                throw new URISyntaxException(s,
-                                             "Relative path in absolute URI");
+                throwURISyntaxException("%s", "Relative path in absolute URI",
+                                        -1, filterHostName(s));
         }
     }
 

@@ -1,0 +1,365 @@
+/*
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package jdk.internal.util;
+
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+
+import sun.security.util.SecurityProperties;
+import jdk.internal.misc.VM;
+
+/**
+ * Contains static utility methods which take an Exception
+ * and return either the same exception or a new instance
+ * of the same exception type with an "enhanced" message
+ * description.
+ *
+ * If the system/security property "jdk.includeInExceptions" is not
+ * set or does not contain the category hostInfo,
+ * then the original exception is returned.
+ *
+ * Code using this mechanism should use one of the static throwException
+ * methods below to generate and throw the exception in one method.
+ * exception() methods are also provided to generate an exception which
+ * then be modified before being thrown or used. Lastly, formatMsg()
+ * can generate a formatted (enhanced or restricted) string only.
+ *
+ * The SensitiveInfo objects should be generated with one of the following:
+ *     public static SensitiveInfo filterHostName(String host)
+ *     public static SensitiveInfo filterJarName(String name)
+ *     public static SensitiveInfo filterUserName(String name)
+ */
+public final class Exceptions {
+    private Exceptions() {}
+
+    private static volatile boolean enhancedHostExceptionText;
+    private static volatile boolean enhancedUserExceptionText;
+    private static volatile boolean enhancedJarExceptionText;
+    private static volatile boolean initialized = false;
+
+    /**
+     * Suffix added to all exception messages when enhanced exceptions are disabled
+     */
+    private static final String ENH_DISABLED_MSG = "[enhanced exceptions disabled]";
+
+
+    public static String enhancedDisabledMsg() {
+        return ENH_DISABLED_MSG;
+    }
+
+    /**
+     * Base class for generating exception messages that may
+     * contain sensitive information which in certain contexts
+     * needs to be filtered out, in case it gets revealed in
+     * unexpected places. Exception messages are either enhanced
+     * or restricted. Enhanced messages include sensitive information.
+     * Restricted messages don't.
+     *
+     * Sub-class for any new category that needs to be independently
+     * controlled. Consider using a unique value for the
+     * SecurityProperties.includedInExceptions(String value) mechanism
+     * Current values defined are "hostInfo", "jar" and "userInfo"
+     * New code can also piggy back on existing categories
+     *
+     * A SensitiveInfo contains the following components
+     * all of which default to empty strings.
+     *
+     * prefix, the sensitive info itself, a suffix
+     * and a replacement string.
+     *
+     * The output(boolean enhance) method generates an enhanced
+     * string when enhance is true.
+     * This comprises (enhance == true)
+     *     prefix + info + suffix
+     * When (enhance == false), then by default the output is:
+     *     "" empty string
+     * However, if a replacement is set, then when enhance == false
+     * the output is the replacement string.
+     */
+    public static abstract class SensitiveInfo  {
+        String info, suffix, prefix, replacement;
+        boolean enhanced;
+
+        SensitiveInfo(String info) {
+            this.info = info;
+            prefix = suffix = replacement = "";
+        }
+        public SensitiveInfo prefixWith(String prefix) {
+            this.prefix = prefix;
+            return this;
+        }
+        public SensitiveInfo suffixWith(String suffix) {
+            this.suffix = suffix;
+            return this;
+        }
+        public SensitiveInfo replaceWith(String replacement) {
+            this.replacement = replacement;
+            return this;
+        }
+
+        public boolean enhanced() {
+            return enhanced;
+        }
+
+        /**
+         * Implementation should call output(boolean)
+         */
+        public abstract String output();
+
+        protected String output(boolean enhance) {
+            if (enhance) {
+                this.enhanced = true;
+                return prefix + info + suffix;
+            } else {
+                return replacement;
+            }
+        }
+    }
+
+    /**
+     * Throw an exception of the given class (which has a single arg (String) constructor
+     * with the given format string. For each %s in the format string, there must be a
+     * SensitiveInfo following that generates a message string in either enhanced or
+     * restricted mode. The entire string is then passed to the exception constructor
+     * Format specifiers other than %s are not supported, and will cause a runtime exception.
+     */
+    public static <X extends Throwable> void throwException(Class<X> exClass, String format,
+                                                            SensitiveInfo... infos) throws X
+    {
+        throw exception(exClass, format, infos);
+    }
+
+    /**
+     * Simplified version of above with one SensitiveInfo and a "%s" format string
+     */
+    public static <X extends Throwable> void throwException(Class<X> exClass, SensitiveInfo... infos) throws X
+    {
+        throwException(exClass, "%s", infos);
+    }
+
+    /**
+     * Returns the exception without throwing it
+     */
+    public static <X extends Throwable> X exception(Class<X> exClass, String format,
+                                                    SensitiveInfo... infos)
+    {
+        try {
+            Constructor<X> ctor = exClass.getConstructor(String.class);
+            String msg = formatMsg(format, infos);
+            return ctor.newInstance(msg);
+        } catch (ReflectiveOperationException e) {
+            throw new InternalError();
+        }
+    }
+
+    public static <X extends Throwable> X exception(Class<X> exClass, SensitiveInfo... infos)
+    {
+        return exception(exClass, "%s", infos);
+    }
+
+    /**
+     * Special case for URISyntaxException (has two additional parameters)
+     */
+    public static URISyntaxException throwURISyntaxException(String format, String arg2,
+                                                             int index, SensitiveInfo... infos)
+    throws URISyntaxException
+    {
+        String msg = formatMsg(format, infos);
+        URISyntaxException ex = new URISyntaxException(msg, arg2, index);
+        throw ex;
+    }
+
+    static final class HostInfo extends SensitiveInfo {
+        public HostInfo(String host) {
+             super(host);
+        }
+        @Override
+        public String output() {
+            setup();
+            return super.output(enhancedHostExceptionText);
+        }
+    }
+
+    static final class JarInfo extends SensitiveInfo {
+        public JarInfo(String name) {
+             super(name);
+        }
+        @Override
+        public String output() {
+            setup();
+            return super.output(enhancedJarExceptionText);
+        }
+    }
+
+    static final class UserInfo extends SensitiveInfo {
+        public UserInfo(String host) {
+             super(host);
+        }
+        @Override
+        public String output() {
+            setup();
+            return super.output(enhancedUserExceptionText);
+        }
+    }
+
+    // remove leading, trailing and duplicated space characters
+    static String trim(String s) {
+        int len = s.length();
+        if (len == 0) return s;
+
+        StringBuilder sb = new StringBuilder();
+
+        // initial value deals with leading spaces
+        boolean inSpace = true;
+        for (int i=0; i<len; i++) {
+            char c = s.charAt(i);
+            if (c == ' ') {
+                if (inSpace)
+                    continue;
+                inSpace = true;
+            } else
+                inSpace = false;
+            sb.append(c);
+        }
+        int sblen = sb.length();
+        // last char could be a space
+        if (sblen > 0 && sb.charAt(sblen - 1) == ' ')
+            sb.deleteCharAt(sblen - 1);
+        return sb.toString();
+    }
+
+    public static SensitiveInfo filterHostName(String host) {
+        return new HostInfo(host);
+    }
+
+    public static SensitiveInfo filterJarName(String name) {
+        return new JarInfo(name);
+    }
+
+    public static SensitiveInfo filterUserName(String name) {
+        return new UserInfo(name);
+    }
+
+    /**
+     * Transform each SensitiveInfo into a String argument which is passed
+     * to String.format(). This string is then trimmed.
+     */
+    public static String formatMsg(String format, SensitiveInfo... infos) {
+        String[] args = new String[infos.length];
+
+        int i = 0;
+        boolean enhanced = true;
+
+        for (SensitiveInfo info : infos) {
+            args[i++] = info.output();
+            if (!info.enhanced())
+                enhanced = false;
+        }
+        return trim(String.format(format, (Object[])args) +
+                        (enhanced ? "" : " " + ENH_DISABLED_MSG));
+    }
+
+    /**
+     * Simplification of above. Equivalent to:
+     *       formatMsg("%s", SensitiveInfo[1]); // ie with one arg
+     */
+    private static String formatMsg(SensitiveInfo info) {
+        return trim(info.output());
+    }
+
+    public static void setup() {
+        if (initialized || !VM.isBooted())
+            return;
+        enhancedHostExceptionText = SecurityProperties.includedInExceptions("hostInfo");
+        enhancedUserExceptionText = SecurityProperties.includedInExceptions("userInfo");
+        enhancedJarExceptionText =  SecurityProperties.INCLUDE_JAR_NAME_IN_EXCEPTIONS;
+        initialized = true;
+    }
+
+    public static boolean enhancedHostExceptions() {
+        setup();
+        return enhancedHostExceptionText;
+    }
+
+    /**
+     * The enhanced message text is the socket address appended to
+     * the original IOException message
+     */
+    public static IOException ioException(IOException e, SocketAddress addr) {
+        setup();
+        if (addr == null) {
+            return e;
+        }
+        if (!enhancedHostExceptionText) {
+            return create(e, e.getMessage() + " " + ENH_DISABLED_MSG);
+        }
+        if (addr instanceof UnixDomainSocketAddress) {
+            return ofUnixDomain(e, (UnixDomainSocketAddress)addr);
+        } else if (addr instanceof InetSocketAddress) {
+            return ofInet(e, (InetSocketAddress)addr);
+        } else {
+            return e;
+        }
+    }
+
+    private static IOException ofInet(IOException e, InetSocketAddress addr) {
+        return create(e, String.join(": ", e.getMessage(), addr.toString()));
+    }
+
+    private static IOException ofUnixDomain(IOException e, UnixDomainSocketAddress addr) {
+        String path = addr.getPath().toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append(e.getMessage());
+        sb.append(": ");
+        sb.append(path);
+        String enhancedMsg = sb.toString();
+        return create(e, enhancedMsg);
+    }
+
+    // return a new instance of the same type with the given detail
+    // msg, or if the type doesn't support detail msgs, return given
+    // instance.
+    private static <T extends Exception> T create(T e, String msg) {
+        try {
+            Class<? extends Exception> clazz = e.getClass();
+            @SuppressWarnings("unchecked")
+            Constructor<T> ctor = (Constructor<T>)clazz.getConstructor(String.class);
+            T e1 = (ctor.newInstance(msg));
+            e1.setStackTrace(e.getStackTrace());
+            return e1;
+        } catch (Exception e0) {
+            // Some eg AsynchronousCloseException have no detail msg
+            return e;
+        }
+    }
+}

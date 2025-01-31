@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 4464135 4505046 4503239 4438319 4991359 4866303 7023363 7041800
  *      7171415 6339649 6933879 8037396 8272072 8051627 8297687
  * @author Mark Reinhold
+ * @run main/othervm -Djdk.includeInExceptions=hostInfo Test
  */
 
 import java.io.ByteArrayInputStream;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.io.ObjectStreamField;
 import java.util.Enumeration;
 import java.util.Arrays;
 import java.util.Objects;
+import static jdk.internal.util.Exceptions.filterHostName;
+import static jdk.internal.util.Exceptions.throwException;
 
 /**
  * This class represents an Internet Protocol version 6 (IPv6) address.
@@ -581,7 +583,8 @@ class Inet6Address extends InetAddress {
         if (addrBytes.length == Inet4Address.INADDRSZ) {
             if (numericZone != -1 || ifname != null) {
                 // IPv4-mapped address must not contain zone-id
-                throw new UnknownHostException(addressLiteral + ": invalid IPv4-mapped address");
+                throwException(UnknownHostException.class, "%sinvalid IPv4-mapped address",
+                               filterHostName(addressLiteral).suffixWith(": "));
             }
             return new Inet4Address(null, addrBytes);
         }

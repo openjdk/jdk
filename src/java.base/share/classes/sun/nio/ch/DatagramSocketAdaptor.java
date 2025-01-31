@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,8 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.filterHostName;
 
 /**
  * A multicast datagram socket based on a datagram channel.
@@ -490,7 +492,8 @@ public class DatagramSocketAdaptor
         NetworkInterface ni = NetworkInterface.getByInetAddress(inf);
         if (ni == null) {
             String address = inf.getHostAddress();
-            throw new SocketException("No network interface with address " + address);
+            throwException(SocketException.class, "No network interface found with address %s",
+                           filterHostName(address));
         }
         synchronized (outgoingInterfaceLock) {
             // set interface and update cached values

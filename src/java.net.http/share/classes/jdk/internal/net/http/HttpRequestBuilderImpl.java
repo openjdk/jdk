@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import static java.util.Objects.requireNonNull;
 import static jdk.internal.net.http.common.Utils.isValidName;
 import static jdk.internal.net.http.common.Utils.isValidValue;
 import static jdk.internal.net.http.common.Utils.newIAE;
+import static jdk.internal.util.Exceptions.filterHostName;
+import static jdk.internal.util.Exceptions.throwException;
 
 public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
@@ -82,7 +84,8 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
             throw newIAE("invalid URI scheme %s", scheme);
         }
         if (uri.getHost() == null) {
-            throw newIAE("unsupported URI %s", uri);
+            throwException(IllegalArgumentException.class, "unsupported URI %s",
+                           filterHostName(uri.toString()));
         }
     }
 

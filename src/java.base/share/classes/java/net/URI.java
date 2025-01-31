@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,11 @@ import java.nio.file.Path;
 import java.text.Normalizer;
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.Exceptions;
 import sun.nio.cs.UTF_8;
+
+import static jdk.internal.util.Exceptions.filterHostName;
+import static jdk.internal.util.Exceptions.throwURISyntaxException;
 
 /**
  * Represents a Uniform Resource Identifier (URI) reference.
@@ -2032,7 +2036,7 @@ public final class URI
     {
         if (scheme != null) {
             if (path != null && !path.isEmpty() && path.charAt(0) != '/')
-                throw new URISyntaxException(s, "Relative path in absolute URI");
+                throwURISyntaxException("%s", "Relative path in absolute URI", -1, filterHostName(s));
         }
     }
 
@@ -2988,11 +2992,14 @@ public final class URI
         // -- Methods for throwing URISyntaxException in various ways --
 
         private void fail(String reason) throws URISyntaxException {
-            throw new URISyntaxException(input, reason);
+            throwURISyntaxException("%s", reason, -1, filterHostName(input));
         }
 
         private void fail(String reason, int p) throws URISyntaxException {
-            throw new URISyntaxException(input, reason, p);
+            if (!Exceptions.enhancedHostExceptions()) {
+                p = -1;
+            }
+            throwURISyntaxException("%s", reason, p, filterHostName(input));
         }
 
         private void failExpecting(String expected, int p)
