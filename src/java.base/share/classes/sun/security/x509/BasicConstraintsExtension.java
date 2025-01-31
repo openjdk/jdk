@@ -140,6 +140,11 @@ public class BasicConstraintsExtension extends Extension {
          if (opt.tag != DerValue.tag_Integer) {
              throw new IOException("Invalid encoding of BasicConstraints");
          }
+
+         if (opt.getInteger() < 0) {
+             throw new IOException("Invalid encoding of BasicConstraints: " +
+                 "pathLenConstraint cannot be negative");
+         }
          this.pathLen = opt.getInteger();
          /*
           * Activate this check once again after PKIX profiling
