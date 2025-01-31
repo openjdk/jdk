@@ -113,7 +113,8 @@ public class ML_DSA_Test {
                 s.initSign(sk, sr);
                 s.update(toByteArray(c.get("message").asString()));
                 var sig = s.sign();
-                Asserts.assertEqualsByteArray(toByteArray(c.get("signature").asString()), sig);
+                Asserts.assertEqualsByteArray(
+                        sig, toByteArray(c.get("signature").asString()));
             }
             System.out.println();
         }
