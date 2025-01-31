@@ -61,7 +61,9 @@ COMMAND_LINE_VARIABLES := $(subst §,\ , $(call reverse, $(subst \ ,§,$(MAKEOVE
 # A list like FOO="val1" BAR="val2" containing all user-supplied make
 # variables that we should propagate.
 # The '§' <=> '\ 'dance is needed to keep values with space in them connected.
-USER_MAKE_VARS := $(subst §,\ , $(filter-out $(addsuffix =%, $(INIT_CONTROL_VARIABLES)), \
+# This explicit propagation is needed to avoid problems with characters that needs
+# escaping.
+USER_MAKE_VARS := $(subst §,\ , $(filter-out $(addsuffix =%, $(ALL_CONTROL_VARIABLES)), \
     $(subst \ ,§,$(MAKEOVERRIDES))))
 
 # Setup information about available configurations, if any.
