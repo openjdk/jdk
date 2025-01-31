@@ -32,7 +32,7 @@ const char* const FilenameUtil::TimestampFilenamePlaceholder = "%t";
 const char* const FilenameUtil::TimestampFormat = "%Y-%m-%d_%H-%M-%S";
 const char* const FilenameUtil::HostnameFilenamePlaceholder = "%hn";
 
-char* FilenameUtil::make_file_name_impl(const char* file_name, jlong timestamp, bool c_heap, MemTag tag) {
+char* FilenameUtil::expand_file_name_impl(const char* file_name, jlong timestamp, bool c_heap, MemTag tag) {
   char* result = nullptr;
 
   // Lets start finding out if we have any %p, %t and/or %hn in the name.
