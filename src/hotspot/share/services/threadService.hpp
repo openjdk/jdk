@@ -487,12 +487,19 @@ class JavaThreadInObjectWaitState : public JavaThreadStatusChanger {
   bool _active;
 
  public:
+  // Sets the java.lang.Thread state of the given JavaThread to reflect it is doing a regular,
+  // or timed, Object.wait call.
+  //
+  // The interruptible parameter, if false, indicates an internal uninterruptible wait,
+  // in which case we do not update the java.lang.Thread state. We do that by passing
+  // the current state to the JavaThreadStatusChanger so no actual change is observable,
+  // and skip the statistics updates. This avoids having to duplicate code paths for
+  // the interruptible and non-interruptible cases in the caller.
   JavaThreadInObjectWaitState(JavaThread *java_thread, bool timed, bool interruptible) :
     JavaThreadStatusChanger(java_thread,
-                            // This helper should do nothing when interruptible == false, so we set active = false.
                             interruptible ? (timed ? JavaThreadStatus::IN_OBJECT_WAIT_TIMED : JavaThreadStatus::IN_OBJECT_WAIT)
                                           : java_lang_Thread::get_thread_status(java_thread->threadObj())) {
-    if (is_alive() && interruptible) { // non-interruptible is not active
+    if (is_alive() && interruptible) { // in non-interruptible case we set _active = false below
       _stat = java_thread->get_thread_stat();
       _active = ThreadService::is_thread_monitoring_contention();
       _stat->monitor_wait();
