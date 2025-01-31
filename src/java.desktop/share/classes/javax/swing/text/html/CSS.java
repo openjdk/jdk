@@ -3007,25 +3007,23 @@ public class CSS implements Serializable {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     static class LengthUnit implements Serializable {
-        static Hashtable<String, Float> lengthMapping = new Hashtable<String, Float>(6);
-        static Hashtable<String, Float> w3cLengthMapping = new Hashtable<String, Float>(6);
-        static {
-            lengthMapping.put("pt", 1f);
-            // Not sure about 1.3, determined by experimentation.
-            lengthMapping.put("px", 1.3f);
-            lengthMapping.put("mm", 2.83464f);
-            lengthMapping.put("cm", 28.3464f);
-            lengthMapping.put("pc", 12f);
-            lengthMapping.put("in", 72f);
-            // Mapping according to the CSS2.2 spec
-            // https://www.w3.org/TR/CSS22/syndata.html#x39
-            w3cLengthMapping.put("pt", 96f / 72f);         // 1/72 of 1in
-            w3cLengthMapping.put("px", 1f);                // 1/96 of 1in
-            w3cLengthMapping.put("mm", 96f / 2.54f / 10f); // 1/10 of 1cm
-            w3cLengthMapping.put("cm", 96f / 2.54f);       // 96px/2.54
-            w3cLengthMapping.put("pc", 96f / 6f);          // 1/6 of 1in
-            w3cLengthMapping.put("in", 96f);               // 96px
-        }
+        private static final Map<String, Float> lengthMapping = Map.of(
+                "pt", 1f,
+                // Not sure about 1.3, determined by experimentation.
+                "px", 1.3f,
+                "mm", 2.83464f,
+                "cm", 28.3464f,
+                "pc", 12f,
+                "in", 72f);
+        // Mapping according to the CSS2.2 spec
+        // https://www.w3.org/TR/CSS22/syndata.html#x39
+        private static final Map<String, Float> w3cLengthMapping = Map.of(
+                "pt", 96f / 72f,         // 1/72 of 1in
+                "px", 1f,                // 1/96 of 1in
+                "mm", 96f / 2.54f / 10f, // 1/10 of 1cm
+                "cm", 96f / 2.54f,       // 96px/2.54
+                "pc", 96f / 6f,          // 1/6 of 1in
+                "in", 96f);              // 96px
 
         LengthUnit(String value, short defaultType, float defaultValue) {
             parse(value, defaultType, defaultValue);
@@ -3097,7 +3095,7 @@ public class CSS implements Serializable {
             if (units == null) {
                 return value;
             }
-            Hashtable<String, Float> mapping = (w3cLengthUnits) ? w3cLengthMapping : lengthMapping;
+            Map<String, Float> mapping = (w3cLengthUnits) ? w3cLengthMapping : lengthMapping;
             float scale = mapping.getOrDefault(units, 1f);
             return value * scale;
         }
