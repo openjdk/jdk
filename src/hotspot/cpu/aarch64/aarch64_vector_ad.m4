@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2024, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2025, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -342,7 +342,7 @@ dnl VECTOR_LOAD_STORE($1,   $2,     $3,       $4,    $5  )
 dnl VECTOR_LOAD_STORE(type, nbytes, arg_name, nbits, size)
 define(`VECTOR_LOAD_STORE', `
 // ifelse(load, $1, Load, Store) Vector ($4 bits)
-instruct $1V$2(vReg $3, vmem$2 mem) %{
+instruct $1V$2(vReg $3, vmem mem) %{
   predicate(`n->as_'ifelse(load, $1, Load, Store)Vector()->memory_size() == $2);
   match(Set ifelse(load, $1, dst (LoadVector mem), mem (StoreVector mem src)));
   format %{ "$1V$2 ifelse(load, $1, `$dst, $mem', `$mem, $src')\t# vector ($4 bits)" %}
