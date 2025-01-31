@@ -418,7 +418,7 @@ static inline void log_circularity_error(Symbol* name, PlaceholderEntry* probe) 
 InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* class_name,
                                                                     Symbol* next_name,
                                                                     Handle class_loader,
-                                                                    bool check_is_superclass,
+                                                                    bool is_superclass,
                                                                     TRAPS) {
 
   assert(next_name != nullptr, "null superclass for resolving");
@@ -426,17 +426,19 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
 
   ClassLoaderData* loader_data = class_loader_data(class_loader);
 
-  // For RedefineClasses, the class is already loaded so don't create a placeholder for checking
-  // circularity error if the next_name matches class->super()->name() and if the class loaders match.
-  // Also rarely, if parallel loading completes loading at this point, we can also check the super class name.
-  if (check_is_superclass) {
+  if (is_superclass) {
     InstanceKlass* klassk = loader_data->dictionary()->find_class(THREAD, class_name);
-    InstanceKlass* quicksuperk;
-    if (klassk != nullptr &&
-       ((quicksuperk = klassk->java_super()) != nullptr) &&
-       ((quicksuperk->name() == next_name) &&
-         (quicksuperk->class_loader() == class_loader()))) {
-      return quicksuperk;
+    if (klassk != nullptr) {
+      // We can come here for two reasons:
+      // (a) RedefineClasses -- the class is already loaded
+      // (b) Rarely, the class might have been loaded by a parallel thread
+      // We can do a quick check against the already assigned superclass's name and loader.
+      InstanceKlass* superk = klassk->java_super();
+      if (superk != nullptr &&
+          superk->name() == next_name &&
+          superk->class_loader() == class_loader()) {
+        return superk;
+      }
     }
   }
 
@@ -502,7 +504,7 @@ static void handle_parallel_super_load(Symbol* name,
                                        TRAPS) {
 
   // The result superk is not used; resolve_with_circularity_detection is called for circularity check only.
-  // This passes false to check_is_superclass to skip doing the unlikely optimization.
+  // This passes false to is_superclass to skip doing the unlikely optimization.
   Klass* superk = SystemDictionary::resolve_with_circularity_detection(name,
                                                                        superclassname,
                                                                        class_loader,
@@ -1013,7 +1015,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
 }
 
 bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, InstanceKlass* super_type,
-                                                     Handle class_loader, bool check_is_superclass, TRAPS) {
+                                                     Handle class_loader, bool is_superclass, TRAPS) {
   assert(super_type->is_shared(), "must be");
 
   // Quick check if the super type has been already loaded.
@@ -1030,7 +1032,7 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, Insta
   }
 
   Klass *found = resolve_with_circularity_detection(klass->name(), super_type->name(),
-                                                    class_loader, check_is_superclass, CHECK_false);
+                                                    class_loader, is_superclass, CHECK_false);
   if (found == super_type) {
     return true;
   } else {

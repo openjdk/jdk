@@ -106,7 +106,7 @@ class SystemDictionary : AllStatic {
   static InstanceKlass* resolve_with_circularity_detection(Symbol* class_name,
                                                            Symbol* next_name,
                                                            Handle class_loader,
-                                                           bool check_is_superclass,
+                                                           bool is_superclass,
                                                            TRAPS);
 
   // Resolve a superclass or superinterface. Called from ClassFileParser,
@@ -114,8 +114,8 @@ class SystemDictionary : AllStatic {
   // "class_name" is the class whose super class or interface is being resolved.
   static InstanceKlass* resolve_super_or_fail(Symbol* class_name, Symbol* super_name,
                                               Handle class_loader,
-                                              bool check_is_superclass, TRAPS) {
-    return resolve_with_circularity_detection(class_name, super_name, class_loader, check_is_superclass, THREAD);
+                                              bool is_superclass, TRAPS) {
+    return resolve_with_circularity_detection(class_name, super_name, class_loader, is_superclass, THREAD);
   }
 
  private:
@@ -319,7 +319,7 @@ private:
                                            Handle class_loader);
   static bool check_shared_class_super_type(InstanceKlass* klass, InstanceKlass* super,
                                             Handle class_loader,
-                                            bool check_is_superclass, TRAPS);
+                                            bool is_superclass, TRAPS);
   static bool check_shared_class_super_types(InstanceKlass* ik, Handle class_loader, TRAPS);
   // Second part of load_shared_class
   static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data) NOT_CDS_RETURN;
