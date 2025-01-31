@@ -44,59 +44,74 @@ import static org.junit.jupiter.api.Assumptions.abort;
  * @test
  * @bug 8344908
  * @summary verify that when locating resources, the URLClassPath can function properly
- *          without throwing unexpected exceptions when any URL in the classpath is unusable
+ *          when classpath elements contain Unicode characters with two, three or four
+ *          byte UTF-8 encodings
  * @modules java.base/jdk.internal.loader
- * @run junit ClassPathUnusableURLs
+ * @run junit ClassPathUnicodeChars
  */
-public class ClassPathUnusableURLs {
+public class ClassPathUnicodeChars {
 
     private static final Path SCRATCH_DIR = Path.of(".").normalize();
     private static final String RESOURCE_NAME = "foo.txt";
-    private static final String SMILEY_EMOJI = "\uD83D\uDE00";
+    private static final String TWO_BYTE_CHAR = "\u00C4";
+    private static final String THREE_BYTE_CHAR = "\u20AC";
+    private static final String FOUR_BYTE_CHAR = "\uD83D\uDE00";
 
-    private static Path ASCII_DIR;
-    private static Path EMOJI_DIR;
-    private static Path JAR_FILE_IN_EMOJI_DIR;
+    private static Path TWO_BYTE_CHAR_DIR;
+    private static Path THREE_BYTE_CHAR_DIR;
+    private static Path FOUR_BYTE_CHAR_DIR;
+    private static Path JAR_FILE_IN_TWO_BYTE_CHAR_DIR;
+    private static Path JAR_FILE_IN_THREE_BYTE_CHAR_DIR;
+    private static Path JAR_FILE_IN_FOUR_BYTE_CHAR_DIR;
     private static int NUM_EXPECTED_LOCATED_RESOURCES;
-
 
     @BeforeAll
     static void beforeAll() throws Exception {
         try {
-            EMOJI_DIR = Files.createTempDirectory(SCRATCH_DIR, SMILEY_EMOJI);
+            TWO_BYTE_CHAR_DIR = Files.createTempDirectory(SCRATCH_DIR, TWO_BYTE_CHAR);
+            THREE_BYTE_CHAR_DIR = Files.createTempDirectory(SCRATCH_DIR, THREE_BYTE_CHAR);
+            FOUR_BYTE_CHAR_DIR = Files.createTempDirectory(SCRATCH_DIR, FOUR_BYTE_CHAR);
         } catch (IllegalArgumentException iae) {
             iae.printStackTrace(); // for debug purpose
-            // if we can't create a directory with an emoji in its path name,
-            // then skip the entire test
-            abort("Skipping test since emoji directory couldn't be created: " + iae);
+            // if we can't create a directory with these characters in their
+            // path name then skip the entire test
+            abort("Skipping test since directory couldn't be created: " + iae);
         }
         // successful creation of the dir, continue with the test
-        Files.createFile(EMOJI_DIR.resolve(RESOURCE_NAME));
+        Files.createFile(TWO_BYTE_CHAR_DIR.resolve(RESOURCE_NAME));
+        Files.createFile(THREE_BYTE_CHAR_DIR.resolve(RESOURCE_NAME));
+        Files.createFile(FOUR_BYTE_CHAR_DIR.resolve(RESOURCE_NAME));
 
-        ASCII_DIR = Files.createTempDirectory(SCRATCH_DIR, "test-urlclasspath");
-        Files.createFile(ASCII_DIR.resolve(RESOURCE_NAME));
-
-        // create a jar file containing the resource
-        JAR_FILE_IN_EMOJI_DIR = Files.createTempDirectory(SCRATCH_DIR, SMILEY_EMOJI)
+        // create jar files containing the resource
+        JAR_FILE_IN_TWO_BYTE_CHAR_DIR = Files.createTempDirectory(SCRATCH_DIR, TWO_BYTE_CHAR)
                 .resolve("foo.jar");
-        final Manifest manifest = new Manifest();
-        manifest.getMainAttributes().putValue("Manifest-Version", "1.0");
-        try (OutputStream fos = Files.newOutputStream(JAR_FILE_IN_EMOJI_DIR);
-             JarOutputStream jos = new JarOutputStream(fos, manifest)) {
+        JAR_FILE_IN_THREE_BYTE_CHAR_DIR = Files.createTempDirectory(SCRATCH_DIR, THREE_BYTE_CHAR)
+                .resolve("foo.jar");
+        JAR_FILE_IN_FOUR_BYTE_CHAR_DIR = Files.createTempDirectory(SCRATCH_DIR, FOUR_BYTE_CHAR)
+                .resolve("foo.jar");
+        for (Path jarFile : Arrays.asList(
+                JAR_FILE_IN_TWO_BYTE_CHAR_DIR,
+                JAR_FILE_IN_THREE_BYTE_CHAR_DIR,
+                JAR_FILE_IN_FOUR_BYTE_CHAR_DIR)) {
+            final Manifest manifest = new Manifest();
+            manifest.getMainAttributes().putValue("Manifest-Version", "1.0");
+            try (OutputStream fos = Files.newOutputStream(jarFile);
+                    JarOutputStream jos = new JarOutputStream(fos, manifest)) {
 
-            final JarEntry jarEntry = new JarEntry(RESOURCE_NAME);
-            jos.putNextEntry(jarEntry);
-            jos.write("hello".getBytes(US_ASCII));
-            jos.closeEntry();
+                final JarEntry jarEntry = new JarEntry(RESOURCE_NAME);
+                jos.putNextEntry(jarEntry);
+                jos.write("hello".getBytes(US_ASCII));
+                jos.closeEntry();
+            }
         }
-        // We expect to find the resource in all but the first (non-existent)
-        // classpath element.
-        NUM_EXPECTED_LOCATED_RESOURCES = 3;
+        // We expect to find the resource in all classpath elements.
+        NUM_EXPECTED_LOCATED_RESOURCES = 6;
     }
 
     /**
      * Constructs a URLClassPath and then exercises the URLClassPath.findResource()
-     * and URLClassPath.findResources() methods and expects them to return the expected
+     * and URLClassPath.findResources() methods and expects them to return the
+     * expected
      * resources.
      */
     @Test
@@ -133,7 +148,8 @@ public class ClassPathUnusableURLs {
 
     /**
      * Constructs a URLClassPath and then exercises the URLClassPath.getResource()
-     * and URLClassPath.getResources() methods and expects them to return the expected
+     * and URLClassPath.getResources() methods and expects them to return the
+     * expected
      * resources.
      */
     @Test
@@ -169,18 +185,13 @@ public class ClassPathUnusableURLs {
     }
 
     private static String[] getClassPathElements() {
-        // Maintain the order - in context of this test, the path that can't
-        // serve the resource should come before the paths that can serve the
-        // resource.
-        return new String[]{
-                // non-existent path
-                ASCII_DIR.resolve("non-existent").toString(),
-                // existing emoji dir
-                EMOJI_DIR.toString(),
-                // existing jar file in a emoji dir
-                JAR_FILE_IN_EMOJI_DIR.toString(),
-                // existing ascii dir
-                ASCII_DIR.toString()
+        return new String[] {
+                TWO_BYTE_CHAR_DIR.toString(),
+                THREE_BYTE_CHAR_DIR.toString(),
+                FOUR_BYTE_CHAR_DIR.toString(),
+                JAR_FILE_IN_TWO_BYTE_CHAR_DIR.toString(),
+                JAR_FILE_IN_THREE_BYTE_CHAR_DIR.toString(),
+                JAR_FILE_IN_FOUR_BYTE_CHAR_DIR.toString()
         };
     }
 }
