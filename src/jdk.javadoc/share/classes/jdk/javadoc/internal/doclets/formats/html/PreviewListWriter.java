@@ -102,7 +102,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
         var notes = builder.getElementNotes();
         if (!notes.isEmpty()) {
             addSummaryAPI(notes, HtmlId.of("preview-api-notes"),
-                    "doclet.Preview_Annotated_Elements", "doclet.Element", content);
+                    "doclet.Preview_Notes_Elements", "doclet.Element", content);
         }
     }
 

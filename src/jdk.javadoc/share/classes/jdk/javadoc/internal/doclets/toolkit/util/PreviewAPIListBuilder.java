@@ -35,14 +35,12 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * Build list of all the preview packages, classes, constructors, fields and methods.
@@ -130,7 +128,7 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
                         .filter(t -> previewNoteTag.equals(t.getTagName()) && !t.getContent().isEmpty())
                         .map(this::findJEP)
                         .filter(Objects::nonNull)
-                        .findAny();
+                        .findFirst();
                 if (jep.isPresent()) {
                     elementNotes.add(element);
                     elementJeps.put(element, jep.get());
@@ -156,7 +154,7 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
     }
 
     /**
-     * {@return the preview tags for the element}
+     * {@return a sorted set containing elements tagged with preview notes}
      */
     public SortedSet<Element> getElementNotes() {
         return elementNotes;
