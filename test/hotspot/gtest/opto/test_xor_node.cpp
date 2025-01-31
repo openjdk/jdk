@@ -22,8 +22,6 @@
  *
  */
 
-#include <functional>
-
 #include "opto/addnode.hpp"
 #include "unittest.hpp"
 
@@ -71,8 +69,8 @@ void test_sample_values(S hi_0, S hi_1){
   }
 }
 
-template <class S>
-void test_in_ranges(S lo, S hi, std::function<void(S, S)> f){
+template <class S, class F>
+void test_in_ranges(S lo, S hi, F f){
   for(S hi_0 = lo; hi_0 <= hi; hi_0++){
     for(S hi_1 = hi_0; hi_1 <=hi; hi_1++){
       f(hi_0, hi_1);
@@ -81,22 +79,18 @@ void test_in_ranges(S lo, S hi, std::function<void(S, S)> f){
 }
 
 TEST_VM(opto, xor_max) {
-  auto sample_values = [](auto a, auto b) { return test_sample_values(a, b); };
-  auto exhaustive_values = [](auto a, auto b) { return test_exhaustive_values(a, b); };
-
   auto maxjint = jint(std::numeric_limits<jint>::max());
   auto maxjlong = jint(std::numeric_limits<jint>::max());
 
+  test_in_ranges<jint>(0, 15, test_exhaustive_values<jint>);
+  test_in_ranges<jlong>(0, 15, test_exhaustive_values<jlong>);
 
-  test_in_ranges<jint>(0, 15, exhaustive_values);
-  test_in_ranges<jlong>(0, 15, exhaustive_values);
-
-  test_in_ranges<jint>(maxjint - 1, maxjint, sample_values);
-  test_in_ranges<jlong>(maxjlong - 1, maxjlong, sample_values);
+  test_in_ranges<jint>(maxjint - 1, maxjint, test_sample_values<jlong>);
+  test_in_ranges<jlong>(maxjlong - 1, maxjlong, test_sample_values<jlong>);
 
   auto top_pos_bit_int = jint(1) << 30;
   auto top_pos_bit_long = jlong(1) << 62;
 
-  test_in_ranges<jint>(top_pos_bit_int - 1, top_pos_bit_int, sample_values);
-  test_in_ranges<jlong>(top_pos_bit_long - 1, top_pos_bit_long, sample_values);
+  test_in_ranges<jint>(top_pos_bit_int - 1, top_pos_bit_long, test_sample_values<jint>);
+  test_in_ranges<jlong>(top_pos_bit_long - 1, top_pos_bit_long, test_sample_values<jlong>);
 }
