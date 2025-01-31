@@ -38,8 +38,6 @@ public class XorINodeIdealizationTests {
     private static final int CONST_1 = G.next();
     private static final int CONST_2 = G.next();
 
-
-
     public static void main(String[] args) {
         TestFramework.run();
     }
