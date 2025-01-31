@@ -34,6 +34,7 @@ import java.security.Security;
  * @library /test/lib
  * @modules java.base/sun.security.provider
  *          java.base/com.sun.crypto.provider
+ * @run main/othervm Launcher
  */
 
 /// This test runs on `internalProjection.json`-style files generated
