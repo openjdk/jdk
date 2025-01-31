@@ -66,7 +66,6 @@ COMMAND_LINE_VARIABLES := $(subst §,\ , $(call reverse, $(subst \ ,§,$(MAKEOVE
 USER_MAKE_VARS := $(subst §,\ , $(filter-out $(addsuffix =%, $(ALL_CONTROL_VARIABLES)), \
     $(subst \ ,§,$(MAKEOVERRIDES))))
 
-
 # Setup information about available configurations, if any.
 ifneq ($(CUSTOM_ROOT), )
   build_dir = $(CUSTOM_ROOT)/build
