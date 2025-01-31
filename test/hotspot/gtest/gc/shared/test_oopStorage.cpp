@@ -1135,9 +1135,9 @@ TEST_VM_F(OopStorageTestWithAllocation, print_storage) {
   {
     ResourceMark rm;
     stringStream expected_st;
-    expected_st.print("Test Storage: " SIZE_FORMAT
-                      " entries in " SIZE_FORMAT
-                      " blocks (%.F%%), " SIZE_FORMAT " bytes",
+    expected_st.print("Test Storage: %zu"
+                      " entries in %zu"
+                      " blocks (%.F%%), %zu bytes",
                       expected_entries,
                       expected_blocks,
                       expected_usage,

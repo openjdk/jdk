@@ -648,7 +648,6 @@ void FpuStackAllocator::handle_op1(LIR_Op1* op1) {
       new_in = to_fpu_stack_top(res);
       new_res = new_in;
 
-      op1->set_fpu_stack_size(sim()->stack_size());
       break;
     }
 

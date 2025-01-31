@@ -327,7 +327,7 @@ static void test_snprintf(PrintFn pf, bool expect_count) {
     size_t test_size = sizes_to_test[i];
     ResourceMark rm;
     stringStream s;
-    s.print("test_size: " SIZE_FORMAT, test_size);
+    s.print("test_size: %zu", test_size);
     SCOPED_TRACE(s.as_string());
     size_t prefix_size = padding_size;
     guarantee(test_size <= (sizeof(buffer) - prefix_size), "invariant");
@@ -1030,7 +1030,7 @@ TEST_VM(os, trim_native_heap) {
   os::size_change_t sc;
   sc.before = sc.after = (size_t)-1;
   EXPECT_TRUE(os::trim_native_heap(&sc));
-  tty->print_cr(SIZE_FORMAT "->" SIZE_FORMAT, sc.before, sc.after);
+  tty->print_cr("%zu->%zu", sc.before, sc.after);
   // Regardless of whether we freed memory, both before and after
   // should be somewhat believable numbers (RSS).
   const size_t min = 5 * M;

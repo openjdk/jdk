@@ -2179,14 +2179,6 @@ public final class System {
                 return str.coder();
             }
 
-            public int getCharsLatin1(long i, int index, byte[] buf) {
-                return StringLatin1.getChars(i, index, buf);
-            }
-
-            public int getCharsUTF16(long i, int index, byte[] buf) {
-                return StringUTF16.getChars(i, index, buf);
-            }
-
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
                 return String.join(prefix, suffix, delimiter, elements, size);
             }

@@ -639,7 +639,7 @@ static void test_controlled_growth(Metaspace::MetaspaceType type, bool is_class,
     ASSERT_GE(capacity2, capacity);
     const size_t capacity_jump = capacity2 - capacity;
     if (capacity_jump > 0) {
-      LOG(">" SIZE_FORMAT "->" SIZE_FORMAT "(+" SIZE_FORMAT ")", capacity, capacity2, capacity_jump)
+      LOG(">%zu->%zu(+%zu)", capacity, capacity2, capacity_jump)
       if (capacity_jump > highest_capacity_jump) {
         /* Disabled for now since this is rather shaky. The way it is tested makes it too dependent
          * on allocation history. Need to rethink this.

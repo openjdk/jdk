@@ -103,7 +103,7 @@ static void static_test_alignments() {
 
 template <typename T, typename A>
 static void test_alignments() {
-  log("### Test: %c" SIZE_FORMAT " " UINT64_FORMAT " : %c" SIZE_FORMAT " " UINT64_FORMAT " ###\n",
+  log("### Test: %c%zu " UINT64_FORMAT " : %c%zu " UINT64_FORMAT " ###\n",
       std::numeric_limits<T>::is_signed ? 's' : 'u', sizeof(T), (uint64_t)std::numeric_limits<T>::max(),
       std::numeric_limits<A>::is_signed ? 's' : 'u', sizeof(A), (uint64_t)std::numeric_limits<A>::max());
 

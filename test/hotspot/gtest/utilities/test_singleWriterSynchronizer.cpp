@@ -74,7 +74,7 @@ public:
         ++values_changed;
       }
     }
-    tty->print_cr("reader iterations: " SIZE_FORMAT ", changes: " SIZE_FORMAT,
+    tty->print_cr("reader iterations: %zu, changes: %zu",
                   iterations, values_changed);
   }
 };

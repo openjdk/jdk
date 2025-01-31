@@ -81,7 +81,7 @@ TEST_VM(metaspace, get_chunk_with_commit_limit) {
           // When should commit work? As long as min_committed_words is smaller than commit_limit_words.
           bool commit_should_work = min_committed_words <= commit_limit_words;
 
-          // printf("commit_limit: " SIZE_FORMAT ", min_committed_words: " SIZE_FORMAT
+          // printf("commit_limit: %zu, min_committed_words: %zu"
           //       ", max chunk level: " CHKLVL_FORMAT ", preferred chunk level: " CHKLVL_FORMAT ", should work: %d\n",
           //       commit_limit_words, min_committed_words, max_lvl, pref_lvl, commit_should_work);
           // fflush(stdout);

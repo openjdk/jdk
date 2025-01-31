@@ -45,7 +45,7 @@ class ChunkHeaderPoolTest {
 
   void attempt_free_at(size_t index) {
 
-    LOG("attempt_free_at " SIZE_FORMAT ".", index);
+    LOG("attempt_free_at %zu.", index);
 
     if (_elems[index] == nullptr) {
       return;
@@ -63,7 +63,7 @@ class ChunkHeaderPoolTest {
 
   void attempt_allocate_at(size_t index) {
 
-    LOG("attempt_allocate_at " SIZE_FORMAT ".", index);
+    LOG("attempt_allocate_at %zu.", index);
 
     if (_elems[index] != nullptr) {
       return;

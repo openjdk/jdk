@@ -141,7 +141,7 @@ public:
       ++_allocations;
       ThreadBlockInVM tbiv(this); // Safepoint check.
     }
-    tty->print_cr("allocations: " SIZE_FORMAT, _allocations);
+    tty->print_cr("allocations: %zu", _allocations);
     Atomic::add(_total_allocations, _allocations);
   }
 };
@@ -233,8 +233,8 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
     post.wait_with_safepoint_check(this_thread);
   }
   ASSERT_TRUE(BufferNode::TestSupport::try_transfer_pending(allocator));
-  tty->print_cr("total allocations: " SIZE_FORMAT, total_allocations);
-  tty->print_cr("allocator free count: " SIZE_FORMAT, allocator->free_count());
+  tty->print_cr("total allocations: %zu", total_allocations);
+  tty->print_cr("allocator free count: %zu", allocator->free_count());
 }
 
 TEST_VM(BufferNodeAllocatorTest, stress_free_list_allocator) {
