@@ -133,6 +133,12 @@ public class MigrationCheck {
                 new sun.security.util.resources.security_fr());
     }
 
+    @Test
+    public void testSecurity_it() {
+        checkResourcesMigration(new sun.security.util.Resources_it(),
+                new sun.security.util.resources.security_it());
+    }
+
     // ResourcesMgr
 
     @Test
