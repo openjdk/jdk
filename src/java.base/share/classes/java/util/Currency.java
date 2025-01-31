@@ -1176,7 +1176,7 @@ public final class Currency implements Serializable {
                     || prop.fraction != fractionDigit);
         }
 
-        // cutOver adheres to: "yyyy-MM-ddTHH:mm:ss"
+        // cutOver adheres to ISO8601 Local Date Time format (excluding nano secs)
         private static boolean isPastCutoverDate(String cutOver) {
             return System.currentTimeMillis() >
                     LocalDateTime.parse(cutOver.trim(), DateTimeFormatter.ISO_LOCAL_DATE_TIME)
