@@ -254,7 +254,7 @@ class Arguments : AllStatic {
   static bool _enable_preview;
 
   // jdwp
-  static bool _jdwp_agent_is_specified;
+  static bool _has_jdwp_agent;
 
   // Used to save default settings
   static bool _AlwaysCompileLoopMethods;
@@ -509,7 +509,7 @@ class Arguments : AllStatic {
   static bool enable_preview() { return _enable_preview; }
 
   // jdwp
-  static bool jdwp_agent_is_specified() { return _jdwp_agent_is_specified; }
+  static bool has_jdwp_agent() { return _has_jdwp_agent; }
 
   // Utility: copies src into buf, replacing "%%" with "%" and "%p" with pid.
   static bool copy_expand_pid(const char* src, size_t srclen, char* buf, size_t buflen);

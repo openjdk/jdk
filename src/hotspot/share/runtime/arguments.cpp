@@ -102,7 +102,7 @@ bool   Arguments::_ClipInlining                 = ClipInlining;
 size_t Arguments::_default_SharedBaseAddress    = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
-bool   Arguments::_jdwp_agent_is_specified      = false;
+bool   Arguments::_has_jdwp_agent               = false;
 
 LegacyGCLogging Arguments::_legacyGCLogging     = { nullptr, 0 };
 
@@ -2308,7 +2308,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         }
 #elif INCLUDE_CDS
         if (valid_jdwp_agent(name, is_absolute_path)) {
-          _jdwp_agent_is_specified = true;
+          _has_jdwp_agent = true;
         }
 #endif // !INCLUDE_JVMTI
         JvmtiAgentList::add(name, options, is_absolute_path);

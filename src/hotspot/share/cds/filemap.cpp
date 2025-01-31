@@ -2526,7 +2526,7 @@ bool FileMapInfo::validate_aot_class_linking() {
     }
 
 #if INCLUDE_JVMTI
-    if (Arguments::jdwp_agent_is_specified()) {
+    if (Arguments::has_jdwp_agent()) {
       log_error(cds)("CDS archive has aot-linked classes. It cannot be used with JDWP agent");
       return false;
     }
