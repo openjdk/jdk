@@ -222,7 +222,13 @@ public final class KEM {
          *          to be returned, inclusive
          * @param to the final index of the shared secret byte array
          *          to be returned, exclusive
-         * @param algorithm the algorithm name for the secret key that is returned
+         * @param algorithm the algorithm name for the secret key that is returned.
+         *          See the SecretKey Algorithms section in the
+         *          <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+         *          Java Security Standard Algorithm Names Specification</a>
+         *          for information about standard secret key algorithm names.
+         *          Specify "Generic" if the output will be used as the input keying
+         *          material of a key derivation function (KDF).
          * @return a {@link Encapsulated} object containing a portion of
          *          the shared secret, key encapsulation message, and optional
          *          parameters. The portion of the shared secret is a
@@ -237,6 +243,7 @@ public final class KEM {
          * @throws UnsupportedOperationException if the combination of
          *          {@code from}, {@code to}, and {@code algorithm}
          *          is not supported by the encapsulator
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          */
         public Encapsulated encapsulate(int from, int to, String algorithm) {
             return e.engineEncapsulate(from, to, algorithm);
@@ -345,7 +352,13 @@ public final class KEM {
          *          to be returned, inclusive
          * @param to the final index of the shared secret byte array
          *          to be returned, exclusive
-         * @param algorithm the algorithm name for the secret key that is returned
+         * @param algorithm the algorithm name for the secret key that is returned.
+         *          See the SecretKey Algorithms section in the
+         *          <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+         *          Java Security Standard Algorithm Names Specification</a>
+         *          for information about standard secret key algorithm names.
+         *          Specify "Generic" if the output will be used as the input keying
+         *          material of a key derivation function (KDF).
          * @return a portion of the shared secret as a {@code SecretKey}
          *          containing the bytes of the secret ranging from {@code from}
          *          to {@code to}, exclusive, and an algorithm name as specified.
@@ -361,6 +374,7 @@ public final class KEM {
          * @throws UnsupportedOperationException if the combination of
          *          {@code from}, {@code to}, and {@code algorithm}
          *          is not supported by the decapsulator
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          */
         public SecretKey decapsulate(byte[] encapsulation,
                 int from, int to, String algorithm)

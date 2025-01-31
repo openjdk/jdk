@@ -48,12 +48,15 @@ ifeq ($(HAS_SPEC), )
   # from the command-line.
   ##############################################################################
 
-  # Make control variables, handled by Init.gmk
-  INIT_CONTROL_VARIABLES += LOG CONF CONF_NAME SPEC JOBS TEST_JOBS CONF_CHECK \
-      COMPARE_BUILD JTREG GTEST MICRO TEST_OPTS TEST_VM_OPTS TEST_DEPS
+  # Essential control variables that are handled by Init.gmk
+  INIT_CONTROL_VARIABLES := LOG CONF CONF_NAME SPEC JOBS CONF_CHECK ALLOW \
+      COMPARE_BUILD
 
-  # All known make control variables
-  MAKE_CONTROL_VARIABLES := $(INIT_CONTROL_VARIABLES) TEST JDK_FILTER SPEC_FILTER
+  # All known make control variables; these are handled in other makefiles
+  MAKE_CONTROL_VARIABLES += JDK_FILTER SPEC_FILTER \
+      TEST TEST_JOBS JTREG GTEST MICRO TEST_OPTS TEST_VM_OPTS TEST_DEPS
+
+  ALL_CONTROL_VARIABLES := $(INIT_CONTROL_VARIABLES) $(MAKE_CONTROL_VARIABLES)
 
   # Define a simple reverse function.
   # Should maybe move to MakeBase.gmk, but we can't include that file now.
@@ -87,8 +90,10 @@ ifeq ($(HAS_SPEC), )
     command_line_variables := $$(strip $$(foreach var, \
         $$(subst \ ,_,$$(MAKEOVERRIDES)), \
         $$(firstword $$(subst =, , $$(var)))))
+    allowed_command_line_variables := $$(strip $$(subst $$(COMMA), , $$(ALLOW)))
     unknown_command_line_variables := $$(strip \
-        $$(filter-out $$(MAKE_CONTROL_VARIABLES), $$(command_line_variables)))
+        $$(filter-out $$(ALL_CONTROL_VARIABLES) $$(allowed_command_line_variables), \
+        $$(command_line_variables)))
     ifneq ($$(unknown_command_line_variables), )
       $$(info Note: Command line contains non-control variables:)
       $$(foreach var, $$(unknown_command_line_variables), $$(info * $$(var)=$$($$(var))))
