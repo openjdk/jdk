@@ -180,8 +180,8 @@ public final class Main {
             new DisabledAlgorithmConstraints(
                     DisabledAlgorithmConstraints.PROPERTY_SECURITY_LEGACY_ALGS);
 
-    private static final Set<CryptoPrimitive> SIG_PRIMITIVE_SET = Collections
-            .unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
+    private static final Set<CryptoScope> SIG_PRIMITIVE_SET =
+            Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
     enum Command {
         CERTREQ("Generates.a.certificate.request",

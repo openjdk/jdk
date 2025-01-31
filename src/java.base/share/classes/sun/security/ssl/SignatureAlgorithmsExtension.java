@@ -27,10 +27,14 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.CryptoScope;
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;

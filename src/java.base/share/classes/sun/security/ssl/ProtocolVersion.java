@@ -26,10 +26,12 @@
 package sun.security.ssl;
 
 import java.security.CryptoPrimitive;
+import java.security.CryptoScope;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Enum for an SSL/TLS/DTLS protocol version.
@@ -156,7 +158,7 @@ enum ProtocolVersion {
         this.minor = (byte)(id & 0xFF);
 
         this.isAvailable = SSLAlgorithmConstraints.DEFAULT_SSL_ONLY.permits(
-                EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT)),
                 name, null);
     }
 

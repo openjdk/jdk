@@ -27,20 +27,13 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.security.CryptoPrimitive;
-import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
+import java.security.*;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.X509Authentication.X509Credentials;
 import sun.security.ssl.X509Authentication.X509Possession;
@@ -54,6 +47,9 @@ final class ECDHServerKeyExchange {
             new ECDHServerKeyExchangeConsumer();
     static final HandshakeProducer ecdheHandshakeProducer =
             new ECDHServerKeyExchangeProducer();
+
+    private static final Set<CryptoScope> KEY_AGREEMENT_PRIMITIVE_SET =
+            Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
     /**
      * The ECDH ServerKeyExchange handshake message.
@@ -222,7 +218,7 @@ final class ECDHServerKeyExchange {
                         sslCredentials instanceof
                                 NamedGroupCredentials namedGroupCredentials) {
                     if (!handshakeContext.algorithmConstraints.permits(
-                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                            KEY_AGREEMENT_PRIMITIVE_SET,
                             namedGroupCredentials.getPublicKey())) {
                         chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
                             "ServerKeyExchange for " + namedGroup +

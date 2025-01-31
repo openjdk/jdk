@@ -26,20 +26,14 @@
 package sun.security.ssl;
 
 import java.io.IOException;
-import java.security.AlgorithmConstraints;
-import java.security.CryptoPrimitive;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Set;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLHandshakeException;
@@ -63,6 +57,9 @@ final class ECDHKeyExchange {
     // TLSv1-1.2, the KA gets more difficult with EC/XEC keys
     static final SSLKeyAgreementGenerator ecdheXdhKAGenerator =
             new ECDHEXDHKAGenerator();
+
+    private static final Set<CryptoScope> KEY_AGREEMENT_PRIMITIVE_SET =
+            Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
     static final class ECDHECredentials implements NamedGroupCredentials {
         final ECPublicKey popPublicKey;
@@ -194,7 +191,7 @@ final class ECDHKeyExchange {
 
                 // check constraints of ECPublicKey
                 if (!constraints.permits(
-                        EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), pubKey)) {
+                        KEY_AGREEMENT_PRIMITIVE_SET, pubKey)) {
                     throw new SSLHandshakeException(
                         "ECPublicKey does not comply to algorithm constraints");
                 }

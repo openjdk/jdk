@@ -195,10 +195,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.sessionId = id;
         this.host = hc.conContext.transport.getPeerHost();
         this.port = hc.conContext.transport.getPeerPort();
-        this.localSupportedSignAlgs = hc.localSupportedSignAlgs == null ?
+        this.localSupportedSignAlgs = hc.localSupportedCertSignAlgs == null ?
                 Collections.emptySet() :
                 Collections.unmodifiableCollection(
-                        new ArrayList<>(hc.localSupportedSignAlgs));
+                        new ArrayList<>(hc.localSupportedCertSignAlgs));
         this.serverNameIndication = hc.negotiatedServerName;
         this.requestedServerNames = List.copyOf(hc.getRequestedServerNames());
         if (hc.sslConfig.isClientMode) {

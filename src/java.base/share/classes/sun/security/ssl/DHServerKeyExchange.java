@@ -28,21 +28,13 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.security.CryptoPrimitive;
-import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
+import java.security.*;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
@@ -62,6 +54,9 @@ final class DHServerKeyExchange {
             new DHServerKeyExchangeConsumer();
     static final HandshakeProducer dhHandshakeProducer =
             new DHServerKeyExchangeProducer();
+
+    private static final Set<CryptoScope> KEY_AGREEMENT_PRIMITIVE_SET =
+            Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
     /**
      * The DiffieHellman ServerKeyExchange handshake message.
@@ -535,7 +530,7 @@ final class DHServerKeyExchange {
             }
 
             if (!chc.algorithmConstraints.permits(
-                    EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), publicKey)) {
+                    KEY_AGREEMENT_PRIMITIVE_SET, publicKey)) {
                 throw chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
                         "DH ServerKeyExchange does not comply to " +
                         "algorithm constraints");

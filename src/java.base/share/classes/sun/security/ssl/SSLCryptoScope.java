@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,61 +23,23 @@
  * questions.
  */
 
-package java.security;
+package sun.security.ssl;
 
-/**
- * An enumeration of cryptographic primitives.
- *
- * @since 1.7
- */
-public enum CryptoPrimitive implements CryptoScope {
-    /**
-     * Hash function
-     */
-    MESSAGE_DIGEST,
+import java.security.CryptoScope;
 
-    /**
-     * Cryptographic random number generator
-     */
-    SECURE_RANDOM,
+public enum SSLCryptoScope implements CryptoScope {
+    SIGNATURE_ALGORITHMS,
+    SIGNATURE_ALGORITHMS_CERT;
 
-    /**
-     * Symmetric primitive: block cipher
-     */
-    BLOCK_CIPHER,
+    // Note: the SSLCryptoScope is not case-sensitive.
+    public static SSLCryptoScope nameOf(String name) {
+        for (SSLCryptoScope scope: SSLCryptoScope.values()) {
+            if (scope.name().equalsIgnoreCase(name)) {
+                return scope;
+            }
+        }
 
-    /**
-     * Symmetric primitive: stream cipher
-     */
-    STREAM_CIPHER,
+        return null;
+    }
 
-    /**
-     * Symmetric primitive: message authentication code
-     */
-    MAC,
-
-    /**
-     * Symmetric primitive: key wrap
-     */
-    KEY_WRAP,
-
-    /**
-     * Asymmetric primitive: public key encryption
-     */
-    PUBLIC_KEY_ENCRYPTION,
-
-    /**
-     * Asymmetric primitive: signature scheme
-     */
-    SIGNATURE,
-
-    /**
-     * Asymmetric primitive: key encapsulation mechanism
-     */
-    KEY_ENCAPSULATION,
-
-    /**
-     * Asymmetric primitive: key agreement and key distribution
-     */
-    KEY_AGREEMENT
 }

@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
+import java.security.CryptoScope;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.*;
@@ -74,6 +75,9 @@ final class ServerHello {
         new T13HelloRetryRequestConsumer();
     private static final HandshakeConsumer d13HrrHandshakeConsumer =
         new T13HelloRetryRequestConsumer();
+
+    private static final Set<CryptoScope> KEY_AGREEMENT_PRIMITIVE_SET =
+            Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
     /**
      * The ServerHello handshake message.
@@ -430,7 +434,7 @@ final class ServerHello {
                     continue;
                 }
                 if (!ServerHandshakeContext.legacyAlgorithmConstraints.permits(
-                        EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), cs.name, null)) {
+                        KEY_AGREEMENT_PRIMITIVE_SET, cs.name, null)) {
                     legacySuites.add(cs);
                     continue;
                 }
@@ -718,7 +722,7 @@ final class ServerHello {
 
                 if ((legacySuite == null) &&
                         !legacyConstraints.permits(
-                                EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                                KEY_AGREEMENT_PRIMITIVE_SET,
                                 cs.name, null)) {
                     legacySuite = cs;
                     continue;

@@ -29,11 +29,14 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.CryptoPrimitive;
+import java.security.CryptoScope;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Locale;
+import java.util.Set;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
@@ -52,6 +55,9 @@ final class DHClientKeyExchange {
             new DHClientKeyExchangeConsumer();
     static final DHClientKeyExchangeProducer dhHandshakeProducer =
             new DHClientKeyExchangeProducer();
+
+    private static final Set<CryptoScope> KEY_AGREEMENT_PRIMITIVE_SET =
+            Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
     /**
      * The DiffieHellman ClientKeyExchange handshake message.
@@ -286,7 +292,7 @@ final class DHClientKeyExchange {
 
                 // check constraints of peer DHPublicKey
                 if (!shc.algorithmConstraints.permits(
-                        EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                        KEY_AGREEMENT_PRIMITIVE_SET,
                         peerPublicKey)) {
                     throw new SSLHandshakeException(
                         "DHPublicKey does not comply to algorithm constraints");

@@ -26,7 +26,7 @@
 package sun.security.util;
 
 import java.security.AlgorithmParameters;
-import java.security.CryptoPrimitive;
+import java.security.CryptoScope;
 import java.security.Key;
 import java.util.Set;
 
@@ -48,9 +48,9 @@ public class LegacyAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     @Override
-    public final boolean permits(Set<CryptoPrimitive> primitives,
+    public final boolean permits(Set<CryptoScope> scopes,
             String algorithm, AlgorithmParameters parameters) {
-        if (primitives == null || primitives.isEmpty()) {
+        if (scopes == null || scopes.isEmpty()) {
             throw new IllegalArgumentException("The primitives cannot be null" +
                     " or empty.");
         }
@@ -58,8 +58,8 @@ public class LegacyAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     @Override
-    public final boolean permits(Set<CryptoPrimitive> primitives, Key key) {
-         if (primitives == null || primitives.isEmpty()) {
+    public final boolean permits(Set<CryptoScope> scopes, Key key) {
+         if (scopes == null || scopes.isEmpty()) {
             throw new IllegalArgumentException("The primitives cannot be null" +
             " or empty.");
         }
@@ -67,9 +67,9 @@ public class LegacyAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     @Override
-    public final boolean permits(Set<CryptoPrimitive> primitives,
+    public final boolean permits(Set<CryptoScope> scopes,
             String algorithm, Key key, AlgorithmParameters parameters) {
-        if (primitives == null || primitives.isEmpty()) {
+        if (scopes == null || scopes.isEmpty()) {
             throw new IllegalArgumentException("The primitives cannot be null" +
                     " or empty.");
         }

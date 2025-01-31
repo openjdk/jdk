@@ -25,11 +25,12 @@
 
 package sun.security.util;
 
+import java.security.CryptoScope;
+import sun.security.ssl.SSLCryptoScope;
 import sun.security.validator.Validator;
 
 import java.lang.ref.SoftReference;
 import java.security.AlgorithmParameters;
-import java.security.CryptoPrimitive;
 import java.security.Key;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
@@ -87,6 +88,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private static final String PROPERTY_DISABLED_EC_CURVES =
             "jdk.disabled.namedCurves";
 
+    private static final String SCOPE_SEPARATOR = ":";
+
     private static final Pattern INCLUDE_PATTERN = Pattern.compile("include " +
             PROPERTY_DISABLED_EC_CURVES, Pattern.CASE_INSENSITIVE);
 
@@ -102,6 +105,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
     private final Set<String> disabledAlgorithms;
     private final List<Pattern> disabledPatterns;
+    private final Map<String, Set<SSLCryptoScope>> algorithmTlsScopesMap;
     private final Constraints algorithmConstraints;
     private volatile SoftReference<Map<String, Boolean>> cacheRef =
             new SoftReference<>(null);
@@ -140,8 +144,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         // Support patterns only for jdk.tls.disabledAlgorithms
         if (PROPERTY_TLS_DISABLED_ALGS.equals(propertyName)) {
             disabledPatterns = getDisabledPatterns();
+            algorithmTlsScopesMap = getAlgorithmTlsScopes();
         } else {
             disabledPatterns = null;
+            algorithmTlsScopesMap = null;
         }
 
         // Check for alias
@@ -162,7 +168,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * there are keysize or other limit, this method allow the algorithm.
      */
     @Override
-    public final boolean permits(Set<CryptoPrimitive> primitives,
+    public final boolean permits(Set<CryptoScope> scopes,
                                  String algorithm,
                                  AlgorithmParameters parameters) {
 
@@ -170,18 +176,19 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 || algorithm.equals("rsa_pkcs1_sha1")) {
             System.err.printf(
                     "------ Got %s with %s%n",
-                    algorithm, primitives.stream().findFirst().get());
+                    algorithm, scopes.stream().findFirst().get());
         }
 
-        if (primitives == null || primitives.isEmpty()) {
-            throw new IllegalArgumentException("The primitives cannot be null" +
+        if (scopes == null || scopes.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "The crypto scopes cannot be null" +
                     " or empty.");
         }
         if (algorithm == null || algorithm.isEmpty()) {
             throw new IllegalArgumentException("No algorithm name specified");
         }
 
-        if (!cachedCheckAlgorithm(algorithm)) {
+        if (!cachedCheckAlgorithm(algorithm, scopes)) {
             return false;
         }
 
@@ -197,8 +204,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * placed on the key.
      */
     @Override
-    public final boolean permits(Set<CryptoPrimitive> primitives, Key key) {
-        return checkConstraints(primitives, "", key, null);
+    public final boolean permits(Set<CryptoScope> scopes, Key key) {
+        return checkConstraints(scopes, "", key, null);
     }
 
     /*
@@ -206,14 +213,14 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * been placed on the key.
      */
     @Override
-    public final boolean permits(Set<CryptoPrimitive> primitives,
+    public final boolean permits(Set<CryptoScope> scopes,
             String algorithm, Key key, AlgorithmParameters parameters) {
 
         if (algorithm == null || algorithm.isEmpty()) {
             throw new IllegalArgumentException("No algorithm name specified");
         }
 
-        return checkConstraints(primitives, algorithm, key, parameters);
+        return checkConstraints(scopes, algorithm, key, parameters);
     }
 
     public final void permits(String algorithm, AlgorithmParameters ap,
@@ -264,7 +271,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             // Check if named curves in the key are disabled.
             for (Key key : cp.getKeys()) {
                 for (String curve : getNamedCurveFromKey(key)) {
-                    if (!cachedCheckAlgorithm(curve)) {
+                    if (!cachedCheckAlgorithm(curve, null)) {
                         throw new CertPathValidatorException(
                             "Algorithm constraints check failed on disabled " +
                                     "algorithm: " + curve,
@@ -290,10 +297,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     // Check algorithm constraints with key and algorithm
-    private boolean checkConstraints(Set<CryptoPrimitive> primitives,
+    private boolean checkConstraints(Set<CryptoScope> scopes,
             String algorithm, Key key, AlgorithmParameters parameters) {
 
-        if (primitives == null || primitives.isEmpty()) {
+        if (scopes == null || scopes.isEmpty()) {
             throw new IllegalArgumentException("The primitives cannot be null" +
                     " or empty.");
         }
@@ -304,19 +311,19 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
         // check the signature algorithm with parameters
         if (algorithm != null && !algorithm.isEmpty()) {
-            if (!permits(primitives, algorithm, parameters)) {
+            if (!permits(scopes, algorithm, parameters)) {
                 return false;
             }
         }
 
         // check the key algorithm
-        if (!permits(primitives, key.getAlgorithm(), null)) {
+        if (!permits(scopes, key.getAlgorithm(), null)) {
             return false;
         }
 
         // If this is an elliptic curve, check if it is disabled
         for (String curve : getNamedCurveFromKey(key)) {
-            if (!permits(primitives, curve, null)) {
+            if (!permits(scopes, curve, null)) {
                 return false;
             }
         }
@@ -970,8 +977,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 
-    private boolean cachedCheckAlgorithm(String algorithm) {
+    private boolean cachedCheckAlgorithm(
+            String algorithm, Set<CryptoScope> scopes) {
         Map<String, Boolean> cache;
+
         if ((cache = cacheRef.get()) == null) {
             synchronized (this) {
                 if ((cache = cacheRef.get()) == null) {
@@ -980,14 +989,23 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 }
             }
         }
-        Boolean result = cache.get(algorithm);
+
+        final String cacheKey = algorithm + ":" + scopes;
+        Boolean result = cache.get(cacheKey);
+
         if (result != null) {
             return result;
         }
+
         // We won't check patterns if algorithm check fails.
         result = checkAlgorithm(disabledAlgorithms, algorithm, decomposer)
                 && checkDisabledPatterns(algorithm);
-        cache.put(algorithm, result);
+
+        if (!result) {
+            result = !isAlgorithmTlsScopesMatch(algorithm, scopes);
+        }
+
+        cache.put(cacheKey, result);
         return result;
     }
 
@@ -1020,6 +1038,70 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 // Ignore all regex characters but asterisk.
                 ret.add(Pattern.compile(
                         "^\\Q" + p.replace("*", "\\E.*\\Q") + "\\E$"));
+            }
+        }
+
+        return ret;
+    }
+
+    private boolean isAlgorithmTlsScopesMatch(
+            final String algorithm, Set<CryptoScope> scopes) {
+
+        if (algorithmTlsScopesMap == null || scopes == null) {
+            return true;
+        }
+
+        Set<SSLCryptoScope> algorithmScopes =
+                algorithmTlsScopesMap.get(algorithm);
+
+        // We are assuming the algorithm constraint applies to all scopes
+        // if constraint has no scopes explicitly specified.
+        if (algorithmScopes == null) {
+            return true;
+        }
+
+        for (CryptoScope scope : scopes) {
+            if (!(scope instanceof SSLCryptoScope)
+                    || !algorithmScopes.contains(scope)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private Map<String, Set<SSLCryptoScope>> getAlgorithmTlsScopes() {
+        Map<String, Set<SSLCryptoScope>> ret = null;
+        List<String> patternStrings = new ArrayList<>(4);
+
+        for (String p : disabledAlgorithms) {
+            if (p.split(SCOPE_SEPARATOR).length > 1) {
+                patternStrings.add(p);
+            }
+        }
+
+        if (!patternStrings.isEmpty()) {
+            ret = new HashMap<>(patternStrings.size());
+
+            for (String p : patternStrings) {
+                String[] arr = p.split(SCOPE_SEPARATOR);
+                String key = arr[0];
+
+                ret.computeIfAbsent(key, k -> new HashSet<>(arr.length - 1));
+
+                disabledAlgorithms.add(key);
+                disabledAlgorithms.remove(p);
+
+                for (int i = 1; i < arr.length; i++) {
+                    SSLCryptoScope sslScope = SSLCryptoScope.nameOf(arr[i]);
+
+                    if (sslScope == null) {
+                        throw new IllegalArgumentException(
+                                "Invalid TLS scope specified: " + arr[i]);
+                    }
+
+                    ret.get(key).add(sslScope);
+                }
             }
         }
 

@@ -28,6 +28,7 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.CryptoPrimitive;
+import java.security.CryptoScope;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.*;
@@ -68,6 +69,9 @@ final class KeyShareExtension {
             new HRRKeyShareReproducer();
     static final SSLStringizer hrrStringizer =
             new HRRKeyShareStringizer();
+
+    private static final Set<CryptoScope> KEY_AGREEMENT_PRIMITIVE_SET =
+            Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
     /**
      * The key share entry used in "key_share" extensions.
@@ -362,7 +366,7 @@ final class KeyShareExtension {
                             kaCred instanceof
                                 NamedGroupCredentials namedGroupCredentials) {
                         if (!shc.algorithmConstraints.permits(
-                                EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                                KEY_AGREEMENT_PRIMITIVE_SET,
                                 namedGroupCredentials.getPublicKey())) {
                             if (SSLLogger.isOn &&
                                     SSLLogger.isOn("ssl,handshake")) {
@@ -667,7 +671,7 @@ final class KeyShareExtension {
                         kaCred instanceof
                                 NamedGroupCredentials namedGroupCredentials) {
                     if (!chc.algorithmConstraints.permits(
-                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                            KEY_AGREEMENT_PRIMITIVE_SET,
                             namedGroupCredentials.getPublicKey())) {
                         chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
                             "key share entry of " + ng + " does not " +

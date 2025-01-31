@@ -219,8 +219,8 @@ enum SignatureScheme {
     }
 
     // performance optimization
-    private static final Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
-        Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
+    private static final Set<CryptoScope> SIGNATURE_ALGORITHMS_PRIMITIVE_SET =
+        Collections.unmodifiableSet(EnumSet.of(SSLCryptoScope.SIGNATURE_ALGORITHMS));
 
 
     SignatureScheme(int id, String name,
@@ -356,15 +356,24 @@ enum SignatureScheme {
     }
 
     private boolean isPermitted(AlgorithmConstraints constraints) {
-        return constraints.permits(SIGNATURE_PRIMITIVE_SET,
-                        this.name, null) &&
-               constraints.permits(SIGNATURE_PRIMITIVE_SET,
-                        this.keyAlgorithm, null) &&
-               constraints.permits(SIGNATURE_PRIMITIVE_SET,
-                        this.algorithm, (signAlgParams != null ?
-                                signAlgParams.parameters : null)) &&
-                        (namedGroup == null ||
-                            namedGroup.isPermitted(constraints));
+        return isPermitted(constraints, SIGNATURE_ALGORITHMS_PRIMITIVE_SET);
+    }
+
+    private boolean isPermitted(AlgorithmConstraints constraints, Set<CryptoScope> scopes) {
+        return constraints.permits(scopes, this.name, null)
+               && constraints.permits(scopes, this.keyAlgorithm, null)
+               && constraints.permits(scopes, this.algorithm,
+                       (signAlgParams != null ? signAlgParams.parameters : null))
+               && (namedGroup == null || namedGroup.isPermitted(constraints));
+    }
+
+    static List<SignatureScheme> getSupportedAlgorithms(
+            SSLConfiguration config,
+            AlgorithmConstraints constraints,
+            List<ProtocolVersion> activeProtocols) {
+        return getSupportedAlgorithms(
+                config, constraints, activeProtocols,
+                SIGNATURE_ALGORITHMS_PRIMITIVE_SET);
     }
 
     // Get local supported algorithm collection complying to algorithm
@@ -372,7 +381,8 @@ enum SignatureScheme {
     static List<SignatureScheme> getSupportedAlgorithms(
             SSLConfiguration config,
             AlgorithmConstraints constraints,
-            List<ProtocolVersion> activeProtocols) {
+            List<ProtocolVersion> activeProtocols,
+            Set<CryptoScope> scopes) {
         List<SignatureScheme> supported = new LinkedList<>();
 
         List<SignatureScheme> schemesToCheck =
@@ -399,7 +409,7 @@ enum SignatureScheme {
             }
 
             if (isMatch) {
-                if (ss.isPermitted(constraints)) {
+                if (ss.isPermitted(constraints, scopes)) {
                     supported.add(ss);
                 } else if (SSLLogger.isOn &&
                         SSLLogger.isOn("ssl,handshake,verbose")) {
@@ -419,7 +429,19 @@ enum SignatureScheme {
     static List<SignatureScheme> getSupportedAlgorithms(
             SSLConfiguration config,
             AlgorithmConstraints constraints,
-            ProtocolVersion protocolVersion, int[] algorithmIds) {
+            ProtocolVersion protocolVersion,
+            int[] algorithmIds) {
+        return getSupportedAlgorithms(
+                config, constraints, protocolVersion, algorithmIds,
+                SIGNATURE_ALGORITHMS_PRIMITIVE_SET);
+    }
+
+        static List<SignatureScheme> getSupportedAlgorithms(
+            SSLConfiguration config,
+            AlgorithmConstraints constraints,
+            ProtocolVersion protocolVersion,
+            int[] algorithmIds,
+            Set<CryptoScope> scopes) {
         List<SignatureScheme> supported = new LinkedList<>();
         for (int ssid : algorithmIds) {
             SignatureScheme ss = SignatureScheme.valueOf(ssid);
@@ -433,7 +455,7 @@ enum SignatureScheme {
                     ss.supportedProtocols.contains(protocolVersion) &&
                     (config.signatureSchemes == null ||
                         Utilities.contains(config.signatureSchemes, ss.name)) &&
-                    ss.isPermitted(constraints)) {
+                    ss.isPermitted(constraints, scopes)) {
                 supported.add(ss);
             } else {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {

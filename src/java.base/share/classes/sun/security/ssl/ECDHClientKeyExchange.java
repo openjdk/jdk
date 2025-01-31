@@ -28,6 +28,7 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.CryptoPrimitive;
+import java.security.CryptoScope;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
@@ -36,8 +37,10 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Locale;
+import java.util.Set;
 import javax.crypto.SecretKey;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.X509Authentication.X509Credentials;
@@ -62,6 +65,9 @@ final class ECDHClientKeyExchange {
             new ECDHEClientKeyExchangeConsumer();
     static final HandshakeProducer ecdheHandshakeProducer =
             new ECDHEClientKeyExchangeProducer();
+
+    private static final Set<CryptoScope> KEY_AGREEMENT_PRIMITIVE_SET =
+            Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
     /**
      * The ECDH/ECDHE/XDH ClientKeyExchange handshake message.
@@ -322,7 +328,7 @@ final class ECDHClientKeyExchange {
                         sslCredentials instanceof
                             NamedGroupCredentials namedGroupCredentials) {
                     if (!shc.algorithmConstraints.permits(
-                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                            KEY_AGREEMENT_PRIMITIVE_SET,
                             namedGroupCredentials.getPublicKey())) {
                         shc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
                             "ClientKeyExchange for " + namedGroup +
@@ -506,7 +512,7 @@ final class ECDHClientKeyExchange {
                         sslCredentials instanceof
                                 NamedGroupCredentials namedGroupCredentials) {
                     if (!shc.algorithmConstraints.permits(
-                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                            KEY_AGREEMENT_PRIMITIVE_SET,
                             namedGroupCredentials.getPublicKey())) {
                         shc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
                             "ClientKeyExchange for " + namedGroup +

@@ -31,6 +31,7 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
+import java.security.CryptoScope;
 import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import javax.crypto.SecretKey;
@@ -127,6 +128,7 @@ abstract class HandshakeContext implements ConnectionContext {
 
     // SignatureScheme
     List<SignatureScheme>                   localSupportedSignAlgs;
+    List<SignatureScheme>                   localSupportedCertSignAlgs;
     List<SignatureScheme>                   peerRequestedSignatureSchemes;
     List<SignatureScheme>                   peerRequestedCertSignSchemes;
 
@@ -147,6 +149,10 @@ abstract class HandshakeContext implements ConnectionContext {
 
     // OCSP Stapling info
     boolean                                 staplingActive = false;
+
+    private static final Set<CryptoScope> KEY_AGREEMENT_PRIMITIVE_SET =
+            Collections.unmodifiableSet(
+                    EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
     protected HandshakeContext(SSLContextImpl sslContext,
             TransportContext conContext) throws IOException {
@@ -266,7 +272,7 @@ abstract class HandshakeContext implements ConnectionContext {
             }
 
             if (!algorithmConstraints.permits(
-                    EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                    KEY_AGREEMENT_PRIMITIVE_SET,
                     protocol.name, null)) {
                 // Ignore disabled protocol.
                 continue;
@@ -537,7 +543,7 @@ abstract class HandshakeContext implements ConnectionContext {
             Map<NamedGroupSpec, Boolean> cachedStatus) {
 
         if (algorithmConstraints.permits(
-                EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), suite.name, null)) {
+                KEY_AGREEMENT_PRIMITIVE_SET, suite.name, null)) {
             if (suite.keyExchange == null) {
                 // TLS 1.3, no definition of key exchange in cipher suite.
                 return true;
