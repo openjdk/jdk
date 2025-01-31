@@ -91,9 +91,12 @@ TEST_VM(opto, xor_max) {
   test_in_ranges<jint>(0, 15, exhaustive_values);
   test_in_ranges<jlong>(0, 15, exhaustive_values);
 
-  test_in_ranges<jint>(maxjint-1, maxjint, sample_values);
-  test_in_ranges<jlong>(maxjlong-1, maxjlong, sample_values);
+  test_in_ranges<jint>(maxjint - 1, maxjint, sample_values);
+  test_in_ranges<jlong>(maxjlong - 1, maxjlong, sample_values);
 
-  test_in_ranges<jint>((1 << 30) - 1, 1 << 30, sample_values);
-  test_in_ranges<jlong>((1L << 62) - 1, 1L << 62, sample_values);
+  auto top_pos_bit_int = jint(1) << 30;
+  auto top_pos_bit_long = jlong(1) << 62;
+
+  test_in_ranges<jint>(top_pos_bit_int - 1, top_pos_bit_int, sample_values);
+  test_in_ranges<jlong>(top_pos_bit_long - 1, top_pos_bit_long, sample_values);
 }
