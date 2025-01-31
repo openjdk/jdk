@@ -22,45 +22,46 @@
  *
  */
 
-#include <iostream>
-#include <climits>
-
 #include "opto/addnode.hpp"
 #include "unittest.hpp"
 
-void test_xor_bounds(jlong hi_0, jlong hi_1, jlong val_0, jlong val_1) {
+template<class S, class U> S calc_xor_max(const S hi_0, const S hi_1);
+
+jint calc_max(const jint hi_0, const jint hi_1) {
+  return calc_xor_max<jint, juint>(hi_0, hi_1);
+}
+
+jlong calc_max(const jlong hi_0, const jlong hi_1) {
+  return calc_xor_max<jlong, julong>(hi_0, hi_1);
+}
+
+template <class S>
+void test_xor_bounds(S hi_0, S hi_1, S val_0, S val_1) {
 
   // Skip out-of-bounds values for convenience
-  if(val_0> hi_0 || val_0 < 0 || val_1 > hi_1 || val_1< 0) {
+  if(val_0> hi_0 || val_0 < S(0) || val_1 > hi_1 || val_1< S(0)) {
     return;
   }
 
-  EXPECT_LE(val_0 ^ val_1, XorLNode::calc_xor_max(hi_0, hi_1));
-
-  // check ints when in range
-  if(hi_0 <= INT_MAX && hi_1 <= INT_MAX) {
-    EXPECT_LE(val_0 ^ val_1, XorINode::calc_xor_max(hi_0, hi_1));
-  }
+  S v = val_0 ^ val_1;
+  S max = calc_max(hi_0, hi_1);
+  EXPECT_LE(v, max);
 }
 
-void test_exhaustive_values(jlong hi_0, jlong hi_1){
-
-  jlong fail_val_0, fail_val_1;
-
-  bool hit_bound=false;
-  for(jlong val_0 = 0; val_0 <= hi_0; val_0++){
-    for(jlong val_1 = val_0; val_1 <= hi_1; val_1++){
+template <class S>
+void test_exhaustive_values(S hi_0, S hi_1){
+  for(S val_0 = 0; val_0 <= hi_0; val_0++){
+    for(S val_1 = val_0; val_1 <= hi_1; val_1++){
       test_xor_bounds(hi_0, hi_1, val_0, val_1);
     }
   }
 }
 
-void test_sample_values(jlong hi_0, jlong hi_1){
+template <class S>
+void test_sample_values(S hi_0, S hi_1){
 
-  jlong fail_val_0, fail_val_1;
-
-  for(int i=0; i<=3; i++){
-    for(int j=0; j<=3; j++){
+  for(S i=0; i<=3; i++){
+    for(S j=0; j<=3; j++){
       // Some bit combinations near the low and high ends of the range
       test_xor_bounds(hi_0, hi_1, i, j);
       test_xor_bounds(hi_0, hi_1, hi_0-i, hi_1-j);
@@ -68,26 +69,35 @@ void test_sample_values(jlong hi_0, jlong hi_1){
   }
 }
 
-void test_exhaustive_values_with_bounds_in_range(jlong lo, jlong hi){
-  for(jlong hi_0 = lo; hi_0 <= hi; hi_0++){
-    for(jlong hi_1 = hi_0; hi_1 <=hi; hi_1++){
+template <class S>
+void test_exhaustive_values_with_bounds_in_range(S lo, S hi){
+  for(S hi_0 = lo; hi_0 <= hi; hi_0++){
+    for(S hi_1 = hi_0; hi_1 <=hi; hi_1++){
       test_exhaustive_values(hi_0, hi_1);
     }
   }
 }
 
-void test_sample_values_with_bounds_in_range(jlong lo, jlong hi){
-  for(jlong hi_0 = lo; hi_0 <= hi; hi_0++){
-    for(jlong hi_1 = hi_0; hi_1 <=hi; hi_1++){
+template <class S>
+void test_sample_values_with_bounds_in_range(S lo, S hi){
+  for(S hi_0 = lo; hi_0 <= hi; hi_0++){
+    for(S hi_1 = hi_0; hi_1 <=hi; hi_1++){
       test_sample_values(hi_0, hi_1);
     }
   }
 }
 
 TEST_VM(opto, xor_max) {
-  test_exhaustive_values_with_bounds_in_range(0, 15);
-  test_sample_values_with_bounds_in_range(INT_MAX - 1, INT_MAX);
-  test_sample_values_with_bounds_in_range((1 << 30) - 1, 1 << 30);
-  test_sample_values_with_bounds_in_range(LONG_MAX - 1, LONG_MAX);
-  test_sample_values_with_bounds_in_range((1L << 62) - 1, 1L << 62);
+
+  auto maxjint = jint(std::numeric_limits<jint>::max());
+  auto maxjlong = jint(std::numeric_limits<jint>::max());
+
+  test_exhaustive_values_with_bounds_in_range<jint>(0, 15);
+  test_exhaustive_values_with_bounds_in_range<jlong>(0, 15);
+
+  test_sample_values_with_bounds_in_range<jint>(maxjint-1, maxjint);
+  test_sample_values_with_bounds_in_range<jlong>(maxjlong-1, maxjlong);
+
+  test_sample_values_with_bounds_in_range<jint>((1 << 30) - 1, 1 << 30);
+  test_sample_values_with_bounds_in_range<jlong>((1L << 62) - 1, 1L << 62);
 }

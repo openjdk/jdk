@@ -981,71 +981,8 @@ const Type* XorINode::Value(PhaseGVN* phase) const {
   return AddNode::Value(phase);
 }
 
-
-//------------------------------add_ring---------------------------------------
-// Supplied function returns the sum of the inputs IN THE CURRENT RING.  For
-// the logical operations the ring's ADD is really a logical OR function.
-// This also type-checks the inputs for sanity.  Guaranteed never to
-// be passed a TOP or BOTTOM type, these are filtered out by pre-check.
-const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
-
-  if (r0->is_con() && r1->is_con()) {
-    // Constant fold: (c1 ^ c2) -> c3
-    return TypeInt::make( r0->get_con() ^ r1->get_con() );
-  }
-
-  // At least one of the arguments is not constant
-
-  // Result of xor can only have bits sets where any of the
-  // inputs have bits set. lo can always become 0.
-
-  if (r0->_lo >= 0 && r1->_lo >= 0) {
-      jint max = calc_xor_max(r0->_hi, r1->_hi);
-      return TypeInt::make(0, max, MAX2(r0->_widen, r1->_widen));
-  }
-
-  return TypeInt::INT;
-}
-
-jint XorINode::calc_xor_max(const jint hi_0, const jint hi_1) {
-  assert(hi_0 >= 0, "must be non-negative");
-  assert(hi_1 >= 0, "must be non-negative");
-
-  // x ^ y cannot have any bit set that is higher than both the highest bits set in x and y
-  // x cannot have any bit set that is higher than the highest bit set in r0->_hi
-  // y cannot have any bit set that is higher than the highest bit set in r1->_hi
-
-  // Note: cast to unsigned happens before +1 to avoid signed overflow, and
-  // round_up is safe because high bit is unset (0 <= lo <= hi)
-  return round_up_power_of_2(juint(hi_0 | hi_1) + 1) - 1;
-}
-//=============================================================================
-//------------------------------add_ring---------------------------------------
-const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeLong *r0 = t0->is_long(); // Handy access
-  const TypeLong *r1 = t1->is_long();
-
-  if (r0->is_con() && r1->is_con()) {
-    // Constant fold: (c1 ^ c2) -> c3
-    return TypeLong::make( r0->get_con() ^ r1->get_con() );
-  }
-
-  // At least one of the arguments is not constant
-
-  // Result of xor can only have bits sets where any of the
-  // inputs have bits set. lo can always become 0.
-
-  if (r0->_lo >= 0 && r1->_lo >= 0) {
-      julong max = calc_xor_max(r0->_hi, r1->_hi);
-      return TypeLong::make(0, max, MAX2(r0->_widen, r1->_widen));
-  }
-
-  return TypeLong::LONG;
-}
-
-jlong XorLNode::calc_xor_max(const jlong hi_0, const jlong hi_1) {
+template<class S, class U>
+S calc_xor_max(const S hi_0, const S hi_1) {
   assert(hi_0 >= 0, "must be non-negative");
   assert(hi_1 >= 0, "must be non-negative");
 
@@ -1072,8 +1009,61 @@ jlong XorLNode::calc_xor_max(const jlong hi_0, const jlong hi_1) {
 
   // Note: cast to unsigned happens before +1 to avoid signed overflow, and
   // round_up is safe because high bit is unset (0 <= lo <= hi)
-  return round_up_power_of_2(julong(hi_0 | hi_1) + 1) - 1 ;
+
+  return round_up_power_of_2(U(hi_0 | hi_1) + 1) - 1 ;
 }
+
+//------------------------------add_ring---------------------------------------
+// Supplied function returns the sum of the inputs IN THE CURRENT RING.  For
+// the logical operations the ring's ADD is really a logical OR function.
+// This also type-checks the inputs for sanity.  Guaranteed never to
+// be passed a TOP or BOTTOM type, these are filtered out by pre-check.
+const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
+  const TypeInt *r0 = t0->is_int(); // Handy access
+  const TypeInt *r1 = t1->is_int();
+
+  if (r0->is_con() && r1->is_con()) {
+    // Constant fold: (c1 ^ c2) -> c3
+    return TypeInt::make( r0->get_con() ^ r1->get_con() );
+  }
+
+  // At least one of the arguments is not constant
+
+  // Result of xor can only have bits sets where any of the
+  // inputs have bits set. lo can always become 0.
+
+  if (r0->_lo >= 0 && r1->_lo >= 0) {
+      jint max = calc_xor_max<jint, juint>(r0->_hi, r1->_hi);
+      return TypeInt::make(0, max, MAX2(r0->_widen, r1->_widen));
+  }
+
+  return TypeInt::INT;
+}
+
+//=============================================================================
+//------------------------------add_ring---------------------------------------
+const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
+  const TypeLong *r0 = t0->is_long(); // Handy access
+  const TypeLong *r1 = t1->is_long();
+
+  if (r0->is_con() && r1->is_con()) {
+    // Constant fold: (c1 ^ c2) -> c3
+    return TypeLong::make( r0->get_con() ^ r1->get_con() );
+  }
+
+  // At least one of the arguments is not constant
+
+  // Result of xor can only have bits sets where any of the
+  // inputs have bits set. lo can always become 0.
+
+  if (r0->_lo >= 0 && r1->_lo >= 0) {
+      julong max = calc_xor_max<jlong, julong>(r0->_hi, r1->_hi);
+      return TypeLong::make(0, max, MAX2(r0->_widen, r1->_widen));
+  }
+
+  return TypeLong::LONG;
+}
+
 
 Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);

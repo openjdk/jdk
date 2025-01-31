@@ -235,9 +235,6 @@ public:
   int min_opcode() const { return Op_MinI; }
   virtual const Type *Value(PhaseGVN *phase) const;
   virtual uint ideal_reg() const { return Op_RegI; }
-private:
-  friend void test_xor_bounds(jlong, jlong, jlong, jlong);
-  static jint calc_xor_max( const jint, const jint );
 };
 
 //------------------------------XorINode---------------------------------------
@@ -254,9 +251,6 @@ public:
   int min_opcode() const { return Op_MinL; }
   virtual const Type *Value(PhaseGVN *phase) const;
   virtual uint ideal_reg() const { return Op_RegL; }
-private:
-  friend void test_xor_bounds(jlong, jlong, jlong, jlong);
-  static jlong calc_xor_max( const jlong, const jlong );
 };
 
 //------------------------------MaxNode----------------------------------------
