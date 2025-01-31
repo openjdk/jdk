@@ -1006,7 +1006,7 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
       return TypeInt::make(0, max, MAX2(r0->_widen, r1->_widen));
   }
 
-  return TypeInt::INT;        // Any integer, but still no symbols.
+  return TypeInt::INT;
 }
 
 jint XorINode::calc_xor_max(const jint hi_0, const jint hi_1) {
@@ -1042,7 +1042,7 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
       return TypeLong::make(0, max, MAX2(r0->_widen, r1->_widen));
   }
 
-  return TypeLong::LONG;      // Any integer, but still no symbols.
+  return TypeLong::LONG;
 }
 
 jlong XorLNode::calc_xor_max(const jlong hi_0, const jlong hi_1) {
