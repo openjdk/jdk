@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
 package jdk.jfr.internal;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.internal.misc.Unsafe;
 
 import static java.nio.file.LinkOption.*;
@@ -50,7 +51,7 @@ public final class Options {
     private static long DEFAULT_THREAD_BUFFER_SIZE;
     private static final int DEFAULT_STACK_DEPTH = 64;
     private static final long DEFAULT_MAX_CHUNK_SIZE = 12 * 1024 * 1024;
-    private static final SafePath DEFAULT_DUMP_PATH = null;
+    private static final Path DEFAULT_DUMP_PATH = null;
     private static final boolean DEFAULT_PRESERVE_REPOSITORY = false;
 
     private static long memorySize;
@@ -115,10 +116,10 @@ public final class Options {
         globalBufferSize = globalBufsize;
     }
 
-    public static synchronized void setDumpPath(SafePath path) throws IOException {
+    public static synchronized void setDumpPath(Path path) throws IOException {
         if (path != null) {
-            if (SecuritySupport.isWritable(path)) {
-                path = SecuritySupport.toRealPath(path, NOFOLLOW_LINKS);
+            if (Files.isWritable(path)) {
+                path = path.toRealPath(NOFOLLOW_LINKS);
             } else {
                 throw new IOException("Cannot write JFR emergency dump to " + path.toString());
             }
@@ -126,8 +127,8 @@ public final class Options {
         JVM.setDumpPath(path == null ? null : path.toString());
     }
 
-    public static synchronized SafePath getDumpPath() {
-        return new SafePath(JVM.getDumpPath());
+    public static synchronized Path getDumpPath() {
+        return Path.of(JVM.getDumpPath());
     }
 
     public static synchronized void setStackDepth(Integer stackTraceDepth) {

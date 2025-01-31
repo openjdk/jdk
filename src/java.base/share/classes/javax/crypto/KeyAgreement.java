@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,17 +57,21 @@ import sun.security.jca.GetInstance.Instance;
  * specific or as specified by the standard key agreement algorithm.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard {@code KeyAgreement} algorithm:
+ * following standard {@code KeyAgreement} algorithms. For the "ECDH"
+ * algorithm, implementations must support the curves in parentheses.
  * <ul>
  * <li>{@code DiffieHellman}</li>
+ * <li>{@code ECDH} (secp256r1, secp384r1)</li>
+ * <li>{@code X25519}</li>
  * </ul>
- * This algorithm is described in the <a href=
+ * These algorithms are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#keyagreement-algorithms">
  * KeyAgreement section</a> of the
  * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Jan Luehe
  *
  * @see KeyGenerator
@@ -167,6 +171,7 @@ public class KeyAgreement {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyAgreement} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
@@ -214,6 +219,7 @@ public class KeyAgreement {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyAgreement} object
      *
      * @throws IllegalArgumentException if the {@code provider}
@@ -258,6 +264,7 @@ public class KeyAgreement {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyAgreement} object
      *
      * @throws IllegalArgumentException if the {@code provider}

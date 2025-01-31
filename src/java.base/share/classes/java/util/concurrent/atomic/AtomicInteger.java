@@ -63,6 +63,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
     private static final long VALUE
         = U.objectFieldOffset(AtomicInteger.class, "value");
 
+    /** @serial */
     private volatile int value;
 
     /**

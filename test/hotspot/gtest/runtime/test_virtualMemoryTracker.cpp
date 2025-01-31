@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 // The gtestLauncher then are called with various levels of -XX:NativeMemoryTracking during
 //  jtreg-controlled gtests (see test/hotspot/jtreg/gtest/NMTGtests.java)
 
-#include "precompiled.hpp"
 #include "memory/memoryReserver.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
@@ -93,6 +92,8 @@ public:
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
@@ -167,6 +168,8 @@ public:
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
@@ -253,7 +256,10 @@ public:
   static void test_add_committed_region_overlapping() {
 
     size_t size  = 0x01000000;
+
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
@@ -425,6 +431,8 @@ public:
 
     size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
