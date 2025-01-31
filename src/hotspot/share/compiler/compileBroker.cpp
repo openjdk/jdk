@@ -365,13 +365,24 @@ void CompileQueue::free_all() {
   while (next != nullptr) {
     CompileTask* current = next;
     next = current->next();
+    bool found_waiter = false;
     {
-      // Wake up thread that blocks on the compile task.
       MutexLocker ct_lock(current->lock());
-      current->lock()->notify();
+      assert(current->waiting_for_completion_count() <= 1, "more than one thread are waiting for task");
+      if (current->waiting_for_completion_count() > 0) {
+        // If another thread waits for this task, we must wake them up
+        // so they will stop waiting and free the task.
+        current->lock()->notify();
+        found_waiter = true;
+      }
     }
-    // Put the task back on the freelist.
-    CompileTask::free(current);
+    if (!found_waiter) {
+      // If no one was waiting for this task, we need to free it ourselves. In this case, the task
+      // is also certainly unlocked, because, again, there is no waiter.
+      // Otherwise, by convention, it's the waiters responsibility to free the task.
+      // Put the task back on the freelist.
+      CompileTask::free(current);
+    }
   }
   _first = nullptr;
   _last = nullptr;
@@ -1722,9 +1733,11 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   {
     MonitorLocker ml(thread, task->lock());
     free_task = true;
+    task->inc_waiting_for_completion();
     while (!task->is_complete() && !is_compilation_disabled_forever()) {
       ml.wait();
     }
+    task->dec_waiting_for_completion();
   }
 
   if (free_task) {

@@ -155,7 +155,11 @@ public class Threads {
         virtualConstructor.addMapping("NotificationThread", NotificationThread.class);
         virtualConstructor.addMapping("StringDedupThread", StringDedupThread.class);
         virtualConstructor.addMapping("AttachListenerThread", AttachListenerThread.class);
-        virtualConstructor.addMapping("DeoptimizeObjectsALotThread", DeoptimizeObjectsALotThread.class);
+
+        /* Only add DeoptimizeObjectsALotThread if it is actually present in the type database. */
+        if (db.lookupType("DeoptimizeObjectsALotThread", false) != null) {
+            virtualConstructor.addMapping("DeoptimizeObjectsALotThread", DeoptimizeObjectsALotThread.class);
+        }
     }
 
     public Threads() {

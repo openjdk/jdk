@@ -462,13 +462,13 @@ java/awt/PopupMenu/PopupMenuLocation.java 8259913,8315878 windows-all,macosx-aar
 java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720,8324782 windows-all,macosx-all
 java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720,8324782 windows-all,macosx-all
 java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java 8238720 windows-all
+java/awt/Headless/HeadlessMalfunctionTest.java 8349099 generic-all
 
 # Several tests which fail sometimes on macos11
 java/awt/Window/MainKeyWindowTest/TestMainKeyWindow.java 8265985 macosx-all
 java/awt/Robot/Delay/InterruptOfDelay.java 8265986 macosx-all
 java/awt/Robot/InfiniteLoopException.java 8342638 windows-all,linux-all
 java/awt/MenuBar/TestNoScreenMenuBar.java 8265987 macosx-all
-java/awt/Robot/ScreenCaptureRobotTest.java 8344581 macosx-all
 
 java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8266283 generic-all
 java/awt/Graphics2D/DrawString/RotTransText.java 8316878 linux-all

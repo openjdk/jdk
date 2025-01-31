@@ -74,9 +74,7 @@ static jint INITIAL_META_COUNT = 2;   /* initial number of entries in meta name 
 /*
  * Declare library specific JNI_Onload entry
  */
-#ifndef WIN32
 DEF_STATIC_JNI_OnLoad
-#endif
 
 /*
  * The ZFILE_* functions exist to provide some platform-independence with
