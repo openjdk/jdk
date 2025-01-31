@@ -696,8 +696,7 @@ public class TestEquivalentInvariants {
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // Would be nice if it vectorized.
-    // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
+    // With AlignVector (strict alignment requirements): we cannot prove that the invariants are alignable -> no vectorization.
     static Object[] testMemorySegmentIInvarL3d(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
         long i2 = (long)(invar2 + invar3 - invar1); // equivalent
@@ -721,8 +720,7 @@ public class TestEquivalentInvariants {
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // Would be nice if it vectorized.
-    // Fails because of control flow. Somehow the "offsetPlain" check (checks for alignment) is not folded away.
+    // With AlignVector (strict alignment requirements): we cannot prove that the invariants are alignable -> no vectorization.
     static Object[] testMemorySegmentIInvarL3d2(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
         for (int i = 0; i < size; i+=2) {
@@ -763,6 +761,7 @@ public class TestEquivalentInvariants {
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // With AlignVector (strict alignment requirements): we cannot prove that the invariants are alignable -> no vectorization.
     static Object[] testMemorySegmentIInvarL3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
         long i2 = (long)(invar2 + invar3) - (long)(invar1); // not equivalent
