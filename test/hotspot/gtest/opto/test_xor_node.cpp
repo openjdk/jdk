@@ -22,6 +22,8 @@
  *
  */
 
+#include <functional>
+
 #include "opto/addnode.hpp"
 #include "unittest.hpp"
 
@@ -70,34 +72,28 @@ void test_sample_values(S hi_0, S hi_1){
 }
 
 template <class S>
-void test_exhaustive_values_with_bounds_in_range(S lo, S hi){
+void test_in_ranges(S lo, S hi, std::function<void(S, S)> f){
   for(S hi_0 = lo; hi_0 <= hi; hi_0++){
     for(S hi_1 = hi_0; hi_1 <=hi; hi_1++){
-      test_exhaustive_values(hi_0, hi_1);
-    }
-  }
-}
-
-template <class S>
-void test_sample_values_with_bounds_in_range(S lo, S hi){
-  for(S hi_0 = lo; hi_0 <= hi; hi_0++){
-    for(S hi_1 = hi_0; hi_1 <=hi; hi_1++){
-      test_sample_values(hi_0, hi_1);
+      f(hi_0, hi_1);
     }
   }
 }
 
 TEST_VM(opto, xor_max) {
+  auto sample_values = [](auto a, auto b) { return test_sample_values(a, b); };
+  auto exhaustive_values = [](auto a, auto b) { return test_exhaustive_values(a, b); };
 
   auto maxjint = jint(std::numeric_limits<jint>::max());
   auto maxjlong = jint(std::numeric_limits<jint>::max());
 
-  test_exhaustive_values_with_bounds_in_range<jint>(0, 15);
-  test_exhaustive_values_with_bounds_in_range<jlong>(0, 15);
 
-  test_sample_values_with_bounds_in_range<jint>(maxjint-1, maxjint);
-  test_sample_values_with_bounds_in_range<jlong>(maxjlong-1, maxjlong);
+  test_in_ranges<jint>(0, 15, exhaustive_values);
+  test_in_ranges<jlong>(0, 15, exhaustive_values);
 
-  test_sample_values_with_bounds_in_range<jint>((1 << 30) - 1, 1 << 30);
-  test_sample_values_with_bounds_in_range<jlong>((1L << 62) - 1, 1L << 62);
+  test_in_ranges<jint>(maxjint-1, maxjint, sample_values);
+  test_in_ranges<jlong>(maxjlong-1, maxjlong, sample_values);
+
+  test_in_ranges<jint>((1 << 30) - 1, 1 << 30, sample_values);
+  test_in_ranges<jlong>((1L << 62) - 1, 1L << 62, sample_values);
 }
