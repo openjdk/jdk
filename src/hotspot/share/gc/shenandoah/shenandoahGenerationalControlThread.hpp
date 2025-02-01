@@ -28,7 +28,6 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
-#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
@@ -37,6 +36,13 @@ class ShenandoahOldGeneration;
 class ShenandoahGeneration;
 class ShenandoahGenerationalHeap;
 class ShenandoahHeap;
+
+class ShenandoahGCRequest {
+public:
+  ShenandoahGCRequest() : generation(nullptr), cause(GCCause::_no_gc) {}
+  ShenandoahGeneration* generation;
+  GCCause::Cause cause;
+};
 
 class ShenandoahGenerationalControlThread: public ShenandoahController {
   friend class VMStructs;
@@ -71,7 +77,7 @@ private:
 public:
   ShenandoahGenerationalControlThread();
 
-  void run_gc_cycle(GCCause::Cause cause);
+  void run_gc_cycle(ShenandoahGCRequest request);
 
   void run_service() override;
   void stop_service() override;
@@ -86,6 +92,8 @@ public:
   }
 private:
 
+  ShenandoahGCRequest check_for_request();
+
   // Returns true if the cycle has been cancelled or degenerated.
   bool check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point);
 
@@ -93,7 +101,7 @@ private:
   bool resume_concurrent_old_cycle(ShenandoahOldGeneration* generation, GCCause::Cause cause);
   void service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause, bool reset_old_bitmap_specially);
   void service_stw_full_cycle(GCCause::Cause cause);
-  void service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);
+  void service_stw_degenerated_cycle(ShenandoahGCRequest request);
 
   void notify_gc_waiters();
 
@@ -109,8 +117,8 @@ private:
 
   void process_phase_timings();
 
-  void service_concurrent_normal_cycle(GCCause::Cause cause);
-  void service_concurrent_old_cycle(GCCause::Cause cause);
+  void service_concurrent_normal_cycle(ShenandoahGCRequest request);
+  void service_concurrent_old_cycle(ShenandoahGCRequest cause);
 
   void set_gc_mode(GCMode new_mode);
 
