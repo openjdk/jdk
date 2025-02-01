@@ -143,8 +143,6 @@ public final class TaskPipelineBuilder {
 
             final var taskFutures = new CompletableFuture<?>[taskGraph.nodes().size()];
 
-            CompletableFuture<?> lastFuture = null;
-
             // Schedule tasks in the order they should be executed: dependencies before dependents.
             for (final var task : taskGraph.topologicalSort()) {
                 final var taskIndex = taskGraph.nodes().indexOf(task);
@@ -155,18 +153,29 @@ public final class TaskPipelineBuilder {
                             return taskFutures[dependencyTaskIndex];
                         }).toArray(CompletableFuture<?>[]::new);
 
+                final CompletableFuture<?> f;
                 if (dependencyTaskFutures.length == 0) {
-                    lastFuture = CompletableFuture.runAsync(toRunnable(task), executor);
+                    f = CompletableFuture.runAsync(toRunnable(task), executor);
                 } else {
-                    lastFuture = CompletableFuture.allOf(dependencyTaskFutures);
-                    lastFuture = lastFuture.thenRun(toRunnable(task));
+                    f = CompletableFuture.allOf(dependencyTaskFutures).thenRun(toRunnable(task));
                 }
 
-                taskFutures[taskIndex] = lastFuture;
+                taskFutures[taskIndex] = f;
+            }
+
+            final CompletableFuture <?>[] rootFutures = taskGraph.getNoOutgoingEdges().stream().map(task -> {
+                return taskFutures[taskGraph.nodes().indexOf(task)];
+            }).toArray(CompletableFuture []::new);
+
+            final CompletableFuture <?> rootFuture;
+            if (rootFutures.length == 1) {
+                rootFuture = rootFutures[0];
+            } else {
+                rootFuture = CompletableFuture.allOf(rootFutures);
             }
 
             try {
-                lastFuture.get();
+                rootFuture.get();
             } catch (ExecutionException ee) {
                 if (ee.getCause() instanceof Exception ex) {
                     throw ex;
