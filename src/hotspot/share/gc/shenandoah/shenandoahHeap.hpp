@@ -441,17 +441,20 @@ private:
   };
 
   double _cancel_requested_time;
-  ShenandoahSharedEnumFlag<CancelState> _cancelled_gc;
+  ShenandoahSharedEnumFlag<GCCause::Cause> _cancelled_gc;
 
   // Returns true if cancel request was successfully communicated.
   // Returns false if some other thread already communicated cancel
   // request.  A true return value does not mean GC has been
   // cancelled, only that the process of cancelling GC has begun.
-  bool try_cancel_gc();
+  bool try_cancel_gc(GCCause::Cause cause);
 
 public:
   inline bool cancelled_gc() const;
   inline bool check_cancelled_gc_and_yield(bool sts_active = true);
+  inline GCCause::Cause cancelled_cause() const;
+
+  GCCause::Cause acknowledge_cancellation();
 
   inline void clear_cancelled_gc(bool clear_oom_handler = true);
 

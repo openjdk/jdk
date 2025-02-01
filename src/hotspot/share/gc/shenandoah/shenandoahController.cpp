@@ -66,13 +66,16 @@ void ShenandoahController::handle_alloc_failure(ShenandoahAllocRequest& req, boo
                  byte_size_in_proper_unit(req.size() * HeapWordSize), proper_unit_for_byte_size(req.size() * HeapWordSize));
 
     // Now that alloc failure GC is scheduled, we can abort everything else
-    heap->cancel_gc(GCCause::_allocation_failure);
+    heap->cancel_gc(is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_allocation_failure);
+
+    // TODO: Get rid of alloc failure flag, use cancellation cause instead
+    // TODO: Notify control thread in case it is idle
   }
 
 
   if (block) {
     MonitorLocker ml(&_alloc_failure_waiters_lock);
-    while (is_alloc_failure_gc()) {
+    while (heap->cancelled_gc()) {
       ml.wait();
     }
   }
@@ -89,7 +92,7 @@ void ShenandoahController::handle_alloc_failure_evac(size_t words) {
   }
 
   // Forcefully report allocation failure
-  heap->cancel_gc(GCCause::_shenandoah_allocation_failure_evac);
+  heap->cancel_gc(is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_shenandoah_allocation_failure_evac);
 }
 
 void ShenandoahController::notify_alloc_failure_waiters() {

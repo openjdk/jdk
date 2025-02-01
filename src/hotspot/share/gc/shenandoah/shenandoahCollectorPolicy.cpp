@@ -127,7 +127,7 @@ bool ShenandoahCollectorPolicy::is_at_shutdown() {
   return _in_shutdown.is_set();
 }
 
-bool is_explicit_gc(GCCause::Cause cause) {
+bool ShenandoahCollectorPolicy::is_explicit_gc(GCCause::Cause cause) {
   return GCCause::is_user_requested_gc(cause)
       || GCCause::is_serviceability_requested_gc(cause);
 }
@@ -136,12 +136,13 @@ bool is_implicit_gc(GCCause::Cause cause) {
   return cause != GCCause::_no_gc
       && cause != GCCause::_shenandoah_concurrent_gc
       && cause != GCCause::_allocation_failure
-      && !is_explicit_gc(cause);
+      && !ShenandoahCollectorPolicy::is_explicit_gc(cause);
 }
 
 #ifdef ASSERT
 bool is_valid_request(GCCause::Cause cause) {
-  return is_explicit_gc(cause)
+  return ShenandoahCollectorPolicy::is_explicit_gc(cause)
+      || ShenandoahCollectorPolicy::is_shenandoah_gc(cause)
       || cause == GCCause::_metadata_GC_clear_soft_refs
       || cause == GCCause::_codecache_GC_aggressive
       || cause == GCCause::_codecache_GC_threshold
@@ -152,6 +153,15 @@ bool is_valid_request(GCCause::Cause cause) {
       || cause == GCCause::_scavenge_alot;
 }
 #endif
+
+bool ShenandoahCollectorPolicy::is_shenandoah_gc(GCCause::Cause cause) {
+  return cause == GCCause::_allocation_failure
+      || cause == GCCause::_shenandoah_stop_vm
+      || cause == GCCause::_shenandoah_allocation_failure_evac
+      || cause == GCCause::_shenandoah_humongous_allocation_failure
+      || cause == GCCause::_shenandoah_concurrent_gc
+      || cause == GCCause::_shenandoah_upgrade_to_full_gc;
+}
 
 bool ShenandoahCollectorPolicy::is_requested_gc(GCCause::Cause cause) {
   return is_explicit_gc(cause) || is_implicit_gc(cause);

@@ -54,15 +54,15 @@ public:
 
 private:
   Monitor _control_lock;
-  Monitor _regulator_lock;
+  Monitor _gc_mode_lock;
 
   ShenandoahSharedFlag _allow_old_preemption;
-  ShenandoahSharedFlag _preemption_requested;
 
   GCCause::Cause  _requested_gc_cause;
-  volatile ShenandoahGenerationType _requested_generation;
+  ShenandoahGeneration* _requested_generation;
   ShenandoahGC::ShenandoahDegenPoint _degen_point;
-  ShenandoahGeneration* _degen_generation;
+  ShenandoahGenerationalHeap* _heap;
+  uint _age_period;
 
   shenandoah_padding(0);
   volatile GCMode _mode;
@@ -71,13 +71,15 @@ private:
 public:
   ShenandoahGenerationalControlThread();
 
+  void run_gc_cycle(GCCause::Cause cause);
+
   void run_service() override;
   void stop_service() override;
 
   void request_gc(GCCause::Cause cause) override;
 
   // Return true if the request to start a concurrent GC for the given generation succeeded.
-  bool request_concurrent_gc(ShenandoahGenerationType generation);
+  bool request_concurrent_gc(ShenandoahGeneration* generation);
 
   GCMode gc_mode() {
     return _mode;
@@ -103,28 +105,18 @@ private:
   bool is_implicit_gc(GCCause::Cause cause) const;
 
   // Returns true if the old generation marking was interrupted to allow a young cycle.
-  bool preempt_old_marking(ShenandoahGenerationType generation);
+  bool preempt_old_marking(ShenandoahGeneration* generation);
 
-  void process_phase_timings(const ShenandoahGenerationalHeap* heap);
+  void process_phase_timings();
 
-  void service_concurrent_normal_cycle(ShenandoahGenerationalHeap* heap,
-                                       ShenandoahGenerationType generation,
-                                       GCCause::Cause cause);
-
-  void service_concurrent_old_cycle(ShenandoahGenerationalHeap* heap,
-                                    GCCause::Cause &cause);
+  void service_concurrent_normal_cycle(GCCause::Cause cause);
+  void service_concurrent_old_cycle(GCCause::Cause cause);
 
   void set_gc_mode(GCMode new_mode);
 
   static const char* gc_mode_name(GCMode mode);
 
-  void notify_control_thread();
-
-  void service_concurrent_cycle(ShenandoahHeap* heap,
-                                ShenandoahGeneration* generation,
-                                GCCause::Cause &cause,
-                                bool do_old_gc_bootstrap);
-
+  void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP

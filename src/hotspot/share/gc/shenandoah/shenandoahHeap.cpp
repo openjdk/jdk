@@ -583,6 +583,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 {
   // Initialize GC mode early, many subsequent initialization procedures depend on it
   initialize_mode();
+  _cancelled_gc.set(GCCause::_no_gc);
 }
 
 #ifdef _MSC_VER
@@ -2107,9 +2108,9 @@ size_t ShenandoahHeap::tlab_used(Thread* thread) const {
   return _free_set->used();
 }
 
-bool ShenandoahHeap::try_cancel_gc() {
-  jbyte prev = _cancelled_gc.cmpxchg(CANCELLED, CANCELLABLE);
-  return prev == CANCELLABLE;
+bool ShenandoahHeap::try_cancel_gc(GCCause::Cause cause) {
+  jbyte prev = _cancelled_gc.cmpxchg(cause, GCCause::_no_gc);
+  return prev == GCCause::_no_gc;
 }
 
 void ShenandoahHeap::cancel_concurrent_mark() {
@@ -2124,7 +2125,7 @@ void ShenandoahHeap::cancel_concurrent_mark() {
 }
 
 void ShenandoahHeap::cancel_gc(GCCause::Cause cause) {
-  if (try_cancel_gc()) {
+  if (try_cancel_gc(cause)) {
     FormatBuffer<> msg("Cancelling GC: %s", GCCause::to_string(cause));
     log_info(gc)("%s", msg.buffer());
     Events::log(Thread::current(), "%s", msg.buffer());

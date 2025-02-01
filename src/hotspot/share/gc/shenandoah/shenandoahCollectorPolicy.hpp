@@ -94,7 +94,15 @@ public:
     return _consecutive_degenerated_gcs;
   }
 
+  static bool is_allocation_failure(GCCause::Cause cause) {
+    return cause == GCCause::_allocation_failure
+        || cause == GCCause::_shenandoah_allocation_failure_evac
+        || cause == GCCause::_shenandoah_humongous_allocation_failure;
+  }
+
+  static bool is_shenandoah_gc(GCCause::Cause cause);
   static bool is_requested_gc(GCCause::Cause cause);
+  static bool is_explicit_gc(GCCause::Cause cause);
   static bool should_run_full_gc(GCCause::Cause cause);
   static bool should_handle_requested_gc(GCCause::Cause cause);
 

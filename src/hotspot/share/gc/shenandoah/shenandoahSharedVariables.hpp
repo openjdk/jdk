@@ -236,6 +236,12 @@ struct ShenandoahSharedEnumFlag {
     return (T)Atomic::cmpxchg(&value, (ShenandoahSharedValue)expected, (ShenandoahSharedValue)new_value);
   }
 
+  T xchg(T new_value) {
+    assert (new_value >= 0, "sanity");
+    assert (new_value < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
+    return static_cast<T>(Atomic::xchg(&value, static_cast<ShenandoahSharedValue>(new_value)));
+  }
+
   volatile ShenandoahSharedValue* addr_of() {
     return &value;
   }

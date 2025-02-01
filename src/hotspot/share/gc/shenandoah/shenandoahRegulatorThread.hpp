@@ -26,7 +26,9 @@
 
 #include "gc/shared/concurrentGCThread.hpp"
 
+class ShenandoahHeap;
 class ShenandoahHeuristics;
+class ShenandoahGeneration;
 class ShenandoahGenerationalControlThread;
 
 /*
@@ -70,8 +72,9 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   void regulator_sleep();
 
   // Provides instrumentation to track how long it takes to acknowledge a request.
-  bool request_concurrent_gc(ShenandoahGenerationType generation);
+  bool request_concurrent_gc(ShenandoahGeneration* generation);
 
+  ShenandoahHeap* _heap;
   ShenandoahGenerationalControlThread* _control_thread;
   ShenandoahHeuristics* _young_heuristics;
   ShenandoahHeuristics* _old_heuristics;
