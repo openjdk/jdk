@@ -72,9 +72,9 @@ void ShenandoahGenerationalControlThread::run_service() {
 
     if (_heap->cancelled_gc()) {
       // This cycle was cancelled. Make sure we know what to do on the next cycle.
-      // TODO: request needs to be a member so we can carry it over for degenerated cycles
       assert(_degen_point != ShenandoahGC::_degenerated_unset, "Need degen point for cancelled gc");
-      assert(_requested_generation != nullptr, "Need to resume degenerated cycle for same generation");
+      _degenerated_request.cause = request.cause;
+      _degenerated_request.generation = request.generation;
       continue;
     }
     {
@@ -82,6 +82,8 @@ void ShenandoahGenerationalControlThread::run_service() {
       MonitorLocker lock(&_control_lock, Mutex::_no_safepoint_check_flag);
       if (_requested_gc_cause == GCCause::_no_gc) {
         _degen_point = ShenandoahGC::_degenerated_unset;
+        _degenerated_request.cause = GCCause::_no_gc;
+        _degenerated_request.generation = nullptr;
         lock.wait();
       }
     }
@@ -121,8 +123,8 @@ ShenandoahGCRequest ShenandoahGenerationalControlThread::check_for_request() {
       _degen_point = ShenandoahGC::_degenerated_outside_cycle;
       request.generation = _heap->young_generation();
     } else {
-      // TODO: _request_generation could change before degen cycle starts. Need to be sure it carries over.
-      assert(request.generation != nullptr, "Must continue degenerated cycle on the same generation");
+      request.generation = _degenerated_request.generation;
+      assert(request.cause == _degenerated_request.cause, "Expect same cause for degenerated cycle");
     }
 
     ShenandoahHeuristics* heuristics = request.generation->heuristics();

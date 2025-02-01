@@ -67,6 +67,7 @@ private:
   GCCause::Cause  _requested_gc_cause;
   ShenandoahGeneration* _requested_generation;
   ShenandoahGC::ShenandoahDegenPoint _degen_point;
+  ShenandoahGCRequest _degenerated_request;
   ShenandoahGenerationalHeap* _heap;
   uint _age_period;
 
