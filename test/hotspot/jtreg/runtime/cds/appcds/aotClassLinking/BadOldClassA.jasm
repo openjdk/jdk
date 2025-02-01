@@ -19,20 +19,35 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#include "export.h"
+super public class BadOldClassA
+    version 49:0
+{
 
-typedef struct {
-    double x;
-    double y;
-} DoublePoint;
 
-EXPORT DoublePoint unit() {
-    DoublePoint result = { 1, 0 };
-    return result;
+public Method "<init>":"()V"
+    stack 1 locals 1
+{
+        aload_0;
+        invokespecial    Method java/lang/Object."<init>":"()V";
+        return;
 }
 
-EXPORT void unit_ptr(DoublePoint* out) {
-  *out = unit();
+    /*
+     * The following method tries to return an Object as a String.
+     * Verifier should fail.
+     */
+public Method doit:"()Ljava/lang/String;"
+    stack 2 locals 1
+{
+        new              class java/lang/Object;
+        dup;
+        invokespecial    Method java/lang/Object."<init>":"()V";
+        astore_0;
+        aload_0;
+        areturn;   // tries to return an Object as a String
 }
+
+} // end Class BadOldClassA

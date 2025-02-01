@@ -362,7 +362,7 @@ public final class DecimalDigits {
     }
 
     private static void putCharLatin1(byte[] buf, int charPos, int c) {
-        UNSAFE.putByte(buf, ARRAY_BYTE_BASE_OFFSET + (long) charPos, (byte) c);
+        UNSAFE.putByte(buf, ARRAY_BYTE_BASE_OFFSET + charPos, (byte) c);
     }
 
     private static void putCharUTF16(byte[] buf, int charPos, int c) {

@@ -24,7 +24,7 @@
 #
 
 ################################################################################
-# Initial bootstrapping, copied and stripped down from Makefile and Init.gmk
+# Initial bootstrapping, copied and stripped down from Makefile and PreInit.gmk.
 ################################################################################
 
 # In Cygwin, the MAKE variable gets prepended with the current directory if the
@@ -136,7 +136,8 @@ $(eval $(call SetupVariable,JIB_JAR,OPTIONAL))
 # wrapper. This is required so we can include MakeBase which is needed for
 # CreateNewSpec.
 HAS_SPEC :=
-include $(TOPDIR)/make/InitSupport.gmk
+include $(TOPDIR)/make/PreInitSupport.gmk
+include $(TOPDIR)/make/common/LogUtils.gmk
 
 $(eval $(call CheckDeprecatedEnvironment))
 $(eval $(call CheckInvalidMakeFlags))
@@ -300,7 +301,8 @@ test-prebuilt:
         # are always found and parsed, call FindTests.gmk stand alone once
         # before calling RunTests.gmk.
 	@cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -f make/common/FindTests.gmk \
-	    SPEC=$(SPEC) FINDTESTS_STAND_ALONE=true
+	    SPEC=$(SPEC) FINDTESTS_STAND_ALONE=true \
+	    GENERATE_FIND_TESTS_FILE=true
 	@cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -f make/RunTests.gmk run-test \
 	    TEST="$(TEST)"
 

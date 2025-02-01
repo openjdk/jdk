@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,14 +69,14 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result,
   // Check for pending exceptions.
   {
     ld(R0, in_bytes(Thread::pending_exception_offset()), R16_thread);
-    cmpdi(CCR0, R0, 0);
+    cmpdi(CR0, R0, 0);
 
     // This used to conditionally jump to forward_exception however it is
     // possible if we relocate that the branch will not reach. So we must jump
     // around so we can always reach.
 
     Label ok;
-    beq(CCR0, ok);
+    beq(CR0, ok);
 
     // Make sure that the vm_results are cleared.
     if (oop_result1->is_valid() || metadata_result->is_valid()) {
@@ -368,7 +368,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   int call_offset = __ call_RT(noreg, noreg, target);
   OopMapSet* oop_maps = new OopMapSet();
   oop_maps->add_gc_map(call_offset, oop_map);
-  __ cmpdi(CCR0, R3_RET, 0);
+  __ cmpdi(CR0, R3_RET, 0);
 
   // Re-execute the patched instruction or, if the nmethod was deoptmized,
   // return to the deoptimization handler entry that will cause re-execution
@@ -382,7 +382,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 
   restore_live_registers(sasm, noreg, noreg);
   // Return if patching routine returned 0.
-  __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CCR0, Assembler::equal), Assembler::bhintbhBCLRisReturn);
+  __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CR0, Assembler::equal), Assembler::bhintbhBCLRisReturn);
 
   address stub = deopt_blob->unpack_with_reexecution();
   //__ load_const_optimized(R0, stub);
@@ -448,8 +448,8 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
           Label ok;
           __ lwz(R0, in_bytes(Klass::layout_helper_offset()), R4_ARG2);
           __ srawi(R0, R0, Klass::_lh_array_tag_shift);
-          __ cmpwi(CCR0, R0, tag);
-          __ beq(CCR0, ok);
+          __ cmpwi(CR0, R0, tag);
+          __ beq(CR0, ok);
           __ stop("assert(is an array klass)");
           __ should_not_reach_here();
           __ bind(ok);
@@ -485,9 +485,9 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         // Load the klass and check the has finalizer flag.
         __ load_klass(t, R3_ARG1);
         __ lbz(t, in_bytes(Klass::misc_flags_offset()), t);
-        __ testbitdi(CCR0, R0, t, exact_log2(KlassFlags::_misc_has_finalizer));
+        __ testbitdi(CR0, R0, t, exact_log2(KlassFlags::_misc_has_finalizer));
         // Return if has_finalizer bit == 0 (CR0.eq).
-        __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CCR0, Assembler::equal), Assembler::bhintbhBCLRisReturn);
+        __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CR0, Assembler::equal), Assembler::bhintbhBCLRisReturn);
 
         __ mflr(R0);
         __ std(R0, _abi0(lr), R1_SP);
@@ -805,10 +805,10 @@ OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler* sasm)
   // Check that fields in JavaThread for exception oop and issuing pc are
   // empty before writing to them.
   __ ld(R0, in_bytes(JavaThread::exception_oop_offset()), R16_thread);
-  __ cmpdi(CCR0, R0, 0);
+  __ cmpdi(CR0, R0, 0);
   __ asm_assert_eq("exception oop already set");
   __ ld(R0, in_bytes(JavaThread::exception_pc_offset() ), R16_thread);
-  __ cmpdi(CCR0, R0, 0);
+  __ cmpdi(CR0, R0, 0);
   __ asm_assert_eq("exception pc already set");
 #endif
 

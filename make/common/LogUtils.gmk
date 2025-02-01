@@ -1,0 +1,127 @@
+#
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This file contains helper functions for logging.
+################################################################################
+
+# Look for a given option in the LOG variable, and if found, set a variable
+# and remove the option from the LOG variable
+# $1: The option to look for
+# $2: The variable to set to "true" if the option is found
+define ParseLogOption
+  ifneq ($$(findstring $1, $$(LOG)), )
+    override $2 := true
+    # First try to remove ",<option>" if it exists, otherwise just remove "<option>"
+    LOG_STRIPPED := $$(subst $1,, $$(subst $$(COMMA)$$(strip $1),, $$(LOG)))
+    # We might have ended up with a leading comma. Remove it. Need override
+    # since LOG is set from the command line.
+    override LOG := $$(strip $$(patsubst $$(COMMA)%, %, $$(LOG_STRIPPED)))
+  endif
+endef
+
+# Look for a given option with an assignment in the LOG variable, and if found,
+# set a variable to that value and remove the option from the LOG variable
+# $1: The option to look for
+# $2: The variable to set to the value of the option, if found
+define ParseLogValue
+  ifneq ($$(findstring $1=, $$(LOG)), )
+    # Make words of out comma-separated list and find the one with opt=val
+    value := $$(strip $$(subst $$(strip $1)=,, $$(filter $$(strip $1)=%, $$(subst $$(COMMA), , $$(LOG)))))
+    override $2 := $$(value)
+    # First try to remove ",<option>" if it exists, otherwise just remove "<option>"
+    LOG_STRIPPED := $$(subst $$(strip $1)=$$(value),, \
+        $$(subst $$(COMMA)$$(strip $1)=$$(value),, $$(LOG)))
+    # We might have ended up with a leading comma. Remove it. Need override
+    # since LOG is set from the command line.
+    override LOG := $$(strip $$(patsubst $$(COMMA)%, %, $$(LOG_STRIPPED)))
+  endif
+endef
+
+define ParseLogLevel
+  # Catch old-style VERBOSE= command lines.
+  ifneq ($$(origin VERBOSE), undefined)
+    $$(info Error: VERBOSE is deprecated. Use LOG=<warn|info|debug|trace> instead.)
+    $$(error Cannot continue)
+  endif
+
+  # Setup logging according to LOG
+
+  # If "nofile" is present, do not log to a file
+  $$(eval $$(call ParseLogOption, nofile, LOG_NOFILE))
+
+  # If "cmdline" is present, print all executes "important" command lines.
+  $$(eval $$(call ParseLogOption, cmdlines, LOG_CMDLINES))
+
+  # If "report" is present, use non-standard reporting options at build failure.
+  $$(eval $$(call ParseLogValue, report, LOG_REPORT))
+  ifneq ($$(LOG_REPORT), )
+    ifeq ($$(filter $$(LOG_REPORT), none all default), )
+      $$(info Error: LOG=report has invalid value: $$(LOG_REPORT).)
+      $$(info Valid values: LOG=report=<none>|<all>|<default>)
+      $$(error Cannot continue)
+    endif
+  endif
+
+  # If "profile-to-log" is present, write shell times in build log
+  $$(eval $$(call ParseLogOption, profile-to-log, LOG_PROFILE_TIMES_LOG))
+
+  # If "profile" is present, write shell times in separate log file
+  # IMPORTANT: $(ParseLogOption profile-to-log) should go first. Otherwise
+  # parsing of 'LOG=debug,profile-to-log,nofile' ends up in the following error:
+  # Error: LOG contains unknown option or log level: debug-to-log.
+  $$(eval $$(call ParseLogOption, profile, LOG_PROFILE_TIMES_FILE))
+
+  # Treat LOG=profile-to-log as if it were LOG=profile,profile-to-log
+  LOG_PROFILE_TIMES_FILE := $$(firstword $$(LOG_PROFILE_TIMES_FILE) $$(LOG_PROFILE_TIMES_LOG))
+
+  override LOG_LEVEL := $$(LOG)
+
+  ifeq ($$(LOG_LEVEL), )
+    # Set LOG to "warn" as default if not set
+    override LOG_LEVEL := warn
+  endif
+
+  ifeq ($$(LOG_LEVEL), warn)
+    override MAKE_LOG_FLAGS := -s
+  else ifeq ($$(LOG_LEVEL), info)
+    override MAKE_LOG_FLAGS := -s
+  else ifeq ($$(LOG_LEVEL), debug)
+    override MAKE_LOG_FLAGS :=
+  else ifeq ($$(LOG_LEVEL), trace)
+    override MAKE_LOG_FLAGS :=
+  else
+    $$(info Error: LOG contains unknown option or log level: $$(LOG).)
+    $$(info LOG can be <level>[,<opt>[...]] where <opt> is nofile | cmdlines | profile | profile-to-log)
+    $$(info and <level> is warn | info | debug | trace)
+    $$(error Cannot continue)
+  endif
+endef
+
+MAKE_LOG_VARS = $(foreach v, \
+    LOG_LEVEL LOG_NOFILE LOG_CMDLINES LOG_REPORT LOG_PROFILE_TIMES_LOG \
+    LOG_PROFILE_TIMES_FILE, \
+    $v=$($v) \
+)
