@@ -99,10 +99,12 @@ public class MultiNSTClient {
                 for (int i = 0; i < 2; i++) {
                     String svr = serverPSK.getFirst();
                     String cli = clientPSK.getFirst();
-                    if (svr.regionMatches(svr.length() - 16, cli, cli.length() - 16, 16)) {
+                    if (svr.regionMatches(svr.length() - 16, cli,
+                        cli.length() - 16, 16)) {
                         System.out.println("entry " + (i + 1) + " match.");
                     } else {
-                        System.out.println("entry " + (i + 1) + " server and client PSK didn't match:");
+                        System.out.println("entry " + (i + 1) +
+                            " server and client PSK didn't match:");
                         System.out.println("  server: " + svr);
                         System.out.println("  client: " + cli);
                         pass = false;
