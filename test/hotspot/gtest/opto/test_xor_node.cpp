@@ -24,7 +24,6 @@
 
 #include "opto/addnode.hpp"
 #include "unittest.hpp"
-#include <iostream>
 
 jint test_calc_max(const jint hi_0, const jint hi_1) {
   return XorINode::calc_max(hi_0, hi_1);
@@ -36,6 +35,8 @@ jlong test_calc_max(const jlong hi_0, const jlong hi_1) {
 
 template <class S>
 void test_xor_bounds(S hi_0, S hi_1, S val_0, S val_1) {
+  ASSERT_GE(hi_0, 0);
+  ASSERT_GE(hi_1, 0);
 
   // Skip out-of-bounds values for convenience
   if(val_0 > hi_0 || val_0 < S(0) || val_1 > hi_1 || val_1 < S(0)) {
@@ -63,6 +64,9 @@ void test_sample_values(S hi_0, S hi_1){
 
 template <class S>
 void test_in_ranges(S lo, S hi){
+  ASSERT_GE(lo, 0);
+  ASSERT_LE(lo, hi);
+
   for(S hi_0 = lo; hi_0 <= hi; hi_0++){
     for(S hi_1 = hi_0; hi_1 <=hi; hi_1++){
       test_sample_values(hi_0, hi_1);
@@ -85,14 +89,13 @@ void test_exhaustive(S limit){
 
 template <class S>
 void exec_tests(){
-  S max = jint(std::numeric_limits<S>::max());
   S top_bit = max_power_of_2<S>();
   S prev_bit = top_bit >> 1;
 
   test_exhaustive<S>(15);
-  test_in_ranges<S>(max - 1, max);
-//  test_in_ranges<S>(top_bit - 1, top_bit);
-//  test_in_ranges<S>(prev_bit - 1, prev_bit);
+
+  test_in_ranges<S>(top_bit - 1, top_bit);
+  test_in_ranges<S>(prev_bit - 1, prev_bit);
 }
 
 TEST_VM(opto, xor_max) {
