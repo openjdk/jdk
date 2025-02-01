@@ -41,7 +41,7 @@
  *                                jdk.test.whitebox.parser.DiagnosticCommand
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:-BackgroundCompilation
  *                   compiler.jvmci.compilerToVM.AllocateCompileIdTest
  */

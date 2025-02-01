@@ -29,7 +29,7 @@
  * @library /compiler/jvmci/common/patches
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.HotSpotResolvedJavaFieldHelper
  * @run testng/othervm
- *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *      -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler
  *      jdk.vm.ci.hotspot.test.TestHotSpotResolvedJavaField
  */
 

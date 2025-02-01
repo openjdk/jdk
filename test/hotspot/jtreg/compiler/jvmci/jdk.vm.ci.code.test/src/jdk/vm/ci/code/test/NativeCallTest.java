@@ -36,7 +36,7 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.amd64
  *          jdk.internal.vm.ci/jdk.vm.ci.riscv64
  * @compile CodeInstallationTest.java TestHotSpotVMConfig.java NativeCallTest.java TestAssembler.java amd64/AMD64TestAssembler.java aarch64/AArch64TestAssembler.java riscv64/RISCV64TestAssembler.java
- * @run junit/othervm/native -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI  -Xbootclasspath/a:. jdk.vm.ci.code.test.NativeCallTest
+ * @run junit/othervm/native -XX:+UnlockExperimentalVMOptions -Xbootclasspath/a:. jdk.vm.ci.code.test.NativeCallTest
  */
 package jdk.vm.ci.code.test;
 

@@ -29,7 +29,7 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  * @library /compiler/jvmci/jdk.vm.ci.hotspot.test/src
  * @run testng/othervm
- *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *      -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler
  *      jdk.vm.ci.hotspot.test.TestHotSpotSpeculationLog
  */
 

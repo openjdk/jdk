@@ -37,13 +37,13 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestJVMCIPrintProperties {
 
     public static void main(String[] args) throws Exception {
-        test("-XX:+EnableJVMCI");
         test("-XX:+UseJVMCICompiler");
     }
 
     static void test(String enableFlag) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
+            "--add-modules=jdk.internal.vm.ci",
             enableFlag, "-Djvmci.Compiler=null",
             "-XX:+JVMCIPrintProperties");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

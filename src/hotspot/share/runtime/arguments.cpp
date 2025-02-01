@@ -72,6 +72,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 #include <limits>
 
@@ -1796,11 +1799,12 @@ bool Arguments::check_vm_args_consistency() {
   }
 
   status = CompilerConfig::check_args_consistency(status);
+
 #if INCLUDE_JVMCI
-  if (status && EnableJVMCI) {
-    PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
-        AddProperty, UnwriteableProperty, InternalProperty);
-    if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
+  if (status && UseJVMCICompiler && FLAG_IS_DEFAULT(UseJVMCINativeLibrary) && !UseJVMCINativeLibrary) {
+    if (!JVMCI::shared_library_exists() && ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
+      // If no JVMCI native library is present,
+      // we enable the JVMCI module by default.
       if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
         return false;
       }
@@ -2750,6 +2754,14 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
 #if INCLUDE_JVMCI
+    } else if (match_option(option, "-XX:+EnableJVMCI")) {
+        jio_fprintf(defaultStream::error_stream(),
+                  "-XX:+EnableJVMCI was removed in JDK 25. Use --add-modules=jdk.internal.vm.ci to make use of the JVMCI module.\n");
+        return JNI_EINVAL;
+    } else if (match_option(option, "-XX:-EnableJVMCI")) {
+        jio_fprintf(defaultStream::error_stream(),
+                  "-XX:-EnableJVMCI was removed in JDK 25.\n");
+        return JNI_EINVAL;
     } else if (match_option(option, "-XX:-EnableJVMCIProduct") || match_option(option, "-XX:-UseGraalJIT")) {
       if (EnableJVMCIProduct) {
         jio_fprintf(defaultStream::error_stream(),

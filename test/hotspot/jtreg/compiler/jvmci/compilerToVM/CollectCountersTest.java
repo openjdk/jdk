@@ -31,12 +31,10 @@
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
- *                   -XX:+EnableJVMCI
  *                   -XX:JVMCICounterSize=0
  *                   -Dcompiler.jvmci.compilerToVM.CollectCountersTest.expected=0
  *                   compiler.jvmci.compilerToVM.CollectCountersTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
- *                   -XX:+EnableJVMCI
  *                   -XX:JVMCICounterSize=11
  *                   -Dcompiler.jvmci.compilerToVM.CollectCountersTest.expected=11
  *                   compiler.jvmci.compilerToVM.CollectCountersTest

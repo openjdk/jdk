@@ -86,6 +86,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 // Shared runtime stub routines reside in their own unique blob with a
 // single entry point
@@ -649,7 +652,7 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Handle h
   }
 
 #if INCLUDE_JVMCI
-  if (EnableJVMCI) {
+  if (JVMCI::has_installed_code()) {
     vframeStream vfst(current, true);
     methodHandle method = methodHandle(current, vfst.method());
     int bci = vfst.bci();

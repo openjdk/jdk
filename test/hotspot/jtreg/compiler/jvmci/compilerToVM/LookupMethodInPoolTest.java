@@ -37,7 +37,7 @@
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions
  *                   -XX:-UseJVMCICompiler
  *                   compiler.jvmci.compilerToVM.LookupMethodInPoolTest
  */
