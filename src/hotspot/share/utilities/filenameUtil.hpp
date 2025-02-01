@@ -35,11 +35,16 @@ private:
   static const size_t StartTimeBufferSize = 20;
   static const size_t PidBufferSize = 21;
   static const size_t HostnameBufferSize = 512;
-
 public:
-  // The call returns expanded file name allocated on c heap or resource area.
-  // C_HEAP = true, caller is responsible for releasing returned string
-  // C_HEAP = false, caller is responsible for setting up ResourceMark
+  // Expand wildcards in filename:
+  // %p -> PID
+  // %t -> timestamp in YY-MM-DD_HH_MM_SS format
+  // %hn -> hostname
+  //
+  // Returned file name is allocated either on c heap or resource area.
+  // When:
+  //   C_HEAP = true, caller is responsible for free returned string
+  //   C_HEAP = false, caller is responsible for setting up ResourceMark
   template<bool C_HEAP, MemTag MT = mtNone>
   static char* expand_file_name(const char* file_name, jlong timestamp = 0) {
     return expand_file_name_impl(file_name, timestamp, C_HEAP, MT);

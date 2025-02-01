@@ -33,8 +33,9 @@ const char* const FilenameUtil::TimestampFormat = "%Y-%m-%d_%H-%M-%S";
 const char* const FilenameUtil::HostnameFilenamePlaceholder = "%hn";
 
 char* FilenameUtil::expand_file_name_impl(const char* file_name, jlong timestamp, bool c_heap, MemTag tag) {
-  char* result = nullptr;
+  assert(!c_heap || tag != mtNone, "Missing memory tag");
 
+  char* result = nullptr;
   // Lets start finding out if we have any %p, %t and/or %hn in the name.
   // We will only replace the first occurrence of any placeholder
   const char* pid_opt = strstr(file_name, PidFilenamePlaceholder);
