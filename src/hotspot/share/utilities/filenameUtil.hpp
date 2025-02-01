@@ -41,16 +41,13 @@ public:
   // %t -> timestamp in YY-MM-DD_HH_MM_SS format
   // %hn -> hostname
   //
-  // Returned file name is allocated either on c heap or resource area.
-  // When:
-  //   C_HEAP = true, caller is responsible for free returned string
-  //   C_HEAP = false, caller is responsible for setting up ResourceMark
-  template<bool C_HEAP, MemTag MT = mtNone>
-  static char* expand_file_name(const char* file_name, jlong timestamp = 0) {
-    return expand_file_name_impl(file_name, timestamp, C_HEAP, MT);
+  // Caller is responsible for free returned string
+  static char* expand_filename(const char* filename, jlong timestamp, MemTag tag);
+  static char* expand_filename(const char* filename, MemTag tag) {
+    return expand_filename(filename, 0 /* current timestamp */, tag);
   }
+
 private:
-  static char* expand_file_name_impl(const char* file_name, jlong timestamp, bool c_heap, MemTag tag);
   static void get_pid_string(char* buf, size_t buf_len);
   static void get_timestamp_string(char* buf, size_t buf_len, jlong timestamp);
   static void get_hostname_string(char* buf, size_t buf_len);

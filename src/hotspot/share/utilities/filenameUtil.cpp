@@ -32,33 +32,27 @@ const char* const FilenameUtil::TimestampFilenamePlaceholder = "%t";
 const char* const FilenameUtil::TimestampFormat = "%Y-%m-%d_%H-%M-%S";
 const char* const FilenameUtil::HostnameFilenamePlaceholder = "%hn";
 
-char* FilenameUtil::expand_file_name_impl(const char* file_name, jlong timestamp, bool c_heap, MemTag tag) {
-  assert(!c_heap || tag != mtNone, "Missing memory tag");
+char* FilenameUtil::expand_filename(const char* filename, jlong timestamp, MemTag tag) {
+  assert(tag != mtNone, "Missing memory tag");
 
   char* result = nullptr;
   // Lets start finding out if we have any %p, %t and/or %hn in the name.
   // We will only replace the first occurrence of any placeholder
-  const char* pid_opt = strstr(file_name, PidFilenamePlaceholder);
-  const char* timestamp_opt = strstr(file_name, TimestampFilenamePlaceholder);
-  const char* hostname_opt = strstr(file_name, HostnameFilenamePlaceholder);
+  const char* pid_opt = strstr(filename, PidFilenamePlaceholder);
+  const char* timestamp_opt = strstr(filename, TimestampFilenamePlaceholder);
+  const char* hostname_opt = strstr(filename, HostnameFilenamePlaceholder);
 
-  size_t len = strlen(file_name);
+  size_t len = strlen(filename);
   if (pid_opt == nullptr && timestamp_opt == nullptr && hostname_opt == nullptr) {
     // We found no place-holders, return the simple filename
-    if (c_heap) {
-      return os::strdup_check_oom(file_name, tag);
-    } else {
-      char* buf = NEW_RESOURCE_ARRAY(char, len + 1);
-      strcpy(buf, file_name);
-      return buf;
-    }
+      return os::strdup_check_oom(filename, tag);
   }
 
   char pid_string[PidBufferSize];
   char timestamp_string[StartTimeBufferSize];
   char hostname_string[HostnameBufferSize];
 
-  // At least one of the place-holders were found in the file_name
+  // At least one of the place-holders were found in the filename
   size_t result_len = len;
   if (pid_opt != nullptr) {
     get_pid_string(pid_string, sizeof(pid_string));
@@ -79,50 +73,47 @@ char* FilenameUtil::expand_file_name_impl(const char* file_name, jlong timestamp
     result_len += strlen(hostname_string);
   }
   // Allocate the new buffer, size it to hold all we want to put in there +1.
-  if (c_heap) {
-    result = NEW_C_HEAP_ARRAY(char, result_len + 1, tag);
-  } else {
-    result = NEW_RESOURCE_ARRAY(char, result_len + 1);
-  }
+  result = NEW_C_HEAP_ARRAY(char, result_len + 1, tag);
   // Assemble the strings
-  size_t file_name_pos = 0;
+
+  size_t filename_pos = 0;
   size_t i = 0;
   while (i < result_len) {
-    if (file_name[file_name_pos] == '%') {
+    if (filename[filename_pos] == '%') {
       // Replace the first occurrence of any placeholder
-      if (pid_opt != nullptr && strncmp(&file_name[file_name_pos],
+      if (pid_opt != nullptr && strncmp(&filename[filename_pos],
                                         PidFilenamePlaceholder,
                                         strlen(PidFilenamePlaceholder)) == 0) {
         strcpy(result + i, pid_string);
         i += strlen(pid_string);
-        file_name_pos += strlen(PidFilenamePlaceholder);
+        filename += strlen(PidFilenamePlaceholder);
         pid_opt = nullptr;
         continue;
       }
-      if (timestamp_opt != nullptr && strncmp(&file_name[file_name_pos],
+      if (timestamp_opt != nullptr && strncmp(&filename[filename_pos],
                                               TimestampFilenamePlaceholder,
                                               strlen(TimestampFilenamePlaceholder)) == 0) {
         strcpy(result + i, timestamp_string);
         i += strlen(timestamp_string);
-        file_name_pos += strlen(TimestampFilenamePlaceholder);
+        filename += strlen(TimestampFilenamePlaceholder);
         timestamp_opt = nullptr;
         continue;
       }
-      if (hostname_opt != nullptr && strncmp(&file_name[file_name_pos],
+      if (hostname_opt != nullptr && strncmp(&filename[filename_pos],
                                              HostnameFilenamePlaceholder,
                                              strlen(HostnameFilenamePlaceholder)) == 0) {
         strcpy(result + i, hostname_string);
         i += strlen(hostname_string);
-        file_name_pos += strlen(HostnameFilenamePlaceholder);
+        filename_pos += strlen(HostnameFilenamePlaceholder);
         hostname_opt = nullptr;
         continue;
       }
     }
     // Else, copy char by char of the original file
-    result[i++] = file_name[file_name_pos++];
+    result[i++] = filename[filename_pos++];
   }
   assert(i == result_len, "should be");
-  assert(file_name[file_name_pos] == '\0', "should be");
+  assert(filename[filename_pos] == '\0', "should be");
 
   // Add terminating char
   result[result_len] = '\0';
