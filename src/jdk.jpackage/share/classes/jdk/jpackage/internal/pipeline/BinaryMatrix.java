@@ -34,7 +34,7 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-final class BinaryMatrix {
+public final class BinaryMatrix {
 
     BinaryMatrix(BinaryMatrix other) {
         rows = other.rows;

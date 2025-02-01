@@ -49,15 +49,15 @@ import java.util.stream.Stream;
  *                   node container
  * @param nodes      the node container
  */
-record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
+public record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
 
-    static <U> Builder<U> build() {
+    public static <U> Builder<U> build() {
         return new Builder<>();
     }
 
-    final static class Builder<U> {
+    public final static class Builder<U> {
 
-        Builder<U> addNode(U node) {
+        public Builder<U> addNode(U node) {
             Objects.requireNonNull(node);
             if (!nodes.contains(node)) {
                 nodes.add(node);
@@ -65,18 +65,18 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
             return this;
         }
 
-        Builder<U> addEdge(U tail, U head) {
+        public Builder<U> addEdge(U tail, U head) {
             return addEdge(DirectedEdge.create(tail, head));
         }
 
-        Builder<U> addEdge(DirectedEdge<U> edge) {
+        public Builder<U> addEdge(DirectedEdge<U> edge) {
             addNode(edge.tail());
             addNode(edge.head());
             edges.add(edge);
             return this;
         }
 
-        ImmutableDAG<U> create() {
+        public ImmutableDAG<U> create() {
             return ImmutableDAG.create(edges, nodes);
         }
 
@@ -84,7 +84,7 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         private final List<DirectedEdge<U>> edges = new ArrayList<>();
     }
 
-    interface Nodes<U> extends Iterable<U> {
+    public interface Nodes<U> extends Iterable<U> {
         int size();
         int indexOf(U node);
         U get(int index);
@@ -120,7 +120,7 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         }
     }
 
-    ImmutableDAG {
+    public ImmutableDAG {
         Objects.requireNonNull(nodes);
 
         Objects.requireNonNull(edgeMatrix);
@@ -133,7 +133,7 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         }
     }
 
-    static <U> ImmutableDAG<U> create(Collection<DirectedEdge<U>> edges, List<U> nodes) {
+    public static <U> ImmutableDAG<U> create(Collection<DirectedEdge<U>> edges, List<U> nodes) {
         return create(edges, Nodes.ofList(nodes));
     }
 
@@ -159,7 +159,7 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
      *
      * @return topologically ordered nodes of this graph
      */
-    List<T> topologicalSort() {
+    public List<T> topologicalSort() {
         final List<T> result = new ArrayList<>();
         isCyclic(edgeMatrix, index -> {
             result.add(nodes.get(index));
@@ -167,11 +167,11 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         return result;
     }
 
-    List<T> getAllHeadsOf(T node) {
+    public List<T> getAllHeadsOf(T node) {
         return getAllNodesOf(node, true);
     }
 
-    List<T> getAllTailsOf(T node) {
+    public List<T> getAllTailsOf(T node) {
         return getAllNodesOf(node, false);
     }
 
@@ -188,7 +188,7 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
      *
      * @see Nodes
      */
-    List<T> getHeadsOf(T node) {
+    public List<T> getHeadsOf(T node) {
         final int tail = nodes.indexOf(node);
         return getOutgoingEdges(tail, edgeMatrix).map(BinaryMatrix.Cursor::column).map(nodes::get).toList();
     }
@@ -206,7 +206,7 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
      *
      * @see Nodes
      */
-    List<T> getTailsOf(T node) {
+    public List<T> getTailsOf(T node) {
         final int head = nodes.indexOf(node);
         return getIncomingEdges(head, edgeMatrix).map(BinaryMatrix.Cursor::row).map(nodes::get).toList();
     }
@@ -221,7 +221,7 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
      *
      * @return the list of nodes without incoming edges
      */
-    List<T> getNoIncomingEdges() {
+    public List<T> getNoIncomingEdges() {
         return getNoIncomingEdges(edgeMatrix).mapToObj(nodes::get).toList();
     }
 
@@ -235,7 +235,7 @@ record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
      *
      * @return the list of nodes without outgoing edges
      */
-    List<T> getNoOutgoingEdges() {
+    public List<T> getNoOutgoingEdges() {
         return getNoOutgoingEdges(edgeMatrix).mapToObj(nodes::get).toList();
     }
 
