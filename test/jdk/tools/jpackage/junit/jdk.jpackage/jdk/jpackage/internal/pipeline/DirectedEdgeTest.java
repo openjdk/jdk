@@ -23,8 +23,8 @@
 
 package jdk.jpackage.internal.pipeline;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -39,10 +39,9 @@ final class DirectedEdgeTest {
             assertThrows(expectedExceptionType, () -> DirectedEdge.create(tail, head));
         } else {
             final var edge = DirectedEdge.create(tail, head);
-            assertTrue(tail == edge.tail());
-            assertTrue(tail == edge.from());
-            assertTrue(head == edge.head());
-            assertTrue(head == edge.to());
+            assertSame(tail, edge.from());
+            assertSame(head, edge.head());
+            assertSame(head, edge.to());
         }
     }
 
