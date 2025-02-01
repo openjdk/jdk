@@ -24,23 +24,34 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.Application;
+import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconResource;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import jdk.jpackage.internal.AppImageBuilder.AppImageItemGroup;
-import static jdk.jpackage.internal.AppImageBuilder.createLauncherIconResource;
+import jdk.jpackage.internal.PackagingPipeline.AppImageTaskID;
+import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
+import jdk.jpackage.internal.PackagingPipeline.TaskID;
+import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
-final class LinuxAppImageBuilder {
+final class LinuxPackagingPipeline {
 
-    static AppImageBuilder.Builder build() {
-        return AppImageBuilder.build()
-                .itemGroup(AppImageItemGroup.LAUNCHERS)
-                .addItem(LinuxAppImageBuilder::writeLauncherLib)
-                .addItem(LinuxAppImageBuilder::writeLauncherIcons);
+    enum LinuxAppImageTaskID implements TaskID {
+        LAUNCHER_LIB,
+        LAUNCHER_ICONS
+    }
+
+    static PackagingPipeline.Builder build() {
+        return PackagingPipeline.buildStandard()
+                .task(LinuxAppImageTaskID.LAUNCHER_LIB)
+                        .addDependent(PrimaryTaskID.BUILD_APPLICATION_IMAGE)
+                        .action(LinuxPackagingPipeline::writeLauncherLib).add()
+                .task(LinuxAppImageTaskID.LAUNCHER_ICONS)
+                        .addDependent(AppImageTaskID.CONTENT)
+                        .action(LinuxPackagingPipeline::writeLauncherIcons).add();
     }
 
     private static void writeLauncherLib(BuildEnv env, Application app,

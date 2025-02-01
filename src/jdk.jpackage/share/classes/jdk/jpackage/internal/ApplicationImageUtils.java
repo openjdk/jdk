@@ -81,7 +81,7 @@ final class ApplicationImageUtils {
 
     static PackagingPipeline.ApplicationImageTaskAction createWriteRuntimeAction() {
         return (env, app, appLayout) -> {
-            app.runtimeBuilder().ifPresent(toConsumer(runtimeBuilder -> runtimeBuilder.createRuntime(appLayout)));
+            app.runtimeBuilder().orElseThrow().createRuntime(appLayout);
         };
     }
 

@@ -45,7 +45,7 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import static jdk.jpackage.internal.AppImageBuilder.createLauncherIconResource;
+import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconResource;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.util.CompositeProxy;
 import jdk.jpackage.internal.util.PathUtils;

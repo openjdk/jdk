@@ -43,20 +43,20 @@ public class MacAppBundler extends AppImageBundler {
 
              // Order is important!
              final var app = MacFromParams.APPLICATION.fetchFrom(params);
-             final var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+             final var env = BuildEnv.withAppImageDir(BuildEnvFromParams.BUILD_ENV.fetchFrom(params), output);
 
-             final var appImageBuilderBuilder = MacAppImageBuilder2.build().excludeDirFromCopying(output.getParent());
+             final var taskPipeline = MacPackagingPipeline.build()
+                     .excludeDirFromCopying(output.getParent())
+                     .inputApplicationLayoutForPackaging(pkg -> pkg.app().asApplicationLayout())
+                     .create();
 
              if (isDependentTask()) {
-                 final var pkg = Optional.of(MacFromParams.PACKAGE.fetchFrom(params));
-                 appImageBuilderBuilder.addItem((theEnv, theApp, appLayout) -> {
-                     new PackageFile(pkg.orElseThrow().packageName()).save(appLayout);
-                 });
+                 final var pkg = MacFromParams.PACKAGE.fetchFrom(params);
+                 taskPipeline.execute(env, pkg, output);
+             } else {
+                 taskPipeline.execute(env, app);
              }
 
-             final var appImageBuilder = appImageBuilderBuilder.create(app);
-
-             appImageBuilder.execute(BuildEnv.withAppImageDir(env, output));
          });
          setParamsValidator(MacAppBundler::doValidate);
     }

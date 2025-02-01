@@ -24,10 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.LinuxPackage;
-import jdk.jpackage.internal.model.PackagerException;
-import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.model.ConfigException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.MessageFormat;
@@ -36,11 +32,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.model.AppImageLayout;
-import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.PackagerException;
 
 abstract class LinuxPackageBundler extends AbstractBundler {
 
@@ -103,43 +100,17 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         IOUtils.writableOutputDir(outputParentDir);
 
         // Order is important!
-        LinuxPackage pkg = pkgParam.fetchFrom(params);
-        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+        final LinuxPackage pkg = pkgParam.fetchFrom(params);
+        final var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
         BuildEnv pkgEnv = BuildEnv.withAppImageDir(env,
                 env.buildRoot().resolve("image"));
 
+        LinuxPackagingPipeline.build()
+                .excludeDirFromCopying(outputParentDir)
+                .create().execute(env,  pkg, outputParentDir);
+
         try {
-            // We either have an application image or need to build one.
-            if (pkg.app().runtimeBuilder().isPresent()) {
-                // Runtime builder is present, build app image.
-                LinuxAppImageBuilder.build()
-                        .excludeDirFromCopying(outputParentDir)
-                        .create(pkg).execute(pkgEnv);
-            } else {
-                Path srcAppImageDir = pkg.predefinedAppImage().orElseGet(() -> {
-                    // No predefined app image and no runtime builder.
-                    // This should be runtime packaging.
-                    if (pkg.isRuntimeInstaller()) {
-                        return env.appImageDir();
-                    } else {
-                        // Can't create app image without runtime builder.
-                        throw new UnsupportedOperationException();
-                    }
-                });
-
-                var srcLayout = pkg.appImageLayout().resolveAt(srcAppImageDir);
-                var srcLayoutPathGroup = AppImageLayout.toPathGroup(srcLayout);
-
-                if (srcLayout instanceof ApplicationLayout appLayout) {
-                    // Copy app layout omitting application image info file.
-                    srcLayoutPathGroup.ghostPath(AppImageFile.getPathInAppImage(appLayout));
-                }
-
-                srcLayoutPathGroup.copy(AppImageLayout.toPathGroup(
-                        pkg.packageLayout().resolveAt(pkgEnv.appImageDir())));
-            }
-
             for (var ca : customActions) {
                 ca.init(pkgEnv, pkg);
             }

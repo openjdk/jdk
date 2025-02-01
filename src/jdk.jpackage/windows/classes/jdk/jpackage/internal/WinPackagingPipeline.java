@@ -24,12 +24,13 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.AppImageBuilder.createLauncherIconResource;
+import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconResource;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import jdk.jpackage.internal.PackagingPipeline.AppImageTaskID;
-import jdk.jpackage.internal.PackagingPipeline.TopLevelTaskID;
+import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
+import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.PackagerException;
@@ -38,17 +39,18 @@ import jdk.jpackage.internal.model.WinLauncher;
 
 final class WinPackagingPipeline {
 
-    enum WinAppImageTaskID implements AppImageTaskID {
+    enum WinAppImageTaskID implements TaskID {
         REBRAND_LAUNCHERS
     }
 
     static PackagingPipeline.Builder build() {
         return PackagingPipeline.buildStandard()
                 .inputApplicationLayoutForPackaging(pkg -> pkg.app().asApplicationLayout())
-                .linkTasks(WinAppImageTaskID.REBRAND_LAUNCHERS, TopLevelTaskID.BUILD_APPLICATION_IMAGE)
-                .linkTasks(AppImageTaskID.LAUNCHERS, WinAppImageTaskID.REBRAND_LAUNCHERS)
-                .task(TopLevelTaskID.COPY_APP_IMAGE).noaction().add()
-                .task(WinAppImageTaskID.REBRAND_LAUNCHERS).action(WinPackagingPipeline::rebrandLaunchers).add();
+                .task(PrimaryTaskID.COPY_APP_IMAGE).noaction().add()
+                .task(WinAppImageTaskID.REBRAND_LAUNCHERS)
+                        .addDependency(AppImageTaskID.LAUNCHERS)
+                        .addDependent(PrimaryTaskID.BUILD_APPLICATION_IMAGE)
+                        .action(WinPackagingPipeline::rebrandLaunchers).add();
     }
 
     private static void rebrandLaunchers(BuildEnv env, Application app,
