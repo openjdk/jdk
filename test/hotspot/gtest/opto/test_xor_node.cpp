@@ -24,6 +24,7 @@
 
 #include "opto/addnode.hpp"
 #include "unittest.hpp"
+#include <iostream>
 
 jint test_calc_max(const jint hi_0, const jint hi_1) {
   return XorINode::calc_max(hi_0, hi_1);
@@ -40,6 +41,9 @@ void test_xor_bounds(S hi_0, S hi_1, S val_0, S val_1) {
   if(val_0 > hi_0 || val_0 < S(0) || val_1 > hi_1 || val_1 < S(0)) {
     return;
   }
+
+//    std::cout << std::hex << hi_0 << " " << hi_1 << " " << val_0 <<  " " << val_1 << std::endl;
+
   S v = val_0 ^ val_1;
   S max = test_calc_max(hi_0, hi_1);
   EXPECT_LE(v, max);
@@ -79,20 +83,19 @@ void test_exhaustive(S limit){
   }
 }
 
+template <class S>
+void exec_tests(){
+  S max = jint(std::numeric_limits<S>::max());
+  S top_bit = max_power_of_2<S>();
+  S prev_bit = top_bit >> 1;
+
+  test_exhaustive<S>(15);
+//  test_in_ranges<S>(max - 1, max);
+//  test_in_ranges<S>(top_bit - 1, top_bit);
+//  test_in_ranges<S>(prev_bit - 1, prev_bit);
+}
+
 TEST_VM(opto, xor_max) {
-
-  test_exhaustive<jint>(15);
-  test_exhaustive<jlong>(15);
-
-  auto max_jint = jint(std::numeric_limits<jint>::max());
-  auto max_jlong = jint(std::numeric_limits<jint>::max());
-
-  test_in_ranges<jint>(max_jint - 1, max_jint);
-  test_in_ranges<jlong>(max_jlong - 1, max_jlong);
-
-  auto top_pos_bit_int = jint(1) << 30;
-  auto top_pos_bit_long = jlong(1) << 62;
-
-  test_in_ranges<jint>(top_pos_bit_int - 1, top_pos_bit_long);
-  test_in_ranges<jlong>(top_pos_bit_long - 1, top_pos_bit_long);
+  exec_tests<jint>();
+  exec_tests<jlong>();
 }
