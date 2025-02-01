@@ -25,6 +25,9 @@
 
 package jdk.jpackage.internal.pipeline;
 
+import static jdk.jpackage.internal.pipeline.ImmutableDAG.getIncomingEdges;
+import static jdk.jpackage.internal.pipeline.ImmutableDAG.getNoOutgoingEdges;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -147,7 +150,7 @@ public final class TaskPipelineBuilder {
             for (final var task : taskGraph.topologicalSort()) {
                 final var taskIndex = taskGraph.nodes().indexOf(task);
 
-                final var dependencyTaskFutures = ImmutableDAG.getIncomingEdges(taskIndex, taskGraph.edgeMatrix())
+                final var dependencyTaskFutures = getIncomingEdges(taskIndex, taskGraph.edgeMatrix())
                         .map(BinaryMatrix.Cursor::row)
                         .map(dependencyTaskIndex -> {
                             return taskFutures[dependencyTaskIndex];
@@ -163,9 +166,9 @@ public final class TaskPipelineBuilder {
                 taskFutures[taskIndex] = f;
             }
 
-            final CompletableFuture <?>[] rootFutures = taskGraph.getNoOutgoingEdges().stream().map(task -> {
-                return taskFutures[taskGraph.nodes().indexOf(task)];
-            }).toArray(CompletableFuture []::new);
+            final var rootFutures = getNoOutgoingEdges(taskGraph.edgeMatrix()).mapToObj(taskIndex -> {
+                return taskFutures[taskIndex];
+            }).toArray(CompletableFuture[]::new);
 
             final CompletableFuture <?> rootFuture;
             if (rootFutures.length == 1) {
