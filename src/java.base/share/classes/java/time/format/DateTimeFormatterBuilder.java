@@ -3187,7 +3187,20 @@ public final class DateTimeFormatterBuilder {
             ) {
                 return ~position;
             }
-            return setValue(context, d0 * 10 + d1, position, position + 2);
+            return setValue(context, digit2(d0, d1), position, position + 2);
+        }
+
+        protected final int parseFixedWidth3NotNegative(DateTimeParseContext context, CharSequence text, int position) {
+            int d0, d1, d2;
+            var decimalStyle = context.getDecimalStyle();
+            if (((text.length() - position - 3)
+                    | (d0 = decimalStyle.convertToDigit(text.charAt(position    )))
+                    | (d1 = decimalStyle.convertToDigit(text.charAt(position + 1)))
+                    | (d2 = decimalStyle.convertToDigit(text.charAt(position + 2)))) < 0
+            ) {
+                return ~position;
+            }
+            return setValue(context, digit3(d0, d1, d2), position, position + 3);
         }
 
         @Override
@@ -3348,7 +3361,7 @@ public final class DateTimeFormatterBuilder {
             return pos | (((long) total) << 32);
         }
 
-        protected long parseFixedWidth2NotNegative(CharSequence text, int position) {
+        protected final long parseFixedWidth2NotNegative(CharSequence text, int position) {
             int d0, d1;
             if (((text.length() - position - 2)
                     | (d0 = digit(text.charAt(position    )))
@@ -3356,7 +3369,27 @@ public final class DateTimeFormatterBuilder {
             ) {
                 return ~position;
             }
-            return (position + 2) | (((long) (d0 * 10 + d1)) << 32);
+            return (position + 2) | (((long) digit2(d0, d1)) << 32);
+        }
+
+        protected final long parseFixedWidth3NotNegative(CharSequence text, int position) {
+            int d0, d1, d2;
+            if (((text.length() - position - 3)
+                    | (d0 = digit(text.charAt(position    )))
+                    | (d1 = digit(text.charAt(position + 1)))
+                    | (d2 = digit(text.charAt(position + 2)))) < 0
+            ) {
+                return ~position;
+            }
+            return (position + 3) | (((long) digit3(d0, d1, d2)) << 32);
+        }
+
+        protected int digit2(int d0, int d1) {
+            return d0 * 10 + d1;
+        }
+
+        protected int digit3(int d0, int d1, int d2) {
+            return d0 * 100 + d1 * 10 + d2;
         }
 
         static int digit(char ch) {
@@ -3766,6 +3799,14 @@ public final class DateTimeFormatterBuilder {
                 total *= 10;
             }
             return pos | (((long) total) << 32);
+        }
+
+        protected final int digit2(int d0, int d1, int d2) {
+            return d0 * 100_000_000 + d1 * 10_000_000;
+        }
+
+        protected final int digit3(int d0, int d1, int d2) {
+            return d0 * 100_000_000 + d1 * 10_000_000 + d2 * 1_000_000;
         }
 
         @Override
@@ -6688,14 +6729,15 @@ public final class DateTimeFormatterBuilder {
         }
 
         static String parseMethod(DateTimePrinterParser pp) {
-            String parse = "parse";
-            if (pp instanceof NumberPrinterParser npp
-                    && npp.signStyle == SignStyle.NOT_NEGATIVE
-                    && npp.minWidth == 2 && npp.maxWidth == 2
-            ) {
-                parse = "parseFixedWidth2NotNegative";
+            String method = "parse";
+            if (pp instanceof NumberPrinterParser npp && npp.signStyle == SignStyle.NOT_NEGATIVE) {
+                if (npp.minWidth == 2 && npp.maxWidth == 2) {
+                    method = "parseFixedWidth2NotNegative";
+                } else if (npp.minWidth == 3 && npp.maxWidth == 3) {
+                    method = "parseFixedWidth3NotNegative";
+                }
             }
-            return parse;
+            return method;
         }
     }
 }
