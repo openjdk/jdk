@@ -39,11 +39,9 @@ void test_xor_bounds(S hi_0, S hi_1, S val_0, S val_1) {
   ASSERT_GE(hi_1, 0);
 
   // Skip out-of-bounds values for convenience
-  if(val_0 > hi_0 || val_0 < S(0) || val_1 > hi_1 || val_1 < S(0)) {
+  if (val_0 > hi_0 || val_0 < S(0) || val_1 > hi_1 || val_1 < S(0)) {
     return;
   }
-
-//    std::cout << std::hex << hi_0 << " " << hi_1 << " " << val_0 <<  " " << val_1 << std::endl;
 
   S v = val_0 ^ val_1;
   S max = test_calc_max(hi_0, hi_1);
@@ -51,10 +49,9 @@ void test_xor_bounds(S hi_0, S hi_1, S val_0, S val_1) {
 }
 
 template <class S>
-void test_sample_values(S hi_0, S hi_1){
-
-  for(S i = 0; i <= 3; i++){
-    for(S j = 0; j <= 3; j++){
+void test_sample_values(S hi_0, S hi_1) {
+  for (S i = 0; i <= 3; i++) {
+    for (S j = 0; j <= 3; j++) {
       // Some bit combinations near the low and high ends of the range
       test_xor_bounds(hi_0, hi_1, i, j);
       test_xor_bounds(hi_0, hi_1, hi_0 - i, hi_1 - j);
@@ -67,19 +64,19 @@ void test_in_ranges(S lo, S hi){
   ASSERT_GE(lo, 0);
   ASSERT_LE(lo, hi);
 
-  for(S hi_0 = lo; hi_0 <= hi; hi_0++){
-    for(S hi_1 = hi_0; hi_1 <=hi; hi_1++){
+  for (S hi_0 = lo; hi_0 <= hi; hi_0++) {
+    for (S hi_1 = hi_0; hi_1 <=hi; hi_1++) {
       test_sample_values(hi_0, hi_1);
     }
   }
 }
 
 template <class S>
-void test_exhaustive(S limit){
-  for(S hi_0 = 0; hi_0 <= limit; hi_0++){
-    for(S hi_1 = hi_0; hi_1 <= limit; hi_1++){
-      for(S val_0 = 0; val_0 <= hi_0; val_0++){
-        for(S val_1 = val_0; val_1 <= hi_1; val_1++){
+void test_exhaustive(S limit) {
+  for (S hi_0 = 0; hi_0 <= limit; hi_0++) {
+    for (S hi_1 = hi_0; hi_1 <= limit; hi_1++) {
+      for (S val_0 = 0; val_0 <= hi_0; val_0++) {
+        for (S val_1 = val_0; val_1 <= hi_1; val_1++) {
           test_xor_bounds(hi_0, hi_1, val_0, val_1);
         }
       }
@@ -88,7 +85,7 @@ void test_exhaustive(S limit){
 }
 
 template <class S>
-void exec_tests(){
+void exec_tests() {
   S top_bit = max_power_of_2<S>();
   S prev_bit = top_bit >> 1;
 
