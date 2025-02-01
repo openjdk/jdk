@@ -43,12 +43,12 @@ public class XorINodeIdealizationTests {
     }
 
     @Run(test = {"test1", "test2", "test3",
-            "test4", "test5", "test6",
-            "test7", "test8", "test9",
-            "test10", "test11", "test12",
-            "test13", "test14", "test15",
-            "test16", "test17",
-            "testConstXor", "testXorSelf"
+                 "test4", "test5", "test6",
+                 "test7", "test8", "test9",
+                 "test10", "test11", "test12",
+                 "test13", "test14", "test15",
+                 "test16", "test17",
+                 "testConstXor", "testXorSelf"
     })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
@@ -84,10 +84,9 @@ public class XorINodeIdealizationTests {
         Asserts.assertEQ(~a                 , test15(a));
         Asserts.assertEQ((~a + b) + (~a | c), test16(a, b, c));
         Asserts.assertEQ(-2023 - a          , test17(a));
-        Asserts.assertEQ(CONST_1 ^ CONST_2, testConstXor());
-        Asserts.assertEQ(0, testXorSelf(a));
+        Asserts.assertEQ(CONST_1 ^ CONST_2  , testConstXor());
+        Asserts.assertEQ(0                  , testXorSelf(a));
     }
-
 
     @Test
     @IR(failOn = {IRNode.XOR, IRNode.ADD})
@@ -277,6 +276,41 @@ public class XorINodeIdealizationTests {
         return x ^ x;
     }
 
+    @Run(test = {
+            "testFoldableXor", "testXorConstRange"
+    })
+    public void runRangeTests() {
+        int a = G.next();
+        int b = G.next();
+        checkXor(a, b);
+
+        for (a = 0; a < 16; a++) {
+            for (b = a; b < 16; b++) {
+                checkXor(a, b);
+            }
+        }
+    }
+
+    @DontCompile
+    public void checkXor(int a, int b) {
+        Asserts.assertEQ(true, testFoldableXor(a, b));
+        Asserts.assertEQ((a & 0b1000) ^ (b & 0b1000), testXorConstRange(a, b));
+    }
+
+    @Test
+    public int testXorConstRange(int x, int y) {
+        return (x & 0b1000) ^ (y & 0b1000);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"})
+    public boolean testFoldableXor(int x, int y) {
+        var xor = (x & 0b111) ^ (y & 0b100);
+        return xor < 0b1000;
+    }
+
+/*
     private static final Range RANGE_1;
     private static final Range RANGE_2;
     private static final int XOR_MAX_OF_RANGES;
@@ -351,4 +385,5 @@ public class XorINodeIdealizationTests {
             return new Range(a, b);
         }
     }
+    */
 }

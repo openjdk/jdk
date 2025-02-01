@@ -51,13 +51,13 @@ public class XorLNodeIdealizationTests {
                  "testConstXor", "testXorSelf",
     })
     public void runMethod() {
-        long min = Long.MIN_VALUE;
-        long max = Long.MAX_VALUE;
-
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
         long c = RunInfo.getRandom().nextLong();
         long d = RunInfo.getRandom().nextLong();
+
+        long min = Long.MIN_VALUE;
+        long max = Long.MAX_VALUE;
 
         assertResult(0, 0, 0, 0);
         assertResult(a, b, c, d);
@@ -85,7 +85,7 @@ public class XorLNodeIdealizationTests {
         Asserts.assertEQ((~a + b) + (~a | c), test16(a, b, c));
         Asserts.assertEQ(-2023 - a          , test17(a));
         Asserts.assertEQ(CONST_1 ^ CONST_2  , testConstXor());
-        Asserts.assertEQ(0L                  , testXorSelf(a));
+        Asserts.assertEQ(0L                 , testXorSelf(a));
     }
 
     @Test
@@ -241,5 +241,39 @@ public class XorLNodeIdealizationTests {
     // Checks (x ^ x)  => c (constant folded)
     public long testXorSelf(long x) {
         return x ^ x;
+    }
+
+    @Run(test = {
+            "testFoldableXor", "testXorConstRange"
+    })
+    public void runRangeTests() {
+        long a = G.next();
+        long b = G.next();
+        checkXor(a, b);
+
+        for (a = 0; a < 16; a++) {
+            for (b = a; b < 16; b++) {
+                checkXor(a, b);
+            }
+        }
+    }
+
+    @DontCompile
+    public void checkXor(long a, long b) {
+        Asserts.assertEQ(true, testFoldableXor(a, b));
+        Asserts.assertEQ((a & 0b1000) ^ (b & 0b1000), testXorConstRange(a, b));
+    }
+
+    @Test
+    public long testXorConstRange(long x, long y) {
+        return (x & 0b1000) ^ (y & 0b1000);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"}) // note boolean is a CON_I
+    public boolean testFoldableXor(long x, long y) {
+        var xor = (x & 0b111) ^ (y & 0b100);
+        return xor < 0b1000;
     }
 }
