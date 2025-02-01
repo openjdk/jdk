@@ -90,7 +90,7 @@ void exec_tests(){
   S prev_bit = top_bit >> 1;
 
   test_exhaustive<S>(15);
-//  test_in_ranges<S>(max - 1, max);
+  test_in_ranges<S>(max - 1, max);
 //  test_in_ranges<S>(top_bit - 1, top_bit);
 //  test_in_ranges<S>(prev_bit - 1, prev_bit);
 }
