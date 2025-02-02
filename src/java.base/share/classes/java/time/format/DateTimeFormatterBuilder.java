@@ -2654,7 +2654,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         static long valuePos(int value, int pos) {
-            return (pos) | (((long) value) << 32);
+            return (((long) value) << 32) | pos;
         }
 
         static DateTimeParseException error(CharSequence text, int pos) {
