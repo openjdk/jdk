@@ -2653,6 +2653,10 @@ public final class DateTimeFormatterBuilder {
             return (int) (valuePos >> 32);
         }
 
+        static long valuePos(int value, int pos) {
+            return (pos) | (((long) value) << 32);
+        }
+
         static DateTimeParseException error(CharSequence text, int pos) {
             String abbr;
             if (text.length() > 64) {
@@ -3305,6 +3309,9 @@ public final class DateTimeFormatterBuilder {
             return setValue(context, total, position, pos);
         }
 
+        /**
+         * A variant of the parse method that returns a combination of value and position.
+         */
         protected long parse(CharSequence text, int position) {
             int length = text.length();
             if (position == length) {
@@ -3358,7 +3365,7 @@ public final class DateTimeFormatterBuilder {
                 }
             }
 
-            return pos | (((long) total) << 32);
+            return CompositePrinterParser.valuePos(total, pos);
         }
 
         protected final long parseFixedWidth2NotNegative(CharSequence text, int position) {
@@ -3369,7 +3376,7 @@ public final class DateTimeFormatterBuilder {
             ) {
                 return ~position;
             }
-            return (position + 2) | (((long) digit2(d0, d1)) << 32);
+            return CompositePrinterParser.valuePos(digit2(d0, d1), position + 2);
         }
 
         protected final long parseFixedWidth3NotNegative(CharSequence text, int position) {
@@ -3381,7 +3388,7 @@ public final class DateTimeFormatterBuilder {
             ) {
                 return ~position;
             }
-            return (position + 3) | (((long) digit3(d0, d1, d2)) << 32);
+            return CompositePrinterParser.valuePos(digit3(d0, d1, d2), position + 3);
         }
 
         protected int digit2(int d0, int d1) {
@@ -3798,7 +3805,7 @@ public final class DateTimeFormatterBuilder {
             for (int i = 9 - (pos - position); i > 0; i--) {
                 total *= 10;
             }
-            return pos | (((long) total) << 32);
+            return CompositePrinterParser.valuePos(total, pos);
         }
 
         protected final int digit2(int d0, int d1, int d2) {
@@ -4388,7 +4395,6 @@ public final class DateTimeFormatterBuilder {
             char sign = text.charAt(position);  // IOOBE if invalid position
             if (sign == '+' || sign == '-') {
                 // starts
-                int negative = (sign == '-' ? -1 : 1);
                 boolean isColon = isColon();
                 boolean paddedHour = isPaddedHour();
                 int[] array = new int[4];
@@ -4413,64 +4419,15 @@ public final class DateTimeFormatterBuilder {
                     }
                 }
                 // parse according to the selected pattern
-                switch (parseType) {
-                    case 0: // +HH
-                    case 11: // +H
-                        parseHour(text, paddedHour, array);
-                        break;
-                    case 1: // +HHmm
-                    case 2: // +HH:mm
-                    case 13: // +H:mm
-                        parseHour(text, paddedHour, array);
-                        parseMinute(text, isColon, false, array);
-                        break;
-                    case 3: // +HHMM
-                    case 4: // +HH:MM
-                    case 15: // +H:MM
-                        parseHour(text, paddedHour, array);
-                        parseMinute(text, isColon, true, array);
-                        break;
-                    case 5: // +HHMMss
-                    case 6: // +HH:MM:ss
-                    case 17: // +H:MM:ss
-                        parseHour(text, paddedHour, array);
-                        parseMinute(text, isColon, true, array);
-                        parseSecond(text, isColon, false, array);
-                        break;
-                    case 7: // +HHMMSS
-                    case 8: // +HH:MM:SS
-                    case 19: // +H:MM:SS
-                        parseHour(text, paddedHour, array);
-                        parseMinute(text, isColon, true, array);
-                        parseSecond(text, isColon, true, array);
-                        break;
-                    case 9: // +HHmmss
-                    case 10: // +HH:mm:ss
-                    case 21: // +H:mm:ss
-                        parseHour(text, paddedHour, array);
-                        parseOptionalMinuteSecond(text, isColon, array);
-                        break;
-                    case 12: // +Hmm
-                        parseVariableWidthDigits(text, 1, 4, array);
-                        break;
-                    case 14: // +HMM
-                        parseVariableWidthDigits(text, 3, 4, array);
-                        break;
-                    case 16: // +HMMss
-                        parseVariableWidthDigits(text, 3, 6, array);
-                        break;
-                    case 18: // +HMMSS
-                        parseVariableWidthDigits(text, 5, 6, array);
-                        break;
-                    case 20: // +Hmmss
-                        parseVariableWidthDigits(text, 1, 6, array);
-                        break;
-                }
+                parse(text, parseType, paddedHour, array, isColon);
                 if (array[0] > 0) {
-                    if (array[1] > 23 || array[2] > 59 || array[3] > 59) {
+                    if (array[1] > 23 | array[2] > 59 | array[3] > 59) {
                         throw new DateTimeException("Value out of range: Hour[0-23], Minute[0-59], Second[0-59]");
                     }
-                    long offsetSecs = negative * (array[1] * 3600L + array[2] * 60L + array[3]);
+                    long offsetSecs = array[1] * 3600L + array[2] * 60L + array[3];
+                    if (sign == '-') {
+                        offsetSecs = -offsetSecs;
+                    }
                     return context.setParsedField(OFFSET_SECONDS, offsetSecs, position, array[0]);
                 }
             }
@@ -4479,6 +4436,98 @@ public final class DateTimeFormatterBuilder {
                 return context.setParsedField(OFFSET_SECONDS, 0, position, position);
             }
             return ~position;
+        }
+
+        /**
+         * A variant of the parse method that returns a combination of value and position.
+         */
+        final long parse(CharSequence text, int position) {
+            int length = text.length();
+            int noOffsetLen = noOffsetText.length();
+            if (position == length) {
+                return noOffsetLen == 0 ? position : ~position;
+            }
+
+            // parse normal plus/minus offset
+            char sign = text.charAt(position);  // IOOBE if invalid position
+            if (sign == '+' || sign == '-') {
+                // starts
+                int[] array = new int[4];
+                array[0] = position + 1;
+                // parse according to the selected pattern
+                parse(text, type, isPaddedHour(), array, isColon());
+                if (array[0] > 0) {
+                    if (array[1] > 23 | array[2] > 59 | array[3] > 59) {
+                        throw new DateTimeException("Value out of range: Hour[0-23], Minute[0-59], Second[0-59]");
+                    }
+                    int offsetSecs = (array[1] * 3600 + array[2] * 60 + array[3]);
+                    if (sign == '-') {
+                        offsetSecs = -offsetSecs;
+                    }
+                    return CompositePrinterParser.valuePos(offsetSecs, array[0]);
+                }
+            }
+            // handle special case of empty no offset text
+            if (noOffsetLen == 0) {
+                return position;
+            }
+            return ~position;
+        }
+
+        private void parse(CharSequence text, int parseType, boolean paddedHour, int[] array, boolean isColon) {
+            switch (parseType) {
+                case 0: // +HH
+                case 11: // +H
+                    parseHour(text, paddedHour, array);
+                    break;
+                case 1: // +HHmm
+                case 2: // +HH:mm
+                case 13: // +H:mm
+                    parseHour(text, paddedHour, array);
+                    parseMinute(text, isColon, false, array);
+                    break;
+                case 3: // +HHMM
+                case 4: // +HH:MM
+                case 15: // +H:MM
+                    parseHour(text, paddedHour, array);
+                    parseMinute(text, isColon, true, array);
+                    break;
+                case 5: // +HHMMss
+                case 6: // +HH:MM:ss
+                case 17: // +H:MM:ss
+                    parseHour(text, paddedHour, array);
+                    parseMinute(text, isColon, true, array);
+                    parseSecond(text, isColon, false, array);
+                    break;
+                case 7: // +HHMMSS
+                case 8: // +HH:MM:SS
+                case 19: // +H:MM:SS
+                    parseHour(text, paddedHour, array);
+                    parseMinute(text, isColon, true, array);
+                    parseSecond(text, isColon, true, array);
+                    break;
+                case 9: // +HHmmss
+                case 10: // +HH:mm:ss
+                case 21: // +H:mm:ss
+                    parseHour(text, paddedHour, array);
+                    parseOptionalMinuteSecond(text, isColon, array);
+                    break;
+                case 12: // +Hmm
+                    parseVariableWidthDigits(text, 1, 4, array);
+                    break;
+                case 14: // +HMM
+                    parseVariableWidthDigits(text, 3, 4, array);
+                    break;
+                case 16: // +HMMss
+                    parseVariableWidthDigits(text, 3, 6, array);
+                    break;
+                case 18: // +HMMSS
+                    parseVariableWidthDigits(text, 5, 6, array);
+                    break;
+                case 20: // +Hmmss
+                    parseVariableWidthDigits(text, 1, 6, array);
+                    break;
+            }
         }
 
         private void parseHour(CharSequence parseText, boolean paddedHour, int[] array) {
@@ -5981,6 +6030,8 @@ public final class DateTimeFormatterBuilder {
                 CD_TemporalField               = ClassDesc.ofDescriptor("Ljava/time/temporal/TemporalField;"),
                 CD_LocalDate                   = ClassDesc.ofDescriptor("Ljava/time/LocalDate;"),
                 CD_LocalDateTime               = ClassDesc.ofDescriptor("Ljava/time/LocalDateTime;"),
+                CD_ZoneOffset                  = ClassDesc.ofDescriptor("Ljava/time/ZoneOffset;"),
+                CD_OffsetDateTime              = ClassDesc.ofDescriptor("Ljava/time/OffsetDateTime;"),
                 CD_LocalTime                   = ClassDesc.ofDescriptor("Ljava/time/LocalTime;"),
                 CD_CharLiteralPrinterParser    = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$CharLiteralPrinterParser;"),
                 CD_ChronoField                 = ClassDesc.ofDescriptor("Ljava/time/temporal/ChronoField;"),
@@ -5993,6 +6044,7 @@ public final class DateTimeFormatterBuilder {
                 CD_DecimalStyle                = ClassDesc.ofDescriptor("Ljava/time/format/DecimalStyle;"),
                 CD_NanosPrinterParser          = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NanosPrinterParser;"),
                 CD_NumberPrinterParser         = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser;"),
+                CD_OffsetIdPrinterParser       = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$OffsetIdPrinterParser;"),
                 CD_TemporalAccessor            = ClassDesc.ofDescriptor("Ljava/time/temporal/TemporalAccessor;"),
                 CD_TemporalQuery               = ClassDesc.ofDescriptor("Ljava/time/temporal/TemporalQuery;");
         static final MethodTypeDesc
@@ -6020,6 +6072,8 @@ public final class DateTimeFormatterBuilder {
                 MTD_parse                     = MethodTypeDesc.of(CD_Object, CD_CharSequence, CD_DateTimeFormatter, CD_TemporalQuery),
                 MTD_parseValue                = MethodTypeDesc.of(CD_int, CD_DateTimeParseContext, CD_CharSequence, CD_int),
                 MTD_LocalDateTime_Of          = MethodTypeDesc.of(CD_LocalDateTime, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int),
+                MTD_OffsetDateTime_Of         = MethodTypeDesc.of(CD_OffsetDateTime, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int, CD_ZoneOffset),
+                MTD_ZoneOffset_ofTotalSeconds = MethodTypeDesc.of(CD_ZoneOffset, CD_int),
                 MTD_LocalDate_Of              = MethodTypeDesc.of(CD_LocalDate, CD_int, CD_int, CD_int),
                 MTD_LocalTime_Of              = MethodTypeDesc.of(CD_LocalTime, CD_int, CD_int, CD_int, CD_int);
 
@@ -6056,8 +6110,13 @@ public final class DateTimeFormatterBuilder {
 
                             Set<ChronoField> fields = new HashSet<>();
                             boolean allOfLiteralOrNumber = true;
+                            int offsetPrinterParserCount = 0;
                             for (var pp : printerParsers) {
                                 if (pp instanceof CharLiteralPrinterParser) {
+                                    continue;
+                                }
+                                if (pp instanceof OffsetIdPrinterParser) {
+                                    offsetPrinterParserCount++;
                                     continue;
                                 }
                                 if (pp instanceof NumberPrinterParser npp && npp.field instanceof ChronoField chronoField) {
@@ -6068,7 +6127,7 @@ public final class DateTimeFormatterBuilder {
                                 break;
                             }
 
-                            if (allOfLiteralOrNumber) {
+                            if (allOfLiteralOrNumber && offsetPrinterParserCount <= 1) {
                                 boolean localDateTime = false, localDate = false, localTime = false;
                                 if (fields.size() == 7) {
                                     localDateTime = containsLocalDate(fields) && containsLocalTime(fields, true);
@@ -6085,7 +6144,11 @@ public final class DateTimeFormatterBuilder {
                                     clb.withMethodBody("parse",
                                             MTD_parse,
                                             ACC_PUBLIC | ACC_FINAL,
-                                            generateParseLocalDateTime(classDesc, printerParsers, fields));
+                                            generateParseDirect(
+                                                    classDesc,
+                                                    printerParsers,
+                                                    fields,
+                                                    offsetPrinterParserCount == 1));
                                 }
                             }
                         }});
@@ -6526,7 +6589,9 @@ public final class DateTimeFormatterBuilder {
         }
 
         /**
-         * Generate parse method
+         * Generate parse method, Optimizes parsing performance by leveraging built-in temporal queries
+         *  (LocalDate/LocalDateTime/OffsetDateTime), eliminating the overhead
+         *  of constructing new DateTimeParseContext instances.
          *
          * The following is an example of the generated target code:
          *
@@ -6557,10 +6622,11 @@ public final class DateTimeFormatterBuilder {
          *  }
          * </pre></blockquote>
          */
-        private static Consumer<CodeBuilder> generateParseLocalDateTime(
+        private static Consumer<CodeBuilder> generateParseDirect(
                 ClassDesc classDesc,
                 DateTimePrinterParser[] printerParsers,
-                Set<ChronoField> fields
+                Set<ChronoField> fields,
+                boolean includeOffset
         ) {
             return new Consumer<CodeBuilder>() {
                 @Override
@@ -6573,26 +6639,30 @@ public final class DateTimeFormatterBuilder {
                     int valuePosSlot  = cb.allocateLocal(TypeKind.LONG),
                         posSlot       = cb.allocateLocal(TypeKind.INT);
 
-                    int yearSlot       = -1,
-                        monthSlot      = -1,
-                        dayOfMonthSlot = -1,
-                        hourSlot       = -1,
-                        minuteSlot     = -1,
-                        secondSlot     = -1,
-                        nanoSlot       = -1;
+                    int yearSlot          = -1,
+                        monthSlot         = -1,
+                        dayOfMonthSlot    = -1,
+                        hourSlot          = -1,
+                        minuteSlot        = -1,
+                        secondSlot        = -1,
+                        nanoSlot          = -1,
+                        offsetSecondsSlot = -1;
 
                     for (var field : fields) {
                         int slot = cb.allocateLocal(TypeKind.INT);
                         switch (field) {
-                            case YEAR,YEAR_OF_ERA -> yearSlot       = slot;
-                            case MONTH_OF_YEAR    -> monthSlot      = slot;
-                            case DAY_OF_MONTH     -> dayOfMonthSlot = slot;
-                            case HOUR_OF_DAY      -> hourSlot       = slot;
-                            case MINUTE_OF_HOUR   -> minuteSlot     = slot;
-                            case SECOND_OF_MINUTE -> secondSlot     = slot;
-                            case NANO_OF_SECOND   -> nanoSlot       = slot;
+                            case YEAR,YEAR_OF_ERA -> yearSlot          = slot;
+                            case MONTH_OF_YEAR    -> monthSlot         = slot;
+                            case DAY_OF_MONTH     -> dayOfMonthSlot    = slot;
+                            case HOUR_OF_DAY      -> hourSlot          = slot;
+                            case MINUTE_OF_HOUR   -> minuteSlot        = slot;
+                            case SECOND_OF_MINUTE -> secondSlot        = slot;
+                            case NANO_OF_SECOND   -> nanoSlot          = slot;
                             default               -> throw new AssertionError();
                         }
+                    }
+                    if (includeOffset) {
+                        offsetSecondsSlot = cb.allocateLocal(TypeKind.INT);
                     }
 
                     /*
@@ -6621,9 +6691,21 @@ public final class DateTimeFormatterBuilder {
                     for (int i = 0; i < printerParsers.length; i++) {
                         var pp = printerParsers[i];
                         var paramType = paramType(pp);
-                        if (pp instanceof NumberPrinterParser npp) {
+                        if (pp instanceof OffsetIdPrinterParser opp) {
                             /*
-                             * valuePos = printerParserN.parse(context, text, pos)
+                             * valuePos = offsetPrinterParserN.parse(text, pos)
+                             */
+                            cb.aload(thisSlot)
+                              .getfield(classDesc, "printerParser" + i, paramType)
+                              .aload(textSlot)
+                              .iload(posSlot)
+                              .invokevirtual(CD_OffsetIdPrinterParser, "parse", MTD_long_CharSequence_int)
+                              .lstore(valuePosSlot);
+
+                            posValue(cb, textSlot, valuePosSlot, posSlot, offsetSecondsSlot);
+                        } else if (pp instanceof NumberPrinterParser npp) {
+                            /*
+                             * valuePos = printerParserN.parse(text, pos)
                              */
                             cb.aload(thisSlot)
                               .getfield(classDesc, "printerParser" + i, paramType)
@@ -6631,14 +6713,6 @@ public final class DateTimeFormatterBuilder {
                               .iload(posSlot)
                               .invokevirtual(CD_NumberPrinterParser, parseMethod(pp), MTD_long_CharSequence_int)
                               .lstore(valuePosSlot);
-
-                            /*
-                             * pos = position(text, valuePos);
-                             */
-                            cb.aload(textSlot)
-                              .lload(valuePosSlot)
-                              .invokestatic(CD_CompositePrinterParser, "position", MTD_int_CharSequence_long)
-                              .istore(posSlot);
 
                             int slot = switch ((ChronoField) npp.field) {
                                 case YEAR,YEAR_OF_ERA -> yearSlot;
@@ -6650,13 +6724,7 @@ public final class DateTimeFormatterBuilder {
                                 case NANO_OF_SECOND   -> nanoSlot;
                                 default               -> throw new AssertionError();
                             };
-
-                            /*
-                             * fieldValue = (int) (valuePosSlot >> 32);
-                             */
-                            cb.lload(valuePosSlot)
-                              .invokestatic(CD_CompositePrinterParser, "value", MTD_int_long)
-                              .istore(slot);
+                            posValue(cb, textSlot, valuePosSlot, posSlot, slot);
                         } else if (pp instanceof CharLiteralPrinterParser cpp) {
                             /*
                              * pos = litteral(text, pos, literal1);
@@ -6696,7 +6764,13 @@ public final class DateTimeFormatterBuilder {
                         } else {
                             cb.iconst_0();
                         }
-                        cb.invokestatic(CD_LocalDateTime, "of", MTD_LocalDateTime_Of);
+                        if (includeOffset) {
+                            cb.iload(offsetSecondsSlot)
+                              .invokestatic(CD_ZoneOffset, "ofTotalSeconds", MTD_ZoneOffset_ofTotalSeconds)
+                              .invokestatic(CD_OffsetDateTime, "of", MTD_OffsetDateTime_Of);
+                        } else {
+                            cb.invokestatic(CD_LocalDateTime, "of", MTD_LocalDateTime_Of);
+                        }
                     } else if (containsLocalDate) {
                         /*
                          * LocalDate.of(year, month, dayOfMonth));
@@ -6724,6 +6798,23 @@ public final class DateTimeFormatterBuilder {
 
                     cb.invokeinterface(CD_TemporalQuery, "queryFrom", MTD_OBJECT_TemporalAccessor)
                       .areturn();
+                }
+
+                void posValue(CodeBuilder cb, int textSlot, int valuePosSlot, int posSlot, int valueSlot) {
+                    /*
+                     * pos = position(text, valuePos);
+                     */
+                    cb.aload(textSlot)
+                      .lload(valuePosSlot)
+                      .invokestatic(CD_CompositePrinterParser, "position", MTD_int_CharSequence_long)
+                      .istore(posSlot);
+
+                    /*
+                     * fieldValue = (int) (valuePosSlot >> 32);
+                     */
+                    cb.lload(valuePosSlot)
+                      .invokestatic(CD_CompositePrinterParser, "value", MTD_int_long)
+                      .istore(valueSlot);
                 }
             };
         }
