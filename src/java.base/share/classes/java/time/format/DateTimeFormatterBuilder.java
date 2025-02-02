@@ -6079,7 +6079,7 @@ public final class DateTimeFormatterBuilder {
                 MTD_LocalTime_Of              = MethodTypeDesc.of(CD_LocalTime, CD_int, CD_int, CD_int, CD_int),
                 MTD_OffsetTime_Of             = MethodTypeDesc.of(CD_OffsetTime, CD_int, CD_int, CD_int, CD_int, CD_ZoneOffset);
 
-        private PrinterParserFactory() {
+        PrinterParserFactory() {
             // no instantiation
         }
 
@@ -6215,7 +6215,7 @@ public final class DateTimeFormatterBuilder {
             };
         }
 
-        private static ClassDesc paramType(DateTimePrinterParser pp) {
+        static ClassDesc paramType(DateTimePrinterParser pp) {
             if (pp instanceof NanosPrinterParser) {
                 return CD_NanosPrinterParser;
             } else if (pp instanceof NumberPrinterParser) {
@@ -6236,6 +6236,10 @@ public final class DateTimeFormatterBuilder {
          *
          * <blockquote><pre>
          *  public final boolean format(DateTimePrintContext context, StringBuilder buf) {
+         *      if (context.getDecimalStyle() != DecimalStyle.STANDARD) {
+         *          return super.parse(text, formatter, query);
+         *      }
+         *
          *      if (optional) {
          *          context.startOptional();
          *      }
@@ -6268,38 +6272,28 @@ public final class DateTimeFormatterBuilder {
          */
         static Consumer<CodeBuilder> generateFormat(ClassDesc classDesc, DateTimePrinterParser[] printerParsers, boolean optional) {
             return new Consumer<CodeBuilder>() {
-                int thisSlot;
-                int contextSlot;
-                int bufSlot;
-                int lengthSlot;
-                int valueLongSlot;
-                int decimalStyleSlot;
-                int temporalSlot;
+                int thisSlot,
+                    contextSlot,
+                    bufSlot,
+                    lengthSlot,
+                    temporalSlot;
 
                 @Override
                 public void accept(CodeBuilder cb) {
-                    thisSlot         = cb.receiverSlot();
-                    contextSlot      = cb.parameterSlot(0);
-                    bufSlot          = cb.parameterSlot(1);
-                    lengthSlot       = cb.allocateLocal(TypeKind.INT);
-                    valueLongSlot    = cb.allocateLocal(TypeKind.LONG);
-                    decimalStyleSlot = cb.allocateLocal(TypeKind.REFERENCE);
-                    temporalSlot     = cb.allocateLocal(TypeKind.REFERENCE);
+                    thisSlot     = cb.receiverSlot();
+                    contextSlot  = cb.parameterSlot(0);
+                    bufSlot      = cb.parameterSlot(1);
+                    lengthSlot   = cb.allocateLocal(TypeKind.INT);
+                    temporalSlot = cb.allocateLocal(TypeKind.REFERENCE);
 
                     /*
-                     * DecimalStyle decimalStyle = context.getDecimalStyle();
-                     */
-                    cb.aload(contextSlot)
-                      .invokevirtual(CD_DateTimePrintContext, "getDecimalStyle", MTD_DecimalStyle)
-                      .astore(decimalStyleSlot);
-
-                    /*
-                     *  if (decimalStyle != DecimalStyle.STANDARD) {
+                     *  if (context.getDecimalStyle() != DecimalStyle.STANDARD) {
                      *      return super.parse(text, formatter, query);
                      *  }
                      */
                     var L0 = cb.newLabel();
-                    cb.aload(decimalStyleSlot)
+                    cb.aload(contextSlot)
+                      .invokevirtual(CD_DateTimePrintContext, "getDecimalStyle", MTD_DecimalStyle)
                       .getstatic(CD_DecimalStyle, "STANDARD", CD_DecimalStyle)
                       .if_acmpeq(L0)
                       .aload(thisSlot)
@@ -6409,7 +6403,7 @@ public final class DateTimeFormatterBuilder {
                  *
                  * </pre></blockquote>
                  */
-                private void appendNumber(CodeBuilder cb, NumberPrinterParser pp, int index, Label LReturn) {
+                void appendNumber(CodeBuilder cb, NumberPrinterParser pp, int index, Label LReturn) {
                     /*
                      * if (context.isSupported(field)) {
                      *     break;
@@ -6446,40 +6440,7 @@ public final class DateTimeFormatterBuilder {
                                 // year = yearOfEra(year)
                                 cb.invokestatic(CD_NumberPrinterParser, "yearOfEra", MTD_int_int);
                             }
-
-                            var range = pp.field.range();
-                            long minimum = range.getMinimum(),
-                                 maximum = range.getMaximum();
-                            int maximumSize = DecimalDigits.stringSize(maximum),
-                                minimumSize = DecimalDigits.stringSize(Math.abs(minimum));
-
-                            String formatMethodName = "format";
-                            if (pp.signStyle == SignStyle.NOT_NEGATIVE) {
-                                if (pp.minWidth == 1 && pp.maxWidth == 1 && minimum >= 0 && maximumSize == 1) {
-                                    formatMethodName = "printValueWidth1NotNegative";
-                                } else if (pp.maxWidth == 2 && minimum >= 0) {
-                                    if (pp.minWidth == 1) {
-                                        formatMethodName = "printValueWidth2NotNegative";
-                                    } else if (pp.minWidth == 2) {
-                                        formatMethodName = "printValueFixedWidth2NotNegative";
-                                    }
-                                } else if (pp.minWidth == 3 && pp.maxWidth == 3) {
-                                    if (minimum >= 0 && maximumSize <= 3) {
-                                        formatMethodName = "printValueFixWidth3NotNegative";
-                                    } else if (chronoField == ChronoField.NANO_OF_SECOND) {
-                                        formatMethodName = "printNanoFixWidth3";
-                                    }
-                                } else if (pp.minWidth == 4 && pp.maxWidth == 4) {
-                                    formatMethodName = "printValueFixWidth4NotNegative";
-                                }
-                            } else if (pp.signStyle == SignStyle.EXCEEDS_PAD && pp.minWidth == 4
-                                    && maximum <= 1_000_000_000 && minimum >= -1_000_000_000
-                                    && minimumSize <= pp.maxWidth && maximumSize <= pp.maxWidth
-                            ) {
-                                formatMethodName = "printValueWidth4ExceedsPad";
-                            }
-
-                            cb.invokevirtual(CD_NumberPrinterParser, formatMethodName, MTD_formatValue_int);
+                            cb.invokevirtual(CD_NumberPrinterParser, formatMethod(pp), MTD_formatValue_int);
                             return;
                         }
                     }
@@ -6489,7 +6450,42 @@ public final class DateTimeFormatterBuilder {
                       .invokevirtual(CD_NumberPrinterParser, "format", MTD_formatValue_long);
                 }
 
-                private void getfield(CodeBuilder cb, NumberPrinterParser pp, int index) {
+                static String formatMethod(NumberPrinterParser pp) {
+                    var range = pp.field.range();
+                    long minimum = range.getMinimum(),
+                         maximum = range.getMaximum();
+                    int maximumSize = DecimalDigits.stringSize(maximum),
+                        minimumSize = DecimalDigits.stringSize(Math.abs(minimum));
+
+                    String method = "format";
+                    if (pp.signStyle == SignStyle.NOT_NEGATIVE) {
+                        if (pp.minWidth == 1 && pp.maxWidth == 1 && minimum >= 0 && maximumSize == 1) {
+                            method = "printValueWidth1NotNegative";
+                        } else if (pp.maxWidth == 2 && minimum >= 0) {
+                            if (pp.minWidth == 1) {
+                                method = "printValueWidth2NotNegative";
+                            } else if (pp.minWidth == 2) {
+                                method = "printValueFixedWidth2NotNegative";
+                            }
+                        } else if (pp.minWidth == 3 && pp.maxWidth == 3) {
+                            if (minimum >= 0 && maximumSize <= 3) {
+                                method = "printValueFixWidth3NotNegative";
+                            } else if (pp.field == ChronoField.NANO_OF_SECOND) {
+                                method = "printNanoFixWidth3";
+                            }
+                        } else if (pp.minWidth == 4 && pp.maxWidth == 4) {
+                            method = "printValueFixWidth4NotNegative";
+                        }
+                    } else if (pp.signStyle == SignStyle.EXCEEDS_PAD && pp.minWidth == 4
+                            && maximum <= 1_000_000_000 && minimum >= -1_000_000_000
+                            && minimumSize <= pp.maxWidth && maximumSize <= pp.maxWidth
+                    ) {
+                        method = "printValueWidth4ExceedsPad";
+                    }
+                    return method;
+                }
+
+                void getfield(CodeBuilder cb, NumberPrinterParser pp, int index) {
                     if (pp.field instanceof ChronoField chronoField) {
                         cb.getstatic(CD_ChronoField, chronoField.name(), CD_ChronoField);
                     } else {
@@ -6499,7 +6495,7 @@ public final class DateTimeFormatterBuilder {
                     }
                 }
 
-                private void appendLiteral(CodeBuilder cb, CharLiteralPrinterParser parser) {
+                void appendLiteral(CodeBuilder cb, CharLiteralPrinterParser parser) {
                     /*
                      * buf.append(literal);
                      */
@@ -6622,7 +6618,7 @@ public final class DateTimeFormatterBuilder {
          *  }
          * </pre></blockquote>
          */
-        private static Consumer<CodeBuilder> generateParseDirect(
+        static Consumer<CodeBuilder> generateParseDirect(
                 ClassDesc classDesc,
                 DateTimePrinterParser[] printerParsers,
                 Set<ChronoField> fields,
