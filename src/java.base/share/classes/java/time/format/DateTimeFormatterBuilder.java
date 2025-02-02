@@ -6590,7 +6590,7 @@ public final class DateTimeFormatterBuilder {
 
         /**
          * Generate parse method, Optimizes parsing performance by leveraging built-in temporal queries
-         *  (LocalDate/LocalDateTime/OffsetDateTime/OffsetTime), eliminating the overhead
+         *  (LocalDate/LocalDateTime/LocalTime/OffsetDateTime/OffsetTime), eliminating the overhead
          *  of constructing new DateTimeParseContext instances.
          *
          * The following is an example of the generated target code:
