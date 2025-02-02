@@ -3761,6 +3761,20 @@ bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
   Node* test_pin_count_over_underflow = _gvn.transform(new BoolNode(pin_count_cmp, BoolTest::eq));
   IfNode* iff_pin_count_over_underflow = create_and_map_if(control(), test_pin_count_over_underflow, PROB_MIN, COUNT_UNKNOWN);
 
+  // True branch, pin count over/underflow.
+  Node* pin_count_over_underflow = _gvn.transform(new IfTrueNode(iff_pin_count_over_underflow));
+  {
+    // Trap (but not deoptimize (Action_none)) and continue in the interpreter
+    // which will throw IllegalStateException for pin count over/underflow.
+    // No memory changed so far - we can use memory create by reset_memory()
+    // at the beginning of this intrinsic. No need to call reset_memory() again.
+    PreserveJVMState pjvms(this);
+    set_control(pin_count_over_underflow);
+    uncommon_trap(Deoptimization::Reason_intrinsic,
+                  Deoptimization::Action_none);
+    assert(stopped(), "invariant");
+  }
+
   // False branch, no pin count over/underflow. Increment or decrement pin count and store back.
   Node* valid_pin_count = _gvn.transform(new IfFalseNode(iff_pin_count_over_underflow));
   set_control(valid_pin_count);
@@ -3772,20 +3786,7 @@ bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
     next_pin_count = _gvn.transform(new AddINode(pin_count, _gvn.intcon(1)));
   }
 
-  Node* updated_pin_count_memory = store_to_memory(control(), pin_count_offset, next_pin_count, T_INT, MemNode::unordered);
-
-  // True branch, pin count over/underflow.
-  Node* pin_count_over_underflow = _gvn.transform(new IfTrueNode(iff_pin_count_over_underflow));
-  {
-    // Trap (but not deoptimize (Action_none)) and continue in the interpreter
-    // which will throw IllegalStateException for pin count over/underflow.
-    PreserveJVMState pjvms(this);
-    set_control(pin_count_over_underflow);
-    set_all_memory(input_memory_state);
-    uncommon_trap_exact(Deoptimization::Reason_intrinsic,
-                        Deoptimization::Action_none);
-    assert(stopped(), "invariant");
-  }
+  store_to_memory(control(), pin_count_offset, next_pin_count, T_INT, MemNode::unordered);
 
   // Result of top level CFG and Memory.
   RegionNode* result_rgn = new RegionNode(PATH_LIMIT);
@@ -3795,7 +3796,7 @@ bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
 
   result_rgn->init_req(_true_path, _gvn.transform(valid_pin_count));
   result_rgn->init_req(_false_path, _gvn.transform(continuation_is_null));
-  result_mem->init_req(_true_path, _gvn.transform(updated_pin_count_memory));
+  result_mem->init_req(_true_path, _gvn.transform(reset_memory()));
   result_mem->init_req(_false_path, _gvn.transform(input_memory_state));
 
   // Set output state.
