@@ -6509,7 +6509,6 @@ public final class DateTimeFormatterBuilder {
             };
         }
 
-        // (CD_boolean, CD_DateTimePrintContext, CD_StringBuilder);
         /**
          * Generate parse0 method
          *
@@ -6545,7 +6544,6 @@ public final class DateTimeFormatterBuilder {
 
                     /*
                      * int pos = positioin;
-                     *
                      */
                     cb.iload(positionSlot)
                       .istore(posSlot);
