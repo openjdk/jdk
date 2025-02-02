@@ -6031,6 +6031,7 @@ public final class DateTimeFormatterBuilder {
                 CD_LocalDate                   = ClassDesc.ofDescriptor("Ljava/time/LocalDate;"),
                 CD_LocalDateTime               = ClassDesc.ofDescriptor("Ljava/time/LocalDateTime;"),
                 CD_ZoneOffset                  = ClassDesc.ofDescriptor("Ljava/time/ZoneOffset;"),
+                CD_OffsetTime                  = ClassDesc.ofDescriptor("Ljava/time/OffsetTime;"),
                 CD_OffsetDateTime              = ClassDesc.ofDescriptor("Ljava/time/OffsetDateTime;"),
                 CD_LocalTime                   = ClassDesc.ofDescriptor("Ljava/time/LocalTime;"),
                 CD_CharLiteralPrinterParser    = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$CharLiteralPrinterParser;"),
@@ -6075,7 +6076,8 @@ public final class DateTimeFormatterBuilder {
                 MTD_OffsetDateTime_Of         = MethodTypeDesc.of(CD_OffsetDateTime, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int, CD_ZoneOffset),
                 MTD_ZoneOffset_ofTotalSeconds = MethodTypeDesc.of(CD_ZoneOffset, CD_int),
                 MTD_LocalDate_Of              = MethodTypeDesc.of(CD_LocalDate, CD_int, CD_int, CD_int),
-                MTD_LocalTime_Of              = MethodTypeDesc.of(CD_LocalTime, CD_int, CD_int, CD_int, CD_int);
+                MTD_LocalTime_Of              = MethodTypeDesc.of(CD_LocalTime, CD_int, CD_int, CD_int, CD_int),
+                MTD_OffsetTime_Of             = MethodTypeDesc.of(CD_OffsetTime, CD_int, CD_int, CD_int, CD_int, CD_ZoneOffset);
 
         private PrinterParserFactory() {
             // no instantiation
@@ -6789,7 +6791,13 @@ public final class DateTimeFormatterBuilder {
                         } else {
                             cb.iconst_0();
                         }
-                        cb.invokestatic(CD_LocalTime, "of", MTD_LocalTime_Of);
+                        if (includeOffset) {
+                            cb.iload(offsetSecondsSlot)
+                              .invokestatic(CD_ZoneOffset, "ofTotalSeconds", MTD_ZoneOffset_ofTotalSeconds)
+                              .invokestatic(CD_OffsetTime, "of", MTD_OffsetTime_Of);
+                        } else {
+                            cb.invokestatic(CD_LocalTime, "of", MTD_LocalTime_Of);
+                        }
                     } else {
                         throw new AssertionError();
                     }
