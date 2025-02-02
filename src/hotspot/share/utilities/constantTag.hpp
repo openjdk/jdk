@@ -91,6 +91,9 @@ class constantTag {
   bool is_dynamic_constant_in_error() const {
     return _tag == JVM_CONSTANT_DynamicInError;
   }
+  bool is_dynamic_constant_or_error() const {
+    return is_dynamic_constant() || is_dynamic_constant_in_error();
+  }
 
   bool is_in_error() const {
     return is_unresolved_klass_in_error() ||

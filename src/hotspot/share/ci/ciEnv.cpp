@@ -698,17 +698,17 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
     ciKlass* klass = get_klass_by_index_impl(cpool, index, will_link, accessor);
     ciInstance* mirror = (will_link ? klass->java_mirror() : get_unloaded_klass_mirror(klass));
     return ciConstant(T_OBJECT, mirror);
-  } else if (tag.is_method_type() || tag.is_method_type_in_error()) {
+  } else if (tag.is_method_type_or_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
     assert(obj_index >= 0, "should have an object index");
-    SymbolicReference ref = cpool->method_type_ref_at(index);
+    MethodTypeReference ref(cpool, index);
     ciSymbol* signature = get_symbol(ref.signature(cpool));
     ciObject* ciobj = get_unloaded_method_type_constant(signature);
     return ciConstant(T_OBJECT, ciobj);
-  } else if (tag.is_method_handle() || tag.is_method_handle_in_error()) {
+  } else if (tag.is_method_handle_or_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
     assert(obj_index >= 0, "should have an object index");
-    auto ref            = cpool->method_handle_ref_at(index);
+    MethodHandleReference ref(cpool, index);
     bool ignore_will_link;
     int ref_kind        = ref.ref_kind();
     int callee_index    = ref.ref_index();
@@ -717,7 +717,7 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
     ciSymbol* signature = get_symbol(ref.signature(cpool));
     ciObject* ciobj     = get_unloaded_method_handle_constant(callee, name, signature, ref_kind);
     return ciConstant(T_OBJECT, ciobj);
-  } else if (tag.is_dynamic_constant() || tag.is_dynamic_constant_in_error()) {
+  } else if (tag.is_dynamic_constant_or_error()) {
     assert(obj_index >= 0, "should have an object index");
     return ciConstant(T_OBJECT, unloaded_ciinstance()); // unresolved dynamic constant
   } else {
@@ -823,7 +823,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     // Patch the call site to the nmethod entry point of the static compiled lambda form.
     // As with other two-component call sites, both values must be independently verified.
     assert(index < cpool->cache()->resolved_indy_entries_length(), "impossible");
-    auto rie = cpool->resolved_indy_entry_at(index);
+    ResolvedIndyEntry* rie = cpool->resolved_indy_entry_at(index);
     Method* adapter = rie->method();
     // Resolved if the adapter is non null.
     if (adapter != nullptr) {
@@ -836,7 +836,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     ciSymbol*        signature = get_symbol(rie->signature(cpool()));
     return get_unloaded_method(holder, name, signature, accessor);
   } else {
-    auto mref = cpool->from_bytecode_ref_at(index, bc);
+    FMReference mref(cpool, index, bc);
     const int holder_index = mref.klass_index();
     bool holder_is_accessible;
     ciKlass* holder = get_klass_by_index_impl(cpool, holder_index, holder_is_accessible, accessor);
@@ -1468,7 +1468,7 @@ void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, 
 
 // Process an invokehandle call site and record any dynamic locations.
 void ciEnv::process_invokehandle(const constantPoolHandle &cp, int index, JavaThread* thread) {
-  auto mref = cp->from_bytecode_ref_at(index, Bytecodes::_invokehandle);
+  FMReference mref(cp, index, Bytecodes::_invokehandle);
   const int holder_index = mref.klass_index();
   if (!cp->tag_at(holder_index).is_klass()) {
     return;  // not resolved

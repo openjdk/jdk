@@ -419,7 +419,7 @@ class CompileReplay : public StackObj {
         pool_index = cp->resolved_indy_entry_at(index)->constant_pool_index();
       } else if (bytecode.is_invokehandle()) {
 #ifdef ASSERT
-        auto ref = cp->from_bytecode_ref_at(index, bytecode.code());
+        FMReference ref(cp, index, bytecode.code());
         Klass* holder = ref.klass(cp, CHECK_NULL);
         Symbol* name  = ref.name(cp);
         assert(MethodHandles::is_signature_polymorphic_name(holder, name), "");

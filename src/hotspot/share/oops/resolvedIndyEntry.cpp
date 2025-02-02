@@ -28,17 +28,17 @@
 #include "oops/resolvedIndyEntry.hpp"
 
 u2 ResolvedIndyEntry::name_index(ConstantPool* cp) const {
-  auto indy = cp->uncached_bootstrap_specifier_ref_at(constant_pool_index());
+  BSReference indy(cp, constant_pool_index());
   return indy.name_index();
 }
 
 u2 ResolvedIndyEntry::signature_index(ConstantPool* cp) const {
-  auto indy = cp->uncached_bootstrap_specifier_ref_at(constant_pool_index());
+  BSReference indy(cp, constant_pool_index());
   return indy.signature_index();
 }
 
 u2 ResolvedIndyEntry::bsme_index(ConstantPool* cp) const {
-  auto indy = cp->uncached_bootstrap_specifier_ref_at(constant_pool_index());
+  BSReference indy(cp, constant_pool_index());
   return indy.bsme_index();
 }
 

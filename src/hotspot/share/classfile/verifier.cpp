@@ -2193,7 +2193,7 @@ void ClassVerifier::verify_ldc(
       VerificationType::reference_type(
         vmSymbols::java_lang_invoke_MethodType()), CHECK_VERIFY(this));
   } else if (tag.is_dynamic_constant()) {
-    auto condy = cp->uncached_bootstrap_specifier_ref_at(index);
+    BSReference condy(cp, index);
     Symbol* constant_type = condy.signature(cp);
     // Field signature was checked in ClassFileParser.
     assert(SignatureVerifier::is_valid_type_signature(constant_type),
@@ -2314,7 +2314,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
       1 << JVM_CONSTANT_Fieldref, CHECK_VERIFY(this));
 
   // Get field name and signature
-  auto    field_ref  = cp->uncached_field_or_method_ref_at(index);
+  FMReference field_ref(cp, index);
   Symbol* field_name = field_ref.name(cp);
   Symbol* field_sig  = field_ref.signature(cp);
   bool is_getfield = false;
@@ -2405,8 +2405,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
         }
         return;
       }
-      Symbol* ref_class_name =
-        cp->uncached_field_or_method_ref_at(index).klass_name(cp);
+      Symbol* ref_class_name = field_ref.klass_name(cp);
       if (!name_in_supers(ref_class_name, current_class()))
         // stack_object_type must be assignable to _current_class_type since:
         // 1. stack_object_type must be assignable to ref_class.
@@ -2730,9 +2729,10 @@ void ClassVerifier::verify_invoke_init(
     if (name_in_supers(ref_class_type.name(), current_class())) {
       Klass* ref_klass = load_class(ref_class_type.name(), CHECK);
       if (was_recursively_verified()) return;
+      FMReference mref(cp, bcs->get_index_u2());
       Method* m = InstanceKlass::cast(ref_klass)->uncached_lookup_method(
         vmSymbols::object_initializer_name(),
-        cp->uncached_field_or_method_ref_at(bcs->get_index_u2()).signature(cp),
+        mref.signature(cp),
         Klass::OverpassLookupMode::find);
       // Do nothing if method is not found.  Let resolution detect the error.
       if (m != nullptr) {
@@ -2811,7 +2811,7 @@ void ClassVerifier::verify_invoke_instructions(
 
   // Get method name and signature
   verify_cp_type(bcs->bci(), index, cp, types, CHECK_VERIFY(this));
-  auto    method_ref  = cp->uncached_triple_ref_at(index); //field, method, or indy
+  RawReference method_ref(cp, index); //field, method, or indy
   Symbol* method_name = method_ref.name(cp);
   Symbol* method_sig  = method_ref.signature(cp);
 
@@ -2941,7 +2941,7 @@ void ClassVerifier::verify_invoke_instructions(
         if (current_type() != stack_object_type) {
           if (was_recursively_verified()) return;
           assert(cp->cache() == nullptr, "not rewritten yet");
-          Symbol* ref_class_name = method_ref.klass_name(cp);
+          Symbol* ref_class_name = method_ref.as_FMRef().klass_name(cp);
           // See the comments in verify_field_instructions() for
           // the rationale behind this.
           if (name_in_supers(ref_class_name, current_class())) {

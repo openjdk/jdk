@@ -65,7 +65,8 @@ bool AOTConstantPoolResolver::is_resolution_deterministic(ConstantPool* cp, int 
   } else if (cp->tag_at(cp_index).is_invoke_dynamic()) {
     return is_indy_resolution_deterministic(cp, cp_index);
   } else if (cp->tag_at(cp_index).is_field_or_method()) {
-    int klass_cp_index = cp->uncached_field_or_method_ref_at(cp_index).klass_index();
+    FMReference ref(cp, cp_index);
+    int klass_cp_index = ref.klass_index();
     if (!cp->tag_at(klass_cp_index).is_klass()) {
       // Not yet resolved
       return false;
@@ -281,13 +282,14 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
     return;
   }
 
-  int klass_cp_index = cp->uncached_field_or_method_ref_at(cp_index).klass_index();
+  FMReference ref(cp, cp_index);
+  int klass_cp_index = ref.klass_index();
   if (find_loaded_class(THREAD, cp(), klass_cp_index) == nullptr) {
     // Do not resolve any field/methods from a class that has not been loaded yet.
     return;
   }
 
-  auto fmiref = cp->from_bytecode_ref_at(raw_index, bc);
+  FMReference fmiref(cp, raw_index, bc);
   Klass* resolved_klass = fmiref.klass(cp, CHECK);
 
   switch (bc) {
@@ -416,7 +418,8 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPo
     return false;
   }
 
-  Symbol* sig = cp->method_type_ref_at(mt_index).signature(cp);
+  MethodTypeReference mtref(cp, mt_index);
+  Symbol* sig = mtref.signature(cp);
   if (log_is_enabled(Debug, cds, resolve)) {
     ResourceMark rm;
     log_debug(cds, resolve)("Checking MethodType for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
@@ -432,7 +435,8 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(Constant
     return false;
   }
 
-  Symbol* sig = cp->method_handle_ref_at(mh_index).signature(cp);
+  MethodHandleReference mhref(cp, mh_index);
+  Symbol* sig = mhref.signature(cp);
   if (log_is_enabled(Debug, cds, resolve)) {
     ResourceMark rm;
     log_debug(cds, resolve)("Checking MethodType of MethodHandle for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
@@ -451,13 +455,13 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
     return false;
   }
 
-  auto indy = cp->uncached_bootstrap_specifier_ref_at(cp_index);
-  auto bsme = indy.bsme(cp);
-  auto bsmh = bsme->bootstrap_method(cp);
-  Symbol* bsm_name      = bsmh.name(cp);
-  Symbol* bsm_signature = bsmh.signature(cp);
-  Symbol* bsm_klass     = bsmh.klass_name(cp);
-  Symbol* factory_type_sig = indy.signature(cp);
+  BSReference indy(cp, cp_index);
+  BSMAttributeEntry* bsme    = indy.bsme(cp);
+  MethodHandleReference bsmh = bsme->bootstrap_method(cp);
+  Symbol* bsm_name           = bsmh.name(cp);
+  Symbol* bsm_signature      = bsmh.signature(cp);
+  Symbol* bsm_klass          = bsmh.klass_name(cp);
+  Symbol* factory_type_sig   = indy.signature(cp);
 
   // We currently support only StringConcatFactory::makeConcatWithConstants() and LambdaMetafactory::metafactory()
   // We should mark the allowed BSMs in the JDK code using a private annotation.

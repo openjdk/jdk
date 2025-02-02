@@ -819,7 +819,7 @@ int ConstantPool::to_cp_index(int index, Bytecodes::Code code) {
   switch(code) {
     case Bytecodes::_invokedynamic:
       {
-        auto ie = cache()->resolved_indy_entry_at(index);
+        ResolvedIndyEntry* ie = cache()->resolved_indy_entry_at(index);
         int cp_index = ie->constant_pool_index();
         assert(tag_at(cp_index).has_bootstrap(), "index contains symbolic ref");
         return cp_index;
@@ -905,15 +905,15 @@ static const char* exception_message(const constantPoolHandle& this_cp, int whic
     break;
   case JVM_CONSTANT_MethodHandle:
     // return the method handle name in the error message
-    message = this_cp->method_handle_ref_at(which).name(this_cp);
+    message = MethodHandleReference(this_cp, which).name(this_cp);
     break;
   case JVM_CONSTANT_MethodType:
     // return the method type signature in the error message
-    message = this_cp->method_type_ref_at(which).signature(this_cp);
+    message = MethodTypeReference(this_cp, which).signature(this_cp);
     break;
   case JVM_CONSTANT_Dynamic:
     // return the name of the condy in the error message
-    message = this_cp->uncached_bootstrap_specifier_ref_at(which).name(this_cp);
+    message = BSReference(this_cp, which).name(this_cp);
     break;
   default:
     ShouldNotReachHere();
@@ -1015,10 +1015,9 @@ constantTag ConstantPool::constant_tag_at(int cp_index) {
 
 BasicType ConstantPool::basic_type_for_constant_at(int cp_index) {
   constantTag tag = tag_at(cp_index);
-  if (tag.is_dynamic_constant() ||
-      tag.is_dynamic_constant_in_error()) {
+  if (tag.is_dynamic_constant_or_error()) {
     // have to look at the signature for this one
-    auto condy = uncached_bootstrap_specifier_ref_at(cp_index);
+    BSReference condy(this, cp_index);
     Symbol* constant_type = condy.signature(this);
     return Signature::basic_type(constant_type);
   }
@@ -1168,7 +1167,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     { PerfTraceTimedEvent timer(ClassLoader::perf_resolve_method_handle_time(),
                                 ClassLoader::perf_resolve_method_handle_count());
 
-      auto mhref         = this_cp->method_handle_ref_at(cp_index);
+      MethodHandleReference mhref(this_cp, cp_index);
       int ref_kind       = mhref.ref_kind();
       int callee_index   = mhref.klass_index();
       Symbol*  name      = mhref.name(this_cp);
@@ -1220,7 +1219,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     { PerfTraceTimedEvent timer(ClassLoader::perf_resolve_method_type_time(),
                                 ClassLoader::perf_resolve_method_type_count());
 
-      auto mtref         = this_cp->method_type_ref_at(cp_index);
+      MethodTypeReference mtref(this_cp, cp_index);
       Symbol*  signature = mtref.signature(this_cp);
       { ResourceMark rm(THREAD);
         log_debug(class, resolve)("resolve JVM_CONSTANT_MethodType [%d/%d] %s",
@@ -1429,8 +1428,8 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   case JVM_CONSTANT_InterfaceMethodref:
   case JVM_CONSTANT_Methodref:
   {
-    auto ref1 = uncached_field_or_method_ref_at(index1);
-    auto ref2 = cp2->uncached_field_or_method_ref_at(index2);
+    FMReference ref1(this, index1);
+    FMReference ref2(cp2,  index2);
     if (compare_entry_to(ref1.klass_index(), cp2, ref2.klass_index()) &&
         compare_entry_to(ref1.nt_index(),    cp2, ref2.nt_index())) {
       return true;
@@ -1466,8 +1465,8 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 
   case JVM_CONSTANT_NameAndType:
   {
-    auto nt1 = name_and_type_pair_at(index1);
-    auto nt2 = cp2->name_and_type_pair_at(index2);
+    NTReference nt1(this, index1);
+    NTReference nt2(cp2,  index2);
     if (compare_entry_to(nt1.name_index(),      cp2, nt2.name_index()) &&
         compare_entry_to(nt1.signature_index(), cp2, nt2.signature_index())) {
       return true;
@@ -1494,8 +1493,10 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 
   case JVM_CONSTANT_MethodType:
   {
-    int k1 = method_type_ref_at(index1).signature_index();
-    int k2 = cp2->method_type_ref_at(index2).signature_index();
+    MethodTypeReference ref1(this, index1);
+    MethodTypeReference ref2(cp2,  index2);
+    int k1 = ref1.signature_index();
+    int k2 = ref2.signature_index();
     if (compare_entry_to(k1, cp2, k2)) {
       return true;
     }
@@ -1503,8 +1504,8 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 
   case JVM_CONSTANT_MethodHandle:
   {
-    auto ref1 = method_handle_ref_at(index1);
-    auto ref2 = cp2->method_handle_ref_at(index2);
+    MethodHandleReference ref1(this, index1);
+    MethodHandleReference ref2(cp2,  index2);
     if (ref1.ref_kind() == ref2.ref_kind() &&
         compare_entry_to(ref1.ref_index(), cp2, ref2.ref_index())) {
       return true;
@@ -1514,8 +1515,8 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   case JVM_CONSTANT_InvokeDynamic:
   case JVM_CONSTANT_Dynamic:
   {
-    auto ref1 = uncached_bootstrap_specifier_ref_at(index1);
-    auto ref2 = cp2->uncached_bootstrap_specifier_ref_at(index2);
+    BSReference ref1(this, index1);
+    BSReference ref2(cp2,  index2);
     if (compare_entry_to(ref1.nt_index(),  cp2, ref2.nt_index()) &&
         compare_bsme_to(ref1.bsme_index(), cp2, ref2.bsme_index())) {
       return true;
@@ -1557,8 +1558,8 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 // Resize the BSM attribute arrays with delta_len and delta_size.
 // Used in RedefineClasses for CP merge.
 void ConstantPool::resize_bsm_data(int delta_len, int delta_size, TRAPS) {
-  const auto old_offs = bsm_attribute_offsets();
-  const auto old_data = bsm_attribute_entries();
+  Array<u4>* old_offs = bsm_attribute_offsets();
+  Array<u2>* old_data = bsm_attribute_entries();
   const bool have_old = (bsm_attribute_count() != 0);
 
   int old_offs_len  = !have_old ? 0 : old_offs->length();
@@ -1646,10 +1647,10 @@ void ConstantPool::copy_bsm_data(const constantPoolHandle& from_cp,
                                  const constantPoolHandle& to_cp,
                                  TRAPS) {
   // Append my offsets and data to the target's offset and data arrays.
-  const auto from_offs = from_cp->bsm_attribute_offsets();
-  const auto from_data = from_cp->bsm_attribute_entries();
-  const auto to_offs   = to_cp->bsm_attribute_offsets();
-  const auto to_data   = to_cp->bsm_attribute_entries();
+  Array<u4>* from_offs = from_cp->bsm_attribute_offsets();
+  Array<u2>* from_data = from_cp->bsm_attribute_entries();
+  Array<u4>* to_offs   = to_cp->bsm_attribute_offsets();
+  Array<u2>* to_data   = to_cp->bsm_attribute_entries();
   if (from_offs == nullptr || from_offs->length() == 0) {
     return;  // nothing to copy
   }
@@ -1667,8 +1668,8 @@ void ConstantPool::copy_bsm_data(const constantPoolHandle& from_cp,
   ClassLoaderData* loader_data = to_cp->pool_holder()->class_loader_data();
 
   // Use the metaspace for the destination constant pool
-  const auto new_offs = MetadataFactory::new_array<u4>(loader_data, new_offs_len, CHECK);
-  const auto new_data = MetadataFactory::new_array<u2>(loader_data, new_data_len, CHECK);
+  Array<u4>* new_offs = MetadataFactory::new_array<u4>(loader_data, new_offs_len, CHECK);
+  Array<u2>* new_data = MetadataFactory::new_array<u2>(loader_data, new_data_len, CHECK);
 
   // first, recopy pre-existing parts of both dest arrays:
   int offs_fillp = 0, data_fillp = 0, offs_copied, data_copied;
@@ -1764,7 +1765,7 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
 
   case JVM_CONSTANT_Fieldref:
   {
-    auto ref = from_cp->uncached_field_or_method_ref_at(from_i);
+    FMReference ref(from_cp, from_i);
     to_cp->field_at_put(to_i, ref.klass_index(), ref.nt_index());
   } break;
 
@@ -1782,7 +1783,7 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
 
   case JVM_CONSTANT_InterfaceMethodref:
   {
-    auto ref = from_cp->uncached_field_or_method_ref_at(from_i);
+    FMReference ref(from_cp, from_i);
     to_cp->interface_method_at_put(to_i, ref.klass_index(), ref.nt_index());
   } break;
 
@@ -1796,13 +1797,13 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
 
   case JVM_CONSTANT_Methodref:
   {
-    auto ref = from_cp->uncached_field_or_method_ref_at(from_i);
+    FMReference ref(from_cp, from_i);
     to_cp->method_at_put(to_i, ref.klass_index(), ref.nt_index());
   } break;
 
   case JVM_CONSTANT_NameAndType:
   {
-    auto ref = from_cp->name_and_type_pair_at(from_i);
+    NTReference ref(from_cp, from_i);
     to_cp->name_and_type_at_put(to_i, ref.name_index(), ref.signature_index());
   } break;
 
@@ -1839,14 +1840,14 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
   case JVM_CONSTANT_MethodType:
   case JVM_CONSTANT_MethodTypeInError:
   {
-    auto ref = from_cp->method_type_ref_at(from_i);
+    MethodTypeReference ref(from_cp, from_i);
     to_cp->method_type_index_at_put(to_i, ref.signature_index());
   } break;
 
   case JVM_CONSTANT_MethodHandle:
   case JVM_CONSTANT_MethodHandleInError:
   {
-    auto ref = from_cp->method_handle_ref_at(from_i);
+    MethodHandleReference ref(from_cp, from_i);
     to_cp->method_handle_index_at_put(to_i, ref.ref_kind(), ref.ref_index());
   } break;
 
@@ -1854,7 +1855,7 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
   case JVM_CONSTANT_DynamicInError:
   case JVM_CONSTANT_InvokeDynamic:
   {
-    auto ref = from_cp->uncached_bootstrap_specifier_ref_at(from_i);
+    BSReference ref(from_cp, from_i);
     int k1 = ref.bsme_index();
     k1 += to_cp->bsm_attribute_count();  // to_cp might already have BSMs
     if (ref.tag().is_invoke_dynamic()) {
@@ -1897,8 +1898,8 @@ int ConstantPool::find_matching_entry(int pattern_i,
 // Compare this constant pool's BSM attribute entry at idx1 to the constant pool
 // cp2's BSM attribute entry at idx2.
 bool ConstantPool::compare_bsme_to(int idx1, const constantPoolHandle& cp2, int idx2) {
-  auto e1 = bsm_attribute_entry(idx1);
-  auto e2 = cp2->bsm_attribute_entry(idx2);
+  BSMAttributeEntry* e1 = bsm_attribute_entry(idx1);
+  BSMAttributeEntry* e2 = cp2->bsm_attribute_entry(idx2);
   int k1 = e1->bootstrap_method_index();
   int k2 = e2->bootstrap_method_index();
   bool match = compare_entry_to(k1, cp2, k2);
@@ -2259,7 +2260,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_Fieldref:
       case JVM_CONSTANT_Methodref:
       case JVM_CONSTANT_InterfaceMethodref: {
-        auto ref = uncached_field_or_method_ref_at(idx);
+        FMReference ref(this, idx);
         idx1 = ref.klass_index();
         idx2 = ref.nt_index();
         Bytes::put_Java_u2((address) (bytes+1), idx1);
@@ -2268,7 +2269,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         break;
       }
       case JVM_CONSTANT_NameAndType: {
-        auto ref = name_and_type_pair_at(idx);
+        NTReference ref(this, idx);
         idx1 = ref.name_index();
         idx2 = ref.signature_index();
         Bytes::put_Java_u2((address) (bytes+1), idx1);
@@ -2293,7 +2294,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_MethodHandle:
       case JVM_CONSTANT_MethodHandleInError: {
         *bytes = JVM_CONSTANT_MethodHandle;
-        auto ref = method_handle_ref_at(idx);
+        MethodHandleReference ref(this, idx);
         int kind = ref.ref_kind();
         idx1 = checked_cast<u2>(ref.ref_index());
         *(bytes+1) = (unsigned char) kind;
@@ -2304,7 +2305,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_MethodType:
       case JVM_CONSTANT_MethodTypeInError: {
         *bytes = JVM_CONSTANT_MethodType;
-        auto ref = method_type_ref_at(idx);
+        MethodTypeReference ref(this, idx);
         idx1 = checked_cast<u2>(ref.signature_index());
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         DBG(printf("JVM_CONSTANT_MethodType: %hd", idx1));
@@ -2313,7 +2314,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_Dynamic:
       case JVM_CONSTANT_DynamicInError: {
         *bytes = JVM_CONSTANT_Dynamic;
-        auto ref = uncached_bootstrap_specifier_ref_at(idx);
+        BSReference ref(this, idx);
         idx1 = ref.bsme_index();
         idx2 = ref.nt_index();
         Bytes::put_Java_u2((address) (bytes+1), idx1);
@@ -2323,7 +2324,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       }
       case JVM_CONSTANT_InvokeDynamic: {
         *bytes = tag;
-        auto ref = uncached_bootstrap_specifier_ref_at(idx);
+        BSReference ref(this, idx);
         idx1 = ref.bsme_index();
         idx2 = ref.nt_index();
         Bytes::put_Java_u2((address) (bytes+1), idx1);
@@ -2437,7 +2438,7 @@ void ConstantPool::print_entry_on(const int cp_index, outputStream* st) {
     case JVM_CONSTANT_Methodref :
     case JVM_CONSTANT_InterfaceMethodref :
       {
-        auto ref = uncached_field_or_method_ref_at(cp_index);
+        FMReference ref(this, cp_index);
         st->print("klass_index=%d name_and_type_index=%d",
                   ref.klass_index(), ref.nt_index());
       }
@@ -2459,7 +2460,7 @@ void ConstantPool::print_entry_on(const int cp_index, outputStream* st) {
       break;
     case JVM_CONSTANT_NameAndType :
       {
-        auto nt = name_and_type_pair_at(cp_index);
+        NTReference nt(this, cp_index);
         st->print("name_index=%d signature_index=%d",
                   nt.name_index(), nt.signature_index());
       }
@@ -2485,7 +2486,7 @@ void ConstantPool::print_entry_on(const int cp_index, outputStream* st) {
     case JVM_CONSTANT_MethodHandle :
     case JVM_CONSTANT_MethodHandleInError :
       {
-        auto ref = method_handle_ref_at(cp_index);
+        MethodHandleReference ref(this, cp_index);
         st->print("ref_kind=%d ref_index=%d",
                   ref.ref_kind(), ref.ref_index());
       }
@@ -2493,7 +2494,7 @@ void ConstantPool::print_entry_on(const int cp_index, outputStream* st) {
     case JVM_CONSTANT_MethodType :
     case JVM_CONSTANT_MethodTypeInError :
       {
-        auto ref = method_type_ref_at(cp_index);
+        MethodTypeReference ref(this, cp_index);
         st->print("signature_index=%d", ref.signature_index());
       }
       break;
@@ -2501,8 +2502,8 @@ void ConstantPool::print_entry_on(const int cp_index, outputStream* st) {
     case JVM_CONSTANT_DynamicInError :
     case JVM_CONSTANT_InvokeDynamic :
       {
-        auto ref = uncached_bootstrap_specifier_ref_at(cp_index);
-        auto bsme = ref.bsme(this);
+        BSReference ref(this, cp_index);
+        BSMAttributeEntry* bsme = ref.bsme(this);
         st->print("bootstrap_method_index=%d name_and_type_index=%d",
                   ref.bsme_index(), ref.nt_index());
         int argc = bsme->argument_count();

@@ -44,10 +44,10 @@ void BytecodeConstantPool::init() {
       entry = BytecodeCPEntry::utf8(_orig->symbol_at(i));
       break;
     case JVM_CONSTANT_NameAndType:
-      entry = BytecodeCPEntry::name_and_type(_orig->name_and_type_pair_at(i));
+      entry = BytecodeCPEntry::name_and_type(NTReference(_orig, i));
       break;
     case JVM_CONSTANT_Methodref:
-      entry = BytecodeCPEntry::methodref(_orig->uncached_field_or_method_ref_at(i));
+      entry = BytecodeCPEntry::methodref(FMReference(_orig, i));
       break;
     case JVM_CONSTANT_String:
       entry = BytecodeCPEntry::string(_orig->unresolved_string_at(i));

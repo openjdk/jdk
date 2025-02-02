@@ -79,7 +79,7 @@ ciField::ciField(ciInstanceKlass* klass, int index, Bytecodes::Code bc) :
   assert(klass->get_instanceKlass()->is_linked(), "must be linked before using its constant-pool");
 
   constantPoolHandle cpool(THREAD, klass->get_instanceKlass()->constants());
-  SymbolicReference  ref = cpool->from_bytecode_ref_at(index, bc);
+  FMReference ref(cpool, index, bc);
 
   // Get the field's name, signature, and type.
   Symbol* name  = ref.name(cpool);

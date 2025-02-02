@@ -535,7 +535,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
 
 void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii, TRAPS) {
   // Caller needs to allocate ResourceMark.
-  auto indy = pool->uncached_bootstrap_specifier_ref_at(cp_index);
+  BSReference indy(pool, cp_index);
   int name_index = indy.name_index();
   cii->add_item(pool->symbol_at(name_index)->as_C_string());
   int sig_index = indy.signature_index();
@@ -547,10 +547,10 @@ void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int
       int arg = bsme->argument_index(arg_i);
       jbyte tag = pool->tag_at(arg).value();
       if (tag == JVM_CONSTANT_MethodType) {
-        auto ref = pool->method_type_ref_at(arg);
+        MethodTypeReference ref(pool, arg);
         cii->add_item(ref.signature(pool)->as_C_string());
       } else if (tag == JVM_CONSTANT_MethodHandle) {
-        auto ref = pool->method_handle_ref_at(arg);
+        MethodHandleReference ref(pool, arg);
         cii->add_ref_kind(ref.ref_kind());
         Klass* callee = ref.klass(pool, CHECK);  // use ref.klass_name here?
         cii->add_item(callee->name()->as_C_string());

@@ -296,7 +296,7 @@ class ClassVerifier : public StackObj {
 
   VerificationType cp_ref_index_to_type(
       int index, const constantPoolHandle& cp, TRAPS) {
-    auto ref = cp->uncached_field_or_method_ref_at(index);  // field or method ref
+    FMReference ref(cp, index);  // field or method ref
     return cp_index_to_type(ref.klass_index(), cp, THREAD);
   }
 

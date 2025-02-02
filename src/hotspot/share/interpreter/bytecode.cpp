@@ -130,23 +130,26 @@ int Bytecode_invoke::size_of_parameters() const {
 
 
 Symbol* Bytecode_member_ref::klass() const {
-  auto cp = constants();
-  auto bc = _code;
-  return cp->from_bytecode_ref_at(index(), bc).klass_name(cp);
+  FMReference ref(constants(), index(), _code);
+  return ref.klass_name(constants());
 }
 
 
 Symbol* Bytecode_member_ref::name() const {
-  auto cp = constants();
-  auto bc = Bytecodes::java_code(_code);  //why is this different?
-  return cp->from_bytecode_ref_at(index(), bc).name(cp);
+  // FIXME: The following line seems useless; compare signature() method.
+  Bytecodes::Code bc = Bytecodes::java_code(_code);
+  ConstantPool *cp = constants();
+  // RawReference covers field, method, and indy.
+  RawReference ref(cp, cp->to_cp_index(index(), bc));
+  return ref.name(cp);
 }
 
 
 Symbol* Bytecode_member_ref::signature() const {
-  auto cp = constants();
-  auto bc = _code;
-  return cp->from_bytecode_ref_at(index(), bc).signature(cp);
+  ConstantPool *cp = constants();
+  // RawReference covers field, method, and indy.
+  RawReference ref(cp, cp->to_cp_index(index(), _code));
+  return ref.signature(cp);
 }
 
 

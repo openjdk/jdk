@@ -363,7 +363,7 @@ Method* ConstantPoolCache::method_if_resolved(int method_index) const {
       return method_entry->method();
     } else {
       int cp_index = method_entry->constant_pool_index();
-      auto mref = constant_pool()->uncached_field_or_method_ref_at(cp_index);
+      FMReference mref(constant_pool(), cp_index);
       int holder_index = mref.klass_index();
       if (constant_pool()->tag_at(holder_index).is_klass()) {
         Klass* klass = constant_pool()->resolved_klass_at(holder_index);
@@ -442,7 +442,7 @@ void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
       LogStreamHandle(Trace, cds, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
-        auto fref = cp->uncached_field_or_method_ref_at(cp_index);
+        FMReference fref(cp, cp_index);
         Symbol* klass_name = fref.klass_name(cp);
         Symbol* name      = fref.name(cp);
         Symbol* signature = fref.signature(cp);
@@ -482,7 +482,7 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
       LogStreamHandle(Trace, cds, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
-        auto mref = cp->uncached_field_or_method_ref_at(cp_index);
+        FMReference mref(cp, cp_index);
         Symbol* klass_name = mref.klass_name(cp);
         Symbol* name      = mref.name(cp);
         Symbol* signature = mref.signature(cp);
@@ -522,12 +522,12 @@ void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
       LogStreamHandle(Trace, cds, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
-        auto indy = cp->uncached_bootstrap_specifier_ref_at(cp_index);
-        auto bsme = indy.bsme(cp);
-        auto bsmh = bsme->bootstrap_method(cp);
-        Symbol* bsm_name      = bsmh.name(cp);
-        Symbol* bsm_signature = bsmh.signature(cp);
-        Symbol* bsm_klass     = bsmh.klass_name(cp);
+        BSReference indy(cp, cp_index);
+        BSMAttributeEntry* bsme    = indy.bsme(cp);
+        MethodHandleReference bsmh = bsme->bootstrap_method(cp);
+        Symbol* bsm_name           = bsmh.name(cp);
+        Symbol* bsm_signature      = bsmh.signature(cp);
+        Symbol* bsm_klass          = bsmh.klass_name(cp);
         log.print("%s indy   CP entry [%3d]: %s (%d)",
                   (archived ? "archived" : "reverted"),
                   cp_index, cp->pool_holder()->name()->as_C_string(), i);

@@ -1280,7 +1280,7 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     } else {
       // Klass is already loaded.
       constantPoolHandle constants(current, caller->constants());
-      SymbolicReference mref = constants->from_bytecode_ref_at(bytecode_index, bc);
+      FMReference mref(constants, bytecode_index, bc);
       rk = mref.klass(constants, CHECK_NH);
     }
     Klass* static_receiver_klass = rk;

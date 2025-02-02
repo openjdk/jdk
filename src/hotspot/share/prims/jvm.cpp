@@ -2046,7 +2046,7 @@ static jobject get_method_at_helper(const constantPoolHandle& cp, jint index, bo
   if (!tag.is_method() && !tag.is_interface_method()) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Wrong type at constant pool index");
   }
-  SymbolicReference mref = cp->uncached_field_or_method_ref_at(index);
+  FMReference mref(cp, index);
   int klass_ref = mref.klass_index();
   Klass* k_o;
   if (force_resolution) {
@@ -2097,7 +2097,7 @@ static jobject get_field_at_helper(constantPoolHandle cp, jint index, bool force
   if (!tag.is_field()) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Wrong type at constant pool index");
   }
-  SymbolicReference fref = cp->uncached_field_or_method_ref_at(index);
+  FMReference fref(cp, index);
   int klass_ref = fref.klass_index();
   Klass* k_o;
   if (force_resolution) {
@@ -2147,7 +2147,7 @@ JVM_ENTRY(jobjectArray, JVM_ConstantPoolGetMemberRefInfoAt(JNIEnv *env, jobject 
   if (!tag.is_field_or_method()) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Wrong type at constant pool index");
   }
-  auto     member_ref  = cp->uncached_field_or_method_ref_at(index);
+  FMReference member_ref(cp, index);
   Symbol*  klass_name  = member_ref.klass_name(cp);
   Symbol*  member_name = member_ref.name(cp);
   Symbol*  member_sig  = member_ref.signature(cp);
@@ -2172,7 +2172,7 @@ JVM_ENTRY(jint, JVM_ConstantPoolGetClassRefIndexAt(JNIEnv *env, jobject obj, job
   if (!tag.is_field_or_method()) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Wrong type at constant pool index");
   }
-  auto member_ref = cp->uncached_field_or_method_ref_at(index);
+  FMReference member_ref(cp, index);
   return (jint) member_ref.klass_index();
 }
 JVM_END
@@ -2186,7 +2186,8 @@ JVM_ENTRY(jint, JVM_ConstantPoolGetNameAndTypeRefIndexAt(JNIEnv *env, jobject ob
   if (!tag.has_name_and_type()) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Wrong type at constant pool index");
   }
-  return (jint) cp->uncached_triple_ref_at(index).nt_index();
+  RawReference ref(cp, index);  // field, method, indy, condy
+  return (jint) ref.nt_index();
 }
 JVM_END
 
@@ -2199,7 +2200,7 @@ JVM_ENTRY(jobjectArray, JVM_ConstantPoolGetNameAndTypeRefInfoAt(JNIEnv *env, job
   if (!tag.is_name_and_type()) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Wrong type at constant pool index");
   }
-  auto nt = cp->name_and_type_pair_at(index);
+  NTReference nt(cp, index);
   Symbol* member_name = nt.name(cp);
   Symbol* member_sig  = nt.signature(cp);
   objArrayOop dest_o = oopFactory::new_objArray(vmClasses::String_klass(), 2, CHECK_NULL);
@@ -2536,7 +2537,7 @@ JVM_END
  * works on a copy of the code, it will not see any rewriting that
  * may possibly occur in the middle of verification.  So it is important
  * that nothing it calls tries to use the cpCache instead of the raw
- * constant pool, so we must use cp->uncached_x methods when appropriate.
+ * constant pool.
  */
 JVM_ENTRY(const char*, JVM_GetCPFieldNameUTF(JNIEnv *env, jclass cls, jint cp_index))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
@@ -2544,7 +2545,10 @@ JVM_ENTRY(const char*, JVM_GetCPFieldNameUTF(JNIEnv *env, jclass cls, jint cp_in
   ConstantPool* cp = InstanceKlass::cast(k)->constants();
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Fieldref:
-      return cp->uncached_field_or_method_ref_at(cp_index).name(cp)->as_utf8();
+      {
+        FMReference ref(cp, cp_index);
+        return ref.name(cp)->as_utf8();
+      }
     default:
       fatal("JVM_GetCPFieldNameUTF: illegal constant");
   }
@@ -2560,7 +2564,10 @@ JVM_ENTRY(const char*, JVM_GetCPMethodNameUTF(JNIEnv *env, jclass cls, jint cp_i
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_InterfaceMethodref:
     case JVM_CONSTANT_Methodref:
-      return cp->uncached_field_or_method_ref_at(cp_index).name(cp)->as_utf8();
+      {
+        FMReference ref(cp, cp_index);
+        return ref.name(cp)->as_utf8();
+      }
     default:
       fatal("JVM_GetCPMethodNameUTF: illegal constant");
   }
@@ -2576,7 +2583,10 @@ JVM_ENTRY(const char*, JVM_GetCPMethodSignatureUTF(JNIEnv *env, jclass cls, jint
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_InterfaceMethodref:
     case JVM_CONSTANT_Methodref:
-      return cp->uncached_field_or_method_ref_at(cp_index).signature(cp)->as_utf8();
+      {
+        FMReference ref(cp, cp_index);
+        return ref.signature(cp)->as_utf8();
+      }
     default:
       fatal("JVM_GetCPMethodSignatureUTF: illegal constant");
   }
@@ -2591,7 +2601,10 @@ JVM_ENTRY(const char*, JVM_GetCPFieldSignatureUTF(JNIEnv *env, jclass cls, jint 
   ConstantPool* cp = InstanceKlass::cast(k)->constants();
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Fieldref:
-      return cp->uncached_field_or_method_ref_at(cp_index).signature(cp)->as_utf8();
+      {
+        FMReference ref(cp, cp_index);
+        return ref.signature(cp)->as_utf8();
+      }
     default:
       fatal("JVM_GetCPFieldSignatureUTF: illegal constant");
   }
@@ -2615,8 +2628,8 @@ JVM_ENTRY(const char*, JVM_GetCPFieldClassNameUTF(JNIEnv *env, jclass cls, jint 
   ConstantPool* cp = InstanceKlass::cast(k)->constants();
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Fieldref: {
-      SymbolicReference ref = cp->uncached_field_or_method_ref_at(cp_index);
-      Symbol* classname = ref.klass_name(cp);
+      FMReference fref(cp, cp_index);
+      Symbol* classname = fref.klass_name(cp);
       return classname->as_utf8();
     }
     default:
@@ -2634,7 +2647,7 @@ JVM_ENTRY(const char*, JVM_GetCPMethodClassNameUTF(JNIEnv *env, jclass cls, jint
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Methodref:
     case JVM_CONSTANT_InterfaceMethodref: {
-      SymbolicReference ref = cp->uncached_field_or_method_ref_at(cp_index);
+      FMReference ref(cp, cp_index);
       Symbol* classname = ref.klass_name(cp);
       return classname->as_utf8();
     }
@@ -2655,7 +2668,7 @@ JVM_ENTRY(jint, JVM_GetCPFieldModifiers(JNIEnv *env, jclass cls, int cp_index, j
   ConstantPool* cp_called = InstanceKlass::cast(k_called)->constants();
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Fieldref: {
-      auto    fref      = cp->uncached_field_or_method_ref_at(cp_index);
+      FMReference fref(cp, cp_index);
       Symbol* name      = fref.name(cp);
       Symbol* signature = fref.signature(cp);
       InstanceKlass* ik = InstanceKlass::cast(k_called);
@@ -2683,7 +2696,7 @@ JVM_ENTRY(jint, JVM_GetCPMethodModifiers(JNIEnv *env, jclass cls, int cp_index, 
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Methodref:
     case JVM_CONSTANT_InterfaceMethodref: {
-      auto    mref      = cp->uncached_field_or_method_ref_at(cp_index);
+      FMReference mref(cp, cp_index);
       Symbol* name      = mref.name(cp);
       Symbol* signature = mref.signature(cp);
       Array<Method*>* methods = InstanceKlass::cast(k_called)->methods();
@@ -3680,7 +3693,7 @@ JVM_ENTRY(jobjectArray, JVM_GetEnclosingMethodInfo(JNIEnv *env, jclass ofClass))
   dest->obj_at_put(0, enc_k->java_mirror());
   int encl_method_method_idx = ik->enclosing_method_method_index();
   if (encl_method_method_idx != 0) {
-    auto nt = ik->constants()->name_and_type_pair_at(encl_method_method_idx);
+    NTReference nt(ik->constants(), encl_method_method_idx);
     Symbol* sym = nt.name(ik->constants());
     Handle str = java_lang_String::create_from_symbol(sym, CHECK_NULL);
     dest->obj_at_put(1, str());

@@ -1263,11 +1263,11 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
   // While we are here, take a quick look at the index info:
   int bsme_index = -1;
   // FIXME: use a BootstrapInfo record to simplify this logic
-  SymbolicReference indy;
+  BSReference indy;
   if (0 < bss_index_in_pool &&
       bss_index_in_pool < caller->constants()->length() &&
       caller->constants()->tag_at(bss_index_in_pool).has_bootstrap()) {
-    indy = caller->constants()->uncached_bootstrap_specifier_ref_at(bss_index_in_pool);
+    indy = BSReference(caller->constants(), bss_index_in_pool);
     bsme_index = indy.bsme_index();
   }
   if (bsme_index < 0 || (caller->constants()->bsm_attribute_entry(bsme_index)->argument_count()

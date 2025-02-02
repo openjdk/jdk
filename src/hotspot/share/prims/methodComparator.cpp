@@ -88,8 +88,8 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
   case Bytecodes::_putstatic       : // fall through
   case Bytecodes::_getfield        : // fall through
   case Bytecodes::_putfield        : {
-    auto old_ref = old_cp->from_bytecode_ref_at(s_old->get_index_u2(), c_old);
-    auto new_ref = new_cp->from_bytecode_ref_at(s_new->get_index_u2(), c_new);
+    FMReference old_ref(old_cp, s_old->get_index_u2(), c_old);
+    FMReference new_ref(new_cp, s_new->get_index_u2(), c_new);
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.
@@ -103,8 +103,8 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
   case Bytecodes::_invokespecial   : // fall through
   case Bytecodes::_invokestatic    : // fall through
   case Bytecodes::_invokeinterface : {
-    auto old_ref = old_cp->from_bytecode_ref_at(s_old->get_index_u2(), c_old);
-    auto new_ref = new_cp->from_bytecode_ref_at(s_new->get_index_u2(), c_new);
+    FMReference old_ref(old_cp, s_old->get_index_u2(), c_old);
+    FMReference new_ref(new_cp, s_new->get_index_u2(), c_new);
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.
@@ -116,8 +116,8 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
   }
   case Bytecodes::_invokedynamic: {
     // Encoded indy index, should be negative
-    auto old_ref = old_cp->from_bytecode_ref_at(s_old->get_index_u4(), c_old);
-    auto new_ref = new_cp->from_bytecode_ref_at(s_new->get_index_u4(), c_new);
+    BSReference old_ref(old_cp, s_old->get_index_u4(), c_old);
+    BSReference new_ref(new_cp, s_new->get_index_u4(), c_new);
 
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
@@ -127,8 +127,8 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
         (old_ref.signature(old_cp)  != new_ref.signature(new_cp)))
       return false;
 
-    auto bsme_old = old_ref.bsme(old_cp);
-    auto bsme_new = new_ref.bsme(new_cp);
+    BSMAttributeEntry* bsme_old = old_ref.bsme(old_cp);
+    BSMAttributeEntry* bsme_new = new_ref.bsme(new_cp);
     int bsm_old = bsme_old->bootstrap_method_index();
     int bsm_new = bsme_new->bootstrap_method_index();
     if (!pool_constants_same(bsm_old, bsm_new, old_cp, new_cp))
@@ -293,17 +293,17 @@ bool MethodComparator::pool_constants_same(const int cpi_old, const int cpi_new,
     if (old_cp->klass_name_at(cpi_old) != new_cp->klass_name_at(cpi_new))
       return false;
   } else if (tag_old.is_method_type() && tag_new.is_method_type()) {
-    auto old_ref = old_cp->method_type_ref_at(cpi_old);
-    auto new_ref = new_cp->method_type_ref_at(cpi_new);
+    MethodTypeReference old_ref(old_cp, cpi_old);
+    MethodTypeReference new_ref(new_cp, cpi_new);
     if (old_ref.signature(old_cp) != new_ref.signature(new_cp))
       return false;
   } else if (tag_old.is_method_handle() && tag_new.is_method_handle()) {
-    auto old_ref = old_cp->method_handle_ref_at(cpi_old);
-    auto new_ref = new_cp->method_handle_ref_at(cpi_new);
+    MethodHandleReference old_ref(old_cp, cpi_old);
+    MethodHandleReference new_ref(new_cp, cpi_new);
     if (old_ref.ref_kind() != new_ref.ref_kind())
       return false;
-    auto old_mh = old_cp->uncached_field_or_method_ref_at(old_ref.ref_index());
-    auto new_mh = new_cp->uncached_field_or_method_ref_at(new_ref.ref_index());
+    FMReference old_mh(old_cp, old_ref.ref_index());
+    FMReference new_mh(new_cp, new_ref.ref_index());
     if ((old_mh.klass_name(old_cp) != new_mh.klass_name(new_cp)) ||
         (old_mh.name(old_cp)       != new_mh.name(new_cp)) ||
         (old_mh.signature(old_cp)  != new_mh.signature(new_cp)))

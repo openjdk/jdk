@@ -228,11 +228,11 @@ void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
   } else if (tag.is_unresolved_klass()) {
     st->print_cr(" %s", constants->klass_name_at(cp_index)->as_quoted_ascii());
   } else if (tag.is_method_type()) {
-    auto ref = constants->method_type_ref_at(cp_index);
+    MethodTypeReference ref(constants, cp_index);
     st->print(" <MethodType> %d", ref.signature_index());
     st->print_cr(" %s", ref.signature(constants)->as_quoted_ascii());
   } else if (tag.is_method_handle()) {
-    auto ref = constants->method_handle_ref_at(cp_index);
+    MethodHandleReference ref(constants, cp_index);
     st->print(" <MethodHandle of kind %d index at %d>", ref.ref_kind(), ref.ref_index());
     print_field_or_method(ref.ref_index(), st);
   } else if (tag.is_dynamic_constant()) {
@@ -260,7 +260,7 @@ void BytecodePrinter::print_field_or_method(int cp_index, outputStream* st) {
     return;
   }
 
-  auto ref = constants->uncached_field_or_method_ref_at(cp_index);
+  FMReference ref(constants, cp_index);
   Symbol* name      = ref.name(constants);
   Symbol* signature = ref.signature(constants);
   Symbol* klass     = ref.klass_name(constants);
@@ -282,7 +282,7 @@ void BytecodePrinter::print_dynamic(int cp_index, outputStream* st) {
     return;
   }
 
-  auto ref = constants->uncached_bootstrap_specifier_ref_at(cp_index);
+  BSReference ref(constants, cp_index);
   st->print(" bsm=%d", ref.bsme(constants)->bootstrap_method_index());
 
   Symbol* name = ref.name(constants);
@@ -307,9 +307,9 @@ void BytecodePrinter::print_invokedynamic(int indy_index, int cp_index, outputSt
 
 // cp_index: must be the cp_index of a JVM_CONSTANT_{Dynamic, DynamicInError, InvokeDynamic}
 void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
-  const auto indy = constants()->uncached_bootstrap_specifier_ref_at(cp_index);
-  const auto bsme = indy.bsme(constants());
-  const auto bsmh = bsme->bootstrap_method(constants());
+  BSReference indy(constants(), cp_index);
+  BSMAttributeEntry* bsme = indy.bsme(constants());
+  MethodHandleReference bsmh = bsme->bootstrap_method(constants());
   const char* ref_kind = "";
   switch (bsmh.ref_kind()) {
   case JVM_REF_getField         : ref_kind = "REF_getField"; break;

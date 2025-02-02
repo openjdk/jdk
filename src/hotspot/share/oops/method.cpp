@@ -935,7 +935,8 @@ bool Method::is_klass_loaded_by_klass_index(int klass_index) const {
 
 
 bool Method::is_klass_loaded(int refinfo_index, Bytecodes::Code bc, bool must_be_resolved) const {
-  int klass_index = constants()->from_bytecode_ref_at(refinfo_index, bc).klass_index();
+  FMReference mref(constants(), refinfo_index, bc);
+  int klass_index = mref.klass_index();
   if (must_be_resolved) {
     // Make sure klass is resolved in constantpool.
     if (constants()->tag_at(klass_index).is_unresolved_klass()) return false;

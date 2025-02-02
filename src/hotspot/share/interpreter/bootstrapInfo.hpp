@@ -33,8 +33,8 @@
 class BootstrapInfo : public StackObj {
   constantPoolHandle _pool;     // constant pool containing the bootstrap specifier
   const int   _bss_index;       // index of bootstrap specifier in CP (condy or indy)
+  BSReference _bss_data;        // indexes unpacked from the _bss_index
   const int   _indy_index;      // internal index of indy call site, or -1 if a condy call
-  int         _bsm_attr_index;  // index in the BootstrapMethods attribute
   Symbol*     _name;            // extracted from JVM_CONSTANT_NameAndType
   Symbol*     _signature;
 
@@ -58,7 +58,7 @@ class BootstrapInfo : public StackObj {
   const constantPoolHandle& pool() const{ return _pool; }
   int bss_index() const                 { return _bss_index; }
   int indy_index() const                { return _indy_index; }
-  int bsm_attr_index() const            { return _bsm_attr_index; }
+  int bsm_attr_index() const            { return _bss_data.bsme_index(); }
   bool is_method_call() const           { return (_indy_index != -1); }
   Symbol* name() const                  { return _name; }
   Symbol* signature() const             { return _signature; }
@@ -76,7 +76,7 @@ class BootstrapInfo : public StackObj {
   // derived accessors
   InstanceKlass* caller() const         { return _pool->pool_holder(); }
   oop caller_mirror() const             { return caller()->java_mirror(); }
-  BSMAttributeEntry* bsm_attr() const   { return _pool->bsm_attribute_entry(_bsm_attr_index); }
+  BSMAttributeEntry* bsm_attr() const   { return _bss_data.bsme(_pool); }
   int bsm_index() const                 { return bsm_attr()->bootstrap_method_index(); }
   int arg_count() const                 { return bsm_attr()->argument_count(); }
   int arg_index(int j) const            { return bsm_attr()->argument_index(j); }

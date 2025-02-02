@@ -1319,7 +1319,8 @@ void GenerateOopMap::print_current_state(outputStream   *os,
     case Bytecodes::_invokeinterface: {
       int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2();
       ConstantPool* cp      = method()->constants();
-      SymbolicReference ref = cp->from_bytecode_ref_at(idx, currentBC->code());
+      // RawReference covers indy as well as methods
+      RawReference ref(cp, idx, currentBC->code());
       Symbol* signature     = ref.signature(cp);
       os->print("%s", signature->as_C_string());
     }
@@ -1886,7 +1887,7 @@ void GenerateOopMap::do_ldc(int bci) {
   constantTag tag = cp->tag_at(ldc.pool_index()); // idx is index in resolved_references
   BasicType       bt  = ldc.result_type();
 #ifdef ASSERT
-  BasicType   tag_bt = (tag.is_dynamic_constant() || tag.is_dynamic_constant_in_error()) ? bt : tag.basic_type();
+  BasicType   tag_bt = (tag.is_dynamic_constant_or_error()) ? bt : tag.basic_type();
   assert(bt == tag_bt, "same result");
 #endif
   CellTypeState   cts;
@@ -1932,7 +1933,8 @@ int GenerateOopMap::copy_cts(CellTypeState *dst, CellTypeState *src) {
 void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci, Bytecodes::Code bc) {
   // Dig up signature for field in constant pool
   ConstantPool* cp  = method()->constants();
-  Symbol* signature = cp->from_bytecode_ref_at(idx, bc).signature(cp);
+  FMReference   ref(cp, idx, bc);
+  Symbol* signature = ref.signature(cp);
 
   CellTypeState temp[4];
   CellTypeState *eff  = signature_to_effect(signature, bci, temp);
@@ -1954,9 +1956,11 @@ void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci, Bytec
 }
 
 void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci, Bytecodes::Code bc) {
- // Dig up signature for field in constant pool
+ // Dig up signature for method in constant pool
   ConstantPool* cp  = method()->constants();
-  Symbol* signature = cp->from_bytecode_ref_at(idx, bc).signature(cp);
+  // Use RawReference to cover both method & indy.
+  RawReference ref(cp, idx, bc);
+  Symbol* signature = ref.signature(cp);
 
   // Parse method signature
   CellTypeState out[4];

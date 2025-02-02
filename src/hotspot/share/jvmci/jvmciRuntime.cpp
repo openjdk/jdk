@@ -1833,7 +1833,7 @@ Method* JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
     return nullptr;
   }
 
-  auto mref = cpool->from_bytecode_ref_at(index, bc);
+  FMReference mref(cpool, index, bc);
   int holder_index = mref.klass_index();
   bool holder_is_accessible;
   Klass* holder = get_klass_by_index_impl(cpool, holder_index, holder_is_accessible, accessor);

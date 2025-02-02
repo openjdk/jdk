@@ -441,7 +441,7 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     // this is an indirect CP entry so it needs special handling
     case JVM_CONSTANT_NameAndType:
     {
-      auto nt = scratch_cp->name_and_type_pair_at(scratch_i);
+      NTReference nt(scratch_cp, scratch_i);
       int name_ref_i = nt.name_index();
       int new_name_ref_i = find_or_append_indirect_entry(scratch_cp, name_ref_i, merge_cp_p,
                                                          merge_cp_length_p);
@@ -479,7 +479,7 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     case JVM_CONSTANT_InterfaceMethodref: // fall through
     case JVM_CONSTANT_Methodref:
     {
-      auto ref = scratch_cp->uncached_field_or_method_ref_at(scratch_i);
+      FMReference ref(scratch_cp, scratch_i);
       int klass_ref_i = ref.klass_index();
       int new_klass_ref_i = find_or_append_indirect_entry(scratch_cp, klass_ref_i,
                                                           merge_cp_p, merge_cp_length_p);
@@ -531,7 +531,7 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     // this is an indirect CP entry so it needs special handling
     case JVM_CONSTANT_MethodType:
     {
-      auto ref = scratch_cp->method_type_ref_at(scratch_i);
+      MethodTypeReference ref(scratch_cp, scratch_i);
       int ref_i = ref.signature_index();
       int new_ref_i = find_or_append_indirect_entry(scratch_cp, ref_i, merge_cp_p,
                                                     merge_cp_length_p);
@@ -551,7 +551,7 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     // this is an indirect CP entry so it needs special handling
     case JVM_CONSTANT_MethodHandle:
     {
-      auto ref = scratch_cp->method_handle_ref_at(scratch_i);
+      MethodHandleReference ref(scratch_cp, scratch_i);
       int ref_kind = ref.ref_kind();
       int ref_i = ref.ref_index();
       int new_ref_i = find_or_append_indirect_entry(scratch_cp, ref_i, merge_cp_p,
@@ -573,7 +573,7 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     case JVM_CONSTANT_Dynamic:  // fall through
     case JVM_CONSTANT_InvokeDynamic:
     {
-      auto ref = scratch_cp->uncached_bootstrap_specifier_ref_at(scratch_i);
+      BSReference ref(scratch_cp, scratch_i);
 
       // Index of the bootstrap specifier in the BSM data arrays
       int old_bsme_i = ref.bsme_index();
@@ -668,7 +668,7 @@ u2 VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& s
 void VM_RedefineClasses::append_bsm_data(const constantPoolHandle& scratch_cp, int old_bsme_i,
        constantPoolHandle *merge_cp_p, int *merge_cp_length_p) {
 
-  const auto old_bsme = scratch_cp->bsm_attribute_entry(old_bsme_i);
+  BSMAttributeEntry* old_bsme = scratch_cp->bsm_attribute_entry(old_bsme_i);
   u2 old_ref_i = old_bsme->bootstrap_method_index();
   u2 new_ref_i = find_or_append_indirect_entry(scratch_cp, old_ref_i, merge_cp_p,
                                                merge_cp_length_p);
@@ -677,8 +677,8 @@ void VM_RedefineClasses::append_bsm_data(const constantPoolHandle& scratch_cp, i
       ("bsm_data entry@%d bootstrap method ref_index change: %d to %d", _bsm_data_cur_length, old_ref_i, new_ref_i);
   }
 
-  const auto merge_offs = (*merge_cp_p)->bsm_attribute_offsets();
-  const auto merge_data = (*merge_cp_p)->bsm_attribute_entries();
+  Array<u4>* merge_offs = (*merge_cp_p)->bsm_attribute_offsets();
+  Array<u2>* merge_data = (*merge_cp_p)->bsm_attribute_entries();
 
   int new_bsme_i = _bsm_data_cur_length;
   int new_base   = _bsm_data_next_offset;

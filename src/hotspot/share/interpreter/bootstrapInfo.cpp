@@ -48,13 +48,12 @@
 BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int indy_index)
   : _pool(pool),
     _bss_index(bss_index),
+    _bss_data(pool, bss_index),
     _indy_index(indy_index)
 {
   assert(bss_index != 0, "");
-  auto ref = pool->uncached_bootstrap_specifier_ref_at(bss_index);
-  _bsm_attr_index = ref.bsme_index();
-  _name = ref.name(pool);
-  _signature = ref.signature(pool);
+  _name = _bss_data.name(pool);
+  _signature = _bss_data.signature(pool);
   assert(pool->tag_at(bss_index).has_bootstrap(), "");
   assert(indy_index == -1 || pool->resolved_indy_entry_at(indy_index)->constant_pool_index() == bss_index, "invalid bootstrap specifier index");
   _is_resolved = false;
@@ -199,7 +198,7 @@ void BootstrapInfo::resolve_args(TRAPS) {
     // return {arg...}; resolution of arguments is done immediately, before JDK code is called
     objArrayOop args_oop = oopFactory::new_objArray(vmClasses::Object_klass(), argc, CHECK);
     objArrayHandle args(THREAD, args_oop);
-    _pool->copy_bootstrap_arguments_at(_bsm_attr_index,
+    _pool->copy_bootstrap_arguments_at(bsm_attr_index(),
                                        0, argc, args, 0, true, Handle(), CHECK);
     oop arg_oop = ((argc == 1) ? args->obj_at(0) : (oop)nullptr);
     // try to discard the singleton array

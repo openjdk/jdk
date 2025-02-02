@@ -257,8 +257,7 @@ void CallInfo::print() {
 // Implementation of LinkInfo
 
 LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, Bytecodes::Code code, TRAPS) {
-  SymbolicReference ref = pool->from_bytecode_ref_at(index, code);
-  // FIXME: consider copying this struct bitwise into the LinkInfo
+  FMReference ref(pool, index, code);
 
    // resolve klass
   _resolved_klass = ref.klass(pool, CHECK);
@@ -276,7 +275,7 @@ LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, const methodHandle
 }
 
 LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, Bytecodes::Code code, TRAPS) {
-  SymbolicReference ref = pool->from_bytecode_ref_at(index, code);
+  FMReference ref(pool, index, code);
 
    // resolve klass
   _resolved_klass = ref.klass(pool, CHECK);
@@ -652,9 +651,10 @@ Method* LinkResolver::resolve_method_statically(Bytecodes::Code code,
   // FIXME: Remove this method and ciMethod::check_call; refactor to use the other LinkResolver entry points.
   // resolve klass
   if (code == Bytecodes::_invokedynamic) {
+    BSReference indy(pool, index, code);
     Klass* resolved_klass = vmClasses::MethodHandle_klass();
     Symbol* method_name = vmSymbols::invoke_name();
-    Symbol* method_signature = pool->from_bytecode_ref_at(index, code).signature(pool);
+    Symbol* method_signature = indy.signature(pool);
     Klass*  current_klass = pool->pool_holder();
     LinkInfo link_info(resolved_klass, method_name, method_signature, current_klass);
     return resolve_method(link_info, code, THREAD);
