@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jni.h"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -42,7 +41,7 @@
 // Enabling optimizations in this file causes incorrect code to be
 // generated; can not figure out how to turn down optimization for one
 // file in the IDE on Windows
-#ifdef WIN32
+#ifdef _WINDOWS
 # pragma warning( disable: 4748 ) // /GS can not protect parameters and local variables from local buffer overrun because optimizations are disabled in function
 # pragma optimize ( "", off )
 #endif
@@ -671,6 +670,6 @@ JRT_LEAF(jdouble, SharedRuntime::dpow(jdouble x, jdouble y))
   return __ieee754_pow(x, y);
 JRT_END
 
-#ifdef WIN32
+#ifdef _WINDOWS
 # pragma optimize ( "", on )
 #endif

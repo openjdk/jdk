@@ -88,10 +88,6 @@ cp "${TESTSRC}"/Application.java .
 sh -xc "$JAVA ${TESTVMOPTS} ${TESTJAVAOPTS} -classpath . -javaagent:Agent.jar DynamicTest" 2>&1
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
-# Repeat test with security manager
-sh -xc "$JAVA ${TESTVMOPTS} ${TESTJAVAOPTS} -classpath . -javaagent:Agent.jar -Djava.security.manager DynamicTest" 2>&1
-if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
-
 #
 # Results
 #

@@ -46,6 +46,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/ticks.hpp"
 #include "utilities/vmEnums.hpp"
+#include "opto/printinlining.hpp"
 
 class AbstractLockNode;
 class AddPNode;
@@ -239,11 +240,12 @@ class Compile : public Phase {
    private:
     Compile*    _compile;
     CompileLog* _log;
-    const char* _phase_name;
     bool _dolog;
    public:
-    TracePhase(const char* name, elapsedTimer* accumulator);
+    TracePhase(PhaseTraceId phaseTraceId);
+    TracePhase(const char* name, PhaseTraceId phaseTraceId);
     ~TracePhase();
+    const char* phase_name() const { return title(); }
   };
 
   // Information per category of alias (memory slice)
@@ -471,29 +473,6 @@ private:
   // "MemLimit" directive was specified and the memory limit was hit during compilation
   bool                          _oom;
 
-  // Inlining may not happen in parse order which would make
-  // PrintInlining output confusing. Keep track of PrintInlining
-  // pieces in order.
-  class PrintInliningBuffer : public CHeapObj<mtCompiler> {
-   private:
-    CallGenerator* _cg;
-    stringStream   _ss;
-    static const size_t default_stream_buffer_size = 128;
-
-   public:
-    PrintInliningBuffer()
-      : _cg(nullptr), _ss(default_stream_buffer_size) {}
-
-    stringStream* ss()             { return &_ss; }
-    CallGenerator* cg()            { return _cg; }
-    void set_cg(CallGenerator* cg) { _cg = cg; }
-  };
-
-  stringStream* _print_inlining_stream;
-  GrowableArray<PrintInliningBuffer*>* _print_inlining_list;
-  int _print_inlining_idx;
-  char* _print_inlining_output;
-
   // Only keep nodes in the expensive node list that need to be optimized
   void cleanup_expensive_nodes(PhaseIterGVN &igvn);
   // Use for sorting expensive nodes to bring similar nodes together
@@ -505,37 +484,17 @@ private:
 
   void* _replay_inline_data; // Pointer to data loaded from file
 
-  void print_inlining_init();
-  void print_inlining_reinit();
-  void print_inlining_commit();
-  void print_inlining_push();
-  PrintInliningBuffer* print_inlining_current();
-
   void log_late_inline_failure(CallGenerator* cg, const char* msg);
   DEBUG_ONLY(bool _exception_backedge;)
 
   void record_method_not_compilable_oom();
 
- public:
+  InlinePrinter _inline_printer;
 
+public:
   void* barrier_set_state() const { return _barrier_set_state; }
 
-  stringStream* print_inlining_stream() {
-    assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
-    return _print_inlining_stream;
-  }
-
-  void print_inlining_update(CallGenerator* cg);
-  void print_inlining_update_delayed(CallGenerator* cg);
-  void print_inlining_move_to(CallGenerator* cg);
-  void print_inlining_assert_ready();
-  void print_inlining_reset();
-
-  void print_inlining(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
-    stringStream ss;
-    CompileTask::print_inlining_inner(&ss, method, inline_level, bci, result, msg);
-    print_inlining_stream()->print("%s", ss.freeze());
-  }
+  InlinePrinter* inline_printer() { return &_inline_printer; }
 
 #ifndef PRODUCT
   IdealGraphPrinter* igv_printer() { return _igv_printer; }
@@ -710,14 +669,16 @@ private:
   void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
+  void init_igv();
   void dump_igv(const char* graph_name, int level = 3) {
     if (should_print_igv(level)) {
-      _igv_printer->print_method(graph_name, level);
+      _igv_printer->print_graph(graph_name);
     }
   }
 
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
   void igv_print_method_to_network(const char* phase_name = "Debug");
+  void igv_print_graph_to_network(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes);
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
@@ -943,11 +904,9 @@ private:
   Node_Notes* default_node_notes() const        { return _default_node_notes; }
   void    set_default_node_notes(Node_Notes* n) { _default_node_notes = n; }
 
-  Node_Notes*       node_notes_at(int idx) {
-    return locate_node_notes(_node_note_array, idx, false);
-  }
-  inline bool   set_node_notes_at(int idx, Node_Notes* value);
+  Node_Notes*       node_notes_at(int idx);
 
+  inline bool   set_node_notes_at(int idx, Node_Notes* value);
   // Copy notes from source to dest, if they exist.
   // Overwrite dest only if source provides something.
   // Return true if information was moved.
@@ -1099,7 +1058,6 @@ private:
 
   void remove_useless_coarsened_locks(Unique_Node_List& useful);
 
-  void process_print_inlining();
   void dump_print_inlining();
 
   bool over_inlining_cutoff() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
@@ -515,7 +514,7 @@ static ZStoreBarrierBufferTable* z_verify_store_barrier_buffer_table = nullptr;
 
 #define BAD_REMSET_ARG(p, ptr, addr) \
   "Missing remembered set at " PTR_FORMAT " pointing at " PTR_FORMAT \
-  " (" PTR_FORMAT " + " INTX_FORMAT ")" \
+  " (" PTR_FORMAT " + %zd)" \
   , p2i(p), untype(ptr), untype(addr), p2i(p) - untype(addr)
 
 class ZVerifyRemsetBeforeOopClosure : public BasicOopIterateClosure {

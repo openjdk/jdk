@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.awt.TrayIcon;
 import java.awt.Toolkit;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.InvocationEvent;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -229,20 +227,13 @@ public final class AppContext {
      * @see     sun.awt.SunToolkit
      * @since   1.2
      */
-    @SuppressWarnings("removal")
     AppContext(ThreadGroup threadGroup) {
         numAppContexts.incrementAndGet();
 
         this.threadGroup = threadGroup;
         threadGroup2appContext.put(threadGroup, this);
 
-        this.contextClassLoader =
-             AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-                    public ClassLoader run() {
-                        return Thread.currentThread().getContextClassLoader();
-                    }
-                });
-
+        this.contextClassLoader = Thread.currentThread().getContextClassLoader();
         // Initialize push/pop lock and its condition to be used by all the
         // EventQueues within this AppContext
         Lock eventQueuePushPopLock = new ReentrantLock();
@@ -254,26 +245,19 @@ public final class AppContext {
     private static final ThreadLocal<AppContext> threadAppContext =
             new ThreadLocal<AppContext>();
 
-    @SuppressWarnings("removal")
     private static void initMainAppContext() {
         // On the main Thread, we get the ThreadGroup, make a corresponding
         // AppContext, and instantiate the Java EventQueue.  This way, legacy
         // code is unaffected by the move to multiple AppContext ability.
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                ThreadGroup currentThreadGroup =
-                        Thread.currentThread().getThreadGroup();
-                ThreadGroup parentThreadGroup = currentThreadGroup.getParent();
-                while (parentThreadGroup != null) {
-                    // Find the root ThreadGroup to construct our main AppContext
-                    currentThreadGroup = parentThreadGroup;
-                    parentThreadGroup = currentThreadGroup.getParent();
-                }
+        ThreadGroup currentThreadGroup = Thread.currentThread().getThreadGroup();
+        ThreadGroup parentThreadGroup = currentThreadGroup.getParent();
+        while (parentThreadGroup != null) {
+            // Find the root ThreadGroup to construct our main AppContext
+            currentThreadGroup = parentThreadGroup;
+            parentThreadGroup = currentThreadGroup.getParent();
+        }
 
-                mainAppContext = SunToolkit.createNewAppContext(currentThreadGroup);
-                return null;
-            }
-        });
+        mainAppContext = SunToolkit.createNewAppContext(currentThreadGroup);
     }
 
     /**
@@ -284,7 +268,6 @@ public final class AppContext {
      * @see     java.lang.ThreadGroup
      * @since   1.2
      */
-    @SuppressWarnings("removal")
     public static AppContext getAppContext() {
         // we are standalone app, return the main app context
         if (numAppContexts.get() == 1 && mainAppContext != null) {
@@ -294,69 +277,53 @@ public final class AppContext {
         AppContext appContext = threadAppContext.get();
 
         if (null == appContext) {
-            appContext = AccessController.doPrivileged(new PrivilegedAction<AppContext>()
-            {
-                public AppContext run() {
-                    // Get the current ThreadGroup, and look for it and its
-                    // parents in the hash from ThreadGroup to AppContext --
-                    // it should be found, because we use createNewContext()
-                    // when new AppContext objects are created.
-                    ThreadGroup currentThreadGroup = Thread.currentThread().getThreadGroup();
-                    ThreadGroup threadGroup = currentThreadGroup;
+            // Get the current ThreadGroup, and look for it and its
+            // parents in the hash from ThreadGroup to AppContext --
+            // it should be found, because we use createNewContext()
+            // when new AppContext objects are created.
+            ThreadGroup currentThreadGroup = Thread.currentThread().getThreadGroup();
+            ThreadGroup threadGroup = currentThreadGroup;
 
-                    // Special case: we implicitly create the main app context
-                    // if no contexts have been created yet. This covers standalone apps
-                    // and excludes applets because by the time applet starts
-                    // a number of contexts have already been created by the plugin.
-                    synchronized (getAppContextLock) {
-                        if (numAppContexts.get() == 0) {
-                            if (System.getProperty("javaplugin.version") == null &&
-                                    System.getProperty("javawebstart.version") == null) {
-                                initMainAppContext();
-                            } else if (System.getProperty("javafx.version") != null &&
-                                    threadGroup.getParent() != null) {
-                                // Swing inside JavaFX case
-                                SunToolkit.createNewAppContext();
-                            }
-                        }
+            // Special case: we implicitly create the main app context
+            // if no contexts have been created yet. This covers standalone apps
+            // and excludes applets because by the time applet starts
+            // a number of contexts have already been created by the plugin.
+            synchronized (getAppContextLock) {
+                if (numAppContexts.get() == 0) {
+                    if (System.getProperty("javaplugin.version") == null &&
+                            System.getProperty("javawebstart.version") == null) {
+                        initMainAppContext();
+                    } else if (System.getProperty("javafx.version") != null &&
+                            threadGroup.getParent() != null) {
+                        // Swing inside JavaFX case
+                        SunToolkit.createNewAppContext();
                     }
-
-                    AppContext context = threadGroup2appContext.get(threadGroup);
-                    while (context == null) {
-                        threadGroup = threadGroup.getParent();
-                        if (threadGroup == null) {
-                            // We've got up to the root thread group and did not find an AppContext
-                            // Try to get it from the security manager
-                            SecurityManager securityManager = System.getSecurityManager();
-                            if (securityManager != null) {
-                                ThreadGroup smThreadGroup = securityManager.getThreadGroup();
-                                if (smThreadGroup != null) {
-                                    /*
-                                     * If we get this far then it's likely that
-                                     * the ThreadGroup does not actually belong
-                                     * to the applet, so do not cache it.
-                                     */
-                                    return threadGroup2appContext.get(smThreadGroup);
-                                }
-                            }
-                            return null;
-                        }
-                        context = threadGroup2appContext.get(threadGroup);
-                    }
-
-                    // In case we did anything in the above while loop, we add
-                    // all the intermediate ThreadGroups to threadGroup2appContext
-                    // so we won't spin again.
-                    for (ThreadGroup tg = currentThreadGroup; tg != threadGroup; tg = tg.getParent()) {
-                        threadGroup2appContext.put(tg, context);
-                    }
-
-                    // Now we're done, so we cache the latest key/value pair.
-                    threadAppContext.set(context);
-
-                    return context;
                 }
-            });
+            }
+
+            AppContext context = threadGroup2appContext.get(threadGroup);
+            while (context == null) {
+                threadGroup = threadGroup.getParent();
+                if (threadGroup == null) {
+                    // We've got up to the root thread group and did not find an AppContext
+                    // We have nowhere else to look, and this is not supposed to happen.
+                    // return null from this whole method.
+                    return null;
+                }
+                context = threadGroup2appContext.get(threadGroup);
+            }
+
+            // In case we did anything in the above while loop, we add
+            // all the intermediate ThreadGroups to threadGroup2appContext
+            // so we won't spin again.
+            for (ThreadGroup tg = currentThreadGroup; tg != threadGroup; tg = tg.getParent()) {
+                threadGroup2appContext.put(tg, context);
+            }
+
+            // Now we're done, so we cache the latest key/value pair.
+            threadAppContext.set(context);
+
+            appContext = context;
         }
 
         return appContext;
@@ -395,7 +362,6 @@ public final class AppContext {
      *                                    contained within this AppContext
      * @since      1.2
      */
-    @SuppressWarnings({"deprecation", "removal"})
     public void dispose() throws IllegalThreadStateException {
         System.err.println(
             """
@@ -439,19 +405,13 @@ public final class AppContext {
                         log.finer("exception occurred while disposing app context", t);
                     }
                 }
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                        public Void run() {
-                            if (!GraphicsEnvironment.isHeadless() && SystemTray.isSupported())
-                            {
-                                SystemTray systemTray = SystemTray.getSystemTray();
-                                TrayIcon[] trayIconsToDispose = systemTray.getTrayIcons();
-                                for (TrayIcon ti : trayIconsToDispose) {
-                                    systemTray.remove(ti);
-                                }
-                            }
-                            return null;
-                        }
-                    });
+                if (!GraphicsEnvironment.isHeadless() && SystemTray.isSupported()) {
+                    SystemTray systemTray = SystemTray.getSystemTray();
+                    TrayIcon[] trayIconsToDispose = systemTray.getTrayIcons();
+                    for (TrayIcon ti : trayIconsToDispose) {
+                        systemTray.remove(ti);
+                    }
+                }
                 // Alert PropertyChangeListeners that the GUI has been disposed.
                 if (changeSupport != null) {
                     changeSupport.firePropertyChange(GUI_DISPOSED, false, true);
@@ -546,25 +506,6 @@ public final class AppContext {
         }
     }
 
-    static final class CreateThreadAction implements PrivilegedAction<Thread> {
-        private final AppContext appContext;
-        private final Runnable runnable;
-
-        CreateThreadAction(AppContext ac, Runnable r) {
-            appContext = ac;
-            runnable = r;
-        }
-
-        public Thread run() {
-            Thread t = new Thread(appContext.getThreadGroup(),
-                                  runnable, "AppContext Disposer", 0, false);
-            t.setContextClassLoader(appContext.getContextClassLoader());
-            t.setPriority(Thread.NORM_PRIORITY + 1);
-            t.setDaemon(true);
-            return t;
-        }
-    }
-
     static void stopEventDispatchThreads() {
         for (AppContext appContext: getAppContexts()) {
             if (appContext.isDisposed()) {
@@ -576,9 +517,11 @@ public final class AppContext {
             if (appContext != AppContext.getAppContext()) {
                 // Create a thread that belongs to the thread group associated
                 // with the AppContext and invokes EventQueue.postEvent.
-                PrivilegedAction<Thread> action = new CreateThreadAction(appContext, r);
-                @SuppressWarnings("removal")
-                Thread thread = AccessController.doPrivileged(action);
+                Thread thread = new Thread(appContext.getThreadGroup(),
+                                           r, "AppContext Disposer", 0, false);
+                thread.setContextClassLoader(appContext.getContextClassLoader());
+                thread.setPriority(Thread.NORM_PRIORITY + 1);
+                thread.setDaemon(true);
                 thread.start();
             } else {
                 r.run();
@@ -806,14 +749,8 @@ public final class AppContext {
     // Set up JavaAWTAccess in SharedSecrets
     static {
         SharedSecrets.setJavaAWTAccess(new JavaAWTAccess() {
-            @SuppressWarnings("removal")
             private boolean hasRootThreadGroup(final AppContext ecx) {
-                return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-                    @Override
-                    public Boolean run() {
-                        return ecx.threadGroup.getParent() == null;
-                    }
-                });
+                return ecx.threadGroup.getParent() == null;
             }
 
             /**

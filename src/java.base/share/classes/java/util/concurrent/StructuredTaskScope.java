@@ -26,8 +26,6 @@ package java.util.concurrent;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
@@ -688,7 +686,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
     /**
      * Interrupt all unfinished threads.
      */
-    private void implInterruptAll() {
+    private void interruptAll() {
         flock.threads()
             .filter(t -> t != Thread.currentThread())
             .forEach(t -> {
@@ -696,19 +694,6 @@ public class StructuredTaskScope<T> implements AutoCloseable {
                     t.interrupt();
                 } catch (Throwable ignore) { }
             });
-    }
-
-    @SuppressWarnings("removal")
-    private void interruptAll() {
-        if (System.getSecurityManager() == null) {
-            implInterruptAll();
-        } else {
-            PrivilegedAction<Void> pa = () -> {
-                implInterruptAll();
-                return null;
-            };
-            AccessController.doPrivileged(pa);
-        }
     }
 
     /**

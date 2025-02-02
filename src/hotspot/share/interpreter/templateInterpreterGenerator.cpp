@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -175,7 +174,9 @@ void TemplateInterpreterGenerator::generate_all() {
     Interpreter::_throw_StackOverflowError_entry             = generate_StackOverflowError_handler();
   }
 
-
+  { CodeletMark cm(_masm, "preemption resume adapter");
+    Interpreter::_cont_resume_interpreter_adapter = generate_cont_resume_interpreter_adapter();
+  }
 
 #define method_entry(kind)                                                                          \
   { CodeletMark cm(_masm, "method entry point (kind = " #kind ")");                                 \
@@ -242,7 +243,6 @@ void TemplateInterpreterGenerator::generate_all() {
   set_entry_points_for_all_bytes();
 
   // installation of code in other places in the runtime
-  // (ExcutableCodeManager calls not needed to copy the entries)
   set_safepoints_for_all_bytes();
 
   { CodeletMark cm(_masm, "deoptimization entry points");

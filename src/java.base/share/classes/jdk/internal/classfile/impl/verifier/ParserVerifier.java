@@ -34,10 +34,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
-import java.util.stream.Collectors;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.Util;
@@ -65,48 +64,77 @@ public record ParserVerifier(ClassModel classModel) {
 
     private void verifyConstantPool(List<VerifyError> errors) {
         for (var cpe : classModel.constantPool()) {
-            Consumer<Runnable> check = c -> {
-                try {
-                    c.run();
-                } catch (VerifyError|Exception e) {
-                    errors.add(new VerifyError("%s at constant pool index %d in %s".formatted(e.getMessage(), cpe.index(), toString(classModel))));
+            try {
+                switch (cpe) {
+                    case DoubleEntry de -> de.doubleValue();
+                    case FloatEntry fe -> fe.floatValue();
+                    case IntegerEntry ie -> ie.intValue();
+                    case LongEntry le -> le.longValue();
+                    case Utf8Entry ue -> ue.stringValue();
+                    case ConstantDynamicEntry cde -> cde.asSymbol();
+                    case InvokeDynamicEntry ide -> ide.asSymbol();
+                    case ClassEntry ce -> ce.asSymbol();
+                    case StringEntry se -> se.stringValue();
+                    case MethodHandleEntry mhe -> mhe.asSymbol();
+                    case MethodTypeEntry mte -> mte.asSymbol();
+                    case FieldRefEntry fre -> {
+                        try {
+                            fre.owner().asSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        try {
+                            fre.typeSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        verifyFieldName(fre.name().stringValue());
+                    }
+                    case InterfaceMethodRefEntry imre -> {
+                        try {
+                            imre.owner().asSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        try {
+                            imre.typeSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        verifyMethodName(imre.name().stringValue());
+                    }
+                    case MethodRefEntry mre -> {
+                        try {
+                            mre.owner().asSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        try {
+                            mre.typeSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        verifyMethodName(mre.name().stringValue());
+                    }
+                    case ModuleEntry me -> me.asSymbol();
+                    case NameAndTypeEntry nate -> {
+                        try {
+                            nate.name().stringValue();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        nate.type().stringValue();
+                    }
+                    case PackageEntry pe -> pe.asSymbol();
                 }
-            };
-            check.accept(switch (cpe) {
-                case DoubleEntry de -> de::doubleValue;
-                case FloatEntry fe -> fe::floatValue;
-                case IntegerEntry ie -> ie::intValue;
-                case LongEntry le -> le::longValue;
-                case Utf8Entry ue -> ue::stringValue;
-                case ConstantDynamicEntry cde -> cde::asSymbol;
-                case InvokeDynamicEntry ide -> ide::asSymbol;
-                case ClassEntry ce -> ce::asSymbol;
-                case StringEntry se -> se::stringValue;
-                case MethodHandleEntry mhe -> mhe::asSymbol;
-                case MethodTypeEntry mte -> mte::asSymbol;
-                case FieldRefEntry fre -> {
-                    check.accept(fre.owner()::asSymbol);
-                    check.accept(fre::typeSymbol);
-                    yield () -> verifyFieldName(fre.name().stringValue());
-                }
-                case InterfaceMethodRefEntry imre -> {
-                    check.accept(imre.owner()::asSymbol);
-                    check.accept(imre::typeSymbol);
-                    yield () -> verifyMethodName(imre.name().stringValue());
-                }
-                case MethodRefEntry mre -> {
-                    check.accept(mre.owner()::asSymbol);
-                    check.accept(mre::typeSymbol);
-                    yield () -> verifyMethodName(mre.name().stringValue());
-                }
-                case ModuleEntry me -> me::asSymbol;
-                case NameAndTypeEntry nate -> {
-                    check.accept(nate.name()::stringValue);
-                    yield () -> nate.type().stringValue();
-                }
-                case PackageEntry pe -> pe::asSymbol;
-            });
+            } catch (VerifyError|Exception e) {
+                errors.add(cpeVerifyError(cpe, e));
+            }
         }
+    }
+
+    private VerifyError cpeVerifyError(final PoolEntry cpe, final Throwable e) {
+        return new VerifyError("%s at constant pool index %d in %s".formatted(e.getMessage(), cpe.index(), toString(classModel)));
     }
 
     private void verifyFieldName(String name) {
@@ -176,8 +204,8 @@ public record ParserVerifier(ClassModel classModel) {
         if (cfe instanceof AttributedElement ae) {
             var attrNames = new HashSet<String>();
             for (var a : ae.attributes()) {
-                if (!a.attributeMapper().allowMultiple() && !attrNames.add(a.attributeName())) {
-                    errors.add(new VerifyError("Multiple %s attributes in %s".formatted(a.attributeName(), toString(ae))));
+                if (!a.attributeMapper().allowMultiple() && !attrNames.add(a.attributeName().stringValue())) {
+                    errors.add(new VerifyError("Multiple %s attributes in %s".formatted(a.attributeName().stringValue(), toString(ae))));
                 }
                 verifyAttribute(ae, a, errors);
             }
@@ -331,7 +359,7 @@ public record ParserVerifier(ClassModel classModel) {
                 throw new AssertionError(a);
         };
         if (size >= 0 && size != ((BoundAttribute)a).payloadLen()) {
-            errors.add(new VerifyError("Wrong %s attribute length in %s".formatted(a.attributeName(), toString(ae))));
+            errors.add(new VerifyError("Wrong %s attribute length in %s".formatted(a.attributeName().stringValue(), toString(ae))));
         }
     }
 

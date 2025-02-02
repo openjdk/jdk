@@ -27,6 +27,10 @@
  * @summary test on a client notification deadlock.
  * @author Shanliang JIANG
  *
+ * @requires vm.compMode != "Xcomp"
+ * @comment Running with -Xcomp is likely to cause a timeout while establishing the connection
+ *          (RMI: java.rmi.NoSuchObjectException: no such object in table).
+ *
  * @run clean DeadLockTest
  * @run build DeadLockTest
  * @run main DeadLockTest
@@ -139,7 +143,7 @@ public class DeadLockTest {
                     try {
                         conn.getDefaultDomain();
                     } catch (IOException ioe) {
-                        // Greate !
+                        // OK
                     }
 
                     synchronized(this) {

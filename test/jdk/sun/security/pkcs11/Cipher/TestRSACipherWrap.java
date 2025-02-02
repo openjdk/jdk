@@ -29,7 +29,6 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestRSACipherWrap
- * @run main/othervm -Djava.security.manager=allow TestRSACipherWrap sm
  */
 
 import java.security.GeneralSecurityException;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 #include <sys/stat.h>
 
 #include "jni.h"
-#include "jvm_md.h"
 #include "jvm_constants.h"
 #include "jvm_io.h"
+#include "jvm_md.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -327,12 +327,6 @@ JNIEXPORT void JNICALL
 JVM_RegisterContinuationMethods(JNIEnv *env, jclass cls);
 
 /*
- * java.lang.SecurityManager
- */
-JNIEXPORT jobjectArray JNICALL
-JVM_GetClassContext(JNIEnv *env);
-
-/*
  * java.lang.Package
  */
 JNIEXPORT jstring JNICALL
@@ -419,7 +413,7 @@ JVM_FindPrimitiveClass(JNIEnv *env, const char *utf);
 
 
 /*
- * Find a class from a boot class loader. Returns NULL if class not found.
+ * Find a class from a boot class loader. Returns null if class not found.
  */
 JNIEXPORT jclass JNICALL
 JVM_FindClassFromBootLoader(JNIEnv *env, const char *name);
@@ -724,13 +718,6 @@ JNIEXPORT jobjectArray JNICALL
 JVM_GetMethodParameters(JNIEnv *env, jobject method);
 
 /*
- * java.security.*
- */
-
-JNIEXPORT jobject JNICALL
-JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls);
-
-/*
  * Ensure that code doing a stackwalk and using javaVFrame::locals() to
  * get the value will see a materialized value and not a scalar-replaced
  * null value.
@@ -740,9 +727,6 @@ JVM_GetInheritedAccessControlContext(JNIEnv *env, jclass cls);
                    // through a native method is enough.
 JNIEXPORT void JNICALL
 JVM_EnsureMaterializedForStackWalk_func(JNIEnv* env, jobject vthread, jobject value);
-
-JNIEXPORT jobject JNICALL
-JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls);
 
 /*
  * Signal support, used to implement the shutdown sequence.  Every VM must
@@ -1144,6 +1128,12 @@ JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide);
 
 JNIEXPORT void JNICALL
 JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jboolean enter);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadPinnedEvent(JNIEnv* env, jclass clazz, jstring op);
+
+JNIEXPORT jobject JNICALL
+JVM_TakeVirtualThreadListToUnblock(JNIEnv* env, jclass ignored);
 
 /*
  * Core reflection support.

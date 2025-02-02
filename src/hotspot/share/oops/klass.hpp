@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 #ifndef SHARE_OOPS_KLASS_HPP
 #define SHARE_OOPS_KLASS_HPP
 
-#include "memory/iterator.hpp"
-#include "memory/memRegion.hpp"
 #include "oops/klassFlags.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
@@ -60,8 +58,6 @@ class fieldDescriptor;
 class klassVtable;
 class ModuleEntry;
 class PackageEntry;
-class ParCompactionManager;
-class PSPromotionManager;
 class vtableEntry;
 
 class Klass : public Metadata {
@@ -70,7 +66,7 @@ class Klass : public Metadata {
   friend class JVMCIVMStructs;
  public:
   // Klass Kinds for all subclasses of Klass
-  enum KlassKind {
+  enum KlassKind : u2 {
     InstanceKlassKind,
     InstanceRefKlassKind,
     InstanceMirrorKlassKind,
@@ -117,15 +113,20 @@ class Klass : public Metadata {
   //
   // Final note:  This comes first, immediately after C++ vtable,
   // because it is frequently queried.
-  jint        _layout_helper;
+  jint _layout_helper;
 
   // Klass kind used to resolve the runtime type of the instance.
   //  - Used to implement devirtualized oop closure dispatching.
   //  - Various type checking in the JVM
   const KlassKind _kind;
 
+  AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
+                                // Some flags created by the JVM, not in the class file itself,
+                                // are in _misc_flags below.
   // Processed access flags, for use by Class.getModifiers.
-  jint        _modifier_flags;
+  u2          _modifier_flags;
+
+  KlassFlags  _misc_flags;
 
   // The fields _super_check_offset, _secondary_super_cache, _secondary_supers
   // and _primary_supers all help make fast subtype checks.  See big discussion
@@ -161,19 +162,11 @@ class Klass : public Metadata {
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
 
+  markWord _prototype_header;   // Used to initialize objects' header
+
   // Bitmap and hash code used by hashed secondary supers.
   uintx    _secondary_supers_bitmap;
   uint8_t  _hash_slot;
-
-  int _vtable_len;              // vtable length. This field may be read very often when we
-                                // have lots of itable dispatches (e.g., lambdas and streams).
-                                // Keep it away from the beginning of a Klass to avoid cacheline
-                                // contention that may happen when a nearby object is modified.
-  AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
-                                // Some flags created by the JVM, not in the class file itself,
-                                // are in _misc_flags below.
-
-  JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
 private:
   // This is an index into FileMapHeader::_shared_path_table[], to
@@ -193,13 +186,25 @@ private:
     _has_archived_enum_objs                = 1 << 4,
     // This class was not loaded from a classfile in the module image
     // or classpath.
-    _is_generated_shared_class             = 1 << 5
+    _is_generated_shared_class             = 1 << 5,
+    // archived mirror already initialized by AOT-cache assembly: no further need to call <clinit>
+    _has_aot_initialized_mirror            = 1 << 6,
+    // If this class has been aot-inititalized, do we need to call its runtimeSetup()
+    // method during the production run?
+    _is_runtime_setup_required             = 1 << 7,
   };
 #endif
 
-  KlassFlags  _misc_flags;
+  int _vtable_len;              // vtable length. This field may be read very often when we
+                                // have lots of itable dispatches (e.g., lambdas and streams).
+                                // Keep it away from the beginning of a Klass to avoid cacheline
+                                // contention that may happen when a nearby object is modified.
 
   CDS_JAVA_HEAP_ONLY(int _archived_mirror_index;)
+
+public:
+
+  JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
 protected:
 
@@ -278,7 +283,6 @@ protected:
   void set_java_mirror(Handle m);
 
   oop archived_java_mirror() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  void set_archived_java_mirror(int mirror_index) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Temporary mirror switch used by RedefineClasses
   OopHandle java_mirror_handle() const { return _java_mirror; }
@@ -289,8 +293,8 @@ protected:
   void clear_java_mirror_handle() { _java_mirror = OopHandle(); }
 
   // modifier flags
-  jint modifier_flags() const          { return _modifier_flags; }
-  void set_modifier_flags(jint flags)  { _modifier_flags = flags; }
+  u2 modifier_flags() const          { return _modifier_flags; }
+  void set_modifier_flags(u2 flags)  { _modifier_flags = flags; }
 
   // size helper
   int layout_helper() const            { return _layout_helper; }
@@ -372,6 +376,23 @@ protected:
   }
   bool is_generated_shared_class() const {
     CDS_ONLY(return (_shared_class_flags & _is_generated_shared_class) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_has_aot_initialized_mirror() {
+    CDS_ONLY(_shared_class_flags |= _has_aot_initialized_mirror;)
+  }
+  bool has_aot_initialized_mirror() const {
+    CDS_ONLY(return (_shared_class_flags & _has_aot_initialized_mirror) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_is_runtime_setup_required() {
+    assert(has_aot_initialized_mirror(), "sanity");
+    CDS_ONLY(_shared_class_flags |= _is_runtime_setup_required;)
+  }
+  bool is_runtime_setup_required() const {
+    CDS_ONLY(return (_shared_class_flags & _is_runtime_setup_required) != 0;)
     NOT_CDS(return false;)
   }
 
@@ -707,6 +728,10 @@ public:
   bool is_cloneable() const;
   void set_is_cloneable();
 
+  inline markWord prototype_header() const;
+  inline void set_prototype_header(markWord header);
+  static ByteSize prototype_header_offset() { return in_ByteSize(offset_of(Klass, _prototype_header)); }
+
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
@@ -732,7 +757,7 @@ public:
   virtual void release_C_heap_structures(bool release_constant_pool = true);
 
  public:
-  virtual jint compute_modifier_flags() const = 0;
+  virtual u2 compute_modifier_flags() const = 0;
 
   // JVMTI support
   virtual jint jvmti_class_status() const;
@@ -761,6 +786,10 @@ public:
   static bool is_valid(Klass* k);
 
   static void on_secondary_supers_verification_failure(Klass* super, Klass* sub, bool linear_result, bool table_result, const char* msg);
+
+  // Returns true if this Klass needs to be addressable via narrow Klass ID.
+  inline bool needs_narrow_id() const;
+
 };
 
 #endif // SHARE_OOPS_KLASS_HPP

@@ -556,9 +556,6 @@ public class File
      * @return  The absolute pathname string denoting the same file or
      *          directory as this abstract pathname
      *
-     * @throws  SecurityException
-     *          If a required system property value cannot be accessed.
-     *
      * @see     java.io.File#isAbsolute()
      */
     public String getAbsolutePath() {
@@ -571,9 +568,6 @@ public class File
      *
      * @return  The absolute abstract pathname denoting the same file or
      *          directory as this abstract pathname
-     *
-     * @throws  SecurityException
-     *          If a required system property value cannot be accessed.
      *
      * @since 1.2
      */
@@ -614,12 +608,6 @@ public class File
      *          construction of the canonical pathname may require
      *          filesystem queries
      *
-     * @throws  SecurityException
-     *          If a required system property value cannot be accessed, or
-     *          if a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead} method denies
-     *          read access to the file
-     *
      * @since   1.1
      * @see     Path#toRealPath
      */
@@ -641,12 +629,6 @@ public class File
      *          If an I/O error occurs, which is possible because the
      *          construction of the canonical pathname may require
      *          filesystem queries
-     *
-     * @throws  SecurityException
-     *          If a required system property value cannot be accessed, or
-     *          if a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead} method denies
-     *          read access to the file
      *
      * @since 1.2
      * @see     Path#toRealPath
@@ -736,8 +718,6 @@ public class File
      * @return  An absolute, hierarchical URI with a scheme equal to
      *          {@code "file"}, a path representing this abstract pathname,
      *          and undefined authority, query, and fragment components
-     * @throws SecurityException If a required system property value cannot
-     * be accessed.
      *
      * @see #File(java.net.URI)
      * @see java.net.URI
@@ -769,18 +749,8 @@ public class File
      * @return  {@code true} if and only if the file specified by this
      *          abstract pathname exists <em>and</em> can be read by the
      *          application; {@code false} otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file
      */
     public boolean canRead() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -798,18 +768,8 @@ public class File
      *          contains a file denoted by this abstract pathname <em>and</em>
      *          the application is allowed to write to the file;
      *          {@code false} otherwise.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
      */
     public boolean canWrite() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -822,18 +782,8 @@ public class File
      *
      * @return  {@code true} if and only if the file or directory denoted
      *          by this abstract pathname exists; {@code false} otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file or directory
      */
     public boolean exists() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -853,18 +803,8 @@ public class File
      * @return {@code true} if and only if the file denoted by this
      *          abstract pathname exists <em>and</em> is a directory;
      *          {@code false} otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file
      */
     public boolean isDirectory() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -886,18 +826,8 @@ public class File
      * @return  {@code true} if and only if the file denoted by this
      *          abstract pathname exists <em>and</em> is a normal file;
      *          {@code false} otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file
      */
     public boolean isFile() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -923,19 +853,9 @@ public class File
      *          abstract pathname is hidden according to the conventions of the
      *          underlying platform
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file
-     *
      * @since 1.2
      */
     public boolean isHidden() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -968,18 +888,8 @@ public class File
      *          file does not exist or if an I/O error occurs.  The value may
      *          be negative indicating the number of milliseconds before the
      *          epoch
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file
      */
     public long lastModified() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return 0L;
         }
@@ -1000,18 +910,8 @@ public class File
      *          pathname, or {@code 0L} if the file does not exist.  Some
      *          operating systems may return {@code 0L} for pathnames
      *          denoting system-dependent entities such as devices or pipes.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file
      */
     public long length() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return 0L;
         }
@@ -1040,17 +940,9 @@ public class File
      * @throws  IOException
      *          If an I/O error occurred
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
-     *
      * @since 1.2
      */
     public boolean createNewFile() throws IOException {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) security.checkWrite(path);
         if (isInvalid()) {
             throw new IOException("Invalid file path");
         }
@@ -1070,18 +962,8 @@ public class File
      *
      * @return  {@code true} if and only if the file or directory is
      *          successfully deleted; {@code false} otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkDelete} method denies
-     *          delete access to the file
      */
     public boolean delete() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkDelete(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1108,21 +990,11 @@ public class File
      * {@link java.nio.channels.FileLock FileLock}
      * facility should be used instead.
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkDelete} method denies
-     *          delete access to the file
-     *
      * @see #delete
      *
      * @since 1.2
      */
     public void deleteOnExit() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkDelete(path);
-        }
         if (isInvalid()) {
             return;
         }
@@ -1155,11 +1027,6 @@ public class File
      *          empty if the directory is empty.  Returns {@code null} if
      *          this abstract pathname does not denote a directory, or if an
      *          I/O error occurs.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          SecurityManager#checkRead(String)} method denies read access to
-     *          the directory
      */
     public String[] list() {
         return normalizedList();
@@ -1175,18 +1042,8 @@ public class File
      *          empty if the directory is empty.  Returns {@code null} if
      *          this abstract pathname does not denote a directory, or if an
      *          I/O error occurs.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          SecurityManager#checkRead(String)} method denies read access to
-     *          the directory
      */
     private final String[] normalizedList() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return null;
         }
@@ -1222,11 +1079,6 @@ public class File
      *          directory is empty or if no names were accepted by the filter.
      *          Returns {@code null} if this abstract pathname does not denote
      *          a directory, or if an I/O error occurs.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          SecurityManager#checkRead(String)} method denies read access to
-     *          the directory
      *
      * @see java.nio.file.Files#newDirectoryStream(Path,String)
      */
@@ -1275,11 +1127,6 @@ public class File
      *          {@code null} if this abstract pathname does not denote a
      *          directory, or if an I/O error occurs.
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          SecurityManager#checkRead(String)} method denies read access to
-     *          the directory
-     *
      * @since  1.2
      */
     public File[] listFiles() {
@@ -1315,11 +1162,6 @@ public class File
      *          {@code null} if this abstract pathname does not denote a
      *          directory, or if an I/O error occurs.
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          SecurityManager#checkRead(String)} method denies read access to
-     *          the directory
-     *
      * @since  1.2
      * @see java.nio.file.Files#newDirectoryStream(Path,String)
      */
@@ -1353,11 +1195,6 @@ public class File
      *          {@code null} if this abstract pathname does not denote a
      *          directory, or if an I/O error occurs.
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          SecurityManager#checkRead(String)} method denies read access to
-     *          the directory
-     *
      * @since  1.2
      * @see java.nio.file.Files#newDirectoryStream(Path,java.nio.file.DirectoryStream.Filter)
      */
@@ -1378,18 +1215,8 @@ public class File
      *
      * @return  {@code true} if and only if the directory was
      *          created; {@code false} otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method does not permit the named directory to be created
      */
     public boolean mkdir() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1405,16 +1232,6 @@ public class File
      * @return  {@code true} if and only if the directory was created,
      *          along with all necessary parent directories; {@code false}
      *          otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method does not permit verification of the existence of the
-     *          named directory and all necessary parent directories; or if
-     *          the {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method does not permit the named directory and all necessary
-     *          parent directories to be created
      */
     public boolean mkdirs() {
         if (exists()) {
@@ -1458,23 +1275,12 @@ public class File
      * @return  {@code true} if and only if the renaming succeeded;
      *          {@code false} otherwise
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to either the old or new pathnames
-     *
      * @throws  NullPointerException
      *          If parameter {@code dest} is {@code null}
      */
     public boolean renameTo(File dest) {
         if (dest == null) {
             throw new NullPointerException();
-        }
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-            security.checkWrite(dest.path);
         }
         if (this.isInvalid() || dest.isInvalid()) {
             return false;
@@ -1501,20 +1307,10 @@ public class File
      *
      * @throws  IllegalArgumentException  If the argument is negative
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the named file
-     *
      * @since 1.2
      */
     public boolean setLastModified(long time) {
         if (time < 0) throw new IllegalArgumentException("Negative time");
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1533,19 +1329,9 @@ public class File
      * @return {@code true} if and only if the operation succeeded;
      *          {@code false} otherwise
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the named file
-     *
      * @since 1.2
      */
     public boolean setReadOnly() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1577,19 +1363,9 @@ public class File
      *          operation will fail if the user does not have permission to change
      *          the access permissions of this abstract pathname.
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the named file
-     *
      * @since 1.6
      */
     public boolean setWritable(boolean writable, boolean ownerOnly) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1616,11 +1392,6 @@ public class File
      * @return  {@code true} if and only if the operation succeeded.  The
      *          operation will fail if the user does not have permission to
      *          change the access permissions of this abstract pathname.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
      *
      * @since 1.6
      */
@@ -1659,19 +1430,9 @@ public class File
      *          fails, or the value of the {@code readable} parameter if
      *          setting the read permission is not supported.
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
-     *
      * @since 1.6
      */
     public boolean setReadable(boolean readable, boolean ownerOnly) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1704,11 +1465,6 @@ public class File
      * @return  {@code true} if the operation succeeds, {@code false} if it
      *          fails, or the value of the {@code readable} parameter if
      *          setting the read permission is not supported.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
      *
      * @since 1.6
      */
@@ -1747,19 +1503,9 @@ public class File
      *          fails, or the value of the {@code executable} parameter if
      *          setting the execute permission is not supported.
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
-     *
      * @since 1.6
      */
     public boolean setExecutable(boolean executable, boolean ownerOnly) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1793,11 +1539,6 @@ public class File
      *          fails, or the value of the {@code executable} parameter if
      *          setting the execute permission is not supported.
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
-     *
      * @since 1.6
      */
     public boolean setExecutable(boolean executable) {
@@ -1814,19 +1555,9 @@ public class File
      * @return  {@code true} if and only if the abstract pathname exists
      *          <em>and</em> the application is allowed to execute the file
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkExec(java.lang.String)}
-     *          method denies execute access to the file
-     *
      * @since 1.6
      */
     public boolean canExecute() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkExec(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1849,12 +1580,6 @@ public class File
      * that the canonical pathname of any file physically present on the local
      * machine will begin with one of the roots returned by this method.
      * There is no guarantee that a root directory can be accessed.
-     *
-     * <p> Unlike most methods in this class, this method does not throw
-     * security exceptions.  If a security manager exists and its {@link
-     * SecurityManager#checkRead(String)} method denies read access to a
-     * particular root directory, then that directory will not appear in the
-     * result.
      *
      * @implNote
      * Windows platforms, for example, have a root directory
@@ -1898,22 +1623,10 @@ public class File
      *          abstract pathname does not name a partition or if the size
      *          cannot be obtained
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("getFileSystemAttributes")}
-     *          or its {@link SecurityManager#checkRead(String)} method denies
-     *          read access to the file named by this abstract pathname
-     *
      * @since  1.6
      * @see FileStore#getTotalSpace
      */
     public long getTotalSpace() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getFileSystemAttributes"));
-            sm.checkRead(path);
-        }
         if (isInvalid()) {
             return 0L;
         }
@@ -1942,22 +1655,10 @@ public class File
      *          equal to the total file system size returned by
      *          {@link #getTotalSpace}.
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("getFileSystemAttributes")}
-     *          or its {@link SecurityManager#checkRead(String)} method denies
-     *          read access to the file named by this abstract pathname
-     *
      * @since  1.6
      * @see FileStore#getUnallocatedSpace
      */
     public long getFreeSpace() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getFileSystemAttributes"));
-            sm.checkRead(path);
-        }
         if (isInvalid()) {
             return 0L;
         }
@@ -1989,22 +1690,10 @@ public class File
      *          is not available, this method will be equivalent to a call to
      *          {@link #getFreeSpace}.
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("getFileSystemAttributes")}
-     *          or its {@link SecurityManager#checkRead(String)} method denies
-     *          read access to the file named by this abstract pathname
-     *
      * @since  1.6
      * @see FileStore#getUsableSpace
      */
     public long getUsableSpace() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getFileSystemAttributes"));
-            sm.checkRead(path);
-        }
         if (isInvalid()) {
             return 0L;
         }
@@ -2034,7 +1723,6 @@ public class File
             }
             return subNameLength;
         }
-        @SuppressWarnings("removal")
         static File generateFile(String prefix, String suffix, File dir)
             throws IOException
         {
@@ -2091,11 +1779,8 @@ public class File
 
             File f = new File(dir, name);
             if (!name.equals(f.getName()) || f.isInvalid()) {
-                if (System.getSecurityManager() != null)
-                    throw new IOException("Unable to create temporary file");
-                else
-                    throw new IOException("Unable to create temporary file, "
-                        + name);
+                throw new IOException("Unable to create temporary file, "
+                    + name);
             }
             return f;
         }
@@ -2176,11 +1861,6 @@ public class File
      * @throws  IOException
      *          If a file could not be created
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method does not allow a file to be created
-     *
      * @since 1.2
      */
     public static File createTempFile(String prefix, String suffix,
@@ -2197,22 +1877,9 @@ public class File
         File tmpdir = (directory != null) ? directory
                                           : TempDirectory.location();
 
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
         File f;
         do {
             f = TempDirectory.generateFile(prefix, suffix, tmpdir);
-
-            if (sm != null) {
-                try {
-                    sm.checkWrite(f.getPath());
-                } catch (SecurityException se) {
-                    // don't reveal temporary directory location
-                    if (directory == null)
-                        throw new SecurityException("Unable to create temporary file");
-                    throw se;
-                }
-            }
         } while (FS.hasBooleanAttributes(f, FileSystem.BA_EXISTS));
 
         if (!FS.createFileExclusively(f.getPath()))
@@ -2249,11 +1916,6 @@ public class File
      *          characters
      *
      * @throws  IOException  If a file could not be created
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method does not allow a file to be created
      *
      * @since 1.2
      * @see java.nio.file.Files#createTempDirectory(String,FileAttribute[])

@@ -28,6 +28,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+import jdk.internal.util.Architecture;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -73,7 +74,7 @@ public class HostArchPkgTest {
                     "/installer-gui-script/options/@hostArchitectures",
                     doc, XPathConstants.STRING);
 
-        if ("aarch64".equals(System.getProperty("os.arch"))) {
+        if (Architecture.isAARCH64()) {
             TKit.assertEquals(v, "arm64",
                     "Check value of \"hostArchitectures\" attribute");
         } else {

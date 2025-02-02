@@ -1323,6 +1323,37 @@ public class ConcurrentSkipListMapTest extends JSR166TestCase {
         }
     }
 
+    /**
+     * Spliterators.trySplit() returns null with an empty map and non-null when
+     * it is not empty.
+     */
+    public void testSpliterators() {
+        // To test JDK-8343426
+        ConcurrentSkipListMap<Integer, Integer> map = new ConcurrentSkipListMap<>();
+        for (int i = 1; i <= 1000; i++) map.put(i, i);
+        // ensure that the splits do happen
+        assertNotNull(map.keySet().spliterator().trySplit());
+        assertNotNull(map.entrySet().spliterator().trySplit());
+        assertNotNull(map.values().spliterator().trySplit());
+        // ensure that the splits return *all* the items in the set
+        assertEquals(500_500, map.keySet()
+                .parallelStream()
+                .mapToInt(Integer::valueOf)
+                .sum());
+        assertEquals(500_500, map.values()
+                .parallelStream()
+                .mapToInt(Integer::valueOf)
+                .sum());
+        assertEquals(500_500 * 2, map.entrySet()
+                .parallelStream()
+                .mapToInt(entry -> entry.getKey() + entry.getValue())
+                .sum());
+        map.clear();
+        assertNull(map.keySet().spliterator().trySplit());
+        assertNull(map.entrySet().spliterator().trySplit());
+        assertNull(map.values().spliterator().trySplit());
+    }
+
     static void assertEq(Item i, int j) {
         if (i == null)
             mustEqual(j, -1);

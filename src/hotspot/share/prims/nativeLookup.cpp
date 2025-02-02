@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -250,9 +249,9 @@ static address lookup_special_native(const char* jni_name) {
   return nullptr;
 }
 
-address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style, TRAPS) {
+address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, TRAPS) {
   address entry;
-  const char* jni_name = compute_complete_jni_name(pure_name, long_name, args_size, os_style);
+  const char* jni_name = compute_complete_jni_name(pure_name, long_name, args_size);
 
 
   // If the loader is null we have a system class, so we attempt a lookup in
@@ -306,17 +305,10 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   return entry;
 }
 
-const char* NativeLookup::compute_complete_jni_name(const char* pure_name, const char* long_name, int args_size, bool os_style) {
+const char* NativeLookup::compute_complete_jni_name(const char* pure_name, const char* long_name, int args_size) {
   stringStream st;
-  if (os_style) {
-    os::print_jni_name_prefix_on(&st, args_size);
-  }
-
   st.print_raw(pure_name);
   st.print_raw(long_name);
-  if (os_style) {
-    os::print_jni_name_suffix_on(&st, args_size);
-  }
 
   return st.as_string();
 }
@@ -339,7 +331,7 @@ address NativeLookup::lookup_entry(const methodHandle& method, TRAPS) {
                 + method->size_of_parameters(); // actual parameters
 
   // 1) Try JNI short style
-  entry = lookup_style(method, pure_name, "",        args_size, true,  CHECK_NULL);
+  entry = lookup_style(method, pure_name, "",        args_size, CHECK_NULL);
   if (entry != nullptr) return entry;
 
   // Compute long name
@@ -351,15 +343,7 @@ address NativeLookup::lookup_entry(const methodHandle& method, TRAPS) {
   }
 
   // 2) Try JNI long style
-  entry = lookup_style(method, pure_name, long_name, args_size, true,  CHECK_NULL);
-  if (entry != nullptr) return entry;
-
-  // 3) Try JNI short style without os prefix/suffix
-  entry = lookup_style(method, pure_name, "",        args_size, false, CHECK_NULL);
-  if (entry != nullptr) return entry;
-
-  // 4) Try JNI long style without os prefix/suffix
-  entry = lookup_style(method, pure_name, long_name, args_size, false, CHECK_NULL);
+  entry = lookup_style(method, pure_name, long_name, args_size, CHECK_NULL);
 
   return entry; // null indicates not found
 }

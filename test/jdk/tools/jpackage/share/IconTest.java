@@ -41,8 +41,8 @@ import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.AdditionalLauncher;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingBiConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 
@@ -428,7 +428,7 @@ public class IconTest {
         private final Path cmdlineIcon;
         private final Path resourceDirIcon;
 
-        private final static Set<Launcher> PRIMARY = Set.of(Main, Additional);
+        private static final Set<Launcher> PRIMARY = Set.of(Main, Additional);
     }
 
     private final boolean appImage;
@@ -440,7 +440,7 @@ public class IconTest {
                 + TKit.ICON_SUFFIX));
     }
 
-    private final static Path[] ICONS = Stream.of("icon", "icon2", "icon3",
+    private static final Path[] ICONS = Stream.of("icon", "icon2", "icon3",
             "icon4")
             .map(IconTest::iconPath)
             .collect(Collectors.toList()).toArray(Path[]::new);

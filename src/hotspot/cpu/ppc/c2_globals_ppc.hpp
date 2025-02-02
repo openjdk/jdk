@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -59,6 +59,7 @@ define_pd_global(bool, UseCISCSpill,                 false);
 define_pd_global(bool, OptoBundling,                 false);
 define_pd_global(bool, OptoRegScheduling,            false);
 define_pd_global(bool, SuperWordLoopUnrollAnalysis,  true);
+define_pd_global(uint, SuperWordStoreToLoadForwardingFailureDetection, 16);
 // GL:
 // Detected a problem with unscaled compressed oops and
 // narrow_oop_use_complex_address() == false.
