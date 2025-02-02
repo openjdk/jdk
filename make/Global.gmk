@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,7 @@ help:
 	$(info $(_) MICRO="OPT1=x;OPT2=y"  # Control the MICRO test harness, use 'make test-only MICRO=help' to list)
 	$(info $(_) TEST_OPTS="OPT1=x;..." # Generic control of all test harnesses)
 	$(info $(_) TEST_VM_OPTS="ARG ..." # Same as setting TEST_OPTS to VM_OPTIONS="ARG ...")
+	$(info $(_) ALLOW="FOO,BAR"        # Do not warn that FOO and BAR are non-control variables)
 	$(info )
 	$(if $(all_confs), $(info Available configurations in $(build_dir):) $(foreach var,$(all_confs),$(info * $(var))), \
 	    $(info No configurations were found in $(build_dir).) $(info Run 'bash configure' to create a configuration.))
