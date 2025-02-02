@@ -1821,7 +1821,7 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
 
   int bsm_count = old_cp->bsm_attribute_count();
   _bsm_data_cur_length = bsm_count;
-  _bsm_data_next_offset = (bsm_count == 0) ? 0 : old_cp->bsm_attribute_entries()->length(); 
+  _bsm_data_next_offset = (bsm_count == 0) ? 0 : old_cp->bsm_attribute_entries()->length();
   _bsm_data_index_map_count = 0;
   int bsm_data_index_map_len = scratch_cp->bsm_attribute_count();
   _bsm_data_index_map_p = new intArray(bsm_data_index_map_len, bsm_data_index_map_len, -1);
