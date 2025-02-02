@@ -317,6 +317,17 @@
         "always equal to 1.0 / (1.0 + GCTimeRatio) regardless of the "      \
         "current heap size.")                                               \
                                                                             \
+  product(uintx, G1MinPausesOverThresholdForGrowth, 4, EXPERIMENTAL,        \
+          "Number of recent pause time ratios which exceed the pause time " \
+          "threshold that trigger heap expansion. The pause time ratio is " \
+          "the pause time of last GC pause divided by the time since end "  \
+          "of previous GC pause. Pause time threshold is determined by "    \
+          "GCTimeRatio and G1ScaleWithHeapPauseTimeThreshold. Must be an "  \
+          "integer between 1 and 10. 1 means most aggressive heap "         \
+          "expansion, 10 means least aggressive heap expansion. The "       \
+          "default is 4.")                                                  \
+          range(1, 10)                                                      \
+                                                                            \
   product(uint, G1RemSetFreeMemoryRescheduleDelayMillis, 10, EXPERIMENTAL,  \
           "Time after which the card set free memory task reschedules "     \
           "itself if there is work remaining.")                             \

@@ -31,11 +31,6 @@ class G1Analytics;
 class G1CollectedHeap;
 
 class G1HeapSizingPolicy: public CHeapObj<mtGC> {
-  // MinOverThresholdForGrowth must be less than the number of recorded
-  // pause times in G1Analytics, representing the minimum number of pause
-  // time ratios that exceed GCTimeRatio before a heap expansion will be triggered.
-  const static uint MinOverThresholdForGrowth = 4;
-
   const G1CollectedHeap* _g1h;
   const G1Analytics* _analytics;
 

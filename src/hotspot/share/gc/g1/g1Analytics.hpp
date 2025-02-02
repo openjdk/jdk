@@ -28,6 +28,7 @@
 #include "gc/g1/g1AnalyticsSequences.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/numberSeq.hpp"
 
 class TruncatedSeq;
 class G1Predictions;
@@ -112,6 +113,10 @@ public:
 
   uint number_of_recorded_pause_times() const {
     return NumPrevPausesForHeuristics;
+  }
+
+  uint number_of_available_pause_times() const {
+    return _recent_gc_times_ms->num();
   }
 
   void append_prev_collection_pause_end_ms(double ms) {

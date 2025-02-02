@@ -41,7 +41,7 @@ G1HeapSizingPolicy::G1HeapSizingPolicy(const G1CollectedHeap* g1h, const G1Analy
   _analytics(analytics),
   _num_prev_pauses_for_heuristics(analytics->number_of_recorded_pause_times()) {
 
-  assert(MinOverThresholdForGrowth < _num_prev_pauses_for_heuristics, "Threshold must be less than %u", _num_prev_pauses_for_heuristics);
+  assert(G1MinPausesOverThresholdForGrowth < _num_prev_pauses_for_heuristics, "Threshold must be less than %u", _num_prev_pauses_for_heuristics);
   clear_ratio_check_data();
 }
 
@@ -123,8 +123,8 @@ size_t G1HeapSizingPolicy::young_collection_expansion_amount() {
   // reached the end of the history buffer and the average of all entries
   // is still over the threshold. This indicates a smaller number of GCs were
   // long enough to make the average exceed the threshold.
-  bool filled_history_buffer = _pauses_since_start == _num_prev_pauses_for_heuristics;
-  if ((_ratio_over_threshold_count == MinOverThresholdForGrowth) ||
+  bool filled_history_buffer = _analytics->number_of_available_pause_times() == _num_prev_pauses_for_heuristics;
+  if ((_ratio_over_threshold_count == G1MinPausesOverThresholdForGrowth) ||
       (filled_history_buffer && (long_term_pause_time_ratio > threshold))) {
     size_t min_expand_bytes = G1HeapRegion::GrainBytes;
     size_t reserved_bytes = _g1h->max_capacity();
@@ -158,7 +158,7 @@ size_t G1HeapSizingPolicy::young_collection_expansion_amount() {
       double const ScaleUpRange = pause_time_threshold * 2.0;
 
       double ratio_delta;
-      if (filled_history_buffer) {
+      if ((_ratio_over_threshold_count != G1MinPausesOverThresholdForGrowth)) {
         ratio_delta = long_term_pause_time_ratio - threshold;
       } else {
         ratio_delta = (_ratio_over_threshold_sum / _ratio_over_threshold_count) - threshold;
