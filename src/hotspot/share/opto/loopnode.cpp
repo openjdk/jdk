@@ -1121,7 +1121,7 @@ public:
   }
   NONCOPYABLE(NodeInShortLoopBody);
 
-  bool check(Node* node) const override {
+  bool check_node_in_loop_body(Node* node) const override {
     return _phase->is_member(_ilt, _phase->get_ctrl(node));
   }
 };
