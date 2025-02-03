@@ -52,7 +52,7 @@ import jdk.internal.access.JavaUtilConcurrentFJPAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.SharedThreadContainer;
-import static java.util.concurrent.ForkJoinTask.DelayedTask;
+import static java.util.concurrent.DelayScheduler.DelayedTask;
 
 /**
  * An {@link ExecutorService} for running {@link ForkJoinTask}s.
@@ -141,11 +141,12 @@ import static java.util.concurrent.ForkJoinTask.DelayedTask;
  * tasks, as well as method {#link #submitAndCancelOnTimeout} to
  * cancel tasks that take too long. The submitted functions or actions
  * may create and invoke other {@linkplain ForkJoinTask
- * ForkJoinTasks}.  When time-based methods are used, shutdown
- * policies are based on the default policies of class {@link
- * ScheduledThreadPoolExecutor}: upon {@link #shutdown}, existing
- * periodic tasks will not re-execute, and the pool terminates when
- * quiescent and existing delayed tasks complete.
+ * ForkJoinTasks}. Resource exhaustian encountered after initial
+ * submission results in task cancellation. When time-based methods
+ * are used, shutdown policies are based on the default policies of
+ * class {@link ScheduledThreadPoolExecutor}: upon {@link #shutdown},
+ * existing periodic tasks will not re-execute, and the pool
+ * terminates when quiescent and existing delayed tasks complete.
  *
  * <p>The parameters used to construct the common pool may be controlled by
  * setting the following {@linkplain System#getProperty system properties}:
@@ -230,6 +231,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * 3. Completion-based tasks (mainly CountedCompleters)
      * 4. CommonPool and parallelStream support
      * 5. InterruptibleTasks for externally submitted tasks
+     * 6. Support ScheduledExecutorService methods
      *
      * Most changes involve adaptions of base algorithms using
      * combinations of static and dynamic bitwise mode settings (both
@@ -894,6 +896,25 @@ public class ForkJoinPool extends AbstractExecutorService
      * several constructions relying on this.  However as of this
      * writing, virtual thread bodies are by default run as some form
      * of InterruptibleTask.
+     *
+     * DelayScheduler
+     * ================
+     *
+     * This class supports ScheduledExecutorService methods by
+     * creating and starting a DelayScheduler on first use of these
+     * methods. The scheduler operates independently in its own
+     * thread, relaying tasks to the pool to execute as they become
+     * ready (see method executeReadyDelayedTask). The only other
+     * interactions with the delayScheduler are to control shutdown
+     * and maintain shutdown-related policies in methods quiescent()
+     * and tryTerminate(). In particular, to conform to policies,
+     * shutdown-related processing must deal with cases in which tasks
+     * are submitted before shutdown, but not ready until afterwards,
+     * in which case they must bypass some screening to be allowed to
+     * run. Conversely, the DelayScheduler interacts with the pool
+     * only to check runState status (via mehods poolIsStopping and
+     * poolIsShutdown) and complete termination (via canTerminate)
+     * that invoke corresponding private pool implementations.
      *
      * Memory placement
      * ================
@@ -1699,8 +1720,15 @@ public class ForkJoinPool extends AbstractExecutorService
         }
     }
 
-    static boolean poolIsStopping(ForkJoinPool p) { // Used by ForkJoinTask
+    // status methods used by other classes in this package
+    static boolean poolIsStopping(ForkJoinPool p) {
         return p != null && (p.runState & STOP) != 0L;
+    }
+    static boolean poolIsShutdown(ForkJoinPool p) {
+        return p != null && (p.runState & SHUTDOWN) != 0L;
+    }
+    static boolean canTerminate(ForkJoinPool p) { // true if terminated
+        return p != null && (p.tryTerminate(false, false) & STOP) != 0L;
     }
 
     // Creating, registering, and deregistering workers
@@ -2705,7 +2733,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * @param enable if true, terminate when next possible
      * @return runState on exit
      */
-    final long tryTerminate(boolean now, boolean enable) {
+    private long tryTerminate(boolean now, boolean enable) {
         long e, isShutdown, ps;
         if (((e = runState) & TERMINATED) != 0L)
             now = false;
@@ -3385,347 +3413,12 @@ public class ForkJoinPool extends AbstractExecutorService
             .invokeAny(tasks, this, true, unit.toNanos(timeout));
     }
 
-    /*
-     * The DelayScheduler maintains a binary heap based on trigger times
-     * (field DelayedTask.when) along with a pending queue of tasks
-     * submitted by other threads. When ready, tasks are pushed onto
-     * an external WorkQueue.
-     *
-     * To reduce memory contention, the heap is maintained solely via
-     * local variables in method loop() (forcing noticeable code
-     * sprawl), recording only the heap array to allow method
-     * canShutDown to conservatively check emptiness.
-     *
-     * The pending queue uses a design similar to ForkJoinTask.Aux
-     * queues: Incoming requests prepend (Treiber-stack-style) to the
-     * pending list. The scheduler thread takes and nulls out the
-     * entire list per step to process them as a batch. The pending
-     * queue may encounter contention and retries among requesters,
-     * but much less so versus the scheduler.
-     *
-     * Field "active" records whether the scheduler may have any
-     * pending tasks (and/or shutdown actions) to process, otherwise
-     * parking either indefinitely or until the next task
-     * deadline. Incoming pending tasks ensure active status,
-     * unparking if necessary. The scheduler thread sets status to inactive
-     * when apparently no work, and then rechecks before actually
-     * parking.  The active field takes on a negative value on
-     * termination, as a sentinel used in pool tryTerminate checks as
-     * well as to suppress reactivation while terminating.
-     *
-     * The implementation is designed to accommodate usages in which
-     * many or even most tasks are cancelled before executing (mainly
-     * IO-based timeouts).  Cancellations are added to the pending
-     * queue in method DelayedTask.cancel(), to remove them from the
-     * heap. (This requires some safeguards to deal with tasks
-     * cancelled while they are still pending.)  In addition,
-     * cancelled tasks set their "when" fields to Long.MAX_VALUE,
-     * which causes them to be pushed toward the bottom of the heap
-     * where they can be simply swept out in the course of other add
-     * and replace operations, even before processing the removal
-     * request (which is then a no-op).
-     *
-     * To ensure that comparisons do not encounter integer wrap
-     * errors, times are offset with the most negative possible value
-     * (nanoTimeOffset) determined during static initialization, and
-     * negative delays are screened out in public submission methods
-     *
-     * For the sake of compatibility with ScheduledThreadPoolExecutor,
-     * shutdown follows the same rules, which add some further
-     * complexity beyond the cleanup associated with shutdownNow
-     * (runState STOP).  Upon noticing pool shutdown, all periodic
-     * tasks are purged; the scheduler then triggers pool.tryTerminate
-     * when the heap is empty. The asynchronicity of these steps with
-     * respect to pool runState weakens guarantees about exactly when
-     * remaining tasks report isCancelled to callers (they do not run,
-     * but there may be a lag setting their status).
-     */
-    static final class DelayScheduler extends Thread {
-        private static final int INITIAL_HEAP_CAPACITY = 1 << 6;
-        private final ForkJoinPool pool; // read only once
-        private DelayedTask<?>[] heap;   // written only when (re)allocated
-        private volatile int active;     // 0: inactive, -1: stopped, +1: running
-        @jdk.internal.vm.annotation.Contended()
-        private volatile DelayedTask<?> pending;
-
-        private static final Unsafe U;
-        private static final long ACTIVE;
-        private static final long PENDING;
-        static final long nanoTimeOffset;
-        static {
-            U = Unsafe.getUnsafe();
-            Class<DelayScheduler> klass = DelayScheduler.class;
-            ACTIVE = U.objectFieldOffset(klass, "active");
-            PENDING = U.objectFieldOffset(klass, "pending");
-            long ns = System.nanoTime(); // ensure negative to avoid overflow
-            nanoTimeOffset = Long.MIN_VALUE + (ns < 0L ? ns : 0L);
-        }
-
-        DelayScheduler(ForkJoinPool p, String name) {
-            super(name);
-            setDaemon(true);
-            pool = p;
-        }
-
-        /**
-         * Returns System.nanoTime() with nanoTimeOffset
-         */
-        static final long now() {
-            return nanoTimeOffset + System.nanoTime();
-        }
-
-        /**
-         * Ensure active, unparking if necessary, unless stopped
-         */
-        final int ensureActive() {
-            int state;
-            if ((state = active) == 0 && U.getAndBitwiseOrInt(this, ACTIVE, 1) == 0)
-                U.unpark(this);
-            return state;
-        }
-
-        /**
-         * Inserts the task to pending queue, to add, remove, or ignore
-         * depending on task status when processed.
-         */
-        final void pend(DelayedTask<?> task) {
-            DelayedTask<?> f = pending;
-            if (task != null) {
-                do {} while (
-                    f != (f = (DelayedTask<?>)
-                          U.compareAndExchangeReference(
-                              this, PENDING, task.nextPending = f, task)));
-                ensureActive();
-            }
-        }
-
-        /**
-         * Returns true if (momentarily) inactive and heap is empty
-         */
-        final boolean canShutDown() {
-            DelayedTask<?>[] h;
-            return (active <= 0 &&
-                    ((h = heap) == null || h.length <= 0 || h[0] == null) &&
-                    active <= 0);
-        }
-
-        /**
-         * Setup/teardown for scheduling loop
-         */
-        public final void run() {
-            ForkJoinPool p;
-            ThreadLocalRandom.localInit();
-            if ((p = pool) != null) {
-                try {
-                    loop(p);
-                } finally {
-                    active = -1;
-                    p.tryTerminate(false, false);
-                }
-            }
-        }
-
-        /**
-         * After initialization, repeatedly:
-         * 1. Process pending tasks in batches, to add or remove from heap,
-         * 2. Check for shutdown, either exiting or preparing for shutdown when empty
-         * 3. Trigger all ready tasks by externally submitting them to pool
-         * 4. If active, set tentatively inactive,
-         *    else park until next trigger time, or indefinitely if none
-         */
-        private void loop(ForkJoinPool p) {
-            WorkQueue sq; DelayedTask<?>[] h;
-            if ((sq = p.externalSubmissionQueue(false)) != null)
-                sq.unlockPhase();          // try creating default submission queue
-            heap = h = new DelayedTask<?>[INITIAL_HEAP_CAPACITY];
-            active = 1;
-            boolean purgedPeriodic = false;
-            for (int n = 0;;) {                    // n is heap size
-                DelayedTask<?> t;
-                while (pending != null &&          // process pending tasks
-                       (t = (DelayedTask<?>)
-                        U.getAndSetReference(this, PENDING, null)) != null) {
-                    DelayedTask<?> next;
-                    int cap = h.length;
-                    do {
-                        int i = t.heapIndex;
-                        long d = t.when;
-                        if ((next = t.nextPending) != null)
-                            t.nextPending = null;
-                        if (i >= 0) {
-                            t.heapIndex = -1;
-                            if (i < n && i < cap && h[i] == t)
-                                n = replace(h, i, n);
-                        }
-                        else if (t.status >= 0) {
-                            if (n >= cap || n < 0) // couldn't resize
-                                t.trySetCancelled();
-                            else {
-                                DelayedTask<?> parent, u; int pk, newCap;
-                                while (n > 0 &&   // clear trailing cancelled tasks
-                                       (u = h[n - 1]) != null && u.status < 0) {
-                                    u.heapIndex = -1;
-                                    h[--n] = null;
-                                }
-                                int k = n++;
-                                while (k > 0 &&   // sift up
-                                       (parent = h[pk = (k - 1) >>> 1]) != null &&
-                                       (parent.when > d)) {
-                                    parent.heapIndex = k;
-                                    h[k] = parent;
-                                    k = pk;
-                                }
-                                t.heapIndex = k;
-                                h[k] = t;
-                                if (n >= cap && (newCap = cap << 1) > cap) {
-                                    DelayedTask<?>[] a = null;
-                                    try {       // try to resize
-                                        a = Arrays.copyOf(heap, newCap);
-                                    } catch (Error | RuntimeException ex) {
-                                    }
-                                    if (a != null && (newCap = a.length) > cap) {
-                                        cap = newCap;
-                                        heap = h = a;
-                                        U.storeFence();
-                                    }
-                                }
-                            }
-                        }
-                    } while ((t = next) != null);
-                }
-
-                if ((p.runState & SHUTDOWN) != 0L) {
-                    if ((n = tryStop(p, h, n, purgedPeriodic)) < 0)
-                        break;
-                    purgedPeriodic = true;
-                }
-
-                long parkTime = 0L;             // zero for untimed park
-                if (n > 0 && h.length > 0) {
-                    long now = now();
-                    do {                        // submit ready tasks
-                        DelayedTask<?> f; int stat;
-                        if ((f = h[0]) != null) {
-                            long d = f.when - now;
-                            if ((stat = f.status) >= 0 && d > 0L) {
-                                parkTime = d;
-                                break;
-                            }
-                            f.heapIndex = -1;
-                            if (stat >= 0) {    // else already cancelled
-                                boolean cancel = false;
-                                try {
-                                    WorkQueue q = p.externalSubmissionQueue(false);
-                                    if (q == null) // terminating
-                                        cancel = true;
-                                    else
-                                        q.push(f, p, false);
-                                } catch(Error | RuntimeException ex) {
-                                    cancel = true;
-                                }
-                                if (cancel)
-                                    f.trySetCancelled();
-                            }
-                        }
-                    } while ((n = replace(h, 0, n)) > 0);
-                }
-
-                if (pending == null) {
-                    Thread.interrupted();       // clear before park
-                    if (active == 0)
-                        U.park(false, parkTime);
-                    else
-                        U.compareAndSetInt(this, ACTIVE, 1, 0);
-                }
-            }
-        }
-
-        /**
-         * Replaces removed heap element at index k
-         * @return current heap size
-         */
-        private static int replace(DelayedTask<?>[] h, int k, int n) {
-            if (k >= 0 && n > 0 && h != null && n <= h.length) {
-                DelayedTask<?> t = null, u;
-                long d = 0L;
-                while (--n > k) { // find uncancelled replacement
-                    if ((u = h[n]) != null) {
-                        h[n] = null;
-                        d = u.when;
-                        if (u.status >= 0) {
-                            t = u;
-                            break;
-                        }
-                        u.heapIndex = -1;
-                    }
-                }
-                if (t != null) {
-                    int ck, rk; DelayedTask<?> c, r;
-                    while ((ck = (k << 1) + 1) < n && (c = h[ck]) != null) {
-                        long cd = c.when, rd;
-                        if ((rk = ck + 1) < n && (r = h[rk]) != null &&
-                            (rd = r.when) < cd) {
-                            c = r; ck = rk; cd = rd; // use right child
-                        }
-                        if (d <= cd)
-                            break;
-                        c.heapIndex = k;
-                        h[k] = c;
-                        k = ck;
-                    }
-                    t.heapIndex = k;
-                }
-                h[k] = t;
-            }
-            return n;
-        }
-
-        /**
-         * Call only when pool is shutdown or stopping. If called when
-         * shutdown but not stopping, removes periodic tasks if not
-         * already done so, and if not empty or pool not terminating,
-         * returns.  Otherwise, cancels all tasks in heap and pending
-         * queue.
-         * @return negative if stop, else current heap size.
-         */
-        private int tryStop(ForkJoinPool p, DelayedTask<?>[] h,
-                            int n, boolean purgedPeriodic) {
-            if (p != null && h != null && h.length >= n) {
-                if (((p.runState & STOP) == 0L)) {
-                    if (!purgedPeriodic && n > 0) {
-                        DelayedTask<?> t; int stat; // remove periodic tasks
-                        for (int i = n - 1; i >= 0; --i) {
-                            if ((t = h[i]) != null &&
-                                ((stat = t.status) < 0 || t.nextDelay != 0L)) {
-                                t.heapIndex = -1;
-                                if (stat >= 0)
-                                    t.trySetCancelled();
-                                n = replace(h, i, n);
-                            }
-                        }
-                    }
-                    if (n > 0 || (p.tryTerminate(false, false) & STOP) == 0L)
-                        return n;
-                }
-                for (int i = 0; i < n; ++i) {
-                    DelayedTask<?> u = h[i];
-                    h[i] = null;
-                    if (u != null)
-                        u.trySetCancelled();
-                }
-                for (DelayedTask<?> a = (DelayedTask<?>)
-                         U.getAndSetReference(this, PENDING, null);
-                     a != null; a = a.nextPending)
-                    a.trySetCancelled(); // clear pending requests
-            }
-            return -1;
-        }
-    }
+    // Support for delayed tasks
 
     /**
-     * Common code for ScheduledExecutorService methods
+     * Creates and starts DelayScheduler unless pool is in shutdown mode
      */
-    private void sched(DelayedTask<?> t, long delay) {
+    private DelayScheduler startDelayScheduler() {
         DelayScheduler ds;
         if ((ds = delayScheduler) == null) {
             boolean start = false;
@@ -3747,67 +3440,27 @@ public class ForkJoinPool extends AbstractExecutorService
                     ds.start();
             }
         }
-        if (ds == null || (runState & SHUTDOWN) != 0L)
-            throw new RejectedExecutionException();
-        if (t != null) {
-            t.when = DelayScheduler.now() + delay;
-            if (delay == 0L)
-                poolSubmit(true, t);
-            else
-                ds.pend(t);
+        return ds;
+    }
+
+    /**
+     * Arranges execution of a ready task from DelayScheduler
+     */
+    final void executeReadyDelayedTask(DelayedTask<?> task) {
+        if (task != null) {
+            WorkQueue q;
+            boolean cancel = false;
+            try {
+                if ((q = externalSubmissionQueue(false)) == null)
+                    cancel = true; // terminating
+                else
+                    q.push(task, this, false);
+            } catch(Error | RuntimeException ex) {
+                cancel = true;
+            }
+            if (cancel)
+                task.trySetCancelled();
         }
-    }
-
-    public ScheduledFuture<?> schedule(Runnable command,
-                                       long delay,
-                                       TimeUnit unit) {
-        if (command == null || unit == null)
-            throw new NullPointerException();
-        long d = (delay <= 0L) ? 0L : unit.toNanos(delay);
-        DelayedTask<Void> t = new DelayedTask<Void>(command, null, this, 0L);
-        sched(t, d);
-        return t;
-    }
-
-    public <V> ScheduledFuture<V> schedule(Callable<V> callable,
-                                           long delay,
-                                           TimeUnit unit) {
-        if (callable == null || unit == null)
-            throw new NullPointerException();
-        long d = (delay <= 0L) ? 0L : unit.toNanos(delay);
-        DelayedTask<V> t = new DelayedTask<V>(null, callable, this, 0L);
-        sched(t, d);
-        return t;
-    }
-
-    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command,
-                                                  long initialDelay,
-                                                  long period,
-                                                  TimeUnit unit) {
-        if (command == null || unit == null)
-            throw new NullPointerException();
-        if (period <= 0L)
-            throw new IllegalArgumentException();
-        long d = (initialDelay <= 0L) ? 0L : unit.toNanos(initialDelay);
-        long p = -unit.toNanos(period); // negative for fixed rate
-        DelayedTask<Void> t = new DelayedTask<Void>(command, null, this, p);
-        sched(t, d);
-        return t;
-    }
-
-    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
-                                                     long initialDelay,
-                                                     long delay,
-                                                     TimeUnit unit) {
-        if (command == null || unit == null)
-            throw new NullPointerException();
-        if (delay <= 0L)
-            throw new IllegalArgumentException();
-        long d = (initialDelay <= 0L) ? 0L : unit.toNanos(initialDelay);
-        long p = unit.toNanos(delay);
-        DelayedTask<Void> t = new DelayedTask<Void>(command, null, this, p);
-        sched(t, d);
-        return t;
     }
 
     /**
@@ -3820,6 +3473,74 @@ public class ForkJoinPool extends AbstractExecutorService
             if ((t = task) != null)
                 t.cancel(true);
         }
+    }
+
+    public ScheduledFuture<?> schedule(Runnable command,
+                                       long delay,
+                                       TimeUnit unit) {
+        DelayScheduler ds; DelayedTask<Void> t;
+        if (command == null || unit == null)
+            throw new NullPointerException();
+        long d = (delay <= 0L) ? 0L : unit.toNanos(delay);
+        if (((ds = delayScheduler) == null &&
+             (ds = startDelayScheduler()) == null) ||
+            (runState & SHUTDOWN) != 0L)
+            throw new RejectedExecutionException();
+        ds.pend(t = new DelayedTask<Void>(command, null, this, 0L, d));
+        return t;
+    }
+
+    public <V> ScheduledFuture<V> schedule(Callable<V> callable,
+                                           long delay,
+                                           TimeUnit unit) {
+        DelayScheduler ds; DelayedTask<V> t;
+        if (callable == null || unit == null)
+            throw new NullPointerException();
+        long d = (delay <= 0L) ? 0L : unit.toNanos(delay);
+        if (((ds = delayScheduler) == null &&
+             (ds = startDelayScheduler()) == null) ||
+            (runState & SHUTDOWN) != 0L)
+            throw new RejectedExecutionException();
+        ds.pend(t = new DelayedTask<V>(null, callable, this, 0L, d));
+        return t;
+    }
+
+    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command,
+                                                  long initialDelay,
+                                                  long period,
+                                                  TimeUnit unit) {
+        DelayScheduler ds; DelayedTask<Void> t;
+        if (command == null || unit == null)
+            throw new NullPointerException();
+        if (period <= 0L)
+            throw new IllegalArgumentException();
+        long p = -unit.toNanos(period); // negative for fixed rate
+        long d = (initialDelay <= 0L) ? 0L : unit.toNanos(initialDelay);
+        if (((ds = delayScheduler) == null &&
+             (ds = startDelayScheduler()) == null) ||
+            (runState & SHUTDOWN) != 0L)
+            throw new RejectedExecutionException();
+        ds.pend(t = new DelayedTask<Void>(command, null, this, p, d));
+        return t;
+    }
+
+    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
+                                                     long initialDelay,
+                                                     long delay,
+                                                     TimeUnit unit) {
+        DelayScheduler ds; DelayedTask<Void> t;
+        if (command == null || unit == null)
+            throw new NullPointerException();
+        if (delay <= 0L)
+            throw new IllegalArgumentException();
+        long p = unit.toNanos(delay);
+        long d = (initialDelay <= 0L) ? 0L : unit.toNanos(initialDelay);
+        if (((ds = delayScheduler) == null &&
+             (ds = startDelayScheduler()) == null) ||
+            (runState & SHUTDOWN) != 0L)
+            throw new RejectedExecutionException();
+        ds.pend(t = new DelayedTask<Void>(command, null, this, p, d));
+        return t;
     }
 
     /**
@@ -3835,23 +3556,29 @@ public class ForkJoinPool extends AbstractExecutorService
      * @throws RejectedExecutionException if the task cannot be
      *         scheduled for execution
      * @throws NullPointerException if callable or unit is null
-     * @throws IllegalArgumentException if timeout less than or equal to zero
      */
     public <V> ForkJoinTask<V> submitAndCancelOnTimeout(Callable<V> callable,
                                                         long timeout,
                                                         TimeUnit unit) {
         ForkJoinTask.CallableWithCanceller<V> task; CancelAction onTimeout;
+        DelayScheduler ds;
         if (callable == null || unit == null)
             throw new NullPointerException();
-        if (timeout <= 0L)
-             throw new IllegalArgumentException();
-        long d = unit.toNanos(timeout);
+        long d = (timeout <= 0L) ? 0L : unit.toNanos(timeout);
+        if (((ds = delayScheduler) == null &&
+             (ds = startDelayScheduler()) == null) ||
+            (runState & SHUTDOWN) != 0L)
+            throw new RejectedExecutionException();
         DelayedTask<Void> canceller = new DelayedTask<Void>(
-            onTimeout = new CancelAction(), null, this, 0L);
+            onTimeout = new CancelAction(), null, this, 0L, d);
         onTimeout.task = task =
             new ForkJoinTask.CallableWithCanceller<V>(callable, canceller);
-        poolSubmit(true, task);
-        sched(canceller, d);
+        if (d == 0L)
+            task.trySetCancelled();
+        else {
+            poolSubmit(true, task);
+            ds.pend(canceller);
+        }
         return task;
     }
 
@@ -3997,7 +3724,7 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     public long getQueuedTaskCount() {
         WorkQueue[] qs; WorkQueue q;
-        int count = 0;
+        long count = 0;
         if ((runState & TERMINATED) == 0L && (qs = queues) != null) {
             for (int i = 1; i < qs.length; i += 2) {
                 if ((q = qs[i]) != null)

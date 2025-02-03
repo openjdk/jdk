@@ -1863,88 +1863,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         final Object adaptee() { return callable; }
     }
 
-    @SuppressWarnings("serial")
-    static final class DelayedTask<T> extends InterruptibleTask<T>
-        implements ScheduledFuture<T> {
-        final Runnable runnable; // only one of runnable or callable nonnull
-        final Callable<? extends T> callable;
-        final ForkJoinPool pool;
-        T result;
-        DelayedTask<?> nextPending; // for DelayScheduler submissions
-        final long nextDelay;     // 0: once; <0: fixedDelay; >0: fixedRate
-        long when;                // nanoTime-based trigger time
-        int heapIndex;            // index if queued on heap
-
-        DelayedTask(Runnable runnable, Callable<T> callable, ForkJoinPool pool,
-                    long nextDelay) {
-            this.runnable = runnable;
-            this.callable = callable;
-            this.pool = pool;
-            this.nextDelay = nextDelay;
-            heapIndex = -1;
-        }
-        public final T getRawResult() { return result; }
-        public final void setRawResult(T v) { result = v; }
-        final boolean postExec() { // resubmit if periodic
-            long d; ForkJoinPool p; ForkJoinPool.DelayScheduler ds;
-            if ((d = nextDelay) != 0L && status >= 0 &&
-                (p = pool) != null && (ds = p.delayScheduler) != null) {
-                if (!p.isShutdown()) {
-                    heapIndex = -1;
-                    if (d < 0L)
-                        when = ForkJoinPool.DelayScheduler.now() - d;
-                    else
-                        when += d;
-                    ds.pend(this);
-                    return false;
-                }
-                trySetCancelled();
-            }
-            return true;
-        }
-        final T compute() throws Exception {
-            Callable<? extends T> c; Runnable r;
-            T res = null;
-            if ((r = runnable) != null)
-                r.run();
-            else if ((c = callable) != null)
-                res = c.call();
-            return res;
-        }
-        final Object adaptee() { return (runnable != null) ? runnable : callable; }
-        public final boolean cancel(boolean mayInterruptIfRunning) {
-            int s; boolean isCancelled; Thread t;
-            ForkJoinPool p; ForkJoinPool.DelayScheduler ds;
-            if ((s = trySetCancelled()) < 0)
-                isCancelled = ((s & (ABNORMAL | THROWN)) == ABNORMAL);
-            else {
-                isCancelled = true;
-                if ((t = runner) != null) {
-                    if (mayInterruptIfRunning) {
-                        try {
-                            t.interrupt();
-                        } catch (Throwable ignore) {
-                        }
-                    }
-                }
-                else if (heapIndex >= 0 && nextPending == null &&
-                         (p = pool) != null && (ds = p.delayScheduler) != null) {
-                    when = Long.MAX_VALUE; // set to max delay
-                    ds.pend(this);         // for heap cleanup
-                }
-            }
-            return isCancelled;
-        }
-        public final long getDelay(TimeUnit unit) {
-            return unit.convert(when -
-                                ForkJoinPool.DelayScheduler.now(), NANOSECONDS);
-        }
-        public int compareTo(Delayed other) {
-            long diff = getDelay(NANOSECONDS) - other.getDelay(NANOSECONDS);
-            return (diff < 0) ? -1 : (diff > 0) ? 1 : 0;
-        }
-    }
-
     /**
      * Adapter for Callable-based interruptible tasks with timeouts.
      */
@@ -1971,7 +1889,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         }
         final boolean postExec() { return true; }
         final Object adaptee() { return callable; }
-        private static final long serialVersionUID = 2838392045355241008L;
     }
 
 }
