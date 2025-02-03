@@ -232,24 +232,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   }
   assert(merged_memory(), "");
 
-  if(intrinsic_id() == vmIntrinsics::_digestBase_implCompressMB) {
-      fprintf(stderr, "try_to_inline call for _digestBase_implCompressMB\n");
-  } else if(intrinsic_id() == vmIntrinsics::_sha3_implCompress) {
-      fprintf(stderr, "try_to_inline call for _sha3_implCompress\n");
-  } else if(intrinsic_id() == vmIntrinsics::_double_keccak) {
-      fprintf(stderr, "try_to_inline call for _double_keccak\n");
-  } else if(intrinsic_id() == vmIntrinsics::_dilithiumAlmostNtt) {
-      fprintf(stderr, "try_to_inline call for _dilithiumAlmostNtt\n");
-  } else if(intrinsic_id() == vmIntrinsics::_dilithiumAlmostInverseNtt) {
-      fprintf(stderr, "try_to_inline call for _dilithiumAlmostInverseNtt\n");
-  } else if(intrinsic_id() == vmIntrinsics::_dilithiumNttMult) {
-      fprintf(stderr, "try_to_inline call for _dilithiumNttMult\n");
-  } else if(intrinsic_id() == vmIntrinsics::_dilithiumMontMulByConstant) {
-      fprintf(stderr, "try_to_inline call for _dilithiumMontMulByConstant\n");
-  } else if(intrinsic_id() == vmIntrinsics::_dilithiumDecomposePoly) {
-      fprintf(stderr, "try_to_inline call for _dilithiumDecomposePoly\n");
-  }
-
   switch (intrinsic_id()) {
   case vmIntrinsics::_hashCode:                 return inline_native_hashcode(intrinsic()->is_virtual(), !is_static);
   case vmIntrinsics::_identityHashCode:         return inline_native_hashcode(/*!virtual*/ false,         is_static);
