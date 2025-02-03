@@ -58,7 +58,6 @@ public class PopupMenuVisuals {
         PassFailJFrame.builder()
                 .title("PopupMenu Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(35)
                 .testUI(PopupMenuVisuals::createTestUI)
                 .build()
@@ -81,7 +80,7 @@ public class PopupMenuVisuals {
 
         //Get things going.  Request focus, set size, et cetera
         frame = new Frame("PopupMenuVisuals");
-        frame.setSize(200,200);
+        frame.setSize(200, 200);
         frame.validate();
 
         frame.add(b);
