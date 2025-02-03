@@ -4348,6 +4348,31 @@ class StubGenerator: public StubCodeGenerator {
   // state (int[16]) = c_rarg0
   // keystream (byte[256]) = c_rarg1
   // return - number of bytes of keystream (always 256)
+  //
+  // In this approach, we load the 512-bit start state sequentially into
+  // 4 128-bit vectors.  We then make 4 4-vector copies of that starting
+  // state, with each successive set of 4 vectors having a +1 added into
+  // the first 32-bit lane of the 4th vector in that group (the counter).
+  // By doing this, we can perform the block function on 4 512-bit blocks
+  // within one run of this intrinsic.
+  // The alignment of the data across the 4-vector group is such that at
+  // the start it is already aligned for the first round of each two-round
+  // loop iteration.  In other words, the corresponding lanes of each vector
+  // will contain the values needed for that quarter round operation (e.g.
+  // elements 0/4/8/12, 1/5/9/13, 2/6/10/14, etc.).
+  // In between each full round, a lane shift must occur.  Within a loop
+  // iteration, between the first and second rounds, the 2nd, 3rd, and 4th
+  // vectors are rotated left 32, 64 and 96 bits, respectively.  The result
+  // is effectively a diagonal orientation in columnar form.  After the
+  // second full round, those registers are left-rotated again, this time
+  // 96, 64, and 32 bits - returning the vectors to their columnar organization.
+  // After all 10 iterations, the original state is added to each 4-vector
+  // working state along with the add mask, and the 4 vector groups are
+  // sequentially written to the memory dedicated for the output key stream.
+  //
+  // For a more detailed explanation, see Goll and Gueron, "Vectorization of
+  // ChaCha Stream Cipher", 2014 11th Int. Conf. on Information Technology:
+  // New Generations, Las Vegas, NV, USA, April 2014, DOI: 10.1109/ITNG.2014.33
   address generate_chacha20Block_qrpar() {
     Label L_Q_twoRounds, L_Q_cc20_const;
     // The constant data is broken into two 128-bit segments to be loaded
