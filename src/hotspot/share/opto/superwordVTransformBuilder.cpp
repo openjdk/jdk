@@ -220,7 +220,6 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     int vopc = VectorCastNode::opcode(opc, def_bt);
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, prototype, p0->req(), vopc);
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(p0, bt)) {
-    // TODO ensure we have a good test for these
     int vopc = VectorNode::opcode(Op_RShiftI, bt);
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, prototype, p0->req(), vopc);
   } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
