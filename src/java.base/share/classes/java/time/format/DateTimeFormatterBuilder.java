@@ -3059,7 +3059,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         protected final void printValueFixWidth3NotNegative(StringBuilder buf, int value) {
-            if (value > 1000) {
+            if (value >= 1000) {
                 maxWidthError(value);
             }
             if (value < 100) {
