@@ -43,7 +43,7 @@ class ContinuationWrapper;
 
 class ObjectWaiter : public CHeapObj<mtThread> {
  public:
-  enum TStates : uint8_t { TS_UNDEF, TS_READY, TS_RUN, TS_WAIT, TS_ENTER, TS_CXQ };
+  enum TStates : uint8_t { TS_UNDEF, TS_READY, TS_RUN, TS_WAIT, TS_ENTER };
   ObjectWaiter* volatile _next;
   ObjectWaiter* volatile _prev;
   JavaThread*     _thread;
@@ -177,7 +177,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
                                       // The list is actually composed of WaitNodes,
                                       // acting as proxies for Threads.
 
-  ObjectWaiter* volatile _cxq;      // LL of recently-arrived threads blocked on entry.
+  ObjectWaiter* volatile _EntryListTail;      // LL of recently-arrived threads blocked on entry.
   int64_t volatile _succ;           // Heir presumptive thread - used for futile wakeup throttling
 
   volatile int _SpinDuration;
@@ -245,7 +245,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static ByteSize metadata_offset()    { return byte_offset_of(ObjectMonitor, _metadata); }
   static ByteSize owner_offset()       { return byte_offset_of(ObjectMonitor, _owner); }
   static ByteSize recursions_offset()  { return byte_offset_of(ObjectMonitor, _recursions); }
-  static ByteSize cxq_offset()         { return byte_offset_of(ObjectMonitor, _cxq); }
   static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
   static ByteSize EntryList_offset()   { return byte_offset_of(ObjectMonitor, _EntryList); }
 
@@ -275,7 +274,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   bool is_busy() const {
     // TODO-FIXME: assert _owner == NO_OWNER implies _recursions = 0
-    intptr_t ret_code = intptr_t(_waiters) | intptr_t(_cxq) | intptr_t(_EntryList);
+    intptr_t ret_code = intptr_t(_waiters) | intptr_t(_EntryList);
     int cnts = contentions(); // read once
     if (cnts > 0) {
       ret_code |= intptr_t(cnts);
@@ -419,6 +418,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   intx      complete_exit(JavaThread* current);
 
  private:
+  void      AddToEntryList(JavaThread* current, ObjectWaiter* node);
   void      AddWaiter(ObjectWaiter* waiter);
   void      INotify(JavaThread* current);
   ObjectWaiter* DequeueWaiter();
@@ -426,6 +426,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      EnterI(JavaThread* current);
   void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
   void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
+  ObjectWaiter* EntryListTail(JavaThread* current);
 
   bool      VThreadMonitorEnter(JavaThread* current, ObjectWaiter* node = nullptr);
   void      VThreadWait(JavaThread* current, jlong millis);
@@ -435,6 +436,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
 
   bool           TryLockWithContentionMark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
+  bool           TryLockOrAddToEntryList(JavaThread* current, ObjectWaiter* node);
   TryLockResult  TryLock(JavaThread* current);
 
   bool      TrySpin(JavaThread* current);

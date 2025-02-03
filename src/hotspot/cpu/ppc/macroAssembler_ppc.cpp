@@ -2957,10 +2957,8 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the entry lists are empty (EntryList first - by convention).
-  ld(temp,             in_bytes(ObjectMonitor::EntryList_offset()), current_header);
-  ld(displaced_header, in_bytes(ObjectMonitor::cxq_offset()), current_header);
-  orr(temp, temp, displaced_header); // Will be 0 if both are 0.
+  // Check if the EntryList is empty.
+  ld(temp, in_bytes(ObjectMonitor::EntryList_offset()), current_header);
   cmpdi(flag, temp, 0);
   beq(flag, success);  // If so we are done.
 
@@ -3298,8 +3296,6 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 
     bind(not_recursive);
 
-    const Register t2 = tmp2;
-
     // Set owner to null.
     // Release to satisfy the JMM
     release();
@@ -3309,10 +3305,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the entry lists are empty (EntryList first - by convention).
+    // Check if the EntryList is empty.
     ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
-    ld(t2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
-    orr(t, t, t2);
     cmpdi(CR0, t, 0);
     beq(CR0, unlocked); // If so we are done.
 
