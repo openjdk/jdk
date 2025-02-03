@@ -490,6 +490,7 @@ public:
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
   virtual VTransformDataScalarNode* isa_DataScalar() { return nullptr; }
   virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
+  virtual const VTransformMemopScalarNode* isa_MemopScalar() const { return nullptr; }
   virtual VTransformOuterNode* isa_Outer() { return nullptr; }
   virtual VTransformLoopPhiNode* isa_LoopPhi() { return nullptr; }
   virtual const VTransformLoopPhiNode* isa_LoopPhi() const { return nullptr; }
@@ -499,12 +500,15 @@ public:
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
   virtual VTransformMemVectorNode* isa_MemVector() { return nullptr; }
+  virtual const VTransformMemVectorNode* isa_MemVector() const { return nullptr; }
   virtual VTransformLoadVectorNode* isa_LoadVector() { return nullptr; }
+  virtual const VTransformLoadVectorNode* isa_LoadVector() const { return nullptr; }
   virtual VTransformStoreVectorNode* isa_StoreVector() { return nullptr; }
 
-  // TODO refactor to load/store, and in_loop separately???
-  virtual bool is_load_in_loop() const { return false; } // TODO do we need this?
-  virtual bool is_load_or_store_in_loop() const { return false; } // TODO do we need this?
+  bool is_load_in_loop() const;
+  bool is_load_or_store_in_loop() const;
+
+  // VPointer accessor, only where "is_load_or_store_in_loop() == true".
   virtual const VPointer& vpointer() const { ShouldNotReachHere(); }
 
   virtual bool optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) { return false; }
@@ -521,7 +525,7 @@ public:
   NOT_PRODUCT(static void print_node_idx(const VTransformNode* vtn);)
 };
 
-// Identity transform for scalar nodes.
+// Abstract class. Identity transform for scalar nodes.
 class VTransformScalarNode : public VTransformNode {
 private:
   Node* _node;
@@ -531,12 +535,9 @@ public:
   Node* node() const { return _node; }
   virtual VTransformScalarNode* isa_Scalar() override { return this; }
 
-  // TODO - make scalar virtual?
-  virtual bool is_load_in_loop() const override { return _node->is_Load(); }
-  virtual bool is_load_or_store_in_loop() const override { return _node->is_Load() || _node->is_Store(); }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
-  NOT_PRODUCT(virtual const char* name() const override { return "Scalar"; };)
+  NOT_PRODUCT(virtual const char* name() const = 0;)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
@@ -547,9 +548,6 @@ public:
   {
     assert(!node()->is_Load() && !node()->is_Store() && !node()->is_Phi(), "must be data node");
   }
-
-  virtual bool is_load_in_loop() const override { return false; }
-  virtual bool is_load_or_store_in_loop() const override { return false; }
 
   NOT_PRODUCT(virtual const char* name() const override { return "DataScalar"; };)
 };
@@ -565,11 +563,8 @@ public:
   }
 
   virtual VTransformMemopScalarNode* isa_MemopScalar() override { return this; }
+  virtual const VTransformMemopScalarNode* isa_MemopScalar() const override { return this; }
   virtual const VPointer& vpointer() const override { return _vpointer; }
-
-  // TODO
-  virtual bool is_load_in_loop() const override { return node()->is_Load(); }
-  virtual bool is_load_or_store_in_loop() const override { return true; }
   NOT_PRODUCT(virtual const char* name() const override { return "MemopScalar"; };)
 };
 
@@ -581,8 +576,6 @@ public:
   VTransformOuterNode(VTransform& vtransform, VTransformNodePrototype prototype, Node* n) :
     VTransformScalarNode(vtransform, prototype, n) {}
   virtual VTransformOuterNode* isa_Outer() override { return this; }
-  virtual bool is_load_in_loop() const override { return false; }
-  virtual bool is_load_or_store_in_loop() const override { return false; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { ShouldNotReachHere(); }
   NOT_PRODUCT(virtual const char* name() const override { return "Outer"; })
 };
@@ -743,7 +736,7 @@ public:
   VTransformMemVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const uint req, const VPointer& vpointer) :
     VTransformVectorNode(vtransform, prototype, req), _vpointer(vpointer) {}
   virtual VTransformMemVectorNode* isa_MemVector() override { return this; }
-  virtual bool is_load_or_store_in_loop() const override { return true; }
+  virtual const VTransformMemVectorNode* isa_MemVector() const override { return this; }
   virtual const VPointer& vpointer() const override { return _vpointer; }
 };
 
@@ -758,8 +751,7 @@ public:
     _control_dependency(control_dependency) {}
 
   virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
-  virtual bool is_load_in_loop() const override { return true; }
-
+  virtual const VTransformLoadVectorNode* isa_LoadVector() const override { return this; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoadVector"; };)
@@ -771,7 +763,6 @@ public:
   VTransformStoreVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const VPointer& vpointer) :
     VTransformMemVectorNode(vtransform, prototype, 4, vpointer) {}
   virtual VTransformStoreVectorNode* isa_StoreVector() override { return this; }
-  virtual bool is_load_in_loop() const override { return false; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)

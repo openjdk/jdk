@@ -1043,6 +1043,19 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
 }
 
+bool VTransformNode::is_load_in_loop() const {
+  const VTransformMemopScalarNode* memop_scalar = isa_MemopScalar();
+  if (memop_scalar != nullptr && memop_scalar->node()->is_Load()) { return true; }
+  if (isa_LoadVector() != nullptr) { return true; }
+  return false;
+}
+
+bool VTransformNode::is_load_or_store_in_loop() const {
+  if (isa_MemopScalar() != nullptr) { return true; }
+  if (isa_MemVector() != nullptr) { return true; }
+  return false;
+}
+
 void VTransformNode::register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn) const {
   PhaseIdealLoop* phase = apply_state.phase();
   phase->C->copy_node_notes_to(vn, approximate_origin());
