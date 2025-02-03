@@ -301,8 +301,6 @@ public:
     init_memory_states();
   }
 
-  // TODO rm, only needed for vtn vpointer
-  const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
   const VLoop& vloop() const { return _vloop_analyzer.vloop(); }
   PhaseIdealLoop* phase() const { return vloop().phase(); }
 
