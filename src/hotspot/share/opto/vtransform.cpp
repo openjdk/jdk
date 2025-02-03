@@ -210,7 +210,7 @@ float VTransformGraph::cost() const {
   }
 #endif
 
-  // TODO Arena for vector set in_loop and is_not_before_loop
+  ResourceMark rm;
   VectorSet in_loop;
   mark_vtnodes_in_loop(in_loop);
 
@@ -1002,7 +1002,6 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
   // does not have any memory dependency.
-  // TODO: can we move this elsewhere? Refactor VPointer?
   const VPointer& load_p = vpointer();
   while (mem->is_StoreVector()) {
     VPointer store_p(mem->as_Mem(), apply_state.vloop());
