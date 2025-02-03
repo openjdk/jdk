@@ -29,10 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 class Frame {
-    sealed interface Code permits Token, CodeList {}
-    record Token(String s) implements Code {}
-    record CodeList(List<Code> list) implements Code {}
-
     private final List<Code> codeList = new ArrayList<Code>();
 
     //private final Map<Hook, Integer> hookInsertionIndex = new HashMap<>();
@@ -40,7 +36,11 @@ class Frame {
     private final Map<String, String> context = new HashMap<>();
 
     void addString(String s) {
-        codeList.add(new Token(s));
+        codeList.add(new Code.Token(s));
+    }
+
+    void addCode(Code code) {
+        codeList.add(code);
     }
 
     //void addHook(Hook hook) {
@@ -72,18 +72,8 @@ class Frame {
         return variableNames.computeIfAbsent(name, s -> name + Renderer.variableId++);
     }
 
-    String render() {
-        StringBuilder builder = new StringBuilder();
-        for (Code code : codeList) {
-            renderCode(builder, code);
-        }
-        return builder.toString();
-    }
-
-    void renderCode(StringBuilder builder, Code code) {
-        switch (code) {
-            case Token(String s) -> builder.append(s);
-            case CodeList(List<Code> list) -> list.forEach((Code c) -> renderCode(builder, c));
-        }
+    // TODO ensure only use once!
+    Code getCode() {
+        return new Code.CodeList(codeList);
     }
 }

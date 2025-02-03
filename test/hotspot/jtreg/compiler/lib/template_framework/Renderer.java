@@ -47,7 +47,9 @@ public abstract class Renderer {
         if (!STACK.isEmpty()) {
             throw new RendererException("Nested render not allowed");
         }
-        return renderTemplateUse(templateUse);
+        StringBuilder builder = new StringBuilder();
+        renderTemplateUse(templateUse).renderTo(builder);
+        return builder.toString();
     }
 
     public static String $(String name) {
@@ -75,7 +77,7 @@ public abstract class Renderer {
         return STACK.getLast();
     }
 
-    private static String renderTemplateUse(TemplateUse templateUse) {
+    private static Code renderTemplateUse(TemplateUse templateUse) {
         Frame frame = new Frame();
         STACK.add(frame);
         templateUse.visitArguments((name, value) -> frame.addContext(name, value.toString()));
@@ -84,7 +86,7 @@ public abstract class Renderer {
             renderElement(frame, e);
         }
         STACK.removeLast();
-        return frame.render();
+        return frame.getCode();
     }
 
     private static void renderElement(Frame frame, Object element) {
@@ -103,7 +105,7 @@ public abstract class Renderer {
             //case Hook h ->    frame.addHook(h);
             //case HookInsert h ->
             //        frameForHook(h.hook()).insertIntoHook(h.hook(), render(h.templateUse()));
-            case TemplateUse t -> frame.addString(renderTemplateUse(t));
+            case TemplateUse t -> frame.addCode(renderTemplateUse(t));
             default -> throw new RendererException("body contained unexpected element: " + element);
         }
     }
