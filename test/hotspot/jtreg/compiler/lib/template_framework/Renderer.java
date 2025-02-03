@@ -37,14 +37,17 @@ public abstract class Renderer {
         private Nothing() {}
     }
 
-    private static final Pattern variableNamePattern = Pattern.compile("\\$([a-zA-Z_][a-zA-Z0-9_]*)");
-    private static final Pattern interpolationPattern = Pattern.compile("#([a-zA-Z_][a-zA-Z0-9_]*)");
-    private static final ArrayList<Frame> stack = new ArrayList<Frame>();
+    private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile("\\$([a-zA-Z_][a-zA-Z0-9_]*)");
+    private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile("#([a-zA-Z_][a-zA-Z0-9_]*)");
+    private static final ArrayList<Frame> STACK = new ArrayList<Frame>();
 
     static int variableId = 0;
 
     public static String render(TemplateUse templateUse) {
-        return visit(templateUse);
+        if (!STACK.isEmpty()) {
+            throw new RendererException("Nested render not allowed");
+        }
+        return renderTemplateUse(templateUse);
     }
 
     public static String $(String name) {
@@ -62,48 +65,57 @@ public abstract class Renderer {
     }
 
     public static int depth() {
-        return stack.size();
+        return STACK.size();
     }
 
     private static Frame currentStackFrame() {
-        if (stack.isEmpty()) {
+        if (STACK.isEmpty()) {
             throw new RendererException("A method such as $ or let was called outside a template rendering. Make sure you are not calling templates yourself, but use use().");
         }
-        return stack.getLast();
+        return STACK.getLast();
     }
 
-    private static String visit(TemplateUse templateUse) {
+    private static String renderTemplateUse(TemplateUse templateUse) {
         Frame frame = new Frame();
-        stack.add(frame);
+        STACK.add(frame);
         templateUse.visitArguments((name, value) -> frame.addContext(name, value.toString()));
         InstantiatedTemplate it = templateUse.instantiate();
-        for (Object i : it.elements()) {
-            switch (i) {
-                case Nothing x -> {}
-                case String s -> frame.addString(templateString(s, frame));
-                case Integer s -> frame.addString(s.toString());
-                case Long s -> frame.addString(s.toString());
-                case Double s -> frame.addString(s.toString());
-                case Float s -> frame.addString(s.toString());
-                case Hook h -> frame.addHook(h);
-                case HookInsert h ->
-                        frameForHook(h.hook()).insertIntoHook(h.hook(), visit(h.templateUse()));
-                case TemplateUse t -> frame.addString(visit(t));
-                default -> throw new RendererException("body contained unexpected element: " + i);
-            }
+        for (Object e : it.elements()) {
+            renderElement(frame, e);
         }
-        stack.removeLast();
+        STACK.removeLast();
         return frame.toString();
     }
 
+    private static void renderElement(Frame frame, Object element) {
+        switch (element) {
+            case Nothing x -> {}
+            case String s ->  frame.addString(templateString(s, frame));
+            case Integer s -> frame.addString(s.toString());
+            case Long s ->    frame.addString(s.toString());
+            case Double s ->  frame.addString(s.toString());
+            case Float s ->   frame.addString(s.toString());
+            case Hook h ->    frame.addHook(h);
+            case List l -> {
+                for (Object e : l) {
+                    renderElement(frame, e);
+                }
+            }
+            case HookInsert h ->
+                    frameForHook(h.hook()).insertIntoHook(h.hook(), render(h.templateUse()));
+            case TemplateUse t -> frame.addString(renderTemplateUse(t));
+            default -> throw new RendererException("body contained unexpected element: " + element);
+        }
+    }
+
     private static String templateString(String s, Frame frame) {
-        var temp = variableNamePattern.matcher(s).replaceAll((MatchResult result) -> $(result.group(1)));
-        return interpolationPattern.matcher(temp).replaceAll((MatchResult result) -> frame.getContext(result.group(1)));
+        var temp = DOLLAR_NAME_PATTERN.matcher(s).replaceAll((MatchResult result) -> $(result.group(1)));
+        return HASHTAG_REPLACEMENT_PATTERN.matcher(temp).replaceAll((MatchResult result) -> frame.getContext(result.group(1)));
     }
 
     private static Frame frameForHook(Hook hook) {
-        for (int i = stack.size() - 1; i >= 0; i--) {
-            Frame frame = stack.get(i);
+        for (int i = STACK.size() - 1; i >= 0; i--) {
+            Frame frame = STACK.get(i);
             if (frame.hasHook(hook)) {
                 return frame;
             }

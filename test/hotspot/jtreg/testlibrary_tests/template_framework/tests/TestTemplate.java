@@ -34,6 +34,7 @@
 package template_framework.tests;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.HashSet;
 import java.util.Random;
 
@@ -90,16 +91,18 @@ public class TestTemplate {
 
     public static void testBodyElements() {
         // We can fill the body with Objects of different types, and they get concatenated.
+        // Lists get flattened into the body.
         var template = Template.make(() -> body(
             "start ",
             Integer.valueOf(1),
             Long.valueOf(2),
             Double.valueOf(3.4),
             Float.valueOf(5.6f),
+            List.of(" ", 1, " and ", 2),
             " end"
         ));
         String code = template.withArgs().render();
-        checkEQ(code, "start 123.45.6 end");
+        checkEQ(code, "start 123.45.6 1 and 2 end");
     }
 
     public static void testWithOneArguments() {
@@ -195,6 +198,8 @@ public class TestTemplate {
             }""";
         checkEQ(code, expected);
     }
+
+
 
     public static void checkEQ(String code, String expected) {
         if (!code.equals(expected)) {
