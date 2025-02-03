@@ -1377,8 +1377,8 @@ public:
         }
       }
 
-      // 2. collection set
       {
+        // 2. collection set
         G1MergeCardSetClosure merge(_scan_state);
 
         if (_initial_evacuation) {
