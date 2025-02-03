@@ -239,13 +239,23 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * If {@code minimumCapacity} is non positive due to numeric
      * overflow, this method throws {@code OutOfMemoryError}.
      */
-    private byte[] ensureCapacityInternal(int minimumCapacity) {
+    private void ensureCapacityInternal(int minimumCapacity) {
+        ensureCapacityInternal(minimumCapacity, value, getCoder());
+    }
+
+    /**
+     * For positive values of {@code minimumCapacity}, this method
+     * behaves like {@code ensureCapacity}, however it is never
+     * synchronized.
+     * If {@code minimumCapacity} is non positive due to numeric
+     * overflow, this method throws {@code OutOfMemoryError}.
+     */
+    private byte[] ensureCapacityInternal(int minimumCapacity, byte[] value, byte coder) {
         // overflow-conscious code
-        byte[] value = this.value;
         int oldCapacity = value.length >> coder;
         if (minimumCapacity - oldCapacity > 0) {
             value = Arrays.copyOf(value,
-                    newCapacity(minimumCapacity) << coder);
+                    newCapacity(minimumCapacity, value, coder) << coder);
             this.value = value;
         }
         return value;
@@ -263,7 +273,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @throws OutOfMemoryError if minCapacity is less than zero or
      *         greater than (Integer.MAX_VALUE >> coder)
      */
-    private int newCapacity(int minCapacity) {
+    private static int newCapacity(int minCapacity, byte[] value, byte coder) {
         int oldLength = value.length;
         int newLength = minCapacity << coder;
         int growth = newLength - oldLength;
@@ -841,8 +851,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     public AbstractStringBuilder append(int i) {
         int count = this.count;
         int spaceNeeded = count + DecimalDigits.stringSize(i);
-        byte[] value = ensureCapacityInternal(spaceNeeded);
-        if (isLatin1()) {
+        byte coder = getCoder();
+        byte[] value = ensureCapacityInternal(spaceNeeded, this.value, coder);
+        if (coder == LATIN1) {
             DecimalDigits.getCharsLatin1(i, spaceNeeded, value);
         } else {
             DecimalDigits.getCharsUTF16(i, spaceNeeded, value);
@@ -866,8 +877,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     public AbstractStringBuilder append(long l) {
         int count = this.count;
         int spaceNeeded = count + DecimalDigits.stringSize(l);
-        byte[] value = ensureCapacityInternal(spaceNeeded);
-        if (isLatin1()) {
+        byte coder = getCoder();
+        byte[] value = ensureCapacityInternal(spaceNeeded, this.value, coder);
+        if (coder == LATIN1) {
             DecimalDigits.getCharsLatin1(l, spaceNeeded, value);
         } else {
             DecimalDigits.getCharsUTF16(l, spaceNeeded, value);
