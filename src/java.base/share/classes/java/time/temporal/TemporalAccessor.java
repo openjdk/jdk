@@ -313,4 +313,5 @@ public interface TemporalAccessor {
         }
         return query.queryFrom(this);
     }
+
 }
