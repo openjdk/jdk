@@ -1179,7 +1179,7 @@ public final class Currency implements Serializable {
         // cutOver adheres to ISO8601 Local Date Time format (excluding nano secs)
         private static boolean isPastCutoverDate(String cutOver) {
             return System.currentTimeMillis() >
-                    LocalDateTime.parse(cutOver.trim(), DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                    LocalDateTime.parse(cutOver, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                             .toInstant(ZoneOffset.UTC)
                             .toEpochMilli();
         }
