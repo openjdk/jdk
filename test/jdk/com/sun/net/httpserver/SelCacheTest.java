@@ -25,8 +25,7 @@
  * @test
  * @bug 6270015
  * @library /test/lib
- * @build jdk.test.lib.Asserts
- *        jdk.test.lib.Utils
+ * @build jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.net.URIBuilder
  * @run main/othervm -Dsun.net.httpserver.selCacheTimeout=2 SelCacheTest

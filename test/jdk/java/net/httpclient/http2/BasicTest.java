@@ -29,7 +29,6 @@
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.httpclient.test.lib.http2.Http2TestExchange
  *        jdk.httpclient.test.lib.http2.Http2EchoHandler
- *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors BasicTest
