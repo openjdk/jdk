@@ -69,6 +69,8 @@ public class Test9 extends Test {
             InetSocketAddress addr = new InetSocketAddress(loopback, 0);
             s1 = HttpServer.create (addr, 0);
             s2 = HttpsServer.create (addr, 0);
+            // Assert that both files share the same parent and can be served from the same `FileServerHandler`
+            assert smallFilePath.getParent().equals(largeFilePath.getParent());
             HttpHandler h = new FileServerHandler (smallFilePath.getParent().toString());
             HttpContext c1 = s1.createContext ("/", h);
             HttpContext c2 = s2.createContext ("/", h);

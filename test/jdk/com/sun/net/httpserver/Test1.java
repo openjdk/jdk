@@ -83,6 +83,8 @@ public class Test1 extends Test {
                 throw new RuntimeException ("should not be httpsserver");
             }
             s2 = HttpsServer.create (addr, 0);
+            // Assert that both files share the same parent and can be served from the same `FileServerHandler`
+            assert smallFilePath.getParent().equals(largeFilePath.getParent());
             HttpHandler h = new FileServerHandler (smallFilePath.getParent().toString());
             HttpContext c1 = s1.createContext ("/", h);
             HttpContext c2 = s2.createContext ("/", h);
