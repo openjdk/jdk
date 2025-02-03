@@ -239,13 +239,16 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * If {@code minimumCapacity} is non positive due to numeric
      * overflow, this method throws {@code OutOfMemoryError}.
      */
-    private void ensureCapacityInternal(int minimumCapacity) {
+    private byte[] ensureCapacityInternal(int minimumCapacity) {
         // overflow-conscious code
+        byte[] value = this.value;
         int oldCapacity = value.length >> coder;
         if (minimumCapacity - oldCapacity > 0) {
             value = Arrays.copyOf(value,
                     newCapacity(minimumCapacity) << coder);
+            this.value = value;
         }
+        return value;
     }
 
     /**
@@ -838,7 +841,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     public AbstractStringBuilder append(int i) {
         int count = this.count;
         int spaceNeeded = count + DecimalDigits.stringSize(i);
-        ensureCapacityInternal(spaceNeeded);
+        byte[] value = ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
             DecimalDigits.getCharsLatin1(i, spaceNeeded, value);
         } else {
@@ -863,7 +866,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     public AbstractStringBuilder append(long l) {
         int count = this.count;
         int spaceNeeded = count + DecimalDigits.stringSize(l);
-        ensureCapacityInternal(spaceNeeded);
+        byte[] value = ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
             DecimalDigits.getCharsLatin1(l, spaceNeeded, value);
         } else {
