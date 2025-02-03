@@ -453,13 +453,18 @@ bool SuperWord::transform_loop() {
 //
 // 8) The pairs are combined into vector sized packs.
 //
-// 9) Reorder the memory slices to co-locate members of the memory packs.
+// 9) The packs are split and filtered to ensure:
+//    - def vectors have matching length.
+//    - All vectors can be implemented, i.e. have a corresponding instruction
+//      in the backend for the required vector length.
+//    - There are no dependency cycles.
+//    - All vector loads and stores can be aligned, if we have strict alignment
+//      requirements (e.g. -XX:+AlignVector).
+//    - Other "profitable" checks, i.e. consistency checks between use and def
+//      vectors.
 //
-// 10) Generate ideal vector nodes for the final set of packs and where necessary,
-//    inserting scalar promotion, vector creation from multiple scalars, and
-//    extraction of scalar values from vectors.
-//
-// TODO adjust this description!
+// 10) "do_vtransform": create the VTransform, optimize, schedule, evaluate
+//     cost-model, other consistency checks, apply.
 //
 bool SuperWord::SLP_extract() {
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
@@ -495,7 +500,7 @@ bool SuperWord::SLP_extract() {
   DEBUG_ONLY(verify_packs();)
   DEBUG_ONLY(verify_no_extract());
 
-  return schedule_and_apply();
+  return do_vtransform();
 }
 
 int SuperWord::MemOp::cmp_by_group(MemOp* a, MemOp* b) {
@@ -1838,7 +1843,8 @@ void PackSet::verify() const {
 }
 #endif
 
-bool SuperWord::schedule_and_apply() const {
+// See description at top of "vtransform.hpp".
+bool SuperWord::do_vtransform() const {
   if (_packset.is_empty()) { return false; }
 
   // Make an empty transform.
