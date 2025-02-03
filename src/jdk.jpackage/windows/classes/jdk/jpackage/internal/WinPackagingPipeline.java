@@ -56,7 +56,7 @@ final class WinPackagingPipeline {
     private static void rebrandLaunchers(BuildEnv env, Application app,
             ApplicationLayout appLayout) throws IOException, PackagerException {
         for (var launcher : app.launchers()) {
-            final var iconTarget = createLauncherIconResource(app, launcher, name -> env.createResource(name)).map(iconResource -> {
+            final var iconTarget = createLauncherIconResource(app, launcher, env::createResource).map(iconResource -> {
                 var iconDir = env.buildRoot().resolve("icons");
                 var theIconTarget = iconDir.resolve(launcher.executableName() + ".ico");
                 try {
@@ -74,7 +74,7 @@ final class WinPackagingPipeline {
 
             // Update branding of launcher executable
             new ExecutableRebrander((WinApplication) app,
-                    (WinLauncher) launcher, name -> env.createResource(name)).execute(
+                    (WinLauncher) launcher, env::createResource).execute(
                     env, launcherExecutable, iconTarget);
         }
     }
