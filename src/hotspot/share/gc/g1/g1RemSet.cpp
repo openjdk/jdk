@@ -1160,22 +1160,6 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
   };
 
-  // Helper to allow two closure to be applied when
-  // iterating through the collection set.
-  class G1CombinedClosure : public G1HeapRegionClosure {
-    G1HeapRegionClosure* _closure1;
-    G1HeapRegionClosure* _closure2;
-  public:
-    G1CombinedClosure(G1HeapRegionClosure* cl1, G1HeapRegionClosure* cl2) :
-      _closure1(cl1),
-      _closure2(cl2) { }
-
-    bool do_heap_region(G1HeapRegion* hr) {
-      return _closure1->do_heap_region(hr) ||
-             _closure2->do_heap_region(hr);
-    }
-  };
-
   // Visitor for the remembered sets of humongous candidate regions to merge their
   // remembered set into the card table.
   class G1FlushHumongousCandidateRemSets : public G1HeapRegionIndexClosure {
@@ -1276,6 +1260,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
   };
 
   uint _num_workers;
+  G1HeapRegionClaimer _hr_claimer;
   G1RemSetScanState* _scan_state;
 
   // To mitigate contention due multiple threads accessing and popping BufferNodes from a shared
@@ -1305,6 +1290,7 @@ public:
   G1MergeHeapRootsTask(G1RemSetScanState* scan_state, uint num_workers, bool initial_evacuation) :
     WorkerTask("G1 Merge Heap Roots"),
     _num_workers(num_workers),
+    _hr_claimer(num_workers),
     _scan_state(scan_state),
     _dirty_card_buffers(nullptr),
     _initial_evacuation(initial_evacuation),
@@ -1391,23 +1377,25 @@ public:
         }
       }
 
+      // 2. collection set
       {
-        // 2. collection set
         G1MergeCardSetClosure merge(_scan_state);
-        G1ClearBitmapClosure clear(g1h);
-        G1CombinedClosure combined(&merge, &clear);
 
         if (_initial_evacuation) {
           G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
         }
 
-        g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
-        G1MergeCardSetStats stats = merge.stats();
-
+        g1h->collection_set_iterate_increment_from(&merge, worker_id);
         for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
-          p->record_or_add_thread_work_item(merge_remset_phase, worker_id, stats.merged(i), i);
+          p->record_or_add_thread_work_item(merge_remset_phase, worker_id, merge.stats().merged(i), i);
         }
       }
+    }
+
+    // Preparation for evacuation failure handling.
+    {
+      G1ClearBitmapClosure clear(g1h);
+      g1h->collection_set_iterate_increment_from(&clear, &_hr_claimer, worker_id);
     }
 
     // Now apply the closure to all remaining log entries.
