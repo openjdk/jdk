@@ -6329,8 +6329,8 @@ public final class DateTimeFormatterBuilder {
                     for (int i = 0; i < printerParsers.length; ++i) {
                         var pp = printerParsers[i];
 
-                        if (pp instanceof CharLiteralPrinterParser literlal) {
-                            appendLiteral(cb, literlal);
+                        if (pp instanceof CharLiteralPrinterParser literal) {
+                            appendLiteral(cb, literal);
                             continue;
                         }
 
