@@ -227,6 +227,7 @@ public final class ML_KEM {
         }
 
         //Generate K-PKE keys
+        //The 1st 32-byte `d` is used in K-PKE key pair generation
         var kPkeKeyPair = generateK_PkeKeyPair(kem_d_z);
         //encaps key = kPke encryption key
         byte[] encapsKey = kPkeKeyPair.publicKey.keyBytes;
@@ -246,6 +247,7 @@ public final class ML_KEM {
             // This should never happen.
             throw new RuntimeException(e);
         }
+        // The 2nd 32-byte `z` is copied into decapsKey
         System.arraycopy(kem_d_z, 32, decapsKey,
             kPkePrivateKey.length + encapsKey.length + 32, 32);
 
@@ -367,6 +369,7 @@ public final class ML_KEM {
             throw new RuntimeException(e);
         }
 
+        // Note: only the 1st 32-byte in the seed is used
         mlKemG.update(seed, 0, 32);
         mlKemG.update((byte)mlKem_k);
 

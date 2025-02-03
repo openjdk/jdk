@@ -29,7 +29,9 @@ import sun.security.jca.JCAUtil;
 import sun.security.provider.NamedKEM;
 import sun.security.provider.NamedKeyFactory;
 import sun.security.provider.NamedKeyPairGenerator;
+import sun.security.util.DerValue;
 
+import java.io.IOException;
 import java.security.*;
 import java.util.Arrays;
 
@@ -37,7 +39,7 @@ import javax.crypto.DecapsulateException;
 
 public final class ML_KEM_Impls {
 
-    public static byte[] seedToExpandedPrivate(String pname, byte[] seed) {
+    public static byte[] seedToTransformed(String pname, byte[] seed) {
         return new ML_KEM(pname).generateKemKeyPair(seed)
                 .decapsulationKey()
                 .keyBytes();
@@ -99,9 +101,15 @@ public final class ML_KEM_Impls {
         }
 
         @Override
-        protected byte[] implGenAlt(String name, byte[] key) {
-            if (key.length == 64) {
-                return seedToExpandedPrivate(name, key);
+        protected byte[] implTransform(String name, byte[] input) {
+            if (input.length == 64) { // seed
+                return seedToTransformed(name, input);
+            } else if (input.length > 1 && input[0] == 4) { // jdk24
+                try {
+                    return new DerValue(input).getOctetString();
+                } catch (IOException e) {
+                    return null;
+                }
             } else {
                 return null;
             }

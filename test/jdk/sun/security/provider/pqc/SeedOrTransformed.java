@@ -29,7 +29,7 @@
  *          java.base/sun.security.provider
  *          java.base/sun.security.util
  * @summary check key reading compatibility
- * @run main/othervm SeedOrExpanded
+ * @run main/othervm SeedOrTransformed
  */
 
 import com.sun.crypto.provider.ML_KEM_Impls;
@@ -50,7 +50,7 @@ import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
 
-public class SeedOrExpanded {
+public class SeedOrTransformed {
 
     static final SeededSecureRandom RAND = SeededSecureRandom.one();
 
@@ -68,28 +68,37 @@ public class SeedOrExpanded {
 
         g.initialize(-1, new FixedSecureRandom(seed));
         var kp = g.generateKeyPair();
-        var kseed = kp.getPrivate().getEncoded();
+        var encSeed = kp.getPrivate().getEncoded();
 
         var ex = alg.contains("ML-KEM")
-                ? ML_KEM_Impls.seedToExpandedPrivate(alg, seed)
-                : ML_DSA_Impls.seedToExpandedPrivate(alg, seed);
-        var kexpanded = new DerOutputStream().write(DerValue.tag_Sequence,
+                ? ML_KEM_Impls.seedToTransformed(alg, seed)
+                : ML_DSA_Impls.seedToTransformed(alg, seed);
+        var encTransformed = new DerOutputStream().write(DerValue.tag_Sequence,
                 new DerOutputStream().putInteger(0)
                         .write(DerValue.tag_Sequence, new DerOutputStream()
                                 .putOID(ObjectIdentifier.of(KnownOIDs.findMatch(alg))))
-                        .putOctetString(ex)).toByteArray();
+                        .putOctetString(ex))
+                .toByteArray();
+        var enc24 = new DerOutputStream().write(DerValue.tag_Sequence,
+                new DerOutputStream().putInteger(0)
+                        .write(DerValue.tag_Sequence, new DerOutputStream()
+                                .putOID(ObjectIdentifier.of(KnownOIDs.findMatch(alg))))
+                        .putOctetString(
+                                new DerOutputStream().putOctetString(ex).toByteArray()))
+                .toByteArray();
 
-        // Seed encoding is usually shorter than expanded
-        Asserts.assertTrue(kseed.length < kexpanded.length);
+        // Seed encoding is usually shorter than transformed
+        Asserts.assertTrue(encSeed.length < encTransformed.length);
         Asserts.assertEqualsByteArray( // ... and encoding ends with seed
-                Arrays.copyOfRange(kseed, kseed.length - seed.length, kseed.length),
+                Arrays.copyOfRange(encSeed, encSeed.length - seed.length, encSeed.length),
                 seed);
 
         // Key loading
 
         var f = KeyFactory.getInstance(alg);
-        var sk1 = f.generatePrivate(new PKCS8EncodedKeySpec(kseed));
-        var sk2 = f.generatePrivate(new PKCS8EncodedKeySpec(kexpanded));
+        var sk1 = f.generatePrivate(new PKCS8EncodedKeySpec(encSeed));
+        var sk2 = f.generatePrivate(new PKCS8EncodedKeySpec(encTransformed));
+        var sk24 = f.generatePrivate(new PKCS8EncodedKeySpec(enc24));
         var sk3 = f.translateKey(new PrivateKey() {
             public String getAlgorithm() { return alg; }
             public String getFormat() { return "RAW"; }
@@ -101,10 +110,11 @@ public class SeedOrExpanded {
             public byte[] getEncoded() { return ex.clone(); }
         });
         // Key factory never tries to reformat keys
-        Asserts.assertEqualsByteArray(sk1.getEncoded(), kseed);
-        Asserts.assertEqualsByteArray(sk2.getEncoded(), kexpanded);
-        Asserts.assertEqualsByteArray(sk3.getEncoded(), kseed);
-        Asserts.assertEqualsByteArray(sk4.getEncoded(), kexpanded);
+        Asserts.assertEqualsByteArray(sk1.getEncoded(), encSeed);
+        Asserts.assertEqualsByteArray(sk2.getEncoded(), encTransformed);
+        Asserts.assertEqualsByteArray(sk24.getEncoded(), enc24);
+        Asserts.assertEqualsByteArray(sk3.getEncoded(), encSeed);
+        Asserts.assertEqualsByteArray(sk4.getEncoded(), encTransformed);
 
         // Key using
 
@@ -114,7 +124,9 @@ public class SeedOrExpanded {
             var enc = e.encapsulate();
             var k1 = kem.newDecapsulator(sk1).decapsulate(enc.encapsulation());
             var k2 = kem.newDecapsulator(sk2).decapsulate(enc.encapsulation());
+            var k24 = kem.newDecapsulator(sk24).decapsulate(enc.encapsulation());
             Asserts.assertEqualsByteArray(k1.getEncoded(), k2.getEncoded());
+            Asserts.assertEqualsByteArray(k1.getEncoded(), k24.getEncoded());
             Asserts.assertEqualsByteArray(k1.getEncoded(), enc.key().getEncoded());
         } else {
             var s = Signature.getInstance("ML-DSA");
@@ -126,7 +138,11 @@ public class SeedOrExpanded {
             s.initSign(sk2, new FixedSecureRandom(rnd));
             s.update(msg);
             var sig2 = s.sign();
+            s.initSign(sk24, new FixedSecureRandom(rnd));
+            s.update(msg);
+            var sig24 = s.sign();
             Asserts.assertEqualsByteArray(sig1, sig2);
+            Asserts.assertEqualsByteArray(sig1, sig24);
             s.initVerify(kp.getPublic());
             s.update(msg);
             Asserts.assertTrue(s.verify(sig1));

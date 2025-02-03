@@ -26,15 +26,22 @@
 package sun.security.provider;
 
 import sun.security.jca.JCAUtil;
+import sun.security.util.DerValue;
 
+import java.io.IOException;
 import java.security.*;
 import java.security.SecureRandom;
 
 public class ML_DSA_Impls {
 
-    public static byte[] seedToExpandedPrivate(String pname, byte[] seed) {
+    public static byte[] seedToTransformed(String pname, byte[] seed) {
         var impl = new ML_DSA(name2int(pname));
-        return impl.skEncode(impl.generateKeyPairInternal(seed).privateKey());
+        var sk = impl.generateKeyPairInternal(seed).privateKey();
+        try {
+            return impl.skEncode(sk);
+        } finally {
+            sk.destroy();
+        }
     }
 
     public enum Version {
@@ -119,9 +126,15 @@ public class ML_DSA_Impls {
         }
 
         @Override
-        protected byte[] implGenAlt(String name, byte[] key) {
-            if (key.length == 32) {
-                return seedToExpandedPrivate(name, key);
+        protected byte[] implTransform(String name, byte[] input) {
+            if (input.length == 32) { // seed
+                return seedToTransformed(name, input);
+            } else if (input.length > 1 && input[0] == 4) { // jdk24
+                try {
+                    return new DerValue(input).getOctetString();
+                } catch (IOException e) {
+                    return null;
+                }
             } else {
                 return null;
             }

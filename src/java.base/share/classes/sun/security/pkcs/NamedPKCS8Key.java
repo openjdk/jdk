@@ -25,7 +25,6 @@
 
 package sun.security.pkcs;
 
-import sun.security.util.DerValue;
 import sun.security.x509.AlgorithmId;
 
 import javax.security.auth.DestroyFailedException;
@@ -50,20 +49,29 @@ import java.util.function.BiFunction;
 /// identifier in the PKCS #8 encoding of the key is always a single OID derived
 /// from the parameter set name.
 ///
-/// Besides the [PKCS8Key#key] field, this class might contain an optional
-/// alternative key stored in [#alt].
+/// Besides the existing [PKCS8Key#key] field, this class optionally supports a
+/// transformed format stored in [#transformed]. While `key` always represents
+/// the base format used for encoding, an algorithm may perform pre-computation
+/// to derive a transformed format, which may accelerate future operations.
+/// The transformed format must be self-sufficient for cryptographic
+/// computations without requiring the base format.
 ///
-/// 1. If there is only `key`, there is only one private key encoding.
-/// 2. If both `key` and `alt` exist. `key` is used in encoding,
-///    and `alt` is used in calculation.
+/// 1. If only `key` is present, it is used for both encoding and computations.
+/// 2. If both `key` and `transformed` are available, `key` is used for encoding,
+///    and `transformed` is used for computations.
 ///
-/// This allows ML-KEM or ML-DSA to encode the seed used in key pair
-/// generation as the private key. In this case, `alt` will be the
-/// expanded key as described in the FIPS documents. If the seed is
-/// lost, `key` will be the expanded key and `alt` will be null.
+/// For algorithms that do not define a transformed key format, only `key` is
+/// included, and `transformed` must be `null`.
 ///
-/// For algorithms that do not have this "alternative" key format,
-/// only `key` will be included and `alt` must be `null`.
+/// Note: When a transformed format is not defined, `key` and `transformed`
+/// may hold the same value. However, subtle differences can arise depending
+/// on if they are the same object. To avoid ambiguity, always set `transformed`
+/// to `null`.
+///
+/// The encoding in `NamedPKCS8Key` differs from that of XDH and EdDSA keys.
+/// While `key` is always placed inside an `OneAsymmetricKey` structure as an
+/// OCTET STRING , for XDH and EdDSA, the `key` field itself is an OCTET STRING.
+/// `NamedPKCS8Key` treats `key` as a generic opaque byte array.
 ///
 /// @see sun.security.provider.NamedKeyPairGenerator
 public final class NamedPKCS8Key extends PKCS8Key {
@@ -72,23 +80,23 @@ public final class NamedPKCS8Key extends PKCS8Key {
 
     private final String fname;
     private final transient NamedParameterSpec paramSpec;
-    private final byte[] alt;
+    private final transient byte[] transformed;
 
     private transient boolean destroyed = false;
 
-    /// Ctor from raw key bytes.
+    /// Creates a `NamedPKCS8Key` from raw key bytes.
     ///
-    /// `rawBytes` and `alt` won't be cloned, caller
+    /// `rawBytes` and `transformed` won't be cloned, caller
     /// must relinquish ownership.
     ///
     /// @param fname family name
     /// @param pname parameter set name
     /// @param rawBytes raw key bytes
-    /// @param alt alternative key format, can be `null`.
-    public NamedPKCS8Key(String fname, String pname, byte[] rawBytes, byte[] alt) {
+    /// @param transformed transformed key format, can be `null`.
+    public NamedPKCS8Key(String fname, String pname, byte[] rawBytes, byte[] transformed) {
         this.fname = fname;
         this.paramSpec = new NamedParameterSpec(pname);
-        this.alt = alt;
+        this.transformed = transformed;
         try {
             this.algid = AlgorithmId.get(pname);
         } catch (NoSuchAlgorithmException e) {
@@ -97,21 +105,22 @@ public final class NamedPKCS8Key extends PKCS8Key {
         this.key = rawBytes;
     }
 
-    /// Ctor from family name and PKCS #8 encoding
+    /// Creates a `NamedPKCS8Key` from family name and PKCS #8 encoding.
     ///
     /// @param fname family name
     /// @param encoded PKCS #8 encoding. It is copied so caller can modify
     ///     it after the method call.
-    /// @param genAlt a function that is able to calculate the alternative
-    ///     key from raw key inside `encoded`. In the case of seed/expanded,
-    ///     the function will calculate expanded from seed. If it recognizes
-    ///     the input being already the expanded key, it must return `null`.
-    ///     If there is no alternative key format, `getAlt` must be `null`.
+    /// @param transform a function that is able to calculate the transformed
+    ///     format from the base format inside `encoded`. If it recognizes
+    ///     the input already in transformed format, it must return `null`.
+    ///     If there is no transformed key format, `transform` must be `null`.
+    ///     Whatever the case, the ownership of the result is fully granted
+    ///     to this `NamedPKCS8Key` object.
     public NamedPKCS8Key(String fname, byte[] encoded,
-            BiFunction<String, byte[], byte[]> genAlt) throws InvalidKeyException {
+            BiFunction<String, byte[], byte[]> transform) throws InvalidKeyException {
         super(encoded);
         this.fname = fname;
-        this.alt = genAlt == null ? null : genAlt.apply(algid.getName(), this.key);
+        this.transformed = transform == null ? null : transform.apply(algid.getName(), this.key);
         paramSpec = new NamedParameterSpec(algid.getName());
         if (algid.getEncodedParams() != null) {
             throw new InvalidKeyException("algorithm identifier has params");
@@ -126,25 +135,16 @@ public final class NamedPKCS8Key extends PKCS8Key {
     }
 
     /// Returns the reference to the internal key. Caller must not modify
-    /// the content or keep a reference.
+    /// the content or pass the reference to untrusted application code.
     public byte[] getRawBytes() {
         return key;
     }
 
-    /// Returns the reference to the key that will be used in computations
-    /// inside `NamedKEM` or `NamedSignature` between `alt` (if exists)
-    /// and `key`.
-    ///
-    /// This method currently simply chooses the longer one, where it is the
-    /// expanded format. If the key used in computations is not the longer
-    /// one for an algorithm, consider adding overridable methods to
-    /// `NamedKEM` and `NamedSignature` to extract it.
-    public byte[] getExpanded() {
-        if (alt == null) {
-            return key;
-        } else {
-            return alt.length > key.length ? alt : key;
-        }
+    /// Returns the reference to the key that will be used in computations.
+    /// Caller must not modify the content or pass the reference to untrusted
+    /// application code.
+    public byte[] getTransformed() {
+        return transformed == null ? key : transformed;
     }
 
     @Override
@@ -167,8 +167,8 @@ public final class NamedPKCS8Key extends PKCS8Key {
     @Override
     public void destroy() throws DestroyFailedException {
         Arrays.fill(key, (byte)0);
-        if (alt != null) {
-            Arrays.fill(alt, (byte)0);
+        if (transformed != null) {
+            Arrays.fill(transformed, (byte)0);
         }
         if (encodedKey != null) {
             Arrays.fill(encodedKey, (byte)0);

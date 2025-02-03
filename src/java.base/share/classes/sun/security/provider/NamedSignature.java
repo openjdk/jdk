@@ -96,7 +96,7 @@ public abstract class NamedSignature extends SignatureSpi {
         // translate also check the key
         var nk = (NamedPKCS8Key) fac.engineTranslateKey(privateKey);
         name = nk.getParams().getName();
-        secKey = nk.getExpanded();
+        secKey = nk.getTransformed();
         sk2 = implCheckPrivateKey(name, secKey);
         pubKey = null;
         bout.reset();

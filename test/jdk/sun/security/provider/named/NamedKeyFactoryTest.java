@@ -237,11 +237,6 @@ public class NamedKeyFactoryTest {
         public KF(String name) {
             super("SHA", name);
         }
-
-        @Override
-        protected byte[] implGenAlt(String name, byte[] key) {
-            return null;
-        }
     }
     public static class KF1 extends KF {
         public KF1() {

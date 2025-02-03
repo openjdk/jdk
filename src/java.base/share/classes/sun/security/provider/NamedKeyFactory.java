@@ -57,7 +57,7 @@ import java.util.Arrays;
 ///
 /// When reading from a RAW format, it needs enough info to derive the
 /// parameter set name.
-public abstract class NamedKeyFactory extends KeyFactorySpi {
+public class NamedKeyFactory extends KeyFactorySpi {
 
     private final String fname; // family name
     private final String[] pnames; // allowed parameter set name (at least one)
@@ -129,7 +129,7 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
         } else if (keySpec instanceof RawKeySpec rks) {
             if (pnames.length == 1) {
                 var raw = rks.getKeyArr();
-                return new NamedPKCS8Key(fname, pnames[0], raw, implGenAlt(pnames[0], raw));
+                return new NamedPKCS8Key(fname, pnames[0], raw, implTransform(pnames[0], raw));
             } else {
                 throw new InvalidKeySpecException("Parameter set name unavailable");
             }
@@ -137,7 +137,7 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
                 && espec.getFormat().equalsIgnoreCase("RAW")) {
             if (pnames.length == 1) {
                 var raw = espec.getEncoded();
-                return new NamedPKCS8Key(fname, pnames[0], raw, implGenAlt(pnames[0], raw));
+                return new NamedPKCS8Key(fname, pnames[0], raw, implTransform(pnames[0], raw));
             } else {
                 throw new InvalidKeySpecException("Parameter set name unavailable");
             }
@@ -148,7 +148,7 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
 
     private PrivateKey fromPKCS8(byte[] bytes)
             throws InvalidKeyException, InvalidKeySpecException {
-        var k = new NamedPKCS8Key(fname, bytes, this::implGenAlt);
+        var k = new NamedPKCS8Key(fname, bytes, this::implTransform);
         checkName(k.getParams().getName());
         return k;
     }
@@ -253,7 +253,7 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
                 }
                 var raw = key.getEncoded();
                 return key instanceof PrivateKey
-                        ? new NamedPKCS8Key(fname, name, raw, implGenAlt(name, raw))
+                        ? new NamedPKCS8Key(fname, name, raw, implTransform(name, raw))
                         : new NamedX509Key(fname, name, raw);
             } else {
                 throw new InvalidKeyException("Unsupported key type: " + key.getClass());
@@ -278,11 +278,16 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
         }
     }
 
-    /// User-defined function to generate the alternative key inside
+    /// User-defined function to generate the transformed format of
     /// a [NamedPKCS8Key].
     ///
-    /// This method will be called when the key factory is constructing
-    /// a private key. If the input `key` is a seed, the expanded key must
-    /// be returned. If `key` is in expanded format, `null` must be returned.
-    protected abstract byte[] implGenAlt(String name, byte[] key);
+    /// This method is called when the key factory is constructing a private
+    /// key. If `input` is in base format, the transformed key must be returned.
+    /// If `input` is in transformed format, `null` must be returned. Whatever
+    /// the case, the ownership of the result is fully granted to the caller.
+    ///
+    /// The default implementation returns `null`.
+    protected byte[] implTransform(String name, byte[] input) {
+        return null;
+    }
 }

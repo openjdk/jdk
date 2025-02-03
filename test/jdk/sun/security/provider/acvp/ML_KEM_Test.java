@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class ML_KEM_Test {
                 Asserts.assertEqualsByteArray(toByteArray(c.get("ek").asString()), pk);
                 Asserts.assertEqualsByteArray(
                         toByteArray(c.get("dk").asString()),
-                        ML_KEM_Impls.seedToExpandedPrivate(pname, sk));
+                        ML_KEM_Impls.seedToTransformed(pname, sk));
             }
             System.out.println();
         }

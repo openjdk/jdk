@@ -74,7 +74,7 @@ public class ML_DSA_Test {
                 var sk = f.getKeySpec(kp.getPrivate(), EncodedKeySpec.class).getEncoded();
                 Asserts.assertEqualsByteArray(toByteArray(c.get("pk").asString()), pk);
                 Asserts.assertEqualsByteArray(toByteArray(c.get("sk").asString()),
-                        ML_DSA_Impls.seedToExpandedPrivate(pname, sk));
+                        ML_DSA_Impls.seedToTransformed(pname, sk));
             }
             System.out.println();
         }

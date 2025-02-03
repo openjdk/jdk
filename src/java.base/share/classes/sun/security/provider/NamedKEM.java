@@ -95,7 +95,7 @@ public abstract class NamedKEM implements KEMSpi {
         }
         // translate also check the key
         var nk = (NamedPKCS8Key) fac.engineTranslateKey(privateKey);
-        var sk = nk.getExpanded();
+        var sk = nk.getTransformed();
         return getKeyConsumerImpl(this, nk.getParams(), sk,
                 implCheckPrivateKey(nk.getParams().getName(), sk), null);
     }

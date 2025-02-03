@@ -129,11 +129,6 @@ public class NamedEdDSA {
                 super("Ed448");
             }
         }
-
-        @Override
-        protected byte[] implGenAlt(String name, byte[] key) {
-            return null;
-        }
     }
 
     public static class EdDSAKeyPairGenerator extends NamedKeyPairGenerator {
