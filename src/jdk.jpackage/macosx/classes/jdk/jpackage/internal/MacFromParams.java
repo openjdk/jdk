@@ -34,6 +34,7 @@ import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
@@ -78,6 +79,7 @@ final class MacFromParams {
             appBuilder.externalInfoPlistFile(PREDEFINED_APP_IMAGE.fetchFrom(params).resolve("Contents/Info.plist"));
         }
 
+        ICON.copyInto(params, appBuilder::icon);
         MAC_CF_BUNDLE_NAME.copyInto(params, appBuilder::bundleName);
         MAC_CF_BUNDLE_IDENTIFIER.copyInto(params, appBuilder::bundleIdentifier);
         APP_CATEGORY.copyInto(params, appBuilder::category);

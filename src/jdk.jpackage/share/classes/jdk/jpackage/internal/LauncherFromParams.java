@@ -109,7 +109,7 @@ record LauncherFromParams(Optional<BiFunction<FileAssociation, Map<String, ? sup
 
                 if (faExtension.isPresent()) {
                     return new FileAssociationGroup(faGroup.items().stream().map(fa -> {
-                        return faExtension.get().apply(fa, params);
+                        return faExtension.get().apply(fa, faParams);
                     }).toList());
                 } else {
                     return faGroup;

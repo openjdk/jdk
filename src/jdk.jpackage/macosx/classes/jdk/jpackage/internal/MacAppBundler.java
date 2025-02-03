@@ -31,6 +31,7 @@ import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
 import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.jpackage.internal.StandardBundlerParam.OUTPUT_DIR;
 
 import java.text.MessageFormat;
 import java.util.Map;
@@ -47,6 +48,7 @@ public class MacAppBundler extends AppImageBundler {
 
              final var taskPipelineBuilder = MacPackagingPipeline.build()
                      .excludeDirFromCopying(output.getParent())
+                     .excludeDirFromCopying(OUTPUT_DIR.fetchFrom(params))
                      .inputApplicationLayoutForPackaging(pkg -> pkg.app().asApplicationLayout());
 
              if (isDependentTask()) {

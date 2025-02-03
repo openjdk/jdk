@@ -284,7 +284,7 @@ final class MacPackagingPipeline {
                 fa.nsPersistentStoreTypeKey());
         writeString(xml, "NSDocumentClass", fa.nsDocumentClass());
         writeBoolean(xml, "LSIsAppleDefaultForType", true);
-        writeString(xml, "LSTypeIsPackage", fa.lsTypeIsPackage());
+        writeBoolean(xml, "LSTypeIsPackage", fa.lsTypeIsPackage());
         writeBoolean(xml, "LSSupportsOpeningDocumentsInPlace",
                 fa.lsSupportsOpeningDocumentsInPlace());
         writeBoolean(xml, "UISupportsDocumentBrowser",
