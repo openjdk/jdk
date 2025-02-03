@@ -7,10 +7,10 @@
 
 #define spa_exchange(var, new_value) \
 __extension__ ({ \
-	__typeof__(var) *_ptr_ = &(var); \
-	__typeof__(var) _old_value_ = *_ptr_; \
-	*_ptr_ = (new_value); \
-	_old_value_; \
+    __typeof__(var) *_ptr_ = &(var); \
+    __typeof__(var) _old_value_ = *_ptr_; \
+    *_ptr_ = (new_value); \
+    _old_value_; \
 })
 
 /* ========================================================================== */
@@ -23,10 +23,10 @@ __extension__ ({ \
 
 #define spa_clear_ptr(ptr, destructor) \
 __extension__ ({ \
-	__typeof__(ptr) _old_value = spa_steal_ptr(ptr); \
-	if (_old_value) \
-		destructor(_old_value); \
-	(void) 0; \
+    __typeof__(ptr) _old_value = spa_steal_ptr(ptr); \
+    if (_old_value) \
+        destructor(_old_value); \
+    (void) 0; \
 })
 
 /* ========================================================================== */
@@ -38,10 +38,10 @@ __extension__ ({ \
 
 #define spa_clear_fd(fd) \
 __extension__ ({ \
-	int _old_value = spa_steal_fd(fd), _res = 0; \
-	if (_old_value >= 0) \
-		_res = close(_old_value); \
-	_res; \
+    int _old_value = spa_steal_fd(fd), _res = 0; \
+    if (_old_value >= 0) \
+        _res = close(_old_value); \
+    _res; \
 })
 
 /* ========================================================================== */
@@ -54,27 +54,27 @@ __extension__ ({ \
 typedef __typeof__(type) _spa_auto_cleanup_type_ ## name; \
 static inline void _spa_auto_cleanup_func_ ## name (__typeof__(type) *thing) \
 { \
-	int _save_errno = errno; \
-	__VA_ARGS__ \
-	errno = _save_errno; \
+    int _save_errno = errno; \
+    __VA_ARGS__ \
+    errno = _save_errno; \
 }
 
 #define spa_auto(name) \
-	spa_cleanup(_spa_auto_cleanup_func_ ## name) \
-	_spa_auto_cleanup_type_ ## name
+    spa_cleanup(_spa_auto_cleanup_func_ ## name) \
+    _spa_auto_cleanup_type_ ## name
 
 #define SPA_DEFINE_AUTOPTR_CLEANUP(name, type, ...) \
 typedef __typeof__(type) * _spa_autoptr_cleanup_type_ ## name; \
 static inline void _spa_autoptr_cleanup_func_ ## name (__typeof__(type) **thing) \
 { \
-	int _save_errno = errno; \
-	__VA_ARGS__ \
-	errno = _save_errno; \
+    int _save_errno = errno; \
+    __VA_ARGS__ \
+    errno = _save_errno; \
 }
 
 #define spa_autoptr(name) \
-	spa_cleanup(_spa_autoptr_cleanup_func_ ## name) \
-	_spa_autoptr_cleanup_type_ ## name
+    spa_cleanup(_spa_autoptr_cleanup_func_ ## name) \
+    _spa_autoptr_cleanup_type_ ## name
 
 /* ========================================================================== */
 
@@ -82,9 +82,9 @@ static inline void _spa_autoptr_cleanup_func_ ## name (__typeof__(type) **thing)
 
 static inline void _spa_autofree_cleanup_func(void *p)
 {
-	int save_errno = errno;
-	free(*(void **) p);
-	errno = save_errno;
+    int save_errno = errno;
+    free(*(void **) p);
+    errno = save_errno;
 }
 #define spa_autofree spa_cleanup(_spa_autofree_cleanup_func)
 
@@ -92,9 +92,9 @@ static inline void _spa_autofree_cleanup_func(void *p)
 
 static inline void _spa_autoclose_cleanup_func(int *fd)
 {
-	int save_errno = errno;
-	spa_clear_fd(*fd);
-	errno = save_errno;
+    int save_errno = errno;
+    spa_clear_fd(*fd);
+    errno = save_errno;
 }
 #define spa_autoclose spa_cleanup(_spa_autoclose_cleanup_func)
 
@@ -103,7 +103,7 @@ static inline void _spa_autoclose_cleanup_func(int *fd)
 #include <stdio.h>
 
 SPA_DEFINE_AUTOPTR_CLEANUP(FILE, FILE, {
-	spa_clear_ptr(*thing, fclose);
+    spa_clear_ptr(*thing, fclose);
 })
 
 /* ========================================================================== */
@@ -111,7 +111,7 @@ SPA_DEFINE_AUTOPTR_CLEANUP(FILE, FILE, {
 #include <dirent.h>
 
 SPA_DEFINE_AUTOPTR_CLEANUP(DIR, DIR, {
-	spa_clear_ptr(*thing, closedir);
+    spa_clear_ptr(*thing, closedir);
 })
 
 #else

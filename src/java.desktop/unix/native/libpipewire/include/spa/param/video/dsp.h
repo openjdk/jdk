@@ -17,12 +17,12 @@ extern "C" {
 #include <spa/param/video/raw.h>
 
 struct spa_video_info_dsp {
-	enum spa_video_format format;
-	uint32_t flags;
-	uint64_t modifier;
+    enum spa_video_format format;
+    uint32_t flags;
+    uint64_t modifier;
 };
 
-#define SPA_VIDEO_INFO_DSP_INIT(...)	((struct spa_video_info_dsp) { __VA_ARGS__ })
+#define SPA_VIDEO_INFO_DSP_INIT(...)    ((struct spa_video_info_dsp) { __VA_ARGS__ })
 
 /**
  * \}

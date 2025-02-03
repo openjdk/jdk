@@ -43,7 +43,7 @@ extern "C" {
  */
 SPA_API_STRING bool spa_streq(const char *s1, const char *s2)
 {
-	return SPA_LIKELY(s1 && s2) ? strcmp(s1, s2) == 0 : s1 == s2;
+    return SPA_LIKELY(s1 && s2) ? strcmp(s1, s2) == 0 : s1 == s2;
 }
 
 /**
@@ -53,7 +53,7 @@ SPA_API_STRING bool spa_streq(const char *s1, const char *s2)
  */
 SPA_API_STRING bool spa_strneq(const char *s1, const char *s2, size_t len)
 {
-	return SPA_LIKELY(s1 && s2) ? strncmp(s1, s2, len) == 0 : s1 == s2;
+    return SPA_LIKELY(s1 && s2) ? strncmp(s1, s2, len) == 0 : s1 == s2;
 }
 
 
@@ -64,12 +64,12 @@ SPA_API_STRING bool spa_strneq(const char *s1, const char *s2, size_t len)
  */
 SPA_API_STRING bool spa_strstartswith(const char *s, const char *prefix)
 {
-	if (SPA_UNLIKELY(s == NULL))
-		return false;
+    if (SPA_UNLIKELY(s == NULL))
+        return false;
 
-	spa_assert_se(prefix);
+    spa_assert_se(prefix);
 
-	return strncmp(s, prefix, strlen(prefix)) == 0;
+    return strncmp(s, prefix, strlen(prefix)) == 0;
 }
 
 
@@ -80,16 +80,16 @@ SPA_API_STRING bool spa_strstartswith(const char *s, const char *prefix)
  */
 SPA_API_STRING bool spa_strendswith(const char *s, const char *suffix)
 {
-	size_t l1, l2;
+    size_t l1, l2;
 
-	if (SPA_UNLIKELY(s == NULL))
-	    return false;
+    if (SPA_UNLIKELY(s == NULL))
+        return false;
 
-	spa_assert_se(suffix);
+    spa_assert_se(suffix);
 
-	l1 = strlen(s);
-	l2 = strlen(suffix);
-	return l1 >= l2 && spa_streq(s + l1 - l2, suffix);
+    l1 = strlen(s);
+    l2 = strlen(suffix);
+    return l1 >= l2 && spa_streq(s + l1 - l2, suffix);
 }
 
 /**
@@ -102,22 +102,22 @@ SPA_API_STRING bool spa_strendswith(const char *s, const char *suffix)
  */
 SPA_API_STRING bool spa_atoi32(const char *str, int32_t *val, int base)
 {
-	char *endptr;
-	long v;
+    char *endptr;
+    long v;
 
-	if (!str || *str =='\0')
-		return false;
+    if (!str || *str =='\0')
+        return false;
 
-	errno = 0;
-	v = strtol(str, &endptr, base);
-	if (errno != 0 || *endptr != '\0')
-		return false;
+    errno = 0;
+    v = strtol(str, &endptr, base);
+    if (errno != 0 || *endptr != '\0')
+        return false;
 
-	if (v != (int32_t)v)
-		return false;
+    if (v != (int32_t)v)
+        return false;
 
-	*val = v;
-	return true;
+    *val = v;
+    return true;
 }
 
 /**
@@ -130,22 +130,22 @@ SPA_API_STRING bool spa_atoi32(const char *str, int32_t *val, int base)
  */
 SPA_API_STRING bool spa_atou32(const char *str, uint32_t *val, int base)
 {
-	char *endptr;
-	unsigned long long v;
+    char *endptr;
+    unsigned long long v;
 
-	if (!str || *str =='\0')
-		return false;
+    if (!str || *str =='\0')
+        return false;
 
-	errno = 0;
-	v = strtoull(str, &endptr, base);
-	if (errno != 0 || *endptr != '\0')
-		return false;
+    errno = 0;
+    v = strtoull(str, &endptr, base);
+    if (errno != 0 || *endptr != '\0')
+        return false;
 
-	if (v != (uint32_t)v)
-		return false;
+    if (v != (uint32_t)v)
+        return false;
 
-	*val = v;
-	return true;
+    *val = v;
+    return true;
 }
 
 /**
@@ -158,19 +158,19 @@ SPA_API_STRING bool spa_atou32(const char *str, uint32_t *val, int base)
  */
 SPA_API_STRING bool spa_atoi64(const char *str, int64_t *val, int base)
 {
-	char *endptr;
-	long long v;
+    char *endptr;
+    long long v;
 
-	if (!str || *str =='\0')
-		return false;
+    if (!str || *str =='\0')
+        return false;
 
-	errno = 0;
-	v = strtoll(str, &endptr, base);
-	if (errno != 0 || *endptr != '\0')
-		return false;
+    errno = 0;
+    v = strtoll(str, &endptr, base);
+    if (errno != 0 || *endptr != '\0')
+        return false;
 
-	*val = v;
-	return true;
+    *val = v;
+    return true;
 }
 
 /**
@@ -183,19 +183,19 @@ SPA_API_STRING bool spa_atoi64(const char *str, int64_t *val, int base)
  */
 SPA_API_STRING bool spa_atou64(const char *str, uint64_t *val, int base)
 {
-	char *endptr;
-	unsigned long long v;
+    char *endptr;
+    unsigned long long v;
 
-	if (!str || *str =='\0')
-		return false;
+    if (!str || *str =='\0')
+        return false;
 
-	errno = 0;
-	v = strtoull(str, &endptr, base);
-	if (errno != 0 || *endptr != '\0')
-		return false;
+    errno = 0;
+    v = strtoull(str, &endptr, base);
+    if (errno != 0 || *endptr != '\0')
+        return false;
 
-	*val = v;
-	return true;
+    *val = v;
+    return true;
 }
 
 /**
@@ -206,7 +206,7 @@ SPA_API_STRING bool spa_atou64(const char *str, uint64_t *val, int base)
  */
 SPA_API_STRING bool spa_atob(const char *str)
 {
-	return spa_streq(str, "true") || spa_streq(str, "1");
+    return spa_streq(str, "true") || spa_streq(str, "1");
 }
 
 /**
@@ -220,16 +220,16 @@ SPA_API_STRING bool spa_atob(const char *str)
 SPA_PRINTF_FUNC(3, 0)
 SPA_API_STRING int spa_vscnprintf(char *buffer, size_t size, const char *format, va_list args)
 {
-	int r;
+    int r;
 
-	spa_assert_se((ssize_t)size > 0);
+    spa_assert_se((ssize_t)size > 0);
 
-	r = vsnprintf(buffer, size, format, args);
-	if (SPA_UNLIKELY(r < 0))
-		buffer[0] = '\0';
-	if (SPA_LIKELY(r < (ssize_t)size))
-		return r;
-	return size - 1;
+    r = vsnprintf(buffer, size, format, args);
+    if (SPA_UNLIKELY(r < 0))
+        buffer[0] = '\0';
+    if (SPA_LIKELY(r < (ssize_t)size))
+        return r;
+    return size - 1;
 }
 
 /**
@@ -243,14 +243,14 @@ SPA_API_STRING int spa_vscnprintf(char *buffer, size_t size, const char *format,
 SPA_PRINTF_FUNC(3, 4)
 SPA_API_STRING int spa_scnprintf(char *buffer, size_t size, const char *format, ...)
 {
-	int r;
-	va_list args;
+    int r;
+    va_list args;
 
-	va_start(args, format);
-	r = spa_vscnprintf(buffer, size, format, args);
-	va_end(args);
+    va_start(args, format);
+    r = spa_vscnprintf(buffer, size, format, args);
+    va_end(args);
 
-	return r;
+    return r;
 }
 
 /**
@@ -264,20 +264,20 @@ SPA_API_STRING int spa_scnprintf(char *buffer, size_t size, const char *format, 
 SPA_API_STRING float spa_strtof(const char *str, char **endptr)
 {
 #ifndef __LOCALE_C_ONLY
-	static locale_t locale = NULL;
-	locale_t prev;
+    static locale_t locale = NULL;
+    locale_t prev;
 #endif
-	float v;
+    float v;
 #ifndef __LOCALE_C_ONLY
-	if (SPA_UNLIKELY(locale == NULL))
-		locale = newlocale(LC_ALL_MASK, "C", NULL);
-	prev = uselocale(locale);
+    if (SPA_UNLIKELY(locale == NULL))
+        locale = newlocale(LC_ALL_MASK, "C", NULL);
+    prev = uselocale(locale);
 #endif
-	v = strtof(str, endptr);
+    v = strtof(str, endptr);
 #ifndef __LOCALE_C_ONLY
-	uselocale(prev);
+    uselocale(prev);
 #endif
-	return v;
+    return v;
 }
 
 /**
@@ -289,18 +289,18 @@ SPA_API_STRING float spa_strtof(const char *str, char **endptr)
  */
 SPA_API_STRING bool spa_atof(const char *str, float *val)
 {
-	char *endptr;
-	float v;
+    char *endptr;
+    float v;
 
-	if (!str || *str =='\0')
-		return false;
-	errno = 0;
-	v = spa_strtof(str, &endptr);
-	if (errno != 0 || *endptr != '\0')
-		return false;
+    if (!str || *str =='\0')
+        return false;
+    errno = 0;
+    v = spa_strtof(str, &endptr);
+    if (errno != 0 || *endptr != '\0')
+        return false;
 
-	*val = v;
-	return true;
+    *val = v;
+    return true;
 }
 
 /**
@@ -314,20 +314,20 @@ SPA_API_STRING bool spa_atof(const char *str, float *val)
 SPA_API_STRING double spa_strtod(const char *str, char **endptr)
 {
 #ifndef __LOCALE_C_ONLY
-	static locale_t locale = NULL;
-	locale_t prev;
+    static locale_t locale = NULL;
+    locale_t prev;
 #endif
-	double v;
+    double v;
 #ifndef __LOCALE_C_ONLY
-	if (SPA_UNLIKELY(locale == NULL))
-		locale = newlocale(LC_ALL_MASK, "C", NULL);
-	prev = uselocale(locale);
+    if (SPA_UNLIKELY(locale == NULL))
+        locale = newlocale(LC_ALL_MASK, "C", NULL);
+    prev = uselocale(locale);
 #endif
-	v = strtod(str, endptr);
+    v = strtod(str, endptr);
 #ifndef __LOCALE_C_ONLY
-	uselocale(prev);
+    uselocale(prev);
 #endif
-	return v;
+    return v;
 }
 
 /**
@@ -339,58 +339,58 @@ SPA_API_STRING double spa_strtod(const char *str, char **endptr)
  */
 SPA_API_STRING bool spa_atod(const char *str, double *val)
 {
-	char *endptr;
-	double v;
+    char *endptr;
+    double v;
 
-	if (!str || *str =='\0')
-		return false;
+    if (!str || *str =='\0')
+        return false;
 
-	errno = 0;
-	v = spa_strtod(str, &endptr);
-	if (errno != 0 || *endptr != '\0')
-		return false;
+    errno = 0;
+    v = spa_strtod(str, &endptr);
+    if (errno != 0 || *endptr != '\0')
+        return false;
 
-	*val = v;
-	return true;
+    *val = v;
+    return true;
 }
 
 SPA_API_STRING char *spa_dtoa(char *str, size_t size, double val)
 {
-	int i, l;
-	l = spa_scnprintf(str, size, "%f", val);
-	for (i = 0; i < l; i++)
-		if (str[i] == ',')
-			str[i] = '.';
-	return str;
+    int i, l;
+    l = spa_scnprintf(str, size, "%f", val);
+    for (i = 0; i < l; i++)
+        if (str[i] == ',')
+            str[i] = '.';
+    return str;
 }
 
 struct spa_strbuf {
-	char *buffer;
-	size_t maxsize;
-	size_t pos;
+    char *buffer;
+    size_t maxsize;
+    size_t pos;
 };
 
 SPA_API_STRING void spa_strbuf_init(struct spa_strbuf *buf, char *buffer, size_t maxsize)
 {
-	buf->buffer = buffer;
-	buf->maxsize = maxsize;
-	buf->pos = 0;
-	if (maxsize > 0)
-		buf->buffer[0] = '\0';
+    buf->buffer = buffer;
+    buf->maxsize = maxsize;
+    buf->pos = 0;
+    if (maxsize > 0)
+        buf->buffer[0] = '\0';
 }
 
 SPA_PRINTF_FUNC(2, 3)
 SPA_API_STRING int spa_strbuf_append(struct spa_strbuf *buf, const char *fmt, ...)
 {
-	size_t remain = buf->maxsize - buf->pos;
-	ssize_t written;
-	va_list args;
-	va_start(args, fmt);
-	written = vsnprintf(&buf->buffer[buf->pos], remain, fmt, args);
-	va_end(args);
-	if (written > 0)
-		buf->pos += SPA_MIN(remain, (size_t)written);
-	return written;
+    size_t remain = buf->maxsize - buf->pos;
+    ssize_t written;
+    va_list args;
+    va_start(args, fmt);
+    written = vsnprintf(&buf->buffer[buf->pos], remain, fmt, args);
+    va_end(args);
+    if (written > 0)
+        buf->pos += SPA_MIN(remain, (size_t)written);
+    return written;
 }
 
 /**
