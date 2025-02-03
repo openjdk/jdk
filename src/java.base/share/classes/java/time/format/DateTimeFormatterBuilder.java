@@ -2632,9 +2632,9 @@ public final class DateTimeFormatterBuilder {
             return pos;
         }
 
-        static int litteral(CharSequence text, int pos, char literlal) {
+        static int litteral(CharSequence text, int pos, char literal) {
             char ch;
-            if (pos == text.length() || text.charAt(pos) != literlal) {
+            if (pos == text.length() || text.charAt(pos) != literal) {
                 throw error(text, pos);
             }
             return pos + 1;
