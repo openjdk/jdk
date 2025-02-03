@@ -224,15 +224,15 @@ private:
   static void  print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
                                       bool is_osr_method = false, int osr_bci = -1, bool is_blocking = false,
                                       const char* msg = nullptr, bool short_form = false, bool cr = true,
-                                      jlong time_queued = 0, jlong time_started = 0);
+                                      jlong time_queued = 0, jlong time_started = 0, const char* method_name_suffix = nullptr);
 
 public:
-  void         print(outputStream* st = tty, const char* msg = nullptr, bool short_form = false, bool cr = true);
+  void         print(outputStream* st = tty, const char* msg = nullptr, bool short_form = false, bool cr = true, const char* method_name_suffix = nullptr);
   void         print_ul(const char* msg = nullptr);
-  static void  print(outputStream* st, const nmethod* nm, const char* msg = nullptr, bool short_form = false, bool cr = true) {
+  static void  print(outputStream* st, const nmethod* nm, const char* msg = nullptr, bool short_form = false, bool cr = true, const char* method_name_suffix = nullptr) {
     print_impl(st, nm->method(), nm->compile_id(), nm->comp_level(),
                            nm->is_osr_method(), nm->is_osr_method() ? nm->osr_entry_bci() : -1, /*is_blocking*/ false,
-                           msg, short_form, cr);
+                           msg, short_form, cr, 0, 0, method_name_suffix);
   }
   static void  print_ul(const nmethod* nm, const char* msg = nullptr);
 

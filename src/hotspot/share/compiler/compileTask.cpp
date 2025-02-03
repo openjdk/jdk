@@ -220,7 +220,7 @@ void CompileTask::print_tty() {
 void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
                              bool is_osr_method, int osr_bci, bool is_blocking,
                              const char* msg, bool short_form, bool cr,
-                             jlong time_queued, jlong time_started) {
+                             jlong time_queued, jlong time_started, const char* method_name_suffix) {
   if (!short_form) {
     // Print current time
     st->print(UINT64_FORMAT " ", (uint64_t) tty->time_stamp().milliseconds());
@@ -267,6 +267,9 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
     st->print("(method)");
   } else {
     method->print_short_name(st);
+    if (method_name_suffix != nullptr) {
+      st->print("$%s", method_name_suffix);
+    }
     if (is_osr_method) {
       st->print(" @ %d", osr_bci);
     }
@@ -286,9 +289,10 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
 
 // ------------------------------------------------------------------
 // CompileTask::print_compilation
-void CompileTask::print(outputStream* st, const char* msg, bool short_form, bool cr) {
+void CompileTask::print(outputStream* st, const char* msg, bool short_form, bool cr, const char* method_name_suffix) {
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  print_impl(st, is_unloaded() ? nullptr : method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr, _time_queued, _time_started);
+  print_impl(st, is_unloaded() ? nullptr : method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(),
+      msg, short_form, cr, _time_queued, _time_started, method_name_suffix);
 }
 
 // ------------------------------------------------------------------

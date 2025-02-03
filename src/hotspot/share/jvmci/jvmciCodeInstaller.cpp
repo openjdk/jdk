@@ -818,7 +818,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
         // Since this compilation didn't pass through the broker it wasn't logged yet.
         if (PrintCompilation) {
           ttyLocker ttyl;
-          CompileTask::print(tty, nm, "(hosted JVMCI compilation)");
+          CompileTask::print(tty, nm, "(hosted JVMCI compilation)", false, true, nm->jvmci_name());
         }
       }
 
