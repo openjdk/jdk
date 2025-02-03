@@ -144,7 +144,7 @@ public class IncludeLocalesPluginTest {
                         "en_IE", "en_IL", "en_IM", "en_IN", "en_IO", "en_IT", "en_JE", "en_JM", "en_KE",
                         "en_KI", "en_KN", "en_KY", "en_LC", "en_LR", "en_LS", "en_MG", "en_MO",
                         "en_MS", "en_MT", "en_MU", "en_MV", "en_MW", "en_MY", "en_NA", "en_NF", "en_NG",
-                        "en_NL", "en_NO", "en_NR", "en_NU", "en_NZ", "en_PG", "en_PK", "en_PN", "en_PT",
+                        "en_NL", "en_NO", "en_NR", "en_NU", "en_NZ", "en_PG", "en_PK", "en_PL", "en_PN", "en_PT",
                         "en_PW", "en_RO", "en_RW", "en_SB", "en_SC", "en_SD", "en_SE", "en_SG", "en_SH",
                         "en_SI", "en_SK", "en_SL", "en_SS", "en_SX", "en_SZ", "en_TC", "en_TK", "en_TO",
                         "en_TT", "en_TV", "en_TZ", "en_UG", "en_US", "en_US_#Latn", "en_US_POSIX", "en_VC", "en_VG", "en_VU", "en_WS",
