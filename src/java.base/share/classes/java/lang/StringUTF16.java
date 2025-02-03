@@ -1533,7 +1533,7 @@ final class StringUTF16 {
     }
 
     static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4) {
-        assert index >= 0 && index + 3 < length(val) : "Trusted caller missed bounds check";
+        checkBoundsBeginEnd(index, index + 4, val);
         putChar(val, index    , c1);
         putChar(val, index + 1, c2);
         putChar(val, index + 2, c3);
@@ -1541,6 +1541,7 @@ final class StringUTF16 {
     }
 
     static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4, int c5) {
+        checkBoundsBeginEnd(index, index + 5, val);
         putChar(val, index    , c1);
         putChar(val, index + 1, c2);
         putChar(val, index + 2, c3);
