@@ -21,18 +21,20 @@
  * questions.
  */
 
-#include "export.h"
+/*
+ * @test
+ * @bug 8326485
+ * @compile/fail/ref=T8326485.out -XDrawDiagnostics -XDdev T8326485.java
+ * @summary Assertion due to Type.addMetadata adding annotations to already-annotated type
+ */
 
-typedef struct {
-    double x;
-    double y;
-} DoublePoint;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-EXPORT DoublePoint unit() {
-    DoublePoint result = { 1, 0 };
-    return result;
+public class T8326485 {
+    @Ann
+    not.java.lang.@Ann String f;
 }
 
-EXPORT void unit_ptr(DoublePoint* out) {
-  *out = unit();
-}
+@Target({ElementType.TYPE_USE, ElementType.FIELD})
+@interface Ann {}
