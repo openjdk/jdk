@@ -167,14 +167,10 @@ class MacroAssembler: public Assembler {
   void incrementl(Address dst, int value = 1);
   void incrementl(Register reg, int value = 1);
 
-  void eincrementl(Register dst, Register src, bool no_flags, int value = 1);
-  void eincrementl(Register dst, Address src, bool no_flags, int value = 1);
 
   void incrementq(Register reg, int value = 1);
   void incrementq(Address dst, int value = 1);
 
-  void eincrementq(Register dst, Register src, bool no_flags, int value = 1);
-  void eincrementq(Register dst, Address src, bool no_flags, int value = 1);
 
   void incrementl(AddressLiteral dst, Register rscratch = noreg);
   void incrementl(ArrayAddress   dst, Register rscratch);
