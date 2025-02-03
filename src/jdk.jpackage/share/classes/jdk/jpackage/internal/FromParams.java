@@ -29,7 +29,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_MODULES;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.COPYRIGHT;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
@@ -41,6 +40,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.LIMIT_MODULES;
 import static jdk.jpackage.internal.StandardBundlerParam.MODULE_PATH;
+import static jdk.jpackage.internal.StandardBundlerParam.NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
@@ -89,36 +89,34 @@ final class FromParams {
             appBuilder.appImageLayout(RuntimeLayout.DEFAULT);
         } else {
             appBuilder.appImageLayout(appLayout);
-        }
 
-        if (isRuntimeInstaller) {
-            // NOP if building Java runtime installer
-        } else if (hasPredefinedAppImage(params)) {
-            final var appImageFile = PREDEFINED_APP_IMAGE_FILE.fetchFrom(params);
-            appBuilder.initFromAppImage(appImageFile, launcherInfo -> {
-                var launcherParams = mapLauncherInfo(launcherInfo);
-                return launcherMapper.apply(mergeParams(params, launcherParams));
-            });
-        } else {
-            final var launchers = createLaunchers(params, launcherMapper);
+            if (hasPredefinedAppImage(params)) {
+                final var appImageFile = PREDEFINED_APP_IMAGE_FILE.fetchFrom(params);
+                appBuilder.initFromAppImage(appImageFile, launcherInfo -> {
+                    var launcherParams = mapLauncherInfo(launcherInfo);
+                    return launcherMapper.apply(mergeParams(params, launcherParams));
+                });
+            } else {
+                final var launchers = createLaunchers(params, launcherMapper);
 
-            final var runtimeBuilderBuilder = new RuntimeBuilderBuilder();
+                final var runtimeBuilderBuilder = new RuntimeBuilderBuilder();
 
-            MODULE_PATH.copyInto(params, runtimeBuilderBuilder::modulePath);
+                MODULE_PATH.copyInto(params, runtimeBuilderBuilder::modulePath);
 
-            final var predefinedRuntimeImage = PREDEFINED_RUNTIME_IMAGE.findIn(params);
-            predefinedRuntimeImage.ifPresentOrElse(runtimeBuilderBuilder::forRuntime, () -> {
-                final var startupInfos = launchers.asList().stream()
-                        .map(Launcher::startupInfo)
-                        .map(Optional::orElseThrow).toList();
-                final var jlinkOptionsBuilder = runtimeBuilderBuilder.forNewRuntime(startupInfos);
-                ADD_MODULES.copyInto(params, jlinkOptionsBuilder::addModules);
-                LIMIT_MODULES.copyInto(params, jlinkOptionsBuilder::limitModules);
-                JLINK_OPTIONS.copyInto(params, jlinkOptionsBuilder::options);
-                jlinkOptionsBuilder.appy();
-            });
+                final var predefinedRuntimeImage = PREDEFINED_RUNTIME_IMAGE.findIn(params);
+                predefinedRuntimeImage.ifPresentOrElse(runtimeBuilderBuilder::forRuntime, () -> {
+                    final var startupInfos = launchers.asList().stream()
+                            .map(Launcher::startupInfo)
+                            .map(Optional::orElseThrow).toList();
+                    final var jlinkOptionsBuilder = runtimeBuilderBuilder.forNewRuntime(startupInfos);
+                    ADD_MODULES.copyInto(params, jlinkOptionsBuilder::addModules);
+                    LIMIT_MODULES.copyInto(params, jlinkOptionsBuilder::limitModules);
+                    JLINK_OPTIONS.copyInto(params, jlinkOptionsBuilder::options);
+                    jlinkOptionsBuilder.appy();
+                });
 
-            appBuilder.launchers(launchers).runtimeBuilder(runtimeBuilderBuilder.create());
+                appBuilder.launchers(launchers).runtimeBuilder(runtimeBuilderBuilder.create());
+            }
         }
 
         return appBuilder;
