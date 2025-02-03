@@ -1,4 +1,16 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ */
 
+/**
+ * @test
+ * @bug 8346094
+ * @summary validating getExtensionValue and getKeyUsage with specified and unspecified extensions on the X509Certificate.
+ * @library /test/lib
+ * @modules java.base/sun.security.x509
+ * java.base/sun.security.util
+ */
 import jdk.test.lib.Asserts;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.*;
@@ -10,74 +22,41 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
-/**
- * @test
- * @bug 8346094
- * @library /test/lib
- * @modules java.base/sun.security.x509
- * java.base/sun.security.util
- */
+
 public class CertificateExtensions {
 
     public static void main(String[] args) throws Exception {
         X509CertImpl x509Certimpl = createCertificate();
-
-        /**
-         * Certificate is created without extensions. Invoking getExtensionValue with oid must return NULL
-         * else it is incorrect
-         */
         try {
+            /**
+             * Certificate is created without extensions. Invoking getExtensionValue with oid must return NULL
+             * else it is incorrect
+             */
             Asserts.assertNull(x509Certimpl.getExtensionValue("2.5.29.17"));
-        } catch (Exception e) {
-            throw new RuntimeException("expected NULL with the certificate extensions as NULL, however it is not null.");
-        }
-
-        /**
-         * Certificate is created with extensions. Invoking getExtensionValue with oid must not return NULL
-         * else it is incorrect
-         */
-        try {
-            System.out.println("------ cert x509Certimpl ------ " + x509Certimpl);
-            System.out.println("------ cert info ------ " + x509Certimpl.getInfo());
+            /**
+             * Certificate is created with extensions. Invoking getExtensionValue with oid must not return NULL
+             * else it is incorrect
+             */
             x509Certimpl.getInfo().setExtensions(createCertificateExtensions(x509Certimpl.getInfo().getKey().getKey()));
-            System.out.println("-- ceetificate extensions --" + x509Certimpl.getInfo().getExtensions());
             Asserts.assertNotNull(x509Certimpl.getExtensionValue("2.5.29.17"));
-        } catch (Exception e) {
-            throw new RuntimeException("expected not NULL with the certificate extensions, however it is null.");
-        }
-
-        /**
-         * Certificate is created with extensions. Invoking getExtensionValue with invalid oid must return NULL
-         * else it is incorrect
-         */
-        try {
-            x509Certimpl.getInfo().setExtensions(createCertificateExtensions(x509Certimpl.getInfo().getKey().getKey()));
+            /**
+             * Certificate is created with extensions. Invoking getExtensionValue with invalid oid must return NULL
+             * else it is incorrect
+             */
             Asserts.assertNull(x509Certimpl.getExtensionValue("1.2.3.4"));
-        } catch (Exception e) {
-            throw new RuntimeException("expected not NULL with the certificate extensions, however it is null.");
-        }
-
-
-        /**
-         * Certificate is created without extensions. Invoking getKeyUsage must return NULL
-         * else it is incorrect
-         */
-        try {
+            /**
+             * Certificate is created with extensions. Invoking getKeyUsage must not return NULL
+             * else it is incorrect
+             */
+            Asserts.assertNotNull(x509Certimpl.getKeyUsage());
+            /**
+             * Certificate is created without extensions. Invoking getKeyUsage must return NULL
+             * else it is incorrect
+             */
             x509Certimpl.getInfo().setExtensions(null);
             Asserts.assertNull(x509Certimpl.getKeyUsage());
         } catch (Exception e) {
-            throw new RuntimeException("expected NULL with the certificate extensions as NULL, however it is not null.");
-        }
-
-        /**
-         * Certificate is created with extensions. Invoking getKeyUsage must not return NULL
-         * else it is incorrect
-         */
-        try {
-            x509Certimpl.getInfo().setExtensions(createCertificateExtensions(x509Certimpl.getInfo().getKey().getKey()));
-            Asserts.assertNotNull(x509Certimpl.getKeyUsage());
-        } catch (Exception e) {
-            throw new RuntimeException("expected not NULL with the certificate extensions, however it is null.");
+            throw new RuntimeException(e);
         }
     }
 
