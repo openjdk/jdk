@@ -6057,6 +6057,7 @@ public final class DateTimeFormatterBuilder {
                 MTD_int_long                  = MethodTypeDesc.of(CD_int, CD_long),
                 MTD_long                      = MethodTypeDesc.of(CD_long),
                 MTD_DecimalStyle              = MethodTypeDesc.of(CD_DecimalStyle),
+                MTD_int_TemporalField         = MethodTypeDesc.of(CD_int, CD_TemporalField),
                 MTD_Long_TemporalField        = MethodTypeDesc.of(CD_Long, CD_TemporalField),
                 MTD_long_TemporalField        = MethodTypeDesc.of(CD_long, CD_TemporalField),
                 MTD_boolean_TemporalField     = MethodTypeDesc.of(CD_boolean, CD_TemporalField),
@@ -6421,30 +6422,19 @@ public final class DateTimeFormatterBuilder {
                       .aload(bufSlot)
                       .aload(temporalSlot);
                     getfield(cb, pp, index);
-                    cb.invokeinterface(CD_TemporalAccessor, "getLong", MTD_long_TemporalField);
 
                     String formatMethod = "format";
                     MethodTypeDesc mtd = MTD_formatValue_long;
-                    if (pp.field instanceof ChronoField chronoField) {
-                        boolean formatInt = switch (chronoField) {
-                            case YEAR,
-                                 YEAR_OF_ERA,
-                                 MONTH_OF_YEAR,
-                                 DAY_OF_YEAR,
-                                 DAY_OF_MONTH,
-                                 HOUR_OF_DAY,
-                                 MINUTE_OF_HOUR,
-                                 SECOND_OF_MINUTE,
-                                 NANO_OF_SECOND -> true;
-                            default             -> false;
-                        };
-                        if (formatInt) {
-                            cb.l2i();
-                            formatMethod = formatMethod(pp);
-                            mtd = MTD_formatValue_int;
-                        }
+                    boolean formatInt = pp.field != ChronoField.NANO_OF_DAY
+                                     && pp.field != ChronoField.MICRO_OF_DAY
+                                     && pp.field != ChronoField.INSTANT_SECONDS;
+                    if (formatInt) {
+                        cb.invokeinterface(CD_TemporalAccessor, "get", MTD_int_TemporalField)
+                          .invokevirtual(CD_NumberPrinterParser, formatMethod(pp), MTD_formatValue_int);
+                    } else {
+                        cb.invokeinterface(CD_TemporalAccessor, "getLong", MTD_long_TemporalField)
+                          .invokevirtual(CD_NumberPrinterParser, "format", MTD_formatValue_long);
                     }
-                    cb.invokevirtual(CD_NumberPrinterParser, formatMethod, mtd);
                 }
 
                 static String formatMethod(NumberPrinterParser pp) {
