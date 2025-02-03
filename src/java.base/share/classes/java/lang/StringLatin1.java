@@ -714,7 +714,6 @@ final class StringLatin1 {
 
     static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4) {
         checkBoundsBeginEnd(index, index + 4, val);
-        assert index >= 0 && index + 3 < length(val) : "Trusted caller missed bounds check";
         // Don't use the putChar method, Its instrinsic will cause C2 unable to combining values into larger stores.
         long offset = Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
         UNSAFE.putByte(val, offset    , (byte)(c1));
