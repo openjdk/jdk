@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,9 @@ final class MemoryContext {
         var modulePathModules = modulePathFinder.findAll().stream().map(ModuleReference::descriptor).map(ModuleDescriptor::name).toList();
         if (!modulePathModules.isEmpty()) {
             var modulePathConfiguration = bootLayer.configuration().resolveAndBind(modulePathFinder, ModuleFinder.of(), Set.copyOf(modulePathModules));
-            var modulePathLayer = ModuleLayer.defineModulesWithOneLoader(modulePathConfiguration, List.of(bootLayer), parent).layer();
+            var modulePathController = ModuleLayer.defineModulesWithOneLoader(modulePathConfiguration, List.of(bootLayer), parent);
+            enableNativeAccess(modulePathController, false);
+            var modulePathLayer = modulePathController.layer();
             parentLayer = modulePathLayer;
             parentLoader = modulePathLayer.findLoader(modulePathModules.getFirst());
         }
@@ -226,6 +228,9 @@ final class MemoryContext {
         var mainClassNamePackageName = mainClassName.substring(0, lastDotInMainClassName);
         memoryController.addOpens(module, mainClassNamePackageName, getClass().getModule());
 
+        // Configure native access for the modular application.
+        enableNativeAccess(memoryController, true);
+
         return memoryLayer.findLoader(applicationModule.name());
     }
 
@@ -236,6 +241,33 @@ final class MemoryContext {
         }
         var paths = Arrays.stream(elements.split(File.pathSeparator)).map(Path::of);
         return ModuleFinder.of(paths.toArray(Path[]::new));
+    }
+
+    /**
+     * Grants native access to modules selected using the --enable-native-access
+     * command line option.
+     */
+    @SuppressWarnings("restricted")
+    private void enableNativeAccess(ModuleLayer.Controller controller, boolean shouldWarn) {
+        var layer = controller.layer();
+        for (var name : options.enableNativeAccessForModules()) {
+            if (name.equals("ALL-UNNAMED")) {
+                continue; // was taken care of by module bootstrap
+            }
+            var found = layer.findModule(name);
+            if (found.isEmpty()) {
+                if (shouldWarn) {
+                    // same message as ModuleBootstrap.warnUnknownModule(ENABLE_NATIVE_ACCESS, name);
+                    out.println("WARNING: Unknown module: " + name + " specified to --enable-native-access");
+                }
+                continue;
+            }
+            var module = found.get();
+            if (module.isNativeAccessEnabled()) {
+                continue;
+            }
+            controller.enableNativeAccess(module);
+        }
     }
 
     static class MemoryPreview extends Preview {

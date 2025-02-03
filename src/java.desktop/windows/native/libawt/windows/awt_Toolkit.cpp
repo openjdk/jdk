@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,15 +102,34 @@ extern void DWMResetCompositionEnabled();
    first loaded */
 JavaVM *jvm = NULL;
 
+/* Return a handle to the module containing this method, either a DLL in case
+ * of a dynamic library build, or the .EXE in case of a static build.
+ */
+static HMODULE GetAwtModuleHandle() {
+    HMODULE hModule = NULL;
+    GetModuleHandleEx(
+        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        (LPCTSTR) &GetAwtModuleHandle,
+        &hModule
+    );
+    return hModule;
+}
+
+extern "C" {
+
 JNIEXPORT jint JNICALL
 DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     TRY;
 
+    AwtToolkit::GetInstance().SetModuleHandle(GetAwtModuleHandle());
+
     jvm = vm;
     return JNI_VERSION_1_2;
 
     CATCH_BAD_ALLOC_RET(0);
+}
+
 }
 
 extern "C" JNIEXPORT jboolean JNICALL AWTIsHeadless() {
@@ -244,32 +263,6 @@ BOOL AwtToolkit::activateKeyboardLayout(HKL hkl) {
     }
 
     return (prev != 0);
-}
-
-/************************************************************************
- * Exported functions
- */
-
-extern "C" BOOL APIENTRY DllMain(HANDLE hInstance, DWORD ul_reason_for_call,
-                                 LPVOID)
-{
-    // Don't use the TRY and CATCH_BAD_ALLOC_RET macros if we're detaching
-    // the library. Doing so causes awt.dll to call back into the VM during
-    // shutdown. This crashes the HotSpot VM.
-    switch (ul_reason_for_call) {
-    case DLL_PROCESS_ATTACH:
-        TRY;
-        AwtToolkit::GetInstance().SetModuleHandle((HMODULE)hInstance);
-        CATCH_BAD_ALLOC_RET(FALSE);
-        break;
-    case DLL_PROCESS_DETACH:
-#ifdef DEBUG
-        DTrace_DisableMutex();
-        DMem_DisableMutex();
-#endif // DEBUG
-        break;
-    }
-    return TRUE;
 }
 
 /************************************************************************
@@ -1936,28 +1929,13 @@ JNIEnv* AwtToolkit::GetEnv() {
 
 BOOL AwtToolkit::GetScreenInsets(int screenNum, RECT * rect)
 {
-    /* if primary display */
-    if (screenNum == 0) {
-        RECT rRW;
-        if (::SystemParametersInfo(SPI_GETWORKAREA,0,(void *) &rRW,0) == TRUE) {
-            rect->top = rRW.top;
-            rect->left = rRW.left;
-            rect->bottom = ::GetSystemMetrics(SM_CYSCREEN) - rRW.bottom;
-            rect->right = ::GetSystemMetrics(SM_CXSCREEN) - rRW.right;
-            return TRUE;
-        }
-    }
-    /* if additional display */
-    else {
-        MONITORINFO *miInfo;
-        miInfo = AwtWin32GraphicsDevice::GetMonitorInfo(screenNum);
-        if (miInfo) {
-            rect->top = miInfo->rcWork.top    - miInfo->rcMonitor.top;
-            rect->left = miInfo->rcWork.left   - miInfo->rcMonitor.left;
-            rect->bottom = miInfo->rcMonitor.bottom - miInfo->rcWork.bottom;
-            rect->right = miInfo->rcMonitor.right - miInfo->rcWork.right;
-            return TRUE;
-        }
+    MONITORINFO *miInfo = AwtWin32GraphicsDevice::GetMonitorInfo(screenNum);
+    if (miInfo) {
+        rect->top = miInfo->rcWork.top - miInfo->rcMonitor.top;
+        rect->left = miInfo->rcWork.left - miInfo->rcMonitor.left;
+        rect->bottom = miInfo->rcMonitor.bottom - miInfo->rcWork.bottom;
+        rect->right = miInfo->rcMonitor.right - miInfo->rcWork.right;
+        return TRUE;
     }
     return FALSE;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -546,6 +546,16 @@ public class IRNode {
     public static final String CON_L = PREFIX + "CON_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(CON_L, "ConL");
+    }
+
+    public static final String CON_D = PREFIX + "CON_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CON_D, "ConD");
+    }
+
+    public static final String CON_F = PREFIX + "CON_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CON_F, "ConF");
     }
 
     public static final String COUNTED_LOOP = PREFIX + "COUNTED_LOOP" + POSTFIX;

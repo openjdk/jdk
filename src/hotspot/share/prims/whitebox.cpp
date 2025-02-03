@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds.h"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConstants.hpp"
@@ -288,8 +287,8 @@ WB_ENTRY(jlong, WB_GetCompressedOopsMaxHeapSize(JNIEnv* env, jobject o)) {
 WB_END
 
 WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
-  tty->print_cr("Minimum heap " SIZE_FORMAT " Initial heap " SIZE_FORMAT " "
-                "Maximum heap " SIZE_FORMAT " Space alignment " SIZE_FORMAT " Heap alignment " SIZE_FORMAT,
+  tty->print_cr("Minimum heap %zu Initial heap %zu "
+                "Maximum heap %zu Space alignment %zu Heap alignment %zu",
                 MinHeapSize,
                 InitialHeapSize,
                 MaxHeapSize,
@@ -301,11 +300,9 @@ WB_END
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
   size_t granularity = os::vm_allocation_granularity();
   ReservedHeapSpace rhs = HeapReserver::reserve(100 * granularity, granularity, os::vm_page_size(), nullptr);
-  VirtualSpace vs;
-  vs.initialize(rhs, 50 * granularity);
 
   // Check if constraints are complied
-  if (!( UseCompressedOops && rhs.base() != nullptr &&
+  if (!( UseCompressedOops && rhs.is_reserved() &&
          CompressedOops::base() != nullptr &&
          CompressedOops::use_implicit_null_checks() )) {
     tty->print_cr("WB_ReadFromNoaccessArea method is useless:\n "
@@ -319,6 +316,10 @@ WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
                   CompressedOops::use_implicit_null_checks());
     return;
   }
+
+  VirtualSpace vs;
+  vs.initialize(rhs, 50 * granularity);
+
   tty->print_cr("Reading from no access area... ");
   tty->print_cr("*(vs.low_boundary() - rhs.noaccess_prefix() / 2 ) = %c",
                 *(vs.low_boundary() - rhs.noaccess_prefix() / 2 ));
@@ -328,6 +329,11 @@ static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
                                            size_t magnitude, size_t iterations) {
   size_t granularity = os::vm_allocation_granularity();
   ReservedHeapSpace rhs = HeapReserver::reserve(reserved_space_size * granularity, granularity, os::vm_page_size(), nullptr);
+  if (!rhs.is_reserved()) {
+    tty->print_cr("Failed to initialize ReservedSpace. Can't proceed.");
+    return 3;
+  }
+
   VirtualSpace vs;
   if (!vs.initialize(rhs, 0)) {
     tty->print_cr("Failed to initialize VirtualSpace. Can't proceed.");
