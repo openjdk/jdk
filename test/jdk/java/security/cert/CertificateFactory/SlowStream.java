@@ -31,7 +31,6 @@
 import java.io.*;
 import java.security.cert.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class SlowStream {
     public static void main(String[] args) throws Exception {
@@ -39,7 +38,6 @@ public class SlowStream {
         final var inputStream = new PipedInputStream(outputStream);
 
         final var failed = new AtomicBoolean(false);
-        final var exception = new AtomicReference<Exception>();
 
         final var writer = new Thread(() -> {
             try {
@@ -49,28 +47,35 @@ public class SlowStream {
                     final byte[] buffer = new byte[4096];
                     while (true) {
                         int len = fin.read(buffer);
-                        if (len < 0) break;
+                        if (len < 0) {
+                            break;
+                        }
                         outputStream.write(buffer, 0, len);
                     }
                     Thread.sleep(2000);
                 }
                 outputStream.close();
             } catch (final Exception e) {
+                System.out.println("Writer Thread Error: ");
+                e.printStackTrace(System.out);
                 failed.set(true);
-                exception.set(e);
             }
         });
 
         final var reader = new Thread(() -> {
             try {
                 final var factory = CertificateFactory.getInstance("X.509");
-                if (factory.generateCertificates(inputStream).size() != 5) {
-                    throw new Exception("Not all certs read");
+                final var factorySize = factory.generateCertificates(inputStream).size();
+                if (factorySize != 5) {
+                    throw new Exception(
+                            String.format("Not all certs read. %d found 5 expected", factorySize)
+                    );
                 }
                 inputStream.close();
             } catch (final Exception e) {
+                System.out.println("Reader Thread Error: ");
+                e.printStackTrace(System.out);
                 failed.set(true);
-                exception.set(e);
             }
         });
 
@@ -81,7 +86,9 @@ public class SlowStream {
         reader.join();
 
         if (failed.get()) {
-            throw exception.get();
+            throw new RuntimeException(
+                    "The test failed, please check the reader and writer threads output"
+            );
         }
     }
 }
