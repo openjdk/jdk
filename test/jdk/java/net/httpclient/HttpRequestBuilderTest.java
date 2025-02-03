@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,12 @@ import java.net.http.HttpRequest;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
 import static java.net.http.HttpRequest.BodyPublishers.noBody;
 
-/**
+/*
  * @test
  * @bug 8170064 8276559
- * @summary  HttpRequest[.Builder] API and behaviour checks
+ * @summary HttpRequest[.Builder] API and behaviour checks
  */
+
 public class HttpRequestBuilderTest {
 
     static final URI TEST_URI = URI.create("http://www.foo.com/");
