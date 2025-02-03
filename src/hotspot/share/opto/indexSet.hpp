@@ -256,7 +256,7 @@ class IndexSet : public ResourceObj {
     _count = 0;
     if (_blocks != nullptr) {
       for (uint i = 0; i < _current_block_limit; i++) {
-        BitBlock *block = _blocks[i];
+        BitBlock* block = _blocks[i];
         if (block != &_empty_block) {
           free_block(i);
         }
@@ -330,6 +330,7 @@ class IndexSet : public ResourceObj {
   // from the static Arena member.
   void initialize(uint max_element, Arena *arena);
 
+  // Top level array of pointers to BitBlocks is allocated on first element addition to avoid wasting memory.
   void initialize_if_needed() {
     if (_blocks != nullptr) {
       return;
