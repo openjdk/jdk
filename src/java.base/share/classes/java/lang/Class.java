@@ -1001,8 +1001,6 @@ public final class Class<T> implements java.io.Serializable,
 
     private transient Object classData; // Set by VM
     private transient Object[] signers; // Read by VM, mutable
-
-    @Stable
     private final transient int modifiers;  // Set by the VM
 
     // package-private
