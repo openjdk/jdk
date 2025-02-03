@@ -1293,20 +1293,22 @@ void ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
                                                ShenandoahFreeSetPartitionId::OldCollector, region_capacity);
   _partitions.assert_bounds();
   _heap->old_generation()->augment_evacuation_reserve(region_capacity);
-  bool transferred = gen_heap->generation_sizer()->transfer_to_old(1);
-  if (!transferred) {
-    log_warning(gc, free)("Forcing transfer of %zu to old reserve.", idx);
-    if (r->is_trash() && r->is_young()) {
-      // If this is a trash region and is still affiliated with the young generation
-      // we need to recycle it before decreasing the capacity of the young generation.
-      // Otherwise, we may violate the constraint that the size of regions affiliated
-      // with the young generation is always less than or equal to its maximum capacity
+
+  if (r->is_young()) {
+    // If this is a trash region and is still affiliated with the young generation
+    // we need to recycle it before decreasing the capacity of the young generation.
+    // Otherwise, we may violate the constraint that the size of regions affiliated
+    // with the young generation is always less than or equal to its maximum capacity
+    if (r->is_trash()) {
       r->try_recycle_under_lock();
     }
-    gen_heap->generation_sizer()->force_transfer_to_old(1);
+
+    const bool transferred = gen_heap->generation_sizer()->transfer_to_old(1);
+    if (!transferred) {
+      log_warning(gc, free)("Forcing transfer of %zu to old reserve.", idx);
+      gen_heap->generation_sizer()->force_transfer_to_old(1);
+    }
   }
-  // We do not ensure that the region is no longer trash, relying on try_allocate_in(), which always comes next,
-  // to recycle trash before attempting to allocate anything in the region.
 }
 
 void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r) {
