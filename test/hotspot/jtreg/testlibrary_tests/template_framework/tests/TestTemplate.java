@@ -52,7 +52,7 @@ public class TestTemplate {
         testBodyElements();
         testWithOneArguments();
         testWithTwoArguments();
-        //testCustomLibrary();
+        testCustomLibrary();
         //testClassInstantiator();
         //testRepeat();
         //testDispatch();
@@ -104,25 +104,25 @@ public class TestTemplate {
 
     public static void testWithOneArguments() {
         // Capture String argument via String name.
-        var template1 = Template.make("p", (String p) -> body("start #p end"));
+        var template1 = Template.make("a", (String a) -> body("start #a end"));
         checkEQ(template1.withArgs("x").render(), "start x end");
         checkEQ(template1.withArgs("a").render(), "start a end");
         checkEQ(template1.withArgs("" ).render(), "start  end");
 
         // Capture String argument via typed lambda argument.
-        var template2 = Template.make("p", (String p) -> body("start ", p, " end"));
+        var template2 = Template.make("a", (String a) -> body("start ", a, " end"));
         checkEQ(template2.withArgs("x").render(), "start x end");
         checkEQ(template2.withArgs("a").render(), "start a end");
         checkEQ(template2.withArgs("" ).render(), "start  end");
 
         // Capture Integer argument via String name.
-        var template3 = Template.make("p", (Integer p) -> body("start #p end"));
+        var template3 = Template.make("a", (Integer a) -> body("start #a end"));
         checkEQ(template3.withArgs(0  ).render(), "start 0 end");
         checkEQ(template3.withArgs(22 ).render(), "start 22 end");
         checkEQ(template3.withArgs(444).render(), "start 444 end");
 
         // Capture Integer argument via templated lambda argument.
-        var template4 = Template.make("p", (Integer p) -> body("start ", p, " end"));
+        var template4 = Template.make("a", (Integer a) -> body("start ", a, " end"));
         checkEQ(template4.withArgs(0  ).render(), "start 0 end");
         checkEQ(template4.withArgs(22 ).render(), "start 22 end");
         checkEQ(template4.withArgs(444).render(), "start 444 end");
@@ -130,28 +130,84 @@ public class TestTemplate {
 
     public static void testWithTwoArguments() {
         // Capture 2 String arguments via String names.
-        var template1 = Template.make("p1", "p2", (String p1, String p2) -> body("start #p1 #p2 end"));
+        var template1 = Template.make("a1", "a2", (String a1, String a2) -> body("start #a1 #a2 end"));
         checkEQ(template1.withArgs("x", "y").render(), "start x y end");
         checkEQ(template1.withArgs("a", "b").render(), "start a b end");
         checkEQ(template1.withArgs("",  "" ).render(), "start   end");
 
         // Capture 2 String arguments via typed lambda arguments.
-        var template2 = Template.make("p1", "p2", (String p1, String p2) -> body("start ", p1, " ", p2, " end"));
+        var template2 = Template.make("a1", "a2", (String a1, String a2) -> body("start ", a1, " ", a2, " end"));
         checkEQ(template2.withArgs("x", "y").render(), "start x y end");
         checkEQ(template2.withArgs("a", "b").render(), "start a b end");
         checkEQ(template2.withArgs("",  "" ).render(), "start   end");
 
         // Capture 2 Integer arguments via String names.
-        var template3 = Template.make("p1", "p2", (Integer p1, Integer p2) -> body("start #p1 #p2 end"));
+        var template3 = Template.make("a1", "a2", (Integer a1, Integer a2) -> body("start #a1 #a2 end"));
         checkEQ(template3.withArgs(0,   1  ).render(), "start 0 1 end");
         checkEQ(template3.withArgs(22,  33 ).render(), "start 22 33 end");
         checkEQ(template3.withArgs(444, 555).render(), "start 444 555 end");
 
         // Capture 2 Integer arguments via templated lambda arguments.
-        var template4 = Template.make("p1", "p2", (Integer p1, Integer p2) -> body("start ", p1, " ", p2, " end"));
+        var template4 = Template.make("a1", "a2", (Integer a1, Integer a2) -> body("start ", a1, " ", a2, " end"));
         checkEQ(template4.withArgs(0,   1  ).render(), "start 0 1 end");
         checkEQ(template4.withArgs(22,  33 ).render(), "start 22 33 end");
         checkEQ(template4.withArgs(444, 555).render(), "start 444 555 end");
+    }
+
+    public static void testCustomLibrary() {
+        var template1 = Template.make(() -> body("proton"));
+
+        var template2 = Template.make("a1", "a2", (String a1, String a2) -> body(
+            """
+            electron #a1
+            neutron #a2
+            """
+        ));
+
+        //var template3 = Template.make(() -> body(
+        //    """
+        //    Universe """, template.withArgs(), """ {
+        //        #{:my_generator_2(param1=up,param2=down)}
+        //        #{:my_generator_2(param1=#param1,param2=#param2)}
+        //    }
+        //    """
+        //));
+        //CodeGeneratorLibrary library = new CodeGeneratorLibrary(null, codeGenerators);
+
+        //Template template = new Template("my_template",
+        //    """
+        //    #{:my_generator_3(param1=low,param2=high)}
+        //    {
+        //        #{:my_generator_3(param1=42,param2=24)}
+        //    }
+        //    """
+        //);
+
+        //String code = template.with(library).instantiate();
+        //String expected =
+        //    """
+        //    Universe proton {
+        //        electron up
+        //        neutron down
+
+        //        electron low
+        //        neutron high
+
+        //    }
+
+        //    {
+        //        Universe proton {
+        //            electron up
+        //            neutron down
+
+        //            electron 42
+        //            neutron 24
+
+        //        }
+
+        //    }
+        //    """;
+        //checkEQ(code, expected);
     }
 
     public static void checkEQ(String code, String expected) {
