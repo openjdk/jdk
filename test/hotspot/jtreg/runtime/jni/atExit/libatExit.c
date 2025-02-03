@@ -71,7 +71,7 @@ jboolean getJavaVMfunctions() {
 #ifdef WINDOWS
     HMODULE handle;
     handle = GetModuleHandle("jvm.dll");
-    if (handle == NULL) (
+    if (handle == NULL) {
       // No loaded jvm.dll. Get the handle to the executable.
       handle = GetModuleHandle(NULL);
     }
