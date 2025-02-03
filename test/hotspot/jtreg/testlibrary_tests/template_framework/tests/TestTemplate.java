@@ -52,7 +52,7 @@ public class TestTemplate {
         testBodyElements();
         testWithOneArguments();
         testWithTwoArguments();
-        testCustomLibrary();
+        testRecursive();
         //testClassInstantiator();
         //testRepeat();
         //testDispatch();
@@ -92,10 +92,10 @@ public class TestTemplate {
         // We can fill the body with Objects of different types, and they get concatenated.
         var template = Template.make(() -> body(
             "start ",
-            new Integer(1),
-            new Long(2),
-            new Double(3.4),
-            new Float(5.6),
+            Integer.valueOf(1),
+            Long.valueOf(2),
+            Double.valueOf(3.4),
+            Float.valueOf(5.6f),
             " end"
         ));
         String code = template.withArgs().render();
@@ -154,60 +154,46 @@ public class TestTemplate {
         checkEQ(template4.withArgs(444, 555).render(), "start 444 555 end");
     }
 
-    public static void testCustomLibrary() {
+    public static void testRecursive() {
         var template1 = Template.make(() -> body("proton"));
 
         var template2 = Template.make("a1", "a2", (String a1, String a2) -> body(
-            """
-            electron #a1
-            neutron #a2
-            """
+            "electron #a1\n",
+            "neutron #a2\n"
         ));
 
-        //var template3 = Template.make(() -> body(
-        //    """
-        //    Universe """, template.withArgs(), """ {
-        //        #{:my_generator_2(param1=up,param2=down)}
-        //        #{:my_generator_2(param1=#param1,param2=#param2)}
-        //    }
-        //    """
-        //));
-        //CodeGeneratorLibrary library = new CodeGeneratorLibrary(null, codeGenerators);
+        var template3 = Template.make("a1", "a2", (String a1, String a2) -> body(
+            "Universe ", template1.withArgs(), " {\n",
+                template2.withArgs("up", "down"),
+                template2.withArgs(a1, a2),
+            "}\n"
+        ));
 
-        //Template template = new Template("my_template",
-        //    """
-        //    #{:my_generator_3(param1=low,param2=high)}
-        //    {
-        //        #{:my_generator_3(param1=42,param2=24)}
-        //    }
-        //    """
-        //);
+        var template4 = Template.make(() -> body(
+            template3.withArgs("low", "high"),
+            "{\n",
+                template3.withArgs("42", "24"),
+            "}"
+        ));
 
-        //String code = template.with(library).instantiate();
-        //String expected =
-        //    """
-        //    Universe proton {
-        //        electron up
-        //        neutron down
-
-        //        electron low
-        //        neutron high
-
-        //    }
-
-        //    {
-        //        Universe proton {
-        //            electron up
-        //            neutron down
-
-        //            electron 42
-        //            neutron 24
-
-        //        }
-
-        //    }
-        //    """;
-        //checkEQ(code, expected);
+        String code = template4.withArgs().render();
+        String expected =
+            """
+            Universe proton {
+            electron up
+            neutron down
+            electron low
+            neutron high
+            }
+            {
+            Universe proton {
+            electron up
+            neutron down
+            electron 42
+            neutron 24
+            }
+            }""";
+        checkEQ(code, expected);
     }
 
     public static void checkEQ(String code, String expected) {
