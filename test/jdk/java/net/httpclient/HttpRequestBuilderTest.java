@@ -25,6 +25,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -269,6 +271,9 @@ public class HttpRequestBuilderTest {
         if (defaultHeadReq.bodyPublisher().isEmpty()) {
             throw new AssertionError("failed: missing bodyPublisher on HEAD request");
         }
+
+        verifyCopy();
+
     }
 
     private static boolean shouldFail(Class<? extends Exception> ...exceptions) {
@@ -376,6 +381,38 @@ public class HttpRequestBuilderTest {
                 return receiver;
             }
         }
+    }
+
+    private static void verifyCopy() {
+
+        // Create the request builder
+        HttpRequest.Builder requestBuilder = HttpRequest
+                .newBuilder(TEST_URI)
+                .header("X-Foo", "1")
+                .method("GET", noBody())
+                .expectContinue(true)
+                .timeout(Duration.ofSeconds(0xBEEF))
+                .version(HttpClient.Version.HTTP_2);
+
+        // Create the original and the _copy_ requests
+        HttpRequest request = requestBuilder.build();
+        HttpRequest copiedRequest = requestBuilder
+                .copy()
+                .header("X-Foo", "2")
+                .header("X-Bar", "3")
+                .build();
+
+        // Verify copied _references_
+        assert request.uri().equals(copiedRequest.uri());
+        assert request.method().equals(copiedRequest.method());
+        assert request.expectContinue() == copiedRequest.expectContinue();
+        assert request.timeout().equals(copiedRequest.timeout());
+        assert request.version().equals(copiedRequest.version());
+
+        // Verify headers
+        assert request.headers().map().equals(Map.of("X-Foo", List.of("1")));
+        assert copiedRequest.headers().map().equals(Map.of("X-Foo", List.of("1", "2"), "X-Bar", List.of("3")));
+
     }
 
     // doesn't override the default HEAD() method
