@@ -24,10 +24,10 @@
 package compiler.lib.template_framework;
 
 public interface TemplateUse {
-    record ZeroArgUse(Template.ZeroArg zeroArg) implements TemplateUse {
+    record ZeroArgsUse(Template.ZeroArgs zeroArgs) implements TemplateUse {
         @Override
         public InstantiatedTemplate instantiate() {
-            return zeroArg.instantiate();
+            return zeroArgs.instantiate();
         }
 
         @Override

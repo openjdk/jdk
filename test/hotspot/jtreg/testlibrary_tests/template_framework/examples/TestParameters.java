@@ -73,6 +73,6 @@ public class TestParameters {
         ));
 
         // The two parameter holes are to be replaced with the provided values.
-        return Renderer.render(use(template, "42", "7"));
+        return Renderer.render(template.withArgs("42", "7"));
     }
 }

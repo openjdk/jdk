@@ -25,10 +25,11 @@ package compiler.lib.template_framework;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public interface Template {
-    static ZeroArg make(ZeroArg t) {
-        return t;
+    static ZeroArgs make(Supplier<InstantiatedTemplate> t) {
+        return new ZeroArgs(t);
     }
 
     static <A> OneArg<A> make(String arg0Name, Function<A, InstantiatedTemplate> t) {
@@ -39,14 +40,23 @@ public interface Template {
         return new TwoArgs<>(arg0Name, arg1Name, t);
     }
 
-    @FunctionalInterface
-    interface ZeroArg extends Template {
-        InstantiatedTemplate instantiate();
+    record ZeroArgs(Supplier<InstantiatedTemplate> function) implements Template {
+        InstantiatedTemplate instantiate() {
+            return function.get();
+        }
+
+        public TemplateUse.ZeroArgsUse withArgs() {
+            return new TemplateUse.ZeroArgsUse(this);
+        }
     }
 
     record OneArg<A>(String arg0Name, Function<A, InstantiatedTemplate> function) implements Template {
         InstantiatedTemplate instantiate(A a) {
             return function.apply(a);
+        }
+
+        public TemplateUse.OneArgUse<A> withArgs(A a) {
+            return new TemplateUse.OneArgUse<>(this, a);
         }
     }
 
@@ -54,6 +64,10 @@ public interface Template {
                          BiFunction<A, B, InstantiatedTemplate> function) implements Template {
         InstantiatedTemplate instantiate(A a, B b) {
             return function.apply(a, b);
+        }
+
+        public TemplateUse.TwoArgsUse<A, B> withArgs(A a, B b) {
+            return new TemplateUse.TwoArgsUse<>(this, a, b);
         }
     }
 }

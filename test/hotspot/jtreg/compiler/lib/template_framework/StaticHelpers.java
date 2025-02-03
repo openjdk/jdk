@@ -28,18 +28,6 @@ public interface StaticHelpers {
         return new InstantiatedTemplate(tokens);
     }
 
-    static TemplateUse use(Template.ZeroArg t) {
-        return new TemplateUse.ZeroArgUse(t);
-    }
-
-    static <A> TemplateUse.OneArgUse<A> use(Template.OneArg<A> t, A a) {
-        return new TemplateUse.OneArgUse<>(t, a);
-    }
-
-    static <A, B> TemplateUse.TwoArgsUse<A, B> use(Template.TwoArgs<A, B> t, A a, B b) {
-        return new TemplateUse.TwoArgsUse<>(t, a, b);
-    }
-
     static HookInsert intoHook(Hook hook, TemplateUse t) {
         return new HookInsert(hook, t);
     }
