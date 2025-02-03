@@ -48,8 +48,10 @@ public class TestTemplate {
 
     public static void main(String[] args) {
         testSingleLine();
-        //testMultiLine();
-        //testMultiLineWithParameters();
+        testMultiLine();
+        testBodyElements();
+        testWithOneArguments();
+        testWithTwoArguments();
         //testCustomLibrary();
         //testClassInstantiator();
         //testRepeat();
@@ -70,6 +72,87 @@ public class TestTemplate {
         checkEQ(code, "Hello World!");
     }
 
+    public static void testMultiLine() {
+        var template = Template.make(() -> body(
+            """
+            Code on more
+            than a single line
+            """
+        ));
+        String code = template.withArgs().render();
+        String expected =
+            """
+            Code on more
+            than a single line
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testBodyElements() {
+        // We can fill the body with Objects of different types, and they get concatenated.
+        var template = Template.make(() -> body(
+            "start ",
+            new Integer(1),
+            new Long(2),
+            new Double(3.4),
+            new Float(5.6),
+            " end"
+        ));
+        String code = template.withArgs().render();
+        checkEQ(code, "start 123.45.6 end");
+    }
+
+    public static void testWithOneArguments() {
+        // Capture String argument via String name.
+        var template1 = Template.make("p", (String p) -> body("start #p end"));
+        checkEQ(template1.withArgs("x").render(), "start x end");
+        checkEQ(template1.withArgs("a").render(), "start a end");
+        checkEQ(template1.withArgs("" ).render(), "start  end");
+
+        // Capture String argument via typed lambda argument.
+        var template2 = Template.make("p", (String p) -> body("start ", p, " end"));
+        checkEQ(template2.withArgs("x").render(), "start x end");
+        checkEQ(template2.withArgs("a").render(), "start a end");
+        checkEQ(template2.withArgs("" ).render(), "start  end");
+
+        // Capture Integer argument via String name.
+        var template3 = Template.make("p", (Integer p) -> body("start #p end"));
+        checkEQ(template3.withArgs(0  ).render(), "start 0 end");
+        checkEQ(template3.withArgs(22 ).render(), "start 22 end");
+        checkEQ(template3.withArgs(444).render(), "start 444 end");
+
+        // Capture Integer argument via templated lambda argument.
+        var template4 = Template.make("p", (Integer p) -> body("start ", p, " end"));
+        checkEQ(template4.withArgs(0  ).render(), "start 0 end");
+        checkEQ(template4.withArgs(22 ).render(), "start 22 end");
+        checkEQ(template4.withArgs(444).render(), "start 444 end");
+    }
+
+    public static void testWithTwoArguments() {
+        // Capture 2 String arguments via String names.
+        var template1 = Template.make("p1", "p2", (String p1, String p2) -> body("start #p1 #p2 end"));
+        checkEQ(template1.withArgs("x", "y").render(), "start x y end");
+        checkEQ(template1.withArgs("a", "b").render(), "start a b end");
+        checkEQ(template1.withArgs("",  "" ).render(), "start   end");
+
+        // Capture 2 String arguments via typed lambda arguments.
+        var template2 = Template.make("p1", "p2", (String p1, String p2) -> body("start ", p1, " ", p2, " end"));
+        checkEQ(template2.withArgs("x", "y").render(), "start x y end");
+        checkEQ(template2.withArgs("a", "b").render(), "start a b end");
+        checkEQ(template2.withArgs("",  "" ).render(), "start   end");
+
+        // Capture 2 Integer arguments via String names.
+        var template3 = Template.make("p1", "p2", (Integer p1, Integer p2) -> body("start #p1 #p2 end"));
+        checkEQ(template3.withArgs(0,   1  ).render(), "start 0 1 end");
+        checkEQ(template3.withArgs(22,  33 ).render(), "start 22 33 end");
+        checkEQ(template3.withArgs(444, 555).render(), "start 444 555 end");
+
+        // Capture 2 Integer arguments via templated lambda arguments.
+        var template4 = Template.make("p1", "p2", (Integer p1, Integer p2) -> body("start ", p1, " ", p2, " end"));
+        checkEQ(template4.withArgs(0,   1  ).render(), "start 0 1 end");
+        checkEQ(template4.withArgs(22,  33 ).render(), "start 22 33 end");
+        checkEQ(template4.withArgs(444, 555).render(), "start 444 555 end");
+    }
 
     public static void checkEQ(String code, String expected) {
         if (!code.equals(expected)) {
