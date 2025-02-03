@@ -554,9 +554,9 @@ bool Thread::set_as_starting_thread(JavaThread* jt) {
   return os::create_main_thread(jt);
 }
 
-// Ad-hoc mutual exclusion primitives: spin lock
+// Ad-hoc mutual exclusion primitive: spin lock
 //
-// We employ spin lock _only for low-contention, fixed-length
+// We employ a spin lock _only for low-contention, fixed-length
 // short-duration critical sections where we're concerned
 // about native mutex_t or HotSpot Mutex:: latency.
 
