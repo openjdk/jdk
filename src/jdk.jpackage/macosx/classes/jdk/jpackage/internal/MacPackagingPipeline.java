@@ -43,19 +43,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.PackagingPipeline.AppImageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.ApplicationImageTaskAction;
-import jdk.jpackage.internal.PackagingPipeline.CopyAppImageTaskAction;
+import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskAction;
 import jdk.jpackage.internal.PackagingPipeline.TaskContext;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
-import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
-import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.FileAssociation;
@@ -82,26 +78,11 @@ final class MacPackagingPipeline {
 
     static PackagingPipeline.Builder build() {
         final var builder = PackagingPipeline.buildStandard()
+                .appContextMapper(appContext -> {
+                    return new TaskContextProxy(appContext, true);
+                })
                 .pkgContextMapper(appContext -> {
-                    return new TaskContext() {
-
-                        @Override
-                        public boolean test(TaskID taskID) {
-                            if (taskID == AppImageTaskID.APP_IMAGE_FILE) {
-                                // Always create ".jpackage.xml" for compatibility with tests
-                                // TODO: Don't create ".jpackage.xml" when doing bundling a package like on other platforms
-                                return true;
-                            } else {
-                                return appContext.test(taskID);
-                            }
-                        }
-
-                        @Override
-                        public void execute(TaskAction taskAction) throws IOException, PackagerException {
-                            appContext.execute(taskAction);
-                        }
-
-                    };
+                    return new TaskContextProxy(appContext, false);
                 })
                 .task(PrimaryTaskID.COPY_APP_IMAGE)
                         .copyAction(MacPackagingPipeline::copyAppImage).add()
@@ -109,7 +90,8 @@ final class MacPackagingPipeline {
                         .action(conv(MacPackagingPipeline::writeRuntimeInfoPlist))
                         .addDependent(AppImageTaskID.CONTENT).add()
                 .task(MacAppImageTaskID.COPY_JLILIB)
-                        .action(MacPackagingPipeline::copyJliLib)
+                        .action(conv(MacPackagingPipeline::copyJliLib))
+                        .addDependency(AppImageTaskID.RUNTIME)
                         .addDependent(AppImageTaskID.CONTENT).add()
                 .task(MacAppImageTaskID.APP_ICON)
                         .action(conv(new ApplicationIcon()))
@@ -137,23 +119,25 @@ final class MacPackagingPipeline {
 
     @FunctionalInterface
     private interface MacApplicationImageTaskAction extends TaskAction {
-        void execute(BuildEnv env, MacApplication app, ApplicationLayout appLayout) throws IOException, PackagerException;
+        void execute(BuildEnv env, MacApplication app, MacApplicationLayout appLayout)
+                throws IOException, PackagerException;
     }
 
     private static ApplicationImageTaskAction conv(MacApplicationImageTaskAction v) {
         return (env, app, appLayout) -> {
-            v.execute(env, (MacApplication)app, appLayout);
+            v.execute(env, (MacApplication)app, (MacApplicationLayout)appLayout);
         };
     }
 
-    private static void copyAppImage(Package pkg, Path srcAppImageRoot, Path dstAppImageRoot) throws IOException {
+    private static void copyAppImage(Package pkg, Path srcAppImageRoot,
+            Path dstAppImageRoot) throws IOException {
         FileUtils.copyRecursive(srcAppImageRoot, dstAppImageRoot);
     }
 
-    private static void copyJliLib(BuildEnv env, Application app,
-            ApplicationLayout appLayout) throws IOException {
+    private static void copyJliLib(BuildEnv env, MacApplication app,
+            MacApplicationLayout appLayout) throws IOException {
 
-        final var runtimeMacOSDir = ((MacApplicationLayout)appLayout).runtimeRootDirectory().resolve("Contents/MacOS");
+        final var runtimeMacOSDir = appLayout.runtimeRootDirectory().resolve("Contents/MacOS");
 
         final var jliName = Path.of("libjli.dylib");
 
@@ -169,6 +153,14 @@ final class MacPackagingPipeline {
 
     private static void writePackageFile(BuildEnv env, Package pkg) throws IOException {
         new PackageFile(pkg.packageName()).save(pkg.asApplicationLayout().orElseThrow().resolveAt(env.appImageDir()));
+    }
+
+    private static void writePkgInfoFile(BuildEnv env, Application app,
+            ApplicationLayout appLayout) throws IOException {
+        final var dir = appLayout.contentDirectory();
+        Files.createDirectories(dir);
+        Files.write(dir.resolve("PkgInfo"),
+                "APPL????".getBytes(StandardCharsets.ISO_8859_1));
     }
 
     private static void writeRuntimeInfoPlist(BuildEnv env, MacApplication app,
@@ -188,7 +180,7 @@ final class MacPackagingPipeline {
     }
 
     private static void writeAppInfoPlist(BuildEnv env, MacApplication app,
-            ApplicationLayout appLayout) throws IOException {
+            MacApplicationLayout appLayout) throws IOException {
 
         final String faXml = toSupplier(() -> {
             var buf = new StringWriter();
@@ -218,7 +210,8 @@ final class MacPackagingPipeline {
                 .saveToFile(appLayout.contentDirectory().resolve("Info.plist"));
     }
 
-    private static void sign(BuildEnv env, MacApplication app, ApplicationLayout appLayout) throws IOException {
+    private static void sign(BuildEnv env, MacApplication app,
+            MacApplicationLayout appLayout) throws IOException {
 
         final var codesignConfigBuilder = CodesignConfig.build();
         app.signingConfig().ifPresent(codesignConfigBuilder::from);
@@ -321,7 +314,7 @@ final class MacPackagingPipeline {
         }
 
         @Override
-        public void execute(BuildEnv env, MacApplication app, ApplicationLayout appLayout)
+        public void execute(BuildEnv env, MacApplication app, MacApplicationLayout appLayout)
                 throws IOException {
             final var resource = env.createResource("JavaApp.icns").setCategory("icon");
 
@@ -341,10 +334,26 @@ final class MacPackagingPipeline {
         }
     }
 
-    private static void writePkgInfoFile(BuildEnv env, Application app,
-            ApplicationLayout appLayout) throws IOException {
-        Files.write(appLayout.contentDirectory().resolve("PkgInfo"),
-                "APPL????".getBytes(StandardCharsets.ISO_8859_1));
+    private record TaskContextProxy(TaskContext delegate, boolean forApp) implements TaskContext {
+
+        @Override
+        public boolean test(TaskID taskID) {
+            if (forApp && taskID == MacAppImageTaskID.PKG_FILE) {
+                // Don't create files relevant for package bundling when bundling app image
+                return false;
+            } else if (!forApp && taskID == AppImageTaskID.APP_IMAGE_FILE) {
+                // Always create ".jpackage.xml" for compatibility with tests
+                // TODO: Don't create ".jpackage.xml" when bundling a package like on other platforms
+                return true;
+            } else {
+                return delegate.test(taskID);
+            }
+        }
+
+        @Override
+        public void execute(TaskAction taskAction) throws IOException, PackagerException {
+            delegate.execute(taskAction);
+        }
     }
 
     final static MacApplicationLayout APPLICATION_LAYOUT = MacApplicationLayout.create(

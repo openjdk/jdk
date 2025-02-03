@@ -61,6 +61,7 @@ import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
 import static jdk.jpackage.internal.StandardBundlerParam.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
+import static jdk.jpackage.internal.MacApplicationBuilder.isValidBundleIdentifier;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.XmlUtils;
 
@@ -689,20 +690,6 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     @Override
     public String getID() {
         return "pkg";
-    }
-
-    private static boolean isValidBundleIdentifier(String id) {
-        for (int i = 0; i < id.length(); i++) {
-            char a = id.charAt(i);
-            // We check for ASCII codes first which we accept. If check fails,
-            // check if it is acceptable extended ASCII or unicode character.
-            if ((a >= 'A' && a <= 'Z') || (a >= 'a' && a <= 'z')
-                    || (a >= '0' && a <= '9') || (a == '-' || a == '.')) {
-                continue;
-            }
-            return false;
-        }
-        return true;
     }
 
     @Override

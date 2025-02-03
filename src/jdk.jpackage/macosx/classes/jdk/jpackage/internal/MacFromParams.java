@@ -31,15 +31,18 @@ import static jdk.jpackage.internal.FromParams.createApplicationBuilder;
 import static jdk.jpackage.internal.FromParams.createApplicationBundlerParam;
 import static jdk.jpackage.internal.FromParams.createPackageBundlerParam;
 import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
-import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
+import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -60,6 +63,8 @@ final class MacFromParams {
     private static MacApplication createMacApplication(
             Map<String, ? super Object> params) throws ConfigException, IOException {
 
+        adjustRuntimeDir(params);
+
         final var launcherFromParams = new LauncherFromParams(Optional.of(MacFromParams::createMacFa));
 
         final var app = createApplicationBuilder(params, toFunction(launcherParams -> {
@@ -68,6 +73,10 @@ final class MacFromParams {
         }), APPLICATION_LAYOUT).create();
 
         final var appBuilder = new MacApplicationBuilder(app);
+
+        if (hasPredefinedAppImage(params)) {
+            appBuilder.externalInfoPlistFile(PREDEFINED_APP_IMAGE.fetchFrom(params).resolve("Contents/Info.plist"));
+        }
 
         MAC_CF_BUNDLE_NAME.copyInto(params, appBuilder::bundleName);
         MAC_CF_BUNDLE_IDENTIFIER.copyInto(params, appBuilder::bundleIdentifier);
@@ -117,6 +126,15 @@ final class MacFromParams {
         FA_MAC_UTTYPECONFORMSTO.copyInto(params, builder::utTypeConformsTo);
 
         return toFunction(builder::create).apply(fa);
+    }
+
+    private static void adjustRuntimeDir(Map<String, ? super Object> params) {
+        PREDEFINED_RUNTIME_IMAGE.copyInto(params, runtimeRoot -> {
+            final var runtimeDir = runtimeRoot.resolve("Contents/Home");
+            if (Files.isDirectory(runtimeDir)) {
+                params.put(PREDEFINED_RUNTIME_IMAGE.getID(), runtimeDir);
+            }
+        });
     }
 
     static final BundlerParamInfo<MacApplication> APPLICATION = createApplicationBundlerParam(

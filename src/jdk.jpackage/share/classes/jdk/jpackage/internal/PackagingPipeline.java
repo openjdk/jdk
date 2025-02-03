@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
@@ -45,8 +46,8 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
-import jdk.jpackage.internal.pipeline.ImmutableDAG;
 import jdk.jpackage.internal.pipeline.DirectedEdge;
+import jdk.jpackage.internal.pipeline.ImmutableDAG;
 import jdk.jpackage.internal.pipeline.TaskPipelineBuilder;
 import jdk.jpackage.internal.pipeline.TaskSpecBuilder;
 import jdk.jpackage.internal.util.function.ExceptionBox;
@@ -200,7 +201,7 @@ final class PackagingPipeline {
         }
 
         Builder linkTasks(DirectedEdge<TaskID> edge) {
-            taskGraph.add(edge);
+            taskGraphBuilder.addEdge(edge);
             if (taskGraphSnapshot != null) {
                 taskGraphSnapshot = null;
             }
@@ -237,6 +238,11 @@ final class PackagingPipeline {
             return this;
         }
 
+        Builder pkgBuildEnvFactory(BiFunction<BuildEnv, Package, BuildEnv> v) {
+            pkgBuildEnvFactory = v;
+            return this;
+        }
+
         Builder inputApplicationLayoutForPackaging(Function<Package, Optional<ApplicationLayout>> v) {
             inputApplicationLayoutForPackaging = v;
             return this;
@@ -244,24 +250,28 @@ final class PackagingPipeline {
 
         ImmutableDAG<TaskID> taskGraphSnapshot() {
             if (taskGraphSnapshot == null) {
-                taskGraphSnapshot = createTaskGraph(taskGraph);
+                taskGraphSnapshot = taskGraphBuilder.create();
             }
             return taskGraphSnapshot;
         }
 
         PackagingPipeline create() {
-            return new PackagingPipeline(taskGraph, taskConfig,
+            return new PackagingPipeline(taskGraphSnapshot(), taskConfig,
                     Optional.ofNullable(appContextMapper).orElse(UnaryOperator.identity()),
                     Optional.ofNullable(pkgContextMapper).orElse(UnaryOperator.identity()),
-                    Optional.ofNullable(inputApplicationLayoutForPackaging).orElse(Package::asPackageApplicationLayout));
+                    Optional.ofNullable(inputApplicationLayoutForPackaging).orElse(Package::asPackageApplicationLayout),
+                    Optional.ofNullable(pkgBuildEnvFactory).orElse((env, pkg) -> {
+                        return BuildEnv.withAppImageDir(env, env.buildRoot().resolve("image"));
+                    }));
         }
 
-        private final List<DirectedEdge<TaskID>> taskGraph = new ArrayList<>();
+        private final ImmutableDAG.Builder<TaskID> taskGraphBuilder = ImmutableDAG.build();
         private final List<Path> excludeCopyDirs = new ArrayList<>();
         private final Map<TaskID, TaskConfig> taskConfig = new HashMap<>();
         private UnaryOperator<TaskContext> appContextMapper;
         private UnaryOperator<TaskContext> pkgContextMapper;
         private Function<Package, Optional<ApplicationLayout>> inputApplicationLayoutForPackaging;
+        private BiFunction<BuildEnv, Package, BuildEnv> pkgBuildEnvFactory;
         private ImmutableDAG<TaskID> taskGraphSnapshot;
     }
 
@@ -324,19 +334,21 @@ final class PackagingPipeline {
         };
     }
 
-    private PackagingPipeline(List<DirectedEdge<TaskID>> taskGraph, Map<TaskID, TaskConfig> taskConfig,
+    private PackagingPipeline(ImmutableDAG<TaskID> taskGraph, Map<TaskID, TaskConfig> taskConfig,
             UnaryOperator<TaskContext> appContextMapper, UnaryOperator<TaskContext> pkgContextMapper,
-            Function<Package, Optional<ApplicationLayout>> inputApplicationLayoutForPackaging) {
+            Function<Package, Optional<ApplicationLayout>> inputApplicationLayoutForPackaging,
+            BiFunction<BuildEnv, Package, BuildEnv> pkgBuildEnvFactory) {
         this.taskGraph = Objects.requireNonNull(taskGraph);
         this.taskConfig = Objects.requireNonNull(taskConfig);
         this.appContextMapper = Objects.requireNonNull(appContextMapper);
         this.pkgContextMapper = Objects.requireNonNull(pkgContextMapper);
         this.inputApplicationLayoutForPackaging = Objects.requireNonNull(inputApplicationLayoutForPackaging);
+        this.pkgBuildEnvFactory = Objects.requireNonNull(pkgBuildEnvFactory);
     }
 
     private TaskContext createTaskContext(BuildEnv env, Application app) {
         final var appImageLayout = app.asApplicationLayout().map(layout -> layout.resolveAt(env.appImageDir()));
-        return new DefaultTaskContext(createTaskGraph(taskGraph), env, app, appImageLayout, Optional.empty());
+        return new DefaultTaskContext(taskGraph, env, app, appImageLayout, Optional.empty());
     }
 
     private TaskContext createTaskContext(BuildEnv env, Package pkg, Path outputDir) {
@@ -346,11 +358,11 @@ final class PackagingPipeline {
             pkgEnv = env;
         } else {
             // Use existing app image. Set up a new directory to copy the existing app image for packaging.
-            pkgEnv = BuildEnv.withAppImageDir(env, env.buildRoot().resolve("image"));
+            pkgEnv = pkgBuildEnvFactory.apply(env, pkg);
         }
 
         final var appImageInfo = analyzeAppImageDir(env, pkg);
-        return new DefaultTaskContext(createTaskGraph(taskGraph), env, pkg.app(),
+        return new DefaultTaskContext(taskGraph, env, pkg.app(),
                 appImageInfo.asResolvedApplicationLayout(),
                 Optional.of(new PackagingTaskContext(pkg, pkgEnv, appImageInfo.path(), outputDir)));
     }
@@ -362,9 +374,11 @@ final class PackagingPipeline {
 
         final var builder = new TaskPipelineBuilder();
 
-        taskGraph.forEach(edge -> {
-            builder.linkTasks(tasks.get(edge.tail()), tasks.get(edge.head()));
-        });
+        for (final var tail : taskGraph.nodes()) {
+            for (final var head : taskGraph.getHeadsOf(tail)) {
+                builder.linkTasks(tasks.get(tail), tasks.get(head));
+            }
+        }
 
         try {
             builder.create().call();
@@ -470,19 +484,12 @@ final class PackagingPipeline {
 
     }
 
-    private static ImmutableDAG<TaskID> createTaskGraph(List<DirectedEdge<TaskID>> taskGraph) {
-        final var builder = ImmutableDAG.<TaskID>build();
-        taskGraph.forEach(builder::addEdge);
-        return builder.create();
-    }
-
     private static Callable<Void> createTask(TaskContext context, TaskID id, TaskConfig config) {
         Objects.requireNonNull(context);
         Objects.requireNonNull(id);
         return () -> {
             if (config.action != null && context.test(id)) {
                 try {
-                    System.out.println("execute: " + id);
                     context.execute(config.action);
                 } catch (ExceptionBox ex) {
                     throw ExceptionBox.rethrowUnchecked(ex);
@@ -492,9 +499,10 @@ final class PackagingPipeline {
         };
     }
 
-    private final List<DirectedEdge<TaskID>> taskGraph;
+    private final ImmutableDAG<TaskID> taskGraph;
     private final Map<TaskID, TaskConfig> taskConfig;
     private final Function<Package, Optional<ApplicationLayout>> inputApplicationLayoutForPackaging;
     private final UnaryOperator<TaskContext> appContextMapper;
     private final UnaryOperator<TaskContext> pkgContextMapper;
+    private final BiFunction<BuildEnv, Package, BuildEnv> pkgBuildEnvFactory;
 }

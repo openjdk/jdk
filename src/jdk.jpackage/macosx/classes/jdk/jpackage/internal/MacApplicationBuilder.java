@@ -24,8 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -167,16 +165,10 @@ final class MacApplicationBuilder {
 
     private String validatedBundleIdentifier() throws ConfigException {
         final var value = Optional.ofNullable(bundleIdentifier).orElseGet(() -> {
-            return toSupplier(() -> {
-                return app.mainLauncher()
-                        .flatMap(Launcher::startupInfo)
-                        .map(LauncherStartupInfo::simpleClassName)
-                        .orElseThrow(() -> {
-                            return I18N.buildConfigException("message.app-image-requires-identifier")
-                                    .advice("message.app-image-requires-identifier.advice")
-                                    .create();
-                            });
-            }).get();
+            return app.mainLauncher()
+                    .flatMap(Launcher::startupInfo)
+                    .map(LauncherStartupInfo::simpleClassName)
+                    .orElseGet(app::name);
         });
 
         if (!isValidBundleIdentifier(value)) {
