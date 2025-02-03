@@ -45,7 +45,6 @@ import javax.net.ssl.*;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 
-import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
 /* Same as Test1 but requests run in parallel.
@@ -198,7 +197,8 @@ public class Test9 extends Test {
                     System.out.println ("count = "+count);
                     error = true;
                 }
-                assertFileContentsEqual(filePath, temp.toPath());
+                Path tempPath = temp.toPath();
+                assert Files.mismatch(filePath, tempPath) < 0;
                 temp.delete();
             } catch (Exception e) {
                 e.printStackTrace();
