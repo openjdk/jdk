@@ -543,8 +543,9 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
   ResourceMark rm;
   PhaseCFG* const cfg = Compile::current()->cfg();
 
-  // Find stores and allocations, and track them in lists.
-  Node_List stores;
+  // Find allocations and memory accesses (stores and atomic operations), and
+  // track them in lists.
+  Node_List accesses;
   Node_List allocations;
   for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
     const Block* const block = cfg->get_block(i);
@@ -563,8 +564,14 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
       switch (mach->ideal_Opcode()) {
       case Op_StoreP:
       case Op_StoreN:
+      case Op_CompareAndExchangeP:
+      case Op_CompareAndSwapP:
+      case Op_GetAndSetP:
+      case Op_CompareAndExchangeN:
+      case Op_CompareAndSwapN:
+      case Op_GetAndSetN:
         if (mach->barrier_data() != 0) {
-          stores.push(mach);
+          accesses.push(mach);
         }
         break;
       default:
@@ -573,9 +580,9 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
     }
   }
 
-  // Find dominating allocations for each store and elide barriers if there is
-  // no safepoint poll in between.
-  elide_dominated_barriers(stores, allocations);
+  // Find dominating allocations for each memory access (store or atomic
+  // operation) and elide barriers if there is no safepoint poll in between.
+  elide_dominated_barriers(accesses, allocations);
 }
 
 void G1BarrierSetC2::late_barrier_analysis() const {

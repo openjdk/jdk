@@ -737,9 +737,71 @@ public class TestG1BarrierGeneration {
         return fVarHandle.getAndSet(o, newVal);
     }
 
+    @Test
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_COMPARE_AND_EXCHANGE_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_COMPARE_AND_EXCHANGE_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_COMPARE_AND_EXCHANGE_P_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_COMPARE_AND_EXCHANGE_N_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    static Object testCompareAndExchangeOnNewObject(Object oldVal, Object newVal) {
+        Outer o = new Outer();
+        o.f = oldVal;
+        return fVarHandle.compareAndExchange(o, oldVal, newVal);
+    }
+
+    @Test
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_COMPARE_AND_SWAP_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_COMPARE_AND_SWAP_N_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    static boolean testCompareAndSwapOnNewObject(Object oldVal, Object newVal) {
+        Outer o = new Outer();
+        o.f = oldVal;
+        return fVarHandle.compareAndSet(o, oldVal, newVal);
+    }
+
+    @Test
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    static Object testGetAndSetOnNewObject(Object oldVal, Object newVal) {
+        Outer o = new Outer();
+        o.f = oldVal;
+        return fVarHandle.getAndSet(o, newVal);
+    }
+
+    // TODO: add more tests (perhaps only with getandset) for different barrier elision cases (conditional, exception, with safepoints, etc).
+
     @Run(test = {"testCompareAndExchange",
                  "testCompareAndSwap",
-                 "testGetAndSet"})
+                 "testGetAndSet",
+                 "testCompareAndExchangeOnNewObject",
+                 "testCompareAndSwapOnNewObject",
+                 "testGetAndSetOnNewObject"})
     public void runAtomicTests() {
         {
             Outer o = new Outer();
@@ -767,6 +829,24 @@ public class TestG1BarrierGeneration {
             Object oldVal2 = testGetAndSet(o, newVal);
             Asserts.assertEquals(oldVal, oldVal2);
             Asserts.assertEquals(o.f, newVal);
+        }
+        {
+            Object oldVal = new Object();
+            Object newVal = new Object();
+            Object oldVal2 = testCompareAndExchangeOnNewObject(oldVal, newVal);
+            Asserts.assertEquals(oldVal, oldVal2);
+        }
+        {
+            Object oldVal = new Object();
+            Object newVal = new Object();
+            boolean b = testCompareAndSwapOnNewObject(oldVal, newVal);
+            Asserts.assertTrue(b);
+        }
+        {
+            Object oldVal = new Object();
+            Object newVal = new Object();
+            Object oldVal2 = testGetAndSetOnNewObject(oldVal, newVal);
+            Asserts.assertEquals(oldVal, oldVal2);
         }
     }
 
