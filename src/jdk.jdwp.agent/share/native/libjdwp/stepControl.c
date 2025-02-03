@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -805,7 +805,8 @@ stepControl_beginStep(JNIEnv *env, jthread thread, jint size, jint depth,
     LOG_STEP(("stepControl_beginStep: thread=%p,size=%d,depth=%d",
               thread, size, depth));
 
-    eventHandler_lock(); /* for proper lock order */
+    callback_lock();     /* for proper lock order in threadControl getLocks() */
+    eventHandler_lock(); /* for proper lock order in threadControl getLocks() */
     stepControl_lock();
 
     step = threadControl_getStepRequest(thread);
@@ -852,6 +853,7 @@ stepControl_beginStep(JNIEnv *env, jthread thread, jint size, jint depth,
 
     stepControl_unlock();
     eventHandler_unlock();
+    callback_unlock();
 
     return error;
 }

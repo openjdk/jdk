@@ -228,7 +228,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE d MMMM y</pattern>
+							<pattern>EEEE, d MMMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -292,7 +292,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMMEEEEd">EEEE d MMM y G</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
@@ -794,16 +793,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-kilometer">
 				<displayName>kilometre</displayName>
 			</unit>
-			<unit type="length-micrometer">
-				<displayName>micrometres</displayName>
-			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>pounds per square inch</displayName>
 				<unitPattern count="one">{0} pound per square inch</unitPattern>
 				<unitPattern count="other">{0} pounds per square inch</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
-				<displayName>degrees</displayName>
 				<unitPattern count="one">{0} degree</unitPattern>
 				<unitPattern count="other">{0} degrees</unitPattern>
 			</unit>
@@ -856,24 +851,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} m.p.g.</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<displayName>C.</displayName>
-				<unitPattern count="one">{0} C.</unitPattern>
-				<unitPattern count="other">{0} C.</unitPattern>
-			</unit>
-			<unit type="duration-second">
-				<displayName>sec.</displayName>
-				<unitPattern count="one">{0} sec.</unitPattern>
-				<unitPattern count="other">{0} secs</unitPattern>
-				<perUnitPattern>{0} ps.</perUnitPattern>
-			</unit>
-			<unit type="duration-millisecond">
-				<displayName>millisec.</displayName>
-			</unit>
-			<unit type="duration-microsecond">
-				<displayName>μsec.</displayName>
-			</unit>
-			<unit type="duration-nanosecond">
-				<displayName>nanosec.</displayName>
+				<displayName>C</displayName>
+				<unitPattern count="one">{0} C</unitPattern>
+				<unitPattern count="other">{0} C</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>Cal</displayName>
@@ -993,29 +973,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}L/100km</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<displayName>C.</displayName>
-				<unitPattern count="one">{0}C.</unitPattern>
-				<unitPattern count="other">{0}C.</unitPattern>
-			</unit>
-			<unit type="duration-second">
-				<displayName>sec.</displayName>
-				<unitPattern count="one">{0}s.</unitPattern>
-				<unitPattern count="other">{0}s.</unitPattern>
-				<perUnitPattern>{0} ps.</perUnitPattern>
-			</unit>
-			<unit type="duration-millisecond">
-				<displayName>msec.</displayName>
-			</unit>
-			<unit type="duration-microsecond">
-				<displayName>μsec.</displayName>
+				<displayName>C</displayName>
+				<unitPattern count="one">{0}C</unitPattern>
+				<unitPattern count="other">{0}C</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<unitPattern count="one">{0} km/h</unitPattern>
 				<unitPattern count="other">{0} km/h</unitPattern>
-			</unit>
-			<unit type="temperature-celsius">
-				<unitPattern count="one">{0}°C</unitPattern>
-				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
 				<displayName>ML</displayName>

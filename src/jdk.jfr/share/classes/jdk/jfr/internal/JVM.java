@@ -31,6 +31,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.jfr.Event;
 import jdk.jfr.internal.event.EventConfiguration;
 import jdk.jfr.internal.event.EventWriter;
+import jdk.jfr.internal.management.HiddenWait;
 
 /**
  * Interface against the JVM.

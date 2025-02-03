@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CardSetMemory.inline.hpp"
@@ -244,6 +243,10 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   using CHTScanTask = CardSetHash::ScanTask;
 
   const static uint BucketClaimSize = 16;
+  // The claim size for group cardsets should be smaller to facilitate
+  // better work distribution. The group cardsets should be larger than
+  // the per region cardsets.
+  const static uint GroupBucketClaimSize = 4;
   // Did we insert at least one card in the table?
   bool volatile _inserted_card;
 
@@ -347,7 +350,15 @@ public:
   }
 
   void reset_table_scanner() {
-    _table_scanner.set(&_table, BucketClaimSize);
+    reset_table_scanner(BucketClaimSize);
+  }
+
+  void reset_table_scanner_for_groups() {
+    reset_table_scanner(GroupBucketClaimSize);
+  }
+
+  void reset_table_scanner(uint claim_size) {
+    _table_scanner.set(&_table, claim_size);
   }
 
   void grow() {
@@ -1041,4 +1052,8 @@ void G1CardSet::clear() {
 
 void G1CardSet::reset_table_scanner() {
   _table->reset_table_scanner();
+}
+
+void G1CardSet::reset_table_scanner_for_groups() {
+  _table->reset_table_scanner_for_groups();
 }

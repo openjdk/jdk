@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,29 +142,7 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
      */
     public static <K, V> ReferencedKeyMap<K, V>
     create(boolean isSoft, Supplier<Map<ReferenceKey<K>, V>> supplier) {
-        return create(isSoft, false, supplier);
-    }
-
-    /**
-     * Create a new {@link ReferencedKeyMap} map.
-     *
-     * @param isSoft          true if {@link SoftReference} keys are to
-     *                        be used, {@link WeakReference} otherwise.
-     * @param useNativeQueue  true if uses NativeReferenceQueue
-     *                        otherwise use {@link ReferenceQueue}.
-     * @param supplier        {@link Supplier} of the backing map
-     *
-     * @return a new map with {@link Reference} keys
-     *
-     * @param <K> the type of keys maintained by the new map
-     * @param <V> the type of mapped values
-     */
-    public static <K, V> ReferencedKeyMap<K, V>
-    create(boolean isSoft, boolean useNativeQueue, Supplier<Map<ReferenceKey<K>, V>> supplier) {
-        return new ReferencedKeyMap<K, V>(isSoft, supplier.get(),
-                useNativeQueue ? SharedSecrets.getJavaLangRefAccess().newNativeReferenceQueue()
-                               : new ReferenceQueue<>()
-                );
+        return new ReferencedKeyMap<K, V>(isSoft, supplier.get(), new ReferenceQueue<>());
     }
 
     /**
@@ -219,8 +197,14 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
 
     @Override
     public V get(Object key) {
-        Objects.requireNonNull(key, "key must not be null");
         removeStaleReferences();
+        return getNoCheckStale(key);
+    }
+
+    // Internal get(key) without removing stale references that would modify the keyset.
+    // Use when iterating or streaming over the keys to avoid ConcurrentModificationException.
+    private V getNoCheckStale(Object key) {
+        Objects.requireNonNull(key, "key must not be null");
         return map.get(lookupKey(key));
     }
 
@@ -291,7 +275,7 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
     public Set<Entry<K, V>> entrySet() {
         removeStaleReferences();
         return filterKeySet()
-                .map(k -> new AbstractMap.SimpleEntry<>(k, get(k)))
+                .map(k -> new AbstractMap.SimpleEntry<>(k, getNoCheckStale(k)))
                 .collect(Collectors.toSet());
     }
 
@@ -335,7 +319,7 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
     public String toString() {
         removeStaleReferences();
         return filterKeySet()
-                .map(k -> k + "=" + get(k))
+                .map(k -> k + "=" + getNoCheckStale(k))
                 .collect(Collectors.joining(", ", "{", "}"));
     }
 

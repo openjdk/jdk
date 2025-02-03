@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -235,14 +235,17 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
       # Additional warnings that are not activated by -Wall and -Wextra
-      WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare \
-          -Wunused-function -Wundef -Wunused-value -Wreturn-type \
-          -Wtrampolines"
+      WARNINGS_ENABLE_ADDITIONAL="-Winvalid-pch -Wpointer-arith -Wreturn-type \
+          -Wsign-compare -Wtrampolines -Wtype-limits -Wundef -Wuninitialized \
+          -Wunused-const-variable=1 -Wunused-function -Wunused-result \
+          -Wunused-value"
       WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder"
       WARNINGS_ENABLE_ALL_CFLAGS="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
 
-      DISABLED_WARNINGS="unused-parameter unused"
+      # These warnings will never be turned on, since they generate too many
+      # false positives.
+      DISABLED_WARNINGS="unused-parameter"
       # gcc10/11 on ppc generate lots of abi warnings about layout of aggregates containing vectors
       if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
         DISABLED_WARNINGS="$DISABLED_WARNINGS psabi"
@@ -259,7 +262,9 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
           -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
       WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
-      DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
+      # These warnings will never be turned on, since they generate too many
+      # false positives.
+      DISABLED_WARNINGS="unknown-warning-option unused-parameter"
       ;;
   esac
   AC_SUBST(DISABLE_WARNING_PREFIX)
@@ -273,7 +278,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
 [
   # bounds, memory and behavior checking options
-  if test "x$TOOLCHAIN_TYPE" = xgcc; then
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     case $DEBUG_LEVEL in
     release )
       # no adjustment
@@ -298,7 +303,7 @@ AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
 
 AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
 [
-  if test "x$TOOLCHAIN_TYPE" = xgcc; then
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     C_O_FLAG_HIGHEST_JVM="-O3"
     C_O_FLAG_HIGHEST="-O3"
     C_O_FLAG_HI="-O3"
@@ -307,6 +312,13 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG="-O0"
     C_O_FLAG_DEBUG_JVM="-O0"
     C_O_FLAG_NONE="-O0"
+
+    if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
+      C_O_FLAG_HIGHEST_JVM="${C_O_FLAG_HIGHEST_JVM} -finline-functions"
+      C_O_FLAG_HIGHEST="${C_O_FLAG_HIGHEST} -finline-functions"
+      C_O_FLAG_HI="${C_O_FLAG_HI} -finline-functions"
+    fi
+
     # -D_FORTIFY_SOURCE=2 hardening option needs optimization (at least -O1) enabled
     # set for lower O-levels -U_FORTIFY_SOURCE to overwrite previous settings
     if test "x$OPENJDK_TARGET_OS" = xlinux -a "x$DEBUG_LEVEL" = "xfastdebug"; then
@@ -327,21 +339,6 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
       C_O_FLAG_DEBUG_JVM="${C_O_FLAG_DEBUG_JVM} ${DISABLE_FORTIFY_CFLAGS}"
       C_O_FLAG_NONE="${C_O_FLAG_NONE} ${DISABLE_FORTIFY_CFLAGS}"
     fi
-  elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    if test "x$OPENJDK_TARGET_OS" = xaix; then
-      C_O_FLAG_HIGHEST_JVM="-O3 -finline-functions"
-      C_O_FLAG_HIGHEST="-O3 -finline-functions"
-      C_O_FLAG_HI="-O3 -finline-functions"
-    else
-      C_O_FLAG_HIGHEST_JVM="-O3"
-      C_O_FLAG_HIGHEST="-O3"
-      C_O_FLAG_HI="-O3"
-    fi
-    C_O_FLAG_NORM="-O2"
-    C_O_FLAG_DEBUG_JVM="-O0"
-    C_O_FLAG_SIZE="-Os"
-    C_O_FLAG_DEBUG="-O0"
-    C_O_FLAG_NONE="-O0"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     C_O_FLAG_HIGHEST_JVM="-O2 -Oy-"
     C_O_FLAG_HIGHEST="-O2"
@@ -476,7 +473,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   # Always enable optional macros for VM.
   ALWAYS_CFLAGS_JVM="-D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS"
 
-  ###############################################################################
+  ##############################################################################
 
   # Adjust flags according to debug level.
   # Setup debug/release defines
@@ -510,7 +507,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     ALWAYS_DEFINES_JVM="$ALWAYS_DEFINES -DNOMINMAX"
   fi
 
-  ###############################################################################
+  ##############################################################################
   #
   #
   # CFLAGS BASIC
@@ -518,12 +515,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # COMMON to gcc and clang
     TOOLCHAIN_CFLAGS_JVM="-pipe -fno-rtti -fno-exceptions \
         -fvisibility=hidden -fno-strict-aliasing -fno-omit-frame-pointer"
-  fi
-
-  if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
-    # clang compiler on aix needs -ffunction-sections
-    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -ftls-model -fno-math-errno -fstack-protector"
-    TOOLCHAIN_CFLAGS_JDK="-ffunction-sections -fsigned-char -fstack-protector"
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
@@ -545,7 +536,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # Restrict the debug information created by Clang to avoid
     # too big object files and speed the build up a little bit
     # (see http://llvm.org/bugs/show_bug.cgi?id=7554)
-    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -flimit-debug-info"
+    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -flimit-debug-info -fstack-protector"
 
     # In principle the stack alignment below is cpu- and ABI-dependent and
     # should agree with values of StackAlignmentInBytes in various
@@ -563,13 +554,19 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
       TOOLCHAIN_CFLAGS_JDK="-pipe"
       TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing" # technically NOT for CXX
     fi
-    TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -fvisibility=hidden"
+
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+      TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -ftls-model -fno-math-errno"
+      TOOLCHAIN_CFLAGS_JDK="-ffunction-sections -fsigned-char"
+    fi
+
+    TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -fvisibility=hidden -fstack-protector"
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # The -utf-8 option sets source and execution character sets to UTF-8 to enable correct
     # compilation of all source files regardless of the active code page on Windows.
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:inline -permissive- -utf-8 -MP"
-    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:inline -permissive- -utf-8 -Zc:wchar_t-"
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -utf-8 -MP"
+    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -utf-8 -Zc:wchar_t-"
   fi
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)
@@ -644,23 +641,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # Linking is different on macOS
     JVM_PICFLAG=""
   fi
-
-  # Extra flags needed when building optional static versions of certain
-  # JDK libraries.
-  STATIC_LIBS_CFLAGS="-DSTATIC_BUILD=1"
-  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-    STATIC_LIBS_CFLAGS="$STATIC_LIBS_CFLAGS -ffunction-sections -fdata-sections \
-      -DJNIEXPORT='__attribute__((visibility(\"default\")))'"
-  else
-    STATIC_LIBS_CFLAGS="$STATIC_LIBS_CFLAGS -DJNIEXPORT="
-  fi
-  if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    # Disable relax-relocation to enable compatibility with older linkers
-    RELAX_RELOCATIONS_FLAG="-Xassembler -mrelax-relocations=no"
-    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${RELAX_RELOCATIONS_FLAG}],
-        IF_TRUE: [STATIC_LIBS_CFLAGS="$STATIC_LIBS_CFLAGS ${RELAX_RELOCATIONS_FLAG}"])
-  fi
-  AC_SUBST(STATIC_LIBS_CFLAGS)
 ])
 
 ################################################################################
@@ -757,6 +737,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         # for all archs except arm and ppc, prevent gcc to omit frame pointer
         $1_CFLAGS_CPU_JDK="${$1_CFLAGS_CPU_JDK} -fno-omit-frame-pointer"
       fi
+      if test "x$FLAGS_CPU" = xppc64le; then
+        # Little endian machine uses ELFv2 ABI.
+        # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
+        $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -DABI_ELFv2 -mcpu=power8 -mtune=power8"
+      fi
     fi
     if test "x$OPENJDK_TARGET_OS" = xaix; then
       $1_CFLAGS_CPU="-mcpu=pwr8"
@@ -775,10 +760,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    FLAGS_SETUP_GCC6_COMPILER_FLAGS($1, $3)
-    $1_TOOLCHAIN_CFLAGS="${$1_GCC6_CFLAGS}"
-
-    $1_WARNING_CFLAGS_JVM="-Wno-format-zero-length -Wtype-limits -Wuninitialized"
+    # This flag is required since GCC 6 as undefined behavior in OpenJDK code
+    # runs afoul of the more aggressive versions of this optimization.
+    $1_TOOLCHAIN_CFLAGS="-fno-lifetime-dse"
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -852,6 +836,22 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
 
   FLAGS_SETUP_BRANCH_PROTECTION
 
+  if test "x$FLAGS_CPU" = xriscv64; then
+    AC_MSG_CHECKING([if RVV/vector sigcontext supported])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <linux/ptrace.h>],
+        [
+          return (int)sizeof(struct __riscv_v_ext_state);
+        ])],
+        [
+          AC_MSG_RESULT([yes])
+        ],
+        [
+          $1_DEFINES_CPU_JVM="${$1_DEFINES_CPU_JVM} -DNO_RVV_SIGCONTEXT"
+          AC_MSG_RESULT([no])
+        ]
+    )
+  fi
+
   # EXPORT to API
   CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM \
       $TOOLCHAIN_CFLAGS_JVM ${$1_TOOLCHAIN_CFLAGS_JVM} \
@@ -908,20 +908,36 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         IF_FALSE: [$2FDLIBM_CFLAGS=""])
   fi
   AC_SUBST($2FDLIBM_CFLAGS)
-])
 
-# FLAGS_SETUP_GCC6_COMPILER_FLAGS([PREFIX])
-# Arguments:
-# $1 - Prefix for each variable defined.
-# $2 - Prefix for compiler variables (either BUILD_ or nothing).
-AC_DEFUN([FLAGS_SETUP_GCC6_COMPILER_FLAGS],
-[
-  # This flag is required for GCC 6 builds as undefined behavior in OpenJDK code
-  # runs afoul of the more aggressive versions of this optimization.
-  NO_LIFETIME_DSE_CFLAG="-fno-lifetime-dse"
-  FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$NO_LIFETIME_DSE_CFLAG],
-      PREFIX: $2, IF_FALSE: [NO_LIFETIME_DSE_CFLAG=""])
-  $1_GCC6_CFLAGS="${NO_LIFETIME_DSE_CFLAG}"
+  # Check whether the compiler supports the Arm C Language Extensions (ACLE)
+  # for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
+  # ACLE and this flag are required to build the aarch64 SVE related functions in
+  # libvectormath.
+  if test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
+    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+      AC_LANG_PUSH(C)
+      OLD_CFLAGS="$CFLAGS"
+      CFLAGS="$CFLAGS -march=armv8-a+sve"
+      AC_MSG_CHECKING([if Arm SVE ACLE is supported])
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <arm_sve.h>],
+          [
+            svint32_t r = svdup_n_s32(1);
+            return 0;
+          ])],
+          [
+            AC_MSG_RESULT([yes])
+            $2SVE_CFLAGS="-march=armv8-a+sve"
+          ],
+          [
+            AC_MSG_RESULT([no])
+            $2SVE_CFLAGS=""
+          ]
+      )
+      CFLAGS="$OLD_CFLAGS"
+      AC_LANG_POP(C)
+    fi
+  fi
+  AC_SUBST($2SVE_CFLAGS)
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
@@ -932,15 +948,13 @@ AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
 
   if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
     if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${BRANCH_PROTECTION_FLAG}],
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$BRANCH_PROTECTION_FLAG],
           IF_TRUE: [BRANCH_PROTECTION_AVAILABLE=true])
     fi
   fi
 
-  BRANCH_PROTECTION_CFLAGS=""
   UTIL_ARG_ENABLE(NAME: branch-protection, DEFAULT: false,
-      RESULT: USE_BRANCH_PROTECTION, AVAILABLE: $BRANCH_PROTECTION_AVAILABLE,
+      RESULT: BRANCH_PROTECTION_ENABLED, AVAILABLE: $BRANCH_PROTECTION_AVAILABLE,
       DESC: [enable branch protection when compiling C/C++],
-      IF_ENABLED: [ BRANCH_PROTECTION_CFLAGS=${BRANCH_PROTECTION_FLAG}])
-  AC_SUBST(BRANCH_PROTECTION_CFLAGS)
+      IF_ENABLED: [BRANCH_PROTECTION_CFLAGS=$BRANCH_PROTECTION_FLAG])
 ])

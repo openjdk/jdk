@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_BYTESWAP_HPP
 
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #include <cstddef>
@@ -63,7 +64,7 @@ struct ByteswapFallbackImpl;
 template <typename T>
 struct ByteswapFallbackImpl<T, 2> {
   inline constexpr uint16_t operator()(uint16_t x) const {
-    return (((x & UINT16_C(0x00ff)) << 8) | ((x & UINT16_C(0xff00)) >> 8));
+    return checked_cast<uint16_t>(((x & UINT16_C(0x00ff)) << 8) | ((x & UINT16_C(0xff00)) >> 8));
   }
 };
 

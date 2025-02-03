@@ -271,6 +271,7 @@ class nmethod : public CodeBlob {
           _has_method_handle_invokes:1,// Has this method MethodHandle invokes?
           _has_wide_vectors:1,         // Preserve wide vectors at safepoints
           _has_monitors:1,             // Fastpath monitor detection for continuations
+          _has_scoped_access:1,        // used by for shared scope closure (scopedMemoryAccess.cpp)
           _has_flushed_dependencies:1, // Used for maintenance of dependencies (under CodeCache_lock)
           _is_unlinked:1,              // mark during class unloading
           _load_reported:1;            // used by jvmti to track if an event has been posted for this nmethod
@@ -663,6 +664,9 @@ public:
 
   bool  has_monitors() const                      { return _has_monitors; }
   void  set_has_monitors(bool z)                  { _has_monitors = z; }
+
+  bool  has_scoped_access() const                 { return _has_scoped_access; }
+  void  set_has_scoped_access(bool z)             { _has_scoped_access = z; }
 
   bool  has_method_handle_invokes() const         { return _has_method_handle_invokes; }
   void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }

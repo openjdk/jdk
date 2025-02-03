@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 package jdk.test.lib.thread;
 
-import java.lang.reflect.Field;
+import java.lang.management.ManagementFactory;
 import java.time.Duration;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
+import jdk.management.VirtualThreadSchedulerMXBean;
 
 /**
  * Helper class to support tests running tasks in a virtual thread.
@@ -94,7 +94,9 @@ public class VThreadRunner {
                 throw e;
             if (ex instanceof Error e)
                 throw e;
-            throw (X) ex;
+            @SuppressWarnings("unchecked")
+            var x = (X) ex;
+            throw x;
         }
     }
 
@@ -134,38 +136,35 @@ public class VThreadRunner {
     }
 
     /**
-     * Returns the virtual thread scheduler.
-     */
-    private static ForkJoinPool defaultScheduler() {
-        try {
-            var clazz = Class.forName("java.lang.VirtualThread");
-            var field = clazz.getDeclaredField("DEFAULT_SCHEDULER");
-            field.setAccessible(true);
-            return (ForkJoinPool) field.get(null);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
      * Sets the virtual thread scheduler's target parallelism.
+     *
+     * <p> Tests using this method should use "{@code @modules jdk.management}" to help
+     * test selection.
+     *
      * @return the previous parallelism level
      */
     public static int setParallelism(int size) {
-        return defaultScheduler().setParallelism(size);
+        var bean = ManagementFactory.getPlatformMXBean(VirtualThreadSchedulerMXBean.class);
+        int parallelism = bean.getParallelism();
+        bean.setParallelism(size);
+        return parallelism;
     }
 
     /**
      * Ensures that the virtual thread scheduler's target parallelism is at least
      * the given size. If the target parallelism is less than the given size then
      * it is changed to the given size.
+     *
+     * <p> Tests using this method should use "{@code @modules jdk.management}" to help
+     * test selection.
+     *
      * @return the previous parallelism level
      */
     public static int ensureParallelism(int size) {
-        ForkJoinPool pool = defaultScheduler();
-        int parallelism = pool.getParallelism();
+        var bean = ManagementFactory.getPlatformMXBean(VirtualThreadSchedulerMXBean.class);
+        int parallelism = bean.getParallelism();
         if (size > parallelism) {
-            pool.setParallelism(size);
+            bean.setParallelism(size);
         }
         return parallelism;
     }

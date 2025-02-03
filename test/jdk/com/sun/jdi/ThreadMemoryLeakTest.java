@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
  * @bug 8297638
  * @summary JDI memory leak when creating and destroying many threads
  *
- * @comment Don't allow -Xcomp or -Xint as they impact memory useage and number of iterations
- * @requires (vm.compMode == "Xmixed")
+ * @comment Don't allow -Xcomp or -Xint as they impact memory useage and number of iterations.
+ *          Require compressed oops because not doing so increases memory usage.
+ * @requires (vm.compMode == "Xmixed") & vm.opt.final.UseCompressedOops
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g ThreadMemoryLeakTest.java
  * @comment run with -Xmx7m so any leak will quickly produce OOME

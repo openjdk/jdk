@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package javax.lang.model.element;
 
 /**
- * The <i>nesting kind</i> of a type element.
+ * The <dfn>nesting kind</dfn> of a type element.
  * Type elements come in four varieties:
  * top-level, member, local, and anonymous.
  * <i>Nesting kind</i> is a non-standard term used here to denote this
@@ -95,7 +95,7 @@ public enum NestingKind {
     /**
      * A named class or interface declared within a construct other
      * than a class or interface.
-     * @jls 14.3 Local Class Declarations
+     * @jls 14.3 Local Class and Interface Declarations
      */
     LOCAL,
 
@@ -107,11 +107,11 @@ public enum NestingKind {
 
     /**
      * Does this constant correspond to a nested type element?
-     * A <i>nested</i> type element is any that is not top-level.
+     * A <dfn>nested</dfn> type element is any that is not top-level.
      * More specifically, an <i>inner</i> type element is any nested type element that
      * is not {@linkplain Modifier#STATIC static}.
      * @return whether or not the constant is nested
-     * @jls 14.3 Local Class Declarations
+     * @jls 14.3 Local Class and Interface Declarations
      */
     public boolean isNested() {
         return this != TOP_LEVEL;

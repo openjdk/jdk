@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
@@ -46,6 +45,7 @@
 #include "nmt/nmtCommon.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/objLayout.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -85,6 +85,7 @@ char** Arguments::_jvm_flags_array              = nullptr;
 int    Arguments::_num_jvm_flags                = 0;
 char** Arguments::_jvm_args_array               = nullptr;
 int    Arguments::_num_jvm_args                 = 0;
+unsigned int Arguments::_addmods_count          = 0;
 char*  Arguments::_java_command                 = nullptr;
 SystemProperty* Arguments::_system_properties   = nullptr;
 size_t Arguments::_conservative_max_heap_alignment = 0;
@@ -101,8 +102,9 @@ bool   Arguments::_ClipInlining                 = ClipInlining;
 size_t Arguments::_default_SharedBaseAddress    = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
+bool   Arguments::_has_jdwp_agent               = false;
 
-LegacyGCLogging Arguments::_legacyGCLogging     = { 0, 0 };
+LegacyGCLogging Arguments::_legacyGCLogging     = { nullptr, 0 };
 
 // These are not set by the JDK's built-in launchers, but they can be set by
 // programs that embed the JVM using JNI_CreateJavaVM. See comments around
@@ -305,6 +307,8 @@ bool needs_module_property_warning = false;
 #define UPGRADE_PATH_LEN 12
 #define ENABLE_NATIVE_ACCESS "enable.native.access"
 #define ENABLE_NATIVE_ACCESS_LEN 20
+#define ILLEGAL_NATIVE_ACCESS "illegal.native.access"
+#define ILLEGAL_NATIVE_ACCESS_LEN 21
 
 // Return TRUE if option matches 'property', or 'property=', or 'property.'.
 static bool matches_property_suffix(const char* option, const char* property, size_t len) {
@@ -316,18 +320,35 @@ static bool matches_property_suffix(const char* option, const char* property, si
 // any of the reserved module properties.
 // property should be passed without the leading "-D".
 bool Arguments::is_internal_module_property(const char* property) {
-  if  (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
+  return internal_module_property_helper(property, false);
+}
+
+// Returns true if property is one of those recognized by is_internal_module_property() but
+// is not supported by CDS archived full module graph.
+bool Arguments::is_incompatible_cds_internal_module_property(const char* property) {
+  return internal_module_property_helper(property, true);
+}
+
+bool Arguments::internal_module_property_helper(const char* property, bool check_for_cds) {
+  if (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
     const char* property_suffix = property + MODULE_PROPERTY_PREFIX_LEN;
     if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
         matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
         matches_property_suffix(property_suffix, ADDOPENS, ADDOPENS_LEN) ||
         matches_property_suffix(property_suffix, PATCH, PATCH_LEN) ||
-        matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
         matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
-        matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
         matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN) ||
-        matches_property_suffix(property_suffix, ENABLE_NATIVE_ACCESS, ENABLE_NATIVE_ACCESS_LEN)) {
+        matches_property_suffix(property_suffix, ILLEGAL_NATIVE_ACCESS, ILLEGAL_NATIVE_ACCESS_LEN)) {
       return true;
+    }
+
+    if (!check_for_cds) {
+      // CDS notes: these properties are supported by CDS archived full module graph.
+      if (matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
+          matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
+          matches_property_suffix(property_suffix, ENABLE_NATIVE_ACCESS, ENABLE_NATIVE_ACCESS_LEN)) {
+        return true;
+      }
     }
   }
   return false;
@@ -497,14 +518,14 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::undefined(), JDK_Version::undefined() },
   { "DumpSharedSpaces",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-  { "DontYieldALot",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "PreserveAllAnnotations",       JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "UseNotificationThread",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+#ifdef LINUX
+  { "UseLinuxPosixThreadCPUClocks", JDK_Version::jdk(24), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "UseOprofile",                  JDK_Version::jdk(25), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+#endif
   { "LockingMode",                  JDK_Version::jdk(24), JDK_Version::jdk(26), JDK_Version::jdk(27) },
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -512,17 +533,8 @@ static SpecialFlag const special_jvm_flags[] = {
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::undefined() },
 
-  { "UseEmptySlotsInSupers",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "OldSize",                      JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-#if defined(X86)
-  { "UseRTMLocking",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "UseRTMDeopt",                  JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "RTMRetryCount",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-#endif // X86
-
-  { "HeapFirstMaximumCompactionCount", JDK_Version::undefined(), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "UseVtableBasedCHA",               JDK_Version::undefined(), JDK_Version::jdk(24), JDK_Version::jdk(25) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -1412,13 +1424,6 @@ void Arguments::set_use_compressed_oops() {
 #endif // _LP64
 }
 
-void Arguments::set_use_compressed_klass_ptrs() {
-#ifdef _LP64
-  assert(!UseCompressedClassPointers || CompressedClassSpaceSize <= KlassEncodingMetaspaceMax,
-         "CompressedClassSpaceSize is too large for UseCompressedClassPointers");
-#endif // _LP64
-}
-
 void Arguments::set_conservative_max_heap_alignment() {
   // The conservative maximum required alignment for the heap is the maximum of
   // the alignments imposed by several sources: any requirements from the heap
@@ -1437,7 +1442,6 @@ jint Arguments::set_ergonomics_flags() {
 
 #ifdef _LP64
   set_use_compressed_oops();
-  set_use_compressed_klass_ptrs();
 
   // Also checks that certain machines are slower with compressed oops
   // in vm_version initialization code.
@@ -1528,8 +1532,8 @@ void Arguments::set_heap_size() {
       if (!FLAG_IS_DEFAULT(HeapBaseMinAddress)) {
         if (HeapBaseMinAddress < DefaultHeapBaseMinAddress) {
           // matches compressed oops printing flags
-          log_debug(gc, heap, coops)("HeapBaseMinAddress must be at least " SIZE_FORMAT
-                                     " (" SIZE_FORMAT "G) which is greater than value given " SIZE_FORMAT,
+          log_debug(gc, heap, coops)("HeapBaseMinAddress must be at least %zu"
+                                     " (%zuG) which is greater than value given %zu",
                                      DefaultHeapBaseMinAddress,
                                      DefaultHeapBaseMinAddress/G,
                                      HeapBaseMinAddress);
@@ -1554,7 +1558,7 @@ void Arguments::set_heap_size() {
       if (reasonable_max > max_coop_heap) {
         if (FLAG_IS_ERGO(UseCompressedOops) && override_coop_limit) {
           log_info(cds)("UseCompressedOops and UseCompressedClassPointers have been disabled due to"
-            " max heap " SIZE_FORMAT " > compressed oop heap " SIZE_FORMAT ". "
+            " max heap %zu > compressed oop heap %zu. "
             "Please check the setting of MaxRAMPercentage %5.2f."
             ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
@@ -1565,7 +1569,7 @@ void Arguments::set_heap_size() {
     }
 #endif // _LP64
 
-    log_trace(gc, heap)("  Maximum heap size " SIZE_FORMAT, (size_t) reasonable_max);
+    log_trace(gc, heap)("  Maximum heap size %zu", (size_t) reasonable_max);
     FLAG_SET_ERGO(MaxHeapSize, (size_t)reasonable_max);
   }
 
@@ -1586,13 +1590,13 @@ void Arguments::set_heap_size() {
       reasonable_initial = MIN2(reasonable_initial, (julong)MaxHeapSize);
 
       FLAG_SET_ERGO(InitialHeapSize, (size_t)reasonable_initial);
-      log_trace(gc, heap)("  Initial heap size " SIZE_FORMAT, InitialHeapSize);
+      log_trace(gc, heap)("  Initial heap size %zu", InitialHeapSize);
     }
     // If the minimum heap size has not been set (via -Xms or -XX:MinHeapSize),
     // synchronize with InitialHeapSize to avoid errors with the default value.
     if (MinHeapSize == 0) {
       FLAG_SET_ERGO(MinHeapSize, MIN2((size_t)reasonable_minimum, InitialHeapSize));
-      log_trace(gc, heap)("  Minimum heap size " SIZE_FORMAT, MinHeapSize);
+      log_trace(gc, heap)("  Minimum heap size %zu", MinHeapSize);
     }
   }
 }
@@ -1653,9 +1657,6 @@ jint Arguments::set_aggressive_heap_flags() {
 #endif
 
   // Increase some data structure sizes for efficiency
-  if (FLAG_SET_CMDLINE(BaseFootPrintEstimate, MaxHeapSize) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
   if (FLAG_SET_CMDLINE(ResizeTLAB, false) != JVMFlag::SUCCESS) {
     return JNI_EINVAL;
   }
@@ -1730,7 +1731,7 @@ jint Arguments::set_aggressive_opts_flags() {
     }
     // Feed the cache size setting into the JDK
     char buffer[1024];
-    jio_snprintf(buffer, 1024, "java.lang.Integer.IntegerCache.high=" INTX_FORMAT, AutoBoxCacheMax);
+    jio_snprintf(buffer, 1024, "java.lang.Integer.IntegerCache.high=%zd", AutoBoxCacheMax);
     if (!add_property(buffer)) {
       return JNI_ENOMEM;
     }
@@ -1761,15 +1762,20 @@ bool Arguments::sun_java_launcher_is_altjvm() {
 //===========================================================================================================
 // Parsing of main arguments
 
-unsigned int addreads_count = 0;
-unsigned int addexports_count = 0;
-unsigned int addopens_count = 0;
-unsigned int addmods_count = 0;
-unsigned int patch_mod_count = 0;
-unsigned int enable_native_access_count = 0;
+static unsigned int addreads_count = 0;
+static unsigned int addexports_count = 0;
+static unsigned int addopens_count = 0;
+static unsigned int patch_mod_count = 0;
+static unsigned int enable_native_access_count = 0;
+static bool patch_mod_javabase = false;
 
 // Check the consistency of vm_init_args
 bool Arguments::check_vm_args_consistency() {
+  // This may modify compiler flags. Must be called before CompilerConfig::check_args_consistency()
+  if (!CDSConfig::check_vm_args_consistency(patch_mod_javabase, mode_flag_cmd_line)) {
+    return false;
+  }
+
   // Method for adding checks for flag consistency.
   // The intent is to warn the user of all possible conflicts,
   // before returning an error.
@@ -1779,7 +1785,7 @@ bool Arguments::check_vm_args_consistency() {
   if (TLABRefillWasteFraction == 0) {
     jio_fprintf(defaultStream::error_stream(),
                 "TLABRefillWasteFraction should be a denominator, "
-                "not " SIZE_FORMAT "\n",
+                "not %zu\n",
                 TLABRefillWasteFraction);
     status = false;
   }
@@ -1790,7 +1796,7 @@ bool Arguments::check_vm_args_consistency() {
     PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
         AddProperty, UnwriteableProperty, InternalProperty);
     if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
-      if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
+      if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
         return false;
       }
     }
@@ -1799,7 +1805,7 @@ bool Arguments::check_vm_args_consistency() {
 
 #if INCLUDE_JFR
   if (status && (FlightRecorderOptions || StartFlightRecording)) {
-    if (!create_numbered_module_property("jdk.module.addmods", "jdk.jfr", addmods_count++)) {
+    if (!create_numbered_module_property("jdk.module.addmods", "jdk.jfr", _addmods_count++)) {
       return false;
     }
   }
@@ -1812,12 +1818,20 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM) && !defined(PPC64) && !defined(S390)
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    FLAG_SET_CMDLINE(LockingMode, LM_LEGACY);
-    warning("New lightweight locking not supported on this platform");
+#ifndef _LP64
+  if (LockingMode == LM_LEGACY) {
+    FLAG_SET_CMDLINE(LockingMode, LM_LIGHTWEIGHT);
+    // Self-forwarding in bit 3 of the mark-word conflicts
+    // with 4-byte-aligned stack-locks.
+    warning("Legacy locking not supported on this platform");
   }
 #endif
+
+  if (UseObjectMonitorTable && LockingMode != LM_LIGHTWEIGHT) {
+    // ObjectMonitorTable requires lightweight locking.
+    FLAG_SET_CMDLINE(UseObjectMonitorTable, false);
+    warning("UseObjectMonitorTable requires LM_LIGHTWEIGHT");
+  }
 
 #if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
   if (LockingMode == LM_MONITOR) {
@@ -1850,11 +1864,11 @@ bool Arguments::is_bad_option(const JavaVMOption* option, jboolean ignore,
 }
 
 static const char* user_assertion_options[] = {
-  "-da", "-ea", "-disableassertions", "-enableassertions", 0
+  "-da", "-ea", "-disableassertions", "-enableassertions", nullptr
 };
 
 static const char* system_assertion_options[] = {
-  "-dsa", "-esa", "-disablesystemassertions", "-enablesystemassertions", 0
+  "-dsa", "-esa", "-disablesystemassertions", "-enablesystemassertions", nullptr
 };
 
 bool Arguments::parse_uint(const char* value,
@@ -1932,8 +1946,6 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
                                    const JavaVMInitArgs *java_tool_options_args,
                                    const JavaVMInitArgs *java_options_args,
                                    const JavaVMInitArgs *cmd_line_args) {
-  bool patch_mod_javabase = false;
-
   // Save default settings for some mode flags
   Arguments::_AlwaysCompileLoopMethods = AlwaysCompileLoopMethods;
   Arguments::_UseOnStackReplacement    = UseOnStackReplacement;
@@ -1947,27 +1959,27 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   set_mode_flags(_mixed);
 
   // Parse args structure generated from java.base vm options resource
-  jint result = parse_each_vm_init_arg(vm_options_args, &patch_mod_javabase, JVMFlagOrigin::JIMAGE_RESOURCE);
+  jint result = parse_each_vm_init_arg(vm_options_args, JVMFlagOrigin::JIMAGE_RESOURCE);
   if (result != JNI_OK) {
     return result;
   }
 
   // Parse args structure generated from JAVA_TOOL_OPTIONS environment
   // variable (if present).
-  result = parse_each_vm_init_arg(java_tool_options_args, &patch_mod_javabase, JVMFlagOrigin::ENVIRON_VAR);
+  result = parse_each_vm_init_arg(java_tool_options_args, JVMFlagOrigin::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
   }
 
   // Parse args structure generated from the command line flags.
-  result = parse_each_vm_init_arg(cmd_line_args, &patch_mod_javabase, JVMFlagOrigin::COMMAND_LINE);
+  result = parse_each_vm_init_arg(cmd_line_args, JVMFlagOrigin::COMMAND_LINE);
   if (result != JNI_OK) {
     return result;
   }
 
   // Parse args structure generated from the _JAVA_OPTIONS environment
   // variable (if present) (mimics classic VM)
-  result = parse_each_vm_init_arg(java_options_args, &patch_mod_javabase, JVMFlagOrigin::ENVIRON_VAR);
+  result = parse_each_vm_init_arg(java_options_args, JVMFlagOrigin::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
   }
@@ -1988,7 +2000,7 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   SystemMemoryBarrier::initialize();
 
   // Do final processing now that all arguments have been parsed
-  result = finalize_vm_init_args(patch_mod_javabase);
+  result = finalize_vm_init_args();
   if (result != JNI_OK) {
     return result;
   }
@@ -1996,7 +2008,7 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   return JNI_OK;
 }
 
-#if !INCLUDE_JVMTI
+#if !INCLUDE_JVMTI || INCLUDE_CDS
 // Checks if name in command-line argument -agent{lib,path}:name[=options]
 // represents a valid JDWP agent.  is_path==true denotes that we
 // are dealing with -agentpath (case where name is a path), otherwise with
@@ -2043,7 +2055,7 @@ static bool valid_jdwp_agent(char *name, bool is_path) {
 }
 #endif
 
-int Arguments::process_patch_mod_option(const char* patch_mod_tail, bool* patch_mod_javabase) {
+int Arguments::process_patch_mod_option(const char* patch_mod_tail) {
   // --patch-module=<module>=<file>(<pathsep><file>)*
   assert(patch_mod_tail != nullptr, "Unexpected null patch-module value");
   // Find the equal sign between the module name and the path specification
@@ -2059,7 +2071,7 @@ int Arguments::process_patch_mod_option(const char* patch_mod_tail, bool* patch_
       memcpy(module_name, patch_mod_tail, module_len);
       *(module_name + module_len) = '\0';
       // The path piece begins one past the module_equal sign
-      add_patch_mod_prefix(module_name, module_equal + 1, patch_mod_javabase);
+      add_patch_mod_prefix(module_name, module_equal + 1);
       FREE_C_HEAP_ARRAY(char, module_name);
       if (!create_numbered_module_property("jdk.module.patch", patch_mod_tail, patch_mod_count++)) {
         return JNI_ENOMEM;
@@ -2125,7 +2137,7 @@ jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* ou
   return JNI_OK;
 }
 
-jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, JVMFlagOrigin origin) {
+jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin origin) {
   // For match_option to return remaining or value part of option string
   const char* tail;
 
@@ -2227,11 +2239,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--add-modules=", &tail)) {
-      if (!create_numbered_module_property("jdk.module.addmods", tail, addmods_count++)) {
+      if (!create_numbered_module_property("jdk.module.addmods", tail, _addmods_count++)) {
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--enable-native-access=", &tail)) {
       if (!create_numbered_module_property("jdk.module.enable.native.access", tail, enable_native_access_count++)) {
+        return JNI_ENOMEM;
+      }
+    } else if (match_option(option, "--illegal-native-access=", &tail)) {
+      if (!create_module_property("jdk.module.illegal.native.access", tail, InternalProperty)) {
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--limit-modules=", &tail)) {
@@ -2248,7 +2264,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       }
     } else if (match_option(option, "--patch-module=", &tail)) {
       // --patch-module=<module>=<file>(<pathsep><file>)*
-      int res = process_patch_mod_option(tail, patch_mod_javabase);
+      int res = process_patch_mod_option(tail);
       if (res != JNI_OK) {
         return res;
       }
@@ -2290,6 +2306,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
             "Debugging agents are not supported in this VM\n");
           return JNI_ERR;
         }
+#elif INCLUDE_CDS
+        if (valid_jdwp_agent(name, is_absolute_path)) {
+          _has_jdwp_agent = true;
+        }
 #endif // !INCLUDE_JVMTI
         JvmtiAgentList::add(name, options, is_absolute_path);
         os::free(name);
@@ -2310,7 +2330,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         FREE_C_HEAP_ARRAY(char, options);
 
         // java agents need module java.instrument
-        if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
+        if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", _addmods_count++)) {
           return JNI_ENOMEM;
         }
       }
@@ -2491,7 +2511,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_EINVAL;
         }
         // management agent in module jdk.management.agent
-        if (!create_numbered_module_property("jdk.module.addmods", "jdk.management.agent", addmods_count++)) {
+        if (!create_numbered_module_property("jdk.module.addmods", "jdk.management.agent", _addmods_count++)) {
           return JNI_ENOMEM;
         }
 #else
@@ -2516,19 +2536,23 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -Xshare:dump
     } else if (match_option(option, "-Xshare:dump")) {
       CDSConfig::enable_dumping_static_archive();
+      CDSConfig::set_old_cds_flags_used();
     // -Xshare:on
     } else if (match_option(option, "-Xshare:on")) {
       UseSharedSpaces = true;
       RequireSharedSpaces = true;
+      CDSConfig::set_old_cds_flags_used();
     // -Xshare:auto || -XX:ArchiveClassesAtExit=<archive file>
     } else if (match_option(option, "-Xshare:auto")) {
       UseSharedSpaces = true;
       RequireSharedSpaces = false;
       xshare_auto_cmd_line = true;
+      CDSConfig::set_old_cds_flags_used();
     // -Xshare:off
     } else if (match_option(option, "-Xshare:off")) {
       UseSharedSpaces = false;
       RequireSharedSpaces = false;
+      CDSConfig::set_old_cds_flags_used();
     // -Xverify
     } else if (match_option(option, "-Xverify", &tail)) {
       if (strcmp(tail, ":all") == 0 || strcmp(tail, "") == 0) {
@@ -2793,16 +2817,16 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
   return JNI_OK;
 }
 
-void Arguments::add_patch_mod_prefix(const char* module_name, const char* path, bool* patch_mod_javabase) {
+void Arguments::add_patch_mod_prefix(const char* module_name, const char* path) {
   // For java.base check for duplicate --patch-module options being specified on the command line.
   // This check is only required for java.base, all other duplicate module specifications
   // will be checked during module system initialization.  The module system initialization
   // will throw an ExceptionInInitializerError if this situation occurs.
   if (strcmp(module_name, JAVA_BASE_NAME) == 0) {
-    if (*patch_mod_javabase) {
+    if (patch_mod_javabase) {
       vm_exit_during_initialization("Cannot specify " JAVA_BASE_NAME " more than once to --patch-module");
     } else {
-      *patch_mod_javabase = true;
+      patch_mod_javabase = true;
     }
   }
 
@@ -2854,7 +2878,7 @@ void Arguments::fix_appclasspath() {
   }
 }
 
-jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
+jint Arguments::finalize_vm_init_args() {
   // check if the default lib/endorsed directory exists; if so, error
   char path[JVM_MAXPATHLEN];
   const char* fileSep = os::file_separator();
@@ -2928,9 +2952,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     return JNI_ERR;
   }
 
-  if (!CDSConfig::check_vm_args_consistency(patch_mod_javabase, mode_flag_cmd_line)) {
-    return JNI_ERR;
-  }
 
 #ifndef CAN_SHOW_REGISTERS_ON_ASSERT
   UNSUPPORTED_OPTION(ShowRegistersOnAssert);
@@ -3635,6 +3656,34 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   return JNI_OK;
 }
 
+void Arguments::set_compact_headers_flags() {
+#ifdef _LP64
+  if (UseCompactObjectHeaders && FLAG_IS_CMDLINE(UseCompressedClassPointers) && !UseCompressedClassPointers) {
+    warning("Compact object headers require compressed class pointers. Disabling compact object headers.");
+    FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
+  }
+  if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
+    // If UseCompactObjectHeaders is on the command line, turn on UseObjectMonitorTable.
+    if (FLAG_IS_CMDLINE(UseCompactObjectHeaders)) {
+      FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
+
+      // If UseObjectMonitorTable is on the command line, turn off UseCompactObjectHeaders.
+    } else if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
+      FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
+      // If neither on the command line, the defaults are incompatible, but turn on UseObjectMonitorTable.
+    } else {
+      FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
+    }
+  }
+  if (UseCompactObjectHeaders && LockingMode != LM_LIGHTWEIGHT) {
+    FLAG_SET_DEFAULT(LockingMode, LM_LIGHTWEIGHT);
+  }
+  if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
+    FLAG_SET_DEFAULT(UseCompressedClassPointers, true);
+  }
+#endif
+}
+
 jint Arguments::apply_ergo() {
   // Set flags based on ergonomics.
   jint result = set_ergonomics_flags();
@@ -3644,6 +3693,12 @@ jint Arguments::apply_ergo() {
   set_heap_size();
 
   GCConfig::arguments()->initialize();
+
+  set_compact_headers_flags();
+
+  if (UseCompressedClassPointers) {
+    CompressedKlassPointers::pre_initialize();
+  }
 
   CDSConfig::initialize();
 

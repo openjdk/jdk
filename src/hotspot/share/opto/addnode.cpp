@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
@@ -1120,7 +1119,7 @@ Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, co
       cmp = gvn.transform(CmpNode::make(b, a, bt, is_unsigned));
     }
     Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-    res = gvn.transform(CMoveNode::make(nullptr, bol, a, b, t));
+    res = gvn.transform(CMoveNode::make(bol, a, b, t));
   }
   if (hook != nullptr) {
     hook->destruct(&gvn);
@@ -1149,7 +1148,7 @@ Node* MaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const
   }
   Node* sub = gvn.transform(SubNode::make(a, b, bt));
   Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-  Node* res = gvn.transform(CMoveNode::make(nullptr, bol, sub, zero, t));
+  Node* res = gvn.transform(CMoveNode::make(bol, sub, zero, t));
   if (hook != nullptr) {
     hook->destruct(&gvn);
   }
@@ -1263,6 +1262,20 @@ Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return IdealI(phase, can_reshape);
 }
 
+Node* MaxINode::Identity(PhaseGVN* phase) {
+  const TypeInt* t1 = phase->type(in(1))->is_int();
+  const TypeInt* t2 = phase->type(in(2))->is_int();
+
+  // Can we determine the maximum statically?
+  if (t1->_lo >= t2->_hi) {
+    return in(1);
+  } else if (t2->_lo >= t1->_hi) {
+    return in(2);
+  }
+
+  return MaxNode::Identity(phase);
+}
+
 //=============================================================================
 //------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs.
@@ -1280,6 +1293,20 @@ const Type *MaxINode::add_ring( const Type *t0, const Type *t1 ) const {
 // "MIN2(x+c0,MIN2(y,x+c1))".  Pick the smaller constant: "MIN2(x+c0,y)"
 Node* MinINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return IdealI(phase, can_reshape);
+}
+
+Node* MinINode::Identity(PhaseGVN* phase) {
+  const TypeInt* t1 = phase->type(in(1))->is_int();
+  const TypeInt* t2 = phase->type(in(2))->is_int();
+
+  // Can we determine the minimum statically?
+  if (t1->_lo >= t2->_hi) {
+    return in(2);
+  } else if (t2->_lo >= t1->_hi) {
+    return in(1);
+  }
+
+  return MaxNode::Identity(phase);
 }
 
 //------------------------------add_ring---------------------------------------
@@ -1396,7 +1423,7 @@ const Type* MinLNode::add_ring(const Type* t0, const Type* t1) const {
   const TypeLong* r0 = t0->is_long();
   const TypeLong* r1 = t1->is_long();
 
-  return TypeLong::make(MIN2(r0->_lo, r1->_lo), MIN2(r0->_hi, r1->_hi), MIN2(r0->_widen, r1->_widen));
+  return TypeLong::make(MIN2(r0->_lo, r1->_lo), MIN2(r0->_hi, r1->_hi), MAX2(r0->_widen, r1->_widen));
 }
 
 Node* MinLNode::Identity(PhaseGVN* phase) {
@@ -1424,9 +1451,54 @@ Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
+int MaxNode::opposite_opcode() const {
+  if (Opcode() == max_opcode()) {
+    return min_opcode();
+  } else {
+    assert(Opcode() == min_opcode(), "Caller should be either %s or %s, but is %s", NodeClassNames[max_opcode()], NodeClassNames[min_opcode()], NodeClassNames[Opcode()]);
+    return max_opcode();
+  }
+}
+
+// Given a redundant structure such as Max/Min(A, Max/Min(B, C)) where A == B or A == C, return the useful part of the structure.
+// 'operation' is the node expected to be the inner 'Max/Min(B, C)', and 'operand' is the node expected to be the 'A' operand of the outer node.
+Node* MaxNode::find_identity_operation(Node* operation, Node* operand) {
+  if (operation->Opcode() == Opcode() || operation->Opcode() == opposite_opcode()) {
+    Node* n1 = operation->in(1);
+    Node* n2 = operation->in(2);
+
+    // Given Op(A, Op(B, C)), see if either A == B or A == C is true.
+    if (n1 == operand || n2 == operand) {
+      // If the operations are the same return the inner operation, as Max(A, Max(A, B)) == Max(A, B).
+      if (operation->Opcode() == Opcode()) {
+        return operation;
+      }
+
+      // If the operations are different return the operand 'A', as Max(A, Min(A, B)) == A if the value isn't floating point.
+      // With floating point values, the identity doesn't hold if B == NaN.
+      const Type* type = bottom_type();
+      if (type->isa_int() || type->isa_long()) {
+        return operand;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
 Node* MaxNode::Identity(PhaseGVN* phase) {
   if (in(1) == in(2)) {
       return in(1);
+  }
+
+  Node* identity_1 = MaxNode::find_identity_operation(in(2), in(1));
+  if (identity_1 != nullptr) {
+    return identity_1;
+  }
+
+  Node* identity_2 = MaxNode::find_identity_operation(in(1), in(2));
+  if (identity_2 != nullptr) {
+    return identity_2;
   }
 
   return AddNode::Identity(phase);

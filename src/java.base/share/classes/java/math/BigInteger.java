@@ -2723,7 +2723,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             throw new ArithmeticException("Negative BigInteger");
         }
 
-        return new MutableBigInteger(this.mag).sqrt().toBigInteger();
+        return new MutableBigInteger(this.mag).sqrtRem(false)[0].toBigInteger();
     }
 
     /**
@@ -2742,10 +2742,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @since  9
      */
     public BigInteger[] sqrtAndRemainder() {
-        BigInteger s = sqrt();
-        BigInteger r = this.subtract(s.square());
-        assert r.compareTo(BigInteger.ZERO) >= 0;
-        return new BigInteger[] {s, r};
+        if (this.signum < 0) {
+            throw new ArithmeticException("Negative BigInteger");
+        }
+
+        MutableBigInteger[] sqrtRem = new MutableBigInteger(this.mag).sqrtRem(true);
+        return new BigInteger[] { sqrtRem[0].toBigInteger(), sqrtRem[1].toBigInteger() };
     }
 
     /**
@@ -2775,6 +2777,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      */
     static int bitLengthForInt(int n) {
         return 32 - Integer.numberOfLeadingZeros(n);
+    }
+
+    /**
+     * Package private method to return bit length for a long.
+     */
+    static int bitLengthForLong(long n) {
+        return 64 - Long.numberOfLeadingZeros(n);
     }
 
     /**

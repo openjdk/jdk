@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public abstract class Architecture {
     /**
      * Converts this architecture to a string.
      *
-     * @return the string representation of this architecture
+     * @return a lowercase version of {@linkplain #getName name}
      */
     @Override
     public final String toString() {
@@ -126,9 +126,14 @@ public abstract class Architecture {
         return wordKind;
     }
 
-    /**
-     * Gets the name of this architecture.
-     */
+    /// Gets the name of this architecture. The value returned for
+    /// each architecture is shown in the table below.
+    ///
+    /// | Name      | Receiver type               |
+    /// |-----------|-----------------------------|
+    /// | "aarch64" | [jdk.vm.ci.aarch64.AArch64] |
+    /// | "AMD64"   | [jdk.vm.ci.amd64.AMD64]     |
+    /// | "riscv64" | [jdk.vm.ci.riscv64.RISCV64] |
     public String getName() {
         return name;
     }

@@ -23,7 +23,7 @@
 # questions.
 #
 
-ifeq (,$(_MAKEBASE_GMK))
+ifeq ($(_MAKEBASE_GMK), )
   $(error You must include MakeBase.gmk prior to including Utils.gmk)
 endif
 
@@ -36,7 +36,7 @@ endif
 # String equals
 equals = \
     $(if $(strip $1)$(strip $2),$(strip \
-      $(and $(findstring $(strip $1),$(strip $2)),\
+      $(and $(findstring $(strip $1),$(strip $2)), \
         $(findstring $(strip $2),$(strip $1)))), \
       true \
     )
@@ -64,7 +64,7 @@ uppercase = \
 # Param 2 - ending number
 sequence = \
     $(wordlist $1, $2, $(strip \
-        $(eval SEQUENCE_COUNT :=) \
+        $(eval SEQUENCE_COUNT := ) \
         $(call _sequence-do,$(strip $2))))
 
 _sequence-do = \
@@ -225,7 +225,7 @@ uniq = \
 # whitespace-separated words in $1 is a substring.
 containing = \
     $(strip \
-        $(foreach v,$(strip $2),\
+        $(foreach v,$(strip $2), \
           $(call uniq,$(foreach p,$(strip $1),$(if $(findstring $p,$v),$v)))))
 
 # Returns all whitespace-separated words in $2 where none of the
@@ -242,7 +242,7 @@ dups = \
 # $1 - List of prefixes
 # $2 - List of elements to process
 remove-prefixes = \
-    $(strip $(if $1,$(patsubst $(firstword $1)%,%,\
+    $(strip $(if $1,$(patsubst $(firstword $1)%,%, \
       $(call remove-prefixes,$(filter-out $(firstword $1),$1),$2)),$2))
 
 ################################################################################
@@ -270,11 +270,11 @@ Or = \
 ifeq ($(IS_GNU_DATE), yes)
   EpochToISO8601 = \
     $(shell $(DATE) --utc --date="@$(strip $1)" \
-         +"$(ISO_8601_FORMAT_STRING)" 2> /dev/null)
+        +"$(ISO_8601_FORMAT_STRING)" 2> /dev/null)
 else
   EpochToISO8601 = \
     $(shell $(DATE) -u -j -f "%s" "$(strip $1)" \
-         +"$(ISO_8601_FORMAT_STRING)" 2> /dev/null)
+        +"$(ISO_8601_FORMAT_STRING)" 2> /dev/null)
 endif
 
 ################################################################################

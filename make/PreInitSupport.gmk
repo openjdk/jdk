@@ -1,0 +1,297 @@
+#
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+##############################################################################
+# Helper functions for PreInit.gmk, the initial part of initialization before
+# the SPEC file is loaded. Most of these functions provide parsing and setting
+# up make options from the command-line.
+##############################################################################
+
+# COMMA is defined in spec.gmk, but that is not included yet
+COMMA := ,
+
+# Include the corresponding closed file, if present.
+ifneq ($(CUSTOM_MAKE_DIR), )
+  -include $(CUSTOM_MAKE_DIR)/InitSupport.gmk
+endif
+
+# Essential control variables that are handled by PreInit.gmk or Init.gmk
+INIT_CONTROL_VARIABLES := LOG CONF CONF_NAME SPEC JOBS CONF_CHECK ALLOW \
+    COMPARE_BUILD
+
+# All known make control variables; these are handled in other makefiles
+MAKE_CONTROL_VARIABLES += JDK_FILTER SPEC_FILTER \
+    TEST TEST_JOBS JTREG GTEST MICRO TEST_OPTS TEST_VM_OPTS TEST_DEPS
+
+ALL_CONTROL_VARIABLES := $(INIT_CONTROL_VARIABLES) $(MAKE_CONTROL_VARIABLES)
+
+# Define a simple reverse function.
+# Should maybe move to MakeBase.gmk, but we can't include that file now.
+reverse = \
+    $(if $(strip $(1)), $(call reverse, $(wordlist 2, $(words $(1)), $(1)))) \
+        $(firstword $(1))
+
+# The variable MAKEOVERRIDES contains variable assignments from the command
+# line, but in reverse order to what the user entered.
+# The '§' <=> '\ 'dance is needed to keep values with space in them connected.
+COMMAND_LINE_VARIABLES := $(subst §,\ , $(call reverse, $(subst \ ,§,$(MAKEOVERRIDES))))
+
+# A list like FOO="val1" BAR="val2" containing all user-supplied make
+# variables that we should propagate.
+# The '§' <=> '\ 'dance is needed to keep values with space in them connected.
+# This explicit propagation is needed to avoid problems with characters that needs
+# escaping.
+USER_MAKE_VARS := $(subst §,\ , $(filter-out $(addsuffix =%, $(ALL_CONTROL_VARIABLES)), \
+    $(subst \ ,§,$(MAKEOVERRIDES))))
+
+# Setup information about available configurations, if any.
+ifneq ($(CUSTOM_ROOT), )
+  build_dir = $(CUSTOM_ROOT)/build
+else
+  build_dir = $(topdir)/build
+endif
+all_spec_files = $(wildcard $(build_dir)/*/spec.gmk)
+# Extract the configuration names from the path
+all_confs = $(patsubst %/spec.gmk, %, $(patsubst $(build_dir)/%, %, $(all_spec_files)))
+
+# Check for unknown command-line variables
+define CheckControlVariables
+  command_line_variables := $$(strip $$(foreach var, \
+      $$(subst \ ,_,$$(MAKEOVERRIDES)), \
+      $$(firstword $$(subst =, , $$(var)))))
+  allowed_command_line_variables := $$(strip $$(subst $$(COMMA), , $$(ALLOW)))
+  unknown_command_line_variables := $$(strip \
+      $$(filter-out $$(ALL_CONTROL_VARIABLES) $$(allowed_command_line_variables), \
+      $$(command_line_variables)))
+  ifneq ($$(unknown_command_line_variables), )
+    $$(info Note: Command line contains non-control variables:)
+    $$(foreach var, $$(unknown_command_line_variables), $$(info * $$(var)=$$($$(var))))
+    $$(info Make sure it is not mistyped, and that you intend to override this variable.)
+    $$(info 'make help' will list known control variables.)
+    $$(info )
+  endif
+endef
+
+# Check for deprecated ALT_ variables
+define CheckDeprecatedEnvironment
+  defined_alt_variables := $$(filter ALT_%, $$(.VARIABLES))
+  ifneq ($$(defined_alt_variables), )
+    $$(info Warning: You have the following ALT_ variables set:)
+    $$(foreach var, $$(defined_alt_variables), $$(info * $$(var)=$$($$(var))))
+    $$(info ALT_ variables are deprecated, and may result in a failed build.)
+    $$(info Please clean your environment.)
+    $$(info )
+  endif
+endef
+
+# Check for invalid make flags like -j
+define CheckInvalidMakeFlags
+  # This is a trick to get this rule to execute before any other rules
+  # MAKEFLAGS only indicate -j if read in a recipe (!)
+  $$(topdir)/make/PreInit.gmk: .FORCE
+	$$(if $$(findstring --jobserver, $$(MAKEFLAGS)), \
+	    $$(info Error: 'make -jN' is not supported, use 'make JOBS=N') \
+	    $$(error Cannot continue) \
+	)
+  .FORCE:
+  .PHONY: .FORCE
+endef
+
+# Check that the CONF_CHECK option is valid and set up handling
+define ParseConfCheckOption
+  ifeq ($$(CONF_CHECK), )
+    # Default behavior is fail
+    CONF_CHECK := fail
+  else ifneq ($$(filter-out auto fail ignore, $$(CONF_CHECK)), )
+    $$(info Error: CONF_CHECK must be one of: auto, fail or ignore.)
+    $$(error Cannot continue)
+  endif
+endef
+
+define ParseConfAndSpec
+  ifneq ($$(origin SPEC), undefined)
+    # We have been given a SPEC, check that it works out properly
+    ifneq ($$(origin CONF), undefined)
+      # We also have a CONF argument. We can't have both.
+      $$(info Error: Cannot use CONF=$$(CONF) and SPEC=$$(SPEC) at the same time. Choose one.)
+      $$(error Cannot continue)
+    endif
+    ifneq ($$(origin CONF_NAME), undefined)
+      # We also have a CONF_NAME argument. We can't have both.
+      $$(info Error: Cannot use CONF_NAME=$$(CONF_NAME) and SPEC=$$(SPEC) at the same time. Choose one.)
+      $$(error Cannot continue)
+    endif
+    ifeq ($$(wildcard $$(SPEC)), )
+      $$(info Error: Cannot locate spec.gmk, given by SPEC=$$(SPEC).)
+      $$(error Cannot continue)
+    endif
+    ifeq ($$(filter /%, $$(SPEC)), )
+      # If given with relative path, make it absolute
+      SPECS := $$(CURDIR)/$$(strip $$(SPEC))
+    else
+      SPECS := $$(SPEC)
+    endif
+
+    # For now, unset this SPEC variable.
+    override SPEC :=
+  else
+    # Use spec.gmk files in the build output directory
+    ifeq ($$(all_spec_files), )
+      ifneq ($(CUSTOM_ROOT), )
+        $$(info Error: No configurations found for $$(CUSTOM_ROOT).)
+      else
+        $$(info Error: No configurations found for $$(topdir).)
+      endif
+      $$(info Please run 'bash configure' to create a configuration.)
+      $$(info )
+      $$(error Cannot continue)
+    endif
+
+    ifneq ($$(origin CONF_NAME), undefined)
+      ifneq ($$(origin CONF), undefined)
+        # We also have a CONF argument. We can't have both.
+        $$(info Error: Cannot use CONF=$$(CONF) and CONF_NAME=$$(CONF_NAME) at the same time. Choose one.)
+        $$(error Cannot continue)
+      endif
+      matching_conf := $$(strip $$(filter $$(CONF_NAME), $$(all_confs)))
+      ifeq ($$(matching_conf), )
+        $$(info Error: No configurations found matching CONF_NAME=$$(CONF_NAME).)
+        $$(info Available configurations in $$(build_dir):)
+        $$(foreach var, $$(all_confs), $$(info * $$(var)))
+        $$(error Cannot continue)
+      else ifneq ($$(words $$(matching_conf)), 1)
+        $$(info Error: Matching more than one configuration CONF_NAME=$$(CONF_NAME).)
+        $$(info Available configurations in $$(build_dir):)
+        $$(foreach var, $$(all_confs), $$(info * $$(var)))
+        $$(error Cannot continue)
+      else
+        $$(info Building configuration '$$(matching_conf)' (matching CONF_NAME=$$(CONF_NAME)))
+      endif
+      # Create a SPEC definition. This will contain the path to exactly one spec file.
+      SPECS := $$(build_dir)/$$(matching_conf)/spec.gmk
+    else ifneq ($$(origin CONF), undefined)
+      # User have given a CONF= argument.
+      ifeq ($$(CONF), )
+        # If given CONF=, match all configurations
+        matching_confs := $$(strip $$(all_confs))
+      else
+        # Otherwise select those that contain the given CONF string
+        ifeq ($$(patsubst !%,,$$(CONF)), )
+          # A CONF starting with ! means we should negate the search term
+          matching_confs := $$(strip $$(foreach var, $$(all_confs), \
+              $$(if $$(findstring $$(subst !,,$$(CONF)), $$(var)), ,$$(var))))
+        else
+          matching_confs := $$(strip $$(foreach var, $$(all_confs), \
+              $$(if $$(findstring $$(CONF), $$(var)), $$(var))))
+        endif
+        ifneq ($$(filter $$(CONF), $$(matching_confs)), )
+          ifneq ($$(word 2, $$(matching_confs)), )
+            # Don't repeat this output on make restarts caused by including
+            # generated files.
+            ifeq ($$(MAKE_RESTARTS), )
+              $$(info Using exact match for CONF=$$(CONF) (other matches are possible))
+            endif
+          endif
+          # If we found an exact match, use that
+          matching_confs := $$(CONF)
+        endif
+      endif
+      ifeq ($$(matching_confs), )
+        $$(info Error: No configurations found matching CONF=$$(CONF).)
+        $$(info Available configurations in $$(build_dir):)
+        $$(foreach var, $$(all_confs), $$(info * $$(var)))
+        $$(error Cannot continue)
+      else
+        # Don't repeat this output on make restarts caused by including
+        # generated files.
+        ifeq ($$(MAKE_RESTARTS), )
+          ifeq ($$(words $$(matching_confs)), 1)
+            ifneq ($$(findstring $$(LOG_LEVEL), info debug trace), )
+              $$(info Building configuration '$$(matching_confs)' (matching CONF=$$(CONF)))
+            endif
+          else
+            $$(info Building these configurations (matching CONF=$$(CONF)):)
+            $$(foreach var, $$(matching_confs), $$(info * $$(var)))
+          endif
+        endif
+      endif
+
+      # Create a SPEC definition. This will contain the path to one or more spec.gmk files.
+      SPECS := $$(addsuffix /spec.gmk, $$(addprefix $$(build_dir)/, $$(matching_confs)))
+    else
+      # No CONF or SPEC given, check the available configurations
+      ifneq ($$(words $$(all_spec_files)), 1)
+        $$(info Error: No CONF given, but more than one configuration found.)
+        $$(info Available configurations in $$(build_dir):)
+        $$(foreach var, $$(all_confs), $$(info * $$(var)))
+        $$(info Please retry building with CONF=<config pattern> (or SPEC=<spec file>).)
+        $$(info )
+        $$(error Cannot continue)
+      endif
+
+      # We found exactly one configuration, use it
+      SPECS := $$(strip $$(all_spec_files))
+    endif
+  endif
+endef
+
+# Extract main targets from Main.gmk using the spec provided in $2.
+#
+# Param 1: FORCE = force generation of main-targets.gmk or LAZY = do not force.
+# Param 2: The SPEC file to use.
+define DefineMainTargets
+
+  # We will start by making sure the main-targets.gmk file is removed, if
+  # make has not been restarted. By the -include, we will trigger the
+  # rule for generating the file (which is never there since we removed it),
+  # thus generating it fresh, and make will restart, incrementing the restart
+  # count.
+  main_targets_file := $$(dir $(strip $2))make-support/main-targets.gmk
+
+  ifeq ($$(MAKE_RESTARTS), )
+    # Only do this if make has not been restarted, and if we do not force it.
+    ifeq ($(strip $1), FORCE)
+      $$(shell rm -f $$(main_targets_file))
+    endif
+  endif
+
+  $$(main_targets_file):
+	@( cd $$(topdir) && \
+	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(topdir)/make/Main.gmk \
+	    -I $$(topdir)/make/common SPEC=$(strip $2) NO_RECIPES=true \
+	    $$(MAKE_LOG_VARS) \
+	    create-main-targets-include )
+
+  # Now include main-targets.gmk. This will define ALL_MAIN_TARGETS.
+  -include $$(main_targets_file)
+endef
+
+define PrintConfCheckFailed
+	@echo ' '
+	@echo "Please rerun configure! Easiest way to do this is by running"
+	@echo "'make reconfigure'."
+	@echo "This behavior may also be changed using CONF_CHECK=<ignore|auto>."
+	@echo ' '
+endef

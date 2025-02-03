@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@ import java.util.Enumeration;
 
 
 /**
- * A <code>SSLSessionContext</code> represents a set of
- * <code>SSLSession</code>s associated with a single entity. For example,
+ * A {@code SSLSessionContext} represents a set of
+ * {@code SSLSession}s associated with a single entity. For example,
  * it could be associated with a server or client who participates in many
  * sessions concurrently.
  * <p>
@@ -41,7 +41,7 @@ import java.util.Enumeration;
  * Session contexts may not contain all sessions. For example, stateless
  * sessions are not stored in the session context.
  * <p>
- * There are <code>SSLSessionContext</code> parameters that affect how
+ * There are {@code SSLSessionContext} parameters that affect how
  * sessions are stored:
  * <UL>
  *      <LI>Sessions can be set to expire after a specified
@@ -50,7 +50,7 @@ import java.util.Enumeration;
  *      can be limited.
  * </UL>
  * A session can be retrieved based on its session id, and all session id's
- * in a <code>SSLSessionContext</code> can be listed.
+ * in a {@code SSLSessionContext} can be listed.
  *
  * @see SSLSession
  *
@@ -61,19 +61,19 @@ import java.util.Enumeration;
 public interface SSLSessionContext {
 
     /**
-     * Returns the <code>SSLSession</code> bound to the specified session id.
+     * Returns the {@code SSLSession} bound to the specified session id.
      *
      * @param sessionId the Session identifier
-     * @return the <code>SSLSession</code> or null if
+     * @return the {@code SSLSession} or null if
      * the specified session id does not refer to a valid SSLSession.
      *
-     * @throws NullPointerException if <code>sessionId</code> is null.
+     * @throws NullPointerException if {@code sessionId} is null.
      */
     SSLSession getSession(byte[] sessionId);
 
     /**
      * Returns an Enumeration of all known session id's grouped under this
-     * <code>SSLSessionContext</code>.
+     * {@code SSLSessionContext}.
      * <p>Session contexts may not contain all sessions. For example,
      * stateless sessions are not stored in the session context.
      *
@@ -82,16 +82,17 @@ public interface SSLSessionContext {
     Enumeration<byte[]> getIds();
 
     /**
-     * Sets the timeout limit for <code>SSLSession</code> objects grouped
-     * under this <code>SSLSessionContext</code>.
+     * Sets the timeout limit for {@code SSLSession} objects grouped
+     * under this {@code SSLSessionContext}.
      * <p>
      * If the timeout limit is set to 't' seconds, a session exceeds the
      * timeout limit 't' seconds after its creation time.
      * When the timeout limit is exceeded for a session, the
-     * <code>SSLSession</code> object is invalidated and future connections
-     * cannot resume or rejoin the session.
+     * {@code SSLSession} object is marked so that future connections
+     * cannot resume or rejoin the session. Active sessions can continue
+     * to be used so long as resume and rejoin operations are not attempted.
      * A check for sessions exceeding the timeout is made immediately whenever
-     * the timeout limit is changed for this <code>SSLSessionContext</code>.
+     * the timeout limit is changed for this {@code SSLSessionContext}.
      *
      * @apiNote Note that the JDK Implementation uses default values for both
      *          the session cache size and timeout.  See
@@ -109,17 +110,18 @@ public interface SSLSessionContext {
     void setSessionTimeout(int seconds);
 
     /**
-     * Returns the timeout limit of <code>SSLSession</code> objects grouped
-     * under this <code>SSLSessionContext</code>.
+     * Returns the timeout limit of {@code SSLSession} objects grouped
+     * under this {@code SSLSessionContext}.
      * <p>
      * If the timeout limit is set to 't' seconds, a session exceeds the
      * timeout limit 't' seconds after its creation time.
      * When the timeout limit is exceeded for a session, the
-     * <code>SSLSession</code> object is invalidated and future connections
-     * cannot resume or rejoin the session.
+     * {@code SSLSession} object is marked so that future connections
+     * cannot resume or rejoin the session. Active sessions can continue
+     * to be used so long as resume and rejoin operations are not attempted.
      * A check for sessions exceeding the timeout limit is made immediately
      * whenever the timeout limit is changed for this
-     * <code>SSLSessionContext</code>.
+     * {@code SSLSessionContext}.
      *
      * @implNote The JDK implementation returns the session timeout as set by
      *           the {@code setSessionTimeout} method, or if not set, a default
@@ -133,8 +135,8 @@ public interface SSLSessionContext {
     int getSessionTimeout();
 
     /**
-     * Sets the size of the cache used for storing <code>SSLSession</code>
-     * objects grouped under this <code>SSLSessionContext</code>.
+     * Sets the size of the cache used for storing {@code SSLSession}
+     * objects grouped under this {@code SSLSessionContext}.
      *
      * @apiNote Note that the JDK Implementation uses default values for both
      *          the session cache size and timeout.  See
@@ -152,8 +154,8 @@ public interface SSLSessionContext {
     void setSessionCacheSize(int size);
 
     /**
-     * Returns the size of the cache used for storing <code>SSLSession</code>
-     * objects grouped under this <code>SSLSessionContext</code>.
+     * Returns the size of the cache used for storing {@code SSLSession}
+     * objects grouped under this {@code SSLSessionContext}.
      *
      * @implNote The JDK implementation returns the cache size as set by
      *           the {@code setSessionCacheSize} method, or if not set, the

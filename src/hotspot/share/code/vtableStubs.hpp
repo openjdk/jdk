@@ -28,7 +28,6 @@
 #include "asm/macroAssembler.hpp"
 #include "code/vmreg.hpp"
 #include "memory/allStatic.hpp"
-#include "sanitizers/ub.hpp"
 #include "utilities/checkedCast.hpp"
 
 // A VtableStub holds an individual code stub for a pair (vtable index, #args) for either itables or vtables
@@ -94,6 +93,7 @@ class VtableStubs : AllStatic {
   static VtableStub* lookup            (bool is_vtable_stub, int vtable_index);
   static void        enter             (bool is_vtable_stub, int vtable_index, VtableStub* s);
   static inline uint hash              (bool is_vtable_stub, int vtable_index);
+  static inline uint unsafe_hash       (address entry_point);
   static address     find_stub         (bool is_vtable_stub, int vtable_index);
   static void        bookkeeping(MacroAssembler* masm, outputStream* out, VtableStub* s,
                                  address npe_addr, address ame_addr,   bool is_vtable_stub,
@@ -119,6 +119,12 @@ class VtableStub {
  private:
   friend class VtableStubs;
 
+  enum class Type : uint8_t {
+    itable_stub,
+    vtable_stub,
+  };
+
+
   static address _chunk;             // For allocation
   static address _chunk_end;         // For allocation
   static VMReg   _receiver_location; // Where to find receiver
@@ -127,14 +133,14 @@ class VtableStub {
   const short    _index;             // vtable index
   short          _ame_offset;        // Where an AbstractMethodError might occur
   short          _npe_offset;        // Where a NullPointerException might occur
-  bool           _is_vtable_stub;    // True if vtable stub, false, is itable stub
+  Type           _type;              // Type, either vtable stub or itable stub
   /* code follows here */            // The vtableStub code
 
   void* operator new(size_t size, int code_size) throw();
 
   VtableStub(bool is_vtable_stub, short index)
         : _next(nullptr), _index(index), _ame_offset(-1), _npe_offset(-1),
-          _is_vtable_stub(is_vtable_stub) {}
+          _type(is_vtable_stub ? Type::vtable_stub : Type::itable_stub) {}
   VtableStub* next() const                       { return _next; }
   int index() const                              { return _index; }
   static VMReg receiver_location()               { return _receiver_location; }
@@ -142,12 +148,12 @@ class VtableStub {
 
  public:
   address code_begin() const                     { return (address)(this + 1); }
-  address code_end() const                       { return code_begin() + VtableStubs::code_size_limit(_is_vtable_stub); }
+  address code_end() const                       { return code_begin() + VtableStubs::code_size_limit(is_vtable_stub()); }
   address entry_point() const                    { return code_begin(); }
   static int entry_offset()                      { return sizeof(class VtableStub); }
 
   bool matches(bool is_vtable_stub, int index) const {
-    return _index == index && _is_vtable_stub == is_vtable_stub;
+    return _index == index && this->is_vtable_stub() == is_vtable_stub;
   }
   bool contains(address pc) const                { return code_begin() <= pc && pc < code_end(); }
 
@@ -173,11 +179,8 @@ class VtableStub {
 
  public:
   // Query
-  bool is_itable_stub()                          { return !_is_vtable_stub; }
-  // We reinterpret arbitrary memory as VtableStub. This does not cause failures because the lookup/equality
-  // check will reject false objects. Disabling UBSan is a temporary workaround until JDK-8331725 is fixed.
-  ATTRIBUTE_NO_UBSAN
-  bool is_vtable_stub()                          { return  _is_vtable_stub; }
+  bool is_itable_stub() const                    { return _type == Type::itable_stub; }
+  bool is_vtable_stub() const                    { return _type == Type::vtable_stub; }
   bool is_abstract_method_error(address epc)     { return epc == code_begin()+_ame_offset; }
   bool is_null_pointer_exception(address epc)    { return epc == code_begin()+_npe_offset; }
 

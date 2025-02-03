@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import jdk.jfr.Period;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.consumer.RepositoryFiles;
 import jdk.jfr.internal.event.EventConfiguration;
+import jdk.jfr.internal.management.HiddenWait;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.Utils;
 
@@ -57,6 +58,7 @@ public final class MetadataRepository {
     private final Map<String, EventType> nativeEventTypes = LinkedHashMap.newHashMap(150);
     private final Map<String, EventControl> nativeControls = LinkedHashMap.newHashMap(150);
     private final SettingsManager settingsManager = new SettingsManager();
+    private final HiddenWait threadSleeper = new HiddenWait();
     private Constructor<EventConfiguration> cachedEventConfigurationConstructor;
     private boolean staleMetadata = true;
     private boolean unregistered;
@@ -121,7 +123,6 @@ public final class MetadataRepository {
     }
 
     public synchronized void unregister(Class<? extends Event> eventClass) {
-        SecuritySupport.checkRegisterPermission();
         EventConfiguration configuration = getConfiguration(eventClass, false);
         if (configuration != null) {
             configuration.getPlatformEventType().setRegistered(false);
@@ -133,7 +134,6 @@ public final class MetadataRepository {
     }
 
     public synchronized EventType register(Class<? extends jdk.internal.event.Event> eventClass, List<AnnotationElement> dynamicAnnotations, List<ValueDescriptor> dynamicFields) {
-        SecuritySupport.checkRegisterPermission();
         if (JVM.isExcluded(eventClass)) {
             // Event classes are marked as excluded during class load
             // if they override methods in the jdk.jfr.Event class, i.e. commit().
@@ -184,7 +184,7 @@ public final class MetadataRepository {
             if (cachedEventConfigurationConstructor == null) {
                 var argClasses = new Class<?>[] { EventType.class, EventControl.class};
                 Constructor<EventConfiguration> c = EventConfiguration.class.getDeclaredConstructor(argClasses);
-                SecuritySupport.setAccessible(c);
+                c.setAccessible(true);
                 cachedEventConfigurationConstructor = c;
             }
             return cachedEventConfigurationConstructor.newInstance(eventType, ec);
@@ -341,7 +341,7 @@ public final class MetadataRepository {
                 lastMillis = millis;
                 return;
             }
-            Utils.takeNap(1);
+            threadSleeper.takeNap(1);
         }
     }
 

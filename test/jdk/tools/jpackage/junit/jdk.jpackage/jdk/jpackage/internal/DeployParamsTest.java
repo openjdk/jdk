@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,14 @@
  */
 package jdk.jpackage.internal;
 
-import java.nio.file.Path;
-import java.io.IOException;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
-import org.junit.Rule;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TemporaryFolder;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 
 public class DeployParamsTest {
-
-    @Rule
-    public final TemporaryFolder tempFolder = new TemporaryFolder();
-
-    @Rule
-    public final ExpectedException thrown = ExpectedException.none();
-
-    @Before
-    public void setUp() throws IOException {
-        testRoot = tempFolder.newFolder().toPath();
-    }
 
     @Test
     public void testValidAppName() throws PackagerException {
@@ -56,58 +42,13 @@ public class DeployParamsTest {
         setAppNameAndValidate("Test - Name !!!");
     }
 
-    @Test
-    public void testInvalidAppName() throws PackagerException {
-        initForInvalidAppNamePackagerException();
+    @ParameterizedTest
+    @ValueSource(strings = {"Test\nName", "Test\rName", "TestName\\", "Test \" Name"})
+    public void testInvalidAppName(String appName) throws PackagerException {
         initParamsAppName();
-        setAppNameAndValidate("Test\nName");
-    }
+        var ex = assertThrowsExactly(PackagerException.class, () -> setAppNameAndValidate(appName));
 
-    @Test
-    public void testInvalidAppName2() throws PackagerException {
-        initForInvalidAppNamePackagerException();
-        initParamsAppName();
-        setAppNameAndValidate("Test\rName");
-    }
-
-    @Test
-    public void testInvalidAppName3() throws PackagerException {
-        initForInvalidAppNamePackagerException();
-        initParamsAppName();
-        setAppNameAndValidate("TestName\\");
-    }
-
-    @Test
-    public void testInvalidAppName4() throws PackagerException {
-        initForInvalidAppNamePackagerException();
-        initParamsAppName();
-        setAppNameAndValidate("Test \" Name");
-    }
-
-    private void initForInvalidAppNamePackagerException() {
-        thrown.expect(PackagerException.class);
-
-        String msg = "Error: Invalid Application name";
-
-        // Unfortunately org.hamcrest.core.StringStartsWith is not available
-        // with older junit, DIY
-
-        // thrown.expectMessage(startsWith("Error: Invalid Application name"));
-        thrown.expectMessage(new BaseMatcher() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public boolean matches(Object o) {
-                if (o instanceof String) {
-                    return ((String) o).startsWith(msg);
-                }
-                return false;
-            }
-
-            @Override
-            public void describeTo(Description d) {
-                d.appendText(msg);
-            }
-        });
+        assertTrue(ex.getMessage().startsWith("Error: Invalid Application name"));
     }
 
     // Returns deploy params initialized to pass all validation, except for
@@ -115,7 +56,6 @@ public class DeployParamsTest {
     private void initParamsAppName() {
         params = new DeployParams();
 
-        params.setOutput(testRoot);
         params.addBundleArgument(Arguments.CLIOptions.APPCLASS.getId(),
                 "TestClass");
         params.addBundleArgument(Arguments.CLIOptions.MAIN_JAR.getId(),
@@ -128,6 +68,5 @@ public class DeployParamsTest {
         params.validate();
     }
 
-    private Path testRoot = null;
     private DeployParams params;
 }

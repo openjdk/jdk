@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ class MutableSpace: public CHeapObj<mtGC> {
   // Return true if this space needs to be expanded in order to satisfy an
   // allocation request of the indicated size.  Concurrent allocations and
   // resizes may change the result of a later call.  Used by oldgen allocator.
-  // precondition: holding PSOldGenExpand_lock
+  // precondition: holding PSOldGenExpand_lock if not VM thread
   bool needs_expand(size_t word_size) const;
 
   // Iteration.

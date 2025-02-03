@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  *          java.base/java.util:open
  * @comment Opens java.util so HashMap bytecode generation can access its nested
@@ -127,7 +126,7 @@ class ClassHierarchyInfoTest {
                     if (cle instanceof MethodModel mm) {
                         clb.transformMethod(mm, (mb, me) -> {
                             if (me instanceof CodeModel cm) {
-                                mb.withCode(cob -> cm.forEachElement(cob));
+                                mb.withCode(cm::forEach);
                             }
                             else
                                 mb.with(me);

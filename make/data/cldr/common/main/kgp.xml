@@ -1213,7 +1213,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -2261,6 +2261,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Óra kar {0}</regionFormat>
 			<regionFormat type="daylight">Prỹg kã óra kar {0}</regionFormat>
 			<regionFormat type="standard">Óra pẽ {0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honãruru</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Ga-kar Óra Vẽnh-krén-ja</standard>
@@ -2968,9 +2971,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Uran Mator</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Sojmarsỹ</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Mỹkau</exemplarCity>
 			</zone>
@@ -3364,9 +3364,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>Jyjy</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honãruru</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ỹkoragi</exemplarCity>
 			</zone>
@@ -3756,13 +3753,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Óra Sĩnỹ tá</generic>
 					<standard>Óra Pã Sĩnỹ tá</standard>
 					<daylight>Rỹ Kã óra Sĩnỹ tá</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Óra Sojmarsỹ tá</generic>
-					<standard>Óra Pã Sojmarsỹ tá</standard>
-					<daylight>Rỹ Kã óra Sojmarsỹ tá</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">

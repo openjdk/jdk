@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
- * @LastModified: May 2022
+ * @LastModified: Nov 2024
  */
 public class XPATHErrorResources_it extends ListResourceBundle
 {
@@ -326,7 +326,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
          "WG_PROPERTY_NOT_SUPPORTED";
   public static final String WG_DONT_DO_ANYTHING_WITH_NS =
          "WG_DONT_DO_ANYTHING_WITH_NS";
-  public static final String WG_SECURITY_EXCEPTION = "WG_SECURITY_EXCEPTION";
   public static final String WG_QUO_NO_LONGER_DEFINED =
          "WG_QUO_NO_LONGER_DEFINED";
   public static final String WG_NEED_DERIVED_OBJECT_TO_IMPLEMENT_NODETEST =
@@ -838,9 +837,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { WG_DONT_DO_ANYTHING_WITH_NS,
       "Non effettuare alcuna operazione sullo spazio di nomi {0} nella propriet\u00E0: {1}"},
-
-  { WG_SECURITY_EXCEPTION,
-      "SecurityException nel tentativo di accedere alla propriet\u00E0 di sistema XSL {0}"},
 
   { WG_QUO_NO_LONGER_DEFINED,
       "Sintassi obsoleta: quo(...) non \u00E8 pi\u00F9 definito nell'XPath."},

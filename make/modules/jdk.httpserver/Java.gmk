@@ -23,6 +23,6 @@
 # questions.
 #
 
-DISABLED_WARNINGS_java += missing-explicit-ctor this-escape
+DISABLED_WARNINGS_java += this-escape
 
 COPY += .ico

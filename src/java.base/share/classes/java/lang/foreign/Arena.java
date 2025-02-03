@@ -61,7 +61,7 @@ import java.util.function.Consumer;
  * by the garbage collector. The scope of an automatic arena is an automatic scope. As
  * such, the regions of memory backing memory segments allocated with the automatic arena
  * are deallocated at some unspecified time <em>after</em> the automatic arena (and all
- * the segments allocated by it) becomes <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>,
+ * the segments allocated by it) becomes {@linkplain java.lang.ref##reachability unreachable},
  * as shown below:
  * {@snippet lang = java:
  * MemorySegment segment = Arena.ofAuto().allocate(100, 1); // @highlight regex='ofAuto()'

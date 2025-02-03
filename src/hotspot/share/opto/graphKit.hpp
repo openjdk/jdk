@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ class GraphKit : public Phase {
 
 #ifdef ASSERT
   ~GraphKit() {
-    assert(failing() || !has_exceptions(),
+    assert(failing_internal() || !has_exceptions(),
            "unless compilation failed, user must call transfer_exceptions_into_jvms");
   }
 #endif
@@ -182,6 +182,7 @@ class GraphKit : public Phase {
 
   // Tell if the compilation is failing.
   bool failing() const { return C->failing(); }
+  bool failing_internal() const { return C->failing_internal(); }
 
   // Set _map to null, signalling a stop to further bytecode execution.
   // Preserve the map intact for future use, and return it back to the caller.
@@ -541,26 +542,6 @@ class GraphKit : public Phase {
   Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
                   MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
                   bool require_atomic_access = false, bool unaligned = false,
-                  bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0) {
-    // This version computes alias_index from bottom_type
-    return make_load(ctl, adr, t, bt, adr->bottom_type()->is_ptr(),
-                     mo, control_dependency, require_atomic_access,
-                     unaligned, mismatched, unsafe, barrier_data);
-  }
-  Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt, const TypePtr* adr_type,
-                  MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
-                  bool require_atomic_access = false, bool unaligned = false,
-                  bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0) {
-    // This version computes alias_index from an address type
-    assert(adr_type != nullptr, "use other make_load factory");
-    return make_load(ctl, adr, t, bt, C->get_alias_index(adr_type),
-                     mo, control_dependency, require_atomic_access,
-                     unaligned, mismatched, unsafe, barrier_data);
-  }
-  // This is the base version which is given an alias index.
-  Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt, int adr_idx,
-                  MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
-                  bool require_atomic_access = false, bool unaligned = false,
                   bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0);
 
   // Create & transform a StoreNode and store the effect into the
@@ -571,26 +552,8 @@ class GraphKit : public Phase {
   // procedure must indicate that the store requires `release'
   // semantics, if the stored value is an object reference that might
   // point to a new object and may become externally visible.
-  Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
-                        const TypePtr* adr_type,
-                        MemNode::MemOrd mo,
-                        bool require_atomic_access = false,
-                        bool unaligned = false,
-                        bool mismatched = false,
-                        bool unsafe = false,
-                        int barrier_data = 0) {
-    // This version computes alias_index from an address type
-    assert(adr_type != nullptr, "use other store_to_memory factory");
-    return store_to_memory(ctl, adr, val, bt,
-                           C->get_alias_index(adr_type),
-                           mo, require_atomic_access,
-                           unaligned, mismatched, unsafe,
-                           barrier_data);
-  }
-  // This is the base version which is given alias index
   // Return the new StoreXNode
   Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
-                        int adr_idx,
                         MemNode::MemOrd,
                         bool require_atomic_access = false,
                         bool unaligned = false,
@@ -730,7 +693,7 @@ class GraphKit : public Phase {
   // Replace the call with the current state of the kit.  Requires
   // that the call was generated with separate io_projs so that
   // exceptional control flow can be handled properly.
-  void replace_call(CallNode* call, Node* result, bool do_replaced_nodes = false);
+  void replace_call(CallNode* call, Node* result, bool do_replaced_nodes = false, bool do_asserts = true);
 
   // helper functions for statistics
   void increment_counter(address counter_addr);   // increment a debug counter
@@ -907,7 +870,7 @@ class GraphKit : public Phase {
 
   // Vector API support (implemented in vectorIntrinsics.cpp)
   Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);
-  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector = false);
+  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem);
   Node* vector_shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
 };
 

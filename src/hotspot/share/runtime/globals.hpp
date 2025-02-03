@@ -128,6 +128,9 @@ const size_t minimumSymbolTableSize = 1024;
           "Use 32-bit class pointers in 64-bit VM. "                        \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
+  product(bool, UseCompactObjectHeaders, false, EXPERIMENTAL,               \
+          "Use compact 64-bit object headers in 64-bit VM")                 \
+                                                                            \
   product(int, ObjectAlignmentInBytes, 8,                                   \
           "Default object alignment in bytes, 8 is minimum")                \
           range(8, 256)                                                     \
@@ -144,6 +147,7 @@ const size_t minimumSymbolTableSize = 1024;
                            constraint)
 const bool UseCompressedOops = false;
 const bool UseCompressedClassPointers = false;
+const bool UseCompactObjectHeaders = false;
 const int ObjectAlignmentInBytes = 8;
 
 #endif // _LP64
@@ -288,9 +292,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseInlineCaches, true,                                      \
           "Use Inline Caches for virtual calls ")                           \
-                                                                            \
-  product(size_t, InlineCacheBufferSize, 10*K, EXPERIMENTAL,                \
-          "InlineCacheBuffer size")                                         \
                                                                             \
   product(bool, InlineArrayCopy, true, DIAGNOSTIC,                          \
           "Inline arraycopy native that is known to be part of "            \
@@ -680,9 +681,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, PrintCodeCacheExtension, false,                             \
           "Print extension of code cache")                                  \
                                                                             \
-  develop(bool, UsePrivilegedStack, true,                                   \
-          "Enable the security JVM functions")                              \
-                                                                            \
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
                                                                             \
@@ -698,9 +696,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
-                                                                            \
-  product_pd(bool, DontYieldALot,                                           \
-             "(Deprecated) Throw away obvious excess yield calls")          \
                                                                             \
   product(bool, DisablePrimordialThreadGuardPages, false, EXPERIMENTAL,     \
                "Disable the use of stack guard pages if the JVM is loaded " \
@@ -794,10 +789,6 @@ const int ObjectAlignmentInBytes = 8;
           "Eagerly initialize -Xrun libraries; allows startup profiling, "  \
           "but not all -Xrun libraries may support the state of the VM "    \
           "at this time")                                                   \
-                                                                            \
-  product(bool, PreserveAllAnnotations, false,                              \
-          "(Deprecated) Preserve RuntimeInvisibleAnnotations as well "      \
-          "as RuntimeVisibleAnnotations")                                   \
                                                                             \
   develop(uintx, PreallocatedOutOfMemoryErrorCount, 4,                      \
           "Number of OutOfMemoryErrors preallocated with backtrace")        \
@@ -955,9 +946,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, EnableThreadSMRStatistics, trueInDebug, DIAGNOSTIC,         \
              "Enable Thread SMR Statistics")                                \
-                                                                            \
-  product(bool, UseNotificationThread, true,                                \
-          "(Deprecated) Use Notification Thread")                           \
                                                                             \
   product(bool, Inline, true,                                               \
           "Enable inlining")                                                \
@@ -1208,9 +1196,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseCompiler, true,                                          \
           "Use Just-In-Time compilation")                                   \
                                                                             \
-  develop(intx, CounterHalfLifeTime,    30,                                 \
-          "Half-life time of invocation counters (in seconds)")             \
-                                                                            \
   product(bool, AlwaysCompileLoopMethods, false,                            \
           "When using recompilation, never interpret methods "              \
           "containing loops")                                               \
@@ -1303,6 +1288,12 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(int, MaxElementPrintSize, 256,                                    \
           "maximum number of elements to print")                            \
+                                                                            \
+  develop(int, MaxStringPrintSize, 256,                                     \
+          "maximum number of characters to print for a java.lang.String "   \
+          "in the VM. If exceeded, an abridged version of the string is "   \
+          "printed with the middle of the string elided.")                  \
+          range(2, O_BUFLEN)                                                \
                                                                             \
   develop(intx, MaxSubklassPrintSize, 4,                                    \
           "maximum number of subklasses to print when printing klass")      \
@@ -1957,6 +1948,17 @@ const int ObjectAlignmentInBytes = 8;
           "2: monitors & new lightweight locking (LM_LIGHTWEIGHT, default)") \
           range(0, 2)                                                       \
                                                                             \
+  product(bool, UseObjectMonitorTable, false, DIAGNOSTIC,                   \
+          "With Lightweight Locking mode, use a table to record inflated "  \
+          "monitors rather than the first word of the object.")             \
+                                                                            \
+  product(int, LightweightFastLockingSpins, 13, DIAGNOSTIC,                 \
+          "Specifies the number of times lightweight fast locking will "    \
+          "attempt to CAS the markWord before inflating. Between each "     \
+          "CAS it will spin for exponentially more time, resulting in "     \
+          "a total number of spins on the order of O(2^value)")             \
+          range(1, 30)                                                      \
+                                                                            \
   product(uint, TrimNativeHeapInterval, 0,                                  \
           "Interval, in ms, at which the JVM will trim the native heap if " \
           "the platform supports that. Lower values will reclaim memory "   \
@@ -1987,6 +1989,10 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, StressSecondarySupers, false, DIAGNOSTIC,                   \
           "Use a terrible hash function in order to generate many collisions.") \
+                                                                            \
+  product(bool, UseThreadsLockThrottleLock, true, DIAGNOSTIC,               \
+          "Use an extra lock during Thread start and exit to alleviate"     \
+          "contention on Threads_lock.")                                    \
 
 // end of RUNTIME_FLAGS
 

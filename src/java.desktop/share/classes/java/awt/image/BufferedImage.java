@@ -31,8 +31,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.Vector;
@@ -800,26 +798,16 @@ public class BufferedImage extends java.awt.Image
         }   // else if ((raster instanceof ByteComponentRaster) &&
     }
 
-    @SuppressWarnings("removal")
     private static boolean isStandard(ColorModel cm, WritableRaster wr) {
         final Class<? extends ColorModel> cmClass = cm.getClass();
         final Class<? extends WritableRaster> wrClass = wr.getClass();
         final Class<? extends SampleModel> smClass = wr.getSampleModel().getClass();
 
-        final PrivilegedAction<Boolean> checkClassLoadersAction =
-                new PrivilegedAction<Boolean>()
-        {
+        final ClassLoader std = System.class.getClassLoader();
 
-            @Override
-            public Boolean run() {
-                final ClassLoader std = System.class.getClassLoader();
-
-                return (cmClass.getClassLoader() == std) &&
-                        (smClass.getClassLoader() == std) &&
-                        (wrClass.getClassLoader() == std);
-            }
-        };
-        return AccessController.doPrivileged(checkClassLoadersAction);
+        return (cmClass.getClassLoader() == std) &&
+                (smClass.getClassLoader() == std) &&
+                (wrClass.getClassLoader() == std);
     }
 
     /**

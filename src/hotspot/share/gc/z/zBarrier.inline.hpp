@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -745,7 +745,7 @@ inline void ZBarrier::mark_and_remember(volatile zpointer* p, zaddress addr) {
 
 template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
 inline void ZBarrier::mark(zaddress addr) {
-  assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");
+  assert_is_oop(addr);
 
   if (ZHeap::heap()->is_old(addr)) {
     ZGeneration::old()->mark_object_if_active<resurrect, gc_thread, follow, finalizable>(addr);
@@ -757,7 +757,7 @@ inline void ZBarrier::mark(zaddress addr) {
 template <bool resurrect, bool gc_thread, bool follow>
 inline void ZBarrier::mark_young(zaddress addr) {
   assert(ZGeneration::young()->is_phase_mark(), "Should only be called during marking");
-  assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");
+  assert_is_oop(addr);
   assert(ZHeap::heap()->is_young(addr), "Must be young");
 
   ZGeneration::young()->mark_object<resurrect, gc_thread, follow, ZMark::Strong>(addr);

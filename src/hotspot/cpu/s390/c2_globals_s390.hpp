@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -60,7 +60,8 @@ define_pd_global(bool, UseCISCSpill,                 true);
 define_pd_global(bool, OptoBundling,                 false);
 define_pd_global(bool, OptoScheduling,               false);
 define_pd_global(bool, OptoRegScheduling,            false);
-define_pd_global(bool, SuperWordLoopUnrollAnalysis,  false);
+define_pd_global(bool, SuperWordLoopUnrollAnalysis,  true);
+define_pd_global(uint, SuperWordStoreToLoadForwardingFailureDetection, 16);
 // On s390x, we can clear the array with a single instruction,
 // so don't idealize it.
 define_pd_global(bool, IdealizeClearArrayNode,       false);

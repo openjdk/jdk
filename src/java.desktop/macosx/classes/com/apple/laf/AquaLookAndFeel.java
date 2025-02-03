@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.apple.laf;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.KeyboardFocusManager;
-import java.security.PrivilegedAction;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -55,6 +54,8 @@ import javax.swing.plaf.basic.BasicLookAndFeel;
 
 import apple.laf.JRSUIControl;
 import apple.laf.JRSUIUtils;
+import sun.swing.AltProcessor;
+import sun.swing.MnemonicHandler;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 
@@ -152,29 +153,19 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @see #uninitialize
      * @see UIManager#setLookAndFeel
      */
-    @SuppressWarnings("removal")
+    @SuppressWarnings("restricted")
     public void initialize() {
-        java.security.AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("osxui");
-                    return null;
-                }
-            });
-
-        java.security.AccessController.doPrivileged(new PrivilegedAction<Void>(){
-            @Override
-            public Void run() {
-                JRSUIControl.initJRSUI();
-                return null;
-            }
-        });
+        System.loadLibrary("osxui");
+        JRSUIControl.initJRSUI();
 
         super.initialize();
         final ScreenPopupFactory spf = new ScreenPopupFactory();
         spf.setActive(true);
         PopupFactory.setSharedInstance(spf);
 
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(AquaMnemonicHandler.getInstance());
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addKeyEventPostProcessor(AltProcessor.getInstance());
+        MnemonicHandler.setMnemonicHidden(true);
     }
 
     /**
@@ -185,7 +176,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @see #initialize
      */
     public void uninitialize() {
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventPostProcessor(AquaMnemonicHandler.getInstance());
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .removeKeyEventPostProcessor(AltProcessor.getInstance());
 
         final PopupFactory popupFactory = PopupFactory.getSharedInstance();
         if (popupFactory instanceof ScreenPopupFactory spf) {

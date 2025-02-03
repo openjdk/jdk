@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import jdk.httpclient.test.lib.http2.Http2TestServerConnection.ResponseHeaders;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.HeaderFrame;
 import jdk.internal.net.http.frame.HeadersFrame;
+import jdk.internal.net.http.frame.Http2Frame;
 import jdk.internal.net.http.frame.ResetFrame;
 
 import javax.net.ssl.SSLSession;
@@ -39,6 +40,7 @@ import java.net.http.HttpHeaders;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiPredicate;
 
 public class Http2TestExchangeImpl implements Http2TestExchange {
 
@@ -132,8 +134,13 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
         return os;
     }
 
-    @Override
     public void sendResponseHeaders(int rCode, long responseLength) throws IOException {
+        sendResponseHeaders(rCode, responseLength, (n,v) -> false);
+    }
+    @Override
+    public void sendResponseHeaders(int rCode, long responseLength,
+                                    BiPredicate<CharSequence, CharSequence> insertionPolicy)
+            throws IOException {
         // Do not set Content-Length for 100, and do not set END_STREAM
         if (rCode == 100) responseLength = 0;
 
@@ -147,7 +154,7 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
         HttpHeaders headers = rspheadersBuilder.build();
 
         ResponseHeaders response
-                = new ResponseHeaders(headers);
+                = new ResponseHeaders(headers, insertionPolicy);
         response.streamid(streamid);
         response.setFlag(HeaderFrame.END_HEADERS);
 
@@ -170,6 +177,11 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
 
     public void sendResponseHeaders(ResponseHeaders response) throws IOException {
         conn.outputQ.put(response);
+    }
+
+    @Override
+    public void sendFrames(List<Http2Frame> frames) throws IOException {
+        conn.sendFrames(frames);
     }
 
     @Override
@@ -218,6 +230,11 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
         } catch (IOException ex) {
             System.err.println("TestServer: pushPromise exception: " + ex);
         }
+    }
+
+    @Override
+    public String getConnectionKey() {
+        return conn.connectionKey();
     }
 
     private boolean isHeadRequest() {

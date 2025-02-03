@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,12 +51,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.GeneralNameInterface;
 import sun.security.x509.URIName;
 import sun.security.util.Cache;
 import sun.security.util.Debug;
+import sun.security.util.SecurityProperties;
 
 /**
  * A <code>CertStore</code> that retrieves <code>Certificates</code> or
@@ -175,7 +175,7 @@ class URICertStore extends CertStoreSpi {
      */
     private static int initializeTimeout(String prop, int def) {
         int timeoutVal =
-                GetPropertyAction.privilegedGetTimeoutProp(prop, def, debug);
+                SecurityProperties.getTimeoutSystemProp(prop, def, debug);
         if (debug != null) {
             debug.println(prop + " set to " + timeoutVal + " milliseconds");
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,11 +105,11 @@ public interface DSAKeyPairGenerator {
      * @param modlen the modulus length in bits. Valid values are any
      * multiple of 64 between 512 and 1024, inclusive, 2048, and 3072.
      *
-     * @param random the random bit source to use to generate key bits;
-     * can be null.
-     *
      * @param genParams whether to generate new parameters for
      * the modulus length requested.
+     *
+     * @param random the random bit source to use to generate key bits;
+     * can be null.
      *
      * @throws    InvalidParameterException if {@code modlen} is
      * invalid, or unsupported, or if {@code genParams} is false and there

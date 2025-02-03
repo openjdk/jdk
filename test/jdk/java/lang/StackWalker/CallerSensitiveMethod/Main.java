@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @build java.base/java.util.CSM csm/*
  * @run main/othervm csm/jdk.test.CallerSensitiveTest
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames csm/jdk.test.CallerSensitiveTest
- * @run main/othervm -Djava.security.manager=allow csm/jdk.test.CallerSensitiveTest sm
  */
 public class Main {
 }

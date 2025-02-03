@@ -95,7 +95,7 @@ class AdaptCodeTest {
                     if ((val instanceof Integer) && ((Integer) val) == 13) {
                         val = 7;
                     }
-                    codeB.loadConstant(i.opcode(), val);
+                    codeB.loadConstant(val);
                 }
                 default -> codeB.with(codeE);
             }
@@ -114,7 +114,7 @@ class AdaptCodeTest {
     void testCopy() throws Exception {
         var cc = ClassFile.of();
         ClassModel cm = cc.parse(testClassPath);
-        byte[] newBytes = cc.build(cm.thisClass().asSymbol(), cb -> cm.forEachElement(cb));
+        byte[] newBytes = cc.build(cm.thisClass().asSymbol(), cm::forEach);
 //        TestUtil.writeClass(newBytes, "TestClass.class");
         String result = (String)
                 new ByteArrayClassLoader(AdaptCodeTest.class.getClassLoader(), testClassName, newBytes)

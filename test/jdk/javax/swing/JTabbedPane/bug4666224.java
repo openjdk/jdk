@@ -49,7 +49,7 @@ public class bug4666224 {
     private static JFrame frame;
 
     private static final String INSTRUCTIONS = """
-                ON ALL PLATFORMS
+                ON ALL PLATFORMS except macos where pt.6 is not applicable
                     1. Click on any of the tabs, focus indicator is visible.
                     2. Lose focus on the window by clicking on some other window.
                     3. Focus indicator should disappear

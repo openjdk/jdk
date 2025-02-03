@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ public:
 
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3);
+
+  virtual void resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2);
 };
 
 #endif // CPU_S390_GC_SHARED_MODREFBARRIERSETASSEMBLER_S390_HPP

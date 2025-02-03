@@ -54,11 +54,6 @@ class PhaseCFG;
 #define DEBUG_ARG(x)
 #endif
 
-// Define the initial sizes for allocation of the resizable code buffer
-enum {
-  initial_const_capacity =   4 * 1024
-};
-
 class BufferSizingData {
 public:
   int _stub;
@@ -208,6 +203,9 @@ public:
 
   bool starts_bundle(const Node *n) const;
   bool contains_as_owner(GrowableArray<MonitorValue*> *monarray, ObjectValue *ov) const;
+  bool contains_as_scalarized_obj(JVMState* jvms, MachSafePointNode* sfn,
+                                  GrowableArray<ScopeValue*>* objs,
+                                  ObjectValue* ov) const;
 
   // Dump formatted assembly
 #if defined(SUPPORT_OPTO_ASSEMBLY)

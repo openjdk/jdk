@@ -26,6 +26,7 @@
  * @summary Testing ClassFile handling JSR and RET instructions.
  * @run junit DiscontinuedInstructionsTest
  */
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
@@ -63,7 +64,7 @@ class DiscontinuedInstructionsTest {
                         .pop()
                         .with(DiscontinuedInstruction.RetInstruction.of(355))));
 
-        var c = cc.parse(bytes).methods().get(0).code().get();
+        var c = (CodeAttribute) cc.parse(bytes).methods().get(0).code().get();
         assertEquals(356, c.maxLocals());
         assertEquals(6, c.maxStack());
 

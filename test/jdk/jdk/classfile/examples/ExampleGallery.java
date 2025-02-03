@@ -207,7 +207,7 @@ public class ExampleGallery {
     public byte[] changeFieldFlags(ClassModel cm) {
         return ClassFile.of().transformClass(cm, ClassTransform.transformingFields((fb, fe) -> {
             switch (fe) {
-                case AccessFlags a -> fb.with(AccessFlags.ofField(a.flagsMask() & ~ClassFile.ACC_PUBLIC & ~ClassFile.ACC_PROTECTED));
+                case AccessFlags a -> fb.withFlags(a.flagsMask() & ~ClassFile.ACC_PUBLIC & ~ClassFile.ACC_PROTECTED);
                 default -> fb.with(fe);
             }
         }));

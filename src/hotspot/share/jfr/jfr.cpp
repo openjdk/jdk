@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
@@ -98,6 +97,10 @@ void Jfr::on_java_thread_start(JavaThread* starter, JavaThread* startee) {
 
 void Jfr::on_set_current_thread(JavaThread* jt, oop thread) {
   JfrThreadLocal::on_set_current_thread(jt, thread);
+}
+
+void Jfr::initialize_main_thread(JavaThread* jt) {
+  JfrThreadLocal::initialize_main_thread(jt);
 }
 
 void Jfr::on_resolution(const CallInfo& info, TRAPS) {

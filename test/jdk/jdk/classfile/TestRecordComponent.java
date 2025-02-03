@@ -105,7 +105,7 @@ class TestRecordComponent {
     void testOptions() throws Exception {
         AtomicInteger count = new AtomicInteger(0);
         ClassModel cm = ClassFile.of().parse(Files.readAllBytes(testClassPath));
-        cm.forEachElement((ce) -> {
+        cm.forEach((ce) -> {
             if (ce instanceof RecordAttribute rm) {
                 count.addAndGet(rm.components().size());
             }});

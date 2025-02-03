@@ -41,7 +41,7 @@ import java.nio.ByteBuffer;
 
 @Measurement(iterations = 3, time = 10)
 @Warmup(iterations = 3, time = 10)
-@Fork(value = 1, jvmArgsAppend = {"--add-opens", "java.base/com.sun.crypto.provider=ALL-UNNAMED"})
+@Fork(value = 1, jvmArgs = {"--add-opens", "java.base/com.sun.crypto.provider=ALL-UNNAMED"})
 public class Poly1305DigestBench extends CryptoBase {
     public static final int SET_SIZE = 128;
 

@@ -54,9 +54,6 @@ import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RemoteObject;
 import java.rmi.server.RemoteObjectInvocationHandler;
 import java.rmi.server.RemoteRef;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Collections;
@@ -102,7 +99,6 @@ import javax.naming.NamingException;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.security.auth.Subject;
 import jdk.internal.module.Modules;
-import sun.reflect.misc.ReflectUtil;
 import sun.rmi.server.UnicastRef2;
 import sun.rmi.transport.LiveRef;
 import java.io.NotSerializableException;
@@ -1856,7 +1852,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         protected Class<?> resolveClass(ObjectStreamClass classDesc)
                 throws IOException, ClassNotFoundException {
             String name = classDesc.getName();
-            ReflectUtil.checkPackageAccess(name);
             return Class.forName(name, false, Objects.requireNonNull(loader));
         }
 
@@ -1964,51 +1959,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 "\4\0\1\0\14\0\0";
         final byte[] pRefByteCode =
                 NoCallStackClassLoader.stringToBytes(pRefByteCodeString);
-        PrivilegedExceptionAction<Constructor<?>> action =
-                new PrivilegedExceptionAction<Constructor<?>>() {
-            public Constructor<?> run() throws Exception {
-                Class<RMIConnector> thisClass = RMIConnector.class;
-                ClassLoader thisLoader = thisClass.getClassLoader();
-                ProtectionDomain thisProtectionDomain =
-                        thisClass.getProtectionDomain();
 
-                String proxyRefCName = ProxyRef.class.getName();
-                ClassLoader cl =
-                        new NoCallStackClassLoader(pRefClassName,
-                        pRefByteCode,
-                        new String[] { proxyRefCName },
-                        thisLoader,
-                        thisProtectionDomain);
-
-                Module jmxModule = ProxyRef.class.getModule();
-                Module rmiModule = RemoteRef.class.getModule();
-
-                String pkg = packageOf(pRefClassName);
-                assert pkg != null && pkg.length() > 0 &&
-                        !pkg.equals(packageOf(proxyRefCName));
-
-                ModuleDescriptor descriptor =
-                    ModuleDescriptor.newModule("jdk.remoteref", Set.of(SYNTHETIC))
-                        .packages(Set.of(pkg))
-                        .build();
-                Module m = Modules.defineModule(cl, descriptor, null);
-
-                // jdk.remoteref needs to read to java.base and jmxModule
-                Modules.addReads(m, Object.class.getModule());
-                Modules.addReads(m, jmxModule);
-                Modules.addReads(m, rmiModule);
-
-                // jdk.remoteref needs access to ProxyRef class
-                Modules.addExports(jmxModule, packageOf(proxyRefCName), m);
-
-                // java.management needs to instantiate the fabricated RemoteRef class
-                Modules.addReads(jmxModule, m);
-                Modules.addExports(m, pkg, jmxModule);
-
-                Class<?> c = cl.loadClass(pRefClassName);
-                return c.getConstructor(RemoteRef.class);
-            }
-        };
 
         Class<?> serverStubClass;
         try {
@@ -2026,9 +1977,48 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         Constructor<?> constr;
         try {
             stubClass = Class.forName(rmiConnectionImplStubClassName);
-            @SuppressWarnings("removal")
-            Constructor<?> tmp = (Constructor<?>) AccessController.doPrivileged(action);
-            constr = tmp;
+
+            Class<RMIConnector> thisClass = RMIConnector.class;
+            ClassLoader thisLoader = thisClass.getClassLoader();
+            ProtectionDomain thisProtectionDomain =
+                    thisClass.getProtectionDomain();
+
+            String proxyRefCName = ProxyRef.class.getName();
+            ClassLoader cl =
+                    new NoCallStackClassLoader(pRefClassName,
+                    pRefByteCode,
+                    new String[] { proxyRefCName },
+                    thisLoader,
+                    thisProtectionDomain);
+
+            Module jmxModule = ProxyRef.class.getModule();
+            Module rmiModule = RemoteRef.class.getModule();
+
+            String pkg = packageOf(pRefClassName);
+            assert pkg != null && pkg.length() > 0 &&
+                    !pkg.equals(packageOf(proxyRefCName));
+
+            ModuleDescriptor descriptor =
+                ModuleDescriptor.newModule("jdk.remoteref", Set.of(SYNTHETIC))
+                    .packages(Set.of(pkg))
+                    .build();
+            Module m = Modules.defineModule(cl, descriptor, null);
+
+            // jdk.remoteref needs to read to java.base and jmxModule
+            Modules.addReads(m, Object.class.getModule());
+            Modules.addReads(m, jmxModule);
+            Modules.addReads(m, rmiModule);
+
+            // jdk.remoteref needs access to ProxyRef class
+            Modules.addExports(jmxModule, packageOf(proxyRefCName), m);
+
+            // java.management needs to instantiate the fabricated RemoteRef class
+            Modules.addReads(jmxModule, m);
+            Modules.addExports(m, pkg, jmxModule);
+
+            Class<?> c = cl.loadClass(pRefClassName);
+
+            constr = c.getConstructor(RemoteRef.class);
         } catch (Exception e) {
             logger.error("<clinit>",
                     "Failed to initialize proxy reference constructor "+
@@ -2172,33 +2162,22 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     //--------------------------------------------------------------------
     // Private stuff - Find / Set default class loader
     //--------------------------------------------------------------------
-    @SuppressWarnings("removal")
     private ClassLoader pushDefaultClassLoader() {
         final Thread t = Thread.currentThread();
         final ClassLoader old =  t.getContextClassLoader();
-        if (defaultClassLoader != null)
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    if (t.getContextClassLoader() != defaultClassLoader) {
-                        t.setContextClassLoader(defaultClassLoader);
-                    }
-                    return null;
-                }
-            });
-            return old;
+        if (defaultClassLoader != null) {
+            if (t.getContextClassLoader() != defaultClassLoader) {
+                t.setContextClassLoader(defaultClassLoader);
+            }
+        }
+        return old;
     }
 
-    @SuppressWarnings("removal")
     private void popDefaultClassLoader(final ClassLoader old) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                Thread t = Thread.currentThread();
-                if (t.getContextClassLoader() != old) {
-                    t.setContextClassLoader(old);
-                }
-                return null;
-            }
-        });
+        Thread t = Thread.currentThread();
+        if (t.getContextClassLoader() != old) {
+            t.setContextClassLoader(old);
+        }
     }
 
     //--------------------------------------------------------------------

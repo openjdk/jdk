@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
 #include "gc/parallel/spaceCounters.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
+
+class ReservedSpace;
 
 class PSOldGen : public CHeapObj<mtGC> {
   friend class VMStructs;
@@ -118,6 +120,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Calculating new sizes
   void resize(size_t desired_free_space);
 
+  // Invoked by mutators and GC-workers.
   HeapWord* allocate(size_t word_size) {
     HeapWord* res;
     do {
@@ -126,6 +129,9 @@ class PSOldGen : public CHeapObj<mtGC> {
     } while ((res == nullptr) && expand_for_allocate(word_size));
     return res;
   }
+
+  // Invoked by VM thread inside a safepoint.
+  HeapWord* expand_and_allocate(size_t word_size);
 
   // Iteration.
   void oop_iterate(OopIterateClosure* cl) { object_space()->oop_iterate(cl); }

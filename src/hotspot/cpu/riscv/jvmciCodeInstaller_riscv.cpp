@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
@@ -39,7 +38,7 @@
 jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMCI_TRAPS) {
   address pc = (address) inst;
   if (inst->is_call()) {
-    return pc_offset + NativeCall::instruction_size;
+    return pc_offset + NativeCall::byte_size();
   } else if (inst->is_jump()) {
     return pc_offset + NativeJump::instruction_size;
   } else if (inst->is_movptr1()) {

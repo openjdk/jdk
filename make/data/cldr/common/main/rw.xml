@@ -87,7 +87,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pt_PT">Inyeporutigali (Igiporutigali)</language>
 			<language type="ro">Ikinyarumaniya</language>
 			<language type="ru">Ikirusiya</language>
-			<language type="rw">Kinyarwanda</language>
+			<language type="rw">Ikinyarwanda</language>
 			<language type="sa">Igisansikiri</language>
 			<language type="sd">Igisindi</language>
 			<language type="sh">Inyeseribiya na Korowasiya</language>
@@ -118,6 +118,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yi">Inyeyidishi</language>
 			<language type="zu">Inyezulu</language>
 		</languages>
+		<scripts>
+			<script type="Latn">Latin</script>
+		</scripts>
 		<territories>
 			<territory type="MK">Masedoniya y’Amajyaruguru</territory>
 			<territory type="RW">U Rwanda</territory>
@@ -186,7 +189,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="6">Kamena</month>
 							<month type="7">Nyakanga</month>
 							<month type="8">Kanama</month>
-							<month type="9">Nzeli</month>
+							<month type="9">Nzeri</month>
 							<month type="10">Ukwakira</month>
 							<month type="11">Ugushyingo</month>
 							<month type="12">Ukuboza</month>
@@ -240,6 +243,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMMM y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="h">
@@ -308,6 +313,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<timeZoneNames>
+			<metazone type="GMT">
+				<long>
+					<standard>Greenwich Mean Time</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
 	</dates>
 	<numbers>
 		<symbols numberSystem="latn">

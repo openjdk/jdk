@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,13 +46,6 @@ class GCPolicyCounters: public CHeapObj<mtGC> {
   const char* _name_space;
 
 public:
-  enum Name {
-    NONE,
-    GCPolicyCountersKind,
-    GCAdaptivePolicyCountersKind,
-    PSGCAdaptivePolicyCountersKind
-  };
-
   GCPolicyCounters(const char* name, int collectors, int generations);
 
   inline PerfVariable* tenuring_threshold() const  {
@@ -68,12 +61,6 @@ public:
   }
 
   const char* name_space() const { return _name_space; }
-
-  virtual void update_counters() {}
-
-  virtual GCPolicyCounters::Name kind() const {
-    return GCPolicyCounters::GCPolicyCountersKind;
-  }
 };
 
 #endif // SHARE_GC_SHARED_GCPOLICYCOUNTERS_HPP

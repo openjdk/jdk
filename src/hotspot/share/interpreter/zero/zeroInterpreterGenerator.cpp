@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -54,6 +53,7 @@ void ZeroInterpreterGenerator::generate_all() {
     method_entry(java_lang_math_sin   );
     method_entry(java_lang_math_cos   );
     method_entry(java_lang_math_tan   );
+    method_entry(java_lang_math_tanh  );
     method_entry(java_lang_math_abs   );
     method_entry(java_lang_math_sqrt  );
     method_entry(java_lang_math_sqrt_strict);
@@ -95,6 +95,7 @@ address ZeroInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_math_sin     : // fall thru
   case Interpreter::java_lang_math_cos     : // fall thru
   case Interpreter::java_lang_math_tan     : // fall thru
+  case Interpreter::java_lang_math_tanh    : // fall thru
   case Interpreter::java_lang_math_abs     : // fall thru
   case Interpreter::java_lang_math_log     : // fall thru
   case Interpreter::java_lang_math_log10   : // fall thru

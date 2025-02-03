@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 /*
  * @test
- * @bug 8043758
+ * @bug 8043758 8307383
  * @summary Datagram Transport Layer Security (DTLS)
  * @modules java.base/sun.security.util
  * @library /test/lib
@@ -36,6 +36,7 @@
 
 import java.net.DatagramPacket;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -73,11 +74,34 @@ public class InvalidRecords extends DTLSOverDatagram {
             // ClientHello with cookie
             needInvalidRecords.set(false);
             System.out.println("invalidate ClientHello message");
-            if (ba[ba.length - 1] == (byte)0xFF) {
-                ba[ba.length - 1] = (byte)0xFE;
+            // We will alter the compression method field in order to make the cookie
+            // check fail.
+            ByteBuffer chRec = ByteBuffer.wrap(ba);
+            // Skip 59 bytes past the record header (13), the handshake header (12),
+            // the protocol version (2), and client random (32)
+            chRec.position(59);
+            // Jump past the session ID
+            int len = Byte.toUnsignedInt(chRec.get());
+            chRec.position(chRec.position() + len);
+            // Skip the cookie
+            len = Byte.toUnsignedInt(chRec.get());
+            chRec.position(chRec.position() + len);
+            // Skip past cipher suites
+            len = Short.toUnsignedInt(chRec.getShort());
+            chRec.position(chRec.position() + len);
+            // Read the data on the compression methods, should be at least 1
+            len = Byte.toUnsignedInt(chRec.get());
+            if (len >= 1) {
+                System.out.println("Detected compression methods (count = " + len + ")");
             } else {
                 ba[ba.length - 1] = (byte)0xFF;
+                throw new RuntimeException("Got zero length comp methods");
             }
+            // alter the first comp method.
+            int compMethodVal = Byte.toUnsignedInt(chRec.get(chRec.position()));
+            System.out.println("Changing value at position " + chRec.position() +
+                    " from " + compMethodVal + " to " + ++compMethodVal);
+            chRec.put(chRec.position(), (byte)compMethodVal);
         }
 
         return super.createHandshakePacket(ba, socketAddr);

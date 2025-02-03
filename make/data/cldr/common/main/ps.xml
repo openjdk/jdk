@@ -54,6 +54,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bi">بسلاما</language>
 			<language type="bin">بینی</language>
 			<language type="bla">سکسيکا</language>
+			<language type="blo">انۍ</language>
 			<language type="bm">بمبارا</language>
 			<language type="bn">بنگالي</language>
 			<language type="bo">تبتي</language>
@@ -175,7 +176,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="iba">ابن</language>
 			<language type="ibb">ابیبیو</language>
 			<language type="id">انډونېزي</language>
-			<language type="ie" draft="unconfirmed">آسا نا جبة</language>
+			<language type="ie">آسا نا جبة</language>
 			<language type="ig">اګبو</language>
 			<language type="ii">سیچیان یی</language>
 			<language type="ikt">مغربی کینیډین انوکټیټ</language>
@@ -200,7 +201,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kde">ميکونډي</language>
 			<language type="kea">کابوورډیانو</language>
 			<language type="kfo">کورو</language>
-			<language type="kgp">kgg</language>
+			<language type="kgp">کینګا</language>
 			<language type="kha">خاسې</language>
 			<language type="khq">کویرا چینی</language>
 			<language type="ki">ککوؤو</language>
@@ -228,6 +229,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kv">کومی</language>
 			<language type="kw">کورنيشي</language>
 			<language type="kwk">Vote kwk</language>
+			<language type="kxv">کووئ</language>
 			<language type="ky">کرغيزي</language>
 			<language type="la">لاتیني</language>
 			<language type="lad">لاډینو</language>
@@ -236,6 +238,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lez">لیګغیان</language>
 			<language type="lg">ګانده</language>
 			<language type="li">لمبرگیانی</language>
+			<language type="lij">لینګورین</language>
 			<language type="lil">lill</language>
 			<language type="lkt">لکوټا</language>
 			<language type="lmo">لومبارډ</language>
@@ -393,6 +396,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sw_CD">کانګو سواهلی</language>
 			<language type="swb">کومورياني</language>
 			<language type="syr">سوریاني</language>
+			<language type="szl">سیلیسیان</language>
 			<language type="ta">تامل</language>
 			<language type="tce">جنوبي توچون</language>
 			<language type="te">تېليګو</language>
@@ -433,7 +437,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="uz">اوزبکي</language>
 			<language type="vai">وای</language>
 			<language type="ve">ویندا</language>
+			<language type="vec">وینټیان</language>
 			<language type="vi">وېتنامي</language>
+			<language type="vmw">مکوه</language>
 			<language type="vo">والاپوک</language>
 			<language type="vun">وونجو</language>
 			<language type="wa">والون</language>
@@ -444,6 +450,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="wuu">وو چینایی</language>
 			<language type="xal">کالمک</language>
 			<language type="xh">خوسا</language>
+			<language type="xnr">کانګرو</language>
 			<language type="xog">سوګا</language>
 			<language type="yav">ینګبین</language>
 			<language type="ybb">یمبا</language>
@@ -452,6 +459,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yrl">نینګاتو</language>
 			<language type="yue">کانټوني</language>
 			<language type="yue" alt="menu">چايني، کانټونيز</language>
+			<language type="za">ژوانګ</language>
 			<language type="zgh">معياري مراکشي تمازيټ</language>
 			<language type="zh">چیني</language>
 			<language type="zh" alt="menu">چيني، ماندرين</language>
@@ -946,7 +954,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1156,14 +1164,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am">غ.م.</dayPeriod>
 							<dayPeriod type="pm">غ.و.</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">غ.م.</dayPeriod>
-							<dayPeriod type="pm">غ.و.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">غ.م.</dayPeriod>
-							<dayPeriod type="pm">غ.و.</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
@@ -1301,7 +1301,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="2">صفر</month>
 							<month type="3">ربيع</month>
 							<month type="4">ربيع II</month>
-							<month type="5">جماد ۱</month>
+							<month type="5">جماد</month>
 							<month type="6">جماد ۲</month>
 							<month type="7">رجب</month>
 							<month type="8">شعبان</month>
@@ -1371,7 +1371,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>پېر</displayName>
+				<displayName>دور</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>دور</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>دور</displayName>
 			</field>
 			<field type="year">
 				<displayName>کال</displayName>
@@ -1737,6 +1743,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat>د {0} په وخت</regionFormat>
 			<regionFormat type="daylight">{0} رڼا ورځ وخت</regionFormat>
 			<regionFormat type="standard">{0} معیاری وخت</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>هینولولو</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>همغږى نړیوال وخت</standard>
@@ -2471,9 +2480,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>اولان باټر</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>چويبلسان</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>مکاو</exemplarCity>
 			</zone>
@@ -2873,9 +2879,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Nome">
 				<exemplarCity>نوم</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>هینولولو</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>اینکریج</exemplarCity>
 			</zone>
@@ -3220,13 +3223,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>د چين د رڼا ورځې وخت</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>چوئیبیلسن وخت</generic>
-					<standard>چوئیبیلسن معیاری وخت</standard>
-					<daylight>چوئیبیلسن اوړي وخت</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>کريسمس ټاپو وخت</standard>
@@ -3463,6 +3459,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>جاپان وخت</generic>
 					<standard>جاپان معياري وخت</standard>
 					<daylight>جاپان د ورځې روښانه وخت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>قزاقستان وخت</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3886,6 +3887,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<otherNumberingSystems>
 			<native>arabext</native>
 		</otherNumberingSystems>
+		<symbols numberSystem="arab">
+			<exponential>^</exponential>
+		</symbols>
 		<symbols numberSystem="arabext">
 			<timeSeparator>:</timeSeparator>
 		</symbols>
@@ -3956,8 +3960,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -5047,12 +5049,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} مياشتې</unitPattern>
 			</unit>
 			<unit type="duration-week">
-				<unitPattern count="one">اونۍ</unitPattern>
+				<unitPattern count="one">{0} اونۍ</unitPattern>
 				<unitPattern count="other">{0} اونۍ</unitPattern>
 				<perUnitPattern>{0} په هره اونۍ کې</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<perUnitPattern>{0} په هره ورځ کې</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<unitPattern count="one">{0} ساعت</unitPattern>
+				<unitPattern count="other">{0} h</unitPattern>
+				<perUnitPattern>{0} په ساعت</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<unitPattern count="one">{0} دقیقه</unitPattern>
@@ -5060,9 +5067,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} په دقیقه کې</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<unitPattern count="one">{0} s</unitPattern>
+				<unitPattern count="one">{0} ثانیه</unitPattern>
 				<unitPattern count="other">{0} ثانیې</unitPattern>
 				<perUnitPattern>{0} هره ثانیه</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>ملی ثانیې</displayName>
+				<unitPattern count="one">{0} ملی ثانیه</unitPattern>
+				<unitPattern count="other">{0} ملی ثانیې</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>مايکرو ثانيې</displayName>
@@ -5624,6 +5636,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} Imp. quart</unitPattern>
 				<unitPattern count="other">{0} Imp. quart</unitPattern>
 			</unit>
+			<unit type="duration-night">
+				<displayName>شپي</displayName>
+				<unitPattern count="one">{0}/شپه</unitPattern>
+				<unitPattern count="other">{0}/شپه</unitPattern>
+				<perUnitPattern>{0}/شپه</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>کارډنل اړخ</displayName>
 				<coordinateUnitPattern type="east">{0} ختيځ</coordinateUnitPattern>
@@ -5780,6 +5798,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} sec</unitPattern>
 				<unitPattern count="other">{0} sec</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName>μsecs</displayName>
+			</unit>
 			<unit type="electric-ampere">
 				<displayName>amps</displayName>
 			</unit>
@@ -5818,6 +5839,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>dpcm</displayName>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>ټکي</displayName>
@@ -5974,6 +5999,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} چنه</unitPattern>
 				<unitPattern count="other">{0} چنه</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>p/b</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>شپي</displayName>
+				<unitPattern count="one">{0}/شپه</unitPattern>
+				<unitPattern count="other">{0}/شپه</unitPattern>
+				<perUnitPattern>{0}/شپه</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>اړخ</displayName>
 				<coordinateUnitPattern type="east">{0} خ</coordinateUnitPattern>
@@ -5986,12 +6020,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>mpg UK</displayName>
 			</unit>
-			<unit type="duration-decade">
-				<unitPattern count="one">{0} لسیز</unitPattern>
-				<unitPattern count="other">{0} لسیز</unitPattern>
-			</unit>
 			<unit type="duration-year">
-				<displayName>yr</displayName>
+				<displayName>کال</displayName>
 				<unitPattern count="one">{0} y</unitPattern>
 				<unitPattern count="other">{0} y</unitPattern>
 			</unit>
@@ -6010,7 +6040,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}d</unitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>hr</displayName>
+				<displayName>ساعت</displayName>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>دقیق</displayName>
@@ -6020,6 +6050,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-second">
 				<unitPattern count="one">{0} s</unitPattern>
 				<unitPattern count="other">{0} s</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>μsec</displayName>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<unitPattern count="one">{0} kWh/100km</unitPattern>
@@ -6105,6 +6138,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>dsp Imp</displayName>
 				<unitPattern count="one">{0}dsp-Imp</unitPattern>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>p/b</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>شپي</displayName>
+				<unitPattern count="one">{0}/شپه</unitPattern>
+				<unitPattern count="other">{0}/شپه</unitPattern>
+				<perUnitPattern>{0}/شپه</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}خ</coordinateUnitPattern>

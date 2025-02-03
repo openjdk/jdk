@@ -137,6 +137,9 @@ public class Launcher extends DebugeeBinder {
                 /* Some tests need more carrier threads than the default provided. */
                 args.add("-R-Djdk.virtualThreadScheduler.parallelism=15");
             }
+            /* Some jdb tests need java.library.path setup for native libraries. */
+            String libpath = System.getProperty("java.library.path");
+            args.add("-R-Djava.library.path=" + libpath);
         }
 
         args.addAll(argumentHandler.enwrapJavaOptions(argumentHandler.getJavaOptions()));
@@ -180,10 +183,12 @@ public class Launcher extends DebugeeBinder {
             } else /* LaunchingConnector or DefaultConnector */ {
 
                 connect.append("vmexec=" + argumentHandler.getLaunchExecName().trim());
+                connect.append(",options=");
+                connect.append(" \"-cp\"");
+                connect.append(" \"" + System.getProperty("test.class.path") + "\"");
+
                 String debuggeeOpts = argumentHandler.getDebuggeeOptions();
                 if (debuggeeOpts.trim().length() > 0) {
-                    //connect.append(",options=" + debuggeeOpts.trim());
-                    connect.append(",options=");
                     for (String arg : debuggeeOpts.split("\\s+")) {
                        connect.append(" \"");
                        connect.append(arg);

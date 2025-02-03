@@ -51,11 +51,11 @@ public sealed interface PackageDesc
      * @throws NullPointerException if the argument is {@code null}
      * @throws IllegalArgumentException if the name string is not in the
      * correct format
-     * @jls 6.5.3 Module Names and Package Names
+     * @jls 6.5.3 Meaning of Module Names and Package Names
      * @see PackageDesc#ofInternalName(String)
      */
     static PackageDesc of(String name) {
-        ConstantUtils.validateBinaryPackageName(requireNonNull(name));
+        ConstantUtils.validateBinaryPackageName(name);
         return new PackageDescImpl(ConstantUtils.binaryToInternal(name));
     }
 
@@ -75,7 +75,7 @@ public sealed interface PackageDesc
      * @see PackageDesc#of(String)
      */
     static PackageDesc ofInternalName(String name) {
-        ConstantUtils.validateInternalPackageName(requireNonNull(name));
+        ConstantUtils.validateInternalPackageName(name);
         return new PackageDescImpl(name);
     }
 

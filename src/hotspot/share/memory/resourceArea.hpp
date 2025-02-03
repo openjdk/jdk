@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,11 @@ class ResourceArea: public Arena {
 #endif // ASSERT
 
 public:
-  ResourceArea(MEMFLAGS flags = mtThread) :
-    Arena(flags, Arena::Tag::tag_ra) DEBUG_ONLY(COMMA _nesting(0)) {}
+  ResourceArea(MemTag mem_tag = mtThread) :
+    Arena(mem_tag, Arena::Tag::tag_ra) DEBUG_ONLY(COMMA _nesting(0)) {}
 
-  ResourceArea(size_t init_size, MEMFLAGS flags = mtThread) :
-    Arena(flags, Arena::Tag::tag_ra, init_size) DEBUG_ONLY(COMMA _nesting(0)) {
+  ResourceArea(size_t init_size, MemTag mem_tag = mtThread) :
+    Arena(mem_tag, Arena::Tag::tag_ra, init_size) DEBUG_ONLY(COMMA _nesting(0)) {
   }
 
   char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
@@ -107,7 +107,7 @@ public:
       // Reset size before deleting chunks.  Otherwise, the total
       // size could exceed the total chunk size.
       assert(size_in_bytes() > state._size_in_bytes,
-             "size: " SIZE_FORMAT ", saved size: " SIZE_FORMAT,
+             "size: %zu, saved size: %zu",
              size_in_bytes(), state._size_in_bytes);
       set_size_in_bytes(state._size_in_bytes);
       Chunk::next_chop(state._chunk);

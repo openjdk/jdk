@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,25 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/basicLock.hpp"
+#include "runtime/basicLock.inline.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/synchronizer.hpp"
 
 void BasicLock::print_on(outputStream* st, oop owner) const {
   st->print("monitor");
-  markWord mark_word = displaced_header();
-  if (mark_word.value() != 0) {
-    // Print monitor info if there's an owning oop and it refers to this BasicLock.
-    bool print_monitor_info = (owner != nullptr) && (owner->mark() == markWord::from_pointer((void*)this));
-    mark_word.print_on(st, print_monitor_info);
+  if (UseObjectMonitorTable) {
+    ObjectMonitor* mon = object_monitor_cache();
+    if (mon != nullptr) {
+      mon->print_on(st);
+    }
+  } else if (LockingMode == LM_LEGACY) {
+    markWord mark_word = displaced_header();
+    if (mark_word.value() != 0) {
+      // Print monitor info if there's an owning oop and it refers to this BasicLock.
+      bool print_monitor_info = (owner != nullptr) && (owner->mark() == markWord::from_pointer((void*)this));
+      mark_word.print_on(st, print_monitor_info);
+    }
   }
 }
 
@@ -82,10 +89,15 @@ void BasicLock::move_to(oop obj, BasicLock* dest) {
       // we can find any flavor mark in the displaced mark.
     }
     dest->set_displaced_header(displaced_header());
+  } else if (UseObjectMonitorTable) {
+    // Preserve the ObjectMonitor*, the cache is cleared when a box is reused
+    // and only read while the lock is held, so no stale ObjectMonitor* is
+    // encountered.
+    dest->set_object_monitor_cache(object_monitor_cache());
   }
 #ifdef ASSERT
   else {
-    dest->set_displaced_header(markWord(badDispHeaderDeopt));
+    dest->set_bad_metadata_deopt();
   }
 #endif
 }

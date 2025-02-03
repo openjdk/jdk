@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciTypeFlow.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -50,12 +49,11 @@ extern uint explicit_null_checks_elided;
 IfNode::IfNode(Node* control, Node* bol, float p, float fcnt)
     : MultiBranchNode(2),
       _prob(p),
-      _fcnt(fcnt)
-      NOT_PRODUCT(COMMA _assertion_predicate_type(AssertionPredicateType::None)) {
+      _fcnt(fcnt),
+      _assertion_predicate_type(AssertionPredicateType::None) {
   init_node(control, bol);
 }
 
-#ifndef PRODUCT
 IfNode::IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type)
     : MultiBranchNode(2),
       _prob(p),
@@ -63,7 +61,6 @@ IfNode::IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicate
       _assertion_predicate_type(assertion_predicate_type) {
   init_node(control, bol);
 }
-#endif // NOT_PRODUCT
 
 //=============================================================================
 //------------------------------Value------------------------------------------
@@ -773,6 +770,7 @@ bool IfNode::cmpi_folds(PhaseIterGVN* igvn, bool fold_ne) {
 bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
   return ctrl != nullptr &&
     ctrl->is_Proj() &&
+    ctrl->outcnt() == 1 && // No side-effects
     ctrl->in(0) != nullptr &&
     ctrl->in(0)->Opcode() == Op_If &&
     ctrl->in(0)->outcnt() == 2 &&
@@ -839,9 +837,9 @@ bool IfNode::is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* u
 }
 
 // Return projection that leads to an uncommon trap if any
-ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call) const {
+ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::DeoptReason reason) const {
   for (int i = 0; i < 2; i++) {
-    call = proj_out(i)->is_uncommon_trap_proj();
+    call = proj_out(i)->is_uncommon_trap_proj(reason);
     if (call != nullptr) {
       return proj_out(i);
     }
@@ -1346,7 +1344,7 @@ Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
 
   if (cmpi_folds(igvn)) {
     Node* ctrl = in(0);
-    if (is_ctrl_folds(ctrl, igvn) && ctrl->outcnt() == 1) {
+    if (is_ctrl_folds(ctrl, igvn)) {
       // A integer comparison immediately dominated by another integer
       // comparison
       ProjNode* success = nullptr;
@@ -1523,6 +1521,14 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* prev_dom = search_identical(dist, igvn);
 
   if (prev_dom != nullptr) {
+    // Dominating CountedLoopEnd (left over from some now dead loop) will become the new loop exit. Outer strip mined
+    // loop will go away. Mark this loop as no longer strip mined.
+    if (is_CountedLoopEnd()) {
+      CountedLoopNode* counted_loop_node = as_CountedLoopEnd()->loopnode();
+      if (counted_loop_node != nullptr) {
+        counted_loop_node->clear_strip_mined();
+      }
+    }
     // Replace dominated IfNode
     return dominated_by(prev_dom, igvn, false);
   }
@@ -1842,11 +1848,14 @@ void IfProjNode::pin_array_access_nodes(PhaseIterGVN* igvn) {
 #ifndef PRODUCT
 void IfNode::dump_spec(outputStream* st) const {
   switch (_assertion_predicate_type) {
-    case AssertionPredicateType::Init_value:
+    case AssertionPredicateType::InitValue:
       st->print("#Init Value Assertion Predicate  ");
       break;
-    case AssertionPredicateType::Last_value:
+    case AssertionPredicateType::LastValue:
       st->print("#Last Value Assertion Predicate  ");
+      break;
+    case AssertionPredicateType::FinalIv:
+      st->print("#Final IV Assertion Predicate  ");
       break;
     case AssertionPredicateType::None:
       // No Assertion Predicate
@@ -2203,10 +2212,10 @@ void ParsePredicateNode::dump_spec(outputStream* st) const {
       st->print("Loop ");
       break;
     case Deoptimization::DeoptReason::Reason_profile_predicate:
-      st->print("Profiled_Loop ");
+      st->print("Profiled Loop ");
       break;
     case Deoptimization::DeoptReason::Reason_loop_limit_check:
-      st->print("Loop_Limit_Check ");
+      st->print("Loop Limit Check ");
       break;
     default:
       fatal("unknown kind");
