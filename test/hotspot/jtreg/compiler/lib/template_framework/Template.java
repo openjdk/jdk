@@ -70,4 +70,12 @@ public interface Template {
             return new TemplateUse.TwoArgsUse<>(this, a, b);
         }
     }
+
+    static InstantiatedTemplate body(Object... tokens) {
+        return new InstantiatedTemplate(tokens);
+    }
+
+    static HookInsert intoHook(Hook hook, TemplateUse t) {
+        return new HookInsert(hook, t);
+    }
 }

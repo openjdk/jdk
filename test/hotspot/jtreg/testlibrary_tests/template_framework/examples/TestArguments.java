@@ -23,20 +23,19 @@
 
 /*
  * @test
- * @summary Example test with parameters.
+ * @summary Test templates with arguments.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver template_framework.examples.TestParameters
+ * @run driver template_framework.examples.TestArguments
  */
 
 package template_framework.examples;
 
 import compiler.lib.compile_framework.*;
-import compiler.lib.template_framework.*;
-import static compiler.lib.template_framework.Renderer.*;
-import static compiler.lib.template_framework.StaticHelpers.*;
+import compiler.lib.template_framework.Template;
+import static compiler.lib.template_framework.Template.body;
 
-public class TestParameters {
+public class TestArguments {
 
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
@@ -52,7 +51,7 @@ public class TestParameters {
         Object ret = comp.invoke("p.xyz.InnerTest", "test", new Object[] {});
         System.out.println("res: " + ret);
 
-        // Check that the return value is the sum of the two parameters.
+        // Check that the return value is the sum of the two arguments.
         if ((42 + 7) != (int)ret) {
             throw new RuntimeException("Unexpected result");
         }
@@ -60,19 +59,19 @@ public class TestParameters {
 
     // Generate a source Java file as String
     public static String generate() {
-        // Create a Template with two parameter holes.
-        var template = Template.make("param1", "param2", (String param1, String param2) -> body(
+        // Create a Template with two arguments.
+        var template = Template.make("arg1", "arg2", (String arg1, String arg2) -> body(
             """
             package p.xyz;
             public class InnerTest {
                 public static int test() {
-                    return #param1 + #param2;
+                    return #arg1 + #arg2;
                 }
             }
             """
         ));
 
-        // The two parameter holes are to be replaced with the provided values.
-        return Renderer.render(template.withArgs("42", "7"));
+        // Use the template with two arguments, and render it to a String.
+        return template.withArgs("42", "7").render();
     }
 }
