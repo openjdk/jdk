@@ -32,7 +32,9 @@ import java.time.LocalTime;
 /**
  * Helper for java.time
  */
-public class DateTimeHelper {
+public final class DateTimeHelper {
+    private DateTimeHelper() {
+    }
     /**
      * Prints the toString result to the given buf, avoiding extra string allocations.
      */
