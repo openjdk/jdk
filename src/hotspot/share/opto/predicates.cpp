@@ -183,7 +183,7 @@ TemplateAssertionPredicate TemplateAssertionPredicate::clone(Node* new_control, 
   return cloned_template_assertion_predicate;
 }
 
-// Clone this Template Assertion Predicate and replace the input of the OpaqueLoopInitNode with 'new_opaque_input'.
+// Clone this Template Assertion Predicate and use a newly created OpaqueLoopInitNode with 'new_opaque_input' as input.
 TemplateAssertionPredicate TemplateAssertionPredicate::clone_and_replace_opaque_input(Node* new_control,
                                                                                       Node* new_opaque_input,
                                                                                       PhaseIdealLoop* phase) const {
@@ -806,7 +806,8 @@ InitializedAssertionPredicate InitializedAssertionPredicateCreator::create_from_
     IfNode* template_assertion_predicate, Node* new_control, Node* new_init, Node* new_stride) const {
   OpaqueInitializedAssertionPredicateNode* assertion_expression =
       create_assertion_expression_from_template(template_assertion_predicate, new_control, new_init, new_stride);
-   IfTrueNode* success_proj = create_control_nodes(new_control, template_assertion_predicate->Opcode(),
+   IfTrueNode* success_proj = create_control_nodes(new_control,
+                                                   template_assertion_predicate->Opcode(),
                                                    assertion_expression,
                                                    template_assertion_predicate->assertion_predicate_type());
   return InitializedAssertionPredicate(success_proj);
