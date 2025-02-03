@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3683,7 +3682,7 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            format(buf, context.getDecimalStyle(), context.getTemporal().getNano());
+            format(buf, context.getDecimalStyle(), context.getTemporal().get(ChronoField.NANO_OF_SECOND));
             return true;
         }
 
@@ -6421,33 +6420,31 @@ public final class DateTimeFormatterBuilder {
                       .getfield(classDesc, "printerParser" + index, paramType(pp))
                       .aload(bufSlot)
                       .aload(temporalSlot);
+                    getfield(cb, pp, index);
+                    cb.invokeinterface(CD_TemporalAccessor, "getLong", MTD_long_TemporalField);
 
+                    String formatMethod = "format";
+                    MethodTypeDesc mtd = MTD_formatValue_long;
                     if (pp.field instanceof ChronoField chronoField) {
-                        String methodName = switch (chronoField) {
-                            case YEAR,YEAR_OF_ERA -> "getYear";
-                            case MONTH_OF_YEAR    -> "getMonthValue";
-                            case DAY_OF_YEAR      -> "getDayOfYear";
-                            case DAY_OF_MONTH     -> "getDayOfMonth";
-                            case HOUR_OF_DAY      -> "getHour";
-                            case MINUTE_OF_HOUR   -> "getMinute";
-                            case SECOND_OF_MINUTE -> "getSecond";
-                            case NANO_OF_SECOND   -> "getNano";
-                            default               -> null;
+                        boolean formatInt = switch (chronoField) {
+                            case YEAR,
+                                 YEAR_OF_ERA,
+                                 MONTH_OF_YEAR,
+                                 DAY_OF_YEAR,
+                                 DAY_OF_MONTH,
+                                 HOUR_OF_DAY,
+                                 MINUTE_OF_HOUR,
+                                 SECOND_OF_MINUTE,
+                                 NANO_OF_SECOND -> true;
+                            default             -> false;
                         };
-                        if (methodName != null) {
-                            cb.invokeinterface(CD_TemporalAccessor, methodName, MTD_int);
-                            if (chronoField == ChronoField.YEAR_OF_ERA) {
-                                // year = yearOfEra(year)
-                                cb.invokestatic(CD_NumberPrinterParser, "yearOfEra", MTD_int_int);
-                            }
-                            cb.invokevirtual(CD_NumberPrinterParser, formatMethod(pp), MTD_formatValue_int);
-                            return;
+                        if (formatInt) {
+                            cb.l2i();
+                            formatMethod = formatMethod(pp);
+                            mtd = MTD_formatValue_int;
                         }
                     }
-
-                    getfield(cb, pp, index);
-                    cb.invokeinterface(CD_TemporalAccessor, "getLong", MTD_long_TemporalField)
-                      .invokevirtual(CD_NumberPrinterParser, "format", MTD_formatValue_long);
+                    cb.invokevirtual(CD_NumberPrinterParser, formatMethod, mtd);
                 }
 
                 static String formatMethod(NumberPrinterParser pp) {
