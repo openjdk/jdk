@@ -101,8 +101,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.chrono.Era;
@@ -6022,7 +6025,7 @@ public final class DateTimeFormatterBuilder {
      * Bytecode PrinterParserFactory.
      *
      */
-    private static final class PrinterParserFactory {
+    static final class PrinterParserFactory {
         static final ClassDesc
                 CD_CharSequence                = ClassDesc.ofDescriptor("Ljava/lang/CharSequence;"),
                 CD_StringBuilder               = ClassDesc.ofDescriptor("Ljava/lang/StringBuilder;"),
@@ -6046,38 +6049,40 @@ public final class DateTimeFormatterBuilder {
                 CD_NumberPrinterParser         = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser;"),
                 CD_OffsetIdPrinterParser       = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$OffsetIdPrinterParser;"),
                 CD_TemporalAccessor            = ClassDesc.ofDescriptor("Ljava/time/temporal/TemporalAccessor;"),
-                CD_TemporalQuery               = ClassDesc.ofDescriptor("Ljava/time/temporal/TemporalQuery;");
+                CD_TemporalQuery               = ClassDesc.ofDescriptor("Ljava/time/temporal/TemporalQuery;"),
+                CD_TemporalAccessorWrapper     = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$PrinterParserFactory$TemporalAccessorWrapper;");
         static final MethodTypeDesc
-                MTD_StringBuilder_char        = MethodTypeDesc.of(CD_StringBuilder, CD_char),
-                MTD_void_int                  = MethodTypeDesc.of(CD_void, CD_int),
-                MTD_boolean                   = MethodTypeDesc.of(CD_boolean),
-                MTD_char                      = MethodTypeDesc.of(CD_char),
-                MTD_int                       = MethodTypeDesc.of(CD_int),
-                MTD_int_int                   = MethodTypeDesc.of(CD_int, CD_int),
-                MTD_int_long                  = MethodTypeDesc.of(CD_int, CD_long),
-                MTD_long                      = MethodTypeDesc.of(CD_long),
-                MTD_DecimalStyle              = MethodTypeDesc.of(CD_DecimalStyle),
-                MTD_int_TemporalField         = MethodTypeDesc.of(CD_int, CD_TemporalField),
-                MTD_Long_TemporalField        = MethodTypeDesc.of(CD_Long, CD_TemporalField),
-                MTD_long_TemporalField        = MethodTypeDesc.of(CD_long, CD_TemporalField),
-                MTD_boolean_TemporalField     = MethodTypeDesc.of(CD_boolean, CD_TemporalField),
-                MTD_TemporalAccessor          = MethodTypeDesc.of(CD_TemporalAccessor),
-                MTD_OBJECT_TemporalAccessor   = MethodTypeDesc.of(CD_Object, CD_TemporalAccessor),
-                MTD_long_CharSequence_int     = MethodTypeDesc.of(CD_long, CD_CharSequence, CD_int),
-                MTD_int_CharSequence_long     = MethodTypeDesc.of(CD_int, CD_CharSequence, CD_long),
-                MTD_int_CharSequence_int_char = MethodTypeDesc.of(CD_int, CD_CharSequence, CD_int, CD_char),
-                MTD_constructor               = MethodTypeDesc.of(CD_void, CD_DateTimePrinterParser_array, CD_boolean),
-                MTD_format                    = MethodTypeDesc.of(CD_boolean, CD_DateTimePrintContext, CD_StringBuilder),
-                MTD_formatValue_int           = MethodTypeDesc.of(CD_void, CD_StringBuilder, CD_int),
-                MTD_formatValue_long          = MethodTypeDesc.of(CD_void, CD_StringBuilder, CD_long),
-                MTD_parse                     = MethodTypeDesc.of(CD_Object, CD_CharSequence, CD_DateTimeFormatter, CD_TemporalQuery),
-                MTD_parseValue                = MethodTypeDesc.of(CD_int, CD_DateTimeParseContext, CD_CharSequence, CD_int),
-                MTD_LocalDateTime_Of          = MethodTypeDesc.of(CD_LocalDateTime, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int),
-                MTD_OffsetDateTime_Of         = MethodTypeDesc.of(CD_OffsetDateTime, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int, CD_ZoneOffset),
-                MTD_ZoneOffset_ofTotalSeconds = MethodTypeDesc.of(CD_ZoneOffset, CD_int),
-                MTD_LocalDate_Of              = MethodTypeDesc.of(CD_LocalDate, CD_int, CD_int, CD_int),
-                MTD_LocalTime_Of              = MethodTypeDesc.of(CD_LocalTime, CD_int, CD_int, CD_int, CD_int),
-                MTD_OffsetTime_Of             = MethodTypeDesc.of(CD_OffsetTime, CD_int, CD_int, CD_int, CD_int, CD_ZoneOffset);
+                MTD_StringBuilder_char         = MethodTypeDesc.of(CD_StringBuilder, CD_char),
+                MTD_void_int                   = MethodTypeDesc.of(CD_void, CD_int),
+                MTD_boolean                    = MethodTypeDesc.of(CD_boolean),
+                MTD_char                       = MethodTypeDesc.of(CD_char),
+                MTD_int                        = MethodTypeDesc.of(CD_int),
+                MTD_int_int                    = MethodTypeDesc.of(CD_int, CD_int),
+                MTD_int_long                   = MethodTypeDesc.of(CD_int, CD_long),
+                MTD_long                       = MethodTypeDesc.of(CD_long),
+                MTD_DecimalStyle               = MethodTypeDesc.of(CD_DecimalStyle),
+                MTD_int_TemporalField          = MethodTypeDesc.of(CD_int, CD_TemporalField),
+                MTD_Long_TemporalField         = MethodTypeDesc.of(CD_Long, CD_TemporalField),
+                MTD_long_TemporalField         = MethodTypeDesc.of(CD_long, CD_TemporalField),
+                MTD_boolean_TemporalField      = MethodTypeDesc.of(CD_boolean, CD_TemporalField),
+                MTD_TemporalAccessor           = MethodTypeDesc.of(CD_TemporalAccessor),
+                MTD_OBJECT_TemporalAccessor    = MethodTypeDesc.of(CD_Object, CD_TemporalAccessor),
+                MTD_long_CharSequence_int      = MethodTypeDesc.of(CD_long, CD_CharSequence, CD_int),
+                MTD_int_CharSequence_long      = MethodTypeDesc.of(CD_int, CD_CharSequence, CD_long),
+                MTD_int_CharSequence_int_char  = MethodTypeDesc.of(CD_int, CD_CharSequence, CD_int, CD_char),
+                MTD_constructor                = MethodTypeDesc.of(CD_void, CD_DateTimePrinterParser_array, CD_boolean),
+                MTD_format                     = MethodTypeDesc.of(CD_boolean, CD_DateTimePrintContext, CD_StringBuilder),
+                MTD_formatValue_int            = MethodTypeDesc.of(CD_void, CD_StringBuilder, CD_int),
+                MTD_formatValue_long           = MethodTypeDesc.of(CD_void, CD_StringBuilder, CD_long),
+                MTD_parse                      = MethodTypeDesc.of(CD_Object, CD_CharSequence, CD_DateTimeFormatter, CD_TemporalQuery),
+                MTD_parseValue                 = MethodTypeDesc.of(CD_int, CD_DateTimeParseContext, CD_CharSequence, CD_int),
+                MTD_LocalDateTime_Of           = MethodTypeDesc.of(CD_LocalDateTime, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int),
+                MTD_OffsetDateTime_Of          = MethodTypeDesc.of(CD_OffsetDateTime, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int, CD_int, CD_ZoneOffset),
+                MTD_ZoneOffset_ofTotalSeconds  = MethodTypeDesc.of(CD_ZoneOffset, CD_int),
+                MTD_LocalDate_Of               = MethodTypeDesc.of(CD_LocalDate, CD_int, CD_int, CD_int),
+                MTD_LocalTime_Of               = MethodTypeDesc.of(CD_LocalTime, CD_int, CD_int, CD_int, CD_int),
+                MTD_OffsetTime_Of              = MethodTypeDesc.of(CD_OffsetTime, CD_int, CD_int, CD_int, CD_int, CD_ZoneOffset),
+                MTD_TemporalAccessorWrapper_Of = MethodTypeDesc.of(CD_TemporalAccessorWrapper, CD_TemporalAccessor);
 
         PrinterParserFactory() {
             // no instantiation
@@ -6276,7 +6281,8 @@ public final class DateTimeFormatterBuilder {
                     contextSlot,
                     bufSlot,
                     lengthSlot,
-                    temporalSlot;
+                    temporalSlot,
+                    wrapperSlot;
 
                 @Override
                 public void accept(CodeBuilder cb) {
@@ -6285,6 +6291,7 @@ public final class DateTimeFormatterBuilder {
                     bufSlot      = cb.parameterSlot(1);
                     lengthSlot   = cb.allocateLocal(TypeKind.INT);
                     temporalSlot = cb.allocateLocal(TypeKind.REFERENCE);
+                    wrapperSlot  = cb.allocateLocal(TypeKind.REFERENCE);
 
                     /*
                      *  if (context.getDecimalStyle() != DecimalStyle.STANDARD) {
@@ -6317,6 +6324,13 @@ public final class DateTimeFormatterBuilder {
                     cb.aload(contextSlot)
                       .invokevirtual(CD_DateTimePrintContext, "getTemporal", MTD_TemporalAccessor)
                       .astore(temporalSlot);
+
+                    /*
+                     * TemporalAccessorWrapper wrapper = TemporalAccessorWrapper.wrapper(temporal);
+                     */
+                    cb.aload(temporalSlot)
+                      .invokestatic(CD_TemporalAccessorWrapper, "wrapper", MTD_TemporalAccessorWrapper_Of)
+                      .astore(wrapperSlot);
 
                     /*
                      * int length = buf.length();
@@ -6420,21 +6434,33 @@ public final class DateTimeFormatterBuilder {
                     cb.aload(thisSlot)
                       .getfield(classDesc, "printerParser" + index, paramType(pp))
                       .aload(bufSlot)
-                      .aload(temporalSlot);
-                    getfield(cb, pp, index);
-
-                    String formatMethod = "format";
-                    MethodTypeDesc mtd = MTD_formatValue_long;
-                    boolean formatInt = pp.field != ChronoField.NANO_OF_DAY
-                                     && pp.field != ChronoField.MICRO_OF_DAY
-                                     && pp.field != ChronoField.INSTANT_SECONDS;
-                    if (formatInt) {
-                        cb.invokeinterface(CD_TemporalAccessor, "get", MTD_int_TemporalField)
-                          .invokevirtual(CD_NumberPrinterParser, formatMethod(pp), MTD_formatValue_int);
-                    } else {
-                        cb.invokeinterface(CD_TemporalAccessor, "getLong", MTD_long_TemporalField)
-                          .invokevirtual(CD_NumberPrinterParser, "format", MTD_formatValue_long);
+                      .aload(wrapperSlot);
+                    if (pp.field instanceof ChronoField chronoField) {
+                        String methodName = switch (chronoField) {
+                            case YEAR,YEAR_OF_ERA -> "getYear";
+                            case MONTH_OF_YEAR    -> "getMonthValue";
+                            case DAY_OF_YEAR      -> "getDayOfYear";
+                            case DAY_OF_MONTH     -> "getDayOfMonth";
+                            case HOUR_OF_DAY      -> "getHour";
+                            case MINUTE_OF_HOUR   -> "getMinute";
+                            case SECOND_OF_MINUTE -> "getSecond";
+                            case NANO_OF_SECOND   -> "getNano";
+                            default               -> null;
+                        };
+                        if (methodName != null) {
+                            cb.invokevirtual(CD_TemporalAccessorWrapper, methodName, MTD_int);
+                            if (chronoField == ChronoField.YEAR_OF_ERA) {
+                                // year = yearOfEra(year)
+                                cb.invokestatic(CD_NumberPrinterParser, "yearOfEra", MTD_int_int);
+                            }
+                            cb.invokevirtual(CD_NumberPrinterParser, formatMethod(pp), MTD_formatValue_int);
+                            return;
+                        }
                     }
+
+                    getfield(cb, pp, index);
+                    cb.invokevirtual(CD_TemporalAccessorWrapper, "getLong", MTD_long_TemporalField)
+                      .invokevirtual(CD_NumberPrinterParser, "format", MTD_formatValue_long);
                 }
 
                 static String formatMethod(NumberPrinterParser pp) {
@@ -6818,6 +6844,60 @@ public final class DateTimeFormatterBuilder {
                 }
             }
             return method;
+        }
+
+        //-----------------------------------------------------------------------
+        // Wrapper for speeding up access to TemporalField
+        //-----------------------------------------------------------------------
+        static record TemporalAccessorWrapper(TemporalAccessor ta, LocalDate localDate, LocalTime localTime) {
+            public long getLong(TemporalField field) {
+                return ta.getLong(field);
+            }
+            public int getYear() {
+                return localDate != null ? localDate.getYear() : ta.get(ChronoField.YEAR);
+            }
+            public int getMonthValue() {
+                return localDate != null ? localDate.getMonthValue() : ta.get(ChronoField.MONTH_OF_YEAR);
+            }
+            public int getDayOfYear() {
+                return localDate != null ? localDate.getDayOfYear() : ta.get(ChronoField.DAY_OF_YEAR);
+            }
+            public int getDayOfMonth() {
+                return localDate != null ? localDate.getDayOfMonth() : ta.get(ChronoField.DAY_OF_MONTH);
+            }
+            public int getHour() {
+                return localTime != null ? localTime.getHour() : ta.get(ChronoField.HOUR_OF_DAY);
+            }
+            public int getMinute() {
+                return localTime != null ? localTime.getMinute() : ta.get(ChronoField.MINUTE_OF_HOUR);
+            }
+            public int getSecond() {
+                return localTime != null ? localTime.getSecond() : ta.get(ChronoField.SECOND_OF_MINUTE);
+            }
+            public int getNano() {
+                return localTime != null ? localTime.getNano() : ta.get(ChronoField.NANO_OF_SECOND);
+            }
+            static TemporalAccessorWrapper wrapper(TemporalAccessor ta) {
+                LocalDate localDate = null;
+                LocalTime localTime = null;
+                if (ta instanceof LocalDate) {
+                    localDate = (LocalDate) ta;
+                } else if (ta instanceof LocalTime) {
+                    localTime = (LocalTime) ta;
+                } else if (ta instanceof LocalDateTime localDateTime) {
+                    localDate = localDateTime.toLocalDate();
+                    localTime = localDateTime.toLocalTime();
+                } else if (ta instanceof OffsetDateTime odt) {
+                    localDate = odt.toLocalDate();
+                    localTime = odt.toLocalTime();
+                } else if (ta instanceof OffsetTime) {
+                    localTime = ((OffsetTime) ta).toLocalTime();
+                } else if (ta instanceof ZonedDateTime zdt) {
+                    localDate = zdt.toLocalDate();
+                    localTime = zdt.toLocalTime();
+                }
+                return new TemporalAccessorWrapper(ta, localDate, localTime);
+            }
         }
     }
 }
