@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
  * questions.
  */
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
@@ -40,8 +37,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -73,7 +68,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.String.format;
 import static java.lang.System.out;
@@ -479,10 +473,12 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
                     // synchronous send will rethrow exceptions
                     Throwable throwable = t.getCause();
                     assert throwable != null;
-
-                    if (thrower.test(where, throwable)) {
-                        System.out.println(now() + "Got expected exception: " + throwable);
-                    } else throw causeNotFound(where, t);
+                    Throwable cause = findCause(where, throwable, thrower);
+                    if (cause == null) {
+                        throw causeNotFound(where, t);
+                    } else {
+                        System.out.println(now() + "Got expected exception: " + cause);
+                    }
                 }
             }
             if (response != null) {

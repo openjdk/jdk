@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
+import java.util.function.Function;
 import java.util.stream.Gatherer;
 import java.util.stream.Gatherers;
 import java.util.stream.Stream;
@@ -298,7 +301,7 @@ public class GatherersMapConcurrentTest {
 
     @ParameterizedTest
     @MethodSource("concurrencyConfigurations")
-    public void behavesAsExpectedWhenShortCircuited(ConcurrencyConfig cc) {
+    public void shortCircuits(ConcurrencyConfig cc) {
         final var limitTo = Math.max(cc.config().streamSize() / 2, 1);
 
         final var expectedResult = cc.config().stream()
@@ -310,6 +313,62 @@ public class GatherersMapConcurrentTest {
                 .gather(Gatherers.mapConcurrent(cc.concurrencyLevel(), x -> x * x))
                 .limit(limitTo)
                 .toList();
+
+        assertEquals(expectedResult, result);
+    }
+
+    @ParameterizedTest
+    @MethodSource("concurrencyConfigurations")
+    public void ignoresAndRestoresCallingThreadInterruption(ConcurrencyConfig cc) {
+        final var limitTo = Math.max(cc.config().streamSize() / 2, 1);
+
+        final var expectedResult = cc.config().stream()
+            .map(x -> x * x)
+            .limit(limitTo)
+            .toList();
+
+        // Ensure calling thread is interrupted
+        Thread.currentThread().interrupt();
+
+        final var result = cc.config().stream()
+            .gather(Gatherers.mapConcurrent(cc.concurrencyLevel(), x -> {
+                LockSupport.parkNanos(10000); // 10 us
+                return x * x;
+            }))
+            .limit(limitTo)
+            .toList();
+
+        // Ensure calling thread remains interrupted
+        assertEquals(true, Thread.interrupted());
+
+        assertEquals(expectedResult, result);
+    }
+
+    @ParameterizedTest
+    @MethodSource("concurrencyConfigurations")
+    public void limitsWorkInProgressToMaxConcurrency(ConcurrencyConfig cc) {
+        final var elementNum = new AtomicLong(0);
+        final var wipCount = new AtomicLong(0);
+        final var limitTo = Math.max(cc.config().streamSize() / 2, 1);
+
+        final var expectedResult = cc.config().stream()
+            .map(x -> x * x)
+            .limit(limitTo)
+            .toList();
+
+        Function<Integer, Integer> fun = x -> {
+            if (wipCount.incrementAndGet() > cc.concurrencyLevel)
+                throw new IllegalStateException("Too much wip!");
+            if (elementNum.getAndIncrement() == 0)
+                LockSupport.parkNanos(500_000_000); // 500 ms
+            return x * x;
+        };
+
+        final var result = cc.config().stream()
+            .gather(Gatherers.mapConcurrent(cc.concurrencyLevel(), fun))
+            .gather(Gatherer.of((v, e, d) -> wipCount.decrementAndGet() >= 0 && d.push(e)))
+            .limit(limitTo)
+            .toList();
 
         assertEquals(expectedResult, result);
     }
