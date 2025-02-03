@@ -2591,7 +2591,7 @@ public final class DateTimeFormatterBuilder {
             return true;
         }
 
-        public <T> T parse(CharSequence text, DateTimeFormatter formatter, TemporalQuery<T> query) {
+        protected <T> T parse(CharSequence text, DateTimeFormatter formatter, TemporalQuery<T> query) {
             Objects.requireNonNull(text, "text");
             Objects.requireNonNull(query, "query");
             try {
