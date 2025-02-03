@@ -779,9 +779,17 @@ void MacroAssembler::warn(const char* msg) {
   andq(rsp, -16);     // align stack as required by push_CPU_state and call
   push_CPU_state();   // keeps alignment at 16 bytes
 
+#ifdef _WIN64
+  // Windows always allocates space for it's register args
+  subq(rsp,  frame::arg_reg_save_area_bytes);
+#endif
   lea(c_rarg0, ExternalAddress((address) msg));
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, warning)));
 
+#ifdef _WIN64
+  // restore stack pointer
+  addq(rsp, frame::arg_reg_save_area_bytes);
+#endif
   pop_CPU_state();
   mov(rsp, rbp);
   pop(rbp);
@@ -2383,7 +2391,8 @@ void MacroAssembler::cmp32_mxcsr_std(Address mxcsr_save, Register tmp, Register 
   stmxcsr(mxcsr_save);
   movl(tmp, mxcsr_save);
   // Mask out any pending exceptions (only check control and mask bits)
-  if (EnableX86ECoreOpts) {
+  if (!EnableX86ECoreOpts) {
+    // On Ecore, status bits are set by default (for performance)
     orl(tmp, 0x003f);  // On Ecore, exception bits are set by default
   } else {
     andl(tmp, 0xFFC0);
