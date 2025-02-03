@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class AOTFlags {
         out.shouldContain("Hello World");
         out.shouldHaveExitValue(0);
 
-        // (2) Assembly Phase
+        // (2) Assembly Phase (AOTClassLinking unspecified -> should be enabled by default)
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
@@ -77,6 +77,7 @@ public class AOTFlags {
             "-Xlog:cds",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
+        out.shouldContain("Using AOT-linked classes: true (static archive: has aot-linked classes)");
         out.shouldContain("Opened archive hello.aot.");
         out.shouldContain("Hello World");
         out.shouldHaveExitValue(0);
@@ -107,7 +108,7 @@ public class AOTFlags {
         out.shouldContain("Hello World");
         out.shouldHaveExitValue(0);
 
-        // (5) AOTMode=on
+        // (6) AOTMode=on
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "--show-version",
@@ -116,6 +117,30 @@ public class AOTFlags {
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
         out.shouldContain(", sharing");
+        out.shouldContain("Opened archive hello.aot.");
+        out.shouldContain("Hello World");
+        out.shouldHaveExitValue(0);
+
+        // (7) Assembly Phase with -XX:-AOTClassLinking
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTMode=create",
+            "-XX:-AOTClassLinking",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            "-XX:AOTCache=" + aotCacheFile,
+            "-Xlog:cds",
+            "-cp", appJar);
+        out = CDSTestUtils.executeAndLog(pb, "asm");
+        out.shouldContain("Dumping shared data to file:");
+        out.shouldMatch("cds.*hello[.]aot");
+        out.shouldHaveExitValue(0);
+
+        // (8) Production Run with AOTCache, which was created with -XX:-AOTClassLinking
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTCache=" + aotCacheFile,
+            "-Xlog:cds",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "prod");
+        out.shouldContain("Using AOT-linked classes: false (static archive: no aot-linked classes)");
         out.shouldContain("Opened archive hello.aot.");
         out.shouldContain("Hello World");
         out.shouldHaveExitValue(0);

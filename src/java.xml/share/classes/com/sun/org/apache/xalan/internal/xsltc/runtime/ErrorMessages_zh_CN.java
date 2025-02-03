@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,6 +24,7 @@ import java.util.ListResourceBundle;
 
 /**
  * @author Morten Jorgensen
+ * @LastModified: Dec 2024
  */
 public class ErrorMessages_zh_CN extends ListResourceBundle {
 
@@ -275,10 +275,10 @@ public class ErrorMessages_zh_CN extends ListResourceBundle {
         "\u5176\u503C\u5FC5\u987B\u4E3A NCName \u7684\u5C5E\u6027\u5177\u6709\u503C ''{0}''"},
 
         {BasisLibrary.UNALLOWED_EXTENSION_FUNCTION_ERR,
-        "\u5F53\u5B89\u5168\u5904\u7406\u529F\u80FD\u8BBE\u7F6E\u4E3A\u201C\u771F\u201D\u65F6, \u4E0D\u5141\u8BB8\u4F7F\u7528\u6269\u5C55\u51FD\u6570 ''{0}''\u3002"},
+        "\u5F53\u6269\u5C55\u51FD\u6570\u88AB\u5B89\u5168\u5904\u7406\u529F\u80FD\u6216\u5C5E\u6027 ''jdk.xml.enableExtensionFunctions'' \u7981\u7528\u65F6\uFF0C\u4E0D\u5141\u8BB8\u4F7F\u7528\u6269\u5C55\u51FD\u6570 ''{0}''\u3002\u8981\u542F\u7528\u6269\u5C55\u51FD\u6570\uFF0C\u8BF7\u5C06 ''jdk.xml.enableExtensionFunctions'' \u8BBE\u7F6E\u4E3A ''true''\u3002"},
 
         {BasisLibrary.UNALLOWED_EXTENSION_ELEMENT_ERR,
-        "\u5F53\u5B89\u5168\u5904\u7406\u529F\u80FD\u8BBE\u7F6E\u4E3A\u201C\u771F\u201D\u65F6, \u4E0D\u5141\u8BB8\u4F7F\u7528\u6269\u5C55\u5143\u7D20 ''{0}''\u3002"},
+        "\u5F53\u6269\u5C55\u51FD\u6570\u88AB\u5B89\u5168\u5904\u7406\u529F\u80FD\u6216\u5C5E\u6027 ''jdk.xml.enableExtensionFunctions'' \u7981\u7528\u65F6\uFF0C\u4E0D\u5141\u8BB8\u4F7F\u7528\u6269\u5C55\u5143\u7D20 ''{0}''\u3002\u8981\u542F\u7528\u6269\u5C55\u51FD\u6570\uFF0C\u8BF7\u5C06 ''jdk.xml.enableExtensionFunctions'' \u8BBE\u7F6E\u4E3A ''true''\u3002"},
     };
     }
 

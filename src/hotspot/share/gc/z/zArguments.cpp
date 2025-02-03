@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zCollectedHeap.hpp"
@@ -140,10 +139,6 @@ void ZArguments::initialize() {
   // Backwards compatible alias for ZCollectionIntervalMajor
   if (!FLAG_IS_DEFAULT(ZCollectionInterval)) {
     FLAG_SET_ERGO_IF_DEFAULT(ZCollectionIntervalMajor, ZCollectionInterval);
-  }
-
-  if (FLAG_IS_DEFAULT(ZFragmentationLimit)) {
-    FLAG_SET_DEFAULT(ZFragmentationLimit, 5.0);
   }
 
   // Set medium page size here because MaxTenuringThreshold may use it.

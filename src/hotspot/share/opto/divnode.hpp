@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_DIVNODE_HPP
 #define SHARE_OPTO_DIVNODE_HPP
 
+#include "opto/callnode.hpp"
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
@@ -140,26 +141,41 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------ModFNode---------------------------------------
-// Float Modulus
-class ModFNode : public Node {
+// Base class for float and double modulus
+class ModFloatingNode : public CallLeafNode {
+protected:
+  Node* replace_with_con(PhaseGVN* phase, const Type* con);
+
 public:
-  ModFNode( Node *c, Node *in1, Node *in2 ) : Node(c,in1, in2) {}
-  virtual int Opcode() const;
-  virtual const Type* Value(PhaseGVN* phase) const;
-  virtual const Type *bottom_type() const { return Type::FLOAT; }
-  virtual uint ideal_reg() const { return Op_RegF; }
+  ModFloatingNode(Compile* C, const TypeFunc* tf, const char *name);
 };
 
-//------------------------------ModDNode---------------------------------------
-// Double Modulus
-class ModDNode : public Node {
+// Float Modulus
+class ModFNode : public ModFloatingNode {
+private:
+  Node* dividend() const { return in(TypeFunc::Parms + 0); }
+  Node* divisor() const { return in(TypeFunc::Parms + 1); }
+
 public:
-  ModDNode( Node *c, Node *in1, Node *in2 ) : Node(c, in1, in2) {}
+  ModFNode(Compile* C, Node* a, Node* b);
   virtual int Opcode() const;
-  virtual const Type* Value(PhaseGVN* phase) const;
-  virtual const Type *bottom_type() const { return Type::DOUBLE; }
+  virtual uint ideal_reg() const { return Op_RegF; }
+  virtual uint size_of() const { return sizeof(*this); }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+// Double Modulus
+class ModDNode : public ModFloatingNode {
+private:
+  Node* dividend() const { return in(TypeFunc::Parms + 0); }
+  Node* divisor() const { return in(TypeFunc::Parms + 2); }
+
+public:
+  ModDNode(Compile* C, Node* a, Node* b);
+  virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegD; }
+  virtual uint size_of() const { return sizeof(*this); }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------UModINode---------------------------------------
