@@ -25,30 +25,37 @@ package compiler.lib.template_framework;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 class Frame {
-    private final StringBuilder builder = new StringBuilder();
-    private final Map<Hook, Integer> hookInsertionIndex = new HashMap<>();
+    sealed interface Code permits Token, CodeList {}
+    record Token(String s) implements Code {}
+    record CodeList(List<Code> list) implements Code {}
+
+    private final List<Code> codeList = new ArrayList<Code>();
+
+    //private final Map<Hook, Integer> hookInsertionIndex = new HashMap<>();
     private final Map<String, String> variableNames = new HashMap<>();
     private final Map<String, String> context = new HashMap<>();
 
     void addString(String s) {
-        builder.append(s);
+        codeList.add(new Token(s));
     }
 
-    void addHook(Hook hook) {
-        hookInsertionIndex.put(hook, builder.length());
-    }
+    //void addHook(Hook hook) {
+    //    hookInsertionIndex.put(hook, builder.length());
+    //}
 
-    boolean hasHook(Hook hook) {
-        return hookInsertionIndex.containsKey(hook);
-    }
+    //boolean hasHook(Hook hook) {
+    //    return hookInsertionIndex.containsKey(hook);
+    //}
 
-    void insertIntoHook(Hook hook, String s) {
-        int index = hookInsertionIndex.get(hook);
-        builder.insert(index, s);
-        hookInsertionIndex.put(hook, index + s.length());
-    }
+    //void insertIntoHook(Hook hook, String s) {
+    //    int index = hookInsertionIndex.get(hook);
+    //    builder.insert(index, s);
+    //    hookInsertionIndex.put(hook, index + s.length());
+    //}
 
     public void addContext(String key, String value) {
         context.put(key, value);
@@ -65,8 +72,18 @@ class Frame {
         return variableNames.computeIfAbsent(name, s -> name + Renderer.variableId++);
     }
 
-    @Override
-    public String toString() {
+    String render() {
+        StringBuilder builder = new StringBuilder();
+        for (Code code : codeList) {
+            renderCode(builder, code);
+        }
         return builder.toString();
+    }
+
+    void renderCode(StringBuilder builder, Code code) {
+        switch (code) {
+            case Token(String s) -> builder.append(s);
+            case CodeList(List<Code> list) -> list.forEach((Code c) -> renderCode(builder, c));
+        }
     }
 }
