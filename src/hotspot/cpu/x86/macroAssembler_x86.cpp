@@ -595,7 +595,6 @@ void MacroAssembler::decrementq(Address dst, int value) {
   /* else */      { subq(dst, value)       ; return; }
 }
 
-
 void MacroAssembler::incrementq(AddressLiteral dst, Register rscratch) {
   assert(rscratch != noreg || always_reachable(dst), "missing");
 
@@ -622,7 +621,6 @@ void MacroAssembler::incrementq(Address dst, int value) {
   if (value == 1 && UseIncDec) { incq(dst) ; return; }
   /* else */      { addq(dst, value)       ; return; }
 }
-
 
 // 32bit can do a case table jump in one instruction but we no longer allow the base
 // to be installed in the Address class
@@ -2022,7 +2020,6 @@ void MacroAssembler::decrementl(Address dst, int value) {
   /* else */      { subl(dst, value)       ; return; }
 }
 
-
 void MacroAssembler::division_with_shift (Register reg, int shift_value) {
   assert(shift_value > 0, "illegal shift value");
   Label _is_positive;
@@ -2339,8 +2336,6 @@ void MacroAssembler::incrementl(Address dst, int value) {
   if (value == 1 && UseIncDec) { incl(dst) ; return; }
   /* else */      { addl(dst, value)       ; return; }
 }
-
-
 
 void MacroAssembler::jump(AddressLiteral dst, Register rscratch) {
   assert(rscratch != noreg || always_reachable(dst), "missing");
