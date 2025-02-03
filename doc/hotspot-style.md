@@ -155,7 +155,7 @@ a .inline.hpp file.
 files.
 
 * All .inline.hpp files should include their corresponding .hpp file as
-the first include line with blank line separating it from the rest of the
+the first include line with a blank line separating it from the rest of the
 include lines. Declarations needed by other files should be put in the .hpp
 file, and not in the .inline.hpp file. This rule exists to resolve problems
 with circular dependencies between .inline.hpp files.
@@ -164,7 +164,7 @@ with circular dependencies between .inline.hpp files.
 
 * Use include guards for .hpp and .inline.hpp files. The name of the defined
 guard should be derived from the full search path of the file relative to the
-hotspot source directory. The define should be all upper case with all paths
+hotspot source directory. The guard should be all upper case with all paths
 separators and periods replaced by underscores.
 
 * Some build configurations use precompiled headers to speed up the
