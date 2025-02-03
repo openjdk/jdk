@@ -57,7 +57,6 @@ import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
-import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFile;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
@@ -220,7 +219,7 @@ public class BasicTest {
                     return resp.body();
                 });
         response.join();
-        assertFileContentsEqual(src, dest);
+        assert Files.mismatch(src, dest) < 0;
         System.err.println("streamTest: DONE");
     }
 
@@ -281,10 +280,11 @@ public class BasicTest {
             responses[i] = client.sendAsync(request, BodyHandlers.ofFile(createTempFile(TEMP_FILE_PREFIX, null)))
                 //.thenApply(resp -> compareFiles(resp.body(), source));
                 .thenApply(resp -> {
+                    Path body = resp.body();
                     System.out.printf("Resp status %d body size %d\n",
-                                      resp.statusCode(), resp.body().toFile().length());
+                                      resp.statusCode(), body.toFile().length());
                     try {
-                        assertFileContentsEqual(resp.body(), source);
+                        assert Files.mismatch(body, source) < 0;
                     } catch (IOException exception) {
                         throw new UncheckedIOException(exception);
                     }
