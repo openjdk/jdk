@@ -906,4 +906,110 @@ public class TCKDateTimeFormatter {
         BASIC_FORMATTER.toFormat(null);
     }
 
+    @Test
+    public void test_out_twice_1() {
+        int[] powers = new int[] {
+                1000000000,
+                100000000,
+                10000000,
+                1000000,
+                100000,
+                10000,
+                1000,
+                100,
+                10,
+                1,
+        };
+        int patternCount = 10;
+        String[] dateTimePatterns = new String[patternCount];
+        String[] timePatterns = new String[patternCount];
+        for (int i = 0; i < patternCount; i++) {
+            String nano = i == 0 ? "" : "." + "S".repeat(i);
+            String dateTimePattern = "yyyy-MM-dd HH:mm:ss" + nano;
+            dateTimePatterns[i] = dateTimePattern + " " + dateTimePattern;
+
+            String timePattern = "HH:mm:ss" + nano;
+            timePatterns[i] = timePattern + " " + timePattern;
+        }
+        DateTimeFormatter[] dateTimeFormatters = new DateTimeFormatter[patternCount];
+        DateTimeFormatter[] timeFormatters = new DateTimeFormatter[patternCount];
+        for (int i = 0; i < patternCount; i++) {
+            dateTimeFormatters[i] = DateTimeFormatter.ofPattern(dateTimePatterns[i], Locale.US);
+            timeFormatters[i] = DateTimeFormatter.ofPattern(timePatterns[i], Locale.US);
+        }
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd yyyy-MM-dd", Locale.US);
+        LocalDateTime dateTime = LocalDateTime.now();
+
+        String dateStr = new StringBuilder().append(dateTime.getYear())
+                .append(dateTime.getMonthValue() < 10 ? "-0" : "-").append(dateTime.getMonthValue())
+                .append(dateTime.getDayOfMonth() < 10 ? "-0" : "-").append(dateTime.getDayOfMonth()).toString();
+
+        String dateExpected = dateStr + " " + dateStr;
+        assertEquals(dateExpected, dateFormatter.format(dateTime));
+        assertEquals(dateExpected, dateFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+        assertEquals(dateExpected, dateFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+
+        for (int i = 0; i < patternCount; i++) {
+            StringBuilder buf = new StringBuilder()
+                    .append(dateTime.getHour() < 10 ? "0" : "").append(dateTime.getHour())
+                    .append(dateTime.getMinute() < 10 ? ":0" : ":").append(dateTime.getMinute())
+                    .append(dateTime.getSecond() < 10 ? ":0" : ":").append(dateTime.getSecond());
+            if (i > 0) {
+                buf.append('.');
+                int power = powers[i];
+                int value = dateTime.getNano() / power;
+                buf.append(("%0" + i + "d").formatted(value));
+            }
+            String timeStr = buf.toString();
+            String dateTimeExpected = dateStr + " " + timeStr + " " + dateStr + " " + timeStr;
+            DateTimeFormatter dateTimeFormatter = dateTimeFormatters[i];
+            assertEquals(dateTimeExpected, dateTimeFormatter.format(dateTime));
+            assertEquals(dateTimeExpected, dateTimeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+            assertEquals(dateTimeExpected, dateTimeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+
+            String timeExpected = timeStr + " " + timeStr;
+            DateTimeFormatter timeFormatter = timeFormatters[i];
+            assertEquals(timeExpected, timeFormatter.format(dateTime));
+            assertEquals(timeExpected, timeFormatter.format(dateTime.toLocalTime()));
+            assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+            assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC).toOffsetTime()));
+            assertEquals(timeExpected, timeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+        }
+    }
+
+    @Test
+    public void test_out_twice_2() {
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-M-d yyyy-M-d", Locale.US);
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("H:m:s H:m:s", Locale.US);
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-M-d H:m:s yyyy-M-d H:m:s", Locale.US);
+
+        LocalDateTime dateTime = LocalDateTime.now();
+
+        String dateStr = new StringBuilder().append(dateTime.getYear())
+                .append('-').append(dateTime.getMonthValue())
+                .append('-').append(dateTime.getDayOfMonth())
+                .toString();
+
+        String dateExpected = dateStr + " " + dateStr;
+        assertEquals(dateExpected, dateFormatter.format(dateTime));
+        assertEquals(dateExpected, dateFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+        assertEquals(dateExpected, dateFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+
+        StringBuilder buf = new StringBuilder().append(dateTime.getHour())
+                .append(':').append(dateTime.getMinute())
+                .append(':').append(dateTime.getSecond());
+        String timeStr = buf.toString();
+
+        String dateTimeExpected = dateStr + " " + timeStr + " " + dateStr + " " + timeStr;
+        assertEquals(dateTimeExpected, dateTimeFormatter.format(dateTime));
+        assertEquals(dateTimeExpected, dateTimeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+        assertEquals(dateTimeExpected, dateTimeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+
+        String timeExpected = timeStr + " " + timeStr;
+        assertEquals(timeExpected, timeFormatter.format(dateTime));
+        assertEquals(timeExpected, timeFormatter.format(dateTime.toLocalTime()));
+        assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+        assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC).toOffsetTime()));
+        assertEquals(timeExpected, timeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+    }
 }

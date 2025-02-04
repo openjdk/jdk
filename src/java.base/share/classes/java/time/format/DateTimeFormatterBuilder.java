@@ -3048,7 +3048,7 @@ public final class DateTimeFormatterBuilder {
             printValue(buf, decimalStyle, size, value);
         }
 
-        protected final void printValueWidth1NotNegative(StringBuilder buf, int value) {
+        protected void printValueWidth1NotNegative(StringBuilder buf, int value) {
             buf.append((char) ('0' + value));
         }
 
@@ -3056,11 +3056,11 @@ public final class DateTimeFormatterBuilder {
             buf.append(value);
         }
 
-        protected final void printValueFixedWidth2NotNegative(StringBuilder buf, int value) {
+        protected void printValueFixedWidth2NotNegative(StringBuilder buf, int value) {
             JLA.appendPair(buf, value);
         }
 
-        protected final void printValueFixWidth3NotNegative(StringBuilder buf, int value) {
+        protected void printValueFixWidth3NotNegative(StringBuilder buf, int value) {
             if (value >= 1000) {
                 maxWidthError(value);
             }
@@ -3070,7 +3070,7 @@ public final class DateTimeFormatterBuilder {
             buf.append(value);
         }
 
-        protected final void printValueFixWidth4NotNegative(StringBuilder buf, int value) {
+        protected void printValueFixWidth4NotNegative(StringBuilder buf, int value) {
             if (Math.abs(value) >= 10000) {
                 maxWidthError(value);
             }
@@ -3093,14 +3093,6 @@ public final class DateTimeFormatterBuilder {
             } else {
                 buf.append(value);
             }
-        }
-
-        protected final void printNanoFixWidth3(StringBuilder buf, int value) {
-            int nano3 = value / 1_000_000;
-            if (nano3 < 100) {
-                buf.repeat('0', nano3 < 10 ? 2 : 1);
-            }
-            buf.append(nano3);
         }
 
         protected final void printValue(StringBuilder buf, DecimalStyle decimalStyle, int size, long value) {
@@ -3736,6 +3728,28 @@ public final class DateTimeFormatterBuilder {
                     buf.append(decimalStyle.convertNumberToI18N(Integer.toString(val)));
                 }
             }
+        }
+
+        protected void printValueWidth1NotNegative(StringBuilder buf, int value) {
+            buf.append(value / 100_000_000);
+        }
+
+        protected void printValueFixedWidth2NotNegative(StringBuilder buf, int value) {
+            JLA.appendPair(buf, value / 10_000_000);
+        }
+
+        protected void printValueFixWidth3NotNegative(StringBuilder buf, int value) {
+            value /= 1000_000;
+            if (value < 100) {
+                buf.repeat('0', value < 10 ? 2 : 1);
+            }
+            buf.append(value);
+        }
+
+        protected void printValueFixWidth4NotNegative(StringBuilder buf, int value) {
+            value /= 100_000;
+            JLA.appendPair(buf, value / 100);
+            JLA.appendPair(buf, value % 100);
         }
 
         @Override
@@ -6411,7 +6425,7 @@ public final class DateTimeFormatterBuilder {
                  *      case HOUR_OF_DAY      -> printValueFixedWidth2NotNegative(buf, temporal.getHourOfDay());
                  *      case MINUTE_OF_HOUR   -> printValueFixedWidth2NotNegative(buf, temporal.getMinuteOfHour());
                  *      case SECOND_OF_MINUTE -> printValueFixedWidth2NotNegative(buf, decimalStyle, temporal.getSecondOfMinute());
-                 *      case NANO_OF_SECOND   -> printNanoFixWidth3(buf, temporal.getNanoOfSecond()); //
+                 *      case NANO_OF_SECOND   -> printValueFixWidth3NotNegative(buf, temporal.getNanoOfSecond());
                  *      default               -> printerParserN.format(buf, temporal.getLong(field));
                  *  };
                  *
@@ -6483,8 +6497,6 @@ public final class DateTimeFormatterBuilder {
                         } else if (pp.minWidth == 3 && pp.maxWidth == 3) {
                             if (minimum >= 0 && maximumSize <= 3) {
                                 method = "printValueFixWidth3NotNegative";
-                            } else if (pp.field == ChronoField.NANO_OF_SECOND) {
-                                method = "printNanoFixWidth3";
                             }
                         } else if (pp.minWidth == 4 && pp.maxWidth == 4) {
                             method = "printValueFixWidth4NotNegative";
