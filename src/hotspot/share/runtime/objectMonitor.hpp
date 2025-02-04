@@ -434,7 +434,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
 
-  bool           TryLockWithContentionMark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
+  bool           try_lock_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   TryLockResult  TryLock(JavaThread* current);
 
   bool      TrySpin(JavaThread* current);
