@@ -85,8 +85,9 @@ public class HotSpotSpeculationLog implements SpeculationLog {
         if (managesFailedSpeculations) {
             synchronized (this) {
                 if (failedSpeculationsAddress == 0L) {
-                    failedSpeculationsAddress = UnsafeAccess.UNSAFE.allocateMemory(HotSpotJVMCIRuntime.getHostWordKind().getByteCount());
-                    UnsafeAccess.UNSAFE.putAddress(failedSpeculationsAddress, 0L);
+                    long address = UnsafeAccess.UNSAFE.allocateMemory(HotSpotJVMCIRuntime.getHostWordKind().getByteCount());
+                    UnsafeAccess.UNSAFE.putAddress(address, 0L);
+                    failedSpeculationsAddress = address;
                     LogCleaner c = new LogCleaner(this, failedSpeculationsAddress);
                     assert c.address == failedSpeculationsAddress;
                 }
@@ -171,7 +172,11 @@ public class HotSpotSpeculationLog implements SpeculationLog {
 
     @Override
     public void collectFailedSpeculations() {
-        if (failedSpeculationsAddress != 0 && UnsafeAccess.UNSAFE.getLong(failedSpeculationsAddress) != 0) {
+        if (failedSpeculationsAddress == 0) {
+            return;
+        }
+
+        if (UnsafeAccess.UNSAFE.getLong(getFailedSpeculationsAddress()) != 0) {
             failedSpeculations = compilerToVM().getFailedSpeculations(failedSpeculationsAddress, failedSpeculations);
             assert failedSpeculations.getClass() == byte[][].class;
         }
