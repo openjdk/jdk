@@ -386,9 +386,6 @@ public interface QuicTLSEngine {
      * {@code run} method returns, the {@code Runnable} object
      * is no longer needed and may be discarded.
      * <P>
-     * Delegated tasks run in the {@code AccessControlContext}
-     * in place when this object was created.
-     * <P>
      * A call to this method will return each outstanding task
      * exactly once.
      * <P>

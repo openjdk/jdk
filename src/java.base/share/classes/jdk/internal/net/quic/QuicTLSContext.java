@@ -26,8 +26,6 @@ package jdk.internal.net.quic;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.Objects;
 

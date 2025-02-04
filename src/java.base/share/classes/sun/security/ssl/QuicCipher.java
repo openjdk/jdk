@@ -26,11 +26,9 @@ package sun.security.ssl;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.Collections;
 import java.util.HashMap;
