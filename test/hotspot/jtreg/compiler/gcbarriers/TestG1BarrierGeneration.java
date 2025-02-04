@@ -794,14 +794,73 @@ public class TestG1BarrierGeneration {
         return fVarHandle.getAndSet(o, newVal);
     }
 
-    // TODO: add more tests (perhaps only with getandset) for different barrier elision cases (conditional, exception, with safepoints, etc).
+    @Test
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    static Object testGetAndSetConditionallyOnNewObject(Object oldVal, Object newVal, boolean c) {
+        Outer o = new Outer();
+        o.f = oldVal;
+        if (c) {
+            return fVarHandle.getAndSet(o, newVal);
+        }
+        return oldVal;
+    }
+
+    @Test
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    static Object testGetAndSetOnNewObjectAfterException(Object oldVal, Object newVal, boolean c) throws Exception {
+        Outer o = new Outer();
+        if (c) {
+            throw new Exception("");
+        }
+        o.f = oldVal;
+        return fVarHandle.getAndSet(o, newVal);
+    }
+
+    @Test
+    @IR(applyIf = {"UseCompressedOops", "false"},
+        counts = {IRNode.G1_GET_AND_SET_P_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIf = {"UseCompressedOops", "true"},
+        counts = {IRNode.G1_GET_AND_SET_N_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    static Object testGetAndSetOnNewObjectAfterCall(Object oldVal, Object newVal) {
+        Outer o = new Outer();
+        nonInlinedMethod();
+        o.f = oldVal;
+        return fVarHandle.getAndSet(o, newVal);
+    }
 
     @Run(test = {"testCompareAndExchange",
                  "testCompareAndSwap",
                  "testGetAndSet",
                  "testCompareAndExchangeOnNewObject",
                  "testCompareAndSwapOnNewObject",
-                 "testGetAndSetOnNewObject"})
+                 "testGetAndSetOnNewObject",
+                 "testGetAndSetConditionallyOnNewObject",
+                 "testGetAndSetOnNewObjectAfterException",
+                 "testGetAndSetOnNewObjectAfterCall"})
     public void runAtomicTests() {
         {
             Outer o = new Outer();
@@ -846,6 +905,27 @@ public class TestG1BarrierGeneration {
             Object oldVal = new Object();
             Object newVal = new Object();
             Object oldVal2 = testGetAndSetOnNewObject(oldVal, newVal);
+            Asserts.assertEquals(oldVal, oldVal2);
+        }
+        {
+            Object oldVal = new Object();
+            Object newVal = new Object();
+            boolean c = ThreadLocalRandom.current().nextBoolean();
+            Object oldVal2 = testGetAndSetConditionallyOnNewObject(oldVal, newVal, c);
+            Asserts.assertEquals(oldVal, oldVal2);
+        }
+        {
+            Object oldVal = new Object();
+            Object newVal = new Object();
+            boolean c = ThreadLocalRandom.current().nextBoolean();
+            try {
+                Object oldVal2 = testGetAndSetOnNewObjectAfterException(oldVal, newVal, c);
+            } catch (Exception e) {}
+        }
+        {
+            Object oldVal = new Object();
+            Object newVal = new Object();
+            Object oldVal2 = testGetAndSetOnNewObjectAfterCall(oldVal, newVal);
             Asserts.assertEquals(oldVal, oldVal2);
         }
     }
