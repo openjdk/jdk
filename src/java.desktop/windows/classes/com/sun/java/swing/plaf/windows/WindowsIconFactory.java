@@ -848,6 +848,7 @@ public class WindowsIconFactory implements Serializable
                 }
                 assert menuItem == null || c == menuItem;
                 Icon icon = getIcon();
+                int skinWidth = -1;
                 if (type == JCheckBoxMenuItem.class
                       || type == JRadioButtonMenuItem.class) {
                     AbstractButton b = (AbstractButton) c;
@@ -877,11 +878,14 @@ public class WindowsIconFactory implements Serializable
                                 getIconWidth(), getIconHeight(), backgroundState);
                             skin = xp.getSkin(c, part);
                             skin.paintSkin(g, x - OFFSET, y + OFFSET, state);
+                            skinWidth = skin.getWidth();
                         }
                     }
                 }
                 if (icon != null) {
-                    icon.paintIcon(c, g, x + 3 * OFFSET, y + OFFSET);
+                    System.out.println(skinWidth);
+                    icon.paintIcon(c, g, x - OFFSET +
+                            ((skinWidth != -1) ? skinWidth : 0), y + OFFSET);
                 }
             }
             private static WindowsMenuItemUIAccessor getAccessor(
