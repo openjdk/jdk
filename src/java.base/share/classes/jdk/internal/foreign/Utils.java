@@ -103,13 +103,15 @@ public final class Utils {
      * @return a raw memory segment var handle.
      */
     public static VarHandle makeRawSegmentViewVarHandle(MemoryLayout enclosing, ValueLayout layout) {
-        var vl = layout.withoutName();
-        if (enclosing.withoutName().equals(vl)) {
-            final class VarHandleCache {
-                private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+        if (enclosing instanceof ValueLayout direct) {
+            var key = direct.withoutName();
+            if (key.equals(layout.withoutName())) {
+                final class VarHandleCache {
+                    private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+                }
+                return VarHandleCache.HANDLE_MAP
+                        .computeIfAbsent(key, vl1 -> Utils.makeRawSegmentViewVarHandleInternal(vl1, vl1));
             }
-            return VarHandleCache.HANDLE_MAP
-                    .computeIfAbsent(vl, vl1 -> Utils.makeRawSegmentViewVarHandleInternal(vl1, vl1));
         }
         return makeRawSegmentViewVarHandleInternal(enclosing, layout);
     }

@@ -41,6 +41,7 @@ abstract sealed class VarHandleSegmentViewBase extends VarHandle permits
 
     /** endianness **/
     final boolean be;
+    /** The layout the accessed segment must be compatible with. */
     final MemoryLayout enclosing;
 
     VarHandleSegmentViewBase(VarForm form, boolean be, MemoryLayout enclosing, boolean exact) {
