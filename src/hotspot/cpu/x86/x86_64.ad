@@ -4384,17 +4384,18 @@ instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
   ins_pipe(ialu_reg_mem); // XXX
 %}
 
-instruct loadNKlassCompactHeaders_ndd(rRegN dst, memory mem)
+instruct loadNKlassCompactHeaders_ndd(rRegN dst, memory mem, rFlagsReg cr)
 %{
   predicate(UseAPX && UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
+  effect(KILL cr);
 
   ins_cost(125); // XXX
   format %{
     "eshrl    $dst, $mem, markWord::klass_shift_at_offset\t# compressed klass ptr, shifted (ndd)\n\t"
   %}
   ins_encode %{
-    __ eshrl($dst$$Register, $mem$$Address, markWord::klass_shift_at_offset, true);
+    __ eshrl($dst$$Register, $mem$$Address, markWord::klass_shift_at_offset, false);
   %}
   ins_pipe(ialu_reg_mem); // XXX
 %}
@@ -5559,13 +5560,14 @@ instruct countLeadingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countLeadingZerosI_nf(rRegI dst, rRegI src) %{
+instruct countLeadingZerosI_nf(rRegI dst, rRegI src, rFlagsReg cr) %{
   predicate(UseAPX && UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosI src));
+  effect(KILL cr);
 
   format %{ "elzcntl  $dst, $src\t# count leading zeros (int  nf)" %}
   ins_encode %{
-    __ elzcntl($dst$$Register, $src$$Register, true);
+    __ elzcntl($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -5582,13 +5584,15 @@ instruct countLeadingZerosI_mem(rRegI dst, memory src, rFlagsReg cr) %{
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct countLeadingZerosI_mem_nf(rRegI dst, memory src) %{
+instruct countLeadingZerosI_mem_nf(rRegI dst, memory src, rFlagsReg cr) %{
   predicate(UseAPX && UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosI (LoadI src)));
+  
+  effect(KILL cr);
   ins_cost(175);
   format %{ "elzcntl  $dst, $src\t# count leading zeros (int) nf" %}
   ins_encode %{
-    __ elzcntl($dst$$Register, $src$$Address, true);
+    __ elzcntl($dst$$Register, $src$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -5630,13 +5634,14 @@ instruct countLeadingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countLeadingZerosL_nf(rRegI dst, rRegL src) %{
+instruct countLeadingZerosL_nf(rRegI dst, rRegL src, rFlagsReg cr) %{
   predicate(UseAPX && UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosL src));
+  effect(KILL cr);
 
   format %{ "elzcntq  $dst, $src\t# count leading zeros (long nf)" %}
   ins_encode %{
-    __ elzcntq($dst$$Register, $src$$Register, true);
+    __ elzcntq($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -5653,13 +5658,15 @@ instruct countLeadingZerosL_mem(rRegI dst, memory src, rFlagsReg cr) %{
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct countLeadingZerosL_mem_nf(rRegI dst, memory src) %{
+instruct countLeadingZerosL_mem_nf(rRegI dst, memory src, rFlagsReg cr) %{
   predicate(UseAPX && UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosL (LoadL src)));
+  effect(KILL cr);
+
   ins_cost(175);
   format %{ "elzcntq  $dst, $src\t# count leading zeros (long) nf" %}
   ins_encode %{
-    __ elzcntq($dst$$Register, $src$$Address, true);
+    __ elzcntq($dst$$Register, $src$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -5701,13 +5708,14 @@ instruct countTrailingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countTrailingZerosI_nf(rRegI dst, rRegI src) %{
+instruct countTrailingZerosI_nf(rRegI dst, rRegI src, rFlagsReg cr) %{
   predicate(UseAPX && UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosI src));
+  effect(KILL cr);
 
   format %{ "etzcntl    $dst, $src\t# count trailing zeros (int nf)" %}
   ins_encode %{
-    __ etzcntl($dst$$Register, $src$$Register, true);
+    __ etzcntl($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -5724,13 +5732,15 @@ instruct countTrailingZerosI_mem(rRegI dst, memory src, rFlagsReg cr) %{
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct countTrailingZerosI_mem_nf(rRegI dst, memory src) %{
+instruct countTrailingZerosI_mem_nf(rRegI dst, memory src, rFlagsReg cr) %{
   predicate(UseAPX && UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosI (LoadI src)));
+  effect(KILL cr);
+
   ins_cost(175);
   format %{ "etzcntl    $dst, $src\t# count trailing zeros (int) nf" %}
   ins_encode %{
-    __ etzcntl($dst$$Register, $src$$Address, true);
+    __ etzcntl($dst$$Register, $src$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -5770,10 +5780,11 @@ instruct countTrailingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
 instruct countTrailingZerosL_nf(rRegI dst, rRegL src, rFlagsReg cr) %{
   predicate(UseAPX && UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosL src));
+  effect(KILL cr);
 
   format %{ "etzcntq    $dst, $src\t# count trailing zeros (long nf)" %}
   ins_encode %{
-    __ etzcntq($dst$$Register, $src$$Register, true);
+    __ etzcntq($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -5790,13 +5801,15 @@ instruct countTrailingZerosL_mem(rRegI dst, memory src, rFlagsReg cr) %{
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct countTrailingZerosL_mem_nf(rRegI dst, memory src) %{
+instruct countTrailingZerosL_mem_nf(rRegI dst, memory src, rFlagsReg cr) %{
   predicate(UseAPX && UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosL (LoadL src)));
+  effect(KILL cr);
+
   ins_cost(175);
   format %{ "etzcntq    $dst, $src\t# count trailing zeros (long) nf" %}
   ins_encode %{
-    __ etzcntq($dst$$Register, $src$$Address, true);
+    __ etzcntq($dst$$Register, $src$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -5880,13 +5893,14 @@ instruct popCountI(rRegI dst, rRegI src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct popCountI_nf(rRegI dst, rRegI src) %{
+instruct popCountI_nf(rRegI dst, rRegI src, rFlagsReg cr) %{
   predicate(UsePopCountInstruction && UseAPX);
   match(Set dst (PopCountI src));
+  effect(KILL cr);
 
   format %{ "epopcntl  $dst, $src\t pop count (int nf)" %}
   ins_encode %{
-    __ epopcntl($dst$$Register, $src$$Register, true);
+    __ epopcntl($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -5904,13 +5918,14 @@ instruct popCountI_mem(rRegI dst, memory mem, rFlagsReg cr) %{
 %}
 
 
-instruct popCountI_mem_nf(rRegI dst, memory mem) %{
+instruct popCountI_mem_nf(rRegI dst, memory mem, rFlagsReg cr) %{
   predicate(UseAPX && UsePopCountInstruction);
   match(Set dst (PopCountI (LoadI mem)));
+  effect(KILL cr);
 
   format %{ "epopcntl  $dst, $mem\t pop count (int nf)" %}
   ins_encode %{
-    __ epopcntl($dst$$Register, $mem$$Address, true);
+    __ epopcntl($dst$$Register, $mem$$Address, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -5929,13 +5944,14 @@ instruct popCountL(rRegI dst, rRegL src, rFlagsReg cr) %{
 %}
 
 // Note: Long.bitCount(long) returns an int.
-instruct popCountL_nf(rRegI dst, rRegL src) %{
+instruct popCountL_nf(rRegI dst, rRegL src, rFlagsReg cr) %{
   predicate(UseAPX && UsePopCountInstruction);
   match(Set dst (PopCountL src));
+  effect(KILL cr);
 
   format %{ "epopcntq  $dst, $src\t# pop count (long nf)" %}
   ins_encode %{
-    __ epopcntq($dst$$Register, $src$$Register, true);
+    __ epopcntq($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -5953,13 +5969,14 @@ instruct popCountL_mem(rRegI dst, memory mem, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct popCountL_mem_nf(rRegI dst, memory mem) %{
+instruct popCountL_mem_nf(rRegI dst, memory mem, rFlagsReg cr) %{
   predicate(UseAPX && UsePopCountInstruction);
   match(Set dst (PopCountL (LoadL mem)));
+  effect(KILL cr);
 
   format %{ "epopcntq  $dst, $mem\t pop count (long nf)" %}
   ins_encode %{
-    __ epopcntq($dst$$Register, $mem$$Address, true);
+    __ epopcntq($dst$$Register, $mem$$Address, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -6994,14 +7011,15 @@ instruct addI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct addI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
+instruct addI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AddI src1 src2));
+  effect(KILL cr);
 
   format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eaddl($dst$$Register, $src1$$Register, $src2$$Register, true);
+    __ eaddl($dst$$Register, $src1$$Register, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -7020,26 +7038,28 @@ instruct addI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
   ins_pipe( ialu_reg );
 %}
 
-instruct addI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2)
+instruct addI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AddI src1 src2));
+  effect(KILL cr);
 
   format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eaddl($dst$$Register, $src1$$Register, $src2$$constant, true);
+    __ eaddl($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe( ialu_reg );
 %}
 
-instruct addI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2)
+instruct addI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AddI (LoadI src1) src2));
+  effect(KILL cr);
 
   format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eaddl($dst$$Register, $src1$$Address, $src2$$constant, true);
+    __ eaddl($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe( ialu_reg );
 %}
@@ -7059,28 +7079,30 @@ instruct addI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct addI_rReg_mem_rReg_ndd(rRegI dst, memory src1, rRegI src2)
+instruct addI_rReg_mem_rReg_ndd(rRegI dst, memory src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AddI (LoadI src1) src2));
+  effect(KILL cr);
 
   ins_cost(150); // XXX
   format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eaddl($dst$$Register, $src1$$Address, $src2$$Register, true);
+    __ eaddl($dst$$Register, $src1$$Address, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct addI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2)
+instruct addI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AddI src1 (LoadI src2)));
+  effect(KILL cr);
 
   ins_cost(150); // XXX
   format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eaddl($dst$$Register, $src1$$Register, $src2$$Address, true);
+    __ eaddl($dst$$Register, $src1$$Register, $src2$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -7128,26 +7150,28 @@ instruct incI_rReg(rRegI dst, immI_1 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct incI_rReg_ndd(rRegI dst, rRegI src, immI_1 val)
+instruct incI_rReg_ndd(rRegI dst, rRegI src, immI_1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddI src val));
+  effect(KILL cr);
 
   format %{ "eincl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ eincl($dst$$Register, $src$$Register, true);
+    __ eincl($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
-instruct incI_rReg_mem_ndd(rRegI dst, memory src, immI_1 val)
+instruct incI_rReg_mem_ndd(rRegI dst, memory src, immI_1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddI (LoadI src) val));
+  effect(KILL cr);
 
   format %{ "eincl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ eincl($dst$$Register, $src$$Address, true);
+    __ eincl($dst$$Register, $src$$Address, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7180,26 +7204,28 @@ instruct decI_rReg(rRegI dst, immI_M1 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct decI_rReg_ndd(rRegI dst, rRegI src, immI_M1 val)
+instruct decI_rReg_ndd(rRegI dst, rRegI src, immI_M1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddI src val));
+  effect(KILL cr);
 
   format %{ "edecl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ edecl($dst$$Register, $src$$Register, true);
+    __ edecl($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
-instruct decI_rReg_mem_ndd(rRegI dst, memory src, immI_M1 val)
+instruct decI_rReg_mem_ndd(rRegI dst, memory src, immI_M1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddI (LoadI src) val));
+  effect(KILL cr);
 
   format %{ "edecl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ edecl($dst$$Register, $src$$Address, true);
+    __ edecl($dst$$Register, $src$$Address, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7284,14 +7310,15 @@ instruct addL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct addL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2)
+instruct addL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AddL src1 src2));
+  effect(KILL cr);
 
   format %{ "eaddq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eaddq($dst$$Register, $src1$$Register, $src2$$Register, true);
+    __ eaddq($dst$$Register, $src1$$Register, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -7310,26 +7337,28 @@ instruct addL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
   ins_pipe( ialu_reg );
 %}
 
-instruct addL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2)
+instruct addL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AddL src1 src2));
+  effect(KILL cr);
 
   format %{ "eaddq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eaddq($dst$$Register, $src1$$Register, $src2$$constant, true);
+    __ eaddq($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe( ialu_reg );
 %}
 
-instruct addL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2)
+instruct addL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AddL (LoadL src1) src2));
+  effect(KILL cr);
 
   format %{ "eaddq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eaddq($dst$$Register, $src1$$Address, $src2$$constant, true);
+    __ eaddq($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe( ialu_reg );
 %}
@@ -7349,28 +7378,30 @@ instruct addL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct addL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2)
+instruct addL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AddL src1 (LoadL src2)));
+  effect(KILL cr);
 
   ins_cost(150); // XXX
   format %{ "eaddq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eaddq($dst$$Register, $src1$$Register, $src2$$Address, true);
+    __ eaddq($dst$$Register, $src1$$Register, $src2$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct addL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2)
+instruct addL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AddL (LoadL src1) src2));
+  effect(KILL cr);
 
   ins_cost(150); // XXX
   format %{ "eaddq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eaddq($dst$$Register, $src1$$Address, $src2$$Register, true);
+    __ eaddq($dst$$Register, $src1$$Address, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -7416,26 +7447,28 @@ instruct incL_rReg(rRegI dst, immL1 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val)
+instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddL src val));
+  effect(KILL cr);
 
   format %{ "eincq    $dst, $src\t# long ndd" %}
   ins_encode %{
-    __ eincq($dst$$Register, $src$$Register, true);
+    __ eincq($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
-instruct incL_rReg_mem_ndd(rRegI dst, memory src, immL1 val)
+instruct incL_rReg_mem_ndd(rRegI dst, memory src, immL1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddL (LoadL src) val));
+  effect(KILL cr);
 
   format %{ "eincq    $dst, $src\t# long ndd" %}
   ins_encode %{
-    __ eincq($dst$$Register, $src$$Address, true);
+    __ eincq($dst$$Register, $src$$Address, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7468,26 +7501,28 @@ instruct decL_rReg(rRegL dst, immL_M1 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct decL_rReg_ndd(rRegL dst, rRegL src, immL_M1 val)
+instruct decL_rReg_ndd(rRegL dst, rRegL src, immL_M1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddL src val));
+  effect(KILL cr);
 
   format %{ "edecq    $dst, $src\t# long ndd" %}
   ins_encode %{
-    __ edecq($dst$$Register, $src$$Register, true);
+    __ edecq($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
-instruct decL_rReg_mem_ndd(rRegL dst, memory src, immL_M1 val)
+instruct decL_rReg_mem_ndd(rRegL dst, memory src, immL_M1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddL (LoadL src) val));
+  effect(KILL cr);
 
   format %{ "edecq    $dst, $src\t# long ndd" %}
   ins_encode %{
-    __ edecq($dst$$Register, $src$$Address, true);
+    __ edecq($dst$$Register, $src$$Address, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8128,38 +8163,41 @@ instruct subI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct subI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
+instruct subI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubI src1 src2));
+  effect(KILL cr);
 
   format %{ "esubl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ esubl($dst$$Register, $src1$$Register, $src2$$Register, true);
+    __ esubl($dst$$Register, $src1$$Register, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct subI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2)
+instruct subI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubI src1 src2));
+  effect(KILL cr);
 
   format %{ "esubl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ esubl($dst$$Register, $src1$$Register, $src2$$constant, true);
+    __ esubl($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct subI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2)
+instruct subI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubI (LoadI src1) src2));
+  effect(KILL cr);
 
   format %{ "esubl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ esubl($dst$$Register, $src1$$Address, $src2$$constant, true);
+    __ esubl($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -8179,28 +8217,30 @@ instruct subI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct subI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2)
+instruct subI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubI src1 (LoadI src2)));
+  effect(KILL cr);
 
   ins_cost(150);
   format %{ "esubl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ esubl($dst$$Register, $src1$$Register, $src2$$Address, true);
+    __ esubl($dst$$Register, $src1$$Register, $src2$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct subI_rReg_mem_rReg_ndd(rRegI dst, memory src1, rRegI src2)
+instruct subI_rReg_mem_rReg_ndd(rRegI dst, memory src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubI (LoadI src1) src2));
+  effect(KILL cr);
 
   ins_cost(150);
   format %{ "esubl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ esubl($dst$$Register, $src1$$Address, $src2$$Register, true);
+    __ esubl($dst$$Register, $src1$$Address, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -8233,38 +8273,41 @@ instruct subL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct subL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2)
+instruct subL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubL src1 src2));
+  effect(KILL cr);
 
   format %{ "esubq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ esubq($dst$$Register, $src1$$Register, $src2$$Register, true);
+    __ esubq($dst$$Register, $src1$$Register, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct subL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2)
+instruct subL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubL src1 src2));
+  effect(KILL cr);
 
   format %{ "esubq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ esubq($dst$$Register, $src1$$Register, $src2$$constant, true);
+    __ esubq($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct subL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2)
+instruct subL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubL (LoadL src1) src2));
+  effect(KILL cr);
 
   format %{ "esubq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ esubq($dst$$Register, $src1$$Address, $src2$$constant, true);
+    __ esubq($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -8284,28 +8327,30 @@ instruct subL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct subL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2)
+instruct subL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubL src1 (LoadL src2)));
+  effect(KILL cr);
 
   ins_cost(150);
   format %{ "esubq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ esubq($dst$$Register, $src1$$Register, $src2$$Address, true);
+    __ esubq($dst$$Register, $src1$$Register, $src2$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct subL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2)
+instruct subL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubL (LoadL src1) src2));
+  effect(KILL cr);
 
   ins_cost(150);
   format %{ "esubq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ esubq($dst$$Register, $src1$$Address, $src2$$Register, true);
+    __ esubq($dst$$Register, $src1$$Address, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -8352,14 +8397,15 @@ instruct negI_rReg(rRegI dst, immI_0 zero, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct negI_rReg_ndd(rRegI src, rRegI dst, immI_0 zero)
+instruct negI_rReg_ndd(rRegI src, rRegI dst, immI_0 zero, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubI zero src));
+  effect(KILL cr);
 
   format %{ "enegl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ enegl($dst$$Register, $src$$Register, true);
+    __ enegl($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8378,14 +8424,15 @@ instruct negI_rReg_2(rRegI dst, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct negI_rReg_2_ndd(rRegI src, rRegI dst)
+instruct negI_rReg_2_ndd(rRegI src, rRegI dst, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (NegI src));
+  effect(KILL cr);
 
   format %{ "enegl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ enegl($dst$$Register, $src$$Register, true);
+    __ enegl($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8417,14 +8464,15 @@ instruct negL_rReg(rRegL dst, immL0 zero, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct negL_rReg_ndd(rRegL src, rRegL dst, immL0 zero)
+instruct negL_rReg_ndd(rRegL src, rRegL dst, immL0 zero, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (SubL zero src));
+  effect(KILL cr);
 
   format %{ "enegq    $dst, $src\t# long ndd" %}
   ins_encode %{
-    __ enegq($dst$$Register, $src$$Register, true);
+    __ enegq($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8443,14 +8491,15 @@ instruct negL_rReg_2(rRegL dst, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct negL_rReg_2_ndd(rRegL src, rRegL dst)
+instruct negL_rReg_2_ndd(rRegL src, rRegL dst, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (NegL src));
+  effect(KILL cr);
 
   format %{ "enegq    $dst, $src\t# long ndd" %}
   ins_encode %{
-    __ enegq($dst$$Register, $src$$Register, true);
+    __ enegq($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8486,15 +8535,16 @@ instruct mulI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
-instruct mulI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
+instruct mulI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (MulI src1 src2));
+  effect(KILL cr);
 
   ins_cost(300);
   format %{ "eimull   $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eimull($dst$$Register, $src1$$Register, $src2$$Register, true);
+    __ eimull($dst$$Register, $src1$$Register, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
@@ -8513,15 +8563,16 @@ instruct mulI_rReg_imm(rRegI dst, rRegI src, immI imm, rFlagsReg cr)
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
-instruct mulI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2)
+instruct mulI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (MulI src1 src2));
+  effect(KILL cr);
 
   ins_cost(300);
   format %{ "eimull   $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eimull($dst$$Register, $src1$$Register, $src2$$constant, true);
+    __ eimull($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
@@ -8540,15 +8591,16 @@ instruct mulI_mem(rRegI dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem_alu0);
 %}
 
-instruct mulI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2)
+instruct mulI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (MulI src1 (LoadI src2)));
+  effect(KILL cr);
 
   ins_cost(350);
   format %{ "eimull   $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eimull($dst$$Register, $src1$$Register, $src2$$Address, true);
+    __ eimull($dst$$Register, $src1$$Register, $src2$$Address, false);
   %}
   ins_pipe(ialu_reg_mem_alu0);
 %}
@@ -8567,15 +8619,16 @@ instruct mulI_mem_imm(rRegI dst, memory src, immI imm, rFlagsReg cr)
   ins_pipe(ialu_reg_mem_alu0);
 %}
 
-instruct mulI_rReg_mem_imm(rRegI dst, memory src1, immI src2)
+instruct mulI_rReg_mem_imm(rRegI dst, memory src1, immI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (MulI (LoadI src1) src2));
+  effect(KILL cr);
 
   ins_cost(300);
   format %{ "eimull   $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eimull($dst$$Register, $src1$$Address, $src2$$constant, true);
+    __ eimull($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_mem_alu0);
 %}
@@ -8604,15 +8657,16 @@ instruct mulL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
-instruct mulL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2)
+instruct mulL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (MulL src1 src2));
+  effect(KILL cr);
 
   ins_cost(300);
   format %{ "eimulq   $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eimulq($dst$$Register, $src1$$Register, $src2$$Register, true);
+    __ eimulq($dst$$Register, $src1$$Register, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
@@ -8631,15 +8685,16 @@ instruct mulL_rReg_imm(rRegL dst, rRegL src, immL32 imm, rFlagsReg cr)
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
-instruct mulL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2)
+instruct mulL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (MulL src1 src2));
+  effect(KILL cr);
 
   ins_cost(300);
   format %{ "eimulq   $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eimulq($dst$$Register, $src1$$Register, $src2$$constant, true);
+    __ eimulq($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
@@ -8658,15 +8713,16 @@ instruct mulL_mem(rRegL dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem_alu0);
 %}
 
-instruct mulL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2)
+instruct mulL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (MulL src1 (LoadL src2)));
+  effect(KILL cr);
 
   ins_cost(350);
   format %{ "eimulq   $dst, $src1, $src2 \t# long" %}
   ins_encode %{
-    __ eimulq($dst$$Register, $src1$$Register, $src2$$Address, true);
+    __ eimulq($dst$$Register, $src1$$Register, $src2$$Address, false);
   %}
   ins_pipe(ialu_reg_mem_alu0);
 %}
@@ -8685,15 +8741,16 @@ instruct mulL_mem_imm(rRegL dst, memory src, immL32 imm, rFlagsReg cr)
   ins_pipe(ialu_reg_mem_alu0);
 %}
 
-instruct mulL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2)
+instruct mulL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (MulL (LoadL src1) src2));
+  effect(KILL cr);
 
   ins_cost(300);
   format %{ "eimulq   $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eimulq($dst$$Register, $src1$$Address, $src2$$constant, true);
+    __ eimulq($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg_mem_alu0);
 %}
@@ -8945,14 +9002,15 @@ instruct salI_rReg_immI2(rRegI dst, immI2 shift, rFlagsReg cr)
 %}
 
 // Shift Left by one, two, three
-instruct salI_rReg_immI2_ndd(rRegI dst, rRegI src, immI2 shift)
+instruct salI_rReg_immI2_ndd(rRegI dst, rRegI src, immI2 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (LShiftI src shift));
+  effect(KILL cr);
 
   format %{ "esall    $dst, $src, $shift\t# int(ndd)" %}
   ins_encode %{
-    __ esall($dst$$Register, $src$$Register, $shift$$constant, true);
+    __ esall($dst$$Register, $src$$Register, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8972,26 +9030,28 @@ instruct salI_rReg_imm(rRegI dst, immI8 shift, rFlagsReg cr)
 %}
 
 // Shift Left by 8-bit immediate
-instruct salI_rReg_imm_ndd(rRegI dst, rRegI src, immI8 shift)
+instruct salI_rReg_imm_ndd(rRegI dst, rRegI src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (LShiftI src shift));
+  effect(KILL cr);
 
   format %{ "esall    $dst, $src, $shift\t# int (ndd)" %}
   ins_encode %{
-    __ esall($dst$$Register, $src$$Register, $shift$$constant, true);
+    __ esall($dst$$Register, $src$$Register, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
-instruct salI_rReg_mem_imm_ndd(rRegI dst, memory src, immI8 shift)
+instruct salI_rReg_mem_imm_ndd(rRegI dst, memory src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (LShiftI (LoadI src) shift));
+  effect(KILL cr);
 
   format %{ "esall    $dst, $src, $shift\t# int (ndd)" %}
   ins_encode %{
-    __ esall($dst$$Register, $src$$Address, $shift$$constant, true);
+    __ esall($dst$$Register, $src$$Address, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -9024,14 +9084,15 @@ instruct salI_rReg_CL(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Shift Left by variable
-instruct salI_rReg_CL_ndd(rRegI dst, rRegI src, rcx_RegI shift)
+instruct salI_rReg_CL_ndd(rRegI dst, rRegI src, rcx_RegI shift, rFlagsReg cr)
 %{
   predicate(UseAPX && !VM_Version::supports_bmi2());
   match(Set dst (LShiftI src shift));
+  effect(KILL cr);
 
   format %{ "esall    $dst, $src, $shift\t# int (ndd)" %}
   ins_encode %{
-    __ esall($dst$$Register, $src$$Register, true);
+    __ esall($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -9089,26 +9150,28 @@ instruct sarI_rReg_imm(rRegI dst, immI8 shift, rFlagsReg cr)
 %}
 
 // Arithmetic Shift Right by 8-bit immediate
-instruct sarI_rReg_imm_ndd(rRegI dst, rRegI src, immI8 shift)
+instruct sarI_rReg_imm_ndd(rRegI dst, rRegI src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (RShiftI src shift));
+  effect(KILL cr);
 
   format %{ "esarl    $dst, $src, $shift\t# int (ndd)" %}
   ins_encode %{
-    __ esarl($dst$$Register, $src$$Register, $shift$$constant, true);
+    __ esarl($dst$$Register, $src$$Register, $shift$$constant, false);
   %}
   ins_pipe(ialu_mem_imm);
 %}
 
-instruct sarI_rReg_mem_imm_ndd(rRegI dst, memory src, immI8 shift)
+instruct sarI_rReg_mem_imm_ndd(rRegI dst, memory src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (RShiftI (LoadI src) shift));
+  effect(KILL cr);
 
   format %{ "esarl    $dst, $src, $shift\t# int (ndd)" %}
   ins_encode %{
-    __ esarl($dst$$Register, $src$$Address, $shift$$constant, true);
+    __ esarl($dst$$Register, $src$$Address, $shift$$constant, false);
   %}
   ins_pipe(ialu_mem_imm);
 %}
@@ -9141,14 +9204,15 @@ instruct sarI_rReg_CL(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Arithmetic Shift Right by variable
-instruct sarI_rReg_CL_ndd(rRegI dst, rRegI src, rcx_RegI shift)
+instruct sarI_rReg_CL_ndd(rRegI dst, rRegI src, rcx_RegI shift, rFlagsReg cr)
 %{
   predicate(UseAPX && !VM_Version::supports_bmi2());
   match(Set dst (RShiftI src shift));
+  effect(KILL cr);
 
   format %{ "esarl    $dst, $src, $shift\t# int (ndd)" %}
   ins_encode %{
-    __ esarl($dst$$Register, $src$$Register, true);
+    __ esarl($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -9206,26 +9270,28 @@ instruct shrI_rReg_imm(rRegI dst, immI8 shift, rFlagsReg cr)
 %}
 
 // Logical Shift Right by 8-bit immediate
-instruct shrI_rReg_imm_ndd(rRegI dst, rRegI src, immI8 shift)
+instruct shrI_rReg_imm_ndd(rRegI dst, rRegI src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (URShiftI src shift));
+  effect(KILL cr);
 
   format %{ "eshrl    $dst, $src, $shift\t # int (ndd)" %}
   ins_encode %{
-    __ eshrl($dst$$Register, $src$$Register, $shift$$constant, true);
+    __ eshrl($dst$$Register, $src$$Register, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
-instruct shrI_rReg_mem_imm_ndd(rRegI dst, memory src, immI8 shift)
+instruct shrI_rReg_mem_imm_ndd(rRegI dst, memory src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (URShiftI (LoadI src) shift));
+  effect(KILL cr);
 
   format %{ "eshrl    $dst, $src, $shift\t # int (ndd)" %}
   ins_encode %{
-    __ eshrl($dst$$Register, $src$$Address, $shift$$constant, true);
+    __ eshrl($dst$$Register, $src$$Address, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -9258,14 +9324,15 @@ instruct shrI_rReg_CL(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Logical Shift Right by variable
-instruct shrI_rReg_CL_ndd(rRegI dst, rRegI src, rcx_RegI shift)
+instruct shrI_rReg_CL_ndd(rRegI dst, rRegI src, rcx_RegI shift, rFlagsReg cr)
 %{
   predicate(UseAPX && !VM_Version::supports_bmi2());
   match(Set dst (URShiftI src shift));
+  effect(KILL cr);
 
   format %{ "eshrl    $dst, $src, $shift\t# int (ndd)" %}
   ins_encode %{
-    __ eshrl($dst$$Register, $src$$Register, true);
+    __ eshrl($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -9324,14 +9391,15 @@ instruct salL_rReg_immI2(rRegL dst, immI2 shift, rFlagsReg cr)
 %}
 
 // Shift Left by one, two, three
-instruct salL_rReg_immI2_ndd(rRegL dst, rRegL src, immI2 shift)
+instruct salL_rReg_immI2_ndd(rRegL dst, rRegL src, immI2 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (LShiftL src shift));
+  effect(KILL cr);
 
   format %{ "esalq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
-    __ esalq($dst$$Register, $src$$Register, $shift$$constant, true);
+    __ esalq($dst$$Register, $src$$Register, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -9351,26 +9419,28 @@ instruct salL_rReg_imm(rRegL dst, immI8 shift, rFlagsReg cr)
 %}
 
 // Shift Left by 8-bit immediate
-instruct salL_rReg_imm_ndd(rRegL dst, rRegL src, immI8 shift)
+instruct salL_rReg_imm_ndd(rRegL dst, rRegL src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (LShiftL src shift));
+  effect(KILL cr);
 
   format %{ "esalq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
-    __ esalq($dst$$Register, $src$$Register, $shift$$constant, true);
+    __ esalq($dst$$Register, $src$$Register, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
-instruct salL_rReg_mem_imm_ndd(rRegL dst, memory src, immI8 shift)
+instruct salL_rReg_mem_imm_ndd(rRegL dst, memory src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (LShiftL (LoadL src) shift));
+  effect(KILL cr);
 
   format %{ "esalq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
-    __ esalq($dst$$Register, $src$$Address, $shift$$constant, true);
+    __ esalq($dst$$Register, $src$$Address, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -9403,14 +9473,15 @@ instruct salL_rReg_CL(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Shift Left by variable
-instruct salL_rReg_CL_ndd(rRegL dst, rRegL src, rcx_RegI shift)
+instruct salL_rReg_CL_ndd(rRegL dst, rRegL src, rcx_RegI shift, rFlagsReg cr)
 %{
   predicate(UseAPX && !VM_Version::supports_bmi2());
   match(Set dst (LShiftL src shift));
+  effect(KILL cr);
 
   format %{ "esalq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
-    __ esalq($dst$$Register, $src$$Register, true);
+    __ esalq($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -9468,26 +9539,28 @@ instruct sarL_rReg_imm(rRegL dst, immI shift, rFlagsReg cr)
 %}
 
 // Arithmetic Shift Right by 8-bit immediate
-instruct sarL_rReg_imm_ndd(rRegL dst, rRegL src, immI8 shift)
+instruct sarL_rReg_imm_ndd(rRegL dst, rRegL src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (RShiftL src shift));
+  effect(KILL cr);
 
   format %{ "esarq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
-    __ esarq($dst$$Register, $src$$Register, $shift$$constant, true);
+    __ esarq($dst$$Register, $src$$Register, $shift$$constant, false);
   %}
   ins_pipe(ialu_mem_imm);
 %}
 
-instruct sarL_rReg_mem_imm_ndd(rRegL dst, memory src, immI8 shift)
+instruct sarL_rReg_mem_imm_ndd(rRegL dst, memory src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (RShiftL (LoadL src) shift));
+  effect(KILL cr);
 
   format %{ "esarq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
-    __ esarq($dst$$Register, $src$$Address, $shift$$constant, true);
+    __ esarq($dst$$Register, $src$$Address, $shift$$constant, false);
   %}
   ins_pipe(ialu_mem_imm);
 %}
@@ -9520,14 +9593,15 @@ instruct sarL_rReg_CL(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Arithmetic Shift Right by variable
-instruct sarL_rReg_CL_ndd(rRegL dst, rRegL src, rcx_RegI shift)
+instruct sarL_rReg_CL_ndd(rRegL dst, rRegL src, rcx_RegI shift, rFlagsReg cr)
 %{
   predicate(UseAPX && !VM_Version::supports_bmi2());
   match(Set dst (RShiftL src shift));
+  effect(KILL cr);
 
   format %{ "esarq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
-    __ esarq($dst$$Register, $src$$Register, true);
+    __ esarq($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -9585,26 +9659,28 @@ instruct shrL_rReg_imm(rRegL dst, immI8 shift, rFlagsReg cr)
 %}
 
 // Logical Shift Right by 8-bit immediate
-instruct shrL_rReg_imm_ndd(rRegL dst, rRegL src, immI8 shift)
+instruct shrL_rReg_imm_ndd(rRegL dst, rRegL src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (URShiftL src shift));
+  effect(KILL cr);
 
   format %{ "eshrq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
-    __ eshrq($dst$$Register, $src$$Register, $shift$$constant, true);
+    __ eshrq($dst$$Register, $src$$Register, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
-instruct shrL_rReg_mem_imm_ndd(rRegL dst, memory src, immI8 shift)
+instruct shrL_rReg_mem_imm_ndd(rRegL dst, memory src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (URShiftL (LoadL src) shift));
+  effect(KILL cr);
 
   format %{ "eshrq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
-    __ eshrq($dst$$Register, $src$$Address, $shift$$constant, true);
+    __ eshrq($dst$$Register, $src$$Address, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -9637,14 +9713,15 @@ instruct shrL_rReg_CL(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Logical Shift Right by variable
-instruct shrL_rReg_CL_ndd(rRegL dst, rRegL src, rcx_RegI shift)
+instruct shrL_rReg_CL_ndd(rRegL dst, rRegL src, rcx_RegI shift, rFlagsReg cr)
 %{
   predicate(UseAPX && !VM_Version::supports_bmi2());
   match(Set dst (URShiftL src shift));
+  effect(KILL cr);
 
   format %{ "eshrq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
-    __ eshrq($dst$$Register, $src$$Register, true);
+    __ eshrq($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -9729,13 +9806,15 @@ instruct rolI_immI8_legacy(rRegI dst, immI8 shift, rFlagsReg cr)
 %}
 
 // Rotate left by constant.
-instruct rolI_immI8_ndd(rRegI dst, rRegI src, immI8 shift)
+instruct rolI_immI8_ndd(rRegI dst, rRegI src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateLeft src shift));
+  effect(KILL cr);
+
   format %{ "eroll    $dst, $src, $shift\t# rotate left (int ndd)" %}
   ins_encode %{
-    __ eroll($dst$$Register, $src$$Register, $shift$$constant, true);
+    __ eroll($dst$$Register, $src$$Register, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -9779,13 +9858,15 @@ instruct rolI_rReg_Var(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Rotate Left by variable
-instruct rolI_rReg_Var_ndd(rRegI dst, rRegI src, rcx_RegI shift)
+instruct rolI_rReg_Var_ndd(rRegI dst, rRegI src, rcx_RegI shift, rFlagsReg cr)
 %{
   predicate(UseAPX && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateLeft src shift));
+  effect(KILL cr);
+
   format %{ "eroll    $dst, $src, $shift\t# rotate left (int ndd)" %}
   ins_encode %{
-    __ eroll($dst$$Register, $src$$Register, true);
+    __ eroll($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -9804,13 +9885,15 @@ instruct rorI_immI8_legacy(rRegI dst, immI8 shift, rFlagsReg cr)
 %}
 
 // Rotate Right by constant.
-instruct rorI_immI8_ndd(rRegI dst, rRegI src, immI8 shift)
+instruct rorI_immI8_ndd(rRegI dst, rRegI src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateRight src shift));
+  effect(KILL cr);
+
   format %{ "erorl    $dst, $src, $shift\t# rotate right (int ndd)" %}
   ins_encode %{
-    __ erorl($dst$$Register, $src$$Register, $shift$$constant, true);
+    __ erorl($dst$$Register, $src$$Register, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -9853,13 +9936,15 @@ instruct rorI_rReg_Var(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Rotate Right by variable
-instruct rorI_rReg_Var_ndd(rRegI dst, rRegI src, rcx_RegI shift)
+instruct rorI_rReg_Var_ndd(rRegI dst, rRegI src, rcx_RegI shift, rFlagsReg cr)
 %{
   predicate(UseAPX && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateRight src shift));
+  effect(KILL cr);
+
   format %{ "erorl    $dst, $src, $shift\t# rotate right(int ndd)" %}
   ins_encode %{
-    __ erorl($dst$$Register, $src$$Register, true);
+    __ erorl($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -9878,13 +9963,15 @@ instruct rolL_immI8_legacy(rRegL dst, immI8 shift, rFlagsReg cr)
 %}
 
 // Rotate Left by constant.
-instruct rolL_immI8_ndd(rRegL dst, rRegL src, immI8 shift)
+instruct rolL_immI8_ndd(rRegL dst, rRegL src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateLeft src shift));
+  effect(KILL cr);
+
   format %{ "erolq    $dst, $src, $shift\t# rotate left (long ndd)" %}
   ins_encode %{
-    __ erolq($dst$$Register, $src$$Register, $shift$$constant, true);
+    __ erolq($dst$$Register, $src$$Register, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -9928,13 +10015,15 @@ instruct rolL_rReg_Var(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Rotate Left by variable
-instruct rolL_rReg_Var_ndd(rRegL dst, rRegL src, rcx_RegI shift)
+instruct rolL_rReg_Var_ndd(rRegL dst, rRegL src, rcx_RegI shift, rFlagsReg cr)
 %{
   predicate(UseAPX && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateLeft src shift));
+  effect(KILL cr);
+
   format %{ "erolq    $dst, $src, $shift\t# rotate left(long ndd)" %}
   ins_encode %{
-    __ erolq($dst$$Register, $src$$Register, true);
+    __ erolq($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -9953,13 +10042,15 @@ instruct rorL_immI8_legacy(rRegL dst, immI8 shift, rFlagsReg cr)
 %}
 
 // Rotate Right by constant.
-instruct rorL_immI8_ndd(rRegL dst, rRegL src, immI8 shift)
+instruct rorL_immI8_ndd(rRegL dst, rRegL src, immI8 shift, rFlagsReg cr)
 %{
   predicate(UseAPX && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateRight src shift));
+  effect(KILL cr);
+
   format %{ "erorq    $dst, $src, $shift\t# rotate right(long ndd)" %}
   ins_encode %{
-    __ erorq($dst$$Register, $src$$Register, $shift$$constant, true);
+    __ erorq($dst$$Register, $src$$Register, $shift$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -10002,13 +10093,15 @@ instruct rorL_rReg_Var(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Rotate Right by variable
-instruct rorL_rReg_Var_ndd(rRegL dst, rRegL src, rcx_RegI shift)
+instruct rorL_rReg_Var_ndd(rRegL dst, rRegL src, rcx_RegI shift, rFlagsReg cr)
 %{
   predicate(UseAPX && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateRight src shift));
+  effect(KILL cr);
+
   format %{ "erorq    $dst, $src, $shift\t# rotate right(long ndd)" %}
   ins_encode %{
-    __ erorq($dst$$Register, $src$$Register, true);
+    __ erorq($dst$$Register, $src$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -10077,14 +10170,15 @@ instruct andI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
 %}
 
 // And Register with Register using New Data Destination (NDD)
-instruct andI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
+instruct andI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AndI src1 src2));
+  effect(KILL cr);
 
   format %{ "eandl     $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eandl($dst$$Register, $src1$$Register, $src2$$Register, true);
+    __ eandl($dst$$Register, $src1$$Register, $src2$$Register, false);
 
   %}
   ins_pipe(ialu_reg_reg);
@@ -10168,26 +10262,28 @@ instruct andI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct andI_rReg_rReg_imm(rRegI dst, rRegI src1, immI src2)
+instruct andI_rReg_rReg_imm(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AndI src1 src2));
+  effect(KILL cr);
 
   format %{ "eandl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eandl($dst$$Register, $src1$$Register, $src2$$constant, true);
+    __ eandl($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
-instruct andI_rReg_mem_imm(rRegI dst, memory src1, immI src2)
+instruct andI_rReg_mem_imm(rRegI dst, memory src1, immI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AndI (LoadI src1) src2));
+  effect(KILL cr);
 
   format %{ "eandl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eandl($dst$$Register, $src1$$Address, $src2$$constant, true);
+    __ eandl($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -10208,15 +10304,16 @@ instruct andI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct andI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2)
+instruct andI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AndI src1 (LoadI src2)));
+  effect(KILL cr);
 
   ins_cost(150);
   format %{ "eandl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eandl($dst$$Register, $src1$$Register, $src2$$Address, true);
+    __ eandl($dst$$Register, $src1$$Register, $src2$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -10406,14 +10503,15 @@ instruct orI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
 %}
 
 // Or Register with Register using New Data Destination (NDD)
-instruct orI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
+instruct orI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (OrI src1 src2));
+  effect(KILL cr);
 
   format %{ "eorl     $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eorl($dst$$Register, $src1$$Register, $src2$$Register, true);
+    __ eorl($dst$$Register, $src1$$Register, $src2$$Register, false);
 
   %}
   ins_pipe(ialu_reg_reg);
@@ -10434,38 +10532,41 @@ instruct orI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct orI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2)
+instruct orI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (OrI src1 src2));
+  effect(KILL cr);
 
   format %{ "eorl     $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eorl($dst$$Register, $src1$$Register, $src2$$constant, true);
+    __ eorl($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
-instruct orI_rReg_imm_rReg_ndd(rRegI dst, immI src1, rRegI src2)
+instruct orI_rReg_imm_rReg_ndd(rRegI dst, immI src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (OrI src1 src2));
+  effect(KILL cr);
 
   format %{ "eorl     $dst, $src2, $src1\t# int ndd" %}
   ins_encode %{
-    __ eorl($dst$$Register, $src2$$Register, $src1$$constant, true);
+    __ eorl($dst$$Register, $src2$$Register, $src1$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
-instruct orI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2)
+instruct orI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (OrI (LoadI src1) src2));
+  effect(KILL cr);
 
   format %{ "eorl     $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eorl($dst$$Register, $src1$$Address, $src2$$constant, true);
+    __ eorl($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -10486,15 +10587,16 @@ instruct orI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct orI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2)
+instruct orI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (OrI src1 (LoadI src2)));
+  effect(KILL cr);
 
   ins_cost(150);
   format %{ "eorl     $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ eorl($dst$$Register, $src1$$Register, $src2$$Address, true);
+    __ eorl($dst$$Register, $src1$$Register, $src2$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -10562,14 +10664,15 @@ instruct xorI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
 
 
 // Xor Register with Register using New Data Destination (NDD)
-instruct xorI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
+instruct xorI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (XorI src1 src2));
+  effect(KILL cr);
 
   format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ exorl($dst$$Register, $src1$$Register, $src2$$Register, true);
+    __ exorl($dst$$Register, $src1$$Register, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -10615,27 +10718,29 @@ instruct xorI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct xorI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2)
+instruct xorI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (XorI src1 src2));
+  effect(KILL cr);
 
   format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ exorl($dst$$Register, $src1$$Register, $src2$$constant, true);
+    __ exorl($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
 // Xor Memory with Immediate
-instruct xorI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2)
+instruct xorI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (XorI (LoadI src1) src2));
+  effect(KILL cr);
 
   format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ exorl($dst$$Register, $src1$$Address, $src2$$constant, true);
+    __ exorl($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -10656,28 +10761,30 @@ instruct xorI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct xorI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2)
+instruct xorI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (XorI src1 (LoadI src2)));
+  effect(KILL cr);
 
   ins_cost(150);
   format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ exorl($dst$$Register, $src1$$Register, $src2$$Address, true);
+    __ exorl($dst$$Register, $src1$$Register, $src2$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct xorI_rReg_mem_rReg_ndd(rRegI dst, memory src1, rRegI src2)
+instruct xorI_rReg_mem_rReg_ndd(rRegI dst, memory src1, rRegI src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (XorI (LoadI src1) src2));
+  effect(KILL cr);
 
   ins_cost(150);
   format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
   ins_encode %{
-    __ exorl($dst$$Register, $src1$$Address, $src2$$Register, true);
+    __ exorl($dst$$Register, $src1$$Address, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -10746,14 +10853,15 @@ instruct andL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
 %}
 
 // And Register with Register using New Data Destination (NDD)
-instruct andL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2)
+instruct andL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AndL src1 src2));
+  effect(KILL cr);
 
   format %{ "eandq     $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eandq($dst$$Register, $src1$$Register, $src2$$Register, true);
+    __ eandq($dst$$Register, $src1$$Register, $src2$$Register, false);
 
   %}
   ins_pipe(ialu_reg_reg);
@@ -10800,26 +10908,28 @@ instruct andL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct andL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2)
+instruct andL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AndL src1 src2));
+  effect(KILL cr);
 
   format %{ "eandq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eandq($dst$$Register, $src1$$Register, $src2$$constant, true);
+    __ eandq($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
-instruct andL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2)
+instruct andL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AndL (LoadL src1) src2));
+  effect(KILL cr);
 
   format %{ "eandq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eandq($dst$$Register, $src1$$Address, $src2$$constant, true);
+    __ eandq($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -10840,28 +10950,30 @@ instruct andL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct andL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2)
+instruct andL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AndL src1 (LoadL src2)));
+  effect(KILL cr);
 
   ins_cost(150);
   format %{ "eandq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eandq($dst$$Register, $src1$$Register, $src2$$Address, true);
+    __ eandq($dst$$Register, $src1$$Register, $src2$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct andL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2)
+instruct andL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (AndL (LoadL src1) src2));
+  effect(KILL cr);
 
   ins_cost(150);
   format %{ "eandq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eandq($dst$$Register, $src1$$Address, $src2$$Register, true);
+    __ eandq($dst$$Register, $src1$$Address, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -11054,14 +11166,15 @@ instruct orL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
 %}
 
 // Or Register with Register using New Data Destination (NDD)
-instruct orL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2)
+instruct orL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (OrL src1 src2));
+  effect(KILL cr);
 
   format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eorq($dst$$Register, $src1$$Register, $src2$$Register, true);
+    __ eorq($dst$$Register, $src1$$Register, $src2$$Register, false);
 
   %}
   ins_pipe(ialu_reg_reg);
@@ -11096,39 +11209,42 @@ instruct orL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct orL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2)
+instruct orL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (OrL src1 src2));
+  effect(KILL cr);
 
   format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eorq($dst$$Register, $src1$$Register, $src2$$constant, true);
+    __ eorq($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
-instruct orL_rReg_imm_rReg_ndd(rRegL dst, immL32 src1, rRegL src2)
+instruct orL_rReg_imm_rReg_ndd(rRegL dst, immL32 src1, rRegL src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (OrL src1 src2));
+  effect(KILL cr);
 
   format %{ "eorq     $dst, $src2, $src1\t# long ndd" %}
   ins_encode %{
-    __ eorq($dst$$Register, $src2$$Register, $src1$$constant, true);
+    __ eorq($dst$$Register, $src2$$Register, $src1$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
 // Or Memory with Immediate
-instruct orL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2)
+instruct orL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (OrL (LoadL src1) src2));
+  effect(KILL cr);
 
   format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eorq($dst$$Register, $src1$$Address, $src2$$constant, true);
+    __ eorq($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -11149,15 +11265,16 @@ instruct orL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct orL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2)
+instruct orL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (OrL src1 (LoadL src2)));
+  effect(KILL cr);
 
   ins_cost(150);
   format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ eorq($dst$$Register, $src1$$Register, $src2$$Address, true);
+    __ eorq($dst$$Register, $src1$$Register, $src2$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -11226,14 +11343,15 @@ instruct xorL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
 %}
 
 // Xor Register with Register using New Data Destination (NDD)
-instruct xorL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2)
+instruct xorL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (XorL src1 src2));
+  effect(KILL cr);
 
   format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ exorq($dst$$Register, $src1$$Register, $src2$$Register, true);
+    __ exorq($dst$$Register, $src1$$Register, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -11278,27 +11396,29 @@ instruct xorL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct xorL_rReg_rReg_imm(rRegL dst, rRegL src1, immL32 src2)
+instruct xorL_rReg_rReg_imm(rRegL dst, rRegL src1, immL32 src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (XorL src1 src2));
+  effect(KILL cr);
 
   format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ exorq($dst$$Register, $src1$$Register, $src2$$constant, true);
+    __ exorq($dst$$Register, $src1$$Register, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
 
 // Xor Memory with Immediate
-instruct xorL_rReg_mem_imm(rRegL dst, memory src1, immL32 src2)
+instruct xorL_rReg_mem_imm(rRegL dst, memory src1, immL32 src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (XorL (LoadL src1) src2));
+  effect(KILL cr);
 
   format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ exorq($dst$$Register, $src1$$Address, $src2$$constant, true);
+    __ exorq($dst$$Register, $src1$$Address, $src2$$constant, false);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -11319,28 +11439,30 @@ instruct xorL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct xorL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2)
+instruct xorL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (XorL src1 (LoadL src2)));
+  effect(KILL cr);
 
   ins_cost(150);
   format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ exorq($dst$$Register, $src1$$Register, $src2$$Address, true);
+    __ exorq($dst$$Register, $src1$$Register, $src2$$Address, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct xorL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2)
+instruct xorL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2, rFlagsReg cr)
 %{
   predicate(UseAPX);
   match(Set dst (XorL (LoadL src1) src2));
+  effect(KILL cr);
 
   ins_cost(150);
   format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ exorq($dst$$Register, $src1$$Address, $src1$$Register, true);
+    __ exorq($dst$$Register, $src1$$Address, $src1$$Register, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
