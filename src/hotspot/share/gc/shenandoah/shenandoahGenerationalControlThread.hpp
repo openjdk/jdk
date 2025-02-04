@@ -37,13 +37,6 @@ class ShenandoahGeneration;
 class ShenandoahGenerationalHeap;
 class ShenandoahHeap;
 
-class ShenandoahGCRequest {
-public:
-  ShenandoahGCRequest() : generation(nullptr), cause(GCCause::_no_gc) {}
-  ShenandoahGeneration* generation;
-  GCCause::Cause cause;
-};
-
 class ShenandoahGenerationalControlThread: public ShenandoahController {
   friend class VMStructs;
 
@@ -57,6 +50,14 @@ public:
     servicing_old,
     stopped
   } GCMode;
+
+  class ShenandoahGCRequest {
+  public:
+    ShenandoahGCRequest() : generation(nullptr), cause(GCCause::_no_gc), mode(none) {}
+    ShenandoahGeneration* generation;
+    GCCause::Cause cause;
+    GCMode mode;
+  };
 
 private:
   Monitor _control_lock;
@@ -95,6 +96,8 @@ private:
 
   ShenandoahGCRequest check_for_request();
 
+  void maybe_set_aging_cycle();
+
   // Returns true if the cycle has been cancelled or degenerated.
   bool check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point);
 
@@ -126,6 +129,11 @@ private:
   static const char* gc_mode_name(GCMode mode);
 
   void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
+
+  bool handle_cancellation(ShenandoahGCRequest request);
+  ShenandoahGCRequest prepare_for_allocation_failure_request(ShenandoahGCRequest request);
+  ShenandoahGCRequest prepare_for_explicit_gc_request(ShenandoahGCRequest request);
+  ShenandoahGCRequest prepare_for_concurrent_gc_request(ShenandoahGCRequest request);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP

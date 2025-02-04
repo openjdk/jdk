@@ -129,7 +129,9 @@ bool ShenandoahCollectorPolicy::is_at_shutdown() {
 
 bool ShenandoahCollectorPolicy::is_explicit_gc(GCCause::Cause cause) {
   return GCCause::is_user_requested_gc(cause)
-      || GCCause::is_serviceability_requested_gc(cause);
+      || GCCause::is_serviceability_requested_gc(cause)
+      || cause == GCCause::_wb_full_gc
+      || cause == GCCause::_wb_young_gc;
 }
 
 bool is_implicit_gc(GCCause::Cause cause) {
