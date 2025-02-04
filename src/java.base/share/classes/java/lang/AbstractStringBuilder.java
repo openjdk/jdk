@@ -239,10 +239,21 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * If {@code minimumCapacity} is non positive due to numeric
      * overflow, this method throws {@code OutOfMemoryError}.
      */
-    private byte[] ensureCapacityInternal(int minimumCapacity) {
+    private void ensureCapacityInternal(int minimumCapacity) {
+        // overflow-conscious code
+        ensureCapacityInternal(minimumCapacity, coder);
+    }
+
+    /**
+     * For positive values of {@code minimumCapacity}, this method
+     * behaves like {@code ensureCapacity}, however it is never
+     * synchronized.
+     * If {@code minimumCapacity} is non positive due to numeric
+     * overflow, this method throws {@code OutOfMemoryError}.
+     */
+    private byte[] ensureCapacityInternal(int minimumCapacity, byte coder) {
         // overflow-conscious code
         byte[] value = this.value;
-        byte coder = this.coder;
         int oldCapacity = value.length >> coder;
         if (minimumCapacity - oldCapacity > 0) {
             value = Arrays.copyOf(value,
@@ -842,8 +853,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     public AbstractStringBuilder append(int i) {
         int count = this.count;
         int spaceNeeded = count + DecimalDigits.stringSize(i);
-        byte[] value = ensureCapacityInternal(spaceNeeded);
-        if (isLatin1()) {
+        byte coder = this.coder;
+        byte[] value = ensureCapacityInternal(spaceNeeded, coder);
+        if (coder == LATIN1) {
             DecimalDigits.getCharsLatin1(i, spaceNeeded, value);
         } else {
             DecimalDigits.getCharsUTF16(i, spaceNeeded, value);
@@ -867,8 +879,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     public AbstractStringBuilder append(long l) {
         int count = this.count;
         int spaceNeeded = count + DecimalDigits.stringSize(l);
-        byte[] value = ensureCapacityInternal(spaceNeeded);
-        if (isLatin1()) {
+        byte coder = this.coder;
+        byte[] value = ensureCapacityInternal(spaceNeeded, coder);
+        if (coder == LATIN1) {
             DecimalDigits.getCharsLatin1(l, spaceNeeded, value);
         } else {
             DecimalDigits.getCharsUTF16(l, spaceNeeded, value);
