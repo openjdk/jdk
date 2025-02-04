@@ -42,7 +42,7 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A stable value is an immutable holder of deferred content.
+ * A stable value is a shallowly immutable holder of deferred content.
  * <p>
  * A {@linkplain StableValue {@code StableValue<T>}} can be created using the factory
  * method {@linkplain StableValue#ofUnset() {@code StableValue.ofUnset()}}. When created
@@ -335,13 +335,6 @@ import java.util.function.Supplier;
  * @implNote A {@linkplain StableValue} is mainly intended to be a non-public field in
  *           a class and is usually neither exposed directly via accessors nor passed as
  *           a method parameter.
- *           Instance fields explicitly declared as {@code StableValue} or one-dimensional
- *           arrays thereof might in some VM implementation be eligible for certain
- *           JVM optimizations where normal instance fields are not. In such cases, this
- *           comes with restrictions on reflective modifications -- although most ways of
- *           reflective modification of such fields are disabled, it is strongly
- *           discouraged to circumvent these protection means as reflectively modifying
- *           such fields may lead to unspecified behavior.
  *
  * @param <T> type of the content
  *
