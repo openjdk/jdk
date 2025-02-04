@@ -132,12 +132,9 @@ public final class QuicTLSContext {
     private static final VarHandle CONTEXT_SPI;
     static {
         try {
-            final PrivilegedExceptionAction<MethodHandles.Lookup> pa = () ->
+            final MethodHandles.Lookup lookup =
                     MethodHandles.privateLookupIn(SSLContext.class,
                             MethodHandles.lookup());
-            @SuppressWarnings("removal")
-            final MethodHandles.Lookup lookup =
-                    AccessController.doPrivileged(pa);
             final VarHandle vh = lookup.findVarHandle(SSLContext.class,
                     "contextSpi", SSLContextSpi.class);
             CONTEXT_SPI = vh;

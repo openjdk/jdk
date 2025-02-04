@@ -73,7 +73,6 @@ public final class Http3ClientImpl implements AutoCloseable {
         // determined
         final List<QuicVersion> defaultPref = List.of(QuicVersion.QUIC_V1, QuicVersion.QUIC_V2);
         // check user specified preference
-        @SuppressWarnings("removal")
         final String sysPropVal = Utils.getProperty("jdk.httpclient.quic.available.versions");
         if (sysPropVal == null || sysPropVal.isBlank()) {
             // default to supporting both v1 and v2, with v1 given preference

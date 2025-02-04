@@ -59,15 +59,8 @@ abstract class QuicCipher {
     private static final Map<String, Long> KEY_LIMITS;
 
     static {
-        @SuppressWarnings("removal")
-        final String propVal = AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-                    @Override
-                    public String run() {
-                        return Security.getProperty(
+        final String propVal = Security.getProperty(
                                 SEC_PROP_QUIC_TLS_KEY_LIMITS);
-                    }
-                });
         if (propVal == null) {
             KEY_LIMITS = Map.of(); // no specific limits
         } else {
