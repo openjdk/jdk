@@ -43,6 +43,7 @@ import sun.invoke.util.Wrapper;
 
 import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
+import java.lang.foreign.MemoryLayout;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -1552,8 +1553,8 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, ByteOrder order) {
-                return VarHandles.memorySegmentViewHandle(carrier, alignmentMask, order);
+            public VarHandle memorySegmentViewHandle(Class<?> carrier, MemoryLayout enclosing, long alignmentMask, ByteOrder order) {
+                return VarHandles.memorySegmentViewHandle(carrier, enclosing, alignmentMask, order);
             }
 
             @Override

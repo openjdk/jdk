@@ -102,15 +102,19 @@ public final class Utils {
      * @param layout the value layout for which a raw memory segment var handle is to be created.
      * @return a raw memory segment var handle.
      */
-    public static VarHandle makeRawSegmentViewVarHandle(ValueLayout layout) {
-        final class VarHandleCache {
-            private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+    public static VarHandle makeRawSegmentViewVarHandle(MemoryLayout enclosing, ValueLayout layout) {
+        var vl = layout.withoutName();
+        if (enclosing.withoutName().equals(vl)) {
+            final class VarHandleCache {
+                private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+            }
+            return VarHandleCache.HANDLE_MAP
+                    .computeIfAbsent(vl, vl1 -> Utils.makeRawSegmentViewVarHandleInternal(vl1, vl1));
         }
-        return VarHandleCache.HANDLE_MAP
-                .computeIfAbsent(layout.withoutName(), Utils::makeRawSegmentViewVarHandleInternal);
+        return makeRawSegmentViewVarHandleInternal(enclosing, layout);
     }
 
-    private static VarHandle makeRawSegmentViewVarHandleInternal(ValueLayout layout) {
+    private static VarHandle makeRawSegmentViewVarHandleInternal(MemoryLayout enclosing, ValueLayout layout) {
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
@@ -123,7 +127,7 @@ public final class Utils {
         }
 
         VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
-                layout.byteAlignment() - 1, layout.order());
+                enclosing, layout.byteAlignment() - 1, layout.order());
 
         if (layout.carrier() == boolean.class) {
             handle = MethodHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);

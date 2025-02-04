@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import sun.invoke.util.Wrapper;
 
+import java.lang.foreign.MemoryLayout;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -304,7 +305,7 @@ final class VarHandles {
      * @param byteOrder the byte order.
      * @return the created VarHandle.
      */
-    static VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask,
+    static VarHandle memorySegmentViewHandle(Class<?> carrier, MemoryLayout enclosing, long alignmentMask,
                                              ByteOrder byteOrder) {
         if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
@@ -313,19 +314,19 @@ final class VarHandles {
         boolean exact = VAR_HANDLE_SEGMENT_FORCE_EXACT;
 
         if (carrier == byte.class) {
-            return maybeAdapt(new VarHandleSegmentAsBytes(be, alignmentMask, exact));
+            return maybeAdapt(VarHandleSegmentAsBytes.of(be, enclosing, alignmentMask, exact));
         } else if (carrier == char.class) {
-            return maybeAdapt(new VarHandleSegmentAsChars(be, alignmentMask, exact));
+            return maybeAdapt(VarHandleSegmentAsChars.of(be, enclosing, alignmentMask, exact));
         } else if (carrier == short.class) {
-            return maybeAdapt(new VarHandleSegmentAsShorts(be, alignmentMask, exact));
+            return maybeAdapt(VarHandleSegmentAsShorts.of(be, enclosing, alignmentMask, exact));
         } else if (carrier == int.class) {
-            return maybeAdapt(new VarHandleSegmentAsInts(be, alignmentMask, exact));
+            return maybeAdapt(VarHandleSegmentAsInts.of(be, enclosing, alignmentMask, exact));
         } else if (carrier == float.class) {
-            return maybeAdapt(new VarHandleSegmentAsFloats(be, alignmentMask, exact));
+            return maybeAdapt(VarHandleSegmentAsFloats.of(be, enclosing, alignmentMask, exact));
         } else if (carrier == long.class) {
-            return maybeAdapt(new VarHandleSegmentAsLongs(be, alignmentMask, exact));
+            return maybeAdapt(VarHandleSegmentAsLongs.of(be, enclosing, alignmentMask, exact));
         } else if (carrier == double.class) {
-            return maybeAdapt(new VarHandleSegmentAsDoubles(be, alignmentMask, exact));
+            return maybeAdapt(VarHandleSegmentAsDoubles.of(be, enclosing, alignmentMask, exact));
         } else {
             throw new IllegalStateException("Cannot get here");
         }

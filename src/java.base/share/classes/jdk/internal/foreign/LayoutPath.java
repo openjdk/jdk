@@ -205,8 +205,7 @@ public class LayoutPath {
                     String.format("Path does not select a value layout: %s", breadcrumbs()));
         }
 
-        VarHandle handle = Utils.makeRawSegmentViewVarHandle(valueLayout);              // (MS, ML, long, long)
-        handle = MethodHandles.insertCoordinates(handle, 1, rootLayout());          // (MS, long, long)
+        VarHandle handle = Utils.makeRawSegmentViewVarHandle(rootLayout(), valueLayout);              // (MS, ML, long, long)
         if (strides.length > 0) {
             MethodHandle offsetAdapter = offsetHandle();
             offsetAdapter = MethodHandles.insertArguments(offsetAdapter, 0, 0L);
