@@ -24,11 +24,12 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.I18N.buildConfigException;
+
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
@@ -36,8 +37,6 @@ import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.LinuxPackageMixin;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.StandardPackageType;
-import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
-import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
 
 final class LinuxPackageBuilder {
 
