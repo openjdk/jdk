@@ -102,9 +102,10 @@ public abstract class Renderer {
                     renderElement(frame, e);
                 }
             }
-            //case Hook h ->    frame.addHook(h);
-            //case HookInsert h ->
-            //        frameForHook(h.hook()).insertIntoHook(h.hook(), render(h.templateUse()));
+            case Hook h ->    frame.addHook(h);
+            case HookInsert(Hook hook, TemplateUse t) -> {
+                Frame f = frameForHook(hook); //.insertIntoHook(hook, render(t));
+            }
             case TemplateUse t -> frame.addCode(renderTemplateUse(t));
             default -> throw new RendererException("body contained unexpected element: " + element);
         }
@@ -115,13 +116,13 @@ public abstract class Renderer {
         return HASHTAG_REPLACEMENT_PATTERN.matcher(temp).replaceAll((MatchResult result) -> frame.getContext(result.group(1)));
     }
 
-    //private static Frame frameForHook(Hook hook) {
-    //    for (int i = STACK.size() - 1; i >= 0; i--) {
-    //        Frame frame = STACK.get(i);
-    //        if (frame.hasHook(hook)) {
-    //            return frame;
-    //        }
-    //    }
-    //    throw new RuntimeException("hook " + hook.name() + " was referenced but not found!");
-    //}
+    private static Frame frameForHook(Hook hook) {
+        for (int i = STACK.size() - 1; i >= 0; i--) {
+            Frame frame = STACK.get(i);
+            if (frame.hasHook(hook)) {
+                return frame;
+            }
+        }
+        throw new RendererException("hook " + hook.name() + " was referenced but not found!");
+    }
 }

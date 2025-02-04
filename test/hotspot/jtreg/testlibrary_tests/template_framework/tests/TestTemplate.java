@@ -43,6 +43,7 @@ import jdk.test.lib.Utils;
 import compiler.lib.template_framework.*;
 import compiler.lib.template_framework.Template;
 import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.intoHook;
 
 public class TestTemplate {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -54,6 +55,8 @@ public class TestTemplate {
         testWithOneArguments();
         testWithTwoArguments();
         testRecursive();
+        testHook();
+
         //testClassInstantiator();
         //testRepeat();
         //testDispatch();
@@ -199,7 +202,25 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
+    public static void testHook() {
+        var hook1 = new Hook("Hook1");
 
+        var template1 = Template.make(() -> body("Hello\n"));
+
+        var template2 = Template.make(() -> body(
+            "{\n",
+            hook1,
+            "World\n",
+            intoHook(hook1, template1.withArgs()),
+            "}"
+        ));
+
+        String code = template2.withArgs().render();
+        String expected =
+            """
+            xxx""";
+        checkEQ(code, expected);
+    }
 
     public static void checkEQ(String code, String expected) {
         if (!code.equals(expected)) {

@@ -30,8 +30,8 @@ import java.util.List;
 
 class Frame {
     private final List<Code> codeList = new ArrayList<Code>();
+    private final Map<Hook, Code.CodeList> hookCodeLists = new HashMap<>();
 
-    //private final Map<Hook, Integer> hookInsertionIndex = new HashMap<>();
     private final Map<String, String> variableNames = new HashMap<>();
     private final Map<String, String> context = new HashMap<>();
 
@@ -43,13 +43,16 @@ class Frame {
         codeList.add(code);
     }
 
-    //void addHook(Hook hook) {
-    //    hookInsertionIndex.put(hook, builder.length());
-    //}
+    void addHook(Hook hook) {
+        if (hasHook(hook)) {
+            throw new RendererException("Duplicate Hook in Template: " + hook.name());
+        }
+        hookCodeLists.put(hook, new Code.CodeList(new ArrayList<Code>()));
+    }
 
-    //boolean hasHook(Hook hook) {
-    //    return hookInsertionIndex.containsKey(hook);
-    //}
+    boolean hasHook(Hook hook) {
+        return hookCodeLists.containsKey(hook);
+    }
 
     //void insertIntoHook(Hook hook, String s) {
     //    int index = hookInsertionIndex.get(hook);
