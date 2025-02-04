@@ -175,7 +175,6 @@ public class TestMemorySegment {
         if (args.length > 1 && args[1].equals("AlignVector")) {
             framework.addFlags("-XX:+AlignVector");
         }
-//        framework.addFlags("-XX:-ShortRunningLongLoop");
         framework.setDefaultWarmup(100);
         framework.start();
     }
