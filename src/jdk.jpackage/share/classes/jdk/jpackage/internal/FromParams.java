@@ -149,6 +149,11 @@ final class FromParams {
         return BundlerParamInfo.createBundlerParam(jdk.jpackage.internal.model.Package.class, ctor);
     }
 
+    static Optional<jdk.jpackage.internal.model.Package> getCurrentPackage(Map<String, ? super Object> params) {
+        return Optional.ofNullable((jdk.jpackage.internal.model.Package)params.get(
+                jdk.jpackage.internal.model.Package.class.getName()));
+    }
+
     private static ApplicationLaunchers createLaunchers(
             Map<String, ? super Object> params,
             Function<Map<String, ? super Object>, Launcher> launcherMapper) {
