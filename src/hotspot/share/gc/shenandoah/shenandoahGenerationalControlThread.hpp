@@ -68,7 +68,6 @@ private:
   GCCause::Cause  _requested_gc_cause;
   ShenandoahGeneration* _requested_generation;
   ShenandoahGC::ShenandoahDegenPoint _degen_point;
-  ShenandoahGCRequest _degenerated_request;
   ShenandoahGenerationalHeap* _heap;
   uint _age_period;
 
@@ -93,8 +92,6 @@ public:
     return _mode;
   }
 private:
-
-  ShenandoahGCRequest check_for_request();
 
   void maybe_set_aging_cycle();
 
@@ -130,10 +127,10 @@ private:
 
   void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
 
-  bool handle_cancellation(ShenandoahGCRequest request);
-  ShenandoahGCRequest prepare_for_allocation_failure_request(ShenandoahGCRequest request);
-  ShenandoahGCRequest prepare_for_explicit_gc_request(ShenandoahGCRequest request);
-  ShenandoahGCRequest prepare_for_concurrent_gc_request(ShenandoahGCRequest request);
+  void check_for_request(ShenandoahGCRequest& request);
+  void prepare_for_allocation_failure_request(ShenandoahGCRequest& request);
+  void prepare_for_explicit_gc_request(ShenandoahGCRequest& request);
+  void prepare_for_concurrent_gc_request(ShenandoahGCRequest& request);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP
