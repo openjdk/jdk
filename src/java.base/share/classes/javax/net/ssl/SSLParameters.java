@@ -653,6 +653,7 @@ public class SSLParameters {
      * {@code String} should be exchanged using {@code UTF-8}, the
      * {@code String} should be converted to its {@code byte[]} representation
      * and stored as a byte-oriented {@code String} before calling this method.
+     * For example:
      *
      * <blockquote><pre>
      *     // Encode 3 Meetei Mayek letters (HUK, UN, I) using Unicode Escapes
@@ -662,7 +663,7 @@ public class SSLParameters {
      *     // Convert into UTF-8 encoded bytes (3 bytes/letter)
      *     byte[] bytes = HUK_UN_I.getBytes(StandardCharsets.UTF_8);
      *
-     *     // Convert bytes into a ISO_8859_1 encoded string
+     *     // Preserve network byte order by using ISO_8859_1 encoding
      *     String encodedHukUnI =
      *         new String(bytes, StandardCharsets.ISO_8859_1);
      *
