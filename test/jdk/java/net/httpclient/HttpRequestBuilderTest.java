@@ -267,7 +267,7 @@ public class HttpRequestBuilderTest {
         // interface works as expected
         HttpRequest defaultHeadReq = new NotOverriddenHEADImpl().HEAD().uri(TEST_URI).build();
         assertEquals("HEAD", defaultHeadReq.method(), "Method");
-        assertEquals(defaultHeadReq.bodyPublisher().isEmpty(), false, "Body publisher absence");
+        assertEquals(false, defaultHeadReq.bodyPublisher().isEmpty(), "Body publisher absence");
 
         verifyCopy();
 
@@ -297,7 +297,7 @@ public class HttpRequestBuilderTest {
             throw new AssertionError("failed: " + name
                     + ". Unexpected body processor for GET: "
                     + request.bodyPublisher().get());
-        assertEquals(method, expectedMethod, "Method");
+        assertEquals(expectedMethod, method, "Method");
     }
 
     static void test0(String name,
