@@ -17,12 +17,12 @@ public final class StableValueFactories {
 
     // Factories
 
-    public static <T> StableValueImpl<T> ofUnset() {
+    public static <T> StableValueImpl<T> of() {
         return StableValueImpl.newInstance();
     }
 
     public static <T> StableValueImpl<T> of(T value) {
-        final StableValueImpl<T> stableValue = ofUnset();
+        final StableValueImpl<T> stableValue = of();
         stableValue.trySet(value);
         return stableValue;
     }

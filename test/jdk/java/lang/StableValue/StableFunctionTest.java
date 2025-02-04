@@ -72,8 +72,8 @@ final class StableFunctionTest {
     @ParameterizedTest
     @MethodSource("allSets")
     void factoryInvariants(Set<Value> inputs) {
-        assertThrows(NullPointerException.class, () -> StableValue.ofFunction(null, MAPPER));
-        assertThrows(NullPointerException.class, () -> StableValue.ofFunction(inputs, null));
+        assertThrows(NullPointerException.class, () -> StableValue.function(null, MAPPER));
+        assertThrows(NullPointerException.class, () -> StableValue.function(inputs, null));
     }
 
     @ParameterizedTest
@@ -85,7 +85,7 @@ final class StableFunctionTest {
 
     void basic(Set<Value> inputs, Function<Value, Integer> mapper) {
         StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(mapper);
-        var cached = StableValue.ofFunction(inputs, cif);
+        var cached = StableValue.function(inputs, cif);
         assertEquals(mapper.apply(Value.FORTY_TWO), cached.apply(Value.FORTY_TWO));
         assertEquals(1, cif.cnt());
         assertEquals(mapper.apply(Value.FORTY_TWO), cached.apply(Value.FORTY_TWO));
@@ -104,7 +104,7 @@ final class StableFunctionTest {
     @ParameterizedTest
     @MethodSource("emptySets")
     void empty(Set<Value> inputs) {
-        Function<Value, Integer> f0 = StableValue.ofFunction(inputs, Value::asInt);
+        Function<Value, Integer> f0 = StableValue.function(inputs, Value::asInt);
         assertTrue(f0.toString().contains("{}"));
     }
 
@@ -114,7 +114,7 @@ final class StableFunctionTest {
         StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
-        var cached = StableValue.ofFunction(inputs, cif);
+        var cached = StableValue.function(inputs, cif);
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(Value.FORTY_TWO));
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(Value.FORTY_TWO));
@@ -130,7 +130,7 @@ final class StableFunctionTest {
     @MethodSource("nonEmptySets")
     void circular(Set<Value> inputs) {
         final AtomicReference<Function<?, ?>> ref = new AtomicReference<>();
-        Function<Value, Function<?, ?>> cached = StableValue.ofFunction(inputs, _ -> ref.get());
+        Function<Value, Function<?, ?>> cached = StableValue.function(inputs, _ -> ref.get());
         ref.set(cached);
         cached.apply(Value.FORTY_TWO);
         String toString = cached.toString();
@@ -143,8 +143,8 @@ final class StableFunctionTest {
     @MethodSource("allSets")
     void equality(Set<Value> inputs) {
         Function<Value, Integer> mapper = Value::asInt;
-        Function<Value, Integer> f0 = StableValue.ofFunction(inputs, mapper);
-        Function<Value, Integer> f1 = StableValue.ofFunction(inputs, mapper);
+        Function<Value, Integer> f0 = StableValue.function(inputs, mapper);
+        Function<Value, Integer> f1 = StableValue.function(inputs, mapper);
         // No function is equal to another function
         assertNotEquals(f0, f1);
     }
@@ -152,7 +152,7 @@ final class StableFunctionTest {
     @ParameterizedTest
     @MethodSource("allSets")
     void hashCodeStable(Set<Value> inputs) {
-        Function<Value, Integer> f0 = StableValue.ofFunction(inputs, Value::asInt);
+        Function<Value, Integer> f0 = StableValue.function(inputs, Value::asInt);
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         if (!inputs.isEmpty()) {
             f0.apply(Value.FORTY_TWO);
@@ -162,9 +162,9 @@ final class StableFunctionTest {
 
     @Test
     void usesOptimizedVersion() {
-        Function<Value, Integer> enumFunction = StableValue.ofFunction(EnumSet.of(Value.FORTY_TWO), Value::asInt);
+        Function<Value, Integer> enumFunction = StableValue.function(EnumSet.of(Value.FORTY_TWO), Value::asInt);
         assertEquals("jdk.internal.lang.stable.StableEnumFunction", enumFunction.getClass().getName());
-        Function<Value, Integer> emptyFunction = StableValue.ofFunction(Set.of(), Value::asInt);
+        Function<Value, Integer> emptyFunction = StableValue.function(Set.of(), Value::asInt);
         assertEquals("jdk.internal.lang.stable.EmptyStableFunction", emptyFunction.getClass().getName());
     }
 

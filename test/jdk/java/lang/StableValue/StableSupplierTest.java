@@ -40,7 +40,7 @@ final class StableSupplierTest {
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> StableValue.ofSupplier(null));
+        assertThrows(NullPointerException.class, () -> StableValue.supplier(null));
     }
 
     @Test
@@ -51,7 +51,7 @@ final class StableSupplierTest {
 
     void basic(Supplier<Integer> supplier) {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(supplier);
-        var cached = StableValue.ofSupplier(cs);
+        var cached = StableValue.supplier(cs);
         assertEquals("StableSupplier[value=.unset, original=" + cs + "]", cached.toString());
         assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
@@ -65,7 +65,7 @@ final class StableSupplierTest {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
-        var cached = StableValue.ofSupplier(cs);
+        var cached = StableValue.supplier(cs);
         assertThrows(UnsupportedOperationException.class, cached::get);
         assertEquals(1, cs.cnt());
         assertThrows(UnsupportedOperationException.class, cached::get);
@@ -76,7 +76,7 @@ final class StableSupplierTest {
     @Test
     void circular() {
         final AtomicReference<Supplier<?>> ref = new AtomicReference<>();
-        Supplier<Supplier<?>> cached = StableValue.ofSupplier(ref::get);
+        Supplier<Supplier<?>> cached = StableValue.supplier(ref::get);
         ref.set(cached);
         cached.get();
         String toString = cached.toString();
@@ -86,15 +86,15 @@ final class StableSupplierTest {
 
     @Test
     void equality() {
-        Supplier<Integer> f0 = StableValue.ofSupplier(SUPPLIER);
-        Supplier<Integer> f1 = StableValue.ofSupplier(SUPPLIER);
+        Supplier<Integer> f0 = StableValue.supplier(SUPPLIER);
+        Supplier<Integer> f1 = StableValue.supplier(SUPPLIER);
         // No function is equal to another function
         assertNotEquals(f0, f1);
     }
 
     @Test
     void hashCodeStable() {
-        Supplier<Integer> f0 = StableValue.ofSupplier(SUPPLIER);
+        Supplier<Integer> f0 = StableValue.supplier(SUPPLIER);
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.get();
         assertEquals(System.identityHashCode(f0), f0.hashCode());

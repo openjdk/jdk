@@ -57,8 +57,8 @@ final class StableMapTest {
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> StableValue.ofMap(KEYS, null));
-        assertThrows(NullPointerException.class, () -> StableValue.ofMap(null, IDENTITY));
+        assertThrows(NullPointerException.class, () -> StableValue.map(KEYS, null));
+        assertThrows(NullPointerException.class, () -> StableValue.map(null, IDENTITY));
     }
 
     @Test
@@ -76,7 +76,7 @@ final class StableMapTest {
     @Test
     void get() {
         StableTestUtil.CountingFunction<Integer, Integer> cf = new StableTestUtil.CountingFunction<>(IDENTITY);
-        var lazy = StableValue.ofMap(KEYS, cf);
+        var lazy = StableValue.map(KEYS, cf);
         int cnt = 1;
         for (int i : KEYS) {
             assertEquals(i, lazy.get(i));
@@ -92,7 +92,7 @@ final class StableMapTest {
         StableTestUtil.CountingFunction<Integer, Integer> cf = new StableTestUtil.CountingFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
-        var lazy = StableValue.ofMap(KEYS, cf);
+        var lazy = StableValue.map(KEYS, cf);
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(KEY));
         assertEquals(1, cf.cnt());
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(KEY));
@@ -131,7 +131,7 @@ final class StableMapTest {
     @Test
     void toStringTest() {
         assertEquals("{}", newEmptyMap().toString());
-        assertEquals("{" + KEY + "=" + KEY + "}", StableValue.ofMap(Set.of(KEY), IDENTITY).toString());
+        assertEquals("{" + KEY + "=" + KEY + "}", StableValue.map(Set.of(KEY), IDENTITY).toString());
         String actual = newMap().toString();
         assertTrue(actual.startsWith("{"));
         for (int key:KEYS) {
@@ -210,7 +210,7 @@ final class StableMapTest {
 
     @Test
     void distinct() {
-        Map<Integer, StableValueImpl<Integer>> map = StableValueFactories.ofMap(Set.of(1, 2, 3));
+        Map<Integer, StableValueImpl<Integer>> map = StableValueFactories.map(Set.of(1, 2, 3));
         assertEquals(3, map.size());
         // Check, every StableValue is distinct
         Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
@@ -252,11 +252,11 @@ final class StableMapTest {
     }
 
     static Map<Integer, Integer> newMap() {
-        return StableValue.ofMap(KEYS, IDENTITY);
+        return StableValue.map(KEYS, IDENTITY);
     }
 
     static Map<Integer, Integer> newEmptyMap() {
-        return StableValue.ofMap(EMPTY, IDENTITY);
+        return StableValue.map(EMPTY, IDENTITY);
     }
 
     static Map<Integer, Integer> newRegularMap() {

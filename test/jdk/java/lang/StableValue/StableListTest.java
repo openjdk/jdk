@@ -60,8 +60,8 @@ final class StableListTest {
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> StableValue.ofList(SIZE, null));
-        assertThrows(IllegalArgumentException.class, () -> StableValue.ofList(-1, IDENTITY));
+        assertThrows(NullPointerException.class, () -> StableValue.list(SIZE, null));
+        assertThrows(IllegalArgumentException.class, () -> StableValue.list(-1, IDENTITY));
     }
 
     @Test
@@ -79,7 +79,7 @@ final class StableListTest {
     @Test
     void get() {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(IDENTITY);
-        var lazy = StableValue.ofList(SIZE, cif);
+        var lazy = StableValue.list(SIZE, cif);
         for (int i = 0; i < SIZE; i++) {
             assertEquals(i, lazy.get(i));
             assertEquals(i + 1, cif.cnt());
@@ -93,7 +93,7 @@ final class StableListTest {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
-        var lazy = StableValue.ofList(SIZE, cif);
+        var lazy = StableValue.list(SIZE, cif);
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(INDEX));
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(INDEX));
@@ -110,7 +110,7 @@ final class StableListTest {
     void toArrayWithArrayLarger() {
         Integer[] arr = new Integer[SIZE];
         arr[INDEX] = 1;
-        assertSame(arr, StableValue.ofList(INDEX, IDENTITY).toArray(arr));
+        assertSame(arr, StableValue.list(INDEX, IDENTITY).toArray(arr));
         assertNull(arr[INDEX]);
     }
 
@@ -151,7 +151,7 @@ final class StableListTest {
     @Test
     void toStringTest() {
         assertEquals("[]", newEmptyList().toString());
-        assertEquals("[0, 1]", StableValue.ofList(2, IDENTITY).toString());
+        assertEquals("[0, 1]", StableValue.list(2, IDENTITY).toString());
         assertEquals(newRegularList().toString(), newList().toString());
     }
 
@@ -205,7 +205,7 @@ final class StableListTest {
     @Test
     void recursiveCall() {
         AtomicReference<IntFunction<Integer>> ref = new AtomicReference<>();
-        var lazy = StableValue.ofList(SIZE, i -> ref.get().apply(i));
+        var lazy = StableValue.list(SIZE, i -> ref.get().apply(i));
         ref.set(lazy::get);
         assertThrows(StackOverflowError.class, () -> lazy.get(INDEX));
     }
@@ -268,7 +268,7 @@ final class StableListTest {
 
     @Test
     void distinct() {
-        StableValueImpl<Integer>[] array = StableValueFactories.ofArray(SIZE);
+        StableValueImpl<Integer>[] array = StableValueFactories.array(SIZE);
         assertEquals(SIZE, array.length);
         // Check, every StableValue is distinct
         Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
@@ -332,11 +332,11 @@ final class StableListTest {
     }
 
     static List<Integer> newList() {
-        return StableValue.ofList(SIZE, IDENTITY);
+        return StableValue.list(SIZE, IDENTITY);
     }
 
     static List<Integer> newEmptyList() {
-        return StableValue.ofList(ZERO, IDENTITY);
+        return StableValue.list(ZERO, IDENTITY);
     }
 
     static List<Integer> newRegularList() {
