@@ -59,9 +59,9 @@ import java.util.function.Supplier;
  * <em>at-most-once</em> update semantics is crucial, but where the eager initialization
  * semantics associated with {@code final} fields is too restrictive.
  * <p>
- * Consider the following example where a stable value field "{@code logger}" is an
- * immutable holder of content of type {@code Logger} and that is initially created
- * as <em>unset</em>, which means it holds no value. Later in the example, the
+ * Consider the following example where a stable value field "{@code logger}" is a
+ * shallowly immutable holder of content of type {@code Logger} and that is initially
+ * created as <em>unset</em>, which means it holds no content. Later in the example, the
  * state of the "{@code logger}" field is checked and if it is still <em>unset</em>,
  * the content is <em>set</em>:
  *
@@ -90,7 +90,9 @@ import java.util.function.Supplier;
  * <p>
  * To guarantee that, even under races, only one instance of {@code Logger} is ever
  * created, the {@linkplain #orElseSet(Supplier) orElseSet()} method can be used
- * instead, where the content is atomically and lazily computed via a lambda expression:
+ * instead, where the content is atomically and lazily computed via a
+ * {@linkplain Supplier supplier}. In the example below, the supplier is provided in the
+ * form of a lambda expression:
  *
  * {@snippet lang = java:
  * class Component {
@@ -116,9 +118,9 @@ import java.util.function.Supplier;
  * words, {@code orElseSet()} guarantees that a stable value's content is <em>set</em>
  * before it is used.
  * <p>
- * Furthermore, {@code orElseSet()} guarantees that the lambda expression provided is
+ * Furthermore, {@code orElseSet()} guarantees that the supplier provided is
  * evaluated only once, even when {@code logger.orElseSet()} is invoked concurrently.
- * This property is crucial as evaluation of the lambda expression may have side effects,
+ * This property is crucial as evaluation of the supplier may have side effects,
  * e.g., the call above to {@code Logger.getLogger()} may result in storage resources
  * being prepared.
  *
@@ -170,8 +172,8 @@ import java.util.function.Supplier;
  *}
  * <p>
  * A <em>stable function</em> is a function that takes a parameter (of type {@code T}) and
- * uses it to compute a result that is then cached into the backing stable value storage
- * for that parameter value. A stable function is created via the
+ * uses it to compute a result (of type {@code R}) that is then cached into a backing
+ * stable value storage for that parameter value. A stable function is created via the
  * {@linkplain StableValue#function(Set, Function) StableValue.function()} factory.
  * Upon creation, the input {@linkplain Set} is specified together with an original
  * {@linkplain Function} which is invoked at most once per input value. In effect, the
@@ -210,9 +212,6 @@ import java.util.function.Supplier;
  *
  * }
  *}
- * <p>
- * Note: In the example above, there is a constructor in the {@code Component}
- *       class that takes an {@code int} parameter.
  * <p>
  * Similarly, a <em>stable map</em> is an unmodifiable map whose keys are known at
  * construction. The stable map values are computed when they are first accessed,
@@ -289,7 +288,7 @@ import java.util.function.Supplier;
  * Both {@code FIB} and {@code Fibonacci::fib} recurses into each other. Because the
  * stable int function {@code FIB} caches intermediate results, the initial
  * computational complexity is reduced from exponential to linear compared to a
- * traditional non-caching recursive fibonacci method. Once computed, the VM can
+ * traditional non-caching recursive fibonacci method. Once computed, the VM is free to
  * constant-fold expressions like {@code Fibonacci.fib(10)}.
  * <p>
  * The fibonacci example above is a dependency graph with no circular dependencies (i.e.,
@@ -302,7 +301,8 @@ import java.util.function.Supplier;
  * threads are racing to set a stable value, only one update succeeds, while other updates
  * are blocked until the stable value becomes set.
  * <p>
- * The at-most-once write operation on a stable value (e.g. {@linkplain #trySet(Object) trySet()})
+ * The at-most-once write operation on a stable value that succeeds
+ * (e.g. {@linkplain #trySet(Object) trySet()})
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
  * any subsequent read operation (e.g. {@linkplain #orElseThrow()}).
  * <p>
