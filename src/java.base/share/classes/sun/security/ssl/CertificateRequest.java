@@ -25,6 +25,9 @@
 
 package sun.security.ssl;
 
+import static sun.security.ssl.SignatureScheme.CERTIFICATE_SCOPE;
+import static sun.security.ssl.SignatureScheme.HANDSHAKE_SCOPE;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.PrivateKey;
@@ -637,7 +640,9 @@ final class CertificateRequest {
                 shc.localSupportedSignAlgs =
                     SignatureScheme.getSupportedAlgorithms(
                             shc.sslConfig,
-                            shc.algorithmConstraints, shc.activeProtocols);
+                            shc.algorithmConstraints,
+                            shc.activeProtocols,
+                            HANDSHAKE_SCOPE);
             }
 
             if (shc.localSupportedSignAlgs.isEmpty()) {
@@ -730,19 +735,35 @@ final class CertificateRequest {
             chc.handshakeProducers.put(SSLHandshake.CERTIFICATE.id,
                     SSLHandshake.CERTIFICATE);
 
-            List<SignatureScheme> sss =
+            List<SignatureScheme> signAlgs =
                     SignatureScheme.getSupportedAlgorithms(
                             chc.sslConfig,
-                            chc.algorithmConstraints, chc.negotiatedProtocol,
-                            crm.algorithmIds);
-            if (sss.isEmpty()) {
+                            chc.algorithmConstraints,
+                            chc.negotiatedProtocol,
+                            crm.algorithmIds,
+                            HANDSHAKE_SCOPE);
+            if (signAlgs.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No supported signature algorithm");
             }
 
-            chc.peerRequestedSignatureSchemes = sss;
-            chc.peerRequestedCertSignSchemes = sss;     // use the same schemes
-            chc.handshakeSession.setPeerSupportedSignatureAlgorithms(sss);
+            List<SignatureScheme> signCertAlgs =
+                    SignatureScheme.getSupportedAlgorithms(
+                            chc.sslConfig,
+                            chc.algorithmConstraints,
+                            chc.negotiatedProtocol,
+                            crm.algorithmIds,
+                            CERTIFICATE_SCOPE);
+            if (signCertAlgs.isEmpty()) {
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No supported signature cert algorithm");
+            }
+
+            chc.peerRequestedSignatureSchemes = signAlgs;
+            chc.peerRequestedCertSignSchemes = signCertAlgs;
+            chc.handshakeSession.setPeerSupportedSignatureAlgorithms(
+                    signCertAlgs);
+
             try {
                 chc.peerSupportedAuthorities = crm.getAuthorities();
             } catch (IllegalArgumentException iae) {
@@ -792,7 +813,8 @@ final class CertificateRequest {
                     .filter(ka -> SignatureScheme.getPreferableAlgorithm(   // Don't select a signature scheme unless
                             hc.algorithmConstraints,                        //  we will be able to produce
                             hc.peerRequestedSignatureSchemes,               //  a CertificateVerify message later
-                            ka, hc.negotiatedProtocol) != null
+                            ka, hc.negotiatedProtocol,
+                            CERTIFICATE_SCOPE) != null
                             || SSLLogger.logWarning("ssl,handshake",
                                     "Unable to produce CertificateVerify for key algorithm: " + ka))
                     .filter(ka -> {

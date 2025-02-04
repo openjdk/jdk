@@ -28,8 +28,8 @@ package sun.security.ssl;
 import java.security.CryptoScope;
 
 public enum SSLCryptoScope implements CryptoScope {
-    SIGNATURE_ALGORITHMS,
-    SIGNATURE_ALGORITHMS_CERT;
+    HANDSHAKE,
+    CERTIFICATE;
 
     // Note: the SSLCryptoScope is not case-sensitive.
     public static SSLCryptoScope nameOf(String name) {

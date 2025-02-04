@@ -47,6 +47,8 @@ import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.security.auth.x500.X500Principal;
 import static sun.security.ssl.ClientAuthType.CLIENT_AUTH_REQUIRED;
+import static sun.security.ssl.SignatureScheme.CERTIFICATE_SCOPE;
+
 import sun.security.ssl.ClientHello.ClientHelloMessage;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.X509Authentication.X509Credentials;
@@ -1051,7 +1053,8 @@ final class CertificateMessage {
                     .filter(ka -> SignatureScheme.getPreferableAlgorithm(   // Don't select a signature scheme unless
                             hc.algorithmConstraints,                        //  we will be able to produce
                             hc.peerRequestedSignatureSchemes,               //  a CertificateVerify message later
-                            ka, hc.negotiatedProtocol) != null
+                            ka, hc.negotiatedProtocol,
+                            CERTIFICATE_SCOPE) != null
                             || SSLLogger.logWarning("ssl,handshake",
                                     "Unable to produce CertificateVerify for key algorithm: " + ka))
                     .filter(ka -> X509Authentication.valueOfKeyAlgorithm(ka) != null

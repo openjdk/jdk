@@ -25,13 +25,11 @@
 
 package sun.security.ssl;
 
+import static sun.security.ssl.SignatureScheme.CERTIFICATE_SCOPE;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.security.CryptoScope;
-import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SignatureAlgorithmsExtension.SignatureSchemesSpec;
@@ -71,10 +69,6 @@ final class CertSignAlgsExtension {
         }
     }
 
-    private static final Set<CryptoScope> SIGNATURE_ALGORITHMS_CERT_PRIMITIVE_SET =
-            Collections.unmodifiableSet(
-                    EnumSet.of(SSLCryptoScope.SIGNATURE_ALGORITHMS_CERT));
-
     /**
      * Network data producer of a "signature_algorithms_cert" extension in
      * the ClientHello handshake message.
@@ -111,7 +105,7 @@ final class CertSignAlgsExtension {
                             chc.sslConfig,
                             chc.algorithmConstraints,
                             chc.activeProtocols,
-                            SIGNATURE_ALGORITHMS_CERT_PRIMITIVE_SET
+                            CERTIFICATE_SCOPE
                     );
             }
 
@@ -204,7 +198,7 @@ final class CertSignAlgsExtension {
                             shc.algorithmConstraints,
                             shc.negotiatedProtocol,
                             spec.signatureSchemes,
-                            SIGNATURE_ALGORITHMS_CERT_PRIMITIVE_SET);
+                            CERTIFICATE_SCOPE);
             shc.peerRequestedCertSignSchemes = schemes;
             shc.handshakeSession.setPeerSupportedSignatureAlgorithms(schemes);
 
@@ -258,7 +252,7 @@ final class CertSignAlgsExtension {
                             shc.sslConfig,
                             shc.algorithmConstraints,
                             List.of(shc.negotiatedProtocol),
-                            SIGNATURE_ALGORITHMS_CERT_PRIMITIVE_SET);
+                            CERTIFICATE_SCOPE);
 
             int vectorLen = SignatureScheme.sizeInRecord() * sigAlgs.size();
             byte[] extData = new byte[vectorLen + 2];
@@ -346,7 +340,7 @@ final class CertSignAlgsExtension {
                             chc.sslConfig,
                             chc.algorithmConstraints, chc.negotiatedProtocol,
                             spec.signatureSchemes,
-                            SIGNATURE_ALGORITHMS_CERT_PRIMITIVE_SET);
+                            CERTIFICATE_SCOPE);
             chc.peerRequestedCertSignSchemes = schemes;
             chc.handshakeSession.setPeerSupportedSignatureAlgorithms(schemes);
         }

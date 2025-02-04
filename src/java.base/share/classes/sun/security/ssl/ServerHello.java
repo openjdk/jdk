@@ -25,6 +25,8 @@
 
 package sun.security.ssl;
 
+import static sun.security.ssl.SignatureScheme.HANDSHAKE_SCOPE;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
@@ -277,7 +279,9 @@ final class ServerHello {
                     shc.localSupportedSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
                                 shc.sslConfig,
-                                shc.algorithmConstraints, shc.activeProtocols);
+                                shc.algorithmConstraints,
+                                shc.activeProtocols,
+                                HANDSHAKE_SCOPE);
                 }
 
                 SSLSessionImpl session =
@@ -518,7 +522,9 @@ final class ServerHello {
                     shc.localSupportedSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
                                 shc.sslConfig,
-                                shc.algorithmConstraints, shc.activeProtocols);
+                                shc.algorithmConstraints,
+                                shc.activeProtocols,
+                                HANDSHAKE_SCOPE);
                 }
 
                 SSLSessionImpl session =

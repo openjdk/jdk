@@ -218,10 +218,13 @@ enum SignatureScheme {
         }
     }
 
-    // performance optimization
-    private static final Set<CryptoScope> SIGNATURE_ALGORITHMS_PRIMITIVE_SET =
-        Collections.unmodifiableSet(EnumSet.of(SSLCryptoScope.SIGNATURE_ALGORITHMS));
+    // Handshake signature scope
+    public static final Set<CryptoScope> HANDSHAKE_SCOPE =
+            Collections.unmodifiableSet(EnumSet.of(SSLCryptoScope.HANDSHAKE));
 
+    // Certificate signature scope
+    public static final Set<CryptoScope> CERTIFICATE_SCOPE =
+            Collections.unmodifiableSet(EnumSet.of(SSLCryptoScope.CERTIFICATE));
 
     SignatureScheme(int id, String name,
             String algorithm, String keyAlgorithm,
@@ -355,25 +358,12 @@ enum SignatureScheme {
         return 2;
     }
 
-    private boolean isPermitted(AlgorithmConstraints constraints) {
-        return isPermitted(constraints, SIGNATURE_ALGORITHMS_PRIMITIVE_SET);
-    }
-
     private boolean isPermitted(AlgorithmConstraints constraints, Set<CryptoScope> scopes) {
         return constraints.permits(scopes, this.name, null)
                && constraints.permits(scopes, this.keyAlgorithm, null)
                && constraints.permits(scopes, this.algorithm,
                        (signAlgParams != null ? signAlgParams.parameters : null))
                && (namedGroup == null || namedGroup.isPermitted(constraints));
-    }
-
-    static List<SignatureScheme> getSupportedAlgorithms(
-            SSLConfiguration config,
-            AlgorithmConstraints constraints,
-            List<ProtocolVersion> activeProtocols) {
-        return getSupportedAlgorithms(
-                config, constraints, activeProtocols,
-                SIGNATURE_ALGORITHMS_PRIMITIVE_SET);
     }
 
     // Get local supported algorithm collection complying to algorithm
@@ -426,16 +416,6 @@ enum SignatureScheme {
         return supported;
     }
 
-    static List<SignatureScheme> getSupportedAlgorithms(
-            SSLConfiguration config,
-            AlgorithmConstraints constraints,
-            ProtocolVersion protocolVersion,
-            int[] algorithmIds) {
-        return getSupportedAlgorithms(
-                config, constraints, protocolVersion, algorithmIds,
-                SIGNATURE_ALGORITHMS_PRIMITIVE_SET);
-    }
-
         static List<SignatureScheme> getSupportedAlgorithms(
             SSLConfiguration config,
             AlgorithmConstraints constraints,
@@ -472,13 +452,14 @@ enum SignatureScheme {
             AlgorithmConstraints constraints,
             List<SignatureScheme> schemes,
             String keyAlgorithm,
-            ProtocolVersion version) {
+            ProtocolVersion version,
+            Set<CryptoScope> scopes) {
 
         for (SignatureScheme ss : schemes) {
             if (ss.isAvailable &&
                     ss.handshakeSupportedProtocols.contains(version) &&
                     keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm) &&
-                    ss.isPermitted(constraints)) {
+                    ss.isPermitted(constraints, scopes)) {
                 return ss;
             }
         }
@@ -507,7 +488,7 @@ enum SignatureScheme {
             if (ss.isAvailable && (keySize >= ss.minimalKeySize) &&
                     ss.handshakeSupportedProtocols.contains(version) &&
                     keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm) &&
-                    ss.isPermitted(constraints)) {
+                    ss.isPermitted(constraints, CERTIFICATE_SCOPE)) {
                 if ((ss.namedGroup != null) && (ss.namedGroup.spec ==
                         NamedGroupSpec.NAMED_GROUP_ECDHE)) {
                     ECParameterSpec params =
