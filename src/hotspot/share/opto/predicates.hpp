@@ -327,8 +327,8 @@ class ParsePredicate : public Predicate {
     return _success_proj;
   }
 
-  ParsePredicateSuccessProj* clone_to_unswitched_loop(Node* new_control, bool is_true_path_loop,
-                                                      PhaseIdealLoop* phase) const;
+  ParsePredicate clone_to_unswitched_loop(Node* new_control, bool is_true_path_loop,
+                                          PhaseIdealLoop* phase) const;
 
   // Kills this Parse Predicate by marking it useless. Will be folded away in the next IGVN round.
   void kill(const PhaseIterGVN& igvn) const {
@@ -403,10 +403,11 @@ class TemplateAssertionPredicate : public Predicate {
     return _if_node->assertion_predicate_type() == AssertionPredicateType::LastValue;
   }
 
-  IfTrueNode* clone(Node* new_control, PhaseIdealLoop* phase) const;
-  IfTrueNode* clone_and_replace_init(Node* new_control, OpaqueLoopInitNode* new_opaque_init, PhaseIdealLoop* phase) const;
+  TemplateAssertionPredicate clone(Node* new_control, PhaseIdealLoop* phase) const;
+  TemplateAssertionPredicate clone_and_replace_opaque_input(Node* new_control, Node* new_opaque_input,
+                                                            PhaseIdealLoop* phase) const;
   void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn) const;
-  IfTrueNode* initialize(PhaseIdealLoop* phase, Node* new_control) const;
+  InitializedAssertionPredicate initialize(PhaseIdealLoop* phase) const;
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      PhaseIdealLoop* phase) const;
   void kill(PhaseIdealLoop* phase) const;
@@ -609,7 +610,7 @@ class TemplateAssertionPredicateCreator : public StackObj {
   Node* create_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init) const;
   IfTrueNode* create_if_node(Node* new_control,
                              OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression,
-                             bool does_overflow, AssertionPredicateType assertion_predicate_type);
+                             bool does_overflow, AssertionPredicateType assertion_predicate_type) const;
 
  public:
   TemplateAssertionPredicateCreator(CountedLoopNode* loop_head, int scale, Node* offset, Node* range,
@@ -632,19 +633,21 @@ class InitializedAssertionPredicateCreator : public StackObj {
   explicit InitializedAssertionPredicateCreator(PhaseIdealLoop* phase);
   NONCOPYABLE(InitializedAssertionPredicateCreator);
 
-  IfTrueNode* create_from_template(IfNode* template_assertion_predicate, Node* new_control, Node* new_init,
-                                   Node* new_stride);
-  IfTrueNode* create_from_template(IfNode* template_assertion_predicate, Node* new_control);
+  InitializedAssertionPredicate create_from_template(IfNode* template_assertion_predicate, Node* new_control,
+                                                     Node* new_init, Node* new_stride) const;
+
+  InitializedAssertionPredicate
+  create_from_template_and_insert_below(const TemplateAssertionPredicate& template_assertion_predicate) const;
   IfTrueNode* create(Node* operand, Node* new_control, jint stride, int scale, Node* offset, Node* range,
-                     AssertionPredicateType assertion_predicate_type);
+                     AssertionPredicateType assertion_predicate_type) const;
 
  private:
   OpaqueInitializedAssertionPredicateNode* create_assertion_expression_from_template(IfNode* template_assertion_predicate,
                                                                                      Node* new_control, Node* new_init,
-                                                                                     Node* new_stride);
+                                                                                     Node* new_stride) const;
   IfTrueNode* create_control_nodes(Node* new_control, int if_opcode,
                                    OpaqueInitializedAssertionPredicateNode* assertion_expression,
-                                   AssertionPredicateType assertion_predicate_type);
+                                   AssertionPredicateType assertion_predicate_type) const;
 };
 
 // This class iterates through all predicates of a Regular Predicate Block and applies the given visitor to each.
@@ -1040,9 +1043,11 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   const NodeInLoopBody& _node_in_loop_body;
   const bool _clone_template;
 
-  IfTrueNode* clone_template_and_replace_init_input(const TemplateAssertionPredicate& template_assertion_predicate);
-  IfTrueNode* initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate,
-                                       Node* new_control) const;
+  TemplateAssertionPredicate
+  clone_template_and_replace_init_input(const TemplateAssertionPredicate& template_assertion_predicate) const;
+
+  InitializedAssertionPredicate initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate,
+                                                         Node* new_control) const;
   void rewire_to_old_predicate_chain_head(Node* initialized_assertion_predicate_success_proj) const;
 
  public:
@@ -1070,7 +1075,7 @@ public:
   TargetLoopPredicateChain(LoopNode* loop_head, PhaseIdealLoop* phase);
   NONCOPYABLE(TargetLoopPredicateChain);
 
-  void insert_predicate(IfTrueNode* predicate_success_proj);
+  void insert_predicate(const Predicate& predicate);
 };
 
 // This class clones Parse and Template Assertion Predicates to the provided target loop. This also involves rewiring
@@ -1102,17 +1107,18 @@ public:
 
   // Clones the provided Parse Predicate to the head of the current predicate chain at the target loop.
   void clone_parse_predicate(const ParsePredicate& parse_predicate, bool is_true_path_loop) {
-    ParsePredicateSuccessProj* cloned_parse_predicate_success_proj =
-      parse_predicate.clone_to_unswitched_loop(_old_target_loop_entry, is_true_path_loop, _phase);
-    _target_loop_predicate_chain.insert_predicate(cloned_parse_predicate_success_proj);
+    ParsePredicate cloned_parse_predicate = parse_predicate.clone_to_unswitched_loop(_old_target_loop_entry,
+                                                                                     is_true_path_loop, _phase);
+    _target_loop_predicate_chain.insert_predicate(cloned_parse_predicate);
   }
 
   // Clones the provided Template Assertion Predicate to the head of the current predicate chain at the target loop.
   void clone_template_assertion_predicate(const TemplateAssertionPredicate& template_assertion_predicate) {
-    IfTrueNode* cloned_template_success_proj = template_assertion_predicate.clone(_old_target_loop_entry,
-                                                                                  _phase);
-    template_assertion_predicate.rewire_loop_data_dependencies(cloned_template_success_proj, _node_in_loop_body, _phase);
-    _target_loop_predicate_chain.insert_predicate(cloned_template_success_proj);
+    TemplateAssertionPredicate cloned_template_assertion_predicate =
+        template_assertion_predicate.clone(_old_target_loop_entry, _phase);
+    template_assertion_predicate.rewire_loop_data_dependencies(cloned_template_assertion_predicate.tail(),
+                                                               _node_in_loop_body, _phase);
+    _target_loop_predicate_chain.insert_predicate(cloned_template_assertion_predicate);
   }
 };
 
@@ -1164,8 +1170,10 @@ class UpdateStrideForAssertionPredicates : public PredicateVisitor {
   PhaseIdealLoop* const _phase;
 
   void replace_opaque_stride_input(const TemplateAssertionPredicate& template_assertion_predicate) const;
-  IfTrueNode* initialize_from_updated_template(const TemplateAssertionPredicate& template_assertion_predicate) const;
-  void connect_initialized_assertion_predicate(Node* new_control_out, IfTrueNode* initialized_success_proj) const;
+
+  InitializedAssertionPredicate
+  initialize_from_updated_template(const TemplateAssertionPredicate& template_assertion_predicate) const;
+  void connect_initialized_assertion_predicate(Node* new_control_out, const InitializedAssertionPredicate& initialized_assertion_predicate) const;
 
  public:
   UpdateStrideForAssertionPredicates(Node* const new_stride, PhaseIdealLoop* phase)
