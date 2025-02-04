@@ -173,11 +173,15 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     @Override
     public void collectFailedSpeculations() {
         if (failedSpeculationsAddress == 0) {
+            // If no memory has been allocated then don't force its creation
             return;
         }
 
-        if (UnsafeAccess.UNSAFE.getLong(getFailedSpeculationsAddress()) != 0) {
-            failedSpeculations = compilerToVM().getFailedSpeculations(failedSpeculationsAddress, failedSpeculations);
+        // Go through getFailedSpeculationsAddress() to ensure that any concurrent
+        // initialization of failedSpeculationsAddress is seen by this thread.
+        long address = getFailedSpeculationsAddress();
+        if (UnsafeAccess.UNSAFE.getLong(address) != 0) {
+            failedSpeculations = compilerToVM().getFailedSpeculations(address, failedSpeculations);
             assert failedSpeculations.getClass() == byte[][].class;
         }
     }
