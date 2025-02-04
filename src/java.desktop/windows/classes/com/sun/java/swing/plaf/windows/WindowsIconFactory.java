@@ -885,7 +885,7 @@ public class WindowsIconFactory implements Serializable
                 if (icon != null) {
                     System.out.println(skinWidth);
                     icon.paintIcon(c, g, x - OFFSET +
-                            ((skinWidth != -1) ? skinWidth : 0), y + OFFSET);
+                            ((skinWidth != -1) ? skinWidth : 16), y + OFFSET);
                 }
             }
             private static WindowsMenuItemUIAccessor getAccessor(
