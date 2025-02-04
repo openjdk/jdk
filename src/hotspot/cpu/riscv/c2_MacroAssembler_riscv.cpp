@@ -1518,6 +1518,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     // main loop
     bind(NEXT_WORD);
     if (str1_isL == str2_isL) { // LL or UU
+      // both of the two loads are 8-byte aligned
       add(t0, str1, cnt2);
       ld(tmp1, Address(t0));
       add(t0, str2, cnt2);
