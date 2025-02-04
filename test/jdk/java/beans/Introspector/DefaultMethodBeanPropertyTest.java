@@ -196,60 +196,44 @@ public class DefaultMethodBeanPropertyTest {
 
 // Helper methods
 
+    private static void verifyEquality(Set<String> expected, Set<String> actual) {
+        if (!actual.equals(expected)) {
+            throw new Error("properties mismatch: "
+                    + "\nACTUAL:\n  "
+                    + actual.stream()
+                            .map(Object::toString)
+                            .collect(Collectors.joining("\n  "))
+                    + "\nEXPECTED:\n  "
+                    + expected.stream()
+                            .map(Object::toString)
+                            .collect(Collectors.joining("\n  ")));
+        }
+    }
+
     public static void verify(Class<?> type, String... getterNames) {
         // Verify properties
         try {
-            // Gather expected properties
             final Set<String> expected = new HashSet<>(Arrays.asList(getterNames));
             expected.add("public final native java.lang.Class java.lang.Object.getClass()");
-
-            // Gather actual properties
             final Set<String> actual = Arrays
                     .stream(Introspector.getBeanInfo(type).getPropertyDescriptors())
                     .map(PropertyDescriptor::getReadMethod)
                     .map(Method::toString)
                     .collect(Collectors.toSet());
-
-            // Verify the two sets are the same
-            if (!actual.equals(expected)) {
-                throw new Error("properties mismatch: " + type
-                        + "\nACTUAL:\n  "
-                        + actual.stream()
-                                .map(Object::toString)
-                                .collect(Collectors.joining("\n  "))
-                        + "\nEXPECTED:\n  "
-                        + expected.stream()
-                                .map(Object::toString)
-                                .collect(Collectors.joining("\n  ")));
-            }
+            verifyEquality(expected, actual);
         } catch (IntrospectionException exception) {
             throw new Error("unexpected exception", exception);
         }
 
         // Verify methods
         try {
-            // Gather expected properties
             final Set<String> expected = new HashSet<>(Arrays.asList(getterNames));
-
-            // Gather actual methods
             final Set<String> actualMethods = Arrays
                     .stream(Introspector.getBeanInfo(type, Object.class).getMethodDescriptors())
                     .map(MethodDescriptor::getMethod)
                     .map(Method::toString)
                     .collect(Collectors.toSet());
-
-            // Verify the two sets are the same
-            if (!actualMethods.equals(expected)) {
-                throw new Error("methods mismatch: " + type
-                        + "\nACTUAL:\n  "
-                        + actualMethods.stream()
-                                .map(Object::toString)
-                                .collect(Collectors.joining("\n  "))
-                        + "\nEXPECTED:\n  "
-                        + expected.stream()
-                                .map(Object::toString)
-                                .collect(Collectors.joining("\n  ")));
-            }
+            verifyEquality(expected, actualMethods);
         } catch (IntrospectionException exception) {
             throw new Error("unexpected exception", exception);
         }
