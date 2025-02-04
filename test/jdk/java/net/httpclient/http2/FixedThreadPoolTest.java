@@ -177,7 +177,7 @@ public class FixedThreadPoolTest {
                     return resp.body();
                 });
         response.join();
-        assert Files.mismatch(src, dest) < 0;
+        assertFileContentsEqual(src, dest);
         System.err.println("DONE");
     }
 
