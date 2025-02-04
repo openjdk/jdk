@@ -48,6 +48,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class PathGroupTest {
 
+    @Test
     public void testNullId() {
         assertThrowsExactly(NullPointerException.class, () -> new PathGroup(Map.of()).getPath(null));
     }

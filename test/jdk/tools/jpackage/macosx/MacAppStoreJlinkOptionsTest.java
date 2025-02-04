@@ -21,8 +21,14 @@
  * questions.
  */
 
-import jdk.jpackage.test.JPackageCommand;
+import static java.util.stream.Collectors.joining;
+
+import java.util.ArrayList;
+import java.util.List;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
 
 /**
  * Tests generation of app image with --mac-app-store and --jlink-options. jpackage should able
@@ -43,20 +49,25 @@ import jdk.jpackage.test.Annotations.Test;
 public class MacAppStoreJLinkOptionsTest {
 
     @Test
-    public static void testWithStripNativeCommands() throws Exception {
-        JPackageCommand cmd = JPackageCommand.helloAppImage();
-        cmd.addArguments("--mac-app-store", "--jlink-options",
-                "--strip-debug --no-man-pages --no-header-files --strip-native-commands");
+    @Parameter("true")
+    @Parameter("false")
+    public static void testWithStripNativeCommands(boolean stripNativeCommands) throws Exception {
 
-        cmd.executeAndAssertHelloAppImageCreated();
-    }
+        final var jlinkOptions = new ArrayList<String>(List.of("--strip-debug --no-man-pages --no-header-files"));
+        if (stripNativeCommands) {
+            jlinkOptions.add("--strip-native-commands");
+        }
 
-    @Test
-    public static void testWithoutStripNativeCommands() throws Exception {
-        JPackageCommand cmd = JPackageCommand.helloAppImage();
-        cmd.addArguments("--mac-app-store", "--jlink-options",
-                "--strip-debug --no-man-pages --no-header-files");
+        final var cmd = JPackageCommand.helloAppImage().ignoreDefaultRuntime(true);
 
-        cmd.execute(1);
+        cmd.addArguments("--mac-app-store", "--jlink-options", jlinkOptions.stream().collect(joining(" ")));
+
+        if (stripNativeCommands) {
+            cmd.executeAndAssertHelloAppImageCreated();
+        } else {
+            cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString(
+                    "ERR_MissingJLinkOptMacAppStore", "--strip-native-commands"));
+            cmd.execute(1);
+        }
     }
 }
