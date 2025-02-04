@@ -966,6 +966,7 @@ public class TCKDateTimeFormatter {
             assertEquals(dateTimeExpected, dateTimeFormatter.format(dateTime));
             assertEquals(dateTimeExpected, dateTimeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
             assertEquals(dateTimeExpected, dateTimeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+            assertEquals(dateTimeExpected, dateTimeFormatter.withZone(ZoneOffset.UTC).format(dateTime.toInstant(ZoneOffset.UTC)));
 
             String timeExpected = timeStr + " " + timeStr;
             DateTimeFormatter timeFormatter = timeFormatters[i];
@@ -974,6 +975,7 @@ public class TCKDateTimeFormatter {
             assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
             assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC).toOffsetTime()));
             assertEquals(timeExpected, timeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+            assertEquals(timeExpected, timeFormatter.withZone(ZoneOffset.UTC).format(dateTime.toInstant(ZoneOffset.UTC)));
         }
     }
 
