@@ -912,42 +912,7 @@ public class TCKDateTimeFormatter {
 
     @Test
     public void test_output_twice() {
-        List<LocalDateTime> dateTimes = new ArrayList<>();
-        int[] years = {
-                -1, -10, -100, -1000, -10000, -100000, -1000000, -10000000, -100000000, -999999999,
-                0, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 999999999
-        };
-        int[] months = {1, 12};
-        int[] days = {1, 28};
-        int[] hours = {0, 9, 23};
-        int[] minutes = {0, 9, 59};
-        int[] seconds = {0, 9, 59};
-        int[] nanos = {
-                0, 9,
-                10, 99,
-                100, 999,
-                1000, 9999,
-                10000, 99999,
-                100000, 999999,
-                1000000, 9999999,
-                10000000, 99999999,
-                10000000, 999999999
-        };
-        for (int year : years) {
-            for (int month : months) {
-                for (int day : days) {
-                    for (int hour : hours) {
-                        for (int minute : minutes) {
-                            for (int second : seconds) {
-                                for (int nano : nanos) {
-                                    dateTimes.add(LocalDateTime.of(year, month, day, hour, minute, second, nano));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        List<LocalDateTime> dateTimes = dateTimes(true);
 
         int[] powers = new int[] {
                 1000000000,
@@ -1025,33 +990,11 @@ public class TCKDateTimeFormatter {
 
     @Test
     public void test_output() {
-        List<LocalDateTime> dateTimes = new ArrayList<>();
-        int[] years = {
-                -1, -10, -100, -1000, -10000, -100000, -1000000, -10000000, -100000000, -999999999,
-                0, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 999999999
-        };
-        int[] months = {1, 12};
-        int[] days = {1, 28};
-        int[] hours = {0, 9, 23};
-        int[] minutes = {0, 9, 59};
-        int[] seconds = {0, 9, 59};
-        for (int year : years) {
-            for (int month : months) {
-                for (int day : days) {
-                    for (int hour : hours) {
-                        for (int minute : minutes) {
-                            for (int second : seconds) {
-                                dateTimes.add(LocalDateTime.of(year, month, day, hour, minute, second));
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        List<LocalDateTime> dateTimes = dateTimes(false);
 
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("u-M-d'T'H:m:s", Locale.US);
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("u-M-d", Locale.US);
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("H:m:s", Locale.US);
+        DateTimeFormatter dateFormatter     = DateTimeFormatter.ofPattern("u-M-d", Locale.US);
+        DateTimeFormatter timeFormatter     = DateTimeFormatter.ofPattern("H:m:s", Locale.US);
 
         for (LocalDateTime dateTime : dateTimes) {
             String dateExpected = new StringBuilder().append(dateTime.getYear())
@@ -1079,5 +1022,61 @@ public class TCKDateTimeFormatter {
             assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC).toOffsetTime()));
             assertEquals(timeExpected, timeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
         }
+    }
+
+    static List<LocalDateTime> dateTimes(boolean includeNanos) {
+        int[] years = {
+                -1, -10, -100, -1000, -10000, -100000, -1000000, -10000000, -100000000, -999999999,
+                0, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 999999999
+        };
+        int[] months  = {1, 12};
+        int[] days    = {1, 28};
+        int[] hours   = {0, 9, 23};
+        int[] minutes = {0, 9, 59};
+        int[] seconds = {0, 9, 59};
+        int[] nanos = {
+                0, 9,
+                10, 99,
+                100, 999,
+                1000, 9999,
+                10000, 99999,
+                100000, 999999,
+                1000000, 9999999,
+                10000000, 99999999,
+                10000000, 999999999
+        };
+
+        List<LocalDate> localDates = new ArrayList<>();
+        for (int year : years) {
+            for (int month : months) {
+                for (int day : days) {
+                    localDates.add(LocalDate.of(year, month, day));
+                }
+            }
+        }
+
+        List<LocalTime> localTimes = new ArrayList<>();
+        for (int hour : hours) {
+            for (int minute : minutes) {
+                for (int second : seconds) {
+                    if (includeNanos) {
+                        for (int nano : nanos) {
+                            localTimes.add(LocalTime.of(hour, minute, second, nano));
+                        }
+                    } else {
+                        localTimes.add(LocalTime.of(hour, minute, second));
+                    }
+                }
+            }
+        }
+
+        List<LocalDateTime> dateTimes = new ArrayList<>();
+        for (LocalDate localDate : localDates) {
+            for (LocalTime localTime : localTimes) {
+                dateTimes.add(LocalDateTime.of(localDate, localTime));
+            }
+        }
+
+        return dateTimes;
     }
 }
