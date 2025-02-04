@@ -40,7 +40,7 @@ public class ZonedDateTimeFormatterBenchmark {
     private static final DateTimeFormatter df = new DateTimeFormatterBuilder()
             .appendPattern("yyyy:MM:dd:HH:mm:v")
             .toFormatter();
-    private static final String TEXT = "2015:03:10:12:13:Z";
+    private static final String TEXT = "2015:03:10:12:13:PST";
 
     @Setup
     public void setUp() {
