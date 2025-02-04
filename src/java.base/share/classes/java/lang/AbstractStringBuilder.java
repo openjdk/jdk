@@ -250,6 +250,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * synchronized.
      * If {@code minimumCapacity} is non positive due to numeric
      * overflow, this method throws {@code OutOfMemoryError}.
+     *
+     * @param   minimumCapacity   the minimum desired capacity.
+     * @param   coder the coder to be used when calculating the capacity length.
+     * @return  Returns the value that ensures the capacity
      */
     private byte[] ensureCapacityInternal(int minimumCapacity, byte coder) {
         // overflow-conscious code
