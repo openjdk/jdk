@@ -63,7 +63,7 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
 void ShenandoahGenerationalControlThread::run_service() {
 
   ShenandoahGCRequest request;
-  while (!in_graceful_shutdown() && !should_terminate()) {
+  while (!should_terminate()) {
 
     // Figure out if we have pending requests.
     check_for_request(request);
@@ -579,7 +579,7 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
     return false;
   }
 
-  if (in_graceful_shutdown()) {
+  if (_heap->cancelled_cause() == GCCause::_shenandoah_stop_vm) {
     return true;
   }
 
