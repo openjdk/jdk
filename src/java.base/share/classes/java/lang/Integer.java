@@ -522,6 +522,7 @@ public final class Integer extends Number
         if (s == null || radix != 10 || (len = (value = s.value()).length) == 0 || !s.isLatin1()) {
             return parseInt0(s, radix);
         }
+        /* Accumulating negatively avoids surprises near MAX_VALUE */
         int fc = value[0];
         int result = Integer.isDigitLatin1(fc)
                 ? '0' - fc
