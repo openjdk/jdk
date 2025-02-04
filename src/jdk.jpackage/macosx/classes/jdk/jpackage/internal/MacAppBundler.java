@@ -51,12 +51,12 @@ public class MacAppBundler extends AppImageBundler {
                      .excludeDirFromCopying(OUTPUT_DIR.fetchFrom(params))
                      .inputApplicationLayoutForPackaging(pkg -> pkg.app().asApplicationLayout());
 
-             if (isDependentTask()) {
-                 final var pkg = MacFromParams.PACKAGE.fetchFrom(params);
+             final var pkg = FromParams.getCurrentPackage(params);
+             if (pkg.isPresent()) {
                  taskPipelineBuilder.pkgBuildEnvFactory((e, p) -> {
                      return BuildEnv.withAppImageDir(e, output);
                  });
-                 taskPipelineBuilder.create().execute(env, pkg, output);
+                 taskPipelineBuilder.create().execute(env, pkg.orElseThrow(), output);
              } else {
                  taskPipelineBuilder.create().execute(env, app);
              }
