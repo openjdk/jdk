@@ -4063,6 +4063,93 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Execute on round of keccak of two computations in parallel.
+  // One of the states should be loaded into the lower halves of
+  // the vector registers v0-v24, the other should be loaded into
+  // the upper halves of those registers. The ld1r instruction loads
+  // the round constant into both halves.
+  // All vector instructions that are used operate on both register
+  // halves in parallel.
+  // If only a single computation is needed, one can only load the lower halves.
+  void keccak_round(Register rscratch1) {
+    __ eor3(v29, __ T16B, v4, v9, v14);
+    __ eor3(v26, __ T16B, v1, v6, v11);
+    __ eor3(v28, __ T16B, v3, v8, v13);
+    __ eor3(v25, __ T16B, v0, v5, v10);
+    __ eor3(v27, __ T16B, v2, v7, v12);
+    __ eor3(v29, __ T16B, v29, v19, v24);
+    __ eor3(v26, __ T16B, v26, v16, v21);
+    __ eor3(v28, __ T16B, v28, v18, v23);
+    __ eor3(v25, __ T16B, v25, v15, v20);
+    __ eor3(v27, __ T16B, v27, v17, v22);
+
+    __ rax1(v30, __ T2D, v29, v26);
+    __ rax1(v26, __ T2D, v26, v28);
+    __ rax1(v28, __ T2D, v28, v25);
+    __ rax1(v25, __ T2D, v25, v27);
+    __ rax1(v27, __ T2D, v27, v29);
+
+    __ eor(v0, __ T16B, v0, v30);
+    __ xar(v29, __ T2D, v1,  v25, (64 - 1));
+    __ xar(v1,  __ T2D, v6,  v25, (64 - 44));
+    __ xar(v6,  __ T2D, v9,  v28, (64 - 20));
+    __ xar(v9,  __ T2D, v22, v26, (64 - 61));
+    __ xar(v22, __ T2D, v14, v28, (64 - 39));
+    __ xar(v14, __ T2D, v20, v30, (64 - 18));
+    __ xar(v31, __ T2D, v2,  v26, (64 - 62));
+    __ xar(v2,  __ T2D, v12, v26, (64 - 43));
+    __ xar(v12, __ T2D, v13, v27, (64 - 25));
+    __ xar(v13, __ T2D, v19, v28, (64 - 8));
+    __ xar(v19, __ T2D, v23, v27, (64 - 56));
+    __ xar(v23, __ T2D, v15, v30, (64 - 41));
+    __ xar(v15, __ T2D, v4,  v28, (64 - 27));
+    __ xar(v28, __ T2D, v24, v28, (64 - 14));
+    __ xar(v24, __ T2D, v21, v25, (64 - 2));
+    __ xar(v8,  __ T2D, v8,  v27, (64 - 55));
+    __ xar(v4,  __ T2D, v16, v25, (64 - 45));
+    __ xar(v16, __ T2D, v5,  v30, (64 - 36));
+    __ xar(v5,  __ T2D, v3,  v27, (64 - 28));
+    __ xar(v27, __ T2D, v18, v27, (64 - 21));
+    __ xar(v3,  __ T2D, v17, v26, (64 - 15));
+    __ xar(v25, __ T2D, v11, v25, (64 - 10));
+    __ xar(v26, __ T2D, v7,  v26, (64 - 6));
+    __ xar(v30, __ T2D, v10, v30, (64 - 3));
+
+    __ bcax(v20, __ T16B, v31, v22, v8);
+    __ bcax(v21, __ T16B, v8,  v23, v22);
+    __ bcax(v22, __ T16B, v22, v24, v23);
+    __ bcax(v23, __ T16B, v23, v31, v24);
+    __ bcax(v24, __ T16B, v24, v8,  v31);
+
+    __ ld1r(v31, __ T2D, __ post(rscratch1, 8));
+
+    __ bcax(v17, __ T16B, v25, v19, v3);
+    __ bcax(v18, __ T16B, v3,  v15, v19);
+    __ bcax(v19, __ T16B, v19, v16, v15);
+    __ bcax(v15, __ T16B, v15, v25, v16);
+    __ bcax(v16, __ T16B, v16, v3,  v25);
+
+    __ bcax(v10, __ T16B, v29, v12, v26);
+    __ bcax(v11, __ T16B, v26, v13, v12);
+    __ bcax(v12, __ T16B, v12, v14, v13);
+    __ bcax(v13, __ T16B, v13, v29, v14);
+    __ bcax(v14, __ T16B, v14, v26, v29);
+
+    __ bcax(v7, __ T16B, v30, v9,  v4);
+    __ bcax(v8, __ T16B, v4,  v5,  v9);
+    __ bcax(v9, __ T16B, v9,  v6,  v5);
+    __ bcax(v5, __ T16B, v5,  v30, v6);
+    __ bcax(v6, __ T16B, v6,  v4,  v30);
+
+    __ bcax(v3, __ T16B, v27, v0,  v28);
+    __ bcax(v4, __ T16B, v28, v1,  v0);
+    __ bcax(v0, __ T16B, v0,  v2,  v1);
+    __ bcax(v1, __ T16B, v1,  v27, v2);
+    __ bcax(v2, __ T16B, v2,  v28, v27);
+
+    __ eor(v0, __ T16B, v0, v31);
+  }
+
   // Arguments:
   //
   // Inputs:
@@ -4196,82 +4283,7 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(rounds24_loop);
     __ subw(rscratch2, rscratch2, 1);
 
-    __ eor3(v29, __ T16B, v4, v9, v14);
-    __ eor3(v26, __ T16B, v1, v6, v11);
-    __ eor3(v28, __ T16B, v3, v8, v13);
-    __ eor3(v25, __ T16B, v0, v5, v10);
-    __ eor3(v27, __ T16B, v2, v7, v12);
-    __ eor3(v29, __ T16B, v29, v19, v24);
-    __ eor3(v26, __ T16B, v26, v16, v21);
-    __ eor3(v28, __ T16B, v28, v18, v23);
-    __ eor3(v25, __ T16B, v25, v15, v20);
-    __ eor3(v27, __ T16B, v27, v17, v22);
-
-    __ rax1(v30, __ T2D, v29, v26);
-    __ rax1(v26, __ T2D, v26, v28);
-    __ rax1(v28, __ T2D, v28, v25);
-    __ rax1(v25, __ T2D, v25, v27);
-    __ rax1(v27, __ T2D, v27, v29);
-
-    __ eor(v0, __ T16B, v0, v30);
-    __ xar(v29, __ T2D, v1,  v25, (64 - 1));
-    __ xar(v1,  __ T2D, v6,  v25, (64 - 44));
-    __ xar(v6,  __ T2D, v9,  v28, (64 - 20));
-    __ xar(v9,  __ T2D, v22, v26, (64 - 61));
-    __ xar(v22, __ T2D, v14, v28, (64 - 39));
-    __ xar(v14, __ T2D, v20, v30, (64 - 18));
-    __ xar(v31, __ T2D, v2,  v26, (64 - 62));
-    __ xar(v2,  __ T2D, v12, v26, (64 - 43));
-    __ xar(v12, __ T2D, v13, v27, (64 - 25));
-    __ xar(v13, __ T2D, v19, v28, (64 - 8));
-    __ xar(v19, __ T2D, v23, v27, (64 - 56));
-    __ xar(v23, __ T2D, v15, v30, (64 - 41));
-    __ xar(v15, __ T2D, v4,  v28, (64 - 27));
-    __ xar(v28, __ T2D, v24, v28, (64 - 14));
-    __ xar(v24, __ T2D, v21, v25, (64 - 2));
-    __ xar(v8,  __ T2D, v8,  v27, (64 - 55));
-    __ xar(v4,  __ T2D, v16, v25, (64 - 45));
-    __ xar(v16, __ T2D, v5,  v30, (64 - 36));
-    __ xar(v5,  __ T2D, v3,  v27, (64 - 28));
-    __ xar(v27, __ T2D, v18, v27, (64 - 21));
-    __ xar(v3,  __ T2D, v17, v26, (64 - 15));
-    __ xar(v25, __ T2D, v11, v25, (64 - 10));
-    __ xar(v26, __ T2D, v7,  v26, (64 - 6));
-    __ xar(v30, __ T2D, v10, v30, (64 - 3));
-
-    __ bcax(v20, __ T16B, v31, v22, v8);
-    __ bcax(v21, __ T16B, v8,  v23, v22);
-    __ bcax(v22, __ T16B, v22, v24, v23);
-    __ bcax(v23, __ T16B, v23, v31, v24);
-    __ bcax(v24, __ T16B, v24, v8,  v31);
-
-    __ ld1r(v31, __ T2D, __ post(rscratch1, 8));
-
-    __ bcax(v17, __ T16B, v25, v19, v3);
-    __ bcax(v18, __ T16B, v3,  v15, v19);
-    __ bcax(v19, __ T16B, v19, v16, v15);
-    __ bcax(v15, __ T16B, v15, v25, v16);
-    __ bcax(v16, __ T16B, v16, v3,  v25);
-
-    __ bcax(v10, __ T16B, v29, v12, v26);
-    __ bcax(v11, __ T16B, v26, v13, v12);
-    __ bcax(v12, __ T16B, v12, v14, v13);
-    __ bcax(v13, __ T16B, v13, v29, v14);
-    __ bcax(v14, __ T16B, v14, v26, v29);
-
-    __ bcax(v7, __ T16B, v30, v9,  v4);
-    __ bcax(v8, __ T16B, v4,  v5,  v9);
-    __ bcax(v9, __ T16B, v9,  v6,  v5);
-    __ bcax(v5, __ T16B, v5,  v30, v6);
-    __ bcax(v6, __ T16B, v6,  v4,  v30);
-
-    __ bcax(v3, __ T16B, v27, v0,  v28);
-    __ bcax(v4, __ T16B, v28, v1,  v0);
-    __ bcax(v0, __ T16B, v0,  v2,  v1);
-    __ bcax(v1, __ T16B, v1,  v27, v2);
-    __ bcax(v2, __ T16B, v2,  v28, v27);
-
-    __ eor(v0, __ T16B, v0, v31);
+    keccak_round(rscratch1);
 
     __ cbnzw(rscratch2, rounds24_loop);
 
@@ -4316,6 +4328,8 @@ class StubGenerator: public StubCodeGenerator {
       0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
     };
 
+    // Implements the double_keccak() method of the
+    // sun.secyrity.provider.SHA3Parallel class
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "double_keccak");
     address start = __ pc();
@@ -4358,84 +4372,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(rounds24_loop);
     __ subw(rscratch2, rscratch2, 1);
-
-    __ eor3(v29, __ T16B, v4, v9, v14);
-    __ eor3(v26, __ T16B, v1, v6, v11);
-    __ eor3(v28, __ T16B, v3, v8, v13);
-    __ eor3(v25, __ T16B, v0, v5, v10);
-    __ eor3(v27, __ T16B, v2, v7, v12);
-    __ eor3(v29, __ T16B, v29, v19, v24);
-    __ eor3(v26, __ T16B, v26, v16, v21);
-    __ eor3(v28, __ T16B, v28, v18, v23);
-    __ eor3(v25, __ T16B, v25, v15, v20);
-    __ eor3(v27, __ T16B, v27, v17, v22);
-
-    __ rax1(v30, __ T2D, v29, v26);
-    __ rax1(v26, __ T2D, v26, v28);
-    __ rax1(v28, __ T2D, v28, v25);
-    __ rax1(v25, __ T2D, v25, v27);
-    __ rax1(v27, __ T2D, v27, v29);
-
-    __ eor(v0, __ T16B, v0, v30);
-    __ xar(v29, __ T2D, v1,  v25, (64 - 1));
-    __ xar(v1,  __ T2D, v6,  v25, (64 - 44));
-    __ xar(v6,  __ T2D, v9,  v28, (64 - 20));
-    __ xar(v9,  __ T2D, v22, v26, (64 - 61));
-    __ xar(v22, __ T2D, v14, v28, (64 - 39));
-    __ xar(v14, __ T2D, v20, v30, (64 - 18));
-    __ xar(v31, __ T2D, v2,  v26, (64 - 62));
-    __ xar(v2,  __ T2D, v12, v26, (64 - 43));
-    __ xar(v12, __ T2D, v13, v27, (64 - 25));
-    __ xar(v13, __ T2D, v19, v28, (64 - 8));
-    __ xar(v19, __ T2D, v23, v27, (64 - 56));
-    __ xar(v23, __ T2D, v15, v30, (64 - 41));
-    __ xar(v15, __ T2D, v4,  v28, (64 - 27));
-    __ xar(v28, __ T2D, v24, v28, (64 - 14));
-    __ xar(v24, __ T2D, v21, v25, (64 - 2));
-    __ xar(v8,  __ T2D, v8,  v27, (64 - 55));
-    __ xar(v4,  __ T2D, v16, v25, (64 - 45));
-    __ xar(v16, __ T2D, v5,  v30, (64 - 36));
-    __ xar(v5,  __ T2D, v3,  v27, (64 - 28));
-    __ xar(v27, __ T2D, v18, v27, (64 - 21));
-    __ xar(v3,  __ T2D, v17, v26, (64 - 15));
-    __ xar(v25, __ T2D, v11, v25, (64 - 10));
-    __ xar(v26, __ T2D, v7,  v26, (64 - 6));
-    __ xar(v30, __ T2D, v10, v30, (64 - 3));
-
-    __ bcax(v20, __ T16B, v31, v22, v8);
-    __ bcax(v21, __ T16B, v8,  v23, v22);
-    __ bcax(v22, __ T16B, v22, v24, v23);
-    __ bcax(v23, __ T16B, v23, v31, v24);
-    __ bcax(v24, __ T16B, v24, v8,  v31);
-
-    __ ld1r(v31, __ T2D, __ post(rscratch1, 8));
-
-    __ bcax(v17, __ T16B, v25, v19, v3);
-    __ bcax(v18, __ T16B, v3,  v15, v19);
-    __ bcax(v19, __ T16B, v19, v16, v15);
-    __ bcax(v15, __ T16B, v15, v25, v16);
-    __ bcax(v16, __ T16B, v16, v3,  v25);
-
-    __ bcax(v10, __ T16B, v29, v12, v26);
-    __ bcax(v11, __ T16B, v26, v13, v12);
-    __ bcax(v12, __ T16B, v12, v14, v13);
-    __ bcax(v13, __ T16B, v13, v29, v14);
-    __ bcax(v14, __ T16B, v14, v26, v29);
-
-    __ bcax(v7, __ T16B, v30, v9,  v4);
-    __ bcax(v8, __ T16B, v4,  v5,  v9);
-    __ bcax(v9, __ T16B, v9,  v6,  v5);
-    __ bcax(v5, __ T16B, v5,  v30, v6);
-    __ bcax(v6, __ T16B, v6,  v4,  v30);
-
-    __ bcax(v3, __ T16B, v27, v0,  v28);
-    __ bcax(v4, __ T16B, v28, v1,  v0);
-    __ bcax(v0, __ T16B, v0,  v2,  v1);
-    __ bcax(v1, __ T16B, v1,  v27, v2);
-    __ bcax(v2, __ T16B, v2,  v28, v27);
-
-    __ eor(v0, __ T16B, v0, v31);
-
+    keccak_round(rscratch1);
     __ cbnzw(rscratch2, rounds24_loop);
 
     __ st4(v0, v1, v2,  v3,  __ D, 0, __ post(state0, 32));
@@ -4453,6 +4390,7 @@ class StubGenerator: public StubCodeGenerator {
     __ st4(v20, v21, v22, v23, __ D, 1, __ post(state1, 32));
     __ st1(v24, __ D, 1, state1);
 
+    // restore callee-saved vector registers
     __ ldpd(v14, v15, Address(sp, 48));
     __ ldpd(v12, v13, Address(sp, 32));
     __ ldpd(v10, v11, Address(sp, 16));
@@ -4633,15 +4571,42 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void dilithium_montmul32() {
-    __ sqdmulh(v24, __ T4S, v0, v16);
-    __ mulv(v16, __ T4S, v0, v16);
-    __ sqdmulh(v25, __ T4S, v1, v17);
-    __ mulv(v17, __ T4S, v1, v17);
-    __ sqdmulh(v26, __ T4S, v2, v18);
-    __ mulv(v18, __ T4S, v2, v18);
-    __ sqdmulh(v27, __ T4S, v3, v19);
-    __ mulv(v19, __ T4S, v3, v19);
+  void dilithium_load4zetas(int o0, Register zetas) {
+    __ ldpq(as_FloatRegister(o0), as_FloatRegister(o0 + 1), __ post (zetas, 32));
+    __ ldpq(as_FloatRegister(o0 + 2), as_FloatRegister(o0 + 3), __ post (zetas, 32));
+
+  }
+
+  void dilithium_load8zetas(Register zetas) {
+    dilithium_load4zetas(16, zetas);
+    dilithium_load4zetas(20, zetas);
+  }
+
+  // 2x16 32-bit Montgomery multiplications in parallel
+  // See the montMul() method of the sun.security.provider.ML_DSA class.
+  // Here MONT_R_BITS is 32, so the right shift by it is implicit.
+  // The constants MONT_Q_INV_MOD_R and MONT_Q are loaded in (all 32-bit
+  // chunks of) vector registers v30 and v31, resp.
+  // The inputs are in v0-v7 and v16-v23 and the results go to v16-v23,
+  // four 32-bit values in each register
+  void dilithium_montmul32(bool by_constant) {
+    FloatRegister vr0 = by_constant ? v29 : v0;
+    FloatRegister vr1 = by_constant ? v29 : v1;
+    FloatRegister vr2 = by_constant ? v29 : v2;
+    FloatRegister vr3 = by_constant ? v29 : v3;
+    FloatRegister vr4 = by_constant ? v29 : v4;
+    FloatRegister vr5 = by_constant ? v29 : v5;
+    FloatRegister vr6 = by_constant ? v29 : v6;
+    FloatRegister vr7 = by_constant ? v29 : v7;
+
+    __ sqdmulh(v24, __ T4S, vr0, v16);
+    __ mulv(v16, __ T4S, vr0, v16);
+    __ sqdmulh(v25, __ T4S, vr1, v17);
+    __ mulv(v17, __ T4S, vr1, v17);
+    __ sqdmulh(v26, __ T4S, vr2, v18);
+    __ mulv(v18, __ T4S, vr2, v18);
+    __ sqdmulh(v27, __ T4S, vr3, v19);
+    __ mulv(v19, __ T4S, vr3, v19);
 
     __ mulv(v16, __ T4S, v16, v30);
     __ mulv(v17, __ T4S, v17, v30);
@@ -4658,14 +4623,14 @@ class StubGenerator: public StubCodeGenerator {
     __ shsubv(v18, __ T4S, v26, v18);
     __ shsubv(v19, __ T4S, v27, v19);
 
-    __ sqdmulh(v24, __ T4S, v4, v20);
-    __ mulv(v20, __ T4S, v4, v20);
-    __ sqdmulh(v25, __ T4S, v5, v21);
-    __ mulv(v21, __ T4S, v5, v21);
-    __ sqdmulh(v26, __ T4S, v6, v22);
-    __ mulv(v22, __ T4S, v6, v22);
-    __ sqdmulh(v27, __ T4S, v7, v23);
-    __ mulv(v23, __ T4S, v7, v23);
+    __ sqdmulh(v24, __ T4S, vr4, v20);
+    __ mulv(v20, __ T4S, vr4, v20);
+    __ sqdmulh(v25, __ T4S, vr5, v21);
+    __ mulv(v21, __ T4S, vr5, v21);
+    __ sqdmulh(v26, __ T4S, vr6, v22);
+    __ mulv(v22, __ T4S, vr6, v22);
+    __ sqdmulh(v27, __ T4S, vr7, v23);
+    __ mulv(v23, __ T4S, vr7, v23);
 
     __ mulv(v20, __ T4S, v20, v30);
     __ mulv(v21, __ T4S, v21, v30);
@@ -4741,13 +4706,14 @@ class StubGenerator: public StubCodeGenerator {
 
   // At these levels, the indices that correspond to the 'j's (and 'j+l's)
   // in the Java implementation come in sequences of at least 8, so we
-  // can use ldpq to collect the corresponding data into pairs of v registers
-  // we collect the coefficients that need to be multiplied by the corresponding
-  // zeta values into registers v0-v7, the zetas into registers v16-v23 then
-  // do the (Montgomery) multiplications by zeta in parallel into v16-v23
-  // load the coeffs corresponding to the'j+l's into v0-v7, then
-  // do the additions into v24-v31 and the subtractions into v0-v7 and
-  // finally save the results back to the coeffs array
+  // can use ldpq to collect the corresponding data into pairs of vector
+  // registers.
+  // We collect the coefficients corresponding to the 'j+l' indexes into
+  // the vector registers v0-v7, the zetas into the vector registers v16-v23
+  // then we do the (Montgomery) multiplications by the zetas in parallel
+  // into v16-v23, load the coeffs corresponding to the 'j' indexes into
+  // v0-v7, then do the additions into v24-v31 and the subtractions into
+  // v0-v7 and finally save the results back to the coeffs array.
   void dilithiumNttLevel0_4(const Register dilithiumConsts,
     const Register coeffs, const Register zetas) {
     int c1 = 0;
@@ -4776,11 +4742,8 @@ class StubGenerator: public StubCodeGenerator {
         __ ldpq(v2, v3, Address(coeffs, c2Start + incr1));
         __ ldpq(v4, v5, Address(coeffs, c2Start + incr2));
         __ ldpq(v6, v7, Address(coeffs, c2Start + incr3));
-        __ ldpq(v16, v17, __ post (zetas, 32));
-        __ ldpq(v18, v19, __ post (zetas, 32));
-        __ ldpq(v20, v21, __ post (zetas, 32));
-        __ ldpq(v22, v23, __ post (zetas, 32));
-        dilithium_montmul32();
+        dilithium_load8zetas(zetas);
+        dilithium_montmul32(false);
         __ ldpq(v0, v1, Address(coeffs, c1Start));
         __ ldpq(v2, v3, Address(coeffs, c1Start + incr1));
         __ ldpq(v4, v5, Address(coeffs, c1Start + incr2));
@@ -4814,8 +4777,9 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Dilithium NTT function except for the final "normalization" to |coeff| < Q.
-  // Implements
+  // Implements the method
   // static int implDilithiumAlmostNtt(int[] coeffs, int zetas[]) {}
+  // of the Java class sun.security.provider
   //
   // coeffs (int[256]) = c_rarg0
   // zetas (int[256]) = c_rarg1
@@ -4838,6 +4802,7 @@ class StubGenerator: public StubCodeGenerator {
     __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
 
     // Each level represents one iteration of the outer for loop of the Java version
+
     // level 0-4
     dilithiumNttLevel0_4(dilithiumConsts, coeffs, zetas);
 
@@ -4852,11 +4817,8 @@ class StubGenerator: public StubCodeGenerator {
       __ ldr(v5, __ Q, Address(coeffs, i + 176));
       __ ldr(v6, __ Q, Address(coeffs, i + 208));
       __ ldr(v7, __ Q, Address(coeffs, i + 240));
-      __ ldpq(v16, v17, __ post (zetas, 32));
-      __ ldpq(v18, v19, __ post (zetas, 32));
-      __ ldpq(v20, v21, __ post (zetas, 32));
-      __ ldpq(v22, v23, __ post (zetas, 32));
-      dilithium_montmul32();
+      dilithium_load8zetas(zetas);
+      dilithium_montmul32(false);
       __ ldr(v0, __ Q, Address(coeffs, i));
       __ ldr(v1, __ Q, Address(coeffs, i + 32));
       __ ldr(v2, __ Q, Address(coeffs, i + 64));
@@ -4895,8 +4857,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ld2(v4, v5, __ T2D, tmpAddr);
       __ add(tmpAddr, coeffs, i + 96);
       __ ld2(v6, v7, __ T2D, tmpAddr);
-      __ ldpq(v16, v17, __ post (zetas, 32));
-      __ ldpq(v18, v19, __ post (zetas, 32));
+      dilithium_load4zetas(16, zetas);
       dilithium_montmul_sub_add16();
       __ add(tmpAddr, coeffs, i);
       __ st2(v0, v1, __ T2D, tmpAddr);
@@ -4919,8 +4880,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ld2(v4, v5, __ T4S, tmpAddr);
       __ add(tmpAddr, coeffs, i + 96);
       __ ld2(v6, v7, __ T4S, tmpAddr);
-      __ ldpq(v16, v17, __ post (zetas, 32));
-      __ ldpq(v18, v19, __ post(zetas, 32));
+      dilithium_load4zetas(16, zetas);
       dilithium_montmul_sub_add16();
       __ add(tmpAddr, coeffs, i);
       __ st2(v0, v1, __ T4S, tmpAddr);
@@ -4977,8 +4937,9 @@ class StubGenerator: public StubCodeGenerator {
 
   // At these levels, the indices that correspond to the 'j's (and 'j+l's)
   // in the Java implementation come in sequences of at least 8, so we
-  // can use ldpq to collect the corresponding data into pairs of v registers
-  // we collect the coefficients that correspond to the 'j's into v0-v7
+  // can use ldpq to collect the corresponding data into pairs of vector
+  // registers
+  // We collect the coefficients that correspond to the 'j's into v0-v7
   // the coefficiets that correspond to the 'j+l's into v16-v23 then
   // do the additions into v24-v31 and the subtractions into v0-v7 then
   // save the result of the additions, load the zetas into v16-v23
@@ -5025,11 +4986,8 @@ class StubGenerator: public StubCodeGenerator {
         __ stpq(v28, v29, Address(coeffs, c1Start + incr2));
         __ stpq(v30, v31, Address(coeffs, c1Start + incr3));
         __ ldpq(v30, v31, Address(dilithiumConsts, 0));
-        __ ldpq(v16, v17, __ post (zetas, 32));
-        __ ldpq(v18, v19, __ post (zetas, 32));
-        __ ldpq(v20, v21, __ post (zetas, 32));
-        __ ldpq(v22, v23, __ post (zetas, 32));
-        dilithium_montmul32();
+        dilithium_load8zetas(zetas);
+        dilithium_montmul32(false);
         __ stpq(v16, v17, Address(coeffs, c2Start));
         __ stpq(v18, v19, Address(coeffs, c2Start + incr1));
         __ stpq(v20, v21, Address(coeffs, c2Start + incr2));
@@ -5054,8 +5012,9 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Dilithium Inverse NTT function except the final mod Q division by 2^256.
-  // Implements
-  // static int implDilithiumAlmostInverseNtt(int[] coeffs, int[] zetas) {}
+  // Implements the method
+  // static int implDilithiumAlmostInverseNtt(int[] coeffs, int[] zetas) {} of
+  // the sun.security.provider.ML_DSA class.
   //
   // coeffs (int[256]) = c_rarg0
   // zetas (int[256]) = c_rarg1
@@ -5089,8 +5048,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ld2(v4, v5, __ T4S, tmpAddr);
       __ add(tmpAddr, coeffs, i + 96);
       __ ld2(v6, v7, __ T4S, tmpAddr);
-      __ ldpq(v16, v17, __ post (zetas, 32));
-      __ ldpq(v18, v19, __ post (zetas, 32));
+      dilithium_load4zetas(16, zetas);
       dilithium_sub_add_montmul16();
       __ add(tmpAddr, coeffs, i);
       __ st2(v0, v1, __ T4S, tmpAddr);
@@ -5112,8 +5070,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ld2(v4, v5, __ T2D, tmpAddr);
       __ add(tmpAddr, coeffs, i + 96);
       __ ld2(v6, v7, __ T2D, tmpAddr);
-      __ ldpq(v16, v17, __ post (zetas, 32));
-      __ ldpq(v18, v19, __ post (zetas, 32));
+      dilithium_load4zetas(16, zetas);
       dilithium_sub_add_montmul16();
       __ add(tmpAddr, coeffs, i);
       __ st2(v0, v1, __ T2D, tmpAddr);
@@ -5152,12 +5109,9 @@ class StubGenerator: public StubCodeGenerator {
       __ str(v29, __ Q, Address(coeffs, i + 160));
       __ str(v30, __ Q, Address(coeffs, i + 192));
       __ str(v31, __ Q, Address(coeffs, i + 224));
-      __ ldpq(v16, v17, __ post (zetas, 32));
-      __ ldpq(v18, v19, __ post (zetas, 32));
-      __ ldpq(v20, v21, __ post (zetas, 32));
-      __ ldpq(v22, v23, __ post (zetas, 32));
+      dilithium_load8zetas(zetas);
       __ ldpq(v30, v31, Address(dilithiumConsts, 0));
-      dilithium_montmul32();
+      dilithium_montmul32(false);
       __ str(v16, __ Q, Address(coeffs, i + 16));
       __ str(v17, __ Q, Address(coeffs, i + 48));
       __ str(v18, __ Q, Address(coeffs, i + 80));
@@ -5180,9 +5134,10 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Dilithium multiply polynomials in the NTT domain.
-  // Implements
+  // Straightforward implementation of the method
   // static int implDilithiumNttMult(
-  //              int[] result, int[] ntta, int[] nttb {}
+  //              int[] result, int[] ntta, int[] nttb {} of
+  // the sun.security.provider.ML_DSA class.
   //
   // result (int[256]) = c_rarg0
   // poly1 (int[256]) = c_rarg1
@@ -5222,47 +5177,8 @@ class StubGenerator: public StubCodeGenerator {
     __ ldpq(v18, v19, __ post(poly2, 32));
     __ ldpq(v20, v21, __ post(poly2, 32));
     __ ldpq(v22, v23, __ post(poly2, 32));
-    dilithium_montmul32();
-    __ sqdmulh(v24, __ T4S, v29, v16);
-    __ mulv(v16, __ T4S, v29, v16);
-    __ sqdmulh(v25, __ T4S, v29, v17);
-    __ mulv(v17, __ T4S, v29, v17);
-    __ sqdmulh(v26, __ T4S, v29, v18);
-    __ mulv(v18, __ T4S, v29, v18);
-    __ sqdmulh(v27, __ T4S, v29, v19);
-    __ mulv(v19, __ T4S, v29, v19);
-    __ mulv(v16, __ T4S, v16, v30);
-    __ mulv(v17, __ T4S, v17, v30);
-    __ mulv(v18, __ T4S, v18, v30);
-    __ mulv(v19, __ T4S, v19, v30);
-    __ sqdmulh(v16, __ T4S, v16, v31);
-    __ sqdmulh(v17, __ T4S, v17, v31);
-    __ sqdmulh(v18, __ T4S, v18, v31);
-    __ sqdmulh(v19, __ T4S, v19, v31);
-    __ shsubv(v16, __ T4S, v24, v16);
-    __ shsubv(v17, __ T4S, v25, v17);
-    __ shsubv(v18, __ T4S, v26, v18);
-    __ shsubv(v19, __ T4S, v27, v19);
-    __ sqdmulh(v24, __ T4S, v29, v20);
-    __ mulv(v20, __ T4S, v29, v20);
-    __ sqdmulh(v25, __ T4S, v29, v21);
-    __ mulv(v21, __ T4S, v29, v21);
-    __ sqdmulh(v26, __ T4S, v29, v22);
-    __ mulv(v22, __ T4S, v29, v22);
-    __ sqdmulh(v27, __ T4S, v29, v23);
-    __ mulv(v23, __ T4S, v29, v23);
-    __ mulv(v20, __ T4S, v20, v30);
-    __ mulv(v21, __ T4S, v21, v30);
-    __ mulv(v22, __ T4S, v22, v30);
-    __ mulv(v23, __ T4S, v23, v30);
-    __ sqdmulh(v20, __ T4S, v20, v31);
-    __ sqdmulh(v21, __ T4S, v21, v31);
-    __ sqdmulh(v22, __ T4S, v22, v31);
-    __ sqdmulh(v23, __ T4S, v23, v31);
-    __ shsubv(v20, __ T4S, v24, v20);
-    __ shsubv(v21, __ T4S, v25, v21);
-    __ shsubv(v22, __ T4S, v26, v22);
-    __ shsubv(v23, __ T4S, v27, v23);
+    dilithium_montmul32(false);
+    dilithium_montmul32(true);
     __ stpq(v16, v17, __ post(result, 32));
     __ stpq(v18, v19, __ post(result, 32));
     __ stpq(v20, v21, __ post(result, 32));
@@ -5281,8 +5197,9 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Dilithium Motgomery multiply an array by a constant.
-  // Implements
+  // A straightforward implementation of the method
   // static int implDilithiumMontMulByConstant(int[] coeffs, int constant) {}
+  // of the sun.security.provider.MLDSA class
   //
   // coeffs (int[256]) = c_rarg0
   // constant (int) = c_rarg1
@@ -5306,62 +5223,22 @@ class StubGenerator: public StubCodeGenerator {
     __ add(result, coeffs, 0);
     __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
 
-
+    __ ldpq(v30, v31, Address(dilithiumConsts, 0));
     __ dup(v29, __ T4S, constant);
     __ mov(len, zr);
     __ add(len, len, 1024);
 
     __ BIND(L_loop);
 
-    __ ldpq(v30, v31, Address(dilithiumConsts, 0));
-    __ ldpq(v0, v1, __ post(coeffs, 32));
-    __ ldpq(v2, v3, __ post(coeffs, 32));
-    __ ldpq(v4, v5, __ post(coeffs, 32));
-    __ ldpq(v6, v7, __ post(coeffs, 32));
-    __ sqdmulh(v16, __ T4S, v0, v29);
-    __ mulv(v0, __ T4S, v0, v29);
-    __ sqdmulh(v17, __ T4S, v1, v29);
-    __ mulv(v1, __ T4S, v1, v29);
-    __ sqdmulh(v18, __ T4S, v2, v29);
-    __ mulv(v2, __ T4S, v2, v29);
-    __ sqdmulh(v19, __ T4S, v3, v29);
-    __ mulv(v3, __ T4S, v3, v29);
-    __ sqdmulh(v20, __ T4S, v4, v29);
-    __ mulv(v4, __ T4S, v4, v29);
-    __ sqdmulh(v21, __ T4S, v5, v29);
-    __ mulv(v5, __ T4S, v5, v29);
-    __ sqdmulh(v22, __ T4S, v6, v29);
-    __ mulv(v6, __ T4S, v6, v29);
-    __ sqdmulh(v23, __ T4S, v7, v29);
-    __ mulv(v7, __ T4S, v7, v29);
-    __ mulv(v0, __ T4S, v0, v30);
-    __ mulv(v1, __ T4S, v1, v30);
-    __ mulv(v2, __ T4S, v2, v30);
-    __ mulv(v3, __ T4S, v3, v30);
-    __ mulv(v4, __ T4S, v4, v30);
-    __ mulv(v5, __ T4S, v5, v30);
-    __ mulv(v6, __ T4S, v6, v30);
-    __ mulv(v7, __ T4S, v7, v30);
-    __ sqdmulh(v0, __ T4S, v0, v31);
-    __ sqdmulh(v1, __ T4S, v1, v31);
-    __ sqdmulh(v2, __ T4S, v2, v31);
-    __ sqdmulh(v3, __ T4S, v3, v31);
-    __ sqdmulh(v4, __ T4S, v4, v31);
-    __ sqdmulh(v5, __ T4S, v5, v31);
-    __ sqdmulh(v6, __ T4S, v6, v31);
-    __ sqdmulh(v7, __ T4S, v7, v31);
-    __ shsubv(v0, __ T4S, v16, v0);
-    __ shsubv(v1, __ T4S, v17, v1);
-    __ shsubv(v2, __ T4S, v18, v2);
-    __ shsubv(v3, __ T4S, v19, v3);
-    __ shsubv(v4, __ T4S, v20, v4);
-    __ shsubv(v5, __ T4S, v21, v5);
-    __ shsubv(v6, __ T4S, v22, v6);
-    __ shsubv(v7, __ T4S, v23, v7);
-    __ stpq(v0, v1, __ post(result, 32));
-    __ stpq(v2, v3, __ post(result, 32));
-    __ stpq(v4, v5, __ post(result, 32));
-    __ stpq(v6, v7, __ post(result, 32));
+    __ ldpq(v16, v17, __ post(coeffs, 32));
+    __ ldpq(v18, v19, __ post(coeffs, 32));
+    __ ldpq(v20, v21, __ post(coeffs, 32));
+    __ ldpq(v22, v23, __ post(coeffs, 32));
+    dilithium_montmul32(true);
+    __ stpq(v16, v17, __ post(result, 32));
+    __ stpq(v18, v19, __ post(result, 32));
+    __ stpq(v20, v21, __ post(result, 32));
+    __ stpq(v22, v23, __ post(result, 32));
 
     __ sub(len, len, 128);
     __ cmp(len, (u1)128);
@@ -5375,8 +5252,9 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Dilithium decompose poly.
-  // Implements
+  // Implements the method
   // static int implDilithiumDecomposePoly(int[] coeffs, int constant) {}
+  // of the sun.security.provider.ML_DSA class
   //
   // input (int[256]) = c_rarg0
   // lowPart (int[256]) = c_rarg1

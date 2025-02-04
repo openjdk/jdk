@@ -1297,7 +1297,7 @@ public class ML_DSA {
 
     private int[][] useHint(boolean[][] h, int[][] r) {
         int m = (ML_DSA_Q - 1) / (2*gamma2);
-        int[][] lowPart = new int[mlDsa_k][ML_DSA_N];
+        int[][] lowPart = r;
         int[][] highPart = new int[mlDsa_k][ML_DSA_N];
         decompose(r, lowPart, highPart);
 
@@ -1550,6 +1550,7 @@ public class ML_DSA {
     // precondition: -2^31 * MONT_Q <= a, b < 2^31, -2^31 < a * b < 2^31 * MONT_Q
     // computes a * b * 2^-32 mod MONT_Q
     // the result is greater than -MONT_Q and less than MONT_Q
+    // see e.g. Algorithm 3 in https://eprint.iacr.org/2018/039.pdf
     private static int montMul(int b, int c) {
         long a = (long) b * (long) c;
         int aHigh = (int) (a >> MONT_R_BITS);
