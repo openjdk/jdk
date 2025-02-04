@@ -1000,7 +1000,8 @@ public class TCKDateTimeFormatter {
         String timeStr = new StringBuilder()
                 .append(dateTime.getHour())
                 .append(':').append(dateTime.getMinute())
-                .append(':').append(dateTime.getSecond()).toString();
+                .append(':').append(dateTime.getSecond())
+                .toString();
 
         String dateTimeExpected = dateStr + " " + timeStr + " " + dateStr + " " + timeStr;
         assertEquals(dateTimeExpected, dateTimeFormatter.format(dateTime));
