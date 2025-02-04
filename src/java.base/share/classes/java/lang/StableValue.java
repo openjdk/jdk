@@ -45,7 +45,7 @@ import java.util.function.Supplier;
  * A stable value is a shallowly immutable holder of deferred content.
  * <p>
  * A {@linkplain StableValue {@code StableValue<T>}} can be created using the factory
- * method {@linkplain StableValue#ofUnset() {@code StableValue.ofUnset()}}. When created
+ * method {@linkplain StableValue#of() {@code StableValue.of()}}. When created
  * this way, the stable value is <em>unset</em>, which means it holds no <em>content</em>.
  * Its content, of type {@code T}, can be <em>set</em> by calling
  * {@linkplain #trySet(Object) trySet()}, {@linkplain #setOrThrow(Object) setOrThrow()},
@@ -69,8 +69,8 @@ import java.util.function.Supplier;
  * class Component {
  *
  *    // Creates a new unset stable value with no content
- *    // @link substring="ofUnset" target="#ofUnset" :
- *    private final StableValue<Logger> logger = StableValue.ofUnset();
+ *    // @link substring="of" target="#of" :
+ *    private final StableValue<Logger> logger = StableValue.of();
  *
  *    Logger getLogger() {
  *        if (!logger.isSet()) {
@@ -98,8 +98,8 @@ import java.util.function.Supplier;
  * class Component {
  *
  *    // Creates a new unset stable value with no content
- *    // @link substring="ofUnset" target="#ofUnset" :
- *    private final StableValue<Logger> logger = StableValue.ofUnset();
+ *    // @link substring="of" target="#of" :
+ *    private final StableValue<Logger> logger = StableValue.of();
  *
  *    Logger getLogger() {
  *        return logger.orElseSet( () -> Logger.create(Component.class) );
@@ -450,8 +450,8 @@ public sealed interface StableValue<T>
      *
      * @param <T> type of the content
      */
-    static <T> StableValue<T> ofUnset() {
-        return StableValueFactories.ofUnset();
+    static <T> StableValue<T> of() {
+        return StableValueFactories.of();
     }
 
     /**
