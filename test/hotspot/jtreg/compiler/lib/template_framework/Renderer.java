@@ -98,11 +98,9 @@ public abstract class Renderer {
     }
 
     private static void renderTemplateUse(TemplateUse templateUse) {
-        // Add nested Frame.
-        Frame frame = new Frame(getCurrentFrame());
-        currentFrame = frame;
+        Frame frame = getCurrentFrame();
 
-        templateUse.visitArguments((name, value) -> currentFrame.addContext(name, value.toString()));
+        templateUse.visitArguments((name, value) -> frame.addContext(name, value.toString()));
         InstantiatedTemplate it = templateUse.instantiate();
         for (Object e : it.elements()) {
             renderElement(e);
@@ -111,12 +109,6 @@ public abstract class Renderer {
         if (frame != getCurrentFrame()) {
             throw new RendererException("Frame mismatch.");
         }
-
-        // Append code from nested scope to outer scope.
-        frame.parent.addCode(frame.getCode());
-
-        // Remove nested frame.
-        currentFrame = currentFrame.parent;
     }
 
     private static void renderElement(Object element) {
@@ -133,11 +125,22 @@ public abstract class Renderer {
                     renderElement(e);
                 }
             }
-            case Hook h ->    frame.addHook(h);
-            case HookInsert(Hook hook, TemplateUse t) -> {
-                Frame f = frameForHook(hook); //.insertIntoHook(hook, render(t));
+            case Hook h -> {
+                frame.addHook(h);
             }
-            case TemplateUse t -> renderTemplateUse(t);
+            case HookInsert(Hook hook, TemplateUse t) -> {
+                Frame hookFrame = frameForHook(hook);
+                currentFrame = hookFrame; // switch to hook frame.
+                renderTemplateUse(t);
+                currentFrame = frame;     // switch back.
+            }
+            case TemplateUse t -> {
+                // Use a nested Frame.
+                currentFrame = new Frame(frame);
+                renderTemplateUse(t);
+                frame.addCode(currentFrame.getCode());
+                currentFrame = frame;
+            }
             default -> throw new RendererException("body contained unexpected element: " + element);
         }
     }

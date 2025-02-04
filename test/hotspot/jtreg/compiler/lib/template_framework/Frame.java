@@ -64,12 +64,6 @@ class Frame {
         return hookCodeLists.containsKey(hook);
     }
 
-    //void insertIntoHook(Hook hook, String s) {
-    //    int index = hookInsertionIndex.get(hook);
-    //    builder.insert(index, s);
-    //    hookInsertionIndex.put(hook, index + s.length());
-    //}
-
     public void addContext(String key, String value) {
         context.put(key, value);
     }
