@@ -860,7 +860,7 @@ const Type* DivHFNode::Value(PhaseGVN* phase) const {
   return Type::HALF_FLOAT;
 }
 
-//------------------------------isA_Copy---------------------------------------
+//-----------------------------------------------------------------------------
 // Dividing by self is 1.
 // IF the divisor is 1, we are an identity on the dividend.
 Node* DivHFNode::Identity(PhaseGVN* phase) {

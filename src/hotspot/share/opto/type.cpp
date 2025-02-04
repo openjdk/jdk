@@ -1099,20 +1099,20 @@ const Type *Type::xmeet( const Type *t ) const {
     return Type::BOTTOM;
 
   case FloatTop:
-    if (_base == FloatTop ) return this;
+    if (_base == FloatTop ) { return this; }
   case FloatBot:                // Float
-    if (_base == FloatBot || _base == FloatTop) return FLOAT;
-    if (_base == HalfFloatTop || _base == HalfFloatBot) return Type::BOTTOM;
-    if (_base == DoubleTop || _base == DoubleBot) return Type::BOTTOM;
+    if (_base == FloatBot || _base == FloatTop) { return FLOAT; }
+    if (_base == HalfFloatTop || _base == HalfFloatBot) { return Type::BOTTOM; }
+    if (_base == DoubleTop || _base == DoubleBot) { return Type::BOTTOM; }
     typerr(t);
     return Type::BOTTOM;
 
   case DoubleTop:
-    if (_base == DoubleTop) return this;
+    if (_base == DoubleTop) { return this; }
   case DoubleBot:               // Double
-    if (_base == DoubleBot || _base == DoubleTop) return DOUBLE;
-    if (_base == HalfFloatTop || _base == HalfFloatBot) return Type::BOTTOM;
-    if (_base == FloatTop || _base == FloatBot) return Type::BOTTOM;
+    if (_base == DoubleBot || _base == DoubleTop) { return DOUBLE; }
+    if (_base == HalfFloatTop || _base == HalfFloatBot) { return Type::BOTTOM; }
+    if (_base == FloatTop || _base == FloatBot) { return Type::BOTTOM; }
     typerr(t);
     return Type::BOTTOM;
 
@@ -1120,7 +1120,7 @@ const Type *Type::xmeet( const Type *t ) const {
   case Control:                 // Control of code
   case Abio:                    // State of world outside of program
   case Memory:
-    if (_base == t->_base)  return this;
+    if (_base == t->_base)  { return this; }
     typerr(t);
     return Type::BOTTOM;
 
@@ -1467,7 +1467,7 @@ const TypeH* TypeH::make(float f) {
   return (TypeH*)(new TypeH(hf))->hashcons();
 }
 
-//------------------------------meet-------------------------------------------
+//------------------------------xmeet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type* TypeH::xmeet(const Type* t) const {
   // Perform a fast test for common case; meeting the same types together.
