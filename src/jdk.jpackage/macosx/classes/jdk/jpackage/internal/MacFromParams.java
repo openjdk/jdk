@@ -29,17 +29,21 @@ import static jdk.jpackage.internal.BundlerParamInfo.createPathBundlerParam;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import static jdk.jpackage.internal.FromParams.createApplicationBuilder;
 import static jdk.jpackage.internal.FromParams.createApplicationBundlerParam;
+import static jdk.jpackage.internal.FromParams.createPackageBuilder;
 import static jdk.jpackage.internal.FromParams.createPackageBundlerParam;
 import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.StandardBundlerParam.DMG_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
+import static jdk.jpackage.internal.model.StandardPackageType.MAC_DMG;
+import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.IOException;
@@ -54,9 +58,10 @@ import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
+import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.MacLauncher;
-import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.model.MacPkgPackage;
 
 
 final class MacFromParams {
@@ -85,13 +90,18 @@ final class MacFromParams {
         APP_CATEGORY.copyInto(params, appBuilder::category);
 
         final boolean sign;
+        final boolean appStore;
 
         if (hasPredefinedAppImage(params)) {
             final var appImageFileExtras = new MacAppImageFileExtras(PREDEFINED_APP_IMAGE_FILE.fetchFrom(params));
             sign = appImageFileExtras.signed();
+            appStore = APP_STORE.findIn(params).orElse(false);
         } else {
             sign = SIGN_BUNDLE.findIn(params).orElse(false);
+            appStore = APP_STORE.findIn(params).orElse(false);
         }
+
+        appBuilder.appStore(appStore);
 
         if (sign) {
             final var signingBuilder = new SigningConfigBuilder();
@@ -101,8 +111,6 @@ final class MacFromParams {
             ENTITLEMENTS.copyInto(params, signingBuilder::entitlements);
             APP_IMAGE_SIGN_IDENTITY.copyInto(params, signingBuilder::signingIdentifier);
 
-            final boolean appStore = APP_STORE.findIn(params).orElse(false);
-
             final var certificateNameFilter = appStore ? CertificateNameFilter.APP_STORE_APP_IMAGE : CertificateNameFilter.APP_IMAGE;
 
             signingBuilder.addCertificateNameFilters(certificateNameFilter.getFilters(SIGNING_KEY_USER.findIn(params)));
@@ -111,6 +119,32 @@ final class MacFromParams {
         }
 
         return appBuilder.create();
+    }
+
+    private static MacDmgPackage createMacDmgPackage(
+            Map<String, ? super Object> params) throws ConfigException, IOException {
+
+        final var app = APPLICATION.fetchFrom(params);
+
+        final var superPkgBuilder = createPackageBuilder(params, app, MAC_DMG);
+
+        final var pkgBuilder = new MacDmgPackageBuilder(superPkgBuilder);
+
+        DMG_CONTENT.copyInto(params, pkgBuilder::dmgContent);
+
+        return pkgBuilder.create();
+    }
+
+    private static MacPkgPackage createMacPkgPackage(
+            Map<String, ? super Object> params) throws ConfigException, IOException {
+
+        final var app = APPLICATION.fetchFrom(params);
+
+        final var superPkgBuilder = createPackageBuilder(params, app, MAC_PKG);
+
+        final var pkgBuilder = new MacPkgPackageBuilder(superPkgBuilder);
+
+        return pkgBuilder.create();
     }
 
     private static MacFileAssociation createMacFa(FileAssociation fa, Map<String, ? super Object> params) {
@@ -142,33 +176,29 @@ final class MacFromParams {
     static final BundlerParamInfo<MacApplication> APPLICATION = createApplicationBundlerParam(
             MacFromParams::createMacApplication);
 
-    // FIXME: This is just a stub. Replace with DMG and PKG packages
-    static final BundlerParamInfo<jdk.jpackage.internal.model.Package> PACKAGE = createPackageBundlerParam(params -> {
-        final var app = APPLICATION.fetchFrom(params);
-        final var builder = FromParams.createPackageBuilder(params, app, new PackageType () {});
+    static final BundlerParamInfo<MacDmgPackage> DMG_PACKAGE = createPackageBundlerParam(
+            MacFromParams::createMacDmgPackage);
 
-        builder.installDir(Path.of("/foo/bar"));
+    static final BundlerParamInfo<MacPkgPackage> PKG_PACKAGE = createPackageBundlerParam(
+            MacFromParams::createMacPkgPackage);
 
-        return builder.create();
-    });
-
-    public static final BundlerParamInfo<String> MAC_CF_BUNDLE_NAME = createStringBundlerParam(
+    static final BundlerParamInfo<String> MAC_CF_BUNDLE_NAME = createStringBundlerParam(
             Arguments.CLIOptions.MAC_BUNDLE_NAME.getId());
 
-    public static final BundlerParamInfo<String> APP_CATEGORY = createStringBundlerParam(
+    static final BundlerParamInfo<String> APP_CATEGORY = createStringBundlerParam(
             Arguments.CLIOptions.MAC_CATEGORY.getId());
 
-    public static final BundlerParamInfo<Path> ENTITLEMENTS = createPathBundlerParam(
+    static final BundlerParamInfo<Path> ENTITLEMENTS = createPathBundlerParam(
             Arguments.CLIOptions.MAC_ENTITLEMENTS.getId());
 
 
-    public static final BundlerParamInfo<String> MAC_CF_BUNDLE_IDENTIFIER = createStringBundlerParam(
+    static final BundlerParamInfo<String> MAC_CF_BUNDLE_IDENTIFIER = createStringBundlerParam(
             Arguments.CLIOptions.MAC_BUNDLE_IDENTIFIER.getId());
 
-    public static final BundlerParamInfo<String> BUNDLE_ID_SIGNING_PREFIX = createStringBundlerParam(
+    static final BundlerParamInfo<String> BUNDLE_ID_SIGNING_PREFIX = createStringBundlerParam(
             Arguments.CLIOptions.MAC_BUNDLE_SIGNING_PREFIX.getId());
 
-    public static final BundlerParamInfo<String> APP_IMAGE_SIGN_IDENTITY = createStringBundlerParam(
+    static final BundlerParamInfo<String> APP_IMAGE_SIGN_IDENTITY = createStringBundlerParam(
             Arguments.CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY.getId());
 
     private static final BundlerParamInfo<String> FA_MAC_CFBUNDLETYPEROLE = createStringBundlerParam(
@@ -197,7 +227,7 @@ final class MacFromParams {
             new BundlerParamInfo<>(
                     Arguments.MAC_NSEXPORTABLETYPES,
                     (Class<List<String>>) (Object) List.class,
-                    params -> null,
+                    null,
                     (s, p) -> Arrays.asList(s.split("(,|\\s)+"))
             );
 
@@ -206,7 +236,7 @@ final class MacFromParams {
             new BundlerParamInfo<>(
                     Arguments.MAC_UTTYPECONFORMSTO,
                     (Class<List<String>>) (Object) List.class,
-                    params -> null,
+                    null,
                     (s, p) -> Arrays.asList(s.split("(,|\\s)+"))
             );
 }

@@ -27,7 +27,6 @@ package jdk.jpackage.internal;
 
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.PackagerException;
-import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -51,8 +50,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             "imagesRoot",
             Path.class,
             params -> {
-                // Order is important
-                MacFromParams.APPLICATION.fetchFrom(params);
                 final var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
                 return env.buildRoot().resolve("images");
             },

@@ -82,6 +82,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         IOUtils.writableOutputDir(outdir);
 
+        MacFromParams.DMG_PACKAGE.fetchFrom(params);
+
         try {
             Path appLocation = prepareAppBundle(params);
 
@@ -318,11 +320,12 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         Files.createDirectories(protoDMG.getParent());
         Files.createDirectories(finalDMG.getParent());
 
+        final var pkg = MacFromParams.DMG_PACKAGE.fetchFrom(params);
+
         String hdiUtilVerbosityFlag = VERBOSE.fetchFrom(params) ?
                 "-verbose" : "-quiet";
-        List <String> dmgContent = DMG_CONTENT.fetchFrom(params);
-        for (String content : dmgContent) {
-            Path path = Path.of(content);
+        List <Path> dmgContent = DMG_CONTENT.fetchFrom(params);
+        for (Path path : dmgContent) {
             FileUtils.copyRecursive(path, srcFolder.resolve(path.getFileName()));
         }
         // create temp image
@@ -561,6 +564,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             throws ConfigException {
         try {
             Objects.requireNonNull(params);
+
+            MacFromParams.DMG_PACKAGE.fetchFrom(params);
 
             //run basic validation to ensure requirements are met
             //we are not interested in return code, only possible exception

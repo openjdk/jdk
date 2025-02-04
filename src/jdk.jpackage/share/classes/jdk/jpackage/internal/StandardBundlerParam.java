@@ -414,12 +414,12 @@ final class StandardBundlerParam {
             );
 
     @SuppressWarnings("unchecked")
-    static final BundlerParamInfo<List<String>> DMG_CONTENT =
+    static final BundlerParamInfo<List<Path>> DMG_CONTENT =
             new BundlerParamInfo<>(
                     Arguments.CLIOptions.DMG_CONTENT.getId(),
-                    (Class<List<String>>) (Object)List.class,
+                    (Class<List<Path>>) (Object)List.class,
                     p -> Collections.emptyList(),
-                    (s, p) -> Arrays.asList(s.split(","))
+                    (s, p) -> Stream.of(s.split(",")).map(Path::of).toList()
             );
 
     @SuppressWarnings("unchecked")

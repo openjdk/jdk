@@ -184,13 +184,16 @@ final class PackageBuilder {
                 return Path.of("/opt").resolve(pkgName);
             }
             case MAC_DMG, MAC_PKG -> {
-                Path base;
+                final Path base;
+                final String dirName;
                 if (app.isRuntime()) {
+                    dirName = pkgName;
                     base = Path.of("/Library/Java/JavaVirtualMachines");
                 } else {
+                    dirName = pkgName + ".app";
                     base = Path.of("/Applications");
                 }
-                return base.resolve(pkgName);
+                return base.resolve(dirName);
             }
             default -> {
                 throw new UnsupportedOperationException();

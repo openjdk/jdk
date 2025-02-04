@@ -36,15 +36,19 @@ final class BuildEnvFromParams {
 
     static BuildEnv create(Map<String, ? super Object> params) throws ConfigException {
 
-        var builder = new BuildEnvBuilder(TEMP_ROOT.fetchFrom(params))
+        final var builder = new BuildEnvBuilder(TEMP_ROOT.fetchFrom(params))
                 .resourceDir(RESOURCE_DIR.fetchFrom(params));
 
-        var app = FromParams.APPLICATION.fetchFrom(params);
+        final var app = FromParams.APPLICATION.findIn(params).orElseThrow();
+
+        final var pkg = FromParams.getCurrentPackage(params);
 
         if (app.isRuntime()) {
             builder.appImageDir(PREDEFINED_RUNTIME_IMAGE.fetchFrom(params));
         } else if (StandardBundlerParam.hasPredefinedAppImage(params)) {
             builder.appImageDir(StandardBundlerParam.getPredefinedAppImage(params));
+        } else if (pkg.isPresent()) {
+            builder.appImageDirForPackage();
         } else {
             builder.appImageDirFor(app);
         }

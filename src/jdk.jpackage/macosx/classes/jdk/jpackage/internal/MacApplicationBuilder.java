@@ -32,7 +32,6 @@ import java.util.Optional;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.Launcher;
-import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacApplicationMixin;
 import jdk.jpackage.internal.model.SigningConfig;
@@ -49,6 +48,7 @@ final class MacApplicationBuilder {
         bundleName = other.bundleName;
         bundleIdentifier = other.bundleIdentifier;
         category = other.category;
+        appStore = other.appStore;
         externalInfoPlistFile = other.externalInfoPlistFile;
     }
 
@@ -72,6 +72,11 @@ final class MacApplicationBuilder {
         return this;
     }
 
+    MacApplicationBuilder appStore(boolean v) {
+        appStore = v;
+        return this;
+    }
+
     MacApplicationBuilder externalInfoPlistFile(Path v) {
         externalInfoPlistFile = v;
         return this;
@@ -88,7 +93,7 @@ final class MacApplicationBuilder {
         }
 
         final var mixin = new MacApplicationMixin.Stub(validatedIcon(), validatedBundleName(),
-                validatedBundleIdentifier(), validatedCategory(), createSigningConfig());
+                validatedBundleIdentifier(), validatedCategory(), appStore, createSigningConfig());
 
         return MacApplication.create(app, mixin);
     }
@@ -167,7 +172,14 @@ final class MacApplicationBuilder {
         final var value = Optional.ofNullable(bundleIdentifier).orElseGet(() -> {
             return app.mainLauncher()
                     .flatMap(Launcher::startupInfo)
-                    .map(LauncherStartupInfo::simpleClassName)
+                    .map(li -> {
+                        final var packageName = li.packageName();
+                        if (packageName.isEmpty()) {
+                            return li.simpleClassName();
+                        } else {
+                            return packageName;
+                        }
+                    })
                     .orElseGet(app::name);
         });
 
@@ -199,6 +211,7 @@ final class MacApplicationBuilder {
     private String bundleName;
     private String bundleIdentifier;
     private String category;
+    private boolean appStore;
     private Path externalInfoPlistFile;
     private SigningConfigBuilder signingBuilder;
 

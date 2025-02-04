@@ -25,9 +25,13 @@
 package jdk.jpackage.internal.model;
 
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
 
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface MacApplication extends Application, MacApplicationMixin {
@@ -43,13 +47,18 @@ public interface MacApplication extends Application, MacApplicationMixin {
         }).collect(joining(".")));
     }
 
+    @Override
+    default Path appImageDirName() {
+        return Path.of(Application.super.appImageDirName().toString() + ".app");
+    }
+
     default boolean sign() {
         return signingConfig().isPresent();
     }
 
     @Override
     default Map<String, String> extraAppImageFileData() {
-        return Map.of(ExtraAppImageFileField.SIGNED.fieldName(), Boolean.toString(sign()));
+        return Stream.of(ExtraAppImageFileField.values()).collect(toMap(ExtraAppImageFileField::fieldName, x -> x.asString(this)));
     }
 
     public static MacApplication create(Application app, MacApplicationMixin mixin) {
@@ -57,16 +66,23 @@ public interface MacApplication extends Application, MacApplicationMixin {
     }
 
     public enum ExtraAppImageFileField {
-        SIGNED("signed");
+        SIGNED("signed", app -> Boolean.toString(app.sign())),
+        APP_STORE("app-store", app -> Boolean.toString(app.appStore()));
 
-        ExtraAppImageFileField(String fieldName) {
+        ExtraAppImageFileField(String fieldName, Function<MacApplication, String> getter) {
             this.fieldName = fieldName;
+            this.getter = getter;
         }
 
         public String fieldName() {
             return fieldName;
         }
 
+        String asString(MacApplication app) {
+            return getter.apply(app);
+        }
+
         private final String fieldName;
+        private final Function<MacApplication, String> getter;
     }
 }

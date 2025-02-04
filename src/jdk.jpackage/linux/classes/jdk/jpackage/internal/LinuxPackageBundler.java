@@ -103,15 +103,19 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         final LinuxPackage pkg = pkgParam.fetchFrom(params);
         final var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
-        final BuildEnv pkgEnv = BuildEnv.withAppImageDir(env,
-                env.buildRoot().resolve("image"));
+        final BuildEnv pkgEnv;
+
+        if (pkg.app().runtimeBuilder().isEmpty()) {
+            // Packaging external app image
+            pkgEnv = BuildEnv.withAppImageDir(env, BuildEnvBuilder.defaultAppImageDir(env.buildRoot()));
+        } else {
+            pkgEnv = env;
+        }
 
         LinuxPackagingPipeline.build()
                 .excludeDirFromCopying(outputParentDir)
-                .pkgBuildEnvFactory((e, p) -> {
-                    return pkgEnv;
-                })
-                .create().execute(env,  pkg, outputParentDir);
+                .pkgBuildEnvFactory((e, p) -> pkgEnv)
+                .create().execute(env, pkg, outputParentDir);
 
         try {
             for (var ca : customActions) {

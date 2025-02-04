@@ -26,6 +26,7 @@ package jdk.jpackage.internal;
 
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.MacApplication;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -48,9 +49,8 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
     static ShellCustomAction create(Map<String, Object> params,
             Path outputDir) throws IOException {
 
-        // Order is important!
-        var pkg = MacFromParams.PACKAGE.fetchFrom(params);
-        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+        final var pkg = FromParams.getCurrentPackage(params).orElseThrow();
+        final var env = BuildEnv.withAppImageDir(BuildEnvFromParams.BUILD_ENV.findIn(params).orElseThrow(), outputDir);
 
         if (pkg.isRuntimeInstaller()) {
             return null;
@@ -59,10 +59,10 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
                 MacLaunchersAsServices::isEmpty)).orElse(null);
     }
 
-    public static Path getServicePListFileName(String packageName,
+    public static Path getServicePListFileName(String bundleIdentifier,
             String launcherName) {
         String baseName = launcherName.replaceAll("[\\s]", "_");
-        return Path.of(packageName + "-" + baseName + ".plist");
+        return Path.of(bundleIdentifier + "-" + baseName + ".plist");
     }
 
     private static class MacLauncherAsService extends UnixLauncherAsService {
@@ -71,7 +71,7 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
             super(launcher, env.createResource("launchd.plist.template").setCategory(I18N
                     .getString("resource.launchd-plist-file")));
 
-            plistFilename = getServicePListFileName(pkg.packageName(), getName());
+            plistFilename = getServicePListFileName(((MacApplication)pkg.app()).bundleIdentifier(), getName());
 
             // It is recommended to set value of "label" property in launchd
             // .plist file equal to the name of this .plist file without the suffix.

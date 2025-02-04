@@ -24,14 +24,15 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.I18N.buildConfigException;
+
 import java.io.IOException;
 import java.nio.file.Files;
-import jdk.jpackage.internal.model.ConfigException;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
-import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 final class BuildEnvBuilder {
@@ -71,8 +72,17 @@ final class BuildEnvBuilder {
     }
 
     BuildEnvBuilder appImageDirFor(Application app) {
-        appImageDir = root.resolve("image").resolve(app.appImageDirName());
+        appImageDir = defaultAppImageDir(root).resolve(app.appImageDirName());
         return this;
+    }
+
+    BuildEnvBuilder appImageDirForPackage() {
+        appImageDir = defaultAppImageDir(root);
+        return this;
+    }
+
+    static Path defaultAppImageDir(Path root) {
+        return root.resolve("image");
     }
 
     private Path appImageDir;

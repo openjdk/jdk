@@ -37,9 +37,11 @@ public interface MacApplicationMixin {
 
     String category();
 
+    boolean appStore();
+
     Optional<SigningConfig> signingConfig();
 
-    record Stub(Optional<Path> icon, String bundleName, String bundleIdentifier,
-            String category, Optional<SigningConfig> signingConfig) implements MacApplicationMixin {
+    record Stub(Optional<Path> icon, String bundleName, String bundleIdentifier, String category,
+            boolean appStore, Optional<SigningConfig> signingConfig) implements MacApplicationMixin {
     }
 }

@@ -154,6 +154,8 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
         IOUtils.writableOutputDir(outdir);
 
+        MacFromParams.PKG_PACKAGE.fetchFrom(params);
+
         try {
             Path appImageDir = prepareAppBundle(params);
 
@@ -697,6 +699,8 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             throws ConfigException {
         try {
             Objects.requireNonNull(params);
+
+            MacFromParams.PKG_PACKAGE.fetchFrom(params);
 
             // run basic validation to ensure requirements are met
             // we are not interested in return code, only possible exception
