@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -518,14 +518,21 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
  -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
  -runtime/cds/appcds/CDSandJFR.java \
+ -runtime/cds/appcds/customLoader/CustomClassListDump.java \
  -runtime/cds/appcds/customLoader/HelloCustom_JFR.java \
+ -runtime/cds/appcds/customLoader/OldClassAndInf.java \
  -runtime/cds/appcds/customLoader/ParallelTestMultiFP.java \
  -runtime/cds/appcds/customLoader/ParallelTestSingleFP.java \
  -runtime/cds/appcds/customLoader/SameNameInTwoLoadersTest.java \
  -runtime/cds/appcds/DumpClassListWithLF.java \
  -runtime/cds/appcds/dynamicArchive/ModulePath.java \
+ -runtime/cds/appcds/dynamicArchive/LambdaCustomLoader.java \
+ -runtime/cds/appcds/dynamicArchive/LambdaForOldInfInBaseArchive.java \
  -runtime/cds/appcds/dynamicArchive/LambdaInBaseArchive.java \
  -runtime/cds/appcds/dynamicArchive/LambdasInTwoArchives.java \
+ -runtime/cds/appcds/dynamicArchive/OldClassAndInf.java \
+ -runtime/cds/appcds/dynamicArchive/OldClassInBaseArchive.java \
+ -runtime/cds/appcds/dynamicArchive/OldClassVerifierTrouble.java \
  -runtime/cds/appcds/HelloExtTest.java \
  -runtime/cds/appcds/javaldr/GCDuringDump.java \
  -runtime/cds/appcds/javaldr/LockDuringDump.java \
@@ -545,6 +552,13 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/jvmti \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
  -runtime/cds/appcds/loaderConstraints/LoaderConstraintsTest.java \
+ -runtime/cds/appcds/NestHostOldInf.java \
+ -runtime/cds/appcds/OldClassTest.java \
+ -runtime/cds/appcds/OldClassWithjsr.java \
+ -runtime/cds/appcds/OldInfExtendsInfDefMeth.java \
+ -runtime/cds/appcds/OldSuperClass.java \
+ -runtime/cds/appcds/OldSuperInfIndirect.java \
+ -runtime/cds/appcds/OldSuperInf.java \
  -runtime/cds/appcds/redefineClass \
  -runtime/cds/appcds/resolvedConstants/AOTLinkedLambdas.java \
  -runtime/cds/appcds/resolvedConstants/AOTLinkedVarHandles.java \

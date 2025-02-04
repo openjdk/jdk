@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,7 @@ public final class MetadataLoader {
 
     public static List<Type> createTypes() throws IOException {
         try (DataInputStream dis = new DataInputStream(
-                SecuritySupport.getResourceAsStream("/jdk/jfr/internal/types/metadata.bin"))) {
+                MetadataLoader.class.getResourceAsStream("/jdk/jfr/internal/types/metadata.bin"))) {
             MetadataLoader ml = new MetadataLoader(dis);
             return ml.buildTypes();
         } catch (Exception e) {

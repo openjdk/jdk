@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "jfr/jfrEvents.hpp"
 #include "gc/shared/gcCause.hpp"

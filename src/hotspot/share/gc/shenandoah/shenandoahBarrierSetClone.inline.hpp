@@ -95,8 +95,7 @@ void ShenandoahBarrierSet::clone_barrier(oop obj) {
   assert(ShenandoahCloneBarrier, "only get here with clone barriers enabled");
   shenandoah_assert_correct(nullptr, obj);
 
-  int gc_state = _heap->gc_state();
-  if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
+  if (_heap->is_evacuation_in_progress()) {
     clone_evacuation(obj);
   } else {
     clone_update(obj);
