@@ -25,7 +25,8 @@
  * @test
  * @bug 6270015
  * @library /test/lib
- * @build jdk.test.lib.Utils
+ * @build jdk.test.lib.Asserts
+ *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.net.URIBuilder
  * @run main/othervm -Dsun.net.httpserver.selCacheTimeout=2 SelCacheTest
@@ -45,6 +46,8 @@ import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
 
+import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
 /* basic http/s connectivity test
@@ -74,7 +77,7 @@ public class SelCacheTest extends Test {
             }
             s2 = HttpsServer.create(addr, 0);
             // Assert that both files share the same parent and can be served from the same `FileServerHandler`
-            assert smallFilePath.getParent().equals(largeFilePath.getParent());
+            assertEquals(smallFilePath.getParent(), largeFilePath.getParent());
             HttpHandler h = new FileServerHandler(smallFilePath.getParent().toString());
             HttpContext c1 = s1.createContext("/", h);
             HttpContext c2 = s2.createContext("/", h);
@@ -142,11 +145,8 @@ public class SelCacheTest extends Test {
         is.close();
         fout.close();
 
-        if (count != filePath.toFile().length()) {
-            throw new RuntimeException("wrong amount of data returned");
-        }
-        Path tempPath = temp.toPath();
-        assert Files.mismatch(filePath, tempPath) < 0;
+        assertEquals(filePath.toFile().length(), (long) count, "wrong amount of data returned");
+        assertFileContentsEqual(filePath, temp.toPath());
         temp.delete();
     }
 

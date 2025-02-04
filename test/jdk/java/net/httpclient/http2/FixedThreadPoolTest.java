@@ -28,13 +28,12 @@
  *          /test/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.httpclient.test.lib.http2.Http2EchoHandler
- *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
+ *        jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors FixedThreadPoolTest
  */
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.*;
 import java.net.http.*;
 import java.net.http.HttpRequest.BodyPublishers;
@@ -47,6 +46,7 @@ import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 import jdk.test.lib.net.SimpleSSLContext;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFile;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
@@ -253,11 +253,7 @@ public class FixedThreadPoolTest {
                     Path body = resp.body();
                     System.out.printf("Resp status %d body size %d\n",
                                       resp.statusCode(), body.toFile().length());
-                    try {
-                        assert Files.mismatch(body, source) < 0;
-                    } catch (IOException exception) {
-                        throw new UncheckedIOException(exception);
-                    }
+                    assertFileContentsEqual(body, source);
                     return null;
                 });
         }

@@ -25,7 +25,8 @@
  * @test
  * @bug 6270015
  * @library /test/lib
- * @build jdk.test.lib.Utils
+ * @build jdk.test.lib.Asserts
+ *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.net.URIBuilder
  * @run main/othervm Test13
@@ -45,6 +46,7 @@ import javax.net.ssl.*;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
 /* basic http/s connectivity test
@@ -180,8 +182,7 @@ public class Test13 extends Test {
                 if (count != filePath.toFile().length()) {
                     throw new RuntimeException ("wrong amount of data returned");
                 }
-                Path tempPath = temp.toPath();
-                assert Files.mismatch(filePath, tempPath) < 0;
+                assertFileContentsEqual(filePath, temp.toPath());
                 temp.delete();
             } catch (Exception e) {
                 e.printStackTrace();

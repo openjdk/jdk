@@ -29,13 +29,13 @@
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.httpclient.test.lib.http2.Http2TestExchange
  *        jdk.httpclient.test.lib.http2.Http2EchoHandler
+ *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors BasicTest
  */
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.*;
 import javax.net.ssl.*;
 import java.net.http.HttpClient;
@@ -56,6 +56,7 @@ import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFile;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
@@ -218,7 +219,7 @@ public class BasicTest {
                     return resp.body();
                 });
         response.join();
-        assert Files.mismatch(src, dest) < 0;
+        assertFileContentsEqual(src, dest);
         System.err.println("streamTest: DONE");
     }
 
@@ -282,11 +283,7 @@ public class BasicTest {
                     Path body = resp.body();
                     System.out.printf("Resp status %d body size %d\n",
                                       resp.statusCode(), body.toFile().length());
-                    try {
-                        assert Files.mismatch(body, source) < 0;
-                    } catch (IOException exception) {
-                        throw new UncheckedIOException(exception);
-                    }
+                    assertFileContentsEqual(body, source);
                     return null;
                 });
             Thread.sleep(100);

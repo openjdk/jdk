@@ -25,7 +25,8 @@
  * @test
  * @bug 6270015
  * @library /test/lib
- * @build jdk.test.lib.Utils
+ * @build jdk.test.lib.Asserts
+ *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.net.URIBuilder
  * @run main/othervm Test9
@@ -41,9 +42,12 @@ import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
+
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 
+import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
 /* Same as Test1 but requests run in parallel.
@@ -70,7 +74,7 @@ public class Test9 extends Test {
             s1 = HttpServer.create (addr, 0);
             s2 = HttpsServer.create (addr, 0);
             // Assert that both files share the same parent and can be served from the same `FileServerHandler`
-            assert smallFilePath.getParent().equals(largeFilePath.getParent());
+            assertEquals(smallFilePath.getParent(), largeFilePath.getParent());
             HttpHandler h = new FileServerHandler (smallFilePath.getParent().toString());
             HttpContext c1 = s1.createContext ("/", h);
             HttpContext c2 = s2.createContext ("/", h);
@@ -198,8 +202,7 @@ public class Test9 extends Test {
                     System.out.println ("count = "+count);
                     error = true;
                 }
-                Path tempPath = temp.toPath();
-                assert Files.mismatch(filePath, tempPath) < 0;
+                assertFileContentsEqual(filePath, temp.toPath());
                 temp.delete();
             } catch (Exception e) {
                 e.printStackTrace();
