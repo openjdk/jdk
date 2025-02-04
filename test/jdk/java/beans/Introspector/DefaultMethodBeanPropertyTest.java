@@ -23,15 +23,17 @@
 
 /*
  * @test
- * @bug 8071693
+ * @bug 8071693 8347826
  * @summary Verify that the Introspector finds default methods inherited
  *          from interfaces
  */
 
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
+import java.beans.MethodDescriptor;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.NavigableSet;
@@ -78,12 +80,12 @@ public class DefaultMethodBeanPropertyTest {
     }
 
     public static void testScenario1() {
-        verifyProperties(D1.class,
-            "getClass",     // inherited method
-            "getValue",     // inherited default method
-            "getFoo",       // overridden interface method
-            "getObj"        // overridden default method
+        verify(D1.class,
+            "public default int DefaultMethodBeanPropertyTest$A1.getValue()",
+            "public java.lang.Integer DefaultMethodBeanPropertyTest$D1.getFoo()",
+            "public java.lang.Float DefaultMethodBeanPropertyTest$D1.getObj()"
         );
+
     }
 
 //////////////////////////////////////
@@ -108,10 +110,9 @@ public class DefaultMethodBeanPropertyTest {
     }
 
     public static void testScenario2() {
-        verifyProperties(D2.class,
-            "getClass",
-            "getFoo"
-        );
+        verify(D2.class,
+            "public default java.lang.Object DefaultMethodBeanPropertyTest$A2.getFoo()"
+    );
     }
 
 //////////////////////////////////////
@@ -144,60 +145,113 @@ public class DefaultMethodBeanPropertyTest {
     }
 
     public static void testScenario3() {
-        verifyProperties(D3.class,
-            "getClass",
-            "getFoo"
+        verify(D3.class,
+            "public java.util.NavigableSet DefaultMethodBeanPropertyTest$D3.getFoo()"
+        );
+    }
+
+    public interface A4 {
+        default Object getDefault0() {
+            return null;
+        }
+        default Object getDefault1() {
+            return null;
+        }
+        default Object getDefault2() {
+            return null;
+        }
+        default Object getDefault3() {
+            return null;
+        }
+        Object getNonDefault();
+    }
+
+    public class B4 implements A4 {
+        @Override
+        public Object getDefault1() {
+            return new B4();
+        }
+        @Override
+        public String getDefault2() {
+            return null;
+        }
+        @Override
+        public Float getDefault3() {
+            return null;
+        }
+        public Long getNonDefault() {
+            return null;
+        }
+    }
+
+    public static void testScenario4() {
+        verify(B4.class,
+            "public default java.lang.Object DefaultMethodBeanPropertyTest$A4.getDefault0()",
+            "public java.lang.Object DefaultMethodBeanPropertyTest$B4.getDefault1()",
+            "public java.lang.String DefaultMethodBeanPropertyTest$B4.getDefault2()",
+            "public java.lang.Float DefaultMethodBeanPropertyTest$B4.getDefault3()",
+            "public java.lang.Long DefaultMethodBeanPropertyTest$B4.getNonDefault()"
         );
     }
 
 // Helper methods
 
-    public static void verifyProperties(Class<?> type, String... getterNames) {
+    public static void verify(Class<?> type, String... getterNames) {
+        // Verify properties
+        try {
+            // Gather expected properties
+            final Set<String> expected = new HashSet<>(Arrays.asList(getterNames));
+            expected.add("public final native java.lang.Class java.lang.Object.getClass()");
 
-        // Gather expected properties
-        final HashSet<PropertyDescriptor> expected = new HashSet<>();
-        for (String methodName : getterNames) {
-            final String suffix = methodName.substring(3);
-            final String propName = Introspector.decapitalize(suffix);
-            final Method getter;
-            try {
-                getter = type.getMethod(methodName);
-            } catch (NoSuchMethodException e) {
-                throw new Error("unexpected error", e);
+            // Gather actual properties
+            final Set<String> actual = Arrays
+                    .stream(Introspector.getBeanInfo(type).getPropertyDescriptors())
+                    .map(PropertyDescriptor::getReadMethod)
+                    .map(Method::toString)
+                    .collect(Collectors.toSet());
+
+            // Verify the two sets are the same
+            if (!actual.equals(expected)) {
+                throw new Error("properties mismatch: " + type
+                        + "\nACTUAL:\n  "
+                        + actual.stream()
+                                .map(Object::toString)
+                                .collect(Collectors.joining("\n  "))
+                        + "\nEXPECTED:\n  "
+                        + expected.stream()
+                                .map(Object::toString)
+                                .collect(Collectors.joining("\n  ")));
             }
-            final PropertyDescriptor propDesc;
-            try {
-                propDesc = new PropertyDescriptor(propName, getter, null);
-            } catch (IntrospectionException e) {
-                throw new Error("unexpected error", e);
-            }
-            expected.add(propDesc);
+        } catch (IntrospectionException exception) {
+            throw new Error("unexpected exception", exception);
         }
 
-        // Verify properties can be found directly
-        expected.stream()
-                .map(PropertyDescriptor::getName)
-                .filter(name -> BeanUtils.getPropertyDescriptor(type, name) == null)
-                .findFirst()
-                .ifPresent(name -> {
-                    throw new Error("property \"" + name + "\" not found in " + type);
-                });
+        // Verify methods
+        try {
+            // Gather expected properties
+            final Set<String> expected = new HashSet<>(Arrays.asList(getterNames));
 
-        // Gather actual properties
-        final Set<PropertyDescriptor> actual =
-                Set.of(BeanUtils.getPropertyDescriptors(type));
+            // Gather actual methods
+            final Set<String> actualMethods = Arrays
+                    .stream(Introspector.getBeanInfo(type, Object.class).getMethodDescriptors())
+                    .map(MethodDescriptor::getMethod)
+                    .map(Method::toString)
+                    .collect(Collectors.toSet());
 
-        // Verify the two sets are the same
-        if (!actual.equals(expected)) {
-            throw new Error("mismatch: " + type
-              + "\nACTUAL:\n  "
-              + actual.stream()
-                      .map(Object::toString)
-                      .collect(Collectors.joining("\n  "))
-              + "\nEXPECTED:\n  "
-              + expected.stream()
-                        .map(Object::toString)
-                        .collect(Collectors.joining("\n  ")));
+            // Verify the two sets are the same
+            if (!actualMethods.equals(expected)) {
+                throw new Error("methods mismatch: " + type
+                        + "\nACTUAL:\n  "
+                        + actualMethods.stream()
+                                .map(Object::toString)
+                                .collect(Collectors.joining("\n  "))
+                        + "\nEXPECTED:\n  "
+                        + expected.stream()
+                                .map(Object::toString)
+                                .collect(Collectors.joining("\n  ")));
+            }
+        } catch (IntrospectionException exception) {
+            throw new Error("unexpected exception", exception);
         }
     }
 
@@ -207,5 +261,6 @@ public class DefaultMethodBeanPropertyTest {
         testScenario1();
         testScenario2();
         testScenario3();
+        testScenario4();
     }
 }
