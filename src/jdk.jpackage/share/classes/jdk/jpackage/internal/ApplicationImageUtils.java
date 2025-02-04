@@ -114,7 +114,7 @@ final class ApplicationImageUtils {
         return (env, app, appLayout) -> {
             for (var launcher : app.launchers()) {
                 // Create corresponding .cfg file
-                new CfgFile(app, launcher).create(appLayout, appLayout);
+                new CfgFile(app, launcher).create(appLayout);
 
                 // Copy executable to launchers folder
                 Path executableFile = appLayout.launchersDirectory().resolve(

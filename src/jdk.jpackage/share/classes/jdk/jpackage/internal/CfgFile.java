@@ -24,12 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.LauncherStartupInfo;
-import jdk.jpackage.internal.model.LauncherJarStartupInfo;
-import jdk.jpackage.internal.model.LauncherModularStartupInfo;
-import jdk.jpackage.internal.model.Launcher;
-import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.ApplicationLayout;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,6 +32,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.LauncherJarStartupInfo;
+import jdk.jpackage.internal.model.LauncherModularStartupInfo;
+import jdk.jpackage.internal.model.LauncherStartupInfo;
 
 
 /**
@@ -50,10 +50,10 @@ final class CfgFile {
         version = app.version();
     }
 
-    void create(ApplicationLayout unresolvedAppLayout, ApplicationLayout appLayout) throws IOException {
+    void create(ApplicationLayout appLayout) throws IOException {
         List<Map.Entry<String, Object>> content = new ArrayList<>();
 
-        ApplicationLayout appCfgLayout = createAppCfgLayout(unresolvedAppLayout);
+        final var refs = new Referencies(appLayout);
 
         content.add(Map.entry("[Application]", SECTION_TAG));
 
@@ -61,7 +61,7 @@ final class CfgFile {
             content.add(Map.entry("app.mainmodule", modularStartupInfo.moduleName()
                     + "/" + startupInfo.qualifiedClassName()));
         } else if (startupInfo instanceof LauncherJarStartupInfo jarStartupInfo) {
-            Path mainJarPath = appCfgLayout.appDirectory().resolve(jarStartupInfo.jarPath());
+            Path mainJarPath = refs.appDirectory().resolve(jarStartupInfo.jarPath());
 
             if (jarStartupInfo.isJarWithMainClass()) {
                 content.add(Map.entry("app.mainjar", mainJarPath));
@@ -78,7 +78,7 @@ final class CfgFile {
 
         for (var value : Optional.ofNullable(startupInfo.classPath()).orElseGet(List::of)) {
             content.add(Map.entry("app.classpath",
-                    appCfgLayout.appDirectory().resolve(value).toString()));
+                    refs.appDirectory().resolve(value).toString()));
         }
 
         content.add(Map.entry("[JavaOptions]", SECTION_TAG));
@@ -95,7 +95,7 @@ final class CfgFile {
         // add module path if there is one
         if (Files.isDirectory(appLayout.appModsDirectory())) {
             content.add(Map.entry("java-options", "--module-path"));
-            content.add(Map.entry("java-options", appCfgLayout.appModsDirectory()));
+            content.add(Map.entry("java-options", refs.appModsDirectory()));
         }
 
         var arguments = Optional.ofNullable(startupInfo.defaultParameters()).orElseGet(List::of);
@@ -123,15 +123,21 @@ final class CfgFile {
         Files.write(cfgFile, (Iterable<String>) lines::iterator);
     }
 
-    private ApplicationLayout createAppCfgLayout(ApplicationLayout appLayout) {
-        return ApplicationLayout
-                .buildFrom(appLayout.resolveAt(Path.of("$ROOTDIR")))
-                .appDirectory("$APPDIR")
-                .appModsDirectory(
-                        Path.of("$APPDIR").resolve(
-                                appLayout.appDirectory().relativize(
-                                        appLayout.appModsDirectory())))
-                .create();
+    private record Referencies(Path appModsDirectory) {
+
+        Referencies {
+            if (!appModsDirectory.getParent().equals(appDirectory())) {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        Referencies(ApplicationLayout appLayout) {
+            this(Path.of("$APPDIR").resolve(appLayout.appModsDirectory().getFileName()));
+        }
+
+        Path appDirectory() {
+            return Path.of("$APPDIR");
+        }
     }
 
     private final LauncherStartupInfo startupInfo;
