@@ -902,19 +902,21 @@ public class ForkJoinPool extends AbstractExecutorService
      *
      * This class supports ScheduledExecutorService methods by
      * creating and starting a DelayScheduler on first use of these
-     * methods. The scheduler operates independently in its own
-     * thread, relaying tasks to the pool to execute as they become
-     * ready (see method executeReadyDelayedTask). The only other
-     * interactions with the delayScheduler are to control shutdown
-     * and maintain shutdown-related policies in methods quiescent()
-     * and tryTerminate(). In particular, to conform to policies,
-     * shutdown-related processing must deal with cases in which tasks
-     * are submitted before shutdown, but not ready until afterwards,
-     * in which case they must bypass some screening to be allowed to
-     * run. Conversely, the DelayScheduler interacts with the pool
-     * only to check runState status (via mehods poolIsStopping and
-     * poolIsShutdown) and complete termination (via canTerminate)
-     * that invoke corresponding private pool implementations.
+     * methods (via startDelayScheduler, with callback
+     * onDelaySchedulerStart). The scheduler operates independently in
+     * its own thread, relaying tasks to the pool to execute as they
+     * become ready (see method executeReadyDelayedTask). The only
+     * other interactions with the delayScheduler are to control
+     * shutdown and maintain shutdown-related policies in methods
+     * quiescent() and tryTerminate(). In particular, to conform to
+     * policies, shutdown-related processing must deal with cases in
+     * which tasks are submitted before shutdown, but not ready until
+     * afterwards, in which case they must bypass some screening to be
+     * allowed to run. Conversely, the DelayScheduler interacts with
+     * the pool only to check runState status (via mehods
+     * poolIsStopping and poolIsShutdown) and complete termination
+     * (via poolCanTerminate) that invoke corresponding private pool
+     * implementations.
      *
      * Memory placement
      * ================
@@ -1718,17 +1720,6 @@ public class ForkJoinPool extends AbstractExecutorService
                     waits <<= 1;
             }
         }
-    }
-
-    // status methods used by other classes in this package
-    static boolean poolIsStopping(ForkJoinPool p) {
-        return p != null && (p.runState & STOP) != 0L;
-    }
-    static boolean poolIsShutdown(ForkJoinPool p) {
-        return p != null && (p.runState & SHUTDOWN) != 0L;
-    }
-    static boolean canTerminate(ForkJoinPool p) { // true if terminated
-        return p != null && (p.tryTerminate(false, false) & STOP) != 0L;
     }
 
     // Creating, registering, and deregistering workers
@@ -3415,6 +3406,17 @@ public class ForkJoinPool extends AbstractExecutorService
 
     // Support for delayed tasks
 
+    // status methods used by Delayscheduler and other classes in this package
+    static boolean poolIsStopping(ForkJoinPool p) {
+        return p != null && (p.runState & STOP) != 0L;
+    }
+    static boolean poolIsShutdown(ForkJoinPool p) {
+        return p != null && (p.runState & SHUTDOWN) != 0L;
+    }
+    static boolean poolCanTerminate(ForkJoinPool p) { // true if terminated
+        return p != null && (p.tryTerminate(false, false) & STOP) != 0L;
+    }
+
     /**
      * Creates and starts DelayScheduler unless pool is in shutdown mode
      */
@@ -3441,6 +3443,15 @@ public class ForkJoinPool extends AbstractExecutorService
             }
         }
         return ds;
+    }
+
+    /**
+     * Callback upon starting DelayScheduler
+     */
+    final void onDelaySchedulerStart() {
+        WorkQueue q;           // set up default submission queue
+        if ((q = submissionQueue(0, false)) != null)
+            q.unlockPhase();
     }
 
     /**
@@ -3754,6 +3765,19 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
+     * Returns an estimate of the number of delayed (including
+     * periodic) tasks scheduled in this pool that are not yet ready
+     * to submit for execution. The returned value is innacurate when
+     * delayed tasks are being processed.
+     *
+     * @return an estimate of the number of delayed tasks
+     */
+    public int getDelayedTaskCount() {
+        DelayScheduler ds;
+        return ((ds = delayScheduler) == null ? 0 : ds.approximateSize());
+    }
+
+    /**
      * Returns {@code true} if there are any tasks submitted to this
      * pool that have not yet begun executing.
      *
@@ -3816,6 +3840,7 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     public String toString() {
         // Use a single pass through queues to collect counts
+        DelayScheduler ds;
         long e = runState;
         long st = stealCount;
         long qt = 0L, ss = 0L; int rc = 0;
@@ -3835,7 +3860,8 @@ public class ForkJoinPool extends AbstractExecutorService
                 }
             }
         }
-
+        String delayed = ((ds = delayScheduler) == null ? "" :
+                          ", delayed = " + ds.approximateSize());
         int pc = parallelism;
         long c = ctl;
         int tc = (short)(c >>> TC_SHIFT);
@@ -3855,6 +3881,7 @@ public class ForkJoinPool extends AbstractExecutorService
             ", steals = " + st +
             ", tasks = " + qt +
             ", submissions = " + ss +
+            delayed +
             "]";
     }
 

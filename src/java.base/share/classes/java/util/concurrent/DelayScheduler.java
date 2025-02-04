@@ -54,8 +54,10 @@ final class DelayScheduler extends Thread {
      *
      * To reduce memory contention, the heap is maintained solely via
      * local variables in method loop() (forcing noticeable code
-     * sprawl), recording only the heap array to allow method
-     * canShutDown to conservatively check emptiness.
+     * sprawl), recording only the current heap size when blocked to
+     * allow method canShutDown to conservatively check emptiness, and
+     * to support an approximate reporting of current size for
+     * monitoring.
      *
      * The pending queue uses a design similar to ForkJoinTask.Aux
      * queues: Incoming requests prepend (Treiber-stack-style) to the
@@ -104,7 +106,7 @@ final class DelayScheduler extends Thread {
 
     private static final int INITIAL_HEAP_CAPACITY = 1 << 6;
     private final ForkJoinPool pool; // read only once
-    private DelayedTask<?>[] heap;   // written only when (re)allocated
+    int restingSize;                 // written only before parking
     private volatile int active;     // 0: inactive, -1: stopped, +1: running
     @jdk.internal.vm.annotation.Contended()
     private volatile DelayedTask<?> pending;
@@ -164,24 +166,28 @@ final class DelayScheduler extends Thread {
      * Returns true if (momentarily) inactive and heap is empty
      */
     final boolean canShutDown() {
-        DelayedTask<?>[] h;
-        return (active <= 0 &&
-                ((h = heap) == null || h.length <= 0 || h[0] == null) &&
-                active <= 0);
+        return (active <= 0 && restingSize <= 0);
     }
 
     /**
-     * Setup and run scheduling loop
+     * Returns an approximate number of elements in heap
+     */
+    final int approximateSize() {
+        return (active < 0) ? 0 : restingSize;
+    }
+
+    /**
+     * Sets up and runs scheduling loop
      */
     public final void run() {
         ForkJoinPool p;
-        ThreadLocalRandom.localInit();
         if ((p = pool) != null) {
             try {
                 loop(p);
             } finally {
+                restingSize = 0;
                 active = -1;
-                ForkJoinPool.canTerminate(p);
+                ForkJoinPool.poolCanTerminate(p);
             }
         }
     }
@@ -195,9 +201,9 @@ final class DelayScheduler extends Thread {
      *    else park until next trigger time, or indefinitely if none
      */
     private void loop(ForkJoinPool p) {
-        DelayedTask<?>[] h = new DelayedTask<?>[INITIAL_HEAP_CAPACITY];
-        heap = h;
+        p.onDelaySchedulerStart();
         active = 1;
+        DelayedTask<?>[] h = new DelayedTask<?>[INITIAL_HEAP_CAPACITY];
         boolean purgedPeriodic = false;
         for (int n = 0;;) {                    // n is heap size
             DelayedTask<?> t;
@@ -236,7 +242,7 @@ final class DelayScheduler extends Thread {
                             }
                             t.heapIndex = k;
                             h[k] = t;
-                            if (n >= cap && (nh = growHeap(h)) != null)
+                            if (n >= cap && (nh = growHeap(h, cap)) != null)
                                 cap = (h = nh).length;
                         }
                     }
@@ -261,13 +267,14 @@ final class DelayScheduler extends Thread {
                             break;
                         }
                         f.heapIndex = -1;
-                        if (stat >= 0 && p != null)
+                        if (stat >= 0)
                             p.executeReadyDelayedTask(f);
                     }
                 } while ((n = replace(h, 0, n)) > 0);
             }
 
             if (pending == null) {
+                restingSize = n;
                 Thread.interrupted();       // clear before park
                 if (active == 0)
                     U.park(false, parkTime);
@@ -281,20 +288,16 @@ final class DelayScheduler extends Thread {
      * Tries to reallocate the heap array, returning existing
      * array on failure.
      */
-    private DelayedTask<?>[] growHeap(DelayedTask<?>[] h) {
-        int cap, newCap;
-        if (h != null && (cap = h.length) < (newCap = cap << 1)) {
-            DelayedTask<?>[] a = null;
+    private DelayedTask<?>[] growHeap(DelayedTask<?>[] h, int cap) {
+        int newCap  = cap << 1;
+        DelayedTask<?>[] nh = h;
+        if (h != null && h.length == cap && cap < newCap) {
             try {
-                a = Arrays.copyOf(h, newCap);
+                nh = Arrays.copyOf(h, newCap);
             } catch (Error | RuntimeException ex) {
             }
-            if (a != null && a.length > cap) {
-                heap = h = a;
-                U.storeFence();
-            }
         }
-        return h;
+        return nh;
     }
 
     /**
@@ -361,7 +364,7 @@ final class DelayScheduler extends Thread {
                         }
                     }
                 }
-                if (n > 0 || !ForkJoinPool.canTerminate(p))
+                if (n > 0 || !ForkJoinPool.poolCanTerminate(p))
                     return n;
             }
             for (int i = 0; i < n; ++i) {
@@ -376,25 +379,6 @@ final class DelayScheduler extends Thread {
                 a.trySetCancelled(); // clear pending requests
         }
         return -1;
-    }
-
-    /**
-     * Returns an approximate count by finding the highest used
-     * heap array slot. This is very racy and not fast, but
-     * useful enough for monitoring purposes.
-     */
-    final int approximateSize() {
-        DelayedTask<?>[] h;
-        int size = 0;
-        if (active >= 0 && (h = heap) != null) {
-            for (int i = h.length - 1; i >= 0; --i) {
-                if (h[i] != null) {
-                    size = i + 1;
-                    break;
-                }
-            }
-        }
-        return size;
     }
 
     /**
