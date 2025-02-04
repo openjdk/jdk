@@ -1384,10 +1384,11 @@ public:
         if (_initial_evacuation) {
           G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
         }
-
         g1h->collection_set_iterate_increment_from(&merge, worker_id);
+
+        G1MergeCardSetStats stats = merge.stats();
         for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
-          p->record_or_add_thread_work_item(merge_remset_phase, worker_id, merge.stats().merged(i), i);
+          p->record_or_add_thread_work_item(merge_remset_phase, worker_id, stats.merged(i), i);
         }
       }
     }
