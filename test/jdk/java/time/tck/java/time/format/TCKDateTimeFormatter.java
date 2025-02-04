@@ -997,10 +997,10 @@ public class TCKDateTimeFormatter {
         assertEquals(dateExpected, dateFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
         assertEquals(dateExpected, dateFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
 
-        StringBuilder buf = new StringBuilder().append(dateTime.getHour())
+        String timeStr = new StringBuilder()
+                .append(dateTime.getHour())
                 .append(':').append(dateTime.getMinute())
-                .append(':').append(dateTime.getSecond());
-        String timeStr = buf.toString();
+                .append(':').append(dateTime.getSecond()).toString();
 
         String dateTimeExpected = dateStr + " " + timeStr + " " + dateStr + " " + timeStr;
         assertEquals(dateTimeExpected, dateTimeFormatter.format(dateTime));
