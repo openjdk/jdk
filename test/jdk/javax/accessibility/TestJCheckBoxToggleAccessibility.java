@@ -44,9 +44,9 @@ import javax.swing.JToggleButton;
 public class TestJCheckBoxToggleAccessibility {
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
-                
+
                 Testing with VoiceOver
-                
+
                 1. Start the VoiceOver application (Press Command + F5)
                 2. Click on Frame with CheckBox and ToggleButton window to move focus
                 3. Press Spacebar
@@ -56,9 +56,9 @@ public class TestJCheckBoxToggleAccessibility {
                 7. Press Tab to move focus to ToggleButton
                 8. Repeat steps 3 to 6 and listen the announcement
                 9. If announcements are incorrect, Press Fail
-                
+
                 Stop the VoiceOver application (Press Command + F5)
-                
+
                 Testing with Screen Magnifier
                 1. Enable Screen magnifier on the Mac
                    System Preference -> Accessibility -> Hover Text -> Enable Hover Text
@@ -67,26 +67,24 @@ public class TestJCheckBoxToggleAccessibility {
 
                     Test CheckBox states with Screen Magnifier
                         a. Click on CheckBox to select
-                        b. Press Command key and hover mouse over CheckBox 
+                        b. Press Command key and hover mouse over CheckBox
                         c. CheckBox ticked state along with label should be magnified
                         d. Keep Command button pressed and click CheckBox to deselect
                         e. CheckBox unticked state along with label should be magnified
                         f. Release Command key
                         g. If Screen Magnifier behaviour is incorrect, Press Fail
-                        
+
                     Test ToggleButton states with Screen Magnifier
                         a. Click on ToggleButton to select
-                        b. Press Command key and hover mouse over ToggleButton 
+                        b. Press Command key and hover mouse over ToggleButton
                         c. Ticked state along with label should be magnified
                         d. Keep Command button pressed and click ToggleButton to deselect
                         e. Unticked state along with label should be magnified
                         f. Release Command key
                         g. If Screen Magnifier behaviour is incorrect, Press Fail
-                
+
                 Press Pass if you are able to hear correct VoiceOver announcements and
-                able to see the correct screen magnifier behaviour.
-                
-                """;
+                able to see the correct screen magnifier behaviour. """;
 
         PassFailJFrame.builder()
                 .title("TestJCheckBoxToggleAccessibility Instruction")
