@@ -21,21 +21,19 @@
  * questions.
  */
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.plaf.PanelUI;
 
-/**
- * @test
- * @bug 8024926 8040279
- * @requires (os.family == "mac")
- * @summary [macosx] AquaIcon HiDPI support
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual PixelatedTextTest
+/* @test
+   @bug 8303904
+   @requires (os.family == "mac")
+   @summary Images appear pixelated at resolutions higher than 100%
+            when volatile image buffering is disabled.
+   @library /java/awt/regtesthelpers
+   @build PassFailJFrame
+   @run main/manual PixelatedImageTest
  */
-public class PixelatedTextTest {
+public class PixelatedImageTest {
 
     private static final String INSTRUCTIONS = """
                 Verify that the rendered image is not pixelated.
@@ -47,18 +45,18 @@ public class PixelatedTextTest {
     public static void main(String[] args) throws Exception {
         System.setProperty("swing.volatileImageBufferEnabled", "false");
         PassFailJFrame.builder()
-                .title("Pixelated image test")
+                .title("Pixelated image Test")
                 .instructions(INSTRUCTIONS)
-                .rows(10)
+                .rows((5))
                 .columns(35)
-                .testUI(PixelatedTextTest::createTestUI)
+                .testUI(PixelatedImageTest::createTestUI)
                 .build()
                 .awaitAndCheck();
     }
 
     private static JDialog createTestUI() {
         JTextPane textPane = new JTextPane();
-        textPane.setText("This text should not appear pixelated");
+        textPane.setText("This text should appear clear, without any pixelation.");
         textPane.setEditable(false);
         textPane.setOpaque(false);
         textPane.setBorder(new EmptyBorder(10,10,10,10));
@@ -67,20 +65,21 @@ public class PixelatedTextTest {
         dialog.setUndecorated(true);
         dialog.setLocationRelativeTo(null);
 
-        JPanel panel = new JPanel();
-        panel.setOpaque(false);
-        panel.setBorder(new EmptyBorder(10,10,10,10));
-        panel.setUI(new PanelUI() {
+        JPanel panel = new JPanel() {
             @Override
-            public void paint(Graphics g, JComponent c) {
+            public void paintComponent(Graphics g) {
+                super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(new Color(220, 180, 0, 200));
-                g2.fill(new RoundRectangle2D.Double(5, 5,c.getWidth()-10,c.getHeight()-10,20,20));
+                g2.fillRect(5, 5, getWidth(), getHeight());
             }
-        });
+        };
+        panel.setOpaque(false);
+        panel.setBorder(new EmptyBorder(10,10,10,10));
         panel.setLayout(new BorderLayout());
         panel.add(textPane, BorderLayout.NORTH);
+
         dialog.getContentPane().add(panel);
         dialog.setBackground(new Color(0,0,0,0));
         dialog.pack();

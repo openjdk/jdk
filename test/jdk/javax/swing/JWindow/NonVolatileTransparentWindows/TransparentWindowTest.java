@@ -37,6 +37,7 @@ import java.awt.event.WindowEvent;
 public class TransparentWindowTest extends JWindow {
 
     public static void main(String[] args) throws Exception {
+        System.setProperty("swing.volatileImageBufferEnabled", "false");
         Robot robot = new Robot();
         robot.setAutoDelay(100);
 
