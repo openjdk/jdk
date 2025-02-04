@@ -21,19 +21,20 @@
  * questions.
  */
 
-#include "export.h"
+/*
+ * @test
+ * @bug 8326485
+ * @compile/fail/ref=T8326485.out -XDrawDiagnostics -XDdev T8326485.java
+ * @summary Assertion due to Type.addMetadata adding annotations to already-annotated type
+ */
 
-typedef struct { double x, y, z; } HVAPoint3D;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-EXPORT HVAPoint3D recurse(int depth, HVAPoint3D (*cb)(int)) {
-  if (depth == 0) {
-    HVAPoint3D result = { 2, 1, 0};
-    return result;
-  }
-
-  HVAPoint3D result = cb(depth - 1);
-  result.x += 1;
-  result.y += 1;
-  result.z += 1;
-  return result;
+public class T8326485 {
+    @Ann
+    not.java.lang.@Ann String f;
 }
+
+@Target({ElementType.TYPE_USE, ElementType.FIELD})
+@interface Ann {}
