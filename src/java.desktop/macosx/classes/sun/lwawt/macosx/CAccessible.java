@@ -182,7 +182,8 @@ class CAccessible extends CFRetainedResource implements Accessible {
 
                     // Do send check box state changes to native side
                     if (thisRole == AccessibleRole.CHECK_BOX) {
-                        if (newValue != null && !newValue.equals(oldValue)) {
+                        if ((newValue != null && !newValue.equals(oldValue)) ||
+                                oldValue != null && !oldValue.equals(newValue)) {
                             valueChanged(ptr);
                         }
 
@@ -208,7 +209,8 @@ class CAccessible extends CFRetainedResource implements Accessible {
 
                     // Do send toggle button state changes to native side
                     if (thisRole == AccessibleRole.TOGGLE_BUTTON) {
-                        if (newValue != null && !newValue.equals(oldValue)) {
+                        if ((newValue != null && !newValue.equals(oldValue)) ||
+                                oldValue != null && !oldValue.equals(newValue)) {
                             valueChanged(ptr);
                         }
                     }
