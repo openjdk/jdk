@@ -26,7 +26,6 @@ package sun.security.ssl;
 
 import jdk.internal.net.quic.QuicKeyUnavailableException;
 import jdk.internal.net.quic.QuicOneRttContext;
-import jdk.internal.net.quic.QuicTLSContext;
 import jdk.internal.net.quic.QuicTLSEngine;
 import jdk.internal.net.quic.QuicTransportErrors;
 import jdk.internal.net.quic.QuicTransportException;
@@ -98,7 +97,6 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
         }
     }
 
-    private final QuicTLSContext quicTLSContext;
     private final TransportContext conContext;
     private final String peerHost;
     private final int peerPort;
@@ -123,21 +121,16 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
 
     private volatile QuicVersion negotiatedVersion;
 
-    public QuicTLSEngineImpl(final QuicTLSContext quicTLSContext) {
-        this(quicTLSContext, null, -1);
+    public QuicTLSEngineImpl(SSLContextImpl sslContextImpl) {
+        this(sslContextImpl, null, -1);
     }
 
-    public QuicTLSEngineImpl(final QuicTLSContext quicTLSContext,
-            final String peerHost, final int peerPort) {
-        Objects.requireNonNull(quicTLSContext);
-        this.quicTLSContext = quicTLSContext;
+    public QuicTLSEngineImpl(SSLContextImpl sslContextImpl, final String peerHost, final int peerPort) {
         this.peerHost = peerHost;
         this.peerPort = peerPort;
         this.sendKeySpace = INITIAL;
         HandshakeHash handshakeHash = new HandshakeHash();
-        final SSLContextImpl sslCtxImpl =
-                this.quicTLSContext.getSSLContextImpl();
-        this.conContext = new TransportContext(sslCtxImpl, this,
+        this.conContext = new TransportContext(sslContextImpl, this,
                 new SSLEngineInputRecord(handshakeHash),
                 new QuicEngineOutputRecord(handshakeHash));
         conContext.sslConfig.enabledProtocols = List.of(ProtocolVersion.TLS13);

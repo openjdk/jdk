@@ -121,16 +121,7 @@ public final class QuicTLSContext {
      * @return the newly created QuicTLSEngine
      */
     public QuicTLSEngine createEngine(final String peerHost, final int peerPort) {
-        return new QuicTLSEngineImpl(this, peerHost, peerPort);
-    }
-
-    /**
-     * @return the SunJSSE SSLContext from which this QuicTLSContext was
-     *         constructed
-     */
-    // TODO: get rid of this method eventually
-    public SSLContextImpl getSSLContextImpl() {
-        return this.sslCtxImpl;
+        return new QuicTLSEngineImpl(this.sslCtxImpl, peerHost, peerPort);
     }
 
     // This VarHandle is used to access the SSLContext::contextSpi
