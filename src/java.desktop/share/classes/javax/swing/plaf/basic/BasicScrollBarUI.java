@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import javax.swing.BoundedRangeModel;
+import javax.swing.FocusManager;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -1613,7 +1614,15 @@ public class BasicScrollBarUI
             // and mouseReleased is not called, then timer will not be stopped
             // Stop the timer if frame is disabled
             Component parent = scrollbar.getParent();
+            Component focusOwner = FocusManager.getCurrentManager().getFocusOwner();
             do {
+                // If application isn't in focus, stop the timer
+                if (focusOwner == null) {
+                    ((Timer)e.getSource()).stop();
+                    buttonListener.handledEvent = false;
+                    scrollbar.setValueIsAdjusting(false);
+                    return;
+                }
                 if (parent instanceof JFrame par) {
                     if (!par.isEnabled()) {
                         ((Timer)e.getSource()).stop();
