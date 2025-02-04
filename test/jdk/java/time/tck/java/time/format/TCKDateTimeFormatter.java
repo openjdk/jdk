@@ -97,6 +97,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
 import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
@@ -1021,6 +1022,217 @@ public class TCKDateTimeFormatter {
             assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
             assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC).toOffsetTime()));
             assertEquals(timeExpected, timeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+        }
+    }
+
+    @Test
+    public void test_output_second_fields() {
+        List<ChronoField> fields = new ArrayList<>();
+        for (ChronoField value : ChronoField.values()) {
+            if (value.getRangeUnit() == ChronoUnit.SECONDS) {
+                fields.add(value);
+            }
+        }
+        DateTimeFormatter[] formatters = new DateTimeFormatter[fields.size()];
+        for (int i = 0; i < fields.size(); i++) {
+            ChronoField chronoField = fields.get(i);
+            formatters[i] = new DateTimeFormatterBuilder().appendValue(chronoField).toFormatter();
+        }
+
+        int[] nanos = {
+                0, 9,
+                10, 99,
+                100, 999,
+                1000, 9999,
+                10000, 99999,
+                100000, 999999,
+                1000000, 9999999,
+                10000000, 99999999,
+                10000000, 999999999
+        };
+        for (int nano : nanos) {
+            Instant instant = Instant.ofEpochSecond(0, nano);
+            for (int i = 0; i < fields.size(); i++) {
+                assertEquals(String.valueOf(instant.getLong(fields.get(i))), formatters[i].format(instant));
+            }
+            LocalTime localTime = LocalTime.of(0, 0, 0, nano);
+            for (int i = 0; i < fields.size(); i++) {
+                assertEquals(String.valueOf(localTime.get(fields.get(i))), formatters[i].format(localTime));
+            }
+        }
+    }
+
+    @Test
+    public void test_output_days_fields() {
+        List<ChronoField> fields = new ArrayList<>();
+        for (ChronoField value : ChronoField.values()) {
+            if (value.getRangeUnit() == ChronoUnit.DAYS) {
+                fields.add(value);
+            }
+        }
+        DateTimeFormatter[] formatters = new DateTimeFormatter[fields.size()];
+        for (int i = 0; i < fields.size(); i++) {
+            ChronoField chronoField = fields.get(i);
+            formatters[i] = new DateTimeFormatterBuilder().appendValue(chronoField)
+                    .toFormatter();
+        }
+
+        List<LocalDateTime> dateTimes = dateTimes(false);
+        for (LocalDateTime dateTime : dateTimes) {
+            for (int i = 0; i < fields.size(); i++) {
+                assertEquals(String.valueOf(dateTime.getLong(fields.get(i))), formatters[i].format(dateTime));
+            }
+        }
+    }
+
+    @Test
+    public void test_output_long_fields() {
+        ChronoField[] fields = {
+                ChronoField.MICRO_OF_DAY,
+                ChronoField.NANO_OF_DAY,
+                ChronoField.MILLI_OF_DAY,
+                ChronoField.EPOCH_DAY
+        };
+        DateTimeFormatter[] formatters = new DateTimeFormatter[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            ChronoField chronoField = fields[i];
+            formatters[i] = new DateTimeFormatterBuilder().appendValue(chronoField)
+                    .toFormatter().withZone(ZoneOffset.UTC);
+        }
+
+        List<LocalDateTime> dateTimes = dateTimes(false);
+        for (LocalDateTime dateTime : dateTimes) {
+            for (int i = 0; i < fields.length; i++) {
+                Instant instant = dateTime.toInstant(ZoneOffset.UTC);
+                assertEquals(String.valueOf(dateTime.getLong(fields[i])), formatters[i].format(instant));
+            }
+        }
+    }
+
+    @Test
+    public void test_output_width_1() {
+        List<LocalDateTime> dateTimes = dateTimes(true);
+        ChronoField[] fields = {ChronoField.DAY_OF_WEEK, ChronoField.AMPM_OF_DAY, ChronoField.ALIGNED_WEEK_OF_MONTH};
+        DateTimeFormatter[] formatters = new DateTimeFormatter[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            formatters[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 1, 1, SignStyle.NOT_NEGATIVE)
+                    .toFormatter();
+        }
+        for (LocalDateTime dateTime : dateTimes) {
+            for (int i = 0; i < fields.length; i++) {
+                assertEquals(
+                        String.valueOf(dateTime.get(fields[i])),
+                        formatters[i].format(dateTime));
+            }
+        }
+    }
+
+    @Test
+    public void test_output_width_2() {
+        List<LocalDateTime> dateTimes = dateTimes(true);
+        ChronoField[] fields = {
+                ChronoField.DAY_OF_MONTH,
+                ChronoField.HOUR_OF_DAY,
+                ChronoField.SECOND_OF_MINUTE,
+                ChronoField.CLOCK_HOUR_OF_DAY,
+                ChronoField.ALIGNED_WEEK_OF_YEAR
+        };
+        DateTimeFormatter[] formatters_1_2 = new DateTimeFormatter[fields.length];
+        DateTimeFormatter[] formatters_2_2 = new DateTimeFormatter[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            formatters_1_2[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 1, 2, SignStyle.NOT_NEGATIVE)
+                    .toFormatter();
+            formatters_2_2[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 2, 2, SignStyle.NOT_NEGATIVE)
+                    .toFormatter();
+        }
+        for (LocalDateTime dateTime : dateTimes) {
+            for (int i = 0; i < fields.length; i++) {
+                assertEquals(
+                        String.valueOf(dateTime.get(fields[i])),
+                        formatters_1_2[i].format(dateTime));
+                assertEquals(
+                        "%02d".formatted(dateTime.get(fields[i])),
+                        formatters_2_2[i].format(dateTime));
+            }
+        }
+    }
+
+    @Test
+    public void test_output_width_3() {
+        List<LocalDateTime> dateTimes = dateTimes(true);
+        ChronoField[] fields = {ChronoField.ALIGNED_WEEK_OF_YEAR, ChronoField.DAY_OF_YEAR, ChronoField.MILLI_OF_SECOND};
+        DateTimeFormatter[] formatters_3_3 = new DateTimeFormatter[fields.length];
+        DateTimeFormatter[] formatters_1_3 = new DateTimeFormatter[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            formatters_3_3[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 3, 3, SignStyle.NOT_NEGATIVE)
+                    .toFormatter();
+            formatters_1_3[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 1, 3, SignStyle.NOT_NEGATIVE)
+                    .toFormatter();
+        }
+        for (LocalDateTime dateTime : dateTimes) {
+            for (int i = 0; i < fields.length; i++) {
+                assertEquals(
+                        "%03d".formatted(dateTime.get(fields[i])),
+                        formatters_3_3[i].format(dateTime));
+                assertEquals(
+                        Integer.toString(dateTime.get(fields[i])),
+                        formatters_1_3[i].format(dateTime));
+            }
+        }
+    }
+
+    @Test
+    public void test_output_width_4() {
+        ChronoField[] fields = {ChronoField.YEAR, ChronoField.YEAR_OF_ERA};
+        DateTimeFormatter[] formatters_4_4 = new DateTimeFormatter[fields.length];
+        DateTimeFormatter[] formatters_4_EXCEEDS_PAD = new DateTimeFormatter[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            formatters_4_4[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 4, 9, SignStyle.NOT_NEGATIVE)
+                    .toFormatter();
+            formatters_4_EXCEEDS_PAD[i] = new DateTimeFormatterBuilder()
+                    .appendValue(fields[i], 4, 9, SignStyle.EXCEEDS_PAD)
+                    .toFormatter();
+        }
+        LocalDate date = LocalDate.of(1972, 1, 1);
+        for (int i = 0; i < fields.length; i++) {
+            assertEquals(
+                    "%04d".formatted(date.get(fields[i])),
+                    formatters_4_4[i].format(date));
+            assertEquals(
+                    "%04d".formatted(date.get(fields[i])),
+                    formatters_4_EXCEEDS_PAD[i].format(date));
+        }
+    }
+
+    @Test
+    public void test_output_nano_second() {
+        DateTimeFormatter[] formatters = new DateTimeFormatter[9];
+        DateTimeFormatter[] formatters_fixed_width = new DateTimeFormatter[9];
+        for (int i = 0; i < 9; i++) {
+            int width = i + 1;
+            formatters[i] = new DateTimeFormatterBuilder()
+                    .appendFraction(ChronoField.NANO_OF_SECOND, 1, width, false)
+                    .toFormatter();
+            formatters_fixed_width[i] = new DateTimeFormatterBuilder()
+                    .appendFraction(ChronoField.NANO_OF_SECOND, width, width, false)
+                    .toFormatter();
+        }
+        int nanoOfSecond = 123456789;
+        String nanoOfSecondStr = Integer.toString(nanoOfSecond);
+        LocalTime date = LocalTime.of(12, 13,14, nanoOfSecond);
+        for (int i = 0; i < formatters.length; i++) {
+            assertEquals(
+                    nanoOfSecondStr.substring(0, i + 1),
+                    formatters[i].format(date));
+            assertEquals(
+                    nanoOfSecondStr.substring(0, i + 1),
+                    formatters_fixed_width[i].format(date));
         }
     }
 

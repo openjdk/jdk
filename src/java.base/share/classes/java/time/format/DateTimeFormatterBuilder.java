@@ -3048,19 +3048,36 @@ public final class DateTimeFormatterBuilder {
             printValue(buf, decimalStyle, size, value);
         }
 
-        protected void printValueWidth1NotNegative(StringBuilder buf, int value) {
-            buf.append((char) ('0' + value));
+        protected int value1(int value) {
+            return value;
+        }
+
+        protected int value2(int value) {
+            return value;
+        }
+
+        protected int value3(int value) {
+            return value;
+        }
+
+        protected int value4(int value) {
+            return value;
+        }
+
+        protected final void printValueWidth1NotNegative(StringBuilder buf, int value) {
+            buf.append((char) ('0' + value1(value)));
         }
 
         protected final void printValueWidth2NotNegative(StringBuilder buf, int value) {
-            buf.append(value);
+            buf.append(value2(value));
         }
 
-        protected void printValueFixedWidth2NotNegative(StringBuilder buf, int value) {
-            JLA.appendPair(buf, value);
+        protected final void printValueFixedWidth2NotNegative(StringBuilder buf, int value) {
+            JLA.appendPair(buf, value2(value));
         }
 
-        protected void printValueFixWidth3NotNegative(StringBuilder buf, int value) {
+        protected final void printValueFixWidth3NotNegative(StringBuilder buf, int value) {
+            value = value3(value);
             if (value >= 1000) {
                 maxWidthError(value);
             }
@@ -3070,15 +3087,18 @@ public final class DateTimeFormatterBuilder {
             buf.append(value);
         }
 
-        protected void printValueFixWidth4NotNegative(StringBuilder buf, int value) {
+        protected final void printValueFixWidth4NotNegative(StringBuilder buf, int value) {
+            value = value4(value);
             if (Math.abs(value) >= 10000) {
                 maxWidthError(value);
             }
+            int value2 = value / 100;
             JLA.appendPair(buf, value / 100);
-            JLA.appendPair(buf, value % 100);
+            JLA.appendPair(buf, value - value2 * 100);
         }
 
         protected final void printValueWidth4ExceedsPad(StringBuilder buf, int value) {
+            value = value4(value);
             if (value >= 0) {
                 if (value > 9999) {
                     buf.append('+');
@@ -3730,26 +3750,20 @@ public final class DateTimeFormatterBuilder {
             }
         }
 
-        protected void printValueWidth1NotNegative(StringBuilder buf, int value) {
-            buf.append(value / 100_000_000);
+        protected int value1(int value) {
+            return value / 100_000_000;
         }
 
-        protected void printValueFixedWidth2NotNegative(StringBuilder buf, int value) {
-            JLA.appendPair(buf, value / 10_000_000);
+        protected int value2(int value) {
+            return value / 10_000_000;
         }
 
-        protected void printValueFixWidth3NotNegative(StringBuilder buf, int value) {
-            value /= 1000_000;
-            if (value < 100) {
-                buf.repeat('0', value < 10 ? 2 : 1);
-            }
-            buf.append(value);
+        protected int value3(int value) {
+            return value / 1_000_000;
         }
 
-        protected void printValueFixWidth4NotNegative(StringBuilder buf, int value) {
-            value /= 100_000;
-            JLA.appendPair(buf, value / 100);
-            JLA.appendPair(buf, value % 100);
+        protected int value4(int value) {
+            return value / 100_000;
         }
 
         @Override
@@ -6469,6 +6483,13 @@ public final class DateTimeFormatterBuilder {
                             }
                             cb.invokevirtual(CD_NumberPrinterParser, formatMethod(pp), MTD_formatValue_int);
                             return;
+                        } else if (chronoField.range().getMinimum() >= Integer.MIN_VALUE
+                                && chronoField.range().getMaximum() <= Integer.MAX_VALUE
+                        ) {
+                            getfield(cb, pp, index);
+                            cb.invokevirtual(CD_TemporalAccessorWrapper, "get", MTD_int_TemporalField)
+                              .invokevirtual(CD_NumberPrinterParser, formatMethod(pp), MTD_formatValue_int);
+                            return;
                         }
                     }
 
@@ -6486,7 +6507,7 @@ public final class DateTimeFormatterBuilder {
 
                     String method = "format";
                     if (pp.signStyle == SignStyle.NOT_NEGATIVE) {
-                        if (pp.minWidth == 1 && pp.maxWidth == 1 && minimum >= 0 && maximumSize == 1) {
+                        if (pp.minWidth == 1 && pp.maxWidth == 1) {
                             method = "printValueWidth1NotNegative";
                         } else if (pp.maxWidth == 2 && minimum >= 0) {
                             if (pp.minWidth == 1) {
@@ -6494,10 +6515,8 @@ public final class DateTimeFormatterBuilder {
                             } else if (pp.minWidth == 2) {
                                 method = "printValueFixedWidth2NotNegative";
                             }
-                        } else if (pp.minWidth == 3 && pp.maxWidth == 3) {
-                            if (minimum >= 0 && maximumSize <= 3) {
-                                method = "printValueFixWidth3NotNegative";
-                            }
+                        } else if (pp.minWidth == 3 && pp.maxWidth == 3 && minimum >= 0) {
+                            method = "printValueFixWidth3NotNegative";
                         } else if (pp.minWidth == 4 && pp.maxWidth == 4) {
                             method = "printValueFixWidth4NotNegative";
                         }
@@ -6862,6 +6881,9 @@ public final class DateTimeFormatterBuilder {
         // Wrapper for speeding up access to TemporalField
         //-----------------------------------------------------------------------
         static record TemporalAccessorWrapper(TemporalAccessor ta, LocalDate localDate, LocalTime localTime) {
+            public int get(TemporalField field) {
+                return ta.get(field);
+            }
             public long getLong(TemporalField field) {
                 return ta.getLong(field);
             }
