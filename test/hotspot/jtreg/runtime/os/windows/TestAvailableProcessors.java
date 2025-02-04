@@ -62,7 +62,13 @@ public class TestAvailableProcessors {
     private static String getWindowsVersion() throws IOException {
         String systeminfoPath = "systeminfo.exe";
 
-        var processBuilder = new ProcessBuilder(systeminfoPath);
+        List<String> command = new ArrayList<>();
+        //Execution command to prevent garbled characters
+        command.addAll(List.of("cmd.exe", "/c", "chcp 437", ">nul", "2>&1", "&&"));
+        //Execute command to obtain OS Version
+        command.add(systeminfoPath);
+
+        var processBuilder = new ProcessBuilder(command);
         OutputAnalyzer outputAnalyzer = new OutputAnalyzer(processBuilder.start());
         outputAnalyzer.shouldHaveExitValue(0);
         outputAnalyzer.shouldContain(osVersionMessage);
