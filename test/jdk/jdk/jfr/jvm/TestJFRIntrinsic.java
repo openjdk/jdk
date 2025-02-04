@@ -24,7 +24,6 @@
 /**
  * @test
  * @summary Intrinsic for JFR
- * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  *

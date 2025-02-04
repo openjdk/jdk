@@ -29,6 +29,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @requires vm.flagless
+ * @requires vm.debug == true
  *
  * @run driver compiler.inlining.LateInlinePrinting
  */

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,8 +179,8 @@ class MacroAssembler: public Assembler {
   //
   // branch, jump
   //
-  // set dst to -1, 0, +1 as follows: if CCR0bi is "greater than", dst is set to 1,
-  // if CCR0bi is "equal", dst is set to 0, otherwise it's set to -1.
+  // set dst to -1, 0, +1 as follows: if CR0bi is "greater than", dst is set to 1,
+  // if CR0bi is "equal", dst is set to 0, otherwise it's set to -1.
   void inline set_cmp3(Register dst);
   // set dst to (treat_unordered_like_less ? -1 : +1)
   void inline set_cmpu3(Register dst, bool treat_unordered_like_less);
