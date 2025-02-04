@@ -39,57 +39,88 @@ public abstract class Renderer {
 
     private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile("\\$([a-zA-Z_][a-zA-Z0-9_]*)");
     private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile("#([a-zA-Z_][a-zA-Z0-9_]*)");
-    private static final ArrayList<Frame> STACK = new ArrayList<Frame>();
+    private static Frame baseFrame = null;
+    private static Frame currentFrame = null;
 
     static int variableId = 0;
 
     public static String render(TemplateUse templateUse) {
-        if (!STACK.isEmpty()) {
-            throw new RendererException("Nested render not allowed");
+        // Check nobody else is using the Renderer.
+        if (baseFrame != null) {
+            throw new RendererException("Nested render not allowed.");
         }
+        baseFrame = new Frame(null);
+        currentFrame = baseFrame;
+
+        renderTemplateUse(templateUse);
+
+        // Ensure Frame consistency.
+        if (baseFrame != currentFrame) {
+            throw new RendererException("Renderer did not end up at base frame.");
+        }
+
+        // Collect Code to String.
         StringBuilder builder = new StringBuilder();
-        renderTemplateUse(templateUse).renderTo(builder);
-        return builder.toString();
+        baseFrame.getCode().renderTo(builder);
+        String code = builder.toString();
+
+        // Release the Renderer.
+        baseFrame = null;
+
+        return code;
     }
 
     public static String $(String name) {
-        return currentStackFrame().variableName(name);
+        return getCurrentFrame().variableName(name);
     }
 
     public static Nothing let(String key, Object value) {
-        currentStackFrame().addContext(key, value.toString());
+        getCurrentFrame().addContext(key, value.toString());
         return Nothing.instance;
     }
 
     public static <T, R> R let(String key, T value, Function<T, R> block) {
-        currentStackFrame().addContext(key, value.toString());
+        getCurrentFrame().addContext(key, value.toString());
         return block.apply(value);
     }
 
+    // TODO fuel
     public static int depth() {
-        return STACK.size();
+        return getCurrentFrame().depth();
     }
 
-    private static Frame currentStackFrame() {
-        if (STACK.isEmpty()) {
+    private static Frame getCurrentFrame() {
+        if (currentFrame == null) {
+            // TODO update text
             throw new RendererException("A method such as $ or let was called outside a template rendering. Make sure you are not calling templates yourself, but use use().");
         }
-        return STACK.getLast();
+        return currentFrame;
     }
 
-    private static Code renderTemplateUse(TemplateUse templateUse) {
-        Frame frame = new Frame();
-        STACK.add(frame);
-        templateUse.visitArguments((name, value) -> frame.addContext(name, value.toString()));
+    private static void renderTemplateUse(TemplateUse templateUse) {
+        // Add nested Frame.
+        Frame frame = new Frame(getCurrentFrame());
+        currentFrame = frame;
+
+        templateUse.visitArguments((name, value) -> currentFrame.addContext(name, value.toString()));
         InstantiatedTemplate it = templateUse.instantiate();
         for (Object e : it.elements()) {
-            renderElement(frame, e);
+            renderElement(e);
         }
-        STACK.removeLast();
-        return frame.getCode();
+
+        if (frame != getCurrentFrame()) {
+            throw new RendererException("Frame mismatch.");
+        }
+
+        // Append code from nested scope to outer scope.
+        frame.parent.addCode(frame.getCode());
+
+        // Remove nested frame.
+        currentFrame = currentFrame.parent;
     }
 
-    private static void renderElement(Frame frame, Object element) {
+    private static void renderElement(Object element) {
+        Frame frame = getCurrentFrame();
         switch (element) {
             case Nothing x -> {}
             case String s ->  frame.addString(templateString(s, frame));
@@ -99,14 +130,14 @@ public abstract class Renderer {
             case Float s ->   frame.addString(s.toString());
             case List l -> {
                 for (Object e : l) {
-                    renderElement(frame, e);
+                    renderElement(e);
                 }
             }
             case Hook h ->    frame.addHook(h);
             case HookInsert(Hook hook, TemplateUse t) -> {
                 Frame f = frameForHook(hook); //.insertIntoHook(hook, render(t));
             }
-            case TemplateUse t -> frame.addCode(renderTemplateUse(t));
+            case TemplateUse t -> renderTemplateUse(t);
             default -> throw new RendererException("body contained unexpected element: " + element);
         }
     }
@@ -117,11 +148,12 @@ public abstract class Renderer {
     }
 
     private static Frame frameForHook(Hook hook) {
-        for (int i = STACK.size() - 1; i >= 0; i--) {
-            Frame frame = STACK.get(i);
+        Frame frame = getCurrentFrame();
+        while (frame != null) {
             if (frame.hasHook(hook)) {
                 return frame;
             }
+            frame = frame.parent;
         }
         throw new RendererException("hook " + hook.name() + " was referenced but not found!");
     }

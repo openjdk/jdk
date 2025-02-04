@@ -29,11 +29,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 class Frame {
+    public final Frame parent;
     private final List<Code> codeList = new ArrayList<Code>();
     private final Map<Hook, Code.CodeList> hookCodeLists = new HashMap<>();
 
     private final Map<String, String> variableNames = new HashMap<>();
     private final Map<String, String> context = new HashMap<>();
+
+    Frame(Frame parent) {
+        this.parent = parent;
+    }
+
+    public int depth() {
+        if (parent == null) { return 0; }
+        return parent.depth() + 1;
+    }
 
     void addString(String s) {
         codeList.add(new Code.Token(s));
