@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,10 @@ requires.extraPropDefns.libs = \
     ../../lib/jdk/test/lib/Container.java
 requires.extraPropDefns.javacOpts = --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
 requires.extraPropDefns.vmOpts = \
-    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI \
+    -XX:+UnlockDiagnosticVMOptions \
+    -XX:+LogVMOutput -XX:-DisplayVMOutput -XX:LogFile=vmprops.flags.final.vm.log \
+    -XX:+PrintFlagsFinal \
+    -XX:+WhiteBoxAPI \
     --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
 requires.properties= \
     sun.arch.data.model \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,19 +20,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package metaspace.share;
 
+/*
+ * @test
+ * @bug 8348038
+ * @summary Verify use of "-XDignore.symbol.file=true" doesn't cause assertion failure
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
+ */
 
-import jdk.test.whitebox.WhiteBox;
-import nsk.share.test.ExecutionController;
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
-public class TriggerUnloadingWithWhiteBox implements TriggerUnloadingHelper {
+public class JavadocIgnoreSymbolFile {
 
-        private final static WhiteBox wb = WhiteBox.getWhiteBox();
-
-        @Override
-        public void triggerUnloading(ExecutionController stresser) {
-                wb.fullGC();
+    public static void main(String[] args) {
+        String[] javadocArgs = new String[] {
+            "-XDignore.symbol.file=true"
+        };
+        StringWriter buf = new StringWriter();
+        try (PrintWriter pw = new PrintWriter(buf)) {
+            jdk.javadoc.internal.tool.Main.execute(javadocArgs, pw);
         }
-
+        String expected = "error: No modules, packages or classes specified. 1 error";
+        String actual = buf.toString().trim().replaceAll("\\s+", " ");
+        if (!actual.equals(expected))
+            throw new AssertionError("unexpected output:\n" + actual);
+    }
 }

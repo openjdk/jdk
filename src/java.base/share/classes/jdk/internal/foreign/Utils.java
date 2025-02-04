@@ -298,7 +298,7 @@ public final class Utils {
         return "0x" + Long.toHexString(value);
     }
 
-    public record BaseAndScale(int base, long scale) {
+    public record BaseAndScale(long base, long scale) {
 
         public static final BaseAndScale BYTE =
                 new BaseAndScale(Unsafe.ARRAY_BYTE_BASE_OFFSET, Unsafe.ARRAY_BYTE_INDEX_SCALE);

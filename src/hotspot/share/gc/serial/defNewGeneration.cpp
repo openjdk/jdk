@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.inline.hpp"

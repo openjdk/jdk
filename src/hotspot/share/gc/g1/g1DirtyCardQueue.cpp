@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.inline.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"

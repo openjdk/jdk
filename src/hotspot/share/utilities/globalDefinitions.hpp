@@ -134,12 +134,6 @@ class oopDesc;
 #define UINT64_FORMAT_W(width)   "%"   #width PRIu64
 #define UINT64_FORMAT_0          "%016"       PRIx64
 
-
-// Format integers which change size between 32- and 64-bit.
-#define SIZE_FORMAT              "%"          PRIuPTR
-#define SIZE_FORMAT_X            "0x%"        PRIxPTR
-#define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
-
 // Format jlong, if necessary
 #ifndef JLONG_FORMAT
 #define JLONG_FORMAT             INT64_FORMAT
@@ -373,15 +367,15 @@ inline T byte_size_in_proper_unit(T s) {
   }
 }
 
-#define PROPERFMT             SIZE_FORMAT "%s"
+#define PROPERFMT             "%zu%s"
 #define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
 
 // Printing a range, with start and bytes given
-#define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
+#define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (%zu bytes)"
 #define RANGEFMTARGS(p1, size) p2i(p1), p2i(p1 + size), size
 
 // Printing a range, with start and end given
-#define RANGE2FMT             "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
+#define RANGE2FMT             "[" PTR_FORMAT " - " PTR_FORMAT "), (%zu bytes)"
 #define RANGE2FMTARGS(p1, p2) p2i(p1), p2i(p2), ((uintptr_t)p2 - (uintptr_t)p1)
 
 inline const char* exact_unit_for_byte_size(size_t s) {
@@ -414,12 +408,12 @@ inline size_t byte_size_in_exact_unit(size_t s) {
   return s;
 }
 
-#define EXACTFMT            SIZE_FORMAT "%s"
+#define EXACTFMT            "%zu%s"
 #define EXACTFMTARGS(s)     byte_size_in_exact_unit(s), exact_unit_for_byte_size(s)
 
 // Memory size transition formatting.
 
-#define HEAP_CHANGE_FORMAT "%s: " SIZE_FORMAT "K(" SIZE_FORMAT "K)->" SIZE_FORMAT "K(" SIZE_FORMAT "K)"
+#define HEAP_CHANGE_FORMAT "%s: %zuK(%zuK)->%zuK(%zuK)"
 
 #define HEAP_CHANGE_FORMAT_ARGS(_name_, _prev_used_, _prev_capacity_, _used_, _capacity_) \
   (_name_), (_prev_used_) / K, (_prev_capacity_) / K, (_used_) / K, (_capacity_) / K

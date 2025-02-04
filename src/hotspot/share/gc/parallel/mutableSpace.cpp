@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/shared/pretouchTask.hpp"
 #include "gc/shared/spaceDecorator.hpp"
