@@ -147,12 +147,12 @@ void ShenandoahGenerationalControlThread::prepare_for_allocation_failure_request
       !old_gen_evacuation_failed && request.cause != GCCause::_shenandoah_humongous_allocation_failure) {
     heuristics->record_allocation_failure_gc();
     _heap->shenandoah_policy()->record_alloc_failure_to_degenerated(_degen_point);
-    request.mode = stw_degenerated;
+    set_gc_mode(stw_degenerated);
   } else {
     heuristics->record_allocation_failure_gc();
     _heap->shenandoah_policy()->record_alloc_failure_to_full();
     request.generation = _heap->global_generation();
-    request.mode = stw_full;
+    set_gc_mode(stw_full);
   }
 }
 
@@ -163,9 +163,9 @@ void ShenandoahGenerationalControlThread::prepare_for_explicit_gc_request(Shenan
   global_heuristics->record_requested_gc();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
-    request.mode = stw_full;
+    set_gc_mode(stw_full);
   } else {
-    request.mode = concurrent_normal;
+    set_gc_mode(concurrent_normal);
     // Unload and clean up everything
     _heap->set_unload_classes(global_heuristics->can_unload_classes());
   }
@@ -176,7 +176,7 @@ void ShenandoahGenerationalControlThread::prepare_for_concurrent_gc_request(Shen
              "Old heuristic should not request cycles while it waits for mixed evacuations");
 
   // preemption was requested or this is a regular cycle
-  request.mode = request.generation->is_old() ? servicing_old : concurrent_normal;
+  set_gc_mode(request.generation->is_old() ? servicing_old : concurrent_normal);
 
   if (request.generation->is_global()) {
     ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
@@ -198,7 +198,7 @@ void ShenandoahGenerationalControlThread::maybe_set_aging_cycle() {
 void ShenandoahGenerationalControlThread::run_gc_cycle(ShenandoahGCRequest request) {
 
   log_debug(gc, thread)("Starting GC: %s", GCCause::to_string(request.cause));
-  set_gc_mode(request.mode);
+  assert(gc_mode() != none, "GC mode cannot be none here");
 
   // Blow away all soft references on this cycle, if handling allocation failure,
   // either implicit or explicit GC request, or we are requested to do so unconditionally.

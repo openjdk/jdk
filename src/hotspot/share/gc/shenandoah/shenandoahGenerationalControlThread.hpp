@@ -53,10 +53,9 @@ public:
 
   class ShenandoahGCRequest {
   public:
-    ShenandoahGCRequest() : generation(nullptr), cause(GCCause::_no_gc), mode(none) {}
+    ShenandoahGCRequest() : generation(nullptr), cause(GCCause::_no_gc) {}
     ShenandoahGeneration* generation;
     GCCause::Cause cause;
-    GCMode mode;
   };
 
 private:
