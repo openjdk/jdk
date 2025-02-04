@@ -77,7 +77,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     }
 
     /**
-     * Gets the address of the pointer to the native failed speculations list.
+     * Gets the address of the pointer to the native failed speculations list.  This always returns a non-zero address.
      *
      * @see #managesFailedSpeculations()
      */
