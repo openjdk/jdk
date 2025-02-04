@@ -272,7 +272,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * unless the given minimum capacity is greater than that.
      *
      * @param  minCapacity the desired minimum capacity
-     * @param  oldLength current length
+     * @param  oldLength the raw length of the current value array, without being processed using coder.
      * @param  coder the coder to be used when calculating the capacity length
      * @throws OutOfMemoryError if minCapacity is less than zero or
      *         greater than (Integer.MAX_VALUE >> coder)
