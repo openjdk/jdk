@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,13 +96,16 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
+import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.UnsupportedTemporalTypeException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -907,7 +911,44 @@ public class TCKDateTimeFormatter {
     }
 
     @Test
-    public void test_out_twice_1() {
+    public void test_output_twice() {
+        List<LocalDateTime> dateTimes = new ArrayList<>();
+        int[] years = {
+                -1, -10, -100, -1000, -10000, -100000, -1000000, -10000000, -100000000, -999999999,
+                0, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 999999999
+        };
+        int[] months = {1, 12};
+        int[] days = {1, 28};
+        int[] hours = {0, 9, 23};
+        int[] minutes = {0, 9, 59};
+        int[] seconds = {0, 9, 59};
+        int[] nanos = {
+                0, 9,
+                10, 99,
+                100, 999,
+                1000, 9999,
+                10000, 99999,
+                100000, 999999,
+                1000000, 9999999,
+                10000000, 99999999,
+                10000000, 999999999
+        };
+        for (int year : years) {
+            for (int month : months) {
+                for (int day : days) {
+                    for (int hour : hours) {
+                        for (int minute : minutes) {
+                            for (int second : seconds) {
+                                for (int nano : nanos) {
+                                    dateTimes.add(LocalDateTime.of(year, month, day, hour, minute, second, nano));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         int[] powers = new int[] {
                 1000000000,
                 100000000,
@@ -938,81 +979,105 @@ public class TCKDateTimeFormatter {
             timeFormatters[i] = DateTimeFormatter.ofPattern(timePatterns[i], Locale.US);
         }
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd yyyy-MM-dd", Locale.US);
-        LocalDateTime dateTime = LocalDateTime.now();
 
-        String dateStr = new StringBuilder().append(dateTime.getYear())
-                .append(dateTime.getMonthValue() < 10 ? "-0" : "-").append(dateTime.getMonthValue())
-                .append(dateTime.getDayOfMonth() < 10 ? "-0" : "-").append(dateTime.getDayOfMonth()).toString();
+        for (LocalDateTime dateTime : dateTimes) {
+            String dateStr = new StringBuilder()
+                    .append(dateTime.get(ChronoField.YEAR_OF_ERA) < 10000 ? "" : "+")
+                    .append("%04d".formatted(dateTime.get(ChronoField.YEAR_OF_ERA)))
+                    .append(dateTime.getMonthValue() < 10 ? "-0" : "-").append(dateTime.getMonthValue())
+                    .append(dateTime.getDayOfMonth() < 10 ? "-0" : "-").append(dateTime.getDayOfMonth()).toString();
 
-        String dateExpected = dateStr + " " + dateStr;
-        assertEquals(dateExpected, dateFormatter.format(dateTime));
-        assertEquals(dateExpected, dateFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
-        assertEquals(dateExpected, dateFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+            String dateExpected = dateStr + " " + dateStr;
+            assertEquals(dateExpected, dateFormatter.format(dateTime));
+            assertEquals(dateExpected, dateFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+            assertEquals(dateExpected, dateFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
 
-        for (int i = 0; i < patternCount; i++) {
-            StringBuilder buf = new StringBuilder()
-                    .append(dateTime.getHour() < 10 ? "0" : "").append(dateTime.getHour())
-                    .append(dateTime.getMinute() < 10 ? ":0" : ":").append(dateTime.getMinute())
-                    .append(dateTime.getSecond() < 10 ? ":0" : ":").append(dateTime.getSecond());
-            if (i > 0) {
-                buf.append('.');
-                int power = powers[i];
-                int value = dateTime.getNano() / power;
-                buf.append(("%0" + i + "d").formatted(value));
+            for (int i = 0; i < patternCount; i++) {
+                StringBuilder buf = new StringBuilder()
+                        .append(dateTime.getHour() < 10 ? "0" : "").append(dateTime.getHour())
+                        .append(dateTime.getMinute() < 10 ? ":0" : ":").append(dateTime.getMinute())
+                        .append(dateTime.getSecond() < 10 ? ":0" : ":").append(dateTime.getSecond());
+                if (i > 0) {
+                    buf.append('.');
+                    int power = powers[i];
+                    int value = dateTime.getNano() / power;
+                    buf.append(("%0" + i + "d").formatted(value));
+                }
+                String timeStr = buf.toString();
+                String dateTimeExpected = dateStr + " " + timeStr + " " + dateStr + " " + timeStr;
+                DateTimeFormatter dateTimeFormatter = dateTimeFormatters[i];
+                assertEquals(dateTimeExpected, dateTimeFormatter.format(dateTime));
+                assertEquals(dateTimeExpected, dateTimeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+                assertEquals(dateTimeExpected, dateTimeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+                assertEquals(dateTimeExpected, dateTimeFormatter.withZone(ZoneOffset.UTC).format(dateTime.toInstant(ZoneOffset.UTC)));
+
+                String timeExpected = timeStr + " " + timeStr;
+                DateTimeFormatter timeFormatter = timeFormatters[i];
+                assertEquals(timeExpected, timeFormatter.format(dateTime));
+                assertEquals(timeExpected, timeFormatter.format(dateTime.toLocalTime()));
+                assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+                assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC).toOffsetTime()));
+                assertEquals(timeExpected, timeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+                assertEquals(timeExpected, timeFormatter.withZone(ZoneOffset.UTC).format(dateTime.toInstant(ZoneOffset.UTC)));
             }
-            String timeStr = buf.toString();
-            String dateTimeExpected = dateStr + " " + timeStr + " " + dateStr + " " + timeStr;
-            DateTimeFormatter dateTimeFormatter = dateTimeFormatters[i];
+        }
+    }
+
+    @Test
+    public void test_output() {
+        List<LocalDateTime> dateTimes = new ArrayList<>();
+        int[] years = {
+                -1, -10, -100, -1000, -10000, -100000, -1000000, -10000000, -100000000, -999999999,
+                0, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 999999999
+        };
+        int[] months = {1, 12};
+        int[] days = {1, 28};
+        int[] hours = {0, 9, 23};
+        int[] minutes = {0, 9, 59};
+        int[] seconds = {0, 9, 59};
+        for (int year : years) {
+            for (int month : months) {
+                for (int day : days) {
+                    for (int hour : hours) {
+                        for (int minute : minutes) {
+                            for (int second : seconds) {
+                                dateTimes.add(LocalDateTime.of(year, month, day, hour, minute, second));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("u-M-d'T'H:m:s", Locale.US);
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("u-M-d", Locale.US);
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("H:m:s", Locale.US);
+
+        for (LocalDateTime dateTime : dateTimes) {
+            String dateExpected = new StringBuilder().append(dateTime.getYear())
+                    .append('-').append(dateTime.getMonthValue())
+                    .append('-').append(dateTime.getDayOfMonth())
+                    .toString();
+
+            assertEquals(dateExpected, dateFormatter.format(dateTime));
+            assertEquals(dateExpected, dateFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
+            assertEquals(dateExpected, dateFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
+
+            String timeExpected = new StringBuilder().append(dateTime.getHour())
+                    .append(':').append(dateTime.getMinute())
+                    .append(':').append(dateTime.getSecond())
+                    .toString();
+
+            String dateTimeExpected = dateExpected + "T" + timeExpected;
             assertEquals(dateTimeExpected, dateTimeFormatter.format(dateTime));
             assertEquals(dateTimeExpected, dateTimeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
             assertEquals(dateTimeExpected, dateTimeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
-            assertEquals(dateTimeExpected, dateTimeFormatter.withZone(ZoneOffset.UTC).format(dateTime.toInstant(ZoneOffset.UTC)));
 
-            String timeExpected = timeStr + " " + timeStr;
-            DateTimeFormatter timeFormatter = timeFormatters[i];
             assertEquals(timeExpected, timeFormatter.format(dateTime));
             assertEquals(timeExpected, timeFormatter.format(dateTime.toLocalTime()));
             assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
             assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC).toOffsetTime()));
             assertEquals(timeExpected, timeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
-            assertEquals(timeExpected, timeFormatter.withZone(ZoneOffset.UTC).format(dateTime.toInstant(ZoneOffset.UTC)));
         }
-    }
-
-    @Test
-    public void test_out_twice_2() {
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-M-d yyyy-M-d", Locale.US);
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("H:m:s H:m:s", Locale.US);
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-M-d H:m:s yyyy-M-d H:m:s", Locale.US);
-
-        LocalDateTime dateTime = LocalDateTime.now();
-
-        String dateStr = new StringBuilder().append(dateTime.getYear())
-                .append('-').append(dateTime.getMonthValue())
-                .append('-').append(dateTime.getDayOfMonth())
-                .toString();
-
-        String dateExpected = dateStr + " " + dateStr;
-        assertEquals(dateExpected, dateFormatter.format(dateTime));
-        assertEquals(dateExpected, dateFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
-        assertEquals(dateExpected, dateFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
-
-        String timeStr = new StringBuilder()
-                .append(dateTime.getHour())
-                .append(':').append(dateTime.getMinute())
-                .append(':').append(dateTime.getSecond())
-                .toString();
-
-        String dateTimeExpected = dateStr + " " + timeStr + " " + dateStr + " " + timeStr;
-        assertEquals(dateTimeExpected, dateTimeFormatter.format(dateTime));
-        assertEquals(dateTimeExpected, dateTimeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
-        assertEquals(dateTimeExpected, dateTimeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
-
-        String timeExpected = timeStr + " " + timeStr;
-        assertEquals(timeExpected, timeFormatter.format(dateTime));
-        assertEquals(timeExpected, timeFormatter.format(dateTime.toLocalTime()));
-        assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC)));
-        assertEquals(timeExpected, timeFormatter.format(OffsetDateTime.of(dateTime, ZoneOffset.UTC).toOffsetTime()));
-        assertEquals(timeExpected, timeFormatter.format(ZonedDateTime.of(dateTime, ZoneOffset.UTC)));
     }
 }
