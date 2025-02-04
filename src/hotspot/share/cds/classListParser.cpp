@@ -535,7 +535,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
 
 void ClassListParser::populate_cds_indy_info(const constantPoolHandle &pool, int cp_index, CDSIndyInfo* cii, TRAPS) {
   // Caller needs to allocate ResourceMark.
-  BSReference indy(pool, cp_index);
+  BootstrapReference indy(pool, cp_index);
   int name_index = indy.name_index();
   cii->add_item(pool->symbol_at(name_index)->as_C_string());
   int sig_index = indy.signature_index();

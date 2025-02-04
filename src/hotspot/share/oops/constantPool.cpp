@@ -913,7 +913,7 @@ static const char* exception_message(const constantPoolHandle& this_cp, int whic
     break;
   case JVM_CONSTANT_Dynamic:
     // return the name of the condy in the error message
-    message = BSReference(this_cp, which).name(this_cp);
+    message = BootstrapReference(this_cp, which).name(this_cp);
     break;
   default:
     ShouldNotReachHere();
@@ -1017,7 +1017,7 @@ BasicType ConstantPool::basic_type_for_constant_at(int cp_index) {
   constantTag tag = tag_at(cp_index);
   if (tag.is_dynamic_constant_or_error()) {
     // have to look at the signature for this one
-    BSReference condy(this, cp_index);
+    BootstrapReference condy(this, cp_index);
     Symbol* constant_type = condy.signature(this);
     return Signature::basic_type(constant_type);
   }
@@ -1515,8 +1515,8 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   case JVM_CONSTANT_InvokeDynamic:
   case JVM_CONSTANT_Dynamic:
   {
-    BSReference ref1(this, index1);
-    BSReference ref2(cp2,  index2);
+    BootstrapReference ref1(this, index1);
+    BootstrapReference ref2(cp2,  index2);
     if (compare_entry_to(ref1.nt_index(),  cp2, ref2.nt_index()) &&
         compare_bsme_to(ref1.bsme_index(), cp2, ref2.bsme_index())) {
       return true;
@@ -1855,7 +1855,7 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
   case JVM_CONSTANT_DynamicInError:
   case JVM_CONSTANT_InvokeDynamic:
   {
-    BSReference ref(from_cp, from_i);
+    BootstrapReference ref(from_cp, from_i);
     int k1 = ref.bsme_index();
     k1 += to_cp->bsm_attribute_count();  // to_cp might already have BSMs
     if (ref.tag().is_invoke_dynamic()) {
@@ -2314,7 +2314,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_Dynamic:
       case JVM_CONSTANT_DynamicInError: {
         *bytes = JVM_CONSTANT_Dynamic;
-        BSReference ref(this, idx);
+        BootstrapReference ref(this, idx);
         idx1 = ref.bsme_index();
         idx2 = ref.nt_index();
         Bytes::put_Java_u2((address) (bytes+1), idx1);
@@ -2324,7 +2324,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       }
       case JVM_CONSTANT_InvokeDynamic: {
         *bytes = tag;
-        BSReference ref(this, idx);
+        BootstrapReference ref(this, idx);
         idx1 = ref.bsme_index();
         idx2 = ref.nt_index();
         Bytes::put_Java_u2((address) (bytes+1), idx1);
@@ -2502,7 +2502,7 @@ void ConstantPool::print_entry_on(const int cp_index, outputStream* st) {
     case JVM_CONSTANT_DynamicInError :
     case JVM_CONSTANT_InvokeDynamic :
       {
-        BSReference ref(this, cp_index);
+        BootstrapReference ref(this, cp_index);
         BSMAttributeEntry* bsme = ref.bsme(this);
         st->print("bootstrap_method_index=%d name_and_type_index=%d",
                   ref.bsme_index(), ref.nt_index());

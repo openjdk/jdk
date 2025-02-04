@@ -33,7 +33,7 @@
 class BootstrapInfo : public StackObj {
   constantPoolHandle _pool;     // constant pool containing the bootstrap specifier
   const int   _bss_index;       // index of bootstrap specifier in CP (condy or indy)
-  BSReference _bss_data;        // indexes unpacked from the _bss_index
+  BootstrapReference _bss_data; // indexes unpacked from the _bss_index
   const int   _indy_index;      // internal index of indy call site, or -1 if a condy call
   Symbol*     _name;            // extracted from JVM_CONSTANT_NameAndType
   Symbol*     _signature;

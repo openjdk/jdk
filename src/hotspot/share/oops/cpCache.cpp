@@ -522,7 +522,7 @@ void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
       LogStreamHandle(Trace, cds, resolve) log;
       if (log.is_enabled()) {
         ResourceMark rm;
-        BSReference indy(cp, cp_index);
+        BootstrapReference indy(cp, cp_index);
         BSMAttributeEntry* bsme    = indy.bsme(cp);
         MethodHandleReference bsmh = bsme->bootstrap_method(cp);
         Symbol* bsm_name           = bsmh.name(cp);

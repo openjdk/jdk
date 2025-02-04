@@ -573,7 +573,7 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     case JVM_CONSTANT_Dynamic:  // fall through
     case JVM_CONSTANT_InvokeDynamic:
     {
-      BSReference ref(scratch_cp, scratch_i);
+      BootstrapReference ref(scratch_cp, scratch_i);
 
       // Index of the bootstrap specifier in the BSM data arrays
       int old_bsme_i = ref.bsme_index();

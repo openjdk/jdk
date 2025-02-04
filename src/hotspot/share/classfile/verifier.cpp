@@ -2193,7 +2193,7 @@ void ClassVerifier::verify_ldc(
       VerificationType::reference_type(
         vmSymbols::java_lang_invoke_MethodType()), CHECK_VERIFY(this));
   } else if (tag.is_dynamic_constant()) {
-    BSReference condy(cp, index);
+    BootstrapReference condy(cp, index);
     Symbol* constant_type = condy.signature(cp);
     // Field signature was checked in ClassFileParser.
     assert(SignatureVerifier::is_valid_type_signature(constant_type),

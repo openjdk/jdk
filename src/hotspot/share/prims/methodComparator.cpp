@@ -116,8 +116,8 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
   }
   case Bytecodes::_invokedynamic: {
     // Encoded indy index, should be negative
-    BSReference old_ref(old_cp, s_old->get_index_u4(), c_old);
-    BSReference new_ref(new_cp, s_new->get_index_u4(), c_new);
+    BootstrapReference old_ref(old_cp, s_old->get_index_u4(), c_old);
+    BootstrapReference new_ref(new_cp, s_new->get_index_u4(), c_new);
 
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant

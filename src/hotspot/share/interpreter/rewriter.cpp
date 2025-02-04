@@ -357,7 +357,7 @@ void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
         (tag.is_dynamic_constant() &&
          // keep regular ldc interpreter logic for condy primitives
          is_reference_type(Signature::basic_type(
-           BSReference(_pool, cp_index).signature(_pool)
+           BootstrapReference(_pool, cp_index).signature(_pool)
          )))
         ) {
       int ref_index = cp_entry_to_resolved_references(cp_index);

@@ -748,7 +748,7 @@ C2V_VMENTRY_NULL(jobject, lookupConstantInPool, (JNIEnv* env, jobject, ARGUMENT_
     if (obj == nullptr) {
       return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
     }
-    BSReference condy(cp, cp_index);
+    BootstrapReference condy(cp, cp_index);
     BasicType bt = Signature::basic_type(condy.signature(cp));
     if (!is_reference_type(bt)) {
       if (!is_java_primitive(bt)) {
@@ -891,7 +891,7 @@ C2V_END
 
 C2V_VMENTRY_0(jint, bootstrapArgumentIndexAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint cpi, jint index))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  BSReference indy(cp, cpi);  // indy or condy
+  BootstrapReference indy(cp, cpi);  // indy or condy
   BSMAttributeEntry* bsme = indy.bsme(cp);
   return bsme->argument_index(index);
 C2V_END

@@ -446,7 +446,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         if (!_need_verify) break;
         // Use RawReference because CP structure is not fully checked yet.
         // A real FMReference causes asserts to fire on some bad classfiles.
-        RawReference ref(/*allow_malformed*/ true, cp, index);
+        RawReference ref = cp->possibly_malformed_RawReference_at(index);
         const int klass_ref_index         = ref.third_index();
         const int name_and_type_ref_index = ref.nt_index();
         guarantee_property(valid_klass_reference_at(klass_ref_index),
@@ -576,8 +576,8 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       case JVM_CONSTANT_InvokeDynamic:
       case JVM_CONSTANT_Dynamic: {
         // Use RawReference because CP structure is not fully checked yet.
-        // A real BSReference causes asserts to fire on some bad classfiles.
-        RawReference bsref(/*allow_malformed*/ true, cp, index);
+        // A real BootstrapReference causes asserts to fire on some bad classfiles.
+        RawReference bsref = cp->possibly_malformed_RawReference_at(index);
         const int name_and_type_ref_index = bsref.nt_index();
 
         guarantee_property(valid_cp_range(name_and_type_ref_index, length) &&
@@ -646,7 +646,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         if (_need_verify) {
           // CONSTANT_Dynamic's name and signature are verified above, when iterating NameAndType_info.
           // Need only to be sure signature is the right type.
-          BSReference bsref(cp, index);
+          BootstrapReference bsref(cp, index);
           // name, signature are already verified to be utf8
           if (Signature::is_method(bsref.signature(cp))) {
             throwIllegalSignature("CONSTANT_Dynamic", bsref.name(cp), bsref.signature(cp), CHECK);

@@ -282,7 +282,7 @@ void BytecodePrinter::print_dynamic(int cp_index, outputStream* st) {
     return;
   }
 
-  BSReference ref(constants, cp_index);
+  BootstrapReference ref(constants, cp_index);
   st->print(" bsm=%d", ref.bsme(constants)->bootstrap_method_index());
 
   Symbol* name = ref.name(constants);
@@ -307,7 +307,7 @@ void BytecodePrinter::print_invokedynamic(int indy_index, int cp_index, outputSt
 
 // cp_index: must be the cp_index of a JVM_CONSTANT_{Dynamic, DynamicInError, InvokeDynamic}
 void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
-  BSReference indy(constants(), cp_index);
+  BootstrapReference indy(constants(), cp_index);
   BSMAttributeEntry* bsme = indy.bsme(constants());
   MethodHandleReference bsmh = bsme->bootstrap_method(constants());
   const char* ref_kind = "";

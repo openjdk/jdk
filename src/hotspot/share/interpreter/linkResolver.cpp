@@ -651,7 +651,7 @@ Method* LinkResolver::resolve_method_statically(Bytecodes::Code code,
   // FIXME: Remove this method and ciMethod::check_call; refactor to use the other LinkResolver entry points.
   // resolve klass
   if (code == Bytecodes::_invokedynamic) {
-    BSReference indy(pool, index, code);
+    BootstrapReference indy(pool, index, code);
     Klass* resolved_klass = vmClasses::MethodHandle_klass();
     Symbol* method_name = vmSymbols::invoke_name();
     Symbol* method_signature = indy.signature(pool);

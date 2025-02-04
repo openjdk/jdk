@@ -411,7 +411,8 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_signature(ConstantPool* c
   return !exclude;
 }
 
-bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPool* cp, BSMAttributeEntry* bsme, int arg_i) {
+bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPool* cp, int bsme_index, int arg_i) {
+  BSMAttributeEntry* bsme = cp->bsm_attribute_entry(bsme_index);
   int mt_index = bsme->argument_index(arg_i);
   if (!cp->tag_at(mt_index).is_method_type()) {
     // malformed class?
@@ -428,7 +429,8 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPo
   return check_methodtype_signature(cp, sig);
 }
 
-bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, BSMAttributeEntry* bsme, int arg_i) {
+bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsme_index, int arg_i) {
+  BSMAttributeEntry* bsme = cp->bsm_attribute_entry(bsme_index);
   int mh_index = bsme->argument_index(arg_i);
   if (!cp->tag_at(mh_index).is_method_handle()) {
     // malformed class?
@@ -455,9 +457,10 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
     return false;
   }
 
-  BSReference indy(cp, cp_index);
+  BootstrapReference indy(cp, cp_index);
   BSMAttributeEntry* bsme    = indy.bsme(cp);
   MethodHandleReference bsmh = bsme->bootstrap_method(cp);
+  int     bsme_index         = indy.bsme_index();
   Symbol* bsm_name           = bsmh.name(cp);
   Symbol* bsm_signature      = bsmh.signature(cp);
   Symbol* bsm_klass          = bsmh.klass_name(cp);
@@ -542,17 +545,17 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
     }
 
     // interfaceMethodType
-    if (!check_lambda_metafactory_methodtype_arg(cp, bsme, 0)) {
+    if (!check_lambda_metafactory_methodtype_arg(cp, bsme_index, 0)) {
       return false;
     }
 
     // implementation
-    if (!check_lambda_metafactory_methodhandle_arg(cp, bsme, 1)) {
+    if (!check_lambda_metafactory_methodhandle_arg(cp, bsme_index, 1)) {
       return false;
     }
 
     // dynamicMethodType
-    if (!check_lambda_metafactory_methodtype_arg(cp, bsme, 2)) {
+    if (!check_lambda_metafactory_methodtype_arg(cp, bsme_index, 2)) {
       return false;
     }
 

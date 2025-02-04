@@ -77,67 +77,12 @@ public:
   }
 };
 
-// unpacked references into the CP, defined below:
-//class ConstantPool::NTReference;
-//class  ConstantPool::RawReference; // extends NTReference (no klass or bsme)
-class   FMReference;            // extends RawReference (add klass)
-class    BSReference;           // extends RawReference (add bsme)
-class  MethodHandleReference;   // extends RawReference (add MH kind & index)
-class MethodTypeReference;      // extends NTReference (but signature only)
-
-// A single entry from a BootstrapMethods (BSM) attribute.
-// It is an overlaid view of two or more consuctive u2 words within the
-// ConstantPool::bsm_attribute_entries array.
-// To its closest friends, a BSMAttributeEntry goes by the name "bsme".
-class BSMAttributeEntry {
- private:
-  u2 _bootstrap_method_index;
-  u2 _argument_count;
-  // C++ does not have a "Flexible Array Member" feature.
-  //u2 _argument_indexes[_argument_count];
-  const u2* argument_indexes() const { return (const u2*)(this+1); }
-
-  // These are overlays on top of Array<u2> data.  Do not construct.
-  BSMAttributeEntry() { ShouldNotReachHere(); }
-
-  // See also parse_classfile_bootstrap_methods_attribute in the class
-  // file parser, which builds this layout.
-
- public:
-  int bootstrap_method_index() const { return _bootstrap_method_index; }
-  int argument_count()         const { return _argument_count; }
-  int argument_index(int n)    const { assert((uint)n < _argument_count, "oob");
-                                       return argument_indexes()[n];
-                                     }
-
-  // utility methods for mapping BSM index to the metadata item
-  inline MethodHandleReference bootstrap_method(ConstantPool* cp) const;
-  // and a duplicate for clients holding a CP handle
-  inline MethodHandleReference bootstrap_method(const constantPoolHandle& cp) const;
-
- private:
-  // how to locate one of these inside a packed u2 data array:
-  static BSMAttributeEntry* entry_at_offset(Array<u2>* entries, int offset) {
-    assert(0 <= offset && offset+2 <= entries->length(), "oob-1");
-    // do not bother to copy u2 data; just overlay the struct within the array
-    BSMAttributeEntry* bsme = (BSMAttributeEntry*) entries->adr_at(offset);
-    assert(offset+2+bsme->argument_count() <= entries->length(), "oob-2");
-    return bsme;
-  }
-  friend class ConstantPool;  // uses entry_at_offset
-};
-
 class ConstantPool : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
   friend class AOTConstantPoolResolver;
-  // unpacked references into this pool, defined below:
-  friend class FMReference;
-  friend class BSReference;
-  friend class MethodHandleReference;
-  friend class MethodTypeReference;
 
  private:
   // If you add a new field that points to any metaspace object, you
@@ -554,16 +499,17 @@ class ConstantPool : public Metadata {
   //
   // This struct and its subtypes is cheap to build.  Also, it is cheap
   // to optimize away unused field values within the struct, if the
-  // object constructcion is inlined correctly.
+  // object construction is inlined correctly.
   //
   // Warning:  Please keep these structs simple, just tuples of
   // index values and other small integers.  It's probably a bad
   // idea to add destructors, virtual methods, or pointer fields.
   class NTReference {
-    friend class ConstantPool;
-   private:
     // some of these could be u1, but let's just keep it uniform
-    u2 _tag;                      // tag of the CP node using the name&type
+   protected:
+    u2 _tag;                      // tag of the CP node *using* the name&type
+                                  // it is protected so it can be reassigned
+   private:
     u2 _nt_index;                 // index of the name&type being used
     u2 _name_index;               // index of a name symbol (from name&type)
     u2 _signature_index;          // index of a signature symbol
@@ -617,83 +563,42 @@ class ConstantPool : public Metadata {
     //   int ni = nt.name_index();
     //   Symbol* sig = nt.signature(my_cp);
     NTReference(ConstantPool* cp, u2 cp_index)
-      : NTReference(false, cp, cp_index)
-    { }
+      : NTReference(/*allow_malformed*/ false, cp, cp_index) { }
     NTReference(const constantPoolHandle& cp, u2 cp_index)
-      : NTReference(cp(), cp_index)
-    { }
+      : NTReference(cp(), cp_index) { }
+
   private:
+    // The allow_malformed option is only used by the classfile
+    // parser's early validation logic.  It suppresses a single
+    // assert that is normally done.  If the assert would
+    // fail because there is no NameAndType at the address,
+    // the data structure is not populated with name and type.
+    friend class ConstantPool;
     NTReference(bool allow_malformed, ConstantPool* cp, u2 cp_index) {
       DEBUG_ONLY(record_cp(cp));
-      _tag      = JVM_CONSTANT_NameAndType;  // may be overwritten
       _nt_index = cp_index;
       if (allow_malformed && !cp->tag_at(cp_index).is_name_and_type()) {
         // This path is used only in CP validation phases of the classfile parser.
-        // We could make a separate function for it, but common code seems better.
-        _tag             = JVM_CONSTANT_Invalid;
-        _name_index      = 0;
-        _signature_index = 0;
-      } else {
-        assert_valid_tag(cp, cp_index, is_name_and_type());
-        jint bits        = *cp->int_at_addr(cp_index);
-        _name_index      = extract_low_short_from_int(bits);
-        _signature_index = extract_high_short_from_int(bits);
+        // In addition, it only happens when the classfile parser is parsing
+        // a classfile with a malformed NameAndType reference but has not yet
+        // gotten around to throwing an exception for the classfile.
+        // The only calls which can set allow_malformed to true originate
+        // from the classfile parser, which is a friend of this class
+        // (and also RawReference) so it can set that flag to true.
+        //
+        // We could make a separate function for it.  Common code is better,
+        // because then there are fewer code paths that need exercise.
+        return;
       }
+      // This is where 99.9999% of the code goes:
+      assert_valid_tag(cp, cp_index, is_name_and_type());
+      jint bits        = *cp->int_at_addr(cp_index);
+      _name_index      = extract_low_short_from_int(bits);
+      _signature_index = extract_high_short_from_int(bits);
+      _tag             = JVM_CONSTANT_NameAndType;  // may be overwritten
       // Note: subtypes of NTReference will overwrite this->_tag.
     }
   };
-
- private:
-  // The ugly templates keep the construction logic here, where it belongs.
-  // The classes being constructed are undefined at this point.
-
-  // CONSTANT_MethodType is the most complex.  It contains a whole
-  // field or method reference (with NameAndType) and adds more bits.
-  template<typename MethodHandleReference_ = MethodHandleReference>
-  void construct_method_handle_ref(MethodHandleReference_& ref, int cp_index) {
-    assert_valid_tag(this, cp_index, is_method_handle_or_error());
-    jint bits  = *int_at_addr(cp_index);
-    int kind   = extract_low_short_from_int(bits);  // mask out unwanted ref_index bits
-    int member = extract_high_short_from_int(bits);  // shift out unwanted ref_kind bits
-    construct_field_or_method_ref(ref, member);
-    ref._ref_kind  = kind;
-    ref._ref_index = member;
-    ref._tag       = JVM_CONSTANT_MethodHandle;  // must overwrite earlier tag
-  }
-
-  // CONSTANT_MethodType is very simple.  It has only a signature, not
-  // even a name&type.  But for better uniformity we will wrap it up.
-  template<typename MethodTypeReference_ = MethodTypeReference>
-  void construct_method_type_ref(MethodTypeReference_& ref, int cp_index) {
-    DEBUG_ONLY(ref.record_cp(this));
-    assert_valid_tag(this, cp_index, is_method_type_or_error());
-    int signature_index = *int_at_addr(cp_index);
-    ref._signature_index = signature_index;
-    ref._tag = JVM_CONSTANT_MethodType;
-  }
- public:
-
-  BSMAttributeEntry* bsm_attribute_entry(int bsm_attribute_index) {
-    int offset = bsm_attribute_offsets()->at(bsm_attribute_index);
-    return BSMAttributeEntry::entry_at_offset(bsm_attribute_entries(), offset);
-  }
-  int bsm_attribute_count() const {
-    if (bsm_attribute_offsets() == nullptr)  return 0;  // just in case
-    return bsm_attribute_offsets()->length();
-  }
-
-  // Compare BSM attribute entries between two CPs
-  bool compare_bsme_to(int bsme_index1, const constantPoolHandle& cp2,
-                       int bsme_index2);
-  // Find a matching BSM attribute entries in another CP
-  int find_matching_bsme(int bsme_index, const constantPoolHandle& search_cp,
-                         int search_len);
-  // Resize the BSM data arrays with delta_len and delta_size
-  void resize_bsm_data(int delta_len, int delta_size, TRAPS);
-  // Extend the BSM data arrays with the length and size of the BSM data in ext_cp
-  void extend_bsm_data(const constantPoolHandle& ext_cp, TRAPS);
-  // Shrink the BSM data arrays to a smaller array with new_len length
-  void shrink_bsm_data(int new_len, TRAPS);
 
   constantTag tag_ref_at(int which, Bytecodes::Code code) {
     return tag_at(to_cp_index(which, code));
@@ -809,12 +714,14 @@ private:
   // Common structure for the following tags:
   // CONSTANT_Fieldref, CONSTANT_Methodref, CONSTANT_InterfaceMethodref
   // CONSTANT_InvokeDynamic, CONSTANT_Dynamic
-  // This is less common than FMReference or BSReference, but is handy
-  // in a few places.
+  // This is less common than FMReference or BootstrapReference,
+  // but is handy in a few places.
   // A "raw" reference is a 3-tuple of (x, name, type), where x
   // is the index of a klass or a bootstrap attribute entry.
   // Since the CP node structure is identical, we treat "triples"
   // using common code.
+  class FMReference;         // subclass of RawReference
+  class BootstrapReference;  // ditto
   class RawReference : public NTReference {
    private:
     // a NameAndType has two u2 indexes, and here is the third:
@@ -825,9 +732,7 @@ private:
     int third_index() const       { return _third_index; }
 
     // You can always create a blank one, containing only zeroes.
-    RawReference()
-      : _third_index(0)
-    { }
+    RawReference() : _third_index(0) { }
 
     // usage:
     //   RawReference r3(my_cp, my_cp_index);
@@ -835,34 +740,32 @@ private:
     //   Symbol* sig = r3.signature(my_cp);
     //   int bsme = r3.tag().has_bootstrap() ? r3.third_index() : -1;
     RawReference(ConstantPool* cp, u2 cp_index)
-      : RawReference(false, cp, cp_index)
-    { }
+      : RawReference(false, cp, cp_index) { }
     RawReference(const constantPoolHandle& cp, u2 cp_index)
-      : RawReference(cp(), cp_index)
-    { }
+      : RawReference(cp(), cp_index) { }
 
-    RawReference(ConstantPool* cp, int which, Bytecodes::Code code)
-      : RawReference(cp, cp->to_cp_index(which, code))
-    { }
-    RawReference(const constantPoolHandle& cp, int which, Bytecodes::Code code)
-      : RawReference(cp(), which, code)
-    { }
+    RawReference(ConstantPool* cp, int cp_cache_index, Bytecodes::Code code)
+      : RawReference(cp, cp->to_cp_index(cp_cache_index, code)) { }
+    RawReference(const constantPoolHandle& cp, int cp_cache_index, Bytecodes::Code code)
+      : RawReference(cp(), cp_cache_index, code) { }
 
     // checked narrowing operations (in-place downcasts)
     const FMReference& as_FMRef() {
       assert(tag().is_field_or_method(), "must be valid as FMReference");
       return *(const FMReference*)this;
     }
-    const BSReference& as_BSRef() {
-      assert(tag().has_bootstrap(), "must be valid as BSReference");
-      return *(const BSReference*)this;
+    const BootstrapReference& as_BSRef() {
+      assert(tag().has_bootstrap(), "must be valid as BootstrapReference");
+      return *(const BootstrapReference*)this;
     }
 
    private:
-    friend class ClassFileParser;
     // The allow_malformed option is only used by the classfile
-    // parser's early validation logic.  It suppresses certain
-    // asserts that are normally done.
+    // parser's early validation logic.  It suppresses a single
+    // assert that is normally done.  If the assert would
+    // fail because there is no NameAndType at the address,
+    // the data structure is not populated with name and type.
+    friend class ConstantPool;
     RawReference(bool allow_malformed,
                  ConstantPool* cp, u2 cp_index) {
       constantTag tag = cp->tag_at(cp_index);
@@ -873,8 +776,9 @@ private:
       int third_index = extract_low_short_from_int(ref_bits);
 
       // given nt_index, we can now initialize the NameAndType parts:
-      *(NTReference*)this = NTReference(allow_malformed, cp, nt_index);
-      // allow_malformed relaxes checks on the nested NameAndType
+      *(NTReference*)this = cp->possibly_malformed_NTReference_at(nt_index, allow_malformed);
+      // allow_malformed relaxes one assert on the nested NameAndType,
+      // when called from classfile parser, only.
 
       // fill in the subclass bits
       _third_index = third_index;
@@ -882,23 +786,208 @@ private:
       _tag         = tag.value();  // must overwrite earlier tag, do it last
     }
   };
-
  private:
-  // The ugly templates keep the construction logic here, where it belongs.
-  // The classes being constructed are undefined at this point.
-
-  template<typename FMReference_ = FMReference>
-  void construct_field_or_method_ref(FMReference_& ref, int cp_index) {
-    assert_valid_tag(this, cp_index, is_field_or_method());
-    *(RawReference*)&ref = RawReference(this, cp_index);
+  // These are private to hide the possibility of malformation from public view.
+  NTReference possibly_malformed_NTReference_at(u2 cp_index, bool allow_malformed) {
+    return NTReference(allow_malformed, this, cp_index);
   }
-  template<typename BSReference_ = BSReference>
-  void construct_bootstrap_specifier_ref(BSReference_& ref, int cp_index) {
-    assert_valid_tag(this, cp_index, has_bootstrap());
-    *(RawReference*)&ref = RawReference(this, cp_index);
+  RawReference possibly_malformed_RawReference_at(u2 cp_index) {
+    bool allow_malformed = true;
+    return RawReference(allow_malformed, this, cp_index);
   }
-
  public:
+
+  // CONSTANT_Fieldref, CONSTANT_Methodref, CONSTANT_InterfaceMethodref
+  class FMReference : public RawReference {
+   public:
+    int klass_index() const       { return third_index(); }
+
+    Symbol* klass_name(ConstantPool* cp) const {
+      assert(is_same_cp(cp), "wrong CP pointer");
+      return cp->klass_name_at(klass_index());
+    }
+    Klass* klass(ConstantPool* cp, TRAPS) const {
+      assert(is_same_cp(cp), "wrong CP pointer");
+      return cp->klass_at(klass_index(), THREAD);
+    }
+    Symbol* klass_name(const constantPoolHandle& cp) const {
+      return klass_name(cp());
+    }
+    Klass* klass(const constantPoolHandle& cp, TRAPS) const {
+      return klass(cp(), THREAD);
+    }
+
+    // You can always create a blank one, containing only zeroes.
+    FMReference() { }
+
+    // usage:
+    //   FMReference mref(my_cp, my_cp_index);
+    //   int ni = mref.name_index();
+    //   Symbol* sig = mref.signature(my_cp);
+    //   Klass* holder = mref.klass(my_cp, CHECK);
+    FMReference(ConstantPool* cp, u2 cp_index) {
+      assert_valid_tag(cp, cp_index, is_field_or_method());
+      *(RawReference*)this = RawReference(cp, cp_index);
+      assert(sizeof(*this) == sizeof(RawReference), "no new fields in this class");
+    }
+    FMReference(const constantPoolHandle& cp, u2 cp_index)
+      : FMReference(cp(), cp_index) { }
+
+    FMReference(ConstantPool* cp, int cp_cache_index, Bytecodes::Code code)
+      : FMReference(cp, cp->to_cp_index(cp_cache_index, code)) { }
+    FMReference(const constantPoolHandle& cp, int cp_cache_index, Bytecodes::Code code)
+      : FMReference(cp(), cp_cache_index, code) { }
+  };
+
+  // CONSTANT_MethodHandle is the most complex.  It contains a whole
+  // field or method reference (with NameAndType) and adds more bits.
+  class MethodHandleReference : public FMReference {
+   private:
+    u2 _ref_kind;
+    u2 _ref_index;
+
+   public:
+    int ref_kind() const          { return _ref_kind; }
+    int ref_index() const         { return _ref_index; }
+
+    // You can always create a blank one, containing only zeroes.
+    MethodHandleReference() { }
+
+    MethodHandleReference(ConstantPool* cp, u2 cp_index) {
+      assert_valid_tag(cp, cp_index, is_method_handle_or_error());
+      jint bits  = *cp->int_at_addr(cp_index);
+      int kind   = extract_low_short_from_int(bits);  // mask out unwanted ref_index bits
+      int member = extract_high_short_from_int(bits);  // shift out unwanted ref_kind bits
+      *(FMReference*)this = FMReference(cp, member);
+      _ref_kind  = kind;
+      _ref_index = member;
+      _tag       = JVM_CONSTANT_MethodHandle;  // must overwrite earlier tag
+    }
+    MethodHandleReference(const constantPoolHandle& cp, u2 cp_index)
+      : MethodHandleReference(cp(), cp_index) { }
+  };
+
+  // CONSTANT_MethodType is very simple.  It has only a signature, not
+  // even a name&type.  But for better uniformity we will wrap it up.
+  class MethodTypeReference : public NTReference {
+   public:
+    // You can always create a blank one, containing only zeroes.
+    MethodTypeReference() { }
+
+    MethodTypeReference(ConstantPool* cp, u2 cp_index) {
+      DEBUG_ONLY(record_cp(cp));
+      assert_valid_tag(cp, cp_index, is_method_type_or_error());
+      int signature_index = *cp->int_at_addr(cp_index);
+      _signature_index = signature_index;
+      _tag = JVM_CONSTANT_MethodType;
+    }
+    MethodTypeReference(const constantPoolHandle& cp, u2 cp_index)
+      : MethodTypeReference(cp(), cp_index) { }
+  };
+
+  // A single entry from a BootstrapMethods (BSM) attribute.
+  // It is an overlaid view of two or more consuctive u2 words within the
+  // ConstantPool::bsm_attribute_entries array.
+  // To its closest friends, a BSMAttributeEntry goes by the name "bsme".
+  class BSMAttributeEntry {
+   private:
+    u2 _bootstrap_method_index;
+    u2 _argument_count;
+    // C++ does not have a "Flexible Array Member" feature.
+    //u2 _argument_indexes[_argument_count];
+    const u2* argument_indexes() const { return (const u2*)(this+1); }
+
+    // These are overlays on top of Array<u2> data.  Do not construct.
+    BSMAttributeEntry() { ShouldNotReachHere(); }
+
+    // See also parse_classfile_bootstrap_methods_attribute in the class
+    // file parser, which builds this layout.
+
+   public:
+    int bootstrap_method_index() const { return _bootstrap_method_index; }
+    int argument_count()         const { return _argument_count; }
+    int argument_index(int n)    const { assert((uint)n < _argument_count, "oob");
+                                         return argument_indexes()[n];
+                                       }
+
+    // utility methods for mapping BSM index to the metadata item
+    MethodHandleReference bootstrap_method(ConstantPool* cp) const {
+      return MethodHandleReference(cp, bootstrap_method_index());
+    }
+    // and a duplicate for clients holding a CP handle
+    MethodHandleReference bootstrap_method(const constantPoolHandle& cp) const {
+      return bootstrap_method(cp());
+    }
+
+   private:
+    // how to locate one of these inside a packed u2 data array:
+    friend class ConstantPool;  // uses entry_at_offset
+    static BSMAttributeEntry* entry_at_offset(Array<u2>* entries, int offset) {
+      assert(0 <= offset && offset+2 <= entries->length(), "oob-1");
+      // do not bother to copy u2 data; just overlay the struct within the array
+      BSMAttributeEntry* bsme = (BSMAttributeEntry*) entries->adr_at(offset);
+      assert(offset+2+bsme->argument_count() <= entries->length(), "oob-2");
+      return bsme;
+    }
+  };
+
+  BSMAttributeEntry* bsm_attribute_entry(int bsm_attribute_index) {
+    int offset = bsm_attribute_offsets()->at(bsm_attribute_index);
+    return BSMAttributeEntry::entry_at_offset(bsm_attribute_entries(), offset);
+  }
+  int bsm_attribute_count() const {
+    if (bsm_attribute_offsets() == nullptr)  return 0;  // just in case
+    return bsm_attribute_offsets()->length();
+  }
+
+  // Compare BSM attribute entries between two CPs
+  bool compare_bsme_to(int bsme_index1, const constantPoolHandle& cp2,
+                       int bsme_index2);
+  // Find a matching BSM attribute entries in another CP
+  int find_matching_bsme(int bsme_index, const constantPoolHandle& search_cp,
+                         int search_len);
+  // Resize the BSM data arrays with delta_len and delta_size
+  void resize_bsm_data(int delta_len, int delta_size, TRAPS);
+  // Extend the BSM data arrays with the length and size of the BSM data in ext_cp
+  void extend_bsm_data(const constantPoolHandle& ext_cp, TRAPS);
+  // Shrink the BSM data arrays to a smaller array with new_len length
+  void shrink_bsm_data(int new_len, TRAPS);
+
+  // CONSTANT_InvokeDynamic, CONSTANT_Dynamic
+  class BootstrapReference : public RawReference {
+   public:
+    int bsme_index() const        { return third_index(); }
+
+    BSMAttributeEntry* bsme(ConstantPool* cp) const {
+      assert(is_same_cp(cp), "wrong CP pointer");
+      return cp->bsm_attribute_entry(bsme_index());
+    }
+    // and a duplicate for clients holding a CP handle
+    BSMAttributeEntry* bsme(const constantPoolHandle& cp) const {
+      return bsme(cp());
+    }
+
+    // You can always create a blank one, containing only zeroes.
+    BootstrapReference() { }
+
+    // usage:
+    //   BootstrapReference bsref(my_cp, my_cp_index);
+    //   int ni = bsref.name_index();
+    //   Symbol* sig = bsref.signature(my_cp);
+    //   BSMAttributeEntry* bsme = bsref.bsme(my_cp);
+    BootstrapReference(ConstantPool* cp, u2 cp_index) {
+      assert_valid_tag(cp, cp_index, has_bootstrap());
+      *(RawReference*)this = RawReference(cp, cp_index);
+      assert(sizeof(*this) == sizeof(RawReference), "no new fields in this class");
+    }
+    BootstrapReference(const constantPoolHandle& cp, u2 cp_index)
+      : BootstrapReference(cp(), cp_index) { }
+
+    BootstrapReference(ConstantPool* cp, int cp_cache_index, Bytecodes::Code code)
+      : BootstrapReference(cp, cp->to_cp_index(cp_cache_index, code)) { }
+    BootstrapReference(const constantPoolHandle& cp, int cp_cache_index, Bytecodes::Code code)
+      : BootstrapReference(cp(), cp_cache_index, code) { }
+  };
 
   // Sharing
   int pre_resolve_shared_klasses(TRAPS);
@@ -1038,143 +1127,13 @@ private:
   #undef assert_valid_tag
 };
 
+// FIXME: Do we want these?
 using NTReference = ConstantPool::NTReference;
 using RawReference = ConstantPool::RawReference;
-
-// The following definitions are closely coupled to the CP, and deserve to be here.
-
-// CONSTANT_Fieldref, CONSTANT_Methodref, CONSTANT_InterfaceMethodref
-class FMReference : public RawReference {
- public:
-  int klass_index() const       { return third_index(); }
-
-  Symbol* klass_name(ConstantPool* cp) const {
-    assert(is_same_cp(cp), "wrong CP pointer");
-    return cp->klass_name_at(klass_index());
-  }
-  Klass* klass(ConstantPool* cp, TRAPS) const {
-    assert(is_same_cp(cp), "wrong CP pointer");
-    return cp->klass_at(klass_index(), THREAD);
-  }
-  Symbol* klass_name(const constantPoolHandle& cp) const {
-    return klass_name(cp());
-  }
-  Klass* klass(const constantPoolHandle& cp, TRAPS) const {
-    return klass(cp(), THREAD);
-  }
-
-  // You can always create a blank one, containing only zeroes.
-  FMReference()
-  { }
-
-  // usage:
-  //   FMReference mref(my_cp, my_cp_index);
-  //   int ni = mref.name_index();
-  //   Symbol* sig = mref.signature(my_cp);
-  //   Klass* holder = mref.klass(my_cp, CHECK);
-  FMReference(ConstantPool* cp, u2 cp_index) {
-    assert(sizeof(*this) == sizeof(RawReference), "no new fields in this class");
-    cp->construct_field_or_method_ref(*this, cp_index);
-  }
-  FMReference(const constantPoolHandle& cp, u2 cp_index)
-    : FMReference(cp(), cp_index)
-  { }
-
-  FMReference(ConstantPool* cp, int which, Bytecodes::Code code)
-    : FMReference(cp, cp->to_cp_index(which, code))
-  {
-  }
-  FMReference(const constantPoolHandle& cp, int which, Bytecodes::Code code)
-    : FMReference(cp(), which, code)
-  { }
-};
-
-// CONSTANT_InvokeDynamic, CONSTANT_Dynamic
-class BSReference : public RawReference {
- public:
-  int bsme_index() const        { return third_index(); }
-
-  BSMAttributeEntry* bsme(ConstantPool* cp) const {
-    assert(is_same_cp(cp), "wrong CP pointer");
-    return cp->bsm_attribute_entry(bsme_index());
-  }
-  // and a duplicate for clients holding a CP handle
-  BSMAttributeEntry* bsme(const constantPoolHandle& cp) const {
-    return bsme(cp());
-  }
-
-  // You can always create a blank one, containing only zeroes.
-  BSReference()
-  { }
-
-  // usage:
-  //   FMReference mref(my_cp, my_cp_index);
-  //   int ni = mref.name_index();
-  //   Symbol* sig = mref.signature(my_cp);
-  //   Klass* holder = mref.klass(my_cp, CHECK);
-  BSReference(ConstantPool* cp, u2 cp_index) {
-    cp->construct_bootstrap_specifier_ref(*this, cp_index);
-    assert(sizeof(*this) == sizeof(RawReference), "no new fields in this class");
-  }
-  BSReference(const constantPoolHandle& cp, u2 cp_index)
-    : BSReference(cp(), cp_index)
-  { }
-
-  BSReference(ConstantPool* cp, int which, Bytecodes::Code code)
-    : BSReference(cp, cp->to_cp_index(which, code))
-  {
-  }
-  BSReference(const constantPoolHandle& cp, int which, Bytecodes::Code code)
-    : BSReference(cp(), which, code)
-  { }
-};
-
-// CONSTANT_MethodHandle
-class MethodHandleReference : public FMReference {
-  friend class ConstantPool;
- private:
-  u2 _ref_kind;
-  u2 _ref_index;
-
- public:
-  int ref_kind() const          { return _ref_kind; }
-  int ref_index() const         { return _ref_index; }
-
-  // You can always create a blank one, containing only zeroes.
-  MethodHandleReference()
-  { }
-
-  MethodHandleReference(ConstantPool* cp, u2 cp_index) {
-    cp->construct_method_handle_ref(*this, cp_index);
-  }
-  MethodHandleReference(const constantPoolHandle& cp, u2 cp_index)
-    : MethodHandleReference(cp(), cp_index)
-  { }
-};
-
-// CONSTANT_MethodType
-class MethodTypeReference : public NTReference {
-  friend class ConstantPool;
- private:
-
- public:
-  // You can always create a blank one, containing only zeroes.
-  MethodTypeReference()
-  { }
-
-  MethodTypeReference(ConstantPool* cp, u2 cp_index) {
-    cp->construct_method_type_ref(*this, cp_index);
-  }
-  MethodTypeReference(const constantPoolHandle& cp, u2 cp_index)
-    : MethodTypeReference(cp(), cp_index)
-  { }
-};
-
-inline MethodHandleReference BSMAttributeEntry::bootstrap_method(ConstantPool* cp) const {
-  return MethodHandleReference(cp, bootstrap_method_index());
-}
-inline MethodHandleReference BSMAttributeEntry::bootstrap_method(const constantPoolHandle& cp) const {
-  return bootstrap_method(cp());
-}
+using FMReference = ConstantPool::FMReference;
+using BootstrapReference = ConstantPool::BootstrapReference;
+using MethodHandleReference = ConstantPool::MethodHandleReference;
+using MethodTypeReference = ConstantPool::MethodTypeReference;
+using BSMAttributeEntry = ConstantPool::BSMAttributeEntry;
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP
