@@ -196,9 +196,9 @@ public class DefaultMethodBeanPropertyTest {
 
 // Helper methods
 
-    private static void verifyEquality(Set<String> expected, Set<String> actual) {
+    private static void verifyEquality(String title, Set<String> expected, Set<String> actual) {
         if (!actual.equals(expected)) {
-            throw new Error("properties mismatch: "
+            throw new Error(title + " mismatch: "
                     + "\nACTUAL:\n  "
                     + actual.stream()
                             .map(Object::toString)
@@ -220,7 +220,7 @@ public class DefaultMethodBeanPropertyTest {
                     .map(PropertyDescriptor::getReadMethod)
                     .map(Method::toString)
                     .collect(Collectors.toSet());
-            verifyEquality(expected, actual);
+            verifyEquality("properties", expected, actual);
         } catch (IntrospectionException exception) {
             throw new Error("unexpected exception", exception);
         }
@@ -233,7 +233,7 @@ public class DefaultMethodBeanPropertyTest {
                     .map(MethodDescriptor::getMethod)
                     .map(Method::toString)
                     .collect(Collectors.toSet());
-            verifyEquality(expected, actualMethods);
+            verifyEquality("methods", expected, actualMethods);
         } catch (IntrospectionException exception) {
             throw new Error("unexpected exception", exception);
         }
