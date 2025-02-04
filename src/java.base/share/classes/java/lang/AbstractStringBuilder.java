@@ -257,7 +257,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int oldCapacity = val.length >> coder;
         if (minimumCapacity - oldCapacity > 0) {
             val = Arrays.copyOf(val,
-                    newCapacity(minimumCapacity, val, coder) << coder);
+                    newCapacity(minimumCapacity, val.length, coder) << coder);
             this.value = val;
         }
         return val;
@@ -272,12 +272,12 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * unless the given minimum capacity is greater than that.
      *
      * @param  minCapacity the desired minimum capacity
+     * @param  oldLength current length
      * @param  coder the coder to be used when calculating the capacity length
      * @throws OutOfMemoryError if minCapacity is less than zero or
      *         greater than (Integer.MAX_VALUE >> coder)
      */
-    private static int newCapacity(int minCapacity, byte[] value, byte coder) {
-        int oldLength = value.length;
+    private static int newCapacity(int minCapacity, int oldLength, byte coder) {
         int newLength = minCapacity << coder;
         int growth = newLength - oldLength;
         int length = ArraysSupport.newLength(oldLength, growth, oldLength + (2 << coder));
