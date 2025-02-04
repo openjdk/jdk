@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.spi.CurrencyNameProvider;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jdk.internal.util.StaticProperty;
 import sun.util.locale.provider.CalendarDataUtility;
@@ -432,61 +433,82 @@ public final class Currency implements Serializable {
     }
 
     /**
-     * Gets the set of available currencies.  The returned set of currencies
-     * contains all of the available currencies, which may include currencies
-     * that represent obsolete ISO 4217 codes.  The set can be modified
+     * {@return a set of available currencies} The returned set of currencies
+     * contains all the available currencies, which may include currencies
+     * that represent obsolete ISO 4217 codes. If there is no currency available
+     * in the runtime, the returned set is empty. The set can be modified
      * without affecting the available currencies in the runtime.
      *
-     * @return the set of available currencies.  If there is no currency
-     *    available in the runtime, the returned set is empty.
+     * @apiNote Consider using {@link #availableCurrencies()} which returns
+     * a stream of the available currencies.
+     * @see #availableCurrencies()
      * @since 1.7
      */
     public static Set<Currency> getAvailableCurrencies() {
-        synchronized(Currency.class) {
-            if (available == null) {
-                available = new HashSet<>(256);
+        return new HashSet<>(getCurrencies());
+    }
 
-                // Add simple currencies first
-                for (char c1 = 'A'; c1 <= 'Z'; c1 ++) {
-                    for (char c2 = 'A'; c2 <= 'Z'; c2 ++) {
-                        int tableEntry = getMainTableEntry(c1, c2);
-                        if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
-                             && tableEntry != INVALID_COUNTRY_ENTRY) {
-                            char finalChar = (char) ((tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) + 'A');
-                            int defaultFractionDigits = (tableEntry & SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK) >> SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT;
-                            int numericCode = (tableEntry & NUMERIC_CODE_MASK) >> NUMERIC_CODE_SHIFT;
-                            StringBuilder sb = new StringBuilder();
-                            sb.append(c1);
-                            sb.append(c2);
-                            sb.append(finalChar);
-                            available.add(getInstance(sb.toString(), defaultFractionDigits, numericCode));
-                        } else if ((tableEntry & COUNTRY_TYPE_MASK) == SPECIAL_CASE_COUNTRY_MASK
-                                && tableEntry != INVALID_COUNTRY_ENTRY
-                                && tableEntry != COUNTRY_WITHOUT_CURRENCY_ENTRY) {
-                            int index = SpecialCaseEntry.toIndex(tableEntry);
-                            SpecialCaseEntry scEntry = specialCasesList.get(index);
+    /**
+     * {@return a stream of available currencies} The returned stream of currencies
+     * contains all the available currencies, which may include currencies
+     * that represent obsolete ISO 4217 codes. If there is no currency
+     * available in the runtime, the returned stream is empty.
+     *
+     * @implNote Unlike {@link #getAvailableCurrencies()}, this method does
+     * not create a defensive copy of the {@code Currency} set.
+     * @see #getAvailableCurrencies()
+     * @since 25
+     */
+    public static Stream<Currency> availableCurrencies() {
+        return getCurrencies().stream();
+    }
 
-                            if (scEntry.cutOverTime == Long.MAX_VALUE
-                                    || System.currentTimeMillis() < scEntry.cutOverTime) {
-                                available.add(getInstance(scEntry.oldCurrency,
-                                        scEntry.oldCurrencyFraction,
-                                        scEntry.oldCurrencyNumericCode));
-                            } else {
-                                available.add(getInstance(scEntry.newCurrency,
-                                        scEntry.newCurrencyFraction,
-                                        scEntry.newCurrencyNumericCode));
-                            }
+    // Returns the set of available Currencies which are lazily initialized
+    private static synchronized HashSet<Currency> getCurrencies() {
+        if (available == null) {
+            var sysTime = System.currentTimeMillis();
+            available = HashSet.newHashSet(256);
+
+            // Add simple currencies first
+            for (char c1 = 'A'; c1 <= 'Z'; c1 ++) {
+                for (char c2 = 'A'; c2 <= 'Z'; c2 ++) {
+                    int tableEntry = getMainTableEntry(c1, c2);
+                    if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
+                            && tableEntry != INVALID_COUNTRY_ENTRY) {
+                        char finalChar = (char) ((tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) + 'A');
+                        int defaultFractionDigits = (tableEntry & SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK) >> SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT;
+                        int numericCode = (tableEntry & NUMERIC_CODE_MASK) >> NUMERIC_CODE_SHIFT;
+                        StringBuilder sb = new StringBuilder();
+                        sb.append(c1);
+                        sb.append(c2);
+                        sb.append(finalChar);
+                        available.add(getInstance(sb.toString(), defaultFractionDigits, numericCode));
+                    } else if ((tableEntry & COUNTRY_TYPE_MASK) == SPECIAL_CASE_COUNTRY_MASK
+                            && tableEntry != INVALID_COUNTRY_ENTRY
+                            && tableEntry != COUNTRY_WITHOUT_CURRENCY_ENTRY) {
+                        int index = SpecialCaseEntry.toIndex(tableEntry);
+                        SpecialCaseEntry scEntry = specialCasesList.get(index);
+
+                        if (scEntry.cutOverTime == Long.MAX_VALUE
+                                || sysTime < scEntry.cutOverTime) {
+                            available.add(getInstance(scEntry.oldCurrency,
+                                    scEntry.oldCurrencyFraction,
+                                    scEntry.oldCurrencyNumericCode));
+                        } else {
+                            available.add(getInstance(scEntry.newCurrency,
+                                    scEntry.newCurrencyFraction,
+                                    scEntry.newCurrencyNumericCode));
                         }
                     }
                 }
+            }
 
-                // Now add other currencies
-                for (OtherCurrencyEntry entry : otherCurrenciesList) {
-                    available.add(getInstance(entry.currencyCode));
-                }
+            // Now add other currencies
+            for (OtherCurrencyEntry entry : otherCurrenciesList) {
+                available.add(getInstance(entry.currencyCode));
             }
         }
-        return new HashSet<>(available);
+        return available;
     }
 
     /**
