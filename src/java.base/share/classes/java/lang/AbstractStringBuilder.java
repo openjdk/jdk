@@ -253,14 +253,14 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     private byte[] ensureCapacityInternal(int minimumCapacity, byte coder) {
         // overflow-conscious code
-        byte[] value = this.value;
-        int oldCapacity = value.length >> coder;
+        byte[] val = this.value;
+        int oldCapacity = val.length >> coder;
         if (minimumCapacity - oldCapacity > 0) {
-            value = Arrays.copyOf(value,
-                    newCapacity(minimumCapacity, value, coder) << coder);
-            this.value = value;
+            val = Arrays.copyOf(val,
+                    newCapacity(minimumCapacity, val, coder) << coder);
+            this.value = val;
         }
-        return value;
+        return val;
     }
 
     /**
@@ -272,6 +272,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * unless the given minimum capacity is greater than that.
      *
      * @param  minCapacity the desired minimum capacity
+     * @param  coder the coder to be used when calculating the capacity length
      * @throws OutOfMemoryError if minCapacity is less than zero or
      *         greater than (Integer.MAX_VALUE >> coder)
      */
