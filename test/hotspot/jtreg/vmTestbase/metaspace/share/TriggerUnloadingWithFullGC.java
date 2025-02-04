@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,16 @@
  * questions.
  */
 
-#include "export.h"
+package metaspace.share;
 
-typedef struct {
-    double x;
-    double y;
-} DoublePoint;
+import jdk.test.lib.classloader.ClassUnloadCommon;
+import nsk.share.test.ExecutionController;
 
-EXPORT DoublePoint unit() {
-    DoublePoint result = { 1, 0 };
-    return result;
-}
+public class TriggerUnloadingWithFullGC implements TriggerUnloadingHelper {
 
-EXPORT void unit_ptr(DoublePoint* out) {
-  *out = unit();
+        @Override
+        public void triggerUnloading(ExecutionController stresser) {
+                ClassUnloadCommon.triggerUnloading();
+        }
+
 }
