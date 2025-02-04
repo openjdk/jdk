@@ -734,7 +734,6 @@ public final class XSLTC {
      */
     public void setPackageName(String packageName) {
         _packageName = Objects.requireNonNull(packageName);
-        if (_className != null) setClassName(_className);
     }
 
     /**
