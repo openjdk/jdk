@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -265,13 +266,8 @@ public class HttpRequestBuilderTest {
         // verify that the default HEAD() method implementation in HttpRequest.Builder
         // interface works as expected
         HttpRequest defaultHeadReq = new NotOverriddenHEADImpl().HEAD().uri(TEST_URI).build();
-        String actualMethod = defaultHeadReq.method();
-        if (!actualMethod.equals("HEAD")) {
-            throw new AssertionError("failed: expected HEAD method but got method: " + actualMethod);
-        }
-        if (defaultHeadReq.bodyPublisher().isEmpty()) {
-            throw new AssertionError("failed: missing bodyPublisher on HEAD request");
-        }
+        assertEquals("HEAD", defaultHeadReq.method(), "Method");
+        assertEquals(defaultHeadReq.bodyPublisher().isEmpty(), false, "Body publisher absence");
 
         verifyCopy();
 
@@ -301,13 +297,7 @@ public class HttpRequestBuilderTest {
             throw new AssertionError("failed: " + name
                     + ". Unexpected body processor for GET: "
                     + request.bodyPublisher().get());
-
-        if (expectedMethod.equals(method)) {
-            System.out.println("success: " + name);
-        } else {
-            throw new AssertionError("failed: " + name
-                    + ". Expected " + expectedMethod + ", got " + method);
-        }
+        assertEquals(method, expectedMethod, "Method");
     }
 
     static void test0(String name,
@@ -404,16 +394,23 @@ public class HttpRequestBuilderTest {
                 .build();
 
         // Verify copied _references_
-        assert request.uri().equals(copiedRequest.uri());
-        assert request.method().equals(copiedRequest.method());
-        assert request.expectContinue() == copiedRequest.expectContinue();
-        assert request.timeout().equals(copiedRequest.timeout());
-        assert request.version().equals(copiedRequest.version());
+        assertEquals(request.uri(), copiedRequest.uri(), "URI");
+        assertEquals(request.method(), copiedRequest.method(), "Method");
+        assertEquals(request.expectContinue(), copiedRequest.expectContinue(), "Expect continue setting");
+        assertEquals(request.timeout(), copiedRequest.timeout(), "Timeout");
+        assertEquals(request.version(), copiedRequest.version(), "Version");
 
         // Verify headers
-        assert request.headers().map().equals(Map.of("X-Foo", List.of("1")));
-        assert copiedRequest.headers().map().equals(Map.of("X-Foo", List.of("1", "2"), "X-Bar", List.of("3")));
+        assertEquals(request.headers().map(), Map.of("X-Foo", List.of("1")), "Request headers");
+        assertEquals(copiedRequest.headers().map(), Map.of("X-Foo", List.of("1", "2"), "X-Bar", List.of("3")), "Copied request headers");
 
+    }
+
+    private static void assertEquals(Object expected, Object actual, Object name) {
+        if (!Objects.equals(expected, actual)) {
+            String message = String.format("%s mismatch!%nExpected: %s%nActual: %s", name, expected, actual);
+            throw new AssertionError(message);
+        }
     }
 
     // doesn't override the default HEAD() method
