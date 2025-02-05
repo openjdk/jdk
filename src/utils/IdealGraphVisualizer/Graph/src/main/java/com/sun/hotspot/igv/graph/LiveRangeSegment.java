@@ -27,6 +27,7 @@ import com.sun.hotspot.igv.data.InputLiveRange;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.layout.Segment;
 import java.awt.Point;
+import java.util.Set;
 
 public class LiveRangeSegment extends Properties.Entity implements Segment {
 
@@ -38,6 +39,7 @@ public class LiveRangeSegment extends Properties.Entity implements Segment {
     private Point endPoint;
     private boolean lastOfLiveRange;
     private boolean instantaneous;
+    private Set<LiveRangeSegment> segmentSet;
 
     protected LiveRangeSegment(InputLiveRange liveRange, Block block, Figure start, Figure end) {
         this.block = block;
@@ -98,6 +100,14 @@ public class LiveRangeSegment extends Properties.Entity implements Segment {
 
     public boolean isInstantaneous() {
         return instantaneous;
+    }
+
+    public Set<LiveRangeSegment> getSegmentSet() {
+        return segmentSet;
+    }
+
+    public void setSegmentSet(Set<LiveRangeSegment> segmentSet) {
+        this.segmentSet = segmentSet;
     }
 
     @Override

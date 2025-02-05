@@ -35,6 +35,7 @@ import com.sun.hotspot.igv.util.PropertiesConverter;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.view.DiagramScene;
 import com.sun.hotspot.igv.view.DiagramViewModel;
+import com.sun.hotspot.igv.view.actions.CustomSelectAction;
 
 import java.awt.*;
 import java.util.HashSet;
@@ -42,6 +43,7 @@ import java.util.Set;
 import javax.swing.JPopupMenu;
 import org.netbeans.api.visual.action.ActionFactory;
 import org.netbeans.api.visual.action.PopupMenuProvider;
+import org.netbeans.api.visual.action.SelectProvider;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
@@ -61,7 +63,6 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
     private static final float NORMAL_THICKNESS = 1.4f;
     private static final float SELECTED_THICKNESS = 2.2f;
     private boolean highlighted;
-    private boolean selected;
     private static final Color NORMAL_COLOR = Color.BLACK;
     private static final Color HIGHLIGHTED_COLOR = Color.BLUE;
 
@@ -91,6 +92,23 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
         node.setDisplayName("L" + liveRangeSegment.getLiveRange().getId());
 
         this.setToolTipText(PropertiesConverter.convertToHTML(liveRangeSegment.getProperties()));
+
+        getActions().addAction(new CustomSelectAction(new SelectProvider() {
+            @Override
+            public boolean isAimingAllowed(Widget widget, Point localLocation, boolean invertSelection) {
+                return true;
+            }
+
+            @Override
+            public boolean isSelectionAllowed(Widget widget, Point localLocation, boolean invertSelection) {
+                return true;
+            }
+
+            @Override
+            public void select(Widget widget, Point localLocation, boolean invertSelection) {
+                scene.userSelectionSuggested(liveRangeSegment.getSegmentSet(), invertSelection);
+            }
+        }));
     }
 
     public void setLength(int length) {
@@ -119,6 +137,7 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
         }
         Graphics2D g = getScene().getGraphics();
         g.setPaint(this.getBackground());
+        boolean selected = scene.getSelectedObjects().contains(liveRangeSegment);
         g.setStroke(new BasicStroke(selected ? SELECTED_THICKNESS : NORMAL_THICKNESS));
         g.setColor(highlighted ? HIGHLIGHTED_COLOR : NORMAL_COLOR);
         g.drawLine(- RANGE_WIDTH, 0, RANGE_WIDTH, 0);
@@ -131,22 +150,8 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
     @Override
     protected void notifyStateChanged(ObjectState previousState, ObjectState state) {
         super.notifyStateChanged(previousState, state);
-        if (previousState.isSelected() != state.isSelected()) {
-            setSelected(state.isSelected());
-        }
         if (previousState.isHighlighted() != state.isHighlighted()) {
             setHighlighted(state.isHighlighted());
-        }
-    }
-
-    private void setSelected(boolean enable) {
-        if (enable == selected) {
-            return; // end recursion
-        }
-        selected = enable;
-        revalidate(true);
-        if (next != null) {
-            next.setSelected(enable);
         }
     }
 

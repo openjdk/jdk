@@ -1576,6 +1576,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 LiveRangeWidget firstSegmentWidget = null;
                 LiveRangeWidget nextSegmentWidget = null;
                 for (LiveRangeSegment segment : segmentSet) {
+                    segment.setSegmentSet(segmentSet);
                     segment.setStartPoint(null);
                     segment.setEndPoint(null);
                     LiveRangeWidget segmentWidget =
@@ -1585,7 +1586,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                         firstSegmentWidget = segmentWidget;
                     }
                     addObject(segment, segmentWidget);
-                    segmentWidget.getActions().addAction(selectAction);
                     segmentWidget.getActions().addAction(hoverAction);
                     segmentLayer.addChild(segmentWidget);
                     nextSegmentWidget = segmentWidget;
