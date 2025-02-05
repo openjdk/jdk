@@ -622,8 +622,8 @@ address generate_ghash_processBlocks() {
   __ vsldoi(vLowerH, vZero, vTmp11, 8);         // H.L
   __ vsldoi(vHigherH, vTmp11, vZero, 8);        // H.H
   #ifdef ASSERT
-    __ cmpwi(CCR0, blocks, 0);
-    __ beq(CCR0, L_error);
+    __ cmpwi(CR0, blocks, 0);
+    __ beq(CR0, L_error);
   #endif
   __ clrldi(blocks, blocks, 32);
   __ mtctr(blocks);
@@ -657,8 +657,8 @@ address generate_ghash_processBlocks() {
     __ vspltisb(vZero, 0);
     __ li(temp1, 0);
     __ andi(temp1, data, 15);
-    __ cmpwi(CCR0, temp1, 0);
-    __ beq(CCR0, L_aligned);                    // Check if address is aligned (mask lower 4 bits)
+    __ cmpwi(CR0, temp1, 0);
+    __ beq(CR0, L_aligned);                    // Check if address is aligned (mask lower 4 bits)
     __ li(temp1, 0);
     __ lvx(vHigh, temp1, data);
     __ lvsl(vPerm, temp1, data);
