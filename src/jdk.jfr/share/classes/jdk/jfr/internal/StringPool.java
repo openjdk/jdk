@@ -24,9 +24,6 @@
  */
 package jdk.jfr.internal;
 
-import static jdk.jfr.internal.Options.StringPoolPolicy.AUTO;
-import static jdk.jfr.internal.Options.StringPoolPolicy.NEVER;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.internal.vm.Continuation;
@@ -134,7 +131,7 @@ public final class StringPool {
         if (lsid != null) {
             return ensureCurrentGeneration(s, lsid, pinVirtualThread);
         }
-         if (Options.getStringPoolPolicy().equals(NEVER) || (Options.getStringPoolPolicy().equals(AUTO) && s.length() <= PRECACHE_THRESHOLD && !preCache(s))) { // *** don't pool if short and not already in the precache. We already know it's not in the cache
+        if (s.length() <= PRECACHE_THRESHOLD && !preCache(s)) {
             /* we should not pool this string */
             return DO_NOT_POOL;
         }
