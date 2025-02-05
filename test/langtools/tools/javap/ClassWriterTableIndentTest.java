@@ -52,7 +52,7 @@ public class ClassWriterTableIndentTest {
          *        line 145: 14
          * ...
          */
-        List<String[]> runArgsList = List.of(new String[]{"-c", "-l"}, new String[]{"-v"}, new String[]{"-l"});
+        List<String[]> runArgsList = List.of(new String[]{"-c", "-l"}, new String[]{"-v"});
         for (String[] runArgs : runArgsList) {
             String output = javap(runArgs);
             int methodIntent = findNthMatchPrecedingSpaces(output, "public void emptyLoop();", 0);

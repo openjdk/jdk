@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +55,11 @@
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
+ *      -XX:+ShenandoahVerify
+ *      TestVerifyJCStress
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
  *      -XX:+ShenandoahVerify
  *      TestVerifyJCStress
  */

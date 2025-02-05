@@ -63,20 +63,28 @@ public class ShowRegistersOnAssertTest {
 
         OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
 
-        // we should have crashed with an internal error. We should definitly NOT have crashed with a segfault
+        // we should have crashed with an internal error. We should definitely NOT have crashed with a segfault
         // (which would be a sign that the assert poison page mechanism does not work).
         output_detail.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
         output_detail.shouldMatch("# +Internal Error.*");
         if (show_registers_on_assert) {
             // Extract the hs_err_pid file.
             File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output_detail);
-            Pattern[] pattern = new Pattern[] { Pattern.compile("Registers:"), null };
+            Pattern[] pattern = null;
             if (Platform.isX64()) {
-                pattern[1] = Pattern.compile("RAX=.*");
+                pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("RAX=.*")};
             } else if (Platform.isX86()) {
-                pattern[1] = Pattern.compile("EAX=.*");
+                pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("EAX=.*")};
             } else if (Platform.isAArch64()) {
-                pattern[1] = Pattern.compile("R0=.*");
+                pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("R0=.*")};
+            } else if (Platform.isS390x()) {
+                pattern = new Pattern[] { Pattern.compile("General Purpose Registers:"),
+                                          Pattern.compile("^-{26}$"),
+                                          Pattern.compile("  r0  =.*")};
+            } else if (Platform.isPPC()) {
+                pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("pc =.*")};
+            } else {
+                pattern = new Pattern[] { Pattern.compile("Registers:") };
             }
             // Pattern match the hs_err_pid file.
             HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, false);

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2024, 2025, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,6 +24,9 @@
  */
 package jdk.tools.jlink.internal.runtimelink;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -47,6 +52,7 @@ public class JimageDiffGenerator {
     public interface ImageResource extends AutoCloseable {
         public List<String> getEntries();
         public byte[] getResourceBytes(String name);
+        public InputStream getResource(String name);
     }
 
     /**
@@ -69,7 +75,6 @@ public class JimageDiffGenerator {
             resources.addAll(image.getEntries());
             baseResources = base.getEntries();
             for (String item: baseResources) {
-                byte[] baseBytes = base.getResourceBytes(item);
                 // First check that every item in the base image exist in
                 // the optimized image as well. If it does not, it's a removed
                 // item in the optimized image.
@@ -80,19 +85,18 @@ public class JimageDiffGenerator {
                     ResourceDiff.Builder builder = new ResourceDiff.Builder();
                     ResourceDiff diff = builder.setKind(ResourceDiff.Kind.REMOVED)
                            .setName(item)
-                           .setResourceBytes(baseBytes)
+                           .setResourceBytes(base.getResourceBytes(item))
                            .build();
                     diffs.add(diff);
                     continue;
                 }
                 // Verify resource bytes are equal if present in both images
-                boolean contentEquals = Arrays.equals(baseBytes, image.getResourceBytes(item));
-                if (!contentEquals) {
+                if (!compareStreams(base.getResource(item), image.getResource(item))) {
                     // keep track of original bytes (non-optimized)
                     ResourceDiff.Builder builder = new ResourceDiff.Builder();
                     ResourceDiff diff = builder.setKind(ResourceDiff.Kind.MODIFIED)
                         .setName(item)
-                        .setResourceBytes(baseBytes)
+                        .setResourceBytes(base.getResourceBytes(item))
                         .build();
                     diffs.add(diff);
                 }
@@ -108,6 +112,39 @@ public class JimageDiffGenerator {
             diffs.add(diff);
         }
         return diffs;
+    }
+
+    /**
+     * Compare the contents of the two input streams (byte-by-byte).
+     *
+     * @param is1 The first input stream
+     * @param is2 The second input stream
+     * @return {@code true} iff the two streams contain the same number of
+     *         bytes and each byte of the streams are equal. {@code false}
+     *         otherwise.
+     */
+    private boolean compareStreams(InputStream is1, InputStream is2) {
+        byte[] buf1 = new byte[1024];
+        byte[] buf2 = new byte[1024];
+        int bytesRead1, bytesRead2;
+        try (is1; is2) {
+            while (true) {
+                bytesRead1 = is1.readNBytes(buf1, 0, buf1.length);
+                bytesRead2 = is2.readNBytes(buf2, 0, buf2.length);
+                if (!Arrays.equals(buf1, 0, bytesRead1,
+                                   buf2, 0, bytesRead2)) {
+                    return false;
+                }
+                if (bytesRead1 == 0) {
+                    // If we reach here, bytesRead2 must be 0 as well, otherwise
+                    // we return false on the !Arrays.equals() check above.
+                    assert bytesRead2 == 0 : "Arrays must have been read to the end";
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("IO exception when comparing bytes", e);
+        }
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.layout.Port;
 import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.Dimension;
 import java.awt.Point;
+import java.util.Objects;
 
 /**
  *
@@ -50,11 +51,11 @@ public class ClusterInputSlotNode implements Vertex {
     public ClusterInputSlotNode(ClusterNode n, String id) {
         this.blockNode = n;
         this.id = id;
+        this.position = new Point(0, 0);
 
         n.addSubNode(this);
 
         final Vertex thisNode = this;
-        final ClusterNode thisBlockNode = blockNode;
 
         outputSlot = new Port() {
 
@@ -76,13 +77,13 @@ public class ClusterInputSlotNode implements Vertex {
 
             public Point getRelativePosition() {
                 Point p = new Point(thisNode.getPosition());
-                p.x += blockNode.getBorder();
+                p.x += ClusterNode.PADDING;
                 p.y = 0;
                 return p;
             }
 
             public Vertex getVertex() {
-                return thisBlockNode;
+                return blockNode;
             }
 
             @Override
@@ -124,4 +125,15 @@ public class ClusterInputSlotNode implements Vertex {
         return toString().compareTo(o.toString());
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof ClusterInputSlotNode other)) return false;
+        return Objects.equals(this.id, other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

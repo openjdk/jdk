@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1781,12 +1781,8 @@ public class JInternalFrame extends JComponent implements
           isClosed = true;
         }
         fireInternalFrameEvent(InternalFrameEvent.INTERNAL_FRAME_CLOSED);
-        try {
-            java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
-                    new sun.awt.UngrabEvent(this));
-        } catch (SecurityException e) {
-            this.dispatchEvent(new sun.awt.UngrabEvent(this));
-        }
+        java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
+                new sun.awt.UngrabEvent(this));
     }
 
     /**

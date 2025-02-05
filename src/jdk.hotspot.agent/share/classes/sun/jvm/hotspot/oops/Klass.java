@@ -133,23 +133,6 @@ public class Klass extends Metadata implements ClassConstants {
     return traceIDField.getJLong(addr);
   }
 
-  // computed access flags - takes care of inner classes etc.
-  // This is closer to actual source level than getAccessFlags() etc.
-  public long computeModifierFlags() {
-    return 0L; // Unless overridden, modifier_flags is 0.
-  }
-
-  // same as JVM_GetClassModifiers
-  public final long getClassModifiers() {
-    // unlike the VM counterpart we never have to deal with primitive type,
-    // because we operator on Klass and not an instance of java.lang.Class.
-    long flags = computeModifierFlags();
-    if (isSuper()) {
-       flags |= JVM_ACC_SUPER;
-    }
-    return flags;
-  }
-
   // subclass check
   public boolean isSubclassOf(Klass k) {
     if (k != null) {

@@ -266,11 +266,8 @@ public class CodeWriter extends BasicWriter {
     }
 
     private void writeMinimalMode(CodeAttribute attr) {
-        if (options.showDisassembled) {
-            writeInstrs(attr);
-            writeExceptionTable(attr);
-        }
-
+        writeInstrs(attr);
+        writeExceptionTable(attr);
         if (options.showLineAndLocalVariableTables) {
             writeLineAndLocalVariableTables(attr);
         }

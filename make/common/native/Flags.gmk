@@ -99,7 +99,7 @@ define SetupCompilerFlags
     $1_EXTRA_CFLAGS += $$($1_CFLAGS_$(OPENJDK_TARGET_OS)_$(OPENJDK_TARGET_CPU)_release)
   endif
   ifeq ($(STATIC_LIBS), true)
-    $1_EXTRA_CFLAGS += $$(STATIC_LIBS_CFLAGS)
+    $1_EXTRA_CFLAGS += -DSTATIC_BUILD=1
   endif
 
   # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS and/or TOOLCHAIN_TYPE

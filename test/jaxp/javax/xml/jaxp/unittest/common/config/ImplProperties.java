@@ -102,7 +102,7 @@ public class ImplProperties {
         "0", "1000000", "3000000", "10000", "5000", "0", "1000", "10", "100", "10000"},
 
         // default values in JDK 24
-        {"true", "false", "continue", "allow", "2500", "100000",
+        {"false", "false", "continue", "allow", "2500", "100000",
         "100000", "15000", "100000", "200", "5000", "100", "1000", "10", "100", "10000"},
 
         // default values in jaxp-strict.properties.template, since JDK 23

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,41 @@
 
 package java.lang.classfile.attribute;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.classfile.Annotation;
 import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.AttributeMapper.AttributeStability;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.MethodElement;
-import java.lang.classfile.MethodModel;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Executable;
 import java.util.List;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code RuntimeVisibleParameterAnnotations} attribute (JVMS {@jvms 4.7.18}), which
- * can appear on methods. Delivered as a {@link java.lang.classfile.MethodElement}
- * when traversing a {@link MethodModel}.
- *
- * @apiNote The attribute does not permit multiple instances in a given location.
- * Subsequent occurrence of the attribute takes precedence during the attributed
- * element build or transformation.
+ * Models the {@link Attributes#runtimeVisibleParameterAnnotations()
+ * RuntimeVisibleParameterAnnotations} attribute (JVMS {@jvms 4.7.18}), which
+ * stores declaration annotations on the method parameters of this method
+ * that are visible to both {@code class} file consumers and {@linkplain
+ * AnnotatedElement core reflection}.
  * <p>
- * The attribute was introduced in the Java SE Platform version 5.0.
+ * This attribute only appears on methods, and does not permit {@linkplain
+ * AttributeMapper#allowMultiple multiple instances} in a method.  It has a
+ * data dependency on the {@linkplain AttributeStability#CP_REFS constant pool}.
+ * <p>
+ * The attribute was introduced in the Java SE Platform version 5.0, major
+ * version {@value ClassFile#JAVA_5_VERSION}.
  *
+ * @see Attributes#runtimeVisibleParameterAnnotations()
+ * @see Executable#getParameterAnnotations()
+ * @see ElementType#PARAMETER
+ * @see RetentionPolicy#RUNTIME
+ * @jvms 4.7.18 The {@code RuntimeVisibleParameterAnnotations} Attribute
  * @since 24
  */
 public sealed interface RuntimeVisibleParameterAnnotationsAttribute
@@ -53,15 +68,26 @@ public sealed interface RuntimeVisibleParameterAnnotationsAttribute
                 UnboundAttribute.UnboundRuntimeVisibleParameterAnnotationsAttribute {
 
     /**
-     * {@return the list of annotations corresponding to each method parameter}
+     * {@return the list of run-time visible annotations on the method parameters}
      * The element at the i'th index corresponds to the annotations on the i'th
-     * parameter.
+     * formal parameter, but note that some synthetic or implicit parameters
+     * may be omitted by this list.  If a parameter has no annotations, that
+     * element is left empty, but is not omitted; thus, the list will never be
+     * truncated because trailing parameters are not annotated.
+     *
+     * @see java.lang.reflect##LanguageJvmModel Java programming language and
+     *      JVM modeling in core reflection
      */
     List<List<Annotation>> parameterAnnotations();
 
     /**
      * {@return a {@code RuntimeVisibleParameterAnnotations} attribute}
-     * @param parameterAnnotations a list of parameter annotations for each parameter
+     * The {@code parameterAnnotations} list should not be truncated, and must
+     * have a length equal to the number of formal parameters; elements for
+     * unannotated parameters may be empty, but may not be omitted.  It may omit
+     * some synthetic or implicit parameters.
+     *
+     * @param parameterAnnotations a list of run-time visible annotations for each parameter
      */
     static RuntimeVisibleParameterAnnotationsAttribute of(List<List<Annotation>> parameterAnnotations) {
         return new UnboundAttribute.UnboundRuntimeVisibleParameterAnnotationsAttribute(parameterAnnotations);

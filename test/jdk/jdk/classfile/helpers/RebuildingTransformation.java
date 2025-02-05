@@ -32,7 +32,7 @@ import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.*;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
-import java.lang.classfile.components.CodeStackTracker;
+import jdk.internal.classfile.components.CodeStackTracker;
 
 class RebuildingTransformation {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,10 +260,6 @@ inline jboolean java_lang_invoke_ConstantCallSite::is_frozen(oop site) {
 }
 
 inline bool java_lang_invoke_ConstantCallSite::is_instance(oop obj) {
-  return obj != nullptr && is_subclass(obj->klass());
-}
-
-inline bool java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(oop obj) {
   return obj != nullptr && is_subclass(obj->klass());
 }
 

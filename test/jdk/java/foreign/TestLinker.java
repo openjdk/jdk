@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.foreign
+ * @modules java.base/jdk.internal.foreign java.base/jdk.internal.foreign.abi.fallback
  * @run testng TestLinker
  * @run testng/othervm TestLinker
  */
 
 import jdk.internal.foreign.CABI;
+import jdk.internal.foreign.abi.fallback.FallbackLinker;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -250,7 +251,13 @@ public class TestLinker extends NativeTestHelper {
         var padding5a1 = MemoryLayout.paddingLayout(5);
         var struct8a8 = MemoryLayout.structLayout(sequence0a8, sequence3a1, padding5a1);
         var fd = FunctionDescriptor.of(struct8a8, struct8a8, struct8a8);
-        linker.downcallHandle(fd);
+        if (linker.getClass().equals(FallbackLinker.class)) {
+            // The fallback linker does not support empty layouts (FFI_BAD_TYPEDEF)
+            var iae = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+            assertTrue(iae.getMessage().contains("is empty"));
+        } else {
+            linker.downcallHandle(fd);
+        }
     }
 
     @DataProvider

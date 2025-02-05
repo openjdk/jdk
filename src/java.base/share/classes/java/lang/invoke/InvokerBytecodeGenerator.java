@@ -248,7 +248,7 @@ class InvokerBytecodeGenerator {
             return ClassFile.of().build(classEntry, pool, new Consumer<>() {
                 @Override
                 public void accept(ClassBuilder clb) {
-                    clb.withFlags(ACC_ABSTRACT | ACC_SUPER)
+                    clb.withFlags(ACC_FINAL | ACC_SUPER)
                        .withSuperclass(INVOKER_SUPER_DESC)
                        .with(SourceFileAttribute.of(clb.constantPool().utf8Entry(SOURCE_PREFIX + name)));
                     config.accept(clb);

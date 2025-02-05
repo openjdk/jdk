@@ -3912,6 +3912,184 @@ public class Byte128VectorTests extends AbstractVectorTest {
                 Byte128VectorTests::MAXReduceMasked, Byte128VectorTests::MAXReduceAllMasked);
     }
 
+    static byte UMINReduce(byte[] a, int idx) {
+        byte res = Byte.MAX_VALUE;
+        for (int i = idx; i < (idx + SPECIES.length()); i++) {
+            res = (byte) VectorMath.minUnsigned(res, a[i]);
+        }
+
+        return res;
+    }
+
+    static byte UMINReduceAll(byte[] a) {
+        byte res = Byte.MAX_VALUE;
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (byte) VectorMath.minUnsigned(res, UMINReduce(a, i));
+        }
+
+        return res;
+    }
+
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void UMINReduceByte128VectorTests(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+        byte ra = Byte.MAX_VALUE;
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                r[i] = av.reduceLanes(VectorOperators.UMIN);
+            }
+        }
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = Byte.MAX_VALUE;
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                ra = (byte) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN));
+            }
+        }
+
+        assertReductionArraysEquals(r, ra, a,
+                Byte128VectorTests::UMINReduce, Byte128VectorTests::UMINReduceAll);
+    }
+
+    static byte UMINReduceMasked(byte[] a, int idx, boolean[] mask) {
+        byte res = Byte.MAX_VALUE;
+        for (int i = idx; i < (idx + SPECIES.length()); i++) {
+            if (mask[i % SPECIES.length()])
+                res = (byte) VectorMath.minUnsigned(res, a[i]);
+        }
+
+        return res;
+    }
+
+    static byte UMINReduceAllMasked(byte[] a, boolean[] mask) {
+        byte res = Byte.MAX_VALUE;
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (byte) VectorMath.minUnsigned(res, UMINReduceMasked(a, i, mask));
+        }
+
+        return res;
+    }
+
+    @Test(dataProvider = "byteUnaryOpMaskProvider")
+    static void UMINReduceByte128VectorTestsMasked(IntFunction<byte[]> fa, IntFunction<boolean[]> fm) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+        byte ra = Byte.MAX_VALUE;
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                r[i] = av.reduceLanes(VectorOperators.UMIN, vmask);
+            }
+        }
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = Byte.MAX_VALUE;
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                ra = (byte) VectorMath.minUnsigned(ra, av.reduceLanes(VectorOperators.UMIN, vmask));
+            }
+        }
+
+        assertReductionArraysEqualsMasked(r, ra, a, mask,
+                Byte128VectorTests::UMINReduceMasked, Byte128VectorTests::UMINReduceAllMasked);
+    }
+
+    static byte UMAXReduce(byte[] a, int idx) {
+        byte res = Byte.MIN_VALUE;
+        for (int i = idx; i < (idx + SPECIES.length()); i++) {
+            res = (byte) VectorMath.maxUnsigned(res, a[i]);
+        }
+
+        return res;
+    }
+
+    static byte UMAXReduceAll(byte[] a) {
+        byte res = Byte.MIN_VALUE;
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (byte) VectorMath.maxUnsigned(res, UMAXReduce(a, i));
+        }
+
+        return res;
+    }
+
+    @Test(dataProvider = "byteUnaryOpProvider")
+    static void UMAXReduceByte128VectorTests(IntFunction<byte[]> fa) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+        byte ra = Byte.MIN_VALUE;
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                r[i] = av.reduceLanes(VectorOperators.UMAX);
+            }
+        }
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = Byte.MIN_VALUE;
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                ra = (byte) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX));
+            }
+        }
+
+        assertReductionArraysEquals(r, ra, a,
+                Byte128VectorTests::UMAXReduce, Byte128VectorTests::UMAXReduceAll);
+    }
+
+    static byte UMAXReduceMasked(byte[] a, int idx, boolean[] mask) {
+        byte res = Byte.MIN_VALUE;
+        for (int i = idx; i < (idx + SPECIES.length()); i++) {
+            if (mask[i % SPECIES.length()])
+                res = (byte) VectorMath.maxUnsigned(res, a[i]);
+        }
+
+        return res;
+    }
+
+    static byte UMAXReduceAllMasked(byte[] a, boolean[] mask) {
+        byte res = Byte.MIN_VALUE;
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (byte) VectorMath.maxUnsigned(res, UMAXReduceMasked(a, i, mask));
+        }
+
+        return res;
+    }
+
+    @Test(dataProvider = "byteUnaryOpMaskProvider")
+    static void UMAXReduceByte128VectorTestsMasked(IntFunction<byte[]> fa, IntFunction<boolean[]> fm) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Byte> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+        byte ra = Byte.MIN_VALUE;
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                r[i] = av.reduceLanes(VectorOperators.UMAX, vmask);
+            }
+        }
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = Byte.MIN_VALUE;
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                ra = (byte) VectorMath.maxUnsigned(ra, av.reduceLanes(VectorOperators.UMAX, vmask));
+            }
+        }
+
+        assertReductionArraysEqualsMasked(r, ra, a, mask,
+                Byte128VectorTests::UMAXReduceMasked, Byte128VectorTests::UMAXReduceAllMasked);
+    }
+
     static byte FIRST_NONZEROReduce(byte[] a, int idx) {
         byte res = (byte) 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {

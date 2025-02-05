@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -1356,6 +1355,9 @@ void PhaseCFG::verify() const {
       verify_memory_writer_placement(block, n);
       if (n->needs_anti_dependence_check()) {
         verify_anti_dependences(block, n);
+        if (C->failing()) {
+          return;
+        }
       }
       for (uint k = 0; k < n->req(); k++) {
         Node *def = n->in(k);
