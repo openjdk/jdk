@@ -142,6 +142,7 @@ public final class DecimalDigits {
      */
     @ForceInline
     public static int digit2(byte[] str, int offset) {
+        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         /*
             Here we are doing a 2-Byte Vector operation on the short type.
 
