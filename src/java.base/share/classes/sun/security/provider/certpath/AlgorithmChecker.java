@@ -238,7 +238,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
             Set<CryptoPrimitive> primitives = KU_PRIMITIVE_SET;
 
             if (keyUsage != null) {
-                primitives = new HashSet<>(EnumSet.noneOf(CryptoPrimitive.class));
+                primitives = EnumSet.noneOf(CryptoPrimitive.class);
 
                 if (keyUsage[0] || keyUsage[1] || keyUsage[5] || keyUsage[6]) {
                     // keyUsage[0]: KeyUsage.digitalSignature
