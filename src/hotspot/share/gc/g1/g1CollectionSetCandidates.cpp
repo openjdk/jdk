@@ -27,6 +27,8 @@
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "utilities/growableArray.hpp"
 
+uint G1CSetCandidateGroup::_next_group_id = 2;
+
 G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id) :
   _candidates(4, mtGCCardSet),
   _card_set_mm(config, card_set_freelist_pool),
@@ -36,8 +38,8 @@ G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, G1Mon
   _group_id(group_id)
 { }
 
-G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, uint group_id) :
-  G1CSetCandidateGroup(config, G1CollectedHeap::heap()->card_set_freelist_pool(), group_id)
+G1CSetCandidateGroup::G1CSetCandidateGroup() :
+  G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), G1CollectedHeap::heap()->card_set_freelist_pool(), _next_group_id++)
 { }
 
 void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
@@ -292,10 +294,10 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
 
   uint num_added_to_group = 0;
 
-  uint group_id = 2;
+  G1CSetCandidateGroup::reset_next_group_id();
   G1CSetCandidateGroup* current = nullptr;
 
-  current = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), group_id++);
+  current = new G1CSetCandidateGroup();
 
   for (uint i = 0; i < num_infos; i++) {
     G1HeapRegion* r = candidate_infos[i]._r;
@@ -309,7 +311,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
 
       _from_marking_groups.append(current);
 
-      current = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), group_id++);
+      current = new G1CSetCandidateGroup();
       num_added_to_group = 0;
     }
     current->add(candidate_infos[i]);
@@ -370,7 +372,7 @@ void G1CollectionSetCandidates::add_retained_region_unsorted(G1HeapRegion* r) {
   assert(!contains(r), "Must not already contain region %u", r->hrm_index());
   _contains_map[r->hrm_index()] = CandidateOrigin::Retained;
 
-  G1CSetCandidateGroup* gr = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config());
+  G1CSetCandidateGroup* gr = new G1CSetCandidateGroup();
   gr->add(r);
 
   _retained_groups.append(gr);

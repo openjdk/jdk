@@ -80,8 +80,9 @@ class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
   //    such as G1CSetCandidateGroups for retained regions.
   // * _group_id 1 is reserved for the G1CSetCandidateGroup that contains all young regions.
   const uint _group_id;
+  static uint _next_group_id;
 public:
-  G1CSetCandidateGroup(G1CardSetConfiguration* config, uint group_id = 0);
+  G1CSetCandidateGroup();
   G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id);
   ~G1CSetCandidateGroup() {
     assert(length() == 0, "post condition!");
@@ -127,6 +128,10 @@ public:
 
   G1CSetCandidateGroupIterator end() const {
     return _candidates.end();
+  }
+
+  static void reset_next_group_id() {
+    _next_group_id = 2;
   }
 };
 

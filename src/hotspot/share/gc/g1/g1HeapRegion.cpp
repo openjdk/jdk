@@ -179,7 +179,7 @@ void G1HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
-  G1CSetCandidateGroup* cset_group = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config());
+  G1CSetCandidateGroup* cset_group = new G1CSetCandidateGroup();
   cset_group->add(this);
 
   _bot->update_for_block(bottom(), obj_top);
