@@ -314,14 +314,14 @@ public final class Module implements AnnotatedElement {
                                     boolean jni,
                                     Module target,
                                     ModuleBootstrap.IllegalNativeAccess illegalNativeAccess) {
-        String mod = mod(currentClass);
+        String modDeclaredLabel = modDeclaredLabel(currentClass);
         if (illegalNativeAccess == ModuleBootstrap.IllegalNativeAccess.DENY) {
-            throw new IllegalCallerException("Illegal native access from " + mod);
+            throw new IllegalCallerException("Illegal native access from " + modDeclaredLabel);
         } else if (EnableNativeAccess.trySetEnableNativeAccess(target)) {
             // warn and set flag, so that only one warning is reported per module
             String cls = owner.getName();
             String mtd = cls + "::" + methodName;
-            String modflag = isNamed() ? getName() : "ALL-UNNAMED";
+            String modFlag = isNamed() ? getName() : "ALL-UNNAMED";
             String caller = currentClass != null ? currentClass.getName() : "code";
             if (jni) {
                 VM.initialErr().printf("""
@@ -329,31 +329,31 @@ public final class Module implements AnnotatedElement {
                             WARNING: %s is declared in %s
                             WARNING: Use --enable-native-access=%s to avoid a warning for native methods declared in this module
                             WARNING: Restricted methods will be blocked in a future release unless native access is enabled
-                            %n""", cls, mtd, mod, modflag);
+                            %n""", cls, mtd, modDeclaredLabel, modFlag);
             } else {
                 VM.initialErr().printf("""
                             WARNING: A restricted method in %s has been called
                             WARNING: %s has been called by %s in %s
                             WARNING: Use --enable-native-access=%s to avoid a warning for callers in this module
                             WARNING: Restricted methods will be blocked in a future release unless native access is enabled
-                            %n""", cls, mtd, caller, mod, modflag);
+                            %n""", cls, mtd, caller, modDeclaredLabel, modFlag);
             }
         }
     }
 
-    private String mod(Class<?> currentClass) {
-        String mod = isNamed() ? "module " + getName() : "an unnamed module";
+    private String modDeclaredLabel(Class<?> currentClass) {
+        String label = isNamed() ? "module " + getName() : "an unnamed module";
         if (currentClass != null) {
             // try to extract location of the current class (e.g. jar or folder)
             CodeSource cs = currentClass.getProtectionDomain().getCodeSource();
             if (cs != null) {
                 URL url = cs.getLocation();
                 if (url != null) {
-                    mod += " (" + url + ")";
+                    label += " (" + url + ")";
                 }
             }
         }
-        return mod;
+        return label;
     }
 
     /**
