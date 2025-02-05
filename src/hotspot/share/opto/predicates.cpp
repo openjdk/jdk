@@ -365,6 +365,27 @@ class ReplaceInitAndCloneStrideStrategy : public TransformStrategyForOpaqueLoopN
   }
 };
 
+// This strategy replaces the OpaqueLoopInit and OpaqueLoopStride nodes with the provided init and stride nodes,
+// respectively.
+class ReplaceInitAndStrideStrategy : public TransformStrategyForOpaqueLoopNodes {
+  Node* const _new_init;
+  Node* const _new_stride;
+
+ public:
+  ReplaceInitAndStrideStrategy(Node* new_init, Node* new_stride)
+      : _new_init(new_init),
+        _new_stride(new_stride) {}
+  NONCOPYABLE(ReplaceInitAndStrideStrategy);
+
+  Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) const override {
+    return _new_init;
+  }
+
+  Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) const override {
+    return _new_stride;
+  }
+};
+
 // Creates an identical clone of this Template Assertion Expression (i.e.cloning all nodes from the
 // OpaqueTemplateAssertionPredicate to and including the OpaqueLoop* nodes). The cloned nodes are rewired to reflect the
 // same graph structure as found for this Template Assertion Expression. The cloned nodes get 'new_control' as control.
@@ -379,6 +400,15 @@ OpaqueTemplateAssertionPredicateNode*
 TemplateAssertionExpression::clone_and_replace_init(Node* new_control, Node* new_init, PhaseIdealLoop* phase) const {
   ReplaceInitAndCloneStrideStrategy replace_init_and_clone_stride_strategy(new_control, new_init, phase);
   return clone(replace_init_and_clone_stride_strategy, new_control, phase);
+}
+
+// Same as clone() but instead of cloning the OpaqueLoopInit and OpaqueLoopStride node, we replace them with the provided
+// 'new_init' and 'new_stride' nodes, respectively.
+OpaqueTemplateAssertionPredicateNode*
+TemplateAssertionExpression::clone_and_replace_init_and_stride(Node* new_control, Node* new_init, Node* new_stride,
+                                                               PhaseIdealLoop* phase) const {
+  ReplaceInitAndStrideStrategy replace_init_and_stride_strategy(new_init, new_stride);
+  return clone(replace_init_and_stride_strategy, new_control, phase);
 }
 
 // Class to collect data nodes from a source to target nodes by following the inputs of the source node recursively.
@@ -774,9 +804,9 @@ InitializedAssertionPredicateCreator::InitializedAssertionPredicateCreator(Phase
 //                           proj    (Halt or UCT)                       proj
 //
 InitializedAssertionPredicate InitializedAssertionPredicateCreator::create_from_template(
-    const IfNode* template_assertion_predicate, Node* new_control, Node* new_init) const {
+    const IfNode* template_assertion_predicate, Node* new_control, Node* new_init, Node* new_stride) const {
   OpaqueInitializedAssertionPredicateNode* assertion_expression =
-      create_assertion_expression_from_template(template_assertion_predicate, new_control, new_init);
+      create_assertion_expression_from_template(template_assertion_predicate, new_control, new_init, new_stride);
    IfTrueNode* success_proj = create_control_nodes(new_control,
                                                    template_assertion_predicate->Opcode(),
                                                    assertion_expression,
@@ -828,12 +858,13 @@ IfTrueNode* InitializedAssertionPredicateCreator::create_control_nodes(
 // Assertion Predicate IfNode.
 OpaqueInitializedAssertionPredicateNode*
 InitializedAssertionPredicateCreator::create_assertion_expression_from_template(const IfNode* template_assertion_predicate,
-                                                                                Node* new_control, Node* new_init) const {
+                                                                                Node* new_control, Node* new_init,
+                                                                                Node* new_stride) const {
   OpaqueTemplateAssertionPredicateNode* template_opaque =
       template_assertion_predicate->in(1)->as_OpaqueTemplateAssertionPredicate();
   TemplateAssertionExpression template_assertion_expression(template_opaque);
   OpaqueTemplateAssertionPredicateNode* tmp_opaque =
-      template_assertion_expression.clone_and_replace_init(new_control, new_init, _phase);
+      template_assertion_expression.clone_and_replace_init_and_stride(new_control, new_init, new_stride, _phase);
   OpaqueInitializedAssertionPredicateNode* assertion_expression =
       new OpaqueInitializedAssertionPredicateNode(tmp_opaque->in(1)->as_Bool(), _phase->C);
   _phase->register_new_node(assertion_expression, new_control);
@@ -888,6 +919,7 @@ CreateAssertionPredicatesVisitor::CreateAssertionPredicatesVisitor(CountedLoopNo
                                                                    const NodeInLoopBody& node_in_loop_body,
                                                                    const bool clone_template)
     : _init(target_loop_head->init_trip()),
+      _stride(target_loop_head->stride()),
       _old_target_loop_entry(target_loop_head->skip_strip_mined()->in(LoopNode::EntryControl)),
       _current_predicate_chain_head(target_loop_head->skip_strip_mined()), // Initially no predicates, yet.
       _phase(phase),
@@ -929,7 +961,8 @@ InitializedAssertionPredicate CreateAssertionPredicatesVisitor::initialize_from_
   IfNode* template_head = template_assertion_predicate.head();
   InitializedAssertionPredicateCreator initialized_assertion_predicate_creator(_phase);
   InitializedAssertionPredicate initialized_assertion_predicate =
-      initialized_assertion_predicate_creator.create_from_template(template_head, new_control, _init);
+      initialized_assertion_predicate_creator.create_from_template(template_head, new_control, _init, _stride);
+
   DEBUG_ONLY(initialized_assertion_predicate.verify();)
   template_assertion_predicate.rewire_loop_data_dependencies(initialized_assertion_predicate.tail(),
                                                              _node_in_loop_body, _phase);

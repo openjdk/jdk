@@ -492,6 +492,8 @@ class TemplateAssertionExpression : public StackObj {
   OpaqueTemplateAssertionPredicateNode* clone(Node* new_control, PhaseIdealLoop* phase) const;
   OpaqueTemplateAssertionPredicateNode* clone_and_replace_init(Node* new_control, Node* new_init,
                                                                PhaseIdealLoop* phase) const;
+  OpaqueTemplateAssertionPredicateNode* clone_and_replace_init_and_stride(Node* new_control, Node* new_init,
+                                                                          Node* new_stride, PhaseIdealLoop* phase) const;
   void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn) const;
   OpaqueInitializedAssertionPredicateNode* clone_and_fold_opaque_loop_nodes(Node* new_control, PhaseIdealLoop* phase) const;
 };
@@ -632,7 +634,7 @@ class InitializedAssertionPredicateCreator : public StackObj {
   NONCOPYABLE(InitializedAssertionPredicateCreator);
 
   InitializedAssertionPredicate create_from_template(const IfNode* template_assertion_predicate, Node* new_control,
-                                                     Node* new_init) const;
+                                                     Node* new_init, Node* new_stride) const;
 
   InitializedAssertionPredicate
   create_from_template_and_insert_below(const TemplateAssertionPredicate& template_assertion_predicate) const;
@@ -641,7 +643,8 @@ class InitializedAssertionPredicateCreator : public StackObj {
 
  private:
   OpaqueInitializedAssertionPredicateNode* create_assertion_expression_from_template(const IfNode* template_assertion_predicate,
-                                                                                     Node* new_control, Node* new_init) const;
+                                                                                     Node* new_control, Node* new_init,
+                                                                                     Node* new_stride) const;
   IfTrueNode* create_control_nodes(Node* new_control, int if_opcode,
                                    OpaqueInitializedAssertionPredicateNode* assertion_expression,
                                    AssertionPredicateType assertion_predicate_type) const;
@@ -1032,6 +1035,7 @@ class NodeInClonedLoopBody : public NodeInLoopBody {
 // loop. This visitor can be used in combination with a PredicateIterator.
 class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   Node* const _init;
+  Node* const _stride;
   Node* const _old_target_loop_entry;
   Node* _current_predicate_chain_head;
   PhaseIdealLoop* const _phase;
