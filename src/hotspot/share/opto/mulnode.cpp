@@ -2075,9 +2075,10 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
     type = phase->type(expr)->isa_int();
   }
 
+  // Pattern: expr = (x << shift)
   if (expr->Opcode() == Op_LShift(bt)) {
-    const TypeInt* rhs_t = phase->type(expr->in(2))->isa_int();
-    if (rhs_t == nullptr || !rhs_t->is_con()) {
+    const TypeInt* shift_t = phase->type(expr->in(2))->isa_int();
+    if (shift_t == nullptr || !shift_t->is_con()) {
       return -1;
     }
     return rhs_t->get_con() & (type2aelembytes(bt) * BitsPerByte - 1);
@@ -2086,39 +2087,51 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
   return -1;
 }
 
-// Checks whether expr is neutral wrt addition under mask, i.e.
-// an expression of the form (AndX (T+expr) mask) can be simplified to (AndX T mask).
+// Checks whether expr is neutral element (zero) under mask. We have:
+//   (AndX expr mask)
 // The X in AndX must be I or L, depending on bt.
-// Specifically, this holds for the following cases,
-// when the shift value N is large enough to zero out
-// all the set positions of the and-mask M:
-//   (AndI (LShiftI _ #N) #M)
-//   (AndL (LShiftL _ #N) #M)
-//   (AndL (ConvI2L (LShiftI _ #N)) #M)
-// including equivalent constant operands:
-//   (AndI (ConI (_ << #N)) #M)
-//   (AndL (ConL (_ << #N)) #M)
-// The M and N values must satisfy ((-1 << N) & M) == 0.
+//
+// We split the bits of expr into MSB and LSB, where LSB represents
+// all trailing zeros of expr:
+//   MSB    LSB
+//   mmmmmm 0000000000
+//
+// We check if the mask has no one bits in the corresponding higher
+// bits, i.e. if the number of trailing zeros is larger or equal to the
+// bit width of the expr, i.e. if the number of leading zeros for mask
+// is greater or equal to the number of bits in MSB:
+//   000000 00000eeee -> (AndX expr mask) = 0                 -> return true
+//   0000ee eeeeeeeeee -> (AndX expr mask) = 0000xx 0000000000 -> return false
+//
 static bool AndIL_is_zero_element_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt) {
   jint expr_trailing_zeros = AndIL_min_trailing_zeros(phase, expr, bt);
   if (expr_trailing_zeros < 0) {
     return false;
   }
 
+  // When the mask is negative, it has the most significant bit set.
   const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
   if (mask_t == nullptr || mask_t->lo_as_long() < 0) {
     return false;
   }
 
-  jint mask_bit_width = mask_t->hi_as_long() == 0 ? 0 : (BitsPerLong - count_leading_zeros(mask_t->hi_as_long()));
+  // Is the mask always zero?
+  if (mask_t->hi_as_long() == 0) {
+    assert(mask_t->lo_as_long() == 0, "checked earlier");
+    return true;
+  }
+  jint mask_bit_width =  BitsPerLong - count_leading_zeros(mask_t->hi_as_long());
   return expr_trailing_zeros >= mask_bit_width;
 }
 
-// Given an expression (AndX (AddX v1 v2) mask)
-// determine if the AndX must always produce (AndX v1 mask),
-// because v2 is zero wrt addition under mask.
-// Because the AddX operands can come in either
-// order, we check for both orders.
+// Pattern:
+//   (AndX (AddX add1 add2) mask)
+//
+// Assume:
+//   (AndX add1 mask) == 0
+//
+// ... prove why we know that we can return:
+//   (AndX add2 mask)
 Node* MulNode::AndIL_sum_and_mask(PhaseGVN* phase, BasicType bt) {
   Node* add = in(1);
   Node* mask = in(2);
