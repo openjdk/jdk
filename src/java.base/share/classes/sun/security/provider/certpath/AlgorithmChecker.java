@@ -62,10 +62,10 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
     private PublicKey prevPubKey;
     private TrustAnchor anchor;
 
-    private static final Set<CryptoScope> SIGNATURE_PRIMITIVE_SET =
+    private static final Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
-    private static final Set<CryptoScope> KU_PRIMITIVE_SET =
+    private static final Set<CryptoPrimitive> KU_PRIMITIVE_SET =
         Collections.unmodifiableSet(EnumSet.of(
             CryptoPrimitive.SIGNATURE,
             CryptoPrimitive.KEY_ENCAPSULATION,
@@ -235,7 +235,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
                 }
             }
             // Assume all key usage bits are set if key usage is not present
-            Set<CryptoScope> primitives = KU_PRIMITIVE_SET;
+            Set<CryptoPrimitive> primitives = KU_PRIMITIVE_SET;
 
             if (keyUsage != null) {
                 primitives = new HashSet<>(EnumSet.noneOf(CryptoPrimitive.class));

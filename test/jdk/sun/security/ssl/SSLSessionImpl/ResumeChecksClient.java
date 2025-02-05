@@ -116,17 +116,17 @@ public class ResumeChecksClient extends SSLContextTemplate {
         }
 
         @Override
-        public boolean permits(Set<CryptoScope> primitives, Key key) {
+        public boolean permits(Set<CryptoPrimitive> primitives, Key key) {
             return true;
         }
         @Override
-        public boolean permits(Set<CryptoScope> primitives,
+        public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
 
             return test(algorithm);
         }
         @Override
-        public boolean permits(Set<CryptoScope> primitives,
+        public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, Key key, AlgorithmParameters parameters) {
 
             return test(algorithm);

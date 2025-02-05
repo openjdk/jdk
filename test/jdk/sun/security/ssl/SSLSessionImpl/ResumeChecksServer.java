@@ -137,15 +137,15 @@ public class ResumeChecksServer extends SSLContextTemplate {
             return !a.toLowerCase().contains(alg.toLowerCase());
         }
 
-        public boolean permits(Set<CryptoScope> primitives, Key key) {
+        public boolean permits(Set<CryptoPrimitive> primitives, Key key) {
             return true;
         }
-        public boolean permits(Set<CryptoScope> primitives,
+        public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
 
             return test(algorithm);
         }
-        public boolean permits(Set<CryptoScope> primitives,
+        public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, Key key, AlgorithmParameters parameters) {
 
             return test(algorithm);

@@ -284,6 +284,7 @@ final class SignatureAlgorithmsExtension {
                             shc.algorithmConstraints, shc.negotiatedProtocol,
                             spec.signatureSchemes,
                             HANDSHAKE_SCOPE);
+
             if (sss == null || sss.isEmpty()) {
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No supported signature algorithm");
@@ -511,9 +512,11 @@ final class SignatureAlgorithmsExtension {
             List<SignatureScheme> sss =
                     SignatureScheme.getSupportedAlgorithms(
                             chc.sslConfig,
-                            chc.algorithmConstraints, chc.negotiatedProtocol,
+                            chc.algorithmConstraints,
+                            chc.negotiatedProtocol,
                             spec.signatureSchemes,
                             HANDSHAKE_SCOPE);
+
             if (sss == null || sss.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No supported signature algorithm");

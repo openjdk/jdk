@@ -236,7 +236,7 @@ enum NamedGroup {
     final boolean isAvailable;
 
     // performance optimization
-    private static final Set<CryptoScope> KEY_AGREEMENT_PRIMITIVE_SET =
+    private static final Set<CryptoPrimitive> KEY_AGREEMENT_PRIMITIVE_SET =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
     // Constructor used for all NamedGroup types

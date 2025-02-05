@@ -22,8 +22,6 @@
  */
 package org.openjdk.bench.java.security;
 
-import java.security.CryptoPrimitive;
-import java.util.Collections;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -38,7 +36,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import sun.security.util.DisabledAlgorithmConstraints;
 
 import java.security.AlgorithmConstraints;
-import java.security.CryptoScope;
+import java.security.CryptoPrimitive;
 import java.util.concurrent.TimeUnit;
 import java.util.EnumSet;
 import java.util.Set;
@@ -54,8 +52,7 @@ import static sun.security.util.DisabledAlgorithmConstraints.PROPERTY_TLS_DISABL
 public class AlgorithmConstraintsPermits {
 
     AlgorithmConstraints tlsDisabledAlgConstraints;
-    Set<CryptoScope> primitives = Collections.unmodifiableSet(
-            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
+    Set<CryptoPrimitive> primitives = EnumSet.of(CryptoPrimitive.KEY_AGREEMENT);
 
     @Param({"SSLv3", "DES", "NULL", "TLS1.3"})
     String algorithm;

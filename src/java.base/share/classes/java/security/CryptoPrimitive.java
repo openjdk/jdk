@@ -30,7 +30,7 @@ package java.security;
  *
  * @since 1.7
  */
-public enum CryptoPrimitive implements CryptoScope {
+public enum CryptoPrimitive {
     /**
      * Hash function
      */

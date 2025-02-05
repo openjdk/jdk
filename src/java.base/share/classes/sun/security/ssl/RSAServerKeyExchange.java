@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.CryptoPrimitive;
-import java.security.CryptoScope;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -39,10 +38,8 @@ import java.security.SignatureException;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.RSAPublicKeySpec;
 import java.text.MessageFormat;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Locale;
-import java.util.Set;
 import sun.security.ssl.RSAKeyExchange.EphemeralRSACredentials;
 import sun.security.ssl.RSAKeyExchange.EphemeralRSAPossession;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
@@ -58,9 +55,6 @@ final class RSAServerKeyExchange {
         new RSAServerKeyExchangeConsumer();
     static final HandshakeProducer rsaHandshakeProducer =
         new RSAServerKeyExchangeProducer();
-
-    private static final Set<CryptoScope> KEY_AGREEMENT_PRIMITIVE_SET =
-            Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
 
     /**
      * The ephemeral RSA ServerKeyExchange handshake message.
@@ -324,7 +318,7 @@ final class RSAServerKeyExchange {
             }
 
             if (!chc.algorithmConstraints.permits(
-                    KEY_AGREEMENT_PRIMITIVE_SET, publicKey)) {
+                    EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), publicKey)) {
                 throw chc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
                         "RSA ServerKeyExchange does not comply to " +
                         "algorithm constraints");

@@ -55,16 +55,18 @@ public interface AlgorithmConstraints {
      * Determines whether an algorithm is granted permission for the
      * specified cryptographic primitives.
      *
-     * @param scopes a set of cryptographic scopes
+     * @param primitives a set of cryptographic primitives
      * @param algorithm the algorithm name
      * @param parameters the algorithm parameters, or {@code null}
-     *         if no additional parameters
+     *     if no additional parameters
+     *
      * @return {@code true} if the algorithm is permitted and can be used for
-     *         all the specified cryptographic primitives
+     *     all the specified cryptographic primitives
+     *
      * @throws IllegalArgumentException if primitives or algorithm is
-     *         {@code null} or empty
+     *     {@code null} or empty
      */
-    boolean permits(Set<CryptoScope> scopes,
+    boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters);
 
     /**
@@ -73,30 +75,34 @@ public interface AlgorithmConstraints {
      * <p>
      * This method is usually used to check key size and key usage.
      *
-     * @param scopes a set of cryptographic scopes
+     * @param primitives a set of cryptographic primitives
      * @param key the key
+     *
      * @return {@code true} if the key can be used for all the specified
-     *         cryptographic primitives
+     *     cryptographic primitives
+     *
      * @throws IllegalArgumentException if primitives is {@code null}
-     *         or empty, or the key is {@code null}
+     * or empty, or the key is {@code null}
      */
-    boolean permits(Set<CryptoScope> scopes, Key key);
+    boolean permits(Set<CryptoPrimitive> primitives, Key key);
 
     /**
      * Determines whether an algorithm and the corresponding key are granted
      * permission for the specified cryptographic primitives.
      *
-     * @param scopes a set of cryptographic scopes
+     * @param primitives a set of cryptographic primitives
      * @param algorithm the algorithm name
      * @param key the key
      * @param parameters the algorithm parameters, or {@code null}
-     *         if no additional parameters
+     *     if no additional parameters
+     *
      * @return {@code true} if the key and the algorithm can be used for all the
-     *         specified cryptographic primitives
+     *     specified cryptographic primitives
+     *
      * @throws IllegalArgumentException if primitives or algorithm is
-     *         {@code null} or empty, or the key is {@code null}
+     *     {@code null} or empty, or the key is {@code null}
      */
-    boolean permits(Set<CryptoScope> scopes,
+    boolean permits(Set<CryptoPrimitive> primitives,
                 String algorithm, Key key, AlgorithmParameters parameters);
 
 }

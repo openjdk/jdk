@@ -25,21 +25,7 @@
 
 package sun.security.ssl;
 
-import java.security.CryptoScope;
-
-public enum SSLCryptoScope implements CryptoScope {
+enum SSLCryptoScope {
     HANDSHAKE,
     CERTIFICATE;
-
-    // Note: the SSLCryptoScope is not case-sensitive.
-    public static SSLCryptoScope nameOf(String name) {
-        for (SSLCryptoScope scope: SSLCryptoScope.values()) {
-            if (scope.name().equalsIgnoreCase(name)) {
-                return scope;
-            }
-        }
-
-        return null;
-    }
-
 }

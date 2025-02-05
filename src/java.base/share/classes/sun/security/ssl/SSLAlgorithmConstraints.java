@@ -27,9 +27,10 @@ package sun.security.ssl;
 
 import java.security.AlgorithmConstraints;
 import java.security.AlgorithmParameters;
-import java.security.CryptoScope;
+import java.security.CryptoPrimitive;
 import java.security.Key;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.net.ssl.*;
 import sun.security.util.DisabledAlgorithmConstraints;
 import static sun.security.util.DisabledAlgorithmConstraints.*;
@@ -42,11 +43,11 @@ import static sun.security.util.DisabledAlgorithmConstraints.*;
  */
 final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
-    private static final AlgorithmConstraints tlsDisabledAlgConstraints =
+    private static final DisabledAlgorithmConstraints tlsDisabledAlgConstraints =
             new DisabledAlgorithmConstraints(PROPERTY_TLS_DISABLED_ALGS,
                     new SSLAlgorithmDecomposer());
 
-    private static final AlgorithmConstraints x509DisabledAlgConstraints =
+    private static final DisabledAlgorithmConstraints x509DisabledAlgConstraints =
             new DisabledAlgorithmConstraints(PROPERTY_CERTPATH_DISABLED_ALGS,
                     new SSLAlgorithmDecomposer(true));
 
@@ -56,11 +57,11 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     private final boolean enabledX509DisabledAlgConstraints;
 
     // the default algorithm constraints
-    static final AlgorithmConstraints DEFAULT =
+    static final SSLAlgorithmConstraints DEFAULT =
                         new SSLAlgorithmConstraints(null, true);
 
     // the default SSL only algorithm constraints
-    static final AlgorithmConstraints DEFAULT_SSL_ONLY =
+    static final SSLAlgorithmConstraints DEFAULT_SSL_ONLY =
                         new SSLAlgorithmConstraints(null, false);
 
     private SSLAlgorithmConstraints(AlgorithmConstraints userSpecifiedConstraints,
@@ -84,11 +85,11 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
      * @param userSpecifiedConstraints additional constraints to check
      * @return a SSLAlgorithmConstraints instance
      */
-    static AlgorithmConstraints wrap(AlgorithmConstraints userSpecifiedConstraints) {
+    static SSLAlgorithmConstraints wrap(AlgorithmConstraints userSpecifiedConstraints) {
         return wrap(userSpecifiedConstraints, true);
     }
 
-    private static AlgorithmConstraints wrap(
+    private static SSLAlgorithmConstraints wrap(
             AlgorithmConstraints userSpecifiedConstraints,
             boolean withDefaultCertPathConstraints) {
         if (nullIfDefault(userSpecifiedConstraints) == null) {
@@ -192,87 +193,94 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     }
 
     @Override
-    public boolean permits(Set<CryptoScope> scopes,
+    public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
 
         boolean permitted = true;
 
         if (peerSpecifiedConstraints != null) {
             permitted = peerSpecifiedConstraints.permits(
-                    scopes, algorithm, parameters);
+                    primitives, algorithm, parameters);
         }
 
         if (permitted && userSpecifiedConstraints != null) {
             permitted = userSpecifiedConstraints.permits(
-                    scopes, algorithm, parameters);
+                    primitives, algorithm, parameters);
         }
 
         if (permitted) {
             permitted = tlsDisabledAlgConstraints.permits(
-                    scopes, algorithm, parameters);
+                    primitives, algorithm, parameters);
         }
 
         if (permitted && enabledX509DisabledAlgConstraints) {
             permitted = x509DisabledAlgConstraints.permits(
-                    scopes, algorithm, parameters);
+                    primitives, algorithm, parameters);
         }
 
         return permitted;
     }
 
     @Override
-    public boolean permits(Set<CryptoScope> scopes, Key key) {
+    public boolean permits(Set<CryptoPrimitive> primitives, Key key) {
 
         boolean permitted = true;
 
         if (peerSpecifiedConstraints != null) {
-            permitted = peerSpecifiedConstraints.permits(scopes, key);
+            permitted = peerSpecifiedConstraints.permits(primitives, key);
         }
 
         if (permitted && userSpecifiedConstraints != null) {
-            permitted = userSpecifiedConstraints.permits(scopes, key);
+            permitted = userSpecifiedConstraints.permits(primitives, key);
         }
 
         if (permitted) {
-            permitted = tlsDisabledAlgConstraints.permits(scopes, key);
+            permitted = tlsDisabledAlgConstraints.permits(primitives, key);
         }
 
         if (permitted && enabledX509DisabledAlgConstraints) {
-            permitted = x509DisabledAlgConstraints.permits(scopes, key);
+            permitted = x509DisabledAlgConstraints.permits(primitives, key);
         }
 
         return permitted;
     }
 
     @Override
-    public boolean permits(Set<CryptoScope> scopes,
+    public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, Key key, AlgorithmParameters parameters) {
 
         boolean permitted = true;
 
         if (peerSpecifiedConstraints != null) {
             permitted = peerSpecifiedConstraints.permits(
-                    scopes, algorithm, key, parameters);
+                    primitives, algorithm, key, parameters);
         }
 
         if (permitted && userSpecifiedConstraints != null) {
             permitted = userSpecifiedConstraints.permits(
-                    scopes, algorithm, key, parameters);
+                    primitives, algorithm, key, parameters);
         }
 
         if (permitted) {
             permitted = tlsDisabledAlgConstraints.permits(
-                    scopes, algorithm, key, parameters);
+                    primitives, algorithm, key, parameters);
         }
 
         if (permitted && enabledX509DisabledAlgConstraints) {
             permitted = x509DisabledAlgConstraints.permits(
-                    scopes, algorithm, key, parameters);
+                    primitives, algorithm, key, parameters);
         }
 
         return permitted;
     }
 
+    // Check algorithm against TLS scopes.
+    boolean permits(String algorithm, Set<SSLCryptoScope> scopes) {
+        return tlsDisabledAlgConstraints.permits(algorithm,
+                scopes.stream()
+                .map(SSLCryptoScope::name)
+                .collect(Collectors.toSet()));
+    }
 
     private static class SupportedSignatureAlgorithmConstraints
                                     implements AlgorithmConstraints {
@@ -288,7 +296,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         }
 
         @Override
-        public boolean permits(Set<CryptoScope> scopes,
+        public boolean permits(Set<CryptoPrimitive> primitives,
                 String algorithm, AlgorithmParameters parameters) {
 
             if (algorithm == null || algorithm.isEmpty()) {
@@ -296,7 +304,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                         "No algorithm name specified");
             }
 
-            if (scopes == null || scopes.isEmpty()) {
+            if (primitives == null || primitives.isEmpty()) {
                 throw new IllegalArgumentException(
                         "No cryptographic primitive specified");
             }
@@ -322,12 +330,12 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         }
 
         @Override
-        public final boolean permits(Set<CryptoScope> scopes, Key key) {
+        public final boolean permits(Set<CryptoPrimitive> primitives, Key key) {
             return true;
         }
 
         @Override
-        public final boolean permits(Set<CryptoScope> scopes,
+        public final boolean permits(Set<CryptoPrimitive> primitives,
                 String algorithm, Key key, AlgorithmParameters parameters) {
 
             if (algorithm == null || algorithm.isEmpty()) {
@@ -335,7 +343,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                         "No algorithm name specified");
             }
 
-            return permits(scopes, algorithm, parameters);
+            return permits(primitives, algorithm, parameters);
         }
     }
 }

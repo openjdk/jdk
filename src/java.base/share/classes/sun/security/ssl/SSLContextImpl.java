@@ -71,9 +71,6 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 
     private final ReentrantLock contextLock = new ReentrantLock();
 
-    private static final Set<CryptoScope> KEY_AGREEMENT_PRIMITIVE_SET =
-            Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
-
     SSLContextImpl() {
         ephemeralKeyManager = new EphemeralKeyManager();
         clientCache = new SSLSessionContextImpl(false);
@@ -381,7 +378,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                     }
 
                     if (SSLAlgorithmConstraints.DEFAULT.permits(
-                            KEY_AGREEMENT_PRIMITIVE_SET,
+                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                             suite.name, null)) {
                         suites.add(suite);
                         isSupported = true;

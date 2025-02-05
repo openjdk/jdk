@@ -742,9 +742,10 @@ final class CertificateRequest {
                             chc.negotiatedProtocol,
                             crm.algorithmIds,
                             HANDSHAKE_SCOPE);
+
             if (signAlgs.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                        "No supported signature algorithm");
+                        "No supported handshake signature algorithm");
             }
 
             List<SignatureScheme> signCertAlgs =
@@ -754,15 +755,15 @@ final class CertificateRequest {
                             chc.negotiatedProtocol,
                             crm.algorithmIds,
                             CERTIFICATE_SCOPE);
+
             if (signCertAlgs.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                        "No supported signature cert algorithm");
+                        "No supported certificate signature algorithm");
             }
 
             chc.peerRequestedSignatureSchemes = signAlgs;
             chc.peerRequestedCertSignSchemes = signCertAlgs;
-            chc.handshakeSession.setPeerSupportedSignatureAlgorithms(
-                    signCertAlgs);
+            chc.handshakeSession.setPeerSupportedSignatureAlgorithms(signCertAlgs);
 
             try {
                 chc.peerSupportedAuthorities = crm.getAuthorities();

@@ -199,6 +199,7 @@ final class CertSignAlgsExtension {
                             shc.negotiatedProtocol,
                             spec.signatureSchemes,
                             CERTIFICATE_SCOPE);
+
             shc.peerRequestedCertSignSchemes = schemes;
             shc.handshakeSession.setPeerSupportedSignatureAlgorithms(schemes);
 
@@ -338,9 +339,11 @@ final class CertSignAlgsExtension {
             List<SignatureScheme> schemes =
                     SignatureScheme.getSupportedAlgorithms(
                             chc.sslConfig,
-                            chc.algorithmConstraints, chc.negotiatedProtocol,
+                            chc.algorithmConstraints,
+                            chc.negotiatedProtocol,
                             spec.signatureSchemes,
                             CERTIFICATE_SCOPE);
+
             chc.peerRequestedCertSignSchemes = schemes;
             chc.handshakeSession.setPeerSupportedSignatureAlgorithms(schemes);
         }
