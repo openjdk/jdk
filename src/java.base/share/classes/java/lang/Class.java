@@ -2697,7 +2697,6 @@ public final class Class<T> implements java.io.Serializable,
         return true;
     }
 
-    @Stable
     private transient final ProtectionDomain protectionDomain;
 
     /** Holder for the protection domain returned when the internal domain is null */
