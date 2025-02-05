@@ -258,8 +258,7 @@ public interface QuicTLSEngine {
     int getAuthTagSize();
 
     /**
-     * Encrypt the given packet bytes using keys for the given packet key space
-     * and the given direction (incoming/outgoing).
+     * Encrypt the given packet bytes using keys for the given packet key space.
      * <p>
      * The output buffer contains the encrypted bytes and the tag. AAD is not
      * copied.
@@ -284,8 +283,7 @@ public interface QuicTLSEngine {
             QuicTransportException;
 
     /**
-     * Decrypt the given packet bytes using keys for the given packet key space
-     * and the given direction (incoming/outgoing).
+     * Decrypt the given packet bytes using keys for the given packet key space.
      * <p>
      * The output buffer contains the decrypted bytes only. AAD is not copied.
      *
