@@ -24,6 +24,7 @@
 
 #ifndef SHARE_UTILITIES_RBTREE_HPP
 #define SHARE_UTILITIES_RBTREE_HPP
+
 #include "metaprogramming/enableIf.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/os.hpp"

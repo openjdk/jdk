@@ -748,7 +748,7 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
     }
   }
   { // Make a very large tree and verify at the end
-    RBTreeCHeap<int, void, Cmp, mtOther> rbtree;
+    RBTreeCHeap<size_t, void, Cmp, mtOther> rbtree;
     constexpr size_t one_hundred_thousand = 100000;
     for (size_t i = 0; i < one_hundred_thousand; i++) {
       rbtree.upsert(i);
