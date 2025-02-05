@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
