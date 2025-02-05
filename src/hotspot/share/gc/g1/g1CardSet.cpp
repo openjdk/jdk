@@ -779,7 +779,6 @@ G1AddCardResult G1CardSet::add_card(uintptr_t card) {
   uint card_within_region;
   split_card(card, card_region, card_within_region);
 
-
 #ifdef ASSERT
   {
     uint region_idx = card_region >> config()->log2_card_regions_per_heap_region();
