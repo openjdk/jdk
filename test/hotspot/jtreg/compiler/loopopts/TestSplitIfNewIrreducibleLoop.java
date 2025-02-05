@@ -44,7 +44,7 @@ public class TestSplitIfNewIrreducibleLoop {
     static class B extends A {}
 
     public static void main(String[] args) {
-        // Instanciate one each: classes are loaded.
+        // Instantiate one each: classes are loaded.
         A a = new A();
         B b = new B();
         test(b);
