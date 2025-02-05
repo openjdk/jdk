@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,12 @@ import static jdk.internal.util.ArraysSupport.U;
  * if the start index of the access will cause out of bounds read/write.
  * <p>
  * Methods are grouped into 4 categories: BO for explicit byte order, BE for
- * big endian, LE for little endian, and there are boolean access that does not
- * depend on byte order.
+ * big endian, LE for little endian, and there are boolean access methods that
+ * does not depend on byte order.
  * <p>
- * Types supported including non-byte primitives, raw float/double writes with
- * special NaN treatment, unsigned 2-byte, and single-byte boolean.
+ * Types supported including non-byte primitives numbers (char, short, int,
+ * float, long, double), raw float/double writes with special NaN treatment,
+ * unsigned shorts (u2), and single-byte boolean checking != 0.
  */
 public final class ByteArray {
 
@@ -88,7 +89,7 @@ public final class ByteArray {
         U.putLongUnaligned(array, ARRAY_BYTE_BASE_OFFSET + index, value, big);
     }
 
-    // Secondary types with byte order
+    // Derived types with Byte Order
 
     public static float getFloatBO(byte[] array, int index, boolean big) {
         return Float.intBitsToFloat(getIntBO(array, index, big));
@@ -257,7 +258,7 @@ public final class ByteArray {
         setDoubleRawBO(array, offset, false, value);
     }
 
-    // custom types
+    // boolean
 
     public static boolean getBoolean(byte[] array, int offset) {
         return array[offset] != 0;
