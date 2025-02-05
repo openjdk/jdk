@@ -374,7 +374,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
       }
       int free_count = 0;
       do {
-        mon->INotify(current);
+        mon->notify_internal(current);
         ++free_count;
       } while (mon->first_waiter() != nullptr && all);
       OM_PERFDATA_OP(Notifications, inc(free_count));
