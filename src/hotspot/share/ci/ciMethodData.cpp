@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMetadata.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciReplay.hpp"
@@ -785,7 +784,7 @@ void ciMethodData::dump_replay_data(outputStream* out) {
     // We could use INTPTR_FORMAT here but that's zero justified
     // which makes comparing it with the SA version of this output
     // harder. data()'s element type is intptr_t.
-    out->print(" %#zx", data()[i]);
+    out->print(" 0x%zx", data()[i]);
   }
 
   // The MDO contained oop references as ciObjects, so scan for those
