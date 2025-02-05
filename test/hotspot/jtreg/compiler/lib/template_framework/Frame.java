@@ -76,7 +76,7 @@ class Frame {
     }
 
     String variableName(String name) {
-        return variableNames.computeIfAbsent(name, s -> name + Renderer.variableId++);
+        return variableNames.computeIfAbsent(name, s -> name + "_" + Renderer.variableId++);
     }
 
     // TODO ensure only use once!

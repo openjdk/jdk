@@ -44,6 +44,7 @@ import compiler.lib.template_framework.*;
 import compiler.lib.template_framework.Template;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.intoHook;
+import static compiler.lib.template_framework.Template.$;
 
 public class TestTemplate {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -58,6 +59,9 @@ public class TestTemplate {
         testHookSimple();
         testHookNested();
         testHookWithNestedTemplates();
+        testNames();
+
+        // TODO let
 
         //testClassInstantiator();
         //testRepeat();
@@ -377,6 +381,37 @@ public class TestTemplate {
             """;
         checkEQ(code, expected);
     }
+
+    public static void testNames() {
+        var hook1 = new Hook("Hook1");
+
+        var template1 = Template.make("a", (String a) -> body("x $name #a x\n"));
+
+        var template2 = Template.make(() -> body(
+            "{\n",
+            "$name\n",
+            "$name", "\n",
+            "y $name\n y",
+            "y$name y\n",
+            template1.withArgs("name"),     // does not capture -> literal "$name"
+            template1.withArgs("$name"),    // does not capture -> literal "$name"
+            template1.withArgs($("name")),  // capture replacement name "name_TODO"
+            hook1.set(
+                "$name\n"
+            ),
+            "}\n"
+        ));
+
+        String code = template2.withArgs().render();
+        String expected =
+            """
+            {
+            }
+            """;
+        checkEQ(code, expected);
+    }
+
+
 
     public static void checkEQ(String code, String expected) {
         if (!code.equals(expected)) {

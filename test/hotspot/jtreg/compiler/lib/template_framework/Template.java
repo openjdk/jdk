@@ -78,4 +78,8 @@ public interface Template {
     static HookInsert intoHook(Hook hook, TemplateUse t) {
         return new HookInsert(hook, t);
     }
+
+    static String $(String name) {
+        return Renderer.variableName(name);
+    }
 }

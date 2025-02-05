@@ -70,7 +70,7 @@ public abstract class Renderer {
         return code;
     }
 
-    public static String $(String name) {
+    static String variableName(String name) {
         return getCurrentFrame().variableName(name);
     }
 
@@ -169,8 +169,13 @@ public abstract class Renderer {
     }
 
     private static String templateString(String s, Frame frame) {
-        var temp = DOLLAR_NAME_PATTERN.matcher(s).replaceAll((MatchResult result) -> $(result.group(1)));
-        return HASHTAG_REPLACEMENT_PATTERN.matcher(temp).replaceAll((MatchResult result) -> frame.getContext(result.group(1)));
+        var temp = DOLLAR_NAME_PATTERN.matcher(s).replaceAll(
+            (MatchResult result) -> variableName(result.group(1))
+	);
+        return HASHTAG_REPLACEMENT_PATTERN.matcher(temp).replaceAll(
+            // We must escape "$", because it has a special meaning in replaceAll.
+            (MatchResult result) -> frame.getContext(result.group(1)).replace("$", "\\$")
+        );
     }
 
     private static Frame frameForHook(Hook hook) {
