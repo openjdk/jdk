@@ -167,9 +167,12 @@ public class Check {
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
         boolean enforceMandatoryWarnings = true;
 
-        deprecationHandler = new MandatoryWarningHandler(log, null, verboseDeprecated, enforceMandatoryWarnings, "deprecated");
-        removalHandler = new MandatoryWarningHandler(log, null, verboseRemoval, enforceMandatoryWarnings);
-        uncheckedHandler = new MandatoryWarningHandler(log, null, verboseUnchecked, enforceMandatoryWarnings);
+        deprecationHandler = new MandatoryWarningHandler(log, null, verboseDeprecated,
+                enforceMandatoryWarnings, LintCategory.DEPRECATION, "deprecated");
+        removalHandler = new MandatoryWarningHandler(log, null, verboseRemoval,
+                enforceMandatoryWarnings, LintCategory.REMOVAL);
+        uncheckedHandler = new MandatoryWarningHandler(log, null, verboseUnchecked,
+                enforceMandatoryWarnings, LintCategory.UNCHECKED);
 
         deferredLintHandler = DeferredLintHandler.instance(context);
 
