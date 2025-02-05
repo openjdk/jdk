@@ -41,7 +41,7 @@ on:
       debug-levels:
         required: false
         type: string
-        default: '[ "release" ]'
+        default: '[ "debug", "release" ]'
       gcc-major-version:
         required: true
         type: string
