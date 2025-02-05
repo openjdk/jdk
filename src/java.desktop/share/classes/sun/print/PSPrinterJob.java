@@ -1561,7 +1561,6 @@ public class PSPrinterJob extends RasterPrinterJob {
                                   boolean noJobSheet,
                                   String jobTitle, int copies, String spoolFile) {
         int PRINTER = 0x1;
-        int OPTIONS = 0x2;
         int JOBTITLE  = 0x4;
         int COPIES  = 0x8;
         int NOSHEET = 0x10;
@@ -1569,14 +1568,15 @@ public class PSPrinterJob extends RasterPrinterJob {
         String[] execCmd;
         int ncomps = 2; // minimum number of print args
         int n = 0;
+        String[] optionArgs = null;
 
         if (printer != null && !printer.isEmpty() && !printer.equals("lp")) {
             pFlags |= PRINTER;
             ncomps+=1;
         }
         if (options != null && !options.isEmpty()) {
-            pFlags |= OPTIONS;
-            ncomps+=1;
+            optionArgs = options.trim().split("\\s+");
+            ncomps+=optionArgs.length;
         }
         if (jobTitle != null && !jobTitle.isEmpty()) {
             pFlags |= JOBTITLE;
@@ -1613,9 +1613,10 @@ public class PSPrinterJob extends RasterPrinterJob {
                         isAttributeCategorySupported(JobSheets.class)) {
                 execCmd[n++] = "-o job-sheets=standard";
             }
-            if ((pFlags & OPTIONS) != 0) {
-                execCmd[n++] = "-o " + options.trim().
-                        replaceAll("\\s+", " -o ");
+            if (optionArgs != null) {
+                for (String option : optionArgs) {
+                    execCmd[n++] = "-o " + option;
+                }
             }
         } else {
             ncomps+=1; //add 1 arg for lp
@@ -1637,9 +1638,10 @@ public class PSPrinterJob extends RasterPrinterJob {
                         isAttributeCategorySupported(JobSheets.class)) {
                 execCmd[n++] = "-o job-sheets=standard";
             }
-            if ((pFlags & OPTIONS) != 0) {
-                execCmd[n++] = "-o " + options.trim().
-                        replaceAll("\\s+", " -o ");
+            if (optionArgs != null) {
+                for (String option : optionArgs) {
+                    execCmd[n++] = "-o " + option;
+                }
             }
         }
         execCmd[n++] = spoolFile;
