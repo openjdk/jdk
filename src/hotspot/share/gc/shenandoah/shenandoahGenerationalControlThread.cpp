@@ -24,7 +24,6 @@
  *
  */
 
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
@@ -47,7 +46,7 @@
 #include "runtime/atomic.hpp"
 
 ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
-  _control_lock(Mutex::nosafepoint - 2, "ShenandoahControlGC_lock", true),
+  _request_lock(Mutex::nosafepoint - 2, "ShenandoahGCRequest_lock", true),
   _gc_mode_lock(Mutex::nosafepoint - 3, "ShenandoahGCMode_lock", true),
   _requested_gc_cause(GCCause::_no_gc),
   _requested_generation(nullptr),
@@ -79,7 +78,7 @@ void ShenandoahGenerationalControlThread::run_service() {
     // If the cycle was cancelled, continue the next iteration to deal with it. Otherwise,
     // if there was no other cycle requested, cleanup and wait for the next request.
     if (!_heap->cancelled_gc()) {
-      MonitorLocker lock(&_control_lock, Mutex::_no_safepoint_check_flag);
+      MonitorLocker lock(&_request_lock, Mutex::_no_safepoint_check_flag);
       if (_requested_gc_cause == GCCause::_no_gc) {
         set_gc_mode(none);
         lock.wait();
@@ -88,16 +87,11 @@ void ShenandoahGenerationalControlThread::run_service() {
   }
 
   set_gc_mode(stopped);
-
-  // Wait for the actual stop(), can't leave run_service() earlier.
-  while (!should_terminate()) {
-    os::naked_short_sleep(ShenandoahControlIntervalMin);
-  }
 }
 
 void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest& request) {
   // Hold the lock while we read request cause and generation
-  MonitorLocker lock(&_control_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker lock(&_request_lock, Mutex::_no_safepoint_check_flag);
 
   if (_heap->cancelled_gc()) {
     // The previous request was cancelled. Either it was cancelled for an allocation
@@ -605,9 +599,9 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
 }
 
 void ShenandoahGenerationalControlThread::stop_service() {
-  MonitorLocker locker(&_control_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker locker(&_request_lock, Mutex::_no_safepoint_check_flag);
   _requested_gc_cause = GCCause::_shenandoah_stop_vm;
-  _control_lock.notify();
+  _request_lock.notify();
 }
 
 void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause cause) {
@@ -644,8 +638,11 @@ void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(Shenando
 
 void ShenandoahGenerationalControlThread::request_gc(GCCause::Cause cause) {
   if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-    MonitorLocker locker(&_control_lock, Mutex::_no_safepoint_check_flag);
-    _control_lock.notify();
+    // GC should already be cancelled. Here we are just notifying the control thread to
+    // wake up and handle the cancellation request, so we don't need to set _requested_gc_cause.
+    assert(_heap->cancelled_gc(), "GC should already be cancelled");
+    MonitorLocker locker(&_request_lock, Mutex::_no_safepoint_check_flag);
+    _request_lock.notify();
   } else if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
     handle_requested_gc(cause);
   }
@@ -688,6 +685,10 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
       }
     }
 
+    // Setting the request and generation is not necessary here, the control thread knows
+    // that when the cancellation cause is for a concurrent gc, then it means a young gc
+    // wants to preempt the old gc. The cancellation cause takes precedence.
+    // TODO: Can we just wait while mode != concurrent_normal?
     notify_control_thread(GCCause::_shenandoah_concurrent_gc, generation);
 
     {
@@ -706,10 +707,10 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
 }
 
 void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) {
-  MonitorLocker locker(&_control_lock, Mutex::_no_safepoint_check_flag);
+  MonitorLocker locker(&_request_lock, Mutex::_no_safepoint_check_flag);
   _requested_gc_cause = cause;
   _requested_generation = generation;
-  _control_lock.notify();
+  _request_lock.notify();
 }
 
 bool ShenandoahGenerationalControlThread::preempt_old_marking(ShenandoahGeneration* generation) {
