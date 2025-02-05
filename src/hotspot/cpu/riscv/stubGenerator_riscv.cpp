@@ -2461,10 +2461,10 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef ASSERT
     if (AvoidUnalignedAccesses) {
       Label align_ok;
-      andi(t0, strL, 0x7);
-      beqz(t0, align_ok);
-      stop("bad alignment");
-      bind(align_ok);
+      __ andi(t0, strL, 0x7);
+      __ beqz(t0, align_ok);
+      __ stop("bad alignment");
+      __ bind(align_ok);
     }
 #endif
     __ ld(tmpLval, Address(strL));
