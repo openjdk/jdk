@@ -71,7 +71,7 @@ public class CompilerThread extends JavaThread {
        * See JDK-8348317. CompilerThreads are sometimes hidden and sometimes not. They
        * are not when JVMCI is enabled and a compiler implemented in java is running
        * on the CompilerThread. This is hard for SA to determine, and not something a customer
-       * is likely to ever run across or care about, so by default all CompilerThreads 
+       * is likely to ever run across or care about, so by default all CompilerThreads
        * are considered to be hidden. However, we allow this behaviour to be overridden
        * in case the user has a need to make the CompilerThreads visible.
        */
