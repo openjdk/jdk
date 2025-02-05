@@ -40,7 +40,7 @@ import java.util.Optional;
 import java.nio.file.Path;
 
 import jdk.jpackage.test.JPackageCommand;
-import static jdk.jpackage.test.HelloApp.configureEnvironment;
+import static jdk.jpackage.test.HelloApp.configureAndExecute;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.TKit;
@@ -63,9 +63,9 @@ public class WinChildProcessTest {
 
             // Start the third party application launcher and dump and save the
             // output of the application
-            List<String> output = configureEnvironment(new Executor()).saveOutput().dumpOutput()
-                    .setExecutable(cmd.appLauncherPath().toAbsolutePath())
-                    .execute(0).getOutput();
+            List<String> output = configureAndExecute(0, new Executor().saveOutput().dumpOutput()
+                    .setExecutable(cmd.appLauncherPath().toAbsolutePath()))
+                            .getOutput();
             String pidStr = output.get(0);
 
             // parse child PID
