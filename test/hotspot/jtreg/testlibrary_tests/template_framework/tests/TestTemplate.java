@@ -51,12 +51,13 @@ public class TestTemplate {
     public static void main(String[] args) {
         testSingleLine();
         testMultiLine();
-        testBodyElements();
+        testBodyTokens();
         testWithOneArguments();
         testWithTwoArguments();
         testRecursive();
-        testHook1();
-        testHook2();
+        testHookSimple();
+        testHookNested();
+        testHookWithNestedTemplates();
 
         //testClassInstantiator();
         //testRepeat();
@@ -93,7 +94,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testBodyElements() {
+    public static void testBodyTokens() {
         // We can fill the body with Objects of different types, and they get concatenated.
         // Lists get flattened into the body.
         var template = Template.make(() -> body(
@@ -203,7 +204,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testHook1() {
+    public static void testHookSimple() {
         var hook1 = new Hook("Hook1");
 
         var template1 = Template.make(() -> body("Hello\n"));
@@ -227,7 +228,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testHook2() {
+    public static void testHookNested() {
         var hook1 = new Hook("Hook1");
 
         var template1 = Template.make("a", (String a) -> body("x #a x\n"));
@@ -285,6 +286,95 @@ public class TestTemplate {
             x ten x
             x eleven x
             }""";
+        checkEQ(code, expected);
+    }
+
+    public static void testHookWithNestedTemplates() {
+        var hook1 = new Hook("Hook1");
+        var hook2 = new Hook("Hook2");
+
+        var template1 = Template.make("a", (String a) -> body("x #a x\n"));
+
+        var template2 = Template.make("b", (String b) -> body(
+            "{\n",
+            template1.withArgs(b + "A"),
+            intoHook(hook1, template1.withArgs(b + "B")),
+            intoHook(hook2, template1.withArgs(b + "C")),
+            template1.withArgs(b + "D"),
+            hook1.set(
+                template1.withArgs(b + "E"),
+                intoHook(hook1, template1.withArgs(b + "F")),
+                intoHook(hook2, template1.withArgs(b + "G")),
+                template1.withArgs(b + "H"),
+                hook2.set(
+                    template1.withArgs(b + "I"),
+                    intoHook(hook1, template1.withArgs(b + "J")),
+                    intoHook(hook2, template1.withArgs(b + "K")),
+                    template1.withArgs(b + "L")
+                ),
+                template1.withArgs(b + "M"),
+                intoHook(hook1, template1.withArgs(b + "N")),
+                intoHook(hook2, template1.withArgs(b + "O")),
+                template1.withArgs(b + "O")
+            ),
+            template1.withArgs(b + "P"),
+            intoHook(hook1, template1.withArgs(b + "Q")),
+            intoHook(hook2, template1.withArgs(b + "R")),
+            template1.withArgs(b + "S"),
+            "}\n"
+        ));
+
+        // Test use of hooks across templates.
+        var template3 = Template.make(() -> body(
+            "{\n",
+            "base-A\n",
+            hook1.set(
+                "base-B\n",
+                hook2.set(
+                    "base-C\n",
+                    template2.withArgs("sub-"),
+                    "base-D\n"
+	        ),
+                "base-E\n"
+	    ),
+            "base-F\n",
+            "}\n"
+        ));
+
+        String code = template3.withArgs().render();
+        String expected =
+            """
+            {
+            base-A
+            x sub-B x
+            x sub-Q x
+            base-B
+            x sub-C x
+            x sub-G x
+            x sub-O x
+            x sub-R x
+            base-C
+            {
+            x sub-A x
+            x sub-D x
+            x sub-F x
+            x sub-J x
+            x sub-N x
+            x sub-E x
+            x sub-H x
+            x sub-K x
+            x sub-I x
+            x sub-L x
+            x sub-M x
+            x sub-O x
+            x sub-P x
+            x sub-S x
+            }
+            base-D
+            base-E
+            base-F
+            }
+            """;
         checkEQ(code, expected);
     }
 

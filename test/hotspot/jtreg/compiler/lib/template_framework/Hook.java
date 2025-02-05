@@ -30,4 +30,6 @@ public record Hook(String name) {
     public HookUse set(Object... tokens) {
         return new HookUse(this, Arrays.asList(tokens));
     }
+
+    // TODO hook.send(...) vs intoHook(hook, ...)
 }
