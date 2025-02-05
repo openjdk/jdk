@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package jdk.internal.foreign.abi;
 
 import java.lang.foreign.FunctionDescriptor;
-
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.stream.Stream;
@@ -193,6 +192,10 @@ public class CallingSequence {
 
     public boolean needsTransition() {
         return !linkerOptions.isCritical();
+    }
+
+    public boolean usingAddressPairs() {
+        return linkerOptions.allowsHeapAccess();
     }
 
     public int numLeadingParams() {

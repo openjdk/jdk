@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-// no precompiled headers
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -2013,7 +2012,9 @@ run:
                 oopDesc::release_set_mark(result, ik->prototype_header());
               } else {
                 oopDesc::set_mark(result, markWord::prototype());
-                oopDesc::set_klass_gap(result, 0);
+                if (oopDesc::has_klass_gap()) {
+                  oopDesc::set_klass_gap(result, 0);
+                }
                 oopDesc::release_set_klass(result, ik);
               }
               oop obj = cast_to_oop(result);

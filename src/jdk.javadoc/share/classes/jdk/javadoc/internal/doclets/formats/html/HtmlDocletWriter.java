@@ -791,19 +791,16 @@ public abstract class HtmlDocletWriter {
         }
         if (targetLink != null) {
             if (flags.contains(ElementFlag.PREVIEW)) {
-                return new ContentBuilder(
-                    links.createLink(targetLink, label),
-                    HtmlTree.SUP(links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(packageElement).name()),
-                                                  contents.previewMark))
-                );
+                return new ContentBuilder(links.createLink(targetLink, label),
+                        HtmlTree.SUP(HtmlStyles.previewMark,
+                                links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(packageElement).name()),
+                                        contents.previewMark)));
             }
             return links.createLink(targetLink, label);
         } else {
             if (flags.contains(ElementFlag.PREVIEW)) {
-                return new ContentBuilder(
-                    label,
-                    HtmlTree.SUP(contents.previewMark)
-                );
+                return new ContentBuilder(label,
+                        HtmlTree.SUP(HtmlStyles.previewMark, contents.previewMark));
             }
             return label;
         }
@@ -835,19 +832,16 @@ public abstract class HtmlDocletWriter {
             targetLink = new DocLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)), fragment);
             Content link = links.createLink(targetLink, label, "");
             if (flags.contains(ElementFlag.PREVIEW) && label != contents.moduleLabel) {
-                link = new ContentBuilder(
-                        link,
-                        HtmlTree.SUP(links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(mdle).name()),
-                                                      contents.previewMark))
-                );
+                link = new ContentBuilder(link,
+                        HtmlTree.SUP(HtmlStyles.previewMark,
+                                links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(mdle).name()),
+                                                      contents.previewMark)));
             }
             return link;
         }
         if (flags.contains(ElementFlag.PREVIEW)) {
-            return new ContentBuilder(
-                label,
-                HtmlTree.SUP(contents.previewMark)
-            );
+            return new ContentBuilder(label,
+                    HtmlTree.SUP(HtmlStyles.previewMark, contents.previewMark));
         }
         return label;
     }
@@ -1030,11 +1024,10 @@ public abstract class HtmlDocletWriter {
     }
 
     /**
-     * Return the main type element of the current page or null for pages that don't have one.
-     *
-     * @return the type element of the current page.
+     * {@return the type element documented by this writer if it is a {@code ClassWriter},
+     * or null for any other kind of writer}
      */
-    public TypeElement getCurrentPageElement() {
+    public TypeElement getCurrentTypeElement() {
         return null;
     }
 
@@ -1918,7 +1911,7 @@ public abstract class HtmlDocletWriter {
         // Retrieve the element of this writer if it is a "primary" writer for an element.
         // Note: It would be nice to have getCurrentPageElement() return package and module elements
         // in their respective writers, but other uses of the method are only interested in TypeElements.
-        Element currentPageElement = getCurrentPageElement();
+        Element currentPageElement = getCurrentTypeElement();
         if (currentPageElement == null) {
             if (this instanceof PackageWriter packageWriter) {
                 currentPageElement = packageWriter.packageElement;
@@ -1957,7 +1950,7 @@ public abstract class HtmlDocletWriter {
      */
     private boolean inSamePackage(Element element) {
         Element currentPageElement = (this instanceof PackageWriter packageWriter)
-                ? packageWriter.packageElement : getCurrentPageElement();
+                ? packageWriter.packageElement : getCurrentTypeElement();
         return currentPageElement != null && !utils.isModule(element)
                 && Objects.equals(utils.containingPackage(currentPageElement),
                 utils.containingPackage(element));

@@ -30,9 +30,6 @@ import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.Vector;
 import javax.sql.rowset.RowSetWarning;
-import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.reflect.Reflection;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * A serializable mapping in the Java programming language of an SQL
@@ -125,23 +122,9 @@ public class SerialJavaObject implements Serializable, Cloneable {
      * the serialized object
      * @see Class#getFields
      */
-    @CallerSensitive
     public Field[] getFields() throws SerialException {
         if (fields != null) {
             Class<?> c = this.obj.getClass();
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                /*
-                 * Check if the caller is allowed to access the specified class's package.
-                 * If access is denied, throw a SecurityException.
-                 */
-                Class<?> caller = Reflection.getCallerClass();
-                if (ReflectUtil.needsPackageAccessCheck(caller.getClassLoader(),
-                                                        c.getClassLoader())) {
-                    ReflectUtil.checkPackageAccess(c);
-                }
-            }
             return c.getFields();
         } else {
             throw new SerialException("SerialJavaObject does not contain" +

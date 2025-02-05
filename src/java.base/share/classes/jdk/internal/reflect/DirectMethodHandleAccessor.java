@@ -47,7 +47,7 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
      * Creates a MethodAccessorImpl for a non-native method.
      */
     static MethodAccessorImpl methodAccessor(Method method, MethodHandle target) {
-        assert !Modifier.isNative(method.getModifiers());
+        assert !MethodHandleAccessorFactory.isSignaturePolymorphicMethod(method);
 
         return new DirectMethodHandleAccessor(method, target, false);
     }

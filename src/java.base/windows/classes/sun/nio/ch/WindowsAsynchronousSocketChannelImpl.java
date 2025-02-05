@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,15 @@
 
 package sun.nio.ch;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.channels.*;
 import java.nio.ByteBuffer;
 import java.nio.BufferOverflowException;
 import java.net.*;
 import java.util.concurrent.*;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.Unsafe;
 import sun.net.util.SocketExceptions;
 
@@ -308,20 +308,6 @@ class WindowsAsynchronousSocketChannelImpl
         }
     }
 
-    @SuppressWarnings("removal")
-    private void doPrivilegedBind(final SocketAddress sa) throws IOException {
-        try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                public Void run() throws IOException {
-                    bind(sa);
-                    return null;
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw (IOException) e.getException();
-        }
-    }
-
     @Override
     <A> Future<Void> implConnect(SocketAddress remote,
                                  A attachment,
@@ -337,12 +323,6 @@ class WindowsAsynchronousSocketChannelImpl
 
         InetSocketAddress isa = Net.checkAddress(remote);
 
-        // permission check
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkConnect(isa.getAddress().getHostAddress(), isa.getPort());
-
         // check and update state
         // ConnectEx requires the socket to be bound to a local address
         IOException bindException = null;
@@ -354,11 +334,7 @@ class WindowsAsynchronousSocketChannelImpl
             if (localAddress == null) {
                 try {
                     SocketAddress any = new InetSocketAddress(0);
-                    if (sm == null) {
-                        bind(any);
-                    } else {
-                        doPrivilegedBind(any);
-                    }
+                    bind(any);
                 } catch (IOException x) {
                     bindException = x;
                 }
@@ -394,10 +370,13 @@ class WindowsAsynchronousSocketChannelImpl
      * result when the read completes.
      */
     private class ReadTask<V,A> implements Runnable, Iocp.ResultHandler {
+        private static final VarHandle RELEASED = MhUtil.findVarHandle(MethodHandles.lookup(),
+                "released", boolean.class);
         private final ByteBuffer[] bufs;
         private final int numBufs;
         private final boolean scatteringRead;
         private final PendingFuture<V,A> result;
+        private volatile boolean released;
 
         // set by run method
         private ByteBuffer[] shadow;
@@ -488,12 +467,14 @@ class WindowsAsynchronousSocketChannelImpl
         }
 
         void releaseBuffers() {
-            for (int i=0; i<numBufs; i++) {
-                if (!(bufs[i] instanceof DirectBuffer)) {
-                    Util.releaseTemporaryDirectBuffer(shadow[i]);
+            if (RELEASED.compareAndSet(this, false, true)) {
+                for (int i = 0; i < numBufs; i++) {
+                    if (!(bufs[i] instanceof DirectBuffer)) {
+                        Util.releaseTemporaryDirectBuffer(shadow[i]);
+                    }
                 }
+                IOUtil.releaseScopes(scopeHandleReleasers);
             }
-            IOUtil.releaseScopes(scopeHandleReleasers);
         }
 
         @Override
@@ -668,10 +649,13 @@ class WindowsAsynchronousSocketChannelImpl
      * result when the write completes.
      */
     private class WriteTask<V,A> implements Runnable, Iocp.ResultHandler {
+        private static final VarHandle RELEASED = MhUtil.findVarHandle(MethodHandles.lookup(),
+                "released", boolean.class);
         private final ByteBuffer[] bufs;
         private final int numBufs;
         private final boolean gatheringWrite;
         private final PendingFuture<V,A> result;
+        private volatile boolean released;
 
         // set by run method
         private ByteBuffer[] shadow;
@@ -755,12 +739,14 @@ class WindowsAsynchronousSocketChannelImpl
         }
 
         void releaseBuffers() {
-            for (int i=0; i<numBufs; i++) {
-                if (!(bufs[i] instanceof DirectBuffer)) {
-                    Util.releaseTemporaryDirectBuffer(shadow[i]);
+            if (RELEASED.compareAndSet(this, false, true)) {
+                for (int i = 0; i < numBufs; i++) {
+                    if (!(bufs[i] instanceof DirectBuffer)) {
+                        Util.releaseTemporaryDirectBuffer(shadow[i]);
+                    }
                 }
+                IOUtil.releaseScopes(scopeHandleReleasers);
             }
-            IOUtil.releaseScopes(scopeHandleReleasers);
         }
 
         @Override

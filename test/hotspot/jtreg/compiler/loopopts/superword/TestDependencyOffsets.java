@@ -643,6 +643,12 @@ public class TestDependencyOffsets {
         return new ArrayList<Integer>(set);
     }
 
+    enum ExpectVectorization {
+        ALWAYS,    // -> positive "count" IR rule
+        UNKNOWN,   // -> disable IR rule
+        NEVER      // -> negative "failOn" IR rule
+    };
+
     static record TestDefinition (int id, Type type, int offset) {
 
         /*
@@ -656,18 +662,22 @@ public class TestDependencyOffsets {
             String aliasingComment;
             String secondArgument;
             String loadFrom;
+            boolean isSingleArray;
             switch (RANDOM.nextInt(3)) {
             case 0: // a[i + offset] = a[i]
+                isSingleArray = true;
                 aliasingComment = "single-array";
                 secondArgument = "a";
                 loadFrom = "a";
                 break;
             case 1: // a[i + offset] = b[i], but a and b alias, i.e. at runtime a == b.
+                isSingleArray = false;
                 aliasingComment = "aliasing";
                 secondArgument = "a";
                 loadFrom = "b";
                 break;
             case 2: // a[i + offset] = b[i], and a and b do not alias, i.e. at runtime a != b.
+                isSingleArray = false;
                 aliasingComment = "non-aliasing";
                 secondArgument = "b";
                 loadFrom = "b";
@@ -712,7 +722,7 @@ public class TestDependencyOffsets {
                    type.name, id, type.name,
                    id, id, id, id, secondArgument, id,
                    // IR rules
-                   generateIRRules(),
+                   generateIRRules(isSingleArray),
                    // test
                    id, type.name, type.name,
                    start, end,
@@ -726,7 +736,7 @@ public class TestDependencyOffsets {
          * expect depends on AlignVector and MaxVectorSize, as well as the byteOffset between the load and
          * store.
          */
-        String generateIRRules() {
+        String generateIRRules(boolean isSingleArray) {
             StringBuilder builder = new StringBuilder();
 
             for (CPUMinVectorWidth cm : getCPUMinVectorWidth(type.name)) {
@@ -744,29 +754,75 @@ public class TestDependencyOffsets {
                 // power of two.
                 int infinity = 256; // No vector size is ever larger than this.
                 int maxVectorWidth = infinity; // no constraint by default
+                int log2 = 31 - Integer.numberOfLeadingZeros(offset);
+                int floorPow2Offset = 1 << log2;
                 if (0 < byteOffset && byteOffset < maxVectorWidth) {
-                    int log2 = 31 - Integer.numberOfLeadingZeros(offset);
-                    int floorPow2 = 1 << log2;
-                    maxVectorWidth = Math.min(maxVectorWidth, floorPow2 * type.size);
-                    builder.append("    // Vectors must have at most " + floorPow2 +
+                    maxVectorWidth = Math.min(maxVectorWidth, floorPow2Offset * type.size);
+                    builder.append("    // Vectors must have at most " + floorPow2Offset +
                                    " elements: maxVectorWidth = " + maxVectorWidth +
                                    " to avoid cyclic dependency.\n");
                 }
 
+                ExpectVectorization expectVectorization = ExpectVectorization.ALWAYS;
+                if (isSingleArray && 0 < offset && offset < 64) {
+                    // In a store-forward case at iteration distances below a certain threshold, and not there
+                    // is some partial overlap between the expected vector store and some vector load in a later
+                    // iteration, we avoid vectorization to avoid the latency penalties of store-to-load
+                    // forwarding failure. We only detect these failures in single-array cases.
+                    //
+                    // Note: we currently never detect store-to-load-forwarding failures beyond 64 iterations,
+                    //       And so if the offset >= 64, we always expect vectorization.
+                    //
+                    // The condition for partial overlap:
+                    //   offset % #elements != 0
+                    //
+                    // But we do not know #elements exactly, only a range from min/maxVectorWidth.
+
+                    int maxElements = maxVectorWidth / type.size;
+                    int minElements = minVectorWidth / type.size;
+                    boolean sometimesPartialOverlap = offset % maxElements != 0;
+                    // If offset % minElements != 0, then it does also not hold for any larger vector.
+                    boolean alwaysPartialOverlap = offset % minElements != 0;
+
+                    if (alwaysPartialOverlap) {
+                        // It is a little tricky to know the exact threshold. On all platforms and in all
+                        // unrolling cases, it is between 8 and 64. Hence, we have these 3 cases:
+                        if (offset <= 8) {
+                            builder.append("    // We always detect store-to-load-forwarding failures -> never vectorize.\n");
+                            expectVectorization = ExpectVectorization.NEVER;
+                        } else if (offset <= 64) {
+                            builder.append("    // Unknown if detect store-to-load-forwarding failures -> maybe disable IR rules.\n");
+                            expectVectorization = ExpectVectorization.UNKNOWN;
+                        } else {
+                            // offset > 64  -> offset too large, expect no store-to-load-failure detection
+                            throw new RuntimeException("impossible");
+                        }
+                    } else if (sometimesPartialOverlap && !alwaysPartialOverlap) {
+                        builder.append("    // Partial overlap condition true: sometimes but not always -> maybe disable IR rules.\n");
+                        expectVectorization = ExpectVectorization.UNKNOWN;
+                    } else {
+                        builder.append("    // Partial overlap never happens -> expect vectorization.\n");
+                        expectVectorization = ExpectVectorization.ALWAYS;
+                    }
+                }
+
                 // Rule 1: No strict alignment: -XX:-AlignVector
+                ExpectVectorization expectVectorization1 = expectVectorization;
                 IRRule r1 = new IRRule(type, type.irNode, applyIfCPUFeature);
                 r1.addApplyIf("\"AlignVector\", \"false\"");
                 r1.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
 
                 if (maxVectorWidth < minVectorWidth) {
                     builder.append("    // maxVectorWidth < minVectorWidth -> expect no vectorization.\n");
-                    r1.setNegative();
+                    expectVectorization1 = ExpectVectorization.NEVER;
                 } else if (maxVectorWidth < infinity) {
                     r1.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
                 }
+                r1.setExpectVectVectorization(expectVectorization1);
                 r1.generate(builder);
 
                 // Rule 2: strict alignment: -XX:+AlignVector
+                ExpectVectorization expectVectorization2 = expectVectorization;
                 IRRule r2 = new IRRule(type, type.irNode, applyIfCPUFeature);
                 r2.addApplyIf("\"AlignVector\", \"true\"");
                 r2.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
@@ -791,18 +847,23 @@ public class TestDependencyOffsets {
                     builder.append("    // byteOffset % awMax == 0   -> always trivially aligned\n");
                 } else if (byteOffset % awMin != 0) {
                     builder.append("    // byteOffset % awMin != 0   -> can never align -> expect no vectorization.\n");
-                    r2.setNegative();
+                    expectVectorization2 = ExpectVectorization.NEVER;
                 } else {
-                    builder.append("    // Alignment unknown -> disable IR rule.\n");
-                    r2.disable();
+                    if (expectVectorization2 != ExpectVectorization.NEVER) {
+                        builder.append("    // Alignment unknown -> disable IR rule.\n");
+                        expectVectorization2 = ExpectVectorization.UNKNOWN;
+                    } else {
+                        builder.append("    // Alignment unknown -> but already proved no vectorization above.\n");
+                    }
                 }
 
                 if (maxVectorWidth < minVectorWidth) {
                     builder.append("    // Not at least 2 elements or 4 bytes -> expect no vectorization.\n");
-                    r2.setNegative();
+                    expectVectorization2 = ExpectVectorization.NEVER;
                 } else if (maxVectorWidth < infinity) {
                     r2.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
                 }
+                r2.setExpectVectVectorization(expectVectorization2);
                 r2.generate(builder);
             }
             return builder.toString();
@@ -846,12 +907,12 @@ public class TestDependencyOffsets {
             this.size = size;
         }
 
-        void setNegative() {
-            this.isPositiveRule = false;
-        }
-
-        void disable() {
-            this.isEnabled = false;
+        void setExpectVectVectorization(ExpectVectorization expectVectorization) {
+            switch(expectVectorization) {
+                case ExpectVectorization.NEVER   -> { this.isPositiveRule = false; }
+                case ExpectVectorization.UNKNOWN -> { this.isEnabled = false; }
+                case ExpectVectorization.ALWAYS  -> {}
+            }
         }
 
         void addApplyIf(String constraint) {

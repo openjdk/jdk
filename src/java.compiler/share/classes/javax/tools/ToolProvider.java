@@ -25,8 +25,6 @@
 
 package javax.tools;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -118,29 +116,13 @@ public class ToolProvider {
         try {
             ServiceLoader<T> sl = ServiceLoader.load(clazz, ClassLoader.getSystemClassLoader());
             for (T tool : sl) {
-                if (matches(tool, moduleName))
+                if (Objects.equals(tool.getClass().getModule().getName(), moduleName)) {
                     return tool;
+                }
             }
         } catch (ServiceConfigurationError e) {
             throw new Error(e);
         }
         return null;
-    }
-
-    /**
-     * Determine if this is the desired tool instance.
-     * @param <T>               the interface of the tool
-     * @param tool              the instance of the tool
-     * @param moduleName        the name of the module containing the desired implementation
-     * @return true if and only if the tool matches the specified criteria
-     */
-    @SuppressWarnings("removal")
-    private static <T> boolean matches(T tool, String moduleName) {
-        PrivilegedAction<Boolean> pa = () -> {
-            Module toolModule = tool.getClass().getModule();
-            String toolModuleName = toolModule.getName();
-            return Objects.equals(toolModuleName, moduleName);
-        };
-        return AccessController.doPrivileged(pa);
     }
 }

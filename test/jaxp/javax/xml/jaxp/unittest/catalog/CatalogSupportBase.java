@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ public class CatalogSupportBase {
     // For the xsd import and include
     String xsd_xmlSchema, dtd_xmlSchema, dtd_datatypes;
     String xsd_xmlSchema_import, xsd_xml;
-    String xml_val_test, xml_val_test_id, xsd_val_test;
+    String xml_val_test, xml_val_test_id, xsd_val_test, xsd_val_test_dtd;
     String xsd_include_company, xsd_include_person, xsd_include_product;
     String xsl_include, xsl_includeDTD, xsl_import_html, xsl_include_header, xsl_include_footer;
 
@@ -254,6 +254,7 @@ public class CatalogSupportBase {
         xml_val_test = filepath + "/val_test.xml";
         xml_val_test_id = "file://" + slash + xml_val_test;
         xsd_val_test = filepath + "/val_test.xsd";
+        xsd_val_test_dtd = Paths.get(filepath + "val_test_dtd.xsd").toUri().toASCIIString();
 
         xml_xsl = "<?xml version=\"1.0\"?>\n" +
                 "<content>\n" +
@@ -375,7 +376,11 @@ public class CatalogSupportBase {
             factory.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), catalog);
         }
 
-        Schema schema = factory.newSchema(new StreamSource(new StringReader(xsd)));
+        if (xsd.endsWith(".xsd")) {
+            Schema schema = factory.newSchema(new StreamSource(xsd));
+        } else {
+            Schema schema = factory.newSchema(new StreamSource(new StringReader(xsd)));
+        }
         success("XMLSchema.dtd and datatypes.dtd are resolved.");
     }
 

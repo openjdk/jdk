@@ -45,12 +45,12 @@ public class TestDuplicatedLateInliningOutput {
     public static void main(String[] args) throws Exception {
         test(
             NonConstantReceiverLauncher.class,
-            "@ (\\d+)\\s+java\\.lang\\.invoke\\.LambdaForm\\$DMH\\/0x[0-9a-f]+::invokeStatic \\(\\d+ bytes\\)\\s+force inline by annotation",
+            "@ (\\d+)\\s+java\\.lang\\.invoke\\.MethodHandle::invokeBasic\\(\\)V \\(\\d+ bytes\\)\\s+failed to inline: receiver not constant\\s+callee changed to\\s+java\\.lang\\.invoke\\.LambdaForm\\$DMH\\/0x[0-9a-f]+::invokeStatic \\(\\d+ bytes\\)\\s+force inline by annotation\\s+late inline succeeded \\(method handle\\)",
             "@ (\\d+)\\s+java\\.lang\\.invoke\\.MethodHandle::invokeBasic\\(\\)V \\(\\d+ bytes\\)\\s+failed to inline: receiver not constant");
 
         test(
             VirtualCallLauncher.class,
-            "@ (\\d+)\\s+compiler\\.inlining\\.TestDuplicatedLateInliningOutput\\$VirtualCallLauncher\\$B::lateInlined2 \\(\\d+ bytes\\)\\s+inline \\(hot\\)",
+            "@ (\\d+)\\s+compiler\\.inlining\\.TestDuplicatedLateInliningOutput\\$VirtualCallLauncher\\$A::lateInlined2 \\(\\d+ bytes\\)\\s+failed to inline: virtual call\\s+callee changed to\\s+\\s+compiler\\.inlining\\.TestDuplicatedLateInliningOutput\\$VirtualCallLauncher\\$B::lateInlined2 \\(\\d+ bytes\\)\\s+inline \\(hot\\)\\s+late inline succeeded",
             "@ (\\d+)\\s+compiler\\.inlining\\.TestDuplicatedLateInliningOutput\\$VirtualCallLauncher\\$A::lateInlined2 \\(\\d+ bytes\\)\\s+failed to inline: virtual call"
         );
     }
@@ -75,7 +75,7 @@ public class TestDuplicatedLateInliningOutput {
         int index = IntStream.range(0, lines.size())
                 .filter(i -> lines.get(i).trim().matches(pattern1))
                 .findFirst()
-                .orElseThrow(() -> new Exception("No inlining found"));
+                .orElseThrow(() -> new Exception("No inlining found" + pattern1));
 
         if (lines.get(index - 1).trim().matches(pattern2)) {
             throw new Exception("Both failure and success message found");

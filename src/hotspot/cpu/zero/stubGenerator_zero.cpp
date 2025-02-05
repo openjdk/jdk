@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010, 2015 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_zero.hpp"
@@ -180,8 +179,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_initial_stubs() {
-    // Generates all stubs and initializes the entry points
-
     // entry points that exist in all platforms Note: This is code
     // that could be shared among different platforms - however the
     // benefit seems to be smaller than the disadvantage of having a
@@ -200,26 +197,44 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_fence_entry               = ShouldNotCallThisStub();
   }
 
-  void generate_final_stubs() {
-    // Generates all stubs and initializes the entry points
+  void generate_continuation_stubs() {
+    // do nothing
+  }
 
+  void generate_compiler_stubs() {
+    // do nothing
+  }
+
+  void generate_final_stubs() {
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
   }
 
  public:
-  StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
-    if (kind == Initial_stubs) {
+  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
+    switch(blob_id) {
+    case initial_id:
       generate_initial_stubs();
-    } else if (kind == Final_stubs) {
+      break;
+     case continuation_id:
+       generate_continuation_stubs();
+      break;
+    case compiler_id:
+       // do nothing
+      break;
+    case final_id:
       generate_final_stubs();
-    }
+      break;
+    default:
+      fatal("unexpected blob id: %d", blob_id);
+      break;
+    };
   }
 };
 
-void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind) {
-  StubGenerator g(code, kind);
+void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id) {
+  StubGenerator g(code, blob_id);
 }
 
 EntryFrame *EntryFrame::build(const intptr_t*  parameters,

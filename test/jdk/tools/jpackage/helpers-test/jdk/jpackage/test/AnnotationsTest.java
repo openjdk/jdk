@@ -40,7 +40,7 @@ import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
-import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 /*
  * @test

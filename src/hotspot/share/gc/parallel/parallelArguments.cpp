@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
@@ -83,6 +82,8 @@ void ParallelArguments::initialize() {
   if (FLAG_IS_DEFAULT(ParallelRefProcEnabled) && ParallelGCThreads > 1) {
     FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
   }
+
+  FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
 // The alignment used for boundary between young gen and old gen
@@ -128,7 +129,6 @@ void ParallelArguments::initialize_heap_flags_and_sizes() {
     // Redo everything from the start
     initialize_heap_flags_and_sizes_one_pass();
   }
-  FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
 size_t ParallelArguments::heap_reserved_size_bytes() {

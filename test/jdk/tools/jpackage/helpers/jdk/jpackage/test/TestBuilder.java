@@ -40,9 +40,9 @@ import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.AfterEach;
 import jdk.jpackage.test.Annotations.BeforeEach;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import static jdk.jpackage.test.Functional.ThrowingConsumer.toConsumer;
-import jdk.jpackage.test.Functional.ThrowingFunction;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.test.TestMethodSupplier.InvalidAnnotationException;
 import static jdk.jpackage.test.TestMethodSupplier.MethodQuery.fromQualifiedMethodName;
 

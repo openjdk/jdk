@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,9 +38,6 @@
                        VectorRegister vr1, VectorRegister vr2,
                        VectorRegister vrs,
                        bool is_latin, Label& DONE, Assembler::LMUL lmul);
-
-  void compress_bits_v(Register dst, Register src, Register mask, bool is_long);
-  void expand_bits_v(Register dst, Register src, Register mask, bool is_long);
 
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
@@ -101,7 +98,6 @@
 
   // refer to conditional_branches and float_conditional_branches
   static const int bool_test_bits = 3;
-  static const int neg_cond_bits = 2;
   static const int unsigned_branch_mask = 1 << bool_test_bits;
   static const int double_branch_mask = 1 << bool_test_bits;
 
@@ -183,13 +179,6 @@
 
 
   // intrinsic methods implemented by rvv instructions
-
-  // compress bits, i.e. j.l.Integer/Long::compress.
-  void compress_bits_i_v(Register dst, Register src, Register mask);
-  void compress_bits_l_v(Register dst, Register src, Register mask);
-  // expand bits, i.e. j.l.Integer/Long::expand.
-  void expand_bits_i_v(Register dst, Register src, Register mask);
-  void expand_bits_l_v(Register dst, Register src, Register mask);
 
   void java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
   void java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
@@ -280,7 +269,5 @@
 
   void extract_v(Register dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
   void extract_fp_v(FloatRegister dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
-
-  void load_narrow_klass_compact_c2(Register dst, Address src);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP

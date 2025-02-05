@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 package jdk.internal.perf;
 
 import java.nio.ByteBuffer;
-import java.security.Permission;
-import java.security.PrivilegedAction;
 import java.io.IOException;
 
 import sun.nio.cs.UTF_8;
@@ -49,7 +47,6 @@ import jdk.internal.ref.CleanerFactory;
  * @author   Brian Doherty
  * @since    1.4.2
  * @see      #getPerf
- * @see      jdk.internal.perf.Perf.GetPerfAction
  * @see      java.nio.ByteBuffer
  */
 public final class Perf {
@@ -59,57 +56,12 @@ public final class Perf {
     private Perf() { }    // prevent instantiation
 
     /**
-     * The GetPerfAction class is a convenience class for acquiring access
-     * to the singleton Perf instance using the
-     * <code>AccessController.doPrivileged()</code> method.
-     * <p>
-     * An instance of this class can be used as the argument to
-     * <code>AccessController.doPrivileged(PrivilegedAction)</code>.
-     * <p> Here is a suggested idiom for use of this class:
-     *
-     * <blockquote><pre>{@code
-     * class MyTrustedClass {
-     *   private static final Perf perf =
-     *       AccessController.doPrivileged(new Perf.GetPerfAction<Perf>());
-     *   ...
-     * }
-     * }</pre></blockquote>
-     * <p>
-     * In the presence of a security manager, the <code>MyTrustedClass</code>
-     * class in the above example will need to be granted the
-     * <em>"sun.misc.Perf.getPerf"</em> <code>RuntimePermission</code>
-     * permission in order to successfully acquire the singleton Perf instance.
-     * <p>
-     * Please note that the <em>"sun.misc.Perf.getPerf"</em> permission
-     * is not a JDK specified permission.
-     *
-     * @see  java.security.AccessController#doPrivileged(PrivilegedAction)
-     * @see  java.lang.RuntimePermission
-     */
-    public static class GetPerfAction implements PrivilegedAction<Perf>
-    {
-        /**
-         * Run the <code>Perf.getPerf()</code> method in a privileged context.
-         *
-         * @see #getPerf
-         */
-        public Perf run() {
-            return getPerf();
-        }
-    }
-
-    /**
      * Return a reference to the singleton Perf instance.
      * <p>
      * The getPerf() method returns the singleton instance of the Perf
      * class. The returned object provides the caller with the capability
      * for accessing the instrumentation buffer for this or another local
      * Java virtual machine.
-     * <p>
-     * If a security manager is installed, its <code>checkPermission</code>
-     * method is called with a <code>RuntimePermission</code> with a target
-     * of <em>"sun.misc.Perf.getPerf"</em>. A security exception will result
-     * if the caller has not been granted this permission.
      * <p>
      * Access to the returned <code>Perf</code> object should be protected
      * by its caller and not passed on to untrusted code. This object can
@@ -119,26 +71,12 @@ public final class Perf {
      * information. API's built on top of this interface may want to provide
      * finer grained access control to the contents of individual
      * instrumentation objects contained within the buffer.
-     * <p>
-     * Please note that the <em>"sun.misc.Perf.getPerf"</em> permission
-     * is not a JDK specified permission.
      *
      * @return  A reference to the singleton Perf instance.
-     * @throws SecurityException  if a security manager exists and its
-     *         <code>checkPermission</code> method doesn't allow access
-     *         to the <em>"jdk.internal.perf.Perf.getPerf""</em> target.
-     * @see  java.lang.RuntimePermission
      * @see  #attach
      */
     public static Perf getPerf()
     {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            Permission perm = new RuntimePermission("jdk.internal.perf.Perf.getPerf");
-            security.checkPermission(perm);
-        }
-
         return instance;
     }
 

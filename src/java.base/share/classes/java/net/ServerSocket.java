@@ -33,7 +33,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
 
-import sun.security.util.SecurityConstants;
 import sun.net.PlatformSocketImpl;
 
 /**
@@ -90,13 +89,6 @@ public class ServerSocket implements java.io.Closeable {
     private final Object socketLock = new Object();
 
     /**
-     * Creates a server socket with the given {@code SocketImpl}.
-     */
-    private ServerSocket(Void unused, SocketImpl impl) {
-        this.impl = Objects.requireNonNull(impl);
-    }
-
-    /**
      * Creates a server socket with a user-specified {@code SocketImpl}.
      *
      * @param      impl an instance of a SocketImpl to use on the ServerSocket.
@@ -106,16 +98,7 @@ public class ServerSocket implements java.io.Closeable {
      * @since 12
      */
     protected ServerSocket(SocketImpl impl) {
-        this(checkPermission(), impl);
-    }
-
-    private static Void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SecurityConstants.SET_SOCKETIMPL_PERMISSION);
-        }
-        return null;
+        this.impl = Objects.requireNonNull(impl);
     }
 
     /**
@@ -237,7 +220,7 @@ public class ServerSocket implements java.io.Closeable {
         this.impl = createImpl();
         try {
             bind(new InetSocketAddress(bindAddr, port), backlog);
-        } catch (IOException | SecurityException e) {
+        } catch (IOException e) {
             close();
             throw e;
         }
@@ -338,11 +321,6 @@ public class ServerSocket implements java.io.Closeable {
         if (backlog < 1)
             backlog = 50;
 
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null)
-            security.checkListen(epoint.getPort());
-
         // SocketImpl bind+listen throw if already bound or closed
         SocketImpl impl = getImpl();
         impl.bind(epoint.getAddress(), epoint.getPort());
@@ -364,14 +342,7 @@ public class ServerSocket implements java.io.Closeable {
         if (!isBound())
             return null;
         try {
-            InetAddress in = getImpl().getInetAddress();
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null)
-                sm.checkConnect(in.getHostAddress(), -1);
-            return in;
-        } catch (SecurityException e) {
-            return InetAddress.getLoopbackAddress();
+            return getImpl().getInetAddress();
         } catch (SocketException e) {
             // nothing
             // If we're bound, the impl has been created
@@ -631,17 +602,6 @@ public class ServerSocket implements java.io.Closeable {
             throw e;
         }
 
-        // check permission, close SocketImpl/connection if denied
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                sm.checkAccept(si.getInetAddress().getHostAddress(), si.getPort());
-            } catch (SecurityException se) {
-                si.close();
-                throw se;
-            }
-        }
     }
 
     /**
@@ -835,15 +795,10 @@ public class ServerSocket implements java.io.Closeable {
      *
      * @return  a string representation of this socket.
      */
-    @SuppressWarnings("removal")
     public String toString() {
         if (!isBound())
             return "ServerSocket[unbound]";
-        InetAddress in;
-        if (System.getSecurityManager() != null)
-            in = getInetAddress();
-        else
-            in = impl.getInetAddress();
+        InetAddress in = impl.getInetAddress();
         return "ServerSocket[addr=" + in +
                 ",localport=" + impl.getLocalPort()  + "]";
     }
@@ -883,11 +838,6 @@ public class ServerSocket implements java.io.Closeable {
     public static synchronized void setSocketFactory(SocketImplFactory fac) throws IOException {
         if (factory != null) {
             throw new SocketException("factory already defined");
-        }
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSetFactory();
         }
         factory = fac;
     }

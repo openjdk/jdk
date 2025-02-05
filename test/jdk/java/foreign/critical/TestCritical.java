@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,15 @@ import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntFunction;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.testng.Assert.assertEquals;
 
 public class TestCritical extends NativeTestHelper {
+
+    static final MemoryLayout CAPTURE_STATE_LAYOUT = Linker.Option.captureStateLayout();
+    static final VarHandle ERRNO_HANDLE = CAPTURE_STATE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("errno"));
 
     static {
         System.loadLibrary("Critical");
@@ -87,11 +91,16 @@ public class TestCritical extends NativeTestHelper {
     }
 
     public record AllowHeapCase(IntFunction<MemorySegment> newArraySegment, ValueLayout elementLayout,
-                                String fName, FunctionDescriptor fDesc, boolean readOnly) {}
+                                String fName, FunctionDescriptor fDesc, boolean readOnly, boolean captureErrno) {}
 
     @Test(dataProvider = "allowHeapCases")
     public void testAllowHeap(AllowHeapCase testCase) throws Throwable {
-        MethodHandle handle = downcallHandle(testCase.fName(), testCase.fDesc(), Linker.Option.critical(true));
+        List<Linker.Option> options = new ArrayList<>();
+        options.add(Linker.Option.critical(true));
+        if (testCase.captureErrno()) {
+            options.add(Linker.Option.captureCallState("errno"));
+        }
+        MethodHandle handle = downcallHandle(testCase.fName(), testCase.fDesc(), options.toArray(Linker.Option[]::new));
         int elementCount = 10;
         MemorySegment heapSegment = testCase.newArraySegment().apply(elementCount);
         if (testCase.readOnly()) {
@@ -101,29 +110,36 @@ public class TestCritical extends NativeTestHelper {
 
         try (Arena arena = Arena.ofConfined()) {
             TestValue[] tvs = genTestArgs(testCase.fDesc(), arena);
-            Object[] args = Stream.of(tvs).map(TestValue::value).toArray();
+            List<Object> args = Stream.of(tvs).map(TestValue::value).collect(Collectors.toCollection(ArrayList::new));
+            MemorySegment captureSegment = testCase.captureErrno()
+                    ? MemorySegment.ofArray(new int[((int) CAPTURE_STATE_LAYOUT.byteSize() + 3) / 4])
+                    : null;
 
             // inject our custom last three arguments
-            args[args.length - 1] = (int) sequence.byteSize();
+            args.set(args.size() - 1, (int) sequence.byteSize());
             TestValue sourceSegment = genTestValue(sequence, arena);
-            args[args.length - 2] = sourceSegment.value();
-            args[args.length - 3] = heapSegment;
+            args.set(args.size() - 2, sourceSegment.value());
+            args.set(args.size() - 3, heapSegment);
 
+            if (testCase.captureErrno()) {
+                args.add(0, captureSegment);
+            }
             if (handle.type().parameterType(0) == SegmentAllocator.class) {
-                Object[] newArgs = new Object[args.length + 1];
-                newArgs[0] = arena;
-                System.arraycopy(args, 0, newArgs, 1, args.length);
-                args = newArgs;
+                args.add(0, arena);
             }
 
             Object o = handle.invokeWithArguments(args);
-
             if (o != null) {
                 tvs[0].check(o);
             }
 
             // check that writes went through to array
             sourceSegment.check(heapSegment);
+
+            if (testCase.captureErrno()) {
+                int errno = (int) ERRNO_HANDLE.get(captureSegment, 0L);
+                assertEquals(errno, 42);
+            }
         }
     }
 
@@ -149,14 +165,16 @@ public class TestCritical extends NativeTestHelper {
 
         List<AllowHeapCase> cases = new ArrayList<>();
 
-        for (HeapSegmentFactory hsf : HeapSegmentFactory.values()) {
-            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_void", voidDesc, false));
-            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_int", intDesc, false));
-            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_return_buffer", L2Desc, false));
-            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_imr", L3Desc, false));
-            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_void_stack", stackDesc, false));
-            // readOnly
-            cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_void", voidDesc, true));
+        for (boolean doCapture : new boolean[]{ true, false }) {
+            for (HeapSegmentFactory hsf : HeapSegmentFactory.values()) {
+                cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_void", voidDesc, false, doCapture));
+                cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_int", intDesc, false, doCapture));
+                cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_return_buffer", L2Desc, false, doCapture));
+                cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_imr", L3Desc, false, doCapture));
+                cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_void_stack", stackDesc, false, doCapture));
+                // readOnly
+                cases.add(new AllowHeapCase(hsf.newArray, hsf.elementLayout, "test_allow_heap_void", voidDesc, true, doCapture));
+            }
         }
 
         return cases.stream().map(e -> new Object[]{ e }).toArray(Object[][]::new);

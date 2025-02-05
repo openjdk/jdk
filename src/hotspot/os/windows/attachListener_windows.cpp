@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
@@ -152,7 +151,7 @@ public:
   }
 
   bool read_request() {
-    return AttachOperation::read_request(&_pipe);
+    return AttachOperation::read_request(&_pipe, &_pipe);
   }
 
 public:
@@ -161,7 +160,7 @@ public:
 
 
 // Win32AttachOperationRequest is an element of AttachOperation request list.
-class Win32AttachOperationRequest {
+class Win32AttachOperationRequest: public CHeapObj<mtServiceability> {
 private:
   AttachAPIVersion _ver;
   char _name[AttachOperation::name_length_max + 1];

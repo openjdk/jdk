@@ -98,12 +98,6 @@ public:
   inline uint8_t lockstack_size() const;
   inline void set_lockstack_size(uint8_t value);
 
-  inline ObjectWaiter* object_waiter() const;
-  inline void set_object_waiter(ObjectWaiter* obj_waiter);
-
-  inline ObjectMonitor* current_pending_monitor() const;
-  inline ObjectMonitor* current_waiting_monitor() const;
-
   inline oop cont() const;
   template<typename P>
   inline oop cont() const;

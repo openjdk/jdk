@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -258,6 +257,10 @@ void Exceptions::throw_stack_overflow_exception(JavaThread* THREAD, const char* 
   _throw(THREAD, file, line, exception);
 }
 
+// All callers are expected to have ensured that the incoming expanded format string
+// will be within reasonable limits - specifically we will never hit the INT_MAX limit
+// of os::vsnprintf when it tries to report how big a buffer is needed. Even so we
+// further limit the formatted output to 1024 characters.
 void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* h_name, const char* format, ...) {
   const int max_msg_size = 1024;
   va_list ap;
@@ -273,6 +276,7 @@ void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* 
   // have a truncated UTF-8 sequence. Similarly, if the buffer was too small and ret >= max_msg_size
   // we may also have a truncated UTF-8 sequence. In such cases we need to fix the buffer so the UTF-8
   // sequence is valid.
+  assert(ret != -1, "Caller should have ensured the incoming format string is size limited!");
   if (ret == -1 || ret >= max_msg_size) {
     int len = (int) strlen(msg);
     if (len > 0) {

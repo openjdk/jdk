@@ -64,7 +64,6 @@ import javax.swing.text.DefaultEditorKit;
 import sun.awt.AppContext;
 import sun.awt.OSInfo;
 import sun.awt.SunToolkit;
-import sun.security.action.GetPropertyAction;
 import sun.swing.DefaultLayoutStyle;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
