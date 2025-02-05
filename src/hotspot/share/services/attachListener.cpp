@@ -50,10 +50,10 @@
 
 
 // Stream for printing attach operation results.
-// Supports buffered and streaming output for commands which can produce lenghtly reply.
+// Supports buffered and streaming output for commands which can produce lengthy reply.
 //
-// To support streaming output platform implementation need to implement AttachOperation::get_reply_writer() method
-// and ctor allow_streaming argument should be set to true.
+// A platform implementation supports streaming output if it implements AttachOperation::get_reply_writer().
+// Streaming is enabled if the allow_streaming in the constructor is set to true.
 //
 // Initially attachStream works in buffered mode.
 // To switch to the streaming mode attach command handler need to call attachStream::set_result().
@@ -136,10 +136,6 @@ public:
         _error = !_reply_writer->write_fully(str, (int)len);
       }
     } else {
-      /* TODO: handle buffer overflow
-      if (size() + len > MAXIMUM_BUFFER_SIZE) {
-      }
-      */
       bufferedStream::write(str, len);
     }
   }

@@ -386,7 +386,7 @@ void DCmd::Executor::parse_and_execute(const char* cmdline, char delim, TRAPS) {
 
   int count = 0;
   while (iter.has_next()) {
-    if(_source == DCmd_Source_MBean && count > 0) {
+    if (_source == DCmd_Source_MBean && count > 0) {
       // When diagnostic commands are invoked via JMX, each command line
       // must contains one and only one command because of the Permission
       // checks performed by the DiagnosticCommandMBean
