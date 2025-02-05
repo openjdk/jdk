@@ -268,21 +268,6 @@ inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
   return _cancelled_gc.get();
 }
 
-inline GCCause::Cause ShenandoahHeap::acknowledge_cancellation() {
-  GCCause::Cause cancellation_cause = _cancelled_gc.xchg(GCCause::Cause::_no_gc);
-  if (cancellation_cause != GCCause::_no_gc) {
-    if (_cancel_requested_time > 0) {
-      log_debug(gc)("GC cancellation took %.3fs", (os::elapsedTime() - _cancel_requested_time));
-      _cancel_requested_time = 0;
-    }
-
-    if (cancellation_cause != GCCause::_shenandoah_concurrent_gc) {
-      _oom_evac_handler.clear();
-    }
-  }
-  return cancellation_cause;
-}
-
 inline void ShenandoahHeap::clear_cancelled_gc(bool clear_oom_handler) {
   _cancelled_gc.set(GCCause::_no_gc);
   if (_cancel_requested_time > 0) {

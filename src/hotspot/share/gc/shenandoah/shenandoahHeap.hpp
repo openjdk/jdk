@@ -444,8 +444,6 @@ public:
   inline bool check_cancelled_gc_and_yield(bool sts_active = true);
   inline GCCause::Cause cancelled_cause() const;
 
-  GCCause::Cause acknowledge_cancellation();
-
   inline void clear_cancelled_gc(bool clear_oom_handler = true);
 
   void cancel_concurrent_mark();
