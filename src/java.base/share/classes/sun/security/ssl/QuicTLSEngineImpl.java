@@ -323,24 +323,24 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
 
     @Override
     public void encryptPacket(KeySpace keySpace, long packetNumber,
-            ByteBuffer packet, int aadLength,
+            ByteBuffer packet, int headerLength,
             ByteBuffer output, Consumer<Integer> keyPhaseConsumer)
             throws QuicKeyUnavailableException,
             QuicTransportException {
         final QuicKeyManager keyManager = keyManager(keySpace);
-        keyManager.encryptPacket(packetNumber, packet, aadLength, output,
+        keyManager.encryptPacket(packetNumber, packet, headerLength, output,
                 keyPhaseConsumer);
     }
 
     @Override
     public void decryptPacket(final KeySpace keySpace,
             final long packetNumber, final int keyPhase,
-            final ByteBuffer packet, final int aadLength,
+            final ByteBuffer packet, final int headerLength,
             final ByteBuffer output)
             throws QuicKeyUnavailableException, AEADBadTagException,
             QuicTransportException {
         final QuicKeyManager keyManager = keyManager(keySpace);
-        keyManager.decryptPacket(packetNumber, keyPhase, packet, aadLength,
+        keyManager.decryptPacket(packetNumber, keyPhase, packet, headerLength,
                 output);
     }
 

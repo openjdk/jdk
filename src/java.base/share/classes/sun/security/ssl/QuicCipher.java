@@ -199,8 +199,8 @@ abstract class QuicCipher {
         }
 
         final void decryptPacket(long packetNumber, ByteBuffer packet,
-                int aadLength, ByteBuffer output) throws AEADBadTagException {
-            doDecrypt(packetNumber, packet, aadLength, output);
+                int headerLength, ByteBuffer output) throws AEADBadTagException {
+            doDecrypt(packetNumber, packet, headerLength, output);
             boolean updated;
             do {
                 final long current = lowestDecryptedPktNum.get();
@@ -214,7 +214,7 @@ abstract class QuicCipher {
         }
 
         protected abstract void doDecrypt(long packetNumber,
-                ByteBuffer packet, int aadLength, ByteBuffer output)
+                ByteBuffer packet, int headerLength, ByteBuffer output)
                 throws AEADBadTagException;
 
         /**
@@ -259,7 +259,7 @@ abstract class QuicCipher {
         }
 
         final void encryptPacket(final long packetNumber,
-                final ByteBuffer packet, final int aadLength,
+                final ByteBuffer packet, final int headerLength,
                 final ByteBuffer output) throws QuicTransportException {
             final long confidentialityLimit = confidentialityLimit();
             final long numEncrypted = this.numPacketsEncrypted.get();
@@ -284,7 +284,7 @@ abstract class QuicCipher {
                         QuicTransportErrors.AEAD_LIMIT_REACHED);
             }
             this.numPacketsEncrypted.incrementAndGet();
-            doEncryptPacket(packetNumber, packet, aadLength, output);
+            doEncryptPacket(packetNumber, packet, headerLength, output);
             boolean updated;
             do {
                 final long current = lowestEncryptedPktNum.get();
@@ -327,7 +327,7 @@ abstract class QuicCipher {
         }
 
         abstract void doEncryptPacket(long packetNumber, ByteBuffer packet,
-                                      int aadLength, ByteBuffer output);
+                                      int headerLength, ByteBuffer output);
 
         /**
          * Returns the maximum limit on the number of packets that are allowed
@@ -385,7 +385,7 @@ abstract class QuicCipher {
 
         @Override
         protected void doDecrypt(long packetNumber, ByteBuffer packet,
-                int aadLength, ByteBuffer output) throws AEADBadTagException {
+                                 int headerLength, ByteBuffer output) throws AEADBadTagException {
             byte[] iv = this.iv.clone();
 
             // apply packet number to IV
@@ -406,7 +406,7 @@ abstract class QuicCipher {
 
                 try {
                     int limit = packet.limit();
-                    packet.limit(packet.position() + aadLength);
+                    packet.limit(packet.position() + headerLength);
                     cipher.updateAAD(packet);
                     packet.limit(limit);
                     cipher.doFinal(packet, output);
@@ -461,7 +461,7 @@ abstract class QuicCipher {
 
         @Override
         void doEncryptPacket(long packetNumber, ByteBuffer packet,
-                             int aadLength, ByteBuffer output) {
+                             int headerLength, ByteBuffer output) {
             byte[] iv = this.iv.clone();
 
             // apply packet number to IV
@@ -481,7 +481,7 @@ abstract class QuicCipher {
                 }
                 try {
                     int limit = packet.limit();
-                    packet.limit(packet.position() + aadLength);
+                    packet.limit(packet.position() + headerLength);
                     cipher.updateAAD(packet);
                     packet.limit(limit);
                     cipher.doFinal(packet, output);
@@ -553,7 +553,7 @@ abstract class QuicCipher {
 
         @Override
         protected void doDecrypt(long packetNumber, ByteBuffer packet,
-                int aadLength, ByteBuffer output) throws AEADBadTagException {
+                                 int headerLength, ByteBuffer output) throws AEADBadTagException {
             byte[] iv = this.iv.clone();
 
             // apply packet number to IV
@@ -574,7 +574,7 @@ abstract class QuicCipher {
 
                 try {
                     int limit = packet.limit();
-                    packet.limit(packet.position() + aadLength);
+                    packet.limit(packet.position() + headerLength);
                     cipher.updateAAD(packet);
                     packet.limit(limit);
                     cipher.doFinal(packet, output);
@@ -630,7 +630,7 @@ abstract class QuicCipher {
 
         @Override
         void doEncryptPacket(final long packetNumber, final ByteBuffer packet,
-                             final int aadLength, final ByteBuffer output) {
+                             final int headerLength, final ByteBuffer output) {
             byte[] iv = this.iv.clone();
 
             // apply packet number to IV
@@ -651,7 +651,7 @@ abstract class QuicCipher {
                 }
                 try {
                     int limit = packet.limit();
-                    packet.limit(packet.position() + aadLength);
+                    packet.limit(packet.position() + headerLength);
                     cipher.updateAAD(packet);
                     packet.limit(limit);
                     cipher.doFinal(packet, output);

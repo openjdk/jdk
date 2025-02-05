@@ -258,14 +258,29 @@ public interface QuicTLSEngine {
     /**
      * Encrypt the given packet bytes using keys for the given packet key space.
      * <p>
-     * The output buffer contains the encrypted bytes and the tag. AAD is not
-     * copied.
+     * The input buffer contains the packet header and the unencrypted packet payload.
+     * The packet header (first {@code headerLength} bytes of the input buffer)
+     * is consumed by this method, but is not encrypted.
+     * The packet payload (bytes following the packet header) is encrypted
+     * by this method. This method consumes the entire input buffer.
+     * <p>
+     * The encrypted payload bytes and the authentication tag are written
+     * to the output buffer.
+     * <p>
+     * It is recommended to do the encryption in place by using slices of a bigger
+     * buffer as the input and output buffer:
+     * <pre>
+     *          +--------+-------------------+
+     * input:   | header | plaintext payload |
+     *          +--------+-------------------+----------+
+     * output:           | encrypted payload | AEAD tag |
+     *                   +-------------------+----------+
+     * </pre>
      *
      * @param keySpace Packet key space
      * @param packetNumber full packet number
      * @param packet buffer containing unencrypted packet bytes
-     * @param aadLength number of leading header bytes that are
-     *         authenticated but not encrypted
+     * @param headerLength length of the packet header
      * @param output buffer where encrypted packet bytes will be stored
      * @param keyPhaseConsumer a {@code Consumer} which will be invoked
      *         by this engine and will be passed the key phase bit (0 or 1)
@@ -275,23 +290,40 @@ public interface QuicTLSEngine {
      *          in exceeding the AEAD cipher confidentiality limit
      */
     void encryptPacket(KeySpace keySpace, long packetNumber,
-            ByteBuffer packet, int aadLength, ByteBuffer output,
+            ByteBuffer packet, int headerLength, ByteBuffer output,
             Consumer<Integer> keyPhaseConsumer)
             throws QuicKeyUnavailableException,
             QuicTransportException;
 
     /**
      * Decrypt the given packet bytes using keys for the given packet key space.
+     * Header protection must be removed before decryption.
      * <p>
-     * The output buffer contains the decrypted bytes only. AAD is not copied.
+     * The input buffer contains the packet header and the encrypted packet payload.
+     * The packet header (first {@code headerLength} bytes of the input buffer)
+     * is consumed by this method, but is not decrypted.
+     * The packet payload (bytes following the packet header) is decrypted
+     * by this method. This method consumes the entire input buffer.
+     * <p>
+     * The decrypted payload bytes are written
+     * to the output buffer.
+     * <p>
+     * It is recommended to do the decryption in place by using slices of a bigger
+     * buffer as the input and output buffer:
+     * <pre>
+     *          +--------+-------------------+----------+
+     * input:   | header | encrypted payload | AEAD tag |
+     *          +--------+-------------------+----------+
+     * output:           | decrypted payload |
+     *                   +-------------------+
+     * </pre>
      *
      * @param keySpace Packet key space
      * @param packetNumber full packet number
      * @param keyPhase key phase bit (0 or 1) found on the packet, or -1
      *                 if the packet does not have a key phase bit
-     * @param packet buffer containing unencrypted packet bytes
-     * @param aadLength number of leading header bytes that are
-     *         authenticated but not encrypted
+     * @param packet buffer containing encrypted packet bytes
+     * @param headerLength length of the packet header
      * @param output buffer where decrypted packet bytes will be stored
      * @throws IllegalArgumentException if keyPhase bit is invalid
      * @throws QuicKeyUnavailableException if keys are not available
@@ -301,7 +333,7 @@ public interface QuicTLSEngine {
      *          in exceeding the AEAD cipher integrity limit
      */
     void decryptPacket(KeySpace keySpace, long packetNumber, int keyPhase,
-            ByteBuffer packet, int aadLength, ByteBuffer output)
+            ByteBuffer packet, int headerLength, ByteBuffer output)
             throws IllegalArgumentException, QuicKeyUnavailableException,
                    AEADBadTagException, QuicTransportException;
 

@@ -116,7 +116,7 @@ sealed abstract class QuicKeyManager
     abstract void discardKeys();
 
     void decryptPacket(final long packetNumber, final int keyPhase,
-            final ByteBuffer packet,final int aadLength,
+            final ByteBuffer packet,final int headerLength,
             final ByteBuffer output) throws QuicKeyUnavailableException,
             IllegalArgumentException, AEADBadTagException,
             QuicTransportException {
@@ -130,7 +130,7 @@ sealed abstract class QuicKeyManager
         // use current keys to decrypt
         QuicReadCipher readCipher = getReadCipher();
         try {
-            readCipher.decryptPacket(packetNumber, packet, aadLength, output);
+            readCipher.decryptPacket(packetNumber, packet, headerLength, output);
         } catch (AEADBadTagException e) {
             if (invalidPackets.incrementAndGet() >=
                     readCipher.integrityLimit()) {
@@ -142,7 +142,7 @@ sealed abstract class QuicKeyManager
     }
 
     void encryptPacket(final long packetNumber, final ByteBuffer packet,
-            final int aadLength, final ByteBuffer output,
+            final int headerLength, final ByteBuffer output,
             final Consumer<Integer> keyPhaseConsumer)
             throws QuicKeyUnavailableException, QuicTransportException {
         // first let the consumer know the key phase that will be used to
@@ -150,7 +150,7 @@ sealed abstract class QuicKeyManager
         // packet (header) appropriately
         keyPhaseConsumer.accept(0); // key phase is always 0 for non-ONE_RTT
         // packets
-        getWriteCipher().encryptPacket(packetNumber, packet, aadLength, output);
+        getWriteCipher().encryptPacket(packetNumber, packet, headerLength, output);
     }
 
     private static QuicKeys deriveQuicKeys(final QuicVersion quicVersion,
@@ -583,7 +583,7 @@ sealed abstract class QuicKeyManager
 
         @Override
         void decryptPacket(final long packetNumber, final int keyPhase,
-                final ByteBuffer packet, final int aadLength,
+                final ByteBuffer packet, final int headerLength,
                 final ByteBuffer output) throws QuicKeyUnavailableException,
                 QuicTransportException, AEADBadTagException {
             if (keyPhase != 0 && keyPhase != 1) {
@@ -600,7 +600,7 @@ sealed abstract class QuicKeyManager
             final int currentKeyPhase = current.writeCipher.getKeyPhase();
             if (keyPhase == currentKeyPhase) {
                 current.readCipher.decryptPacket(packetNumber, packet,
-                        aadLength, output);
+                        headerLength, output);
                 return;
             }
             // incoming packet is using a key phase which doesn't match the
@@ -618,7 +618,7 @@ sealed abstract class QuicKeyManager
                             currentKeyPhase);
                 }
                 oldReadCipher.decryptPacket(
-                        packetNumber, packet, aadLength, output);
+                        packetNumber, packet, headerLength, output);
                 // we were able to decrypt using an old key. now verify
                 // that it was OK to use this old key for this packet.
                 if (!series.current.usedByBothEndpoints()
@@ -653,13 +653,13 @@ sealed abstract class QuicKeyManager
                         + ", packet number: " + packetNumber);
             }
             decryptUsingNextKeys(
-                    series, packetNumber, packet, aadLength, output);
+                    series, packetNumber, packet, headerLength, output);
         }
 
         @Override
         void encryptPacket(final long packetNumber, final ByteBuffer packet,
-                final int aadLength, final ByteBuffer output,
-                final Consumer<Integer> keyPhaseConsumer)
+                           final int headerLength, final ByteBuffer output,
+                           final Consumer<Integer> keyPhaseConsumer)
                 throws QuicKeyUnavailableException, QuicTransportException {
             KeySeries currentSeries = requireKeySeries();
             if (currentSeries.next == null) {
@@ -679,7 +679,7 @@ sealed abstract class QuicKeyManager
             // appropriately
             final int keyPhase = writeCipher.getKeyPhase();
             keyPhaseConsumer.accept(keyPhase);
-            writeCipher.encryptPacket(packetNumber, packet, aadLength, output);
+            writeCipher.encryptPacket(packetNumber, packet, headerLength, output);
         }
 
         void setOneRttContext(final QuicOneRttContext ctx) {
@@ -788,7 +788,7 @@ sealed abstract class QuicKeyManager
                 final KeySeries currentKeySeries,
                 final long packetNumber,
                 final ByteBuffer packet,
-                final int aadLength,
+                final int headerLength,
                 final ByteBuffer output)
                 throws QuicKeyUnavailableException, AEADBadTagException {
             if (currentKeySeries.next == null) {
@@ -810,7 +810,7 @@ sealed abstract class QuicKeyManager
             }
             // use the next keys to attempt decrypting
             currentKeySeries.next.readCipher.decryptPacket(packetNumber, packet,
-                    aadLength, output);
+                    headerLength, output);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.finest(
                         "decrypted using next keys for peer-initiated" +

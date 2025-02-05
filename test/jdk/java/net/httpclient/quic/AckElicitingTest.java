@@ -146,16 +146,16 @@ public class AckElicitingTest {
         }
 
         @Override
-        public void encryptPacket(KeySpace keySpace, long packetNumber, ByteBuffer packet, int aadLength,
+        public void encryptPacket(KeySpace keySpace, long packetNumber, ByteBuffer packet, int headerLength,
                                   ByteBuffer output, Consumer<Integer> keyPhaseConsumer) {
-            packet.position(packet.position() + aadLength);
+            packet.position(packet.position() + headerLength);
             output.put(packet);
         }
 
         @Override
         public void decryptPacket(KeySpace keySpace, long packetNumber, int keyPhase,
-                                  ByteBuffer packet, int aadLength, ByteBuffer output) {
-            packet.position(packet.position() + aadLength);
+                                  ByteBuffer packet, int headerLength, ByteBuffer output) {
+            packet.position(packet.position() + headerLength);
             output.put(packet);
         }
         @Override
