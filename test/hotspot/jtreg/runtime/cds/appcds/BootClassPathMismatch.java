@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ public class BootClassPathMismatch {
         }
         test.testBootClassPathMatch();
         test.testBootClassPathMismatchTwoJars();
+        test.testBootClassPathAppend();
     }
 
     /* Archive contains boot classes only, with Hello class on -Xbootclasspath/a path.
@@ -233,6 +234,22 @@ public class BootClassPathMismatch {
         TestCommon.run(
                 "-cp", appJar, "-Xbootclasspath/a:" + jars + "x", "Hello")
             .assertAbnormalExit(mismatchMessage);
+    }
+
+    /* Arcchive contains Hello class with only hello.jar in bootclasspath at dump time.
+     *
+     * No error - bootclasspath can be appended during runtime if no -cp is specified.
+     */
+    public void testBootClassPathAppend() throws Exception {
+        String appJar = JarBuilder.getOrCreateHelloJar();
+        String jar2 = ClassFileInstaller.writeJar("jar2.jar", "pkg/C2");
+        String jars = appJar + File.pathSeparator + jar2;
+        String appClasses[] = {"Hello", "pkg/C2"};
+        TestCommon.dump(
+            null, appClasses, "-Xbootclasspath/a:" + appJar);
+        TestCommon.run(
+                "-Xbootclasspath/a:" + jars, "Hello")
+            .assertNormalExit();
     }
 
     private static void copyHelloToNewDir() throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class NonExistClasspath {
     }
 
     static void doTest(String appJar, boolean bootcp) throws Exception {
-        final String errorMessage3 = (bootcp ? "BOOT" : "APP") + " classpath mismatch";
+        final String errorMessage3 = (bootcp ? "boot" : "app") + " classpath validation: failed";
         (new File(nonExistPath)).delete();
 
         String classPath = nonExistPath + File.pathSeparator + appJar;
@@ -63,30 +63,6 @@ public class NonExistClasspath {
         // The nonExistPath doesn't exist yet, so we should be able to run without problem
         TestCommon.run(make_args(bootcp,
                                  classPath,
-                                 "-Xlog:class+path=trace",
-                                 "Hello"))
-            .assertNormalExit();
-
-        // Replace nonExistPath with another non-existent file in the CP, it should still work
-        TestCommon.run(make_args(bootcp,
-                                 nonExistPath + ".duh"  + File.pathSeparator + appJar,
-                                 "-Xlog:class+path=trace",
-                                 "Hello"))
-            .assertNormalExit();
-
-        // Add a few more non-existent files in the CP, it should still work
-        TestCommon.run(make_args(bootcp,
-                                 nonExistPath + ".duh"  + File.pathSeparator +
-                                 nonExistPath + ".daa"  + File.pathSeparator +
-                                 nonExistPath + ".boo"  + File.pathSeparator +
-                                 appJar,
-                                 "-Xlog:class+path=trace",
-                                 "Hello"))
-            .assertNormalExit();
-
-        // Or, remove all non-existent paths from the CP, it should still work
-        TestCommon.run(make_args(bootcp,
-                                 appJar,
                                  "-Xlog:class+path=trace",
                                  "Hello"))
             .assertNormalExit();
@@ -161,15 +137,7 @@ public class NonExistClasspath {
                                  "Hello"))
             .assertNormalExit();
 
-        // Run with non-existent boot class path, test should pass.
-        TestCommon.run(make_args(true,
-                                 nonExistPath,
-                                 "-cp", appJar,
-                                 "-Xlog:class+path=trace",
-                                 "Hello"))
-            .assertNormalExit();
-
-        // Run with existent boot class path, test should fail.
+        // Run with a different boot class path, test should fail.
         TestCommon.run(make_args(true,
                                  appJar,
                                  "-cp", appJar,
