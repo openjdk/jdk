@@ -27,7 +27,6 @@
 package jdk.internal.util;
 
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
@@ -140,7 +139,6 @@ public final class DecimalDigits {
      * @param offset the offset
      * @return If both characters are digits, return (str[offset] - '0') * 10 + (str[offset + 1] - '0'), otherwise return -1
      */
-    @ForceInline
     public static int digit2(byte[] str, int offset) {
         // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         /*
