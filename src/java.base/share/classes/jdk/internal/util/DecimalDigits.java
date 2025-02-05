@@ -135,10 +135,10 @@ public final class DecimalDigits {
     }
 
     /**
-     * Determine whether the two character in str are both digits. If they are, return (str[off] - '0') * 10 + (str[off] - '0'), otherwise return -1
+     * Determine whether the two character in str are both digits. If they are, return (str[offset] - '0') * 10 + (str[offset + 1] - '0'), otherwise return -1
      * @param str The input LATIN1 encoded String value
      * @param offset the offset
-     * @return If both characters are digits, return (str[off] - '0') * 10 + (str[off] - '0'), otherwise return -1
+     * @return If both characters are digits, return (str[offset] - '0') * 10 + (str[offset + 1] - '0'), otherwise return -1
      */
     @ForceInline
     public static int digit2(byte[] str, int offset) {
