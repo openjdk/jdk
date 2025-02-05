@@ -925,7 +925,7 @@ Compile::Compile(ciEnv* ci_env,
           _unique(0),
       _dead_node_count(0),
       _dead_node_list(comp_arena()),
-      _node_arena_one(mtCompiler), sdsd
+      _node_arena_one(mtCompiler),
       _node_arena_two(mtCompiler),
       _node_arena(&_node_arena_one),
       _mach_constant_base_node(nullptr),

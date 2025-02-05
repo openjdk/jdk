@@ -105,10 +105,10 @@ void ArenaCounterTable::print_on(outputStream* st) const {
         header_printed = true;
       }
       st->print("%24s ", phase_trc_id_to_string(phase_trc_id));
-      st->print(SIZE_FORMAT_W(10), sum);
+      st->print("%10zu", sum);
       for (int arena_tag = 0; arena_tag < arena_tag_max; arena_tag++) {
         const size_t v = at(phase_trc_id, arena_tag);
-        st->print(SIZE_FORMAT_W(10), v);
+        st->print("%10zu", v);
       }
       st->cr();
     }
