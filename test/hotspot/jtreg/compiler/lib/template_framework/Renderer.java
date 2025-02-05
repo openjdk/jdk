@@ -102,8 +102,8 @@ public abstract class Renderer {
 
         templateUse.visitArguments((name, value) -> frame.addContext(name, value.toString()));
         InstantiatedTemplate it = templateUse.instantiate();
-        for (Object e : it.elements()) {
-            renderElement(e);
+        for (Object token : it.tokens()) {
+            renderToken(token);
         }
 
         if (frame != getCurrentFrame()) {
@@ -111,9 +111,9 @@ public abstract class Renderer {
         }
     }
 
-    private static void renderElement(Object element) {
+    private static void renderToken(Object token) {
         Frame frame = getCurrentFrame();
-        switch (element) {
+        switch (token) {
             case Nothing x -> {}
             case String s ->  frame.addString(templateString(s, frame));
             case Integer s -> frame.addString(s.toString());
@@ -121,12 +121,35 @@ public abstract class Renderer {
             case Double s ->  frame.addString(s.toString());
             case Float s ->   frame.addString(s.toString());
             case List l -> {
-                for (Object e : l) {
-                    renderElement(e);
+                for (Object t : l) {
+                    renderToken(t);
                 }
             }
             case Hook h -> {
-                frame.addHook(h);
+                throw new RendererException("Do not use Hook directly, use Hook.set: " + h);
+            }
+            case HookUse(Hook hook, List<Object> tokens) -> {
+                Frame outerFrame = getCurrentFrame();
+
+                // We need a frame to which the hook can insert code. That way, name
+                // definitions at the hook cannot excape the hookFrame.
+                Frame hookFrame = new Frame(outerFrame);
+                hookFrame.addHook(hook);
+
+                // We need a frame where the tokens can be rendered. That way, name
+                // definitions from the tokens cannot escape the innerFrame to the
+                // hookFrame.
+                Frame innerFrame = new Frame(hookFrame);
+                currentFrame = innerFrame;
+                // TODO render list, and verify frames are consistent.
+                for (Object t : tokens) {
+                    renderToken(t);
+                }
+                // Close the hookFrame and innerFrame. hookFrame code comes before the
+                // innerFrame code from the tokens.
+                currentFrame = outerFrame;
+                currentFrame.addCode(hookFrame.getCode());
+                currentFrame.addCode(innerFrame.getCode());
             }
             case HookInsert(Hook hook, TemplateUse t) -> {
                 Frame hookFrame = frameForHook(hook);
@@ -141,7 +164,7 @@ public abstract class Renderer {
                 frame.addCode(currentFrame.getCode());
                 currentFrame = frame;
             }
-            default -> throw new RendererException("body contained unexpected element: " + element);
+            default -> throw new RendererException("body contained unexpected token: " + token);
         }
     }
 

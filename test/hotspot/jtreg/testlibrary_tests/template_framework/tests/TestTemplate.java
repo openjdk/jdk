@@ -209,16 +209,18 @@ public class TestTemplate {
 
         var template2 = Template.make(() -> body(
             "{\n",
-            hook1,
-            "World\n",
-            intoHook(hook1, template1.withArgs()),
+            hook1.set(
+                "World\n",
+                intoHook(hook1, template1.withArgs())
+	    ),
             "}"
         ));
 
         String code = template2.withArgs().render();
         String expected =
             """
-            xxx""";
+            Hello
+            World""";
         checkEQ(code, expected);
     }
 

@@ -23,4 +23,6 @@
 
 package compiler.lib.template_framework;
 
-public record InstantiatedTemplate(Object[] tokens) {}
+import java.util.List;
+
+public record HookUse(Hook hook, List<Object> tokens) {}

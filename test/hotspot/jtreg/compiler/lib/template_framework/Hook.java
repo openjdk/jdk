@@ -23,4 +23,11 @@
 
 package compiler.lib.template_framework;
 
-public record Hook(String name) {}
+import java.util.List;
+import java.util.Arrays;
+
+public record Hook(String name) {
+    public HookUse set(Object... tokens) {
+        return new HookUse(this, Arrays.asList(tokens));
+    }
+}
