@@ -21,9 +21,7 @@
  * questions.
  */
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 
 public class ChildProcessAppLauncher {
     public static void main(String[] args) throws IOException, InterruptedException {
