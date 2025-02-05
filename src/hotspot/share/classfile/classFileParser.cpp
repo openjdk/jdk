@@ -5680,11 +5680,11 @@ void ClassFileParser::mangle_hidden_class_name(InstanceKlass* const ik) {
   // Update this_class_index's slot in the constant pool with the new Utf8 entry.
   // We have to update the resolved_klass_index and the name_index together
   // so extract the existing resolved_klass_index first.
-  CPKlassSlot cp_klass_slot = _cp->klass_slot_at(_this_class_index);
+  KlassReference cp_klass_slot(_cp, _this_class_index);
   int resolved_klass_index = cp_klass_slot.resolved_klass_index();
   _cp->unresolved_klass_at_put(_this_class_index, hidden_index, resolved_klass_index);
-  assert(_cp->klass_slot_at(_this_class_index).name_index() == _orig_cp_size,
-         "Bad name_index");
+  KlassReference updated_cp_klass_slot(_cp, _this_class_index);
+  assert(updated_cp_klass_slot.name_index() == hidden_index, "updated name_index");
 }
 
 void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const stream,

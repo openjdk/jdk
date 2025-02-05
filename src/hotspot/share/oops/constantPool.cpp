@@ -244,7 +244,7 @@ void ConstantPool::allocate_resolved_klasses(ClassLoaderData* loader_data, int n
   // entry for the class's name. So at most we will have 0xfffe class entries.
   // This allows us to use 0xffff (ConstantPool::_temp_resolved_klass_index) to indicate
   // UnresolvedKlass entries that are temporarily created during class redefinition.
-  assert(num_klasses < CPKlassSlot::_temp_resolved_klass_index, "sanity");
+  assert(num_klasses < KlassReference::_temp_resolved_klass_index, "sanity");
   assert(resolved_klasses() == nullptr, "sanity");
   Array<Klass*>* rk = MetadataFactory::new_array<Klass*>(loader_data, num_klasses, CHECK);
   set_resolved_klasses(rk);
@@ -277,8 +277,8 @@ void ConstantPool::initialize_unresolved_klasses(ClassLoaderData* loader_data, T
 // Hidden class support:
 void ConstantPool::klass_at_put(int class_index, Klass* k) {
   assert(k != nullptr, "must be valid klass");
-  CPKlassSlot kslot = klass_slot_at(class_index);
-  resolved_klass_release_at_put(kslot.resolved_klass_index(), k);
+  KlassReference kref(this, class_index);
+  resolved_klass_release_at_put(kref.resolved_klass_index(), k);
 
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* non-null, so we need hardware store ordering here.
@@ -570,7 +570,8 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
   }
 
   if (!can_archive) {
-    int resolved_klass_index = klass_slot_at(cp_index).resolved_klass_index();
+    KlassReference kref(this, cp_index);
+    int resolved_klass_index = kref.resolved_klass_index();
     resolved_klasses()->at_put(resolved_klass_index, nullptr);
     tag_at_put(cp_index, JVM_CONSTANT_UnresolvedClass);
   }
@@ -639,18 +640,18 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
                                    TRAPS) {
   JavaThread* javaThread = THREAD;
 
-  // A resolved constantPool entry will contain a Klass*, otherwise a Symbol*.
-  // It is not safe to rely on the tag bit's here, since we don't have a lock, and
-  // the entry and tag is not updated atomically.
-  CPKlassSlot kslot = this_cp->klass_slot_at(cp_index);
-  int resolved_klass_index = kslot.resolved_klass_index();
-  int name_index = kslot.name_index();
-  assert(this_cp->tag_at(name_index).is_symbol(), "sanity");
+  // It should be safe to rely on the tag here, since the tag is updated
+  // *after* the resolved_klasses entry is updated.  Both tag and RK entry
+  // are read and written with appropriate acquires and releases.
+  KlassReference kref(this_cp, cp_index);
 
   // The tag must be JVM_CONSTANT_Class in order to read the correct value from
   // the unresolved_klasses() array.
-  if (this_cp->tag_at(cp_index).is_klass()) {
-    Klass* klass = this_cp->resolved_klass_at_acquire(resolved_klass_index);
+  if (kref.is_resolved()) {
+    Klass* klass = kref.resolved_klass(this_cp);
+    // We always publish the Klass* before updating the tag.
+    //FIXME: (8349405) This assert should be true.
+    //assert(klass != nullptr, "pointer must be published before caller reads");
     if (klass != nullptr) {
       return klass;
     }
@@ -672,7 +673,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
 
   HandleMark hm(THREAD);
   Handle mirror_handle;
-  Symbol* name = this_cp->symbol_at(name_index);
+  Symbol* name = kref.name(this_cp);
   Handle loader (THREAD, this_cp->pool_holder()->class_loader());
 
   Klass* k;
@@ -696,7 +697,8 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
     // If CHECK_NULL above doesn't return the exception, that means that
     // some other thread has beaten us and has resolved the class.
     // To preserve old behavior, we return the resolved class.
-    Klass* klass = this_cp->resolved_klass_at_acquire(resolved_klass_index);
+    // FIXME: (8349405) should probably be:  return kref.resolved_klass(this_cp);
+    Klass* klass = this_cp->resolved_klass_at_acquire(kref.resolved_klass_index());
     assert(klass != nullptr, "must be resolved if exception was cleared");
     return klass;
   }
@@ -709,7 +711,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   // The releasing store publishes any pending writes into the Klass
   // object before the Klass pointer itself is published.
   // This is matched elsewhere by an acquiring load.
-  this_cp->resolved_klass_release_at_put(resolved_klass_index, k);
+  this_cp->resolved_klass_release_at_put(kref.resolved_klass_index(), k);
 
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* stored in _resolved_klasses is non-null, so we need
@@ -723,7 +725,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   // We need to recheck exceptions from racing thread and return the same.
   if (old_tag == JVM_CONSTANT_UnresolvedClassInError) {
     // Remove klass.
-    this_cp->resolved_klasses()->at_put(resolved_klass_index, nullptr);
+    this_cp->resolved_klasses()->at_put(kref.resolved_klass_index(), nullptr);
     throw_resolution_error(this_cp, cp_index, CHECK_NULL);
   }
 
@@ -736,21 +738,18 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
 // instanceof operations. Returns null if the class has not been loaded or
 // if the verification of constant pool failed
 Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int which) {
-  CPKlassSlot kslot = this_cp->klass_slot_at(which);
-  int resolved_klass_index = kslot.resolved_klass_index();
-  int name_index = kslot.name_index();
-  assert(this_cp->tag_at(name_index).is_symbol(), "sanity");
+  KlassReference kref(this_cp, which);
 
-  if (this_cp->tag_at(which).is_klass()) {
-    Klass* k = this_cp->resolved_klass_at_acquire(resolved_klass_index);
+  if (kref.tag().is_klass()) {
+    Klass* k = kref.resolved_klass(this_cp);
     assert(k != nullptr, "should be resolved");
     return k;
-  } else if (this_cp->tag_at(which).is_unresolved_klass_in_error()) {
+  } else if (kref.tag().is_unresolved_klass_in_error()) {
     return nullptr;
   } else {
     Thread* current = Thread::current();
     HandleMark hm(current);
-    Symbol* name = this_cp->symbol_at(name_index);
+    Symbol* name = kref.name(this_cp);
     oop loader = this_cp->pool_holder()->class_loader();
     Handle h_loader (current, loader);
     Klass* k = SystemDictionary::find_instance_klass(current, name, h_loader);
@@ -814,7 +813,7 @@ bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cp
 }
 
 // Translate index, which could be CPCache index or Indy index, to a constant pool index
-int ConstantPool::to_cp_index(int index, Bytecodes::Code code) {
+int ConstantPool::to_cp_index(int index, Bytecodes::Code code) const {
   assert(cache() != nullptr, "'index' is a rewritten index so this class must have been rewritten");
   switch(code) {
     case Bytecodes::_invokedynamic:
@@ -1067,9 +1066,9 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     switch (tag.value()) {
     case JVM_CONSTANT_Class:
     {
-      CPKlassSlot kslot = this_cp->klass_slot_at(cp_index);
-      int resolved_klass_index = kslot.resolved_klass_index();
-      if (this_cp->resolved_klasses()->at(resolved_klass_index) == nullptr) {
+      KlassReference kref(this_cp, cp_index);
+      if (this_cp->resolved_klasses()->at(kref.resolved_klass_index()) == nullptr) {
+        //FIXME: (8349405) this path should not be taken
         (*status_return) = false;
         return nullptr;
       }
@@ -1818,9 +1817,8 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
   case JVM_CONSTANT_UnresolvedClassInError:
   {
     // Revert to JVM_CONSTANT_ClassIndex
-    int name_index = from_cp->klass_slot_at(from_i).name_index();
-    assert(from_cp->tag_at(name_index).is_symbol(), "sanity");
-    to_cp->klass_index_at_put(to_i, name_index);
+    KlassReference kref(from_cp, from_i);
+    to_cp->klass_index_at_put(to_i, kref.name_index());
   } break;
 
   case JVM_CONSTANT_String:
@@ -2476,11 +2474,8 @@ void ConstantPool::print_entry_on(const int cp_index, outputStream* st) {
       break;
     case JVM_CONSTANT_UnresolvedClass :               // fall-through
     case JVM_CONSTANT_UnresolvedClassInError: {
-        CPKlassSlot kslot = klass_slot_at(cp_index);
-        int resolved_klass_index = kslot.resolved_klass_index();
-        int name_index = kslot.name_index();
-        assert(tag_at(name_index).is_symbol(), "sanity");
-        symbol_at(name_index)->print_value_on(st);
+        KlassReference kref(this, cp_index);
+        symbol_at(kref.name_index())->print_value_on(st);
       }
       break;
     case JVM_CONSTANT_MethodHandle :

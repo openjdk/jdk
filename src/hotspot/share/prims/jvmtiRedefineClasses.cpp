@@ -385,7 +385,8 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     case JVM_CONSTANT_Class:
     case JVM_CONSTANT_UnresolvedClass:
     {
-      int name_i = scratch_cp->klass_name_index_at(scratch_i);
+      KlassReference kref_i(scratch_cp, scratch_i);
+      int name_i = kref_i.name_index();
       int new_name_i = find_or_append_indirect_entry(scratch_cp, name_i, merge_cp_p,
                                                      merge_cp_length_p);
 
@@ -1633,7 +1634,7 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
         // May be resolving while calling this so do the same for
         // JVM_CONSTANT_UnresolvedClass (klass_name_at() deals with transition)
         (*merge_cp_p)->temp_unresolved_klass_at_put(old_i,
-          old_cp->klass_name_index_at(old_i));
+          KlassReference(old_cp, old_i).name_index());
         break;
 
       case JVM_CONSTANT_Double:

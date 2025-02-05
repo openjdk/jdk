@@ -33,15 +33,7 @@
 #include "oops/resolvedMethodEntry.hpp"
 #include "runtime/atomic.hpp"
 
-inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Compiler
-  guarantee(tag_at(which).is_klass(), "Corrupted constant pool"
-            DEBUG_ONLY(" [%d]" COMMA which));
-  CPKlassSlot kslot = klass_slot_at(which);
-  assert(tag_at(kslot.name_index()).is_symbol(), "sanity");
-  return resolved_klass_at_acquire(kslot.resolved_klass_index());
-}
-
-inline ResolvedFieldEntry* ConstantPool::resolved_field_entry_at(int field_index) {
+inline ResolvedFieldEntry* ConstantPool::resolved_field_entry_at(int field_index) const {
     return cache()->resolved_field_entry_at(field_index);
 }
 
@@ -49,7 +41,7 @@ inline int ConstantPool::resolved_field_entries_length() const {
     return cache()->resolved_field_entries_length();
 }
 
-inline ResolvedMethodEntry* ConstantPool::resolved_method_entry_at(int method_index) {
+inline ResolvedMethodEntry* ConstantPool::resolved_method_entry_at(int method_index) const {
     return cache()->resolved_method_entry_at(method_index);
 }
 
@@ -65,7 +57,7 @@ inline oop ConstantPool::appendix_if_resolved(int method_index) const {
   return resolved_reference_at(ref_index);
 }
 
-inline ResolvedIndyEntry* ConstantPool::resolved_indy_entry_at(int index) {
+inline ResolvedIndyEntry* ConstantPool::resolved_indy_entry_at(int index) const {
   return cache()->resolved_indy_entry_at(index);
 }
 

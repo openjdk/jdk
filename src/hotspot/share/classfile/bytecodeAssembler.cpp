@@ -38,7 +38,7 @@ void BytecodeConstantPool::init() {
     switch(_orig->tag_at(i).value()) {
     case JVM_CONSTANT_Class:
     case JVM_CONSTANT_UnresolvedClass:
-      entry = BytecodeCPEntry::klass(_orig->klass_slot_at(i).name_index());
+      entry = BytecodeCPEntry::klass(KlassReference(_orig, i).name_index());
       break;
     case JVM_CONSTANT_Utf8:
       entry = BytecodeCPEntry::utf8(_orig->symbol_at(i));
