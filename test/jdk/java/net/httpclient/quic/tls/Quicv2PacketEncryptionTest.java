@@ -394,7 +394,7 @@ public class Quicv2PacketEncryptionTest {
                          int packetNumberLength, QuicTLSEngine tlsEngine, int headersMask)
             throws QuicKeyUnavailableException {
         ByteBuffer sample = buffer.slice(packetNumberStart + 4, 16);
-        ByteBuffer encryptedSample = tlsEngine.encryptHeaderProtectionSample(space, false, sample);
+        ByteBuffer encryptedSample = tlsEngine.computeHeaderProtectionMask(space, false, sample);
         byte headers = buffer.get(0);
         headers ^= encryptedSample.get() & headersMask;
         buffer.put(0, headers);
@@ -405,7 +405,7 @@ public class Quicv2PacketEncryptionTest {
                            int packetNumberLength, QuicTLSEngine tlsEngine, int headersMask)
             throws QuicKeyUnavailableException {
         ByteBuffer sample = buffer.slice(packetNumberStart + 4, 16);
-        ByteBuffer encryptedSample = tlsEngine.encryptHeaderProtectionSample(keySpace, true, sample);
+        ByteBuffer encryptedSample = tlsEngine.computeHeaderProtectionMask(keySpace, true, sample);
         byte headers = buffer.get(0);
         headers ^= encryptedSample.get() & headersMask;
         buffer.put(0, headers);

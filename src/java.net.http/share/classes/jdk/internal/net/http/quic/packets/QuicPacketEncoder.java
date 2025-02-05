@@ -1755,7 +1755,7 @@ public class QuicPacketEncoder {
             assert buffer.position() - packetNumberStart >= sampleSize + 4 : buffer.position() - packetNumberStart - sampleSize - 4;
 
             ByteBuffer sample = buffer.slice(packetNumberStart + 4, sampleSize);
-            ByteBuffer encryptedSample = tlsEngine.encryptHeaderProtectionSample(packetType.keySpace().get(), false, sample);
+            ByteBuffer encryptedSample = tlsEngine.computeHeaderProtectionMask(packetType.keySpace().get(), false, sample);
             byte headers = headers();
             headers ^= (byte) (encryptedSample.get() & headerMask);
             headers(headers);

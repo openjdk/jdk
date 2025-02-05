@@ -296,18 +296,18 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
     }
 
     @Override
-    public ByteBuffer encryptHeaderProtectionSample(KeySpace keySpace,
-            boolean incoming, ByteBuffer sample)
+    public ByteBuffer computeHeaderProtectionMask(KeySpace keySpace,
+                                                  boolean incoming, ByteBuffer sample)
             throws QuicKeyUnavailableException {
         final QuicKeyManager keyManager = keyManager(keySpace);
         if (incoming) {
             final QuicCipher.QuicReadCipher quicCipher =
                     keyManager.getReadCipher();
-            return quicCipher.encryptHeaderProtectionSample(sample);
+            return quicCipher.computeHeaderProtectionMask(sample);
         } else {
             final QuicCipher.QuicWriteCipher quicCipher =
                     keyManager.getWriteCipher();
-            return quicCipher.encryptHeaderProtectionSample(sample);
+            return quicCipher.computeHeaderProtectionMask(sample);
         }
     }
 

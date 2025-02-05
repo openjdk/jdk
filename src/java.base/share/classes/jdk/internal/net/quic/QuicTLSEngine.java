@@ -26,13 +26,11 @@ package jdk.internal.net.quic;
 
 import javax.crypto.AEADBadTagException;
 import javax.crypto.ShortBufferException;
-import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -233,10 +231,8 @@ public interface QuicTLSEngine {
     int getHeaderProtectionSampleSize(KeySpace keySpace);
 
     /**
-     * Encrypt the sample bytes using header protection keys for the given
-     * packet key space and the given direction (incoming/outgoing)
-     * <p>
-     * See RFC 9001, section "Header Protection Application"
+     * Compute the header protection mask for the given sample,
+     * packet key space and direction (incoming/outgoing).
      *
      * @param keySpace Packet key space
      * @param incoming true for incoming packets, false for outgoing
@@ -245,9 +241,11 @@ public interface QuicTLSEngine {
      * @throws IllegalArgumentException when keySpace does not require
      *         header protection or sample length is different from required
      * @see #getHeaderProtectionSampleSize(KeySpace)
+     * @spec https://www.rfc-editor.org/rfc/rfc9001.html#name-header-protection-applicati
+     *     RFC 9001, Section 5.4.1 Header Protection Application
      */
-    ByteBuffer encryptHeaderProtectionSample(KeySpace keySpace,
-            boolean incoming, ByteBuffer sample)
+    ByteBuffer computeHeaderProtectionMask(KeySpace keySpace,
+                                           boolean incoming, ByteBuffer sample)
             throws QuicKeyUnavailableException;
 
     /**

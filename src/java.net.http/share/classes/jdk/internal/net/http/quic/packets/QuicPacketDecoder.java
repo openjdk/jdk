@@ -1455,7 +1455,7 @@ public class QuicPacketDecoder {
                 throw new BufferUnderflowException();
             }
             ByteBuffer sample = peekPayloadSlice(4, sampleSize);
-            ByteBuffer encryptedSample = tlsEngine.encryptHeaderProtectionSample(packetType.keySpace().get(), true, sample);
+            ByteBuffer encryptedSample = tlsEngine.computeHeaderProtectionMask(packetType.keySpace().get(), true, sample);
             byte headers = headers();
             headers ^= (byte) (encryptedSample.get() & headerMask);
             headers(headers);

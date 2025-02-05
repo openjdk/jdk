@@ -136,7 +136,7 @@ public class AckElicitingTest {
             return 0;
         }
         @Override
-        public ByteBuffer encryptHeaderProtectionSample(KeySpace keySpace, boolean incoming, ByteBuffer sample) {
+        public ByteBuffer computeHeaderProtectionMask(KeySpace keySpace, boolean incoming, ByteBuffer sample) {
             return ByteBuffer.allocate(5);
         }
 

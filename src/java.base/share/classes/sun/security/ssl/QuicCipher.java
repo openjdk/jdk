@@ -133,8 +133,8 @@ abstract class QuicCipher {
         return this.hpCipher.headerProtectionKey;
     }
 
-    final ByteBuffer encryptHeaderProtectionSample(ByteBuffer sample) {
-        return hpCipher.encryptHeaderProtectionSample(sample);
+    final ByteBuffer computeHeaderProtectionMask(ByteBuffer sample) {
+        return hpCipher.computeHeaderProtectionMask(sample);
     }
 
     final int getKeyPhase() {
@@ -357,7 +357,7 @@ abstract class QuicCipher {
             return 16;
         }
 
-        abstract ByteBuffer encryptHeaderProtectionSample(ByteBuffer sample);
+        abstract ByteBuffer computeHeaderProtectionMask(ByteBuffer sample);
 
         final void discard() {
             safeDiscard(this.headerProtectionKey);
@@ -513,7 +513,7 @@ abstract class QuicCipher {
         }
 
         @Override
-        public ByteBuffer encryptHeaderProtectionSample(ByteBuffer sample) {
+        public ByteBuffer computeHeaderProtectionMask(ByteBuffer sample) {
             if (sample.remaining() != getHeaderProtectionSampleSize()) {
                 throw new IllegalArgumentException("Invalid sample size");
             }
@@ -682,7 +682,7 @@ abstract class QuicCipher {
         }
 
         @Override
-        public ByteBuffer encryptHeaderProtectionSample(ByteBuffer sample) {
+        public ByteBuffer computeHeaderProtectionMask(ByteBuffer sample) {
             if (sample.remaining() != getHeaderProtectionSampleSize()) {
                 throw new IllegalArgumentException("Invalid sample size");
             }
