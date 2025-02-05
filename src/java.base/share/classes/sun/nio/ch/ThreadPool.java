@@ -70,7 +70,7 @@ public class ThreadPool {
 
     static ThreadFactory defaultThreadFactory() {
         return (Runnable r) -> {
-            Thread t = new Thread(r);
+            Thread t = InnocuousThread.newThread(r);
             t.setDaemon(true);
             return t;
         };
