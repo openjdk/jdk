@@ -27,7 +27,15 @@
 
 include LibCommon.gmk
 
+SCTP_SUPPORTED=
 ifeq ($(call isTargetOs, linux), true)
+  SCTP_SUPPORTED=true
+endif
+ifeq ($(OPENJDK_TARGET_OS_ENV), bsd.freebsd)
+  SCTP_SUPPORTED=true
+endif
+
+ifeq ($(SCTP_SUPPORTED), true)
   ##############################################################################
   ## Build libsctp
   ##############################################################################
@@ -42,6 +50,7 @@ ifeq ($(call isTargetOs, linux), true)
           java.base:libnio/ch, \
       JDK_LIBS := java.base:libjava java.base:libnet, \
       LIBS_linux := $(LIBDL) -lpthread, \
+      LIBS_bsd := -pthread $(LIBDL), \
   ))
 
   TARGETS += $(BUILD_LIBSCTP)

@@ -31,17 +31,29 @@ include LibCommon.gmk
 ## Build libinstrument
 ################################################################################
 
+ifeq ($(call isTargetOs, bsd), true)
+  ifeq ($(OPENJDK_TARGET_OS_ENV), bsd.openbsd)
+    BSD_JLI_LIB := -ljli_static
+  else
+    BSD_JLI_LIB := -ljli
+  endif
+endif
+
 # equivalent of strcasecmp is stricmp on Windows
 $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
     NAME := instrument, \
     OPTIMIZATION := LOW, \
+    CFLAGS_bsd := $(ICONV_CFLAGS), \
     CFLAGS_windows := -Dstrcasecmp=stricmp, \
     CFLAGS_debug := -DJPLIS_LOGGING, \
     CFLAGS_release := -DNO_JPLIS_LOGGING, \
     JDK_LIBS := java.base:libjava java.base:libjli java.base:libjvm, \
     LIBS_unix := $(LIBZ_LIBS), \
     LIBS_linux := $(LIBDL), \
+    LIBS_bsd := $(ICONV_LIBS) $(LIBDL), \
     LIBS_aix := $(LIBDL) -liconv, \
+    LDFLAGS_bsd := -L$(SUPPORT_OUTPUTDIR)/native/java.base \
+        $(ICONV_LDFLAGS), \
     LIBS_macosx := -liconv \
         -framework ApplicationServices \
         -framework Cocoa \

@@ -45,6 +45,8 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   else ifeq ($(call isBuildOs, windows), true)
     ADLC_CFLAGS := -nologo -EHsc
     ADLC_CFLAGS_WARNINGS := -W3 -D_CRT_SECURE_NO_WARNINGS
+  else ifeq ($(call isBuildOs, bsd), true)
+    ADLC_CFLAGS := -fno-exceptions -D_ALLBSD_SOURCE=1 -D_BSDONLY_SOURCE
   endif
 
   # Set the C++ standard
@@ -106,6 +108,8 @@ ifeq ($(call check-jvm-feature, compiler2), true)
     ifeq ($(HOTSPOT_TARGET_CPU_ARCH), aarch64)
       ADLCFLAGS += -DR18_RESERVED
     endif
+  else ifeq ($(call isTargetOs, bsd), true)
+    ADLCFLAGS += -D_ALLBSD_SOURCE=1 -D_BSDONLY_SOURCE
   else ifeq ($(call isTargetOs, windows), true)
     ADLCFLAGS += -D_WIN64=1
     ifeq ($(HOTSPOT_TARGET_CPU_ARCH), aarch64)

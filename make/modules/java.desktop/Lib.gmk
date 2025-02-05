@@ -38,6 +38,7 @@ include lib/AwtLibraries.gmk
 include lib/ClientLibraries.gmk
 
 ifeq ($(call isTargetOs, aix), false)
+ifneq ($(OPENJDK_TARGET_OS_ENV), bsd.openbsd)
   ##############################################################################
   # Build libjsound
   ##############################################################################
@@ -51,9 +52,20 @@ ifeq ($(call isTargetOs, aix), false)
       -DUSE_PLATFORM_MIDI_IN=TRUE \
       #
 
+  ifeq ($(call isTargetOs, bsd), false)
+    LIBJSOUND_CFLAGS += \
+        -DUSE_PLATFORM_MIDI_OUT=TRUE \
+        -DUSE_PLATFORM_MIDI_IN=TRUE \
+        #
+  endif
+
   LIBJSOUND_LINK_TYPE := C
   ifeq ($(call isTargetOs, macosx), true)
     LIBJSOUND_LINK_TYPE := C++
+  endif
+
+  ifeq ($(call isTargetOs, bsd), true)
+    LIBJSOUND_CFLAGS += $(ICONV_CFLAGS)
   endif
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUND, \
@@ -69,6 +81,7 @@ ifeq ($(call isTargetOs, aix), false)
           unused-but-set-variable, \
       DISABLED_WARNINGS_clang_DirectAudioDevice.c := unused-function, \
       LIBS_linux := $(ALSA_LIBS), \
+      LIBS_bsd := $(ALSA_LIBS), \
       LIBS_macosx := \
           -framework AudioToolbox \
           -framework AudioUnit \
@@ -80,6 +93,7 @@ ifeq ($(call isTargetOs, aix), false)
   ))
 
   TARGETS += $(BUILD_LIBJSOUND)
+endif
 endif
 
 ifeq ($(call isTargetOs, macosx), true)

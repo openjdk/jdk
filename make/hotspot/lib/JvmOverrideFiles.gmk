@@ -82,6 +82,7 @@ ifeq ($(call isTargetOs, linux), true)
   endif
 
 else ifeq ($(call isTargetOs, macosx), true)
+  JVM_EXCLUDE_FILES += decoder_bsd.cpp
   # The copied fdlibm routines in these files must not be optimized
   BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
   BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
@@ -146,6 +147,55 @@ else ifeq ($(call isTargetOs, windows), true)
 
   # Workaround for jvmciCompilerToVM.cpp long compilation time
   BUILD_LIBJVM_jvmciCompilerToVMInit.cpp_OPTIMIZATION := NONE
+
+else ifeq ($(call isTargetOs, bsd), true)
+  JVM_EXCLUDE_FILES += decoder_mach0.cpp
+  BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := -DNO_PCH $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
+  BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := -DNO_PCH $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
+
+  BUILD_LIBJVM_loopTransform.cpp_CXXFLAGS := $(CXX_O_FLAG_NONE)
+  ifneq ($(DEBUG_LEVEL), slowdebug)
+    BUILD_LIBJVM_unsafe.cpp_CXXFLAGS := -O1
+  endif
+
+  ifeq ($(TOOLCHAIN_TYPE), gcc)
+    BUILD_LIBJVM_unsafe.cpp_CXXFLAGS += -Wno-maybe-uninitialized
+  endif
+
+  ifeq ($(TOOLCHAIN_TYPE), clang)
+    ifeq ($(call isTargetCpu, x86), true)
+      ifneq ($(DEBUG_LEVEL), slowdebug)
+        # hotspot/jtreg/compiler/c2/Test8062950.java test fails on x86
+        # with clang when parse2.cpp is optimized above -O1
+        BUILD_LIBJVM_parse2.cpp_CXXFLAGS := -O1
+      endif
+    endif
+
+    # The following files are compiled at various optimization
+    # levels due to optimization issues encountered at the
+    # default level. The Clang compiler issues a compile
+    # time error if there is an optimization level specification
+    # skew between the PCH file and the C++ file.  Especially if the
+    # PCH file is compiled at a higher optimization level than
+    # the C++ file.  One solution might be to prepare extra optimization
+    # level specific PCH files for the opt build and use them here, but
+    # it's probably not worth the effort as long as only a few files
+    # need this special handling.
+    JVM_PRECOMPILED_HEADER_EXCLUDE := \
+        sharedRuntimeTrig.cpp \
+        sharedRuntimeTrans.cpp \
+        loopTransform.cpp \
+        unsafe.cpp \
+        parse2.cpp \
+        #
+
+    ifeq ($(OPENJDK_TARGET_CPU), aarch64)
+      JVM_PRECOMPILED_HEADER_EXCLUDE += \
+          memnode.cpp
+          #
+      BUILD_LIBJVM_memnode.cpp_CXXFLAGS := -O0
+    endif
+  endif
 
 endif
 

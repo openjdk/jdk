@@ -85,6 +85,12 @@ else
   ifeq ($(call isTargetOs, linux), true)
     BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libInheritedChannel := java.base:libjava
     BUILD_JDK_JTREG_EXECUTABLES_LIBS_exelauncher := -ldl
+  else ifeq ($(call isTargetOs, bsd), true)
+    BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libInheritedChannel := java.base:libjava
+    BUILD_JDK_JTREG_EXECUTABLES_LIBS_exelauncher := -pthread
+  endif
+  ifeq ($(OPENJDK_TARGET_OS_ENV), bsd.openbsd)
+    BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c
   endif
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX)
 endif

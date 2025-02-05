@@ -35,6 +35,11 @@ ifeq ($(call isTargetOs, macosx), true)
   LIBSAPROC_CFLAGS := -D_GNU_SOURCE -mno-omit-leaf-frame-pointer \
       -mstack-alignment=16 -fPIC
   LIBSAPROC_EXTRA_SRC := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent
+else ifeq ($(call isTargetOs, bsd), true)
+  LIBSAPROC_CFLAGS := -Wno-error=format-nonliteral -Wno-sign-compare
+  ifeq ($(TOOLCHAIN_TYPE), clang)
+    LIBSAPROC_CFLAGS += -Wno-error=tautological-pointer-compare
+  endif
 else ifeq ($(call isTargetOs, windows), true)
   LIBSAPROC_CFLAGS := -D_WINDOWS -D_DEBUG -D_CONSOLE -EHsc
   ifeq ($(call isTargetCpu, x86_64), true)
@@ -54,6 +59,9 @@ ifeq ($(call isTargetOs, linux), true)
 else
   LIBSAPROC_LINK_TYPE := C
 endif
+ifeq ($(call isTargetOs, bsd), true)
+  SA_TOOLCHAIN := TOOLCHAIN_LINK_CXX
+endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
     NAME := saproc, \
@@ -72,6 +80,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
     EXTRA_SRC := $(LIBSAPROC_EXTRA_SRC), \
     JDK_LIBS := java.base:libjava, \
     LIBS_linux := $(LIBDL), \
+    LIBS_bsd := -lutil $(LIBDL), \
     LIBS_macosx := \
         -framework CoreFoundation \
         -framework Foundation \

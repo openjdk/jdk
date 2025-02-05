@@ -39,7 +39,7 @@ ifeq ($(call isTargetOs, windows), true)
 endif
 
 LIBMANAGEMENT_EXT_OPTIMIZATION := HIGH
-ifeq ($(call isTargetOs, linux)+$(COMPILE_WITH_DEBUG_SYMBOLS), true+true)
+ifeq ($(call isTargetOs, linux bsd)+$(COMPILE_WITH_DEBUG_SYMBOLS), true+true)
   LIBMANAGEMENT_EXT_OPTIMIZATION := LOW
 endif
 

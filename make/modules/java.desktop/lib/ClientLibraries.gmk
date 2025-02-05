@@ -123,6 +123,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVAJPEG, \
     NAME := javajpeg, \
     INCLUDE_FILES := $(LIBJAVAJPEG_INCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
+    CFLAGS := $(LIBJPEG_CFLAGS), \
     HEADERS_FROM_SRC := $(LIBJAVAJPEG_HEADERS_FROM_SRC), \
     DISABLED_WARNINGS_gcc_imageioJPEG.c := array-bounds clobbered \
         unused-but-set-variable, \
@@ -181,7 +182,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
   LIBSPLASHSCREEN_CFLAGS += -DSPLASHSCREEN -DPNG_NO_MMX_CODE \
       -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_IMPLEMENTATION=0
 
-  ifeq ($(call isTargetOs, linux)+$(call isTargetCpuArch, ppc), true+true)
+  ifeq ($(call isTargetOs, linux bsd)+$(call isTargetCpuArch, ppc), true+true)
     LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
   endif
 
@@ -229,6 +230,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       OPTIMIZATION := LOW, \
       CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
+      CFLAGS_bsd := $(ICONV_CFLAGS), \
       CXXFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBSPLASHSCREEN_HEADER_DIRS), \
@@ -257,11 +259,13 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_microsoft_splashscreen_png.c := 4267, \
       DISABLED_WARNINGS_microsoft_splashscreen_sys.c := 4267 4244, \
       LDFLAGS_windows := -delayload:user32.dll, \
+      LDFLAGS_bsd := $(ICONV_LDFLAGS), \
       JDK_LIBS_windows := java.base:libjava, \
       JDK_LIBS_macosx := libosxapp, \
       LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS), \
       LIBS_unix := $(LIBM) -lpthread, \
       LIBS_linux := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
+      LIBS_bsd := -pthread $(ICONV_LIBS) $(X_LIBS) -lX11 -lXext, \
       LIBS_macosx := -liconv \
           -framework ApplicationServices \
           -framework Cocoa \
@@ -311,7 +315,7 @@ else
         -DHAVE_SYSCONF -DHAVE_SYS_MMAN_H -DHAVE_UNISTD_H \
         -DHB_NO_PRAGMA_GCC_DIAGNOSTIC
   endif
-  ifeq ($(call isTargetOs, linux macosx), true)
+  ifeq ($(call isTargetOs, linux macosx bsd), true)
     HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES -DHB_NO_VISIBILITY
   endif
 

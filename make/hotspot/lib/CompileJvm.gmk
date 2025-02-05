@@ -158,7 +158,7 @@ ifeq ($(call isTargetOs, windows), true)
   JVM_LDFLAGS += -def:$(WIN_EXPORT_FILE)
 endif
 
-ifeq ($(call isTargetOs, linux), true)
+ifeq ($(call isTargetOs, linux bsd), true)
   HOTSPOT_VERSION_SCRIPT := $(TOPDIR)/make/data/hotspot-symbols/version-script-$(TOOLCHAIN_TYPE).txt
 
   JVM_LDFLAGS += -Wl,-version-script=$(HOTSPOT_VERSION_SCRIPT)
@@ -211,6 +211,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_g1YoungGCPostEvacuateTasks.cpp := delete-abstract-non-virtual-dtor, \
     DISABLED_WARNINGS_clang_management.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_notificationThread.cpp := bitwise-instead-of-logical, \
+    DISABLED_WARNINGS_clang_os_bsd_aarch64.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_os_posix.cpp := mismatched-tags missing-field-initializers, \
     DISABLED_WARNINGS_clang_aix_os_posix.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_postaloc.cpp := tautological-undefined-compare, \
