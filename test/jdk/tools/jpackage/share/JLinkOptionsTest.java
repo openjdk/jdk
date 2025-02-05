@@ -22,8 +22,6 @@
  */
 
 
-import static jdk.jpackage.test.HelloApp.configureEnvironment;
-
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -33,7 +31,7 @@ import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Comm;
-import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 
@@ -165,15 +163,8 @@ public final class JLinkOptionsTest {
 
         cmd.executeAndAssertImageCreated();
 
-        final int attempts = 3;
-        final int waitBetweenAttemptsSeconds = 5;
-
-        final String output = configureEnvironment(new Executor())
-                .saveFirstLineOfOutput()
-                .setExecutable(cmd.appLauncherPath().toAbsolutePath())
-                .addArguments("--print-modules")
-                .executeAndRepeatUntilExitCode(0, attempts,
-                        waitBetweenAttemptsSeconds).getFirstLineOfOutput();
+        final var output = HelloApp.assertApp(cmd.appLauncherPath())
+                .saveOutput(true).execute("--print-modules").getFirstLineOfOutput();
 
         return Stream.of(output.split(",")).collect(Collectors.toSet());
     }
