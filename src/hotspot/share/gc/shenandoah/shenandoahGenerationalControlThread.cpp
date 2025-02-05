@@ -61,8 +61,12 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
 
 void ShenandoahGenerationalControlThread::run_service() {
 
+  const int64_t wait_ms = ShenandoahPacing ? ShenandoahControlIntervalMin : 0;
   ShenandoahGCRequest request;
   while (!should_terminate()) {
+
+    // This control loop iteration has seen this much allocation.
+    const size_t allocs_seen = reset_allocs_seen();
 
     // Figure out if we have pending requests.
     check_for_request(request);
@@ -73,6 +77,11 @@ void ShenandoahGenerationalControlThread::run_service() {
 
     if (request.cause != GCCause::_no_gc) {
       run_gc_cycle(request);
+    } else {
+      // Report to pacer that we have seen this many words allocated
+      if (ShenandoahPacing && (allocs_seen > 0)) {
+        _heap->pacer()->report_alloc(allocs_seen);
+      }
     }
 
     // If the cycle was cancelled, continue the next iteration to deal with it. Otherwise,
@@ -81,7 +90,7 @@ void ShenandoahGenerationalControlThread::run_service() {
       MonitorLocker lock(&_request_lock, Mutex::_no_safepoint_check_flag);
       if (_requested_gc_cause == GCCause::_no_gc) {
         set_gc_mode(none);
-        lock.wait();
+        lock.wait(wait_ms);
       }
     }
   }
@@ -688,7 +697,6 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
     // Setting the request and generation is not necessary here, the control thread knows
     // that when the cancellation cause is for a concurrent gc, then it means a young gc
     // wants to preempt the old gc. The cancellation cause takes precedence.
-    // TODO: Can we just wait while mode != concurrent_normal?
     notify_control_thread(GCCause::_shenandoah_concurrent_gc, generation);
 
     {
