@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Comm;
@@ -146,17 +145,17 @@ public final class JLinkOptionsTest {
         final var modulesWithBindServices = getModulesInRuntime("--bind-services");
 
         final var moduleComm = Comm.compare(defaultModules, modulesWithBindServices);
-        
-        TKit.assertStringListEquals(List.of(), moduleComm.unique1().stream().toList(), 
+
+        TKit.assertStringListEquals(List.of(), moduleComm.unique1().stream().toList(),
                 "Check '--bind-services' option doesn't remove modules");
-        TKit.assertNotEquals("", moduleComm.unique2().stream().sorted().collect(Collectors.joining(",")), 
+        TKit.assertNotEquals("", moduleComm.unique2().stream().sorted().collect(Collectors.joining(",")),
                 "Check '--bind-services' option adds modules");
     }
 
     private final JPackageCommand createJPackageCommand(String javaAppDesc) {
         return JPackageCommand.helloAppImage(javaAppDesc).ignoreDefaultRuntime(true);
     }
-    
+
     private final Set<String> getModulesInRuntime(String ... jlinkOptions) {
         final var cmd = createJPackageCommand(PRINT_ENV_APP + "*");
         if (jlinkOptions.length != 0) {
@@ -165,17 +164,17 @@ public final class JLinkOptionsTest {
         }
 
         cmd.executeAndAssertImageCreated();
-        
+
         final int attempts = 3;
         final int waitBetweenAttemptsSeconds = 5;
-        
+
         final String output = configureEnvironment(new Executor())
                 .saveFirstLineOfOutput()
                 .setExecutable(cmd.appLauncherPath().toAbsolutePath())
                 .addArguments("--print-modules")
                 .executeAndRepeatUntilExitCode(0, attempts,
                         waitBetweenAttemptsSeconds).getFirstLineOfOutput();
-        
+
         return Stream.of(output.split(",")).collect(Collectors.toSet());
     }
 
