@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,6 @@ class SharedClassLoadingMark {
 };
 
 class SystemDictionaryShared: public SystemDictionary {
-  friend class ExcludeDumpTimeSharedClasses;
   friend class CleanupDumpTimeLambdaProxyClassTable;
 
   struct ArchiveInfo {
@@ -188,24 +187,20 @@ private:
   static DumpTimeClassInfo* get_info(InstanceKlass* k);
   static DumpTimeClassInfo* get_info_locked(InstanceKlass* k);
 
-  static void find_all_archivable_classes_impl();
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
   static void cleanup_lambda_proxy_class_dictionary();
   static void reset_registered_lambda_proxy_class(InstanceKlass* ik);
   static bool is_jfr_event_class(InstanceKlass *k);
-  static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
   static bool check_for_exclusion_impl(InstanceKlass* k);
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
   static InstanceKlass* retrieve_lambda_proxy_class(const RunTimeLambdaProxyClassInfo* info) NOT_CDS_RETURN_(nullptr);
-  static void scan_constant_pool(InstanceKlass* k);
   DEBUG_ONLY(static bool _class_loading_may_happen;)
 
 public:
-  static bool should_hidden_class_be_archived(InstanceKlass* k);
-  static void mark_required_hidden_class(InstanceKlass* k);
+  static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static bool has_archived_enum_objs(InstanceKlass* ik);
@@ -291,7 +286,9 @@ public:
   }
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
 
-  static void find_all_archivable_classes();
+  static void finish_exclusion_checks();
+  static DumpTimeSharedClassTable* dumptime_table() { return _dumptime_table; }
+
   static bool should_be_excluded(Klass* k);
   static bool check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info);
   static void validate_before_archiving(InstanceKlass* k);

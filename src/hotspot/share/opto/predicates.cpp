@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
@@ -82,6 +81,25 @@ ParsePredicateNode* ParsePredicate::init_parse_predicate(Node* parse_predicate_p
   return nullptr;
 }
 
+ParsePredicate ParsePredicate::clone_to_unswitched_loop(Node* new_control, const bool is_true_path_loop,
+                                                        PhaseIdealLoop* phase) const {
+  ParsePredicateSuccessProj* success_proj = phase->create_new_if_for_predicate(_success_proj, new_control,
+                                                                               _parse_predicate_node->deopt_reason(),
+                                                                               Op_ParsePredicate, is_true_path_loop);
+  NOT_PRODUCT(trace_cloned_parse_predicate(is_true_path_loop, success_proj));
+  return ParsePredicate(success_proj, _parse_predicate_node->deopt_reason());
+}
+
+#ifndef PRODUCT
+void ParsePredicate::trace_cloned_parse_predicate(const bool is_true_path_loop,
+                                                  const ParsePredicateSuccessProj* success_proj) {
+  if (TraceLoopPredicate) {
+    tty->print("Parse Predicate cloned to %s path loop: ", is_true_path_loop ? "true" : "false");
+    success_proj->in(0)->dump();
+  }
+}
+#endif // NOT PRODUCT
+
 Deoptimization::DeoptReason RuntimePredicate::uncommon_trap_reason(IfProjNode* if_proj) {
     CallStaticJavaNode* uct_call = if_proj->is_uncommon_trap_if_pattern();
     if (uct_call == nullptr) {
@@ -135,7 +153,7 @@ void TemplateAssertionPredicate::rewire_loop_data_dependencies(IfTrueNode* targe
                                                                PhaseIdealLoop* phase) const {
   for (DUIterator i = _success_proj->outs(); _success_proj->has_out(i); i++) {
     Node* output = _success_proj->out(i);
-    if (!output->is_CFG() && data_in_loop_body.check(output)) {
+    if (!output->is_CFG() && data_in_loop_body.check_node_in_loop_body(output)) {
       phase->igvn().replace_input_of(output, 0, target_predicate);
       --i; // account for the just deleted output
     }
@@ -151,8 +169,8 @@ bool TemplateAssertionPredicate::is_predicate(Node* node) {
   return if_node->in(1)->is_OpaqueTemplateAssertionPredicate();
 }
 
-// Clone this Template Assertion Predicate and replace the OpaqueLoopInitNode with the provided 'new_opaque_init' node.
-IfTrueNode* TemplateAssertionPredicate::clone(Node* new_control, PhaseIdealLoop* phase) const {
+// Clone this Template Assertion Predicate without modifying any OpaqueLoop*Node inputs.
+TemplateAssertionPredicate TemplateAssertionPredicate::clone(Node* new_control, PhaseIdealLoop* phase) const {
   DEBUG_ONLY(verify();)
   TemplateAssertionExpression template_assertion_expression(opaque_node());
   OpaqueTemplateAssertionPredicateNode* new_opaque_node = template_assertion_expression.clone(new_control, phase);
@@ -160,14 +178,18 @@ IfTrueNode* TemplateAssertionPredicate::clone(Node* new_control, PhaseIdealLoop*
   IfTrueNode* success_proj = assertion_predicate_if_creator.create_for_template(new_control, _if_node->Opcode(),
                                                                                 new_opaque_node,
                                                                                 _if_node->assertion_predicate_type());
-  DEBUG_ONLY(TemplateAssertionPredicate::verify(success_proj);)
-  return success_proj;
+  TemplateAssertionPredicate cloned_template_assertion_predicate(success_proj);
+  DEBUG_ONLY(cloned_template_assertion_predicate.verify();)
+  return cloned_template_assertion_predicate;
 }
 
-// Clone this Template Assertion Predicate and replace the OpaqueLoopInitNode with the provided 'new_opaque_init' node.
-IfTrueNode* TemplateAssertionPredicate::clone_and_replace_init(Node* new_control, OpaqueLoopInitNode* new_opaque_init,
-                                                               PhaseIdealLoop* phase) const {
+// Clone this Template Assertion Predicate and use a newly created OpaqueLoopInitNode with 'new_opaque_input' as input.
+TemplateAssertionPredicate TemplateAssertionPredicate::clone_and_replace_opaque_input(Node* new_control,
+                                                                                      Node* new_opaque_input,
+                                                                                      PhaseIdealLoop* phase) const {
   DEBUG_ONLY(verify();)
+  OpaqueLoopInitNode* new_opaque_init = new OpaqueLoopInitNode(phase->C, new_opaque_input);
+  phase->register_new_node(new_opaque_init, new_control);
   TemplateAssertionExpression template_assertion_expression(opaque_node());
   OpaqueTemplateAssertionPredicateNode* new_opaque_node =
       template_assertion_expression.clone_and_replace_init(new_control, new_opaque_init, phase);
@@ -175,8 +197,9 @@ IfTrueNode* TemplateAssertionPredicate::clone_and_replace_init(Node* new_control
   IfTrueNode* success_proj = assertion_predicate_if_creator.create_for_template(new_control, _if_node->Opcode(),
                                                                                 new_opaque_node,
                                                                                 _if_node->assertion_predicate_type());
-  DEBUG_ONLY(TemplateAssertionPredicate::verify(success_proj);)
-  return success_proj;
+  TemplateAssertionPredicate cloned_template_assertion_predicate(success_proj);
+  DEBUG_ONLY(cloned_template_assertion_predicate.verify();)
+  return cloned_template_assertion_predicate;
 }
 
 // Replace the input to OpaqueLoopStrideNode with 'new_stride' and leave the other nodes unchanged.
@@ -186,14 +209,20 @@ void TemplateAssertionPredicate::replace_opaque_stride_input(Node* new_stride, P
   expression.replace_opaque_stride_input(new_stride, igvn);
 }
 
-// Create a new Initialized Assertion Predicate from this template at 'new_control' and return the success projection
-// of the newly created Initialized Assertion Predicate.
-IfTrueNode* TemplateAssertionPredicate::initialize(PhaseIdealLoop* phase, Node* new_control) const {
+// Create a new Initialized Assertion Predicate from this template at the template success projection.
+InitializedAssertionPredicate TemplateAssertionPredicate::initialize(PhaseIdealLoop* phase) const {
   DEBUG_ONLY(verify();)
   InitializedAssertionPredicateCreator initialized_assertion_predicate_creator(phase);
-  IfTrueNode* success_proj = initialized_assertion_predicate_creator.create_from_template(head(), new_control);
-  DEBUG_ONLY(InitializedAssertionPredicate::verify(success_proj);)
-  return success_proj;
+  InitializedAssertionPredicate initialized_assertion_predicate =
+      initialized_assertion_predicate_creator.create_from_template_and_insert_below(*this);
+  DEBUG_ONLY(initialized_assertion_predicate.verify();)
+  return initialized_assertion_predicate;
+}
+
+// Kills the Template Assertion Predicate by setting the condition to true. Will be folded away in the next IGVN round.
+void TemplateAssertionPredicate::kill(PhaseIdealLoop* phase) const {
+  ConINode* true_con = phase->intcon(1);
+  phase->igvn().replace_input_of(_if_node, 1, true_con);
 }
 
 #ifdef ASSERT
@@ -722,7 +751,7 @@ Node* TemplateAssertionPredicateCreator::create_last_value(Node* new_control, Op
 
 IfTrueNode* TemplateAssertionPredicateCreator::create_if_node(
     Node* new_control, OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression,
-    const bool does_overflow, const AssertionPredicateType assertion_predicate_type) {
+    const bool does_overflow, const AssertionPredicateType assertion_predicate_type) const {
   AssertionPredicateIfCreator assertion_predicate_if_creator(_phase);
   return assertion_predicate_if_creator.create_for_template(new_control, does_overflow ? Op_If : Op_RangeCheck,
                                                             template_assertion_predicate_expression,
@@ -756,7 +785,7 @@ InitializedAssertionPredicateCreator::InitializedAssertionPredicateCreator(Phase
 // Create an Initialized Assertion Predicate from the provided template_assertion_predicate at 'new_control'.
 // We clone the Template Assertion Expression and replace:
 // - OpaqueTemplateAssertionPredicateNode with OpaqueInitializedAssertionPredicate
-// - OpaqueLoop*Nodes with new_init and _ew_stride, respectively.
+// - OpaqueLoop*Nodes with new_init and new_stride, respectively.
 //
 //             /         init                 stride
 //             |           |                    |
@@ -773,32 +802,38 @@ InitializedAssertionPredicateCreator::InitializedAssertionPredicateCreator(Phase
 //                         success     fail path                     new success   new Halt
 //                           proj    (Halt or UCT)                       proj
 //
-IfTrueNode* InitializedAssertionPredicateCreator::create_from_template(IfNode* template_assertion_predicate,
-                                                                       Node* new_control, Node* new_init,
-                                                                       Node* new_stride) {
+InitializedAssertionPredicate InitializedAssertionPredicateCreator::create_from_template(
+    IfNode* template_assertion_predicate, Node* new_control, Node* new_init, Node* new_stride) const {
   OpaqueInitializedAssertionPredicateNode* assertion_expression =
       create_assertion_expression_from_template(template_assertion_predicate, new_control, new_init, new_stride);
-  return create_control_nodes(new_control, template_assertion_predicate->Opcode(), assertion_expression,
-                              template_assertion_predicate->assertion_predicate_type());
+   IfTrueNode* success_proj = create_control_nodes(new_control,
+                                                   template_assertion_predicate->Opcode(),
+                                                   assertion_expression,
+                                                   template_assertion_predicate->assertion_predicate_type());
+  return InitializedAssertionPredicate(success_proj);
 }
 
-// Create a new Initialized Assertion Predicate from 'template_assertion_predicate' by cloning it but omitting the
-// OpaqueLoop*Notes (i.e. taking their inputs instead).
-IfTrueNode* InitializedAssertionPredicateCreator::create_from_template(IfNode* template_assertion_predicate,
-                                                                       Node* new_control) {
-  OpaqueTemplateAssertionPredicateNode* template_opaque =
-      template_assertion_predicate->in(1)->as_OpaqueTemplateAssertionPredicate();
-  TemplateAssertionExpression template_assertion_expression(template_opaque);
+// Create a new Initialized Assertion Predicate from the provided Template Assertion Predicate at the template success
+// projection by cloning it but omitting the OpaqueLoop*Notes (i.e. taking their inputs instead).
+InitializedAssertionPredicate InitializedAssertionPredicateCreator::create_from_template_and_insert_below(
+    const TemplateAssertionPredicate& template_assertion_predicate) const {
+  TemplateAssertionExpression template_assertion_expression(template_assertion_predicate.opaque_node());
+  IfTrueNode* template_assertion_predicate_success_proj = template_assertion_predicate.tail();
   OpaqueInitializedAssertionPredicateNode* assertion_expression =
-      template_assertion_expression.clone_and_fold_opaque_loop_nodes(new_control, _phase);
-  return create_control_nodes(new_control, template_assertion_predicate->Opcode(), assertion_expression,
-                              template_assertion_predicate->assertion_predicate_type());
+      template_assertion_expression.clone_and_fold_opaque_loop_nodes(template_assertion_predicate_success_proj, _phase);
+
+  IfNode* template_assertion_predicate_if = template_assertion_predicate.head();
+  AssertionPredicateType assertion_predicate_type = template_assertion_predicate_if->assertion_predicate_type();
+  int if_opcode = template_assertion_predicate_if->Opcode();
+  IfTrueNode* success_proj = create_control_nodes(template_assertion_predicate_success_proj, if_opcode,
+                                                  assertion_expression, assertion_predicate_type);
+  return InitializedAssertionPredicate(success_proj);
 }
 
 // Create a new Initialized Assertion Predicate directly without a template.
 IfTrueNode* InitializedAssertionPredicateCreator::create(Node* operand, Node* new_control, const jint stride,
                                                          const int scale, Node* offset, Node* range,
-                                                         const AssertionPredicateType assertion_predicate_type) {
+                                                         const AssertionPredicateType assertion_predicate_type) const {
   AssertionPredicateExpressionCreator expression_creator(stride, scale, offset, range, _phase);
   bool does_overflow;
   OpaqueInitializedAssertionPredicateNode* assertion_expression =
@@ -812,7 +847,7 @@ IfTrueNode* InitializedAssertionPredicateCreator::create(Node* operand, Node* ne
 // Creates the CFG nodes for the Initialized Assertion Predicate.
 IfTrueNode* InitializedAssertionPredicateCreator::create_control_nodes(
     Node* new_control, const int if_opcode, OpaqueInitializedAssertionPredicateNode* assertion_expression,
-    const AssertionPredicateType assertion_predicate_type) {
+    const AssertionPredicateType assertion_predicate_type) const {
   AssertionPredicateIfCreator assertion_predicate_if_creator(_phase);
   return assertion_predicate_if_creator.create_for_initialized(new_control, if_opcode, assertion_expression,
                                                                assertion_predicate_type);
@@ -823,7 +858,7 @@ IfTrueNode* InitializedAssertionPredicateCreator::create_control_nodes(
 OpaqueInitializedAssertionPredicateNode*
 InitializedAssertionPredicateCreator::create_assertion_expression_from_template(IfNode* template_assertion_predicate,
                                                                                 Node* new_control, Node* new_init,
-                                                                                Node* new_stride) {
+                                                                                Node* new_stride) const {
   OpaqueTemplateAssertionPredicateNode* template_opaque =
       template_assertion_predicate->in(1)->as_OpaqueTemplateAssertionPredicate();
   TemplateAssertionExpression template_assertion_expression(template_opaque);
@@ -907,36 +942,39 @@ void CreateAssertionPredicatesVisitor::visit(const TemplateAssertionPredicate& t
     return;
   }
   if (_clone_template) {
-    IfTrueNode* cloned_template_success_proj = clone_template_and_replace_init_input(template_assertion_predicate);
-    initialize_from_template(template_assertion_predicate, cloned_template_success_proj);
-    _current_predicate_chain_head = cloned_template_success_proj->in(0);
+    TemplateAssertionPredicate cloned_template_assertion_predicate =
+        clone_template_and_replace_init_input(template_assertion_predicate);
+    initialize_from_template(template_assertion_predicate, cloned_template_assertion_predicate.tail());
+    _current_predicate_chain_head = cloned_template_assertion_predicate.head();
   } else {
-    IfTrueNode* initialized_success_proj = initialize_from_template(template_assertion_predicate, _old_target_loop_entry);
-    _current_predicate_chain_head = initialized_success_proj->in(0);
+    InitializedAssertionPredicate initialized_assertion_predicate =
+        initialize_from_template(template_assertion_predicate, _old_target_loop_entry);
+    _current_predicate_chain_head = initialized_assertion_predicate.head();
   }
 }
 
 // Create an Initialized Assertion Predicate from the provided Template Assertion Predicate.
-IfTrueNode* CreateAssertionPredicatesVisitor::initialize_from_template(
+InitializedAssertionPredicate CreateAssertionPredicatesVisitor::initialize_from_template(
     const TemplateAssertionPredicate& template_assertion_predicate, Node* new_control) const {
   DEBUG_ONLY(template_assertion_predicate.verify();)
   IfNode* template_head = template_assertion_predicate.head();
   InitializedAssertionPredicateCreator initialized_assertion_predicate_creator(_phase);
-  IfTrueNode* initialized_predicate = initialized_assertion_predicate_creator.create_from_template(template_head,
-                                                                                                   new_control,
-                                                                                                   _init, _stride);
-  DEBUG_ONLY(InitializedAssertionPredicate::verify(initialized_predicate);)
-  template_assertion_predicate.rewire_loop_data_dependencies(initialized_predicate, _node_in_loop_body, _phase);
-  rewire_to_old_predicate_chain_head(initialized_predicate);
-  return initialized_predicate;
+  InitializedAssertionPredicate initialized_assertion_predicate =
+      initialized_assertion_predicate_creator.create_from_template(template_head, new_control, _init, _stride);
+
+  DEBUG_ONLY(initialized_assertion_predicate.verify();)
+  template_assertion_predicate.rewire_loop_data_dependencies(initialized_assertion_predicate.tail(),
+                                                             _node_in_loop_body, _phase);
+  rewire_to_old_predicate_chain_head(initialized_assertion_predicate.tail());
+  return initialized_assertion_predicate;
 }
 
-// Clone the provided 'template_assertion_predicate' and set '_init' as new input for the OpaqueLoopInitNode.
-IfTrueNode* CreateAssertionPredicatesVisitor::clone_template_and_replace_init_input(
-    const TemplateAssertionPredicate& template_assertion_predicate) {
-  OpaqueLoopInitNode* opaque_init = new OpaqueLoopInitNode(_phase->C, _init);
-  _phase->register_new_node(opaque_init, _old_target_loop_entry);
-  return template_assertion_predicate.clone_and_replace_init(_old_target_loop_entry, opaque_init, _phase);
+// Clone the provided Template Assertion Predicate and set '_init' as new input for the OpaqueLoopInitNode.
+TemplateAssertionPredicate CreateAssertionPredicatesVisitor::clone_template_and_replace_init_input(
+    const TemplateAssertionPredicate& template_assertion_predicate) const {
+  TemplateAssertionPredicate new_template =
+      template_assertion_predicate.clone_and_replace_opaque_input(_old_target_loop_entry, _init, _phase);
+  return new_template;
 }
 
 // Rewire the newly created predicates to the old predicate chain head (i.e. '_current_predicate_chain_head') by
@@ -947,8 +985,8 @@ IfTrueNode* CreateAssertionPredicatesVisitor::clone_template_and_replace_init_in
 //          x
 //          |                                               old target
 //  Template Assertion                                      loop entry
-//     Predicate 1             old target        clone           |    \
-//          |                  loop entry        TAP 2           |     cloned Template Assertion
+//     Predicate 1            old target         clone           |    \
+//          |                 loop entry         TAP 2           |     cloned Template Assertion
 //  Template Assertion             |            ======>          |            Predicate 2
 //     Predicate 2            target loop                        |
 //          |                                               target loop #_current_predicate_chain_head
@@ -977,7 +1015,76 @@ void CreateAssertionPredicatesVisitor::rewire_to_old_predicate_chain_head(
   }
 }
 
-// Clone the Template Assertion Predicate and set a new input for the OpaqueLoopStrideNode.
+TargetLoopPredicateChain::TargetLoopPredicateChain(LoopNode* loop_head, PhaseIdealLoop* phase)
+    : DEBUG_ONLY(_old_target_loop_entry(loop_head->in(LoopNode::EntryControl)) COMMA)
+      DEBUG_ONLY(_node_index_before_cloning(phase->C->unique()) COMMA)
+      _current_predicate_chain_head(loop_head),
+      _phase(phase) {}
+
+// Inserts the provided newly cloned predicate to the head of the target loop predicate chain.
+void TargetLoopPredicateChain::insert_predicate(const Predicate& predicate) {
+  rewire_to_target_chain_head(predicate.tail()->as_IfTrue());
+  _current_predicate_chain_head = predicate.head();
+  assert(predicate.head()->_idx >= _node_index_before_cloning, "must be a newly cloned predicate");
+  assert(predicate.tail()->_idx >= _node_index_before_cloning, "must be a newly cloned predicate");
+  assert(_current_predicate_chain_head->in(0) == _old_target_loop_entry &&
+         _old_target_loop_entry->unique_ctrl_out() == _current_predicate_chain_head , "must be connected now");
+}
+
+void TargetLoopPredicateChain::rewire_to_target_chain_head(IfTrueNode* template_assertion_predicate_success_proj) const {
+  if (_current_predicate_chain_head->is_Loop()) {
+    _phase->replace_loop_entry(_current_predicate_chain_head->as_Loop(), template_assertion_predicate_success_proj);
+  } else {
+    _phase->replace_control(_current_predicate_chain_head, template_assertion_predicate_success_proj);
+  }
+}
+
+ClonePredicateToTargetLoop::ClonePredicateToTargetLoop(LoopNode* target_loop_head, const NodeInLoopBody& node_in_loop_body,
+                                                       PhaseIdealLoop* phase)
+    : _old_target_loop_entry(target_loop_head->in(LoopNode::EntryControl)),
+      _target_loop_predicate_chain(target_loop_head, phase),
+      _node_in_loop_body(node_in_loop_body),
+      _phase(phase) {}
+
+
+CloneUnswitchedLoopPredicatesVisitor::CloneUnswitchedLoopPredicatesVisitor(
+    LoopNode* true_path_loop_head, LoopNode* false_path_loop_head,
+    const NodeInOriginalLoopBody& node_in_true_path_loop_body, const NodeInClonedLoopBody& node_in_false_path_loop_body,
+    PhaseIdealLoop* phase)
+    : _clone_predicate_to_true_path_loop(true_path_loop_head, node_in_true_path_loop_body, phase),
+      _clone_predicate_to_false_path_loop(false_path_loop_head, node_in_false_path_loop_body, phase),
+      _phase(phase),
+      _has_hoisted_check_parse_predicates(false) {}
+
+// Keep track of whether we are in the correct Predicate Block where Template Assertion Predicates can be found.
+// The PredicateIterator will always start at the loop entry and first visits the Loop Limit Check Predicate Block.
+void CloneUnswitchedLoopPredicatesVisitor::visit(const ParsePredicate& parse_predicate) {
+  Deoptimization::DeoptReason deopt_reason = parse_predicate.head()->deopt_reason();
+  if (deopt_reason == Deoptimization::Reason_predicate ||
+      deopt_reason == Deoptimization::Reason_profile_predicate) {
+    _has_hoisted_check_parse_predicates = true;
+  }
+
+  _clone_predicate_to_true_path_loop.clone_parse_predicate(parse_predicate, true);
+  _clone_predicate_to_false_path_loop.clone_parse_predicate(parse_predicate, false);
+  parse_predicate.kill(_phase->igvn());
+}
+
+// Clone the Template Assertion Predicate, which is currently found before the newly added unswitched loop selector,
+// to the true path and false path loop.
+void CloneUnswitchedLoopPredicatesVisitor::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
+  if (!_has_hoisted_check_parse_predicates) {
+    // Only process if we are in the correct Predicate Block.
+    return;
+  }
+
+  _clone_predicate_to_true_path_loop.clone_template_assertion_predicate(template_assertion_predicate);
+  _clone_predicate_to_false_path_loop.clone_template_assertion_predicate(template_assertion_predicate);
+  template_assertion_predicate.kill(_phase);
+}
+
+// Update the Template Assertion Predicate by setting a new input for the OpaqueLoopStrideNode. Create a new
+// Initialized Assertion Predicate from the updated Template Assertion Predicate.
 void UpdateStrideForAssertionPredicates::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
   if (!template_assertion_predicate.is_last_value()) {
     // Only Last Value Assertion Predicates have an OpaqueLoopStrideNode.
@@ -985,8 +1092,9 @@ void UpdateStrideForAssertionPredicates::visit(const TemplateAssertionPredicate&
   }
   replace_opaque_stride_input(template_assertion_predicate);
   Node* template_tail_control_out = template_assertion_predicate.tail()->unique_ctrl_out();
-  IfTrueNode* initialized_success_proj = initialize_from_updated_template(template_assertion_predicate);
-  connect_initialized_assertion_predicate(template_tail_control_out, initialized_success_proj);
+  InitializedAssertionPredicate initialized_assertion_predicate =
+      initialize_from_updated_template(template_assertion_predicate);
+  connect_initialized_assertion_predicate(template_tail_control_out, initialized_assertion_predicate);
 }
 
 // Replace the input to OpaqueLoopStrideNode with 'new_stride' and leave the other nodes unchanged.
@@ -995,20 +1103,20 @@ void UpdateStrideForAssertionPredicates::replace_opaque_stride_input(
   template_assertion_predicate.replace_opaque_stride_input(_new_stride, _phase->igvn());
 }
 
-IfTrueNode* UpdateStrideForAssertionPredicates::initialize_from_updated_template(
+InitializedAssertionPredicate UpdateStrideForAssertionPredicates::initialize_from_updated_template(
     const TemplateAssertionPredicate& template_assertion_predicate) const {
-  IfTrueNode* initialized_success_proj = template_assertion_predicate.initialize(_phase, template_assertion_predicate.tail());
-  return initialized_success_proj;
+  return template_assertion_predicate.initialize(_phase);
 }
 
 // The newly created Initialized Assertion Predicate can safely be inserted because this visitor is already visiting
 // the Template Assertion Predicate above this. So, we will not accidentally visit this again and kill it with the
 // visit() method for Initialized Assertion Predicates.
 void UpdateStrideForAssertionPredicates::connect_initialized_assertion_predicate(
-    Node* new_control_out, IfTrueNode* initialized_success_proj) const {
+    Node* new_control_out, const InitializedAssertionPredicate& initialized_assertion_predicate) const {
+  Node* initialized_assertion_predicate_success_proj = initialized_assertion_predicate.tail();
   if (new_control_out->is_Loop()) {
-    _phase->replace_loop_entry(new_control_out->as_Loop(), initialized_success_proj);
+    _phase->replace_loop_entry(new_control_out->as_Loop(), initialized_assertion_predicate_success_proj);
   } else {
-    _phase->replace_control(new_control_out, initialized_success_proj);
+    _phase->replace_control(new_control_out, initialized_assertion_predicate_success_proj);
   }
 }
