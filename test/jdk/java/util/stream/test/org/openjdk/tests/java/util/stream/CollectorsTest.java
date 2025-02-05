@@ -47,6 +47,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.LambdaTestHelpers;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
@@ -64,11 +65,13 @@ import static java.util.stream.Collectors.groupingByConcurrent;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.reducing;
+import static java.util.stream.Collectors.teeing;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toConcurrentMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Gatherers.scan;
 import static java.util.stream.LambdaTestHelpers.assertContents;
 import static java.util.stream.LambdaTestHelpers.assertContentsUnordered;
 import static java.util.stream.LambdaTestHelpers.mDoubler;
@@ -806,5 +809,72 @@ public class CollectorsTest extends OpTestCase {
         exerciseMapCollection(data, groupingBy(classifier, sumAndCount),
                 new GroupingByAssertion<>(classifier, Map.class,
                         new TeeingAssertion<>(summing, counting, Map::entry)));
+    }
+
+    static class SizingValidator {
+        final int expectedSize;
+        int actualSize;
+
+        SizingValidator() {
+            throw new UnsizedException();
+        }
+
+        SizingValidator(int expectedSize) {
+            this.expectedSize = expectedSize;
+        }
+
+        synchronized void count(Object value) {
+            actualSize++;
+        }
+
+        SizingValidator merge(SizingValidator other) {
+            actualSize += other.actualSize;
+            return this;
+        }
+
+        Integer validateAndGetSize() {
+            if (actualSize != expectedSize) {
+                throw new IllegalStateException("Expected size: %s, actual size: %s".formatted(expectedSize, actualSize));
+            }
+            return actualSize;
+        }
+
+        static class UnsizedException extends RuntimeException {}
+    }
+
+    @Test
+    public void testOfSized() {
+        Collector<Object, SizingValidator, Integer> collector = Collector.ofSized(
+            SizingValidator::new,
+            SizingValidator::new,
+            SizingValidator::count,
+            SizingValidator::merge,
+            SizingValidator::validateAndGetSize,
+            Collector.Characteristics.UNORDERED,
+            Collector.Characteristics.CONCURRENT);
+
+        assertEquals(collector.characteristics(), Set.of(Collector.Characteristics.UNORDERED, Collector.Characteristics.CONCURRENT));
+
+        // Serial collect, serial fused gather-collect and parallel concurrent unordered collect all presize the
+        // final container to the known size.
+        assertEquals((int) IntStream.range(0, 100).boxed().collect(collector), 100);
+        assertEquals((int) IntStream.range(0, 100).boxed().gather(scan(() -> 0, Integer::sum)).collect(collector), 100);
+        assertEquals((int) IntStream.range(0, 100).boxed().parallel().map(i -> 2 * i).collect(collector), 100);
+
+        try {
+            IntStream.range(0, 100).boxed().filter(i -> i != 2).collect(collector);
+            fail("Expecting stream without known size to use unsized supplier");
+        } catch (SizingValidator.UnsizedException _) {}
+
+        // Collector combinators that preserve the stream size also presize.
+        assertEquals((int) IntStream.range(0, 100).boxed().collect(collectingAndThen(collector, i -> i + 1)), 101);
+        assertEquals((int) IntStream.range(0, 100).boxed().collect(mapping(i -> i + 1, collector)), 100);
+        assertEquals((int) IntStream.range(0, 100).boxed().collect(teeing(collector, collector, Integer::sum)), 200);
+
+        // Collector combinators that don't preserve the stream size don't presize.
+        try {
+            IntStream.range(0, 100).boxed().collect(partitioningBy(i -> i % 2 == 0, collector));
+            fail("Expecting partitioningBy combinator to drop sizedSupplier");
+        } catch (SizingValidator.UnsizedException _) {}
     }
 }

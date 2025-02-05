@@ -37,6 +37,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.IntBinaryOperator;
 import java.util.function.LongBinaryOperator;
+import java.util.function.LongFunction;
 import java.util.function.ObjDoubleConsumer;
 import java.util.function.ObjIntConsumer;
 import java.util.function.ObjLongConsumer;
@@ -154,14 +155,14 @@ final class ReduceOps {
      */
     public static <T, I> TerminalOp<T, I>
     makeRef(Collector<? super T, I, ?> collector) {
-        Supplier<I> supplier = Objects.requireNonNull(collector).supplier();
+        LongFunction<I> sizedSupplier = Objects.requireNonNull(collector).sizedSupplier();
         BiConsumer<I, ? super T> accumulator = collector.accumulator();
         BinaryOperator<I> combiner = collector.combiner();
         class ReducingSink extends Box<I>
                 implements AccumulatingSink<T, I, ReducingSink> {
             @Override
             public void begin(long size) {
-                state = supplier.get();
+                state = sizedSupplier.apply(size);
             }
 
             @Override

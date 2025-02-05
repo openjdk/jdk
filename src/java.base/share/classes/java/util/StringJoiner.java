@@ -134,6 +134,34 @@ public final class StringJoiner {
     }
 
     /**
+     * Constructs a {@code StringJoiner} with no characters in it using copies
+     * of the supplied {@code prefix}, {@code delimiter} and {@code suffix}.
+     * If no characters are added to the {@code StringJoiner} and methods
+     * accessing the string value of it are invoked, it will return the
+     * {@code prefix + suffix} (or properties thereof) in the result, unless
+     * {@code setEmptyValue} has first been called.
+     *
+     * @param  delimiter the sequence of characters to be used between each
+     *         element added to the {@code StringJoiner}
+     * @param  prefix the sequence of characters to be used at the beginning
+     * @param  suffix the sequence of characters to be used at the end
+     * @param  initialCapacity the number of elements that can be added before
+     *         the internal buffer needs to be resized
+     * @throws NullPointerException if {@code prefix}, {@code delimiter}, or
+     *         {@code suffix} is {@code null}
+     */
+    public StringJoiner(CharSequence delimiter,
+                        CharSequence prefix,
+                        CharSequence suffix,
+                        int initialCapacity) {
+        this(delimiter, prefix, suffix);
+        if (initialCapacity < 0) {
+            throw new IllegalArgumentException("Capacity must be non-negative");
+        }
+        elts = new String[initialCapacity];
+    }
+
+    /**
      * Sets the sequence of characters to be used when determining the string
      * representation of this {@code StringJoiner} and no elements have been
      * added yet, that is, when it is empty.  A copy of the {@code emptyValue}
