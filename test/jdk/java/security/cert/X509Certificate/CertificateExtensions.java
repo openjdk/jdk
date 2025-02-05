@@ -24,10 +24,11 @@
 /**
  * @test
  * @bug 8346094
- * @summary validating getExtensionValue and getKeyUsage with specified and unspecified extensions on the X509Certificate.
+ * @summary validating getExtensionValue and getKeyUsage with specified and
+ *          unspecified extensions on the X509Certificate.
  * @library /test/lib
  * @modules java.base/sun.security.x509
- * java.base/sun.security.util
+ *          java.base/sun.security.util
  */
 import jdk.test.lib.Asserts;
 import sun.security.util.ObjectIdentifier;
@@ -47,29 +48,30 @@ public class CertificateExtensions {
         X509CertImpl x509Certimpl = createCertificate();
         try {
             /**
-             * Certificate is created without extensions. Invoking getExtensionValue with oid must return NULL
-             * else it is incorrect
+             * Certificate is created without extensions. Invoking getExtensionValue
+             * with oid must return NULL else it is incorrect
              */
             Asserts.assertNull(x509Certimpl.getExtensionValue("2.5.29.17"));
             /**
-             * Certificate is created with extensions. Invoking getExtensionValue with oid must not return NULL
-             * else it is incorrect
+             * Certificate is created with extensions. Invoking getExtensionValue
+             * with oid must not return NULL else it is incorrect
              */
-            x509Certimpl.getInfo().setExtensions(createCertificateExtensions(x509Certimpl.getInfo().getKey().getKey()));
+            x509Certimpl.getInfo().setExtensions(createCertificateExtensions(
+                    x509Certimpl.getInfo().getKey().getKey()));
             Asserts.assertNotNull(x509Certimpl.getExtensionValue("2.5.29.17"));
             /**
-             * Certificate is created with extensions. Invoking getExtensionValue with invalid oid must return NULL
-             * else it is incorrect
+             * Certificate is created with extensions. Invoking getExtensionValue
+             * with invalid oid must return NULL else it is incorrect
              */
             Asserts.assertNull(x509Certimpl.getExtensionValue("1.2.3.4"));
             /**
-             * Certificate is created with extensions. Invoking getKeyUsage must not return NULL
-             * else it is incorrect
+             * Certificate is created with extensions. Invoking getKeyUsage
+             * must not return NULL else it is incorrect
              */
             Asserts.assertNotNull(x509Certimpl.getKeyUsage());
             /**
-             * Certificate is created without extensions. Invoking getKeyUsage must return NULL
-             * else it is incorrect
+             * Certificate is created without extensions. Invoking getKeyUsage
+             * must return NULL else it is incorrect
              */
             x509Certimpl.getInfo().setExtensions(null);
             Asserts.assertNull(x509Certimpl.getKeyUsage());
@@ -98,7 +100,7 @@ public class CertificateExtensions {
             x509CertInfo.setIssuer(issuer);
             x509CertInfo.setSubject(subject);
 
-            //create and set the subject and issuer unique identity
+            // create and set the subject and issuer unique identity
             byte[] issuerId = {1, 2, 3, 4, 5};
             byte[] subjectId = {6, 7, 8, 9, 10};
             x509CertInfo.setSubjectUniqueId(new UniqueIdentity(subjectId));
@@ -123,7 +125,8 @@ public class CertificateExtensions {
             byte[] signedData = signature.sign();
             byte[] signedCert = {};
 
-            x509Certimpl = new X509CertImpl(x509CertInfo, AlgorithmId.get("SHA256withRSA"), signedData, signedCert);
+            x509Certimpl = new X509CertImpl(x509CertInfo,
+                    AlgorithmId.get("SHA256withRSA"), signedData, signedCert);
         } catch (Exception e) {
             System.out.println("caught exception while creating the certificate : " + e.getMessage());
             throw e;
@@ -131,9 +134,11 @@ public class CertificateExtensions {
         return x509Certimpl;
     }
 
-    public static sun.security.x509.CertificateExtensions createCertificateExtensions(PublicKey publicKey) throws IOException, NoSuchAlgorithmException {
+    public static sun.security.x509.CertificateExtensions createCertificateExtensions
+            (PublicKey publicKey) throws IOException, NoSuchAlgorithmException {
         // Create Extensions
-        sun.security.x509.CertificateExtensions certificateExtensions = new sun.security.x509.CertificateExtensions();
+        sun.security.x509.CertificateExtensions certificateExtensions =
+                new sun.security.x509.CertificateExtensions();
 
         GeneralNameInterface mailInf = new RFC822Name("test@Oracle.com");
         GeneralName mail = new GeneralName(mailInf);
