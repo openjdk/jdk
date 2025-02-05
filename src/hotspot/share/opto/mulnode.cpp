@@ -1308,10 +1308,12 @@ const Type* LShiftLNode::Value(PhaseGVN* phase) const {
   return TypeLong::make( (jlong)r1->get_con() << (jint)shift );
 }
 
-Node *RShiftNode::IdealIL(PhaseGVN *phase, bool can_reshape, BasicType bt) {
+Node *RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   // Inputs may be TOP if they are dead.
   const TypeInteger* t1 = phase->type(in(1))->isa_integer(bt);
-  if (!t1) return NodeSentinel;        // Left input is an integer
+  if (t1 == nullptr) {
+    return NodeSentinel;        // Left input is an integer
+  }
   const TypeInteger* t3;  // type of in(1).in(2)
   int shift = maskShiftAmount(phase, this, bits_per_java_integer(bt));
   if (shift == 0) {
@@ -1397,7 +1399,7 @@ const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
    if (bt ==T_INT) {
      jint lo_verify = checked_cast<jint>(r1->lo_as_long()) >> (jint)shift;
      jint hi_verify = checked_cast<jint>(r1->hi_as_long()) >> (jint)shift;
-     assert((checked_cast<jint>(lo) == lo_verify) & (checked_cast<jint>(hi) == hi_verify), "inconsistent");
+     assert((checked_cast<jint>(lo) == lo_verify) && (checked_cast<jint>(hi) == hi_verify), "inconsistent");
    }
 #endif
     const TypeInteger* ti = TypeInteger::make(lo, hi, MAX2(r1->_widen,r2->_widen), bt);
