@@ -358,7 +358,3 @@ void GCTracer::send_phase_events(TimePartitions* time_partitions) const {
     phase->accept(&phase_reporter);
   }
 }
-
-#if INCLUDE_JFR
-
-#endif

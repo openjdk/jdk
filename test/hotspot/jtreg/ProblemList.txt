@@ -171,8 +171,6 @@ vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 gener
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
 
-vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
-
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all
 

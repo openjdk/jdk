@@ -320,7 +320,8 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       }
     }
 
-    if (result == nullptr) {
+    assert(result == nullptr, "inv");
+    {
       VM_ParallelCollectForAllocation op(size, is_tlab, gc_count);
       VMThread::execute(&op);
 

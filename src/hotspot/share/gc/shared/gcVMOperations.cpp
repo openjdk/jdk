@@ -85,16 +85,10 @@ void VM_GC_Operation::notify_gc_end() {
 
 // Allocations may fail in several threads at about the same time,
 // resulting in multiple gc requests.  We only want to do one of them.
-// In case a GC locker is active and the need for a GC is already signaled,
-// we want to skip this GC attempt altogether, without doing a futile
-// safepoint operation.
 bool VM_GC_Operation::skip_operation() const {
   bool skip = (_gc_count_before != Universe::heap()->total_collections());
   if (_full && skip) {
     skip = (_full_gc_count_before != Universe::heap()->total_full_collections());
-  }
-  if (!skip && GCLocker::is_active()) {
-    skip = Universe::heap()->is_maximal_no_gc();
   }
   return skip;
 }

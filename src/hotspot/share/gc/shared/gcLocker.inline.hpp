@@ -41,7 +41,7 @@ void GCLocker::enter(JavaThread* thread) {
       enter_slow(thread);
     }
 
-    DEBUG_ONLY(Atomic::add(&_debug_count, (uint64_t)1);)
+    DEBUG_ONLY(Atomic::add(&_verify_in_cr_count, (uint64_t)1);)
   } else {
     thread->enter_critical();
   }
@@ -52,8 +52,8 @@ void GCLocker::exit(JavaThread* thread) {
 
 #ifdef ASSERT
   if (thread->in_last_critical()) {
-    Atomic::add(&_debug_count, (uint64_t)-1);
-    // Matching the loadload in GCLocker::block
+    Atomic::add(&_verify_in_cr_count, (uint64_t)-1);
+    // Matching the loadload in GCLocker::block.
     OrderAccess::storestore();
   }
 #endif

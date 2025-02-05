@@ -62,14 +62,14 @@ public:
 Monitor* GCLocker::_lock;
 volatile bool GCLocker::_is_gc_request_pending;
 
-DEBUG_ONLY(uint64_t GCLocker::_debug_count;)
+DEBUG_ONLY(uint64_t GCLocker::_verify_in_cr_count;)
 
 void GCLocker::initialize() {
   assert(Heap_lock != nullptr, "inv");
   _lock = Heap_lock;
   _is_gc_request_pending = false;
 
-  DEBUG_ONLY(_debug_count = 0;)
+  DEBUG_ONLY(_verify_in_cr_count = 0;)
 }
 
 bool GCLocker::is_active() {
@@ -103,9 +103,9 @@ void GCLocker::block() {
   }
 
 #ifdef ASSERT
-  // Matching the storestore in GCLocker::exit
+  // Matching the storestore in GCLocker::exit.
   OrderAccess::loadload();
-  assert(Atomic::load(&_debug_count) == 0, "inv");
+  assert(Atomic::load(&_verify_in_cr_count) == 0, "inv");
 #endif
 }
 

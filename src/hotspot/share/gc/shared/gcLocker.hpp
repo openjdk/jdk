@@ -29,12 +29,25 @@
 #include "memory/allStatic.hpp"
 #include "runtime/mutex.hpp"
 
+// GCLocker provides synchronization between the garbage collector (GC) and
+// threads using JNI critical APIs. When threads enter a critical region (CR),
+// certain GC implementations may suspend garbage collection until all such
+// threads have exited.
+//
+// Threads that need to trigger a GC should use the `block()` and `unblock()`
+// APIs. `block()` will block the caller and prevent new threads from entering
+// the CR.
+//
+// Threads entering or exiting a CR must call the `enter` and `exit` APIs to
+// ensure proper synchronization with the GC.
+
 class GCLocker: public AllStatic {
   static Monitor* _lock;
   static volatile bool _is_gc_request_pending;
 
 #ifdef ASSERT
-  static uint64_t _debug_count;
+  // Debug-only: to track the number of java threads in critical-region.
+  static uint64_t _verify_in_cr_count;
 #endif
   static void enter_slow(JavaThread* thread);
 
