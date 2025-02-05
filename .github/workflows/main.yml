@@ -171,7 +171,7 @@ jobs:
   build-linux-x64-static:
     name: linux-x64-static
     needs: prepare
-    uses: ./.github/workflows/build-linux.yml
+    uses: ./.github/workflows/build-linux-static.yml
     with:
       platform: linux-x64
       make-target: 'static-jdk-image'
