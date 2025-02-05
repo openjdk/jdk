@@ -55,7 +55,8 @@ public class TestTemplate {
         testWithOneArguments();
         testWithTwoArguments();
         testRecursive();
-        testHook();
+        testHook1();
+        testHook2();
 
         //testClassInstantiator();
         //testRepeat();
@@ -202,7 +203,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testHook() {
+    public static void testHook1() {
         var hook1 = new Hook("Hook1");
 
         var template1 = Template.make(() -> body("Hello\n"));
@@ -219,8 +220,71 @@ public class TestTemplate {
         String code = template2.withArgs().render();
         String expected =
             """
+            {
             Hello
-            World""";
+            World
+            }""";
+        checkEQ(code, expected);
+    }
+
+    public static void testHook2() {
+        var hook1 = new Hook("Hook1");
+
+        var template1 = Template.make("a", (String a) -> body("x #a x\n"));
+
+        // Test nested use of hooks in the same template.
+        var template2 = Template.make(() -> body(
+            "{\n",
+            hook1.set(), // empty
+            "zero\n",
+            hook1.set(
+                template1.withArgs("one"),
+                template1.withArgs("two"),
+                intoHook(hook1, template1.withArgs("intoHook1a")),
+                intoHook(hook1, template1.withArgs("intoHook1b")),
+                template1.withArgs("three"),
+                hook1.set(
+                    template1.withArgs("four"),
+                    intoHook(hook1, template1.withArgs("intoHook1c")),
+                    template1.withArgs("five")
+	        ),
+                template1.withArgs("six"),
+                hook1.set(), // empty
+                template1.withArgs("seven"),
+                intoHook(hook1, template1.withArgs("intoHook1d")),
+                template1.withArgs("eight"),
+                hook1.set(
+                    template1.withArgs("nine"),
+                    intoHook(hook1, template1.withArgs("intoHook1e")),
+                    template1.withArgs("ten")
+	        ),
+                template1.withArgs("eleven")
+	    ),
+            "}"
+        ));
+
+        String code = template2.withArgs().render();
+        String expected =
+            """
+            {
+            zero
+            x intoHook1a x
+            x intoHook1b x
+            x intoHook1d x
+            x one x
+            x two x
+            x three x
+            x intoHook1c x
+            x four x
+            x five x
+            x six x
+            x seven x
+            x eight x
+            x intoHook1e x
+            x nine x
+            x ten x
+            x eleven x
+            }""";
         checkEQ(code, expected);
     }
 
