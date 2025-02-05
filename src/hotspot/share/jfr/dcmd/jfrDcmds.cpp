@@ -387,6 +387,7 @@ JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* out
   _max_chunk_size("maxchunksize", "Size of an individual disk chunk", "MEMORY SIZE", false, "12m"),
   _sample_threads("samplethreads", "Activate thread sampling", "BOOLEAN", false, "true"),
   _preserve_repository("preserve-repository", "Preserve the disk repository after JVM exit", "BOOLEAN", false, "false"),
+  _string_pool_policy("string-deduplication", "'never' deduplicate, 'always' deduplicate, or 'auto' use heuristics. ","STRING", false, "auto"),
   _verbose(true) {
   _dcmdparser.add_dcmd_option(&_repository_path);
   _dcmdparser.add_dcmd_option(&_dump_path);
@@ -398,6 +399,7 @@ JfrConfigureFlightRecorderDCmd::JfrConfigureFlightRecorderDCmd(outputStream* out
   _dcmdparser.add_dcmd_option(&_max_chunk_size);
   _dcmdparser.add_dcmd_option(&_sample_threads);
   _dcmdparser.add_dcmd_option(&_preserve_repository);
+  _dcmdparser.add_dcmd_option(&_string_pool_policy);
 };
 
 void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
@@ -490,6 +492,11 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
     dump_path = JfrJavaSupport::new_string(_dump_path.value(), CHECK);
   }
 
+  jstring string_pool_policy = nullptr;
+  if (_string_pool_policy.is_set() && _string_pool_policy.value() != nullptr) {
+    string_pool_policy = JfrJavaSupport::new_string(_string_pool_policy.value(), CHECK);
+  }
+
   jobject stack_depth = nullptr;
   jobject global_buffer_count = nullptr;
   jobject global_buffer_size = nullptr;
@@ -535,7 +542,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   static const char method[] = "execute";
   static const char signature[] = "(ZLjava/lang/String;Ljava/lang/String;Ljava/lang/Integer;"
     "Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;"
-    "Ljava/lang/Long;Ljava/lang/Boolean;)[Ljava/lang/String;";
+    "Ljava/lang/Long;Ljava/lang/Boolean;Ljava/lang/String;)[Ljava/lang/String;";
 
   JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
   execute_args.set_receiver(h_dcmd_instance);
@@ -551,6 +558,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   execute_args.push_jobject(memory_size);
   execute_args.push_jobject(max_chunk_size);
   execute_args.push_jobject(preserve_repository);
+  execute_args.push_jobject(string_pool_policy);
 
   JfrJavaSupport::call_virtual(&execute_args, THREAD);
   handle_dcmd_result(output(), result.get_oop(), source, THREAD);

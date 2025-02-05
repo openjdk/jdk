@@ -185,6 +185,7 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
   DCmdArgument<MemorySizeArgument> _max_chunk_size;
   DCmdArgument<bool>  _sample_threads;
   DCmdArgument<bool>  _preserve_repository;
+  DCmdArgument<char*> _string_pool_policy;
   bool _verbose;
 
  public:
@@ -201,7 +202,7 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
   static const char* impact() {
     return "Low";
   }
-  static int num_arguments() { return 10; }
+  static int num_arguments() { return 11; }
   virtual void execute(DCmdSource source, TRAPS);
   virtual void print_help(const char* name) const;
 };

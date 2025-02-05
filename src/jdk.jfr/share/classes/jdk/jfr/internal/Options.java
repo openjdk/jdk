@@ -53,6 +53,7 @@ public final class Options {
     private static final long DEFAULT_MAX_CHUNK_SIZE = 12 * 1024 * 1024;
     private static final Path DEFAULT_DUMP_PATH = null;
     private static final boolean DEFAULT_PRESERVE_REPOSITORY = false;
+    private static final StringPoolPolicy DEFAULT_STRING_POOL_POLICY = StringPoolPolicy.AUTO;
 
     private static long memorySize;
     private static long globalBufferSize;
@@ -61,6 +62,7 @@ public final class Options {
     private static int stackDepth;
     private static long maxChunkSize;
     private static boolean preserveRepository;
+    private static StringPoolPolicy stringPoolPolicy;
 
     static {
         final long pageSize = Unsafe.getUnsafe().pageSize();
@@ -148,6 +150,23 @@ public final class Options {
         return preserveRepository;
     }
 
+    public static synchronized void setStringPoolPolicy(String newPolicyString) {
+        StringPoolPolicy newPolicy =  switch (newPolicyString) {
+            case "always" -> StringPoolPolicy.ALWAYS;
+            case "never" -> StringPoolPolicy.NEVER;
+            case "auto" -> StringPoolPolicy.AUTO;
+            default -> DEFAULT_STRING_POOL_POLICY;
+        };
+        setStringPoolPolicy(newPolicy);
+    }
+    public static synchronized void setStringPoolPolicy(StringPoolPolicy newPolicy) {
+        stringPoolPolicy = newPolicy;
+    }
+
+    public static String getStringPoolPolicy() {
+        return stringPoolPolicy.toString();
+    }
+
     private static synchronized void reset() {
         setMaxChunkSize(DEFAULT_MAX_CHUNK_SIZE);
         setMemorySize(DEFAULT_MEMORY_SIZE);
@@ -161,6 +180,7 @@ public final class Options {
         setStackDepth(DEFAULT_STACK_DEPTH);
         setThreadBufferSize(DEFAULT_THREAD_BUFFER_SIZE);
         setPreserveRepository(DEFAULT_PRESERVE_REPOSITORY);
+        setStringPoolPolicy(DEFAULT_STRING_POOL_POLICY);
     }
 
     static synchronized long getWaitInterval() {
@@ -171,5 +191,19 @@ public final class Options {
         // trigger clinit which will setup JVM defaults.
     }
 
+    public enum StringPoolPolicy {
+        AUTO("auto"),
+        ALWAYS("always"),
+        NEVER("never");
+        private final String policyName;
 
+        StringPoolPolicy(String policyName) {
+            this.policyName = policyName;
+        }
+
+        @Override
+        public String toString() {
+            return policyName;  // Custom toString to return the display name
+        }
+    }
 }

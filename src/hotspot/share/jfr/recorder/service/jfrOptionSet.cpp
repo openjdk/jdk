@@ -167,6 +167,8 @@ const char* const default_retransform = "true";
 const char* const default_old_object_queue_size = "256";
 const char* const default_preserve_repository = "false";
 DEBUG_ONLY(const char* const default_sample_protection = "false";)
+const char* const default_string_pool_policy = "auto";
+
 
 // statics
 static DCmdArgument<char*> _dcmd_repository(
@@ -262,6 +264,13 @@ static DCmdArgument<bool> _dcmd_preserve_repository(
   false,
   default_preserve_repository);
 
+static DCmdArgument<char*> _dcmd_string_pool_policy(
+        "string-deduplication",
+        "'never' deduplicate, 'always' deduplicate, or 'auto' use heuristics. ",
+        "STRING",
+        false,
+        default_string_pool_policy);
+
 static DCmdParser _parser;
 
 static void register_parser_options() {
@@ -278,6 +287,7 @@ static void register_parser_options() {
   _parser.add_dcmd_option(&_dcmd_old_object_queue_size);
   _parser.add_dcmd_option(&_dcmd_preserve_repository);
   DEBUG_ONLY(_parser.add_dcmd_option(&_dcmd_sample_protection);)
+  _parser.add_dcmd_option(&_dcmd_string_pool_policy);
 }
 
 static bool parse_flight_recorder_options_internal(TRAPS) {
@@ -390,6 +400,9 @@ bool JfrOptionSet::configure(TRAPS) {
 
   configure._preserve_repository.set_is_set(_dcmd_preserve_repository.is_set());
   configure._preserve_repository.set_value(_dcmd_preserve_repository.value());
+
+  configure._string_pool_policy.set_is_set(_dcmd_string_pool_policy.is_set());
+  configure._string_pool_policy.set_value(_dcmd_string_pool_policy.value());
 
   configure.set_verbose(false);
   configure.execute(DCmd_Source_Internal, THREAD);

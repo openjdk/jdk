@@ -54,6 +54,7 @@ final class DCmdConfigure extends AbstractDCmd {
      * @param memorySize Size of in memory buffer
      * @param maxChunkSize threshold at which a new chunk is created in the disk repository
      * @param preserveRepository if files in the repository should be deleted on exit.
+     * @param stringPoolPolicy whether to never, always, or by some heuristic pool strings.
      * @return result
 
      * @throws DCmdException
@@ -70,7 +71,8 @@ final class DCmdConfigure extends AbstractDCmd {
             Long threadBufferSize,
             Long memorySize,
             Long maxChunkSize,
-            Boolean preserveRepository
+            Boolean preserveRepository,
+            String stringPoolPolicy
 
     ) throws DCmdException {
         if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
@@ -82,7 +84,8 @@ final class DCmdConfigure extends AbstractDCmd {
                     ", thread_buffer_size=" + threadBufferSize +
                     ", memorysize=" + memorySize +
                     ", maxchunksize=" + maxChunkSize +
-                    ", preserveRepository=" + preserveRepository);
+                    ", preserveRepository=" + preserveRepository +
+                    ", stringPoolPolicy=" + stringPoolPolicy);
         }
 
 
@@ -180,6 +183,11 @@ final class DCmdConfigure extends AbstractDCmd {
             updated = true;
         }
 
+        if (stringPoolPolicy != null) {
+            Options.setStringPoolPolicy(stringPoolPolicy);
+            updated = true;
+        }
+
         if (!verbose) {
             return new String[0];
         }
@@ -195,6 +203,7 @@ final class DCmdConfigure extends AbstractDCmd {
             printThreadBufferSize();
             printMemorySize();
             printMaxChunkSize();
+            printStringPoolPolicy();
         }
         return getResult();
     }
@@ -244,6 +253,12 @@ final class DCmdConfigure extends AbstractDCmd {
     private void printMaxChunkSize() {
         print("Max chunk size: ");
         printBytes(Options.getMaxChunkSize());
+        println();
+    }
+
+    private void printStringPoolPolicy() {
+        print("String pool policy: ");
+        print(Options.getStringPoolPolicy());
         println();
     }
 
