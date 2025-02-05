@@ -202,7 +202,7 @@ public class TrySetAccessibleTest {
     }
 
     /**
-     * Test that some Class fields cannot be make accessible.
+     * Test that some Class fields cannot be made accessible.
      */
     public void testJavaLangClassFields() throws Exception {
 
