@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,7 +359,7 @@ public final class PassFailJFrame {
      * the default values of {@value #ROWS} and {@value #COLUMNS}
      * for rows and columns.
      * <p>
-     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * See {@link #PassFailJFrame(String,String,long,int,int)} for
      * more details.
      *
      * @param instructions the instructions for the tester
@@ -382,7 +382,7 @@ public final class PassFailJFrame {
      * and the default values of {@value #ROWS} and {@value #COLUMNS}
      * for rows and columns.
      * <p>
-     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * See {@link #PassFailJFrame(String,String,long,int,int)} for
      * more details.
      *
      * @param instructions the instructions for the tester
@@ -404,9 +404,8 @@ public final class PassFailJFrame {
      * with the given title, instructions and timeout as well as
      * the default values of {@value #ROWS} and {@value #COLUMNS}
      * for rows and columns.
-     * The screenshot feature is not enabled, if you use this constructor.
      * <p>
-     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * See {@link #PassFailJFrame(String,String,long,int,int)} for
      * more details.
      *
      * @param title        the title of the instruction frame
@@ -427,38 +426,8 @@ public final class PassFailJFrame {
     /**
      * Constructs a frame which displays test instructions and
      * the <i>Pass</i> / <i>Fail</i> buttons
-     * with the given title, instructions, timeout, number of rows and columns.
-     * The screenshot feature is not enabled, if you use this constructor.
-     * <p>
-     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
-     * more details.
-     *
-     * @param title        the title of the instruction frame
-     * @param instructions the instructions for the tester
-     * @param testTimeOut  the test timeout in minutes
-     * @param rows         the number of rows for the text component
-     *                     which displays test instructions
-     * @param columns      the number of columns for the text component
-     *                     which displays test instructions
-     *
-     * @throws InterruptedException if the current thread is interrupted
-     *              while waiting for EDT to finish creating UI components
-     * @throws InvocationTargetException if an exception is thrown while
-     *              creating UI components on EDT
-     */
-    public PassFailJFrame(String title, String instructions,
-                          long testTimeOut,
-                          int rows, int columns)
-            throws InterruptedException, InvocationTargetException {
-        this(title, instructions, testTimeOut, rows, columns, false);
-    }
-
-    /**
-     * Constructs a frame which displays test instructions and
-     * the <i>Pass</i> / <i>Fail</i> buttons
      * as well as supporting UI components with the given title, instructions,
-     * timeout, number of rows and columns,
-     * and screen capture functionality.
+     * timeout, number of rows and columns.
      * All the UI components are created on the EDT, so it is safe to call
      * the constructor on the main thread.
      * <p>
@@ -483,12 +452,6 @@ public final class PassFailJFrame {
      * the size of a text component which displays the instructions.
      * The preferred size of the instructions is calculated by
      * creating {@code new JTextArea(rows, columns)}.
-     * <p>
-     * If you enable screenshots by setting the {@code screenCapture}
-     * parameter to {@code true}, a <i>Screenshot</i> button is added.
-     * Clicking the <i>Screenshot</i> button takes screenshots of
-     * all the monitors or all the windows registered with
-     * {@code PassFailJFrame}.
      *
      * @param title        the title of the instruction frame
      * @param instructions the instructions for the tester
@@ -497,8 +460,6 @@ public final class PassFailJFrame {
      *                     which displays test instructions
      * @param columns      the number of columns for the text component
      *                     which displays test instructions
-     * @param screenCapture if set to {@code true}, enables screen capture
-     *                      functionality
      *
      * @throws InterruptedException if the current thread is interrupted
      *              while waiting for EDT to finish creating UI components
@@ -510,13 +471,11 @@ public final class PassFailJFrame {
      */
     public PassFailJFrame(String title, String instructions,
                           long testTimeOut,
-                          int rows, int columns,
-                          boolean screenCapture)
+                          int rows, int columns)
             throws InterruptedException, InvocationTargetException {
         invokeOnEDT(() -> createUI(title, instructions,
                                    testTimeOut,
-                                   rows, columns,
-                                   screenCapture));
+                                   rows, columns));
     }
 
     /**
@@ -613,8 +572,7 @@ public final class PassFailJFrame {
     }
 
     private static void createUI(String title, String instructions,
-                                 long testTimeOut, int rows, int columns,
-                                 boolean enableScreenCapture) {
+                                 long testTimeOut, int rows, int columns) {
         frame = new JFrame(title);
         frame.setLayout(new BorderLayout());
 
@@ -623,7 +581,7 @@ public final class PassFailJFrame {
         frame.add(createInstructionUIPanel(instructions,
                                            testTimeOut,
                                            rows, columns,
-                                           enableScreenCapture,
+                                           false,
                                            false, 0),
                   BorderLayout.CENTER);
         frame.pack();

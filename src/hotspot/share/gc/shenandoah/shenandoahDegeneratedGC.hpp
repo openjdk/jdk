@@ -53,8 +53,8 @@ private:
   void op_cleanup_early();
 
   void op_evacuate();
-  void op_init_updaterefs();
-  void op_updaterefs();
+  void op_init_update_refs();
+  void op_update_refs();
   void op_update_roots();
   void op_cleanup_complete();
 
