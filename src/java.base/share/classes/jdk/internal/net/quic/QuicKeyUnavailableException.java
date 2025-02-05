@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,7 @@ public final class QuicKeyUnavailableException extends Exception {
     @java.io.Serial
     private static final long serialVersionUID = 8553365136999153478L;
 
-    private final KeySpace keySpace;
-
     public QuicKeyUnavailableException(final String message, final KeySpace keySpace) {
         super(Objects.requireNonNull(keySpace) + " keyspace: " + message);
-        this.keySpace = Objects.requireNonNull(keySpace);
     }
 }
