@@ -1,17 +1,10 @@
 {
 	"folders": [
-		{
-			"name": "Source root",
-			"path": "{{TOPDIR}}"
-		},
-		// {{EXTRA_WORKSPACE_ROOT}}
-		{
-			"name": "Build artifacts",
-			"path": "{{OUTPUTDIR}}"
-		}
+                {{WORKSPACE_FOLDERS}}
 	],
 	"extensions": {
 		"recommendations": [
+			"oracle.oracle-java",
 			// {{INDEXER_EXTENSIONS}}
 		]
 	},
@@ -58,6 +51,7 @@
 		},
 
 		// Trailing whitespace should never be used in this project
-		"files.trimTrailingWhitespace": true
+		"files.trimTrailingWhitespace": true,
+		"jdk.java.onSave.organizeImports": false
 	}
 }
