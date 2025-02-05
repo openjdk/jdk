@@ -67,8 +67,6 @@ public class TransparentWindowTest extends JWindow {
         setBackground(new Color(0, 0, 0, 0));
         setSize(400, 400);
         setLocationRelativeTo(null);
-
-        // Check transparency and border color
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowOpened(WindowEvent e) {
