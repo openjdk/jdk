@@ -476,41 +476,31 @@ public class SinceChecker {
     }
 
     private Version extractSinceVersionFromText(String documentation) {
-        Pattern pattern = Pattern.compile("@since\\s+(\\S+)");
-        Matcher matcher = pattern.matcher(documentation);
-
-        if (matcher.find()) {
-            String versionString = matcher.group(1);
-
-            if (IGNORE_LIST.contains(versionString)) {
-                return IGNORE_VERSION;
-            }
-
-            // Handle `1.x.x` format
-            if (versionString.matches("1\\.\\d+\\.\\d+")) {
-                versionString = "1";
-            }
-
-            // Check if the extracted value is a valid numeric version
-            if (versionString.matches("\\d+(?:\\.\\d+)?")) {
-                try {
-                    if (versionString.equals("1.0")) {
-                        versionString = "1"; //ended up being necessary
-                    } else if (versionString.startsWith("1.")) {
-                        versionString = versionString.substring(2);
-                    }
-                    return Version.parse(versionString);
-                } catch (NumberFormatException ex) {
-                    error("`@since` value that cannot be parsed: " + versionString);
-                    return null;
-                }
-            } else {
-                error("Non-numeric `@since` value encountered: '" + versionString + "'; inferred from enclosing element.");
-                return null;
-            }
-        } else {
+        Matcher matcher = Pattern.compile("@since\\s+(\\S+)").matcher(documentation);
+        if (!matcher.find()) {
             return null;
         }
+
+        String versionString = matcher.group(1);
+        if (IGNORE_LIST.contains(versionString)) {
+            return IGNORE_VERSION;
+        }
+
+        versionString = switch (versionString) {
+            case "1.0" -> "1";
+            case String v when v.matches("1\\.\\d+\\.\\d+") -> "1";  // `1.x.x` -> `1`
+            case String v when v.startsWith("1.") -> v.substring(2);  // `1.x` -> `x`
+            case String v when v.contains("u") -> v.substring(0, v.indexOf('u')); // 6u25 -> 6
+            default -> versionString;
+        };
+
+        if (!versionString.matches("\\d+(?:\\.\\d+)?")) {
+            error("Non-numeric `@since` value encountered: '" + versionString +
+                    "'; If this is intentional, consider using the --ignoreSince option.");
+            return null;
+        }
+
+        return Version.parse(versionString);
     }
 
     private void checkEquals(String prefix, String sinceVersion, String mappedVersion, String name) {
