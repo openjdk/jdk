@@ -391,6 +391,41 @@ public:
     });
   }
 
+  void test_leftmost_rightmost() {
+    using Tree = RBTreeCHeap<int, int, Cmp, mtOther>;
+    using Node = Tree::RBNode;
+    for (int i = 0; i < 10; i++) {
+      Tree rbtree;
+      const Tree& rbtree_const = rbtree;
+      int max = 0, min = INT_MAX;
+      for (int j = 0; j < 10; j++) {
+        if (j == 0) {
+          ASSERT_EQ(rbtree_const.leftmost(), (const Node*)nullptr);
+          ASSERT_EQ(rbtree_const.rightmost(), (const Node*)nullptr);
+        } else {
+          ASSERT_EQ(rbtree_const.rightmost()->key(), max);
+          ASSERT_EQ(rbtree_const.rightmost()->val(), max);
+          ASSERT_EQ(rbtree_const.leftmost()->key(), min);
+          ASSERT_EQ(rbtree_const.leftmost()->val(), min);
+          ASSERT_EQ(rbtree_const.rightmost(), rbtree.rightmost());
+          ASSERT_EQ(rbtree_const.leftmost(), rbtree.leftmost());
+        }
+        const int r = os::random();
+        rbtree.upsert(r, r);
+        min = MIN2(min, r);
+        max = MAX2(max, r);
+      }
+      // rbtree_const.print_on(tty);
+      // Explicitly test non-const variants
+      Node* n = rbtree.rightmost();
+      ASSERT_EQ(n->key(), max);
+      n->set_val(1);
+      n = rbtree.leftmost();
+      ASSERT_EQ(n->key(), min);
+      n->set_val(1);
+    }
+  }
+
 #ifdef ASSERT
   void test_fill_verify() {
     RBTreeInt rbtree;
@@ -505,6 +540,52 @@ TEST_VM_F(RBTreeTest, NodeStableTest) {
 
 TEST_VM_F(RBTreeTest, NodeStableAddressTest) {
   this->test_stable_nodes_addresses();
+}
+
+TEST_VM_F(RBTreeTest, LeftMostRightMost) {
+  this->test_leftmost_rightmost();
+}
+
+struct PtrCmp {
+  static int cmp(const void* a, const void* b) { return a == b ? 0 : (a > b ? 1 : -1); }
+};
+
+TEST_VM(RBTreeTestNonFixture, TestPrintPointerTree) {
+  typedef RBTree<const void*, unsigned, PtrCmp, RBTreeCHeapAllocator<mtTest> > TreeType;
+  TreeType tree;
+  const void* const p1 = (const void*) 0x800000000ULL;
+  const void* const p2 = (const void*) 0xDEADBEEF0ULL;
+  const void* const p3 = (const void*) 0x7f223fba0ULL;
+  tree.upsert(p1, 1);
+  tree.upsert(p2, 2);
+  tree.upsert(p3, 3);
+  stringStream ss;
+  tree.print_on(&ss);
+  // tty->print_cr("%s", ss.base());
+  ASSERT_NE(strstr(ss.base(), "[0x0000000800000000] = 1"), (const char*)nullptr);
+  ASSERT_NE(strstr(ss.base(), "[0x0000000deadbeef0] = 2"), (const char*)nullptr);
+  ASSERT_NE(strstr(ss.base(), "[0x00000007f223fba0] = 3"), (const char*)nullptr);
+}
+
+struct IntCmp {
+  static int cmp(int a, int b) { return a == b ? 0 : (a > b ? 1 : -1); }
+};
+
+TEST_VM(RBTreeTestNonFixture, TestPrintIntegerTree) {
+  typedef RBTree<int, unsigned, IntCmp, RBTreeCHeapAllocator<mtTest> > TreeType;
+    TreeType tree;
+    const int i1 = 82924;
+    const int i2 = -13591;
+    const int i3 = 0;
+    tree.upsert(i1, 1);
+    tree.upsert(i2, 2);
+    tree.upsert(i3, 3);
+    stringStream ss;
+    tree.print_on(&ss);
+    // tty->print_cr("%s", ss.base());
+    ASSERT_NE(strstr(ss.base(), "[82924] = 1"), (const char*)nullptr);
+    ASSERT_NE(strstr(ss.base(), "[-13591] = 2"), (const char*)nullptr);
+    ASSERT_NE(strstr(ss.base(), "[0] = 3"), (const char*)nullptr);
 }
 
 #ifdef ASSERT

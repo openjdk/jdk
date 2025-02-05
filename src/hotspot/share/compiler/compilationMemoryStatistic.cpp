@@ -41,6 +41,7 @@
 #include "memory/resourceArea.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "oops/symbol.hpp"
+#include "oops/method.inline.hpp"
 #ifdef COMPILER2
 #include "opto/node.hpp" // compile.hpp is not self-contained
 #include "opto/compile.hpp"
