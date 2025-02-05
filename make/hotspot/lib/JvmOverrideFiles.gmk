@@ -23,11 +23,13 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, hotspot/lib/JvmOverrideFiles.gmk))
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
 
 ################################################################################
 # This file contains explicit overrides of CFLAGS and/or precompiled header
 # status for individual files on specific platforms.
+################################################################################
 
 ifeq ($(TOOLCHAIN_TYPE), gcc)
   BUILD_LIBJVM_vmStructs.cpp_CXXFLAGS := -fno-var-tracking-assignments
@@ -118,11 +120,7 @@ else ifeq ($(call isTargetOs, macosx), true)
   endif
 
 else ifeq ($(call isTargetOs, aix), true)
-  ifeq ($(TOOLCHAIN_TYPE), clang)
-    BUILD_LIBJVM_synchronizer.cpp_CXXFLAGS := -fno-inline
-  else
-    BUILD_LIBJVM_synchronizer.cpp_CXXFLAGS := -qnoinline
-  endif
+  BUILD_LIBJVM_synchronizer.cpp_CXXFLAGS := -fno-inline
   BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := $(CXX_O_FLAG_NONE)
   # Disable aggressive optimizations for functions in sharedRuntimeTrig.cpp
   # and sharedRuntimeTrans.cpp on ppc64.
@@ -146,6 +144,13 @@ else ifeq ($(call isTargetOs, aix), true)
   # Disable ELF decoder on AIX (AIX uses XCOFF).
   JVM_EXCLUDE_PATTERNS += elf
 
+  JVM_PRECOMPILED_HEADER_EXCLUDE := \
+      sharedRuntimeTrig.cpp \
+      sharedRuntimeTrans.cpp \
+      synchronizer.cpp \
+      $(OPT_SPEED_SRC) \
+      #
+
 else ifeq ($(call isTargetOs, windows), true)
   JVM_PRECOMPILED_HEADER_EXCLUDE := \
       bytecodeInterpreter.cpp \
@@ -161,3 +166,8 @@ else ifeq ($(call isTargetOs, windows), true)
   BUILD_LIBJVM_jvmciCompilerToVMInit.cpp_OPTIMIZATION := NONE
 
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk
