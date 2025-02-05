@@ -61,7 +61,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * The {@link #newBuilder() newBuilder} method returns a builder that creates
  * instances of the default {@code HttpClient} implementation.
  * The builder can be used to configure per-client state, like: the preferred
- * protocol version ( HTTP/1.1 or HTTP/2 or HTTP/3 ), whether to follow redirects, a
+ * protocol version ( HTTP/1.1, HTTP/2 or HTTP/3 ), whether to follow redirects, a
  * proxy, an authenticator, etc. Once built, an {@code HttpClient} is immutable,
  * and can be used to send multiple requests.
  *
