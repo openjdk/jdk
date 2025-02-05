@@ -31,7 +31,7 @@ import javax.swing.JToggleButton;
 
 /*
  * @test
- * @bug 8348936
+ * @bug 8348936 8345728
  * @summary Verifies that VoiceOver announces the untick state of CheckBox and
  *          ToggleButton when space key is pressed. Also verifies that CheckBox
  *          and ToggleButton untick state is magnified with Screen Magnifier.
@@ -55,7 +55,7 @@ public class TestJCheckBoxToggleAccessibility {
                 6. VO should announce the unchecked state
                 7. Press Tab to move focus to ToggleButton
                 8. Repeat steps 3 to 6 and listen the announcement
-                9. If announcements are incorrect, Press Fail
+                9. If announcements are incorrect, press Fail
 
                 Stop the VoiceOver application (Press Command + F5)
 
@@ -72,7 +72,7 @@ public class TestJCheckBoxToggleAccessibility {
                         d. Keep Command button pressed and click CheckBox to deselect
                         e. CheckBox unticked state along with label should be magnified
                         f. Release Command key
-                        g. If Screen Magnifier behaviour is incorrect, Press Fail
+                        g. If Screen Magnifier behaviour is incorrect, press Fail
 
                     Test ToggleButton states with Screen Magnifier
                         a. Click on ToggleButton to select
@@ -81,7 +81,7 @@ public class TestJCheckBoxToggleAccessibility {
                         d. Keep Command button pressed and click ToggleButton to deselect
                         e. Unticked state along with label should be magnified
                         f. Release Command key
-                        g. If Screen Magnifier behaviour is incorrect, Press Fail
+                        g. If Screen Magnifier behaviour is incorrect, press Fail
 
                 Press Pass if you are able to hear correct VoiceOver announcements and
                 able to see the correct screen magnifier behaviour. """;
@@ -92,7 +92,6 @@ public class TestJCheckBoxToggleAccessibility {
                 .columns(40)
                 .rows(25)
                 .testUI(TestJCheckBoxToggleAccessibility::createUI)
-                .logArea(8)
                 .testTimeOut(8)
                 .build()
                 .awaitAndCheck();
