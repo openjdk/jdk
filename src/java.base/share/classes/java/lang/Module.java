@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.lang.reflect.AnnotatedElement;
 import java.net.URI;
 import java.net.URL;
 import java.security.CodeSource;
-import java.security.ProtectionDomain;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -69,6 +68,8 @@ import jdk.internal.module.ServicesCatalog;
 import jdk.internal.module.Resources;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -176,6 +177,7 @@ public final class Module implements AnnotatedElement {
      * @see ClassLoader#getUnnamedModule()
      * @jls 7.7.5 Unnamed Modules
      */
+    @ForceInline
     public boolean isNamed() {
         return name != null;
     }
@@ -186,6 +188,7 @@ public final class Module implements AnnotatedElement {
      *
      * @return The module name
      */
+    @ForceInline
     public String getName() {
         return name;
     }
@@ -195,6 +198,7 @@ public final class Module implements AnnotatedElement {
      *
      * @return The class loader for this module
      */
+    @ForceInline
     public ClassLoader getClassLoader() {
         return loader;
     }
@@ -205,6 +209,7 @@ public final class Module implements AnnotatedElement {
      *
      * @return The module descriptor for this module
      */
+    @ForceInline
     public ModuleDescriptor getDescriptor() {
         return descriptor;
     }
@@ -224,6 +229,7 @@ public final class Module implements AnnotatedElement {
      *
      * @see java.lang.reflect.Proxy
      */
+    @ForceInline
     public ModuleLayer getLayer() {
         if (isNamed()) {
             ModuleLayer layer = this.layer;
@@ -253,6 +259,7 @@ public final class Module implements AnnotatedElement {
      * @return {@code true} if this module can access <em>restricted</em> methods.
      * @since 22
      */
+    @ForceInline
     public boolean isNativeAccessEnabled() {
         Module target = moduleForNativeAccess();
         return EnableNativeAccess.isNativeAccessEnabled(target);
@@ -269,8 +276,9 @@ public final class Module implements AnnotatedElement {
         private static final Unsafe UNSAFE = Unsafe.getUnsafe();
         private static final long FIELD_OFFSET = UNSAFE.objectFieldOffset(Module.class, "enableNativeAccess");
 
+        @ForceInline
         private static boolean isNativeAccessEnabled(Module target) {
-            return UNSAFE.getBooleanVolatile(target, FIELD_OFFSET);
+            return target.enableNativeAccess || UNSAFE.getBooleanVolatile(target, FIELD_OFFSET);
         }
 
         // Atomically sets enableNativeAccess if not already set
@@ -282,53 +290,70 @@ public final class Module implements AnnotatedElement {
 
     // Returns the Module object that holds the enableNativeAccess
     // flag for this module.
+    @ForceInline
     private Module moduleForNativeAccess() {
         return isNamed() ? this : ALL_UNNAMED_MODULE;
     }
 
     // This is invoked from Reflection.ensureNativeAccess
+    @ForceInline
     void ensureNativeAccess(Class<?> owner, String methodName, Class<?> currentClass, boolean jni) {
         // The target module whose enableNativeAccess flag is ensured
         Module target = moduleForNativeAccess();
         ModuleBootstrap.IllegalNativeAccess illegalNativeAccess = ModuleBootstrap.illegalNativeAccess();
         if (illegalNativeAccess != ModuleBootstrap.IllegalNativeAccess.ALLOW &&
                 !EnableNativeAccess.isNativeAccessEnabled(target)) {
-            String mod = isNamed() ? "module " + getName() : "an unnamed module";
-            if (currentClass != null) {
-                // try to extract location of the current class (e.g. jar or folder)
-                CodeSource cs = currentClass.getProtectionDomain().getCodeSource();
-                if (cs != null) {
-                    URL url = cs.getLocation();
-                    if (url != null) {
-                        mod += " (" + url + ")";
-                    }
-                }
-            }
-            if (illegalNativeAccess == ModuleBootstrap.IllegalNativeAccess.DENY) {
-                throw new IllegalCallerException("Illegal native access from " + mod);
-            } else if (EnableNativeAccess.trySetEnableNativeAccess(target)) {
-                // warn and set flag, so that only one warning is reported per module
-                String cls = owner.getName();
-                String mtd = cls + "::" + methodName;
-                String modflag = isNamed() ? getName() : "ALL-UNNAMED";
-                String caller = currentClass != null ? currentClass.getName() : "code";
-                if (jni) {
-                    VM.initialErr().printf("""
+            ensureNativeAccessSlowPath(owner, methodName, currentClass, jni, target, illegalNativeAccess);
+        }
+    }
+
+    @DontInline
+    void ensureNativeAccessSlowPath(Class<?> owner,
+                                    String methodName,
+                                    Class<?> currentClass,
+                                    boolean jni,
+                                    Module target,
+                                    ModuleBootstrap.IllegalNativeAccess illegalNativeAccess) {
+        String mod = mod(currentClass);
+        if (illegalNativeAccess == ModuleBootstrap.IllegalNativeAccess.DENY) {
+            throw new IllegalCallerException("Illegal native access from " + mod);
+        } else if (EnableNativeAccess.trySetEnableNativeAccess(target)) {
+            // warn and set flag, so that only one warning is reported per module
+            String cls = owner.getName();
+            String mtd = cls + "::" + methodName;
+            String modflag = isNamed() ? getName() : "ALL-UNNAMED";
+            String caller = currentClass != null ? currentClass.getName() : "code";
+            if (jni) {
+                VM.initialErr().printf("""
                             WARNING: A native method in %s has been bound
                             WARNING: %s is declared in %s
                             WARNING: Use --enable-native-access=%s to avoid a warning for native methods declared in this module
                             WARNING: Restricted methods will be blocked in a future release unless native access is enabled
                             %n""", cls, mtd, mod, modflag);
-                } else {
-                    VM.initialErr().printf("""
+            } else {
+                VM.initialErr().printf("""
                             WARNING: A restricted method in %s has been called
                             WARNING: %s has been called by %s in %s
                             WARNING: Use --enable-native-access=%s to avoid a warning for callers in this module
                             WARNING: Restricted methods will be blocked in a future release unless native access is enabled
                             %n""", cls, mtd, caller, mod, modflag);
+            }
+        }
+    }
+
+    private String mod(Class<?> currentClass) {
+        String mod = isNamed() ? "module " + getName() : "an unnamed module";
+        if (currentClass != null) {
+            // try to extract location of the current class (e.g. jar or folder)
+            CodeSource cs = currentClass.getProtectionDomain().getCodeSource();
+            if (cs != null) {
+                URL url = cs.getLocation();
+                if (url != null) {
+                    mod += " (" + url + ")";
                 }
             }
         }
+        return mod;
     }
 
     /**
@@ -460,11 +485,8 @@ public final class Module implements AnnotatedElement {
 
         // if other is an unnamed module then check if this module reads
         // all unnamed modules
-        if (!other.isNamed()
-            && ReflectionData.reads.containsKeyPair(this, ALL_UNNAMED_MODULE))
-            return true;
-
-        return false;
+        return !other.isNamed()
+                && ReflectionData.reads.containsKeyPair(this, ALL_UNNAMED_MODULE);
     }
 
     /**
