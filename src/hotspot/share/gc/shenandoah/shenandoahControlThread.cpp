@@ -59,9 +59,14 @@ void ShenandoahControlThread::run_service() {
 
   ShenandoahCollectorPolicy* const policy = heap->shenandoah_policy();
   ShenandoahHeuristics* const heuristics = heap->heuristics();
-  while (!in_graceful_shutdown() && !should_terminate()) {
+  while (!should_terminate()) {
+    const GCCause::Cause cancelled_cause = heap->cancelled_cause();
+    if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
+      break;
+    }
+
     // Figure out if we have pending requests.
-    const bool alloc_failure_pending = _alloc_failure_gc.is_set();
+    const bool alloc_failure_pending = ShenandoahCollectorPolicy::is_allocation_failure(cancelled_cause);
     const bool is_gc_requested = _gc_requested.is_set();
     const GCCause::Cause requested_gc_cause = _requested_gc_cause;
 
@@ -252,11 +257,6 @@ void ShenandoahControlThread::run_service() {
     }
     os::naked_short_sleep(sleep);
   }
-
-  // Wait for the actual stop(), can't leave run_service() earlier.
-  while (!should_terminate()) {
-    os::naked_short_sleep(ShenandoahControlIntervalMin);
-  }
 }
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {
@@ -320,19 +320,24 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 bool ShenandoahControlThread::check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->cancelled_gc()) {
-    assert (is_alloc_failure_gc() || in_graceful_shutdown(), "Cancel GC either for alloc failure GC, or gracefully exiting");
-    if (!in_graceful_shutdown()) {
+    if (heap->cancelled_cause() == GCCause::_shenandoah_stop_vm) {
+      return true;
+    }
+
+    if (ShenandoahCollectorPolicy::is_allocation_failure(heap->cancelled_cause())) {
       assert (_degen_point == ShenandoahGC::_degenerated_outside_cycle,
               "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
       _degen_point = point;
+      return true;
     }
-    return true;
+
+    fatal("Unexpected reason for cancellation: %s", GCCause::to_string(heap->cancelled_cause()));
   }
   return false;
 }
 
 void ShenandoahControlThread::stop_service() {
-  // Nothing to do here.
+  ShenandoahHeap::heap()->cancel_gc(GCCause::_shenandoah_stop_vm);
 }
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {

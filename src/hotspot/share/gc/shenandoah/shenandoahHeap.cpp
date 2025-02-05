@@ -2124,13 +2124,15 @@ void ShenandoahHeap::cancel_concurrent_mark() {
   ShenandoahBarrierSet::satb_mark_queue_set().abandon_partial_marking();
 }
 
-void ShenandoahHeap::cancel_gc(GCCause::Cause cause) {
+bool ShenandoahHeap::cancel_gc(GCCause::Cause cause) {
   if (try_cancel_gc(cause)) {
     FormatBuffer<> msg("Cancelling GC: %s", GCCause::to_string(cause));
     log_info(gc)("%s", msg.buffer());
     Events::log(Thread::current(), "%s", msg.buffer());
     _cancel_requested_time = os::elapsedTime();
+    return true;
   }
+  return false;
 }
 
 uint ShenandoahHeap::max_workers() {
@@ -2143,18 +2145,10 @@ void ShenandoahHeap::stop() {
   // Step 0. Notify policy to disable event recording and prevent visiting gc threads during shutdown
   _shenandoah_policy->record_shutdown();
 
-  // Step 0a. Stop reporting on gc thread cpu utilization
+  // Step 1. Stop reporting on gc thread cpu utilization
   mmu_tracker()->stop();
 
-  // Step 1. Notify control thread that we are in shutdown.
-  // Note that we cannot do that with stop(), because stop() is blocking and waits for the actual shutdown.
-  // Doing stop() here would wait for the normal GC cycle to complete, never falling through to cancel below.
-  control_thread()->prepare_for_graceful_shutdown();
-
-  // Step 2. Notify GC workers that we are cancelling GC.
-  cancel_gc(GCCause::_shenandoah_stop_vm);
-
-  // Step 3. Wait until GC worker exits normally.
+  // Step 2. Wait until GC worker exits normally (this will cancel any ongoing GC).
   control_thread()->stop();
 
   // Stop 4. Shutdown uncommit thread.

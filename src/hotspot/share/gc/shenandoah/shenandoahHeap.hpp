@@ -447,9 +447,8 @@ public:
   inline void clear_cancelled_gc(bool clear_oom_handler = true);
 
   void cancel_concurrent_mark();
-  void cancel_gc(GCCause::Cause cause);
+  bool cancel_gc(GCCause::Cause cause);
 
-public:
   // Returns true if the soft maximum heap has been changed using management APIs.
   bool check_soft_max_changed();
 
