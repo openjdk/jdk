@@ -1220,7 +1220,7 @@
     <Field type="ulong" name="regionsPromotedRegular" label="Regions Promoted Regular" />
     <Field type="ulong" contentType="bytes" name="regularPromotedGarbage" label="Regular Promoted Garbage" description="Garbage memory of in place promoted regular regions" />
     <Field type="ulong" contentType="bytes" name="regularPromotedFree" label="Regular Promoted Free" description="Free memory of in place promoted regular regions" />
-    <Field type="ulong" name="regionsFreed" label="Regions Freed" description="Free regions prior to determining collection set" />
+    <Field type="ulong" name="freeRegions" label="Free Regions" description="Free regions prior to collection" />
     <Field type="ulong" name="regionsImmediate" label="Regions Immediate" />
     <Field type="ulong" contentType="bytes" name="immediateBytes" label="Immediate Bytes" />
   </Event>
