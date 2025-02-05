@@ -45,6 +45,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class SystemSunProprietary extends TestRunner {
@@ -82,16 +84,28 @@ public class SystemSunProprietary extends TestRunner {
             Files.copy(originalSystem.resolve(path), to);
         }
 
-        expectSunapi(true, false, "-XDrawDiagnostics");
-        expectSunapi(true, false, "-XDrawDiagnostics", "--system", System.getProperty("java.home"));
+        expectSunapi(false);
+        expectSunapi(false, "--system", System.getProperty("java.home"));
+        expectSunapi(false, "--release", String.valueOf(Runtime.version().feature()));
+        expectSunapi(false, "--release", String.valueOf(Runtime.version().feature() - 1));
+        expectSunapi(true, "--release", String.valueOf(Runtime.version().feature()));
+        expectSunapi(true, "--release", String.valueOf(Runtime.version().feature() - 1));
 
         // non-default --system arguments disable sunapi, see JDK-8349058
-        expectSunapi(false, false, "-XDrawDiagnostics", "--system", system.toString());
+        expectNoSunapi(false, "--system", system.toString());
 
         // -XDignore.symbol.file disables sunapi diagnostics, see JDK-8349058
-        expectSunapi(false, true, "-XDrawDiagnostics");
-        expectSunapi(false, true, "-XDrawDiagnostics", "--system", System.getProperty("java.home"));
-        expectSunapi(false, true, "-XDrawDiagnostics", "--system", system.toString());
+        expectNoSunapi(true);
+        expectNoSunapi(true, "--system", System.getProperty("java.home"));
+        expectNoSunapi(true, "--system", system.toString());
+    }
+
+    private void expectSunapi(boolean ignoreSymbolFile, String... options) throws IOException {
+        expectSunapi(true, ignoreSymbolFile, options);
+    }
+
+    private void expectNoSunapi(boolean ignoreSymbolFile, String... options) throws IOException {
+        expectSunapi(false, ignoreSymbolFile, options);
     }
 
     private void expectSunapi(boolean expectDiagnostic, boolean ignoreSymbolFile, String... options)
@@ -102,12 +116,15 @@ public class SystemSunProprietary extends TestRunner {
                                 "Test.java:1:43: compiler.warn.sun.proprietary: sun.misc.Unsafe",
                                 "1 warning")
                         : List.of("");
+        List<String> allOptions = new ArrayList<>();
+        allOptions.add("-XDrawDiagnostics");
+        Collections.addAll(allOptions, options);
         JavacFileManager fm = new JavacFileManager(new Context(), false, null);
         fm.setSymbolFileEnabled(!ignoreSymbolFile);
         List<String> log =
                 new JavacTask(tb)
                         .fileManager(fm)
-                        .options(options)
+                        .options(allOptions)
                         .outdir(classes)
                         .files(tb.findJavaFiles(src))
                         .run(Expect.SUCCESS)
