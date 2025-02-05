@@ -336,7 +336,7 @@ public class GatherersMapConcurrentTest {
                 () -> {
                     throw assertThrows(
                         RuntimeException.class,
-                        () -> c.stream().sequential() // Force sequential
+                        () -> c.stream()
                             .gather(Gatherers.mapConcurrent(c.streamSize() / 2, x -> {
                                 vts.offer(Thread.currentThread()); // Remember these for later
                                 currentThread.interrupt(); // Make sure caller gets interrupted
