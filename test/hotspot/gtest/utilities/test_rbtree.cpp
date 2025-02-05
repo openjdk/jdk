@@ -748,12 +748,12 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
     }
   }
   { // Make a very large tree and verify at the end
-    RBTreeCHeap<size_t, void, Cmp, mtOther> rbtree;
-    constexpr size_t one_hundred_thousand = 100000;
-    for (size_t i = 0; i < one_hundred_thousand; i++) {
+    RBTreeCHeap<int, void, Cmp, mtOther> rbtree;
+    constexpr int one_hundred_thousand = 100000;
+    for (int i = 0; i < one_hundred_thousand; i++) {
       rbtree.upsert(i);
     }
-    EXPECT_EQ(one_hundred_thousand, rbtree.size());
+    EXPECT_EQ((size_t)one_hundred_thousand, rbtree.size());
     verify_it(rbtree);
   }
 }
