@@ -49,8 +49,10 @@ public class Password {
     public static void password() throws Exception {
 
         TextCallbackHandler h = new TextCallbackHandler();
-        PasswordCallback nc = new PasswordCallback("Visible: ", true);
-        PasswordCallback nc2 = new PasswordCallback("Invisible: ", false);
+        PasswordCallback nc =
+                new PasswordCallback("Please input something, your input should be VISIBLE: ", true);
+        PasswordCallback nc2 =
+                new PasswordCallback("Please input something again, your input should be INVISIBLE: ", false);
         Callback[] callbacks = {nc, nc2};
         h.handle(callbacks);
         System.out.println("You input " + new String(nc.getPassword()) +
@@ -67,10 +69,10 @@ public class Password {
             );
 
             boolean testFailed = new Password().validate(
-                    "Please copy and execute the following script in the terminal / Windows Command Prompt window, " +
+                    "Please copy and execute the following script in the terminal / Windows Command Prompt window. " +
                             "Two passwords will be prompted for.\n" +
                             "Enter something at each prompt and press Enter/Return.\n" +
-                            "If the first input is invisible and the second is visible, this test PASSES. Otherwise, this test FAILS\n" +
+                            "If the first input is visible and the second is invisible, this test PASSES. Otherwise, this test FAILS.\n" +
                             "Once the test is complete please select whether the test has passed.\n",
                     instructions);
 
