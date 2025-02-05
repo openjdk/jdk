@@ -124,7 +124,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WTaskbarPeer_flashWindow
  * Signature: (J[III)V
  */
 JNIEXPORT void JNICALL Java_sun_awt_windows_WTaskbarPeer_setOverlayIcon
-(JNIEnv* env, jobject, jlong window, jintArray buf, jint w, jint h)
+(JNIEnv *env, jobject, jlong window, jintArray buf, jint w, jint h)
 {
     try
     {
