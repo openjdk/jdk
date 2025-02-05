@@ -395,13 +395,11 @@ public final class Gatherers {
                         R result;
 
                         // Ensure that the task is done before proceeding
-                        for (;;) {
-                            try {
-                                result = current.get();
-                                break;
-                            } catch (InterruptedException ie) {
-                                interrupted = true; // ignore for now, and restore later
-                            }
+                        try {
+                            result = current.get();
+                        } catch (InterruptedException ie) {
+                            // Same behavior as parallel streams: wrap and rethrow
+                            throw new RuntimeException(ie);
                         }
 
                         proceed &= downstream.push(result);
@@ -430,16 +428,12 @@ public final class Gatherers {
                                 try {
                                     next.thread.join();
                                 } catch (InterruptedException ie) {
-                                    interrupted = true; // ignore, for now, and restore later
+                                    // We ignore interrupts here because we cannot proceed
+                                    // until all spawned threads have exited
                                 }
                             }
                         }
                     }
-
-                    // integrate(..) could be called from different threads each time
-                    // so we need to restore the interrupt on the calling thread
-                    if (interrupted)
-                        Thread.currentThread().interrupt();
                 }
             }
         }

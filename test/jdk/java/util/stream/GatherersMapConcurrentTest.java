@@ -22,8 +22,11 @@
  */
 
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Function;
@@ -318,30 +321,42 @@ public class GatherersMapConcurrentTest {
     }
 
     @ParameterizedTest
-    @MethodSource("concurrencyConfigurations")
-    public void ignoresAndRestoresCallingThreadInterruption(ConcurrencyConfig cc) {
-        final var limitTo = Math.max(cc.config().streamSize() / 2, 1);
-
-        final var expectedResult = cc.config().stream()
-            .map(x -> x * x)
-            .limit(limitTo)
-            .toList();
+    @MethodSource("small_atleast3_configurations")
+    public void abortsAndCleansUpOnCallingThreadInterruption(Config c) {
+        // To keep track of virtual threads started
+        final var vts = new ConcurrentLinkedQueue<Thread>();
 
         // Ensure calling thread is interrupted
-        Thread.currentThread().interrupt();
+        final var currentThread = Thread.currentThread();
 
-        final var result = cc.config().stream()
-            .gather(Gatherers.mapConcurrent(cc.concurrencyLevel(), x -> {
-                LockSupport.parkNanos(10000); // 10 us
-                return x * x;
-            }))
-            .limit(limitTo)
-            .toList();
+        // Assert we get an InterruptedException wrapped in a RuntimeException
+        var exception =
+            assertThrows(
+                InterruptedException.class,
+                () -> {
+                    throw assertThrows(
+                        RuntimeException.class,
+                        () -> c.stream().sequential() // Force sequential
+                            .gather(Gatherers.mapConcurrent(c.streamSize() / 2, x -> {
+                                vts.offer(Thread.currentThread()); // Remember these for later
+                                currentThread.interrupt(); // Make sure caller gets interrupted
+                                LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(5));
+                                return x * x;
+                            }))
+                            .toList()
+                    ).getCause();
+                }
+            );
 
-        // Ensure calling thread remains interrupted
-        assertEquals(true, Thread.interrupted());
+        // Ensure calling thread interruption is cleared
+        assertEquals(false, Thread.interrupted());
 
-        assertEquals(expectedResult, result);
+        // Make sure we had at least one task thread
+        assertNotEquals(null, vts.peek());
+
+        // Ensure all task threads were shut down
+        for(Thread t = vts.poll();t != null; t = vts.poll())
+            assertEquals(false, t.isAlive());
     }
 
     @ParameterizedTest
