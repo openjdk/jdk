@@ -119,7 +119,7 @@ public class CloseKeepAliveCached {
                 }
             }
 
-            /* send the header */
+            /* send the response headers and body */
             out.print("HTTP/1.1 200 OK\r\n");
             out.print("Keep-Alive: timeout=15, max=100\r\n");
             out.print("Connection: Keep-Alive\r\n");
@@ -226,16 +226,16 @@ public class CloseKeepAliveCached {
 
         // setting up the error stream for further analysis
         var errorCapture = new ByteArrayOutputStream();
-        var outputStream = new PrintStream(errorCapture);
+        var errorStream = new PrintStream(errorCapture);
         var originalErr = System.err; // saving the initial error stream, so it can be restored
-        System.setErr(outputStream);
+        System.setErr(errorStream);
 
         /*
          * Start the tests.
          */
         try {
             new CloseKeepAliveCached();
-        }finally {
+        } finally {
             // this will allow the error stream to be printed in case of an exception inside for debugging purposes
             System.setErr(originalErr);
             if (debug) {
@@ -243,7 +243,7 @@ public class CloseKeepAliveCached {
             }
         }
 
-        // Looking for the result in the error stream, as it's used by debug (who called close SSL connection)
+        // Parses the captured error stream, which is used by debug, to find out who closed the SSL connection
         // example of pass: javax.net.ssl|DEBUG|91|MainThread|...|close the SSL connection (passive)
         // example of fail: javax.net.ssl|DEBUG|C1|Keep-Alive-Timer|...|close the SSL connection (passive)
         var isTestPassed = false;
