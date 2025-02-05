@@ -39,7 +39,7 @@ import static java.util.zip.ZipConstants.ENDHDR;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.util.Preconditions;
+import jdk.internal.util.ByteArray;
 
 class ZipUtils {
 
@@ -171,10 +171,7 @@ class ZipUtils {
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
     public static final int get16(byte[] b, int off) {
-        Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
-        Preconditions.checkIndex(off + 1, b.length, Preconditions.AIOOBE_FORMATTER);
-        return Short.toUnsignedInt(
-                UNSAFE.getShortUnaligned(b, off + Unsafe.ARRAY_BYTE_BASE_OFFSET, false));
+        return ByteArray.getUnsignedShortLE(b, off);
     }
 
     /**
@@ -182,10 +179,7 @@ class ZipUtils {
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
     public static final long get32(byte[] b, int off) {
-        Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
-        Preconditions.checkIndex(off + 3, b.length, Preconditions.AIOOBE_FORMATTER);
-        return Integer.toUnsignedLong(
-                UNSAFE.getIntUnaligned(b, off + Unsafe.ARRAY_BYTE_BASE_OFFSET, false));
+        return Integer.toUnsignedLong(ByteArray.getIntLE(b, off));
     }
 
     /**
@@ -193,9 +187,7 @@ class ZipUtils {
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
     public static final long get64S(byte[] b, int off) {
-        Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
-        Preconditions.checkIndex(off + 7, b.length, Preconditions.AIOOBE_FORMATTER);
-        return UNSAFE.getLongUnaligned(b, off + Unsafe.ARRAY_BYTE_BASE_OFFSET, false);
+        return ByteArray.getLongLE(b, off);
     }
 
     /**
@@ -204,9 +196,7 @@ class ZipUtils {
      *
      */
     public static final int get32S(byte[] b, int off) {
-        Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
-        Preconditions.checkIndex(off + 3, b.length, Preconditions.AIOOBE_FORMATTER);
-        return UNSAFE.getIntUnaligned(b, off + Unsafe.ARRAY_BYTE_BASE_OFFSET, false);
+        return ByteArray.getIntLE(b, off);
     }
 
     /*

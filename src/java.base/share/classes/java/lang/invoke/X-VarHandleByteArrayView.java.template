@@ -30,6 +30,7 @@ import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.ByteArray;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -119,37 +120,21 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         static $type$ get(VarHandle ob, Object oba, int index) {
             ArrayHandle handle = (ArrayHandle)ob;
             byte[] ba = (byte[]) oba;
-#if[floatingPoint]
-            $rawType$ rawValue = UNSAFE.get$RawType$Unaligned(
+            return ByteArray.get$Type$BO(
                     ba,
-                    ((long) index(ba, index)) + Unsafe.ARRAY_BYTE_BASE_OFFSET,
+                    index,
                     handle.be);
-            return $Type$.$rawType$BitsTo$Type$(rawValue);
-#else[floatingPoint]
-            return UNSAFE.get$Type$Unaligned(
-                    ba,
-                    ((long) index(ba, index)) + Unsafe.ARRAY_BYTE_BASE_OFFSET,
-                    handle.be);
-#end[floatingPoint]
         }
 
         @ForceInline
         static void set(VarHandle ob, Object oba, int index, $type$ value) {
             ArrayHandle handle = (ArrayHandle)ob;
             byte[] ba = (byte[]) oba;
-#if[floatingPoint]
-            UNSAFE.put$RawType$Unaligned(
+            ByteArray.set$Type${#if[floatingPoint]?Raw}BO(
                     ba,
-                    ((long) index(ba, index)) + Unsafe.ARRAY_BYTE_BASE_OFFSET,
-                    $Type$.$type$ToRaw$RawType$Bits(value),
-                    handle.be);
-#else[floatingPoint]
-            UNSAFE.put$RawType$Unaligned(
-                    ba,
-                    ((long) index(ba, index)) + Unsafe.ARRAY_BYTE_BASE_OFFSET,
-                    value,
-                    handle.be);
-#end[floatingPoint]
+                    index,
+                    handle.be,
+                    value);
         }
 
         static final VarForm FORM = new VarForm(ArrayHandle.class, byte[].class, $type$.class, int.class);

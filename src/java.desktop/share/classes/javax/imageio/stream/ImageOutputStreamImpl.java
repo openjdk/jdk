@@ -26,7 +26,6 @@
 package javax.imageio.stream;
 
 import jdk.internal.util.ByteArray;
-import jdk.internal.util.ByteArrayLittleEndian;
 
 import java.io.IOException;
 import java.io.UTFDataFormatException;
@@ -66,9 +65,9 @@ public abstract class ImageOutputStreamImpl
 
     public void writeShort(int v) throws IOException {
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
-            ByteArray.setUnsignedShort(byteBuf, 0, v);
+            ByteArray.setUnsignedShortBE(byteBuf, 0, v);
         } else {
-            ByteArrayLittleEndian.setUnsignedShort(byteBuf, 0, v);
+            ByteArray.setUnsignedShortLE(byteBuf, 0, v);
         }
         write(byteBuf, 0, 2);
     }
@@ -79,18 +78,18 @@ public abstract class ImageOutputStreamImpl
 
     public void writeInt(int v) throws IOException {
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
-            ByteArray.setInt(byteBuf, 0, v);
+            ByteArray.setIntBE(byteBuf, 0, v);
         } else {
-            ByteArrayLittleEndian.setInt(byteBuf, 0, v);
+            ByteArray.setIntLE(byteBuf, 0, v);
         }
         write(byteBuf, 0, 4);
     }
 
     public void writeLong(long v) throws IOException {
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
-            ByteArray.setLong(byteBuf, 0, v);
+            ByteArray.setLongBE(byteBuf, 0, v);
         } else {
-            ByteArrayLittleEndian.setLong(byteBuf, 0, v);
+            ByteArray.setLongLE(byteBuf, 0, v);
         }
         // REMIND: Once 6277756 is fixed, we should do a bulk write of all 8
         // bytes here as we do in writeShort() and writeInt() for even better
@@ -123,13 +122,13 @@ public abstract class ImageOutputStreamImpl
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int i = 0; i < len ; i++) {
                 char v = s.charAt(i);
-                ByteArray.setChar(b, boff, v);
+                ByteArray.setCharBE(b, boff, v);
                 boff += 2;
             }
         } else {
             for (int i = 0; i < len ; i++) {
                 char v = s.charAt(i);
-                ByteArrayLittleEndian.setChar(b, boff, v);
+                ByteArray.setCharLE(b, boff, v);
                 boff += 2;
             }
         }
@@ -194,13 +193,13 @@ public abstract class ImageOutputStreamImpl
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int i = 0; i < len; i++) {
                 short v = s[off + i];
-                ByteArray.setShort(b, boff, v);
+                ByteArray.setShortBE(b, boff, v);
                 boff += 2;
             }
         } else {
             for (int i = 0; i < len; i++) {
                 short v = s[off + i];
-                ByteArrayLittleEndian.setShort(b, boff, v);
+                ByteArray.setShortLE(b, boff, v);
                 boff += 2;
             }
         }
@@ -220,13 +219,13 @@ public abstract class ImageOutputStreamImpl
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int i = 0; i < len; i++) {
                 char v = c[off + i];
-                ByteArray.setChar(b, boff, v);
+                ByteArray.setCharBE(b, boff, v);
                 boff += 2;
             }
         } else {
             for (int i = 0; i < len; i++) {
                 char v = c[off + i];
-                ByteArrayLittleEndian.setChar(b, boff, v);
+                ByteArray.setCharLE(b, boff, v);
                 boff += 2;
             }
         }
@@ -246,13 +245,13 @@ public abstract class ImageOutputStreamImpl
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int j = 0; j < len; j++) {
                 int v = i[off + j];
-                ByteArray.setInt(b, boff, v);
+                ByteArray.setIntBE(b, boff, v);
                 boff += 4;
             }
         } else {
             for (int j = 0; j < len; j++) {
                 int v = i[off + j];
-                ByteArrayLittleEndian.setInt(b, boff, v);
+                ByteArray.setIntLE(b, boff, v);
                 boff += 4;
             }
         }
@@ -272,13 +271,13 @@ public abstract class ImageOutputStreamImpl
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int i = 0; i < len; i++) {
                 long v = l[off + i];
-                ByteArray.setLong(b, boff, v);
+                ByteArray.setLongBE(b, boff, v);
                 boff += 8;
             }
         } else {
             for (int i = 0; i < len; i++) {
                 long v = l[off + i];
-                ByteArrayLittleEndian.setLong(b, boff, v);
+                ByteArray.setLongLE(b, boff, v);
                 boff += 8;
             }
         }
@@ -298,13 +297,13 @@ public abstract class ImageOutputStreamImpl
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int i = 0; i < len; i++) {
                 float v = f[off + i];
-                ByteArray.setFloat(b, boff, v);
+                ByteArray.setFloatBE(b, boff, v);
                 boff += 4;
             }
         } else {
             for (int i = 0; i < len; i++) {
                 float v = f[off + i];
-                ByteArrayLittleEndian.setFloat(b, boff, v);
+                ByteArray.setFloatLE(b, boff, v);
                 boff += 4;
             }
         }
@@ -324,13 +323,13 @@ public abstract class ImageOutputStreamImpl
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int i = 0; i < len; i++) {
                 double v = d[off + i];
-                ByteArray.setDouble(b, boff, v);
+                ByteArray.setDoubleBE(b, boff, v);
                 boff += 8;
             }
         } else {
             for (int i = 0; i < len; i++) {
                 double v = d[off + i];
-                ByteArrayLittleEndian.setDouble(b, boff, v);
+                ByteArray.setDoubleLE(b, boff, v);
                 boff += 8;
             }
         }

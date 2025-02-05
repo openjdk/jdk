@@ -86,12 +86,12 @@ final class ObjectStreamReflection {
             String fieldName = field.getName();
             switch (field.getTypeCode()) {
                 case 'B' -> bytes[offset] = getField.get(fieldName, (byte) 0);
-                case 'C' -> ByteArray.setChar(bytes, offset, getField.get(fieldName, (char) 0));
-                case 'D' -> ByteArray.setDoubleRaw(bytes, offset, getField.get(fieldName, 0.0));
-                case 'F' -> ByteArray.setFloatRaw(bytes, offset, getField.get(fieldName, 0.0f));
-                case 'I' -> ByteArray.setInt(bytes, offset, getField.get(fieldName, 0));
-                case 'J' -> ByteArray.setLong(bytes, offset, getField.get(fieldName, 0L));
-                case 'S' -> ByteArray.setShort(bytes, offset, getField.get(fieldName, (short) 0));
+                case 'C' -> ByteArray.setCharBE(bytes, offset, getField.get(fieldName, (char) 0));
+                case 'D' -> ByteArray.setDoubleRawBE(bytes, offset, getField.get(fieldName, 0.0));
+                case 'F' -> ByteArray.setFloatRawBE(bytes, offset, getField.get(fieldName, 0.0f));
+                case 'I' -> ByteArray.setIntBE(bytes, offset, getField.get(fieldName, 0));
+                case 'J' -> ByteArray.setLongBE(bytes, offset, getField.get(fieldName, 0L));
+                case 'S' -> ByteArray.setShortBE(bytes, offset, getField.get(fieldName, (short) 0));
                 case 'Z' -> ByteArray.setBoolean(bytes, offset, getField.get(fieldName, false));
                 case '[', 'L' -> objs[offset] = getField.get(fieldName, null);
                 default -> throw new IllegalStateException();
@@ -133,12 +133,12 @@ final class ObjectStreamReflection {
             String fieldName = field.getName();
             switch (field.getTypeCode()) {
                 case 'B' -> putField.put(fieldName, bytes[offset]);
-                case 'C' -> putField.put(fieldName, ByteArray.getChar(bytes, offset));
-                case 'D' -> putField.put(fieldName, ByteArray.getDouble(bytes, offset));
-                case 'F' -> putField.put(fieldName, ByteArray.getFloat(bytes, offset));
-                case 'I' -> putField.put(fieldName, ByteArray.getInt(bytes, offset));
-                case 'J' -> putField.put(fieldName, ByteArray.getLong(bytes, offset));
-                case 'S' -> putField.put(fieldName, ByteArray.getShort(bytes, offset));
+                case 'C' -> putField.put(fieldName, ByteArray.getCharBE(bytes, offset));
+                case 'D' -> putField.put(fieldName, ByteArray.getDoubleBE(bytes, offset));
+                case 'F' -> putField.put(fieldName, ByteArray.getFloatBE(bytes, offset));
+                case 'I' -> putField.put(fieldName, ByteArray.getIntBE(bytes, offset));
+                case 'J' -> putField.put(fieldName, ByteArray.getLongBE(bytes, offset));
+                case 'S' -> putField.put(fieldName, ByteArray.getShortBE(bytes, offset));
                 case 'Z' -> putField.put(fieldName, ByteArray.getBoolean(bytes, offset));
                 case '[', 'L' -> putField.put(fieldName, objs[offset]);
                 default -> throw new IllegalStateException();

@@ -26,7 +26,6 @@
 package javax.imageio.stream;
 
 import jdk.internal.util.ByteArray;
-import jdk.internal.util.ByteArrayLittleEndian;
 
 import java.io.DataInputStream;
 import java.io.EOFException;
@@ -244,8 +243,8 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
             throw new EOFException();
         }
         return (byteOrder == ByteOrder.BIG_ENDIAN)
-                ? ByteArray.getShort(byteBuf, 0)
-                : ByteArrayLittleEndian.getShort(byteBuf, 0);
+                ? ByteArray.getShortBE(byteBuf, 0)
+                : ByteArray.getShortLE(byteBuf, 0);
     }
 
     /**
@@ -271,8 +270,8 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         }
 
         return (byteOrder == ByteOrder.BIG_ENDIAN)
-                ? ByteArray.getInt(byteBuf, 0)
-                : ByteArrayLittleEndian.getInt(byteBuf, 0);
+                ? ByteArray.getIntBE(byteBuf, 0)
+                : ByteArray.getIntLE(byteBuf, 0);
     }
 
     /**
@@ -514,12 +513,12 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         int boff = 0;
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int j = 0; j < len; j++) {
-                s[off + j] = ByteArray.getShort(b, boff);
+                s[off + j] = ByteArray.getShortBE(b, boff);
                 boff += 2;
             }
         } else {
             for (int j = 0; j < len; j++) {
-                s[off + j] = ByteArrayLittleEndian.getShort(b, boff);
+                s[off + j] = ByteArray.getShortLE(b, boff);
                 boff += 2;
             }
         }
@@ -529,12 +528,12 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         int boff = 0;
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int j = 0; j < len; j++) {
-                c[off + j] = ByteArray.getChar(b, boff);
+                c[off + j] = ByteArray.getCharBE(b, boff);
                 boff += 2;
             }
         } else {
             for (int j = 0; j < len; j++) {
-                c[off + j] = ByteArrayLittleEndian.getChar(b, boff);
+                c[off + j] = ByteArray.getCharLE(b, boff);
                 boff += 2;
             }
         }
@@ -544,12 +543,12 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         int boff = 0;
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int j = 0; j < len; j++) {
-                i[off + j] = ByteArray.getInt(b, boff);
+                i[off + j] = ByteArray.getIntBE(b, boff);
                 boff += 4;
             }
         } else {
             for (int j = 0; j < len; j++) {
-                i[off + j] = ByteArrayLittleEndian.getInt(b, boff);
+                i[off + j] = ByteArray.getIntLE(b, boff);
                 boff += 4;
             }
         }
@@ -559,12 +558,12 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         int boff = 0;
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int j = 0; j < len; j++) {
-                l[off + j] = ByteArray.getLong(b, boff);
+                l[off + j] = ByteArray.getLongBE(b, boff);
                 boff += 8;
             }
         } else {
             for (int j = 0; j < len; j++) {
-                l[off + j] = ByteArrayLittleEndian.getLong(b, boff);
+                l[off + j] = ByteArray.getLongLE(b, boff);
                 boff += 8;
             }
         }
@@ -574,12 +573,12 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         int boff = 0;
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int j = 0; j < len; j++) {
-                f[off + j] = ByteArray.getFloat(b, boff);
+                f[off + j] = ByteArray.getFloatBE(b, boff);
                 boff += 4;
             }
         } else {
             for (int j = 0; j < len; j++) {
-                f[off + j] = ByteArrayLittleEndian.getFloat(b, boff);
+                f[off + j] = ByteArray.getFloatLE(b, boff);
                 boff += 4;
             }
         }
@@ -589,12 +588,12 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         int boff = 0;
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int j = 0; j < len; j++) {
-                d[off + j] = ByteArray.getDouble(b, boff);
+                d[off + j] = ByteArray.getDoubleBE(b, boff);
                 boff += 8;
             }
         } else {
             for (int j = 0; j < len; j++) {
-                d[off + j] = ByteArrayLittleEndian.getDouble(b, boff);
+                d[off + j] = ByteArray.getDoubleLE(b, boff);
                 boff += 8;
             }
         }

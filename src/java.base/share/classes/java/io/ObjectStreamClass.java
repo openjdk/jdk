@@ -1860,12 +1860,12 @@ public final class ObjectStreamClass implements Serializable {
                 switch (typeCodes[i]) {
                     case 'Z' -> ByteArray.setBoolean(buf, off, UNSAFE.getBoolean(obj, key));
                     case 'B' -> buf[off] = UNSAFE.getByte(obj, key);
-                    case 'C' -> ByteArray.setChar(buf, off, UNSAFE.getChar(obj, key));
-                    case 'S' -> ByteArray.setShort(buf, off, UNSAFE.getShort(obj, key));
-                    case 'I' -> ByteArray.setInt(buf, off, UNSAFE.getInt(obj, key));
-                    case 'F' -> ByteArray.setFloat(buf, off, UNSAFE.getFloat(obj, key));
-                    case 'J' -> ByteArray.setLong(buf, off, UNSAFE.getLong(obj, key));
-                    case 'D' -> ByteArray.setDouble(buf, off, UNSAFE.getDouble(obj, key));
+                    case 'C' -> ByteArray.setCharBE(buf, off, UNSAFE.getChar(obj, key));
+                    case 'S' -> ByteArray.setShortBE(buf, off, UNSAFE.getShort(obj, key));
+                    case 'I' -> ByteArray.setIntBE(buf, off, UNSAFE.getInt(obj, key));
+                    case 'F' -> ByteArray.setFloatBE(buf, off, UNSAFE.getFloat(obj, key));
+                    case 'J' -> ByteArray.setLongBE(buf, off, UNSAFE.getLong(obj, key));
+                    case 'D' -> ByteArray.setDoubleBE(buf, off, UNSAFE.getDouble(obj, key));
                     default  -> throw new InternalError();
                 }
             }
@@ -1889,12 +1889,12 @@ public final class ObjectStreamClass implements Serializable {
                 switch (typeCodes[i]) {
                     case 'Z' -> UNSAFE.putBoolean(obj, key, ByteArray.getBoolean(buf, off));
                     case 'B' -> UNSAFE.putByte(obj, key, buf[off]);
-                    case 'C' -> UNSAFE.putChar(obj, key, ByteArray.getChar(buf, off));
-                    case 'S' -> UNSAFE.putShort(obj, key, ByteArray.getShort(buf, off));
-                    case 'I' -> UNSAFE.putInt(obj, key, ByteArray.getInt(buf, off));
-                    case 'F' -> UNSAFE.putFloat(obj, key, ByteArray.getFloat(buf, off));
-                    case 'J' -> UNSAFE.putLong(obj, key, ByteArray.getLong(buf, off));
-                    case 'D' -> UNSAFE.putDouble(obj, key, ByteArray.getDouble(buf, off));
+                    case 'C' -> UNSAFE.putChar(obj, key, ByteArray.getCharBE(buf, off));
+                    case 'S' -> UNSAFE.putShort(obj, key, ByteArray.getShortBE(buf, off));
+                    case 'I' -> UNSAFE.putInt(obj, key, ByteArray.getIntBE(buf, off));
+                    case 'F' -> UNSAFE.putFloat(obj, key, ByteArray.getFloatBE(buf, off));
+                    case 'J' -> UNSAFE.putLong(obj, key, ByteArray.getLongBE(buf, off));
+                    case 'D' -> UNSAFE.putDouble(obj, key, ByteArray.getDoubleBE(buf, off));
                     default  -> throw new InternalError();
                 }
             }
@@ -2337,12 +2337,12 @@ public final class ObjectStreamClass implements Serializable {
             try {
                 PRIM_VALUE_EXTRACTORS = Map.of(
                     byte.class, MethodHandles.arrayElementGetter(byte[].class),
-                    short.class, lkp.findStatic(ByteArray.class, "getShort", MethodType.methodType(short.class, byte[].class, int.class)),
-                    int.class, lkp.findStatic(ByteArray.class, "getInt", MethodType.methodType(int.class, byte[].class, int.class)),
-                    long.class, lkp.findStatic(ByteArray.class, "getLong", MethodType.methodType(long.class, byte[].class, int.class)),
-                    float.class, lkp.findStatic(ByteArray.class, "getFloat", MethodType.methodType(float.class, byte[].class, int.class)),
-                    double.class, lkp.findStatic(ByteArray.class, "getDouble", MethodType.methodType(double.class, byte[].class, int.class)),
-                    char.class, lkp.findStatic(ByteArray.class, "getChar", MethodType.methodType(char.class, byte[].class, int.class)),
+                    short.class, lkp.findStatic(ByteArray.class, "getShortBE", MethodType.methodType(short.class, byte[].class, int.class)),
+                    int.class, lkp.findStatic(ByteArray.class, "getIntBE", MethodType.methodType(int.class, byte[].class, int.class)),
+                    long.class, lkp.findStatic(ByteArray.class, "getLongBE", MethodType.methodType(long.class, byte[].class, int.class)),
+                    float.class, lkp.findStatic(ByteArray.class, "getFloatBE", MethodType.methodType(float.class, byte[].class, int.class)),
+                    double.class, lkp.findStatic(ByteArray.class, "getDoubleBE", MethodType.methodType(double.class, byte[].class, int.class)),
+                    char.class, lkp.findStatic(ByteArray.class, "getCharBE", MethodType.methodType(char.class, byte[].class, int.class)),
                     boolean.class, lkp.findStatic(ByteArray.class, "getBoolean", MethodType.methodType(boolean.class, byte[].class, int.class))
                 );
             } catch (NoSuchMethodException | IllegalAccessException e) {

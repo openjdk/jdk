@@ -25,400 +25,245 @@
 
 package jdk.internal.util;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.nio.ByteOrder;
+import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
+import static jdk.internal.util.ArraysSupport.U;
 
 /**
- * Utility methods for packing/unpacking primitive values in/out of byte arrays
- * using {@linkplain ByteOrder#BIG_ENDIAN big endian order} (aka. "network order").
+ * Utility methods for packing/unpacking primitive values in/out of byte arrays.
  * <p>
- * All methods in this class will throw an {@linkplain NullPointerException} if {@code null} is
- * passed in as a method parameter for a byte array.
+ * All methods perform checked access, throwing NPE for null arrays or AIOOBE
+ * if the start index of the access will cause out of bounds read/write.
+ * <p>
+ * Methods are grouped into 4 categories: BO for explicit byte order, BE for
+ * big endian, LE for little endian, and there are boolean access that does not
+ * depend on byte order.
+ * <p>
+ * Types supported including non-byte primitives, raw float/double writes with
+ * special NaN treatment, unsigned 2-byte, and single-byte boolean.
  */
 public final class ByteArray {
 
     private ByteArray() {
     }
 
-    private static final VarHandle SHORT = create(short[].class);
-    private static final VarHandle CHAR = create(char[].class);
-    private static final VarHandle INT = create(int[].class);
-    private static final VarHandle FLOAT = create(float[].class);
-    private static final VarHandle LONG = create(long[].class);
-    private static final VarHandle DOUBLE = create(double[].class);
+    // Basic types with Byte Order
 
-    /*
-     * Methods for unpacking primitive values from byte arrays starting at
-     * a given offset.
-     */
+    public static char getCharBO(byte[] array, int index, boolean big) {
+        Preconditions.checkIndex(index, array.length - Character.BYTES + 1, Preconditions.AIOOBE_FORMATTER);
+        return U.getCharUnaligned(array, ARRAY_BYTE_BASE_OFFSET + index, big);
+    }
 
-    /**
-     * {@return a {@code boolean} from the provided {@code array} at the given {@code offset}}.
-     *
-     * @param array  to read a value from.
-     * @param offset where extraction in the array should begin
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 1]
-     * @see #setBoolean(byte[], int, boolean)
-     */
+    public static short getShortBO(byte[] array, int index, boolean big) {
+        Preconditions.checkIndex(index, array.length - Short.BYTES + 1, Preconditions.AIOOBE_FORMATTER);
+        return U.getShortUnaligned(array, ARRAY_BYTE_BASE_OFFSET + index, big);
+    }
+
+    public static int getIntBO(byte[] array, int index, boolean big) {
+        Preconditions.checkIndex(index, array.length - Integer.BYTES + 1, Preconditions.AIOOBE_FORMATTER);
+        return U.getIntUnaligned(array, ARRAY_BYTE_BASE_OFFSET + index, big);
+    }
+
+    public static long getLongBO(byte[] array, int index, boolean big) {
+        Preconditions.checkIndex(index, array.length - Long.BYTES + 1, Preconditions.AIOOBE_FORMATTER);
+        return U.getLongUnaligned(array, ARRAY_BYTE_BASE_OFFSET + index, big);
+    }
+
+    public static void setCharBO(byte[] array, int index, boolean big, char value) {
+        Preconditions.checkIndex(index, array.length - Character.BYTES + 1, Preconditions.AIOOBE_FORMATTER);
+        U.putCharUnaligned(array, ARRAY_BYTE_BASE_OFFSET + index, value, big);
+    }
+
+    public static void setShortBO(byte[] array, int index, boolean big, short value) {
+        Preconditions.checkIndex(index, array.length - Short.BYTES + 1, Preconditions.AIOOBE_FORMATTER);
+        U.putShortUnaligned(array, ARRAY_BYTE_BASE_OFFSET + index, value, big);
+    }
+
+    public static void setIntBO(byte[] array, int index, boolean big, int value) {
+        Preconditions.checkIndex(index, array.length - Integer.BYTES + 1, Preconditions.AIOOBE_FORMATTER);
+        U.putIntUnaligned(array, ARRAY_BYTE_BASE_OFFSET + index, value, big);
+    }
+
+    public static void setLongBO(byte[] array, int index, boolean big, long value) {
+        Preconditions.checkIndex(index, array.length - Long.BYTES + 1, Preconditions.AIOOBE_FORMATTER);
+        U.putLongUnaligned(array, ARRAY_BYTE_BASE_OFFSET + index, value, big);
+    }
+
+    // Secondary types with byte order
+
+    public static float getFloatBO(byte[] array, int index, boolean big) {
+        return Float.intBitsToFloat(getIntBO(array, index, big));
+    }
+
+    public static double getDoubleBO(byte[] array, int index, boolean big) {
+        return Double.longBitsToDouble(getLongBO(array, index, big));
+    }
+
+    // Retains custom NaNs
+    public static void setFloatRawBO(byte[] array, int index, boolean big, float value) {
+        setIntBO(array, index, big, Float.floatToRawIntBits(value));
+    }
+
+    public static void setDoubleRawBO(byte[] array, int index, boolean big, double value) {
+        setLongBO(array, index, big, Double.doubleToRawLongBits(value));
+    }
+
+    // Collapses custom NaNs
+    public static void setFloatBO(byte[] array, int index, boolean big, float value) {
+        setIntBO(array, index, big, Float.floatToIntBits(value));
+    }
+
+    public static void setDoubleBO(byte[] array, int index, boolean big, double value) {
+        setLongBO(array, index, big, Double.doubleToLongBits(value));
+    }
+
+    public static int getUnsignedShortBO(byte[] array, int index, boolean big) {
+        return getCharBO(array, index, big);
+    }
+
+    // Truncates most significant bits
+    public static void setUnsignedShortBO(byte[] array, int index, boolean big, int value) {
+        setCharBO(array, index, big, (char) value);
+    }
+
+    // BE methods
+
+    public static char getCharBE(byte[] array, int offset) {
+        return getCharBO(array, offset, true);
+    }
+
+    public static short getShortBE(byte[] array, int offset) {
+        return getShortBO(array, offset, true);
+    }
+
+    public static int getUnsignedShortBE(byte[] array, int offset) {
+        return getUnsignedShortBO(array, offset, true);
+    }
+
+    public static int getIntBE(byte[] array, int offset) {
+        return getIntBO(array, offset, true);
+    }
+
+    public static float getFloatBE(byte[] array, int offset) {
+        return getFloatBO(array, offset, true);
+    }
+
+    public static long getLongBE(byte[] array, int offset) {
+        return getLongBO(array, offset, true);
+    }
+
+    public static double getDoubleBE(byte[] array, int offset) {
+        return getDoubleBO(array, offset, true);
+    }
+
+    public static void setCharBE(byte[] array, int offset, char value) {
+        setCharBO(array, offset, true, value);
+    }
+
+    public static void setShortBE(byte[] array, int offset, short value) {
+        setShortBO(array, offset, true, value);
+    }
+
+    public static void setUnsignedShortBE(byte[] array, int offset, int value) {
+        setUnsignedShortBO(array, offset, true, value);
+    }
+
+    public static void setIntBE(byte[] array, int offset, int value) {
+        setIntBO(array, offset, true, value);
+    }
+
+    public static void setFloatBE(byte[] array, int offset, float value) {
+        setFloatBO(array, offset, true, value);
+    }
+
+    public static void setFloatRawBE(byte[] array, int offset, float value) {
+        setFloatRawBO(array, offset, true, value);
+    }
+
+    public static void setLongBE(byte[] array, int offset, long value) {
+        setLongBO(array, offset, true, value);
+    }
+
+    public static void setDoubleBE(byte[] array, int offset, double value) {
+        setDoubleBO(array, offset, true, value);
+    }
+
+    public static void setDoubleRawBE(byte[] array, int offset, double value) {
+        setDoubleRawBO(array, offset, true, value);
+    }
+
+    // LE
+
+    public static char getCharLE(byte[] array, int offset) {
+        return getCharBO(array, offset, false);
+    }
+
+    public static short getShortLE(byte[] array, int offset) {
+        return getShortBO(array, offset, false);
+    }
+
+    public static int getUnsignedShortLE(byte[] array, int offset) {
+        return getCharBO(array, offset, false);
+    }
+
+    public static int getIntLE(byte[] array, int offset) {
+        return getIntBO(array, offset, false);
+    }
+
+    public static float getFloatLE(byte[] array, int offset) {
+        return getFloatBO(array, offset, false);
+    }
+
+    public static long getLongLE(byte[] array, int offset) {
+        return getLongBO(array, offset, false);
+    }
+
+    public static double getDoubleLE(byte[] array, int offset) {
+        return getDoubleBO(array, offset, false);
+    }
+
+    public static void setCharLE(byte[] array, int offset, char value) {
+        setCharBO(array, offset, false, value);
+    }
+
+    public static void setShortLE(byte[] array, int offset, short value) {
+        setShortBO(array, offset, false, value);
+    }
+
+    public static void setUnsignedShortLE(byte[] array, int offset, int value) {
+        setUnsignedShortBO(array, offset, false, value);
+    }
+
+    public static void setIntLE(byte[] array, int offset, int value) {
+        setIntBO(array, offset, false, value);
+    }
+
+    public static void setFloatLE(byte[] array, int offset, float value) {
+        setFloatBO(array, offset, false, value);
+    }
+
+    public static void setFloatRawLE(byte[] array, int offset, float value) {
+        setFloatRawBO(array, offset, false, value);
+    }
+
+    public static void setLongLE(byte[] array, int offset, long value) {
+        setLongBO(array, offset, false, value);
+    }
+
+    public static void setDoubleLE(byte[] array, int offset, double value) {
+        setDoubleBO(array, offset, false, value);
+    }
+
+    public static void setDoubleRawLE(byte[] array, int offset, double value) {
+        setDoubleRawBO(array, offset, false, value);
+    }
+
+    // custom types
+
     public static boolean getBoolean(byte[] array, int offset) {
         return array[offset] != 0;
     }
 
-    /**
-     * {@return a {@code char} from the provided {@code array} at the given {@code offset}
-     * using big endian order}.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to get a value from.
-     * @param offset where extraction in the array should begin
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
-     * @see #setChar(byte[], int, char)
-     */
-    public static char getChar(byte[] array, int offset) {
-        return (char) CHAR.get(array, offset);
-    }
-
-    /**
-     * {@return a {@code short} from the provided {@code array} at the given {@code offset}
-     * using big endian order}.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to get a value from.
-     * @param offset where extraction in the array should begin
-     * @return a {@code short} from the array
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
-     * @see #setShort(byte[], int, short)
-     */
-    public static short getShort(byte[] array, int offset) {
-        return (short) SHORT.get(array, offset);
-    }
-
-    /**
-     * {@return an {@code unsigned short} from the provided {@code array} at the given {@code offset}
-     * using big endian order}.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to get a value from.
-     * @param offset where extraction in the array should begin
-     * @return an {@code int} representing an unsigned short from the array
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
-     * @see #setUnsignedShort(byte[], int, int)
-     */
-    public static int getUnsignedShort(byte[] array, int offset) {
-        return Short.toUnsignedInt((short) SHORT.get(array, offset));
-    }
-
-    /**
-     * {@return an {@code int} from the provided {@code array} at the given {@code offset}
-     * using big endian order}.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to get a value from.
-     * @param offset where extraction in the array should begin
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 4]
-     * @see #setInt(byte[], int, int)
-     */
-    public static int getInt(byte[] array, int offset) {
-        return (int) INT.get(array, offset);
-    }
-
-    /**
-     * {@return a {@code float} from the provided {@code array} at the given {@code offset}
-     * using big endian order}.
-     * <p>
-     * Variants of {@linkplain Float#NaN } values are canonized to a single NaN value.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to get a value from.
-     * @param offset where extraction in the array should begin
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 4]
-     * @see #setFloat(byte[], int, float)
-     */
-    public static float getFloat(byte[] array, int offset) {
-        // Using Float.intBitsToFloat collapses NaN values to a single
-        // "canonical" NaN value
-        return Float.intBitsToFloat((int) INT.get(array, offset));
-    }
-
-    /**
-     * {@return a {@code float} from the provided {@code array} at the given {@code offset}
-     * using big endian order}.
-     * <p>
-     * Variants of {@linkplain Float#NaN } values are silently read according
-     * to their bit patterns.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to get a value from.
-     * @param offset where extraction in the array should begin
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 4]
-     * @see #setFloatRaw(byte[], int, float)
-     */
-    public static float getFloatRaw(byte[] array, int offset) {
-        // Just gets the bits as they are
-        return (float) FLOAT.get(array, offset);
-    }
-
-    /**
-     * {@return a {@code long} from the provided {@code array} at the given {@code offset}
-     * using big endian order}.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to get a value from.
-     * @param offset where extraction in the array should begin
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 8]
-     * @see #setLong(byte[], int, long)
-     */
-    public static long getLong(byte[] array, int offset) {
-        return (long) LONG.get(array, offset);
-    }
-
-    /**
-     * {@return a {@code double} from the provided {@code array} at the given {@code offset}
-     * using big endian order}.
-     * <p>
-     * Variants of {@linkplain Double#NaN } values are canonized to a single NaN value.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to get a value from.
-     * @param offset where extraction in the array should begin
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 8]
-     * @see #setDouble(byte[], int, double)
-     */
-    public static double getDouble(byte[] array, int offset) {
-        // Using Double.longBitsToDouble collapses NaN values to a single
-        // "canonical" NaN value
-        return Double.longBitsToDouble((long) LONG.get(array, offset));
-    }
-
-    /**
-     * {@return a {@code double} from the provided {@code array} at the given {@code offset}
-     * using big endian order}.
-     * <p>
-     * Variants of {@linkplain Double#NaN } values are silently read according to
-     * their bit patterns.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to get a value from.
-     * @param offset where extraction in the array should begin
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 8]
-     * @see #setDoubleRaw(byte[], int, double)
-     */
-    public static double getDoubleRaw(byte[] array, int offset) {
-        // Just gets the bits as they are
-        return (double) DOUBLE.get(array, offset);
-    }
-
-    /*
-     * Methods for packing primitive values into byte arrays starting at a given
-     * offset.
-     */
-
-    /**
-     * Sets (writes) the provided {@code value} into
-     * the provided {@code array} beginning at the given {@code offset}.
-     *
-     * @param array  to set (write) a value into
-     * @param offset where setting (writing) in the array should begin
-     * @param value  value to set in the array
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length]
-     * @see #getBoolean(byte[], int)
-     */
     public static void setBoolean(byte[] array, int offset, boolean value) {
         array[offset] = (byte) (value ? 1 : 0);
     }
-
-    /**
-     * Sets (writes) the provided {@code value} using big endian order into
-     * the provided {@code array} beginning at the given {@code offset}.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to set (write) a value into
-     * @param offset where setting (writing) in the array should begin
-     * @param value  value to set in the array
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
-     * @see #getChar(byte[], int)
-     */
-    public static void setChar(byte[] array, int offset, char value) {
-        CHAR.set(array, offset, value);
-    }
-
-    /**
-     * Sets (writes) the provided {@code value} using big endian order into
-     * the provided {@code array} beginning at the given {@code offset}.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to set (write) a value into
-     * @param offset where setting (writing) in the array should begin
-     * @param value  value to set in the array
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
-     * @see #getShort(byte[], int)
-     */
-    public static void setShort(byte[] array, int offset, short value) {
-        SHORT.set(array, offset, value);
-    }
-
-    /**
-     * Sets (writes) the provided {@code value} using big endian order into
-     * the provided {@code array} beginning at the given {@code offset}.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to set (write) a value into
-     * @param offset where setting (writing) in the array should begin
-     * @param value  value to set in the array
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
-     * @see #getUnsignedShort(byte[], int)
-     */
-    public static void setUnsignedShort(byte[] array, int offset, int value) {
-        SHORT.set(array, offset, (short) (char) value);
-    }
-
-    /**
-     * Sets (writes) the provided {@code value} using big endian order into
-     * the provided {@code array} beginning at the given {@code offset}.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to set (write) a value into
-     * @param offset where setting (writing) in the array should begin
-     * @param value  value to set in the array
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 4]
-     * @see #getInt(byte[], int)
-     */
-    public static void setInt(byte[] array, int offset, int value) {
-        INT.set(array, offset, value);
-    }
-
-    /**
-     * Sets (writes) the provided {@code value} using big endian order into
-     * the provided {@code array} beginning at the given {@code offset}.
-     * <p>
-     * Variants of {@linkplain Float#NaN } values are canonized to a single NaN value.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to set (write) a value into
-     * @param offset where setting (writing) in the array should begin
-     * @param value  value to set in the array
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
-     * @see #getFloat(byte[], int)
-     */
-    public static void setFloat(byte[] array, int offset, float value) {
-        // Using Float.floatToIntBits collapses NaN values to a single
-        // "canonical" NaN value
-        INT.set(array, offset, Float.floatToIntBits(value));
-    }
-
-    /**
-     * Sets (writes) the provided {@code value} using big endian order into
-     * the provided {@code array} beginning at the given {@code offset}.
-     * <p>
-     * Variants of {@linkplain Float#NaN } values are silently written according to
-     * their bit patterns.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to set (write) a value into
-     * @param offset where setting (writing) in the array should begin
-     * @param value  value to set in the array
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
-     * @see #getFloatRaw(byte[], int)
-     */
-    public static void setFloatRaw(byte[] array, int offset, float value) {
-        // Just sets the bits as they are
-        FLOAT.set(array, offset, value);
-    }
-
-    /**
-     * Sets (writes) the provided {@code value} using big endian order into
-     * the provided {@code array} beginning at the given {@code offset}.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to set (write) a value into
-     * @param offset where setting (writing) in the array should begin
-     * @param value  value to set in the array
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 4]
-     * @see #getLong(byte[], int)
-     */
-    public static void setLong(byte[] array, int offset, long value) {
-        LONG.set(array, offset, value);
-    }
-
-    /**
-     * Sets (writes) the provided {@code value} using big endian order into
-     * the provided {@code array} beginning at the given {@code offset}.
-     * <p>
-     * Variants of {@linkplain Double#NaN } values are canonized to a single NaN value.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to set (write) a value into
-     * @param offset where setting (writing) in the array should begin
-     * @param value  value to set in the array
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
-     * @see #getDouble(byte[], int)
-     */
-    public static void setDouble(byte[] array, int offset, double value) {
-        // Using Double.doubleToLongBits collapses NaN values to a single
-        // "canonical" NaN value
-        LONG.set(array, offset, Double.doubleToLongBits(value));
-    }
-
-    /**
-     * Sets (writes) the provided {@code value} using big endian order into
-     * the provided {@code array} beginning at the given {@code offset}.
-     * <p>
-     * Variants of {@linkplain Double#NaN } values are silently written according to
-     * their bit patterns.
-     * <p>
-     * There are no access alignment requirements.
-     *
-     * @param array  to set (write) a value into
-     * @param offset where setting (writing) in the array should begin
-     * @param value  value to set in the array
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
-     *                                   the range [0, array.length - 2]
-     * @see #getDoubleRaw(byte[], int)
-     */
-    public static void setDoubleRaw(byte[] array, int offset, double value) {
-        // Just sets the bits as they are
-        DOUBLE.set(array, offset, value);
-    }
-
-    private static VarHandle create(Class<?> viewArrayClass) {
-        return MethodHandles.byteArrayViewVarHandle(viewArrayClass, ByteOrder.BIG_ENDIAN);
-    }
-
 }

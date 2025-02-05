@@ -2540,32 +2540,32 @@ public class ObjectInputStream
 
         public char get(String name, char val) {
             int off = getFieldOffset(name, Character.TYPE);
-            return (off >= 0) ? ByteArray.getChar(primValues, off) : val;
+            return (off >= 0) ? ByteArray.getCharBE(primValues, off) : val;
         }
 
         public short get(String name, short val) {
             int off = getFieldOffset(name, Short.TYPE);
-            return (off >= 0) ? ByteArray.getShort(primValues, off) : val;
+            return (off >= 0) ? ByteArray.getShortBE(primValues, off) : val;
         }
 
         public int get(String name, int val) {
             int off = getFieldOffset(name, Integer.TYPE);
-            return (off >= 0) ? ByteArray.getInt(primValues, off) : val;
+            return (off >= 0) ? ByteArray.getIntBE(primValues, off) : val;
         }
 
         public float get(String name, float val) {
             int off = getFieldOffset(name, Float.TYPE);
-            return (off >= 0) ? ByteArray.getFloat(primValues, off) : val;
+            return (off >= 0) ? ByteArray.getFloatBE(primValues, off) : val;
         }
 
         public long get(String name, long val) {
             int off = getFieldOffset(name, Long.TYPE);
-            return (off >= 0) ? ByteArray.getLong(primValues, off) : val;
+            return (off >= 0) ? ByteArray.getLongBE(primValues, off) : val;
         }
 
         public double get(String name, double val) {
             int off = getFieldOffset(name, Double.TYPE);
-            return (off >= 0) ? ByteArray.getDouble(primValues, off) : val;
+            return (off >= 0) ? ByteArray.getDoubleBE(primValues, off) : val;
         }
 
         public Object get(String name, Object val) throws ClassNotFoundException {
@@ -3000,7 +3000,7 @@ public class ObjectInputStream
                                 return HEADER_BLOCKED;
                             }
                             in.readFully(hbuf, 0, 5);
-                            int len = ByteArray.getInt(hbuf, 1);
+                            int len = ByteArray.getIntBE(hbuf, 1);
                             if (len < 0) {
                                 throw new StreamCorruptedException(
                                     "illegal block data header length: " +
@@ -3299,7 +3299,7 @@ public class ObjectInputStream
             } else if (end - pos < 2) {
                 return din.readChar();
             }
-            char v = ByteArray.getChar(buf, pos);
+            char v = ByteArray.getCharBE(buf, pos);
             pos += 2;
             return v;
         }
@@ -3311,7 +3311,7 @@ public class ObjectInputStream
             } else if (end - pos < 2) {
                 return din.readShort();
             }
-            short v = ByteArray.getShort(buf, pos);
+            short v = ByteArray.getShortBE(buf, pos);
             pos += 2;
             return v;
         }
@@ -3323,7 +3323,7 @@ public class ObjectInputStream
             } else if (end - pos < 2) {
                 return din.readUnsignedShort();
             }
-            int v = ByteArray.getShort(buf, pos) & 0xFFFF;
+            int v = ByteArray.getShortBE(buf, pos) & 0xFFFF;
             pos += 2;
             return v;
         }
@@ -3335,7 +3335,7 @@ public class ObjectInputStream
             } else if (end - pos < 4) {
                 return din.readInt();
             }
-            int v = ByteArray.getInt(buf, pos);
+            int v = ByteArray.getIntBE(buf, pos);
             pos += 4;
             return v;
         }
@@ -3347,7 +3347,7 @@ public class ObjectInputStream
             } else if (end - pos < 4) {
                 return din.readFloat();
             }
-            float v = ByteArray.getFloat(buf, pos);
+            float v = ByteArray.getFloatBE(buf, pos);
             pos += 4;
             return v;
         }
@@ -3359,7 +3359,7 @@ public class ObjectInputStream
             } else if (end - pos < 8) {
                 return din.readLong();
             }
-            long v = ByteArray.getLong(buf, pos);
+            long v = ByteArray.getLongBE(buf, pos);
             pos += 8;
             return v;
         }
@@ -3371,7 +3371,7 @@ public class ObjectInputStream
             } else if (end - pos < 8) {
                 return din.readDouble();
             }
-            double v = ByteArray.getDouble(buf, pos);
+            double v = ByteArray.getDoubleBE(buf, pos);
             pos += 8;
             return v;
         }
@@ -3430,7 +3430,7 @@ public class ObjectInputStream
                 }
 
                 while (off < stop) {
-                    v[off++] = ByteArray.getChar(buf, pos);
+                    v[off++] = ByteArray.getCharBE(buf, pos);
                     pos += 2;
                 }
             }
@@ -3452,7 +3452,7 @@ public class ObjectInputStream
                 }
 
                 while (off < stop) {
-                    v[off++] = ByteArray.getShort(buf, pos);
+                    v[off++] = ByteArray.getShortBE(buf, pos);
                     pos += 2;
                 }
             }
@@ -3474,7 +3474,7 @@ public class ObjectInputStream
                 }
 
                 while (off < stop) {
-                    v[off++] = ByteArray.getInt(buf, pos);
+                    v[off++] = ByteArray.getIntBE(buf, pos);
                     pos += 4;
                 }
             }
@@ -3496,7 +3496,7 @@ public class ObjectInputStream
                 }
 
                 while (off < stop) {
-                    v[off++] = ByteArray.getFloat(buf, pos);
+                    v[off++] = ByteArray.getFloatBE(buf, pos);
                     pos += 4;
                 }
             }
@@ -3518,7 +3518,7 @@ public class ObjectInputStream
                 }
 
                 while (off < stop) {
-                    v[off++] = ByteArray.getLong(buf, pos);
+                    v[off++] = ByteArray.getLongBE(buf, pos);
                     pos += 8;
                 }
             }
@@ -3540,7 +3540,7 @@ public class ObjectInputStream
                 }
 
                 while (off < stop) {
-                    v[off++] = ByteArray.getDouble(buf, pos);
+                    v[off++] = ByteArray.getDoubleBE(buf, pos);
                     pos += 8;
                 }
             }

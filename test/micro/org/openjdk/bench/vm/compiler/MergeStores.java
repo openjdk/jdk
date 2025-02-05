@@ -23,6 +23,7 @@
 
 package org.openjdk.bench.vm.compiler;
 
+import jdk.internal.util.ByteArray;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -36,7 +37,7 @@ import org.openjdk.jmh.annotations.Warmup;
 
 
 import jdk.internal.misc.Unsafe;
-import jdk.internal.util.ByteArrayLittleEndian;
+
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -171,7 +172,7 @@ public class MergeStores {
     @Benchmark
     public byte[] store_B2_con_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
-        ByteArrayLittleEndian.setShort(aB, offset, (short)0x0201);
+        ByteArray.setShortLE(aB, offset, (short)0x0201);
         return aB;
     }
 
@@ -197,7 +198,7 @@ public class MergeStores {
 
     @Benchmark
     public byte[] store_B2_con_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setShort(aB, offset, (short)0x0201);
+        ByteArray.setShortLE(aB, offset, (short)0x0201);
         return aB;
     }
 
@@ -225,7 +226,7 @@ public class MergeStores {
     @Benchmark
     public byte[] store_B2_S_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
-        ByteArrayLittleEndian.setShort(aB, offset, vS);
+        ByteArray.setShortLE(aB, offset, vS);
         return aB;
     }
 
@@ -251,7 +252,7 @@ public class MergeStores {
 
     @Benchmark
     public byte[] store_B2_S_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setShort(aB, offset, vS);
+        ByteArray.setShortLE(aB, offset, vS);
         return aB;
     }
 
@@ -301,7 +302,7 @@ public class MergeStores {
     @Benchmark
     public byte[] store_B4_con_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
-        ByteArrayLittleEndian.setInt(aB, offset, 0x04030201);
+        ByteArray.setIntLE(aB, offset, 0x04030201);
         return aB;
     }
 
@@ -329,7 +330,7 @@ public class MergeStores {
 
     @Benchmark
     public byte[] store_B4_con_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setInt(aB, offset, 0x04030201);
+        ByteArray.setIntLE(aB, offset, 0x04030201);
         return aB;
     }
 
@@ -359,7 +360,7 @@ public class MergeStores {
     @Benchmark
     public byte[] store_B4_I_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
-        ByteArrayLittleEndian.setInt(aB, offset, vI);
+        ByteArray.setIntLE(aB, offset, vI);
         return aB;
     }
 
@@ -387,7 +388,7 @@ public class MergeStores {
 
     @Benchmark
     public byte[] store_B4_I_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setInt(aB, offset, vI);
+        ByteArray.setIntLE(aB, offset, vI);
         return aB;
     }
 
@@ -449,7 +450,7 @@ public class MergeStores {
     @Benchmark
     public byte[] store_B8_con_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
-        ByteArrayLittleEndian.setLong(aB, offset, 0x0807060504030201L);
+        ByteArray.setLongLE(aB, offset, 0x0807060504030201L);
         return aB;
     }
 
@@ -481,7 +482,7 @@ public class MergeStores {
 
     @Benchmark
     public byte[] store_B8_con_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setLong(aB, offset, 0x0807060504030201L);
+        ByteArray.setLongLE(aB, offset, 0x0807060504030201L);
         return aB;
     }
 
@@ -515,7 +516,7 @@ public class MergeStores {
     @Benchmark
     public byte[] store_B8_L_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
-        ByteArrayLittleEndian.setLong(aB, offset, vL);
+        ByteArray.setLongLE(aB, offset, vL);
         return aB;
     }
 
@@ -547,7 +548,7 @@ public class MergeStores {
 
     @Benchmark
     public byte[] store_B8_L_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setLong(aB, offset, vL);
+        ByteArray.setLongLE(aB, offset, vL);
         return aB;
     }
 
@@ -582,8 +583,8 @@ public class MergeStores {
     @Benchmark
     public byte[] store_B8_I2_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
-        ByteArrayLittleEndian.setInt(aB, offset + 0, vI);
-        ByteArrayLittleEndian.setInt(aB, offset + 4, vI);
+        ByteArray.setIntLE(aB, offset + 0, vI);
+        ByteArray.setIntLE(aB, offset + 4, vI);
         return aB;
     }
 
@@ -617,8 +618,8 @@ public class MergeStores {
 
     @Benchmark
     public byte[] store_B8_I2_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setInt(aB, offset + 0, vI);
-        ByteArrayLittleEndian.setInt(aB, offset + 4, vI);
+        ByteArray.setIntLE(aB, offset + 0, vI);
+        ByteArray.setIntLE(aB, offset + 4, vI);
         return aB;
     }
 
