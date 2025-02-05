@@ -2055,13 +2055,12 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
 
 //------------------------------ Sum & Mask ------------------------------
 
-// Returns a lower bound on the number of trailing zeros in expr, or -1 if the number
-// cannot be determined.
+// Returns a lower bound on the number of trailing zeros in expr.
 static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, BasicType bt) {
   expr = expr->uncast();
   const TypeInteger* type = phase->type(expr)->isa_integer(bt);
   if (type == nullptr) {
-    return -1;
+    return 0;
   }
 
   if (type->is_con()) {
@@ -2079,59 +2078,66 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
   if (expr->Opcode() == Op_LShift(bt)) {
     const TypeInt* shift_t = phase->type(expr->in(2))->isa_int();
     if (shift_t == nullptr || !shift_t->is_con()) {
-      return -1;
+      return 0;
     }
-    return rhs_t->get_con() & (type2aelembytes(bt) * BitsPerByte - 1);
+    // We need to truncate the shift, as it may not have been canonicalized yet.
+    // T_INT:  0..31 -> shift_mask = 4 * 8 - 1 = 31
+    // T_LONG: 0..63 -> shift_mask = 8 * 8 - 1 = 63
+    // (JLS: "Shift Operators")
+    jint shift_mask = type2aelembytes(bt) * BitsPerByte - 1;
+    return shift_t->get_con() & shift_mask;
   }
 
-  return -1;
+  return 0;
 }
 
-// Checks whether expr is neutral element (zero) under mask. We have:
-//   (AndX expr mask)
-// The X in AndX must be I or L, depending on bt.
+// Checks whether expr is neutral additive element (zero) under mask,
+// i.e. whether an expression of the form:
+//   (AndX (AddX (expr addend) mask)
+// is equivalent to
+//   (AndX addend mask)
+// for any addend.
+// (The X in AndX must be I or L, depending on bt).
 //
-// We split the bits of expr into MSB and LSB, where LSB represents
-// all trailing zeros of expr:
-//   MSB    LSB
-//   mmmmmm 0000000000
+// We check for the sufficient condition when the lowest set bit in expr is higher than
+// the highest set bit in mask, i.e.:
+// expr: eeeeee0000000000000
+// mask: 000000mmmmmmmmmmmmm
+// We do not test for other cases.
 //
-// We check if the mask has no one bits in the corresponding higher
-// bits, i.e. if the number of trailing zeros is larger or equal to the
-// bit width of the expr, i.e. if the number of leading zeros for mask
-// is greater or equal to the number of bits in MSB:
-//   000000 00000eeee -> (AndX expr mask) = 0                 -> return true
-//   0000ee eeeeeeeeee -> (AndX expr mask) = 0000xx 0000000000 -> return false
+// Correctness:
+// When mask is of the form 1111111 (2^m - 1) and expr has at least m trailing zeros,
+// then expr is a multiple of 2^m. (AndX sum mask) is equivalent to sum % (2^m) and any multiple
+// of the modulus is congruent with zero modulo 2^m (https://en.wikipedia.org/wiki/Modular_arithmetic).
 //
+// This extends to when lower bits in mask are unset:
+// if (AndX (AddX expr addend) 2^m-1) == (AndX addend 2^m-1) for any addend, then also
+//    (AndX (AddX expr addend)  mask) == (AndX addend  mask) for any addend, provided mask's MSB is at most m.
+//
+// We therefore need to only compare the position of the LSB in expr against the position
+// of the MSB in mask.
 static bool AndIL_is_zero_element_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt) {
-  jint expr_trailing_zeros = AndIL_min_trailing_zeros(phase, expr, bt);
-  if (expr_trailing_zeros < 0) {
-    return false;
-  }
-
   // When the mask is negative, it has the most significant bit set.
   const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
   if (mask_t == nullptr || mask_t->lo_as_long() < 0) {
     return false;
   }
 
-  // Is the mask always zero?
+  // When the mask is constant zero, we defer to MulNode::Value to eliminate the entire AndX operation.
   if (mask_t->hi_as_long() == 0) {
     assert(mask_t->lo_as_long() == 0, "checked earlier");
-    return true;
+    return false;
   }
-  jint mask_bit_width =  BitsPerLong - count_leading_zeros(mask_t->hi_as_long());
+
+  jint mask_bit_width = BitsPerLong - count_leading_zeros(mask_t->hi_as_long());
+  jint expr_trailing_zeros = AndIL_min_trailing_zeros(phase, expr, bt);
   return expr_trailing_zeros >= mask_bit_width;
 }
 
-// Pattern:
+// Reduces the pattern:
 //   (AndX (AddX add1 add2) mask)
-//
-// Assume:
-//   (AndX add1 mask) == 0
-//
-// ... prove why we know that we can return:
-//   (AndX add2 mask)
+// to
+//   (AndX add1 mask), if add2 is neutral wrt mask (see above), and vice versa.
 Node* MulNode::AndIL_sum_and_mask(PhaseGVN* phase, BasicType bt) {
   Node* add = in(1);
   Node* mask = in(2);
