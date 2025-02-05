@@ -839,7 +839,7 @@ bool AOTCodeSourceConfig::check_module_paths(bool has_aot_linked_classes, int in
         return true;
       } else {
         break;
-      } 
+      }
     }
   }
 
