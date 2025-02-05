@@ -430,16 +430,6 @@ public:
 private:
   void manage_satb_barrier(bool active);
 
-  enum CancelState {
-    // Normal state. GC has not been cancelled and is open for cancellation.
-    // Worker threads can suspend for safepoint.
-    CANCELLABLE,
-
-    // GC has been cancelled. Worker threads can not suspend for
-    // safepoint but must finish their work as soon as possible.
-    CANCELLED
-  };
-
   double _cancel_requested_time;
   ShenandoahSharedEnumFlag<GCCause::Cause> _cancelled_gc;
 

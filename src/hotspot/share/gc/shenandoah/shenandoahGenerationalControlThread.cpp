@@ -106,8 +106,12 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
     // The previous request was cancelled. Either it was cancelled for an allocation
     // failure (degenerated cycle), or old marking was cancelled to run a young collection.
     // In either case, the correct generation for the next cycle can be determined by
-    // the gc cause.
+    // the cancellation cause.
     request.cause = _heap->cancelled_cause();
+    if (request.cause == GCCause::_shenandoah_concurrent_gc) {
+      request.generation = _heap->young_generation();
+      _heap->clear_cancelled_gc(false);
+    }
   } else {
     request.cause = _requested_gc_cause;
     request.generation = _requested_generation;
@@ -582,24 +586,15 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
     return false;
   }
 
-  if (_heap->cancelled_cause() == GCCause::_shenandoah_stop_vm) {
+  if (_heap->cancelled_cause() == GCCause::_shenandoah_stop_vm
+    || _heap->cancelled_cause() == GCCause::_shenandoah_concurrent_gc) {
     return true;
   }
 
-  assert(_degen_point == ShenandoahGC::_degenerated_unset,
-         "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
-
-  // This use case is why we want to be able to distinguish the cancellation reason
-  // separately from other states. The control thread could observe the cancellation
-  // before the requested cause. We could use GCCause::_no_gc == CANCELLABLE, anything
-  // else to mean CANCELLED.
   if (ShenandoahCollectorPolicy::is_allocation_failure(_heap->cancelled_cause())) {
+    assert(_degen_point == ShenandoahGC::_degenerated_unset,
+           "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
     _degen_point = point;
-    return true;
-  }
-
-  if (_heap->cancelled_cause() == GCCause::_shenandoah_concurrent_gc) {
-    _requested_generation = _heap->young_generation();
     return true;
   }
 
