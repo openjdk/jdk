@@ -27,7 +27,7 @@
  * @summary C2: when a Type node becomes dead, make CFG path that uses it unreachable
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
  *                   -XX:CompileCommand=dontinline,TestGuardOfCastIIDoesntFold::notInlined
- *                   TestGuardOfCastIIDoesntFold         
+ *                   TestGuardOfCastIIDoesntFold
  */
 
 public class TestGuardOfCastIIDoesntFold {
