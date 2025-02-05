@@ -485,8 +485,11 @@ public final class Module implements AnnotatedElement {
 
         // if other is an unnamed module then check if this module reads
         // all unnamed modules
-        return !other.isNamed()
-                && ReflectionData.reads.containsKeyPair(this, ALL_UNNAMED_MODULE);
+        if (!other.isNamed()
+                && ReflectionData.reads.containsKeyPair(this, ALL_UNNAMED_MODULE))
+            return true;
+
+        return false;
     }
 
     /**
