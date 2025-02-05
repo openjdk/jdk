@@ -119,7 +119,16 @@ public:
 // To load the AOTCache in a production run, the JVM must be using a compatible set of
 // AOTCodeSources (subject to checks in AOTCodeSourceConfig::validate(bool&).
 //
-// TODO: document the validation rules here ...
+// In general, validation is performed on AOTCodeSources to ensure the code sources used
+// during AOTCache creation is the same as when the AOTCache is used during runtime.
+// Non-existent entries are recored during AOTCache creation. Those non-existent entries
+// must not exist during runtime.
+//
+// Some details on validation:
+// - the boot classpath could be appended during runtime if there's no app classpath and
+//   module path specified when an AOTCache is created;
+// - the app classpath could be appended during runtime;
+// - the module path during runtime could be a superset of the one specified during AOTCache creation.
 
 class AOTCodeSourceConfig : public CHeapObj<mtClassShared> {
   using Group = AOTCodeSource::Group;

@@ -383,16 +383,6 @@ public:
   bool validate_code_source();
   bool validate_aot_class_linking();
 
-#if 0
-  bool validate_non_existent_class_paths();
-  static void set_shared_path_table(FileMapInfo* info) {
-    _shared_path_table = info->header()->shared_path_table();
-  }
-  static void update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry* ent, TRAPS);
-  static int num_non_existent_class_paths();
-  static void record_non_existent_class_path_entry(const char* path);
-#endif
-
 #if INCLUDE_JVMTI
   // Caller needs a ResourceMark because parts of the returned cfs are resource-allocated.
   static ClassFileStream* open_stream_for_jvmti(InstanceKlass* ik, Handle class_loader, TRAPS);
