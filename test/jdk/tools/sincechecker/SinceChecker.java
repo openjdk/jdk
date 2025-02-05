@@ -113,7 +113,7 @@ ignore these tags (`-ignoreSince LongRunningProjectName`). Maybe be specified mu
 public class SinceChecker {
     private static final int JDK_CURRENT = Runtime.version().feature();
     // Ignored since tags
-    private static final Set<String> IGNORE_SINCE = new HashSet<>();
+    private static final Set<String> IGNORE_LIST = new HashSet<>();
     // Simply replace ignored since tags with the latest version
     private static final Version IGNORE_VERSION = Version.parse(Integer.toString(JDK_CURRENT));
     private final Map<String, Set<String>> LEGACY_PREVIEW_METHODS = new HashMap<>();
@@ -140,9 +140,11 @@ public class SinceChecker {
         for (int i = 1; i < args.length; i++) {
             if ("--ignoreSince".equals(args[i])) {
                 ignoreFlag = true;
+                excludeFlag = false;
                 continue;
             } else if ("--exclude".equals(args[i])) {
                 excludeFlag = true;
+                ignoreFlag = false;
                 continue;
             }
 
@@ -156,11 +158,9 @@ public class SinceChecker {
 
             if (ignoreFlag) {
                 if (args[i].contains(",")) {
-                    IGNORE_SINCE.addAll(Arrays.stream(args[i].split(","))
-                            .map(entry -> "@since " + entry.trim())
-                            .toList());
+                    IGNORE_LIST.addAll(Arrays.asList(args[i].split(",")));
                 } else {
-                    IGNORE_SINCE.add("@since " + args[i]);
+                    IGNORE_LIST.add(args[i]);
                 }
             }
         }
@@ -476,17 +476,15 @@ public class SinceChecker {
     }
 
     private Version extractSinceVersionFromText(String documentation) {
-        for (String ignoreSince : IGNORE_SINCE) {
-            if (documentation.contains(ignoreSince)) {
-                return IGNORE_VERSION;
-            }
-        }
-
         Pattern pattern = Pattern.compile("@since\\s+(\\S+)");
         Matcher matcher = pattern.matcher(documentation);
 
         if (matcher.find()) {
             String versionString = matcher.group(1);
+
+            if (IGNORE_LIST.contains(versionString)) {
+                return IGNORE_VERSION;
+            }
 
             // Handle `1.x.x` format
             if (versionString.matches("1\\.\\d+\\.\\d+")) {
