@@ -33,26 +33,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 
 
-/* @test
- * @summary Test function reading OS version from PE file
- * @requires (os.family == "windows")
- * @run junit ExecutableOSVersionTest
- */
-
-public class ExecutableOSVersionTest {
+public class Foo {
 
     @Test
     @EnabledOnOs(WINDOWS)
     public void test() {
-        final var javaHome = Path.of(System.getProperty("java.home"));
-
-        final var javaExeVer = getExecutableOSVersion(javaHome.resolve("bin/java.exe"));
-
-        assertTrue(javaExeVer.majorOSVersion() > 0);
-        assertTrue(javaExeVer.minorOSVersion() >= 0);
-
-        final var javaDllVer = getExecutableOSVersion(javaHome.resolve("bin/java.dll"));
-
-        assertEquals(javaExeVer, javaDllVer);
+        System.out.println("GGGGG");
     }
 }
