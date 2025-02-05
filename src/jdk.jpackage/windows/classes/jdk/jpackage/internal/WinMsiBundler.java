@@ -227,7 +227,8 @@ public class WinMsiBundler  extends AbstractBundler {
         appImageBundler = new WinAppBundler().setDependentTask(true);
         wixFragments = Stream.of(
                 Map.entry("bundle.wxf", new WixAppImageFragmentBuilder()),
-                Map.entry("ui.wxf", new WixUiFragmentBuilder())
+                Map.entry("ui.wxf", new WixUiFragmentBuilder()),
+                Map.entry("os-condition.wxf", OSVersionCondition.createWixFragmentBuilder())
         ).<WixFragmentBuilder>map(e -> {
             e.getValue().setOutputFileName(e.getKey());
             return e.getValue();
