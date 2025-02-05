@@ -40,12 +40,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TestNoNULL {
-    private static final List<Path> files = new ArrayList<>();
     private static final Set<String> excludedSourceFiles = new HashSet<>();
     private static final Set<String> excludedTestFiles = new HashSet<>();
     private static final Set<String> excludedTestExtensions = Set.of(".c", ".java", ".jar");
-    private static final Pattern NULL_PATTERN = Pattern.compile("\\bNULL\\b");
+    private static final Pattern NULL_PATTERN = Pattern.compile("(?<![\\p{Alnum}_])NULL(?![\\p{Alnum}_])");
     private static Path dir = Paths.get(System.getProperty("test.src"));
+    private static int errorCount = 0;
 
     public static void main(String[] args) throws IOException {
         int maxIter = 20;
@@ -65,15 +65,8 @@ public class TestNoNULL {
         processFiles(srcPath, excludedSourceFiles, false);
         processFiles(testPath, excludedTestFiles, true);
 
-        boolean foundNull = false;
-        for (Path file : files) {
-            if (checkForNull(file)) {
-                foundNull = true;
-            }
-        }
-
-        if (foundNull) {
-            throw new RuntimeException("Found usage of 'NULL' in source files. See errors above.");
+        if (errorCount > 0) {
+            throw new RuntimeException("Test found " + errorCount + " usages of 'NULL' in source files. See errors above.");
         }
     }
 
@@ -82,8 +75,7 @@ public class TestNoNULL {
                 "src/hotspot/share/prims/jvmti.xml",
                 "src/hotspot/share/prims/jvmti.xsl",
                 "src/hotspot/share/utilities/globalDefinitions_visCPP.hpp",
-                "src/hotspot/share/utilities/globalDefinitions_gcc.hpp",
-                "src/hotspot/os/windows/os_windows.cpp" //todo: remove after JDK-8349417
+                "src/hotspot/os/windows/os_windows.cpp" //TODO: remove after JDK-8349417
         );
 
         List<String> testExclusions = List.of(
@@ -91,16 +83,18 @@ public class TestNoNULL {
                 "test/hotspot/jtreg/vmTestbase/nsk/share/jni/README"
         );
 
-        sourceExclusions.forEach(relativePath ->  excludedSourceFiles.add(rootDir.resolve(relativePath).normalize().toString()));
-        testExclusions.forEach(relativePath ->  excludedTestFiles.add(rootDir.resolve(relativePath).normalize().toString()));
+        sourceExclusions.forEach(relativePath ->
+                excludedSourceFiles.add(rootDir.resolve(relativePath).normalize().toString()));
+        testExclusions.forEach(relativePath ->
+                excludedTestFiles.add(rootDir.resolve(relativePath).normalize().toString()));
     }
 
     private static void processFiles(Path directory, Set<String> excludedFiles, boolean excludeExtensions) throws IOException {
         Files.walkFileTree(directory, new SimpleFileVisitor<>() {
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 if (isIncluded(file, excludedFiles, excludeExtensions)) {
-                    files.add(file);
+                    checkForNull(file);
                 }
                 return FileVisitResult.CONTINUE;
             }
@@ -130,17 +124,15 @@ public class TestNoNULL {
         return true;
     }
 
-    private static boolean checkForNull(Path path) throws IOException {
-        boolean found = false;
+    private static void checkForNull(Path path) throws IOException {
         List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
 
         for (int i = 0; i < lines.size(); i++) {
             Matcher matcher = NULL_PATTERN.matcher(lines.get(i));
             if (matcher.find()) {
-                found = true;
+                errorCount++;
                 System.err.printf("Error: 'NULL' found in %s at line %d:%n%s%n", path, i + 1, lines.get(i));
             }
         }
-        return found;
     }
 }
