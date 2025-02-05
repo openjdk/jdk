@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,18 @@
  * @bug 6618387
  * @summary SSL client sessions do not close cleanly. A TCP reset occurs
  *      instead of a close_notify alert.
- * @run main/othervm CloseKeepAliveCached
+ * @library /test/lib
  *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
+ * @run main/othervm CloseKeepAliveCached false
+ * @run main/othervm CloseKeepAliveCached true
  *
- * @ignore
- *    After run the test manually, at the end of the debug output,
+ * @comment SunJSSE does not support dynamic system properties, no way to re-use
+ *    system properties in samevm/agentvm mode.
  *    if "MainThread, called close()" found, the test passed. Otherwise,
  *    if "Keep-Alive-Timer: called close()", the test failed.
  */
+
+import jdk.test.lib.Asserts;
 
 import java.net.*;
 import java.util.*;
@@ -43,6 +45,8 @@ import java.io.*;
 import javax.net.ssl.*;
 
 public class CloseKeepAliveCached {
+    public static final String CLOSE_THE_SSL_CONNECTION_PASSIVE = "close the SSL connection (passive)";
+
     static Map cookies;
     ServerSocket ss;
 
@@ -87,53 +91,48 @@ public class CloseKeepAliveCached {
      */
     void doServerSide() throws Exception {
         SSLServerSocketFactory sslssf =
-            (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+                (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+                (SSLServerSocket) sslssf.createServerSocket(serverPort);
         serverPort = sslServerSocket.getLocalPort();
 
         /*
          * Signal Client, we're ready for his connect.
          */
         serverReady = true;
-        SSLSocket sslSocket = null;
-        try {
-            sslSocket = (SSLSocket) sslServerSocket.accept();
-            for (int i = 0; i < 3 && !sslSocket.isClosed(); i++) {
-                // read request
-                InputStream is = sslSocket.getInputStream ();
+        SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
 
-                BufferedReader r = new BufferedReader(
-                                                new InputStreamReader(is));
-                String x;
-                while ((x=r.readLine()) != null) {
-                    if (x.length() ==0) {
-                        break;
-                    }
+        // getting input and output streams
+        InputStream is = sslSocket.getInputStream();
+        BufferedReader r = new BufferedReader(
+                new InputStreamReader(is));
+        PrintStream out = new PrintStream(
+                new BufferedOutputStream(
+                        sslSocket.getOutputStream()));
+
+        for (int i = 0; i < 3 && !sslSocket.isClosed(); i++) {
+            // read request
+            String x;
+            while ((x = r.readLine()) != null) {
+                if (x.length() == 0) {
+                    break;
                 }
-
-
-                PrintStream out = new PrintStream(
-                                 new BufferedOutputStream(
-                                    sslSocket.getOutputStream() ));
-
-                /* send the header */
-                out.print("HTTP/1.1 200 OK\r\n");
-                out.print("Keep-Alive: timeout=15, max=100\r\n");
-                out.print("Connection: Keep-Alive\r\n");
-                out.print("Content-Type: text/html; charset=iso-8859-1\r\n");
-                out.print("Content-Length: 9\r\n");
-                out.print("\r\n");
-                out.print("Testing\r\n");
-                out.flush();
-
-                Thread.sleep(50);
             }
-            sslSocket.close();
-            sslServerSocket.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+
+            /* send the header */
+            out.print("HTTP/1.1 200 OK\r\n");
+            out.print("Keep-Alive: timeout=15, max=100\r\n");
+            out.print("Connection: Keep-Alive\r\n");
+            out.print("Content-Type: text/html; charset=iso-8859-1\r\n");
+            out.print("Content-Length: 9\r\n");
+            out.print("\r\n");
+            out.print("Testing\r\n");
+            out.flush();
+
+            Thread.sleep(50);
         }
+        sslSocket.close();
+        sslServerSocket.close();
     }
 
     /*
@@ -151,7 +150,7 @@ public class CloseKeepAliveCached {
         }
 
         HostnameVerifier reservedHV =
-            HttpsURLConnection.getDefaultHostnameVerifier();
+                HttpsURLConnection.getDefaultHostnameVerifier();
         try {
             HttpsURLConnection http = null;
 
@@ -208,25 +207,66 @@ public class CloseKeepAliveCached {
     volatile Exception clientException = null;
 
     public static void main(String args[]) throws Exception {
+        separateServerThread = Boolean.parseBoolean(args[0]);
+        System.out.printf("separateServerThread: %s%n", separateServerThread);
+
         String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
+                System.getProperty("test.src", "./") + "/" + pathToStores +
+                        "/" + keyStoreFile;
         String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
+                System.getProperty("test.src", "./") + "/" + pathToStores +
+                        "/" + trustStoreFile;
 
         System.setProperty("javax.net.ssl.keyStore", keyFilename);
         System.setProperty("javax.net.ssl.keyStorePassword", passwd);
         System.setProperty("javax.net.ssl.trustStore", trustFilename);
         System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
-        if (debug)
-            System.setProperty("javax.net.debug", "all");
+        System.setProperty("javax.net.debug", "all");
+
+        // setting up the error stream for further analysis
+        var errorCapture = new ByteArrayOutputStream();
+        var outputStream = new PrintStream(errorCapture);
+        var originalErr = System.err; // saving the initial error stream, so it can be restored
+        System.setErr(outputStream);
 
         /*
          * Start the tests.
          */
-        new CloseKeepAliveCached();
+        try {
+            new CloseKeepAliveCached();
+        }finally {
+            // this will allow the error stream to be printed in case of an exception inside for debugging purposes
+            System.setErr(originalErr);
+            if (debug) {
+                System.err.println(errorCapture);
+            }
+        }
+
+        // Looking for the result in the error stream, as it's used by debug (who called close SSL connection)
+        // example of pass: javax.net.ssl|DEBUG|91|MainThread|...|close the SSL connection (passive)
+        // example of fail: javax.net.ssl|DEBUG|C1|Keep-Alive-Timer|...|close the SSL connection (passive)
+        var isTestPassed = false;
+        for (final var line : errorCapture.toString().split("\n")) {
+            if (line.contains(CLOSE_THE_SSL_CONNECTION_PASSIVE) &&
+                    line.contains("MainThread")) {
+
+                System.out.println("close was called by the MainThread: ");
+                System.out.println(line);
+
+                isTestPassed = true;
+                break;
+            } else if (line.contains(CLOSE_THE_SSL_CONNECTION_PASSIVE) &&
+                    line.contains("Keep-Alive-Timer")) {
+
+                System.out.println("close was called by the Keep-Alive-Timer: ");
+                System.out.println(line);
+
+                throw new RuntimeException("SSL connection was closed by the Keep-Alive-Timer. Should have been MainThread");
+            }
+        }
+
+        Asserts.assertTrue(isTestPassed, "Test pass result");
     }
 
     Thread clientThread = null;
