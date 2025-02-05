@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8299576
+ * @bug 8349503
  * @library /test/lib
  * @modules java.base/jdk.internal.util
  * @summary Basic contracts for ByteArray types and functionalities
