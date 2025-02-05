@@ -6075,6 +6075,17 @@ CountedLoopEndNode* CountedLoopNode::find_pre_loop_end() {
   return pre_end;
 }
 
+Node* CountedLoopNode::uncasted_init_trip(bool uncast) {
+  Node* init = init_trip();
+  if (uncast && init->is_CastII()) {
+    // skip over the cast added by PhaseIdealLoop::cast_incr_before_loop() when pre/post/main loops are created because
+    // it can get in the way of type propagation
+    assert(init->as_CastII()->carry_dependency() && skip_assertion_predicates_with_halt() == init->in(0), "casted iv phi from pre loop expected");
+    init = init->in(1);
+  }
+  return init;
+}
+
 //------------------------------get_late_ctrl----------------------------------
 // Compute latest legal control.
 Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {
