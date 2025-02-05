@@ -34,6 +34,8 @@ class JavaThread;
 class CDSConfig : public AllStatic {
 #if INCLUDE_CDS
   static bool _is_dumping_static_archive;
+  static bool _is_dumping_preimage_static_archive;
+  static bool _is_dumping_final_static_archive;
   static bool _is_dumping_dynamic_archive;
   static bool _is_using_optimized_module_handling;
   static bool _is_dumping_full_module_graph;
@@ -57,7 +59,11 @@ class CDSConfig : public AllStatic {
   static void init_shared_archive_paths();
 
   static void check_flag_alias(bool alias_is_default, const char* alias_name);
-  static void check_flag_aliases();
+  static void check_aot_flags();
+  static void check_aotmode_off();
+  static void check_aotmode_auto_or_on();
+  static void check_aotmode_record();
+  static void check_aotmode_create();
 
 public:
   // Used by jdk.internal.misc.CDS.getCDSConfigStatus();
@@ -87,6 +93,10 @@ public:
   // static_archive
   static bool is_dumping_static_archive()                    { return CDS_ONLY(_is_dumping_static_archive) NOT_CDS(false); }
   static void enable_dumping_static_archive()                { CDS_ONLY(_is_dumping_static_archive = true); }
+
+  static bool is_dumping_classic_static_archive()            NOT_CDS_RETURN_(false);
+  static bool is_dumping_preimage_static_archive()           NOT_CDS_RETURN_(false);
+  static bool is_dumping_final_static_archive()              NOT_CDS_RETURN_(false);
 
   // dynamic_archive
   static bool is_dumping_dynamic_archive()                   { return CDS_ONLY(_is_dumping_dynamic_archive) NOT_CDS(false); }

@@ -26,6 +26,7 @@
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLinkedClassTable.hpp"
+#include "cds/archiveUtils.inline.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -43,6 +44,27 @@ bool AOTLinkedClassBulkLoader::_boot2_completed = false;
 bool AOTLinkedClassBulkLoader::_platform_completed = false;
 bool AOTLinkedClassBulkLoader::_app_completed = false;
 bool AOTLinkedClassBulkLoader::_all_completed = false;
+
+Array<InstanceKlass*>* AOTLinkedClassBulkLoader::_unregistered_classes_from_preimage = nullptr;
+
+void AOTLinkedClassBulkLoader::record_unregistered_classes() {
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    GrowableArray<InstanceKlass*> unreg_classes;
+    GrowableArray<Klass*>* klasses = ArchiveBuilder::current()->klasses();
+    for (int i = 0; i < klasses->length(); i++) {
+      Klass* k = klasses->at(i);
+      if (k->is_instance_klass()) {
+        InstanceKlass* ik = InstanceKlass::cast(k);
+        if (ik->is_shared_unregistered_class()) {
+          unreg_classes.append((InstanceKlass*)ArchiveBuilder::get_buffered_klass(ik));
+        }
+      }
+    }
+    _unregistered_classes_from_preimage = ArchiveUtils::archive_array(&unreg_classes);
+  } else {
+    _unregistered_classes_from_preimage = nullptr;
+  }
+}
 
 void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc, bool is_static_archive) {
   AOTLinkedClassTable::get(is_static_archive)->serialize(soc);

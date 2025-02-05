@@ -38,6 +38,7 @@
 #include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
+#include "cds/finalImageRecipes.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -499,6 +500,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   HeapShared::serialize_tables(soc);
   SystemDictionaryShared::serialize_dictionary_headers(soc);
   AOTLinkedClassBulkLoader::serialize(soc, true);
+  FinalImageRecipes::serialize(soc, true);
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
@@ -619,6 +621,10 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 
   SystemDictionaryShared::write_to_archive();
   AOTClassLinker::write_to_archive();
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    FinalImageRecipes::record_recipes();
+  }
+  AOTLinkedClassBulkLoader::record_unregistered_classes();
   MetaspaceShared::write_method_handle_intrinsics();
 
   // Write lambform lines into archive
@@ -634,7 +640,9 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 }
 
 void VM_PopulateDumpSharedSpace::doit() {
-  guarantee(!CDSConfig::is_using_archive(), "We should not be using an archive when we dump");
+  if (!CDSConfig::is_dumping_final_static_archive()) {
+    guarantee(!CDSConfig::is_using_archive(), "We should not be using an archive when we dump");
+  }
 
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
@@ -688,7 +696,13 @@ void VM_PopulateDumpSharedSpace::doit() {
   CppVtables::zero_archived_vtables();
 
   // Write the archive file
-  const char* static_archive = CDSConfig::static_archive_path();
+  const char* static_archive;
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    static_archive = AOTCache;
+    FileMapInfo::free_current_info();
+  } else {
+    static_archive = CDSConfig::static_archive_path();
+  }
   assert(static_archive != nullptr, "SharedArchiveFile not set?");
   _map_info = new FileMapInfo(static_archive, true);
   _map_info->populate_header(MetaspaceShared::core_region_alignment());
@@ -751,7 +765,7 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
 void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
   AOTClassLinker::initialize();
 
-  if (!jcmd_request) {
+  if (!jcmd_request && !CDSConfig::is_dumping_final_static_archive()) {
     LambdaFormInvokers::regenerate_holder_classes(CHECK);
   }
 
@@ -786,6 +800,10 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
     // Class linking includes verification which may load more classes.
     // Keep scanning until we have linked no more classes.
   }
+
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    FinalImageRecipes::apply_recipes(CHECK);
+  }
 }
 
 void MetaspaceShared::prepare_for_dumping() {
@@ -799,6 +817,8 @@ void MetaspaceShared::prepare_for_dumping() {
 void MetaspaceShared::preload_and_dump(TRAPS) {
   CDSConfig::DumperThreadMark dumper_thread_mark(THREAD);
   ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
   StaticArchiveBuilder builder;
   preload_and_dump_impl(builder, THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -814,12 +834,17 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
   }
 
   if (!CDSConfig::old_cds_flags_used()) {
-    // The JLI launcher only recognizes the "old" -Xshare:dump flag.
-    // When the new -XX:AOTMode=create flag is used, we can't return
-    // to the JLI launcher, as the launcher will fail when trying to
-    // run the main class, which is not what we want.
-    tty->print_cr("AOTCache creation is complete: %s", AOTCache);
-    vm_exit(0);
+    if (CDSConfig::is_dumping_preimage_static_archive()) {
+      tty->print_cr("AOTConfiguration recorded: %s", AOTConfiguration);
+      vm_exit(0);
+    } else {
+      // The JLI launcher only recognizes the "old" -Xshare:dump flag.
+      // When the new -XX:AOTMode=create flag is used, we can't return
+      // to the JLI launcher, as the launcher will fail when trying to
+      // run the main class, which is not what we want.
+      tty->print_cr("AOTCache creation is complete: %s", AOTCache);
+      vm_exit(0);
+    }
   }
 }
 
@@ -919,12 +944,26 @@ void MetaspaceShared::exercise_runtime_cds_code(TRAPS) {
 }
 
 void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) {
-  preload_classes(CHECK);
+  if (CDSConfig::is_dumping_classic_static_archive()) {
+    // We are running with -Xshare:dump
+    preload_classes(CHECK);
 
-  if (SharedArchiveConfigFile) {
-    log_info(cds)("Reading extra data from %s ...", SharedArchiveConfigFile);
-    read_extra_data(THREAD, SharedArchiveConfigFile);
-    log_info(cds)("Reading extra data: done.");
+    if (SharedArchiveConfigFile) {
+      log_info(cds)("Reading extra data from %s ...", SharedArchiveConfigFile);
+      read_extra_data(THREAD, SharedArchiveConfigFile);
+      log_info(cds)("Reading extra data: done.");
+    }
+  }
+
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    log_info(cds)("Reading lambda form invokers of in JDK default classlist ...");
+    char default_classlist[JVM_MAXPATHLEN];
+    get_default_classlist(default_classlist, sizeof(default_classlist));
+    struct stat statbuf;
+    if (os::stat(default_classlist, &statbuf) == 0) {
+      ClassListParser::parse_classlist(default_classlist,
+                                       ClassListParser::_parse_lambda_forms_invokers_only, CHECK);
+    }
   }
 
   // Rewrite and link classes
@@ -1012,7 +1051,13 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
   JavaThread* THREAD = current; // For exception macros.
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  if (!ik->is_shared() && ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
+
+  if (ik->is_shared() && !CDSConfig::is_dumping_final_static_archive()) {
+    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
+    return false;
+  }
+
+  if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == nullptr) {

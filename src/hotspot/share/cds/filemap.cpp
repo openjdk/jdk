@@ -150,6 +150,13 @@ FileMapInfo::~FileMapInfo() {
   }
 }
 
+void FileMapInfo::free_current_info() {
+  assert(CDSConfig::is_dumping_final_static_archive(), "only supported in this mode");
+  assert(_current_info != nullptr, "sanity");
+  delete _current_info;
+  assert(_current_info == nullptr, "sanity"); // Side effect expected from the above "delete" operator.
+}
+
 void FileMapInfo::populate_header(size_t core_region_alignment) {
   assert(_header == nullptr, "Sanity check");
   size_t c_header_size;
@@ -197,7 +204,13 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   set_base_archive_name_offset((unsigned int)base_archive_name_offset);
   set_base_archive_name_size((unsigned int)base_archive_name_size);
   set_common_app_classpath_prefix_size((unsigned int)common_app_classpath_prefix_size);
-  set_magic(CDSConfig::is_dumping_dynamic_archive() ? CDS_DYNAMIC_ARCHIVE_MAGIC : CDS_ARCHIVE_MAGIC);
+  if (CDSConfig::is_dumping_dynamic_archive()) {
+    set_magic(CDS_DYNAMIC_ARCHIVE_MAGIC);
+  } else if (CDSConfig::is_dumping_preimage_static_archive()) {
+    set_magic(CDS_PREIMAGE_ARCHIVE_MAGIC);
+  } else {
+    set_magic(CDS_ARCHIVE_MAGIC);
+  }
   set_version(CURRENT_CDS_ARCHIVE_VERSION);
 
   if (!info->is_static() && base_archive_name_size != 0) {
@@ -1171,7 +1184,8 @@ public:
     }
 
     if (gen_header._magic != CDS_ARCHIVE_MAGIC &&
-        gen_header._magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
+        gen_header._magic != CDS_DYNAMIC_ARCHIVE_MAGIC &&
+        gen_header._magic != CDS_PREIMAGE_ARCHIVE_MAGIC) {
       log_warning(cds)("The shared archive file has a bad magic number: %#x", gen_header._magic);
       return false;
     }
@@ -1226,6 +1240,18 @@ public:
     return _base_archive_name;
   }
 
+  bool is_static_archive() const {
+    return _header->_magic == CDS_ARCHIVE_MAGIC;
+  }
+
+  bool is_dynamic_archive() const {
+    return _header->_magic == CDS_DYNAMIC_ARCHIVE_MAGIC;
+  }
+
+  bool is_preimage_static_archive() const {
+    return _header->_magic == CDS_PREIMAGE_ARCHIVE_MAGIC;
+  }
+
  private:
   bool check_header_crc() const {
     if (VerifySharedSpaces) {
@@ -1251,7 +1277,8 @@ public:
                                  name_offset, name_size);
       return false;
     }
-    if (_header->_magic == CDS_ARCHIVE_MAGIC) {
+
+    if (is_static_archive() || is_preimage_static_archive()) {
       if (name_offset != 0) {
         log_warning(cds)("static shared archive must have zero _base_archive_name_offset");
         return false;
@@ -1261,7 +1288,7 @@ public:
         return false;
       }
     } else {
-      assert(_header->_magic == CDS_DYNAMIC_ARCHIVE_MAGIC, "must be");
+      assert(is_dynamic_archive(), "must be");
       if ((name_size == 0 && name_offset != 0) ||
           (name_size != 0 && name_offset == 0)) {
         // If either is zero, both must be zero. This indicates that we are using the default base archive.
@@ -1309,7 +1336,12 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
     return false;
   }
   GenericCDSFileMapHeader* header = file_helper.get_generic_file_header();
-  if (header->_magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
+  switch (header->_magic) {
+  case CDS_PREIMAGE_ARCHIVE_MAGIC:
+    return false; // This is a binary config file, not a proper archive
+  case CDS_DYNAMIC_ARCHIVE_MAGIC:
+    break;
+  default:
     assert(header->_magic == CDS_ARCHIVE_MAGIC, "must be");
     if (AutoCreateSharedArchive) {
      log_warning(cds)("AutoCreateSharedArchive is ignored because %s is a static archive", archive_name);
@@ -1327,6 +1359,14 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
   return true;
 }
 
+bool FileMapInfo::is_preimage_static_archive(const char* file) {
+  FileHeaderHelper file_helper(file, false);
+  if (!file_helper.initialize()) {
+    return false;
+  }
+  return file_helper.is_preimage_static_archive();
+}
+
 // Read the FileMapInfo information from the file.
 
 bool FileMapInfo::init_from_file(int fd) {
@@ -1338,7 +1378,10 @@ bool FileMapInfo::init_from_file(int fd) {
   GenericCDSFileMapHeader* gen_header = file_helper.get_generic_file_header();
 
   if (_is_static) {
-    if (gen_header->_magic != CDS_ARCHIVE_MAGIC) {
+    if ((gen_header->_magic == CDS_ARCHIVE_MAGIC) ||
+        (gen_header->_magic == CDS_PREIMAGE_ARCHIVE_MAGIC && CDSConfig::is_dumping_final_static_archive())) {
+      // Good
+    } else {
       log_warning(cds)("Not a base shared archive: %s", _full_path);
       return false;
     }
@@ -1429,7 +1472,9 @@ bool FileMapInfo::open_for_read() {
   if (_file_open) {
     return true;
   }
-  log_info(cds)("trying to map %s", _full_path);
+  const char* info = CDSConfig::is_dumping_final_static_archive() ?
+    "AOTConfiguration file " : "";
+  log_info(cds)("trying to map %s%s", info, _full_path);
   int fd = os::open(_full_path, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
     if (errno == ENOENT) {
@@ -1440,7 +1485,9 @@ bool FileMapInfo::open_for_read() {
     }
     return false;
   } else {
-    log_info(cds)("Opened archive %s.", _full_path);
+    const char* type = CDSConfig::is_dumping_final_static_archive() ?
+        "AOTConfiguration file" : "archive";
+    log_info(cds)("Opened %s %s.", type, _full_path);
   }
 
   _fd = fd;
@@ -1453,18 +1500,23 @@ bool FileMapInfo::open_for_read() {
 void FileMapInfo::open_for_write() {
   LogMessage(cds) msg;
   if (msg.is_info()) {
-    msg.info("Dumping shared data to file: ");
+    if (CDSConfig::is_dumping_preimage_static_archive()) {
+      msg.info("Writing binary AOTConfiguration file: ");
+    } else {
+      msg.info("Dumping shared data to file: ");
+    }
     msg.info("   %s", _full_path);
   }
 
 #ifdef _WINDOWS  // On Windows, need WRITE permission to remove the file.
-    chmod(_full_path, _S_IREAD | _S_IWRITE);
+  chmod(_full_path, _S_IREAD | _S_IWRITE);
 #endif
 
   // Use remove() to delete the existing file because, on Unix, this will
   // allow processes that have it open continued access to the file.
   remove(_full_path);
-  int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
+  int mode = CDSConfig::is_dumping_preimage_static_archive() ? 0666 : 0444;
+  int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, mode);
   if (fd < 0) {
     log_error(cds)("Unable to create shared archive file %s: (%s).", _full_path,
                    os::strerror(errno));
@@ -2649,7 +2701,7 @@ bool FileMapHeader::validate() {
     return false;
   }
 
-  if (!_use_optimized_module_handling) {
+  if (!_use_optimized_module_handling && !CDSConfig::is_dumping_final_static_archive()) {
     CDSConfig::stop_using_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
   }
