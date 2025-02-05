@@ -42,7 +42,6 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 final class P11HKDF extends KDFSpi {
     private final Token token;
     private final P11SecretKeyFactory.HKDFKeyInfo svcKi;
-    private final long hmacMechanism;
     private static final SecretKey EMPTY_KEY = new SecretKey() {
         @Override
         public String getAlgorithm() {
@@ -68,13 +67,21 @@ final class P11HKDF extends KDFSpi {
         return null;
     }
 
-    P11HKDF(Token token, String algorithm, long hmacMechanism,
-            KDFParameters kdfParameters)
+    private void checkMechanismEnabled(long mechanism) {
+        if (!token.provider.config.isEnabled(mechanism)) {
+            throw new ProviderException("Mechanism " +
+                    Functions.getMechanismName(mechanism) +
+                    " is disabled through 'enabledMechanisms' or " +
+                    "'disabledMechanisms' in " + token.provider.getName() +
+                    " configuration.");
+        }
+    }
+
+    P11HKDF(Token token, String algorithm, KDFParameters kdfParameters)
             throws InvalidAlgorithmParameterException {
         super(requireNull(kdfParameters,
                 algorithm + " does not support parameters"));
         this.token = token;
-        this.hmacMechanism = hmacMechanism;
         this.svcKi = P11SecretKeyFactory.getHKDFKeyInfo(algorithm);
         assert this.svcKi != null : "Unsupported HKDF algorithm " + algorithm;
     }
@@ -116,6 +123,9 @@ final class P11HKDF extends KDFSpi {
         boolean isData = retType == byte[].class;
         assert isData || retType == SecretKey.class : "Invalid return type.";
         assert alg != null : "The algorithm cannot be null.";
+
+        long mechanism = isData ? CKM_HKDF_DATA : CKM_HKDF_DERIVE;
+        checkMechanismEnabled(mechanism);
 
         switch (derivationSpec) {
             case HKDFParameterSpec.Extract anExtract -> {
@@ -182,13 +192,12 @@ final class P11HKDF extends KDFSpi {
         try {
             session = token.getOpSession();
             CK_HKDF_PARAMS params = new CK_HKDF_PARAMS(isExtract, isExpand,
-                    hmacMechanism, saltType, saltBytes, p11SaltKey != null ?
+                    svcKi.hmacMech, saltType, saltBytes, p11SaltKey != null ?
                     p11SaltKey.getKeyID() : 0L, info);
             attrs = token.getAttributes(O_GENERATE, derivedKeyClass,
                     derivedKeyType, attrs);
             long derivedObjectID = token.p11.C_DeriveKey(session.id(),
-                    new CK_MECHANISM(isData ? CKM_HKDF_DATA : CKM_HKDF_DERIVE,
-                    params), baseKeyID, attrs);
+                    new CK_MECHANISM(mechanism, params), baseKeyID, attrs);
             Object ret;
             if (isData) {
                 try {
@@ -249,13 +258,7 @@ final class P11HKDF extends KDFSpi {
         protected final P11Key.P11SecretKey p11Merge(
                 P11Key.P11SecretKey baseKey, CK_MECHANISM ckMech,
                 int derivedKeyLen) {
-            if (!token.provider.config.isEnabled(ckMech.mechanism)) {
-                throw new ProviderException("Mechanism " +
-                        Functions.getMechanismName(ckMech.mechanism) +
-                        " is either not supported in the token or " +
-                        "disabled through 'disabledMechanisms' in " +
-                        token.provider.getName() + " configuration.");
-            }
+            checkMechanismEnabled(ckMech.mechanism);
             Session session = null;
             long baseKeyID = baseKey.getKeyID();
             try {

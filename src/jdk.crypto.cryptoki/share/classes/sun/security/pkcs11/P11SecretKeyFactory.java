@@ -147,10 +147,12 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
 
     static final class HKDFKeyInfo extends KeyInfo {
         public static final long UNKNOWN_KEY_TYPE = -1;
+        public final long hmacMech;
         public final int prkLen;
 
         HKDFKeyInfo(String algo, HMACKeyInfo hmacKi) {
             super(algo, UNKNOWN_KEY_TYPE);
+            hmacMech = hmacKi.mech;
             prkLen = hmacKi.keyLen;
         }
     }

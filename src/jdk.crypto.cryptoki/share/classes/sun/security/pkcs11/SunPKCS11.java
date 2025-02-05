@@ -1080,12 +1080,12 @@ public final class SunPKCS11 extends AuthProvider {
         d(KG, "SunTls12Prf", "sun.security.pkcs11.P11TlsPrfGenerator",
                 m(CKM_TLS_MAC));
 
-        d(KDF, "HKDF-SHA256", P11HKDF, m(CKM_SHA256_HMAC),
-                m(CKM_HKDF_DERIVE, CKM_HKDF_DATA));
-        d(KDF, "HKDF-SHA384", P11HKDF, m(CKM_SHA384_HMAC),
-                m(CKM_HKDF_DERIVE, CKM_HKDF_DATA));
-        d(KDF, "HKDF-SHA512", P11HKDF, m(CKM_SHA512_HMAC),
-                m(CKM_HKDF_DERIVE, CKM_HKDF_DATA));
+        d(KDF, "HKDF-SHA256", P11HKDF, m(CKM_HKDF_DERIVE, CKM_HKDF_DATA),
+                m(CKM_SHA256_HMAC));
+        d(KDF, "HKDF-SHA384", P11HKDF, m(CKM_HKDF_DERIVE, CKM_HKDF_DATA),
+                m(CKM_SHA384_HMAC));
+        d(KDF, "HKDF-SHA512", P11HKDF, m(CKM_HKDF_DERIVE, CKM_HKDF_DATA),
+                m(CKM_SHA512_HMAC));
     }
 
     // background thread that periodically checks for token insertion
@@ -1522,8 +1522,7 @@ public final class SunPKCS11 extends AuthProvider {
                 }
             } else if (type == KDF) {
                 try {
-                    return new P11HKDF(token, algorithm, mechanism,
-                            (KDFParameters) param);
+                    return new P11HKDF(token, algorithm, (KDFParameters) param);
                 } catch (ClassCastException |
                          InvalidAlgorithmParameterException e) {
                     throw new NoSuchAlgorithmException(
