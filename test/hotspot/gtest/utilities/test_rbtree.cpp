@@ -389,7 +389,7 @@ public:
     EXPECT_EQ(count, 0);
   }
 
-    void test_node_next() {
+  void test_node_next() {
     RBTreeInt _tree;
     using Node = RBTreeInt::RBNode;
     constexpr int num_nodes = 100;
@@ -457,9 +457,9 @@ public:
     }
 
     // After deleting, values should have remained consistant
-    // rbtree.visit_in_order([&](Node* node) {
-    //   EXPECT_EQ(node, node->val());
-    // });
+    rbtree.visit_in_order([&](Tree::RBNode* node) {
+      EXPECT_EQ(node, node->val());
+    });
   }
 
   void test_cursor_empty_tree() {
@@ -748,12 +748,12 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
     }
   }
   { // Make a very large tree and verify at the end
-  struct Nothing {};
-    RBTreeCHeap<int, Nothing, Cmp, mtOther> rbtree;
-    constexpr int one_hundred_thousand = 100000;
-    for (int i = 0; i < one_hundred_thousand; i++) {
-      rbtree.upsert(i, Nothing());
+    RBTreeCHeap<int, void, Cmp, mtOther> rbtree;
+    constexpr size_t one_hundred_thousand = 100000;
+    for (size_t i = 0; i < one_hundred_thousand; i++) {
+      rbtree.upsert(i);
     }
+    EXPECT_EQ(one_hundred_thousand, rbtree.size());
     verify_it(rbtree);
   }
 }

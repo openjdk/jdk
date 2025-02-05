@@ -24,13 +24,12 @@
 
 #ifndef SHARE_UTILITIES_RBTREE_HPP
 #define SHARE_UTILITIES_RBTREE_HPP
-
+#include "metaprogramming/enableIf.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include <type_traits>
 
-struct Empty {};
 class RBTreeNoopAllocator;
 
 // COMPARATOR must have a static function `cmp(a,b)` which returns:
@@ -40,6 +39,7 @@ class RBTreeNoopAllocator;
 // ALLOCATOR must check for oom and exit, as RBTree currently does not handle the
 // allocation failing.
 // Key needs to be of a type that is trivially destructible.
+// If the value has type void, no value will be stored in the nodes.
 // The tree will call a value's destructor when its node is removed.
 // Nodes are address stable and will not change during its lifetime.
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
@@ -50,8 +50,18 @@ private:
   ALLOCATOR _allocator;
   size_t _num_nodes;
 
+  // If the value in a node is not desired (like in an intrusive tree),
+  // we can inherit from Empty instead of Value to avoid wasting space.
+  struct Empty {};
+
+  class Value {
+  protected:
+    V _value;
+    Value(const V& val) : _value(val) {}
+  };
+
 public:
-  class RBNode {
+  class RBNode : std::conditional_t<std::is_same<V, void>::value, Empty, Value>{
     friend RBTree;
     friend class RBTreeTest;
 
@@ -61,21 +71,26 @@ public:
     RBNode* _right;
 
     const K _key;
-    V _value;
 
     DEBUG_ONLY(bool _visited);
 
   public:
     const K& key() const { return _key; }
-    V& val() { return _value; }
-    V& val() const { return _value; }
+
+    template <typename VV = V, ENABLE_IF(!std::is_same<VV, void>::value)>
+    VV& val() { return Value::_value; }
+
+    template <typename VV = V, ENABLE_IF(!std::is_same<VV, void>::value)>
+    const VV& val() const { return Value::_value; }
 
     RBNode(const K& key)
         : _parent(0), _left(nullptr), _right(nullptr),
-          _key(key), _value(Empty()) DEBUG_ONLY(COMMA _visited(false)) {}
-    RBNode(const K& key, const V& val)
-        : _parent(0), _left(nullptr), _right(nullptr),
-          _key(key), _value(val) DEBUG_ONLY(COMMA _visited(false)) {}
+          _key(key) DEBUG_ONLY(COMMA _visited(false)) {}
+
+    template <typename VV = V, ENABLE_IF(!std::is_same<VV, void>::value)>
+    RBNode(const K& key, const VV& val)
+        :  Value(val), _parent(0), _left(nullptr), _right(nullptr),
+          _key(key) DEBUG_ONLY(COMMA _visited(false)) {}
 
     // Gets the previous in-order node in the tree.
     // nullptr is returned if there is no previous node.
@@ -144,14 +159,27 @@ private:
   RBNode* _first;
   DEBUG_ONLY(bool _expected_visited);
 
-  RBNode* allocate_node(const K& key, const V& val) {
+  RBNode* allocate_node(const K& key) {
+    void* node_place = _allocator.allocate(sizeof(RBNode));
+    assert(node_place != nullptr, "rb-tree allocator must exit on failure");
+    return new (node_place) RBNode(key);
+  }
+
+  template <typename VV = V, ENABLE_IF(!std::is_same<VV, void>::value)>
+  RBNode* allocate_node(const K& key, const VV& val) {
     void* node_place = _allocator.allocate(sizeof(RBNode));
     assert(node_place != nullptr, "rb-tree allocator must exit on failure");
     return new (node_place) RBNode(key, val);
   }
 
+  template <typename VV = V, ENABLE_IF(std::is_same<VV, void>::value)>
   void free_node(RBNode* node) {
-    node->_value.~V();
+    _allocator.free(node);
+  }
+
+  template <typename VV = V, ENABLE_IF(!std::is_same<VV, void>::value)>
+  void free_node(RBNode* node) {
+    node->_value.~VV();
     _allocator.free(node);
   }
 
@@ -163,9 +191,6 @@ private:
   static inline bool is_red(const RBNode* node) {
     return node != nullptr && node->is_red();
   }
-
-  // If the node with key k already exist, the value is updated instead.
-  RBNode* insert_node(const K& key, const V& val);
 
   void fix_insert_violations(RBNode* node);
 
@@ -241,9 +266,22 @@ public:
     return cursor.node();
   }
 
-  // Inserts a node with the given k/v into the tree,
+  // Inserts a node with the given key into the tree,
+  // does nothing if the key already exist.
+  void upsert(const K& key) {
+    Cursor cursor = cursor_find(key);
+    if (cursor.found()) {
+      return;
+    }
+
+    RBNode* node = allocate_node(key);
+    insert_at_cursor(node, cursor);
+  }
+
+  // Inserts a node with the given key/value into the tree,
   // if the key already exist, the value is updated instead.
-  void upsert(const K& key, const V& val) {
+  template <typename VV = V, ENABLE_IF(!std::is_same<VV, void>::value)>
+  void upsert(const K& key, const VV& val) {
     Cursor cursor = cursor_find(key);
     RBNode* node = cursor.node();
     if (node != nullptr) {
@@ -376,6 +414,6 @@ template <typename K, typename V, typename COMPARATOR, MemTag mem_tag>
 using RBTreeCHeap = RBTree<K, V, COMPARATOR, RBTreeCHeapAllocator<mem_tag>>;
 
 template <typename K, typename COMPARATOR>
-using IntrusiveRBTree = RBTree<K, Empty, COMPARATOR, RBTreeNoopAllocator>;
+using IntrusiveRBTree = RBTree<K, void, COMPARATOR, RBTreeNoopAllocator>;
 
 #endif // SHARE_UTILITIES_RBTREE_HPP
