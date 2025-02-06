@@ -509,7 +509,6 @@ abstract class QuicCipher {
         T13AESHPCipher(SecretKey hp) throws GeneralSecurityException {
             super(hp);
             cipher = Cipher.getInstance("AES/ECB/NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, hp);
         }
 
         @Override
@@ -520,13 +519,16 @@ abstract class QuicCipher {
             ByteBuffer output = ByteBuffer.allocate(sample.remaining());
             try {
                 synchronized (cipher) {
+                    // Some providers (Jipher) don't re-initialize the cipher
+                    // after doFinal, and need init every time.
+                    cipher.init(Cipher.ENCRYPT_MODE, headerProtectionKey);
                     cipher.doFinal(sample, output);
                 }
                 output.flip();
                 assert output.remaining() >= 5;
                 return output;
             } catch (IllegalBlockSizeException | BadPaddingException |
-                     ShortBufferException e) {
+                     ShortBufferException | InvalidKeyException e) {
                 throw new AssertionError("Should never happen", e);
             }
         }
