@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.PackageTest;
@@ -165,6 +166,8 @@ public class PerUserCfgTest {
                 null).getFileName());
         TKit.assertPathExists(targetCfgFile, false);
         try (var dirCleaner = TKit.createDirectories(targetCfgFile.getParent())) {
+            // Suppress "warning: [try] auto-closeable resource dirCleaner is never referenced"
+            Objects.requireNonNull(dirCleaner);
             Files.copy(srcCfgFile, targetCfgFile);
             try {
                 TKit.traceFileContents(targetCfgFile, "cfg file");

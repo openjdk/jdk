@@ -50,7 +50,7 @@ import static jdk.jpackage.test.TestMethodSupplier.MethodQuery.fromQualifiedMeth
 final class TestBuilder implements AutoCloseable {
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         flushTestGroup();
     }
 
