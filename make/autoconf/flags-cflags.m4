@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -735,6 +735,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       if test "x$FLAGS_CPU_ARCH" != xarm &&  test "x$FLAGS_CPU_ARCH" != xppc; then
         # for all archs except arm and ppc, prevent gcc to omit frame pointer
         $1_CFLAGS_CPU_JDK="${$1_CFLAGS_CPU_JDK} -fno-omit-frame-pointer"
+      fi
+      if test "x$FLAGS_CPU" = xppc64le; then
+        # Little endian machine uses ELFv2 ABI.
+        # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
+        $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -DABI_ELFv2 -mcpu=power8 -mtune=power8"
       fi
     fi
     if test "x$OPENJDK_TARGET_OS" = xaix; then
