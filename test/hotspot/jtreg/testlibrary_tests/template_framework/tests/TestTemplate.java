@@ -387,39 +387,65 @@ public class TestTemplate {
 
         var template1 = Template.make("a", (String a) -> body("x $name #a x\n"));
 
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make("a", (String a) -> body(
+            "{\n",
+            "y $name #a y\n",
+            template1.withArgs($("name")),
+            "}\n"
+        ));
+
+        var template3 = Template.make(() -> body(
             "{\n",
             "$name\n",
             "$name", "\n",
-            "y $name\n y",
-            "y$name y\n",
+            "z $name z\n",
+            "z$name z\n",
             template1.withArgs("name"),     // does not capture -> literal "$name"
             template1.withArgs("$name"),    // does not capture -> literal "$name"
             template1.withArgs($("name")),  // capture replacement name "name_1"
             hook1.set(
                 "$name\n"
             ),
+            "break\n",
+            hook1.set(
+                "one\n",
+                intoHook(hook1, template1.withArgs($("name"))),
+                "two\n",
+                template1.withArgs($("name")),
+                "three\n",
+                intoHook(hook1, template2.withArgs($("name"))),
+                "four\n"
+            ),
             "}\n"
         ));
 
-        String code = template2.withArgs().render();
+        String code = template3.withArgs().render();
         String expected =
             """
             {
             name_1
             name_1
-            y name_1
-             yyname_1 y
+            z name_1 z
+            zname_1 z
             x name_2 name x
             x name_3 $name x
             x name_4 name_1 x
             name_1
+            break
+            x name_5 name_1 x
+            {
+            y name_7 name_1 y
+            x name_8 name_7 x
+            }
+            one
+            two
+            x name_6 name_1 x
+            three
+            four
             }
             """;
         checkEQ(code, expected);
     }
-
-
 
     public static void checkEQ(String code, String expected) {
         if (!code.equals(expected)) {
