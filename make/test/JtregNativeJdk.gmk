@@ -61,7 +61,6 @@ BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeCallerAccessTest := java.base:libjvm
 BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeNullCallerTest := java.base:libjvm
 
 BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libstringPlatformChars := java.base:libjava
-BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libTracePinnedThreads := java.base:libjvm
 BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libNewDirectByteBuffer := java.base:libjava
 BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libGetXSpace := java.base:libjava
 

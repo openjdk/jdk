@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3565,7 +3565,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {
-        return (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
+        return Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
     }
 
     // ================================================

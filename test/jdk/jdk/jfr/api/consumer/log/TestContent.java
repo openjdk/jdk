@@ -32,7 +32,7 @@ import jdk.jfr.Recording;
  * @test
  * @summary Tests that the event payload is printed when using
  *          -Xlog:jfr+event=trace
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.jfr.api.consumer.log.LogAnalyzer
