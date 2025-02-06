@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,16 @@
 # questions.
 #
 
-include MakeFileStart.gmk
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
 
 ################################################################################
 # This makefile generates the "release" file into the exploded image. Jlink is
 # then responsible for using this as the base for release files in each linked
 # image.
+#
 ################################################################################
 
 BASE_RELEASE_FILE := $(JDK_OUTPUTDIR)/release
@@ -81,4 +85,10 @@ TARGETS += $(BASE_RELEASE_FILE)
 
 ################################################################################
 
-include MakeFileEnd.gmk
+$(eval $(call IncludeCustomExtension, ReleaseFile.gmk))
+
+################################################################################
+
+all: $(TARGETS)
+
+.PHONY: all default
