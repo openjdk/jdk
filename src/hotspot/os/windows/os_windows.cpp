@@ -4433,8 +4433,8 @@ bool os::message_box(const char* title, const char* message) {
 void os::init(void) {
   if (is_vm_statically_linked()) {
     // Mimick what is done in DllMain for non-static builds
-    HMODULE hModule = NULL;
-    GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, NULL, &hModule);
+    HMODULE hModule = nullptr;
+    GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, nullptr, &hModule);
     windows_preinit(hModule);
     atexit(windows_atexit);
   }

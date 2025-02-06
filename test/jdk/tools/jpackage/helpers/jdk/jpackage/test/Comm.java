@@ -25,9 +25,9 @@ package jdk.jpackage.test;
 import java.util.HashSet;
 import java.util.Set;
 
-record Comm<T>(Set<T> common, Set<T> unique1, Set<T> unique2) {
+public record Comm<T>(Set<T> common, Set<T> unique1, Set<T> unique2) {
 
-    static <T> Comm<T> compare(Set<T> a, Set<T> b) {
+    public static <T> Comm<T> compare(Set<T> a, Set<T> b) {
         Set<T> common = new HashSet<>(a);
         common.retainAll(b);
         Set<T> unique1 = new HashSet<>(a);
