@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2024, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -244,6 +244,13 @@ source %{
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
         return false;
+      case Op_SaturatingAddV:
+      case Op_SaturatingSubV:
+        // Only SVE2 supports the predicated saturating instructions.
+        if (UseSVE < 2) {
+          return false;
+        }
+        break;
       // We use Op_LoadVectorMasked to implement the predicated Op_LoadVector.
       // Hence we turn to check whether Op_LoadVectorMasked is supported. The
       // same as vector store/gather/scatter.
@@ -814,6 +821,65 @@ VECTOR_AND_NOT_PREDICATE(I)
 VECTOR_AND_NOT_PREDICATE(L)
 
 dnl
+dnl VECTOR_SATURATING_OP($1,     $2, $3     )
+dnl VECTOR_SATURATING_OP(prefix, op, op_name)
+define(`VECTOR_SATURATING_OP', `
+instruct v$1$2(vReg dst, vReg src1, vReg src2) %{
+  predicate(ifelse($1, sq, `!',`')n->as_SaturatingVector()->is_unsigned());
+  match(Set dst ($3 src1 src2));
+  format %{ "v$1$2 $dst, $src1, $src2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ $1$2v($dst$$FloatRegister, get_arrangement(this),
+                $src1$$FloatRegister, $src2$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      BasicType bt = Matcher::vector_element_basic_type(this);
+      __ sve_$1$2($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+                   $src1$$FloatRegister, $src2$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+dnl
+dnl VECTOR_SATURATING_PREDICATE($1,     $2, $3     )
+dnl VECTOR_SATURATING_PREDICATE(prefix, op, op_name)
+define(`VECTOR_SATURATING_PREDICATE', `
+instruct v$1$2_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE == 2 && ifelse($1, sq, `!',`')n->as_SaturatingVector()->is_unsigned());
+  match(Set dst_src1 ($3 (Binary dst_src1 src2) pg));
+  format %{ "v$1$2_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_$1$2($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                 $pg$$PRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+// ------------------------- Vector saturating add -----------------------------
+
+// Signed saturating add
+VECTOR_SATURATING_OP(sq, add, SaturatingAddV)
+VECTOR_SATURATING_PREDICATE(sq, add, SaturatingAddV)
+
+// Unsigned saturating add
+VECTOR_SATURATING_OP(uq, add, SaturatingAddV)
+VECTOR_SATURATING_PREDICATE(uq, add, SaturatingAddV)
+
+// ------------------------- Vector saturating sub -----------------------------
+
+// Signed saturating sub
+VECTOR_SATURATING_OP(sq, sub, SaturatingSubV)
+VECTOR_SATURATING_PREDICATE(sq, sub, SaturatingSubV)
+
+// Unsigned saturating sub
+VECTOR_SATURATING_OP(uq, sub, SaturatingSubV)
+VECTOR_SATURATING_PREDICATE(uq, sub, SaturatingSubV)
+
+dnl
 dnl UNARY_OP($1,        $2,      $3,        $4,       $5  )
 dnl UNARY_OP(rule_name, op_name, insn_neon, insn_sve, size)
 define(`UNARY_OP', `
@@ -964,17 +1030,17 @@ UNARY_OP_PREDICATE_WITH_SIZE(vsqrtF, SqrtVF, sve_fsqrt, S)
 UNARY_OP_PREDICATE_WITH_SIZE(vsqrtD, SqrtVD, sve_fsqrt, D)
 
 dnl
-dnl VMINMAX_L_NEON($1,   $2     )
-dnl VMINMAX_L_NEON(type, op_name)
+dnl VMINMAX_L_NEON($1,   $2     , $3  )
+dnl VMINMAX_L_NEON(type, op_name, sign)
 define(`VMINMAX_L_NEON', `
-instruct v$1L_neon(vReg dst, vReg src1, vReg src2) %{
+instruct v$3$1L_neon(vReg dst, vReg src1, vReg src2) %{
   predicate(UseSVE == 0 && Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst ($2 src1 src2));
   effect(TEMP_DEF dst);
-  format %{ "v$1L_neon $dst, $src1, $src2\t# 2L" %}
+  format %{ "v$3$1L_neon $dst, $src1, $src2\t# 2L" %}
   ins_encode %{
-    __ cm(Assembler::GT, $dst$$FloatRegister, __ T2D, $src1$$FloatRegister, $src2$$FloatRegister);
-    __ bsl($dst$$FloatRegister, __ T16B, ifelse(min, $1, $src2, $src1)$$FloatRegister, ifelse(min, $1, $src1, $src2)$$FloatRegister);
+    __ cm(Assembler::ifelse($3, u, HI, GT), $dst$$FloatRegister, __ T2D, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ bsl($dst$$FloatRegister, __ T16B, ifelse($1, min, $src2, $src1)$$FloatRegister, ifelse(min, $1, $src1, $src2)$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -1058,6 +1124,57 @@ instruct v$1_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
+dnl VUMINMAX_NEON($1,   $2,      $3  )
+dnl VUMINMAX_NEON(type, op_name, insn)
+define(`VUMINMAX_NEON', `
+instruct v$1_neon(vReg dst, vReg src1, vReg src2) %{
+  predicate(Matcher::vector_element_basic_type(n) != T_LONG &&
+            VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst ($2 src1 src2));
+  format %{ "v$1_neon $dst, $src1, $src2\t# B/S/I" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt) && bt != T_LONG, "unsupported type");
+    __ $3($dst$$FloatRegister, get_arrangement(this),
+             $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+dnl VUMINMAX_SVE($1,   $2,      $3  )
+dnl VUMINMAX_SVE(type, op_name, insn)
+define(`VUMINMAX_SVE', `
+instruct v$1_sve(vReg dst_src1, vReg src2) %{
+  predicate(Matcher::vector_element_basic_type(n) != T_LONG &&
+            !VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src1 ($2 dst_src1 src2));
+  format %{ "v$1_sve $dst_src1, $dst_src1, $src2\t# B/S/I" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt) && bt != T_LONG, "unsupported type");
+    __ $3($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                ptrue, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+dnl VUMINMAX_PREDICATE($1,   $2,      $3  )
+dnl VUMINMAX_PREDICATE(type, op_name, insn)
+define(`VUMINMAX_PREDICATE', `
+instruct v$1_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 ($2 (Binary dst_src1 src2) pg));
+  format %{ "v$1_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
+    __ $3($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                $pg$$PRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
 // ------------------------------ Vector min -----------------------------------
 
 // vector min - LONG
@@ -1071,6 +1188,17 @@ VMINMAX_SVE(min, MinV, sve_fmin, sve_smin)
 // vector min - predicated
 VMINMAX_PREDICATE(min, MinV, sve_fmin, sve_smin)
 
+// vector unsigned min - LONG
+VMINMAX_L_NEON(min, UMinV, u)
+VMINMAX_L_SVE(umin, UMinV, sve_umin)
+
+// vector unsigned min - B/S/I
+VUMINMAX_NEON(umin, UMinV, uminv)
+VUMINMAX_SVE(umin, UMinV, sve_umin)
+
+// vector unsigned min - predicated
+VUMINMAX_PREDICATE(umin, UMinV, sve_umin)
+
 // ------------------------------ Vector max -----------------------------------
 
 // vector max - LONG
@@ -1083,6 +1211,17 @@ VMINMAX_SVE(max, MaxV, sve_fmax, sve_smax)
 
 // vector max - predicated
 VMINMAX_PREDICATE(max, MaxV, sve_fmax, sve_smax)
+
+// vector unsigned max - LONG
+VMINMAX_L_NEON(max, UMaxV, u)
+VMINMAX_L_SVE(umax, UMaxV, sve_umax)
+
+// vector unsigned max - B/S/I
+VUMINMAX_NEON(umax, UMaxV, umaxv)
+VUMINMAX_SVE(umax, UMaxV, sve_umax)
+
+// vector unsigned max - predicated
+VUMINMAX_PREDICATE(umax, UMaxV, sve_umax)
 
 // ------------------------------ MLA RELATED ----------------------------------
 
