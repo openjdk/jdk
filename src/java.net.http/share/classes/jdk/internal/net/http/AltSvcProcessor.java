@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,6 +341,7 @@ final class AltSvcProcessor {
         }
         final String altAuthority = remaining.substring(0, nextDoubleQuoteIndex);
         final HostPort hostPort = getHostPort(origin, altAuthority);
+        if (hostPort == null) return null; // host port could not be parsed
         if (nextDoubleQuoteIndex == remaining.length() - 1) {
             // there's nothing more left to parse
             return new ParsedHeaderValue(altValue, alpnName, hostPort.host(), hostPort.port(), Map.of());
@@ -356,6 +357,9 @@ final class AltSvcProcessor {
             return val;
         }
         // TODO: impl this
+        // In practice this method is only used for the ALPN.
+        // We only support h3 for now, so we do not need to
+        // decode percents: anything else but h3 will eventually be ignored.
         return val;
     }
 

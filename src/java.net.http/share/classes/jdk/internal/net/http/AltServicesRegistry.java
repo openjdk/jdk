@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public final class AltServicesRegistry {
      * @param host   The host of the origin
      * @param port   The port of the origin
      */
-    public static final record Origin(String scheme, String host, int port) {
+    public record Origin(String scheme, String host, int port) {
         public Origin {
             Objects.requireNonNull(scheme);
             Objects.requireNonNull(host);
@@ -167,7 +167,7 @@ public final class AltServicesRegistry {
     public static final class AltService {
         // As defined in RFC-7838, section 2, formally an alternate service is a combination of
         // ALPN, host and port
-        public static record Identity(String alpn, String host, int port) {
+        public record Identity(String alpn, String host, int port) {
             public Identity {
                 Objects.requireNonNull(alpn);
                 Objects.requireNonNull(host);
@@ -186,7 +186,7 @@ public final class AltServicesRegistry {
             }
         }
 
-        private static record AltServiceData(Identity id,  Origin origin, Deadline deadline,
+        private record AltServiceData(Identity id,  Origin origin, Deadline deadline,
                                              boolean persist, boolean advertised,
                                              List<SNIServerName> originSNIServerNames,
                                              String authority,
@@ -351,7 +351,7 @@ public final class AltServicesRegistry {
     }
 
     // An alt-service is invalid for a particular origin
-    private final record InvalidAltSvc(Origin origin, AltService.Identity id) {
+    private record InvalidAltSvc(Origin origin, AltService.Identity id) {
     }
 
     private static String toAuthority(String host, int port) {
@@ -431,9 +431,9 @@ public final class AltServicesRegistry {
      * @return An {@code Optional} containing the registered {@code AltService},
      *         or {@link Optional#empty()} if the service was not registered.
      */
-    public Optional<AltService> registerUnadvertised(final AltService.Identity id,
-                                                     final Origin origin,
-                                                     final HttpConnection conn) {
+    Optional<AltService> registerUnadvertised(final AltService.Identity id,
+                                              final Origin origin,
+                                              final HttpConnection conn) {
         Objects.requireNonNull(id);
         Objects.requireNonNull(origin);
         registryLock.lock();
@@ -503,14 +503,14 @@ public final class AltServicesRegistry {
             // remove this alt service from the current active set of the origin
             this.altServices.computeIfPresent(origin,
                     (key, currentActive) -> {
-                        if (currentActive == null) return null;
+                        assert currentActive != null; // should never be null according to spec
                         List<AltService> newList = currentActive.stream()
                                 .filter(Predicate.not(id::matches)).toList();
                         return newList.isEmpty() ? null : newList;
 
                     });
             // additionally keep track of this as an invalid alt service, so that it cannot be
-            // registered again in future.
+            // registered again in the future.
             // we currently ban the alt-service for the origin permanently. In future,
             // if necessary, we can decide if this needs to be banned for only some
             // duration of time.
