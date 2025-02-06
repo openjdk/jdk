@@ -1012,7 +1012,7 @@ void StringTable::verify_secondary_array_index_bits() {
 // [1] Store it into _shared_strings_array. Encode its position as a 32-bit index.
 // [2] Store the index and hashcode into _shared_table.
 oop StringTable::init_shared_strings_array(const DumpedInternedStrings* dumped_interned_strings) {
-  assert(HeapShared::can_write(), "must be");
+  assert(CDSConfig::is_dumping_heap(), "must be");
   objArrayOop array = (objArrayOop)(_shared_strings_array.resolve());
 
   verify_secondary_array_index_bits();
