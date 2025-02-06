@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,9 +64,6 @@ protected:
   // Certain subklasses have an associated class loader.
   virtual oop loader()             { return nullptr; }
   virtual jobject loader_handle()  { return nullptr; }
-
-  virtual oop protection_domain()             { return nullptr; }
-  virtual jobject protection_domain_handle()  { return nullptr; }
 
   const char* type_string() { return "ciKlass"; }
 
