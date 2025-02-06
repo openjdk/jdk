@@ -428,7 +428,8 @@ public final class AltServicesRegistry {
      *
      * @param id         The alt service identity
      * @param origin     The origin
-     * @return true if the alt service was registered with the registry. False otherwise.
+     * @return An {@code Optional} containing the registered {@code AltService},
+     *         or {@link Optional#empty()} if the service was not registered.
      */
     public Optional<AltService> registerUnadvertised(final AltService.Identity id,
                                                      final Origin origin,
