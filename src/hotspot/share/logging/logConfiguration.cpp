@@ -184,10 +184,10 @@ size_t LogConfiguration::find_output(const char* name) {
   return SIZE_MAX;
 }
 
-LogOutput* LogConfiguration::new_output(const char* name,
+LogFileOutput* LogConfiguration::new_output(const char* name,
                                         const char* options,
                                         outputStream* errstream) {
-  LogOutput* output;
+  LogFileOutput* output;
   if (strncmp(name, LogFileOutput::Prefix, strlen(LogFileOutput::Prefix)) == 0) {
     output = new LogFileOutput(name);
   } else {
@@ -497,7 +497,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
 
   ConfigurationLock cl;
   size_t idx;
-  bool added = false;
+  LogFileOutput* added_output = nullptr;
   if (outputstr[0] == '#') { // Output specified using index
     int ret = sscanf(outputstr + 1, "%zu", &idx);
     if (ret != 1 || idx >= _n_outputs) {
@@ -521,10 +521,10 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
     idx = find_output(normalized);
     if (idx == SIZE_MAX) {
       // Attempt to create and add the output
-      LogOutput* output = new_output(normalized, output_options, errstream);
+      LogFileOutput* output = new_output(normalized, output_options, errstream);
       if (output != nullptr) {
-        idx = add_output(output);
-        added = true;
+        idx = add_output((LogOutput*)output);
+        added_output = output;
       }
     }
 
@@ -533,10 +533,15 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
       return false;
     }
   }
-  if (!added && output_options != nullptr && strlen(output_options) > 0) {
+  if (added_output == nullptr  && output_options != nullptr && strlen(output_options) > 0) {
     errstream->print_cr("Output options for existing outputs are ignored.");
   }
+
   configure_output(idx, selections, decorators);
+  if (added_output != nullptr) {
+    added_output->write_file_unique_time_message("Started logging for file at");
+  }
+
   notify_update_listeners();
   selections.verify_selections(errstream);
   return true;
