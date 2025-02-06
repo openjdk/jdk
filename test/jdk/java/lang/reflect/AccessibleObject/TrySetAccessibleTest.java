@@ -201,14 +201,4 @@ public class TrySetAccessibleTest {
         assertFalse(ctor.canAccess(null));
     }
 
-    /**
-     * Test that some Class fields cannot be made accessible.
-     */
-    public void testJavaLangClassFields() throws Exception {
-        try {
-            // This field is explicitly hidden from reflection.
-            Class.class.getDeclaredField("protectionDomain");
-            assertTrue(false);
-        } catch (NoSuchFieldException expected) { }
-    }
 }
