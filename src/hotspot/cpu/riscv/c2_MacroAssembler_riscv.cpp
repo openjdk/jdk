@@ -1461,12 +1461,14 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   {
     if (str1_isL == str2_isL) { // LL or UU
 #ifdef ASSERT
-      Label align_ok;
-      orr(t0, str1, str2);
-      andi(t0, t0, 0x7);
-      beqz(t0, align_ok);
-      stop("bad alignment");
-      bind(align_ok);
+      if (AvoidUnalignedAccesses) {
+        Label align_ok;
+        orr(t0, str1, str2);
+        andi(t0, t0, 0x7);
+        beqz(t0, align_ok);
+        stop("bad alignment");
+        bind(align_ok);
+      }
 #endif
       // load 8 bytes once to compare
       ld(tmp1, Address(str1));
@@ -1518,7 +1520,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     // main loop
     bind(NEXT_WORD);
     if (str1_isL == str2_isL) { // LL or UU
-      // both of the two loads are 8-byte aligned
+      // 8-byte aligned loads when AvoidUnalignedAccesses is enabled
       add(t0, str1, cnt2);
       ld(tmp1, Address(t0));
       add(t0, str2, cnt2);
@@ -1713,12 +1715,14 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2,
   bltz(cnt1, SHORT);
 
 #ifdef ASSERT
-  Label align_ok;
-  orr(t0, a1, a2);
-  andi(t0, t0, 0x7);
-  beqz(t0, align_ok);
-  stop("bad alignment");
-  bind(align_ok);
+  if (AvoidUnalignedAccesses) {
+    Label align_ok;
+    orr(t0, a1, a2);
+    andi(t0, t0, 0x7);
+    beqz(t0, align_ok);
+    stop("bad alignment");
+    bind(align_ok);
+  }
 #endif
 
   // Main 8 byte comparison loop.
@@ -1817,12 +1821,14 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   bltz(cnt1, SHORT);
 
 #ifdef ASSERT
-  Label align_ok;
-  orr(t0, a1, a2);
-  andi(t0, t0, 0x7);
-  beqz(t0, align_ok);
-  stop("bad alignment");
-  bind(align_ok);
+  if (AvoidUnalignedAccesses) {
+    Label align_ok;
+    orr(t0, a1, a2);
+    andi(t0, t0, 0x7);
+    beqz(t0, align_ok);
+    stop("bad alignment");
+    bind(align_ok);
+  }
 #endif
 
   // Main 8 byte comparison loop.

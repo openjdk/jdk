@@ -23,8 +23,8 @@
 # questions.
 #
 
-include MakeIncludeStart.gmk
-ifeq ($(INCLUDE), true)
+ifndef _MODULES_GMK
+_MODULES_GMK := 1
 
 ################################################################################
 # Setup module sets for classloaders
@@ -44,6 +44,11 @@ include $(TOPDIR)/make/conf/docs-modules.conf
 # Setup module sets needed by the build system
 
 include $(TOPDIR)/make/conf/build-module-sets.conf
+
+################################################################################
+# Hook to include the corresponding custom file, if present.
+# Allowing MODULE list extensions setup above.
+$(eval $(call IncludeCustomExtension, common/Modules.gmk))
 
 ################################################################################
 # Depending on the configuration, we might need to filter out some modules that
@@ -311,5 +316,4 @@ endef
 
 ################################################################################
 
-endif # include guard
-include MakeIncludeEnd.gmk
+endif # _MODULES_GMK

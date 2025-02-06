@@ -23,11 +23,6 @@
 # questions.
 #
 
-include MakeIncludeStart.gmk
-ifeq ($(INCLUDE), true)
-
-################################################################################
-
 include CopyFiles.gmk
 
 # Include support files that will setup compiler flags due to the selected
@@ -364,8 +359,3 @@ ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
     $(foreach o, $(BUILD_LIBJVM_ALL_OBJS), $(eval $(call SetupOperatorNewDeleteCheck,$o)))
   endif
 endif
-
-################################################################################
-
-endif # include guard
-include MakeIncludeEnd.gmk

@@ -23,13 +23,11 @@
 # questions.
 #
 
-include MakeIncludeStart.gmk
-ifeq ($(INCLUDE), true)
+$(eval $(call IncludeCustomExtension, hotspot/lib/JvmOverrideFiles.gmk))
 
 ################################################################################
 # This file contains explicit overrides of CFLAGS and/or precompiled header
 # status for individual files on specific platforms.
-################################################################################
 
 ifeq ($(TOOLCHAIN_TYPE), gcc)
   BUILD_LIBJVM_vmStructs.cpp_CXXFLAGS := -fno-var-tracking-assignments
@@ -57,21 +55,11 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
   BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
 
-  ifeq ($(TOOLCHAIN_TYPE), clang)
-    JVM_PRECOMPILED_HEADER_EXCLUDE := \
-        sharedRuntimeTrig.cpp \
-        sharedRuntimeTrans.cpp \
-        $(OPT_SPEED_SRC) \
-        #
-  endif
-
-  ifeq ($(call isTargetCpu, ppc64le)+$(TOOLCHAIN_TYPE), true+gcc)
-    JVM_PRECOMPILED_HEADER_EXCLUDE := \
-        sharedRuntimeTrig.cpp \
-        sharedRuntimeTrans.cpp \
-        $(OPT_SPEED_SRC) \
-        #
-  endif
+  JVM_PRECOMPILED_HEADER_EXCLUDE := \
+      sharedRuntimeTrig.cpp \
+      sharedRuntimeTrans.cpp \
+      $(OPT_SPEED_SRC) \
+      #
 
   ifeq ($(call isTargetCpu, x86), true)
     # Performance measurements show that by compiling GC related code, we could
@@ -153,21 +141,15 @@ else ifeq ($(call isTargetOs, aix), true)
 
 else ifeq ($(call isTargetOs, windows), true)
   JVM_PRECOMPILED_HEADER_EXCLUDE := \
-      bytecodeInterpreter.cpp \
-      bytecodeInterpreterWithChecks.cpp \
       opcodes.cpp \
       os_windows.cpp \
       os_windows_x86.cpp \
       osThread_windows.cpp \
       jvmciCompilerToVMInit.cpp \
+      $(OPT_SPEED_SRC) \
       #
 
   # Workaround for jvmciCompilerToVM.cpp long compilation time
   BUILD_LIBJVM_jvmciCompilerToVMInit.cpp_OPTIMIZATION := NONE
 
 endif
-
-################################################################################
-
-endif # include guard
-include MakeIncludeEnd.gmk
