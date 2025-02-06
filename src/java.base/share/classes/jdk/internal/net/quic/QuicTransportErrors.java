@@ -334,15 +334,4 @@ public enum QuicTransportErrors {
     public static Optional<QuicTransportErrors> ofCode(long code) {
         return Stream.of(values()).filter(e -> e.isFor(code)).findAny();
     }
-
-    /**
-     * {@return whether the given {@code code} corresponds to {@link #NO_ERROR}}
-     * @param code the error code
-     * @apiNote this method returns false if the given code is not
-     *         {@link #NO_ERROR NO_ERROR.code()}.
-     */
-    public static boolean isNoError(long code) {
-        return code == NO_ERROR.code();
-    }
-
 }
