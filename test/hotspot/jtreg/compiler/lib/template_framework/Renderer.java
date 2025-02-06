@@ -31,12 +31,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public abstract class Renderer {
-    public static final class Nothing {
-        public static final Nothing instance = new Nothing();
-
-        private Nothing() {}
-    }
-
     private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile("\\$([a-zA-Z_][a-zA-Z0-9_]*)");
     private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile("#([a-zA-Z_][a-zA-Z0-9_]*)");
 
@@ -59,7 +53,7 @@ public abstract class Renderer {
         baseFrame = new Frame(null);
         currentFrame = baseFrame;
         nextTemplateId = 0;
-        baseTemplateFrame = new TemplateFrame(null, nextTemplateId++);
+        baseTemplateFrame = TemplateFrame.makeBorder(null, nextTemplateId++);
         currentTemplateFrame = baseTemplateFrame;
 
         renderTemplateUse(templateUse);
@@ -91,15 +85,11 @@ public abstract class Renderer {
         return getCurrentTemplateFrame().$(name);
     }
 
-    public static Nothing let(String key, Object value) {
-        getCurrentFrame().addContext(key, value.toString());
-        return Nothing.instance;
-    }
-
-    public static <T, R> R let(String key, T value, Function<T, R> block) {
-        getCurrentFrame().addContext(key, value.toString());
-        return block.apply(value);
-    }
+    // TODO
+    //public static <T, R> R let(String key, T value, Function<T, R> block) {
+    //    getCurrentFrame().addContext(key, value.toString());
+    //    return block.apply(value);
+    //}
 
     // TODO fuel - based on frame or templateFrame?
     public static int depth() {
@@ -123,31 +113,32 @@ public abstract class Renderer {
     }
 
     private static void renderTemplateUse(TemplateUse templateUse) {
-        TemplateFrame templateFrame = new TemplateFrame(getCurrentTemplateFrame(), nextTemplateId++);
+        TemplateFrame templateFrame = TemplateFrame.makeBorder(getCurrentTemplateFrame(), nextTemplateId++);
         currentTemplateFrame = templateFrame;
 
-        Frame frame = getCurrentFrame();
-        templateUse.visitArguments((name, value) -> frame.addContext(name, value.toString()));
+        templateUse.visitArguments((name, value) -> templateFrame.addHashtagReplacement(name, value.toString()));
         InstantiatedTemplate it = templateUse.instantiate();
         renderTokenList(it.tokens());
 
         if (currentTemplateFrame != templateFrame) {
             throw new RendererException("TemplateFrame mismatch!");
         }
-        currentTemplateFrame = currentTemplateFrame.parent();
+        currentTemplateFrame = currentTemplateFrame.parent;
     }
 
     private static void renderToken(Object token) {
         Frame frame = getCurrentFrame();
         switch (token) {
-            case Nothing x -> {}
-            case String s ->  frame.addString(templateString(s, frame));
+            case String s ->  frame.addString(templateString(s));
             case Integer s -> frame.addString(s.toString());
             case Long s ->    frame.addString(s.toString());
             case Double s ->  frame.addString(s.toString());
             case Float s ->   frame.addString(s.toString());
             case List tokens -> {
                 renderTokenList(tokens);
+            }
+            case LetUse(String key, String value) -> {
+                getCurrentTemplateFrame().addHashtagReplacement(key, value.toString());
             }
             case Hook h -> {
                 throw new RendererException("Do not use Hook directly, use Hook.set: " + h);
@@ -217,13 +208,13 @@ public abstract class Renderer {
         }
     }
 
-    private static String templateString(String s, Frame frame) {
+    private static String templateString(String s) {
         var temp = DOLLAR_NAME_PATTERN.matcher(s).replaceAll(
-            (MatchResult result) -> $(result.group(1))
+            (MatchResult result) -> getCurrentTemplateFrame().$(result.group(1))
 	);
         return HASHTAG_REPLACEMENT_PATTERN.matcher(temp).replaceAll(
             // We must escape "$", because it has a special meaning in replaceAll.
-            (MatchResult result) -> frame.getContext(result.group(1)).replace("$", "\\$")
+            (MatchResult result) -> getCurrentTemplateFrame().getHashtagReplacement(result.group(1)).replace("$", "\\$")
         );
     }
 

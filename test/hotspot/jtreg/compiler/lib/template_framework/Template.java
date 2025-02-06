@@ -83,4 +83,8 @@ public interface Template {
     static String $(String name) {
         return Renderer.$(name);
     }
+
+    static LetUse let(String key, Object value) {
+        return new LetUse(key, value.toString());
+    }
 }

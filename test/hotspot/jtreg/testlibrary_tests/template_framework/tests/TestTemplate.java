@@ -45,6 +45,7 @@ import compiler.lib.template_framework.Template;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.intoHook;
 import static compiler.lib.template_framework.Template.$;
+import static compiler.lib.template_framework.Template.let;
 
 public class TestTemplate {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -61,8 +62,7 @@ public class TestTemplate {
         testHookWithNestedTemplates();
         testHookRecursion();
         testNames();
-
-        // TODO let
+        testLet();
 
         //testClassInstantiator();
         //testRepeat();
@@ -503,6 +503,44 @@ public class TestTemplate {
             """;
         checkEQ(code, expected);
     }
+
+    public static void testLet() {
+        var hook1 = new Hook("Hook1");
+
+        var template1 = Template.make("a", (String a) -> body(
+            "{\n",
+            "y #a y\n",
+            let("b", "<" + a + ">"),
+            "y #b y\n",
+            "}\n"
+        ));
+
+        var template2 = Template.make(() -> body(
+            "{\n",
+            let("x", "abc"),
+            template1.withArgs("alpha"),
+            "break\n",
+            "x1 = #x\n",
+            hook1.set(
+                "x2 = #x\n",
+                template1.withArgs("beta"),
+                let("y", "one"),
+                "y1 = #y\n"
+            ),
+            "break\n",
+            let("y", "two"),
+            "y2 = #y\n",
+            "}\n"
+        ));
+
+        String code = template2.withArgs().render();
+        String expected =
+            """
+
+            """;
+        checkEQ(code, expected);
+    }
+
 
     public static void checkEQ(String code, String expected) {
         if (!code.equals(expected)) {
