@@ -57,7 +57,6 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
     private final LiveRangeSegment liveRangeSegment;
     private final DiagramScene scene;
     private int length;
-    private LiveRangeWidget next;
     private Rectangle clientArea;
     private final Node node;
     private static final float NORMAL_THICKNESS = 1.4f;
@@ -68,12 +67,11 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
 
     private static final int RANGE_WIDTH = 4;
 
-    public LiveRangeWidget(LiveRangeSegment liveRangeSegment, DiagramScene scene, int length, LiveRangeWidget next) {
+    public LiveRangeWidget(LiveRangeSegment liveRangeSegment, DiagramScene scene, int length) {
         super(scene);
         this.liveRangeSegment = liveRangeSegment;
         this.scene = scene;
         this.length = length;
-        this.next = next;
 
         getActions().addAction(new DoubleClickAction(this));
         getActions().addAction(ActionFactory.createPopupMenuAction(this));
@@ -92,7 +90,6 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
         node.setDisplayName("L" + liveRangeSegment.getLiveRange().getId());
 
         this.setToolTipText(PropertiesConverter.convertToHTML(liveRangeSegment.getProperties()));
-
         getActions().addAction(new CustomSelectAction(new SelectProvider() {
             @Override
             public boolean isAimingAllowed(Widget widget, Point localLocation, boolean invertSelection) {
@@ -121,10 +118,6 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
         clientArea.grow(RANGE_WIDTH * 2, RANGE_WIDTH * 2);
     }
 
-    public void setNext(LiveRangeWidget next) {
-        this.next = next;
-    }
-
     @Override
     protected Rectangle calculateClientArea() {
         return clientArea;
@@ -140,6 +133,9 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
         boolean selected = scene.getSelectedObjects().contains(liveRangeSegment);
         g.setStroke(new BasicStroke(selected ? SELECTED_THICKNESS : NORMAL_THICKNESS));
         g.setColor(highlighted ? HIGHLIGHTED_COLOR : NORMAL_COLOR);
+        if (highlighted) {
+            g.setStroke(new BasicStroke(2));
+        }
         g.drawLine(- RANGE_WIDTH, 0, RANGE_WIDTH, 0);
         if (length != 0) {
             g.drawLine(0, 0, 0, length);
@@ -151,18 +147,11 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
     protected void notifyStateChanged(ObjectState previousState, ObjectState state) {
         super.notifyStateChanged(previousState, state);
         if (previousState.isHighlighted() != state.isHighlighted()) {
-            setHighlighted(state.isHighlighted());
-        }
-    }
-
-    private void setHighlighted(boolean enable) {
-        if (enable == highlighted) {
-            return; // end recursion
-        }
-        highlighted = enable;
-        revalidate(true);
-        if (next != null) {
-            next.setHighlighted(enable);
+            for (LiveRangeSegment segment : liveRangeSegment.getSegmentSet()) {
+                LiveRangeWidget figureWidget = scene.getWidget(segment);
+                figureWidget.highlighted = state.isHighlighted();
+                figureWidget.revalidate(true);
+            }
         }
     }
 

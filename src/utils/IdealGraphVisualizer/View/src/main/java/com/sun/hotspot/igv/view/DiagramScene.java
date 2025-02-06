@@ -1573,24 +1573,16 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 segments.get(liveRangeId).add(segment);
             }
             for (Set<LiveRangeSegment> segmentSet : segments.values()) {
-                LiveRangeWidget firstSegmentWidget = null;
-                LiveRangeWidget nextSegmentWidget = null;
                 for (LiveRangeSegment segment : segmentSet) {
-                    segment.setSegmentSet(segmentSet);
                     segment.setStartPoint(null);
                     segment.setEndPoint(null);
-                    LiveRangeWidget segmentWidget =
-                        new LiveRangeWidget(segment, this, 0, nextSegmentWidget);
+                    segment.setSegmentSet(segmentSet);
+                    LiveRangeWidget segmentWidget = new LiveRangeWidget(segment, this, 0);
                     segmentWidget.setVisible(false);
-                    if (firstSegmentWidget == null) {
-                        firstSegmentWidget = segmentWidget;
-                    }
                     addObject(segment, segmentWidget);
                     segmentWidget.getActions().addAction(hoverAction);
                     segmentLayer.addChild(segmentWidget);
-                    nextSegmentWidget = segmentWidget;
                 }
-                firstSegmentWidget.setNext(nextSegmentWidget);
             }
         }
     }
