@@ -2156,6 +2156,19 @@ void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRe
   bind(Done);
 }
 
+void C2_MacroAssembler::minmmaxm_fp(FloatRegister dst, FloatRegister src1, FloatRegister src2,
+                                  bool is_double, bool is_min) {
+  assert_different_registers(dst, src1, src2);
+
+  if (is_double) {
+    is_min ? fminm_d(dst, src1, src2)
+           : fmaxm_d(dst, src1, src2);
+  } else {
+    is_min ? fminm_s(dst, src1, src2)
+           : fmaxm_s(dst, src1, src2);
+  }
+}
+
 // According to Java SE specification, for floating-point round operations, if
 // the input is NaN, +/-infinity, or +/-0, the same input is returned as the
 // rounded result; this differs from behavior of RISC-V fcvt instructions (which
