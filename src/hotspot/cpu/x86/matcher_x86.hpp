@@ -267,12 +267,16 @@
       return false;
     }
 
+    // Cannot cast to own type
+    if (to_bt == from_bt) {
+      return false;
+    }
+
     switch (from_bt) {
-      case T_INT: {
-        return to_bt == T_SHORT || to_bt == T_BYTE;
-      }
-      case T_SHORT: {
-        return to_bt == T_BYTE;
+      case T_INT:
+      case T_SHORT:
+      case T_BYTE: {
+        return to_bt == T_INT || to_bt == T_SHORT || to_bt == T_BYTE;
       }
       default: {
         return false;

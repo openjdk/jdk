@@ -601,7 +601,7 @@ VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloo
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
 }
 
-VTransformApplyResult VTransformCastNode::apply(const VLoopAnalyzer& vloop_analyzer,
+VTransformApplyResult VTransformCastVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
                                                        const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* value = find_transformed_input(1, vnode_idx_to_transformed_node);
   VectorNode* vn = VectorCastNode::make(VectorCastNode::opcode(-1, _from_bt), value, _to_bt, _vlen);
@@ -705,7 +705,7 @@ void VTransformPopulateIndexNode::print_spec() const {
   tty->print("vlen=%d element_bt=%s", _vlen, type2name(_element_bt));
 }
 
-void VTransformCastNode::print_spec() const {
+void VTransformCastVectorNode::print_spec() const {
   tty->print("vlen=%d from=%s to=%s", _vlen, type2name(_from_bt), type2name(_to_bt));
 }
 

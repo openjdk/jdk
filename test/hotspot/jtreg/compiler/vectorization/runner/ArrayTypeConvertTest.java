@@ -109,10 +109,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Integer Extension ----------------
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts do not work currently, see JDK-8342095.
-    // Assert the vectorization failure so that we are reminded to update
-    // the test when this limitation is addressed in the future.
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_S2I, IRNode.VECTOR_SIZE + "min(max_int, max_short)", ">0" })
     public int[] signExtension() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -123,7 +122,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts do not work currently, see JDK-8342095.
+    // Subword vector casts with char do not work currently, see JDK-8349562.
     // Assert the vectorization failure so that we are reminded to update
     // the test when this limitation is addressed in the future.
     public int[] zeroExtension() {
@@ -135,12 +134,23 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts do not work currently, see JDK-8342095.
-    // Assert the vectorization failure so that we are reminded to update
-    // the test when this limitation is addressed in the future.
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_B2I, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", ">0" })
     public int[] signExtensionFromByte() {
         int[] res = new int[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = bytes[i];
+        }
+        return res;
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_B2S, IRNode.VECTOR_SIZE + "min(max_short, max_byte)", ">0" })
+    public short[] signExtensionFromByteToShort() {
+        short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
             res[i] = bytes[i];
         }
@@ -275,7 +285,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts do not work currently, see JDK-8342095.
+    // Subword vector casts with char do not work currently, see JDK-8349562.
     // Assert the vectorization failure so that we are reminded to update
     // the test when this limitation is addressed in the future.
     public float[] convertCharToFloat() {
@@ -288,7 +298,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts do not work currently, see JDK-8342095.
+    // Subword vector casts with char do not work currently, see JDK-8349562.
     // Assert the vectorization failure so that we are reminded to update
     // the test when this limitation is addressed in the future.
     public double[] convertCharToDouble() {

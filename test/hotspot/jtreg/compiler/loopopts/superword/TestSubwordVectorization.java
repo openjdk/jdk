@@ -23,6 +23,8 @@
 
 package compiler.loopopts.superword;
 
+
+import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
 import java.util.Random;
 import jdk.test.lib.Utils;
@@ -37,7 +39,8 @@ import jdk.test.lib.Utils;
  */
 
 public class TestSubwordVectorization {
-    private static final Random RANDOM = Utils.getRandomInstance();
+    private static final Generator<Integer> G = Generators.G.ints();
+
     private static final int SIZE = 1024;
 
     public static void main(String[] args) {
@@ -49,7 +52,7 @@ public class TestSubwordVectorization {
         int[] res = new int[SIZE];
 
         for (int i = 0; i < SIZE; i++) {
-            res[i] = RANDOM.nextInt();
+            res[i] = G.next();
         }
 
         return new Object[] { res };
@@ -60,16 +63,29 @@ public class TestSubwordVectorization {
         short[] res = new short[SIZE];
 
         for (int i = 0; i < SIZE; i++) {
-            res[i] = (short) RANDOM.nextInt();
+            res[i] = G.next().shortValue();
         }
 
         return new Object[] { res };
     }
 
+    @Setup
+    static Object[] setupByteArray() {
+        byte[] res = new byte[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = G.next().byteValue();
+        }
+
+        return new Object[] { res };
+    }
+
+    // Narrowing
+
     @Test
     @IR(applyIfCPUFeature = { "avx", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
-        counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_ANY, ">0" })
+        counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", ">0" })
     @Arguments(setup = "setupIntArray")
     public Object[] testIntToShort(int[] ints) {
         short[] res = new short[SIZE];
@@ -98,7 +114,7 @@ public class TestSubwordVectorization {
     @Test
     @IR(applyIfCPUFeature = { "avx", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
-        counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_ANY, ">0" })
+        counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", ">0" })
     @Arguments(setup = "setupIntArray")
     public Object[] testIntToByte(int[] ints) {
         byte[] res = new byte[SIZE];
@@ -127,7 +143,7 @@ public class TestSubwordVectorization {
     @Test
     @IR(applyIfCPUFeature = { "avx", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
-        counts = { IRNode.VECTOR_CAST_S2B, IRNode.VECTOR_SIZE_ANY, ">0" })
+        counts = { IRNode.VECTOR_CAST_S2B, IRNode.VECTOR_SIZE + "min(max_short, max_byte)", ">0" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortToByte(short[] shorts) {
         byte[] res = new byte[SIZE];
@@ -149,6 +165,95 @@ public class TestSubwordVectorization {
 
             if (res[i] != value) {
                 throw new IllegalStateException("Short to byte test failed: Expected " + value + " but got " + res[i]);
+            }
+        }
+    }
+
+    // Widening
+
+    @Test
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", ">0" })
+    @Arguments(setup = "setupShortArray")
+    public Object[] testShortToInt(short[] shorts) {
+        int[] res = new int[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = shorts[i];
+        }
+
+        return new Object[] { shorts, res };
+    }
+
+    @Check(test = "testShortToInt")
+    public void checkTestShortToInt(Object[] vals) {
+        short[] shorts = (short[]) vals[0];
+        int[] res = (int[]) vals[1];
+
+        for (int i = 0; i < SIZE; i++) {
+            int value = shorts[i];
+
+            if (res[i] != value) {
+                throw new IllegalStateException("Short to int test failed: Expected " + value + " but got " + res[i]);
+            }
+        }
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_B2I, IRNode.VECTOR_SIZE + "min(max_byte, max_int)", ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testByteToInt(byte[] bytes) {
+        int[] res = new int[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = bytes[i];
+        }
+
+        return new Object[] { bytes, res };
+    }
+
+    @Check(test = "testByteToInt")
+    public void checkTestByteToInt(Object[] vals) {
+        byte[] bytes = (byte[]) vals[0];
+        int[] res = (int[]) vals[1];
+
+        for (int i = 0; i < SIZE; i++) {
+            int value = bytes[i];
+
+            if (res[i] != value) {
+                throw new IllegalStateException("Byte to int test failed: Expected " + value + " but got " + res[i]);
+            }
+        }
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_B2S, IRNode.VECTOR_SIZE + "min(max_byte, max_short)", ">0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testByteToShort(byte[] bytes) {
+        short[] res = new short[SIZE];
+
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = bytes[i];
+        }
+
+        return new Object[] { bytes, res };
+    }
+
+    @Check(test = "testByteToShort")
+    public void checkTestByteToShort(Object[] vals) {
+        byte[] bytes = (byte[]) vals[0];
+        short[] res = (short[]) vals[1];
+
+        for (int i = 0; i < SIZE; i++) {
+            short value = bytes[i];
+
+            if (res[i] != value) {
+                throw new IllegalStateException("Byte to short test failed: Expected " + value + " but got " + res[i]);
             }
         }
     }

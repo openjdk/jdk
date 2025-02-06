@@ -193,7 +193,7 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
     // If the use and def types are different, emit a cast node
     if (use_bt != def_bt && !p0->is_Convert() && Matcher::is_vector_cast_supported(def_bt, use_bt)) {
       VTransformNode* in = get_vtnode(pack_in->at(0));
-      VTransformNode* cast = new (_vtransform.arena()) VTransformCastNode(_vtransform, pack->size(), def_bt, use_bt);
+      VTransformNode* cast = new (_vtransform.arena()) VTransformCastVectorNode(_vtransform, pack->size(), def_bt, use_bt);
       cast->set_req(1, in);
 
       return cast;
