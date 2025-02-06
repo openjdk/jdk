@@ -23,16 +23,11 @@
 # questions.
 #
 
-include MakeIncludeStart.gmk
-ifeq ($(INCLUDE), true)
-
-################################################################################
-
 include CopyFiles.gmk
 include JdkNativeCompilation.gmk
 include Modules.gmk
 include ProcessMarkdown.gmk
-include $(TOPDIR)/make/ToolsJdk.gmk
+include ToolsJdk.gmk
 
 LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher
 LAUNCHER_CFLAGS += -I$(TOPDIR)/src/java.base/share/native/launcher \
@@ -239,8 +234,3 @@ ifeq ($(call isTargetOsType, unix)+$(MAKEFILE_PREFIX), true+Launcher)
     endif
   endif
 endif
-
-################################################################################
-
-endif # include guard
-include MakeIncludeEnd.gmk

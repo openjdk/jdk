@@ -23,9 +23,11 @@
 # questions.
 #
 
-include MakeFileStart.gmk
+# This must be the first rule
+default: all
 
-################################################################################
+include $(SPEC)
+include MakeBase.gmk
 
 include CopyFiles.gmk
 include JarArchive.gmk
@@ -153,6 +155,4 @@ $(eval $(call SetupCopyFiles, COPY_MICROBENCHMARK_NATIVE, \
 
 all: $(MICROBENCHMARK_JAR) $(BUILD_MICROBENCHMARK_LIBRARIES) $(COPY_MICROBENCHMARK_NATIVE)
 
-################################################################################
-
-include MakeFileEnd.gmk
+.PHONY: all
