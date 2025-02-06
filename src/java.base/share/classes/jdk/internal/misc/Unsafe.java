@@ -3567,6 +3567,7 @@ public final class Unsafe {
      * @return the value fetched from the indicated object
      * @since 9
      */
+    @ForceInline
     public final long getLongUnaligned(Object o, long offset, boolean bigEndian) {
         return convEndian(bigEndian, getLongUnaligned(o, offset));
     }
@@ -3587,6 +3588,7 @@ public final class Unsafe {
         }
     }
     /** @see #getLongUnaligned(Object, long, boolean) */
+    @ForceInline
     public final int getIntUnaligned(Object o, long offset, boolean bigEndian) {
         return convEndian(bigEndian, getIntUnaligned(o, offset));
     }
@@ -3602,6 +3604,7 @@ public final class Unsafe {
         }
     }
     /** @see #getLongUnaligned(Object, long, boolean) */
+    @ForceInline
     public final short getShortUnaligned(Object o, long offset, boolean bigEndian) {
         return convEndian(bigEndian, getShortUnaligned(o, offset));
     }
@@ -3618,6 +3621,7 @@ public final class Unsafe {
     }
 
     /** @see #getLongUnaligned(Object, long, boolean) */
+    @ForceInline
     public final char getCharUnaligned(Object o, long offset, boolean bigEndian) {
         return convEndian(bigEndian, getCharUnaligned(o, offset));
     }
@@ -3688,6 +3692,7 @@ public final class Unsafe {
      *         {@link NullPointerException}
      * @since 9
      */
+    @ForceInline
     public final void putLongUnaligned(Object o, long offset, long x, boolean bigEndian) {
         putLongUnaligned(o, offset, convEndian(bigEndian, x));
     }
@@ -3710,6 +3715,7 @@ public final class Unsafe {
         }
     }
     /** @see #putLongUnaligned(Object, long, long, boolean) */
+    @ForceInline
     public final void putIntUnaligned(Object o, long offset, int x, boolean bigEndian) {
         putIntUnaligned(o, offset, convEndian(bigEndian, x));
     }
@@ -3726,6 +3732,7 @@ public final class Unsafe {
         }
     }
     /** @see #putLongUnaligned(Object, long, long, boolean) */
+    @ForceInline
     public final void putShortUnaligned(Object o, long offset, short x, boolean bigEndian) {
         putShortUnaligned(o, offset, convEndian(bigEndian, x));
     }
@@ -3736,6 +3743,7 @@ public final class Unsafe {
         putShortUnaligned(o, offset, (short)x);
     }
     /** @see #putLongUnaligned(Object, long, long, boolean) */
+    @ForceInline
     public final void putCharUnaligned(Object o, long offset, char x, boolean bigEndian) {
         putCharUnaligned(o, offset, convEndian(bigEndian, x));
     }
@@ -3829,10 +3837,10 @@ public final class Unsafe {
     private static long toUnsignedLong(int n)   { return n & 0xffffffffl; }
 
     // Maybe byte-reverse an integer
-    private static char convEndian(boolean big, char n)   { return big == BIG_ENDIAN ? n : Character.reverseBytes(n); }
-    private static short convEndian(boolean big, short n) { return big == BIG_ENDIAN ? n : Short.reverseBytes(n)    ; }
-    private static int convEndian(boolean big, int n)     { return big == BIG_ENDIAN ? n : Integer.reverseBytes(n)  ; }
-    private static long convEndian(boolean big, long n)   { return big == BIG_ENDIAN ? n : Long.reverseBytes(n)     ; }
+    @ForceInline private static char convEndian(boolean big, char n)   { return big == BIG_ENDIAN ? n : Character.reverseBytes(n); }
+    @ForceInline private static short convEndian(boolean big, short n) { return big == BIG_ENDIAN ? n : Short.reverseBytes(n)    ; }
+    @ForceInline private static int convEndian(boolean big, int n)     { return big == BIG_ENDIAN ? n : Integer.reverseBytes(n)  ; }
+    @ForceInline private static long convEndian(boolean big, long n)   { return big == BIG_ENDIAN ? n : Long.reverseBytes(n)     ; }
 
 
 

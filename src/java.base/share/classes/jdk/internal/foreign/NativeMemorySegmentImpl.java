@@ -38,12 +38,15 @@ import java.util.Optional;
  */
 public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl permits MappedMemorySegmentImpl {
 
+    private static final boolean ADDRESS_SIZE_IS_4 =
+            Unsafe.getUnsafe().addressSize() == 4;
+
     final long min;
 
     @ForceInline
     NativeMemorySegmentImpl(long min, long length, boolean readOnly, MemorySessionImpl scope) {
         super(length, readOnly, scope);
-        this.min = (Unsafe.getUnsafe().addressSize() == 4)
+        this.min = ADDRESS_SIZE_IS_4
                 // On 32-bit systems, normalize the upper unused 32-bits to zero
                 ? min & 0x0000_0000_FFFF_FFFFL
                 // On 64-bit systems, all the bits are used
@@ -77,6 +80,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
         return NIO_ACCESS.newDirectByteBuffer(min, (int) this.length, null, this);
     }
 
+    @ForceInline
     @Override
     public boolean isNative() {
         return true;
@@ -93,6 +97,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
     }
 
     @Override
+    @ForceInline
     public long maxAlignMask() {
         return 0;
     }
