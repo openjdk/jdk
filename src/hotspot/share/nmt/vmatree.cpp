@@ -74,7 +74,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     // If we specify use_tag_inplace then the new region takes over the current tag instead of the tag in metadata.
     // This is important because the VirtualMemoryTracker API doesn't require supplying the tag for some operations.
     if (use_tag_inplace) {
-      //assert(state != StateType::Committed && leqA_n->val().out.type() != StateType::Released, "Should not use inplace the tag of a released region");
+      assert(leqA_n->val().out.type() != StateType::Released, "Should not use inplace the tag of a released region");
       MemTag tag = leqA_n->val().out.mem_tag();
       stA.out.set_tag(tag);
       LEQ_A.state.out.set_tag(tag);

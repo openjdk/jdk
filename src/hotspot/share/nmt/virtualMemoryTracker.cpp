@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +101,7 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
                     " diff-committed: %ld"
                     " vms-reserved: %zu"
                     " vms-committed: %zu",
-                    str, NMTUtil::tag_to_name(tag), (ssize_t)reserve_delta, (ssize_t)commit_delta, reserved, committed);
+                    str, NMTUtil::tag_to_name(tag), (long)reserve_delta, (long)commit_delta, reserved, committed);
   };
 
   for (int i = 0; i < mt_number_of_tags; i++) {

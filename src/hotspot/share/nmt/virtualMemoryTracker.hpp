@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +22,8 @@
  *
  */
 
-#ifndef NMT_VIRTUALMEMORYTRACKER_HPP
-#define NMT_VIRTUALMEMORYTRACKER_HPP
+#ifndef SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
+#define SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
 
 #include "nmt/nmtCommon.hpp"
 #include "nmt/regionsTree.hpp"
@@ -104,4 +103,4 @@ class VirtualMemoryTracker {
   };
 };
 
-#endif // NMT_VIRTUALMEMORYTRACKER_HPP
+#endif // SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
