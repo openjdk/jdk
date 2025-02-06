@@ -175,15 +175,31 @@ public abstract class Renderer {
                 currentFrame.addCode(innerFrame.getCode());
             }
             case HookInsert(Hook hook, TemplateUse t) -> {
+                // Switch to hook frame.
                 Frame hookFrame = frameForHook(hook);
-                currentFrame = hookFrame; // switch to hook frame.
+
+                // Use a transparent nested Frame. We need a frame so that the code generated
+                // by the TemplateUse can be collected, and hook insertions from it can still
+                // be made to the hookFrame before the code from the TemplateUse is added to
+                // the hookFrame.
+                // But the frame must be transparent, so that its name definitions go out to
+                // the hookFrame, and are not limited to the Frame for the TemplateUse.
+                currentFrame = new Frame(hookFrame);
+                // TODO make transparent for names
+
                 renderTemplateUse(t);
-                currentFrame = frame;     // switch back.
+
+                hookFrame.addCode(currentFrame.getCode());
+
+                // Switch back from hook frame to caller frame.
+                currentFrame = frame;
             }
             case TemplateUse t -> {
                 // Use a nested Frame.
                 currentFrame = new Frame(frame);
+
                 renderTemplateUse(t);
+
                 frame.addCode(currentFrame.getCode());
                 currentFrame = frame;
             }

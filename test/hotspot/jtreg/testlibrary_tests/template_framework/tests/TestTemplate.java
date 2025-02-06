@@ -59,6 +59,7 @@ public class TestTemplate {
         testHookSimple();
         testHookNested();
         testHookWithNestedTemplates();
+        testHookRecursion();
         testNames();
 
         // TODO let
@@ -377,6 +378,62 @@ public class TestTemplate {
             base-D
             base-E
             base-F
+            }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testHookRecursion() {
+        var hook1 = new Hook("Hook1");
+
+        var template1 = Template.make("a", (String a) -> body("x #a x\n"));
+
+        var template2 = Template.make("b", (String b) -> body(
+            "<\n",
+            template1.withArgs(b + "A"),
+            intoHook(hook1, template1.withArgs(b + "B")), // sub-B is rendered before template2.
+            template1.withArgs(b + "C"),
+            "inner-hook-start\n",
+            hook1.set(
+                "inner-hook-end\n",
+                template1.withArgs(b + "E"),
+                intoHook(hook1, template1.withArgs(b + "E")),
+                template1.withArgs(b + "F")
+            ),
+            ">\n"
+        ));
+
+        // Test use of hooks across templates.
+        var template3 = Template.make(() -> body(
+            "{\n",
+            "hook-start\n",
+            hook1.set(
+                "hook-end\n",
+                intoHook(hook1, template2.withArgs("sub-")),
+                "base-C\n"
+	    ),
+            "base-D\n",
+            "}\n"
+        ));
+
+        String code = template3.withArgs().render();
+        String expected =
+            """
+            {
+            hook-start
+            x sub-B x
+            <
+            x sub-A x
+            x sub-C x
+            inner-hook-start
+            x sub-E x
+            inner-hook-end
+            x sub-E x
+            x sub-F x
+            >
+            hook-end
+            base-C
+            base-D
             }
             """;
         checkEQ(code, expected);
