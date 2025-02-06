@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,7 @@ import javax.crypto.SecretKey;
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Benjamin Renaud
  * @since 1.1
  *
@@ -128,6 +129,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected MessageDigest(String algorithm) {
         this.algorithm = algorithm;
@@ -166,6 +168,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code MessageDigest} object that implements the
      *         specified algorithm
      *
@@ -221,6 +224,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code MessageDigest} object that implements the
      *         specified algorithm
      *
@@ -275,6 +279,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code MessageDigest} object that implements the
      *         specified algorithm
      *
@@ -513,6 +518,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the name of the algorithm
      */
     public final String getAlgorithm() {

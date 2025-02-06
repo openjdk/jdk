@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -624,4 +624,10 @@ AC_DEFUN_ONCE([BASIC_POST_CONFIG_OUTPUT],
 
   # Make the compare script executable
   $CHMOD +x $OUTPUTDIR/compare.sh
+
+  # Copy the linker wrapper script for clang on AIX and make it executable
+  if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
+    $CP -f "$TOPDIR/make/scripts/aix/ld.sh" "$OUTPUTDIR/ld.sh"
+    $CHMOD +x "$OUTPUTDIR/ld.sh"
+  fi
 ])

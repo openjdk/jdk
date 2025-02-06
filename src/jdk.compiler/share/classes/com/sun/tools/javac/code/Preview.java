@@ -110,7 +110,7 @@ public class Preview {
         source = Source.instance(context);
         verbose = Lint.instance(context).isEnabled(LintCategory.PREVIEW);
         deferredLintHandler = DeferredLintHandler.instance(context);
-        previewHandler = new MandatoryWarningHandler(log, source, true);
+        previewHandler = new MandatoryWarningHandler(log, source, true, LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
         majorVersionToSource = initMajorVersionToSourceMap();
     }
