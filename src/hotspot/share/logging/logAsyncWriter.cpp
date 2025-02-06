@@ -32,16 +32,23 @@
 #include "runtime/os.inline.hpp"
 
 class AsyncLogWriter::AsyncLogLocker : public StackObj {
- public:
+  static Thread* _holder;
+public:
+  static Thread* current_holder() { return _holder; }
   AsyncLogLocker() {
     assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
     _instance->_lock.lock();
+    _holder = Thread::current_or_null();
   }
 
   ~AsyncLogLocker() {
+    assert(_holder == Thread::current_or_null(), "must be");
+    _holder = nullptr;
     _instance->_lock.unlock();
   }
 };
+
+Thread* AsyncLogWriter::AsyncLogLocker::_holder = nullptr;
 
 // LogDecorator::None applies to 'constant initialization' because of its constexpr constructor.
 const LogDecorations& AsyncLogWriter::None = LogDecorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
@@ -84,19 +91,43 @@ void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecora
   _lock.notify();
 }
 
-void AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
+// This function checks for cases where continuing with asynchronous logging may lead to stability issues, such as a deadlock.
+// If this returns true then we give up on logging asynchronously and do so synchronously instead.
+bool AsyncLogWriter::resort_to_synchronous_logging() {
+  AsyncLogWriter* alw = AsyncLogWriter::instance();
+  Thread* holding_thread = AsyncLogWriter::AsyncLogLocker::current_holder();
+  Thread* this_thread = Thread::current_or_null();
+  bool is_async_log_thread = this_thread != nullptr && alw == this_thread;
+  bool is_recursively_logging = this_thread != nullptr && holding_thread == this_thread;
+  assert(!is_recursively_logging, "Do not log while holding the Async log lock");
+  return is_async_log_thread    ||  // The async log producer is attempting to log, leading to recursive logging.
+         is_recursively_logging ||  // A thread enqueuing a message has attempted to log something.
+         alw == nullptr         ||  // There is no AsyncLogWriter instance yet.
+         this_thread == nullptr;    // The current thread is unattached.
+}
+
+bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
+  if (resort_to_synchronous_logging()) {
+    return false;
+  }
+
   AsyncLogLocker locker;
-  enqueue_locked(&output, decorations, msg);
+  AsyncLogWriter::instance()->enqueue_locked(&output, decorations, msg);
+  return true;
 }
 
 // LogMessageBuffer consists of a multiple-part/multiple-line message.
 // The lock here guarantees its integrity.
-void AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
+bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
+  if (resort_to_synchronous_logging()) {
+    return false;
+  }
   AsyncLogLocker locker;
 
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
-    enqueue_locked(&output, msg_iterator.decorations(), msg_iterator.message());
+    AsyncLogWriter::instance()->enqueue_locked(&output, msg_iterator.decorations(), msg_iterator.message());
   }
+  return true;
 }
 
 AsyncLogWriter::AsyncLogWriter()
