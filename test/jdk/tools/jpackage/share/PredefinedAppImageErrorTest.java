@@ -39,7 +39,7 @@ import jdk.jpackage.test.TKit;
  * @summary Test jpackage output for erroneous input with --type "app-image" and --app-image
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile PredefinedAppImageErrorTest.java
+ * @compile -Xlint:all -Werror PredefinedAppImageErrorTest.java
  *
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=PredefinedAppImageErrorTest

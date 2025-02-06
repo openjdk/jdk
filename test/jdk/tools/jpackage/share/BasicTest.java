@@ -53,7 +53,7 @@ import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
  * @summary jpackage basic testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile BasicTest.java
+ * @compile -Xlint:all -Werror BasicTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=BasicTest
  */

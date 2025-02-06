@@ -40,7 +40,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @summary jpackage test with name containing spaces
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile NameWithSpaceTest.java
+ * @compile -Xlint:all -Werror NameWithSpaceTest.java
  * @requires (os.family == "mac")
  * @key jpackagePlatformPackage
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main

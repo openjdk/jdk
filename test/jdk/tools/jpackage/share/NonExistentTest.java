@@ -34,7 +34,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage application version testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile NonExistentTest.java
+ * @compile -Xlint:all -Werror NonExistentTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=NonExistentTest
  */

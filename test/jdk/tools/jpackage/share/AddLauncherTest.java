@@ -49,7 +49,7 @@ import jdk.jpackage.test.CfgFile;
  * @requires (jpackage.test.SQETest != null)
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile AddLauncherTest.java
+ * @compile -Xlint:all -Werror AddLauncherTest.java
  * @run main/othervm/timeout=360 -Xmx512m
  *  jdk.jpackage.test.Main
  *  --jpt-run=AddLauncherTest.test
@@ -62,7 +62,7 @@ import jdk.jpackage.test.CfgFile;
  * @requires (jpackage.test.SQETest == null)
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile AddLauncherTest.java
+ * @compile -Xlint:all -Werror AddLauncherTest.java
  * @run main/othervm/timeout=540 -Xmx512m
  *  jdk.jpackage.test.Main
  *  --jpt-run=AddLauncherTest

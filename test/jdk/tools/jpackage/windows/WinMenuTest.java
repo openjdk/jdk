@@ -39,7 +39,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @compile WinMenuTest.java
+ * @compile -Xlint:all -Werror WinMenuTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinMenuTest
  */

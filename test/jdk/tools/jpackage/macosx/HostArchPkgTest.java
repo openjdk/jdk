@@ -45,7 +45,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @summary jpackage test to validate "hostArchitectures" attribute
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile HostArchPkgTest.java
+ * @compile -Xlint:all -Werror HostArchPkgTest.java
  * @requires (os.family == "mac")
  * @key jpackagePlatformPackage
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main

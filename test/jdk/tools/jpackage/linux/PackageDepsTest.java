@@ -50,7 +50,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (os.family == "linux")
- * @compile PackageDepsTest.java
+ * @compile -Xlint:all -Werror PackageDepsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=PackageDepsTest
  */

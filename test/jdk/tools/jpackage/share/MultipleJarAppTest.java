@@ -33,7 +33,7 @@ import jdk.jpackage.test.JavaAppDesc;
  * @summary jpackage application packed in multiple jars
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile MultipleJarAppTest.java
+ * @compile -Xlint:all -Werror MultipleJarAppTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MultipleJarAppTest
  */

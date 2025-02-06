@@ -68,7 +68,7 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @compile LicenseTest.java
+ * @compile -Xlint:all -Werror LicenseTest.java
  * @requires (jpackage.test.SQETest != null)
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=LicenseTest.testCommon
@@ -80,7 +80,7 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @compile LicenseTest.java
+ * @compile -Xlint:all -Werror LicenseTest.java
  * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=LicenseTest

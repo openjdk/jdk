@@ -46,7 +46,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @library /test/jdk/tools/jpackage/helpers
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
- * @compile AppImagePackageTest.java
+ * @compile -Xlint:all -Werror AppImagePackageTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppImagePackageTest
  */

@@ -36,7 +36,7 @@ import java.util.List;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @requires (os.family == "linux")
- * @compile LinuxResourceTest.java
+ * @compile -Xlint:all -Werror LinuxResourceTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=LinuxResourceTest
  */

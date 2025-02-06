@@ -44,7 +44,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @key jpackagePlatformPackage
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile AddLShortcutTest.java
+ * @compile -Xlint:all -Werror AddLShortcutTest.java
  * @run main/othervm/timeout=540 -Xmx512m
  *  jdk.jpackage.test.Main
  *  --jpt-run=AddLShortcutTest

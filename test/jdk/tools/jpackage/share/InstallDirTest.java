@@ -56,7 +56,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @compile InstallDirTest.java
+ * @compile -Xlint:all -Werror InstallDirTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=InstallDirTest.testCommon
  */
@@ -67,7 +67,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @compile InstallDirTest.java
+ * @compile -Xlint:all -Werror InstallDirTest.java
  * @requires (os.family == "linux")
  * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main

@@ -37,7 +37,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage with --module-path testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile ModulePathTest2.java
+ * @compile -Xlint:all -Werror ModulePathTest2.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ModulePathTest2
  */

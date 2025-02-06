@@ -37,7 +37,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @compile WinConsoleTest.java
+ * @compile -Xlint:all -Werror WinConsoleTest.java
  *
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault

@@ -35,7 +35,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage create image with --java-options test
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile JavaOptionsEqualsTest.java
+ * @compile -Xlint:all -Werror JavaOptionsEqualsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=JavaOptionsEqualsTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useExecutableByDefault
@@ -46,7 +46,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage create image with --java-options test
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile JavaOptionsEqualsTest.java
+ * @compile -Xlint:all -Werror JavaOptionsEqualsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=JavaOptionsEqualsTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault

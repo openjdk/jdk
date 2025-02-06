@@ -46,7 +46,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage for app's module linked in external runtime
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile ModulePathTest3.java
+ * @compile -Xlint:all -Werror ModulePathTest3.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ModulePathTest3
  */

@@ -61,7 +61,7 @@ import jdk.jpackage.test.TKit;
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
- * @compile FileAssociationsTest.java
+ * @compile -Xlint:all -Werror FileAssociationsTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=FileAssociationsTest
  */
@@ -73,7 +73,7 @@ import jdk.jpackage.test.TKit;
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest != null
  * @build jdk.jpackage.test.*
- * @compile FileAssociationsTest.java
+ * @compile -Xlint:all -Werror FileAssociationsTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=FileAssociationsTest.test
  */

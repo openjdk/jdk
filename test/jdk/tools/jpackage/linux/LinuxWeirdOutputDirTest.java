@@ -32,7 +32,7 @@ import jdk.jpackage.test.JPackageCommand;
  * @bug 8268974
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile LinuxWeirdOutputDirTest.java
+ * @compile -Xlint:all -Werror LinuxWeirdOutputDirTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=LinuxWeirdOutputDirTest
  */

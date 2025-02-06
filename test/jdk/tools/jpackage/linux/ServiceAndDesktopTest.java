@@ -43,7 +43,7 @@ import jdk.jpackage.test.TKit;
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
  * @requires (os.family == "linux")
- * @compile ServiceAndDesktopTest.java
+ * @compile -Xlint:all -Werror ServiceAndDesktopTest.java
  * @run main/othervm/timeout=720 jdk.jpackage.test.Main
  *  --jpt-run=ServiceAndDesktopTest
  */

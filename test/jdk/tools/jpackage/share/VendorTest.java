@@ -58,7 +58,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @requires (os.family == "windows")
  * @requires jpackage.test.SQETest != null
  * @build jdk.jpackage.test.*
- * @compile VendorTest.java
+ * @compile -Xlint:all -Werror VendorTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=VendorTest
  */
@@ -71,7 +71,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @requires (os.family != "mac")
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
- * @compile VendorTest.java
+ * @compile -Xlint:all -Werror VendorTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=VendorTest
  */

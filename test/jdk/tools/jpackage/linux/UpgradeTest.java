@@ -36,7 +36,7 @@ import jdk.jpackage.test.TKit;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (os.family == "linux")
- * @compile UpgradeTest.java
+ * @compile -Xlint:all -Werror UpgradeTest.java
  * @run main/othervm/timeout=360 jdk.jpackage.test.Main
  *  --jpt-run=UpgradeTest
  */

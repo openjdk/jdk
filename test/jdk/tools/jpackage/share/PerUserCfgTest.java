@@ -47,7 +47,7 @@ import jdk.jpackage.test.TKit;
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
- * @compile PerUserCfgTest.java
+ * @compile -Xlint:all -Werror PerUserCfgTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=PerUserCfgTest
  */

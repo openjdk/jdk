@@ -39,7 +39,7 @@ import jdk.jpackage.test.JPackageCommand;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @requires (os.family == "windows")
- * @compile WinScriptTest.java
+ * @compile -Xlint:all -Werror WinScriptTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinScriptTest
  */

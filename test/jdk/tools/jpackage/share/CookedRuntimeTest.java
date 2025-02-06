@@ -43,7 +43,7 @@ import jdk.jpackage.test.TKit;
  * @summary test '--runtime-image' option of jpackage
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile CookedRuntimeTest.java
+ * @compile -Xlint:all -Werror CookedRuntimeTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=CookedRuntimeTest
  */

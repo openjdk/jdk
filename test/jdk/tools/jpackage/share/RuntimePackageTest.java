@@ -59,7 +59,7 @@ import static jdk.jpackage.test.TKit.assertFalse;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest == null)
- * @compile RuntimePackageTest.java
+ * @compile -Xlint:all -Werror RuntimePackageTest.java
  * @run main/othervm/timeout=1400 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest
  */
@@ -71,7 +71,7 @@ import static jdk.jpackage.test.TKit.assertFalse;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest != null)
- * @compile RuntimePackageTest.java
+ * @compile -Xlint:all -Werror RuntimePackageTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest.test
  */

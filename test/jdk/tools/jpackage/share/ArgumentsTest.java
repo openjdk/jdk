@@ -48,7 +48,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @summary jpackage create image with --arguments test
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile ArgumentsTest.java
+ * @compile -Xlint:all -Werror ArgumentsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ArgumentsTest
  */

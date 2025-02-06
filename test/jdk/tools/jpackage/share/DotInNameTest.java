@@ -32,7 +32,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @summary jpackage create image with --java-options test
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile DotInNameTest.java
+ * @compile -Xlint:all -Werror DotInNameTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=DotInNameTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault

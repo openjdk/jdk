@@ -43,7 +43,7 @@ import jdk.jpackage.test.Annotations.Test;
  * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @compile SimplePackageTest.java
+ * @compile -Xlint:all -Werror SimplePackageTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SimplePackageTest
  */

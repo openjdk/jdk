@@ -35,7 +35,7 @@ import jdk.jpackage.test.Executor;
  * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @compile RuntimeImageTest.java
+ * @compile -Xlint:all -Werror RuntimeImageTest.java
  * @run main/othervm/timeout=1400 jdk.jpackage.test.Main
  *  --jpt-run=RuntimeImageTest
  */

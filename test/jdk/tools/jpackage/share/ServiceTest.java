@@ -49,7 +49,7 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @build jtreg.SkippedException
  * @key jpackagePlatformPackage
- * @compile ServiceTest.java
+ * @compile -Xlint:all -Werror ServiceTest.java
  * @run main/othervm/timeout=360 -Xmx512m
  *  jdk.jpackage.test.Main
  *  --jpt-run=ServiceTest
