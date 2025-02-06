@@ -663,7 +663,7 @@ public class SSLParameters {
      *     // Convert into UTF-8 encoded bytes (3 bytes/letter)
      *     byte[] bytes = HUK_UN_I.getBytes(StandardCharsets.UTF_8);
      *
-     *     // Preserve network byte order by using ISO_8859_1 encoding
+     *     // Preserve octet byte order by using ISO_8859_1 encoding
      *     String encodedHukUnI =
      *         new String(bytes, StandardCharsets.ISO_8859_1);
      *
