@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,13 @@ public final class Distrust {
         public boolean[] getSubjectUniqueID() {
             return cert.getSubjectUniqueID();
         }
-        public boolean[] getKeyUsage() { return cert.getKeyUsage(); }
+        public boolean[] getKeyUsage() {
+            // Turn on the Digital Signature bit. Some certs that we want
+            // to use as test certs don't have this bit turned on.
+            boolean[] withDigitalSignature = cert.getKeyUsage();
+            withDigitalSignature[0] = true;
+            return withDigitalSignature;
+        }
         public int getBasicConstraints() { return cert.getBasicConstraints(); }
         public byte[] getEncoded() throws CertificateEncodingException {
             return cert.getEncoded();

@@ -592,7 +592,14 @@ final class WinNTFileSystem extends FileSystem {
     @Override
     public long getSpace(File f, int t) {
         if (f.exists()) {
-            return getSpace0(getFileForWin32Calls(f), t);
+            // the value for the number of bytes of free space returned by the
+            // native layer is not used here as it represents the number of free
+            // bytes not considering quotas, whereas the value returned for the
+            // number of usable bytes does respect quotas, and it is required
+            // that free space <= total space
+            if (t == SPACE_FREE)
+                t = SPACE_USABLE;
+            return getSpace0(f, t);
         }
         return 0;
     }

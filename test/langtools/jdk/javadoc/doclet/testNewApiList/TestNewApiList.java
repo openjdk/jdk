@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8263468 8269401 8268422 8287524 8325874
+ * @bug      8263468 8269401 8268422 8287524 8325874 8331873
  * @summary  New page for "recent" new API
  * @library  ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -117,7 +117,7 @@ public class TestNewApiList extends JavadocTester {
                 <input type="checkbox" id="release-6" disabled checked onclick="toggleGlobal(this, '6', 3)">
                 <span>5</span></label> <label for="release-all">
                 <input type="checkbox" id="release-all" disabled checked onclick="toggleGlobal(this, 'all', 3)">
-                <span>all</span></label></div>
+                <span>Toggle all</span></label></div>
                 <h2 title="Contents">Contents</h2>
                 <ul class="contents-list">
                 <li id="contents-module"><a href="#module">Modules</a></li>
@@ -610,7 +610,7 @@ public class TestNewApiList extends JavadocTester {
                 <input type="checkbox" id="release-other" disabled checked onclick="toggleGlobal(this, 'other', 3)">
                 <span>other</span></label> <label for="release-all">
                 <input type="checkbox" id="release-all" disabled checked onclick="toggleGlobal(this, 'all', 3)">
-                <span>all</span></label></div>
+                <span>Toggle all</span></label></div>
                 <h2 title="Contents">Contents</h2>
                 <ul class="contents-list">
                 <li id="contents-for-removal"><a href="#for-removal">Terminally Deprecated</a></li>
@@ -683,7 +683,7 @@ public class TestNewApiList extends JavadocTester {
                 <input type="checkbox" id="release-5" disabled checked onclick="toggleGlobal(this, '5', 3)">
                 <span>6</span></label> <label for="release-all">
                 <input type="checkbox" id="release-all" disabled checked onclick="toggleGlobal(this, 'all', 3)">
-                <span>all</span></label></div>
+                <span>Toggle all</span></label></div>
                 <h2 title="Contents">Contents</h2>
                 <ul class="contents-list">
                 <li id="contents-class"><a href="#class">Classes</a></li>

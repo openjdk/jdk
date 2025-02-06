@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  */
 
+import jdk.test.lib.Platform;
+import jtreg.SkippedException;
+
 import java.awt.EventQueue;
 import java.awt.Point;
 import java.awt.SystemTray;
@@ -37,10 +40,17 @@ import java.awt.image.BufferedImage;
  *          or single clicked with button 3 on Mac OS X
  *          or single clicked with button 1 on rest.
  * @modules java.desktop/java.awt:open
- * @library /java/awt/patchlib
- * @library /lib/client ../
- * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @library
+ *          /java/awt/patchlib
+ *          /java/awt/TrayIcon
+ *          /lib/client
+ *          /test/lib
+ * @build
+ *          java.desktop/java.awt.Helper
+ *          jdk.test.lib.Platform
+ *          jtreg.SkippedException
+ *          ExtendedRobot
+ *          SystemTrayIconHelper
  * @run main TrayIconMouseTest
  */
 
@@ -48,16 +58,18 @@ public class TrayIconMouseTest {
 
     TrayIcon icon;
     ExtendedRobot robot;
-    boolean actionPerformed = false;
-    Object actionLock = new Object();
+
+    volatile boolean actionPerformed = false;
+    final Object actionLock = new Object();
+
     static boolean isMacOS = false;
     static boolean isWinOS = false;
     static boolean isOelOS = false;
     String caption = "Sample Icon";
     int[] buttonTypes = {
-        InputEvent.BUTTON1_MASK,
-        InputEvent.BUTTON2_MASK,
-        InputEvent.BUTTON3_MASK
+        InputEvent.BUTTON1_DOWN_MASK,
+        InputEvent.BUTTON2_DOWN_MASK,
+        InputEvent.BUTTON3_DOWN_MASK
     };
     String[] buttonNames = {
         "BUTTON1",
@@ -66,20 +78,24 @@ public class TrayIconMouseTest {
     };
 
     public static void main(String[] args) throws Exception {
-        if (!SystemTray.isSupported()) {
-            System.out.println("SystemTray not supported on the platform "
-                    + "under test. Marking the test passed");
-        } else {
-            String osName = System.getProperty("os.name").toLowerCase();
-            if (osName.startsWith("mac")) {
-                isMacOS = true;
-            } else if (osName.startsWith("win")) {
-                isWinOS = true;
-            } else {
-                isOelOS = SystemTrayIconHelper.isOel7orLater();
-            }
-            new TrayIconMouseTest().doTest();
+        if (Platform.isOnWayland()) {
+            // The current robot implementation does not support
+            // clicking in the system tray area.
+            throw new SkippedException("Skipped on Wayland");
         }
+
+        if (!SystemTray.isSupported()) {
+            throw new SkippedException("SystemTray is not supported on this platform.");
+        }
+
+        if (Platform.isOSX()) {
+            isMacOS = true;
+        } else if (Platform.isWindows()) {
+            isWinOS = true;
+        } else {
+            isOelOS = SystemTrayIconHelper.isOel7orLater();
+        }
+        new TrayIconMouseTest().doTest();
     }
 
     TrayIconMouseTest() throws Exception {
