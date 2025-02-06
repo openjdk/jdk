@@ -1636,11 +1636,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return Optional.ofNullable(userProxySelector);
     }
 
-    // Return the effective proxy that this client uses.
-    ProxySelector proxySelector() {
-        return proxySelector;
-    }
-
     @Override
     public WebSocket.Builder newWebSocketBuilder() {
         // Make sure to pass the HttpClientFacade to the WebSocket builder.

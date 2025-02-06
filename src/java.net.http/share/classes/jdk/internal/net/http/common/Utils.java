@@ -38,6 +38,8 @@ import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URI;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
@@ -304,6 +306,17 @@ public final class Utils {
     public static boolean proxyHasDisabledSchemes(boolean tunnel) {
         return tunnel ? ! PROXY_AUTH_TUNNEL_DISABLED_SCHEMES.isEmpty()
                       : ! PROXY_AUTH_DISABLED_SCHEMES.isEmpty();
+    }
+
+    /**
+     * Creates a new {@link Proxy} instance for the given proxy iff it is
+     * neither null, {@link Proxy#NO_PROXY Proxy.NO_PROXY}, nor already a
+     * {@code Proxy} instance.
+     */
+    public static Proxy copyProxy(Proxy proxy) {
+        return proxy == null || proxy.getClass() == Proxy.class
+                ? proxy
+                : new Proxy(proxy.type(), proxy.address());
     }
 
     // WebSocket connection Upgrade headers
