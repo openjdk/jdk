@@ -62,7 +62,7 @@ record OSVersionCondition(WindowsVersion version) {
                 .findFirst().orElseGet(() -> {
                     // No java.dll, no launchers, it is either a very customized or messed up app image.
                     // Let it install on Windows NT/95 or newer.
-                    return new WindowsVersion(4, 0); 
+                    return new WindowsVersion(4, 0);
                 });
 
         return new OSVersionCondition(lowestOsVersion);
