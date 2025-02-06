@@ -99,16 +99,9 @@ public abstract class Renderer {
 
     private static void renderTemplateUse(TemplateUse templateUse) {
         Frame frame = getCurrentFrame();
-
         templateUse.visitArguments((name, value) -> frame.addContext(name, value.toString()));
         InstantiatedTemplate it = templateUse.instantiate();
-        for (Object token : it.tokens()) {
-            renderToken(token);
-        }
-
-        if (frame != getCurrentFrame()) {
-            throw new RendererException("Frame mismatch.");
-        }
+        renderTokenList(it.tokens());
     }
 
     private static void renderToken(Object token) {
@@ -120,10 +113,8 @@ public abstract class Renderer {
             case Long s ->    frame.addString(s.toString());
             case Double s ->  frame.addString(s.toString());
             case Float s ->   frame.addString(s.toString());
-            case List l -> {
-                for (Object t : l) {
-                    renderToken(t);
-                }
+            case List tokens -> {
+                renderTokenList(tokens);
             }
             case Hook h -> {
                 throw new RendererException("Do not use Hook directly, use Hook.set: " + h);
@@ -141,10 +132,9 @@ public abstract class Renderer {
                 // hookFrame.
                 Frame innerFrame = new Frame(hookFrame);
                 currentFrame = innerFrame;
-                // TODO render list, and verify frames are consistent.
-                for (Object t : tokens) {
-                    renderToken(t);
-                }
+
+                renderTokenList(tokens);
+
                 // Close the hookFrame and innerFrame. hookFrame code comes before the
                 // innerFrame code from the tokens.
                 currentFrame = outerFrame;
@@ -165,6 +155,16 @@ public abstract class Renderer {
                 currentFrame = frame;
             }
             default -> throw new RendererException("body contained unexpected token: " + token);
+        }
+    }
+
+    private static void renderTokenList(List<Object> tokens) {
+        Frame frame = getCurrentFrame();
+        for (Object t : tokens) {
+            renderToken(t);
+        }
+        if (frame != getCurrentFrame()) {
+            throw new RendererException("Frame mismatch.");
         }
     }
 

@@ -23,6 +23,7 @@
 
 package compiler.lib.template_framework;
 
+import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -72,7 +73,7 @@ public interface Template {
     }
 
     static InstantiatedTemplate body(Object... tokens) {
-        return new InstantiatedTemplate(tokens);
+        return new InstantiatedTemplate(Arrays.asList(tokens));
     }
 
     static HookInsert intoHook(Hook hook, TemplateUse t) {
