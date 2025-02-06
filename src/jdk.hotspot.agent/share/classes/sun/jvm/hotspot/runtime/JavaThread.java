@@ -33,10 +33,6 @@ import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-/** This class is no longer abstract. Platform dependent functionality is now implmented
-    in the JavaThreadPDAccess subclasses.
- */
-
 public class JavaThread extends Thread {
   private static final boolean DEBUG = System.getProperty("sun.jvm.hotspot.runtime.JavaThread.DEBUG") != null;
 
@@ -55,6 +51,7 @@ public class JavaThread extends Thread {
   private static CIntegerField monitorOwnerIDField;
   private static long oopPtrSize;
 
+  // For accessing platform dependent functionality
   private static JavaThreadPDAccess access;
 
   // JavaThreadStates read from underlying process
