@@ -633,6 +633,9 @@
   develop(bool, VerifyLoopOptimizations, false,                             \
           "verify major loop optimizations")                                \
                                                                             \
+  develop(bool, VerifyNoNewIrreducibleLoops, false,                         \
+          "Verify that no new irreducible loops are created after parsing") \
+                                                                            \
   product(bool, ProfileDynamicTypes, true, DIAGNOSTIC,                      \
           "do extra type profiling and use it more aggressively")           \
                                                                             \

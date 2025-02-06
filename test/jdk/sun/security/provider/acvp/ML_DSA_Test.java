@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,6 @@ public class ML_DSA_Test {
 
     public static void run(JSONValue kat, Provider provider) throws Exception {
 
-        // We only have ML-DSA test for internal functions, which
-        // is equivalent to the FIP 204 draft.
-        ML_DSA_Impls.version = ML_DSA_Impls.Version.DRAFT;
-
         var mode = kat.get("mode").asString();
         switch (mode) {
             case "keyGen" -> keyGenTest(kat, provider);
@@ -50,7 +46,7 @@ public class ML_DSA_Test {
     }
 
     static NamedParameterSpec genParams(String pname) {
-       return switch (pname) {
+        return switch (pname) {
             case "ML-DSA-44" -> NamedParameterSpec.ML_DSA_44;
             case "ML-DSA-65" -> NamedParameterSpec.ML_DSA_65;
             case "ML-DSA-87" -> NamedParameterSpec.ML_DSA_87;
@@ -89,9 +85,23 @@ public class ML_DSA_Test {
                 : Signature.getInstance("ML-DSA", p);
         for (var t : kat.get("testGroups").asArray()) {
             var pname = t.get("parameterSet").asString();
-            var det = Boolean.parseBoolean(t.get("deterministic").asString());
             System.out.println(">> " + pname + " sign");
+            var det = Boolean.parseBoolean(t.get("deterministic").asString());
+            if (t.get("signatureInterface").asString().equals("internal")) {
+                ML_DSA_Impls.version = ML_DSA_Impls.Version.DRAFT;
+            } else {
+                ML_DSA_Impls.version = ML_DSA_Impls.Version.FINAL;
+            }
+            if (t.get("externalMu").asString().equals("true")) {
+                continue; // Not supported
+            }
             for (var c : t.get("tests").asArray()) {
+                var cstr = c.get("context");
+                var ctxt = cstr == null ? new byte[0] : toByteArray(cstr.asString());
+                var hashAlg = c.get("hashAlg").asString();
+                if (!hashAlg.equals("none") || ctxt.length != 0) {
+                    continue; // Not supported
+                }
                 System.out.print(Integer.parseInt(c.get("tcId").asString()) + " ");
                 var sk = new PrivateKey() {
                     public String getAlgorithm() { return pname; }
@@ -103,8 +113,7 @@ public class ML_DSA_Test {
                 s.initSign(sk, sr);
                 s.update(toByteArray(c.get("message").asString()));
                 var sig = s.sign();
-                Asserts.assertEqualsByteArray(
-                        toByteArray(c.get("signature").asString()), sig);
+                Asserts.assertEqualsByteArray(toByteArray(c.get("signature").asString()), sig);
             }
             System.out.println();
         }
@@ -116,14 +125,31 @@ public class ML_DSA_Test {
                 : Signature.getInstance("ML-DSA", p);
         for (var t : kat.get("testGroups").asArray()) {
             var pname = t.get("parameterSet").asString();
-            var pk = new PublicKey() {
-                public String getAlgorithm() { return pname; }
-                public String getFormat() { return "RAW"; }
-                public byte[] getEncoded() { return toByteArray(t.get("pk").asString()); }
-            };
             System.out.println(">> " + pname + " verify");
+
+            if (t.get("signatureInterface").asString().equals("internal")) {
+                ML_DSA_Impls.version = ML_DSA_Impls.Version.DRAFT;
+            } else {
+                ML_DSA_Impls.version = ML_DSA_Impls.Version.FINAL;
+            }
+
+            if (t.get("externalMu").asString().equals("true")) {
+                continue; // Not supported
+            }
+
             for (var c : t.get("tests").asArray()) {
+                var cstr = c.get("context");
+                var ctxt = cstr == null ? new byte[0] : toByteArray(cstr.asString());
+                var hashAlg = c.get("hashAlg").asString();
+                if (!hashAlg.equals("none") || ctxt.length != 0) {
+                    continue; // Not supported
+                }
                 System.out.print(c.get("tcId").asString() + " ");
+                var pk = new PublicKey() {
+                    public String getAlgorithm() { return pname; }
+                    public String getFormat() { return "RAW"; }
+                    public byte[] getEncoded() { return toByteArray(c.get("pk").asString()); }
+                };
                 // Only ML-DSA sigVer has negative tests
                 var expected = Boolean.parseBoolean(c.get("testPassed").asString());
                 var actual = true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -779,15 +779,13 @@ public class HtmlTree extends Content {
      * @param rel   the relevance of the link: the {@code rel} attribute
      * @param type  the type of link: the {@code type} attribute
      * @param href  the path for the link: the {@code href} attribute
-     * @param title title for the link: the {@code title} attribute
      * @return the element
      */
-    public static HtmlTree LINK(String rel, String type, String href, String title) {
+    public static HtmlTree LINK(String rel, String type, String href) {
         return new HtmlTree(HtmlTag.LINK)
                 .put(HtmlAttr.REL, rel)
                 .put(HtmlAttr.TYPE, type)
-                .put(HtmlAttr.HREF, href)
-                .put(HtmlAttr.TITLE, title);
+                .put(HtmlAttr.HREF, href);
     }
 
     /**

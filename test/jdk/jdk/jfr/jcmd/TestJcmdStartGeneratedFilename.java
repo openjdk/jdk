@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 /**
  * @test
  * @summary Verify that a filename is generated
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jcmd.TestJcmdStartGeneratedFilename

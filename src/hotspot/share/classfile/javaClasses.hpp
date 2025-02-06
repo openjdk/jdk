@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,12 +321,12 @@ class java_lang_Class : AllStatic {
     set_init_lock(java_class, nullptr);
   }
   static oop  component_mirror(oop java_class);
+  static int component_mirror_offset() { return _component_mirror_offset; }
   static objArrayOop signers(oop java_class);
   static oop  class_data(oop java_class);
   static void set_class_data(oop java_class, oop classData);
   static void set_reflection_data(oop java_class, oop reflection_data);
-
-  static int component_mirror_offset() { return _component_mirror_offset; }
+  static int reflection_data_offset() { return _reflectionData_offset; }
 
   static oop class_loader(oop java_class);
   static void set_module(oop java_class, oop module);
@@ -1409,13 +1409,17 @@ class java_lang_invoke_MethodType: AllStatic {
 
 
 // Interface to java.lang.invoke.CallSite objects
+#define CALLSITE_INJECTED_FIELDS(macro) \
+  macro(java_lang_invoke_CallSite, vmdependencies, intptr_signature, false) \
+  macro(java_lang_invoke_CallSite, last_cleanup, long_signature, false)
 
 class java_lang_invoke_CallSite: AllStatic {
   friend class JavaClasses;
 
 private:
   static int _target_offset;
-  static int _context_offset;
+  static int _vmdependencies_offset;
+  static int _last_cleanup_offset;
 
   static void compute_offsets();
 
@@ -1426,7 +1430,7 @@ public:
   static void         set_target(          oop site, oop target);
   static void         set_target_volatile( oop site, oop target);
 
-  static oop context_no_keepalive(oop site);
+  static DependencyContext vmdependencies(oop call_site);
 
   // Testers
   static bool is_subclass(Klass* klass) {
@@ -1436,7 +1440,6 @@ public:
 
   // Accessors for code generation:
   static int target_offset()  { CHECK_INIT(_target_offset); }
-  static int context_offset() { CHECK_INIT(_context_offset); }
 };
 
 // Interface to java.lang.invoke.ConstantCallSite objects
@@ -1457,35 +1460,6 @@ public:
   // Testers
   static bool is_subclass(Klass* klass) {
     return klass->is_subclass_of(vmClasses::ConstantCallSite_klass());
-  }
-  static bool is_instance(oop obj);
-};
-
-// Interface to java.lang.invoke.MethodHandleNatives$CallSiteContext objects
-
-#define CALLSITECONTEXT_INJECTED_FIELDS(macro) \
-  macro(java_lang_invoke_MethodHandleNatives_CallSiteContext, vmdependencies, intptr_signature, false) \
-  macro(java_lang_invoke_MethodHandleNatives_CallSiteContext, last_cleanup, long_signature, false)
-
-class DependencyContext;
-
-class java_lang_invoke_MethodHandleNatives_CallSiteContext : AllStatic {
-  friend class JavaClasses;
-
-private:
-  static int _vmdependencies_offset;
-  static int _last_cleanup_offset;
-
-  static void compute_offsets();
-
-public:
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-  // Accessors
-  static DependencyContext vmdependencies(oop context);
-
-  // Testers
-  static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(vmClasses::Context_klass());
   }
   static bool is_instance(oop obj);
 };

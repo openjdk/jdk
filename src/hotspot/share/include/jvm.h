@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 #include <sys/stat.h>
 
 #include "jni.h"
-#include "jvm_md.h"
 #include "jvm_constants.h"
 #include "jvm_io.h"
+#include "jvm_md.h"
 
 #ifdef __cplusplus
 extern "C" {
