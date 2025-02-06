@@ -2456,7 +2456,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
           return TypePtr::NULL_PTR;
         }
         // ???
-        // (Folds up the 1st indirection in aClassConstant.getModifiers().)
+        // Fold up the load of the hidden field
         return TypeKlassPtr::make(t->as_klass(), Type::trust_interfaces);
       }
       // non-constant mirror, so we can't tell what's going on
