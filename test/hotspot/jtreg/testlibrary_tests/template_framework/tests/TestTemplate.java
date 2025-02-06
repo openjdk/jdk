@@ -395,7 +395,7 @@ public class TestTemplate {
             "y$name y\n",
             template1.withArgs("name"),     // does not capture -> literal "$name"
             template1.withArgs("$name"),    // does not capture -> literal "$name"
-            template1.withArgs($("name")),  // capture replacement name "name_TODO"
+            template1.withArgs($("name")),  // capture replacement name "name_1"
             hook1.set(
                 "$name\n"
             ),
@@ -406,6 +406,14 @@ public class TestTemplate {
         String expected =
             """
             {
+            name_1
+            name_1
+            y name_1
+             yyname_1 y
+            x name_2 name x
+            x name_3 $name x
+            x name_4 name_1 x
+            name_1
             }
             """;
         checkEQ(code, expected);

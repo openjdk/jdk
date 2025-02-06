@@ -81,6 +81,6 @@ public interface Template {
     }
 
     static String $(String name) {
-        return Renderer.variableName(name);
+        return Renderer.$(name);
     }
 }

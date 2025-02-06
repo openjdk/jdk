@@ -39,24 +39,50 @@ public abstract class Renderer {
 
     private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile("\\$([a-zA-Z_][a-zA-Z0-9_]*)");
     private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile("#([a-zA-Z_][a-zA-Z0-9_]*)");
+
+    // TODO describe
     private static Frame baseFrame = null;
     private static Frame currentFrame = null;
 
-    static int variableId = 0;
+    // TODO better name. Scope and Frame? dollar-scope vs variable-scope? TemplateFrame vs CodeFrame?
+    private static class RenderInfo {
+        public static int nextDollarId = 0;
+
+        public final RenderInfo parent;
+        public final int dollarId = nextDollarId++;
+        RenderInfo(RenderInfo parent) {
+            this.parent = parent;
+        }
+
+        public String $(String name) {
+            return name + "_" + dollarId;
+        }
+    }
+    static RenderInfo baseInfo = null;
+    static RenderInfo currentInfo = null;
 
     public static String render(TemplateUse templateUse) {
         // Check nobody else is using the Renderer.
         if (baseFrame != null) {
             throw new RendererException("Nested render not allowed.");
         }
+
+        // Setup the Renderer.
         baseFrame = new Frame(null);
         currentFrame = baseFrame;
+        RenderInfo.nextDollarId = 0;
+        baseInfo = new RenderInfo(null);
+        currentInfo = baseInfo;
 
         renderTemplateUse(templateUse);
 
         // Ensure Frame consistency.
         if (baseFrame != currentFrame) {
             throw new RendererException("Renderer did not end up at base frame.");
+        }
+        // Ensure RenderInfo consistency.
+        if (baseInfo != currentInfo) {
+            throw new RendererException("Renderer did not end up at base info.");
         }
 
         // Collect Code to String.
@@ -66,12 +92,15 @@ public abstract class Renderer {
 
         // Release the Renderer.
         baseFrame = null;
+        currentFrame = null;
+        baseInfo = null;
+        currentInfo = null;
 
         return code;
     }
 
-    static String variableName(String name) {
-        return getCurrentFrame().variableName(name);
+    static String $(String name) {
+        return getCurrentInfo().$(name);
     }
 
     public static Nothing let(String key, Object value) {
@@ -84,24 +113,40 @@ public abstract class Renderer {
         return block.apply(value);
     }
 
-    // TODO fuel
+    // TODO fuel - based on frame or info?
     public static int depth() {
         return getCurrentFrame().depth();
     }
 
     private static Frame getCurrentFrame() {
         if (currentFrame == null) {
-            // TODO update text
+            // TODO update text - which methods are involved?
             throw new RendererException("A method such as $ or let was called outside a template rendering. Make sure you are not calling templates yourself, but use use().");
         }
         return currentFrame;
     }
 
+    private static RenderInfo getCurrentInfo() {
+        if (currentInfo == null) {
+            // TODO update text - which methods are involved?
+            throw new RendererException("A method such as $ or let was called outside a template rendering. Make sure you are not calling templates yourself, but use use().");
+        }
+        return currentInfo;
+    }
+
     private static void renderTemplateUse(TemplateUse templateUse) {
+        RenderInfo info = new RenderInfo(getCurrentInfo());
+        currentInfo = info;
+
         Frame frame = getCurrentFrame();
         templateUse.visitArguments((name, value) -> frame.addContext(name, value.toString()));
         InstantiatedTemplate it = templateUse.instantiate();
         renderTokenList(it.tokens());
+
+        if (currentInfo != info) {
+            throw new RendererException("Info mismatch!");
+        }
+        currentInfo = info.parent;
     }
 
     private static void renderToken(Object token) {
@@ -170,7 +215,7 @@ public abstract class Renderer {
 
     private static String templateString(String s, Frame frame) {
         var temp = DOLLAR_NAME_PATTERN.matcher(s).replaceAll(
-            (MatchResult result) -> variableName(result.group(1))
+            (MatchResult result) -> $(result.group(1))
 	);
         return HASHTAG_REPLACEMENT_PATTERN.matcher(temp).replaceAll(
             // We must escape "$", because it has a special meaning in replaceAll.

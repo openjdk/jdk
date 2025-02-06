@@ -33,7 +33,6 @@ class Frame {
     private final List<Code> codeList = new ArrayList<Code>();
     private final Map<Hook, Code.CodeList> hookCodeLists = new HashMap<>();
 
-    private final Map<String, String> variableNames = new HashMap<>();
     private final Map<String, String> context = new HashMap<>();
 
     Frame(Frame parent) {
@@ -73,10 +72,6 @@ class Frame {
             return context.get(key);
         }
         throw new RendererException("Tried to interpolate field " + key + " which does not exist.");
-    }
-
-    String variableName(String name) {
-        return variableNames.computeIfAbsent(name, s -> name + "_" + Renderer.variableId++);
     }
 
     // TODO ensure only use once!
