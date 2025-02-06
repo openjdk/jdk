@@ -100,6 +100,15 @@ public class TestSerialAdditions {
         }
     }
 
+    @Run(test = {
+            "bitShiftToOverflow",
+            "bitShiftToOverflowL"
+    })
+    private void runBitShiftTests() {
+        Asserts.assertEQ(95, bitShiftToOverflow());
+        Asserts.assertEQ(191L, bitShiftToOverflowL());
+    }
+
     // ----- integer tests -----
     @Test
     @IR(counts = { IRNode.ADD_I, "1" })
@@ -253,5 +262,30 @@ public class TestSerialAdditions {
     @IR(counts = { IRNode.LSHIFT_L, "1" })
     private static long mulAndAddToOverflowL(long a) {
         return a * Long.MAX_VALUE + a; // a*(MAX+1) => a*(MIN) => a<<63
+    }
+
+    // --- bit shift tests ---
+    @Test
+    @IR(failOn = {IRNode.ADD_I, IRNode.LSHIFT_I})
+    private static int bitShiftToOverflow() {
+        int i, x = 0;
+        for (i = 0; i < 32; i++) {
+            x = i;
+        }
+
+        // x = 31 (phi), i = 32 (phi + 1)
+        return i + (x << i) + i; // Expects 32 + 31 + 32 = 95
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_L, IRNode.LSHIFT_L})
+    private static long bitShiftToOverflowL() {
+        int i, x = 0;
+        for (i = 0; i < 64; i++) {
+            x = i;
+        }
+
+        // x = 63 (phi), i = 64 (phi + 1)
+        return i + (x << i) + i; // Expects 64 + 63 + 64 = 191
     }
 }
