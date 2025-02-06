@@ -26,11 +26,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import jdk.test.lib.Platform;
 
 public class JUnitTestUtil {
     public static final String CLS_DIR = System.getProperty("test.classes");
     public static final String SRC_DIR = System.getProperty("test.src");
-    public static final boolean isWindows = System.getProperty("os.name").contains("Windows");
 
     /**
      * Returns the System identifier (URI) of the source.
@@ -40,7 +40,7 @@ public class JUnitTestUtil {
     public static String getSystemId(String path) {
         if (path == null) return null;
         String xmlSysId = "file://" + path;
-        if (isWindows) {
+        if (Platform.isWindows()) {
             path = path.replace('\\', '/');
             xmlSysId = "file:///" + path;
         }

@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @test
  * @bug 8344925
  * @summary Transformer properties tests
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest /test/lib
  * @run junit/othervm transform.PropertiesTest
  */
 public class PropertiesTest {
@@ -91,7 +91,6 @@ public class PropertiesTest {
         String path = (destination != null) ? destination + expected : new File(xslFile).getParent() + expected;
 
         if (generateTranslet) {
-            //Files.list(Path.of(path)).forEach(System.out::println);
             assertTrue(Files.exists(Path.of(path)), "Translet is expected at " + expected);
         } else {
             assertTrue(Files.notExists(Path.of(path)), "Translet is not to be generated.");
