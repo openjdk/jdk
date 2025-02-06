@@ -44,22 +44,10 @@ public abstract class Renderer {
     private static Frame baseFrame = null;
     private static Frame currentFrame = null;
 
-    // TODO better name. Scope and Frame? dollar-scope vs variable-scope? TemplateFrame vs CodeFrame?
-    private static class RenderInfo {
-        public static int nextDollarId = 0;
+    private static int nextTemplateId = 0; // TODO refactor
 
-        public final RenderInfo parent;
-        public final int dollarId = nextDollarId++;
-        RenderInfo(RenderInfo parent) {
-            this.parent = parent;
-        }
-
-        public String $(String name) {
-            return name + "_" + dollarId;
-        }
-    }
-    static RenderInfo baseInfo = null;
-    static RenderInfo currentInfo = null;
+    static TemplateFrame baseTemplateFrame = null;
+    static TemplateFrame currentTemplateFrame = null;
 
     public static String render(TemplateUse templateUse) {
         // Check nobody else is using the Renderer.
@@ -70,9 +58,9 @@ public abstract class Renderer {
         // Setup the Renderer.
         baseFrame = new Frame(null);
         currentFrame = baseFrame;
-        RenderInfo.nextDollarId = 0;
-        baseInfo = new RenderInfo(null);
-        currentInfo = baseInfo;
+        nextTemplateId = 0;
+        baseTemplateFrame = new TemplateFrame(null, nextTemplateId++);
+        currentTemplateFrame = baseTemplateFrame;
 
         renderTemplateUse(templateUse);
 
@@ -80,9 +68,9 @@ public abstract class Renderer {
         if (baseFrame != currentFrame) {
             throw new RendererException("Renderer did not end up at base frame.");
         }
-        // Ensure RenderInfo consistency.
-        if (baseInfo != currentInfo) {
-            throw new RendererException("Renderer did not end up at base info.");
+        // Ensure TemplateFrame consistency.
+        if (baseTemplateFrame != currentTemplateFrame) {
+            throw new RendererException("Renderer did not end up at base templateFrame.");
         }
 
         // Collect Code to String.
@@ -93,14 +81,14 @@ public abstract class Renderer {
         // Release the Renderer.
         baseFrame = null;
         currentFrame = null;
-        baseInfo = null;
-        currentInfo = null;
+        baseTemplateFrame = null;
+        currentTemplateFrame = null;
 
         return code;
     }
 
     static String $(String name) {
-        return getCurrentInfo().$(name);
+        return getCurrentTemplateFrame().$(name);
     }
 
     public static Nothing let(String key, Object value) {
@@ -113,7 +101,7 @@ public abstract class Renderer {
         return block.apply(value);
     }
 
-    // TODO fuel - based on frame or info?
+    // TODO fuel - based on frame or templateFrame?
     public static int depth() {
         return getCurrentFrame().depth();
     }
@@ -126,27 +114,27 @@ public abstract class Renderer {
         return currentFrame;
     }
 
-    private static RenderInfo getCurrentInfo() {
-        if (currentInfo == null) {
+    private static TemplateFrame getCurrentTemplateFrame() {
+        if (currentTemplateFrame == null) {
             // TODO update text - which methods are involved?
             throw new RendererException("A method such as $ or let was called outside a template rendering. Make sure you are not calling templates yourself, but use use().");
         }
-        return currentInfo;
+        return currentTemplateFrame;
     }
 
     private static void renderTemplateUse(TemplateUse templateUse) {
-        RenderInfo info = new RenderInfo(getCurrentInfo());
-        currentInfo = info;
+        TemplateFrame templateFrame = new TemplateFrame(getCurrentTemplateFrame(), nextTemplateId++);
+        currentTemplateFrame = templateFrame;
 
         Frame frame = getCurrentFrame();
         templateUse.visitArguments((name, value) -> frame.addContext(name, value.toString()));
         InstantiatedTemplate it = templateUse.instantiate();
         renderTokenList(it.tokens());
 
-        if (currentInfo != info) {
-            throw new RendererException("Info mismatch!");
+        if (currentTemplateFrame != templateFrame) {
+            throw new RendererException("TemplateFrame mismatch!");
         }
-        currentInfo = info.parent;
+        currentTemplateFrame = currentTemplateFrame.parent();
     }
 
     private static void renderToken(Object token) {
