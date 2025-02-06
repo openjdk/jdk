@@ -29,48 +29,29 @@
  * @run main/othervm PemEncoding
  */
 
-import jdk.test.lib.Asserts;
 import jdk.test.lib.process.ProcessTools;
 
-import java.io.File;
 import java.io.FileInputStream;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.security.cert.CertificateFactory;
-import java.util.regex.Pattern;
 
 public class PemEncoding {
     public static void main(String[] args) throws Exception {
 
-        final var certPath = String.format("%s%s..%sHostnameChecker%scert5.crt",
-                System.getProperty("test.src", "."),
-                File.separator,
-                File.separator,
-                File.separator);
+        final var certPath = Path.of(System.getProperty("test.src", "."))
+                .getParent()
+                .resolve("HostnameChecker")
+                .resolve("cert5.crt")
+                .toString();
 
         final var testCommand = new String[]{"-Dfile.encoding=UTF-16",
                 PemEncoding.PemEncodingTest.class.getName(),
                 certPath};
 
         final var result = ProcessTools.executeTestJava(testCommand);
-
-        // printing and saving all output from the subprocess
-        final var subProcessOutput = result.getStdout();
-        final var subProcessErr = result.getStderr();
-        System.out.printf("Output:\n%s%n", subProcessOutput);
-        System.err.printf("Error output:\n%s%n", subProcessErr);
-
         result.shouldHaveExitValue(0);
 
-        // checking if there are any errors in the result
-        Asserts.assertEquals(subProcessErr, "", "Errors found in subprocess");
-
-        // checking if there are non ASCII characters, as UTF-16 characters should be present in signature
-        final var pattern = Pattern.compile("[^\\x00-\\x7F]");// detects all non-ASCII characters
-        final var matcher = pattern.matcher(subProcessOutput);
-
-        // Some systems may automatically convert non-ASCII to ?
-        // so this will detect the signature in all possible scenarios
-        final var isUTF16Used = matcher.find() || subProcessOutput.contains("??: ?");
-        Asserts.assertTrue(isUTF16Used, "UTF-16 was used");
     }
 
     static class PemEncodingTest {
@@ -79,6 +60,10 @@ public class PemEncoding {
             try (FileInputStream fis = new FileInputStream(args[0])) {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 System.out.println(cf.generateCertificate(fis));
+            }
+
+            if (!"UTF-16".equals(Charset.defaultCharset().displayName())) {
+                throw new RuntimeException("File encoding is not UTF-16");
             }
         }
     }
