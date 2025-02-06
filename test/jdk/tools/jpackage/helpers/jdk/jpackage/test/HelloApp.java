@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,16 +351,6 @@ public final class HelloApp {
             this.outputFilePath = TKit.workDir().resolve(OUTPUT_FILENAME);
             this.params = new HashMap<>();
             this.defaultLauncherArgs = new ArrayList<>();
-
-            if (TKit.isWindows()) {
-                // When running app launchers on Windows, clear users environment (JDK-8254920)
-                removePathEnvVar(true);
-            }
-        }
-
-        public AppOutputVerifier removePathEnvVar(boolean v) {
-            removePathEnvVar = v;
-            return this;
         }
 
         public AppOutputVerifier saveOutput(boolean v) {
@@ -442,10 +432,7 @@ public final class HelloApp {
             if (launcherNoExit) {
                 return getExecutor(args).executeWithoutExitCodeCheck();
             } else {
-                final int attempts = 3;
-                final int waitBetweenAttemptsSeconds = 5;
-                return getExecutor(args).executeAndRepeatUntilExitCode(expectedExitCode, attempts,
-                        waitBetweenAttemptsSeconds);
+                return HelloApp.execute(expectedExitCode, getExecutor(args));
             }
         }
 
@@ -472,18 +459,17 @@ public final class HelloApp {
                 }
             }
 
-            final List<String> launcherArgs = List.of(args);
-            return new Executor()
+            final var executor = new Executor()
                     .setDirectory(outputFile.getParent())
                     .saveOutput(saveOutput)
                     .dumpOutput()
-                    .setRemovePathEnvVar(removePathEnvVar)
                     .setExecutable(executablePath)
-                    .addArguments(launcherArgs);
+                    .addArguments(List.of(args));
+
+            return configureEnvironment(executor);
         }
 
         private boolean launcherNoExit;
-        private boolean removePathEnvVar;
         private boolean saveOutput;
         private final Path launcherPath;
         private Path outputFilePath;
@@ -496,6 +482,29 @@ public final class HelloApp {
         return new AppOutputVerifier(helloAppLauncher);
     }
 
+    public static Executor.Result configureAndExecute(int expectedExitCode, Executor executor) {
+        return execute(expectedExitCode, configureEnvironment(executor));
+    }
+
+    private static Executor.Result execute(int expectedExitCode, Executor executor) {
+        if (TKit.isLinux()) {
+            final int attempts = 3;
+            final int waitBetweenAttemptsSeconds = 5;
+            return executor.executeAndRepeatUntilExitCode(expectedExitCode, attempts,
+                    waitBetweenAttemptsSeconds);
+        } else {
+            return executor.execute(expectedExitCode);
+        }
+    }
+
+    private static Executor configureEnvironment(Executor executor) {
+        if (CLEAR_JAVA_ENV_VARS) {
+            executor.removeEnvVar("JAVA_TOOL_OPTIONS");
+            executor.removeEnvVar("_JAVA_OPTIONS");
+        }
+        return executor;
+    }
+
     static final String OUTPUT_FILENAME = "appOutput.txt";
 
     private final JavaAppDesc appDesc;
@@ -505,4 +514,7 @@ public final class HelloApp {
 
     private static final String CLASS_NAME = HELLO_JAVA.getFileName().toString().split(
             "\\.", 2)[0];
+
+    private static final boolean CLEAR_JAVA_ENV_VARS = Optional.ofNullable(
+            TKit.getConfigProperty("clear-app-launcher-java-env-vars")).map(Boolean::parseBoolean).orElse(false);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classPrinter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
@@ -61,6 +60,7 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/nativeStackPrinter.hpp"
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
 
@@ -645,10 +645,11 @@ void help() {
 extern "C" DEBUGEXPORT void pns(void* sp, void* fp, void* pc) { // print native stack
   Command c("pns");
   static char buf[O_BUFLEN];
-  Thread* t = Thread::current_or_null();
   // Call generic frame constructor (certain arguments may be ignored)
   frame fr(sp, fp, pc);
-  VMError::print_native_stack(tty, fr, t, false, -1, buf, sizeof(buf));
+  NativeStackPrinter nsp(Thread::current_or_null());
+  nsp.print_stack_from_frame(tty, fr, buf, sizeof(buf),
+                             false /* print_source_info */, -1 /* max stack */);
 }
 
 //
@@ -663,14 +664,9 @@ extern "C" DEBUGEXPORT void pns2() { // print native stack
   Command c("pns2");
   static char buf[O_BUFLEN];
   address lastpc = nullptr;
-  if (os::platform_print_native_stack(tty, nullptr, buf, sizeof(buf), lastpc)) {
-    // We have printed the native stack in platform-specific code,
-    // so nothing else to do in this case.
-  } else {
-    Thread* t = Thread::current_or_null();
-    frame fr = os::current_frame();
-    VMError::print_native_stack(tty, fr, t, false, -1, buf, sizeof(buf));
-  }
+  NativeStackPrinter nsp(Thread::current_or_null());
+  nsp.print_stack(tty, buf, sizeof(buf), lastpc,
+                  false /* print_source_info */, -1 /* max stack */);
 }
 #endif
 
@@ -715,10 +711,9 @@ struct TestMultipleStaticAssertFormsInClassScope {
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
 void initialize_assert_poison() {
-  char* page = os::reserve_memory(os::vm_page_size());
+  char* page = os::reserve_memory(os::vm_page_size(), !ExecMem, mtInternal);
   if (page) {
-    MemTracker::record_virtual_memory_tag(page, mtInternal);
-    if (os::commit_memory(page, os::vm_page_size(), false) &&
+    if (os::commit_memory(page, os::vm_page_size(), !ExecMem) &&
         os::protect_memory(page, os::vm_page_size(), os::MEM_PROT_NONE)) {
       g_assert_poison = page;
       g_assert_poison_read_only = page;

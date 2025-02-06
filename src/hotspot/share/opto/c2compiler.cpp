@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -811,9 +810,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_VectorBinaryOp:
   case vmIntrinsics::_VectorTernaryOp:
   case vmIntrinsics::_VectorFromBitsCoerced:
-  case vmIntrinsics::_VectorShuffleIota:
-  case vmIntrinsics::_VectorShuffleToVector:
-  case vmIntrinsics::_VectorWrapShuffleIndexes:
   case vmIntrinsics::_VectorLoadOp:
   case vmIntrinsics::_VectorLoadMaskedOp:
   case vmIntrinsics::_VectorStoreOp:

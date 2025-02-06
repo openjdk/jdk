@@ -51,7 +51,7 @@ ifeq ($(MAKEFILE_PREFIX), Lib)
   # which static library files to include. The variable $(MODULE)_INCLUDED_LIBS is
   # added to for each call to SetupJdkLibrary. The file module-included-libs.txt is then
   # read in StaticLibs.gmk.
-  ifneq ($($(MODULE)_JDK_LIBS), )
+  ifneq ($($(MODULE)_INCLUDED_LIBS), )
     LIBLIST := $(SUPPORT_OUTPUTDIR)/modules_static-libs/$(MODULE)/module-included-libs.txt
 
     $(LIBLIST): $(TARGETS)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
  * @bug 8301580 8322159 8333107 8332230 8338678
  * @summary Verify error recovery w.r.t. Attr
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main AttrRecovery
  */
@@ -117,7 +115,7 @@ public class AttrRecovery extends TestRunner {
         Path curPath = Path.of(".");
         List<String> actual = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-XDdev",
-                         "-XDshould-stop.at=FLOW", "-Xlint:this-escape")
+                         "-XDshould-stop.at=WARN", "-Xlint:this-escape")
                 .sources(code)
                 .outdir(curPath)
                 .run(Expect.FAIL)

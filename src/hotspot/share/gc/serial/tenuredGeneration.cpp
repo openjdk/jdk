@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
 #include "gc/serial/serialFullGC.hpp"
@@ -69,7 +68,7 @@ bool TenuredGeneration::grow_by(size_t bytes) {
 
     size_t new_mem_size = _virtual_space.committed_size();
     size_t old_mem_size = new_mem_size - bytes;
-    log_trace(gc, heap)("Expanding %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+    log_trace(gc, heap)("Expanding %s from %zuK by %zuK to %zuK",
                     name(), old_mem_size/K, bytes/K, new_mem_size/K);
   }
   return result;
@@ -80,7 +79,7 @@ bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
   if (bytes == 0) {
     return true;  // That's what grow_by(0) would return
   }
-  size_t aligned_bytes  = ReservedSpace::page_align_size_up(bytes);
+  size_t aligned_bytes = os::align_up_vm_page_size(bytes);
   if (aligned_bytes == 0){
     // The alignment caused the number of bytes to wrap.  An expand_by(0) will
     // return true with the implication that an expansion was done when it
@@ -88,9 +87,9 @@ bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
     // but not a guarantee.  Align down to give a best effort.  This is likely
     // the most that the generation can expand since it has some capacity to
     // start with.
-    aligned_bytes = ReservedSpace::page_align_size_down(bytes);
+    aligned_bytes = os::align_down_vm_page_size(bytes);
   }
-  size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
+  size_t aligned_expand_bytes = os::align_up_vm_page_size(expand_bytes);
   bool success = false;
   if (aligned_expand_bytes > aligned_bytes) {
     success = grow_by(aligned_expand_bytes);
@@ -122,7 +121,7 @@ bool TenuredGeneration::grow_to_reserved() {
 void TenuredGeneration::shrink(size_t bytes) {
   assert_correct_size_change_locking();
 
-  size_t size = ReservedSpace::page_align_size_down(bytes);
+  size_t size = os::align_down_vm_page_size(bytes);
   if (size == 0) {
     return;
   }
@@ -140,7 +139,7 @@ void TenuredGeneration::shrink(size_t bytes) {
 
   size_t new_mem_size = _virtual_space.committed_size();
   size_t old_mem_size = new_mem_size + size;
-  log_trace(gc, heap)("Shrinking %s from " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+  log_trace(gc, heap)("Shrinking %s from %zuK to %zuK",
                       name(), old_mem_size/K, new_mem_size/K);
 }
 
@@ -236,7 +235,7 @@ void TenuredGeneration::compute_new_size_inner() {
       assert(shrink_bytes <= max_shrink_bytes, "invalid shrink size");
       log_trace(gc, heap)("    shrinking:  initSize: %.1fK  maximum_desired_capacity: %.1fK",
                                OldSize / (double) K, maximum_desired_capacity / (double) K);
-      log_trace(gc, heap)("    shrink_bytes: %.1fK  current_shrink_factor: " SIZE_FORMAT "  new shrink factor: " SIZE_FORMAT "  _min_heap_delta_bytes: %.1fK",
+      log_trace(gc, heap)("    shrink_bytes: %.1fK  current_shrink_factor: %zu  new shrink factor: %zu  _min_heap_delta_bytes: %.1fK",
                                shrink_bytes / (double) K,
                                current_shrink_factor,
                                _shrink_factor,
@@ -354,8 +353,8 @@ void TenuredGeneration::compute_new_size() {
   compute_new_size_inner();
 
   assert(used() == used_after_gc && used_after_gc <= capacity(),
-         "used: " SIZE_FORMAT " used_after_gc: " SIZE_FORMAT
-         " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity());
+         "used: %zu used_after_gc: %zu"
+         " capacity: %zu", used(), used_after_gc, capacity());
 }
 
 void TenuredGeneration::update_promote_stats() {
@@ -384,7 +383,7 @@ bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes)
 
   bool res = (promotion_estimate <= available);
 
-  log_trace(gc)("Tenured: promo attempt is%s safe: available(" SIZE_FORMAT ") %s av_promo(" SIZE_FORMAT "), max_promo(" SIZE_FORMAT ")",
+  log_trace(gc)("Tenured: promo attempt is%s safe: available(%zu) %s av_promo(%zu), max_promo(%zu)",
     res? "":" not", available, res? ">=":"<", avg_promoted, max_promotion_in_bytes);
 
   return res;
@@ -445,7 +444,7 @@ void TenuredGeneration::verify() {
 void TenuredGeneration::print_on(outputStream* st)  const {
   st->print(" %-10s", name());
 
-  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
+  st->print(" total %zuK, used %zuK",
             capacity()/K, used()/K);
   st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
                p2i(_virtual_space.low_boundary()),

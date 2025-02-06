@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   if test "x$DOT" != "x"; then
     AC_MSG_RESULT([yes])
   else
-    AC_MSG_RESULT([no, cannot generate full docs])
+    AC_MSG_RESULT([no, cannot generate full docs or man pages])
     FULL_DOCS_AVAILABLE=false
   fi
 
@@ -129,7 +129,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   if test "x$ENABLE_PANDOC" = "xtrue"; then
     AC_MSG_RESULT([yes])
   else
-    AC_MSG_RESULT([no, cannot generate full docs])
+    AC_MSG_RESULT([no, cannot generate full docs or man pages])
     FULL_DOCS_AVAILABLE=false
   fi
 
@@ -446,6 +446,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
           fi
           if test "x$TOOLCHAIN_TYPE" = "xclang"; then
             ASAN_CFLAGS="$ASAN_CFLAGS -fsanitize-address-use-after-return=never"
+            ASAN_LDFLAGS="$ASAN_LDFLAGS -shared-libasan"
           fi
         elif test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           # -Oy- is equivalent to -fno-omit-frame-pointer in GCC/Clang.

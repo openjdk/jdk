@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -548,6 +548,16 @@ public class IRNode {
         beforeMatchingNameRegex(CON_L, "ConL");
     }
 
+    public static final String CON_D = PREFIX + "CON_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CON_D, "ConD");
+    }
+
+    public static final String CON_F = PREFIX + "CON_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CON_F, "ConF");
+    }
+
     public static final String COUNTED_LOOP = PREFIX + "COUNTED_LOOP" + POSTFIX;
     static {
         String regex = START + "CountedLoop\\b" + MID + END;
@@ -563,6 +573,11 @@ public class IRNode {
     public static final String DIV = PREFIX + "DIV" + POSTFIX;
     static {
         beforeMatchingNameRegex(DIV, "Div(I|L|F|D)");
+    }
+
+    public static final String UDIV = PREFIX + "UDIV" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(UDIV, "UDiv(I|L|F|D)");
     }
 
     public static final String DIV_BY_ZERO_TRAP = PREFIX + "DIV_BY_ZERO_TRAP" + POSTFIX;
@@ -1167,6 +1182,26 @@ public class IRNode {
     public static final String MOD_L = PREFIX + "MOD_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(MOD_L, "ModL");
+    }
+
+    public static final String MOV_F2I = PREFIX + "MOV_F2I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_F2I, "MoveF2I");
+    }
+
+    public static final String MOV_I2F = PREFIX + "MOV_I2F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_I2F, "MoveI2F");
+    }
+
+    public static final String MOV_D2L = PREFIX + "MOV_D2L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_D2L, "MoveD2L");
+    }
+
+    public static final String MOV_L2D = PREFIX + "MOD_L2D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_L2D, "MoveL2D");
     }
 
     public static final String MUL = PREFIX + "MUL" + POSTFIX;

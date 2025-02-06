@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,6 @@
  *  annotation place on type of element (a FIELD&TYPE_USE element on a field
  *  results in 2). Elements with no annotations expect 0.
  *  Source template is read in from testanoninner.template
- *
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;

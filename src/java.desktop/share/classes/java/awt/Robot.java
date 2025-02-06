@@ -57,6 +57,15 @@ import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
  * events are generated in the platform's native input
  * queue. For example, {@code Robot.mouseMove} will actually move
  * the mouse cursor instead of just generating mouse move events.
+ *
+ * @apiNote When {@code autoWaitForIdle()} is enabled, mouse and key related methods
+ * cannot be called on the AWT EDT. This is because when {@code autoWaitForIdle()}
+ * is enabled, the mouse and key methods implicitly call {@code waitForIdle()}
+ * which will throw {@code IllegalThreadStateException} when called on the AWT EDT.
+ * In addition, screen capture operations can be lengthy
+ * and {@code delay(long ms)} clearly inserts a delay, so these also
+ * should not be called on the EDT. Taken together, this means that as much as possible,
+ * methods on this class should not be called on the EDT.
  * <p>
  * Note that some platforms require special privileges or extensions
  * to access low-level input control. If the current platform configuration
@@ -227,6 +236,8 @@ public class Robot {
      *
      * @param x         X position
      * @param y         Y position
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
      */
     public synchronized void mouseMove(int x, int y) {
         peer.mouseMove(x, y);
@@ -279,6 +290,7 @@ public class Robot {
      *         and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
      * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
      *         that does not exist on the mouse and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread and {@code isAutoWaitForIdle} would return true
      * @see #mouseRelease(int)
      * @see InputEvent#getMaskForButton(int)
      * @see Toolkit#areExtraMouseButtonsEnabled()
@@ -336,6 +348,7 @@ public class Robot {
      *         and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
      * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
      *         that does not exist on the mouse and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread and {@code isAutoWaitForIdle} would return true
      * @see #mousePress(int)
      * @see InputEvent#getMaskForButton(int)
      * @see Toolkit#areExtraMouseButtonsEnabled()
@@ -360,6 +373,8 @@ public class Robot {
      * @param wheelAmt  number of "notches" to move the mouse wheel
      *                  Negative values indicate movement up/away from the user,
      *                  positive values indicate movement down/towards the user.
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
      *
      * @since 1.4
      */
@@ -379,6 +394,8 @@ public class Robot {
      * @param   keycode Key to press (e.g. {@code KeyEvent.VK_A})
      * @throws  IllegalArgumentException if {@code keycode} is not
      *          a valid key
+     * @throws  IllegalThreadStateException if called on the AWT event
+     *          dispatching thread and {@code isAutoWaitForIdle} would return true
      * @see     #keyRelease(int)
      * @see     java.awt.event.KeyEvent
      */
@@ -398,7 +415,9 @@ public class Robot {
      * @param   keycode Key to release (e.g. {@code KeyEvent.VK_A})
      * @throws  IllegalArgumentException if {@code keycode} is not a
      *          valid key
-     * @see  #keyPress(int)
+     * @throws  IllegalThreadStateException if called on the AWT event
+     *          dispatching thread and {@code isAutoWaitForIdle} would return true
+     * @see     #keyPress(int)
      * @see     java.awt.event.KeyEvent
      */
     public synchronized void keyRelease(int keycode) {
@@ -498,6 +517,12 @@ public class Robot {
      *          nativeResImage = resolutionVariants.get(0);
      *      }
      * }</pre>
+     *
+     * @apiNote It is recommended to avoid calling this method on
+     * the AWT Event Dispatch Thread since screen capture may be a lengthy
+     * operation, particularly if acquiring permissions is needed and involves
+     * user interaction.
+     *
      * @param   screenRect     Rect to capture in screen coordinates
      * @return  The captured image
      * @throws  IllegalArgumentException if {@code screenRect} width and height
@@ -652,6 +677,10 @@ public class Robot {
     /**
      * Sets whether this Robot automatically invokes {@code waitForIdle}
      * after generating an event.
+     *
+     * @apiNote Setting this to true means you cannot call mouse and key-controlling events
+     * on the AWT Event Dispatching Thread
+     *
      * @param   isOn    Whether {@code waitForIdle} is automatically invoked
      */
     public synchronized void setAutoWaitForIdle(boolean isOn) {
@@ -702,6 +731,10 @@ public class Robot {
      * immediately with the interrupt status set. If the interrupted status is
      * already set, this method returns immediately with the interrupt status
      * set.
+     *
+     * @apiNote It is recommended to avoid calling this method on
+     * the AWT Event Dispatch Thread since delay may be a lengthy
+     * operation.
      *
      * @param  ms time to sleep in milliseconds
      * @throws IllegalArgumentException if {@code ms} is not between {@code 0}

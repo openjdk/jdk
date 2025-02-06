@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2024 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -156,7 +156,9 @@ class MacroAssembler: public Assembler {
   unsigned int mul_reg64_const16(Register rval, Register work, int cval);
 
   // Generic operation r1 := r2 + imm.
-  void add2reg(Register r1, int64_t imm, Register r2 = noreg);
+  void add2reg   (Register r1, int64_t imm, Register r2 = noreg);
+  void add2reg_32(Register r1, int64_t imm, Register r2 = noreg);
+
   // Generic operation r := b + x + d.
   void add2reg_with_index(Register r, int64_t d, Register x, Register b = noreg);
 
@@ -197,6 +199,7 @@ class MacroAssembler: public Assembler {
 
   // Test a bit in memory. Result is reflected in CC.
   void testbit(const Address &a, unsigned int bit);
+  void testbit_ushort(const Address &a, unsigned int bit);
   // Test a bit in a register. Result is reflected in CC.
   void testbit(Register r, unsigned int bitPos);
 

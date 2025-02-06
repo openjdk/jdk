@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/z/c2/zBarrierSetC2.hpp"
@@ -559,7 +558,9 @@ static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
     // The memory address is computed by 'base' and fed to 'mach' via an
     // indirect memory operand (indicated by offset == 0). The ultimate base and
     // offset can be fetched directly from the inputs and Ideal type of 'base'.
-    offset = base->bottom_type()->isa_oopptr()->offset();
+    const TypeOopPtr* oopptr = base->bottom_type()->isa_oopptr();
+    if (oopptr == nullptr) return nullptr;
+    offset = oopptr->offset();
     // Even if 'base' is not an Ideal AddP node anymore, Matcher::ReduceInst()
     // guarantees that the base address is still available at the same slot.
     base = base->in(AddPNode::Base);

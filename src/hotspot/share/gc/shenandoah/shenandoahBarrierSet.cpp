@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
@@ -86,6 +85,14 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators, Basi
   bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
   return (on_weak_ref || unknown) && keep_alive;
+}
+
+void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
+#if COMPILER2_OR_JVMCI
+  assert(!ReduceInitialCardMarks || !ShenandoahCardBarrier || ShenandoahGenerationalHeap::heap()->is_in_young(new_obj),
+         "Error: losing card mark on initialzing store to old gen");
+#endif // COMPILER2_OR_JVMCI
+  assert(thread->deferred_card_mark().is_empty(), "We don't use this");
 }
 
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {

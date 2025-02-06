@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_LIRAssembler.hpp"
@@ -1532,8 +1531,12 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       // cpu register - constant
       jint c = right->as_constant_ptr()->as_jint();
       switch (code) {
-        case lir_add: __ z_agfi(lreg, c);  break;
-        case lir_sub: __ z_agfi(lreg, -c); break; // note: -min_jint == min_jint
+        case lir_add:
+                      __ add2reg_32(lreg, c);
+                      break;
+        case lir_sub:
+                      __ add2reg_32(lreg, java_negate(c));
+                      break;
         case lir_mul: __ z_msfi(lreg, c);  break;
         default: ShouldNotReachHere();
       }

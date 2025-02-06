@@ -26,8 +26,6 @@
 package jdk.tools.jlink.internal;
 
 import static jdk.tools.jlink.internal.LinkableRuntimeImage.RESPATH_PATTERN;
-import static jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException.Reason.MODIFIED_FILE;
-import static jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException.Reason.PATCH_MODULE;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -37,7 +35,6 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
@@ -56,7 +53,6 @@ import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
-import jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
 
@@ -223,7 +219,9 @@ public class JRTArchive implements Archive {
                         Path path = BASE.resolve(m.resPath);
                         if (shaSumMismatch(path, m.hashOrTarget, m.symlink)) {
                             if (errorOnModifiedFile) {
-                                throw new RuntimeImageLinkException(path.toString(), MODIFIED_FILE);
+                                String msg = taskHelper.getMessage("err.runtime.link.modified.file", path.toString());
+                                IOException cause = new IOException(msg);
+                                throw new UncheckedIOException(cause);
                             } else {
                                 taskHelper.warning("err.runtime.link.modified.file", path.toString());
                             }
@@ -460,16 +458,7 @@ public class JRTArchive implements Archive {
                             // the underlying base path is a JrtPath with the
                             // JrtFileSystem underneath which is able to handle
                             // this size query.
-                            try {
-                                return Files.size(archive.getPath().resolve(resPath));
-                            } catch (NoSuchFileException file) {
-                                // This indicates that we don't find the class in the
-                                // modules image using the JRT FS provider. Yet, we find
-                                // the class using the system module finder. Therefore,
-                                // we have a patched module. Mention that module patching
-                                // is not supported.
-                                throw new RuntimeImageLinkException(file.getFile(), PATCH_MODULE);
-                            }
+                            return Files.size(archive.getPath().resolve(resPath));
                         }
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);

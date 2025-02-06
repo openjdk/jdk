@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -49,6 +48,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiAgent.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
@@ -970,7 +970,7 @@ static void print_hex_location(outputStream* st, const_address p, int unitsize, 
       const uint64_t value =
         LITTLE_ENDIAN_ONLY((((uint64_t)i2) << 32) | i1)
         BIG_ENDIAN_ONLY((((uint64_t)i1) << 32) | i2);
-      st->print("%016" FORMAT64_MODIFIER "x", value);
+      st->print(UINT64_FORMAT_0, value);
       print_ascii_form(ascii_form, value, unitsize);
     } else {
       st->print_raw("????????????????");
@@ -994,7 +994,7 @@ static void print_hex_location(outputStream* st, const_address p, int unitsize, 
       case 1: st->print("%02x", (u1)value); break;
       case 2: st->print("%04x", (u2)value); break;
       case 4: st->print("%08x", (u4)value); break;
-      case 8: st->print("%016" FORMAT64_MODIFIER "x", (u8)value); break;
+      case 8: st->print(UINT64_FORMAT_0, (u8)value); break;
     }
     print_ascii_form(ascii_form, value, unitsize);
   } else {
@@ -1121,6 +1121,31 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
   }
 }
 
+void os::print_jvmti_agent_info(outputStream* st) {
+#if INCLUDE_JVMTI
+  const JvmtiAgentList::Iterator it = JvmtiAgentList::all();
+  if (it.has_next()) {
+    st->print_cr("JVMTI agents:");
+  } else {
+    st->print_cr("JVMTI agents: none");
+  }
+  while (it.has_next()) {
+    const JvmtiAgent* agent = it.next();
+    if (agent != nullptr) {
+      const char* dyninfo = agent->is_dynamic() ? "dynamic " : "";
+      const char* instrumentinfo = agent->is_instrument_lib() ? "instrumentlib " : "";
+      const char* loadinfo = agent->is_loaded() ? "loaded" : "not loaded";
+      const char* initinfo = agent->is_initialized() ? "initialized" : "not initialized";
+      const char* optionsinfo = agent->options();
+      const char* pathinfo = agent->os_lib_path();
+      if (optionsinfo == nullptr) optionsinfo = "none";
+      if (pathinfo == nullptr) pathinfo = "none";
+      st->print_cr("%s path:%s, %s, %s, %s%soptions:%s", agent->name(), pathinfo, loadinfo, initinfo, dyninfo, instrumentinfo, optionsinfo);
+    }
+  }
+#endif
+}
+
 void os::print_register_info(outputStream* st, const void* context) {
   int continuation = 0;
   print_register_info(st, context, continuation);
@@ -1159,9 +1184,9 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
   size_t mem = physical_memory()/G;
   if (mem == 0) {  // for low memory systems
     mem = physical_memory()/M;
-    st->print("%d cores, " SIZE_FORMAT "M, ", processor_count(), mem);
+    st->print("%d cores, %zuM, ", processor_count(), mem);
   } else {
-    st->print("%d cores, " SIZE_FORMAT "G, ", processor_count(), mem);
+    st->print("%d cores, %zuG, ", processor_count(), mem);
   }
   get_summary_os_info(buf, buflen);
   st->print_raw(buf);
@@ -1187,8 +1212,7 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
   if (localtime_pd(&tloc, &tz) != nullptr) {
     wchar_t w_buf[80];
     size_t n = ::wcsftime(w_buf, 80, L"%Z", &tz);
-    if (n > 0) {
-      ::wcstombs(buf, w_buf, buflen);
+    if (n > 0 && ::wcstombs(buf, w_buf, buflen) != (size_t)-1) {
       st->print("Time: %s %s", timestring, buf);
     } else {
       st->print("Time: %s", timestring);
@@ -1796,11 +1820,11 @@ void os::trace_page_sizes(const char* str,
                           const size_t page_size) {
 
   log_info(pagesize)("%s: "
-                     " min=" SIZE_FORMAT "%s"
-                     " max=" SIZE_FORMAT "%s"
+                     " min=%zu%s"
+                     " max=%zu%s"
                      " base=" PTR_FORMAT
-                     " size=" SIZE_FORMAT "%s"
-                     " page_size=" SIZE_FORMAT "%s",
+                     " size=%zu%s"
+                     " page_size=%zu%s",
                      str,
                      trace_page_size_params(region_min_size),
                      trace_page_size_params(region_max_size),
@@ -1817,11 +1841,11 @@ void os::trace_page_sizes_for_requested_size(const char* str,
                                              const size_t page_size) {
 
   log_info(pagesize)("%s:"
-                     " req_size=" SIZE_FORMAT "%s"
-                     " req_page_size=" SIZE_FORMAT "%s"
+                     " req_size=%zu%s"
+                     " req_page_size=%zu%s"
                      " base=" PTR_FORMAT
-                     " size=" SIZE_FORMAT "%s"
-                     " page_size=" SIZE_FORMAT "%s",
+                     " size=%zu%s"
+                     " page_size=%zu%s",
                      str,
                      trace_page_size_params(requested_size),
                      trace_page_size_params(requested_page_size),
@@ -1963,7 +1987,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   // we attempt to minimize fragmentation.
   constexpr unsigned total_shuffle_threshold = 1024;
 
-#define ARGSFMT "range [" PTR_FORMAT "-" PTR_FORMAT "), size " SIZE_FORMAT_X ", alignment " SIZE_FORMAT_X ", randomize: %d"
+#define ARGSFMT "range [" PTR_FORMAT "-" PTR_FORMAT "), size 0x%zx, alignment 0x%zx, randomize: %d"
 #define ARGSFMTARGS p2i(min), p2i(max), bytes, alignment, randomize
 
   log_debug(os, map) ("reserve_between (" ARGSFMT ")", ARGSFMTARGS);
@@ -2177,7 +2201,7 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    ThreadCritical tc;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
       MemTracker::record_virtual_memory_uncommit((address)addr, bytes);
@@ -2199,7 +2223,7 @@ bool os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    ThreadCritical tc;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     res = pd_release_memory(addr, bytes);
     if (res) {
       MemTracker::record_virtual_memory_release((address)addr, bytes);
@@ -2284,7 +2308,7 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
   if (MemTracker::enabled()) {
-    ThreadCritical tc;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     result = pd_unmap_memory(addr, bytes);
     if (result) {
       MemTracker::record_virtual_memory_release((address)addr, bytes);
@@ -2323,7 +2347,7 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
 bool os::release_memory_special(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::enabled()) {
-    ThreadCritical tc;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     res = pd_release_memory_special(addr, bytes);
     if (res) {
       MemTracker::record_virtual_memory_release((address)addr, bytes);
@@ -2350,17 +2374,17 @@ void os::naked_sleep(jlong millis) {
 ////// Implementation of PageSizes
 
 void os::PageSizes::add(size_t page_size) {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   _v |= page_size;
 }
 
 bool os::PageSizes::contains(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   return (_v & page_size) != 0;
 }
 
 size_t os::PageSizes::next_smaller(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   size_t v2 = _v & (page_size - 1);
   if (v2 == 0) {
     return 0;
@@ -2369,7 +2393,7 @@ size_t os::PageSizes::next_smaller(size_t page_size) const {
 }
 
 size_t os::PageSizes::next_larger(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   if (page_size == max_power_of_2<size_t>()) { // Shift by 32/64 would be UB
     return 0;
   }
@@ -2404,11 +2428,11 @@ void os::PageSizes::print_on(outputStream* st) const {
       st->print_raw(", ");
     }
     if (sz < M) {
-      st->print(SIZE_FORMAT "k", sz / K);
+      st->print("%zuk", sz / K);
     } else if (sz < G) {
-      st->print(SIZE_FORMAT "M", sz / M);
+      st->print("%zuM", sz / M);
     } else {
-      st->print(SIZE_FORMAT "G", sz / G);
+      st->print("%zuG", sz / G);
     }
   }
   if (first) {
@@ -2442,7 +2466,7 @@ jint os::set_minimum_stack_sizes() {
     // ThreadStackSize so we go with "Java thread stack size" instead
     // of "ThreadStackSize" to be more friendly.
     tty->print_cr("\nThe Java thread stack size specified is too small. "
-                  "Specify at least " SIZE_FORMAT "k",
+                  "Specify at least %zuk",
                   _java_thread_min_stack_allowed / K);
     return JNI_ERR;
   }
@@ -2463,7 +2487,7 @@ jint os::set_minimum_stack_sizes() {
   if (stack_size_in_bytes != 0 &&
       stack_size_in_bytes < _compiler_thread_min_stack_allowed) {
     tty->print_cr("\nThe CompilerThreadStackSize specified is too small. "
-                  "Specify at least " SIZE_FORMAT "k",
+                  "Specify at least %zuk",
                   _compiler_thread_min_stack_allowed / K);
     return JNI_ERR;
   }
@@ -2475,7 +2499,7 @@ jint os::set_minimum_stack_sizes() {
   if (stack_size_in_bytes != 0 &&
       stack_size_in_bytes < _vm_internal_thread_min_stack_allowed) {
     tty->print_cr("\nThe VMThreadStackSize specified is too small. "
-                  "Specify at least " SIZE_FORMAT "k",
+                  "Specify at least %zuk",
                   _vm_internal_thread_min_stack_allowed / K);
     return JNI_ERR;
   }

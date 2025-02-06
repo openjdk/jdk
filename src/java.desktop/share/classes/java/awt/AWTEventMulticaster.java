@@ -110,6 +110,8 @@ public class AWTEventMulticaster implements
     TextListener, InputMethodListener, HierarchyListener,
     HierarchyBoundsListener, MouseWheelListener {
 
+    private static final int MAX_UNBALANCED_TOP_NODES = 100;
+
     /**
      * A variable in the event chain (listener-a)
      */
@@ -952,6 +954,7 @@ public class AWTEventMulticaster implements
      * If listener-b is null, it returns listener-a
      * If neither are null, then it creates and returns
      * a new AWTEventMulticaster instance which chains a with b.
+     *
      * @param a event listener-a
      * @param b event listener-b
      * @return the resulting listener
@@ -959,7 +962,64 @@ public class AWTEventMulticaster implements
     protected static EventListener addInternal(EventListener a, EventListener b) {
         if (a == null)  return b;
         if (b == null)  return a;
-        return new AWTEventMulticaster(a, b);
+        AWTEventMulticaster n = new AWTEventMulticaster(a, b);
+        if (!needsRebalance(n)) {
+            return n;
+        }
+
+        EventListener[] array = getListeners(n, EventListener.class);
+        return rebalance(array, 0, array.length - 1);
+    }
+
+    /**
+     * Return true if the argument represents a binary tree that needs to be rebalanced.
+     */
+    private static boolean needsRebalance(AWTEventMulticaster l) {
+        int level = 0;
+        while (true) {
+            // The criteria for when we need a rebalance is subjective. This method checks
+            // up to a given threshold of the topmost nodes of a AWTEventMulticaster. If
+            // they all include one leaf node, then this method returns true. This criteria
+            // will be met after several consecutive iterations of `addInternal(a, b)`
+            if (++level > MAX_UNBALANCED_TOP_NODES) {
+                return true;
+            }
+            if (l.a instanceof AWTEventMulticaster aMulti) {
+                if (l.b instanceof AWTEventMulticaster) {
+                    // we reached a node where both children are AWTEventMulticaster: let's assume
+                    // the current node marks the start of a well-balanced subtree
+                    return false;
+                }
+                l = aMulti;
+            } else if (l.b instanceof AWTEventMulticaster bMulti) {
+                l = bMulti;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Recursively create a balanced tree that includes a given range of EventListeners.
+     *
+     * @param array the array of the EventListeners to consult
+     * @param index0 the lowest index (inclusive) that the return value must include
+     * @param index1 the highest index (inclusive) that the return value must include.
+     *
+     * @return a balanced tree. If index0 equals index1 then this returns an EventListener from
+     * the array provided. Otherwise this returns an AWTEventMulticaster.
+     */
+    private static EventListener rebalance(EventListener[] array, int index0, int index1) {
+        if (index0 == index1) {
+            return array[index0];
+        }
+        if (index0 == index1 - 1) {
+            return new AWTEventMulticaster(array[index0], array[index1]);
+        }
+        int mid = (index0 + index1) / 2;
+        return new AWTEventMulticaster(
+                rebalance(array, index0, mid),
+                rebalance(array, mid + 1, index1));
     }
 
     /**
