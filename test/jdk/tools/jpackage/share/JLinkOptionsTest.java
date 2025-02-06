@@ -47,7 +47,7 @@ import jdk.jpackage.test.TKit;
 
 public final class JLinkOptionsTest {
 
-    public static Collection input() {
+    public static Collection<?> input() {
         return List.of(new Object[][]{
             // default but with strip-native-commands removed
             {"Hello", new String[]{
