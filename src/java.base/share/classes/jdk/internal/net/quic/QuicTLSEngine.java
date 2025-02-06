@@ -124,7 +124,7 @@ public interface QuicTLSEngine {
      *
      * @param sslParameters the SSLParameters
      * @throws IllegalArgumentException if
-     *         {@link SSLParameters#getProtocols() TLS protocol versions} on the
+     *         {@linkplain SSLParameters#getProtocols() TLS protocol versions} on the
      *         {@code sslParameters} is either empty or contains anything other
      *         than {@code TLSv1.3}
      * @throws NullPointerException if {@code sslParameters} is null
@@ -176,7 +176,7 @@ public interface QuicTLSEngine {
      * keySpace will no longer be able to
      * {@linkplain #encryptPacket(KeySpace, long, ByteBuffer, int, ByteBuffer,
      * Consumer) encrypt} or
-     * {@link #decryptPacket(KeySpace, long, int, ByteBuffer, int, ByteBuffer)
+     * {@linkplain #decryptPacket(KeySpace, long, int, ByteBuffer, int, ByteBuffer)
      * decrypt} packets.
      *
      * @param keySpace The keyspace whose current keys should be discarded
@@ -195,7 +195,7 @@ public interface QuicTLSEngine {
      *
      * When a Quic client receives a Version Negotiation packet,
      * it restarts the handshake by calling this method after updating the
-     * {@link #setLocalQuicTransportParameters(ByteBuffer) transport parameters}
+     * {@linkplain #setLocalQuicTransportParameters(ByteBuffer) transport parameters}
      * with the new version information.
      */
     void restartHandshake() throws IOException;
@@ -215,7 +215,7 @@ public interface QuicTLSEngine {
      * @param quicVersion QUIC protocol version
      * @param connectionId initial destination connection ID
      * @throws IllegalArgumentException if the {@code quicVersion} isn't
-     *         {@link #getSupportedQuicVersions() supported} on this
+     *         {@linkplain #getSupportedQuicVersions() supported} on this
      *         {@code QuicTLSEngine}
      */
     void deriveInitialKeys(QuicVersion quicVersion, ByteBuffer connectionId);
@@ -297,7 +297,7 @@ public interface QuicTLSEngine {
 
     /**
      * Decrypt the given packet bytes using keys for the given packet key space.
-     * Header protection must be removed before decryption.
+     * Header protection must be removed before calling this method.
      * <p>
      * The input buffer contains the packet header and the encrypted packet payload.
      * The packet header (first {@code headerLength} bytes of the input buffer)
@@ -351,7 +351,7 @@ public interface QuicTLSEngine {
      * @throws IllegalArgumentException if originalConnectionId is
      *         longer than 255 bytes
      * @throws IllegalArgumentException if {@code version} isn't
-     *         {@link #getSupportedQuicVersions() supported}
+     *         {@linkplain #getSupportedQuicVersions() supported}
      */
     void signRetryPacket(QuicVersion version, ByteBuffer originalConnectionId,
             ByteBuffer packet, ByteBuffer output) throws ShortBufferException;
@@ -367,7 +367,7 @@ public interface QuicTLSEngine {
      * @throws IllegalArgumentException if originalConnectionId is
      *         longer than 255 bytes
      * @throws IllegalArgumentException if {@code version} isn't
-     *         {@link #getSupportedQuicVersions() supported}
+     *         {@linkplain #getSupportedQuicVersions() supported}
      */
     void verifyRetryPacket(QuicVersion version, ByteBuffer originalConnectionId,
             ByteBuffer packet) throws AEADBadTagException;
@@ -427,12 +427,12 @@ public interface QuicTLSEngine {
     /**
      * Called to check if a {@code HANDSHAKE_DONE} frame needs to be sent by the
      * server. This method will only be called for a {@code QuicTLSEngine} which
-     * is in {@link #isClientMode() server mode}. If the current TLS handshake
+     * is in {@linkplain #isClientMode() server mode}. If the current TLS handshake
      * state is
-     * {@linkplain  HandshakeState#NEED_SEND_HANDSHAKE_DONE
+     * {@link  HandshakeState#NEED_SEND_HANDSHAKE_DONE
      * NEED_SEND_HANDSHAKE_DONE} then this method returns {@code true} and
      * advances the TLS handshake state to
-     * {@linkplain  HandshakeState#HANDSHAKE_CONFIRMED HANDSHAKE_CONFIRMED}.Else
+     * {@link  HandshakeState#HANDSHAKE_CONFIRMED HANDSHAKE_CONFIRMED}. Else
      * returns {@code false}.
      *
      * @return true if handshake state was {@code NEED_SEND_HANDSHAKE_DONE},
@@ -445,12 +445,12 @@ public interface QuicTLSEngine {
     /**
      * Called when HANDSHAKE_DONE message is received from the server. This
      * method will only be called for a {@code QuicTLSEngine} which is in
-     * {@link #isClientMode() client mode}. If the current TLS handshake state
+     * {@linkplain #isClientMode() client mode}. If the current TLS handshake state
      * is
-     * {@linkplain  HandshakeState#NEED_RECV_HANDSHAKE_DONE
+     * {@link  HandshakeState#NEED_RECV_HANDSHAKE_DONE
      * NEED_RECV_HANDSHAKE_DONE} then this method returns {@code true} and
      * advances the TLS handshake state to
-     * {@linkplain  HandshakeState#HANDSHAKE_CONFIRMED HANDSHAKE_CONFIRMED}.Else
+     * {@link  HandshakeState#HANDSHAKE_CONFIRMED HANDSHAKE_CONFIRMED}. Else
      * returns {@code false}.
      *
      * @return true if handshake state was {@code NEED_RECV_HANDSHAKE_DONE},
@@ -470,7 +470,7 @@ public interface QuicTLSEngine {
      *
      * @param quicVersion the negotiated {@code QuicVersion}
      * @throws IllegalArgumentException if the {@code quicVersion} isn't
-     *         {@link #getSupportedQuicVersions() supported} on this engine
+     *         {@linkplain #getSupportedQuicVersions() supported} on this engine
      */
     void versionNegotiated(QuicVersion quicVersion);
 
