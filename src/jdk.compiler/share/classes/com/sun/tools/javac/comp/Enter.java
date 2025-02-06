@@ -546,7 +546,7 @@ public class Enter extends JCTree.Visitor {
 
 //        Assert.checkNonNull(c.modle, c.sourcefile.toString());
 
-        result = c.type;
+        result = tree.type = c.type;
     }
     //where
         /** Does class have the same name as the file it appears in?

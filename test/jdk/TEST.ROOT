@@ -47,7 +47,7 @@
 # tests which require two displays connected.
 
 keys=headful sound printer multimon \
-     i18n intermittent randomness jfr cgroups
+     i18n intermittent randomness cgroups
 
 # Tests that must run in othervm mode
 othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/swing javax/print \
