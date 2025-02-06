@@ -113,7 +113,7 @@ int CompileLog::identify(ciBaseObject* obj) {
       if (!klass->is_loaded()) {
         print(" unloaded='1'");
       } else {
-        print(" flags='%d'", klass->access_flags());
+        print(" flags='%d'", klass->modifier_flags());
       }
       end_elem();
     } else if (mobj->is_method()) {

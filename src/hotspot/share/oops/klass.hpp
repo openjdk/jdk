@@ -750,6 +750,7 @@ public:
 
  public:
   virtual int compute_modifier_flags() const = 0;
+  int modifier_flags() const;
 
   // JVMTI support
   virtual jint jvmti_class_status() const;

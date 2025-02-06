@@ -71,6 +71,13 @@ public class Clazz {
     public int getAppArrayModifiers() {
         return clazzArray.getClass().getModifiers();
     }
+
+    static final Clazz[] clazzArrayFinal = new Clazz[1];
+    @Benchmark
+    public int getAppArrayModifiersFinal() {
+        return clazzArrayFinal.getClass().getModifiers();
+    }
+
     /**
      * Get modifiers for an primitive array class through reflection
      *

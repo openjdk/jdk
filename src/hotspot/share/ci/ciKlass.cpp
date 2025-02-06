@@ -208,6 +208,15 @@ ciInstance* ciKlass::java_mirror() {
 }
 
 // ------------------------------------------------------------------
+// ciKlass::modifier_flags
+jint ciKlass::modifier_flags() {
+  assert(is_loaded(), "not loaded");
+  GUARDED_VM_ENTRY(
+    return get_Klass()->modifier_flags();
+  )
+}
+
+// ------------------------------------------------------------------
 // ciKlass::access_flags
 jint ciKlass::access_flags() {
   assert(is_loaded(), "not loaded");
