@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -533,6 +533,18 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
             print(node.getURL());
             print(' ');
             print(node.getTitle());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitInfo(InfoTree node, Void p) {
+        try {
+            printTagName(node);
+            print(' ');
+            print(node.getReference());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

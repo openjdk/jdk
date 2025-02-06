@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.source.doctree.UsesTree;
 import com.sun.source.doctree.ValueTree;
 import com.sun.source.doctree.VersionTree;
+import com.sun.source.doctree.InfoTree;
 
 /**
  * Factory for creating {@code DocTree} nodes.
@@ -386,6 +387,14 @@ public interface DocTreeFactory {
      * @since 18
      */
     SnippetTree newSnippetTree(List<? extends DocTree> attributes, TextTree text);
+
+
+    /**
+     * Creates a new {@code InfoTree} object, to represent a {@code {@info}} tag.
+     * @param attributes the attributes of the tag
+     * @since 25
+     */
+    InfoTree newInfoTree(List<? extends DocTree> attributes);
 
     /**
      * Creates a new {@code SpecTree} object, to represent an {@code @spec} tag.

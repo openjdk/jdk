@@ -880,7 +880,7 @@ div.summary-table code {
 }
 .deprecated-label, .description-from-type-label, .implementation-label, .member-name-link,
 .package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link, .preview-label,
-.restricted-label {
+.restricted-label, .info-label {
     font-weight:bold;
 }
 sup.preview-mark,
@@ -918,6 +918,48 @@ sup.restricted-mark > a:link {
 div.block div.deprecation-comment {
     font-style:normal;
 }
+
+.info-block {
+    width: fit-content;
+    height: fit-content;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    color: #333;
+}
+
+.info-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #4d7a97;
+}
+
+.info-label {
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.info-text {
+    flex-grow: 1;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.info-text code {
+    background: #f4f4f4;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+
 details.invalid-tag, span.invalid-tag {
     font-size:1em;
     font-family:var(--block-font-family);

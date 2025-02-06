@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ public class Entity extends Content {
     public static final Entity GREATER_THAN = new Entity("&gt;");
     public static final Entity AMPERSAND = new Entity("&amp;");
     public static final Entity NO_BREAK_SPACE = new Entity("&nbsp;");
+    public static final Entity INFO_ICON = new Entity("&#9432;");
 
     public final String text;
 

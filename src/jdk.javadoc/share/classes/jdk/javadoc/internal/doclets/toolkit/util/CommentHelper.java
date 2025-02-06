@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UsesTree;
 import com.sun.source.doctree.ValueTree;
 import com.sun.source.doctree.VersionTree;
+import com.sun.source.doctree.InfoTree;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.SimpleDocTreeVisitor;
@@ -484,6 +485,11 @@ public class CommentHelper {
             @Override
             public List<? extends DocTree> visitUses(UsesTree node, Void p) {
                 return node.getDescription();
+            }
+
+            @Override
+            public List<? extends DocTree> visitInfo(InfoTree node, Void p) {
+                return node.getReference();
             }
 
             @Override

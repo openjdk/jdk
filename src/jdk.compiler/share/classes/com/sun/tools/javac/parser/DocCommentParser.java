@@ -2414,6 +2414,16 @@ public class DocCommentParser {
                 }
             },
 
+            // @info info-text
+            new TagParser(TagParser.Kind.BLOCK, DCTree.Kind.INFO) {
+                @Override
+                public DCTree parse(int pos) throws ParseException {
+                    skipWhitespace();
+                    List<DCTree> description = blockContent();
+                    return m.at(pos).newInfoTree( description);
+                }
+            },
+
             // @uses service-name description
             new TagParser(TagParser.Kind.BLOCK, DCTree.Kind.USES) {
                 @Override

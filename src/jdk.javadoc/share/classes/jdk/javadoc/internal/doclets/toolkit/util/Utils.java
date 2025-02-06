@@ -107,6 +107,7 @@ import com.sun.source.doctree.SerialTree;
 import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UsesTree;
+import com.sun.source.doctree.InfoTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
@@ -2399,6 +2400,10 @@ public class Utils {
 
     public List<? extends UsesTree> getUsesTrees(Element element) {
         return getBlockTags(element, USES, UsesTree.class);
+    }
+
+    public List<? extends InfoTree> getInfoTrees(Element element) {
+        return getBlockTags(element, INFO, InfoTree.class);
     }
 
     public List<? extends DocTree> getFirstSentenceTrees(Element element) {

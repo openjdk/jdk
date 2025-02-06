@@ -89,6 +89,7 @@ import com.sun.tools.javac.tree.DCTree.DCUnknownInlineTag;
 import com.sun.tools.javac.tree.DCTree.DCUses;
 import com.sun.tools.javac.tree.DCTree.DCValue;
 import com.sun.tools.javac.tree.DCTree.DCVersion;
+import com.sun.tools.javac.tree.DCTree.DCInfo;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -440,6 +441,13 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCSince newSinceTree(List<? extends DocTree> text) {
         DCSince tree = new DCSince(cast(text));
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCInfo newInfoTree(List<? extends DocTree> attributes) {
+        DCInfo tree =  new DCInfo(cast(attributes));
         tree.pos = pos;
         return tree;
     }

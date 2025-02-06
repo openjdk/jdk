@@ -238,6 +238,13 @@ public class TagletWriter {
                 continue;
             }
 
+            if (utils.isTypeElement(element) && taglet instanceof SimpleTaglet
+                    && ((SimpleTaglet) taglet).getTagKind() == DocTree.Kind.INFO) {
+                //`Info` block tag information is documented "inline", not in tag info
+                //section.
+                continue;
+            }
+
             if (element.getKind() == ElementKind.MODULE && taglet instanceof BaseTaglet t) {
                 switch (t.getTagKind()) {
                     // @uses and @provides are handled separately, so skip here.

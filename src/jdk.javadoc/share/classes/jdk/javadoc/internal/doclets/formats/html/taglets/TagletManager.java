@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,6 @@ import static com.sun.source.doctree.DocTree.Kind.SINCE;
 import static com.sun.source.doctree.DocTree.Kind.THROWS;
 import static com.sun.source.doctree.DocTree.Kind.USES;
 import static com.sun.source.doctree.DocTree.Kind.VERSION;
-
 import static javax.tools.DocumentationTool.Location.TAGLET_PATH;
 
 /**
@@ -600,10 +599,12 @@ public class TagletManager {
                     EnumSet.of(Location.OVERVIEW, Location.MODULE, Location.PACKAGE, Location.TYPE), showauthor));
         addStandardTaglet(
                 new SimpleTaglet(config, SERIAL_DATA, resources.getText("doclet.SerialData"),
-                    EnumSet.noneOf(Location.class)));
+                        EnumSet.noneOf(Location.class)));
         addStandardTaglet(
                 new SimpleTaglet(config, HIDDEN, null,
-                    EnumSet.of(Location.TYPE, Location.METHOD, Location.FIELD)));
+                        EnumSet.of(Location.TYPE, Location.METHOD, Location.FIELD)));
+        addStandardTaglet(SimpleTaglet.createInfoTaglet(config, resources.getText("doclet.info"),
+                EnumSet.allOf(Location.class)));
 
         // This appears to be a default custom (non-standard) taglet
         Taglet factoryTaglet = new SimpleTaglet(config, "factory", resources.getText("doclet.Factory"),
@@ -706,7 +707,7 @@ public class TagletManager {
 
     public Taglet getTaglet(DocTree.Kind kind) {
         return switch (kind) {
-            case DEPRECATED, LINK, LINK_PLAIN, PARAM, RETURN, THROWS -> getTaglet(kind.tagName);
+            case DEPRECATED, LINK, LINK_PLAIN, PARAM, RETURN, THROWS, INFO -> getTaglet(kind.tagName);
             default ->
                 throw new IllegalArgumentException(kind.toString());
         };

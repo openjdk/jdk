@@ -170,6 +170,7 @@ public class ClassWriter extends SubWriterHolderWriter {
         var div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
         buildClassSignature(div);
         buildDeprecationInfo(div);
+        buildInfoTagInfo(div);
         buildClassDescription(div);
         buildClassTagInfo(div);
         c.add(div);
@@ -255,6 +256,15 @@ public class ClassWriter extends SubWriterHolderWriter {
      */
     protected void buildNestedClassInfo(Content target) {
         addNestedClassInfo(target);
+    }
+
+    /**
+     * If this class is annotated with an {@code @info} tag, build the appropriate information.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected void buildInfoTagInfo(Content target) {
+        addInfoTagInfo(target);
     }
 
     /**
@@ -715,6 +725,16 @@ public class ClassWriter extends SubWriterHolderWriter {
                 }
             }
             classInfo.add(div);
+        }
+    }
+
+    private void addInfoTagInfo(Content target) {
+        if (utils.hasBlockTag(typeElement, DocTree.Kind.INFO)) {
+            var t = configuration.tagletManager.getTaglet(DocTree.Kind.INFO);
+            Content paramInfo = t.getAllBlockTagOutput(typeElement, getTagletWriterInstance(false));
+            if (!paramInfo.isEmpty()) {
+                target.add(HtmlTree.DL(HtmlStyles.notes, paramInfo));
+            }
         }
     }
 
