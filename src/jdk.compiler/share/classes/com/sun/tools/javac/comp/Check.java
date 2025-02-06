@@ -168,13 +168,11 @@ public class Check {
         boolean enforceMandatoryWarnings = true;
 
         deprecationHandler = new MandatoryWarningHandler(log, null, verboseDeprecated,
-                enforceMandatoryWarnings, "deprecated", LintCategory.DEPRECATION);
+                enforceMandatoryWarnings, LintCategory.DEPRECATION, "deprecated");
         removalHandler = new MandatoryWarningHandler(log, null, verboseRemoval,
-                enforceMandatoryWarnings, "removal", LintCategory.REMOVAL);
+                enforceMandatoryWarnings, LintCategory.REMOVAL);
         uncheckedHandler = new MandatoryWarningHandler(log, null, verboseUnchecked,
-                enforceMandatoryWarnings, "unchecked", LintCategory.UNCHECKED);
-        sunApiHandler = new MandatoryWarningHandler(log, null, false,
-                enforceMandatoryWarnings, "sunapi", null);
+                enforceMandatoryWarnings, LintCategory.UNCHECKED);
 
         deferredLintHandler = DeferredLintHandler.instance(context);
 
@@ -203,10 +201,6 @@ public class Check {
     /** A handler for messages about unchecked or unsafe usage.
      */
     private MandatoryWarningHandler uncheckedHandler;
-
-    /** A handler for messages about using proprietary API.
-     */
-    private MandatoryWarningHandler sunApiHandler;
 
     /** A handler for deferred lint warnings.
      */
@@ -285,7 +279,7 @@ public class Check {
      *  @param msg        A Warning describing the problem.
      */
     public void warnRestrictedAPI(DiagnosticPosition pos, Symbol sym) {
-        lint.logIfEnabled(log, pos, LintWarnings.RestrictedMethod(sym.enclClass(), sym));
+        lint.logIfEnabled(pos, LintWarnings.RestrictedMethod(sym.enclClass(), sym));
     }
 
     /** Warn about unchecked operation.
@@ -304,7 +298,6 @@ public class Check {
         deprecationHandler.reportDeferredDiagnostic();
         removalHandler.reportDeferredDiagnostic();
         uncheckedHandler.reportDeferredDiagnostic();
-        sunApiHandler.reportDeferredDiagnostic();
     }
 
 
@@ -480,7 +473,6 @@ public class Check {
         deprecationHandler.clear();
         removalHandler.clear();
         uncheckedHandler.clear();
-        sunApiHandler.clear();
     }
 
     public void putCompiled(ClassSymbol csym) {
@@ -649,7 +641,7 @@ public class Check {
                 && !(ignoreAnnotatedCasts && TreeInfo.containsTypeAnnotation(tree.clazz))
                 && !is292targetTypeCast(tree)) {
             deferredLintHandler.report(_l -> {
-                lint.logIfEnabled(log, tree.pos(), LintWarnings.RedundantCast(tree.clazz.type));
+                lint.logIfEnabled(tree.pos(), LintWarnings.RedundantCast(tree.clazz.type));
             });
         }
     }
@@ -954,7 +946,7 @@ public class Check {
             }
         } else if (hasTrustMeAnno && varargElemType != null &&
                             types.isReifiable(varargElemType)) {
-            lint.logIfEnabled(log, tree, LintWarnings.VarargsRedundantTrustmeAnno(
+            lint.logIfEnabled(tree, LintWarnings.VarargsRedundantTrustmeAnno(
                                 syms.trustMeType.tsym,
                                 diags.fragment(Fragments.VarargsTrustmeOnReifiableVarargs(varargElemType))));
         }
@@ -1323,7 +1315,7 @@ public class Check {
     private void warnOnExplicitStrictfp(DiagnosticPosition pos) {
         DiagnosticPosition prevLintPos = deferredLintHandler.setPos(pos);
         try {
-            deferredLintHandler.report(_ -> lint.logIfEnabled(log, pos, LintWarnings.Strictfp));
+            deferredLintHandler.report(_ -> lint.logIfEnabled(pos, LintWarnings.Strictfp));
         } finally {
             deferredLintHandler.setPos(prevLintPos);
         }
@@ -1542,7 +1534,7 @@ public class Check {
             !TreeInfo.isDiamond(tree) &&
             !withinAnonConstr(env) &&
             tree.type.isRaw()) {
-            lint.logIfEnabled(log, tree.pos(), LintWarnings.RawClassUse(tree.type, tree.type.tsym.type));
+            lint.logIfEnabled(tree.pos(), LintWarnings.RawClassUse(tree.type, tree.type.tsym.type));
         }
     }
     //where
@@ -1866,7 +1858,7 @@ public class Check {
 
         // Optional warning if varargs don't agree
         if ((((m.flags() ^ other.flags()) & Flags.VARARGS) != 0)) {
-            lint.logIfEnabled(log, TreeInfo.diagnosticPositionFor(m, tree),
+            lint.logIfEnabled(TreeInfo.diagnosticPositionFor(m, tree),
                         ((m.flags() & Flags.VARARGS) != 0)
                         ? LintWarnings.OverrideVarargsMissing(varargsOverrides(m, other))
                         : LintWarnings.OverrideVarargsExtra(varargsOverrides(m, other)));
@@ -4121,7 +4113,7 @@ public class Check {
             int opc = ((OperatorSymbol)operator).opcode;
             if (opc == ByteCodes.idiv || opc == ByteCodes.imod
                 || opc == ByteCodes.ldiv || opc == ByteCodes.lmod) {
-                deferredLintHandler.report(_ -> lint.logIfEnabled(log, pos, LintWarnings.DivZero));
+                deferredLintHandler.report(_ -> lint.logIfEnabled(pos, LintWarnings.DivZero));
             }
         }
     }
@@ -4135,7 +4127,7 @@ public class Check {
     void checkLossOfPrecision(final DiagnosticPosition pos, Type found, Type req) {
         if (found.isNumeric() && req.isNumeric() && !types.isAssignable(found, req)) {
             deferredLintHandler.report(_ ->
-                lint.logIfEnabled(log, pos, LintWarnings.PossibleLossOfPrecision(found, req)));
+                lint.logIfEnabled(pos, LintWarnings.PossibleLossOfPrecision(found, req)));
         }
     }
 
@@ -4144,7 +4136,7 @@ public class Check {
      */
     void checkEmptyIf(JCIf tree) {
         if (tree.thenpart.hasTag(SKIP) && tree.elsepart == null) {
-            lint.logIfEnabled(log, tree.thenpart.pos(), LintWarnings.EmptyIf);
+            lint.logIfEnabled(tree.thenpart.pos(), LintWarnings.EmptyIf);
         }
     }
 
@@ -4291,7 +4283,7 @@ public class Check {
             rs.isAccessible(env, c) &&
             !fileManager.isSameFile(c.sourcefile, env.toplevel.sourcefile))
         {
-            lint.logIfEnabled(log, pos,
+            lint.logIfEnabled(pos,
                         LintWarnings.AuxiliaryClassAccessedFromOutsideOfItsSourceFile(c, c.sourcefile));
         }
     }
@@ -4335,7 +4327,7 @@ public class Check {
                             // annotations; check again for being
                             // enabled in the deferred context.
                             deferredLintHandler.report(_ ->
-                                lint.logIfEnabled(log, pos, LintWarnings.MissingExplicitCtor(c, pkg, modle)));
+                                lint.logIfEnabled(pos, LintWarnings.MissingExplicitCtor(c, pkg, modle)));
                         } else {
                             return;
                         }
@@ -4371,7 +4363,7 @@ public class Check {
                             method.attribute(syms.trustMeType.tsym) != null &&
                             isTrustMeAllowedOnMethod(method) &&
                             !types.isReifiable(method.type.getParameterTypes().last())) {
-                        Check.this.lint.logIfEnabled(log, pos(), LintWarnings.VarargsUnsafeUseVarargsParam(method.params.last()));
+                        Check.this.lint.logIfEnabled(pos(), LintWarnings.VarargsUnsafeUseVarargsParam(method.params.last()));
                     }
                     break;
                 default:
@@ -4670,7 +4662,7 @@ public class Check {
     void checkModuleExists(final DiagnosticPosition pos, ModuleSymbol msym) {
         if (msym.kind != MDL) {
             deferredLintHandler.report(_ ->
-                lint.logIfEnabled(log, pos, LintWarnings.ModuleNotFound(msym)));
+                lint.logIfEnabled(pos, LintWarnings.ModuleNotFound(msym)));
         }
     }
 
@@ -4678,7 +4670,7 @@ public class Check {
         if (packge.members().isEmpty() &&
             ((packge.flags() & Flags.HAS_RESOURCE) == 0)) {
             deferredLintHandler.report(_ ->
-                lint.logIfEnabled(log, pos, LintWarnings.PackageEmptyOrNotFound(packge)));
+                lint.logIfEnabled(pos, LintWarnings.PackageEmptyOrNotFound(packge)));
         }
     }
 
@@ -4688,7 +4680,7 @@ public class Check {
                 if (rd.isTransitive() && lint.isEnabled(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC)) {
                     log.warning(pos, LintWarnings.RequiresTransitiveAutomatic);
                 } else {
-                    lint.logIfEnabled(log, pos, LintWarnings.RequiresAutomatic);
+                    lint.logIfEnabled(pos, LintWarnings.RequiresAutomatic);
                 }
             });
         }
