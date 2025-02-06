@@ -295,7 +295,7 @@ class ParsePredicate : public Predicate {
     return parse_predicate_proj->isa_IfTrue();
   }
 
-  static ParsePredicateNode* init_parse_predicate(Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason);
+  static ParsePredicateNode* init_parse_predicate(const Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason);
   NOT_PRODUCT(static void trace_cloned_parse_predicate(bool is_true_path_loop,
                                                        const ParsePredicateSuccessProj* success_proj);)
 
@@ -351,9 +351,9 @@ class RuntimePredicate : public Predicate {
   NONCOPYABLE(RuntimePredicate);
 
  private:
-  static bool is_predicate(Node* maybe_success_proj);
+  static bool is_predicate(const Node* maybe_success_proj);
   static bool has_valid_uncommon_trap(const Node* success_proj);
-  static Deoptimization::DeoptReason uncommon_trap_reason(IfProjNode* if_proj);
+  static Deoptimization::DeoptReason uncommon_trap_reason(const IfProjNode* if_proj);
 
  public:
   Node* entry() const override {
@@ -409,9 +409,9 @@ class TemplateAssertionPredicate : public Predicate {
   void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn) const;
   InitializedAssertionPredicate initialize(PhaseIdealLoop* phase) const;
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
-                                     PhaseIdealLoop* phase) const;
+                                     const PhaseIdealLoop* phase) const;
   void kill(PhaseIdealLoop* phase) const;
-  static bool is_predicate(Node* node);
+  static bool is_predicate(const Node* node);
 
 #ifdef ASSERT
   static void verify(IfTrueNode* template_assertion_predicate_success_proj) {
@@ -457,7 +457,7 @@ class InitializedAssertionPredicate : public Predicate {
   }
 
   void kill(PhaseIdealLoop* phase) const;
-  static bool is_predicate(Node* node);
+  static bool is_predicate(const Node* node);
 
 #ifdef ASSERT
   static void verify(IfTrueNode* initialized_assertion_predicate_success_proj) {
@@ -486,16 +486,16 @@ class TemplateAssertionExpression : public StackObj {
 
  private:
   OpaqueTemplateAssertionPredicateNode* clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy,
-                                              Node* new_ctrl, PhaseIdealLoop* phase);
+                                              Node* new_control, PhaseIdealLoop* phase) const;
 
  public:
-  OpaqueTemplateAssertionPredicateNode* clone(Node* new_control, PhaseIdealLoop* phase);
+  OpaqueTemplateAssertionPredicateNode* clone(Node* new_control, PhaseIdealLoop* phase) const;
   OpaqueTemplateAssertionPredicateNode* clone_and_replace_init(Node* new_control, Node* new_init,
-                                                               PhaseIdealLoop* phase);
+                                                               PhaseIdealLoop* phase) const;
   OpaqueTemplateAssertionPredicateNode* clone_and_replace_init_and_stride(Node* new_control, Node* new_init,
-                                                                          Node* new_stride, PhaseIdealLoop* phase);
-  void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn);
-  OpaqueInitializedAssertionPredicateNode* clone_and_fold_opaque_loop_nodes(Node* new_ctrl, PhaseIdealLoop* phase);
+                                                                          Node* new_stride, PhaseIdealLoop* phase) const;
+  void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn) const;
+  OpaqueInitializedAssertionPredicateNode* clone_and_fold_opaque_loop_nodes(Node* new_control, PhaseIdealLoop* phase) const;
 };
 
 // Class to represent a node being part of a Template Assertion Expression. Note that this is not an IR node.
@@ -514,7 +514,7 @@ class TemplateAssertionExpressionNode : public StackObj {
   NONCOPYABLE(TemplateAssertionExpressionNode);
 
  private:
-  static bool is_template_assertion_predicate(Node* node);
+  static bool is_template_assertion_predicate(const Node* node);
 
  public:
   // Check whether the provided node is part of a Template Assertion Expression or not.
@@ -581,17 +581,17 @@ class AssertionPredicateIfCreator : public StackObj {
   NONCOPYABLE(AssertionPredicateIfCreator);
 
   IfTrueNode* create_for_initialized(Node* new_control, int if_opcode, Node* assertion_expression,
-                                     AssertionPredicateType assertion_predicate_type);
+                                     AssertionPredicateType assertion_predicate_type) const;
   IfTrueNode* create_for_template(Node* new_control, int if_opcode, Node* assertion_expression,
-                                  AssertionPredicateType assertion_predicate_type);
+                                  AssertionPredicateType assertion_predicate_type) const;
  private:
   IfTrueNode* create(Node* new_control, int if_opcode, Node* assertion_expression, const char* halt_message,
-                     AssertionPredicateType assertion_predicate_type);
+                     AssertionPredicateType assertion_predicate_type) const;
   IfNode* create_if_node(Node* new_control, int if_opcode, Node* assertion_expression, IdealLoopTree* loop,
-                         AssertionPredicateType assertion_predicate_type);
-  IfTrueNode* create_success_path(IfNode* if_node, IdealLoopTree* loop);
-  void create_fail_path(IfNode* if_node, IdealLoopTree* loop, const char* halt_message);
-  void create_halt_node(IfFalseNode* fail_proj, IdealLoopTree* loop, const char* halt_message);
+                         AssertionPredicateType assertion_predicate_type) const;
+  IfTrueNode* create_success_path(IfNode* if_node, IdealLoopTree* loop) const;
+  void create_fail_path(IfNode* if_node, IdealLoopTree* loop, const char* halt_message) const;
+  void create_halt_node(IfFalseNode* fail_proj, IdealLoopTree* loop, const char* halt_message) const;
 };
 
 // This class is used to create a Template Assertion Predicate either with a Halt Node from scratch.
@@ -602,7 +602,7 @@ class TemplateAssertionPredicateCreator : public StackObj {
   Node* const _range;
   PhaseIdealLoop* const _phase;
 
-  OpaqueLoopInitNode* create_opaque_init(Node* new_control);
+  OpaqueLoopInitNode* create_opaque_init(Node* new_control) const;
   OpaqueTemplateAssertionPredicateNode* create_for_init_value(Node* new_control, OpaqueLoopInitNode* opaque_init,
                                                               bool& does_overflow) const;
   OpaqueTemplateAssertionPredicateNode* create_for_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init,
@@ -622,7 +622,7 @@ class TemplateAssertionPredicateCreator : public StackObj {
         _phase(phase) {}
   NONCOPYABLE(TemplateAssertionPredicateCreator);
 
-  IfTrueNode* create(Node* new_control);
+  IfTrueNode* create(Node* new_control) const;
 };
 
 // This class creates a new Initialized Assertion Predicate either from a template or from scratch.
@@ -633,7 +633,7 @@ class InitializedAssertionPredicateCreator : public StackObj {
   explicit InitializedAssertionPredicateCreator(PhaseIdealLoop* phase);
   NONCOPYABLE(InitializedAssertionPredicateCreator);
 
-  InitializedAssertionPredicate create_from_template(IfNode* template_assertion_predicate, Node* new_control,
+  InitializedAssertionPredicate create_from_template(const IfNode* template_assertion_predicate, Node* new_control,
                                                      Node* new_init, Node* new_stride) const;
 
   InitializedAssertionPredicate
@@ -642,7 +642,7 @@ class InitializedAssertionPredicateCreator : public StackObj {
                      AssertionPredicateType assertion_predicate_type) const;
 
  private:
-  OpaqueInitializedAssertionPredicateNode* create_assertion_expression_from_template(IfNode* template_assertion_predicate,
+  OpaqueInitializedAssertionPredicateNode* create_assertion_expression_from_template(const IfNode* template_assertion_predicate,
                                                                                      Node* new_control, Node* new_init,
                                                                                      Node* new_stride) const;
   IfTrueNode* create_control_nodes(Node* new_control, int if_opcode,
@@ -792,7 +792,7 @@ class RegularPredicateBlock : public StackObj {
     return iterator.skip_all();
   }
 
-  DEBUG_ONLY(void verify_block(Node* tail);)
+  DEBUG_ONLY(void verify_block(Node* tail) const;)
 
  public:
   Node* entry() const {
