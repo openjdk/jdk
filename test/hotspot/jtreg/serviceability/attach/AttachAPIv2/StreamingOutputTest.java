@@ -55,7 +55,7 @@ public class StreamingOutputTest {
         try {
             app = LingeredApp.startApp("-Xlog:attach=trace",
                                        "-Djdk.attach.vm.streaming=" + String.valueOf(vmStreaming));
-            attach(app, clientStreaming, vmStreaming);
+            attach(app);
         } finally {
             LingeredApp.stopApp(app);
         }
@@ -66,7 +66,7 @@ public class StreamingOutputTest {
         System.out.println();
     }
 
-    private static void attach(LingeredApp app, boolean clientStreaming, boolean vmStreaming) throws Exception {
+    private static void attach(LingeredApp app) throws Exception {
         HotSpotVirtualMachine vm = (HotSpotVirtualMachine)VirtualMachine.attach(String.valueOf(app.getPid()));
         try {
             try (BufferedReader replyReader = new BufferedReader(
@@ -86,6 +86,10 @@ public class StreamingOutputTest {
         System.out.println("Target VM output:");
         System.out.println(out);
         String expected = "executing command setflag, streaming output: " + (clientStreaming ? "1" : "0");
+        if (!out.contains(expected)) {
+            throw new Exception("VM did not logged expected '" + expected + "'");
+        }
+        expected = "default streaming output: " + (vmStreaming ? "1" : "0");
         if (!out.contains(expected)) {
             throw new Exception("VM did not logged expected '" + expected + "'");
         }

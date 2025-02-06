@@ -627,9 +627,10 @@ void AttachListenerThread::thread_entry(JavaThread* thread, TRAPS) {
       }
 
       if (info != nullptr) {
-        log_debug(attach)("executing command %s, streaming output: %d",
+        log_debug(attach)("executing command %s, streaming output: %d (supported by impl: %d)",
                          op->name(),
-                         (op->get_reply_writer() != nullptr && op->streaming_output()) ? 1 : 0);
+                         op->streaming_output() ? 1 : 0,
+                         op->get_reply_writer() != nullptr ? 1 : 0);
         // dispatch to the function that implements this operation
         info->func(op, &st);
         // If the operation handler hasn't set result, set it to JNI_OK now.
