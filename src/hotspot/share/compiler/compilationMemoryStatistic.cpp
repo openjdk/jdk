@@ -359,6 +359,9 @@ void ArenaStatCounter::verify() const {
 }
 #endif // ASSERT
 
+// We keep the name of the involved symbols in Symbol (made permanent) instead of resolving them to string and
+// storing those. That significantly reduces footprint for the result store and delays resolving until printing
+// time, which may be never.
 class FullMethodName {
   Symbol* const _k;
   Symbol* const _m;
