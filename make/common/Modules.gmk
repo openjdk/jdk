@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ SRC_SUBDIRS += share/classes
 
 SPEC_SUBDIRS += share/specs
 
-MAN_SUBDIRS += share/man
+MAN_SUBDIRS += share/man windows/man
 
 # Find all module-info.java files for the current build target platform and
 # configuration.
@@ -172,8 +172,9 @@ MODULE_DEPS_MAKEFILE := $(MAKESUPPORT_OUTPUTDIR)/module-deps.gmk
 
 MODULE_INFOS := $(call FindAllModuleInfos, *)
 
-$(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
-    $(call DependOnVariable, MODULE_INFOS, $(MAKESUPPORT_OUTPUTDIR)/MODULE_INFOS.vardeps)
+ifeq ($(GENERATE_MODULE_DEPS_FILE), true)
+  $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
+      $(call DependOnVariable, MODULE_INFOS, $(MAKESUPPORT_OUTPUTDIR)/MODULE_INFOS.vardeps)
 	$(call MakeTargetDir)
 	$(RM) $@
 	$(foreach m, $(MODULE_INFOS), \
@@ -206,6 +207,7 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	                          printf(" %s", $$0) } \
 	          END           { printf("\n") }' $m \
 	    ) >> $@ $(NEWLINE))
+endif
 
 -include $(MODULE_DEPS_MAKEFILE)
 
