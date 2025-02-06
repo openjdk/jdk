@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, 2025, Oracle and/or its affiliates.
- * All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -744,8 +743,9 @@ public class FileHandler extends StreamHandler {
         if (!isLoggable(record)) {
             return;
         }
-        // JDK-8349206: DO NOT lock during publishing to avoid deadlock risk when
-        // invoking toString() on user parameters.
+        // JDK-8349206: Do NOT synchronize around the parent's publish() method.
+        // StreamHandler will lock, as needed, to protect writes to the metered
+        // stream.
         super.publish(record);
         // We must lock around the check of meter.xxx fields, and the call to
         // rotate(), and since flush() is also synchronized on the same instance,
