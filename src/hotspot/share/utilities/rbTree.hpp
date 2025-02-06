@@ -71,7 +71,7 @@ public:
     RBNode* _left;
     RBNode* _right;
 
-    const K _key;
+    K _key;
 
     DEBUG_ONLY(bool _visited);
 
@@ -84,6 +84,7 @@ public:
     template <typename VV = V, ENABLE_IF(!std::is_same<VV, void>::value)>
     const VV& val() const { return Value::_value; }
 
+    RBNode() {}
     RBNode(const K& key)
         : _parent(0), _left(nullptr), _right(nullptr),
           _key(key) DEBUG_ONLY(COMMA _visited(false)) {}
@@ -144,9 +145,12 @@ public:
     friend RBTree<K, V, COMPARATOR, ALLOCATOR>;
     RBNode** _insert_location;
     RBNode* _parent;
+    K _key;
     Cursor() : _insert_location(nullptr), _parent(nullptr) {}
-    Cursor(RBNode** insert_location, RBNode* parent) : _insert_location(insert_location), _parent(parent) {}
-    Cursor(RBNode* const* insert_location, RBNode* parent) : _insert_location((RBNode**)insert_location), _parent(parent) {}
+    Cursor(RBNode** insert_location, RBNode* parent, const K& key)
+        : _insert_location(insert_location), _parent(parent), _key(key) {}
+    Cursor(RBNode* const* insert_location, RBNode* parent, const K& key)
+        : _insert_location((RBNode**)insert_location), _parent(parent), _key(key) {}
 
   public:
     bool valid() const { return _insert_location != nullptr; }

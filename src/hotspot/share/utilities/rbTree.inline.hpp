@@ -204,7 +204,7 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::cursor_find(const K& key) const {
       insert_location = &((*insert_location)->_right);
     }
   }
-  return Cursor(insert_location, parent);
+  return Cursor(insert_location, parent, key);
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
@@ -216,8 +216,13 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::insert_at_cursor(RBNode* node, 
     _first = node;
   }
 
-  node->set_parent(cursor._parent);
   *cursor._insert_location = node;
+
+  node->set_parent(cursor._parent);
+  node->set_red();
+  node->_left = nullptr;
+  node->_right = nullptr;
+  node->_key = cursor._key;
 
 #ifdef ASSERT
   node->_visited = _expected_visited;
@@ -475,13 +480,13 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::get_cursor(RBNode* node) const {
   }
 
   if (node->parent() == nullptr) {
-    return Cursor(&_root, nullptr);
+    return Cursor(&_root, nullptr, node->key());
   }
 
   RBNode* parent = node->parent();
   RBNode** insert_location =
       node->is_left_child() ? &parent->_left : &parent->_right;
-  return Cursor(insert_location, parent);
+  return Cursor(insert_location, parent, node->key());
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
