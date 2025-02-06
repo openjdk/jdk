@@ -456,13 +456,9 @@ Node* AddNode::find_simple_lshift_pattern(Node* n, BasicType bt, jlong* multipli
       return nullptr;
     }
 
-    if (UseNewCode2) {
-      *multiplier = bt == T_INT
-                    ? (jlong) (1 << con->get_int()) // loss of precision is expected for int as it overflows
-                    : ((jlong) 1) << con->get_int();
-    } else {
-      *multiplier = ((jlong) 1 << con->get_int());
-    }
+    *multiplier = bt == T_INT
+                  ? (jlong) (1 << con->get_int()) // loss of precision is expected for int as it overflows
+                  : ((jlong) 1) << con->get_int();
     return n->in(1);
   }
 
@@ -524,13 +520,10 @@ Node* AddNode::find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* 
         return nullptr;
       }
 
-      if (UseNewCode2) {
-        lhs_multiplier = bt == T_INT
-                         ? (jlong) (1 << con->get_int())
-                         : ((jlong) 1) << con->get_int();
-      } else {
-        lhs_multiplier = (jlong) 1 << con->get_int();
-      }
+      lhs_multiplier = bt == T_INT
+                       ? (jlong) (1 << con->get_int())
+                       : ((jlong) 1) << con->get_int();
+
     }
 
     // AddNode(LShiftNode(a, CON), a)?
@@ -550,13 +543,9 @@ Node* AddNode::find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* 
           return nullptr;
         }
 
-        if (UseNewCode2) {
-          *multiplier = lhs_multiplier + (bt == T_INT
-                        ? (jlong) (1 << con->get_int())
-                        : ((jlong) 1) << con->get_int());
-        } else {
-          *multiplier = lhs_multiplier + ((jlong) 1 << con->get_int());
-        }
+        *multiplier = lhs_multiplier + (bt == T_INT
+                      ? (jlong) (1 << con->get_int())
+                      : ((jlong) 1) << con->get_int());
       }
 
       return lhs->in(1);
