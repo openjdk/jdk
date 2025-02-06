@@ -41,8 +41,6 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.common.ValidatingHeadersConsumer;
-import jdk.internal.net.http.frame.HeaderFrame;
-import jdk.internal.net.http.frame.ResetFrame;
 import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.http3.frames.DataFrame;
 import jdk.internal.net.http.http3.frames.FramesDecoder;
@@ -368,8 +366,7 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
 
          // check whether we need to wait until response headers
          // have been decoded: in that case readingPaused will be true
-         boolean paused;
-         if (paused = readingPaused) return;
+         if (readingPaused) return;
 
          if (debug.on()) debug.log("processQuicData");
          ByteBuffer buffer;

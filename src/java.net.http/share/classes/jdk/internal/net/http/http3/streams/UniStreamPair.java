@@ -57,12 +57,12 @@ import static jdk.internal.net.http.quic.TerminationCause.appLayerClose;
 /**
  * A class that models a pair of HTTP/3 unidirectional streams.
  * This class implements a read loop that calls a {@link
- * #UniStreamPair(StreamType, QuicConnection, Consumer, Runnable, BiConsumer, Logger)
+ * #UniStreamPair(StreamType, QuicConnection, Consumer, Runnable, StreamErrorHandler, Logger)
  * receiver} every time a {@code ByteBuffer} is read from
  * the receiver part.
  * The {@linkplain #futureSenderStreamWriter() sender stream writer},
  * when available, can be used to write to the sender part.
- * The {@link #UniStreamPair(StreamType, QuicConnection, Consumer, Runnable,BiConsumer, Logger)
+ * The {@link #UniStreamPair(StreamType, QuicConnection, Consumer, Runnable,StreamErrorHandler, Logger)
  * writerLoop} is invoked whenever the writer part becomes unblocked, and
  * writing can be resumed.
  * <p>

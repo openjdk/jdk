@@ -245,7 +245,7 @@ public final class Utils {
     }
 
     /**
-     * {@returns a string comparing the given deadline with now, typically
+     * {@return a string comparing the given deadline with now, typically
      *  something like "due since Nms" or "due in Nms"}
      *
      * @apiNote

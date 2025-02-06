@@ -1183,13 +1183,13 @@ public sealed class PacketSpaceManager implements PacketSpace
      *
      * <p> If a received packet is ACK-eliciting, then it will be either
      * directly acknowledged by {@link QuicConnectionImpl} - which will
-     * call {@link #getNextAck(boolean)}  to embed the {@link AckFrame}
+     * call {@link #getNextAckFrame(boolean)}  to embed the {@link AckFrame}
      * in a packet, or by a non-eliciting ACK packet which will be
      * triggered {@link #getMaxAckDelay() maxAckDelay} after the reception
      * of the ACK-eliciting packet (this method, triggered by the {@link
      * PacketTransmissionTask}).
      *
-     * <p> This method doesn't reset the {@linkplain #getNextAck(boolean)
+     * <p> This method doesn't reset the {@linkplain #getNextAckFrame(boolean)
      * next ack frame} to be sent, but reset its delay so that only
      * one non ACK-eliciting packet is emitted to acknowledge a given
      * packet.

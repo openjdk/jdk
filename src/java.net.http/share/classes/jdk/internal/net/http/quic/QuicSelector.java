@@ -106,7 +106,7 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
         static final boolean usePlatformThreads =
                 Utils.getBooleanProperty("jdk.internal.httpclient.quic.poller.usePlatformThreads", false);
 
-        final class EndpointTask implements Runnable {
+        static final class EndpointTask implements Runnable {
 
             final QuicVirtualThreadedEndpoint endpoint;
             final ConcurrentLinkedQueue<EndpointTask> endpoints;

@@ -968,8 +968,7 @@ public final class QuicConnectionStreams {
     /**
      * Called when the connection is closed by the higher level
      * protocol
-     * @param error the error code
-     * @param reason the reason
+     * @param terminationCause the termination cause
      */
     public void terminate(final TerminationCause terminationCause) {
         assert terminationCause != null : "termination cause is null";

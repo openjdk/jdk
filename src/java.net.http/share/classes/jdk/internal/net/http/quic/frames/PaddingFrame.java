@@ -26,7 +26,6 @@ package jdk.internal.net.http.quic.frames;
 
 import jdk.internal.net.quic.QuicTransportException;
 
-import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 

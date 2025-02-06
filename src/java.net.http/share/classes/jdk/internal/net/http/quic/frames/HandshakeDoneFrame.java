@@ -26,7 +26,6 @@ package jdk.internal.net.http.quic.frames;
 
 import jdk.internal.net.quic.QuicTransportException;
 
-import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
@@ -43,7 +42,6 @@ public final class HandshakeDoneFrame extends QuicFrame {
      *
      * @param buffer
      * @param type
-     * @throws IOException
      */
     HandshakeDoneFrame(ByteBuffer buffer, int type) throws QuicTransportException {
         super(HANDSHAKE_DONE);

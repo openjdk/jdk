@@ -27,7 +27,6 @@ package jdk.internal.net.http.quic.frames;
 import jdk.internal.net.quic.QuicTransportErrors;
 import jdk.internal.net.quic.QuicTransportException;
 
-import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
@@ -48,7 +47,7 @@ public final class MaxStreamsFrame extends QuicFrame {
      *
      * @param buffer
      * @param type
-     * @throws IOException
+     * @throws QuicTransportException if the frame was malformed
      */
     MaxStreamsFrame(ByteBuffer buffer, int type) throws QuicTransportException {
         super(MAX_STREAMS);

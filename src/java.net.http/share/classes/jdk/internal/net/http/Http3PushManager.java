@@ -182,7 +182,7 @@ public final class Http3PushManager {
      * yet.
      * @param <T> the type of the body
      */
-    private final class PendingPushPromise<T> implements PushPromise {
+    private static final class PendingPushPromise<T> implements PushPromise {
         // called when the first push promise frame is received
         PendingPushPromise(Http3ExchangeImpl<T> exchange, long pushId, HttpHeaders promiseHeaders) {
             this.accepted = new MinimalFuture<>();

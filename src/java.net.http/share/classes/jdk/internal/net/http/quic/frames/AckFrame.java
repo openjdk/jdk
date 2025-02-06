@@ -28,7 +28,6 @@ import jdk.internal.net.http.quic.packets.QuicPacket;
 import jdk.internal.net.quic.QuicTransportErrors;
 import jdk.internal.net.quic.QuicTransportException;
 
-import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -70,7 +69,7 @@ public final class AckFrame extends QuicFrame {
      * first byte after the read ACK frame.
      * @param buffer a buffer containing the ACK frame
      * @param type the frame type read from the buffer
-     * @throws IOException if the ACK frame was malformed
+     * @throws QuicTransportException if the ACK frame was malformed
      */
     AckFrame(ByteBuffer buffer, int type) throws QuicTransportException {
         super(ACK);

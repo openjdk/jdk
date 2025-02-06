@@ -443,8 +443,6 @@ public final class Http3ClientImpl implements AutoCloseable {
     private CompletableFuture<Http3Connection> wrapForDebug(CompletableFuture<Http3Connection> h3Cf,
                                                     Exchange<?> exchange,
                                                     HttpRequestImpl request) {
-        // System.err.println("Recreating connection for: " + request + " #"
-        //        + exchange.multi.id);
         if (debug.on() || Log.http3()) {
             if (Log.http3()) {
                 Log.logHttp3("Recreating connection for: " + request + " #"

@@ -26,7 +26,6 @@
 package jdk.internal.net.http;
 
 import java.net.http.HttpResponse.PushPromiseHandler.PushId;
-import java.net.http.HttpResponse.PushPromiseHandler.PushId.Http3PushId;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.net.http.HttpRequest;

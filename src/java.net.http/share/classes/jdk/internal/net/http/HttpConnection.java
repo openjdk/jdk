@@ -46,7 +46,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 
-import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
 
 import jdk.internal.net.http.common.Alpns;

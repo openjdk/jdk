@@ -311,7 +311,6 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
             increaseProcessedData(knownSize);
             return;
         }
-        var requestedStopSending = this.requestedStopSending;
         if (requestedStopSending) {
             // drop the frame
             if (debug.on()) {
@@ -334,7 +333,7 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
             // would be considered ready if requestStopSending had been
             // called concurrently, and `receive` was called after the
             // state had been switched
-            if (requestedStopSending = this.requestedStopSending) {
+            if (requestedStopSending) {
                 return;
             }
             assert received == readyFrame.offset()

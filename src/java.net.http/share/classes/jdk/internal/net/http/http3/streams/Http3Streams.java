@@ -34,7 +34,6 @@ import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.quic.streams.QuicReceiverStream;
 import jdk.internal.net.http.quic.streams.QuicSenderStream;
 import jdk.internal.net.http.quic.streams.QuicStream;
-import jdk.internal.net.quic.QuicTransportErrors;
 
 public final class Http3Streams {
     public static final int CONTROL_STREAM_CODE = 0x00;

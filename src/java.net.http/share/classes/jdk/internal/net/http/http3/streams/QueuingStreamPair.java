@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import jdk.internal.net.http.common.Logger;
@@ -37,7 +36,6 @@ import jdk.internal.net.http.http3.streams.Http3Streams.StreamType;
 import jdk.internal.net.http.quic.QuicConnection;
 import jdk.internal.net.http.quic.streams.QuicSenderStream;
 import jdk.internal.net.http.quic.streams.QuicSenderStream.SendingStreamState;
-import jdk.internal.net.http.quic.streams.QuicStream;
 import jdk.internal.net.http.quic.streams.QuicStreamReader;
 import jdk.internal.net.http.quic.streams.QuicStreamWriter;
 

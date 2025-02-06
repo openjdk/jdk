@@ -27,7 +27,6 @@ package jdk.internal.net.http.common;
 import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;

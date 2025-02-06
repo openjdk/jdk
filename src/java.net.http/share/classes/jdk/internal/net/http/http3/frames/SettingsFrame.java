@@ -27,7 +27,6 @@ package jdk.internal.net.http.http3.frames;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.stream.LongStream;
 
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.http3.Http3Error;

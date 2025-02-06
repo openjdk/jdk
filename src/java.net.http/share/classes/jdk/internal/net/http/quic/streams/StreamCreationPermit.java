@@ -25,7 +25,6 @@
 package jdk.internal.net.http.quic.streams;
 
 import java.util.Objects;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
@@ -42,7 +41,7 @@ import jdk.internal.net.http.common.SequentialScheduler;
  * Quic specifies limits on the number of uni and bidi streams that an endpoint can create.
  * This {@code StreamCreationPermit} is used to keep track of that limit and is expected to be
  * used before attempting to open a Quic stream. Either of {@link #tryAcquire()} or
- * {@link #tryAcquire(long, TimeUnit)} must be used before attempting to open a new stream. Stream
+ * {@link #tryAcquire(long, TimeUnit, Executor)} must be used before attempting to open a new stream. Stream
  * must only be opened if that method returns {@code true} which implies the stream creation limit
  * hasn't yet reached.
  * <p>

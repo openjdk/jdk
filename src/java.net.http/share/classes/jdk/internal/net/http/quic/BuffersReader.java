@@ -179,7 +179,7 @@ public abstract sealed class BuffersReader {
     public abstract long read();
 
     /**
-     * {@returns The offset of this {@code BuffersReader}}
+     * {@return The offset of this {@code BuffersReader}}
      * This is the position in the first {@code ByteBuffer} that
      * was set on the reader. The {@code BuffersReader} will not
      * allow to get or set a position lower than the offset.
@@ -255,7 +255,7 @@ public abstract sealed class BuffersReader {
         }
 
         /**
-         * This method has the same semantics than {@link #getAndReleaseBuffer(long)}
+         * This method has the same semantics than {@link #getAndRelease(long)}
          * except that it avoids creating a list.
          * @return a buffer containing the next {@code bytes}.
          */

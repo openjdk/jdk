@@ -41,8 +41,6 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -949,7 +947,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * The ProtectionRecord indicates the position at which the encrypted packet
      * should be written in the datagram, as well as the position of the
      * first packet in the datagram. After encrypting the packet, this method calls
-     * {@link #processEncrypted(ProtectionRecord)}
+     * {@link #pushEncryptedDatagram(ProtectionRecord)}
      *
      * @param protectionRecord a record containing a quic packet to encrypt,
      *                         a destination byte buffer, and various offset information.
@@ -4030,7 +4028,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
     /**
      * Signal the connection that some stream data is available for sending on one or more streams.
-     * @param streamId the stream ids
+     * @param streamIds the stream ids
      */
     public void streamDataAvailableForSending(final Set<Long> streamIds) {
         for (final long id : streamIds) {

@@ -49,7 +49,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import jdk.internal.net.http.Http3PushManager.CancelPushReason;
-import jdk.internal.net.http.common.ConnectionExpiredException;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;

@@ -575,15 +575,11 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         @Override
         protected void logComplete(Throwable error) {
             if (error == null) {
-                // System.err.println("HTTP/3 body successfully completed for: " + request
-                //        + " #" + exchange.multi.id);
                 if (Log.requests()) {
                     Log.logResponse(() -> "HTTP/3 body successfully completed for: " + request
                             + " #" + exchange.multi.id);
                 }
             } else {
-                // System.err.println("HTTP/3 body exceptionally completed for: " + request + " (" + error + ")"
-                //        + " #" + exchange.multi.id);
                 if (Log.requests()) {
                     Log.logResponse(() -> "HTTP/3 body exceptionally completed for: "
                             + request + " (" + error + ")"

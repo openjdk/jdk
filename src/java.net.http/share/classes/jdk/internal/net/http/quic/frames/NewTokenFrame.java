@@ -45,7 +45,7 @@ public final class NewTokenFrame extends QuicFrame {
      *
      * @param buffer
      * @param type
-     * @throws QuicTransportException
+     * @throws QuicTransportException if the frame was malformed
      */
     NewTokenFrame(ByteBuffer buffer, int type) throws QuicTransportException {
         super(NEW_TOKEN);

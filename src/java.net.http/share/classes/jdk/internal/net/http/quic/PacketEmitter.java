@@ -65,7 +65,7 @@ public interface PacketEmitter {
      * @param packetSpaceManager the packet space manager on behalf of
      *                           which the packet is being retransmitted
      * @param packet the unacknowledged packet which should be retransmitted
-     * @param packet the number of previous retransmission of this packet.
+     * @param attempts the number of previous retransmission of this packet.
      *               A value of 0 indicates the first retransmission.
      */
     void retransmit(PacketSpace packetSpaceManager, QuicPacket packet, int attempts)

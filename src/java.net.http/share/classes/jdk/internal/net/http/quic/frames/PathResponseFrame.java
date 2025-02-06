@@ -26,7 +26,6 @@ package jdk.internal.net.http.quic.frames;
 
 import jdk.internal.net.quic.QuicTransportException;
 
-import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
@@ -46,7 +45,7 @@ public final class PathResponseFrame extends QuicFrame {
      *
      * @param buffer
      * @param type
-     * @throws IOException
+     * @throws QuicTransportException if the frame was malformed
      */
     PathResponseFrame(ByteBuffer buffer, int type) throws QuicTransportException {
         super(PATH_RESPONSE);

@@ -62,7 +62,6 @@ import jdk.internal.net.http.qpack.readers.HeaderFrameReader;
 import jdk.internal.net.http.quic.streams.QuicReceiverStream;
 import jdk.internal.net.http.quic.streams.QuicStreamReader;
 
-import static jdk.internal.net.http.http3.Http3Error.H3_FRAME_ERROR;
 import static jdk.internal.net.http.http3.Http3Error.H3_FRAME_UNEXPECTED;
 
 /**

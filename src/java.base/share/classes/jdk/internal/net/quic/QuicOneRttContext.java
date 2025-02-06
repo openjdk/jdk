@@ -24,8 +24,6 @@
  */
 package jdk.internal.net.quic;
 
-import java.util.concurrent.Future;
-
 // TODO: document this internal interface
 public interface QuicOneRttContext {
 

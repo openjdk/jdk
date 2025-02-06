@@ -232,7 +232,7 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
 
     /**
      * Called when the connection is closed locally
-     * @param errorCode the error code
+     * @param terminationCause the termination cause
      */
     void terminate(final TerminationCause terminationCause) {
         setErrorCode(terminationCause.getCloseCode());
