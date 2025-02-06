@@ -63,13 +63,13 @@ public:
     const K _key;
     V _value;
 
-    DEBUG_ONLY(bool _visited);
+    DEBUG_ONLY(mutable bool _visited);
 
   public:
     const K& key() const { return _key; }
     V& val() { return _value; }
-    void set_val(const V& v) { _value = v; }
     const V& val() const { return _value; }
+    void set_val(const V& v) { _value = v; }
 
   private:
     bool is_black() const { return (_parent & 0x1) != 0; }
@@ -103,22 +103,22 @@ public:
     // Returns left child (now parent)
     RBNode* rotate_right();
 
-    RBNode* prev();
+    const RBNode* prev() const;
 
-    RBNode* next();
+    const RBNode* next() const;
 
   #ifdef ASSERT
     void verify(size_t& num_nodes, size_t& black_nodes_until_leaf,
                 size_t& shortest_leaf_path, size_t& longest_leaf_path,
-                size_t& tree_depth, bool expect_visited);
-#endif // ASSERT
+                size_t& tree_depth, bool expect_visited) const;
+  #endif // ASSERT
   }; // End: RBNode
 
   typedef RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode NodeType;
 
 private:
   RBNode* _root;
-  DEBUG_ONLY(bool _expected_visited);
+  DEBUG_ONLY(mutable bool _expected_visited);
 
   RBNode* allocate_node(const K& key, const V& val) {
     void* node_place = _allocator.allocate(sizeof(RBNode));
@@ -163,7 +163,7 @@ public:
   }
   ~RBTree() { this->remove_all(); }
 
-  size_t size() { return _num_nodes; }
+  size_t size() const { return _num_nodes; }
 
   // Inserts a node with the given k/v into the tree,
   // if the key already exist, the value is updated instead.
@@ -314,7 +314,7 @@ public:
   // Return the range [start, end)
   // where start->key() <= addr < end->key().
   // Failure to find the range leads to start and/or end being null.
-  Range find_enclosing_range(K key) {
+  Range find_enclosing_range(K key) const {
     RBNode* start = closest_leq(key);
     RBNode* end = closest_gt(key);
     return Range(start, end);
@@ -345,12 +345,10 @@ public:
 
   // Visit all RBNodes in ascending order whose keys are in range [from, to), calling f on each node.
   template <typename F>
-  void visit_range_in_order(const K& from, const K& to, F f);
+  void visit_range_in_order(const K& from, const K& to, F f) const;
 
-#ifdef ASSERT
   // Verifies that the tree is correct and holds rb-properties
-  void verify_self();
-#endif // ASSERT
+  void verify_self() const NOT_DEBUG({});
 
   void print_on(outputStream* st) const;
 

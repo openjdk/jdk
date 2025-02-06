@@ -28,6 +28,7 @@
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/rbTree.hpp"
 
@@ -88,9 +89,9 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::rotate_right() {
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
-RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::prev() {
-  RBNode* node = this;
+inline const typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
+RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::prev() const {
+  const RBNode* node = this;
   if (_left != nullptr) { // right subtree exists
     node = _left;
     while (node->_right != nullptr) {
@@ -106,9 +107,9 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::prev() {
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
-RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::next() {
-  RBNode* node = this;
+inline const typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
+RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::next() const {
+  const RBNode* node = this;
   if (_right != nullptr) { // right subtree exists
     node = _right;
     while (node->_left != nullptr) {
@@ -127,7 +128,7 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::next() {
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::verify(
     size_t& num_nodes, size_t& black_nodes_until_leaf, size_t& shortest_leaf_path, size_t& longest_leaf_path,
-    size_t& tree_depth, bool expect_visited) {
+    size_t& tree_depth, bool expect_visited) const {
   assert(expect_visited != _visited, "node already visited");
   _visited = !_visited;
 
@@ -480,9 +481,9 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(RBNode* node) {
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 template <typename F>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_in_order(F f) const {
-  RBNode* to_visit[64];
+  const RBNode* to_visit[64];
   int stack_idx = 0;
-  RBNode* head = _root;
+  const RBNode* head = _root;
   while (stack_idx > 0 || head != nullptr) {
     while (head != nullptr) {
       to_visit[stack_idx++] = head;
@@ -496,11 +497,11 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_in_order(F f) const {
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 template <typename F>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_range_in_order(const K& from, const K& to, F f) {
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_range_in_order(const K& from, const K& to, F f) const {
   assert(COMPARATOR::cmp(from, to) <= 0, "from must be less or equal to to");
-  RBNode* curr = closest_geq(from);
+  const RBNode* curr = closest_geq(from);
   if (curr == nullptr) return;
-  RBNode* end = closest_geq(to);
+  const RBNode* const end = closest_geq(to);
 
   while (curr != nullptr && curr != end) {
     f(curr);
@@ -510,7 +511,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_range_in_order(const K& f
 
 #ifdef ASSERT
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::verify_self() {
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::verify_self() const {
   if (_root == nullptr) {
     assert(_num_nodes == 0, "rbtree has nodes but no root");
     return;
