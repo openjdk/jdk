@@ -296,7 +296,7 @@ final class TestBuilder implements AutoCloseable {
         });
     }
 
-    // Wraps Method.invike() into ThrowingRunnable.run()
+    // Wraps Method.invoke() into ThrowingRunnable.run()
     private ThrowingConsumer<Object> wrap(Method method) {
         return (test) -> {
             Class<?> methodClass = method.getDeclaringClass();
