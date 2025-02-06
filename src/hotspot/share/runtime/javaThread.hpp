@@ -704,6 +704,11 @@ private:
   // current thread, i.e. reverts optimizations based on escape analysis.
   void wait_for_object_deoptimization();
 
+  inline bool is_virtual() const {
+    ContinuationEntry* ce = last_continuation();
+    return ce != nullptr && ce->is_virtual_thread();
+  }
+
 #if INCLUDE_JVMTI
   inline void set_carrier_thread_suspended();
   inline void clear_carrier_thread_suspended();
