@@ -42,7 +42,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpTimeoutException;
@@ -90,7 +89,6 @@ import java.util.stream.Stream;
 import jdk.internal.net.http.common.DebugLogger.LoggerConfig;
 import jdk.internal.net.http.HttpRequestImpl;
 
-import jdk.internal.net.http.http3.Http3Error;
 import sun.net.NetProperties;
 import sun.net.util.IPAddressUtil;
 import sun.net.www.HeaderParser;
@@ -226,19 +224,6 @@ public final class Utils {
                 }
                 return true;
             };
-
-    // Headers that are not generally restricted, and can therefore be set by users,
-    // but can in some contexts be overridden by the implementation.
-    // Currently, only contains "Authorization" which will
-    // be overridden, when an Authenticator is set on the HttpClient.
-    // Needs to be BiPred<String,String> to fit with general form of predicates
-    // used by caller.
-
-    public static final BiPredicate<String, String> CONTEXT_RESTRICTED(HttpClient client) {
-        return (k, v) -> client.authenticator().isEmpty() ||
-                (!k.equalsIgnoreCase("Authorization")
-                        && !k.equalsIgnoreCase("Proxy-Authorization"));
-    }
 
     public static <T extends Throwable> T addSuppressed(T x, Throwable suppressed) {
         if (x != suppressed && suppressed != null) {
@@ -500,23 +485,6 @@ public final class Utils {
     public static IOException getIOException(Throwable t) {
         if (t instanceof IOException) {
             return (IOException) t;
-        }
-        Throwable cause = t.getCause();
-        if (cause != null) {
-            return getIOException(cause);
-        }
-        return new IOException(t);
-    }
-
-    // we can't return a choice between two types, so return one
-    // and throw the other.
-    public static IOException throwRuntimeOrIOException(Throwable t) {
-        if (t instanceof IOException io) {
-            return io;
-        } else if (t instanceof RuntimeException rt) {
-            throw rt;
-        } else if (t instanceof Error e) {
-            throw e;
         }
         Throwable cause = t.getCause();
         if (cause != null) {
@@ -922,7 +890,6 @@ public final class Utils {
         if (those.isEmpty()) return 0;
         Iterator<ByteBuffer> lefti = these.iterator(), righti = those.iterator();
         ByteBuffer left = next(lefti), right = next(righti);
-        var done = false;
         long parsed = 0;
         while (left != null || right != null) {
             int m = left == null || right == null ? 0 : left.mismatch(right);
@@ -1734,18 +1701,6 @@ public final class Utils {
             return "local endpoint (loopback) and remote endpoint (wildcard) ports conflict";
         }
         return null;
-    }
-
-    /**
-     * Returns true if the code should not be handled as an error.
-     * @param code a Quic or HTTP/3 error code
-     * @return whether {@code code} should be considered an error.
-     */
-    public static boolean applicationNoError(long code) {
-        return Http3Error.isNoError(code);
-    }
-    public static String stringForApplicationCode(long code) {
-        return Http3Error.stringForCode(code);
     }
 
     /**
