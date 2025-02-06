@@ -26,6 +26,7 @@
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
+#include "logging/logDecorations.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
@@ -368,6 +369,20 @@ void LogFileOutput::rotate() {
     jio_fprintf(defaultStream::error_stream(), "Could not reopen file '%s' during log rotation (%s).\n",
                 _file_name, os::strerror(errno));
     return;
+  }
+
+  { // Produce a file-unique rotation message.
+    LogTagSet& tagset = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
+    LogLevelType level = tagset.level_for(this);
+    if (level >= LogLevelType::Info) {
+      LogDecorations decorations(LogLevel::Info, tagset, tagset.decorators());
+
+      stringStream st(os::iso8601_timestamp_size);
+      char buf[os::iso8601_timestamp_size];
+      char* result = os::iso8601_time(os::javaTimeMillis(), buf, os::iso8601_timestamp_size, true);
+      st.print("Rotated file at %s", result);
+      this->write_internal(decorations, st.freeze());
+    }
   }
 
   // Reset accumulated size, increase current file counter, and check for file count wrap-around.
