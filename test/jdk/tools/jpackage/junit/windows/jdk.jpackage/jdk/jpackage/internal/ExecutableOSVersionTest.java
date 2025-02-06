@@ -48,7 +48,5 @@ public class ExecutableOSVersionTest {
         final var javaDllVer = getExecutableOSVersion(javaHome.resolve("bin/java.dll"));
 
         assertEquals(javaExeVer, javaDllVer);
-        
-        System.out.println("YYYYYYYYYYYYYYYYY");
     }
 }
