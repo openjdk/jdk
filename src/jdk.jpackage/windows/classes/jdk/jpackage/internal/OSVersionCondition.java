@@ -32,13 +32,14 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
 import jdk.jpackage.internal.util.XmlConsumer;
 
 
@@ -50,17 +51,22 @@ record OSVersionCondition(WindowsVersion version) {
     static OSVersionCondition createFromAppImage(ApplicationLayout appLayout, Map<String, ? super Object> params) {
         Objects.requireNonNull(appLayout);
 
-        final var launcherName = StandardBundlerParam.APP_NAME.fetchFrom(params);
-        final var launcherPath = appLayout.launchersDirectory().resolve(launcherName + ".exe");
+        final List<Path> executables = new ArrayList<>();
 
-        final Path javaDll = appLayout.runtimeDirectory().resolve("bin\\java.dll");
+        if (!StandardBundlerParam.isRuntimeInstaller(params)) {
+            final var launcherName = StandardBundlerParam.APP_NAME.fetchFrom(params);
+            executables.add(appLayout.launchersDirectory().resolve(launcherName + ".exe"));
+        }
 
-        final var lowestOsVersion = Stream.of(launcherPath, javaDll)
+        executables.add(appLayout.runtimeDirectory().resolve("bin\\java.dll"));
+
+        final var lowestOsVersion = executables.stream()
                 .filter(Files::isRegularFile)
                 .map(WindowsVersion::getExecutableOSVersion)
-                .sorted(Comparator.comparing(WindowsVersion::majorOSVersion).thenComparing(WindowsVersion::minorOSVersion))
+                // Order by version, with the higher version first
+                .sorted(WindowsVersion.descendingOrder())
                 .findFirst().orElseGet(() -> {
-                    // No java.dll, no launchers, it is either a very customized or messed up app image.
+                    // No java.dll, no launchers, it is either a highly customized or messed up app image.
                     // Let it install on Windows NT/95 or newer.
                     return new WindowsVersion(4, 0);
                 });
@@ -69,6 +75,17 @@ record OSVersionCondition(WindowsVersion version) {
     }
 
     record WindowsVersion(int majorOSVersion, int minorOSVersion) {
+
+        WindowsVersion {
+            if (majorOSVersion <= 0) {
+                throw new IllegalArgumentException("Invalid major version");
+            }
+
+            if (minorOSVersion < 0) {
+                throw new IllegalArgumentException("Invalid minor version");
+            }
+        }
+
         static WindowsVersion getExecutableOSVersion(Path executable) {
             try (final var fin = Files.newInputStream(executable);
                     final var in = new BufferedInputStream(fin)) {
@@ -113,6 +130,10 @@ record OSVersionCondition(WindowsVersion version) {
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
+        }
+
+        static Comparator<WindowsVersion> descendingOrder() {
+            return Comparator.comparing(WindowsVersion::majorOSVersion).thenComparing(WindowsVersion::minorOSVersion).reversed();
         }
 
         private static int read16BitLE(InputStream in) throws IOException {

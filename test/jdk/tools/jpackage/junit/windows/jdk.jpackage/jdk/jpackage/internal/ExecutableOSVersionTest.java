@@ -29,15 +29,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.condition.OS.WINDOWS;
 
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Stream;
+import jdk.jpackage.internal.OSVersionCondition.WindowsVersion;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 
 public class ExecutableOSVersionTest {
 
     @Test
     @EnabledOnOs(WINDOWS)
-    public void test() {
+    public void testWindowsVersionGetExecutableOSVersion() {
         final var javaHome = Path.of(System.getProperty("java.home"));
 
         final var javaExeVer = getExecutableOSVersion(javaHome.resolve("bin/java.exe"));
@@ -48,5 +53,27 @@ public class ExecutableOSVersionTest {
         final var javaDllVer = getExecutableOSVersion(javaHome.resolve("bin/java.dll"));
 
         assertEquals(javaExeVer, javaDllVer);
+    }
+
+    @ParameterizedTest
+    @EnabledOnOs(WINDOWS)
+    @MethodSource
+    public void testWindowsVersionDescendingOrder(List<WindowsVersion> unsorted, WindowsVersion expectedFirst) {
+        final var actualFirst = unsorted.stream().sorted(WindowsVersion.descendingOrder()).findFirst().orElseThrow();
+        assertEquals(expectedFirst, actualFirst);
+    }
+
+    public static Stream<Object[]> testWindowsVersionDescendingOrder() {
+        return Stream.<Object[]>of(
+                new Object[] { List.of(wver(5, 0), wver(5, 1), wver(4, 9)), wver(5, 1) },
+                new Object[] { List.of(wver(5, 0)), wver(5, 0) },
+                new Object[] { List.of(wver(5, 1), wver(5, 1), wver(5, 0)), wver(5, 1) },
+                new Object[] { List.of(wver(3, 11), wver(4, 8), wver(5, 6)), wver(5, 6) },
+                new Object[] { List.of(wver(3, 11), wver(3, 9), wver(3, 13)), wver(3, 13) }
+        );
+    }
+
+    private final static WindowsVersion wver(int major, int minor) {
+        return new WindowsVersion(major, minor);
     }
 }
