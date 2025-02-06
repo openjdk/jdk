@@ -47,9 +47,6 @@ import javax.net.ssl.*;
 public class CloseKeepAliveCached {
     public static final String CLOSE_THE_SSL_CONNECTION_PASSIVE = "close the SSL connection (passive)";
 
-    static Map cookies;
-    ServerSocket ss;
-
     /*
      * =============================================================
      * Set the various variables needed for the tests, then
@@ -75,11 +72,6 @@ public class CloseKeepAliveCached {
      * Is the server ready to serve?
      */
     volatile static boolean serverReady = false;
-
-    /*
-     * Turn on SSL debugging?
-     */
-    static boolean debug = false;
 
     private SSLServerSocket sslServerSocket = null;
 
@@ -238,7 +230,7 @@ public class CloseKeepAliveCached {
         } finally {
             // this will allow the error stream to be printed in case of an exception inside for debugging purposes
             System.setErr(originalErr);
-            if (debug) {
+            if (Boolean.getBoolean("test.debug")) {
                 System.err.println(errorCapture);
             }
         }
