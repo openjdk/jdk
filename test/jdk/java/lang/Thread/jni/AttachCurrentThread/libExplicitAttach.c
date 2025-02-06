@@ -22,9 +22,18 @@
  */
 #include <stdio.h>
 #include <pthread.h>
+#ifdef WINDOWS
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif // WINDOWS
 #include "jni.h"
 
 #define STACK_SIZE 0x100000
+
+typedef jint (JNICALL *GetCreatedJavaVMs_t)(JavaVM **vmBuf, jsize bufLen, jsize *nVMs);
+
+GetCreatedJavaVMs_t GetCreatedJavaVMs = NULL;
 
 /**
  * Attach the current thread with JNI AttachCurrentThread, call a method, and detach.
@@ -36,7 +45,7 @@ void* thread_main(void* arg) {
     jsize count;
     jint res;
 
-    res = JNI_GetCreatedJavaVMs(&vm, 1, &count);
+    res = (*GetCreatedJavaVMs)(&vm, 1, &count);
     if (res != JNI_OK) {
         fprintf(stderr, "JNI_GetCreatedJavaVMs failed: %d\n", res);
         return NULL;
@@ -78,6 +87,27 @@ JNIEXPORT void JNICALL Java_ExplicitAttach_startThreads(JNIEnv *env, jclass claz
     pthread_t tid;
     pthread_attr_t attr;
     int i;
+
+    if (GetCreatedJavaVMs == NULL) {
+#ifdef WINDOWS
+        HMODULE handle;
+        handle = GetModuleHandle("jvm.dll");
+        if (handle == NULL) {
+            // No loaded jvm.dll. Get the handle to the executable.
+            handle = GetModuleHandle(NULL);
+        }
+#endif
+#ifdef WINDOWS
+#define GET_VM_FUNCTION(f) GetProcAddress(handle, f)
+#else
+#define GET_VM_FUNCTION(f) dlsym(RTLD_DEFAULT, f)
+#endif
+        GetCreatedJavaVMs = (GetCreatedJavaVMs_t)GET_VM_FUNCTION("JNI_GetCreatedJavaVMs");
+        if (GetCreatedJavaVMs == NULL) {
+            fprintf(stderr, "Find JNI_GetCreatedJavaVMs failed\n");
+            return;
+        }
+    }
 
     pthread_attr_init(&attr);
     pthread_attr_setstacksize(&attr, STACK_SIZE);
