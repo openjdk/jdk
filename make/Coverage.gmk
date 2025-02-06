@@ -22,7 +22,8 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 
-include MakeFileStart.gmk
+include $(SPEC)
+include MakeBase.gmk
 
 ################################################################################
 
@@ -53,7 +54,3 @@ $(JCOV_IMAGE_DIR)/release: $(JCOV_INPUT_IMAGE_DIR)/release
 	$(RMDIR) $(JCOV_TEMP)
 
 jcov-image: $(JCOV_IMAGE_DIR)/release
-
-################################################################################
-
-include MakeFileEnd.gmk

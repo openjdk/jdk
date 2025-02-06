@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 # questions.
 #
 
-include MakeFileStart.gmk
+default: all
 
-################################################################################
+include $(SPEC)
+include MakeBase.gmk
 
 include Execute.gmk
 include Modules.gmk
@@ -57,4 +58,6 @@ TARGETS += $(jlink_interim_image)
 
 ################################################################################
 
-include MakeFileEnd.gmk
+all: $(TARGETS)
+
+.PHONY: all

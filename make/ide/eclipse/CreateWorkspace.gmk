@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
 # questions.
 #
 
-include MakeFileStart.gmk
+default: all
 
-################################################################################
-
-include Modules.gmk
+include $(SPEC)
+include MakeBase.gmk
 include TextFileProcessing.gmk
 include Utils.gmk
+include Modules.gmk
 
 JVM_VARIANT := $(JVM_VARIANT_MAIN)
 include hotspot/HotspotCommon.gmk
@@ -356,6 +356,4 @@ else
   ))
 endif
 
-################################################################################
-
-include MakeFileEnd.gmk
+all: $(TARGETS)
