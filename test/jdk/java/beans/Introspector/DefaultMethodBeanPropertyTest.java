@@ -150,6 +150,12 @@ public class DefaultMethodBeanPropertyTest {
         );
     }
 
+//////////////////////////////////////
+//                                  //
+//          SCENARIO 4              //
+//                                  //
+//////////////////////////////////////
+
     public interface A4 {
         default Object getDefault0() {
             return null;
