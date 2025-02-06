@@ -103,7 +103,7 @@ public class TestCopySignIntrinsic {
     }
 
     @Test
-    @IR(counts = {IRNode.COPYSIGN_F, " >0 "}, applyIfCPUFeature = { "avx", "true"})
+    @IR(counts = {IRNode.COPYSIGN_F, " >0 ", IRNode.COPYSIGN_VF, " >0 "}, applyIfCPUFeature = { "avx", "true"})
     public void testCopySignF() {
         for (int i = 0; i < SIZE; i++) {
             afresult[i] = Math.copySign(fmagnitude[i], fsign[i]);
@@ -123,7 +123,7 @@ public class TestCopySignIntrinsic {
     }
 
     @Test
-    @IR(counts = {IRNode.COPYSIGN_D, " >0 "}, applyIfCPUFeature = { "avx", "true"})
+    @IR(counts = {IRNode.COPYSIGN_D, " >0 ", IRNode.COPYSIGN_VD, " >0 "}, applyIfCPUFeature = { "avx", "true"})
     public void testCopySignD() {
         for (int i = 0; i < SIZE; i++) {
             adresult[i] = Math.copySign(dmagnitude[i], dsign[i]);

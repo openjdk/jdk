@@ -583,4 +583,13 @@ public:
 
   void select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
 
+  void vandpsd(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void vpsrldq_imm(BasicType elem_bt, XMMRegister dst, XMMRegister src, int shift, int vlen_enc);
+
+  void vpslldq_imm(BasicType elem_bt, XMMRegister dst, XMMRegister src, int shift, int vlen_enc);
+
+  void vector_copy_sign_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp, int vlen_enc);
+
+  void vector_copy_sign_avx(BasicType elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp, int vlen_enc);
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

@@ -7080,3 +7080,96 @@ void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, X
     vector_saturating_op(ideal_opc, elem_bt, dst, src1, src2, vlen_enc);
   }
 }
+
+// ----------------------------------------------------------------------
+// We are using bitwise ternary logic insturction VPTERNLOG which can
+// absorb complex binary expressions involving 3 boolean variables.
+//
+// For copySign we set the truth table value as 0xE4.
+// First column of truth table represents magnitude, second column
+// represents sign operand while the third column is a conditional
+// operand with fixed value of 0x7FFFFFFF.
+//
+// Whenever condition bit is 1 corresponding magnitude bit gets selected
+// else corresponding sign bit is picked.
+// Our condition mask is such that apart for sign bit i.e. MSB bit all
+// other bits are set to 1, this ensures that all the bits of result
+// apart from MSB bit are copied from magnitude operand while sign bit
+// is borrowed from sign operand.
+//
+// Magnitude Sign Condition Result
+// 0          0       0       0
+// 0          0       1       0
+// 0          1       0       1
+// 0          1       1       0
+// 1          0       0       0
+// 1          0       1       1
+// 1          1       0       1
+// 1          1       1       1
+//
+// ----------------------------------------------------------------------
+
+void C2_MacroAssembler::vector_copy_sign_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src,
+                                              XMMRegister xtmp, int vlen_enc) {
+  assert(is_floating_point_type(elem_bt), "");
+  vpternlogq(xtmp, 0xFF, xtmp, xtmp, vlen_enc);
+  if (elem_bt == T_FLOAT) {
+    vpsrld(xtmp, xtmp, 1, vlen_enc);
+    vpternlogd(dst, 0xE4, src, xtmp, vlen_enc);
+  } else {
+    assert(elem_bt == T_DOUBLE, "");
+    vpsrlq(xtmp, xtmp, 1, vlen_enc);
+    vpternlogq(dst, 0xE4, src, xtmp, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vandpsd(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc) {
+  if (elem_bt == T_FLOAT) {
+    vandps(dst, src1, src2, vlen_enc);
+  } else {
+    assert(elem_bt == T_DOUBLE, "");
+    vandpd(dst, src1, src2, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vpslldq_imm(BasicType elem_bt, XMMRegister dst, XMMRegister src, int shift, int vlen_enc) {
+  int elem_sz = type2aelembytes(elem_bt);
+  if (elem_sz == 2) {
+    vpsllw(dst, src, shift, vlen_enc);
+  } else if (elem_sz == 4) {
+    vpslld(dst, src, shift, vlen_enc);
+  } else if (elem_sz == 8) {
+    vpsllq(dst, src, shift, vlen_enc);
+  } else {
+    fatal("Unsupported lane size %s", type2name(elem_bt));
+  }
+}
+
+void C2_MacroAssembler::vpsrldq_imm(BasicType elem_bt, XMMRegister dst, XMMRegister src, int shift, int vlen_enc) {
+  int elem_sz = type2aelembytes(elem_bt);
+  if (elem_sz == 2) {
+    vpsrlw(dst, src, shift, vlen_enc);
+  } else if (elem_sz == 4) {
+    vpsrld(dst, src, shift, vlen_enc);
+  } else if (elem_sz == 8) {
+    vpsrlq(dst, src, shift, vlen_enc);
+  } else {
+    fatal("Unsupported lane size %s", type2name(elem_bt));
+  }
+}
+
+void C2_MacroAssembler::vector_copy_sign_avx(BasicType elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp, int vlen_enc) {
+  int sign_mask_shift = elem_bt == T_DOUBLE ? 63 : 31;
+  // set all double lanes of temporary vector to 0xFFFFFFFF
+  vcmpps(xtmp, xtmp, xtmp, Assembler::EQ_UQ, vlen_enc);
+  // compute mask for magnitude bits i.e. 0x7FFFFFFFF
+  vpsrldq_imm(elem_bt, xtmp, xtmp, 1, vlen_enc);
+  // extract magnitude bits from destination lanes.
+  vandpsd(elem_bt, dst, dst, xtmp, vlen_enc);
+  // compute mask for sign bit i.e. 0x80000000
+  vpslldq_imm(elem_bt, xtmp, xtmp, sign_mask_shift, vlen_enc);
+  // extract sign bit from source lanes.
+  vandpsd(elem_bt, xtmp, xtmp, src, vlen_enc);
+  // merge extracted sign with magnitude bits.
+  vpor(dst, dst, xtmp, vlen_enc);
+}

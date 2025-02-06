@@ -4364,7 +4364,7 @@ bool MatchRule::is_vector() const {
     "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
     "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD", "SaturatingAddV", "SaturatingSubV",
     // Next are vector mask ops.
-    "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
+    "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast", "CopySignVF", "CopySignVD",
     "RoundVF", "RoundVD",
     // Next are not supported currently.
     "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
