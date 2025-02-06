@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, 2025, Oracle and/or its affiliates.
+ * All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -739,14 +740,21 @@ public class FileHandler extends StreamHandler {
      *                 silently ignored and is not published
      */
     @Override
-    public synchronized void publish(LogRecord record) {
+    public void publish(LogRecord record) {
         if (!isLoggable(record)) {
             return;
         }
+        // JDK-8349206: DO NOT lock during publishing to avoid deadlock risk when
+        // invoking toString() on user parameters.
         super.publish(record);
-        flush();
-        if (limit > 0 && (meter.written >= limit || meter.written < 0)) {
-            rotate();
+        // We must lock around the check of meter.xxx fields, and the call to
+        // rotate(), and since flush() is also synchronized on the same instance,
+        // we might as well lock around everything.
+        synchronized(this) {
+            flush();
+            if (limit > 0 && (meter.written >= limit || meter.written < 0)) {
+                rotate();
+            }
         }
     }
 
