@@ -72,7 +72,6 @@ class ThreadsList extends VMObject {
 }
 
 public class Threads {
-    private static JavaThreadFactory threadFactory;
     private static AddressField      threadListField;
     private static VirtualConstructor virtualConstructor;
     private static JavaThreadPDAccess access;
@@ -90,7 +89,6 @@ public class Threads {
         Type type = db.lookupType("ThreadsSMRSupport");
         threadListField = type.getAddressField("_java_thread_list");
 
-        // Instantiate appropriate platform-specific JavaThreadFactory
         String os  = VM.getVM().getOS();
         String cpu = VM.getVM().getCPU();
 
