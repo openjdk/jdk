@@ -367,7 +367,7 @@ abstract class QuicCipher {
     static final class T13GCMReadCipher extends QuicReadCipher {
         // RFC-9001, section 6.6: For AEAD_AES_128_GCM and AEAD_AES_256_GCM,
         // the integrity limit is 2^52 invalid packets
-        private static final long INTEGRITY_LIMIT = 1 << 52;
+        private static final long INTEGRITY_LIMIT = 1L << 52;
 
         private final Cipher cipher;
         private final SecretKey key;
@@ -537,7 +537,7 @@ abstract class QuicCipher {
     static final class T13CC20P1305ReadCipher extends QuicReadCipher {
         // RFC-9001, section 6.6: For AEAD_CHACHA20_POLY1305,
         // the integrity limit is 2^36 invalid packets
-        private static final long INTEGRITY_LIMIT = 1 << 36;
+        private static final long INTEGRITY_LIMIT = 1L << 36;
 
         private final SecretKey key;
         private final Cipher cipher;
