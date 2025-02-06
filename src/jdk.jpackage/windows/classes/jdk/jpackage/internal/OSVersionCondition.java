@@ -32,14 +32,13 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HexFormat;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.util.XmlConsumer;
 
 
@@ -51,24 +50,20 @@ record OSVersionCondition(WindowsVersion version) {
     static OSVersionCondition createFromAppImage(ApplicationLayout appLayout, Map<String, ? super Object> params) {
         Objects.requireNonNull(appLayout);
 
-        final List<WindowsVersion> osVersions = new ArrayList<>();
+        final var launcherName = StandardBundlerParam.APP_NAME.fetchFrom(params);
+        final var launcherPath = appLayout.launchersDirectory().resolve(launcherName + ".exe");
 
-        if (!StandardBundlerParam.isRuntimeInstaller(params)) {
-            final var launcherName = StandardBundlerParam.APP_NAME.fetchFrom(params);
+        final Path javaDll = appLayout.runtimeDirectory().resolve("bin\\java.dll");
 
-            final var launcherPath = appLayout.launchersDirectory().resolve(launcherName + ".exe");
-
-            osVersions.add(WindowsVersion.getExecutableOSVersion(launcherPath));
-        }
-
-        final Path javaDll = appLayout.runtimeDirectory().resolve("bin").resolve("java.dll");
-        if (Files.isRegularFile(javaDll)) {
-            osVersions.add(WindowsVersion.getExecutableOSVersion(javaDll));
-        }
-
-        final var lowestOsVersion = osVersions.stream()
+        final var lowestOsVersion = Stream.of(launcherPath, javaDll)
+                .filter(Files::isRegularFile)
+                .map(WindowsVersion::getExecutableOSVersion)
                 .sorted(Comparator.comparing(WindowsVersion::majorOSVersion).thenComparing(WindowsVersion::minorOSVersion))
-                .findFirst().orElseThrow();
+                .findFirst().orElseGet(() -> {
+                    // No java.dll, no launchers, it is either a very customized or messed up app image.
+                    // Let it install on Windows NT/95 or newer.
+                    return new WindowsVersion(4, 0); 
+                });
 
         return new OSVersionCondition(lowestOsVersion);
     }

@@ -31,7 +31,7 @@
     <Condition Message="!(loc.OsConditionMessage)">
       <![CDATA[Installed OR (VersionNT >= $(var.JpExecutableOSVersion))]]>
     </Condition>
-    <!-- 
+    <!--
       Fragment contents must be referenced. Otherwise, the fragment will be ignored.
       Use empty component group as an anchor for the reference.
     -->
