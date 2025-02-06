@@ -250,6 +250,20 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
     os::ftruncate(os::get_fileno(_stream), 0);
   }
 
+  { // Produce a file-unique rotation message.
+    LogTagSet& tagset = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
+    LogLevelType level = tagset.level_for(this);
+    if (level >= LogLevelType::Info) {
+      LogDecorations decorations(LogLevel::Info, tagset, tagset.decorators());
+
+      stringStream st(os::iso8601_timestamp_size);
+      char buf[os::iso8601_timestamp_size];
+      char* result = os::iso8601_time(os::javaTimeMillis(), buf, os::iso8601_timestamp_size, true);
+      st.print("Started logging for file at %s", result);
+      this->write_internal(decorations, st.freeze());
+    }
+  }
+
   return true;
 }
 
