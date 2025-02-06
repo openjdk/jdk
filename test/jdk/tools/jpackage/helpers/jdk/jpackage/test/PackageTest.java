@@ -22,6 +22,20 @@
  */
 package jdk.jpackage.test;
 
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import static jdk.jpackage.test.PackageType.LINUX;
+import static jdk.jpackage.test.PackageType.LINUX_DEB;
+import static jdk.jpackage.test.PackageType.LINUX_RPM;
+import static jdk.jpackage.test.PackageType.MAC_DMG;
+import static jdk.jpackage.test.PackageType.MAC_PKG;
+import static jdk.jpackage.test.PackageType.NATIVE;
+import static jdk.jpackage.test.PackageType.WINDOWS;
+import static jdk.jpackage.test.PackageType.WIN_EXE;
+import static jdk.jpackage.test.PackageType.WIN_MSI;
+
 import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,27 +54,14 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
-import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
-import static jdk.jpackage.test.PackageType.LINUX;
-import static jdk.jpackage.test.PackageType.LINUX_DEB;
-import static jdk.jpackage.test.PackageType.LINUX_RPM;
-import static jdk.jpackage.test.PackageType.MAC_DMG;
-import static jdk.jpackage.test.PackageType.MAC_PKG;
-import static jdk.jpackage.test.PackageType.NATIVE;
-import static jdk.jpackage.test.PackageType.WINDOWS;
-import static jdk.jpackage.test.PackageType.WIN_EXE;
-import static jdk.jpackage.test.PackageType.WIN_MSI;
 
 
 /**
@@ -121,6 +122,11 @@ public final class PackageTest extends RunnablePackageTest {
 
     public PackageTest setExpectedExitCode(int v) {
         expectedJPackageExitCode = v;
+        return this;
+    }
+
+    public PackageTest setExpectedInstallExitCode(int v) {
+        expectedInstallExitCode = v;
         return this;
     }
 
@@ -224,13 +230,13 @@ public final class PackageTest extends RunnablePackageTest {
 
     public PackageTest disablePackageInstaller() {
         currentTypes.forEach(
-                type -> packageHandlers.get(type).installHandler = cmd -> {});
+                type -> packageHandlers.put(type, packageHandlers.get(type).copyWithNopInstaller()));
         return this;
     }
 
     public PackageTest disablePackageUninstaller() {
         currentTypes.forEach(
-                type -> packageHandlers.get(type).uninstallHandler = cmd -> {});
+                type -> packageHandlers.put(type, packageHandlers.get(type).copyWithNopUninstaller()));
         return this;
     }
 
@@ -374,10 +380,41 @@ public final class PackageTest extends RunnablePackageTest {
         private final List<Consumer<Action>> handlers;
     }
 
-    static final class PackageHandlers {
-        Consumer<JPackageCommand> installHandler;
-        Consumer<JPackageCommand> uninstallHandler;
-        BiFunction<JPackageCommand, Path, Path> unpackHandler;
+    record PackageHandlers(Function<JPackageCommand, Integer> installHandler,
+            Consumer<JPackageCommand> uninstallHandler,
+            Optional<BiFunction<JPackageCommand, Path, Path>> unpackHandler) {
+
+        PackageHandlers(Function<JPackageCommand, Integer> installHandler,
+                Consumer<JPackageCommand> uninstallHandler,
+                BiFunction<JPackageCommand, Path, Path> unpackHandler) {
+            this(installHandler, uninstallHandler, Optional.of(unpackHandler));
+        }
+
+        PackageHandlers {
+            Objects.requireNonNull(installHandler);
+            Objects.requireNonNull(uninstallHandler);
+            Objects.requireNonNull(unpackHandler);
+        }
+
+        PackageHandlers copyWithNopInstaller() {
+            return new PackageHandlers(cmd -> 0, uninstallHandler, unpackHandler);
+        }
+
+        PackageHandlers copyWithNopUninstaller() {
+            return new PackageHandlers(installHandler, cmd -> {}, unpackHandler);
+        }
+
+        int install(JPackageCommand cmd) {
+            return installHandler.apply(cmd);
+        }
+
+        Path unpack(JPackageCommand cmd, Path unpackDir) {
+            return unpackHandler.orElseThrow().apply(cmd, unpackDir);
+        }
+
+        void uninstall(JPackageCommand cmd) {
+            uninstallHandler.accept(cmd);
+        }
     }
 
     @Override
@@ -456,59 +493,57 @@ public final class PackageTest extends RunnablePackageTest {
                     return;
                 }
 
-                final Supplier<JPackageCommand> curCmd = () -> {
-                    if (Set.of(Action.INITIALIZE, Action.CREATE).contains(action)) {
-                        return cmd;
-                    } else {
-                        return cmd.createImmutableCopy();
-                    }
-                };
-
                 switch (action) {
                     case UNPACK: {
                         cmd.setUnpackedPackageLocation(null);
-                        handleAction(action,
-                                packageHandlers.get(type).unpackHandler,
-                                handler -> {
-                                    unpackDir = TKit.createTempDirectory(
-                                            String.format("unpacked-%s",
-                                                    type.getName()));
-                                    unpackDir = handler.apply(cmd, unpackDir);
-                                    cmd.setUnpackedPackageLocation(unpackDir);
-                                });
+                        final  var pkgHandler = packageHandlers.get(type);
+                        if (pkgHandler.unpackHandler.isEmpty()) {
+                            unhandledAction = action;
+                        } else {
+                            unhandledAction = null;
+                            final var unpackRootDir = TKit.createTempDirectory(
+                                    String.format("unpacked-%s", type.getName()));
+                            unpackDir = pkgHandler.unpack(cmd, unpackRootDir);
+                            cmd.setUnpackedPackageLocation(unpackDir);
+                        }
                         break;
                     }
 
                     case INSTALL: {
                         cmd.setUnpackedPackageLocation(null);
-                        handleAction(action,
-                                packageHandlers.get(type).installHandler,
-                                handler -> {
-                                    handler.accept(curCmd.get());
-                                });
+                        if (expectedInstallExitCode == 0) {
+                            unhandledAction = null;
+                        } else {
+                            unhandledAction = action;
+                        }
+                        final int installExitCode = packageHandlers.get(type).install(cmd);
+                        TKit.assertEquals(expectedInstallExitCode, installExitCode,
+                                String.format("Check installer exited with %d code", expectedInstallExitCode));
                         break;
                     }
 
                     case UNINSTALL: {
-                        handleAction(action,
-                                packageHandlers.get(type).uninstallHandler,
-                                handler -> {
-                                    handler.accept(curCmd.get());
-                                });
+                        unhandledAction = null;
+                        packageHandlers.get(type).uninstall(cmd);
                         break;
                     }
 
                     case CREATE:
                         cmd.setUnpackedPackageLocation(null);
-                        handler.accept(action, curCmd.get());
-                        handleAction(action,
-                                (expectedJPackageExitCode == 0) ? Boolean.TRUE : null,
-                                handler -> {
-                                });
+                        if (expectedJPackageExitCode == 0) {
+                            unhandledAction = null;
+                        } else {
+                            unhandledAction = action;
+                        }
+                        handler.accept(action, cmd);
                         return;
 
+                    case INITIALIZE:
+                        handler.accept(action, cmd);
+                        break;
+
                     default:
-                        handler.accept(action, curCmd.get());
+                        handler.accept(action, cmd.createImmutableCopy());
                         break;
                 }
 
@@ -517,16 +552,6 @@ public final class PackageTest extends RunnablePackageTest {
                             "No handler of [%s] action for %s command", v,
                             cmd.getPrintableCommandLine()));
                 });
-            }
-
-            private <T> void handleAction(Action action, T handler,
-                    ThrowingConsumer<T> consumer) throws Throwable {
-                if (handler == null) {
-                    unhandledAction = action;
-                } else {
-                    unhandledAction = null;
-                    consumer.accept(handler);
-                }
             }
 
             private Path unpackDir;
@@ -787,6 +812,7 @@ public final class PackageTest extends RunnablePackageTest {
     private Collection<PackageType> currentTypes;
     private Set<PackageType> excludeTypes;
     private int expectedJPackageExitCode;
+    private int expectedInstallExitCode;
     private Map<PackageType, Handler> handlers;
     private Set<String> namedInitializers;
     private Map<PackageType, PackageHandlers> packageHandlers;

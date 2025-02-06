@@ -22,6 +22,9 @@
  */
 package jdk.jpackage.test;
 
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -32,14 +35,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 public class WindowsHelper {
@@ -67,7 +67,7 @@ public class WindowsHelper {
         return Path.of(cmd.getArgumentValue("--install-dir", cmd::name));
     }
 
-    private static void runMsiexecWithRetries(Executor misexec) {
+    private static int runMsiexecWithRetries(Executor misexec) {
         Executor.Result result = null;
         for (int attempt = 0; attempt < 8; ++attempt) {
             result = misexec.executeWithoutExitCodeCheck();
@@ -75,7 +75,7 @@ public class WindowsHelper {
             if (result.exitCode() == 1605) {
                 // ERROR_UNKNOWN_PRODUCT, attempt to uninstall not installed
                 // package
-                return;
+                return result.exitCode;
             }
 
             // The given Executor may either be of an msiexec command or an
@@ -91,74 +91,103 @@ public class WindowsHelper {
             break;
         }
 
-        result.assertExitCodeIsZero();
+        return result.exitCode;
     }
 
     static PackageHandlers createMsiPackageHandlers() {
-        BiConsumer<JPackageCommand, Boolean> installMsi = (cmd, install) -> {
-            cmd.verifyIsOfType(PackageType.WIN_MSI);
-            var msiPath = TransientMsi.create(cmd).path();
-            runMsiexecWithRetries(Executor.of("msiexec", "/qn", "/norestart",
-                    install ? "/i" : "/x").addArgument(msiPath));
-        };
+        return new PackageHandlers(WindowsHelper::installMsi, WindowsHelper::uninstallMsi, WindowsHelper::unpackMsi);
+    }
 
-        PackageHandlers msi = new PackageHandlers();
-        msi.installHandler = cmd -> installMsi.accept(cmd, true);
-        msi.uninstallHandler = cmd -> {
-            if (Files.exists(cmd.outputBundle())) {
-                installMsi.accept(cmd, false);
+    private static int runMsiInstaller(JPackageCommand cmd, boolean install) {
+        cmd.verifyIsOfType(PackageType.WIN_MSI);
+        var msiPath = TransientMsi.create(cmd).path();
+        return runMsiexecWithRetries(Executor.of("msiexec", "/qn", "/norestart",
+                install ? "/i" : "/x").addArgument(msiPath));
+    }
+
+    private static int installMsi(JPackageCommand cmd) {
+        return runMsiInstaller(cmd, true);
+    }
+
+    private static void uninstallMsi(JPackageCommand cmd) {
+        if (Files.exists(cmd.outputBundle())) {
+            runMsiInstaller(cmd, false);
+        }
+    }
+
+    private static Path unpackMsi(JPackageCommand cmd, Path destinationDir) {
+        cmd.verifyIsOfType(PackageType.WIN_MSI);
+        final Path unpackBat = destinationDir.resolve("unpack.bat");
+        final Path unpackDir = destinationDir.resolve(
+                TKit.removeRootFromAbsolutePath(
+                        getInstallationRootDirectory(cmd)));
+
+        final Path msiPath = TransientMsi.create(cmd).path();
+
+        // Put msiexec in .bat file because can't pass value of TARGETDIR
+        // property containing spaces through ProcessBuilder properly.
+        // Set folder permissions to allow msiexec unpack msi bundle.
+        TKit.createTextFile(unpackBat, List.of(
+                String.format("icacls \"%s\" /inheritance:e /grant Users:M",
+                        destinationDir),
+                String.join(" ", List.of(
+                "msiexec",
+                "/a",
+                String.format("\"%s\"", msiPath),
+                "/qn",
+                String.format("TARGETDIR=\"%s\"",
+                        unpackDir.toAbsolutePath().normalize())))));
+        runMsiexecWithRetries(Executor.of("cmd", "/c", unpackBat.toString()));
+
+        //
+        // WiX3 uses "." as the value of "DefaultDir" field for "ProgramFiles64Folder" folder in msi's Directory table
+        // WiX4 uses "PFiles64" as the value of "DefaultDir" field for "ProgramFiles64Folder" folder in msi's Directory table
+        // msiexec creates "Program Files/./<App Installation Directory>" from WiX3 msi which translates to "Program Files/<App Installation Directory>"
+        // msiexec creates "Program Files/PFiles64/<App Installation Directory>" from WiX4 msi
+        // So for WiX4 msi we need to transform "Program Files/PFiles64/<App Installation Directory>" into "Program Files/<App Installation Directory>"
+        //
+        // WiX4 does the same thing for %LocalAppData%.
+        //
+        for (var extraPathComponent : List.of("PFiles64", "LocalApp")) {
+            if (Files.isDirectory(unpackDir.resolve(extraPathComponent))) {
+                Path installationSubDirectory = getInstallationSubDirectory(cmd);
+                Path from = Path.of(extraPathComponent).resolve(installationSubDirectory);
+                Path to = installationSubDirectory;
+                TKit.trace(String.format("Convert [%s] into [%s] in [%s] directory", from, to,
+                        unpackDir));
+                ThrowingRunnable.toRunnable(() -> {
+                    Files.createDirectories(unpackDir.resolve(to).getParent());
+                    Files.move(unpackDir.resolve(from), unpackDir.resolve(to));
+                    TKit.deleteDirectoryRecursive(unpackDir.resolve(extraPathComponent));
+                }).run();
             }
-        };
-        msi.unpackHandler = (cmd, destinationDir) -> {
-            cmd.verifyIsOfType(PackageType.WIN_MSI);
-            final Path unpackBat = destinationDir.resolve("unpack.bat");
-            final Path unpackDir = destinationDir.resolve(
-                    TKit.removeRootFromAbsolutePath(
-                            getInstallationRootDirectory(cmd)));
+        }
+        return destinationDir;
+    }
 
-            final Path msiPath = TransientMsi.create(cmd).path();
+    static PackageHandlers createExePackageHandlers() {
+        return new PackageHandlers(WindowsHelper::installExe, WindowsHelper::uninstallExe, Optional.empty());
+    }
 
-            // Put msiexec in .bat file because can't pass value of TARGETDIR
-            // property containing spaces through ProcessBuilder properly.
-            // Set folder permissions to allow msiexec unpack msi bundle.
-            TKit.createTextFile(unpackBat, List.of(
-                    String.format("icacls \"%s\" /inheritance:e /grant Users:M",
-                            destinationDir),
-                    String.join(" ", List.of(
-                    "msiexec",
-                    "/a",
-                    String.format("\"%s\"", msiPath),
-                    "/qn",
-                    String.format("TARGETDIR=\"%s\"",
-                            unpackDir.toAbsolutePath().normalize())))));
-            runMsiexecWithRetries(Executor.of("cmd", "/c", unpackBat.toString()));
+    private static int runExeInstaller(JPackageCommand cmd, boolean install) {
+        cmd.verifyIsOfType(PackageType.WIN_EXE);
+        Executor exec = new Executor().setExecutable(cmd.outputBundle());
+        if (install) {
+            exec.addArgument("/qn").addArgument("/norestart");
+        } else {
+            exec.addArgument("uninstall");
+        }
+        return runMsiexecWithRetries(exec);
+    }
 
-            //
-            // WiX3 uses "." as the value of "DefaultDir" field for "ProgramFiles64Folder" folder in msi's Directory table
-            // WiX4 uses "PFiles64" as the value of "DefaultDir" field for "ProgramFiles64Folder" folder in msi's Directory table
-            // msiexec creates "Program Files/./<App Installation Directory>" from WiX3 msi which translates to "Program Files/<App Installation Directory>"
-            // msiexec creates "Program Files/PFiles64/<App Installation Directory>" from WiX4 msi
-            // So for WiX4 msi we need to transform "Program Files/PFiles64/<App Installation Directory>" into "Program Files/<App Installation Directory>"
-            //
-            // WiX4 does the same thing for %LocalAppData%.
-            //
-            for (var extraPathComponent : List.of("PFiles64", "LocalApp")) {
-                if (Files.isDirectory(unpackDir.resolve(extraPathComponent))) {
-                    Path installationSubDirectory = getInstallationSubDirectory(cmd);
-                    Path from = Path.of(extraPathComponent).resolve(installationSubDirectory);
-                    Path to = installationSubDirectory;
-                    TKit.trace(String.format("Convert [%s] into [%s] in [%s] directory", from, to,
-                            unpackDir));
-                    ThrowingRunnable.toRunnable(() -> {
-                        Files.createDirectories(unpackDir.resolve(to).getParent());
-                        Files.move(unpackDir.resolve(from), unpackDir.resolve(to));
-                        TKit.deleteDirectoryRecursive(unpackDir.resolve(extraPathComponent));
-                    }).run();
-                }
-            }
-            return destinationDir;
-        };
-        return msi;
+    private static int installExe(JPackageCommand cmd) {
+        return runExeInstaller(cmd, true);
+    }
+
+    private static void uninstallExe(JPackageCommand cmd) {
+        if (Files.exists(cmd.outputBundle())) {
+            runExeInstaller(cmd, false);
+        }
     }
 
     record TransientMsi(Path path) {
@@ -202,28 +231,6 @@ public class WindowsHelper {
         } else {
             return Optional.empty();
         }
-    }
-
-    static PackageHandlers createExePackageHandlers() {
-        BiConsumer<JPackageCommand, Boolean> installExe = (cmd, install) -> {
-            cmd.verifyIsOfType(PackageType.WIN_EXE);
-            Executor exec = new Executor().setExecutable(cmd.outputBundle());
-            if (install) {
-                exec.addArgument("/qn").addArgument("/norestart");
-            } else {
-                exec.addArgument("uninstall");
-            }
-            runMsiexecWithRetries(exec);
-        };
-
-        PackageHandlers exe = new PackageHandlers();
-        exe.installHandler = cmd -> installExe.accept(cmd, true);
-        exe.uninstallHandler = cmd -> {
-            if (Files.exists(cmd.outputBundle())) {
-                installExe.accept(cmd, false);
-            }
-        };
-        return exe;
     }
 
     static void verifyDesktopIntegration(JPackageCommand cmd,
