@@ -25,6 +25,8 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
+
+#include "shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 
@@ -59,7 +61,7 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& re
 
   if (block) {
     MonitorLocker ml(&_alloc_failure_waiters_lock);
-    while (heap->cancelled_gc()) {
+    while (ShenandoahCollectorPolicy::is_allocation_failure(heap->cancelled_cause())) {
       ml.wait();
     }
   }
