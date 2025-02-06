@@ -64,31 +64,16 @@ public class AllocTest extends CLayouts {
 
     private static class CallocArena implements Arena {
 
-        static final MethodHandle CALLOC;
-        static final MethodHandle FREE;
-        static final Consumer<MemorySegment> CLEANUP;
+        static final MethodHandle CALLOC = Linker.nativeLinker()
+                .downcallHandle(
+                        Linker.nativeLinker().defaultLookup().findOrThrow("calloc"),
+                        FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG));
 
-        static {
-            var linker = Linker.nativeLinker();
-            var lookup = linker.defaultLookup();
-            var callocAddr = lookup.findOrThrow("calloc");
-            var freeAddr = lookup.findOrThrow("free");
-            CALLOC = linker.downcallHandle(callocAddr, FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG));
-            FREE = linker.downcallHandle(freeAddr, FunctionDescriptor.ofVoid(ValueLayout.JAVA_LONG));
-            CLEANUP = ms -> {
-                try {
-                    FREE.invokeExact(ms.address());
-                } catch (Throwable e) {
-                    throw new AssertionError(e);
-                }
-            };
-        }
-
-        static long calloc(long size) {
+        static MemorySegment calloc(long size) {
             try {
-                return (long)CALLOC.invokeExact(1L, size);
-            } catch (Throwable e) {
-                throw new AssertionError(e);
+                return (MemorySegment)CALLOC.invokeExact(size, 1L);
+            } catch (Throwable ex) {
+                throw new IllegalStateException(ex);
             }
         }
 
@@ -106,8 +91,8 @@ public class AllocTest extends CLayouts {
 
         @Override
         public MemorySegment allocate(long byteSize, long byteAlignment) {
-            long address = calloc(byteSize);
-            return MemorySegment.ofAddress(address).reinterpret(byteSize, arena, CLEANUP);
+            return calloc(byteSize)
+                    .reinterpret(byteSize, arena, CLayouts::freeMemory);
         }
     }
 
