@@ -27,13 +27,12 @@ package com.sun.tools.javac.code;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.function.Consumer;
 
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 
