@@ -749,7 +749,7 @@ public:
   virtual void release_C_heap_structures(bool release_constant_pool = true);
 
  public:
-  virtual int compute_modifier_flags() const = 0;
+  virtual u2 compute_modifier_flags() const = 0;
   int modifier_flags() const;
 
   // JVMTI support

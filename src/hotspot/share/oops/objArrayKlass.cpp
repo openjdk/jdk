@@ -337,7 +337,7 @@ void ObjArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_bottom_klass);
 }
 
-int ObjArrayKlass::compute_modifier_flags() const {
+u2 ObjArrayKlass::compute_modifier_flags() const {
   // The modifier for an objectArray is the same as its element
   assert (element_klass() != nullptr, "should be initialized");
 

@@ -3338,7 +3338,7 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
   return outer_klass;
 }
 
-int InstanceKlass::compute_modifier_flags() const {
+u2 InstanceKlass::compute_modifier_flags() const {
   u2 access = access_flags().as_unsigned_short();
 
   // But check if it happens to be member class.

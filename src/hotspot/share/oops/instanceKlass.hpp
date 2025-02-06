@@ -1125,7 +1125,7 @@ public:
   void compute_has_loops_flag_for_methods();
 #endif
 
-  int compute_modifier_flags() const;
+  u2 compute_modifier_flags() const;
 
 public:
   // JVMTI support
