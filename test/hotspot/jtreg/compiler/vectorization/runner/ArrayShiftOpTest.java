@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,9 +252,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that right shift operations on subword expressions cannot be
-    // vectorized since precise type info about signedness is missing.
-    @IR(failOn = {IRNode.STORE_VECTOR})
+    @IR(applyIfCPUFeature = {"avx", "true"},
+            counts = {IRNode.RSHIFT_VI, ">0"})
     public short[] subwordExpressionRightShift() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {

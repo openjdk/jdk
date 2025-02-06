@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,12 +327,12 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0"},
+    @IR(counts = {IRNode.STORE_VECTOR, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeature = {"avx", "true"})
     // "inflate"  method: 1 byte -> 2 byte.
     // Java scalar code has no explicit conversion.
-    // Vector code would need a conversion. We may add this in the future.
     static Object[] test1(byte[] src, char[] dst) {
         for (int i = 0; i < src.length; i++) {
             dst[i] = (char)(src[i]);
