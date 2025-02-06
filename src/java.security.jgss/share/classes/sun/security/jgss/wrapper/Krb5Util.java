@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package sun.security.jgss.wrapper;
 
 import org.ietf.jgss.*;
 import java.lang.ref.Cleaner;
-import javax.security.auth.kerberos.ServicePermission;
 
 /**
  * This class is a utility class for Kerberos related stuff.
@@ -45,21 +44,5 @@ class Krb5Util {
         int atIndex = krbPrinc.indexOf('@');
         String realm = krbPrinc.substring(atIndex + 1);
         return "krbtgt/" + realm + '@' + realm;
-    }
-
-    // Perform the Service Permission check using the specified
-    // <code>target</code> and <code>action</code>
-    static void checkServicePermission(String target, String action) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            if (SunNativeProvider.DEBUG) {
-                SunNativeProvider.debug("Checking ServicePermission(" +
-                        target + ", " + action + ")");
-            }
-            ServicePermission perm =
-                new ServicePermission(target, action);
-            sm.checkPermission(perm);
-        }
     }
 }

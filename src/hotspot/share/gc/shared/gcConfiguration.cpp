@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
@@ -43,14 +42,15 @@ GCName GCConfiguration::young_collector() const {
   }
 
   if (UseZGC) {
-    if (ZGenerational) {
-      return ZMinor;
-    } else {
-      return NA;
-    }
+    return ZMinor;
   }
 
   if (UseShenandoahGC) {
+#if INCLUDE_SHENANDOAHGC
+    if (ShenandoahCardBarrier) {
+      return ShenandoahYoung;
+    }
+#endif
     return NA;
   }
 
@@ -66,15 +66,16 @@ GCName GCConfiguration::old_collector() const {
     return ParallelOld;
   }
 
-  if (UseZGC) {
-    if (ZGenerational) {
-      return ZMajor;
-    } else {
-      return Z;
-    }
+if (UseZGC) {
+    return ZMajor;
   }
 
   if (UseShenandoahGC) {
+#if INCLUDE_SHENANDOAHGC
+    if (ShenandoahCardBarrier) {
+      return ShenandoahOld;
+    }
+#endif
     return Shenandoah;
   }
 

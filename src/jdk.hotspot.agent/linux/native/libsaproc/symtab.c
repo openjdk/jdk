@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,7 +356,6 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
 
     if (shdr->sh_type == sym_section) {
       ELF_SYM  *syms;
-      int rslt;
       size_t size, n, j, htab_sz;
 
       // FIXME: there could be multiple data buffers associated with the
@@ -390,8 +389,9 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
         goto bad;
       }
 
-      rslt = hcreate_r(htab_sz, symtab->hash_table);
-      // guarantee(rslt, "unexpected failure: hcreate_r");
+      if (hcreate_r(htab_sz, symtab->hash_table) == 0) {
+        goto bad;
+      }
 
       // shdr->sh_link points to the section that contains the actual strings
       // for symbol names. the st_name field in ELF_SYM is just the

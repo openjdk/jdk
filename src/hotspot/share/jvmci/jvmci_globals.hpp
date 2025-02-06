@@ -143,9 +143,11 @@ class fileStream;
           "on the HotSpot heap. Defaults to true if UseJVMCICompiler or "   \
           "EnableJVMCI is true and a JVMCI native library is available.")   \
                                                                             \
-  product(double, JVMCINativeLibraryThreadFraction, 0.33, EXPERIMENTAL,     \
+  product(double, JVMCINativeLibraryThreadFraction, 0.66, EXPERIMENTAL,     \
           "The fraction of compiler threads used by libjvmci. "             \
-          "The remaining compiler threads are used by C1.")                 \
+          "The remaining compiler threads are used by C1. "                 \
+          "Reducing this value could reduce the max RSS but "               \
+          "also increase the warmup time.")                                 \
           range(0.0, 1.0)                                                   \
                                                                             \
   product(ccstr, JVMCINativeLibraryErrorFile, nullptr, EXPERIMENTAL,        \

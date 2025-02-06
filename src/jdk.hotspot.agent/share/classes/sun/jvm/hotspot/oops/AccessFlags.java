@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,10 +74,5 @@ public class AccessFlags implements /* imports */ ClassConstants {
     if (isAbstract    ()) tty.print("abstract "    );
     if (isStrict      ()) tty.print("strict "      );
     if (isSynthetic   ()) tty.print("synthetic "   );
-  }
-
-  // get flags written to .class files
-  public int getStandardFlags() {
-    return (int) (flags & JVM_ACC_WRITTEN_FLAGS);
   }
 }

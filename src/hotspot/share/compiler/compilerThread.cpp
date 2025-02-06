@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileTask.hpp"
@@ -55,8 +54,11 @@ CompilerThread::~CompilerThread() {
 }
 
 void CompilerThread::set_compiler(AbstractCompiler* c) {
-  // Only jvmci compiler threads can call Java
-  _can_call_java = c != nullptr && c->is_jvmci();
+  /*
+   * Compiler threads need to make Java upcalls to the jargraal compiler.
+   * Java upcalls are also needed by the InterpreterRuntime when using jargraal.
+   */
+  _can_call_java = c != nullptr && c->is_jvmci() JVMCI_ONLY(&& !UseJVMCINativeLibrary);
   _compiler = c;
 }
 

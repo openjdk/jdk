@@ -38,6 +38,7 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -74,40 +75,75 @@ public class SegmentBulkFill {
         Arrays.fill(array, (byte) 0);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
+    @Benchmark
+    public void arraysFillLoop() {
+        for (int i = 0; i < array.length; i++) {
+            array[i] = 0;
+        }
+    }
+
+    @Benchmark
+    public void bufferFillLoop() {
+        for (int i = 0; i < array.length; i++) {
+            buffer.put(i, (byte)0);
+        }
+    }
+
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
     @Benchmark
     public void heapSegmentFillJava() {
         heapSegment.fill((byte) 0);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
     @Benchmark
     public void heapSegmentFillUnsafe() {
         heapSegment.fill((byte) 0);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
+    @Benchmark
+    public void heapSegmentFillLoop() {
+        for (long i = 0; i < heapSegment.byteSize(); i++) {
+            heapSegment.set(ValueLayout.JAVA_BYTE, i, (byte) 0);
+        }
+    }
+
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
     @Benchmark
     public void nativeSegmentFillJava() {
         nativeSegment.fill((byte) 0);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
     @Benchmark
     public void nativeSegmentFillUnsafe() {
         nativeSegment.fill((byte) 0);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
+    @Benchmark
+    public void nativeSegmentFillLoop() {
+        for (long i = 0; i < nativeSegment.byteSize(); i++) {
+            nativeSegment.set(ValueLayout.JAVA_BYTE, i, (byte) 0);
+        }
+    }
+
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
     @Benchmark
     public void unalignedSegmentFillJava() {
         unalignedSegment.fill((byte) 0);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
     @Benchmark
     public void unalignedSegmentFillUnsafe() {
         unalignedSegment.fill((byte) 0);
+    }
+
+    @Benchmark
+    public void unalignedSegmentFillLoop() {
+        for (long i = 0; i < unalignedSegment.byteSize(); i++) {
+            unalignedSegment.set(ValueLayout.JAVA_BYTE, i, (byte) 0);
+        }
     }
 
 }

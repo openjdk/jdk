@@ -205,8 +205,9 @@ public interface Types {
      * @return the type of an unboxed value of type {@code t}
      *
      * @throws IllegalArgumentException if the given type has no
-     *         unboxing conversion. Only types for the wrapper classes
-     *         have an unboxing conversion.
+     *         unboxing conversion. Only types for the {@linkplain
+     *         java.lang##wrapperClass wrapper classes} have an
+     *         unboxing conversion.
      * @jls 5.1.8 Unboxing Conversion
      */
     PrimitiveType unboxedType(TypeMirror t);
@@ -262,7 +263,10 @@ public interface Types {
      *
      * @param componentType  the component type
      * @throws IllegalArgumentException if the component type is not valid for
-     *          an array, including executable, package, module, and wildcard types
+     *          an array. All valid types are {@linkplain ReferenceType
+     *          reference types} or {@linkplain PrimitiveType primitive types}.
+     *          Invalid types include {@linkplain NullType null}, executable, package,
+     *          module, and wildcard types.
      * @jls 10.1 Array Types
      */
     ArrayType getArrayType(TypeMirror componentType);

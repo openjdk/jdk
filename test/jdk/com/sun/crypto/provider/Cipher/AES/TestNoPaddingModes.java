@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,8 @@ public class TestNoPaddingModes {
     };
 
     public static void main(String[] args) throws Exception {
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(
+                System.getProperty("test.provider.name", "SunJCE"));
         String transformation;
         for (String mode : MODES) {
             for (String padding : PADDINGS) {
@@ -50,7 +51,8 @@ public class TestNoPaddingModes {
 
                 System.out.println("Test using " + transformation);
                 try {
-                    Cipher c = Cipher.getInstance(transformation, "SunJCE");
+                    Cipher c = Cipher.getInstance(transformation,
+                            System.getProperty("test.provider.name", "SunJCE"));
                     throw new RuntimeException("=> Fail, no exception thrown");
                 } catch (NoSuchAlgorithmException | NoSuchPaddingException ex) {
                     System.out.println("=> Expected ex: " + ex);

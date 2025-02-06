@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.concurrent.ConcurrentHashMap;
@@ -143,18 +141,8 @@ public class BootLoader {
     /**
      * Loads a native library from the system library path.
      */
-    @SuppressWarnings("removal")
     public static void loadLibrary(String name) {
-        if (System.getSecurityManager() == null) {
-            BootLoader.getNativeLibraries().loadLibrary(name);
-        } else {
-            AccessController.doPrivileged(new java.security.PrivilegedAction<>() {
-                public Void run() {
-                    BootLoader.getNativeLibraries().loadLibrary(name);
-                    return null;
-                }
-            });
-        }
+        getNativeLibraries().loadLibrary(name);
     }
 
     /**
@@ -294,38 +282,28 @@ public class BootLoader {
         /**
          * Returns URL if the given location is a regular file path.
          */
-        @SuppressWarnings("removal")
         private static URL toFileURL(String location) {
-            return AccessController.doPrivileged(new PrivilegedAction<>() {
-                public URL run() {
-                    Path path = Path.of(location);
-                    if (Files.isRegularFile(path)) {
-                        try {
-                            return path.toUri().toURL();
-                        } catch (MalformedURLException e) {}
-                    }
-                    return null;
-                }
-            });
+            Path path = Path.of(location);
+            if (Files.isRegularFile(path)) {
+                try {
+                    return path.toUri().toURL();
+                } catch (MalformedURLException e) {}
+            }
+            return null;
         }
 
         /**
          * Returns the Manifest if the given location is a JAR file
          * containing a manifest.
          */
-        @SuppressWarnings("removal")
         private static Manifest getManifest(String location) {
-            return AccessController.doPrivileged(new PrivilegedAction<>() {
-                public Manifest run() {
-                    Path jar = Path.of(location);
-                    try (InputStream in = Files.newInputStream(jar);
-                         JarInputStream jis = new JarInputStream(in, false)) {
-                        return jis.getManifest();
-                    } catch (IOException e) {
-                        return null;
-                    }
-                }
-            });
+            Path jar = Path.of(location);
+            try (InputStream in = Files.newInputStream(jar);
+                 JarInputStream jis = new JarInputStream(in, false)) {
+                return jis.getManifest();
+            } catch (IOException e) {
+                return null;
+            }
         }
     }
 

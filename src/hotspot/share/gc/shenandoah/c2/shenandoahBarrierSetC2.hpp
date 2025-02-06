@@ -67,6 +67,18 @@ private:
                                     Node* pre_val,
                                     BasicType bt) const;
 
+  Node* byte_map_base_node(GraphKit* kit) const;
+
+  void post_barrier(GraphKit* kit,
+                    Node* ctl,
+                    Node* store,
+                    Node* obj,
+                    Node* adr,
+                    uint adr_idx,
+                    Node* val,
+                    BasicType bt,
+                    bool use_precise) const;
+
   void insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* offset,
                           Node* pre_val, bool need_mem_bar) const;
 
@@ -93,9 +105,9 @@ public:
 
   ShenandoahBarrierSetC2State* state() const;
 
-  static const TypeFunc* write_ref_field_pre_entry_Type();
-  static const TypeFunc* shenandoah_clone_barrier_Type();
-  static const TypeFunc* shenandoah_load_reference_barrier_Type();
+  static const TypeFunc* write_ref_field_pre_Type();
+  static const TypeFunc* clone_barrier_Type();
+  static const TypeFunc* load_reference_barrier_Type();
   virtual bool has_load_barrier_nodes() const { return true; }
 
   // This is the entry-point for the backend to perform accesses through the Access API.

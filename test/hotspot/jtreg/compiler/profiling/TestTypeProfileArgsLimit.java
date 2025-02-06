@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8295406
  * @summary Tests execution with TypeProfileArgsLimit=0 TypeProfileLevel=222.
  *
+ * @requires vm.compMode != "Xcomp"
  * @run main/othervm -XX:TypeProfileArgsLimit=0 -XX:TypeProfileLevel=222 compiler.profiling.TestTypeProfileArgsLimit
  * @run main/othervm -XX:TypeProfileArgsLimit=0 -XX:TypeProfileLevel=212 compiler.profiling.TestTypeProfileArgsLimit
  * @run main/othervm -XX:TypeProfileArgsLimit=0 -XX:TypeProfileLevel=202 compiler.profiling.TestTypeProfileArgsLimit

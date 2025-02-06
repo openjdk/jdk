@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -65,6 +65,7 @@ void ShenandoahPacer::setup_for_mark() {
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
+  taxable = MAX2<size_t>(1, taxable);
 
   double tax = 1.0 * live / taxable; // base tax for available free space
   tax *= 1;                          // mark can succeed with immediate garbage, claim all available space
@@ -72,8 +73,8 @@ void ShenandoahPacer::setup_for_mark() {
 
   restart_with(non_taxable, tax);
 
-  log_info(gc, ergo)("Pacer for Mark. Expected Live: " SIZE_FORMAT "%s, Free: " SIZE_FORMAT "%s, "
-                     "Non-Taxable: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
+  log_info(gc, ergo)("Pacer for Mark. Expected Live: %zu%s, Free: %zu%s, "
+                     "Non-Taxable: %zu%s, Alloc Tax Rate: %.1fx",
                      byte_size_in_proper_unit(live),        proper_unit_for_byte_size(live),
                      byte_size_in_proper_unit(free),        proper_unit_for_byte_size(free),
                      byte_size_in_proper_unit(non_taxable), proper_unit_for_byte_size(non_taxable),
@@ -88,6 +89,7 @@ void ShenandoahPacer::setup_for_evac() {
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
+  taxable = MAX2<size_t>(1, taxable);
 
   double tax = 1.0 * used / taxable; // base tax for available free space
   tax *= 2;                          // evac is followed by update-refs, claim 1/2 of remaining free
@@ -96,15 +98,15 @@ void ShenandoahPacer::setup_for_evac() {
 
   restart_with(non_taxable, tax);
 
-  log_info(gc, ergo)("Pacer for Evacuation. Used CSet: " SIZE_FORMAT "%s, Free: " SIZE_FORMAT "%s, "
-                     "Non-Taxable: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
+  log_info(gc, ergo)("Pacer for Evacuation. Used CSet: %zu%s, Free: %zu%s, "
+                     "Non-Taxable: %zu%s, Alloc Tax Rate: %.1fx",
                      byte_size_in_proper_unit(used),        proper_unit_for_byte_size(used),
                      byte_size_in_proper_unit(free),        proper_unit_for_byte_size(free),
                      byte_size_in_proper_unit(non_taxable), proper_unit_for_byte_size(non_taxable),
                      tax);
 }
 
-void ShenandoahPacer::setup_for_updaterefs() {
+void ShenandoahPacer::setup_for_update_refs() {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
 
   size_t used = _heap->used();
@@ -112,6 +114,7 @@ void ShenandoahPacer::setup_for_updaterefs() {
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
+  taxable = MAX2<size_t>(1, taxable);
 
   double tax = 1.0 * used / taxable; // base tax for available free space
   tax *= 1;                          // update-refs is the last phase, claim the remaining free
@@ -120,8 +123,8 @@ void ShenandoahPacer::setup_for_updaterefs() {
 
   restart_with(non_taxable, tax);
 
-  log_info(gc, ergo)("Pacer for Update Refs. Used: " SIZE_FORMAT "%s, Free: " SIZE_FORMAT "%s, "
-                     "Non-Taxable: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
+  log_info(gc, ergo)("Pacer for Update Refs. Used: %zu%s, Free: %zu%s, "
+                     "Non-Taxable: %zu%s, Alloc Tax Rate: %.1fx",
                      byte_size_in_proper_unit(used),        proper_unit_for_byte_size(used),
                      byte_size_in_proper_unit(free),        proper_unit_for_byte_size(free),
                      byte_size_in_proper_unit(non_taxable), proper_unit_for_byte_size(non_taxable),
@@ -145,7 +148,7 @@ void ShenandoahPacer::setup_for_idle() {
 
   restart_with(initial, tax);
 
-  log_info(gc, ergo)("Pacer for Idle. Initial: " SIZE_FORMAT "%s, Alloc Tax Rate: %.1fx",
+  log_info(gc, ergo)("Pacer for Idle. Initial: %zu%s, Alloc Tax Rate: %.1fx",
                      byte_size_in_proper_unit(initial), proper_unit_for_byte_size(initial),
                      tax);
 }
@@ -161,7 +164,7 @@ void ShenandoahPacer::setup_for_reset() {
   size_t initial = _heap->max_capacity();
   restart_with(initial, 1.0);
 
-  log_info(gc, ergo)("Pacer for Reset. Non-Taxable: " SIZE_FORMAT "%s",
+  log_info(gc, ergo)("Pacer for Reset. Non-Taxable: %zu%s",
                      byte_size_in_proper_unit(initial), proper_unit_for_byte_size(initial));
 }
 
@@ -250,9 +253,9 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
     return;
   }
 
-  jlong const max_delay = ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC;
-  jlong const start_time = os::elapsed_counter();
-  while (!claimed && (os::elapsed_counter() - start_time) < max_delay) {
+  jlong const start_time = os::javaTimeNanos();
+  jlong const deadline = start_time + (ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC);
+  while (!claimed && os::javaTimeNanos() < deadline) {
     // We could instead assist GC, but this would suffice for now.
     wait(1);
     claimed = claim_for_alloc<false>(words);
@@ -264,7 +267,7 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
     claimed = claim_for_alloc<true>(words);
     assert(claimed, "Should always succeed");
   }
-  ShenandoahThreadLocalData::add_paced_time(current, (double)(os::elapsed_counter() - start_time) / NANOSECS_PER_SEC);
+  ShenandoahThreadLocalData::add_paced_time(current, (double)(os::javaTimeNanos() - start_time) / NANOSECS_PER_SEC);
 }
 
 void ShenandoahPacer::wait(size_t time_ms) {
@@ -273,7 +276,7 @@ void ShenandoahPacer::wait(size_t time_ms) {
   assert(time_ms > 0, "Should not call this with zero argument, as it would stall until notify");
   assert(time_ms <= LONG_MAX, "Sanity");
   MonitorLocker locker(_wait_monitor);
-  _wait_monitor->wait((long)time_ms);
+  _wait_monitor->wait(time_ms);
 }
 
 void ShenandoahPacer::notify_waiters() {

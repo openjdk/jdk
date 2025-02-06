@@ -86,8 +86,6 @@ import static javax.tools.JavaFileObject.Kind;
  *     URI.create(relativeName).normalize().getPath().equals(relativeName)
  *     }
  *
- * <p>All methods in this interface might throw a SecurityException.
- *
  * <p>An object of this interface is not required to support
  * multi-threaded access, that is, be synchronized.  However, it must
  * support concurrent access to different file objects created by this
@@ -188,8 +186,6 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      * @return a class loader for the given location; or {@code null}
      * if loading plug-ins from the given location is disabled or if
      * the location is not known
-     * @throws SecurityException if a class loader can not be created
-     * in the current security context
      * @throws IllegalStateException if {@link #close} has been called
      * and this file manager cannot be reopened
      * @throws IllegalArgumentException if the location is a module-oriented location

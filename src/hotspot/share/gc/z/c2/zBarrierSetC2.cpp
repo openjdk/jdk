@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/z/c2/zBarrierSetC2.hpp"
@@ -239,21 +238,23 @@ void ZLoadBarrierStubC2::emit_code(MacroAssembler& masm) {
   ZBarrierSet::assembler()->generate_c2_load_barrier_stub(&masm, static_cast<ZLoadBarrierStubC2*>(this));
 }
 
-ZStoreBarrierStubC2* ZStoreBarrierStubC2::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic) {
+ZStoreBarrierStubC2* ZStoreBarrierStubC2::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic, bool is_nokeepalive) {
   AARCH64_ONLY(fatal("Should use ZStoreBarrierStubC2Aarch64::create"));
-  ZStoreBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic);
+  ZStoreBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic, is_nokeepalive);
   register_stub(stub);
 
   return stub;
 }
 
-ZStoreBarrierStubC2::ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic)
+ZStoreBarrierStubC2::ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer,
+                                         bool is_native, bool is_atomic, bool is_nokeepalive)
   : ZBarrierStubC2(node),
     _ref_addr(ref_addr),
     _new_zaddress(new_zaddress),
     _new_zpointer(new_zpointer),
     _is_native(is_native),
-    _is_atomic(is_atomic) {}
+    _is_atomic(is_atomic),
+    _is_nokeepalive(is_nokeepalive) {}
 
 Address ZStoreBarrierStubC2::ref_addr() const {
   return _ref_addr;
@@ -273,6 +274,10 @@ bool ZStoreBarrierStubC2::is_native() const {
 
 bool ZStoreBarrierStubC2::is_atomic() const {
   return _is_atomic;
+}
+
+bool ZStoreBarrierStubC2::is_nokeepalive() const {
+  return _is_nokeepalive;
 }
 
 void ZStoreBarrierStubC2::emit_code(MacroAssembler& masm) {
@@ -439,7 +444,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
       assert(src_offset == dest_offset, "should be equal");
       const jlong offset = src_offset->get_long();
       if (offset != arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
-        assert(!UseCompressedClassPointers, "should only happen without compressed class pointers");
+        assert(!UseCompressedClassPointers || UseCompactObjectHeaders, "should only happen without compressed class pointers");
         assert((arrayOopDesc::base_offset_in_bytes(T_OBJECT) - offset) == BytesPerLong, "unexpected offset");
         length = phase->transform_later(new SubLNode(length, phase->longcon(1))); // Size is in longs
         src_offset = phase->longcon(arrayOopDesc::base_offset_in_bytes(T_OBJECT));
@@ -553,7 +558,9 @@ static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
     // The memory address is computed by 'base' and fed to 'mach' via an
     // indirect memory operand (indicated by offset == 0). The ultimate base and
     // offset can be fetched directly from the inputs and Ideal type of 'base'.
-    offset = base->bottom_type()->isa_oopptr()->offset();
+    const TypeOopPtr* oopptr = base->bottom_type()->isa_oopptr();
+    if (oopptr == nullptr) return nullptr;
+    offset = oopptr->offset();
     // Even if 'base' is not an Ideal AddP node anymore, Matcher::ReduceInst()
     // guarantees that the base address is still available at the same slot.
     base = base->in(AddPNode::Base);

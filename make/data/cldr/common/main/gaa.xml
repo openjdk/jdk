@@ -61,7 +61,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="de" draft="unconfirmed">German</language>
 			<language type="de_AT" draft="unconfirmed">Austria German</language>
 			<language type="de_CH" draft="unconfirmed">Switzerland German Krɔŋŋ</language>
-			<language type="en" draft="unconfirmed">Blɔfo</language>
+			<language type="en">Blɔfo</language>
 			<language type="en_AU" draft="unconfirmed">Australia Blɔfo</language>
 			<language type="en_CA" draft="unconfirmed">Kanada Blɔfo</language>
 			<language type="en_GB" draft="unconfirmed">Britain Blɔfo</language>
@@ -77,7 +77,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fr_CA" draft="unconfirmed">Kanada Frɛntsi</language>
 			<language type="fr_CH" draft="unconfirmed">Switzerland Frɛntsi</language>
 			<language type="frc" draft="unconfirmed">Kajun Frɛntsi</language>
-			<language type="gaa" draft="contributed">Gã</language>
+			<language type="gaa">Gã</language>
 			<language type="hi" draft="unconfirmed">Hindi</language>
 			<language type="hy" draft="unconfirmed">Armenian</language>
 			<language type="id" draft="unconfirmed">Indonesian</language>
@@ -116,7 +116,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hant" alt="stand-alone" draft="unconfirmed">Tsutsu Blema</script>
 			<script type="Jpan" draft="unconfirmed">Japanese</script>
 			<script type="Kore" draft="unconfirmed">Korean</script>
-			<script type="Latn" draft="unconfirmed">Niŋmaa Ni Asharaa Yiteŋ</script>
+			<script type="Latn">Niŋmaa Ni Asharaa Yiteŋ</script>
 			<script type="Zxxx" draft="unconfirmed">Aŋmaaa</script>
 			<script type="Zzzz" draft="unconfirmed">Niŋmaa Ni Aleee</script>
 		</scripts>
@@ -202,7 +202,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GA" draft="unconfirmed">Gabon</territory>
 			<territory type="GD" draft="unconfirmed">Grenada</territory>
 			<territory type="GF" draft="unconfirmed">Frentsibii Guiana</territory>
-			<territory type="GH" draft="unconfirmed">Ghana</territory>
+			<territory type="GH">Ghana</territory>
 			<territory type="GL" draft="unconfirmed">Greenland</territory>
 			<territory type="GM" draft="unconfirmed">Gambia</territory>
 			<territory type="GN" draft="unconfirmed">Guinea</territory>
@@ -296,19 +296,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="latn" draft="unconfirmed">Blɔfomɛi Anɔmbai</type>
 		</types>
 		<measurementSystemNames>
-			<measurementSystemName type="metric" draft="unconfirmed">Susumɔnii</measurementSystemName>
+			<measurementSystemName type="metric">Susumɔnii</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language" draft="unconfirmed">Language: {0}</codePattern>
-			<codePattern type="script" draft="unconfirmed">Script: {0}</codePattern>
-			<codePattern type="territory" draft="unconfirmed">Region: {0}</codePattern>
+			<codePattern type="language">Wiemɔ {0}</codePattern>
+			<codePattern type="script">Woloŋmaa {0}</codePattern>
+			<codePattern type="territory">Kpokpaanɔ {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters draft="unconfirmed">[a b d e ɛ f g h i j k l m n ŋ o ɔ p q r s t u v w y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary" draft="unconfirmed">[áã é íĩ ó ũ]</exemplarCharacters>
+		<exemplarCharacters draft="contributed">[a b d e ɛ f g h i j k l m n ŋ o ɔ p r s t u v w y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[áã é íĩ ó ũ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[A B D E Ɛ F G H I J K L M N Ŋ O Ɔ P Q R S T U V W Y Z]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -491,18 +491,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12" draft="unconfirmed">Afu</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">Aharabata</month>
-							<month type="2" draft="unconfirmed">Oflɔ</month>
-							<month type="3" draft="unconfirmed">Otsokrikri</month>
-							<month type="4" draft="unconfirmed">Abeibe</month>
-							<month type="5" draft="unconfirmed">Agbiɛnaa</month>
-							<month type="6" draft="unconfirmed">Otukwajaŋ</month>
-							<month type="7" draft="unconfirmed">Maawɛ</month>
-							<month type="8" draft="unconfirmed">Manyawale</month>
-							<month type="9" draft="unconfirmed">Gbo</month>
-							<month type="10" draft="unconfirmed">Antɔŋ</month>
-							<month type="11" draft="unconfirmed">Alemle</month>
-							<month type="12" draft="unconfirmed">Afuabe</month>
+							<month type="1">Aharabata</month>
+							<month type="2">Oflɔ</month>
+							<month type="3">Otsokrikri</month>
+							<month type="4">Abɛibe</month>
+							<month type="5">Agbiɛnaa</month>
+							<month type="6">Otukwajaŋ</month>
+							<month type="7">Maawɛ</month>
+							<month type="8">Manyawale</month>
+							<month type="9">Gbo</month>
+							<month type="10">Antɔŋ</month>
+							<month type="11">Alemle</month>
+							<month type="12">Afuabe</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
@@ -524,7 +524,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="1" draft="unconfirmed">Aharabata</month>
 							<month type="2" draft="unconfirmed">Oflɔ</month>
 							<month type="3" draft="unconfirmed">Otsokrikri</month>
-							<month type="4" draft="unconfirmed">Abeibe</month>
+							<month type="4" draft="unconfirmed">Abɛibe</month>
 							<month type="5" draft="unconfirmed">Agbiɛnaa</month>
 							<month type="6" draft="unconfirmed">Otukwajan</month>
 							<month type="7" draft="unconfirmed">Maawɛ</month>
@@ -548,13 +548,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat" draft="unconfirmed">Hɔɔ</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">Hɔgbaa</day>
-							<day type="mon" draft="unconfirmed">Ju</day>
-							<day type="tue" draft="unconfirmed">Jufɔ</day>
-							<day type="wed" draft="unconfirmed">Shɔ</day>
-							<day type="thu" draft="unconfirmed">Soo</day>
-							<day type="fri" draft="unconfirmed">Sohaa</day>
-							<day type="sat" draft="unconfirmed">Hɔɔ</day>
+							<day type="sun">Hɔgbaa</day>
+							<day type="mon">Ju</day>
+							<day type="tue">Jufɔ</day>
+							<day type="wed">Shɔ</day>
+							<day type="thu">Soo</day>
+							<day type="fri">Sohaa</day>
+							<day type="sat">Hɔɔ</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
@@ -592,8 +592,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="pm" draft="unconfirmed">SN</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="unconfirmed">LEEBI</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">SHWANE</dayPeriod>
+							<dayPeriod type="am">LEEBI</dayPeriod>
+							<dayPeriod type="pm">SHWANE</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
@@ -643,26 +643,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern draft="unconfirmed">h:mm:ss a zzzz</pattern>
-							<datetimeSkeleton draft="unconfirmed">ahmmsszzzz</datetimeSkeleton>
+							<pattern draft="contributed">h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton draft="contributed">ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern draft="unconfirmed">h:mm:ss a z</pattern>
-							<datetimeSkeleton draft="unconfirmed">ahmmssz</datetimeSkeleton>
+							<pattern draft="contributed">h:mm:ss a z</pattern>
+							<datetimeSkeleton draft="contributed">ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern draft="unconfirmed">h:mm:ss a</pattern>
-							<datetimeSkeleton draft="unconfirmed">ahmmss</datetimeSkeleton>
+							<pattern draft="contributed">h:mm:ss a</pattern>
+							<datetimeSkeleton draft="contributed">ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern draft="unconfirmed">h:mm a</pattern>
-							<datetimeSkeleton draft="unconfirmed">ahmm</datetimeSkeleton>
+							<pattern draft="contributed">h:mm a</pattern>
+							<datetimeSkeleton draft="contributed">ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -698,10 +698,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMEd" draft="unconfirmed">E, MMM d</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other" draft="unconfirmed">MMMM 'otsi' W</dateFormatItem>
 						<dateFormatItem id="yM" draft="unconfirmed">M/y</dateFormatItem>
-						<dateFormatItem id="yMd" draft="unconfirmed">M/d/y</dateFormatItem>
+						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
 						<dateFormatItem id="yMEd" draft="unconfirmed">E, M/d/y</dateFormatItem>
 						<dateFormatItem id="yMMM" draft="unconfirmed">MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMd" draft="unconfirmed">MMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd" draft="unconfirmed">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM" draft="unconfirmed">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ" draft="unconfirmed">QQQ y</dateFormatItem>
@@ -877,9 +877,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<regionFormat draft="unconfirmed">{0} Be</regionFormat>
-			<regionFormat type="daylight" draft="unconfirmed">{0} Be Yɛ Latsa Beiaŋ</regionFormat>
-			<regionFormat type="standard" draft="unconfirmed">{0} Be Yɛ Fɛi Beiaŋ</regionFormat>
+			<regionFormat>{0} Be</regionFormat>
+			<regionFormat type="daylight">{0} Be Yɛ Latsa Beiaŋ</regionFormat>
+			<regionFormat type="standard">{0} Be Yɛ Fɛi Beiaŋ</regionFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard draft="unconfirmed">Be Ni Maji Ni Yɔɔ Jeŋ Fɛɛ Kɛtsuɔ Nii</standard>
@@ -1041,9 +1041,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Africa/Casablanca">
 				<exemplarCity draft="unconfirmed">Kasablanka</exemplarCity>
-			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity draft="unconfirmed">Tsoibalsan</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity draft="unconfirmed">Makao</exemplarCity>
@@ -1229,6 +1226,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="French_Southern">
 				<long>
 					<standard draft="unconfirmed">Antarktik Kɛ Wuoyigbɛbii Ni Wieɔ Frɛntsi Be</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>Betsɔɔmɔ ni ka ŋɛlɛ kome nɔ</standard>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
@@ -1714,8 +1716,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<minimalPairs>
-			<pluralMinimalPairs count="other" draft="unconfirmed">gbii {0}</pluralMinimalPairs>
-			<ordinalMinimalPairs ordinal="other" draft="unconfirmed">ni ji {0}</ordinalMinimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">gbii {0}</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">ni ji {0}</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -1915,8 +1917,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</units>
 	<listPatterns>
 		<listPattern type="standard-short">
-			<listPatternPart type="end" draft="unconfirmed">{0}, kɛ {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} kɛ {1}</listPatternPart>
+			<listPatternPart type="end">{0}, kɛ {1}</listPatternPart>
+			<listPatternPart type="2">{0} kɛ {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>

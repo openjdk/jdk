@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,14 @@ inline oop java_lang_VirtualThread::vthread_scope() {
   return base->obj_field(static_vthread_scope_offset);
 }
 
+inline ObjectWaiter* java_lang_VirtualThread::objectWaiter(oop vthread) {
+  return (ObjectWaiter*)vthread->address_field(_objectWaiter_offset);
+}
+
+inline void java_lang_VirtualThread::set_objectWaiter(oop vthread, ObjectWaiter* value) {
+  vthread->address_field_put(_objectWaiter_offset, (address)value);
+}
+
 #if INCLUDE_JFR
 inline u2 java_lang_Thread::jfr_epoch(oop ref) {
   return ref->short_field(_jfr_epoch_offset);
@@ -252,10 +260,6 @@ inline jboolean java_lang_invoke_ConstantCallSite::is_frozen(oop site) {
 }
 
 inline bool java_lang_invoke_ConstantCallSite::is_instance(oop obj) {
-  return obj != nullptr && is_subclass(obj->klass());
-}
-
-inline bool java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(oop obj) {
   return obj != nullptr && is_subclass(obj->klass());
 }
 

@@ -58,6 +58,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bi">bislama</language>
 			<language type="bin">bini</language>
 			<language type="bla">siksiká</language>
+			<language type="blo">anii</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bengalí</language>
 			<language type="bo">tibetano</language>
@@ -184,6 +185,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="iba">iban</language>
 			<language type="ibb">ibibio</language>
 			<language type="id">indonesio</language>
+			<language type="ie">occidental</language>
 			<language type="ig">igbo</language>
 			<language type="ii">yi sichuanés</language>
 			<language type="ikt">inuktitut canadense occidental</language>
@@ -238,6 +240,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">komi</language>
 			<language type="kw">córnico</language>
 			<language type="kwk">kwakiutl</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">kirguiz</language>
 			<language type="la">latín</language>
 			<language type="lad">ladino</language>
@@ -246,8 +249,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">lezguio</language>
 			<language type="lg">ganda</language>
 			<language type="li">limburgués</language>
+			<language type="lij">lígur</language>
 			<language type="lil">lillooet</language>
 			<language type="lkt">lakota</language>
+			<language type="lmo">lombardo</language>
 			<language type="ln">lingala</language>
 			<language type="lo">laosiano</language>
 			<language type="lou">crioulo de Luisiana</language>
@@ -258,7 +263,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lu">luba-katanga</language>
 			<language type="lua">luba-lulua</language>
 			<language type="lun">lunda</language>
-			<language type="luo">luo</language>
 			<language type="lus">mizo</language>
 			<language type="luy">luyia</language>
 			<language type="lv">letón</language>
@@ -404,6 +408,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sw_CD">suahili congolés</language>
 			<language type="swb">comoriano</language>
 			<language type="syr">siríaco</language>
+			<language type="szl">silesiano</language>
 			<language type="ta">támil</language>
 			<language type="tce">tutchone do sur</language>
 			<language type="te">telugu</language>
@@ -443,9 +448,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="und">lingua descoñecida</language>
 			<language type="ur">urdú</language>
 			<language type="uz">uzbeko</language>
-			<language type="vai">vai</language>
 			<language type="ve">venda</language>
+			<language type="vec">véneto</language>
 			<language type="vi">vietnamita</language>
+			<language type="vmw">makua</language>
 			<language type="vo">volapuk</language>
 			<language type="vun">vunjo</language>
 			<language type="wa">valón</language>
@@ -457,6 +463,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">chinés wu</language>
 			<language type="xal">calmuco</language>
 			<language type="xh">xhosa</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">soga</language>
 			<language type="yav">yangben</language>
 			<language type="ybb">yemba</language>
@@ -465,6 +472,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl">nheengatu</language>
 			<language type="yue">cantonés</language>
 			<language type="yue" alt="menu">chinés cantonés</language>
+			<language type="za">zhuang</language>
 			<language type="zgh">tamazight marroquí estándar</language>
 			<language type="zh">chinés</language>
 			<language type="zh" alt="menu">chinés mandarín</language>
@@ -574,15 +582,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="419">América Latina</territory>
 			<territory type="AC">Illa de Ascensión</territory>
 			<territory type="AD">Andorra</territory>
-			<territory type="AE">Os Emiratos Árabes Unidos</territory>
+			<territory type="AE">Emiratos Árabes Unidos</territory>
 			<territory type="AF">Afganistán</territory>
 			<territory type="AG">Antigua e Barbuda</territory>
 			<territory type="AI">Anguila</territory>
 			<territory type="AL">Albania</territory>
 			<territory type="AM">Armenia</territory>
 			<territory type="AO">Angola</territory>
-			<territory type="AQ">A Antártida</territory>
-			<territory type="AR">A Arxentina</territory>
+			<territory type="AQ">Antártida</territory>
+			<territory type="AR">Arxentina</territory>
 			<territory type="AS">Samoa Americana</territory>
 			<territory type="AT">Austria</territory>
 			<territory type="AU">Australia</territory>
@@ -603,14 +611,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="BN">Brunei</territory>
 			<territory type="BO">Bolivia</territory>
 			<territory type="BQ">Caribe Neerlandés</territory>
-			<territory type="BR">O Brasil</territory>
+			<territory type="BR">Brasil</territory>
 			<territory type="BS">Bahamas</territory>
 			<territory type="BT">Bután</territory>
 			<territory type="BV">Illa Bouvet</territory>
 			<territory type="BW">Botswana</territory>
 			<territory type="BY">Belarús</territory>
 			<territory type="BZ">Belize</territory>
-			<territory type="CA">O Canadá</territory>
+			<territory type="CA">Canadá</territory>
 			<territory type="CC">Illas Cocos (Keeling)</territory>
 			<territory type="CD">República Democrática do Congo</territory>
 			<territory type="CD" alt="variant">Congo (RDC)</territory>
@@ -623,7 +631,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CK">Illas Cook</territory>
 			<territory type="CL">Chile</territory>
 			<territory type="CM">Camerún</territory>
-			<territory type="CN">A China</territory>
+			<territory type="CN">China</territory>
 			<territory type="CO">Colombia</territory>
 			<territory type="CP">Illa Clipperton</territory>
 			<territory type="CR">Costa Rica</territory>
@@ -645,7 +653,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="EC">Ecuador</territory>
 			<territory type="EE">Estonia</territory>
 			<territory type="EG">Exipto</territory>
-			<territory type="EH">O Sáhara Occidental</territory>
+			<territory type="EH">Sáhara Occidental</territory>
 			<territory type="ER">Eritrea</territory>
 			<territory type="ES">España</territory>
 			<territory type="ET">Etiopía</territory>
@@ -659,7 +667,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="FO">Illas Feroe</territory>
 			<territory type="FR">Francia</territory>
 			<territory type="GA">Gabón</territory>
-			<territory type="GB">O Reino Unido</territory>
+			<territory type="GB">Reino Unido</territory>
 			<territory type="GB" alt="short">RU</territory>
 			<territory type="GD">Granada</territory>
 			<territory type="GE">Xeorxia</territory>
@@ -676,7 +684,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="GS">Illas Xeorxia do Sur e Sandwich do Sur</territory>
 			<territory type="GT">Guatemala</territory>
 			<territory type="GU">Guam</territory>
-			<territory type="GW">A Guinea Bissau</territory>
+			<territory type="GW">Guinea Bissau</territory>
 			<territory type="GY">Güiana</territory>
 			<territory type="HK">Hong Kong RAE da China</territory>
 			<territory type="HK" alt="short">Hong Kong</territory>
@@ -690,7 +698,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IE">Irlanda</territory>
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Illa de Man</territory>
-			<territory type="IN">A India</territory>
+			<territory type="IN">India</territory>
 			<territory type="IO">Territorio Británico do Océano Índico</territory>
 			<territory type="IO" alt="chagos">Arquipélago de Chagos</territory>
 			<territory type="IQ">Iraq</territory>
@@ -700,7 +708,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="JE">Jersey</territory>
 			<territory type="JM">Xamaica</territory>
 			<territory type="JO">Xordania</territory>
-			<territory type="JP">O Xapón</territory>
+			<territory type="JP">Xapón</territory>
 			<territory type="KE">Kenya</territory>
 			<territory type="KG">Kirguizistán</territory>
 			<territory type="KH">Camboxa</territory>
@@ -713,7 +721,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="KY">Illas Caimán</territory>
 			<territory type="KZ">Kazakistán</territory>
 			<territory type="LA">Laos</territory>
-			<territory type="LB">O Líbano</territory>
+			<territory type="LB">Líbano</territory>
 			<territory type="LC">Santa Lucía</territory>
 			<territory type="LI">Liechtenstein</territory>
 			<territory type="LK">Sri Lanka</territory>
@@ -762,8 +770,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NZ" alt="variant">Aotearoa (Nova Zelandia)</territory>
 			<territory type="OM">Omán</territory>
 			<territory type="PA">Panamá</territory>
-			<territory type="PE">O Perú</territory>
-			<territory type="PF">A Polinesia Francesa</territory>
+			<territory type="PE">Perú</territory>
+			<territory type="PF">Polinesia Francesa</territory>
 			<territory type="PG">Papúa-Nova Guinea</territory>
 			<territory type="PH">Filipinas</territory>
 			<territory type="PK">Paquistán</territory>
@@ -775,7 +783,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="PS" alt="short">Palestina</territory>
 			<territory type="PT">Portugal</territory>
 			<territory type="PW">Palau</territory>
-			<territory type="PY">O Paraguai</territory>
+			<territory type="PY">Paraguai</territory>
 			<territory type="QA">Qatar</territory>
 			<territory type="QO">Territorios afastados de Oceanía</territory>
 			<territory type="RE">Reunión</territory>
@@ -786,7 +794,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SA">Arabia Saudita</territory>
 			<territory type="SB">Illas Salomón</territory>
 			<territory type="SC">Seychelles</territory>
-			<territory type="SD">O Sudán</territory>
+			<territory type="SD">Sudán</territory>
 			<territory type="SE">Suecia</territory>
 			<territory type="SG">Singapur</territory>
 			<territory type="SH">Santa Helena</territory>
@@ -798,7 +806,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SN">Senegal</territory>
 			<territory type="SO">Somalia</territory>
 			<territory type="SR">Suriname</territory>
-			<territory type="SS">O Sudán do Sur</territory>
+			<territory type="SS">Sudán do Sur</territory>
 			<territory type="ST">San Tomé e Príncipe</territory>
 			<territory type="SV">O Salvador</territory>
 			<territory type="SX">Sint Maarten</territory>
@@ -827,9 +835,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="UM">Illas Menores Distantes dos Estados Unidos</territory>
 			<territory type="UN">Nacións Unidas</territory>
 			<territory type="UN" alt="short">ONU</territory>
-			<territory type="US">Os Estados Unidos</territory>
+			<territory type="US">Estados Unidos</territory>
 			<territory type="US" alt="short">EUA</territory>
-			<territory type="UY">O Uruguai</territory>
+			<territory type="UY">Uruguai</territory>
 			<territory type="UZ">Uzbekistán</territory>
 			<territory type="VA">Cidade do Vaticano</territory>
 			<territory type="VC">San Vicente e as Granadinas</territory>
@@ -843,7 +851,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="XA">Pseudoacentos</territory>
 			<territory type="XB">Pseudobidireccional</territory>
 			<territory type="XK">Kosovo</territory>
-			<territory type="YE">O Iemen</territory>
+			<territory type="YE">Iemen</territory>
 			<territory type="YT">Mayotte</territory>
 			<territory type="ZA">Suráfrica</territory>
 			<territory type="ZM">Zambia</territory>
@@ -1009,7 +1017,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -2057,6 +2065,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>hora de: {0}</regionFormat>
 			<regionFormat type="daylight">hora de verán de: {0}</regionFormat>
 			<regionFormat type="standard">hora estándar de: {0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulú</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>hora universal coordinada</standard>
@@ -2172,9 +2183,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>Cabo Verde</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Illa Christmas</exemplarCity>
@@ -2380,9 +2388,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Lisbon">
 				<exemplarCity>Lisboa</exemplarCity>
 			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
 			<zone type="Indian/Reunion">
 				<exemplarCity>Reunión</exemplarCity>
 			</zone>
@@ -2479,9 +2484,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Simferópol</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulú</exemplarCity>
-			</zone>
 			<zone type="America/Los_Angeles">
 				<exemplarCity>Os Ánxeles</exemplarCity>
 			</zone>
@@ -2524,6 +2526,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Lusaka">
 				<exemplarCity>Lusaca</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>hora de Acre</generic>
+				</long>
+			</metazone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>hora de Afganistán</standard>
@@ -2595,7 +2602,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Anadyr">
 				<long>
-					<generic>Horario de Anadir</generic>
+					<generic>hora de Anadyr</generic>
 					<standard>Horario estándar de Anadir</standard>
 					<daylight>Horario de verán de Anadir</daylight>
 				</long>
@@ -2744,13 +2751,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>hora da China</generic>
 					<standard>hora estándar da China</standard>
 					<daylight>hora de verán da China</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>hora de Choibalsan</generic>
-					<standard>hora estándar de Choibalsan</standard>
-					<daylight>hora de verán de Choibalsan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -3011,9 +3011,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kamchatka">
 				<long>
-					<generic>Horario de Petropávlovsk-Kamchatski</generic>
+					<generic>hora estándar de Petropavlovsk-Kamchatski</generic>
 					<standard>Horario estándar de Petropávlovsk-Kamchatski</standard>
 					<daylight>Horario de verán de Petropávlovsk-Kamchatski</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>hora de Kazakistán</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3275,7 +3280,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samara">
 				<long>
-					<generic>Horario de Samara</generic>
+					<generic>hora de Samara</generic>
 					<standard>Horario estándar de Samara</standard>
 					<daylight>Horario de verán de Samara</daylight>
 				</long>
@@ -3556,8 +3561,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -4364,9 +4367,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">leones de Serra Leoa</displayName>
 			</currency>
 			<currency type="SLL">
-				<displayName>leone de Serra Leoa (1964—2022)</displayName>
-				<displayName count="one">leone de Serra Leoa (1964—2022)</displayName>
-				<displayName count="other">leones de Serra Leoa (1964—2022)</displayName>
+				<displayName>leone de Serra Leoa (1964–2022)</displayName>
+				<displayName count="one">leone de Serra Leoa (1964–2022)</displayName>
+				<displayName count="other">leones de Serra Leoa (1964–2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>xilin somalí</displayName>
@@ -5577,6 +5580,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} cuarto imperial</unitPattern>
 				<unitPattern count="other">{0} cuartos imperiais</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>luz</displayName>
+				<unitPattern count="one">{0} luz</unitPattern>
+				<unitPattern count="other">{0} luz</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>partes por mil millóns</displayName>
+				<unitPattern count="one">{0} parte por mil millóns</unitPattern>
+				<unitPattern count="other">{0} partes por mil millóns</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noites</displayName>
+				<unitPattern count="one">{0} noite</unitPattern>
+				<unitPattern count="other">{0} noites</unitPattern>
+				<perUnitPattern>{0} por noite</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>punto cardinal</displayName>
 				<coordinateUnitPattern type="east">{0} leste</coordinateUnitPattern>
@@ -6025,6 +6044,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} cto. imp.</unitPattern>
 				<unitPattern count="other">{0} ctos. imp.</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>luz</displayName>
+				<unitPattern count="one">{0} luz</unitPattern>
+				<unitPattern count="other">{0} luz</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>partes/mil millóns</displayName>
+				<unitPattern count="one">{0} ppmm</unitPattern>
+				<unitPattern count="other">{0} ppmm</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noites</displayName>
+				<unitPattern count="one">{0} noite</unitPattern>
+				<unitPattern count="other">{0} noites</unitPattern>
+				<perUnitPattern>{0}/noite</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>punto</displayName>
 				<coordinateUnitPattern type="east">{0} L</coordinateUnitPattern>
@@ -6204,6 +6239,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-quart-imperial">
 				<displayName>cto. imp.</displayName>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>luz</displayName>
+				<unitPattern count="one">{0} luz</unitPattern>
+				<unitPattern count="other">{0} luz</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>ppmm</displayName>
+				<unitPattern count="one">{0} ppmm</unitPattern>
+				<unitPattern count="other">{0} ppmm</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noites</displayName>
+				<unitPattern count="one">{0} noite</unitPattern>
+				<unitPattern count="other">{0} noites</unitPattern>
+				<perUnitPattern>{0}/noite</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>

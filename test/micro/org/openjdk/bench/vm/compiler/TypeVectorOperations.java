@@ -382,7 +382,7 @@ public abstract class TypeVectorOperations {
     }
 
     @Benchmark
-    @Fork(jvmArgsPrepend = {"-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov"})
+    @Fork(jvmArgs = {"-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov"})
     public void cmoveD() {
         for (int i = 0; i < COUNT; i++) {
             resD[i] = resD[i] < doubles[i] ? resD[i] : doubles[i];
@@ -390,21 +390,21 @@ public abstract class TypeVectorOperations {
     }
 
     @Benchmark
-    @Fork(jvmArgsPrepend = {"-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov"})
+    @Fork(jvmArgs = {"-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov"})
     public void cmoveF() {
         for (int i = 0; i < COUNT; i++) {
             resF[i] = resF[i] < floats[i] ? resF[i] : floats[i];
         }
     }
 
-    @Fork(value = 2, jvmArgsPrepend = {
+    @Fork(value = 2, jvmArgs = {
         "-XX:+UseSuperWord"
     })
     public static class TypeVectorOperationsSuperWord extends TypeVectorOperations {
 
     }
 
-    @Fork(value = 2, jvmArgsPrepend = {
+    @Fork(value = 2, jvmArgs = {
         "-XX:-UseSuperWord"
     })
     public static class TypeVectorOperationsNonSuperWord extends TypeVectorOperations {

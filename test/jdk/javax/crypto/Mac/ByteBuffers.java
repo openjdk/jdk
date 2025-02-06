@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
  * @summary Test the Mac.update(ByteBuffer) method
  * @author Andreas Sterbenz
  * @key randomness
+ * @run main ByteBuffers HmacMD5
+ * @run main ByteBuffers HmacSha256
  */
 
 import java.util.*;
@@ -40,17 +42,18 @@ import javax.crypto.spec.*;
 public class ByteBuffers {
 
     public static void main(String[] args) throws Exception {
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
         Random random = new Random();
         int n = 10 * 1024;
         byte[] t = new byte[n];
         random.nextBytes(t);
 
+        String algo = args[0];
         byte[] keyBytes = new byte[16];
         random.nextBytes(keyBytes);
-        SecretKey key = new SecretKeySpec(keyBytes, "HmacMD5");
+        SecretKey key = new SecretKeySpec(keyBytes, algo);
 
-        Mac mac = Mac.getInstance("HmacMD5");
+        Mac mac = Mac.getInstance(algo);
         mac.init(key);
         byte[] macValue = mac.doFinal(t);
 

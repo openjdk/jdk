@@ -136,7 +136,7 @@ ifeq ($(call isTargetOs, macosx), true)
 	  $(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'; \
 	fi
 	if [ -n "`$(XATTR) -ls '$(call DecodeSpace, $@)'`" ]; then \
-          $(CHMOD) u+w '$(call DecodeSpace, $@)'; \
+          $(CHMOD) -h u+w '$(call DecodeSpace, $@)'; \
 	  $(XATTR) -cs '$(call DecodeSpace, $@)'; \
 	fi
   endef

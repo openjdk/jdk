@@ -33,11 +33,6 @@
  * @run build NotificationEmissionTest
  *
  * @run main NotificationEmissionTest 1
- * @run main/othervm -Djava.security.manager=allow NotificationEmissionTest 1
- * @run main/othervm -Djava.security.manager=allow NotificationEmissionTest 2
- * @run main/othervm -Djava.security.manager=allow NotificationEmissionTest 3
- * @run main/othervm -Djava.security.manager=allow NotificationEmissionTest 4
- * @run main/othervm -Djava.security.manager=allow NotificationEmissionTest 5
  */
 
 import java.io.File;

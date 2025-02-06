@@ -1,0 +1,2 @@
+PolymorphicMethodTest.java:10:31: compiler.warn.prob.found.req: (compiler.misc.unchecked.cast.to.type), java.lang.Object, V
+1 warning

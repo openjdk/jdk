@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,21 +103,13 @@ public abstract class ServerSocketFactory
      * Returns a server socket bound to the specified port.
      * The socket is configured with the socket options
      * (such as accept timeout) given to this factory.
-     * <P>
-     * If there is a security manager, its <code>checkListen</code>
-     * method is called with the <code>port</code> argument as its
-     * argument to ensure the operation is allowed. This could result
-     * in a SecurityException.
      *
      * @param port the port to listen to
      * @return the <code>ServerSocket</code>
      * @throws IOException for networking errors
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkListen</code> method doesn't allow the operation.
      * @throws IllegalArgumentException if the port parameter is outside the
      *         specified range of valid port values, which is between 0 and
      *         65535, inclusive.
-     * @see    SecurityManager#checkListen
      * @see java.net.ServerSocket#ServerSocket(int)
      */
     public abstract ServerSocket createServerSocket(int port)
@@ -132,22 +124,14 @@ public abstract class ServerSocketFactory
      * The <code>backlog</code> argument must be a positive
      * value greater than 0. If the value passed if equal or less
      * than 0, then the default value will be assumed.
-     * <P>
-     * If there is a security manager, its <code>checkListen</code>
-     * method is called with the <code>port</code> argument as its
-     * argument to ensure the operation is allowed. This could result
-     * in a SecurityException.
      *
      * @param port the port to listen to
      * @param backlog how many connections are queued
      * @return the <code>ServerSocket</code>
      * @throws IOException for networking errors
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkListen</code> method doesn't allow the operation.
      * @throws IllegalArgumentException if the port parameter is outside the
      *         specified range of valid port values, which is between 0 and
      *         65535, inclusive.
-     * @see    SecurityManager#checkListen
      * @see java.net.ServerSocket#ServerSocket(int, int)
      */
     public abstract ServerSocket
@@ -169,23 +153,15 @@ public abstract class ServerSocketFactory
      * The <code>backlog</code> argument must be a positive
      * value greater than 0. If the value passed if equal or less
      * than 0, then the default value will be assumed.
-     * <P>
-     * If there is a security manager, its <code>checkListen</code>
-     * method is called with the <code>port</code> argument as its
-     * argument to ensure the operation is allowed. This could result
-     * in a SecurityException.
      *
      * @param port the port to listen to
      * @param backlog how many connections are queued
      * @param ifAddress the network interface address to use
      * @return the <code>ServerSocket</code>
      * @throws IOException for networking errors
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkListen</code> method doesn't allow the operation.
      * @throws IllegalArgumentException if the port parameter is outside the
      *         specified range of valid port values, which is between 0 and
      *         65535, inclusive.
-     * @see    SecurityManager#checkListen
      * @see java.net.ServerSocket#ServerSocket(int, int, java.net.InetAddress)
      */
     public abstract ServerSocket

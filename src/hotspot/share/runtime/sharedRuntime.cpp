@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -1963,6 +1962,26 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
   assert(JavaThread::current() == current, "invariant");
   // Exit must be non-blocking, and therefore no exceptions can be thrown.
   ExceptionMark em(current);
+
+  // Check if C2_MacroAssembler::fast_unlock() or
+  // C2_MacroAssembler::fast_unlock_lightweight() unlocked an inflated
+  // monitor before going slow path.  Since there is no safepoint
+  // polling when calling into the VM, we can be sure that the monitor
+  // hasn't been deallocated.
+  ObjectMonitor* m = current->unlocked_inflated_monitor();
+  if (m != nullptr) {
+    assert(!m->has_owner(current), "must be");
+    current->clear_unlocked_inflated_monitor();
+
+    // We need to reacquire the lock before we can call ObjectSynchronizer::exit().
+    if (!m->try_enter(current, /*check_for_recursion*/ false)) {
+      // Some other thread acquired the lock (or the monitor was
+      // deflated). Either way we are done.
+      current->dec_held_monitor_count();
+      return;
+    }
+  }
+
   // The object could become unlocked through a JNI call, which we have no other checks for.
   // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
   if (obj->is_unlocked()) {

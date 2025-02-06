@@ -25,6 +25,8 @@
 
 package java.lang.invoke;
 
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.constant.ConstantUtils;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
@@ -50,7 +52,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.internal.constant.MethodTypeDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
 
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.constant.ConstantDescs.*;
@@ -59,7 +60,6 @@ import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
-import static jdk.internal.constant.ConstantUtils.concat;
 import static jdk.internal.constant.ConstantUtils.validateInternalClassName;
 
 /**
@@ -69,16 +69,16 @@ import static jdk.internal.constant.ConstantUtils.validateInternalClassName;
  */
 class InvokerBytecodeGenerator {
     /** Define class names for convenience. */
-    private static final ClassDesc CD_CasesHolder = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl$CasesHolder;");
-    private static final ClassDesc CD_DirectMethodHandle = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/DirectMethodHandle;");
-    private static final ClassDesc CD_MemberName = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/MemberName;");
-    private static final ClassDesc CD_MethodHandleImpl = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl;");
-    private static final ClassDesc CD_LambdaForm = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
-    private static final ClassDesc CD_LambdaForm_Name = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm$Name;");
-    private static final ClassDesc CD_LoopClauses = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl$LoopClauses;");
-    private static final ClassDesc CD_Object_array  = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;");
-    private static final ClassDesc CD_MethodHandle_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/invoke/MethodHandle;");
-    private static final ClassDesc CD_MethodHandle_array2 = ReferenceClassDescImpl.ofValidated("[[Ljava/lang/invoke/MethodHandle;");
+    private static final ClassDesc CD_CasesHolder = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl$CasesHolder;");
+    private static final ClassDesc CD_DirectMethodHandle = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/DirectMethodHandle;");
+    private static final ClassDesc CD_MemberName = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/MemberName;");
+    private static final ClassDesc CD_MethodHandleImpl = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl;");
+    private static final ClassDesc CD_LambdaForm = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
+    private static final ClassDesc CD_LambdaForm_Name = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm$Name;");
+    private static final ClassDesc CD_LoopClauses = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl$LoopClauses;");
+    private static final ClassDesc CD_Object_array = ConstantUtils.CD_Object_array;
+    private static final ClassDesc CD_MethodHandle_array = CD_MethodHandle.arrayType();
+    private static final ClassDesc CD_MethodHandle_array2 = CD_MethodHandle_array.arrayType();
 
     private static final MethodTypeDesc MTD_boolean_Object = MethodTypeDescImpl.ofValidated(CD_boolean, CD_Object);
     private static final MethodTypeDesc MTD_Object_int = MethodTypeDescImpl.ofValidated(CD_Object, CD_int);
@@ -133,7 +133,7 @@ class InvokerBytecodeGenerator {
         this.name = name;
         this.className = CLASS_PREFIX.concat(name);
         validateInternalClassName(name);
-        this.classEntry = pool.classEntry(ReferenceClassDescImpl.ofValidated(concat("L", className, ";")));
+        this.classEntry = pool.classEntry(ConstantUtils.internalNameToDesc(className));
         this.lambdaForm = lambdaForm;
         this.invokerName = invokerName;
         this.invokerType = invokerType;
@@ -248,7 +248,7 @@ class InvokerBytecodeGenerator {
             return ClassFile.of().build(classEntry, pool, new Consumer<>() {
                 @Override
                 public void accept(ClassBuilder clb) {
-                    clb.withFlags(ACC_ABSTRACT | ACC_SUPER)
+                    clb.withFlags(ACC_FINAL | ACC_SUPER)
                        .withSuperclass(INVOKER_SUPER_DESC)
                        .with(SourceFileAttribute.of(clb.constantPool().utf8Entry(SOURCE_PREFIX + name)));
                     config.accept(clb);
@@ -517,16 +517,18 @@ class InvokerBytecodeGenerator {
         return true;
     }
 
-    static final Annotation DONTINLINE      = Annotation.of(ReferenceClassDescImpl.ofValidated("Ljdk/internal/vm/annotation/DontInline;"));
-    static final Annotation FORCEINLINE     = Annotation.of(ReferenceClassDescImpl.ofValidated("Ljdk/internal/vm/annotation/ForceInline;"));
-    static final Annotation HIDDEN          = Annotation.of(ReferenceClassDescImpl.ofValidated("Ljdk/internal/vm/annotation/Hidden;"));
-    static final Annotation INJECTEDPROFILE = Annotation.of(ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/InjectedProfile;"));
-    static final Annotation LF_COMPILED     = Annotation.of(ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm$Compiled;"));
+    static final Annotation DONTINLINE      = Annotation.of(ClassOrInterfaceDescImpl.ofValidated("Ljdk/internal/vm/annotation/DontInline;"));
+    static final Annotation FORCEINLINE     = Annotation.of(ClassOrInterfaceDescImpl.ofValidated("Ljdk/internal/vm/annotation/ForceInline;"));
+    static final Annotation HIDDEN          = Annotation.of(ClassOrInterfaceDescImpl.ofValidated("Ljdk/internal/vm/annotation/Hidden;"));
+    static final Annotation INJECTEDPROFILE = Annotation.of(ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/InjectedProfile;"));
+    static final Annotation LF_COMPILED     = Annotation.of(ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm$Compiled;"));
 
     // Suppress method in backtraces displayed to the user, mark this method as
     // a compiled LambdaForm, then either force or prohibit inlining.
     public static final RuntimeVisibleAnnotationsAttribute LF_DONTINLINE_ANNOTATIONS = RuntimeVisibleAnnotationsAttribute.of(HIDDEN, LF_COMPILED, DONTINLINE);
+    public static final RuntimeVisibleAnnotationsAttribute LF_DONTINLINE_PROFILE_ANNOTATIONS = RuntimeVisibleAnnotationsAttribute.of(HIDDEN, LF_COMPILED, DONTINLINE, INJECTEDPROFILE);
     public static final RuntimeVisibleAnnotationsAttribute LF_FORCEINLINE_ANNOTATIONS = RuntimeVisibleAnnotationsAttribute.of(HIDDEN, LF_COMPILED, FORCEINLINE);
+    public static final RuntimeVisibleAnnotationsAttribute LF_FORCEINLINE_PROFILE_ANNOTATIONS = RuntimeVisibleAnnotationsAttribute.of(HIDDEN, LF_COMPILED, FORCEINLINE, INJECTEDPROFILE);
 
     /**
      * Generate an invoker method for the passed {@link LambdaForm}.
@@ -586,7 +588,11 @@ class InvokerBytecodeGenerator {
                                     if (PROFILE_GWT) {
                                         assert(name.arguments[0] instanceof Name n &&
                                                 n.refersTo(MethodHandleImpl.class, "profileBoolean"));
-                                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(INJECTEDPROFILE)));
+                                        if (lambdaForm.forceInline) {
+                                            mb.with(LF_FORCEINLINE_PROFILE_ANNOTATIONS);
+                                        } else {
+                                            mb.with(LF_DONTINLINE_PROFILE_ANNOTATIONS);
+                                        }
                                     }
                                     onStack = emitSelectAlternative(cob, name, lambdaForm.names[i+1]);
                                     i++;  // skip MH.invokeBasic of the selectAlternative result
@@ -891,10 +897,9 @@ class InvokerBytecodeGenerator {
         emitStaticInvoke(cob, invokeBasicName);
 
         // goto L_done
-        cob.goto_w(L_done);
-
-        // L_fallback:
-        cob.labelBinding(L_fallback);
+        cob.goto_w(L_done)
+           // L_fallback:
+           .labelBinding(L_fallback);
 
         // invoke selectAlternativeName.arguments[2]
         System.arraycopy(preForkClasses, 0, localClasses, 0, preForkClasses.length);
@@ -945,26 +950,23 @@ class InvokerBytecodeGenerator {
                               .dropParameterTypes(0,1)
                               .changeReturnType(returnType);
 
-        cob.exceptionCatch(L_startBlock, L_endBlock, L_handler, CD_Throwable);
-
-        // Normal case
-        cob.labelBinding(L_startBlock);
+        cob.exceptionCatch(L_startBlock, L_endBlock, L_handler, CD_Throwable)
+           // Normal case
+           .labelBinding(L_startBlock);
         // load target
         emitPushArgument(cob, invoker, 0);
         emitPushArguments(cob, args, 1); // skip 1st argument: method handle
-        cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodDesc(type.basicType()));
-        cob.labelBinding(L_endBlock);
-        cob.goto_w(L_done);
-
-        // Exceptional case
-        cob.labelBinding(L_handler);
-
-        // Check exception's type
-        cob.dup();
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodDesc(type.basicType()))
+           .labelBinding(L_endBlock)
+           .goto_w(L_done)
+           // Exceptional case
+           .labelBinding(L_handler)
+           // Check exception's type
+           .dup();
         // load exception class
         emitPushArgument(cob, invoker, 1);
-        cob.swap();
-        cob.invokevirtual(CD_Class, "isInstance", MTD_boolean_Object);
+        cob.swap()
+           .invokevirtual(CD_Class, "isInstance", MTD_boolean_Object);
         Label L_rethrow = cob.newLabel();
         cob.ifeq(L_rethrow);
 
@@ -974,13 +976,11 @@ class InvokerBytecodeGenerator {
         cob.swap();
         emitPushArguments(cob, args, 1); // skip 1st argument: method handle
         MethodType catcherType = type.insertParameterTypes(0, Throwable.class);
-        cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodDesc(catcherType.basicType()));
-        cob.goto_w(L_done);
-
-        cob.labelBinding(L_rethrow);
-        cob.athrow();
-
-        cob.labelBinding(L_done);
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodDesc(catcherType.basicType()))
+           .goto_w(L_done)
+           .labelBinding(L_rethrow)
+           .athrow()
+           .labelBinding(L_done);
 
         return result;
     }
@@ -1075,8 +1075,8 @@ class InvokerBytecodeGenerator {
         cob.labelBinding(lFrom);
         emitPushArgument(cob, invoker, 0); // load target
         emitPushArguments(cob, args, 1); // load args (skip 0: method handle)
-        cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodDesc(type.basicType()));
-        cob.labelBinding(lTo);
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodDesc(type.basicType()))
+           .labelBinding(lTo);
 
         // FINALLY_NORMAL:
         int index = extendLocalsMap(new Class<?>[]{ returnType });
@@ -1084,17 +1084,16 @@ class InvokerBytecodeGenerator {
             emitStoreInsn(cob, basicReturnType.basicTypeKind(), index);
         }
         emitPushArgument(cob, invoker, 1); // load cleanup
-        cob.loadConstant(null);
+        cob.aconst_null();
         if (isNonVoid) {
             emitLoadInsn(cob, basicReturnType.basicTypeKind(), index);
         }
         emitPushArguments(cob, args, 1); // load args (skip 0: method handle)
-        cob.invokevirtual(CD_MethodHandle, "invokeBasic", cleanupDesc);
-        cob.goto_w(lDone);
-
-        // CATCH:
-        cob.labelBinding(lCatch);
-        cob.dup();
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", cleanupDesc)
+           .goto_w(lDone)
+           // CATCH:
+           .labelBinding(lCatch)
+           .dup();
 
         // FINALLY_EXCEPTIONAL:
         emitPushArgument(cob, invoker, 1); // load cleanup
@@ -1107,10 +1106,9 @@ class InvokerBytecodeGenerator {
         if (isNonVoid) {
             emitPopInsn(cob, basicReturnType);
         }
-        cob.athrow();
-
-        // DONE:
-        cob.labelBinding(lDone);
+        cob.athrow()
+           // DONE:
+           .labelBinding(lDone);
 
         return result;
     }
@@ -1147,26 +1145,24 @@ class InvokerBytecodeGenerator {
         }
 
         emitPushArgument(cob, invoker, 0); // push switch input
-        cob.tableswitch(0, numCases - 1, defaultLabel, cases);
-
-        cob.labelBinding(defaultLabel);
+        cob.tableswitch(0, numCases - 1, defaultLabel, cases)
+           .labelBinding(defaultLabel);
         emitPushArgument(cob, invoker, 1); // push default handle
         emitPushArguments(cob, args, 1); // again, skip collector
-        cob.invokevirtual(CD_MethodHandle, "invokeBasic", caseDescriptor);
-        cob.goto_(endLabel);
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", caseDescriptor)
+           .goto_(endLabel);
 
         for (int i = 0; i < numCases; i++) {
             cob.labelBinding(cases.get(i).target());
             // Load the particular case:
             emitLoadInsn(cob, TypeKind.REFERENCE, casesLocal);
-            cob.loadConstant(i);
-            cob.aaload();
+            cob.loadConstant(i)
+               .aaload();
 
             // invoke it:
             emitPushArguments(cob, args, 1); // again, skip collector
-            cob.invokevirtual(CD_MethodHandle, "invokeBasic", caseDescriptor);
-
-            cob.goto_(endLabel);
+            cob.invokevirtual(CD_MethodHandle, "invokeBasic", caseDescriptor)
+               .goto_(endLabel);
         }
 
         cob.labelBinding(endLabel);
@@ -1335,16 +1331,14 @@ class InvokerBytecodeGenerator {
             // invoke fini
             emitLoopHandleInvoke(cob, invoker, finis, c, args, true, finiType, loopLocalStateTypes, clauseDataIndex,
                     firstLoopStateIndex);
-            cob.goto_w(lDone);
-
-            // this is the beginning of the next loop clause
-            cob.labelBinding(lNext);
+            cob.goto_w(lDone)
+               // this is the beginning of the next loop clause
+               .labelBinding(lNext);
         }
 
-        cob.goto_w(lLoop);
-
-        // DONE:
-        cob.labelBinding(lDone);
+        cob.goto_w(lLoop)
+           // DONE:
+           .labelBinding(lDone);
 
         return result;
     }
@@ -1370,8 +1364,8 @@ class InvokerBytecodeGenerator {
                                       int firstLoopStateSlot) {
         // load handle for clause
         emitPushClauseArray(cob, clauseDataSlot, handles);
-        cob.loadConstant(clause);
-        cob.aaload();
+        cob.loadConstant(clause)
+           .aaload();
         // load loop state (preceding the other arguments)
         if (pushLocalState) {
             for (int s = 0; s < loopLocalStateTypes.length; ++s) {
@@ -1385,8 +1379,8 @@ class InvokerBytecodeGenerator {
 
     private void emitPushClauseArray(CodeBuilder cob, int clauseDataSlot, int which) {
         emitLoadInsn(cob, TypeKind.REFERENCE, clauseDataSlot);
-        cob.loadConstant(which - 1);
-        cob.aaload();
+        cob.loadConstant(which - 1)
+           .aaload();
     }
 
     private void emitZero(CodeBuilder cob, BasicType type) {
@@ -1519,14 +1513,14 @@ class InvokerBytecodeGenerator {
                             @Override
                             public void accept(CodeBuilder cob) {
                                 // create parameter array
-                                cob.loadConstant(invokerType.parameterCount());
-                                cob.anewarray(CD_Object);
+                                cob.loadConstant(invokerType.parameterCount())
+                                   .anewarray(CD_Object);
 
                                 // fill parameter array
                                 for (int i = 0; i < invokerType.parameterCount(); i++) {
                                     Class<?> ptype = invokerType.parameterType(i);
-                                    cob.dup();
-                                    cob.loadConstant(i);
+                                    cob.dup()
+                                       .loadConstant(i);
                                     emitLoadInsn(cob, basicType(ptype).basicTypeKind(), i);
                                     // box if primitive type
                                     if (ptype.isPrimitive()) {
@@ -1535,10 +1529,10 @@ class InvokerBytecodeGenerator {
                                     cob.aastore();
                                 }
                                 // invoke
-                                cob.aload(0);
-                                cob.getfield(CD_MethodHandle, "form", CD_LambdaForm);
-                                cob.swap();  // swap form and array; avoid local variable
-                                cob.invokevirtual(CD_LambdaForm, "interpretWithArguments", MethodTypeDescImpl.ofValidated(CD_Object, CD_Object_array));
+                                cob.aload(0)
+                                   .getfield(CD_MethodHandle, "form", CD_LambdaForm)
+                                   .swap()  // swap form and array; avoid local variable
+                                   .invokevirtual(CD_LambdaForm, "interpretWithArguments", MethodTypeDescImpl.ofValidated(CD_Object, CD_Object_array));
 
                                 // maybe unbox
                                 Class<?> rtype = invokerType.returnType();
@@ -1592,9 +1586,9 @@ class InvokerBytecodeGenerator {
 
                                 // Load arguments from array
                                 for (int i = 0; i < dstType.parameterCount(); i++) {
-                                    cob.aload(1);
-                                    cob.loadConstant(i);
-                                    cob.aaload();
+                                    cob.aload(1)
+                                       .loadConstant(i)
+                                       .aaload();
 
                                     // Maybe unbox
                                     Class<?> dptype = dstType.parameterType(i);
@@ -1645,9 +1639,9 @@ class InvokerBytecodeGenerator {
             clb.withMethodBody("dummy", MTD_void, ACC_STATIC, new Consumer<>() {
                 @Override
                 public void accept(CodeBuilder cob) {
-                    cob.ldc(os.toString());
-                    cob.pop();
-                    cob.return_();
+                    cob.ldc(os.toString())
+                       .pop()
+                       .return_();
                 }
             });
         }
@@ -1661,7 +1655,7 @@ class InvokerBytecodeGenerator {
              : cls == MemberName.class ? CD_MemberName
              : cls == MethodType.class ? CD_MethodType
              : cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).basicClassDescriptor()
-             : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
+             : ConstantUtils.referenceClassDesc(cls.descriptorString());
     }
 
     static MethodTypeDesc methodDesc(MethodType mt) {
