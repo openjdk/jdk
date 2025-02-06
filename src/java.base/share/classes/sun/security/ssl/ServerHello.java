@@ -25,6 +25,7 @@
 
 package sun.security.ssl;
 
+import static sun.security.ssl.SignatureScheme.CERTIFICATE_SCOPE;
 import static sun.security.ssl.SignatureScheme.HANDSHAKE_SCOPE;
 
 import java.io.IOException;
@@ -280,6 +281,15 @@ final class ServerHello {
                                 HANDSHAKE_SCOPE);
                 }
 
+                if (shc.localSupportedCertSignAlgs == null) {
+                    shc.localSupportedCertSignAlgs =
+                            SignatureScheme.getSupportedAlgorithms(
+                                    shc.sslConfig,
+                                    shc.algorithmConstraints,
+                                    shc.activeProtocols,
+                                    CERTIFICATE_SCOPE);
+                }
+
                 SSLSessionImpl session =
                         new SSLSessionImpl(shc, CipherSuite.C_NULL);
                 session.setMaximumPacketSize(shc.sslConfig.maximumPacketSize);
@@ -521,6 +531,15 @@ final class ServerHello {
                                 shc.algorithmConstraints,
                                 shc.activeProtocols,
                                 HANDSHAKE_SCOPE);
+                }
+
+                if (shc.localSupportedCertSignAlgs == null) {
+                    shc.localSupportedCertSignAlgs =
+                            SignatureScheme.getSupportedAlgorithms(
+                                    shc.sslConfig,
+                                    shc.algorithmConstraints,
+                                    shc.activeProtocols,
+                                    CERTIFICATE_SCOPE);
                 }
 
                 SSLSessionImpl session =

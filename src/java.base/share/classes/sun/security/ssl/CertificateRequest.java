@@ -815,7 +815,7 @@ final class CertificateRequest {
                             hc.algorithmConstraints,                        //  we will be able to produce
                             hc.peerRequestedSignatureSchemes,               //  a CertificateVerify message later
                             ka, hc.negotiatedProtocol,
-                            CERTIFICATE_SCOPE) != null
+                            HANDSHAKE_SCOPE) != null
                             || SSLLogger.logWarning("ssl,handshake",
                                     "Unable to produce CertificateVerify for key algorithm: " + ka))
                     .filter(ka -> {
