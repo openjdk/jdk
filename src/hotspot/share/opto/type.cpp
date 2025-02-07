@@ -1530,7 +1530,7 @@ const TypeInteger* TypeInteger::make(jlong lo, jlong hi, int w, BasicType bt) {
   return TypeLong::make(lo, hi, w);
 }
 
-const TypeInteger *TypeInteger::make(jlong lo, BasicType bt) {
+const TypeInteger* TypeInteger::make(jlong lo, BasicType bt) {
   return make(lo, lo, WidenMin, bt);
 }
 
