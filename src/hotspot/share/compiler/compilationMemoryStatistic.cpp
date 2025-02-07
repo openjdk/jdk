@@ -117,9 +117,6 @@ void ArenaCounterTable::print_on(outputStream* st) const {
 // was larger than this threshold, we report it.
 static constexpr size_t significant_peak_threshold = M;
 
-// if true, footprint timeline will not omit phases it deems insignificant.
-static constexpr bool show_insignificant_phases_too = true;
-
 FootprintTimeline::FootprintTimeline() {
   DEBUG_ONLY(_inbetween_phases = true;)
 }
@@ -170,15 +167,8 @@ void FootprintTimeline::on_phase_end(int phase_trc_id, size_t cur_abs, unsigned 
   assert(old._bytes.cur == cur_abs, "miscount");
   on_footprint_change(cur_abs, cur_nodes);
 
-  // Close old, open new entry; but only if the last phase was "interesting".
-  // An "interesting" phase is one that causes a footprint change (to either raise or fall),
-  // or - even if the final footprint is the same - one that had a local peak that significantly
-  // raised above starting/ending footprint
-  if (show_insignificant_phases_too ||
-      old._bytes.end_delta() != 0 ||
-      old._bytes.temporary_peak_size() > significant_peak_threshold) {
-    _fifo.advance();
-  }
+  // Close old, open new entry
+  _fifo.advance();
 
   DEBUG_ONLY(_inbetween_phases = true;)
 }
