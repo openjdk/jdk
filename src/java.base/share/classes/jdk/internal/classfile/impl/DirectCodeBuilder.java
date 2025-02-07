@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -354,7 +354,6 @@ public final class DirectCodeBuilder
             @Override
             public void writeBody(BufWriterImpl buf) {
                 DirectCodeBuilder dcb = DirectCodeBuilder.this;
-                buf.setLabelContext(dcb);
 
                 int codeLength = curPc();
                 if (codeLength == 0 || codeLength >= 65536) {
@@ -366,6 +365,7 @@ public final class DirectCodeBuilder
                 }
 
                 boolean codeMatch = dcb.original != null && codeAndExceptionsMatch(codeLength);
+                buf.setLabelContext(dcb, codeMatch);
                 var context = dcb.context;
                 if (context.stackMapsWhenRequired()) {
                     if (codeMatch) {
@@ -384,7 +384,7 @@ public final class DirectCodeBuilder
                 buf.writeBytes(dcb.bytecodesBufWriter);
                 dcb.writeExceptionHandlers(buf);
                 dcb.attributes.writeTo(buf);
-                buf.setLabelContext(null);
+                buf.setLabelContext(null, false);
             }
 
             @Override
