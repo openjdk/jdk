@@ -37,6 +37,9 @@ import java.util.Map;
  * termination criterion to avoid nesting templates too deeply.
  */
 class TemplateFrame {
+    final static float DEFAULT_FUEL = 100.0f;
+    final static float DEFAULT_FUEL_COST = 10.0f;
+
     final TemplateFrame parent;
     final int id;
     final Map<String, String> hashtagReplacements = new HashMap<>();
@@ -48,7 +51,7 @@ class TemplateFrame {
     }
 
     public static TemplateFrame make(TemplateFrame parent, int id) {
-        return new TemplateFrame(parent, id, parent.fuel - parent.fuelCost, 10.0f);
+        return new TemplateFrame(parent, id, parent.fuel - parent.fuelCost, DEFAULT_FUEL_COST);
     }
 
     private TemplateFrame(TemplateFrame parent, int id, float fuel, float fuelCost) {
