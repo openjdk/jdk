@@ -63,6 +63,7 @@ public class TestTemplate {
         testHookRecursion();
         testNames();
         testLet();
+        testSelector();
 
         //testClassInstantiator();
         //testRepeat();
@@ -561,6 +562,76 @@ public class TestTemplate {
             y2 = one
             break
             abc = 5 50 150
+            }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testSelector() {
+        var template1 = Template.make("a", (String a) -> body(
+            "<\n",
+            "x #a x\n",
+            ">\n"
+        ));
+
+        var template2 = Template.make("a", (String a) -> body(
+            "<\n",
+            "y #a y\n",
+            ">\n"
+        ));
+
+        var template3 = Template.make("a", (Integer a) -> body(
+            "[\n",
+            "z #a z\n",
+            // Select which template should be used:
+            a > 0 ? template1.withArgs("A_" + a)
+                  : template2.withArgs("B_" + a),
+            "]\n"
+        ));
+
+        var template4 = Template.make(() -> body(
+            "{\n",
+            template3.withArgs(-1),
+            "break\n",
+            template3.withArgs(0),
+            "break\n",
+            template3.withArgs(1),
+            "break\n",
+            template3.withArgs(2),
+            "}\n"
+        ));
+
+        String code = template4.withArgs().render();
+        String expected =
+            """
+            {
+            [
+            z -1 z
+            <
+            y B_-1 y
+            >
+            ]
+            break
+            [
+            z 0 z
+            <
+            y B_0 y
+            >
+            ]
+            break
+            [
+            z 1 z
+            <
+            x A_1 x
+            >
+            ]
+            break
+            [
+            z 2 z
+            <
+            x A_2 x
+            >
+            ]
             }
             """;
         checkEQ(code, expected);
