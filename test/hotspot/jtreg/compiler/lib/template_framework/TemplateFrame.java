@@ -48,9 +48,8 @@ import java.util.Map;
  * The {@link parent} relationship provides a trace for the use chain of templates.
  */
 class TemplateFrame {
-    public final TemplateFrame parent;
+    final TemplateFrame parent;
     final int id;
-
     final Map<String, String> hashtagReplacements = new HashMap<>();
 
     TemplateFrame(TemplateFrame parent, int id) {
