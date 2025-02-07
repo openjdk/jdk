@@ -135,10 +135,14 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
         if (highlighted) {
             g.setStroke(new BasicStroke(2));
         }
-        g.drawLine(- RANGE_WIDTH, 0, RANGE_WIDTH, 0);
+        if (liveRangeSegment.getStart() != null) {
+            g.drawLine(-RANGE_WIDTH, 0, RANGE_WIDTH, 0);
+        }
         if (length != 0) {
             g.drawLine(0, 0, 0, length);
-            g.drawLine(- RANGE_WIDTH, length, RANGE_WIDTH, length);
+            if (liveRangeSegment.getEnd() != null) {
+                g.drawLine(-RANGE_WIDTH, length, RANGE_WIDTH, length);
+            }
         }
     }
 
