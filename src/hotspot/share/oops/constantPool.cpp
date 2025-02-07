@@ -650,9 +650,8 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   // the unresolved_klasses() array.
   if (this_cp->tag_at(cp_index).is_klass()) {
     Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
-    if (klass != nullptr) {
-      return klass;
-    }
+    assert(klass != nullptr, "must be non null if resolved");
+    return klass;
   }
 
   // This tag doesn't change back to unresolved class unless at a safepoint.
