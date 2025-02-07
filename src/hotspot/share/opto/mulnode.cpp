@@ -1396,7 +1396,7 @@ const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
     jlong hi = r1->hi_as_long() >> (jint)shift;
     assert(lo <= hi, "must have valid bounds");
 #ifdef ASSERT
-   if (bt ==T_INT) {
+   if (bt == T_INT) {
      jint lo_verify = checked_cast<jint>(r1->lo_as_long()) >> (jint)shift;
      jint hi_verify = checked_cast<jint>(r1->hi_as_long()) >> (jint)shift;
      assert((checked_cast<jint>(lo) == lo_verify) && (checked_cast<jint>(hi) == hi_verify), "inconsistent");

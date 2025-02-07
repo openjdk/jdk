@@ -796,6 +796,7 @@ inline uint bits_per_java_integer(BasicType bt) {
   if (bt == T_INT) {
     return BitsPerJavaInteger;
   }
+  assert(bt == T_LONG, "int or long only");
   return BitsPerJavaLong;
 }
 
