@@ -2040,6 +2040,8 @@ public:
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type *bottom_type() const;
   virtual       uint  ideal_reg() const;
+
+  void make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j);
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
   virtual void dump_compact_spec(outputStream *st) const;

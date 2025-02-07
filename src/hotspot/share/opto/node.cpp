@@ -3048,6 +3048,14 @@ uint TypeNode::ideal_reg() const {
   return _type->ideal_reg();
 }
 
+void TypeNode::make_path_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop, Node* ctrl_use, uint j) {
+  Node* c = ctrl_use->in(j);
+  if (igvn->type(c) != Type::TOP) {
+    igvn->replace_input_of(ctrl_use, j, igvn->C->top());
+    create_halt_path(igvn, c, loop);
+  }
+}
+
 // This Type node is dead. It could be because the type that it captures and the type of the node computed from its
 // inputs do not intersect anymore. That node has some uses along some control flow paths. Those control flow paths must
 // be unreachable as using a dead value makes no sense. For the Type node to capture a narrowed down type, some control
@@ -3064,22 +3072,14 @@ void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loo
       Node* u = n->fast_out(k);
       if (u->is_CFG()) {
         assert(!u->is_Region(), "Can't reach a Region without going through a Phi");
-        Node* c = u->in(0);
-        if (igvn->type(c) != Type::TOP) {
-          igvn->replace_input_of(u, 0, igvn->C->top());
-          create_halt_path(igvn, c, loop);
-        }
+        make_path_dead(igvn, loop, u, 0);
       } else if (u->is_Phi()) {
         Node* r = u->in(0);
         assert(r->is_Region() || r->is_top(), "unexpected Phi's control");
         if (r->is_Region()) {
-          for (uint k = 1; k < u->req(); ++k) {
-            if (u->in(k) == n) {
-              Node* c = r->in(k);
-              if (igvn->type(c) != Type::TOP) {
-                igvn->replace_input_of(r, k, igvn->C->top());
-                create_halt_path(igvn, c, loop);
-              }
+          for (uint j = 1; j < u->req(); ++j) {
+            if (u->in(j) == n) {
+              make_path_dead(igvn, loop, r, j);
             }
           }
         }
