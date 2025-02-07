@@ -23,4 +23,4 @@
 
 package compiler.lib.template_framework;
 
-public record HookInsert(Hook hook, TemplateUse templateUse) {}
+record StringToken(String value) implements Token {}

@@ -23,6 +23,4 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
-
-public record HookUse(Hook hook, List<Object> tokens) {}
+public record HookIntoToken(Hook hook, TemplateWithArgs templateWithArgs) implements Token {}

@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Arrays;
 
 public record Hook(String name) {
-    public HookUse set(Object... tokens) {
-        return new HookUse(this, Arrays.asList(tokens));
+    public HookSetToken set(Object... tokens) {
+        return new HookSetToken(this, Token.parse(Arrays.asList(tokens)));
     }
 
     // TODO hook.send(...) vs intoHook(hook, ...)

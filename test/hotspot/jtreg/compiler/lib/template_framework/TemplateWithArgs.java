@@ -23,8 +23,13 @@
 
 package compiler.lib.template_framework;
 
-public interface TemplateUse {
-    record ZeroArgsUse(Template.ZeroArgs zeroArgs) implements TemplateUse {
+// TODO rename OneArgUse to OneArgsUse for consistency?
+public sealed interface TemplateWithArgs extends Token
+                                         permits TemplateWithArgs.ZeroArgsUse,
+                                                 TemplateWithArgs.OneArgUse,
+                                                 TemplateWithArgs.TwoArgsUse
+{
+    record ZeroArgsUse(Template.ZeroArgs zeroArgs) implements TemplateWithArgs, Token {
         @Override
         public InstantiatedTemplate instantiate() {
             return zeroArgs.instantiate();
@@ -34,7 +39,7 @@ public interface TemplateUse {
         public void visitArguments(ArgumentVisitor visitor) {}
     }
 
-    record OneArgUse<A>(Template.OneArg<A> oneArg, A a) implements TemplateUse {
+    record OneArgUse<A>(Template.OneArg<A> oneArg, A a) implements TemplateWithArgs, Token {
         @Override
         public InstantiatedTemplate instantiate() {
             return oneArg.instantiate(a);
@@ -46,7 +51,7 @@ public interface TemplateUse {
         }
     }
 
-    record TwoArgsUse<A, B>(Template.TwoArgs<A, B> twoArgs, A a, B b) implements TemplateUse {
+    record TwoArgsUse<A, B>(Template.TwoArgs<A, B> twoArgs, A a, B b) implements TemplateWithArgs, Token {
         @Override
         public InstantiatedTemplate instantiate() {
             return twoArgs.instantiate(a, b);

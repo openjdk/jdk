@@ -41,7 +41,7 @@ import java.util.Map;
 //   - code / variable scopes
 
 /**
- * The {@link TemplateFrame} is the frame for a {@link TemplateUse}. It ensures
+ * The {@link TemplateFrame} is the frame for a {@link TemplateWithArgs}. It ensures
  * that each template use has its own unique {@link id} used to deconflict names
  * using {@link $}. It also has a set of hashtag replacements, which combine the
  * key-value pairs from the template argument and the {@link let} definitions.

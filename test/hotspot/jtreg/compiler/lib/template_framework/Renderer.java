@@ -43,7 +43,7 @@ public abstract class Renderer {
     static TemplateFrame baseTemplateFrame = null;
     static TemplateFrame currentTemplateFrame = null;
 
-    public static String render(TemplateUse templateUse) {
+    public static String render(TemplateWithArgs templateWithArgs) {
         // Check nobody else is using the Renderer.
         if (baseCodeFrame != null) {
             throw new RendererException("Nested render not allowed.");
@@ -56,7 +56,7 @@ public abstract class Renderer {
         baseTemplateFrame = new TemplateFrame(null, nextTemplateId++);
         currentTemplateFrame = baseTemplateFrame;
 
-        renderTemplateUse(templateUse);
+        renderTemplateWithArgs(templateWithArgs);
 
         // Ensure CodeFrame consistency.
         if (baseCodeFrame != currentCodeFrame) {
@@ -112,12 +112,12 @@ public abstract class Renderer {
         return currentTemplateFrame;
     }
 
-    private static void renderTemplateUse(TemplateUse templateUse) {
+    private static void renderTemplateWithArgs(TemplateWithArgs templateWithArgs) {
         TemplateFrame templateFrame = new TemplateFrame(getCurrentTemplateFrame(), nextTemplateId++);
         currentTemplateFrame = templateFrame;
 
-        templateUse.visitArguments((name, value) -> templateFrame.addHashtagReplacement(name, value.toString()));
-        InstantiatedTemplate it = templateUse.instantiate();
+        templateWithArgs.visitArguments((name, value) -> templateFrame.addHashtagReplacement(name, value.toString()));
+        InstantiatedTemplate it = templateWithArgs.instantiate();
         renderTokenList(it.tokens());
 
         if (currentTemplateFrame != templateFrame) {
@@ -126,24 +126,14 @@ public abstract class Renderer {
         currentTemplateFrame = currentTemplateFrame.parent;
     }
 
-    private static void renderToken(Object token) {
+    private static void renderToken(Token token) {
         CodeFrame codeFrame = getCurrentCodeFrame();
         switch (token) {
-            case String s ->  codeFrame.addString(templateString(s));
-            case Integer s -> codeFrame.addString(s.toString());
-            case Long s ->    codeFrame.addString(s.toString());
-            case Double s ->  codeFrame.addString(s.toString());
-            case Float s ->   codeFrame.addString(s.toString());
-            case List tokens -> {
-                renderTokenList(tokens);
-            }
-            case LetUse(String key, String value) -> {
+            case StringToken(String s) ->  codeFrame.addString(templateString(s));
+            case LetToken(String key, String value) -> {
                 getCurrentTemplateFrame().addHashtagReplacement(key, value.toString());
             }
-            case Hook h -> {
-                throw new RendererException("Do not use Hook directly, use Hook.set: " + h);
-            }
-            case HookUse(Hook hook, List<Object> tokens) -> {
+            case HookSetToken(Hook hook, List<Token> tokens) -> {
                 // TODO describe and maybe rename to HookSetUse
                 CodeFrame outerCodeFrame = getCurrentCodeFrame();
 
@@ -166,43 +156,42 @@ public abstract class Renderer {
                 currentCodeFrame.addCode(hookCodeFrame.getCode());
                 currentCodeFrame.addCode(innerCodeFrame.getCode());
             }
-            case HookInsert(Hook hook, TemplateUse t) -> {
+            case HookIntoToken(Hook hook, TemplateWithArgs t) -> {
                 // TODO describe and maybe rename to IntoHookUse
                 // Switch to hook CodeFrame.
                 CodeFrame hookCodeFrame = codeFrameForHook(hook);
 
                 // Use a transparent nested CodeFrame. We need a CodeFrame so that the code generated
-                // by the TemplateUse can be collected, and hook insertions from it can still
-                // be made to the hookCodeFrame before the code from the TemplateUse is added to
+                // by the TemplateWithArgs can be collected, and hook insertions from it can still
+                // be made to the hookCodeFrame before the code from the TemplateWithArgs is added to
                 // the hookCodeFrame.
                 // But the CodeFrame must be transparent, so that its name definitions go out to
-                // the hookCodeFrame, and are not limited to the CodeFrame for the TemplateUse.
+                // the hookCodeFrame, and are not limited to the CodeFrame for the TemplateWithArgs.
                 currentCodeFrame = new CodeFrame(hookCodeFrame);
                 // TODO make transparent for names
 
-                renderTemplateUse(t);
+                renderTemplateWithArgs(t);
 
                 hookCodeFrame.addCode(currentCodeFrame.getCode());
 
                 // Switch back from hook CodeFrame to caller CodeFrame.
                 currentCodeFrame = codeFrame;
             }
-            case TemplateUse t -> {
+            case TemplateWithArgs t -> {
                 // Use a nested CodeFrame.
                 currentCodeFrame = new CodeFrame(codeFrame);
 
-                renderTemplateUse(t);
+                renderTemplateWithArgs(t);
 
                 codeFrame.addCode(currentCodeFrame.getCode());
                 currentCodeFrame = codeFrame;
             }
-            default -> throw new RendererException("body contained unexpected token: " + token);
         }
     }
 
-    private static void renderTokenList(List<Object> tokens) {
+    private static void renderTokenList(List<Token> tokens) {
         CodeFrame codeFrame = getCurrentCodeFrame();
-        for (Object t : tokens) {
+        for (Token t : tokens) {
             renderToken(t);
         }
         if (codeFrame != getCurrentCodeFrame()) {

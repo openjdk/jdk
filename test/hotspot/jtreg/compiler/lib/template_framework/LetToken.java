@@ -23,4 +23,4 @@
 
 package compiler.lib.template_framework;
 
-public record LetUse(String key, String value) {}
+public record LetToken(String key, String value) implements Token {}

@@ -46,8 +46,8 @@ public interface Template {
             return function.get();
         }
 
-        public TemplateUse.ZeroArgsUse withArgs() {
-            return new TemplateUse.ZeroArgsUse(this);
+        public TemplateWithArgs.ZeroArgsUse withArgs() {
+            return new TemplateWithArgs.ZeroArgsUse(this);
         }
     }
 
@@ -56,8 +56,8 @@ public interface Template {
             return function.apply(a);
         }
 
-        public TemplateUse.OneArgUse<A> withArgs(A a) {
-            return new TemplateUse.OneArgUse<>(this, a);
+        public TemplateWithArgs.OneArgUse<A> withArgs(A a) {
+            return new TemplateWithArgs.OneArgUse<>(this, a);
         }
     }
 
@@ -67,24 +67,24 @@ public interface Template {
             return function.apply(a, b);
         }
 
-        public TemplateUse.TwoArgsUse<A, B> withArgs(A a, B b) {
-            return new TemplateUse.TwoArgsUse<>(this, a, b);
+        public TemplateWithArgs.TwoArgsUse<A, B> withArgs(A a, B b) {
+            return new TemplateWithArgs.TwoArgsUse<>(this, a, b);
         }
     }
 
     static InstantiatedTemplate body(Object... tokens) {
-        return new InstantiatedTemplate(Arrays.asList(tokens));
+        return new InstantiatedTemplate(Token.parse(Arrays.asList(tokens)));
     }
 
-    static HookInsert intoHook(Hook hook, TemplateUse t) {
-        return new HookInsert(hook, t);
+    static HookIntoToken intoHook(Hook hook, TemplateWithArgs t) {
+        return new HookIntoToken(hook, t);
     }
 
     static String $(String name) {
         return Renderer.$(name);
     }
 
-    static LetUse let(String key, Object value) {
-        return new LetUse(key, value.toString());
+    static LetToken let(String key, Object value) {
+        return new LetToken(key, value.toString());
     }
 }
