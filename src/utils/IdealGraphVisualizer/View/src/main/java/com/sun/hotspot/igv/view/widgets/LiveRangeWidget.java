@@ -62,7 +62,6 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
     private static final float NORMAL_THICKNESS = 1.4f;
     private static final float SELECTED_THICKNESS = 2.2f;
     private boolean highlighted;
-    private static final Color NORMAL_COLOR = Color.BLACK;
     private static final Color HIGHLIGHTED_COLOR = Color.BLUE;
 
     private static final int RANGE_WIDTH = 4;
