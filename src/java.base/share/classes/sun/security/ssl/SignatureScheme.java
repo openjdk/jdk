@@ -371,6 +371,18 @@ enum SignatureScheme {
                 && (namedGroup == null || namedGroup.isPermitted(constraints));
     }
 
+    // Wrapper method taking a HandshakeContext.
+    static List<SignatureScheme> getSupportedAlgorithms(
+            HandshakeContext hc, Set<SSLCryptoScope> scopes) {
+        return getSupportedAlgorithms(
+                hc.sslConfig,
+                hc.algorithmConstraints,
+                hc.negotiatedProtocol != null
+                        ? List.of(hc.negotiatedProtocol)
+                        : hc.activeProtocols,
+                scopes);
+    }
+
     // Get local supported algorithm collection complying to algorithm
     // constraints.
     static List<SignatureScheme> getSupportedAlgorithms(
@@ -419,6 +431,17 @@ enum SignatureScheme {
         }
 
         return supported;
+    }
+
+    // Wrapper method taking a HandshakeContext.
+    static List<SignatureScheme> getSupportedAlgorithms(
+            HandshakeContext hc, int[] algorithmIds, Set<SSLCryptoScope> scopes) {
+        return getSupportedAlgorithms(
+                hc.sslConfig,
+                hc.algorithmConstraints,
+                hc.negotiatedProtocol,
+                algorithmIds,
+                scopes);
     }
 
     static List<SignatureScheme> getSupportedAlgorithms(

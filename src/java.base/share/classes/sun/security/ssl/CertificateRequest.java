@@ -399,7 +399,6 @@ final class CertificateRequest {
                         iae);
             }
 
-
             if (clientAlias == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning("No available client authentication");
@@ -635,26 +634,23 @@ final class CertificateRequest {
         public byte[] produce(ConnectionContext context,
                 HandshakeMessage message) throws IOException {
             // The producing happens in server side only.
-            ServerHandshakeContext shc = (ServerHandshakeContext)context;
-            if (shc.localSupportedSignAlgs == null) {
-                shc.localSupportedSignAlgs =
-                    SignatureScheme.getSupportedAlgorithms(
-                            shc.sslConfig,
-                            shc.algorithmConstraints,
-                            shc.activeProtocols,
-                            HANDSHAKE_SCOPE);
+            ServerHandshakeContext shc = (ServerHandshakeContext) context;
+            if (shc.localSupportedCertSignAlgs == null) {
+                shc.localSupportedCertSignAlgs =
+                        SignatureScheme.getSupportedAlgorithms(
+                                shc, CERTIFICATE_SCOPE);
             }
 
-            if (shc.localSupportedSignAlgs.isEmpty()) {
+            if (shc.localSupportedCertSignAlgs.isEmpty()) {
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                    "No supported signature algorithm");
+                        "No supported signature algorithm");
             }
 
             X509Certificate[] caCerts =
                     shc.sslContext.getX509TrustManager().getAcceptedIssuers();
             T12CertificateRequestMessage crm = new T12CertificateRequestMessage(
                     shc, caCerts, shc.negotiatedCipherSuite.keyExchange,
-                    shc.localSupportedSignAlgs);
+                    shc.localSupportedCertSignAlgs);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced CertificateRequest handshake message", crm);
@@ -737,28 +733,20 @@ final class CertificateRequest {
 
             List<SignatureScheme> signAlgs =
                     SignatureScheme.getSupportedAlgorithms(
-                            chc.sslConfig,
-                            chc.algorithmConstraints,
-                            chc.negotiatedProtocol,
-                            crm.algorithmIds,
-                            HANDSHAKE_SCOPE);
+                            chc, crm.algorithmIds, HANDSHAKE_SCOPE);
 
             if (signAlgs.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                        "No supported handshake signature algorithm");
+                        "No supported signature algorithm");
             }
 
             List<SignatureScheme> signCertAlgs =
                     SignatureScheme.getSupportedAlgorithms(
-                            chc.sslConfig,
-                            chc.algorithmConstraints,
-                            chc.negotiatedProtocol,
-                            crm.algorithmIds,
-                            CERTIFICATE_SCOPE);
+                            chc, crm.algorithmIds, CERTIFICATE_SCOPE);
 
             if (signCertAlgs.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                        "No supported certificate signature algorithm");
+                        "No supported signature algorithm");
             }
 
             chc.peerRequestedSignatureSchemes = signAlgs;
@@ -769,8 +757,8 @@ final class CertificateRequest {
                 chc.peerSupportedAuthorities = crm.getAuthorities();
             } catch (IllegalArgumentException iae) {
                 chc.conContext.fatal(Alert.DECODE_ERROR, "The "
-                    + "distinguished names of the peer's certificate "
-                    + "authorities could not be parsed", iae);
+                        + "distinguished names of the peer's certificate "
+                        + "authorities could not be parsed", iae);
             }
             // For TLS 1.2, we no longer use the certificate_types field
             // from the CertificateRequest message to directly determine

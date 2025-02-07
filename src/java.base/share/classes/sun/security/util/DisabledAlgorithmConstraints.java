@@ -25,12 +25,11 @@
 
 package sun.security.util;
 
-import java.security.CryptoPrimitive;
-import java.util.*;
 import sun.security.validator.Validator;
 
 import java.lang.ref.SoftReference;
 import java.security.AlgorithmParameters;
+import java.security.CryptoPrimitive;
 import java.security.Key;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
@@ -45,6 +44,17 @@ import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

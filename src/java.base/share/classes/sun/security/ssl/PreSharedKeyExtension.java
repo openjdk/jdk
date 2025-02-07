@@ -448,10 +448,7 @@ final class PreSharedKeyExtension {
         if (shc.localSupportedSignAlgs == null) {
             shc.localSupportedSignAlgs =
                     SignatureScheme.getSupportedAlgorithms(
-                            shc.sslConfig,
-                            shc.algorithmConstraints,
-                            shc.activeProtocols,
-                            HANDSHAKE_SCOPE);
+                            shc, HANDSHAKE_SCOPE);
         }
 
         // Validate the required client authentication.
