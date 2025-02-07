@@ -586,13 +586,13 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
                             buf.remaining(), last);
                 // if we have finished receiving the header frame, pause reading until
                 // the status code has been decoded
-                if (endOfHeaders) switchPauseReading(false);
+                if (endOfHeaders) switchPauseReading(true);
                 qpackDecoder.decodeHeader(buf,
                         endOfHeaders,
                         respHeaderFrameReader);
                 if (buf == QuicStreamReader.EOF) {
                     // we are at EOF - no need to pause reading
-                    switchPauseReading(true);
+                    switchPauseReading(false);
                     eof = true;
                 }
             }
