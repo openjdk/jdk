@@ -102,4 +102,20 @@ public interface Template {
         Renderer.getCurrent().setFuelCost(fuelCost);
         return new NothingToken();
     }
+
+    static final NameSelection MUTABLE = NameSelection.MUTABLE;
+    static final NameSelection ALL = NameSelection.ALL;
+
+    static NothingToken defineName(String name, Object type, NameSelection nameSelection) {
+        Renderer.getCurrent().defineName(name, type, nameSelection);
+        return new NothingToken();
+    }
+
+    static boolean hasNameFor(Object type, NameSelection nameSelection) {
+        return Renderer.getCurrent().hasNameFor(type, nameSelection);
+    }
+
+    static String sampleName(Object type, NameSelection nameSelection) {
+        return Renderer.getCurrent().sampleName(type, nameSelection);
+    }
 }

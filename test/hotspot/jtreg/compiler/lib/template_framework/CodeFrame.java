@@ -33,8 +33,13 @@ class CodeFrame {
     private final List<Code> codeList = new ArrayList<Code>();
     private final Map<Hook, Code.CodeList> hookCodeLists = new HashMap<>();
 
+    final NameSet mutableNames;
+    final NameSet allNames;
+
     CodeFrame(CodeFrame parent) {
         this.parent = parent;
+        this.mutableNames = new NameSet(parent != null ? parent.mutableNames : null);
+        this.allNames     = new NameSet(parent != null ? parent.allNames     : null);
     }
 
     void addString(String s) {
@@ -54,6 +59,26 @@ class CodeFrame {
 
     boolean hasHook(Hook hook) {
         return hookCodeLists.containsKey(hook);
+    }
+
+    private NameSet nameSet(NameSelection nameSelection) {
+        if (nameSelection == NameSelection.MUTABLE) {
+            return mutableNames;
+        } else {
+            return allNames;
+        }
+    }
+
+    void defineName(String name, Object type, NameSelection nameSelection) {
+        nameSet(nameSelection).add(name, type);
+    }
+
+    boolean hasNameFor(Object type, NameSelection nameSelection) {
+        return nameSet(nameSelection).count(type) > 0;
+    }
+
+    String sampleName(Object type, NameSelection nameSelection) {
+        return nameSet(nameSelection).sample(type);
     }
 
     // TODO ensure only use once!

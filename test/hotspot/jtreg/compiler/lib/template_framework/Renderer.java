@@ -29,10 +29,15 @@ import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import java.util.Random;
+
+import jdk.test.lib.Utils;
 
 public class Renderer {
     private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile("\\$([a-zA-Z_][a-zA-Z0-9_]*)");
     private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile("#([a-zA-Z_][a-zA-Z0-9_]*)");
+
+    static final Random RANDOM = Utils.getRandomInstance();
 
     /**
      * There can be at most one Renderer instance at any time. This is to avoid that users accidentally
@@ -120,6 +125,18 @@ public class Renderer {
 
     void setFuelCost(float fuelCost) {
         currentTemplateFrame.setFuelCost(fuelCost);
+    }
+
+    void defineName(String name, Object type, NameSelection nameSelection) {
+        currentCodeFrame.defineName(name, type, nameSelection);
+    }
+
+    boolean hasNameFor(Object type, NameSelection nameSelection) {
+        return currentCodeFrame.hasNameFor(type, nameSelection);
+    }
+
+    String sampleName(Object type, NameSelection nameSelection) {
+        return currentCodeFrame.sampleName(type, nameSelection);
     }
 
     private void renderTemplateWithArgs(TemplateWithArgs templateWithArgs) {
