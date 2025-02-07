@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -1160,8 +1159,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _rem_set(nullptr),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
-  _young_regions_cardset_mm(card_set_config(), card_set_freelist_pool()),
-  _young_regions_cardset(card_set_config(), &_young_regions_cardset_mm),
+  _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, 1u /* group_id */),
   _cm(nullptr),
   _cm_thread(nullptr),
   _cr(nullptr),
@@ -2717,7 +2715,7 @@ bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {
 void G1CollectedHeap::set_region_short_lived_locked(G1HeapRegion* hr) {
   _eden.add(hr);
   _policy->set_region_eden(hr);
-  hr->install_group_cardset(young_regions_cardset());
+  young_regions_cset_group()->add(hr);
 }
 
 #ifdef ASSERT
@@ -2928,7 +2926,7 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
       _survivor.add(new_alloc_region);
       register_new_survivor_region_with_region_attr(new_alloc_region);
       // Install the group cardset.
-      new_alloc_region->install_group_cardset(young_regions_cardset());
+      young_regions_cset_group()->add(new_alloc_region);
     } else {
       new_alloc_region->set_old();
     }
@@ -3071,6 +3069,8 @@ void G1CollectedHeap::finish_codecache_marking_cycle() {
   CodeCache::arm_all_nmethods();
 }
 
-void G1CollectedHeap::prepare_group_cardsets_for_scan () {
-  _young_regions_cardset.reset_table_scanner_for_groups();
+void G1CollectedHeap::prepare_group_cardsets_for_scan() {
+  young_regions_cardset()->reset_table_scanner_for_groups();
+
+  collection_set()->prepare_groups_for_scan();
 }

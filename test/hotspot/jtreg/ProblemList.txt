@@ -56,7 +56,7 @@ compiler/c2/irTests/TestDuplicateBackedge.java 8318904 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
-compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897 aix-ppc64,linux-ppc64le
+compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897,8348519 aix-ppc64,linux-ppc64le,linux-s390x
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
 compiler/vectorapi/VectorRebracket128Test.java 8330538 generic-all
 
@@ -116,7 +116,6 @@ runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
-runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
 
 applications/jcstress/copy.java 8229852 linux-all

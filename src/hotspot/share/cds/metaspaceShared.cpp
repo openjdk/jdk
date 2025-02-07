@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
@@ -215,26 +214,54 @@ void MetaspaceShared::dump_loaded_classes(const char* file_name, TRAPS) {
   }
 }
 
-static bool shared_base_too_high(char* specified_base, char* aligned_base, size_t cds_max) {
-  if (specified_base != nullptr && aligned_base < specified_base) {
-    // SharedBaseAddress is very high (e.g., 0xffffffffffffff00) so
-    // align_up(SharedBaseAddress, MetaspaceShared::core_region_alignment()) has wrapped around.
-    return true;
-  }
-  if (max_uintx - uintx(aligned_base) < uintx(cds_max)) {
-    // The end of the archive will wrap around
-    return true;
+// If p is not aligned, move it up to the next address that's aligned with alignment.
+// If this is not possible (because p is too high), return nullptr. Example:
+//     p = 0xffffffffffff0000, alignment= 0x10000    => return nullptr.
+static char* align_up_or_null(char* p, size_t alignment) {
+  assert(p != nullptr, "sanity");
+  if (is_aligned(p, alignment)) {
+    return p;
   }
 
-  return false;
+  char* down = align_down(p, alignment);
+  if (max_uintx - uintx(down) < uintx(alignment)) {
+    // Run out of address space to align up.
+    return nullptr;
+  }
+
+  char* aligned = align_up(p, alignment);
+  assert(aligned >= p, "sanity");
+  assert(aligned != nullptr, "sanity");
+  return aligned;
+}
+
+static bool shared_base_too_high(char* specified_base, char* aligned_base, size_t cds_max) {
+  // Caller should have checked if align_up_or_null( returns nullptr (comparing specified_base
+  // with nullptr is UB).
+  assert(aligned_base != nullptr, "sanity");
+  assert(aligned_base >= specified_base, "sanity");
+
+  if (max_uintx - uintx(aligned_base) < uintx(cds_max)) {
+    // Not enough address space to hold an archive of cds_max bytes from aligned_base.
+    return true;
+  } else {
+    return false;
+  }
 }
 
 static char* compute_shared_base(size_t cds_max) {
   char* specified_base = (char*)SharedBaseAddress;
-  char* aligned_base = align_up(specified_base, MetaspaceShared::core_region_alignment());
+  size_t alignment = MetaspaceShared::core_region_alignment();
   if (UseCompressedClassPointers) {
-    aligned_base = align_up(specified_base, Metaspace::reserve_alignment());
+    alignment = MAX2(alignment, Metaspace::reserve_alignment());
   }
+
+  if (SharedBaseAddress == 0) {
+    // Special meaning of -XX:SharedBaseAddress=0 -> Always map archive at os-selected address.
+    return specified_base;
+  }
+
+  char* aligned_base = align_up_or_null(specified_base, alignment);
 
   if (aligned_base != specified_base) {
     log_info(cds)("SharedBaseAddress (" INTPTR_FORMAT ") aligned up to " INTPTR_FORMAT,
@@ -242,7 +269,9 @@ static char* compute_shared_base(size_t cds_max) {
   }
 
   const char* err = nullptr;
-  if (shared_base_too_high(specified_base, aligned_base, cds_max)) {
+  if (aligned_base == nullptr) {
+    err = "too high";
+  } else if (shared_base_too_high(specified_base, aligned_base, cds_max)) {
     err = "too high";
   } else if (!shared_base_valid(aligned_base)) {
     err = "invalid for this platform";
@@ -250,12 +279,15 @@ static char* compute_shared_base(size_t cds_max) {
     return aligned_base;
   }
 
+  // Arguments::default_SharedBaseAddress() is hard-coded in cds_globals.hpp. It must be carefully
+  // picked that (a) the align_up() below will always return a valid value; (b) none of
+  // the following asserts will fail.
   log_warning(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is %s. Reverted to " INTPTR_FORMAT,
                    p2i((void*)SharedBaseAddress), err,
                    p2i((void*)Arguments::default_SharedBaseAddress()));
 
   specified_base = (char*)Arguments::default_SharedBaseAddress();
-  aligned_base = align_up(specified_base, MetaspaceShared::core_region_alignment());
+  aligned_base = align_up(specified_base, alignment);
 
   // Make sure the default value of SharedBaseAddress specified in globals.hpp is sane.
   assert(!shared_base_too_high(specified_base, aligned_base, cds_max), "Sanity");
@@ -284,7 +316,10 @@ void MetaspaceShared::initialize_for_static_dump() {
   SharedBaseAddress = (size_t)_requested_base_address;
 
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
-  _symbol_rs = MemoryReserver::reserve(symbol_rs_size, mtClassShared);
+  _symbol_rs = MemoryReserver::reserve(symbol_rs_size,
+                                       os::vm_allocation_granularity(),
+                                       os::vm_page_size(),
+                                       mtClassShared);
   if (!_symbol_rs.is_reserved()) {
     log_error(cds)("Unable to reserve memory for symbols: %zu bytes.", symbol_rs_size);
     MetaspaceShared::unrecoverable_writing_error();
@@ -517,7 +552,7 @@ private:
   FileMapInfo* _map_info;
   StaticArchiveBuilder& _builder;
 
-  void dump_java_heap_objects(GrowableArray<Klass*>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
+  void dump_java_heap_objects();
   void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
     log_info(cds)("Dumping symbol table ...");
     SymbolTable::write_to_archive(symbols);
@@ -618,7 +653,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  if (HeapShared::can_write() && _extra_interned_strings != nullptr) {
+  if (CDSConfig::is_dumping_heap() && _extra_interned_strings != nullptr) {
     for (int i = 0; i < _extra_interned_strings->length(); i ++) {
       OopHandle string = _extra_interned_strings->at(i);
       HeapShared::add_to_dumped_interned_strings(string.resolve());
@@ -640,7 +675,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   _builder.make_klasses_shareable();
   MetaspaceShared::make_method_handle_intrinsics_shareable();
 
-  dump_java_heap_objects(_builder.klasses());
+  dump_java_heap_objects();
   dump_shared_symbol_table(_builder.symbols());
 
   char* early_serialized_data = dump_early_read_only_tables();
@@ -1008,19 +1043,13 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   }
 }
 
-#if INCLUDE_CDS_JAVA_HEAP
-void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* klasses) {
-  if (!HeapShared::can_write()) {
-    log_info(cds)(
-      "Archived java heap is not supported as UseG1GC "
-      "and UseCompressedClassPointers are required."
-      "Current settings: UseG1GC=%s, UseCompressedClassPointers=%s.",
-      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedClassPointers));
-    return;
+void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
+  if (CDSConfig::is_dumping_heap()) {
+    HeapShared::write_heap(&_heap_info);
+  } else {
+    CDSConfig::log_reasons_for_not_dumping_heap();
   }
-  HeapShared::write_heap(&_heap_info);
 }
-#endif // INCLUDE_CDS_JAVA_HEAP
 
 void MetaspaceShared::set_shared_metaspace_range(void* base, void *static_top, void* top) {
   assert(base <= static_top && static_top <= top, "must be");
