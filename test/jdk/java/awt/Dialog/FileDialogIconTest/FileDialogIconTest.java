@@ -149,7 +149,7 @@ public class FileDialogIconTest {
                         String fileName = fileBase + "T" + i + ".gif";
                         image = Toolkit.getDefaultToolkit().getImage(fileName);
                         PassFailJFrame.log("Loaded image " + "T" + i + ".gif."
-                                           + "Setting to the list for frame");
+                                           + " Setting to the list for frame");
                         list.add(image);
                     }
                     setImagesToFrame(list);
@@ -169,7 +169,7 @@ public class FileDialogIconTest {
                         String fileName = fileBase + "T" + i + ".gif";
                         image = Toolkit.getDefaultToolkit().getImage(fileName);
                         PassFailJFrame.log("Loaded image " + "T" + i + ".gif."
-                                           + "Setting to the list for dialog");
+                                           + " Setting to the list for dialog");
                         list.add(image);
                     }
                     setImagesToFD(list);
