@@ -85,6 +85,10 @@ public abstract class Renderer {
         return getCurrentTemplateFrame().$(name);
     }
 
+    static void addHashtagReplacement(String key, String value) {
+        getCurrentTemplateFrame().addHashtagReplacement(key, value);
+    }
+
     // TODO
     //public static <T, R> R let(String key, T value, Function<T, R> block) {
     //    getCurrentFrame().addContext(key, value.toString());
@@ -130,9 +134,7 @@ public abstract class Renderer {
         CodeFrame codeFrame = getCurrentCodeFrame();
         switch (token) {
             case StringToken(String s) ->  codeFrame.addString(templateString(s));
-            case LetToken(String key, String value) -> {
-                getCurrentTemplateFrame().addHashtagReplacement(key, value.toString());
-            }
+            case NothingToken() -> { /* nothing */ } // TODO check order?
             case HookSetToken(Hook hook, List<Token> tokens) -> {
                 // TODO describe and maybe rename to HookSetUse
                 CodeFrame outerCodeFrame = getCurrentCodeFrame();

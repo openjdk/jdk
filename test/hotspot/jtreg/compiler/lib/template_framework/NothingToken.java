@@ -23,4 +23,4 @@
 
 package compiler.lib.template_framework;
 
-public record LetToken(String key, String value) implements Token {}
+record NothingToken() implements Token {}

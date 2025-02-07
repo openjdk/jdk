@@ -84,7 +84,16 @@ public interface Template {
         return Renderer.$(name);
     }
 
-    static LetToken let(String key, Object value) {
-        return new LetToken(key, value.toString());
+    static NothingToken let(String key, Object value) {
+        // TODO check order?
+        Renderer.addHashtagReplacement(key, value.toString());
+        return new NothingToken();
     }
+
+    //static <T> TemplateBody let(String key, T value, Function<T, TemplateBody> function) {
+    //    // Idea: let all at the beginning, check for that.
+    //    // directly add to hashtag replacement
+    //    // let with function: after hashtag replacement is added, evaluate the body, pass it out.
+    //    return new LetToken<T>(key, value, function);
+    //}
 }

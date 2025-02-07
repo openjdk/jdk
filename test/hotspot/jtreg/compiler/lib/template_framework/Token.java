@@ -33,7 +33,7 @@ sealed interface Token permits StringToken,
                                TemplateWithArgs.TwoArgsUse,
                                HookSetToken,
                                HookIntoToken,
-                               LetToken
+                               NothingToken
 {
     static List<Token> parse(Object object) {
         List<Token> outputList = new ArrayList<Token>();
