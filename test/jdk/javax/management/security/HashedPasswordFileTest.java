@@ -110,9 +110,7 @@ public class HashedPasswordFileTest {
     }
 
     private String getPasswordFilePath() {
-        String testDir = System.getProperty("test.src");
-        String testFileName = "jmxremote.password";
-        return testDir + File.separator + testFileName;
+        return "jmxremote.password";
     }
 
     private File createNewPasswordFile() throws IOException {

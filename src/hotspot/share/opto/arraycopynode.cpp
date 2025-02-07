@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/c2/cardTableBarrierSetC2.hpp"
@@ -32,6 +31,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+const TypeFunc* ArrayCopyNode::_arraycopy_type_Type = nullptr;
 
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
   : CallNode(arraycopy_type(), nullptr, TypePtr::BOTTOM),
@@ -220,6 +221,10 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
     Node* off = phase->MakeConX(field->offset_in_bytes());
     Node* next_src = phase->transform(new AddPNode(base_src,base_src,off));
     Node* next_dest = phase->transform(new AddPNode(base_dest,base_dest,off));
+    assert(phase->C->get_alias_index(adr_type) == phase->C->get_alias_index(phase->type(next_src)->isa_ptr()),
+      "slice of address and input slice don't match");
+    assert(phase->C->get_alias_index(adr_type) == phase->C->get_alias_index(phase->type(next_dest)->isa_ptr()),
+      "slice of address and input slice don't match");
     BasicType bt = field->layout_type();
 
     const Type *type;

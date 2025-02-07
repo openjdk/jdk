@@ -30,6 +30,7 @@
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/zipLibrary.hpp"
 
 // The VM class loader.
@@ -57,6 +58,8 @@ public:
 
   virtual bool is_modules_image() const { return false; }
   virtual bool is_jar_file() const { return false; }
+  virtual bool is_multi_release_jar() const { return false; }
+  virtual void set_multi_release_jar() {}
   // Is this entry created from the "Class-path" attribute from a JAR Manifest?
   virtual bool from_class_path_attr() const { return false; }
   virtual const char* name() const = 0;
@@ -90,11 +93,14 @@ class ClassPathZipEntry: public ClassPathEntry {
   jzfile* _zip;              // The zip archive
   const char*   _zip_name;   // Name of zip archive
   bool _from_class_path_attr; // From the "Class-path" attribute of a jar file
+  bool _multi_release;       // multi-release jar
  public:
   bool is_jar_file() const { return true;  }
+  bool is_multi_release_jar() const { return _multi_release; }
+  void set_multi_release_jar() { _multi_release = true; }
   bool from_class_path_attr() const { return _from_class_path_attr; }
   const char* name() const { return _zip_name; }
-  ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append, bool from_class_path_attr);
+  ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append, bool from_class_path_attr, bool multi_release);
   virtual ~ClassPathZipEntry();
   u1* open_entry(JavaThread* current, const char* name, jint* filesize, bool nul_terminate);
   ClassFileStream* open_stream(JavaThread* current, const char* name);
@@ -139,6 +145,7 @@ public:
 class ClassLoader: AllStatic {
  public:
   enum ClassLoaderType {
+    OTHER = 0,
     BOOT_LOADER = 1,      /* boot loader */
     PLATFORM_LOADER  = 2, /* PlatformClassLoader */
     APP_LOADER  = 3       /* AppClassLoader */
@@ -166,6 +173,20 @@ class ClassLoader: AllStatic {
   static PerfCounter* _perf_define_appclass_selftime;
   static PerfCounter* _perf_app_classfile_bytes_read;
   static PerfCounter* _perf_sys_classfile_bytes_read;
+  static PerfCounter* _perf_ik_link_methods_time;
+  static PerfCounter* _perf_method_adapters_time;
+  static PerfCounter* _perf_ik_link_methods_count;
+  static PerfCounter* _perf_method_adapters_count;
+
+  static PerfCounter* _perf_resolve_indy_time;
+  static PerfCounter* _perf_resolve_invokehandle_time;
+  static PerfCounter* _perf_resolve_mh_time;
+  static PerfCounter* _perf_resolve_mt_time;
+
+  static PerfCounter* _perf_resolve_indy_count;
+  static PerfCounter* _perf_resolve_invokehandle_count;
+  static PerfCounter* _perf_resolve_mh_count;
+  static PerfCounter* _perf_resolve_mt_count;
 
   static PerfCounter* _unsafe_defineClassCallCounter;
 
@@ -244,7 +265,8 @@ class ClassLoader: AllStatic {
   static ClassPathEntry* create_class_path_entry(JavaThread* current,
                                                  const char *path, const struct stat* st,
                                                  bool is_boot_append,
-                                                 bool from_class_path_attr);
+                                                 bool from_class_path_attr,
+                                                 bool is_multi_release = false);
 
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
@@ -284,6 +306,23 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_define_appclass_selftime() { return _perf_define_appclass_selftime; }
   static PerfCounter* perf_app_classfile_bytes_read() { return _perf_app_classfile_bytes_read; }
   static PerfCounter* perf_sys_classfile_bytes_read() { return _perf_sys_classfile_bytes_read; }
+
+  static PerfCounter* perf_ik_link_methods_time() { return _perf_ik_link_methods_time; }
+  static PerfCounter* perf_method_adapters_time() { return _perf_method_adapters_time; }
+  static PerfCounter* perf_ik_link_methods_count() { return _perf_ik_link_methods_count; }
+  static PerfCounter* perf_method_adapters_count() { return _perf_method_adapters_count; }
+
+  static PerfCounter* perf_resolve_invokedynamic_time() { return _perf_resolve_indy_time; }
+  static PerfCounter* perf_resolve_invokehandle_time() { return _perf_resolve_invokehandle_time; }
+  static PerfCounter* perf_resolve_method_handle_time() { return _perf_resolve_mh_time; }
+  static PerfCounter* perf_resolve_method_type_time() { return _perf_resolve_mt_time; }
+
+  static PerfCounter* perf_resolve_invokedynamic_count() { return _perf_resolve_indy_count; }
+  static PerfCounter* perf_resolve_invokehandle_count() { return _perf_resolve_invokehandle_count; }
+  static PerfCounter* perf_resolve_method_handle_count() { return _perf_resolve_mh_count; }
+  static PerfCounter* perf_resolve_method_type_count() { return _perf_resolve_mt_count; }
+
+  static void print_counters(outputStream *st);
 
   // Record how many calls to Unsafe_DefineClass
   static PerfCounter* unsafe_defineClassCallCounter() {
@@ -350,9 +389,10 @@ class ClassLoader: AllStatic {
   // entries during shared classpath setup time.
   static int num_module_path_entries();
   static void  exit_with_path_failure(const char* error, const char* message);
-  static char* skip_uri_protocol(char* source);
+  static char* uri_to_path(const char* uri);
   static void  record_result(JavaThread* current, InstanceKlass* ik,
                              const ClassFileStream* stream, bool redefined);
+  static void record_hidden_class(InstanceKlass* ik);
 #endif
 
   static char* lookup_vm_options();

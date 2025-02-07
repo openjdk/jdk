@@ -30,7 +30,6 @@ import jdk.internal.javac.PreviewFeature;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
-import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 
 /**
@@ -68,7 +67,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see ElementKindVisitor14
  * @since 23
  */
-@SupportedSourceVersion(RELEASE_24)
+@SupportedSourceVersion(RELEASE_25)
 @PreviewFeature(feature=PreviewFeature.Feature.LANGUAGE_MODEL, reflective=true)
 public class ElementKindVisitorPreview<R, P> extends ElementKindVisitor14<R, P> {
     /**

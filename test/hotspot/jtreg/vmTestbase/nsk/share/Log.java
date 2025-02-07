@@ -29,22 +29,15 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Vector;
 
-import nsk.share.test.LazyFormatString;
 
 /**
- * This class helps to print test-execution trace messages
- * and filter them when execution mode is not verbose.
- * <p>
- * Verbose mode if defined by providing <i>-verbose</i> command line
- * option, handled by <code>ArgumentParser</code>. Use <code>verbose()</code>
- * method to determine which mode is used.
+ * This class helps to print test-execution trace messages.
  * <p>
  * <code>Log</code> provides with two main methods to print messages:
  * <ul>
@@ -60,7 +53,6 @@ import nsk.share.test.LazyFormatString;
  * To provide printing messages from different sources into one log
  * with distinct prefixes use internal <code>Log.Logger</code> class.
  *
- * @see #verbose()
  * @see #complain(String)
  * @see #display(String)
  * @see ArgumentParser
@@ -71,18 +63,6 @@ public class Log {
      * Report step-by-step activity to this stream.
      */
     private PrintStream out = null;
-
-    /**
-     * Is log-mode verbose?
-     * Default value is <code>false</code>.
-     */
-    private boolean verbose = false;
-
-    /**
-     * Should log messages prefixed with timestamps?
-     * Default value is <code>false</code>.
-     */
-    private boolean timestamp = false;
 
     /**
      * Names for trace levels
@@ -188,43 +168,14 @@ public class Log {
 
     /**
      * Incarnate new Log for the given <code>stream</code>; and
-     * either for verbose or for non-verbose mode accordingly to
-     * the given <code>verbose</code> key.
-     */
-    public Log(PrintStream stream, boolean verbose) {
-        this(stream);
-        this.verbose = verbose;
-    }
-
-    /**
-     * Incarnate new Log for the given <code>stream</code>; and
-     * either for verbose or for non-verbose mode accordingly to
      * the given <code>argsHandler</code>.
      */
     public Log(PrintStream stream, ArgumentParser argsParser) {
-        this(stream, argsParser.verbose());
+        this(stream);
         traceLevel = argsParser.getTraceLevel();
-        timestamp = argsParser.isTimestamp();
     }
 
     /////////////////////////////////////////////////////////////////
-
-    /**
-     * Return <i>true</i> if log mode is verbose.
-     */
-    public boolean verbose() {
-        return verbose;
-    }
-
-    /**
-     * Enable or disable verbose mode for printing messages.
-     */
-    public void enableVerbose(boolean enable) {
-        if (!verbose) {
-            flushLogBuffer();
-        }
-        verbose = enable;
-    }
 
     public int getTraceLevel() {
         return traceLevel;
@@ -269,9 +220,6 @@ public class Log {
     @Deprecated
     public synchronized void println(String message) {
         doPrint(message);
-        if (!verbose()) {
-            keepLog(composeLine(message));
-        }
     }
 
     /**
@@ -285,9 +233,6 @@ public class Log {
      */
     @Deprecated
     public synchronized void comment(String message) {
-        if (!verbose()) {
-            doPrint(message);
-        }
     }
 
     /**
@@ -317,17 +262,10 @@ public class Log {
     }
 
     /**
-     * Print <code>message</code> to the assigned output stream,
-     * if log mode is verbose. The <code>message</code> will be lost,
-     * if execution mode is non-verbose, and there is no error messages
-     * printed.
+     * Print <code>message</code> to the assigned output stream.
      */
     public synchronized void display(Object message) {
-        if (verbose()) {
-            doPrint(message.toString());
-        } else {
-            keepLog(composeLine(message.toString()));
-        }
+        doPrint(message.toString());
     }
 
     /**
@@ -336,15 +274,6 @@ public class Log {
      * into <code>errorsBuffer</code>.
      */
     public synchronized void complain(Object message) {
-        if (!verbose()) {
-            PrintStream stream = findOutStream();
-            stream.println("#>  ");
-            stream.println("#>  WARNING: switching log to verbose mode,");
-            stream.println("#>      because error is complained");
-            stream.println("#>  ");
-            stream.flush();
-            enableVerbose(true);
-        }
         String msgStr = message.toString();
         printError(msgStr);
 
@@ -409,10 +338,7 @@ public class Log {
     /////////////////////////////////////////////////////////////////
 
     /**
-     * Redirect log to the given <code>stream</code>, and switch
-     * log mode to verbose.
-     * Prints errors summary to current stream, cancel current stream
-     * and switches to new stream. Turns on verbose mode for new stream.
+     * Redirect log to the given <code>stream</code>.
      *
      * @deprecated  This method is obsolete.
      */
@@ -422,7 +348,6 @@ public class Log {
             out.flush();
         }
         out = stream;
-        verbose = true;
     }
 
     /////////////////////////////////////////////////////////////////
@@ -432,20 +357,6 @@ public class Log {
      */
     public synchronized void clearLogBuffer() {
         logBuffer.clear();
-    }
-
-    /**
-     * Print all messages from log buffer which were hidden because
-     * of non-verbose mode,
-     */
-    private synchronized void flushLogBuffer() {
-        if (!logBuffer.isEmpty()) {
-            PrintStream stream = findOutStream();
-            for (int i = 0; i < logBuffer.size(); i++) {
-                stream.println(logBuffer.elementAt(i));
-            }
-            stream.flush();
-        }
     }
 
     /**
@@ -472,18 +383,15 @@ public class Log {
      * Compose line to print possible prefixing it with timestamp.
      */
     private String composeLine(String message) {
-        if (timestamp) {
-            long time = System.currentTimeMillis();
-            long ms = time % 1000;
-            time /= 1000;
-            long secs = time % 60;
-            time /= 60;
-            long mins = time % 60;
-            time /= 60;
-            long hours = time % 24;
-            return "[" + hours + ":" + mins + ":" + secs + "." + ms + "] " + message;
-        }
-        return message;
+        long time = System.currentTimeMillis();
+        long ms = time % 1000;
+        time /= 1000;
+        long secs = time % 60;
+        time /= 60;
+        long mins = time % 60;
+        time /= 60;
+        long hours = time % 24;
+        return "[" + hours + ":" + mins + ":" + secs + "." + ms + "] " + message;
     }
 
     /**
@@ -515,13 +423,6 @@ public class Log {
                 throw new TestBug("Exception in Log.printError(): " + e);
             };
         }
-    }
-
-    /**
-     * Keep the given log <code>message</code> into <code>logBuffer</code>.
-     */
-    private synchronized void keepLog(String message) {
-        logBuffer.addElement(message);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -100,16 +99,13 @@ size_t G1AllocRegion::retire_internal(G1HeapRegion* alloc_region, bool fill_up) 
   // it will never be empty.
   size_t waste = 0;
   assert_alloc_region(!alloc_region->is_empty(),
-      "the alloc region should never be empty");
+                      "the alloc region should never be empty");
 
   if (fill_up) {
     waste = fill_up_remaining_space(alloc_region);
   }
 
-  assert_alloc_region(alloc_region->used() >= _used_bytes_before, "invariant");
-  size_t allocated_bytes = alloc_region->used() - _used_bytes_before;
-  retire_region(alloc_region, allocated_bytes);
-  _used_bytes_before = 0;
+  retire_region(alloc_region);
 
   return waste;
 }
@@ -132,15 +128,14 @@ size_t G1AllocRegion::retire(bool fill_up) {
 
 HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size) {
   assert_alloc_region(_alloc_region == _dummy_region, "pre-condition");
-  assert_alloc_region(_used_bytes_before == 0, "pre-condition");
 
   trace("attempting region allocation");
   G1HeapRegion* new_alloc_region = allocate_new_region(word_size);
   if (new_alloc_region != nullptr) {
     new_alloc_region->reset_pre_dummy_top();
-    // Need to do this before the allocation
-    _used_bytes_before = new_alloc_region->used();
-    HeapWord* result = allocate(new_alloc_region, word_size);
+
+    assert(new_alloc_region->is_empty(), "new regions should be empty");
+    HeapWord* result = new_alloc_region->allocate(word_size);
     assert_alloc_region(result != nullptr, "the allocation should succeeded");
 
     OrderAccess::storestore();
@@ -159,7 +154,7 @@ HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size) {
 
 void G1AllocRegion::init() {
   trace("initializing");
-  assert_alloc_region(_alloc_region == nullptr && _used_bytes_before == 0, "pre-condition");
+  assert_alloc_region(_alloc_region == nullptr, "pre-condition");
   assert_alloc_region(_dummy_region != nullptr, "should have been set");
   _alloc_region = _dummy_region;
   _count = 0;
@@ -168,16 +163,9 @@ void G1AllocRegion::init() {
 
 void G1AllocRegion::set(G1HeapRegion* alloc_region) {
   trace("setting");
-  // We explicitly check that the region is not empty to make sure we
-  // maintain the "the alloc region cannot be empty" invariant.
-  assert_alloc_region(alloc_region != nullptr && !alloc_region->is_empty(), "pre-condition");
-  assert_alloc_region(_alloc_region == _dummy_region &&
-                         _used_bytes_before == 0 && _count == 0,
-                         "pre-condition");
+  assert_alloc_region(_alloc_region == _dummy_region && _count == 0, "pre-condition");
 
-  _used_bytes_before = alloc_region->used();
-  _alloc_region = alloc_region;
-  _count += 1;
+  update_alloc_region(alloc_region);
   trace("set");
 }
 
@@ -236,10 +224,10 @@ void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_
 
     if (detailed_info) {
       if (result != nullptr) {
-        out->print(" min " SIZE_FORMAT " desired " SIZE_FORMAT " actual " SIZE_FORMAT " " PTR_FORMAT,
-                     min_word_size, desired_word_size, actual_word_size, p2i(result));
+        out->print(" min %zu desired %zu actual %zu " PTR_FORMAT,
+                   min_word_size, desired_word_size, actual_word_size, p2i(result));
       } else if (min_word_size != 0) {
-        out->print(" min " SIZE_FORMAT " desired " SIZE_FORMAT, min_word_size, desired_word_size);
+        out->print(" min %zu desired %zu", min_word_size, desired_word_size);
       }
     }
     out->cr();
@@ -247,12 +235,9 @@ void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_
 }
 #endif // PRODUCT
 
-G1AllocRegion::G1AllocRegion(const char* name,
-                             bool bot_updates,
-                             uint node_index)
+G1AllocRegion::G1AllocRegion(const char* name, uint node_index)
   : _alloc_region(nullptr),
     _count(0),
-    _used_bytes_before(0),
     _name(name),
     _node_index(node_index)
  { }
@@ -261,9 +246,8 @@ G1HeapRegion* MutatorAllocRegion::allocate_new_region(size_t word_size) {
   return _g1h->new_mutator_alloc_region(word_size, _node_index);
 }
 
-void MutatorAllocRegion::retire_region(G1HeapRegion* alloc_region,
-                                       size_t allocated_bytes) {
-  _g1h->retire_mutator_alloc_region(alloc_region, allocated_bytes);
+void MutatorAllocRegion::retire_region(G1HeapRegion* alloc_region) {
+  _g1h->retire_mutator_alloc_region(alloc_region, alloc_region->used());
 }
 
 void MutatorAllocRegion::init() {
@@ -334,7 +318,7 @@ G1HeapRegion* MutatorAllocRegion::release() {
     _wasted_bytes += retire_internal(_retained_alloc_region, false);
     _retained_alloc_region = nullptr;
   }
-  log_debug(gc, alloc, region)("Mutator Allocation stats, regions: %u, wasted size: " SIZE_FORMAT "%s (%4.1f%%)",
+  log_debug(gc, alloc, region)("Mutator Allocation stats, regions: %u, wasted size: %zu%s (%4.1f%%)",
                                count(),
                                byte_size_in_proper_unit(_wasted_bytes),
                                proper_unit_for_byte_size(_wasted_bytes),
@@ -346,9 +330,11 @@ G1HeapRegion* G1GCAllocRegion::allocate_new_region(size_t word_size) {
   return _g1h->new_gc_alloc_region(word_size, _purpose, _node_index);
 }
 
-void G1GCAllocRegion::retire_region(G1HeapRegion* alloc_region,
-                                    size_t allocated_bytes) {
+void G1GCAllocRegion::retire_region(G1HeapRegion* alloc_region) {
+  assert(alloc_region->used() >= _used_bytes_before, "invariant");
+  size_t allocated_bytes = alloc_region->used() - _used_bytes_before;
   _g1h->retire_gc_alloc_region(alloc_region, allocated_bytes, _purpose);
+  _used_bytes_before = 0;
 }
 
 size_t G1GCAllocRegion::retire(bool fill_up) {
@@ -359,4 +345,9 @@ size_t G1GCAllocRegion::retire(bool fill_up) {
     _stats->add_region_end_waste(end_waste / HeapWordSize);
   }
   return end_waste;
+}
+
+void G1GCAllocRegion::reuse(G1HeapRegion* alloc_region) {
+  _used_bytes_before = alloc_region->used();
+  set(alloc_region);
 }

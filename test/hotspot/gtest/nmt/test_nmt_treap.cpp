@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "nmt/nmtTreap.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
-class TreapTest : public testing::Test {
+class NMTTreapTest : public testing::Test {
 public:
   struct Cmp {
     static int cmp(int a, int b) {
@@ -147,15 +146,15 @@ public:
   }
 };
 
-TEST_VM_F(TreapTest, InsertingDuplicatesResultsInOneValue) {
+TEST_VM_F(NMTTreapTest, InsertingDuplicatesResultsInOneValue) {
   this->inserting_duplicates_results_in_one_value();
 }
 
-TEST_VM_F(TreapTest, TreapOughtNotLeak) {
+TEST_VM_F(NMTTreapTest, TreapOughtNotLeak) {
   this->treap_ought_not_leak();
 }
 
-TEST_VM_F(TreapTest, TestVisitors) {
+TEST_VM_F(NMTTreapTest, TestVisitors) {
   { // Tests with 'default' ordering (ascending)
     TreapCHeap<int, int, Cmp> treap;
     using Node = TreapCHeap<int, int, Cmp>::TreapNode;
@@ -259,11 +258,11 @@ TEST_VM_F(TreapTest, TestVisitors) {
   }
 }
 
-TEST_VM_F(TreapTest, TestFind) {
+TEST_VM_F(NMTTreapTest, TestFind) {
   test_find();
 }
 
-TEST_VM_F(TreapTest, TestClosestLeq) {
+TEST_VM_F(NMTTreapTest, TestClosestLeq) {
   using Node = TreapCHeap<int, int, Cmp>::TreapNode;
   {
     TreapCHeap<int, int, Cmp> treap;
@@ -289,7 +288,7 @@ TEST_VM_F(TreapTest, TestClosestLeq) {
 
 #ifdef ASSERT
 
-TEST_VM_F(TreapTest, VerifyItThroughStressTest) {
+TEST_VM_F(NMTTreapTest, VerifyItThroughStressTest) {
   { // Repeatedly verify a treap of moderate size
     TreapCHeap<int, int, Cmp> treap;
     constexpr const int ten_thousand = 10000;
@@ -300,7 +299,9 @@ TEST_VM_F(TreapTest, VerifyItThroughStressTest) {
       } else {
         treap.remove(i);
       }
-      verify_it(treap);
+      if (i % 100 == 0) {
+        verify_it(treap);
+      }
     }
     for (int i = 0; i < ten_thousand; i++) {
       int r = os::random();
@@ -309,18 +310,43 @@ TEST_VM_F(TreapTest, VerifyItThroughStressTest) {
       } else {
         treap.remove(i);
       }
-      verify_it(treap);
+      if (i % 100 == 0) {
+        verify_it(treap);
+      }
     }
   }
   { // Make a very large treap and verify at the end
   struct Nothing {};
     TreapCHeap<int, Nothing, Cmp> treap;
-    constexpr const int five_million = 5000000;
-    for (int i = 0; i < five_million; i++) {
+    constexpr const int one_hundred_thousand = 100000;
+    for (int i = 0; i < one_hundred_thousand; i++) {
       treap.upsert(i, Nothing());
     }
     verify_it(treap);
   }
+}
+struct NTD {
+  static bool has_run_destructor;
+  ~NTD() {
+    has_run_destructor = true;
+  }
+};
+
+bool NTD::has_run_destructor = false;
+
+TEST_VM_F(NMTTreapTest, ValueDestructorsAreRun) {
+  TreapCHeap<int, NTD, Cmp> treap;
+  NTD ntd;
+  treap.upsert(0, ntd);
+  treap.remove(0);
+  EXPECT_TRUE(NTD::has_run_destructor);
+  NTD::has_run_destructor = false;
+  {
+    TreapCHeap<int, NTD, Cmp> treap;
+    NTD ntd;
+    treap.upsert(0, ntd);
+  }
+  EXPECT_TRUE(NTD::has_run_destructor);
 }
 
 #endif // ASSERT

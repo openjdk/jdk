@@ -29,14 +29,14 @@
 #include "logging/log.hpp"
 #include "memory/allStatic.hpp"
 
-class FreeRegionList;
+class G1FreeRegionList;
 
 class G1HeapRegionPrinter : public AllStatic {
 
   // Print an action event.
   static void print(const char* action, G1HeapRegion* hr) {
-    log_trace(gc, region)("G1HR %s(%s) [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
-                          action, hr->get_type_str(), p2i(hr->bottom()), p2i(hr->top()), p2i(hr->end()));
+    log_trace(gc, region)("G1HR %4u %s(%s) [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
+                          hr->hrm_index(), action, hr->get_type_str(), p2i(hr->bottom()), p2i(hr->top()), p2i(hr->end()));
   }
 
 public:

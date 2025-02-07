@@ -109,6 +109,7 @@ public class bug6492108 extends SwingTestHelper {
         } catch (Throwable t) {
             fail("Problem creating text components");
         }
+        setDelay(50);
         return panel;
     }
 

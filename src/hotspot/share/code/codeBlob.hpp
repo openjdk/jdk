@@ -97,7 +97,6 @@ class JavaFrameAnchor; // for UpcallStub::jfa_for_frame
 class CodeBlob {
   friend class VMStructs;
   friend class JVMCIVMStructs;
-  friend class CodeCacheDumper;
 
 protected:
   // order fields from large to small to minimize padding between fields
@@ -595,6 +594,7 @@ class UpcallLinker;
 
 // A (Panama) upcall stub. Not used by JNI.
 class UpcallStub: public RuntimeBlob {
+  friend class VMStructs;
   friend class UpcallLinker;
  private:
   jobject _receiver;

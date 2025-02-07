@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #define SHARE_OPTO_SUPERWORD_HPP
 
 #include "opto/vectorization.hpp"
+#include "opto/vtransform.hpp"
 #include "utilities/growableArray.hpp"
 
 //
@@ -54,8 +55,6 @@
 // Definition 3.3 A Pair is a Pack of size two, where the
 // first statement is considered the left element, and the
 // second statement is considered the right element.
-
-class VPointer;
 
 // The PairSet is a set of pairs. These are later combined to packs,
 // and stored in the PackSet.
@@ -362,6 +361,15 @@ public:
     }
   }
 
+  Node_List* strided_pack_input_at_index_or_null(const Node_List* pack, const int index, const int stride, const int offset) const;
+  bool is_muladds2i_pack_with_pack_inputs(const Node_List* pack) const;
+  Node* same_inputs_at_index_or_null(const Node_List* pack, const int index) const;
+  VTransformBoolTest get_bool_test(const Node_List* bool_pack) const;
+
+  Node_List* pack_input_at_index_or_null(const Node_List* pack, const int index) const {
+    return strided_pack_input_at_index_or_null(pack, index, 1, 0);
+  }
+
 private:
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
 public:
@@ -464,7 +472,7 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.types().same_velt_type(n1, n2);
   }
 
-  int data_size(Node* n) const {
+  int data_size(const Node* n) const {
     return _vloop_analyzer.types().data_size(n);
   }
 
@@ -545,12 +553,6 @@ class SuperWord : public ResourceObj {
   // Accessors
   Arena* arena()                   { return &_arena; }
 
-  // should we align vector memory references on this platform?
-  bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
-
-  // For pack p, are all idx operands the same?
-  bool same_inputs(const Node_List* p, int idx) const;
-
   // CloneMap utilities
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
@@ -559,11 +561,43 @@ private:
   bool SLP_extract();
 
   // Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.
+  class MemOp : public StackObj {
+  private:
+    MemNode* _mem;
+    const VPointer* _vpointer;
+    int _original_index;
+
+  public:
+    // Empty, for GrowableArray
+    MemOp() :
+      _mem(nullptr),
+      _vpointer(nullptr),
+      _original_index(-1) {}
+    MemOp(MemNode* mem, const VPointer* vpointer, int original_index) :
+      _mem(mem),
+      _vpointer(vpointer),
+      _original_index(original_index) {}
+
+    MemNode* mem() const { return _mem; }
+    const VPointer& vpointer() const { return *_vpointer; }
+    int original_index() const { return _original_index; }
+
+    static int cmp_by_group(MemOp* a, MemOp* b);
+    static int cmp_by_group_and_con_and_original_index(MemOp* a, MemOp* b);
+
+    // We use two comparisons, because a subtraction could underflow.
+    template <typename T>
+    static int cmp_code(T a, T b) {
+      if (a < b) { return -1; }
+      if (a > b) { return  1; }
+      return 0;
+    }
+  };
   void create_adjacent_memop_pairs();
-  void collect_valid_vpointers(GrowableArray<const VPointer*>& vpointers);
-  void create_adjacent_memop_pairs_in_all_groups(const GrowableArray<const VPointer*>& vpointers);
-  static int find_group_end(const GrowableArray<const VPointer*>& vpointers, int group_start);
-  void create_adjacent_memop_pairs_in_one_group(const GrowableArray<const VPointer*>& vpointers, const int group_start, int group_end);
+  void collect_valid_memops(GrowableArray<MemOp>& memops) const;
+  void create_adjacent_memop_pairs_in_all_groups(const GrowableArray<MemOp>& memops);
+  static int find_group_end(const GrowableArray<MemOp>& memops, int group_start);
+  void create_adjacent_memop_pairs_in_one_group(const GrowableArray<MemOp>& memops, const int group_start, int group_end);
 
   // Various methods to check if we can pack two nodes.
   bool can_pack_into_pair(Node* s1, Node* s2);
@@ -600,16 +634,6 @@ private:
 
   DEBUG_ONLY(void verify_packs() const;)
 
-  // Adjust the memory graph for the packed operations
-  void schedule();
-  // Helper function for schedule, that reorders all memops, slice by slice, according to the schedule
-  void schedule_reorder_memops(Node_List &memops_schedule);
-
-  // Convert packs into vector node operations
-  bool output();
-  // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
-  Node* vector_opd(Node_List* p, int opd_idx);
-
   // Can code be generated for the pack, restricted to size nodes?
   bool implemented(const Node_List* pack, const uint size) const;
   // Find the maximal implemented size smaller or equal to the packs size
@@ -629,18 +653,9 @@ private:
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx) const;
 
-  // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
-  BasicType longer_type_for_conversion(Node* n) const;
-
-  static bool requires_long_to_int_conversion(int opc);
-
   bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
 
-  static LoadNode::ControlDependency control_dependency(Node_List* p);
-
-  // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
-  void determine_mem_ref_and_aw_for_main_loop_alignment();
-  void adjust_pre_loop_limit_to_align_main_loop_vectors();
+  bool schedule_and_apply() const;
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP

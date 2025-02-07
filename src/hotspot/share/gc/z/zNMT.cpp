@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMT.hpp"
 #include "gc/z/zVirtualMemory.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "utilities/nativeCallStack.hpp"

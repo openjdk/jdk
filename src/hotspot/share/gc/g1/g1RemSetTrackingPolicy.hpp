@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,6 @@
 // set is complete.
 class G1RemSetTrackingPolicy : public CHeapObj<mtGC> {
 public:
-  // Do we need to scan the given region to get all outgoing references for remembered
-  // set rebuild?
-  bool needs_scan_for_rebuild(G1HeapRegion* r) const;
   // Update remembered set tracking state at allocation of the region. May be
   // called at any time. The caller makes sure that the changes to the remembered
   // set state are visible to other threads.

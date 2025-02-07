@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"
@@ -48,6 +47,8 @@ void VectorSet::init(Arena* arena) {
 
 // Expand the existing set to a bigger size
 void VectorSet::grow(uint new_word_capacity) {
+  _nesting.check(_set_arena); // Check if a potential reallocation in the arena is safe
+  assert(new_word_capacity >= _size, "Should have been checked before, use maybe_grow?");
   assert(new_word_capacity < (1U << 30), "");
   uint x = next_power_of_2(new_word_capacity);
   if (x > _data_size) {
@@ -62,9 +63,7 @@ void VectorSet::grow(uint new_word_capacity) {
 void VectorSet::insert(uint elem) {
   uint32_t word = elem >> word_bits;
   uint32_t mask = 1U << (elem & bit_mask);
-  if (word >= _size) {
-    grow(word);
-  }
+  maybe_grow(word);
   _data[word] |= mask;
 }
 

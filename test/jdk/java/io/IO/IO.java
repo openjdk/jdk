@@ -21,6 +21,8 @@
  * questions.
  */
 
+import java.io.Writer;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,8 +34,13 @@ import jdk.test.lib.process.ProcessTools;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
+import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,11 +50,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
- * @bug 8305457
+ * @bug 8305457 8342936
  * @summary java.io.IO tests
  * @library /test/lib
  * @run junit IO
  */
+@ExtendWith(IO.TimingExtension.class)
 public class IO {
 
     @Nested
@@ -62,6 +70,11 @@ public class IO {
             if (!Files.exists(expect) || !Files.isExecutable(expect)) {
                 Assumptions.abort("'" + expect + "' not found");
             }
+            try {
+                var outputAnalyzer = ProcessTools.executeProcess(
+                        expect.toAbsolutePath().toString(), "-version");
+                outputAnalyzer.reportDiagnosticSummary();
+            } catch (Exception _) { }
         }
 
         /*
@@ -120,22 +133,26 @@ public class IO {
             var testSrc = System.getProperty("test.src", ".");
             var command = new ArrayList<String>();
             command.add(expect.toString());
-            command.add(Path.of(testSrc, "input.exp").toAbsolutePath().toString());
+            String expectInputName = PROMPT_NONE.equals(prompt) ? "input-no-prompt"
+                                                                : "input";
+            command.add(Path.of(testSrc, expectInputName + ".exp").toAbsolutePath().toString());
             command.add(System.getProperty("test.jdk") + "/bin/java");
             command.add("--enable-preview");
             if (console != null)
                 command.add("-Djdk.console=" + console);
             command.add(Path.of(testSrc, "Input.java").toAbsolutePath().toString());
-            command.add(prompt == null ? "0" : "1");
+            command.add(prompt == null ? "0" : PROMPT_NONE.equals(prompt) ? "2" : "1");
             command.add(String.valueOf(prompt));
             OutputAnalyzer output = ProcessTools.executeProcess(command.toArray(new String[]{}));
             output.reportDiagnosticSummary();
             assertEquals(0, output.getExitValue());
         }
 
+        private static final String PROMPT_NONE = "prompt-none";
+
         public static Stream<Arguments> args() {
             // cross product: consoles x prompts
-            return Stream.of(null, "gibberish").flatMap(console -> Stream.of(null, "?", "%s")
+            return Stream.of(null, "gibberish").flatMap(console -> Stream.of(null, "?", "%s", PROMPT_NONE)
                     .map(prompt -> new String[]{console, prompt}).map(Arguments::of));
         }
     }
@@ -161,6 +178,33 @@ public class IO {
                 out.substring(out.length() / 2));
     }
 
+    @Test //JDK-8342936
+    public void printlnNoParamsTest() throws Exception {
+        var file = Path.of("PrintlnNoParams.java");
+        try (Writer w = Files.newBufferedWriter(file)) {
+            w.write("""
+                    void main() {
+                        print("1 ");
+                        print("2 ");
+                        print("3 ");
+                        println();
+                        System.console().print("1 ");
+                        System.console().print("2 ");
+                        System.console().print("3 ");
+                        System.console().println();
+                    }
+                    """);
+        }
+        var pb = ProcessTools.createTestJavaProcessBuilder("--enable-preview", file.toString());
+        OutputAnalyzer output = ProcessTools.executeProcess(pb);
+        assertEquals(0, output.getExitValue());
+        assertTrue(output.getStderr().isEmpty());
+        output.reportDiagnosticSummary();
+        String out = output.getStdout();
+        String nl = System.getProperty("line.separator");
+        assertEquals("1 2 3 " + nl + "1 2 3 " + nl, out);
+    }
+
 
     @ParameterizedTest
     @ValueSource(strings = {"println", "print", "input"})
@@ -173,5 +217,42 @@ public class IO {
         output.reportDiagnosticSummary();
         assertEquals(1, output.getExitValue());
         output.shouldContain("Exception in thread \"main\" java.io.IOError");
+    }
+
+
+    // adapted from https://junit.org/junit5/docs/current/user-guide/#extensions-lifecycle-callbacks-timing-extension
+    // remove after CODETOOLS-7903752 propagates to jtreg that this test is routinely run by
+
+    public static class TimingExtension implements BeforeTestExecutionCallback,
+            AfterTestExecutionCallback {
+
+        private static final System.Logger logger = System.getLogger(
+                TimingExtension.class.getName());
+
+        private static final String START_TIME = "start time";
+
+        @Override
+        public void beforeTestExecution(ExtensionContext context) {
+            getStore(context).put(START_TIME, time());
+        }
+
+        @Override
+        public void afterTestExecution(ExtensionContext context) {
+            Method testMethod = context.getRequiredTestMethod();
+            long startTime = getStore(context).remove(START_TIME, long.class);
+            long duration = time() - startTime;
+
+            logger.log(System.Logger.Level.INFO, () ->
+                    String.format("Method [%s] took %s ms.", testMethod.getName(), duration));
+        }
+
+        private ExtensionContext.Store getStore(ExtensionContext context) {
+            return context.getStore(ExtensionContext.Namespace.create(getClass(),
+                    context.getRequiredTestMethod()));
+        }
+
+        private long time() {
+            return System.nanoTime() / 1_000_000;
+        }
     }
 }

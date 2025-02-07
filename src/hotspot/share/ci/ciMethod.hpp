@@ -352,7 +352,6 @@ class ciMethod : public ciMetadata {
   bool is_getter      () const;
   bool is_setter      () const;
   bool is_accessor    () const;
-  bool is_initializer () const;
   bool is_empty       () const;
   bool can_be_statically_bound() const           { return _can_be_statically_bound; }
   bool has_reserved_stack_access() const         { return _has_reserved_stack_access; }
@@ -360,6 +359,8 @@ class ciMethod : public ciMetadata {
   bool is_unboxing_method() const;
   bool is_vector_method() const;
   bool is_object_initializer() const;
+  bool is_scoped() const;
+  bool is_old() const;
 
   bool can_be_statically_bound(ciInstanceKlass* context) const;
 

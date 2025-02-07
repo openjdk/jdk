@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -238,7 +237,8 @@ void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Regi
 
 address StubGenerator::generate_intpoly_montgomeryMult_P256() {
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "intpoly_montgomeryMult_P256");
+  StubGenStubId stub_id = StubGenStubId::intpoly_montgomeryMult_P256_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
   __ enter();
 
@@ -249,7 +249,6 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
   const Register tmp     = r9;
 
   montgomeryMultiply(aLimbs, bLimbs, rLimbs, tmp, _masm);
-  __ mov64(rax, 0x1); // Return 1 (Fig. 5, Step 6 [1] skipped in montgomeryMultiply)
 
   __ leave();
   __ ret(0);
@@ -297,7 +296,8 @@ address StubGenerator::generate_intpoly_assign() {
   // Special Cases 5, 10, 14, 16, 19
 
   __ align(CodeEntryAlignment);
-  StubCodeMark mark(this, "StubRoutines", "intpoly_assign");
+  StubGenStubId stub_id = StubGenStubId::intpoly_assign_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
   __ enter();
 

@@ -945,7 +945,13 @@ public class Annotate {
         boolean fatalError = false;
 
         // Validate that there is a (and only 1) value method
-        Scope scope = targetContainerType.tsym.members();
+        Scope scope = null;
+        try {
+            scope = targetContainerType.tsym.members();
+        } catch (CompletionFailure ex) {
+            chk.completionError(pos, ex);
+            return null;
+        }
         int nr_value_elems = 0;
         boolean error = false;
         for(Symbol elm : scope.getSymbolsByName(names.value)) {

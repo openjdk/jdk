@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkStackAllocator.hpp"
 #include "gc/z/zMarkTerminate.inline.hpp"
@@ -54,7 +53,7 @@ void ZMarkStripeSet::set_nstripes(size_t nstripes) {
   // if they see the old or new values.
   Atomic::store(&_nstripes_mask, nstripes - 1);
 
-  log_debug(gc, marking)("Using " SIZE_FORMAT " mark stripes", nstripes);
+  log_debug(gc, marking)("Using %zu mark stripes", nstripes);
 }
 
 size_t ZMarkStripeSet::nstripes() const {
@@ -86,7 +85,7 @@ ZMarkStripe* ZMarkStripeSet::stripe_for_worker(uint nworkers, uint worker_id) {
     const size_t spillover_nworkers = nworkers - spillover_limit;
     const size_t spillover_worker_id = worker_id - spillover_limit;
     const double spillover_chunk = (double)nstripes / (double)spillover_nworkers;
-    index = spillover_worker_id * spillover_chunk;
+    index = (size_t)(spillover_worker_id * spillover_chunk);
   }
 
   assert(index < nstripes, "Invalid index");

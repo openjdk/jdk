@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1BiasedArray.hpp"
 
-// This table is used to store attribute values of all HeapRegions that need
+// This table is used to store attribute values of all heap regions that need
 // fast access during the full collection. In particular some parts of the
 // region type information is encoded in these per-region bytes. Value encoding
 // has been specifically chosen to make required accesses fast. In particular,

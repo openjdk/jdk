@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 
 #if ALLOCATION_FAILURE_INJECTOR
 
-class SelectAllocationFailureRegionClosure : public HeapRegionClosure {
+class SelectAllocationFailureRegionClosure : public G1HeapRegionClosure {
   CHeapBitMap& _allocation_failure_regions;
   size_t _allocation_failure_regions_num;
 

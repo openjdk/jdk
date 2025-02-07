@@ -286,16 +286,17 @@ public class DocCommentParser {
         int depth = 1;                  // only used when phase is INLINE
         int pos = bp;                   // only used when phase is INLINE
 
+        if (textKind == DocTree.Kind.MARKDOWN) {
+            initMarkdownLine();
+        }
+
         loop:
         while (bp < buflen) {
             switch (ch) {
                 case '\n', '\r' -> {
                     nextChar();
                     if (textKind == DocTree.Kind.MARKDOWN) {
-                        markdown.update();
-                        if (markdown.isIndentedCodeBlock()) {
-                            markdown.skipLine();
-                        }
+                        initMarkdownLine();
                     }
                 }
 
@@ -486,6 +487,17 @@ public class DocCommentParser {
             textStart = bp;
         lastNonWhite = bp;
         nextChar();
+    }
+
+    void initMarkdownLine() {
+        if (textStart == -1) {
+            textStart = bp;
+        }
+        markdown.update();
+        if (markdown.isIndentedCodeBlock()) {
+            markdown.skipLine();
+            lastNonWhite = bp - 1; // do not include newline or EOF
+        }
     }
 
     private IllegalStateException unknownTextKind(DocTree.Kind textKind) {
@@ -1135,7 +1147,6 @@ public class DocCommentParser {
         ListBuffer<DCTree> attrs = new ListBuffer<>();
         skipWhitespace();
 
-        loop:
         while (bp < buflen && isIdentifierStart(ch)) {
             int namePos = bp;
             Name name = readAttributeName();
@@ -1153,14 +1164,6 @@ public class DocCommentParser {
                     nextChar();
                     textStart = bp;
                     while (bp < buflen && ch != quote) {
-                        if (newline && ch == '@') {
-                            attrs.add(erroneous("dc.unterminated.string", namePos));
-                            // No point trying to read more.
-                            // In fact, all attrs get discarded by the caller
-                            // and superseded by a malformed.html node because
-                            // the html tag itself is not terminated correctly.
-                            break loop;
-                        }
                         attrValueChar(v);
                     }
                     addPendingText(v, bp - 1, DocTree.Kind.TEXT);

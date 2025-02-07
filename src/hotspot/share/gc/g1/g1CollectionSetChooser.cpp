@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
@@ -116,7 +115,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   // Per-region closure. In addition to determining whether a region should be
   // added to the candidates, and calculating those regions' gc efficiencies, also
   // gather additional statistics.
-  class G1BuildCandidateRegionsClosure : public HeapRegionClosure {
+  class G1BuildCandidateRegionsClosure : public G1HeapRegionClosure {
     G1BuildCandidateArray* _array;
 
     uint _cur_chunk_idx;
@@ -177,7 +176,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   };
 
   G1CollectedHeap* _g1h;
-  HeapRegionClaimer _hrclaimer;
+  G1HeapRegionClaimer _hrclaimer;
 
   uint volatile _num_regions_added;
 
@@ -224,7 +223,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       num_pruned++;
     }
 
-    log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving " SIZE_FORMAT " bytes waste (allowed " SIZE_FORMAT ")",
+    log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving %zu bytes waste (allowed %zu)",
                               num_pruned,
                               num_candidates,
                               wasted_bytes,

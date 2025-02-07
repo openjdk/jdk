@@ -65,7 +65,7 @@ $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.compiler.interim/javax/tools/ToolProvider.ja
 	$(SED) $(INTERIM_TOOL_PROVIDER_PATTERN) $< > $@
 
 java.compiler.interim_EXTRA_FILES := \
-     $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.compiler.interim/javax/tools/ToolProvider.java
+    $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.compiler.interim/javax/tools/ToolProvider.java
 
 TARGETS += $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.compiler.interim/javax/tools/ToolProvider.java
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_riscv.hpp"
@@ -55,17 +54,29 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
       bytes = MacroAssembler::pd_patch_instruction_size(addr(), x);
       break;
   }
-  ICache::invalidate_range(addr(), bytes);
+
+  // If we are using UseCtxFencei no ICache invalidation is needed here.
+  // Instead every hart will preform an fence.i either by a Java thread
+  // (due to patching epoch will take it to slow path),
+  // or by the kernel when a Java thread is moved to a hart.
+  // The instruction streams changes must only happen before the disarm of
+  // the nmethod barrier. Where the disarm have a leading full two way fence.
+  // If this is performed during a safepoint, all Java threads will emit a fence.i
+  // before transitioning to 'Java', e.g. leaving native or the safepoint wait barrier.
+  if (!UseCtxFencei) {
+    // ICache invalidation is a serialization point.
+    // The above patching of instructions happens before the invalidation.
+    // Hence it have a leading full two way fence (wr, wr).
+    ICache::invalidate_range(addr(), bytes);
+  }
 }
 
 address Relocation::pd_call_destination(address orig_addr) {
   assert(is_call(), "should be an address instruction here");
-  if (MacroAssembler::is_call_at(addr())) {
-    address trampoline = nativeCall_at(addr())->get_trampoline();
-    if (trampoline != nullptr) {
-      return nativeCallTrampolineStub_at(trampoline)->destination();
-    }
+  if (NativeCall::is_at(addr())) {
+    return nativeCall_at(addr())->reloc_destination(orig_addr);
   }
+  // Non call reloc
   if (orig_addr != nullptr) {
     // the extracted address from the instructions in address orig_addr
     address new_addr = MacroAssembler::pd_call_destination(orig_addr);
@@ -81,10 +92,9 @@ address Relocation::pd_call_destination(address orig_addr) {
 
 void Relocation::pd_set_call_destination(address x) {
   assert(is_call(), "should be an address instruction here");
-  if (MacroAssembler::is_call_at(addr())) {
-    address trampoline = nativeCall_at(addr())->get_trampoline();
-    if (trampoline != nullptr) {
-      nativeCall_at(addr())->set_destination_mt_safe(x, /* assert_lock */false);
+  if (NativeCall::is_at(addr())) {
+    NativeCall* nc = nativeCall_at(addr());
+    if (nc->reloc_set_destination(x)) {
       return;
     }
   }

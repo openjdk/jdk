@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 
 package sun.nio.fs;
 
+import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.io.IOException;
 
 import static sun.nio.fs.UnixConstants.*;
 import static sun.nio.fs.UnixNativeDispatcher.*;
@@ -47,7 +47,6 @@ class UnixFileAttributeViews {
 
         @Override
         public BasicFileAttributes readAttributes() throws IOException {
-            file.checkRead();
             try {
                  UnixFileAttributes attrs =
                      UnixFileAttributes.get(file, followLinks);
@@ -69,42 +68,25 @@ class UnixFileAttributeViews {
                 return;
             }
 
-            // permission check
-            file.checkWrite();
-
-            boolean haveFd = false;
-            boolean useFutimes = false;
-            boolean useFutimens = false;
-            boolean useLutimes = false;
+            // use a file descriptor if possible to avoid a race due to
+            // accessing a path more than once as the file at that path could
+            // change.
+            // if path is a symlink, then the open should fail with ELOOP and
+            // the path will be used instead of the file descriptor.
             int fd = -1;
             try {
-                if (!followLinks) {
-                    useLutimes = lutimesSupported() &&
-                        UnixFileAttributes.get(file, false).isSymbolicLink();
-                }
-                if (!useLutimes) {
-                    fd = file.openForAttributeAccess(followLinks);
-                    if (fd != -1) {
-                        haveFd = true;
-                        if (!(useFutimens = futimensSupported())) {
-                            useFutimes = futimesSupported();
-                        }
-                    }
-                }
+                fd = file.openForAttributeAccess(followLinks);
             } catch (UnixException x) {
-                if (!(x.errno() == UnixConstants.ENXIO ||
-                     (x.errno() == UnixConstants.ELOOP && useLutimes))) {
+                if (!(x.errno() == ENXIO || (x.errno() == ELOOP))) {
                     x.rethrowAsIOException(file);
                 }
             }
 
             try {
-                // assert followLinks || !UnixFileAttributes.get(fd).isSymbolicLink();
-
                 // if not changing both attributes then need existing attributes
                 if (lastModifiedTime == null || lastAccessTime == null) {
                     try {
-                        UnixFileAttributes attrs = haveFd ?
+                        UnixFileAttributes attrs = fd >= 0 ?
                             UnixFileAttributes.get(fd) :
                             UnixFileAttributes.get(file, followLinks);
                         if (lastModifiedTime == null)
@@ -117,26 +99,21 @@ class UnixFileAttributeViews {
                 }
 
                 // update times
-                TimeUnit timeUnit = useFutimens ?
-                    TimeUnit.NANOSECONDS : TimeUnit.MICROSECONDS;
-                long modValue = lastModifiedTime.to(timeUnit);
-                long accessValue= lastAccessTime.to(timeUnit);
+                long modValue = lastModifiedTime.to(TimeUnit.NANOSECONDS);
+                long accessValue= lastAccessTime.to(TimeUnit.NANOSECONDS);
 
                 boolean retry = false;
                 try {
-                    if (useFutimens) {
+                    if (fd >= 0)
                         futimens(fd, accessValue, modValue);
-                    } else if (useFutimes) {
-                        futimes(fd, accessValue, modValue);
-                    } else if (useLutimes) {
-                        lutimes(file, accessValue, modValue);
-                    } else {
-                        utimes(file, accessValue, modValue);
-                    }
+                    else
+                        utimensat(AT_FDCWD, file, accessValue, modValue,
+                                  followLinks ? 0 : AT_SYMLINK_NOFOLLOW);
                 } catch (UnixException x) {
-                    // if futimes/utimes fails with EINVAL and one/both of the times is
-                    // negative then we adjust the value to the epoch and retry.
-                    if (x.errno() == UnixConstants.EINVAL &&
+                    // if utimensat fails with EINVAL and one/both of
+                    // the times is negative then we adjust the value to the
+                    // epoch and retry.
+                    if (x.errno() == EINVAL &&
                         (modValue < 0L || accessValue < 0L)) {
                         retry = true;
                     } else {
@@ -147,15 +124,11 @@ class UnixFileAttributeViews {
                     if (modValue < 0L) modValue = 0L;
                     if (accessValue < 0L) accessValue= 0L;
                     try {
-                        if (useFutimens) {
+                        if (fd >= 0)
                             futimens(fd, accessValue, modValue);
-                        } else if (useFutimes) {
-                            futimes(fd, accessValue, modValue);
-                        } else if (useLutimes) {
-                            lutimes(file, accessValue, modValue);
-                        } else {
-                            utimes(file, accessValue, modValue);
-                        }
+                        else
+                            utimensat(AT_FDCWD, file, accessValue, modValue,
+                                      followLinks ? 0 : AT_SYMLINK_NOFOLLOW);
                     } catch (UnixException x) {
                         x.rethrowAsIOException(file);
                     }
@@ -177,24 +150,6 @@ class UnixFileAttributeViews {
 
         Posix(UnixPath file, boolean followLinks) {
             super(file, followLinks);
-        }
-
-        final void checkReadExtended() {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                file.checkRead();
-                sm.checkPermission(new RuntimePermission("accessUserInformation"));
-            }
-        }
-
-        final void checkWriteExtended() {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                file.checkWrite();
-                sm.checkPermission(new RuntimePermission("accessUserInformation"));
-            }
         }
 
         @Override
@@ -251,7 +206,6 @@ class UnixFileAttributeViews {
 
         @Override
         public UnixFileAttributes readAttributes() throws IOException {
-            checkReadExtended();
             try {
                  return UnixFileAttributes.get(file, followLinks);
             } catch (UnixException x) {
@@ -262,8 +216,6 @@ class UnixFileAttributeViews {
 
         // chmod
         final void setMode(int mode) throws IOException {
-            checkWriteExtended();
-
             if (followLinks) {
                 try {
                     chmod(file, mode);
@@ -306,7 +258,6 @@ class UnixFileAttributeViews {
 
         // chown
         final void setOwners(int uid, int gid) throws IOException {
-            checkWriteExtended();
             try {
                 if (followLinks) {
                     chown(file, uid, gid);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,8 +79,7 @@ final class GCTR extends CounterMode implements GCM {
         ByteBuffer buf = ByteBuffer.wrap(counter, counter.length - 4, 4);
         buf.order(ByteOrder.BIG_ENDIAN);
         long ctr32 = 0xFFFFFFFFL & buf.getInt();
-        long blocksLeft = (1L << 32) - ctr32;
-        return blocksLeft;
+        return (1L << 32) - ctr32;
     }
 
     private void checkBlock() {

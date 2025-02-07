@@ -51,32 +51,31 @@ public final class ModuleLoaderMap {
         private static final ClassLoader APP_CLASSLOADER =
                 ClassLoaders.appClassLoader();
 
-        private static final Integer PLATFORM_LOADER_INDEX = 1;
-        private static final Integer APP_LOADER_INDEX      = 2;
+        private static final String PLATFORM_LOADER_NAME = "PLATFORM";
+        private static final String APP_LOADER_NAME      = "APP";
 
         /**
-         * Map from module to a class loader index. The index is resolved to the
+         * Map from module name to class loader name. The name is resolved to the
          * actual class loader in {@code apply}.
          */
-        private final Map<String, Integer> map;
+        private final Map<String, String> map;
 
         /**
          * Creates a Mapper to map module names in the given Configuration to
          * built-in classloaders.
          *
          * As a proxy for the actual classloader, we store an easily archiveable
-         * index value in the internal map. The index is stored as a boxed value
-         * so that we can cheaply do identity comparisons during bootstrap.
+         * loader name in the internal map.
          */
         Mapper(Configuration cf) {
-            var map = new HashMap<String, Integer>();
+            var map = new HashMap<String, String>();
             for (ResolvedModule resolvedModule : cf.modules()) {
                 String mn = resolvedModule.name();
                 if (!Modules.bootModules.contains(mn)) {
                     if (Modules.platformModules.contains(mn)) {
-                        map.put(mn, PLATFORM_LOADER_INDEX);
+                        map.put(mn, PLATFORM_LOADER_NAME);
                     } else {
-                        map.put(mn, APP_LOADER_INDEX);
+                        map.put(mn, APP_LOADER_NAME);
                     }
                 }
             }
@@ -85,12 +84,12 @@ public final class ModuleLoaderMap {
 
         @Override
         public ClassLoader apply(String name) {
-            Integer loader = map.get(name);
-            if (loader == APP_LOADER_INDEX) {
+            String loader = map.get(name);
+            if (APP_LOADER_NAME.equals(loader)) {
                 return APP_CLASSLOADER;
-            } else if (loader == PLATFORM_LOADER_INDEX) {
+            } else if (PLATFORM_LOADER_NAME.equals(loader)) {
                 return PLATFORM_CLASSLOADER;
-            } else { // BOOT_LOADER_INDEX
+            } else {
                 return null;
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
  *          /test/lib
  * @build nsk.jdb.list.list002.list002a
  * @run driver jdk.test.lib.FileInstaller list002a.java src/nsk/jdb/list/list002/list002a.java
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.list.list002.list002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -68,14 +68,10 @@ import java.util.*;
 public class list002 extends JdbTest {
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
-        return new list002().runTest(argv, out);
+        new list002().runTest(argv);
     }
 
     static final String PACKAGE_NAME    = "nsk.jdb.list.list002";

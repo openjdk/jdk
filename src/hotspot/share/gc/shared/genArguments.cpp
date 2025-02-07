@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/genArguments.hpp"
@@ -36,6 +35,12 @@ size_t MinNewSize = 0;
 
 size_t MinOldSize = 0;
 size_t MaxOldSize = 0;
+
+// If InitialHeapSize or MinHeapSize is not set on cmdline, this variable,
+// together with NewSize, is used to derive them.
+// Using the same value when it was a configurable flag to avoid breakage.
+// See more in JDK-8346005
+size_t OldSize = ScaleForWordSize(4*M);
 
 size_t GenAlignment = 0;
 
@@ -73,13 +78,13 @@ void GenArguments::initialize_heap_flags_and_sizes() {
 
   assert(GenAlignment != 0, "Generation alignment not set up properly");
   assert(HeapAlignment >= GenAlignment,
-         "HeapAlignment: " SIZE_FORMAT " less than GenAlignment: " SIZE_FORMAT,
+         "HeapAlignment: %zu less than GenAlignment: %zu",
          HeapAlignment, GenAlignment);
   assert(GenAlignment % SpaceAlignment == 0,
-         "GenAlignment: " SIZE_FORMAT " not aligned by SpaceAlignment: " SIZE_FORMAT,
+         "GenAlignment: %zu not aligned by SpaceAlignment: %zu",
          GenAlignment, SpaceAlignment);
   assert(HeapAlignment % GenAlignment == 0,
-         "HeapAlignment: " SIZE_FORMAT " not aligned by GenAlignment: " SIZE_FORMAT,
+         "HeapAlignment: %zu not aligned by GenAlignment: %zu",
          HeapAlignment, GenAlignment);
 
   // All generational heaps have a young gen; handle those flags here
@@ -122,8 +127,8 @@ void GenArguments::initialize_heap_flags_and_sizes() {
       // Make sure there is room for an old generation
       size_t smaller_max_new_size = MaxHeapSize - GenAlignment;
       if (FLAG_IS_CMDLINE(MaxNewSize)) {
-        log_warning(gc, ergo)("MaxNewSize (" SIZE_FORMAT "k) is equal to or greater than the entire "
-                              "heap (" SIZE_FORMAT "k).  A new max generation size of " SIZE_FORMAT "k will be used.",
+        log_warning(gc, ergo)("MaxNewSize (%zuk) is equal to or greater than the entire "
+                              "heap (%zuk).  A new max generation size of %zuk will be used.",
                               MaxNewSize/K, MaxHeapSize/K, smaller_max_new_size/K);
       }
       FLAG_SET_ERGO(MaxNewSize, smaller_max_new_size);
@@ -141,8 +146,8 @@ void GenArguments::initialize_heap_flags_and_sizes() {
     // At this point this should only happen if the user specifies a large NewSize and/or
     // a small (but not too small) MaxNewSize.
     if (FLAG_IS_CMDLINE(MaxNewSize)) {
-      log_warning(gc, ergo)("NewSize (" SIZE_FORMAT "k) is greater than the MaxNewSize (" SIZE_FORMAT "k). "
-                            "A new max generation size of " SIZE_FORMAT "k will be used.",
+      log_warning(gc, ergo)("NewSize (%zuk) is greater than the MaxNewSize (%zuk). "
+                            "A new max generation size of %zuk will be used.",
                             NewSize/K, MaxNewSize/K, NewSize/K);
     }
     FLAG_SET_ERGO(MaxNewSize, NewSize);
@@ -152,24 +157,7 @@ void GenArguments::initialize_heap_flags_and_sizes() {
     vm_exit_during_initialization("Invalid young gen ratio specified");
   }
 
-  if (OldSize < old_gen_size_lower_bound()) {
-    FLAG_SET_ERGO(OldSize, old_gen_size_lower_bound());
-  }
-  if (!is_aligned(OldSize, GenAlignment)) {
-    FLAG_SET_ERGO(OldSize, align_down(OldSize, GenAlignment));
-  }
-
-  if (FLAG_IS_CMDLINE(OldSize) && FLAG_IS_DEFAULT(MaxHeapSize)) {
-    // NewRatio will be used later to set the young generation size so we use
-    // it to calculate how big the heap should be based on the requested OldSize
-    // and NewRatio.
-    assert(NewRatio > 0, "NewRatio should have been set up earlier");
-    size_t calculated_heapsize = (OldSize / NewRatio) * (NewRatio + 1);
-
-    calculated_heapsize = align_up(calculated_heapsize, HeapAlignment);
-    FLAG_SET_ERGO(MaxHeapSize, calculated_heapsize);
-    FLAG_SET_ERGO(InitialHeapSize, calculated_heapsize);
-  }
+  OldSize = old_gen_size_lower_bound();
 
   // Adjust NewSize and OldSize or MaxHeapSize to match each other
   if (NewSize + OldSize > MaxHeapSize) {
@@ -185,20 +173,9 @@ void GenArguments::initialize_heap_flags_and_sizes() {
       // HeapAlignment, and we just made sure that NewSize is aligned to
       // GenAlignment. In initialize_flags() we verified that HeapAlignment
       // is a multiple of GenAlignment.
-      FLAG_SET_ERGO(OldSize, MaxHeapSize - NewSize);
+      OldSize = MaxHeapSize - NewSize;
     } else {
       FLAG_SET_ERGO(MaxHeapSize, align_up(NewSize + OldSize, HeapAlignment));
-    }
-  }
-
-  // Update NewSize, if possible, to avoid sizing the young gen too small when only
-  // OldSize is set on the command line.
-  if (FLAG_IS_CMDLINE(OldSize) && !FLAG_IS_CMDLINE(NewSize)) {
-    if (OldSize < InitialHeapSize) {
-      size_t new_size = InitialHeapSize - OldSize;
-      if (new_size >= MinNewSize && new_size <= MaxNewSize) {
-        FLAG_SET_ERGO(NewSize, new_size);
-      }
     }
   }
 
@@ -215,12 +192,6 @@ void GenArguments::initialize_heap_flags_and_sizes() {
 // In the absence of explicitly set command line flags, policies
 // such as the use of NewRatio are used to size the generation.
 
-// Minimum sizes of the generations may be different than
-// the initial sizes.  An inconsistency is permitted here
-// in the total size that can be specified explicitly by
-// command line specification of OldSize and NewSize and
-// also a command line specification of -Xms.  Issue a warning
-// but allow the values to pass.
 void GenArguments::initialize_size_info() {
   GCArguments::initialize_size_info();
 
@@ -273,7 +244,7 @@ void GenArguments::initialize_size_info() {
     }
   }
 
-  log_trace(gc, heap)("1: Minimum young " SIZE_FORMAT "  Initial young " SIZE_FORMAT "  Maximum young " SIZE_FORMAT,
+  log_trace(gc, heap)("1: Minimum young %zu  Initial young %zu  Maximum young %zu",
                       MinNewSize, initial_young_size, max_young_size);
 
   // At this point the minimum, initial and maximum sizes
@@ -286,37 +257,7 @@ void GenArguments::initialize_size_info() {
                     InitialHeapSize - initial_young_size,
                     MinHeapSize - MinNewSize);
 
-  size_t initial_old_size = OldSize;
-
-  // If no explicit command line flag has been set for the
-  // old generation size, use what is left.
-  if (!FLAG_IS_CMDLINE(OldSize)) {
-    // The user has not specified any value but the ergonomics
-    // may have chosen a value (which may or may not be consistent
-    // with the overall heap size).  In either case make
-    // the minimum, maximum and initial sizes consistent
-    // with the young sizes and the overall heap sizes.
-    initial_old_size = clamp(InitialHeapSize - initial_young_size, MinOldSize, MaxOldSize);
-    // MaxOldSize and MinOldSize have already been made consistent above.
-  } else {
-    // OldSize has been explicitly set on the command line. Use it
-    // for the initial size but make sure the minimum allow a young
-    // generation to fit as well.
-    // If the user has explicitly set an OldSize that is inconsistent
-    // with other command line flags, issue a warning.
-    // The generation minimums and the overall heap minimum should
-    // be within one generation alignment.
-    if (initial_old_size > MaxOldSize) {
-      log_warning(gc, ergo)("Inconsistency between maximum heap size and maximum "
-                            "generation sizes: using maximum heap = " SIZE_FORMAT
-                            ", -XX:OldSize flag is being ignored",
-                            MaxHeapSize);
-      initial_old_size = MaxOldSize;
-    } else if (initial_old_size < MinOldSize) {
-      log_warning(gc, ergo)("Inconsistency between initial old size and minimum old size");
-      MinOldSize = initial_old_size;
-    }
-  }
+  size_t initial_old_size = clamp(InitialHeapSize - initial_young_size, MinOldSize, MaxOldSize);;
 
   // The initial generation sizes should match the initial heap size,
   // if not issue a warning and resize the generations. This behavior
@@ -345,7 +286,7 @@ void GenArguments::initialize_size_info() {
       initial_young_size = desired_young_size;
     }
 
-    log_trace(gc, heap)("2: Minimum young " SIZE_FORMAT "  Initial young " SIZE_FORMAT "  Maximum young " SIZE_FORMAT,
+    log_trace(gc, heap)("2: Minimum young %zu  Initial young %zu  Maximum young %zu",
                         MinNewSize, initial_young_size, max_young_size);
   }
 
@@ -359,10 +300,10 @@ void GenArguments::initialize_size_info() {
   }
 
   if (OldSize != initial_old_size) {
-    FLAG_SET_ERGO(OldSize, initial_old_size);
+    OldSize = initial_old_size;
   }
 
-  log_trace(gc, heap)("Minimum old " SIZE_FORMAT "  Initial old " SIZE_FORMAT "  Maximum old " SIZE_FORMAT,
+  log_trace(gc, heap)("Minimum old %zu  Initial old %zu  Maximum old %zu",
                       MinOldSize, OldSize, MaxOldSize);
 
   DEBUG_ONLY(assert_size_info();)

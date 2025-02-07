@@ -1,4 +1,4 @@
-File-Date: 2024-05-16
+File-Date: 2024-11-19
 %%
 Type: language
 Subtag: aa
@@ -47991,6 +47991,16 @@ Added: 2008-10-14
 Prefix: kw
 %%
 Type: variant
+Subtag: kleinsch
+Description: Kleinschmidt orthography
+Description: Allattaasitaamut
+Added: 2024-07-20
+Prefix: kl
+Prefix: kl-tunumiit
+Comments: Orthography for Greenlandic designed by Samuel Kleinschmidt,
+  used from 1851 to 1973.
+%%
+Type: variant
 Subtag: kociewie
 Description: The Kociewie dialect of Polish
 Added: 2014-11-27
@@ -48009,7 +48019,9 @@ Type: variant
 Subtag: laukika
 Description: Classical Sanskrit
 Added: 2010-07-28
+Deprecated: 2024-06-08
 Prefix: sa
+Comments: Preferred tag is cls
 %%
 Type: variant
 Subtag: lemosin
@@ -48385,9 +48397,11 @@ Type: variant
 Subtag: vaidika
 Description: Vedic Sanskrit
 Added: 2010-07-28
+Deprecated: 2024-06-08
 Prefix: sa
 Comments: The most ancient dialect of Sanskrit used in verse and prose
   composed until about the 4th century B.C.E.
+Comments: Preferred tag is vsn
 %%
 Type: variant
 Subtag: valbadia

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,30 @@ public class TestDereferencePath {
         }
     }
 
+    static final MemoryLayout A_VALUE = MemoryLayout.structLayout(
+            ValueLayout.ADDRESS.withName("b")
+                    .withTargetLayout(ValueLayout.JAVA_INT)
+    );
+
+    static final VarHandle a_value = A_VALUE.varHandle(
+            PathElement.groupElement("b"), PathElement.dereferenceElement());
+
+    @Test
+    public void testDerefValue() {
+        try (Arena arena = Arena.ofConfined()) {
+            // init structs
+            MemorySegment a = arena.allocate(A);
+            MemorySegment b = arena.allocate(ValueLayout.JAVA_INT);
+            // init struct fields
+            a.set(ValueLayout.ADDRESS, 0, b);
+            b.set(ValueLayout.JAVA_INT, 0, 42);
+            // dereference
+            int val = (int) a_value.get(a, 0L);
+            assertEquals(val, 42);
+        }
+    }
+
+
     @Test(expectedExceptions = IllegalArgumentException.class)
     void testBadDerefInSelect() {
         A.select(PathElement.groupElement("b"), PathElement.dereferenceElement());
@@ -149,7 +173,7 @@ public class TestDereferencePath {
             ValueLayout.ADDRESS.withTargetLayout(ValueLayout.JAVA_INT).withName("x"));
 
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment segment = arena.allocate(struct.byteSize() + 1).asSlice(1);
+            MemorySegment segment = arena.allocate(struct.byteSize() + 1, struct.byteAlignment()).asSlice(1);
             VarHandle vhX = struct.varHandle(PathElement.groupElement("x"), PathElement.dereferenceElement());
             vhX.set(segment, 0L, 42); // should throw
         }

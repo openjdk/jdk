@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 #ifndef SHARE_NMT_NMTTREAP_HPP
 #define SHARE_NMT_NMTTREAP_HPP
 
-#include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
-#include <stdint.h>
+#include "utilities/powerOfTwo.hpp"
+#include <type_traits>
 
 // A Treap is a self-balanced binary tree where each node is equipped with a
 // priority. It adds the invariant that the priority of a parent P is strictly larger
@@ -53,8 +53,8 @@
 
 template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class Treap {
-  friend class VMATreeTest;
-  friend class TreapTest;
+  friend class NMTVMATreeTest;
+  friend class NMTTreapTest;
 public:
   class TreapNode {
     friend Treap;
@@ -66,6 +66,8 @@ public:
     TreapNode* _right;
 
   public:
+    TreapNode(const K& k, uint64_t p) : _priority(p), _key(k), _left(nullptr), _right(nullptr) {}
+
     TreapNode(const K& k, const V& v, uint64_t p)
       : _priority(p),
         _key(k),
@@ -84,16 +86,16 @@ public:
 private:
   ALLOCATOR _allocator;
   TreapNode* _root;
+
+  // A random number
+  static constexpr const uint64_t _initial_seed = 0xC8DD2114AE0543A3;
   uint64_t _prng_seed;
   int _node_count;
 
   uint64_t prng_next() {
-    // Taken directly off of JFRPrng
-    static const constexpr uint64_t PrngMult = 0x5DEECE66DLL;
-    static const constexpr uint64_t PrngAdd = 0xB;
-    static const constexpr uint64_t PrngModPower = 48;
-    static const constexpr uint64_t PrngModMask = (static_cast<uint64_t>(1) << PrngModPower) - 1;
-    _prng_seed = (PrngMult * _prng_seed + PrngAdd) & PrngModMask;
+    uint64_t first_half = os::next_random(_prng_seed);
+    uint64_t second_half = os::next_random(_prng_seed >> 32);
+    _prng_seed = first_half | (second_half << 32);
     return _prng_seed;
   }
 
@@ -173,9 +175,9 @@ private:
 #ifdef ASSERT
   void verify_self() {
     // A balanced binary search tree should have a depth on the order of log(N).
-    // We take the ceiling of log_2(N + 1) * 2.5 as our maximum bound.
+    // We take the ceiling of log_2(N + 1) * 3 as our maximum bound.
     // For comparison, a RB-tree has a proven max depth of log_2(N + 1) * 2.
-    const int expected_maximum_depth = ceil((log(this->_node_count+1) / log(2)) * 2.5);
+    const int expected_maximum_depth = ceil(log2i(this->_node_count+1) * 3);
     // Find the maximum depth through DFS and ensure that the priority invariant holds.
     int maximum_depth_found = 0;
 
@@ -225,15 +227,20 @@ private:
 public:
   NONCOPYABLE(Treap);
 
-  Treap(uint64_t seed = static_cast<uint64_t>(os::random())
-                        | (static_cast<uint64_t>(os::random()) << 32))
+  Treap()
   : _allocator(),
     _root(nullptr),
-    _prng_seed(seed),
-    _node_count(0) {}
+    _prng_seed(_initial_seed),
+    _node_count(0) {
+    static_assert(std::is_trivially_destructible<K>::value, "must be");
+  }
 
   ~Treap() {
     this->remove_all();
+  }
+
+  int size() {
+    return _node_count;
   }
 
   void upsert(const K& k, const V& v) {
@@ -264,6 +271,7 @@ public:
     if (second_split.right != nullptr) {
       // The key k existed, we delete it.
       _node_count--;
+      second_split.right->_value.~V();
       _allocator.free(second_split.right);
     }
     // Merge together everything
@@ -281,6 +289,7 @@ public:
       if (head == nullptr) continue;
       to_delete.push(head->_left);
       to_delete.push(head->_right);
+      head->_value.~V();
       _allocator.free(head);
     }
     _root = nullptr;
@@ -304,6 +313,62 @@ public:
       }
     }
     return candidate;
+  }
+
+  struct FindResult {
+    FindResult(TreapNode* node, bool new_node) : node(node), new_node(new_node) {}
+    TreapNode* const node;
+    bool const new_node;
+  };
+
+  // Finds the node for the given k in the tree or inserts a new node with the default constructed value.
+  FindResult find(const K& k) {
+    if (TreapNode* found = find(_root, k)) {
+      return FindResult(found, false);
+    }
+    _node_count++;
+    // Doesn't exist, make node
+    void* node_place = _allocator.allocate(sizeof(TreapNode));
+    uint64_t prio = prng_next();
+    TreapNode* node = new (node_place) TreapNode(k, prio);
+
+    // (LEQ_k, GT_k)
+    node_pair split_up = split(this->_root, k);
+    // merge(merge(LEQ_k, EQ_k), GT_k)
+    this->_root = merge(merge(split_up.left, node), split_up.right);
+    return FindResult(node, true);
+  }
+
+  TreapNode* closest_gt(const K& key) {
+    TreapNode* candidate = nullptr;
+    TreapNode* pos = _root;
+    while (pos != nullptr) {
+      int cmp_r = COMPARATOR::cmp(pos->key(), key);
+      if (cmp_r > 0) {
+        // Found a match, try to find a better one.
+        candidate = pos;
+        pos = pos->_left;
+      } else if (cmp_r <= 0) {
+        pos = pos->_right;
+      }
+    }
+    return candidate;
+  }
+
+  struct Range {
+    TreapNode* start;
+    TreapNode* end;
+    Range(TreapNode* start, TreapNode* end)
+    : start(start), end(end) {}
+  };
+
+  // Return the range [start, end)
+  // where start->key() <= addr < end->key().
+  // Failure to find the range leads to start and/or end being null.
+  Range find_enclosing_range(K addr) {
+    TreapNode* start = closest_leq(addr);
+    TreapNode* end = closest_gt(addr);
+    return Range(start, end);
   }
 
   // Visit all TreapNodes in ascending key order.

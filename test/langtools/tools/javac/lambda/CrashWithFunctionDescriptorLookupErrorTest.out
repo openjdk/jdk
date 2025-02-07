@@ -1,0 +1,2 @@
+CrashWithFunctionDescriptorLookupErrorTest.java:13:9: compiler.err.ref.ambiguous: test, kindname.method, test(CrashWithFunctionDescriptorLookupErrorTest.A<?>), CrashWithFunctionDescriptorLookupErrorTest, kindname.method, test(CrashWithFunctionDescriptorLookupErrorTest.B<?>), CrashWithFunctionDescriptorLookupErrorTest
+1 error

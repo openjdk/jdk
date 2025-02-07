@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import jdk.test.lib.jfr.SimpleEvent;
 /**
  * @test
  * @summary A simple test for Recording.getStream()
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.misc.TestGetStream
@@ -88,7 +88,7 @@ public class TestGetStream {
     }
 
     private static void printTimeStamp(String name, Instant t) {
-        Duration s = Duration.between(offset, t);
+        Duration s = offset.until(t);
         System.out.println(name + ": " + (s.getSeconds() * 1_000_000_000L + s.getNano()));
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -373,6 +372,10 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   //        [ lo(arg) ]
   //        [ hi(arg) ]
   //
+  if (kind == Interpreter::java_lang_math_tanh) {
+    return nullptr;
+  }
+
   if (kind == Interpreter::java_lang_math_fmaD) {
     if (!UseFMA) {
       return nullptr; // Generate a vanilla entry

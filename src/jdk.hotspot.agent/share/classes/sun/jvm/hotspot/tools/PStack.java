@@ -81,6 +81,13 @@ public class PStack extends Tool {
             out.println("can't print deadlock information: " + exp);
          }
 
+         try {
+             VMLocksPrinter vmLocksPrinter = new VMLocksPrinter(out);
+             vmLocksPrinter.printVMLocks();
+         } catch (Exception e) {
+             out.println("can't print VM locks information: " + e);
+         }
+
          List<ThreadProxy> l = cdbg.getThreadList();
          if (l.isEmpty() && PlatformInfo.getOS().equals("darwin")) {
            // If the list is empty, we assume we attached to a process, and on OSX we can only

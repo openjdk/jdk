@@ -30,7 +30,6 @@
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "utilities/macros.hpp"
-#include "runtime/rtmLocking.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
 
@@ -112,7 +111,8 @@ class MacroAssembler: public Assembler {
         op == 0xEB /* short jmp */ ||
         (op & 0xF0) == 0x70 /* short jcc */ ||
         (op == 0x0F && (branch[1] & 0xF0) == 0x80) /* jcc */ ||
-        (op == 0xC7 && branch[1] == 0xF8) /* xbegin */,
+        (op == 0xC7 && branch[1] == 0xF8) /* xbegin */ ||
+        (op == 0x8D) /* lea */,
         "Invalid opcode at patch point");
 
     if (op == 0xEB || (op & 0xF0) == 0x70) {
@@ -123,7 +123,7 @@ class MacroAssembler: public Assembler {
                 file == nullptr ? "<null>" : file, line);
       *disp = (char)imm8;
     } else {
-      int* disp = (int*) &branch[(op == 0x0F || op == 0xC7)? 2: 1];
+      int* disp = (int*) &branch[(op == 0x0F || op == 0xC7 || op == 0x8D) ? 2 : 1];
       int imm32 = checked_cast<int>(target - (address) &disp[1]);
       *disp = imm32;
     }
@@ -336,6 +336,13 @@ class MacroAssembler: public Assembler {
                            address  last_java_pc,
                            Register rscratch);
 
+#ifdef _LP64
+  void set_last_Java_frame(Register last_java_sp,
+                           Register last_java_fp,
+                           Label &last_java_pc,
+                           Register scratch);
+#endif
+
   void reset_last_Java_frame(Register thread, bool clear_fp);
 
   // thread in the default location (r15_thread on 64bit)
@@ -364,8 +371,19 @@ class MacroAssembler: public Assembler {
   void load_method_holder(Register holder, Register method);
 
   // oop manipulations
+#ifdef _LP64
+  void load_narrow_klass_compact(Register dst, Register src);
+#endif
   void load_klass(Register dst, Register src, Register tmp);
   void store_klass(Register dst, Register src, Register tmp);
+
+  // Compares the Klass pointer of an object to a given Klass (which might be narrow,
+  // depending on UseCompressedClassPointers).
+  void cmp_klass(Register klass, Register obj, Register tmp);
+
+  // Compares the Klass pointer of two objects obj1 and obj2. Result is in the condition flags.
+  // Uses tmp1 and tmp2 as temporary registers.
+  void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                       Register tmp1, Register thread_tmp);
@@ -647,24 +665,66 @@ public:
                                      Label* L_success,
                                      Label* L_failure,
                                      bool set_cond_codes = false);
-  void hashed_check_klass_subtype_slow_path(Register sub_klass,
+
+#ifdef _LP64
+  // The 64-bit version, which may do a hashed subclass lookup.
+  void check_klass_subtype_slow_path(Register sub_klass,
                                      Register super_klass,
                                      Register temp_reg,
                                      Register temp2_reg,
+                                     Register temp3_reg,
+                                     Register temp4_reg,
                                      Label* L_success,
-                                     Label* L_failure,
-                                     bool set_cond_codes = false);
+                                     Label* L_failure);
+#endif
+
+  // Three parts of a hashed subclass lookup: a simple linear search,
+  // a table lookup, and a fallback that does linear probing in the
+  // event of a hash collision.
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register temp_reg,
+                                            Register temp2_reg,
+                                            Label* L_success,
+                                            Label* L_failure,
+                                            bool set_cond_codes = false);
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register temp_reg,
+                                           Register temp2_reg,
+                                           Register temp3_reg,
+                                           Register result_reg,
+                                           Label* L_success,
+                                           Label* L_failure);
+  void hashed_check_klass_subtype_slow_path(Register sub_klass,
+                                            Register super_klass,
+                                            Register temp_reg,
+                                            Label* L_success,
+                                            Label* L_failure);
 
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
-  void lookup_secondary_supers_table(Register sub_klass,
-                                     Register super_klass,
-                                     Register temp1,
-                                     Register temp2,
-                                     Register temp3,
-                                     Register temp4,
-                                     Register result,
-                                     u1 super_klass_slot);
+  void lookup_secondary_supers_table_const(Register sub_klass,
+                                           Register super_klass,
+                                           Register temp1,
+                                           Register temp2,
+                                           Register temp3,
+                                           Register temp4,
+                                           Register result,
+                                           u1 super_klass_slot);
+
+#ifdef _LP64
+  using Assembler::salq;
+  void salq(Register dest, Register count);
+  using Assembler::rorq;
+  void rorq(Register dest, Register count);
+  void lookup_secondary_supers_table_var(Register sub_klass,
+                                         Register super_klass,
+                                         Register temp1,
+                                         Register temp2,
+                                         Register temp3,
+                                         Register temp4,
+                                         Register result);
 
   void lookup_secondary_supers_table_slow_path(Register r_super_klass,
                                                Register r_array_base,
@@ -681,12 +741,20 @@ public:
                                      Register temp1,
                                      Register temp2,
                                      Register temp3);
+#endif
 
   void repne_scanq(Register addr, Register value, Register count, Register limit,
                    Label* L_success,
                    Label* L_failure = nullptr);
 
-    // Simplified, combined version, good for typical uses.
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
+
+  // Simplified, combined version, good for typical uses.
   // Falls through on failure.
   void check_klass_subtype(Register sub_klass,
                            Register super_klass,
@@ -894,7 +962,7 @@ public:
   void atomic_incptr(AddressLiteral counter_addr, Register rscratch = noreg) { LP64_ONLY(atomic_incq(counter_addr, rscratch)) NOT_LP64(atomic_incl(counter_addr, rscratch)) ; }
   void atomic_incptr(Address counter_addr) { LP64_ONLY(atomic_incq(counter_addr)) NOT_LP64(atomic_incl(counter_addr)) ; }
 
-  void lea(Register dst, Address        adr) { Assembler::lea(dst, adr); }
+  using Assembler::lea;
   void lea(Register dst, AddressLiteral adr);
   void lea(Address  dst, AddressLiteral adr, Register rscratch);
 
@@ -1119,6 +1187,7 @@ public:
                    XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
                    Register buf, Register state, Register ofs, Register limit, Register rsp, bool multi_block,
                    XMMRegister shuf_mask);
+  void sha512_update_ni_x1(Register arg_hash, Register arg_msg, Register ofs, Register limit, bool multi_block);
 #endif // _LP64
 
   void fast_md5(Register buf, Address state, Address ofs, Address limit,
@@ -1217,6 +1286,9 @@ public:
   void addpd(XMMRegister dst, Address        src) { Assembler::addpd(dst, src); }
   void addpd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
+  using Assembler::vbroadcasti128;
+  void vbroadcasti128(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
   using Assembler::vbroadcastsd;
   void vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
@@ -1279,6 +1351,7 @@ public:
   // AVX512 Unaligned
   void evmovdqu(BasicType type, KRegister kmask, Address     dst, XMMRegister src, bool merge, int vector_len);
   void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address     src, bool merge, int vector_len);
+  void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, XMMRegister src, bool merge, int vector_len);
 
   void evmovdqub(XMMRegister dst, XMMRegister src, int vector_len) { Assembler::evmovdqub(dst, src, vector_len); }
   void evmovdqub(XMMRegister dst, Address     src, int vector_len) { Assembler::evmovdqub(dst, src, vector_len); }
@@ -1292,6 +1365,7 @@ public:
   void evmovdqub(XMMRegister dst, KRegister mask, Address        src, bool merge, int vector_len) { Assembler::evmovdqub(dst, mask, src, merge, vector_len); }
   void evmovdqub(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
 
+  void evmovdquw(XMMRegister dst, XMMRegister src, int vector_len) { Assembler::evmovdquw(dst, src, vector_len); }
   void evmovdquw(Address     dst, XMMRegister src, int vector_len) { Assembler::evmovdquw(dst, src, vector_len); }
   void evmovdquw(XMMRegister dst, Address     src, int vector_len) { Assembler::evmovdquw(dst, src, vector_len); }
 
@@ -1502,6 +1576,8 @@ public:
   void vpmulld(XMMRegister dst, XMMRegister nds, Address        src, int vector_len) { Assembler::vpmulld(dst, nds, src, vector_len); }
   void vpmulld(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
+  void vpmuldq(XMMRegister dst, XMMRegister nds, XMMRegister    src, int vector_len) { Assembler::vpmuldq(dst, nds, src, vector_len); }
+
   void vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpsubb(XMMRegister dst, XMMRegister nds, Address     src, int vector_len);
 
@@ -1511,9 +1587,13 @@ public:
   void vpsraw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
   void vpsraw(XMMRegister dst, XMMRegister nds, int         shift, int vector_len);
 
+  void evpsrad(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
+  void evpsrad(XMMRegister dst, XMMRegister nds, int         shift, int vector_len);
+
   void evpsraq(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
   void evpsraq(XMMRegister dst, XMMRegister nds, int         shift, int vector_len);
 
+  using Assembler::evpsllw;
   void evpsllw(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsllw(dst, mask, nds, src, merge, vector_len);
@@ -1558,6 +1638,7 @@ public:
       Assembler::evpsrlvq(dst, mask, nds, src, merge, vector_len);
     }
   }
+  using Assembler::evpsraw;
   void evpsraw(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsraw(dst, mask, nds, src, merge, vector_len);
@@ -1565,6 +1646,7 @@ public:
       Assembler::evpsravw(dst, mask, nds, src, merge, vector_len);
     }
   }
+  using Assembler::evpsrad;
   void evpsrad(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsrad(dst, mask, nds, src, merge, vector_len);
@@ -1585,6 +1667,11 @@ public:
   void evpmaxs(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
   void evpmins(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
   void evpmaxs(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+
+  void evpminu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evpmaxu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evpminu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+  void evpmaxu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
 
   void vpsrlw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
   void vpsrlw(XMMRegister dst, XMMRegister nds, int shift, int vector_len);
@@ -2149,26 +2236,14 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
-  void lightweight_lock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
+  void lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
   void lightweight_unlock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
-};
 
-/**
- * class SkipIfEqual:
- *
- * Instantiating this class will result in assembly code being output that will
- * jump around any code emitted between the creation of the instance and it's
- * automatic destruction at the end of a scope block, depending on the value of
- * the flag passed to the constructor, which will be checked at run-time.
- */
-class SkipIfEqual {
- private:
-  MacroAssembler* _masm;
-  Label _label;
-
- public:
-   SkipIfEqual(MacroAssembler*, const bool* flag_addr, bool value, Register rscratch);
-   ~SkipIfEqual();
+#ifdef _LP64
+  void save_legacy_gprs();
+  void restore_legacy_gprs();
+  void setcc(Assembler::Condition comparison, Register dst);
+#endif
 };
 
 #endif // CPU_X86_MACROASSEMBLER_X86_HPP

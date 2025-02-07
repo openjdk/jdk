@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ enum {
 
 // registers
 enum {
-  pd_nof_cpu_regs_frame_map = Register::number_of_registers,       // number of registers used during code emission
+  pd_nof_cpu_regs_frame_map = NOT_LP64(8) LP64_ONLY(16),           // number of registers used during code emission
   pd_nof_fpu_regs_frame_map = FloatRegister::number_of_registers,  // number of registers used during code emission
   pd_nof_xmm_regs_frame_map = XMMRegister::number_of_registers,    // number of registers used during code emission
 

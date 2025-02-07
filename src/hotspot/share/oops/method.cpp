@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"
@@ -62,12 +62,14 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/relocator.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -319,7 +321,7 @@ void Method::mask_for(const methodHandle& this_mh, int bci, InterpreterOopMap* m
 }
 
 int Method::bci_from(address bcp) const {
-  if (is_native() && bcp == 0) {
+  if (is_native() && bcp == nullptr) {
     return 0;
   }
   // Do not have a ResourceMark here because AsyncGetCallTrace stack walking code
@@ -332,7 +334,8 @@ int Method::bci_from(address bcp) const {
 
 
 int Method::validate_bci(int bci) const {
-  return (bci == 0 || bci < code_size()) ? bci : -1;
+  // Called from the verifier, and should return -1 if not valid.
+  return ((is_native() && bci == 0) || (!is_native() && 0 <= bci && bci < code_size())) ? bci : -1;
 }
 
 // Return bci if it appears to be a valid bcp
@@ -342,7 +345,7 @@ int Method::validate_bci(int bci) const {
 int Method::validate_bci_from_bcp(address bcp) const {
   // keep bci as -1 if not a valid bci
   int bci = -1;
-  if (bcp == 0 || bcp == code_base()) {
+  if (bcp == nullptr || bcp == code_base()) {
     // code_size() may return 0 and we allow 0 here
     // the method may be native
     bci = 0;
@@ -843,10 +846,6 @@ bool Method::is_constant_getter() const {
           Bytecodes::is_return(java_code_at(last_index)));
 }
 
-bool Method::is_initializer() const {
-  return is_object_initializer() || is_static_initializer();
-}
-
 bool Method::has_valid_initializer_flags() const {
   return (is_static() ||
           method_holder()->major_version() < 51);
@@ -866,6 +865,11 @@ bool Method::is_object_initializer() const {
 
 bool Method::needs_clinit_barrier() const {
   return is_static() && !method_holder()->is_initialized();
+}
+
+bool Method::is_object_wait0() const {
+  return klass_name() == vmSymbols::java_lang_Object()
+         && name() == vmSymbols::wait_name();
 }
 
 objArrayHandle Method::resolved_checked_exceptions_impl(Method* method, TRAPS) {
@@ -923,8 +927,7 @@ bool Method::is_klass_loaded_by_klass_index(int klass_index) const {
     Thread *thread = Thread::current();
     Symbol* klass_name = constants()->klass_name_at(klass_index);
     Handle loader(thread, method_holder()->class_loader());
-    Handle prot  (thread, method_holder()->protection_domain());
-    return SystemDictionary::find_instance_klass(thread, klass_name, loader, prot) != nullptr;
+    return SystemDictionary::find_instance_klass(thread, klass_name, loader) != nullptr;
   } else {
     return true;
   }
@@ -1017,7 +1020,7 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report,
   }
   if ((TraceDeoptimization || LogCompilation) && (xtty != nullptr)) {
     ttyLocker ttyl;
-    xtty->begin_elem("make_not_compilable thread='" UINTX_FORMAT "' osr='%d' level='%d'",
+    xtty->begin_elem("make_not_compilable thread='%zu' osr='%d' level='%d'",
                      os::current_thread_id(), is_osr, comp_level);
     if (reason != nullptr) {
       xtty->print(" reason=\'%s\'", reason);
@@ -1168,6 +1171,10 @@ void Method::remove_unshareable_flags() {
 // Called when the method_holder is getting linked. Setup entrypoints so the method
 // is ready to be called from interpreter, compiler, and vtables.
 void Method::link_method(const methodHandle& h_method, TRAPS) {
+  if (log_is_enabled(Info, perf, class, link)) {
+    ClassLoader::perf_ik_link_methods_count()->inc();
+  }
+
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
   if (adapter() != nullptr) {
@@ -1219,6 +1226,8 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
 }
 
 address Method::make_adapters(const methodHandle& mh, TRAPS) {
+  PerfTraceTime timer(ClassLoader::perf_method_adapters_time());
+
   // Adapters for compiled code are made eagerly here.  They are fairly
   // small (generally < 100 bytes) and quick to make (and cached and shared)
   // so making them eagerly shouldn't be too expensive.
@@ -1422,9 +1431,10 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   cp->symbol_at_put(_imcp_invoke_name,       name);
   cp->symbol_at_put(_imcp_invoke_signature,  signature);
   cp->set_has_preresolution();
+  cp->set_is_for_method_handle_intrinsic();
 
   // decide on access bits:  public or not?
-  int flags_bits = (JVM_ACC_NATIVE | JVM_ACC_SYNTHETIC | JVM_ACC_FINAL);
+  u2 flags_bits = (JVM_ACC_NATIVE | JVM_ACC_SYNTHETIC | JVM_ACC_FINAL);
   bool must_be_static = MethodHandles::is_signature_polymorphic_static(iid);
   if (must_be_static)  flags_bits |= JVM_ACC_STATIC;
   assert((flags_bits & JVM_ACC_PUBLIC) == 0, "do not expose these methods");
@@ -1469,6 +1479,16 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
 
   return m;
 }
+
+#if INCLUDE_CDS
+void Method::restore_archived_method_handle_intrinsic(methodHandle m, TRAPS) {
+  m->link_method(m, CHECK);
+
+  if (m->intrinsic_id() == vmIntrinsics::_linkToNative) {
+    m->set_interpreter_entry(m->adapter()->get_i2c_entry());
+  }
+}
+#endif
 
 Klass* Method::check_non_bcp_klass(Klass* klass) {
   if (klass != nullptr && klass->class_loader() != nullptr) {
@@ -1631,8 +1651,8 @@ void Method::init_intrinsic_id(vmSymbolID klass_id) {
       && sig_id == vmSymbolID::NO_SID) {
     return;
   }
-  jshort flags = access_flags().as_short();
 
+  u2 flags = access_flags().as_method_flags();
   vmIntrinsics::ID id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
   if (id != vmIntrinsics::_none) {
     set_intrinsic_id(id);
@@ -1724,7 +1744,7 @@ void Method::sort_methods(Array<Method*>* methods, bool set_idnums, method_compa
     }
     {
       NoSafepointVerifier nsv;
-      QuickSort::sort(methods->data(), length, func, /*idempotent=*/false);
+      QuickSort::sort(methods->data(), length, func);
     }
     // Reset method ordering
     if (set_idnums) {
@@ -2279,7 +2299,7 @@ void Method::print_on(outputStream* st) const {
   st->print   (" - method holder:     "); method_holder()->print_value_on(st); st->cr();
   st->print   (" - constants:         " PTR_FORMAT " ", p2i(constants()));
   constants()->print_value_on(st); st->cr();
-  st->print   (" - access:            0x%x  ", access_flags().as_int()); access_flags().print_on(st); st->cr();
+  st->print   (" - access:            0x%x  ", access_flags().as_method_flags()); access_flags().print_on(st); st->cr();
   st->print   (" - flags:             0x%x  ", _flags.as_int()); _flags.print_on(st); st->cr();
   st->print   (" - name:              ");    name()->print_value_on(st); st->cr();
   st->print   (" - signature:         ");    signature()->print_value_on(st); st->cr();

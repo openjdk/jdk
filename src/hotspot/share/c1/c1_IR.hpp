@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "c1/c1_Instruction.hpp"
 #include "ci/ciExceptionHandler.hpp"
-#include "ci/ciMethod.hpp"
 #include "ci/ciStreams.hpp"
 #include "memory/allocation.hpp"
 
@@ -149,6 +148,7 @@ class IRScope: public CompilationResourceObj {
   bool          _wrote_final;                    // has written final field
   bool          _wrote_fields;                   // has written fields
   bool          _wrote_volatile;                 // has written volatile field
+  bool          _wrote_stable;                   // has written @Stable field
   BlockBegin*   _start;                          // the start block, successsors are method entries
 
   ResourceBitMap _requires_phi_function;         // bit is set if phi functions at loop headers are necessary for a local variable
@@ -187,6 +187,8 @@ class IRScope: public CompilationResourceObj {
   bool          wrote_fields    () const         { return _wrote_fields; }
   void          set_wrote_volatile()             { _wrote_volatile = true; }
   bool          wrote_volatile    () const       { return _wrote_volatile; }
+  void          set_wrote_stable()               { _wrote_stable = true; }
+  bool          wrote_stable() const             { return _wrote_stable; }
 };
 
 

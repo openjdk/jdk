@@ -158,4 +158,15 @@ public class EarlyAssignments {
             super();
         }
     }
+
+    public static class Inner8 {
+        class Inner8a {
+            int x;
+        }
+
+        public Inner8() {
+            this.new Inner8a().x = 1;           // FAIL - illegal early access
+            super();
+        }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,6 @@
 
 package java.lang.foreign;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.VarHandle;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Stream;
-
 import jdk.internal.foreign.LayoutPath;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.layout.MemoryLayoutUtil;
@@ -38,6 +32,12 @@ import jdk.internal.foreign.layout.PaddingLayoutImpl;
 import jdk.internal.foreign.layout.SequenceLayoutImpl;
 import jdk.internal.foreign.layout.StructLayoutImpl;
 import jdk.internal.foreign.layout.UnionLayoutImpl;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.VarHandle;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * A memory layout describes the contents of a memory segment.
@@ -369,7 +369,7 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * int size = ...
  * MemorySegment points = ...
  * for (int i = 0 ; i < size ; i++) {
- *     ... POINT_ARR_X.get(segment, 0L, (long)i) ...
+ *     ... POINT_ARR_X.get(points, 0L, (long)i) ...
  * }
  * }
  *
@@ -574,7 +574,9 @@ public sealed interface MemoryLayout
      * <p>
      * For any given dynamic argument {@code x_i}, it must be that {@code 0 <= x_i < size_i},
      * where {@code size_i} is the size of the open path element associated with {@code x_i}.
-     * Otherwise, the returned method handle throws {@link IndexOutOfBoundsException}.
+     * Otherwise, the returned method handle throws {@link IndexOutOfBoundsException}. Moreover,
+     * the value of {@code b} must be such that the computation for {@code offset} does not overflow,
+     * or the returned method handle throws {@link ArithmeticException}.
      *
      * @apiNote The returned method handle can be used to compute a layout offset,
      *          similarly to {@link #byteOffset(PathElement...)}, but more flexibly, as
@@ -664,14 +666,15 @@ public sealed interface MemoryLayout
      * <p>
      * If the provided layout path has size {@code m} and contains a dereference path
      * element in position {@code k} (where {@code k <= m}) then two layout paths
-     * {@code P} and {@code P'} are derived, where P contains all the path elements from
-     * 0 to {@code k - 1} and {@code P'} contains all the path elements from {@code k + 1}
-     * to {@code m} (if any). Then, the returned var handle is computed as follows:
+     * {@code P} and {@code Q} are derived, where P contains all the path elements from
+     * 0 to {@code k - 1} and {@code Q} contains all the path elements from {@code k + 1}
+     * to {@code m} ({@code Q} could be an empty layout path if {@code k == m}).
+     * Then, the returned var handle is computed as follows:
      *
      * {@snippet lang = "java":
      * VarHandle baseHandle = this.varHandle(P);
      * MemoryLayout target = ((AddressLayout)this.select(P)).targetLayout().get();
-     * VarHandle targetHandle = target.varHandle(P);
+     * VarHandle targetHandle = target.varHandle(Q);
      * targetHandle = MethodHandles.insertCoordinates(targetHandle, 1, 0L); // always access nested targets at offset 0
      * targetHandle = MethodHandles.collectCoordinates(targetHandle, 0,
      *         baseHandle.toMethodHandle(VarHandle.AccessMode.GET));
@@ -944,7 +947,7 @@ public sealed interface MemoryLayout
          * is computed as follows:
          * <ul>
          *    <li>if {@code F > 0}, then {@code B = ceilDiv(C - S, F)}</li>
-         *    <li>if {@code F < 0}, then {@code B = ceilDiv(-(S + 1), -F)}</li>
+         *    <li>if {@code F < 0}, then {@code B = ceilDiv(S + 1, -F)}</li>
          * </ul>
          * That is, the size of the returned open path element is {@code B}.
          *
@@ -972,8 +975,8 @@ public sealed interface MemoryLayout
         }
 
         /**
-         * {@return a path element that dereferences an address layout as its
-         * {@linkplain AddressLayout#targetLayout() target layout} (where set)}
+         * {@return a path element that selects the {@linkplain AddressLayout#targetLayout() target layout} of
+         * an address layout (where set)}
          */
         static PathElement dereferenceElement() {
             return LayoutPath.DereferenceElement.instance();

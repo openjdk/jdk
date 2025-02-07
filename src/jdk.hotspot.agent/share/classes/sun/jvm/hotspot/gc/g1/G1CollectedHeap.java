@@ -30,8 +30,8 @@ import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
 import sun.jvm.hotspot.debugger.Address;
-import sun.jvm.hotspot.gc.g1.HeapRegionClosure;
-import sun.jvm.hotspot.gc.g1.PrintRegionClosure;
+import sun.jvm.hotspot.gc.g1.G1HeapRegionClosure;
+import sun.jvm.hotspot.gc.g1.G1PrintRegionClosure;
 import sun.jvm.hotspot.gc.shared.CollectedHeap;
 import sun.jvm.hotspot.gc.shared.CollectedHeapName;
 import sun.jvm.hotspot.gc.shared.LiveRegionsClosure;
@@ -47,7 +47,7 @@ import sun.jvm.hotspot.tools.HeapSummary;
 // Mirror class for G1CollectedHeap.
 
 public class G1CollectedHeap extends CollectedHeap {
-    // HeapRegionManager _hrm;
+    // G1HeapRegionManager _hrm;
     private static long hrmFieldOffset;
     // MemRegion _g1_reserved;
     private static long g1ReservedFieldOffset;
@@ -55,9 +55,9 @@ public class G1CollectedHeap extends CollectedHeap {
     private static CIntegerField summaryBytesUsedField;
     // G1MonitoringSupport* _monitoring_support;
     private static AddressField monitoringSupportField;
-    // HeapRegionSet _old_set;
+    // G1HeapRegionSet _old_set;
     private static long oldSetFieldOffset;
-    // HeapRegionSet _humongous_set;
+    // G1HeapRegionSet _humongous_set;
     private static long humongousSetFieldOffset;
 
     static {
@@ -90,9 +90,9 @@ public class G1CollectedHeap extends CollectedHeap {
         return hrm().length();
     }
 
-    public HeapRegionManager hrm() {
+    public G1HeapRegionManager hrm() {
         Address hrmAddr = addr.addOffsetTo(hrmFieldOffset);
-        return VMObjectFactory.newObject(HeapRegionManager.class, hrmAddr);
+        return VMObjectFactory.newObject(G1HeapRegionManager.class, hrmAddr);
     }
 
     public G1MonitoringSupport monitoringSupport() {
@@ -100,21 +100,21 @@ public class G1CollectedHeap extends CollectedHeap {
         return VMObjectFactory.newObject(G1MonitoringSupport.class, monitoringSupportAddr);
     }
 
-    public HeapRegionSetBase oldSet() {
+    public G1HeapRegionSetBase oldSet() {
         Address oldSetAddr = addr.addOffsetTo(oldSetFieldOffset);
-        return VMObjectFactory.newObject(HeapRegionSetBase.class, oldSetAddr);
+        return VMObjectFactory.newObject(G1HeapRegionSetBase.class, oldSetAddr);
     }
 
-    public HeapRegionSetBase humongousSet() {
+    public G1HeapRegionSetBase humongousSet() {
         Address humongousSetAddr = addr.addOffsetTo(humongousSetFieldOffset);
-        return VMObjectFactory.newObject(HeapRegionSetBase.class, humongousSetAddr);
+        return VMObjectFactory.newObject(G1HeapRegionSetBase.class, humongousSetAddr);
     }
 
     private Iterator<G1HeapRegion> heapRegionIterator() {
         return hrm().heapRegionIterator();
     }
 
-    public void heapRegionIterate(HeapRegionClosure hrcl) {
+    public void heapRegionIterate(G1HeapRegionClosure hrcl) {
         Iterator<G1HeapRegion> iter = heapRegionIterator();
         while (iter.hasNext()) {
             G1HeapRegion hr = iter.next();
@@ -159,7 +159,7 @@ public class G1CollectedHeap extends CollectedHeap {
     }
 
     public void printRegionDetails(PrintStream tty) {
-        PrintRegionClosure prc = new PrintRegionClosure(tty);
+        G1PrintRegionClosure prc = new G1PrintRegionClosure(tty);
         heapRegionIterate(prc);
     }
 

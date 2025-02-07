@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
@@ -118,7 +117,7 @@ void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
     // we allocate to in the region sets. We'll re-add it later, when
     // it's retired again.
     _g1h->old_set_remove(retained_region);
-    old->set(retained_region);
+    old->reuse(retained_region);
     G1HeapRegionPrinter::reuse(retained_region);
     evacuation_info->set_alloc_regions_used_before(retained_region->used());
   }
@@ -218,7 +217,7 @@ HeapWord* G1Allocator::par_allocate_during_gc(G1HeapRegionAttr dest,
   size_t temp = 0;
   HeapWord* result = par_allocate_during_gc(dest, word_size, word_size, &temp, node_index);
   assert(result == nullptr || temp == word_size,
-         "Requested " SIZE_FORMAT " words, but got " SIZE_FORMAT " at " PTR_FORMAT,
+         "Requested %zu words, but got %zu at " PTR_FORMAT,
          word_size, temp, p2i(result));
   return result;
 }

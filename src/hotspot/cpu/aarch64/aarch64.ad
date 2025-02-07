@@ -1244,7 +1244,7 @@ source %{
 
     // r27 is not allocatable when compressed oops is on and heapbase is not
     // zero, compressed klass pointers doesn't use r27 after JDK-8234794
-    if (UseCompressedOops && (CompressedOops::ptrs_base() != nullptr)) {
+    if (UseCompressedOops && (CompressedOops::base() != nullptr)) {
       _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
       _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
       _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
@@ -1648,8 +1648,8 @@ int MachCallRuntimeNode::ret_addr_offset() {
   // for real runtime callouts it will be six instructions
   // see aarch64_enc_java_to_runtime
   //   adr(rscratch2, retaddr)
+  //   str(rscratch2, Address(rthread, JavaThread::last_Java_pc_offset()));
   //   lea(rscratch1, RuntimeAddress(addr)
-  //   stp(zr, rscratch2, Address(__ pre(sp, -2 * wordSize)))
   //   blr(rscratch1)
   CodeBlob *cb = CodeCache::find_blob(_entry_point);
   if (cb) {
@@ -2307,18 +2307,18 @@ const RegMask* Matcher::predicate_reg_mask(void) {
   return &_PR_REG_mask;
 }
 
-const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return new TypeVectMask(elemTy, length);
-}
-
-// Vector calling convention not yet implemented.
 bool Matcher::supports_vector_calling_convention(void) {
-  return false;
+  return EnableVectorSupport && UseVectorStubs;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
-  Unimplemented();
-  return OptoRegPair(0, 0);
+  assert(EnableVectorSupport && UseVectorStubs, "sanity");
+  int lo = V0_num;
+  int hi = V0_H_num;
+  if (ideal_reg == Op_VecX || ideal_reg == Op_VecA) {
+    hi = V0_K_num;
+  }
+  return OptoRegPair(hi, lo);
 }
 
 // Is this branch offset short enough that a short branch can be used?
@@ -2334,7 +2334,7 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
 // Vector width in bytes.
 int Matcher::vector_width_in_bytes(BasicType bt) {
   // The MaxVectorSize should have been set by detecting SVE max vector register size.
-  int size = MIN2((UseSVE > 0) ? 256 : 16, (int)MaxVectorSize);
+  int size = MIN2((UseSVE > 0) ? (int)FloatRegister::sve_vl_max : (int)FloatRegister::neon_vl, (int)MaxVectorSize);
   // Minimum 2 values in vector
   if (size < 2*type2aelembytes(bt)) size = 0;
   // But never < 4
@@ -2373,7 +2373,7 @@ int Matcher::scalable_vector_reg_size(const BasicType bt) {
 
 // Vector ideal reg.
 uint Matcher::vector_ideal_reg(int len) {
-  if (UseSVE > 0 && 16 < len && len <= 256) {
+  if (UseSVE > 0 && FloatRegister::neon_vl < len && len <= FloatRegister::sve_vl_max) {
     return Op_VecA;
   }
   switch(len) {
@@ -2620,7 +2620,8 @@ static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   if (is_vshift_con_pattern(n, m) ||
       is_vector_bitwise_not_pattern(n, m) ||
-      is_valid_sve_arith_imm_pattern(n, m)) {
+      is_valid_sve_arith_imm_pattern(n, m) ||
+      is_encode_and_store_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
   }
@@ -2631,6 +2632,23 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
 // to be subsumed into complex addressing expressions or compute them
 // into registers?
 bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
+
+  // Loads and stores with indirect memory input (e.g., volatile loads and
+  // stores) do not subsume the input into complex addressing expressions. If
+  // the addressing expression is input to at least one such load or store, do
+  // not clone the addressing expression. Query needs_acquiring_load and
+  // needs_releasing_store as a proxy for indirect memory input, as it is not
+  // possible to directly query for indirect memory input at this stage.
+  for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
+    Node* n = m->fast_out(i);
+    if (n->is_Load() && needs_acquiring_load(n)) {
+      return false;
+    }
+    if (n->is_Store() && needs_releasing_store(n)) {
+      return false;
+    }
+  }
+
   if (clone_base_plus_offset_address(m, mstack, address_visited)) {
     return true;
   }
@@ -2745,10 +2763,7 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
     }
 
     if (index == -1) {
-      /* If we get an out-of-range offset it is a bug in the compiler,
-         so we assert here. */
-      assert(Address::offset_ok_for_immed(disp, exact_log2(size_in_memory)), "c2 compiler bug");
-      /* Fix up any out-of-range offsets. */
+      // Fix up any out-of-range offsets.
       assert_different_registers(rscratch1, base);
       Address addr = Address(base, disp);
       addr = __ legitimize_address(addr, size_in_memory, rscratch1);
@@ -3348,7 +3363,11 @@ encode %{
     int scale = $mem$$scale;
     int disp = $mem$$disp;
     if (index == -1) {
-      __ prfm(Address(base, disp), PSTL1KEEP);
+      // Fix up any out-of-range offsets.
+      assert_different_registers(rscratch1, base);
+      Address addr = Address(base, disp);
+      addr = __ legitimize_address(addr, 8, rscratch1);
+      __ prfm(addr, PSTL1KEEP);
     } else {
       Register index_reg = as_Register(index);
       if (disp == 0) {
@@ -3360,7 +3379,7 @@ encode %{
     }
   %}
 
-  /// mov envcodings
+  // mov encodings
 
   enc_class aarch64_enc_movw_imm(iRegI dst, immI src) %{
     uint32_t con = (uint32_t)$src$$constant;
@@ -3694,14 +3713,13 @@ encode %{
       __ post_call_nop();
     } else {
       Label retaddr;
+      // Make the anchor frame walkable
       __ adr(rscratch2, retaddr);
+      __ str(rscratch2, Address(rthread, JavaThread::last_Java_pc_offset()));
       __ lea(rscratch1, RuntimeAddress(entry));
-      // Leave a breadcrumb for JavaFrameAnchor::capture_last_Java_pc()
-      __ stp(zr, rscratch2, Address(__ pre(sp, -2 * wordSize)));
       __ blr(rscratch1);
       __ bind(retaddr);
       __ post_call_nop();
-      __ add(sp, sp, 2 * wordSize);
     }
     if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
@@ -4229,9 +4247,9 @@ operand immIOffset16()
   interface(CONST_INTER);
 %}
 
-operand immLoffset()
+operand immLOffset()
 %{
-  predicate(Address::offset_ok_for_immed(n->get_long(), 0));
+  predicate(n->get_long() >= -256 && n->get_long() <= 65520);
   match(ConL);
 
   op_cost(0);
@@ -5026,6 +5044,24 @@ operand vRegD_V7()
   interface(REG_INTER);
 %}
 
+operand vRegD_V12()
+%{
+  constraint(ALLOC_IN_RC(v12_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegD_V13()
+%{
+  constraint(ALLOC_IN_RC(v13_reg));
+  match(RegD);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 operand pReg()
 %{
   constraint(ALLOC_IN_RC(pr_reg));
@@ -5341,6 +5377,34 @@ operand indOffL16(iRegP reg, immLoffset16 off)
   %}
 %}
 
+operand indirectX2P(iRegL reg)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(CastX2P reg);
+  op_cost(0);
+  format %{ "[$reg]\t# long -> ptr" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp(0x0);
+  %}
+%}
+
+operand indOffX2P(iRegL reg, immLOffset off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (CastX2P reg) off);
+  op_cost(0);
+  format %{ "[$reg, $off]\t# long -> ptr" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
 operand indirectN(iRegN reg)
 %{
   predicate(CompressedOops::shift() == 0);
@@ -5431,7 +5495,7 @@ operand indOffIN(iRegN reg, immIOffset off)
   %}
 %}
 
-operand indOffLN(iRegN reg, immLoffset off)
+operand indOffLN(iRegN reg, immLOffset off)
 %{
   predicate(CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -5628,24 +5692,24 @@ operand cmpOpLtGe()
 // used for certain unsigned integral comparisons which can be
 // converted to cbxx or tbxx instructions
 
-operand cmpOpUEqNeLtGe()
+operand cmpOpUEqNeLeGt()
 %{
   match(Bool);
   op_cost(0);
 
-  predicate(n->as_Bool()->_test._test == BoolTest::eq
-            || n->as_Bool()->_test._test == BoolTest::ne
-            || n->as_Bool()->_test._test == BoolTest::lt
-            || n->as_Bool()->_test._test == BoolTest::ge);
+  predicate(n->as_Bool()->_test._test == BoolTest::eq ||
+            n->as_Bool()->_test._test == BoolTest::ne ||
+            n->as_Bool()->_test._test == BoolTest::le ||
+            n->as_Bool()->_test._test == BoolTest::gt);
 
   format %{ "" %}
   interface(COND_INTER) %{
     equal(0x0, "eq");
     not_equal(0x1, "ne");
-    less(0xb, "lt");
-    greater_equal(0xa, "ge");
-    less_equal(0xd, "le");
-    greater(0xc, "gt");
+    less(0x3, "lo");
+    greater_equal(0x2, "hs");
+    less_equal(0x9, "ls");
+    greater(0x8, "hi");
     overflow(0x6, "vs");
     no_overflow(0x7, "vc");
   %}
@@ -5660,6 +5724,17 @@ operand iRegL2I(iRegL reg) %{
   match(ConvL2I reg);
 
   format %{ "l2i($reg)" %}
+
+  interface(REG_INTER)
+%}
+
+operand iRegL2P(iRegL reg) %{
+
+  op_cost(0);
+
+  match(CastX2P reg);
+
+  format %{ "l2p($reg)" %}
 
   interface(REG_INTER)
 %}
@@ -5680,21 +5755,21 @@ opclass vmem16(indirect, indIndex, indOffI16, indOffL16);
 // instruction defs. we can turn a memory op into an Address
 
 opclass memory1(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI1, indOffL1,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN);
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indirectX2P, indOffX2P);
 
 opclass memory2(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI2, indOffL2,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN);
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indirectX2P, indOffX2P);
 
 opclass memory4(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI4, indOffL4,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN);
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN, indirectX2P, indOffX2P);
 
 opclass memory8(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI8, indOffL8,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN);
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN, indirectX2P, indOffX2P);
 
 // All of the memory operands. For the pipeline description.
 opclass memory(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex,
                indOffI1, indOffL1, indOffI2, indOffL2, indOffI4, indOffL4, indOffI8, indOffL8,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN);
+               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN, indirectX2P, indOffX2P);
 
 
 // iRegIorL2I is used for src inputs in rules for 32 bit int (I)
@@ -5711,6 +5786,7 @@ opclass memory(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indInde
 // movw is actually redundant but its not too costly.
 
 opclass iRegIorL2I(iRegI, iRegL2I);
+opclass iRegPorL2P(iRegP, iRegL2P);
 
 //----------PIPELINE-----------------------------------------------------------
 // Rules which define the behavior of the target architectures pipeline.
@@ -6594,7 +6670,7 @@ instruct loadP(iRegPNoSp dst, memory8 mem)
 instruct loadN(iRegNNoSp dst, memory4 mem)
 %{
   match(Set dst (LoadN mem));
-  predicate(!needs_acquiring_load(n));
+  predicate(!needs_acquiring_load(n) && n->as_Load()->barrier_data() == 0);
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrw  $dst, $mem\t# compressed ptr" %}
@@ -6622,13 +6698,32 @@ instruct loadKlass(iRegPNoSp dst, memory8 mem)
 instruct loadNKlass(iRegNNoSp dst, memory4 mem)
 %{
   match(Set dst (LoadNKlass mem));
-  predicate(!needs_acquiring_load(n));
+  predicate(!needs_acquiring_load(n) && !UseCompactObjectHeaders);
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrw  $dst, $mem\t# compressed class ptr" %}
 
   ins_encode(aarch64_enc_ldrw(dst, mem));
 
+  ins_pipe(iload_reg_mem);
+%}
+
+instruct loadNKlassCompactHeaders(iRegNNoSp dst, memory4 mem)
+%{
+  match(Set dst (LoadNKlass mem));
+  predicate(!needs_acquiring_load(n) && UseCompactObjectHeaders);
+
+  ins_cost(4 * INSN_COST);
+  format %{
+    "ldrw  $dst, $mem\t# compressed class ptr, shifted\n\t"
+    "lsrw  $dst, $dst, markWord::klass_shift_at_offset"
+  %}
+  ins_encode %{
+    // inlined aarch64_enc_ldrw
+    loadStore(masm, &MacroAssembler::ldrw, $dst$$Register, $mem->opcode(),
+              as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
+    __ lsrw($dst$$Register, $dst$$Register, markWord::klass_shift_at_offset);
+  %}
   ins_pipe(iload_reg_mem);
 %}
 
@@ -6850,36 +6945,6 @@ instruct loadConD(vRegD dst, immD con) %{
 
 // Store Instructions
 
-// Store CMS card-mark Immediate
-instruct storeimmCM0(immI0 zero, memory1 mem)
-%{
-  match(Set mem (StoreCM mem zero));
-
-  ins_cost(INSN_COST);
-  format %{ "storestore (elided)\n\t"
-            "strb zr, $mem\t# byte" %}
-
-  ins_encode(aarch64_enc_strb0(mem));
-
-  ins_pipe(istore_mem);
-%}
-
-// Store CMS card-mark Immediate with intervening StoreStore
-// needed when using CMS with no conditional card marking
-instruct storeimmCM0_ordered(immI0 zero, memory1 mem)
-%{
-  match(Set mem (StoreCM mem zero));
-
-  ins_cost(INSN_COST * 2);
-  format %{ "storestore\n\t"
-            "dmb ishst"
-            "\n\tstrb zr, $mem\t# byte" %}
-
-  ins_encode(aarch64_enc_strb0_ordered(mem));
-
-  ins_pipe(istore_mem);
-%}
-
 // Store Byte
 instruct storeB(iRegIorL2I src, memory1 mem)
 %{
@@ -7023,7 +7088,7 @@ instruct storeimmP0(immP0 zero, memory8 mem)
 instruct storeN(iRegN src, memory4 mem)
 %{
   match(Set mem (StoreN mem src));
-  predicate(!needs_releasing_store(n));
+  predicate(!needs_releasing_store(n) && n->as_Store()->barrier_data() == 0);
 
   ins_cost(INSN_COST);
   format %{ "strw  $src, $mem\t# compressed ptr" %}
@@ -7036,7 +7101,7 @@ instruct storeN(iRegN src, memory4 mem)
 instruct storeImmN0(immN0 zero, memory4 mem)
 %{
   match(Set mem (StoreN mem zero));
-  predicate(!needs_releasing_store(n));
+  predicate(!needs_releasing_store(n) && n->as_Store()->barrier_data() == 0);
 
   ins_cost(INSN_COST);
   format %{ "strw  zr, $mem\t# compressed ptr" %}
@@ -7270,6 +7335,7 @@ instruct loadP_volatile(iRegPNoSp dst, /* sync_memory*/indirect mem)
 instruct loadN_volatile(iRegNNoSp dst, /* sync_memory*/indirect mem)
 %{
   match(Set dst (LoadN mem));
+  predicate(n->as_Load()->barrier_data() == 0);
 
   ins_cost(VOLATILE_REF_COST);
   format %{ "ldarw  $dst, $mem\t# compressed ptr" %}
@@ -7437,6 +7503,7 @@ instruct storeimmP0_volatile(immP0 zero, /* sync_memory*/indirect mem)
 instruct storeN_volatile(iRegN src, /* sync_memory*/indirect mem)
 %{
   match(Set mem (StoreN mem src));
+  predicate(n->as_Store()->barrier_data() == 0);
 
   ins_cost(VOLATILE_REF_COST);
   format %{ "stlrw  $src, $mem\t# compressed ptr" %}
@@ -7449,6 +7516,7 @@ instruct storeN_volatile(iRegN src, /* sync_memory*/indirect mem)
 instruct storeimmN0_volatile(immN0 zero, /* sync_memory*/indirect mem)
 %{
   match(Set mem (StoreN mem zero));
+  predicate(n->as_Store()->barrier_data() == 0);
 
   ins_cost(VOLATILE_REF_COST);
   format %{ "stlrw  zr, $mem\t# compressed ptr" %}
@@ -7780,7 +7848,7 @@ instruct membar_acquire() %{
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "membar_acquire\n\t"
-            "dmb ish" %}
+            "dmb ishld" %}
 
   ins_encode %{
     __ block_comment("membar_acquire");
@@ -7834,11 +7902,13 @@ instruct membar_release() %{
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "membar_release\n\t"
-            "dmb ish" %}
+            "dmb ishst\n\tdmb ishld" %}
 
   ins_encode %{
     __ block_comment("membar_release");
-    __ membar(Assembler::LoadStore|Assembler::StoreStore);
+    // These will be merged if AlwaysMergeDMB is enabled.
+    __ membar(Assembler::StoreStore);
+    __ membar(Assembler::LoadStore);
   %}
   ins_pipe(pipe_serial);
 %}
@@ -8243,6 +8313,7 @@ instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval
 instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoSp newval, rFlagsReg cr) %{
 
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   ins_cost(2 * VOLATILE_REF_COST);
 
   effect(KILL cr);
@@ -8357,7 +8428,7 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
 
 instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoSp newval, rFlagsReg cr) %{
 
-  predicate(needs_acquiring_load_exclusive(n));
+  predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
   ins_cost(VOLATILE_REF_COST);
 
@@ -8462,6 +8533,7 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -8571,7 +8643,7 @@ instruct compareAndExchangeLAcq(iRegLNoSp res, indirect mem, iRegL oldval, iRegL
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct compareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-  predicate(needs_acquiring_load_exclusive(n));
+  predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
   ins_cost(VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -8683,6 +8755,7 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
   effect(KILL cr);
@@ -8802,7 +8875,7 @@ instruct weakCompareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL
 // This pattern is generated automatically from cas.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct weakCompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
-  predicate(needs_acquiring_load_exclusive(n));
+  predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
   ins_cost(VOLATILE_REF_COST);
   effect(KILL cr);
@@ -8863,6 +8936,7 @@ instruct get_and_setL(indirect mem, iRegL newv, iRegLNoSp prev) %{
 %}
 
 instruct get_and_setN(indirect mem, iRegN newv, iRegINoSp prev) %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set prev (GetAndSetN mem newv));
   ins_cost(2 * VOLATILE_REF_COST);
   format %{ "atomic_xchgw $prev, $newv, [$mem]" %}
@@ -8906,7 +8980,7 @@ instruct get_and_setLAcq(indirect mem, iRegL newv, iRegLNoSp prev) %{
 %}
 
 instruct get_and_setNAcq(indirect mem, iRegN newv, iRegINoSp prev) %{
-  predicate(needs_acquiring_load_exclusive(n));
+  predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);
   match(Set prev (GetAndSetN mem newv));
   ins_cost(VOLATILE_REF_COST);
   format %{ "atomic_xchgw_acq $prev, $newv, [$mem]" %}
@@ -9809,7 +9883,7 @@ instruct addI_reg_imm_i2l(iRegINoSp dst, iRegL src1, immIAddSub src2) %{
 %}
 
 // Pointer Addition
-instruct addP_reg_reg(iRegPNoSp dst, iRegP src1, iRegL src2) %{
+instruct addP_reg_reg(iRegPNoSp dst, iRegPorL2P src1, iRegL src2) %{
   match(Set dst (AddP src1 src2));
 
   ins_cost(INSN_COST);
@@ -9824,7 +9898,7 @@ instruct addP_reg_reg(iRegPNoSp dst, iRegP src1, iRegL src2) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct addP_reg_reg_ext(iRegPNoSp dst, iRegP src1, iRegIorL2I src2) %{
+instruct addP_reg_reg_ext(iRegPNoSp dst, iRegPorL2P src1, iRegIorL2I src2) %{
   match(Set dst (AddP src1 (ConvI2L src2)));
 
   ins_cost(1.9 * INSN_COST);
@@ -9839,7 +9913,7 @@ instruct addP_reg_reg_ext(iRegPNoSp dst, iRegP src1, iRegIorL2I src2) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct addP_reg_reg_lsl(iRegPNoSp dst, iRegP src1, iRegL src2, immIScale scale) %{
+instruct addP_reg_reg_lsl(iRegPNoSp dst, iRegPorL2P src1, iRegL src2, immIScale scale) %{
   match(Set dst (AddP src1 (LShiftL src2 scale)));
 
   ins_cost(1.9 * INSN_COST);
@@ -9854,7 +9928,7 @@ instruct addP_reg_reg_lsl(iRegPNoSp dst, iRegP src1, iRegL src2, immIScale scale
   ins_pipe(ialu_reg_reg_shift);
 %}
 
-instruct addP_reg_reg_ext_shift(iRegPNoSp dst, iRegP src1, iRegIorL2I src2, immIScale scale) %{
+instruct addP_reg_reg_ext_shift(iRegPNoSp dst, iRegPorL2P src1, iRegIorL2I src2, immIScale scale) %{
   match(Set dst (AddP src1 (LShiftL (ConvI2L src2) scale)));
 
   ins_cost(1.9 * INSN_COST);
@@ -9887,7 +9961,7 @@ instruct lshift_ext(iRegLNoSp dst, iRegIorL2I src, immI scale, rFlagsReg cr) %{
 // Pointer Immediate Addition
 // n.b. this needs to be more expensive than using an indirect memory
 // operand
-instruct addP_reg_imm(iRegPNoSp dst, iRegP src1, immLAddSub src2) %{
+instruct addP_reg_imm(iRegPNoSp dst, iRegPorL2P src1, immLAddSub src2) %{
   match(Set dst (AddP src1 src2));
 
   ins_cost(INSN_COST);
@@ -15685,7 +15759,7 @@ instruct cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN oop, immP0 zero, label 
   ins_pipe(pipe_cmp_branch);
 %}
 
-instruct cmpUI_imm0_branch(cmpOpUEqNeLtGe cmp, iRegIorL2I op1, immI0 op2, label labl, rFlagsRegU cr) %{
+instruct cmpUI_imm0_branch(cmpOpUEqNeLeGt cmp, iRegIorL2I op1, immI0 op2, label labl) %{
   match(If cmp (CmpU op1 op2));
   effect(USE labl);
 
@@ -15694,15 +15768,17 @@ instruct cmpUI_imm0_branch(cmpOpUEqNeLtGe cmp, iRegIorL2I op1, immI0 op2, label 
   ins_encode %{
     Label* L = $labl$$label;
     Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
-    if (cond == Assembler::EQ || cond == Assembler::LS)
+    if (cond == Assembler::EQ || cond == Assembler::LS) {
       __ cbzw($op1$$Register, *L);
-    else
+    } else {
+      assert(cond == Assembler::NE || cond == Assembler::HI, "unexpected condition");
       __ cbnzw($op1$$Register, *L);
+    }
   %}
   ins_pipe(pipe_cmp_branch);
 %}
 
-instruct cmpUL_imm0_branch(cmpOpUEqNeLtGe cmp, iRegL op1, immL0 op2, label labl, rFlagsRegU cr) %{
+instruct cmpUL_imm0_branch(cmpOpUEqNeLeGt cmp, iRegL op1, immL0 op2, label labl) %{
   match(If cmp (CmpUL op1 op2));
   effect(USE labl);
 
@@ -15711,10 +15787,12 @@ instruct cmpUL_imm0_branch(cmpOpUEqNeLtGe cmp, iRegL op1, immL0 op2, label labl,
   ins_encode %{
     Label* L = $labl$$label;
     Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
-    if (cond == Assembler::EQ || cond == Assembler::LS)
+    if (cond == Assembler::EQ || cond == Assembler::LS) {
       __ cbz($op1$$Register, *L);
-    else
+    } else {
+      assert(cond == Assembler::NE || cond == Assembler::HI, "unexpected condition");
       __ cbnz($op1$$Register, *L);
+    }
   %}
   ins_pipe(pipe_cmp_branch);
 %}
@@ -15971,7 +16049,7 @@ instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp
   format %{ "fastlock $object,$box\t! kills $tmp,$tmp2,$tmp3" %}
 
   ins_encode %{
-    __ fast_lock_lightweight($object$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_lock_lightweight($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -15987,7 +16065,7 @@ instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNo
   format %{ "fastunlock $object,$box\t! kills $tmp, $tmp2, $tmp3" %}
 
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -16088,6 +16166,22 @@ instruct CallLeafDirect(method meth)
   ins_pipe(pipe_class_call);
 %}
 
+// Call Runtime Instruction without safepoint and with vector arguments
+instruct CallLeafDirectVector(method meth)
+%{
+  match(CallLeafVector);
+
+  effect(USE meth);
+
+  ins_cost(CALL_COST);
+
+  format %{ "CALL, runtime leaf vector $meth" %}
+
+  ins_encode(aarch64_enc_java_to_runtime(meth));
+
+  ins_pipe(pipe_class_call);
+%}
+
 // Call Runtime Instruction
 
 instruct CallLeafNoFPDirect(method meth)
@@ -16134,6 +16228,19 @@ instruct TailjmpInd(iRegPNoSpNoRfp jump_target, iRegP_R0 ex_oop)
 
   ins_encode(aarch64_enc_tail_jmp(jump_target));
 
+  ins_pipe(pipe_class_call);
+%}
+
+// Forward exception.
+instruct ForwardExceptionjmp()
+%{
+  match(ForwardException);
+  ins_cost(CALL_COST);
+
+  format %{ "b forward_exception_stub" %}
+  ins_encode %{
+    __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+  %}
   ins_pipe(pipe_class_call);
 %}
 
@@ -16209,14 +16316,43 @@ instruct ShouldNotReachHere() %{
 instruct partialSubtypeCheck(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_R5 result, rFlagsReg cr)
 %{
   match(Set result (PartialSubtypeCheck sub super));
+  predicate(!UseSecondarySupersTable);
   effect(KILL cr, KILL temp);
 
-  ins_cost(1100);  // slightly larger than the next version
+  ins_cost(20 * INSN_COST);  // slightly larger than the next version
   format %{ "partialSubtypeCheck $result, $sub, $super" %}
 
   ins_encode(aarch64_enc_partial_subtype_check(sub, super, temp, result));
 
   opcode(0x1); // Force zero of result reg on hit
+
+  ins_pipe(pipe_class_memory);
+%}
+
+// Two versions of partialSubtypeCheck, both used when we need to
+// search for a super class in the secondary supers array. The first
+// is used when we don't know _a priori_ the class being searched
+// for. The second, far more common, is used when we do know: this is
+// used for instanceof, checkcast, and any case where C2 can determine
+// it by constant propagation.
+
+instruct partialSubtypeCheckVarSuper(iRegP_R4 sub, iRegP_R0 super, vRegD_V0 vtemp, iRegP_R5 result,
+                                     iRegP_R1 tempR1, iRegP_R2 tempR2, iRegP_R3 tempR3,
+                                     rFlagsReg cr)
+%{
+  match(Set result (PartialSubtypeCheck sub super));
+  predicate(UseSecondarySupersTable);
+  effect(KILL cr, TEMP tempR1, TEMP tempR2, TEMP tempR3, TEMP vtemp);
+
+  ins_cost(10 * INSN_COST);  // slightly larger than the next version
+  format %{ "partialSubtypeCheck $result, $sub, $super" %}
+
+  ins_encode %{
+    __ lookup_secondary_supers_table_var($sub$$Register, $super$$Register,
+                                         $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
+                                         $vtemp$$FloatRegister,
+                                         $result$$Register, /*L_success*/nullptr);
+  %}
 
   ins_pipe(pipe_class_memory);
 %}
@@ -16229,18 +16365,19 @@ instruct partialSubtypeCheckConstSuper(iRegP_R4 sub, iRegP_R0 super_reg, immP su
   predicate(UseSecondarySupersTable);
   effect(KILL cr, TEMP tempR1, TEMP tempR2, TEMP tempR3, TEMP vtemp);
 
-  ins_cost(700);  // smaller than the next version
+  ins_cost(5 * INSN_COST);  // smaller than the next version
   format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
 
   ins_encode %{
     bool success = false;
     u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
     if (InlineSecondarySupersTest) {
-      success = __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register,
-                                                 $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
-                                                 $vtemp$$FloatRegister,
-                                                 $result$$Register,
-                                                 super_klass_slot);
+      success =
+        __ lookup_secondary_supers_table_const($sub$$Register, $super_reg$$Register,
+                                               $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
+                                               $vtemp$$FloatRegister,
+                                               $result$$Register,
+                                               super_klass_slot);
     } else {
       address call = __ trampoline_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
       success = (call != nullptr);
@@ -16250,21 +16387,6 @@ instruct partialSubtypeCheckConstSuper(iRegP_R4 sub, iRegP_R0 super_reg, immP su
       return;
     }
   %}
-
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct partialSubtypeCheckVsZero(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_R5 result, immP0 zero, rFlagsReg cr)
-%{
-  match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
-  effect(KILL temp, KILL result);
-
-  ins_cost(1100);  // slightly larger than the next version
-  format %{ "partialSubtypeCheck $result, $sub, $super == 0" %}
-
-  ins_encode(aarch64_enc_partial_subtype_check(sub, super, temp, result));
-
-  opcode(0x0); // Don't zero result reg on hit
 
   ins_pipe(pipe_class_memory);
 %}
@@ -16708,6 +16830,32 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
     address tpc = __ arrays_equals($ary1$$Register, $ary2$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    $result$$Register, $tmp$$Register, 2);
+    if (tpc == nullptr) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct arrays_hashcode(iRegP_R1 ary, iRegI_R2 cnt, iRegI_R0 result, immI basic_type,
+                         vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2, vRegD_V3 vtmp3,
+                         vRegD_V4 vtmp4, vRegD_V5 vtmp5, vRegD_V6 vtmp6, vRegD_V7 vtmp7,
+                         vRegD_V12 vtmp8, vRegD_V13 vtmp9, rFlagsReg cr)
+%{
+  match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
+  effect(TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5, TEMP vtmp6,
+         TEMP vtmp7, TEMP vtmp8, TEMP vtmp9, USE_KILL ary, USE_KILL cnt, USE basic_type, KILL cr);
+
+  format %{ "Array HashCode array[] $ary,$cnt,$result,$basic_type -> $result   // KILL all" %}
+  ins_encode %{
+    address tpc = __ arrays_hashcode($ary$$Register, $cnt$$Register, $result$$Register,
+                                     $vtmp3$$FloatRegister, $vtmp2$$FloatRegister,
+                                     $vtmp1$$FloatRegister, $vtmp0$$FloatRegister,
+                                     $vtmp4$$FloatRegister, $vtmp5$$FloatRegister,
+                                     $vtmp6$$FloatRegister, $vtmp7$$FloatRegister,
+                                     $vtmp8$$FloatRegister, $vtmp9$$FloatRegister,
+                                     (BasicType)$basic_type$$constant);
     if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;

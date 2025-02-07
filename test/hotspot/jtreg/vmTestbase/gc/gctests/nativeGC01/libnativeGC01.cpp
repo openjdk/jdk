@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ Java_gc_gctests_nativeGC01_nativeGC01_nativeMethod01
            */
         cls  = env->GetObjectClass(obj);
         mid = env->GetMethodID(cls, "callbackGC", "()V");
-        if (mid == 0) {
+        if (mid == nullptr) {
                 printf("couldnt locate method callbackGC()");
                 return -1;
         }
@@ -56,7 +56,7 @@ Java_gc_gctests_nativeGC01_nativeGC01_nativeMethod01
 
         clss = env->GetObjectClass(linked_list);
         mid2 = env->GetMethodID(clss, "getLength", "()I");
-        if (mid2 == 0) {
+        if (mid2 == nullptr) {
                 printf("couldnt locate method getLength()");
                 return -1;
         }

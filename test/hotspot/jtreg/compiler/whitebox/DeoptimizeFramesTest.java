@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test DeoptimizeFramesTest
  * @bug 8028595
  * @summary testing of WB::deoptimizeFrames()
+ * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,27 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
 using NCSS = NativeCallStackStorage;
 
-class NativeCallStackStorageTest : public testing::Test {};
+class NMTNativeCallStackStorageTest : public testing::Test {};
 
-TEST_VM_F(NativeCallStackStorageTest, DoNotStoreStackIfNotDetailed) {
+TEST_VM_F(NMTNativeCallStackStorageTest, DoNotStoreStackIfNotDetailed) {
   NativeCallStack ncs{};
   NCSS ncss(false);
   NCSS::StackIndex si = ncss.push(ncs);
-  EXPECT_TRUE(si.is_invalid());
+  EXPECT_TRUE(NCSS::is_invalid(si));
   NativeCallStack ncs_received = ncss.get(si);
   EXPECT_TRUE(ncs_received.is_empty());
 }
 
-TEST_VM_F(NativeCallStackStorageTest, CollisionsReceiveDifferentIndexes) {
+TEST_VM_F(NMTNativeCallStackStorageTest, CollisionsReceiveDifferentIndexes) {
   constexpr const int nr_of_stacks = 10;
   NativeCallStack ncs_arr[nr_of_stacks];
-  for (int i = 0; i < nr_of_stacks; i++) {
+  for (size_t i = 0; i < nr_of_stacks; i++) {
     ncs_arr[i] = NativeCallStack((address*)(&i), 1);
   }
 
@@ -53,11 +52,11 @@ TEST_VM_F(NativeCallStackStorageTest, CollisionsReceiveDifferentIndexes) {
     si_arr[i] = ncss.push(ncs_arr[i]);
   }
 
-  // Every SI should be different as every sack is different
+  // Every SI should be different as every stack is different
   for (int i = 0; i < nr_of_stacks; i++) {
     for (int j = 0; j < nr_of_stacks; j++) {
       if (i == j) continue;
-      EXPECT_FALSE(NCSS::StackIndex::equals(si_arr[i],si_arr[j]));
+      EXPECT_FALSE(NCSS::equals(si_arr[i],si_arr[j]));
     }
   }
 }

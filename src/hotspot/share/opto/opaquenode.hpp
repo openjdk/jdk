@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,38 +91,18 @@ public:
   IfNode* if_node() const;
 };
 
-//------------------------------Opaque3Node------------------------------------
-// A node to prevent unwanted optimizations. Will be optimized only during
-// macro nodes expansion.
-class Opaque3Node : public Node {
-  int _opt; // what optimization it was used for
-  virtual uint hash() const;
-  virtual bool cmp(const Node &n) const;
-  public:
-  enum { RTM_OPT };
-  Opaque3Node(Compile* C, Node* n, int opt) : Node(0, n), _opt(opt) {
-    // Put it on the Macro nodes list to removed during macro nodes expansion.
-    init_flags(Flag_is_macro);
-    C->add_macro_node(this);
-  }
-  virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return TypeInt::INT; }
-  virtual Node* Identity(PhaseGVN* phase);
-  bool rtm_opt() const { return (_opt == RTM_OPT); }
-};
-
-// Input 1 is a check that we know implicitly is always true or false
-// but the compiler has no way to prove. If during optimizations, that
-// check becomes true or false, the Opaque4 node is replaced by that
-// constant true or false. Input 2 is the constant value we know the
-// test takes. After loop optimizations, we replace input 1 by input 2
-// so the control that depends on that test can be removed and there's
-// no overhead at runtime. Used for instance by
+// This node is used in the context of intrinsics. We sometimes implicitly know that an object is non-null even though
+// the compiler cannot prove it. We therefore add a corresponding cast to propagate this implicit knowledge. However,
+// this cast could become top during optimizations (input to cast becomes null) and the data path is folded. To ensure
+// that the control path is also properly folded, we insert an If node with a OpaqueNotNullNode as condition. During
+// macro expansion, we replace the OpaqueNotNullNodes with true in product builds such that the actually unneeded checks
+// are folded and do not end up in the emitted code. In debug builds, we keep the actual checks as additional
+// verification code (i.e. removing OpaqueNotNullNodes and use the BoolNode inputs instead). For more details, also see
 // GraphKit::must_be_not_null().
-class Opaque4Node : public Node {
-  public:
-  Opaque4Node(Compile* C, Node* tst, Node* final_tst) : Node(nullptr, tst, final_tst) {
-    init_class_id(Class_Opaque4);
+class OpaqueNotNullNode : public Node {
+ public:
+  OpaqueNotNullNode(Compile* C, Node* tst) : Node(nullptr, tst) {
+    init_class_id(Class_OpaqueNotNull);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
@@ -132,9 +112,26 @@ class Opaque4Node : public Node {
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 };
 
+// This node is used for Template Assertion Predicate BoolNodes. A Template Assertion Predicate is always removed
+// after loop opts and thus is never converted to actual code. In the post loop opts IGVN phase, the
+// OpaqueTemplateAssertionPredicateNode is replaced by true in order to fold the Template Assertion Predicate away.
+class OpaqueTemplateAssertionPredicateNode : public Node {
+ public:
+  OpaqueTemplateAssertionPredicateNode(BoolNode* bol) : Node(nullptr, bol) {
+    init_class_id(Class_OpaqueTemplateAssertionPredicate);
+  }
+
+  virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+};
+
 // This node is used for Initialized Assertion Predicate BoolNodes. Initialized Assertion Predicates must always evaluate
-// to true. Therefore, we get rid of them in product builds during macro expansion as they are useless. In debug builds
-// we keep them as additional verification code (i.e. removing this node and use the BoolNode input instead).
+// to true. During  macro expansion, we replace the OpaqueInitializedAssertionPredicateNodes with true in product builds
+// such that the actually unneeded checks are folded and do not end up in the emitted code. In debug builds, we keep the
+// actual checks as additional verification code (i.e. removing OpaqueInitializedAssertionPredicateNodes and use the
+// BoolNode inputs instead).
 class OpaqueInitializedAssertionPredicateNode : public Node {
  public:
   OpaqueInitializedAssertionPredicateNode(BoolNode* bol, Compile* C) : Node(nullptr, bol) {
@@ -160,7 +157,7 @@ class ProfileBooleanNode : public Node {
   virtual uint hash() const ;                  // { return NO_HASH; }
   virtual bool cmp( const Node &n ) const;
   public:
-  ProfileBooleanNode(Node *n, uint false_cnt, uint true_cnt) : Node(0, n),
+  ProfileBooleanNode(Node *n, uint false_cnt, uint true_cnt) : Node(nullptr, n),
           _false_cnt(false_cnt), _true_cnt(true_cnt), _consumed(false), _delay_removal(true) {}
 
   uint false_count() const { return _false_cnt; }

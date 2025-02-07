@@ -36,7 +36,7 @@
 class G1CollectionCandidateList;
 class G1CollectionSetCandidates;
 class G1HeapRegion;
-class HeapRegionClosure;
+class G1HeapRegionClosure;
 
 using G1CollectionCandidateRegionListIterator = GrowableArrayIterator<G1HeapRegion*>;
 
@@ -110,7 +110,7 @@ public:
   // Restore sorting order by decreasing gc efficiency, using the existing efficiency
   // values.
   void sort_by_efficiency();
-  // Removes any HeapRegions stored in this list also in the other list. The other
+  // Removes any heap regions stored in this list also in the other list. The other
   // list may only contain regions in this list, sorted by gc efficiency. It need
   // not be a prefix of this list. Returns the number of regions removed.
   // E.g. if this list is "A B G H", the other list may be "A G H", but not "F" (not in

@@ -951,7 +951,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
             private AccessibleContext getCurrentAccessibleContext() {
                 TableColumnModel tcm = table.getColumnModel();
                 if (tcm != null) {
-                    // Fixes 4772355 - ArrayOutOfBoundsException in
+                    // Fixes 4772355 - ArrayIndexOutOfBoundsException in
                     // JTableHeader
                     if (column < 0 || column >= tcm.getColumnCount()) {
                         return null;
@@ -979,7 +979,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
             private Component getCurrentComponent() {
                 TableColumnModel tcm = table.getColumnModel();
                 if (tcm != null) {
-                    // Fixes 4772355 - ArrayOutOfBoundsException in
+                    // Fixes 4772355 - ArrayIndexOutOfBoundsException in
                     // JTableHeader
                     if (column < 0 || column >= tcm.getColumnCount()) {
                         return null;

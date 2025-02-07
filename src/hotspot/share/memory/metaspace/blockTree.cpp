@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/blockTree.hpp"
 #include "memory/resourceArea.hpp"
@@ -44,7 +43,7 @@ const size_t BlockTree::MinWordSize;
   ", left " PTR_FORMAT \
   ", right " PTR_FORMAT \
   ", next " PTR_FORMAT \
-  ", size " SIZE_FORMAT
+  ", size %zu"
 
 #define NODE_FORMAT_ARGS(n) \
   p2i(n), \
@@ -178,12 +177,10 @@ void BlockTree::verify() const {
   // (which also verifies that we visited every node, or at least
   //  as many nodes as are in this tree)
   _counter.check(counter);
-
-  #undef assrt0n
 }
 
-void BlockTree::zap_range(MetaWord* p, size_t word_size) {
-  memset(p, 0xF3, word_size * sizeof(MetaWord));
+void BlockTree::zap_block(MetaBlock bl) {
+  memset(bl.base(), 0xF3, bl.word_size() * sizeof(MetaWord));
 }
 
 void BlockTree::print_tree(outputStream* st) const {
@@ -224,6 +221,12 @@ void BlockTree::print_tree(outputStream* st) const {
           st->print_cr("@" PTR_FORMAT ": unreadable (skipping rest of chain).", p2i(n2));
           break; // stop printing this chain.
         }
+      }
+
+      // Handle simple circularities
+      if (n == n->_right || n == n->_left || n == n->_next) {
+        st->print_cr("@" PTR_FORMAT ": circularity detected.", p2i(n));
+        return; // stop printing
       }
 
       // Handle children.

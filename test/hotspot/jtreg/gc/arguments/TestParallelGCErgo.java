@@ -27,6 +27,7 @@ package gc.arguments;
  * @test TestParallelGCErgo
  * @bug 8272364
  * @requires vm.gc.Parallel
+ * @requires vm.opt.UseLargePages == null | !vm.opt.UseLargePages
  * @summary Verify ParallelGC minimum young and old ergonomics are setup correctly
  * @modules java.base/jdk.internal.misc
  * @library /test/lib

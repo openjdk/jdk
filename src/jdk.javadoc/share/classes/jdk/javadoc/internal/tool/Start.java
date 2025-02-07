@@ -336,7 +336,6 @@ public class Start {
     /**
      * Main program - external wrapper.
      */
-    @SuppressWarnings("deprecation")
     Result begin(String... argv) {
         // Preprocess @file arguments
         List<String> allArgs;

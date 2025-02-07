@@ -69,7 +69,7 @@ public class ConstantUtilsTest {
     }
 
     public void testSkipOverFieldSignatureVoid() {
-       int ret = ConstantUtils.skipOverFieldSignature("(V)V", 1, 4, false);
+       int ret = ConstantUtils.skipOverFieldSignature("(V)V", 1, 4);
        assertEquals(ret, 0, "Descriptor of (V)V starting at index 1, void disallowed");
     }
 }

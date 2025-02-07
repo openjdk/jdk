@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,6 @@ final class PKCS5Padding implements Padding {
      * @return the length of the padding
      */
     public int padLength(int len) {
-        int paddingOctet = blockSize - (len % blockSize);
-        return paddingOctet;
+        return blockSize - (len % blockSize);
     }
 }

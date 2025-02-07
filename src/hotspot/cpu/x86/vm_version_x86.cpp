@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/vmIntrinsics.hpp"
@@ -53,13 +52,13 @@ const char* VM_Version::_features_names[] = { CPU_FEATURE_FLAGS(DECLARE_CPU_FEAT
 #undef DECLARE_CPU_FEATURE_FLAG
 
 // Address of instruction which causes SEGV
-address VM_Version::_cpuinfo_segv_addr = 0;
+address VM_Version::_cpuinfo_segv_addr = nullptr;
 // Address of instruction after the one which causes SEGV
-address VM_Version::_cpuinfo_cont_addr = 0;
+address VM_Version::_cpuinfo_cont_addr = nullptr;
 // Address of instruction which causes APX specific SEGV
-address VM_Version::_cpuinfo_segv_addr_apx = 0;
+address VM_Version::_cpuinfo_segv_addr_apx = nullptr;
 // Address of instruction after the one which causes APX specific SEGV
-address VM_Version::_cpuinfo_cont_addr_apx = 0;
+address VM_Version::_cpuinfo_cont_addr_apx = nullptr;
 
 static BufferBlob* stub_blob;
 static const int stub_size = 2000;
@@ -108,6 +107,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
   VM_Version_StubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
 
+#if defined(_LP64)
   address clear_apx_test_state() {
 #   define __ _masm->
     address start = __ pc();
@@ -115,7 +115,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // handling guarantees that preserved register values post signal handling were
     // re-instantiated by operating system and not because they were not modified externally.
 
-    /* FIXME Uncomment following code after OS enablement of
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
@@ -124,10 +123,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ mov64(r31, 0L);
     UseAPX = save_apx;
     VM_Version::clean_cpuFeatures();
-    */
     __ ret(0);
     return start;
   }
+#endif
 
   address generate_get_cpu_info() {
     // Flags to test CPU type.
@@ -419,7 +418,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 8), rcx);
     __ movl(Address(rsi,12), rdx);
 
-#ifndef PRODUCT
+#if defined(_LP64)
     //
     // Check if OS has enabled XGETBV instruction to access XCR0
     // (OSXSAVE feature flag) and CPU supports APX
@@ -437,26 +436,24 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ cmpl(rax, 0x80000);
     __ jcc(Assembler::notEqual, vector_save_restore);
 
-    /* FIXME: Uncomment while integrating JDK-8329032
+#ifndef PRODUCT
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
     __ mov64(r16, VM_Version::egpr_test_value());
     __ mov64(r31, VM_Version::egpr_test_value());
-    */
     __ xorl(rsi, rsi);
     VM_Version::set_cpuinfo_segv_addr_apx(__ pc());
     // Generate SEGV
     __ movl(rax, Address(rsi, 0));
 
     VM_Version::set_cpuinfo_cont_addr_apx(__ pc());
-    /* FIXME: Uncomment after integration of JDK-8329032
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::apx_save_offset())));
     __ movq(Address(rsi, 0), r16);
     __ movq(Address(rsi, 8), r31);
 
     UseAPX = save_apx;
-    */
+#endif
 #endif
     __ bind(vector_save_restore);
     //
@@ -519,12 +516,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       // https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
       __ subptr(rsp, 64);
       __ evmovdqul(Address(rsp, 0), xmm7, Assembler::AVX_512bit);
-#ifdef _LP64
       __ subptr(rsp, 64);
       __ evmovdqul(Address(rsp, 0), xmm8, Assembler::AVX_512bit);
       __ subptr(rsp, 64);
       __ evmovdqul(Address(rsp, 0), xmm31, Assembler::AVX_512bit);
-#endif // _LP64
 #endif // _WINDOWS
 
       // load value into all 64 bytes of zmm7 register
@@ -548,12 +543,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #ifdef _WINDOWS
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm7);
-#ifdef _LP64
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm8);
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm15);
-#endif // _LP64
 #endif // _WINDOWS
 
     // load value into all 32 bytes of ymm7 register
@@ -613,12 +606,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #endif
 
 #ifdef _WINDOWS
-#ifdef _LP64
       __ evmovdqul(xmm31, Address(rsp, 0), Assembler::AVX_512bit);
       __ addptr(rsp, 64);
       __ evmovdqul(xmm8, Address(rsp, 0), Assembler::AVX_512bit);
       __ addptr(rsp, 64);
-#endif // _LP64
       __ evmovdqul(xmm7, Address(rsp, 0), Assembler::AVX_512bit);
       __ addptr(rsp, 64);
 #endif // _WINDOWS
@@ -643,12 +634,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #endif
 
 #ifdef _WINDOWS
-#ifdef _LP64
     __ vmovdqu(xmm15, Address(rsp, 0));
     __ addptr(rsp, 32);
     __ vmovdqu(xmm8, Address(rsp, 0));
     __ addptr(rsp, 32);
-#endif // _LP64
     __ vmovdqu(xmm7, Address(rsp, 0));
     __ addptr(rsp, 32);
 #endif // _WINDOWS
@@ -1049,6 +1038,10 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseAPX, apx_supported ? true : false);
   }
 
+  if (!UseAPX) {
+    _features &= ~CPU_APX_F;
+  }
+
   if (UseAVX < 2) {
     _features &= ~CPU_AVX2;
     _features &= ~CPU_AVX_IFMA;
@@ -1058,6 +1051,7 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX;
     _features &= ~CPU_VZEROUPPER;
     _features &= ~CPU_F16C;
+    _features &= ~CPU_SHA512;
   }
 
   if (logical_processors_per_package() == 1) {
@@ -1302,7 +1296,7 @@ void VM_Version::get_processor_features() {
 
 #ifdef _LP64
   // These are only supported on 64-bit
-  if (UseSHA && supports_avx2() && supports_bmi2()) {
+  if (UseSHA && supports_avx2() && (supports_bmi2() || supports_sha512())) {
     if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
     }
@@ -1313,63 +1307,21 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
-  if (UseSHA3Intrinsics) {
-    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+#ifdef _LP64
+  if (supports_evex() && supports_avx512bw()) {
+      if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
+          UseSHA3Intrinsics = true;
+      }
+  } else
+#endif
+   if (UseSHA3Intrinsics) {
+      warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+      FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
-
-  if (!supports_rtm() && UseRTMLocking) {
-    vm_exit_during_initialization("RTM instructions are not available on this CPU");
-  }
-
-#if INCLUDE_RTM_OPT
-  if (UseRTMLocking) {
-    if (!CompilerConfig::is_c2_enabled()) {
-      // Only C2 does RTM locking optimization.
-      vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
-    }
-    if (is_intel_family_core()) {
-      if ((_model == CPU_MODEL_HASWELL_E3) ||
-          (_model == CPU_MODEL_HASWELL_E7 && _stepping < 3) ||
-          (_model == CPU_MODEL_BROADWELL  && _stepping < 4)) {
-        // currently a collision between SKL and HSW_E3
-        if (!UnlockExperimentalVMOptions && UseAVX < 3) {
-          vm_exit_during_initialization("UseRTMLocking is only available as experimental option on this "
-                                        "platform. It must be enabled via -XX:+UnlockExperimentalVMOptions flag.");
-        } else {
-          warning("UseRTMLocking is only available as experimental option on this platform.");
-        }
-      }
-    }
-    if (!FLAG_IS_CMDLINE(UseRTMLocking)) {
-      // RTM locking should be used only for applications with
-      // high lock contention. For now we do not use it by default.
-      vm_exit_during_initialization("UseRTMLocking flag should be only set on command line");
-    }
-  } else { // !UseRTMLocking
-    if (UseRTMForStackLocks) {
-      if (!FLAG_IS_DEFAULT(UseRTMForStackLocks)) {
-        warning("UseRTMForStackLocks flag should be off when UseRTMLocking flag is off");
-      }
-      FLAG_SET_DEFAULT(UseRTMForStackLocks, false);
-    }
-    if (UseRTMDeopt) {
-      FLAG_SET_DEFAULT(UseRTMDeopt, false);
-    }
-    if (PrintPreciseRTMLockingStatistics) {
-      FLAG_SET_DEFAULT(PrintPreciseRTMLockingStatistics, false);
-    }
-  }
-#else
-  if (UseRTMLocking) {
-    // Only C2 does RTM locking optimization.
-    vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
-  }
-#endif
 
 #ifdef COMPILER2
   if (UseFPUForSpilling) {
@@ -1769,9 +1721,9 @@ void VM_Version::get_processor_features() {
       if (ArrayOperationPartialInlineSize > MaxVectorSize) {
         ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
         if (ArrayOperationPartialInlineSize) {
-          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
+          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize=%zd", MaxVectorSize);
         } else {
-          warning("Setting ArrayOperationPartialInlineSize as " INTX_FORMAT, ArrayOperationPartialInlineSize);
+          warning("Setting ArrayOperationPartialInlineSize as %zd", ArrayOperationPartialInlineSize);
         }
       }
     }
@@ -2219,9 +2171,11 @@ int VM_Version::avx3_threshold() {
           FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
 
+#if defined(_LP64)
 void VM_Version::clear_apx_test_state() {
   clear_apx_test_state_stub();
 }
+#endif
 
 static bool _vm_version_initialized = false;
 
@@ -2240,8 +2194,10 @@ void VM_Version::initialize() {
   detect_virt_stub = CAST_TO_FN_PTR(detect_virt_stub_t,
                                      g.generate_detect_virt());
 
+#if defined(_LP64)
   clear_apx_test_state_stub = CAST_TO_FN_PTR(clear_apx_test_state_t,
                                      g.clear_apx_test_state());
+#endif
   get_processor_features();
 
   LP64_ONLY(Assembler::precompute_instructions();)
@@ -3050,6 +3006,8 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
       xem_xcr0_eax.bits.ymm != 0) {
     result |= CPU_AVX;
     result |= CPU_VZEROUPPER;
+    if (sefsl1_cpuid7_eax.bits.sha512 != 0)
+      result |= CPU_SHA512;
     if (std_cpuid1_ecx.bits.f16c != 0)
       result |= CPU_F16C;
     if (sef_cpuid7_ebx.bits.avx2 != 0) {
@@ -3232,11 +3190,17 @@ bool VM_Version::os_supports_apx_egprs() {
   if (!supports_apx_f()) {
     return false;
   }
+  // Enable APX support for product builds after
+  // completion of planned features listed in JDK-8329030.
+#if !defined(PRODUCT)
   if (_cpuid_info.apx_save[0] != egpr_test_value() ||
       _cpuid_info.apx_save[1] != egpr_test_value()) {
     return false;
   }
   return true;
+#else
+  return false;
+#endif
 }
 
 uint VM_Version::cores_per_cpu() {

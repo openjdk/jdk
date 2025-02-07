@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,19 +41,20 @@
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.Selector;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 
+import jdk.test.lib.thread.VThreadPinner;
 import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -195,7 +196,7 @@ public class VirtualThreads {
      */
     @Test
     void testGetThreadInfoCarrierThread() throws Exception {
-        assumeTrue(supportsCustomScheduler(), "No support for custom schedulers");
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         try (ExecutorService pool = Executors.newFixedThreadPool(1)) {
             var carrierRef = new AtomicReference<Thread>();
             Executor scheduler = (task) -> {
@@ -204,19 +205,30 @@ public class VirtualThreads {
                     task.run();
                 });
             };
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
 
             // start virtual thread so carrier Thread can be captured
-            virtualThreadBuilder(scheduler).start(() -> { }).join();
+            Thread thread = factory.newThread(() -> { });
+            thread.start();
+            thread.join();
             Thread carrier = carrierRef.get();
             assertTrue(carrier != null && !carrier.isVirtual());
 
             try (Selector sel = Selector.open()) {
-                // start virtual thread that blocks in a native method
-                virtualThreadBuilder(scheduler).start(() -> {
+                String selClassName = sel.getClass().getName();
+
+                // start virtual thread that blocks while pinned
+                Thread vthread = factory.newThread(() -> {
                     try {
-                        sel.select();
+                        VThreadPinner.runPinned(sel::select);
                     } catch (Exception e) { }
                 });
+                vthread.start();
+
+                // wait for virtual thread to block in select
+                while (!contains(vthread.getStackTrace(), selClassName)) {
+                    Thread.sleep(20);
+                }
 
                 // invoke getThreadInfo get and check the stack trace
                 long tid = carrier.getId();
@@ -225,7 +237,7 @@ public class VirtualThreads {
                 // should only see carrier frames
                 StackTraceElement[] stack = info.getStackTrace();
                 assertTrue(contains(stack, "java.util.concurrent.ThreadPoolExecutor"));
-                assertFalse(contains(stack, "java.nio.channels.Selector"));
+                assertFalse(contains(stack, selClassName));
 
                 // carrier should not be holding any monitors
                 assertEquals(0, info.getLockedMonitors().length);
@@ -350,41 +362,5 @@ public class VirtualThreads {
         return Arrays.stream(stack)
                 .map(StackTraceElement::getClassName)
                 .anyMatch(className::equals);
-    }
-
-    /**
-     * Returns a builder to create virtual threads that use the given scheduler.
-     * @throws UnsupportedOperationException if there is no support for custom schedulers
-     */
-    private static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
-        Thread.Builder.OfVirtual builder = Thread.ofVirtual();
-        try {
-            Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
-            Constructor<?> ctor = clazz.getDeclaredConstructor(Executor.class);
-            ctor.setAccessible(true);
-            return (Thread.Builder.OfVirtual) ctor.newInstance(scheduler);
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException re) {
-                throw re;
-            }
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Return true if custom schedulers are supported.
-     */
-    private static boolean supportsCustomScheduler() {
-        try (var pool = Executors.newCachedThreadPool()) {
-            try {
-                virtualThreadBuilder(pool);
-                return true;
-            } catch (UnsupportedOperationException e) {
-                return false;
-            }
-        }
     }
 }

@@ -189,10 +189,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     // ---------------- Shift ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.LSHIFT_VS, ">0"})
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"v", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.LSHIFT_VS, ">0"})
     public short[] vectorShiftLeft() {
         short[] res = new short[SIZE];
@@ -203,10 +200,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.RSHIFT_VS, ">0"})
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"v", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.RSHIFT_VS, ">0"})
     public short[] vectorSignedShiftRight() {
         short[] res = new short[SIZE];
@@ -222,9 +216,8 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @IR(failOn = {IRNode.STORE_VECTOR})
     public short[] vectorMin() {
         short[] res = new short[SIZE];
-        int val = 65536;
         for (int i = 0; i < SIZE; i++) {
-            res[i] = (short) Math.min(a[i], val);
+            res[i] = (short) Math.min(a[i], b[i]);
         }
         return res;
     }
@@ -242,10 +235,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.RSHIFT_VS, ">0"})
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"v", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.RSHIFT_VS, ">0"})
     public short[] vectorUnsignedShiftRight() {
         short[] res = new short[SIZE];

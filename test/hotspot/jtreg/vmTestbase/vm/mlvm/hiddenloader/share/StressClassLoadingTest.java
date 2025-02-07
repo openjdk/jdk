@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,25 @@
 
 package vm.mlvm.hiddenloader.share;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
+
 
 import java.io.File;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import nsk.share.test.Stresser;
-import vm.share.options.Option;
-import vm.share.options.OptionSupport;
-import vm.share.options.IgnoreUnknownArgumentsHandler;
 import vm.mlvm.share.Env;
 import vm.mlvm.share.MlvmTest;
 import vm.mlvm.share.CustomClassLoaders;
-import vm.share.FileUtils;
-import vm.share.UnsafeAccess;
+import vm.mlvm.share.FileUtils;
+import vm.share.options.Option;
+import vm.share.options.OptionSupport;
+import vm.share.options.IgnoreUnknownArgumentsHandler;
 
 /**
  * Does stress-testing of class loading subsystem.
@@ -164,7 +165,7 @@ public abstract class StressClassLoadingTest extends MlvmTest {
                             c = CustomClassLoaders.makeClassBytesLoader(classBytes, className)
                                     .loadClass(className);
                         }
-                        UnsafeAccess.unsafe.ensureClassInitialized(c);
+                        MethodHandles.lookup().ensureInitialized(c);
                     } catch (Throwable e) {
                         Env.traceVerbose(e, "parser caught exception");
                     }

@@ -22,21 +22,13 @@
  */
 package helpers;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.RecordComponent;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -53,9 +45,10 @@ import java.lang.classfile.instruction.*;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static java.lang.classfile.ClassFile.*;
 import static java.lang.classfile.Attributes.*;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 import static helpers.ClassRecord.CompatibilityFilter.By_ClassBuilder;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 /**
  * ClassRecord
@@ -241,7 +234,7 @@ public record ClassRecord(
         public static AttributesRecord ofStreamingElements(Supplier<Stream<? extends ClassFileElement>> elements, ConstantPool cp, CompatibilityFilter... cf) {
             Map<String, Attribute<?>> attrs = elements.get().filter(e -> e instanceof Attribute<?>)
                     .map(e -> (Attribute<?>) e)
-                    .collect(toMap(Attribute::attributeName, e -> e));
+                    .collect(toMap(a -> a.attributeName().stringValue(), e -> e));
             return new AttributesRecord(
                     mapAttr(attrs, annotationDefault(), a -> ElementValueRecord.ofElementValue(a.defaultValue())),
                     cp == null ? null : IntStream.range(0, cp.bootstrapMethodCount()).mapToObj(i -> BootstrapMethodRecord.ofBootstrapMethodEntry(cp.bootstrapMethodEntry(i))).collect(toSetOrNull()),
@@ -520,7 +513,7 @@ public record ClassRecord(
                         yield new ConstantPoolEntryRecord.CpClassRecord("[" + type).hashCode() + 1;
                     }
                     case NewPrimitiveArrayInstruction cins ->
-                        new ConstantPoolEntryRecord.CpClassRecord("[" + cins.typeKind().descriptor()).hashCode() + 1;
+                        new ConstantPoolEntryRecord.CpClassRecord("[" + cins.typeKind().upperBound().descriptorString()).hashCode() + 1;
                     case TypeCheckInstruction cins ->
                         ConstantPoolEntryRecord.ofCPEntry(cins.type()).hashCode();
                     case ConstantInstruction.LoadConstantInstruction cins -> {
@@ -828,7 +821,7 @@ public record ClassRecord(
                     ann.targetInfo().targetType().targetTypeValue(),
                     TargetInfoRecord.ofTargetInfo(ann.targetInfo(), lr, code),
                     ann.targetPath().stream().map(tpc -> TypePathRecord.ofTypePathComponent(tpc)).collect(toSet()),
-                    AnnotationRecord.ofAnnotation(ann));
+                    AnnotationRecord.ofAnnotation(ann.annotation()));
         }
 
         public interface TargetInfoRecord {
@@ -916,17 +909,17 @@ public record ClassRecord(
                     CpFieldRefRecord.ofFieldRefEntry((FieldRefEntry) cpInfo);
                 case TAG_METHODREF ->
                     CpMethodRefRecord.ofMethodRefEntry((MethodRefEntry) cpInfo);
-                case TAG_INTERFACEMETHODREF ->
+                case TAG_INTERFACE_METHODREF ->
                     CpInterfaceMethodRefRecord.ofInterfaceMethodRefEntry((InterfaceMethodRefEntry) cpInfo);
-                case TAG_NAMEANDTYPE ->
+                case TAG_NAME_AND_TYPE ->
                     CpNameAndTypeRecord.ofNameAndTypeEntry((NameAndTypeEntry) cpInfo);
-                case TAG_METHODHANDLE ->
+                case TAG_METHOD_HANDLE ->
                     CpMethodHandleRecord.ofMethodHandleEntry((MethodHandleEntry) cpInfo);
-                case TAG_METHODTYPE ->
+                case TAG_METHOD_TYPE ->
                     new CpMethodTypeRecord(((MethodTypeEntry) cpInfo).descriptor().stringValue());
-                case TAG_CONSTANTDYNAMIC ->
+                case TAG_DYNAMIC ->
                     CpConstantDynamicRecord.ofConstantDynamicEntry((ConstantDynamicEntry) cpInfo);
-                case TAG_INVOKEDYNAMIC ->
+                case TAG_INVOKE_DYNAMIC ->
                     CpInvokeDynamicRecord.ofInvokeDynamicEntry((InvokeDynamicEntry) cpInfo);
                 case TAG_MODULE ->
                     new CpModuleRecord(((ModuleEntry) cpInfo).name().stringValue());

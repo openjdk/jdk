@@ -52,8 +52,8 @@
   template(GC_HeapInspection)                     \
   template(SerialCollectForAllocation)            \
   template(SerialGCCollect)                       \
-  template(ParallelGCFailedAllocation)            \
-  template(ParallelGCSystemGC)                    \
+  template(ParallelCollectForAllocation)          \
+  template(ParallelGCCollect)                     \
   template(G1CollectForAllocation)                \
   template(G1CollectFull)                         \
   template(G1PauseRemark)                         \
@@ -87,7 +87,8 @@
   template(HeapWalkOperation)                     \
   template(HeapIterateOperation)                  \
   template(ReportJavaOutOfMemory)                 \
-  template(JFRCheckpoint)                         \
+  template(JFRSafepointClear)                     \
+  template(JFRSafepointWrite)                     \
   template(ShenandoahFullGC)                      \
   template(ShenandoahInitMark)                    \
   template(ShenandoahFinalMarkStartEvac)          \
@@ -108,13 +109,13 @@
   template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
   template(PrintClasses)                          \
-  template(ICBufferFull)                          \
   template(PrintMetadata)                         \
   template(GTestExecuteAtSafepoint)               \
   template(GTestStopSafepoint)                    \
   template(JFROldObject)                          \
   template(JvmtiPostObjectFree)                   \
-  template(RendezvousGCThreads)
+  template(RendezvousGCThreads)                   \
+  template(ReinitializeMDO)
 
 class Thread;
 class outputStream;

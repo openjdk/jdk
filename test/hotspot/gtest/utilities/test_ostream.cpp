@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -106,7 +105,8 @@ TEST_VM(ostream, bufferedStream_dynamic_small) {
 
 static void test_autoindent(bool on) {
   stringStream ss;
-  ss.set_autoindent(on);
+  const bool prior = ss.set_autoindent(on);
+  EXPECT_FALSE(prior);
   {
     streamIndentor si(&ss, 5);
     ss.print("ABC");
@@ -146,6 +146,8 @@ static void test_autoindent(bool on) {
         "end"
     );
   }
+  bool prior2 = ss.set_autoindent(prior);
+  EXPECT_EQ(prior2, on);
 }
 
 TEST_VM(ostream, autoindent_on)  { test_autoindent(true);  }

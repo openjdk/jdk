@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -37,11 +36,9 @@ import org.w3c.dom.NodeList;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.NamedNodeMapTest
  * @run testng/othervm org.w3c.dom.ptests.NamedNodeMapTest
  * @summary Test for the methods of NamedNodeMap Interface
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class NamedNodeMapTest {
     /*
      * Test setNamedItemNS method with a node having the same namespaceURI and

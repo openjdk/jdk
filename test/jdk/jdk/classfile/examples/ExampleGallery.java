@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ import java.lang.classfile.instruction.InvokeInstruction;
  */
 public class ExampleGallery {
     public byte[] changeClassVersion(ClassModel cm) {
-        return ClassFile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transformClass(cm, (cb, ce) -> {
             switch (ce) {
                 case ClassFileVersion cv -> cb.withVersion(57, 0);
                 default -> cb.with(ce);
@@ -71,7 +71,7 @@ public class ExampleGallery {
     }
 
     public byte[] incrementClassVersion(ClassModel cm) {
-        return ClassFile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transformClass(cm, (cb, ce) -> {
             switch (ce) {
                 case ClassFileVersion cv -> cb.withVersion(cv.majorVersion() + 1, 0);
                 default -> cb.with(ce);
@@ -80,7 +80,7 @@ public class ExampleGallery {
     }
 
     public byte[] changeSuperclass(ClassModel cm, ClassDesc superclass) {
-        return ClassFile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transformClass(cm, (cb, ce) -> {
             switch (ce) {
                 case Superclass sc -> cb.withSuperclass(superclass);
                 default -> cb.with(ce);
@@ -89,11 +89,11 @@ public class ExampleGallery {
     }
 
     public byte[] overrideSuperclass(ClassModel cm, ClassDesc superclass) {
-        return ClassFile.of().transform(cm, ClassTransform.endHandler(cb -> cb.withSuperclass(superclass)));
+        return ClassFile.of().transformClass(cm, ClassTransform.endHandler(cb -> cb.withSuperclass(superclass)));
     }
 
     public byte[] removeInterface(ClassModel cm, String internalName) {
-        return ClassFile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transformClass(cm, (cb, ce) -> {
             switch (ce) {
                 case Interfaces i -> cb.withInterfaces(i.interfaces().stream()
                                                         .filter(e -> !e.asInternalName().equals(internalName))
@@ -104,7 +104,7 @@ public class ExampleGallery {
     }
 
     public byte[] addInterface(ClassModel cm, ClassDesc newIntf) {
-        return ClassFile.of().transform(cm, ClassTransform.ofStateful(()  -> new ClassTransform() {
+        return ClassFile.of().transformClass(cm, ClassTransform.ofStateful(()  -> new ClassTransform() {
             boolean seen = false;
 
             @Override
@@ -133,7 +133,7 @@ public class ExampleGallery {
 
     }
     public byte[] addInterface1(ClassModel cm, ClassDesc newIntf) {
-        return ClassFile.of().transform(cm, ClassTransform.ofStateful(()  -> new ClassTransform() {
+        return ClassFile.of().transformClass(cm, ClassTransform.ofStateful(()  -> new ClassTransform() {
             Interfaces interfaces;
 
             @Override
@@ -160,11 +160,11 @@ public class ExampleGallery {
     }
 
     public byte[] removeSignature(ClassModel cm) {
-        return ClassFile.of().transform(cm, ClassTransform.dropping(e -> e instanceof SignatureAttribute));
+        return ClassFile.of().transformClass(cm, ClassTransform.dropping(e -> e instanceof SignatureAttribute));
     }
 
     public byte[] changeSignature(ClassModel cm) {
-        return ClassFile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transformClass(cm, (cb, ce) -> {
             switch (ce) {
                 case SignatureAttribute sa -> {
                     String result = sa.signature().stringValue();
@@ -176,7 +176,7 @@ public class ExampleGallery {
     }
 
     public byte[] setSignature(ClassModel cm) {
-        return ClassFile.of().transform(cm, ClassTransform.dropping(e -> e instanceof SignatureAttribute)
+        return ClassFile.of().transformClass(cm, ClassTransform.dropping(e -> e instanceof SignatureAttribute)
                                           .andThen(ClassTransform.endHandler(b -> b.with(SignatureAttribute.of(
                                               ClassSignature.of(
                                                       ClassTypeSig.of(ClassDesc.of("impl.Fox"),
@@ -187,16 +187,16 @@ public class ExampleGallery {
     // @@@ strip annos (class, all)
 
     public byte[] stripFields(ClassModel cm, Predicate<String> filter) {
-        return ClassFile.of().transform(cm, ClassTransform.dropping(e -> e instanceof FieldModel fm
+        return ClassFile.of().transformClass(cm, ClassTransform.dropping(e -> e instanceof FieldModel fm
                                                          && filter.test(fm.fieldName().stringValue())));
     }
 
     public byte[] addField(ClassModel cm) {
-        return ClassFile.of().transform(cm, ClassTransform.endHandler(cb -> cb.withField("cool", ClassDesc.ofDescriptor("(I)D"), ClassFile.ACC_PUBLIC)));
+        return ClassFile.of().transformClass(cm, ClassTransform.endHandler(cb -> cb.withField("cool", ClassDesc.ofDescriptor("(I)D"), ClassFile.ACC_PUBLIC)));
     }
 
     public byte[] changeFieldSig(ClassModel cm) {
-        return ClassFile.of().transform(cm, ClassTransform.transformingFields((fb, fe) -> {
+        return ClassFile.of().transformClass(cm, ClassTransform.transformingFields((fb, fe) -> {
             if (fe instanceof SignatureAttribute sa)
                 fb.with(SignatureAttribute.of(Signature.parseFrom(sa.signature().stringValue().replace("this/", "that/"))));
             else
@@ -205,16 +205,16 @@ public class ExampleGallery {
     }
 
     public byte[] changeFieldFlags(ClassModel cm) {
-        return ClassFile.of().transform(cm, ClassTransform.transformingFields((fb, fe) -> {
+        return ClassFile.of().transformClass(cm, ClassTransform.transformingFields((fb, fe) -> {
             switch (fe) {
-                case AccessFlags a -> fb.with(AccessFlags.ofField(a.flagsMask() & ~ClassFile.ACC_PUBLIC & ~ClassFile.ACC_PROTECTED));
+                case AccessFlags a -> fb.withFlags(a.flagsMask() & ~ClassFile.ACC_PUBLIC & ~ClassFile.ACC_PROTECTED);
                 default -> fb.with(fe);
             }
         }));
     }
 
     public byte[] addException(ClassModel cm, ClassDesc ex) {
-        return ClassFile.of().transform(cm, ClassTransform.transformingMethods(
+        return ClassFile.of().transformClass(cm, ClassTransform.transformingMethods(
                 MethodTransform.ofStateful(() -> new MethodTransform() {
                     ExceptionsAttribute attr;
 
@@ -258,11 +258,11 @@ public class ExampleGallery {
             }
         });
 
-        return ClassFile.of().transform(cm, ClassTransform.transformingMethodBodies(transform));
+        return ClassFile.of().transformClass(cm, ClassTransform.transformingMethodBodies(transform));
     }
 
     public byte[] addInstrumentationBeforeInvoke(ClassModel cm) {
-        return ClassFile.of().transform(cm, ClassTransform.transformingMethodBodies((codeB, codeE) -> {
+        return ClassFile.of().transformClass(cm, ClassTransform.transformingMethodBodies((codeB, codeE) -> {
             switch (codeE) {
                 case InvokeInstruction i -> {
                     codeB.nop();
@@ -274,7 +274,7 @@ public class ExampleGallery {
     }
 
     public byte[] replaceIntegerConstant(ClassModel cm) {
-        return ClassFile.of().transform(cm, ClassTransform.transformingMethodBodies((codeB, codeE) -> {
+        return ClassFile.of().transformClass(cm, ClassTransform.transformingMethodBodies((codeB, codeE) -> {
             switch (codeE) {
                 case ConstantInstruction ci -> {
                         if (ci.constantValue() instanceof Integer i) codeB.loadConstant(i + 1);

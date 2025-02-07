@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,27 @@ public final class HotSpotVMConfigStore {
      */
     public List<VMIntrinsicMethod> getIntrinsics() {
         return Collections.unmodifiableList(vmIntrinsics);
+    }
+
+    /**
+     * Gets the VM intrinsic description by its ID.
+     */
+    public VMIntrinsicMethod getIntrinsic(int intrinsicID) {
+        if (intrinsicID >= 1 && intrinsicID <= vmIntrinsics.size()) {
+            // valid intrinsicID starts from 1
+            VMIntrinsicMethod intrinsic = vmIntrinsics.get(intrinsicID - 1);
+            // We speculate that vmIntrinsics are sorted by ID
+            if (intrinsic.id == intrinsicID) {
+                return intrinsic;
+            }
+        }
+        // Assumption failed, fall back to iteration
+        for (VMIntrinsicMethod intrinsic : vmIntrinsics) {
+            if (intrinsic.id == intrinsicID) {
+                return intrinsic;
+            }
+        }
+        return null;
     }
 
     final HashMap<String, VMField> vmFields;

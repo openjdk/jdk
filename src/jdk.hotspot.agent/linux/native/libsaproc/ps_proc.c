@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,7 +242,7 @@ static bool process_doesnt_exist(pid_t pid) {
       found_state = true;
       state = buf + state_len;
       // Skip the spaces
-      while (isspace(*state)) {
+      while (isspace((unsigned char) *state)) {
         state++;
       }
       // A state value of 'X' indicates that the thread is dead. 'Z'

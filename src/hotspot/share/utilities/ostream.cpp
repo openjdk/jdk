@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/classListWriter.hpp"
 #include "compiler/compileLog.hpp"
 #include "jvm.h"
@@ -130,8 +129,8 @@ const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
   }
 #ifdef ASSERT
   if (required_len > result_len) {
-    warning("outputStream::do_vsnprintf output truncated -- buffer length is " SIZE_FORMAT
-            " bytes but " SIZE_FORMAT " bytes are needed.",
+    warning("outputStream::do_vsnprintf output truncated -- buffer length is %zu"
+            " bytes but %zu bytes are needed.",
             add_cr ? buflen + 1 : buflen, required_len + 1);
   }
 #endif
@@ -191,9 +190,10 @@ void outputStream::print_raw(const char* str, size_t len) {
   write(str, len);
 }
 
-void outputStream::fill_to(int col) {
-  int need_fill = col - position();
+int outputStream::fill_to(int col) {
+  const int need_fill = MAX2(col - position(), 0);
   sp(need_fill);
+  return need_fill;
 }
 
 void outputStream::move_to(int col, int slop, int min_space) {
@@ -275,6 +275,12 @@ void outputStream::date_stamp(bool guard,
 outputStream& outputStream::indent() {
   sp(_indentation - _position);
   return *this;
+}
+
+bool outputStream::set_autoindent(bool value) {
+  const bool old = _autoindent;
+  _autoindent = value;
+  return old;
 }
 
 void outputStream::print_jlong(jlong value) {
@@ -380,7 +386,7 @@ void stringStream::write(const char* s, size_t len) {
   }
   const size_t reasonable_max_len = 1 * G;
   if (len >= reasonable_max_len) {
-    assert(false, "bad length? (" SIZE_FORMAT ")", len);
+    assert(false, "bad length? (%zu)", len);
     return;
   }
   size_t write_len = 0;
@@ -868,7 +874,7 @@ intx defaultStream::hold(intx writer_id) {
     if (has_log) {
       _log_file->bol();
       // output a hint where this output is coming from:
-      _log_file->print_cr("<writer thread='" UINTX_FORMAT "'/>", writer_id);
+      _log_file->print_cr("<writer thread='%zu'/>", writer_id);
     }
     _last_writer = writer_id;
   }
@@ -1031,7 +1037,7 @@ void bufferedStream::write(const char* s, size_t len) {
     const size_t reasonable_cap = MAX2(100 * M, buffer_max * 2);
     if (end > reasonable_cap) {
       // In debug VM, assert right away.
-      assert(false, "Exceeded max buffer size for this string.");
+      assert(false, "Exceeded max buffer size for this string (\"%.200s...\").", buffer);
       // Release VM: silently truncate. We do this since these kind of errors
       // are both difficult to predict with testing (depending on logging content)
       // and usually not serious enough to kill a production VM for it.

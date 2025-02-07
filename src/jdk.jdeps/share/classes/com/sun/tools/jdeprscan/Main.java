@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,7 +414,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
                              .noneMatch(n -> n.equals(release))) {
                 return false;
             }
-            JavaFileManager fm = pp.getPlatform(release, "").getFileManager();
+            JavaFileManager fm = pp.getPlatformTrusted(release).getFileManager();
             List<String> classNames = new ArrayList<>();
             for (JavaFileObject fo : fm.list(StandardLocation.PLATFORM_CLASS_PATH,
                                              "",

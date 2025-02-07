@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,8 @@ public:
   // Load barrier
   static zaddress load_barrier_on_oop_field(volatile zpointer* p);
   static zaddress load_barrier_on_oop_field_preloaded(volatile zpointer* p, zpointer o);
+
+  static void load_barrier_on_oop_array(volatile zpointer* p, size_t length);
 
   static zaddress keep_alive_load_barrier_on_oop_field_preloaded(volatile zpointer* p, zpointer o);
 

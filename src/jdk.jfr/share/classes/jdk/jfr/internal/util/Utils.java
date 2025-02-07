@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 
 package jdk.jfr.internal.util;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
@@ -48,18 +50,20 @@ import jdk.internal.module.Checks;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.RecordingState;
+import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
+import jdk.jfr.internal.management.HiddenWait;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 
 public final class Utils {
-    private static final Object flushObject = new Object();
+    private static final HiddenWait flushObject = new HiddenWait();
     private static final String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
 
     /**
@@ -350,14 +354,6 @@ public final class Utils {
         return Type.isValidJavaFieldType(type.getName());
     }
 
-    public static void takeNap(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            // ok
-        }
-    }
-
     public static void notifyFlush() {
         synchronized (flushObject) {
             flushObject.notifyAll();
@@ -365,13 +361,7 @@ public final class Utils {
     }
 
     public static void waitFlush(long timeOut) {
-        synchronized (flushObject) {
-            try {
-                flushObject.wait(timeOut);
-            } catch (InterruptedException e) {
-                // OK
-            }
-        }
+        flushObject.takeNap(timeOut);
     }
 
     public static Instant epochNanosToInstant(long epochNanos) {
@@ -442,5 +432,31 @@ public final class Utils {
         // type.getClassLoader() == ClassLoader.getPlatformClassLoader();
         // but only if it is safe and there is a mechanism to register event
         // classes in other modules besides jdk.jfr and java.base.
+    }
+
+    public static long multiplyOverflow(long a, long b, long defaultValue) {
+        try {
+            return Math.multiplyExact(a, b);
+        } catch (ArithmeticException ae) {
+            return defaultValue;
+        }
+    }
+
+    public static ValueDescriptor findField(List<ValueDescriptor> fields, String name) {
+        for (ValueDescriptor v : fields) {
+            if (v.getName().equals(name)) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    public static Path getPathInProperty(String prop, String subPath) {
+        String path = System.getProperty(prop);
+        if (path == null) {
+            return null;
+        }
+        File file = subPath == null ? new File(path) : new File(path, subPath);
+        return file.toPath().toAbsolutePath();
     }
 }

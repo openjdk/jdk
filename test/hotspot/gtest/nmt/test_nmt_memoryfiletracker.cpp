@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTracker.hpp"
 #include "unittest.hpp"
 
-class MemoryFileTrackerTest : public testing::Test {
+class NMTMemoryFileTrackerTest : public testing::Test {
 public:
   size_t sz(int x) { return (size_t) x; }
   void basics() {
@@ -48,6 +47,6 @@ public:
   };
 };
 
-TEST_VM_F(MemoryFileTrackerTest, Basics) {
+TEST_VM_F(NMTMemoryFileTrackerTest, Basics) {
   this->basics();
 }

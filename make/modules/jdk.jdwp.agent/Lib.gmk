@@ -52,16 +52,25 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
     NAME := jdwp, \
     OPTIMIZATION := LOW, \
     CFLAGS := -DJDWP_LOGGING, \
+    DISABLED_WARNINGS_gcc_eventFilter.c := unused-variable, \
     DISABLED_WARNINGS_gcc_SDE.c := unused-function, \
+    DISABLED_WARNINGS_gcc_threadControl.c := unused-but-set-variable \
+        unused-variable, \
+    DISABLED_WARNINGS_gcc_utf_util.c := unused-but-set-variable, \
     DISABLED_WARNINGS_clang_error_messages.c := format-nonliteral, \
+    DISABLED_WARNINGS_clang_eventFilter.c := unused-variable, \
     DISABLED_WARNINGS_clang_EventRequestImpl.c := self-assign, \
     DISABLED_WARNINGS_clang_inStream.c := sometimes-uninitialized, \
     DISABLED_WARNINGS_clang_log_messages.c := format-nonliteral, \
+    DISABLED_WARNINGS_clang_SDE.c := unused-function, \
+    DISABLED_WARNINGS_clang_threadControl.c := unused-but-set-variable \
+        unused-variable, \
+    DISABLED_WARNINGS_clang_utf_util.c := unused-but-set-variable, \
     EXTRA_HEADER_DIRS := \
         include \
         libjdwp/export \
-        java.base:libjava \
-        java.base:libjvm, \
+        java.base:libjava, \
+    JDK_LIBS := java.base:libjvm, \
     LIBS_linux := $(LIBDL), \
     LIBS_macosx := -liconv, \
     LIBS_aix := -liconv, \

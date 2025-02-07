@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public:
   // Page allocation
   ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
   void undo_alloc_page(ZPage* page);
-  void free_page(ZPage* page);
+  void free_page(ZPage* page, bool allow_defragment);
   size_t free_empty_pages(const ZArray<ZPage*>* pages);
 
   // Object allocation
