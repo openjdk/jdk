@@ -127,4 +127,7 @@ public class CaptureStateUtilBench {
         return result;
     }
 
+    @Fork(value = 3, jvmArgsAppend = "-Djmh.executor=VIRTUAL")
+    public static class OfVirtual extends CaptureStateUtilBench {}
+
 }
