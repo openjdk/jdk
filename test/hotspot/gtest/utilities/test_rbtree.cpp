@@ -414,7 +414,6 @@ public:
         min = MIN2(min, r);
         max = MAX2(max, r);
       }
-      // rbtree_const.print_on(tty);
       // Explicitly test non-const variants
       Node* n = rbtree.rightmost();
       ASSERT_EQ(n->key(), max);
@@ -554,7 +553,7 @@ struct PtrCmp {
 };
 
 TEST_VM(RBTreeTestNonFixture, TestPrintPointerTree) {
-  typedef RBTree<const void*, unsigned, PtrCmp, RBTreeCHeapAllocator<mtTest> > TreeType;
+  typedef RBTreeCHeap<const void*, unsigned, PtrCmp, mtTest> TreeType;
   TreeType tree;
 #ifdef _LP64
   const void* const p1 = (const void*) 0x800000000ULL;
