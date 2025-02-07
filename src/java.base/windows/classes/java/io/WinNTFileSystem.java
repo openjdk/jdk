@@ -599,7 +599,7 @@ final class WinNTFileSystem extends FileSystem {
             // that free space <= total space
             if (t == SPACE_FREE)
                 t = SPACE_USABLE;
-            return getSpace0(f, t);
+            return getSpace0(getFileForWin32Calls(f), t);
         }
         return 0;
     }

@@ -32,6 +32,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.FileStore;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -98,22 +99,35 @@ public class EmptyPath {
         assertTrue(f.canWrite());
     }
 
-    @Test
-    @Order(1)
-    public void getFreeSpace() {
-        assertTrue(f.getFreeSpace() > 0);
+    private void checkSpace(long expected, long actual) {
+        if (expected == 0) {
+            assertEquals(actual, 0L);
+        } else {
+            assertTrue(actual > 0);
+            long ds = Math.abs(expected - actual);
+            assertTrue((double)ds/expected < 0.05);
+        }
     }
 
     @Test
     @Order(1)
-    public void getTotalSpace() {
-        assertTrue(f.getTotalSpace() > 0);
+    public void getFreeSpace() throws IOException {
+        FileStore fs = Files.getFileStore(f.toPath());
+        checkSpace(fs.getUnallocatedSpace(), f.getFreeSpace());
     }
 
     @Test
     @Order(1)
-    public void getUsableSpace() {
-        assertTrue(f.getUsableSpace() > 0);
+    public void getTotalSpace() throws IOException {
+        FileStore fs = Files.getFileStore(f.toPath());
+        checkSpace(fs.getTotalSpace(), f.getTotalSpace());
+    }
+
+    @Test
+    @Order(1)
+    public void getUsableSpace() throws IOException {
+        FileStore fs = Files.getFileStore(f.toPath());
+        checkSpace(fs.getUsableSpace(), f.getUsableSpace());
     }
 
     @Test
