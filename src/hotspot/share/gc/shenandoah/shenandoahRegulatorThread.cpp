@@ -74,6 +74,10 @@ void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
           } else if (request_concurrent_gc(_heap->young_generation())) {
             log_debug(gc)("Heuristics request for young collection accepted");
           }
+        } else if (_old_heuristics->resume_old_cycle() || _old_heuristics->should_start_gc()) {
+          if (request_concurrent_gc(_heap->old_generation())) {
+            log_debug(gc)("Heuristics request to resume old collection accepted");
+          }
         }
       }
     } else if (mode == ShenandoahGenerationalControlThread::servicing_old) {
@@ -124,19 +128,19 @@ void ShenandoahRegulatorThread::regulator_sleep() {
   }
 }
 
-bool ShenandoahRegulatorThread::start_old_cycle() {
+bool ShenandoahRegulatorThread::start_old_cycle() const {
   return _old_heuristics->should_start_gc() && request_concurrent_gc(_heap->old_generation());
 }
 
-bool ShenandoahRegulatorThread::start_young_cycle() {
+bool ShenandoahRegulatorThread::start_young_cycle() const {
   return _young_heuristics->should_start_gc() && request_concurrent_gc(_heap->young_generation());
 }
 
-bool ShenandoahRegulatorThread::start_global_cycle() {
+bool ShenandoahRegulatorThread::start_global_cycle() const {
   return _global_heuristics->should_start_gc() && request_concurrent_gc(_heap->global_generation());
 }
 
-bool ShenandoahRegulatorThread::request_concurrent_gc(ShenandoahGeneration* generation) {
+bool ShenandoahRegulatorThread::request_concurrent_gc(ShenandoahGeneration* generation) const {
   double now = os::elapsedTime();
   bool accepted = _control_thread->request_concurrent_gc(generation);
   if (LogTarget(Debug, gc, thread)::is_enabled() && accepted) {

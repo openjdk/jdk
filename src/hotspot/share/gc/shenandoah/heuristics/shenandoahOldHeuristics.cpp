@@ -620,6 +620,21 @@ void ShenandoahOldHeuristics::evaluate_triggers(size_t first_old_region, size_t 
   set_trigger_if_old_is_overgrown();
 }
 
+bool ShenandoahOldHeuristics::resume_old_cycle() {
+  // If we are preparing to mark old, or if we are already marking old, then try to continue that work.
+  if (_old_generation->is_concurrent_mark_in_progress()) {
+    log_trigger("Resume marking old");
+    return true;
+  }
+
+  if (_old_generation->is_preparing_for_mark()) {
+    log_trigger("Resume preparing to mark old");
+    return true;
+  }
+
+  return false;
+}
+
 bool ShenandoahOldHeuristics::should_start_gc() {
 
   const ShenandoahHeap* heap = ShenandoahHeap::heap();
@@ -630,17 +645,6 @@ bool ShenandoahOldHeuristics::should_start_gc() {
     // For example, we could choose to abandon the previous old collection before it has completed evacuations.
     log_debug(gc)("Not starting an old cycle because we are waiting for mixed evacuations");
     return false;
-  }
-
-  // If we are preparing to mark old, or if we are already marking old, then try to continue that work.
-  if (_old_generation->is_concurrent_mark_in_progress()) {
-    log_trigger("Resume marking old");
-    return true;
-  }
-
-  if (_old_generation->is_preparing_for_mark()) {
-    log_trigger("Resume preparing to mark old");
-    return true;
   }
 
   if (_cannot_expand_trigger) {
