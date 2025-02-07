@@ -876,15 +876,16 @@ public class WindowsIconFactory implements Serializable
                             skin =  xp.getSkin(c, backgroundPart);
                             skin.paintSkin(g, x - 2 * OFFSET, y,
                                 getIconWidth(), getIconHeight(), backgroundState);
+                            skinWidth = getIconWidth();
                             skin = xp.getSkin(c, part);
                             skin.paintSkin(g, x - OFFSET, y + OFFSET, state);
-                            skinWidth = skin.getWidth();
                         }
                     }
                 }
                 if (icon != null) {
                     icon.paintIcon(c, g, x - OFFSET +
-                            ((skinWidth != -1) ? skinWidth : 16), y + OFFSET);
+                            ((skinWidth != -1) ? skinWidth : 16 + 2 * OFFSET),
+                            y + OFFSET);
                 }
             }
             private static WindowsMenuItemUIAccessor getAccessor(

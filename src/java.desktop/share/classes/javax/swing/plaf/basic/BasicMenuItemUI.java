@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -659,6 +659,16 @@ public class BasicMenuItemUI extends MenuItemUI
         paintBackground(g, mi, background);
         paintCheckIcon(g, lh, lr, holdc, foreground);
         paintIcon(g, lh, lr, holdc);
+        if (UIManager.getLookAndFeel().getName().equals("Windows")
+            && lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
+            Rectangle rect = lr.getTextRect();
+            if (menuItem.getIcon() != null) {
+                rect.x = rect.x + checkIcon.getIconWidth() / 2;
+            } else {
+                rect.x = rect.x - checkIcon.getIconWidth() / 2;
+            }
+            lr.setTextRect(rect);
+        }
         paintText(g, lh, lr);
         paintAccText(g, lh, lr);
         paintArrowIcon(g, lh, lr, foreground);
