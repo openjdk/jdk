@@ -2016,11 +2016,11 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     return nullptr; // overflow
   }
 
-  const size_t hi_end = p2u(MIN2(max, absolute_max));
-  if (hi_end < bytes) {
+  char* const hi_end = MIN2(max, absolute_max);
+  if ((uintptr_t)hi_end <= bytes) {
     return nullptr; // no need to go on
   }
-  char* const hi_att = align_down((char*)(hi_end - bytes), alignment_adjusted);
+  char* const hi_att = align_down(hi_end - bytes, alignment_adjusted);
   if (hi_att > max) {
     return nullptr; // overflow
   }
