@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8247352 8293348
+ * @test 8247352 8293348 8349512
  * @summary test different configurations of sealed classes, same compilation unit, diff pkg or mdl, etc
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
