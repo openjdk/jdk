@@ -90,7 +90,7 @@ public class ProdRed_Double {
         counts = {IRNode.MUL_REDUCTION_VD, ">= 1"})
     @IR(applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {" v ", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
         counts = {IRNode.MUL_REDUCTION_VD, ">= 1"})
     public static double prodReductionImplement(double[] a, double[] b, double total) {
         for (int i = 0; i < a.length; i++) {
@@ -107,7 +107,7 @@ public class ProdRed_Double {
         counts = {IRNode.MUL_REDUCTION_VD, ">= 1"})
     @IR(applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {" v ", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
         counts = {IRNode.MUL_REDUCTION_VD, ">= 1"})
     public static double prodReductionWithStoreImplement(double[] a, double[] b, double[] c, double total) {
         for (int i = 0; i < a.length; i++) {

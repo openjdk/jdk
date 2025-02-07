@@ -2957,7 +2957,7 @@ void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
 void C2_MacroAssembler::reduce_mul_integer_v(Register dst, Register src1, VectorRegister src2,
                                              VectorRegister vtmp1, VectorRegister vtmp2,
                                              BasicType bt, uint vector_length) {
-  assert(bt == T_INT || bt == T_LONG, "unsupported element type");
+  assert(bt == T_BYTE || bt == T_CHAR || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
   uint len = vector_length/type2aelembytes(bt);
   vsetvli_helper(bt, len);
 

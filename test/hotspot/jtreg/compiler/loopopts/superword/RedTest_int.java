@@ -204,7 +204,7 @@ public class RedTest_int {
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.MUL_REDUCTION_VI, ">= 1", IRNode.MUL_REDUCTION_VI, "<= 2"}) // one for main-loop, one for vector-post-loop
     @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {" v ", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.MUL_REDUCTION_VI, ">= 1", IRNode.MUL_REDUCTION_VI, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int mulReductionImplement(

@@ -88,7 +88,7 @@ public class ProdRed_Float {
         counts = {IRNode.MUL_REDUCTION_VF, ">= 1"})
     @IR(applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {" v ", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
         counts = {IRNode.MUL_REDUCTION_VF, ">= 1"})
     public static float prodReductionImplement(float[] a, float[] b, float total) {
         for (int i = 0; i < a.length; i++) {
