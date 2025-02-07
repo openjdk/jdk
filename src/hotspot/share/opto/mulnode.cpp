@@ -1322,7 +1322,7 @@ Node *RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
 
   // Check for (x & 0xFF000000) >> 24, whose mask can be made smaller.
   // Such expressions arise normally from shift chains like (byte)(x >> 24).
-  const Node *mask = in(1);
+  const Node* mask = in(1);
   if (mask->Opcode() == Op_And(bt) &&
       (t3 = phase->type(mask->in(2))->isa_integer(bt)) &&
       t3->is_con()) {
