@@ -115,10 +115,12 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
   } else {
     request.cause = _requested_gc_cause;
     request.generation = _requested_generation;
-  }
 
-  _requested_gc_cause = GCCause::_no_gc;
-  _requested_generation = nullptr;
+    // Only clear these if we made a request from them. In the case of a cancelled gc,
+    // we do not want to inadvertently lose this pending request.
+    _requested_gc_cause = GCCause::_no_gc;
+    _requested_generation = nullptr;
+  }
 
   if (request.cause == GCCause::_no_gc || request.cause == GCCause::_shenandoah_stop_vm) {
     return;
