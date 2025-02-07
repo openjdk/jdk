@@ -135,8 +135,12 @@ private:
   void set_gc_mode(GCMode new_mode);
   static const char* gc_mode_name(GCMode mode);
 
-  // Takes the request lock and updates the requested cause and generation, then notifies the lock's waiters.
+  // Takes the request lock and updates the requested cause and generation, then notifies the control thread.
   void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
+  void notify_control_thread_with_lock(GCCause::Cause cause, ShenandoahGeneration* generation);
+
+  // Notifies the control thread, but does not update the requested cause or generation.
+  void notify_cancellation(GCCause::Cause cause);
 
   void maybe_set_aging_cycle();
   void check_for_request(ShenandoahGCRequest& request);

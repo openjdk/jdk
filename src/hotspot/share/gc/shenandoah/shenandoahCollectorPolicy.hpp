@@ -77,7 +77,7 @@ public:
   void record_collection_cause(GCCause::Cause cause);
 
   void record_shutdown();
-  bool is_at_shutdown();
+  bool is_at_shutdown() const;
 
   ShenandoahTracer* tracer() {return _tracer;}
 

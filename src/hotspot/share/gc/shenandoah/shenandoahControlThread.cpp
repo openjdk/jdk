@@ -50,7 +50,6 @@ ShenandoahControlThread::ShenandoahControlThread() :
 
 void ShenandoahControlThread::run_service() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-
   const GCMode default_mode = concurrent_normal;
   const GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
   int sleep = ShenandoahControlIntervalMin;
@@ -59,7 +58,7 @@ void ShenandoahControlThread::run_service() {
 
   ShenandoahCollectorPolicy* const policy = heap->shenandoah_policy();
   ShenandoahHeuristics* const heuristics = heap->heuristics();
-  while (!should_terminate()) {
+  while (!should_terminate() && !policy->is_at_shutdown()) {
     const GCCause::Cause cancelled_cause = heap->cancelled_cause();
     if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
       break;

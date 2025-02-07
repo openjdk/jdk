@@ -123,7 +123,7 @@ void ShenandoahCollectorPolicy::record_shutdown() {
   _in_shutdown.set();
 }
 
-bool ShenandoahCollectorPolicy::is_at_shutdown() {
+bool ShenandoahCollectorPolicy::is_at_shutdown() const {
   return _in_shutdown.is_set();
 }
 
