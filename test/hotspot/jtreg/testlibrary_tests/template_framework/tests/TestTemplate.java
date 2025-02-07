@@ -515,7 +515,14 @@ public class TestTemplate {
             "}\n"
         ));
 
-        var template2 = Template.make(() -> body(
+        var template2 = Template.make("a", (Integer a) -> let("b", a * 10, b ->
+            body(
+                let("c", b * 3),
+                "abc = #a #b #c\n"
+            )
+        ));
+
+        var template3 = Template.make(() -> body(
             "{\n",
             let("x", "abc"),
             template1.withArgs("alpha"),
@@ -529,32 +536,18 @@ public class TestTemplate {
             ),
             "break\n",
             "y2 = #y\n", // leaks outside
+            "break\n",
+            template2.withArgs(5),
             "}\n"
         ));
 
-        String code = template2.withArgs().render();
+        String code = template3.withArgs().render();
         String expected =
             """
-            {
-            {
-            y alpha y
-            y <alpha> y
-            }
-            break
-            x1 = abc
-            x2 = abc
-            {
-            y beta y
-            y <beta> y
-            }
-            y1 = one
-            break
-            y2 = one
-            }
+
             """;
         checkEQ(code, expected);
     }
-
 
     public static void checkEQ(String code, String expected) {
         if (!code.equals(expected)) {
