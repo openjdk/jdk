@@ -41,14 +41,20 @@ public class Renderer {
     private static Renderer renderer = null;
 
     // TODO describe
-    private int nextTemplateFrameId = 0;
-    private TemplateFrame baseTemplateFrame = new TemplateFrame(null, nextTemplateFrameId++);
-    private TemplateFrame currentTemplateFrame = baseTemplateFrame;
-    private CodeFrame baseCodeFrame = new CodeFrame(null);
-    private CodeFrame currentCodeFrame = baseCodeFrame;
+    private int nextTemplateFrameId;
+    private TemplateFrame baseTemplateFrame;
+    private TemplateFrame currentTemplateFrame;
+    private CodeFrame baseCodeFrame;
+    private CodeFrame currentCodeFrame;
 
     // We do not want any other instances.
-    private Renderer() {}
+    private Renderer(float fuel) {
+        nextTemplateFrameId = 0;
+        baseTemplateFrame = TemplateFrame.makeBase(nextTemplateFrameId++, fuel);
+        currentTemplateFrame = baseTemplateFrame;
+        baseCodeFrame = new CodeFrame(null);
+        currentCodeFrame = baseCodeFrame;
+    }
 
     static Renderer getCurrent() {
         if (renderer == null) {
@@ -59,12 +65,16 @@ public class Renderer {
     }
 
     public static String render(TemplateWithArgs templateWithArgs) {
+        return render(templateWithArgs, 1.0f);
+    }
+
+    public static String render(TemplateWithArgs templateWithArgs, float fuel) {
         // Check nobody else is using the Renderer.
         if (renderer != null) {
             throw new RendererException("Nested render not allowed.");
         }
 
-        renderer = new Renderer();
+        renderer = new Renderer(fuel);
         renderer.renderTemplateWithArgs(templateWithArgs);
         renderer.checkFrameConsistencyAfterRendering();
         String code = renderer.collectCode();
@@ -104,13 +114,12 @@ public class Renderer {
         return currentTemplateFrame.getHashtagReplacement(key);
     }
 
-    // TODO fuel - based on codeFrame or templateFrame?
-    int depth() {
-        return currentCodeFrame.depth();
+    float fuel() {
+        return currentTemplateFrame.fuel;
     }
 
     private void renderTemplateWithArgs(TemplateWithArgs templateWithArgs) {
-        TemplateFrame templateFrame = new TemplateFrame(currentTemplateFrame, nextTemplateFrameId++);
+        TemplateFrame templateFrame = TemplateFrame.make(currentTemplateFrame, nextTemplateFrameId++, 0.1f);
         currentTemplateFrame = templateFrame;
 
         templateWithArgs.visitArguments((name, value) -> addHashtagReplacement(name, value.toString()));

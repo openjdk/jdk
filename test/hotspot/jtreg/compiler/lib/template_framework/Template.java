@@ -33,8 +33,8 @@ public interface Template {
         return new ZeroArgs(t);
     }
 
-    static <A> OneArg<A> make(String arg0Name, Function<A, TemplateBody> t) {
-        return new OneArg<>(arg0Name, t);
+    static <A> OneArgs<A> make(String arg0Name, Function<A, TemplateBody> t) {
+        return new OneArgs<>(arg0Name, t);
     }
 
     static <A, B> TwoArgs<A, B> make(String arg0Name, String arg1Name, BiFunction<A, B, TemplateBody> t) {
@@ -51,13 +51,13 @@ public interface Template {
         }
     }
 
-    record OneArg<A>(String arg0Name, Function<A, TemplateBody> function) implements Template {
+    record OneArgs<A>(String arg0Name, Function<A, TemplateBody> function) implements Template {
         TemplateBody instantiate(A a) {
             return function.apply(a);
         }
 
-        public TemplateWithArgs.OneArgUse<A> withArgs(A a) {
-            return new TemplateWithArgs.OneArgUse<>(this, a);
+        public TemplateWithArgs.OneArgsUse<A> withArgs(A a) {
+            return new TemplateWithArgs.OneArgsUse<>(this, a);
         }
     }
 
@@ -92,5 +92,9 @@ public interface Template {
     static <T> TemplateBody let(String key, T value, Function<T, TemplateBody> function) {
         Renderer.getCurrent().addHashtagReplacement(key, value.toString());
         return function.apply(value);
+    }
+
+    static float fuel() {
+        return Renderer.getCurrent().fuel();
     }
 }

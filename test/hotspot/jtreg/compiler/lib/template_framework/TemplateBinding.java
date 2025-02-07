@@ -23,41 +23,20 @@
 
 package compiler.lib.template_framework;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
+public class TemplateBinding<T extends Template> {
+    private T template = null;
 
-class CodeFrame {
-    public final CodeFrame parent;
-    private final List<Code> codeList = new ArrayList<Code>();
-    private final Map<Hook, Code.CodeList> hookCodeLists = new HashMap<>();
-
-    CodeFrame(CodeFrame parent) {
-        this.parent = parent;
-    }
-
-    void addString(String s) {
-        codeList.add(new Code.Token(s));
-    }
-
-    void addCode(Code code) {
-        codeList.add(code);
-    }
-
-    void addHook(Hook hook) {
-        if (hasHook(hook)) {
-            throw new RendererException("Duplicate Hook in Template: " + hook.name());
+    public T get() {
+        if (template == null) {
+            throw new RendererException("Cannot 'get' before 'bind'.");
         }
-        hookCodeLists.put(hook, new Code.CodeList(new ArrayList<Code>()));
+        return template;
     }
 
-    boolean hasHook(Hook hook) {
-        return hookCodeLists.containsKey(hook);
-    }
-
-    // TODO ensure only use once!
-    Code getCode() {
-        return new Code.CodeList(codeList);
+    public void bind(T template) {
+         if (this.template != null) {
+            throw new RendererException("Duplicate 'bind' not allowed.");
+        }
+        this.template = template;
     }
 }

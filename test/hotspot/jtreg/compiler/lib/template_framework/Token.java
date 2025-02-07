@@ -29,7 +29,7 @@ import java.util.List;
 sealed interface Token permits StringToken,
                                TemplateWithArgs,
                                TemplateWithArgs.ZeroArgsUse,
-                               TemplateWithArgs.OneArgUse,
+                               TemplateWithArgs.OneArgsUse,
                                TemplateWithArgs.TwoArgsUse,
                                HookSetToken,
                                HookIntoToken,

@@ -23,10 +23,9 @@
 
 package compiler.lib.template_framework;
 
-// TODO rename OneArgUse to OneArgsUse for consistency?
 public sealed interface TemplateWithArgs extends Token
                                          permits TemplateWithArgs.ZeroArgsUse,
-                                                 TemplateWithArgs.OneArgUse,
+                                                 TemplateWithArgs.OneArgsUse,
                                                  TemplateWithArgs.TwoArgsUse
 {
     record ZeroArgsUse(Template.ZeroArgs zeroArgs) implements TemplateWithArgs, Token {
@@ -39,7 +38,7 @@ public sealed interface TemplateWithArgs extends Token
         public void visitArguments(ArgumentVisitor visitor) {}
     }
 
-    record OneArgUse<A>(Template.OneArg<A> oneArg, A a) implements TemplateWithArgs, Token {
+    record OneArgsUse<A>(Template.OneArgs<A> oneArg, A a) implements TemplateWithArgs, Token {
         @Override
         public TemplateBody instantiate() {
             return oneArg.instantiate(a);

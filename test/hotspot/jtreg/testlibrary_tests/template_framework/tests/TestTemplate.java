@@ -46,6 +46,7 @@ import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.intoHook;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.let;
+import static compiler.lib.template_framework.Template.fuel;
 
 public class TestTemplate {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -56,7 +57,7 @@ public class TestTemplate {
         testBodyTokens();
         testWithOneArguments();
         testWithTwoArguments();
-        testRecursive();
+        testNested();
         testHookSimple();
         testHookNested();
         testHookWithNestedTemplates();
@@ -64,17 +65,15 @@ public class TestTemplate {
         testNames();
         testLet();
         testSelector();
+        testRecursion();
+        //testFuel();
 
         //testClassInstantiator();
-        //testRepeat();
-        //testDispatch();
         //testClassInstantiatorAndDispatch();
-        //testChoose();
         //testFieldsAndVariables();
         //testFieldsAndVariablesDispatch();
         //testIntCon();
         //testLongCon();
-        //testFuel();
         //testRecursiveCalls();
     }
 
@@ -168,7 +167,7 @@ public class TestTemplate {
         checkEQ(template4.withArgs(444, 555).render(), "start 444 555 end");
     }
 
-    public static void testRecursive() {
+    public static void testNested() {
         var template1 = Template.make(() -> body("proton"));
 
         var template2 = Template.make("a1", "a2", (String a1, String a2) -> body(
@@ -636,6 +635,72 @@ public class TestTemplate {
             """;
         checkEQ(code, expected);
     }
+
+    public static void testRecursion() {
+        // Binding allows use of template1 inside template1, via the Binding indirection.
+        var binding1 = new TemplateBinding<Template.OneArgs<Integer>>();
+
+        var template1 = Template.make("i", (Integer i) -> body(
+            "[ #i\n",
+            // We cannot yet use the template1 directly, as it is being defined.
+            // So we use binding1 instead.
+            i < 0 ? "done\n" : binding1.get().withArgs(i - 1),
+            "] #i\n"
+        ));
+        binding1.bind(template1);
+
+        var template2 = Template.make(() -> body(
+            "{\n",
+            // Now, we can use template1 normally, as it is already defined.
+            template1.withArgs(3),
+            "}\n"
+        ));
+
+        String code = template2.withArgs().render();
+        String expected =
+            """
+            {
+            [ 3
+            [ 2
+            [ 1
+            [ 0
+            [ -1
+            done
+            ] -1
+            ] 0
+            ] 1
+            ] 2
+            ] 3
+            }
+            """;
+        checkEQ(code, expected);
+    }
+
+    //public static void testFuel() {
+    //    var template1 = Template.make(() -> body(
+    //        "<", fuel(),">\n"
+    //    ));
+
+    //    var template2 = Template.make("i", (Integer i) -> body(
+    //        "[ #i\n",
+    //        template1.withArgs(),
+    //        i < 0 ? "done" : template2.withArgs(i - 1),
+    //        "] #i\n"
+    //    ));
+
+    //    var template3 = Template.make(() -> body(
+    //        "{\n",
+    //        template2.withArgs(3),
+    //        "}\n"
+    //    ));
+
+    //    String code = template3.withArgs().render();
+    //    String expected =
+    //        """
+
+    //        """;
+    //    checkEQ(code, expected);
+    //}
 
     public static void checkEQ(String code, String expected) {
         if (!code.equals(expected)) {

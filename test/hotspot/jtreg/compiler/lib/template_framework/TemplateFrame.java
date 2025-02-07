@@ -51,10 +51,20 @@ class TemplateFrame {
     final TemplateFrame parent;
     final int id;
     final Map<String, String> hashtagReplacements = new HashMap<>();
+    final float fuel;
 
-    TemplateFrame(TemplateFrame parent, int id) {
+    public static TemplateFrame makeBase(int id, float fuel) {
+        return new TemplateFrame(null, id, fuel);
+    }
+
+    public static TemplateFrame make(TemplateFrame parent, int id, float fuelCost) {
+        return new TemplateFrame(parent, id, parent.fuel - fuelCost);
+    }
+
+    private TemplateFrame(TemplateFrame parent, int id, float fuel) {
         this.parent = parent;
         this.id = id;
+        this.fuel = fuel;
     }
 
     public String $(String name) {
