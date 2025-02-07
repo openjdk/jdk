@@ -188,7 +188,7 @@ public class FileDialogIconTest {
                     Rectangle rectangle;
                     for (int i = 1; i <= 4; i++) {
                         rectangle = new Rectangle(i * 10, i * 10,
-                                            i * 10 + 40, i * 10 + 40);
+                                                  i * 10 + 40, i * 10 + 40);
                         BufferedImage image = robot.createScreenCapture(rectangle);
                         robot.delay(100);
                         list.add(image);
@@ -209,7 +209,7 @@ public class FileDialogIconTest {
                     Rectangle rectangle;
                     for (int i = 1; i <= 4; i++) {
                         rectangle = new Rectangle(i * 10, i * 10,
-                                            i * 10 + 40, i * 10 + 40);
+                                                  i * 10 + 40, i * 10 + 40);
                         BufferedImage image = robot.createScreenCapture(rectangle);
                         robot.delay(100);
                         list.add(image);
