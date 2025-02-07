@@ -28,15 +28,16 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 
-class Frame {
-    public final Frame parent;
+class CodeFrame {
+    public final CodeFrame parent;
     private final List<Code> codeList = new ArrayList<Code>();
     private final Map<Hook, Code.CodeList> hookCodeLists = new HashMap<>();
 
-    Frame(Frame parent) {
+    CodeFrame(CodeFrame parent) {
         this.parent = parent;
     }
 
+    // TODO move depth to TemplateFrame
     public int depth() {
         if (parent == null) { return 0; }
         return parent.depth() + 1;

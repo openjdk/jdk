@@ -35,8 +35,8 @@ public abstract class Renderer {
     private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile("#([a-zA-Z_][a-zA-Z0-9_]*)");
 
     // TODO describe
-    private static Frame baseFrame = null;
-    private static Frame currentFrame = null;
+    private static CodeFrame baseCodeFrame = null;
+    private static CodeFrame currentCodeFrame = null;
 
     private static int nextTemplateId = 0; // TODO refactor
 
@@ -45,36 +45,36 @@ public abstract class Renderer {
 
     public static String render(TemplateUse templateUse) {
         // Check nobody else is using the Renderer.
-        if (baseFrame != null) {
+        if (baseCodeFrame != null) {
             throw new RendererException("Nested render not allowed.");
         }
 
         // Setup the Renderer.
-        baseFrame = new Frame(null);
-        currentFrame = baseFrame;
+        baseCodeFrame = new CodeFrame(null);
+        currentCodeFrame = baseCodeFrame;
         nextTemplateId = 0;
         baseTemplateFrame = new TemplateFrame(null, nextTemplateId++);
         currentTemplateFrame = baseTemplateFrame;
 
         renderTemplateUse(templateUse);
 
-        // Ensure Frame consistency.
-        if (baseFrame != currentFrame) {
-            throw new RendererException("Renderer did not end up at base frame.");
+        // Ensure CodeFrame consistency.
+        if (baseCodeFrame != currentCodeFrame) {
+            throw new RendererException("Renderer did not end up at base CodeFrame.");
         }
         // Ensure TemplateFrame consistency.
         if (baseTemplateFrame != currentTemplateFrame) {
-            throw new RendererException("Renderer did not end up at base templateFrame.");
+            throw new RendererException("Renderer did not end up at base TemplateFrame.");
         }
 
         // Collect Code to String.
         StringBuilder builder = new StringBuilder();
-        baseFrame.getCode().renderTo(builder);
+        baseCodeFrame.getCode().renderTo(builder);
         String code = builder.toString();
 
         // Release the Renderer.
-        baseFrame = null;
-        currentFrame = null;
+        baseCodeFrame = null;
+        currentCodeFrame = null;
         baseTemplateFrame = null;
         currentTemplateFrame = null;
 
@@ -91,17 +91,17 @@ public abstract class Renderer {
     //    return block.apply(value);
     //}
 
-    // TODO fuel - based on frame or templateFrame?
+    // TODO fuel - based on codeFrame or templateFrame?
     public static int depth() {
-        return getCurrentFrame().depth();
+        return getCurrentCodeFrame().depth();
     }
 
-    private static Frame getCurrentFrame() {
-        if (currentFrame == null) {
+    private static CodeFrame getCurrentCodeFrame() {
+        if (currentCodeFrame == null) {
             // TODO update text - which methods are involved?
             throw new RendererException("A method such as $ or let was called outside a template rendering. Make sure you are not calling templates yourself, but use use().");
         }
-        return currentFrame;
+        return currentCodeFrame;
     }
 
     private static TemplateFrame getCurrentTemplateFrame() {
@@ -127,13 +127,13 @@ public abstract class Renderer {
     }
 
     private static void renderToken(Object token) {
-        Frame frame = getCurrentFrame();
+        CodeFrame codeFrame = getCurrentCodeFrame();
         switch (token) {
-            case String s ->  frame.addString(templateString(s));
-            case Integer s -> frame.addString(s.toString());
-            case Long s ->    frame.addString(s.toString());
-            case Double s ->  frame.addString(s.toString());
-            case Float s ->   frame.addString(s.toString());
+            case String s ->  codeFrame.addString(templateString(s));
+            case Integer s -> codeFrame.addString(s.toString());
+            case Long s ->    codeFrame.addString(s.toString());
+            case Double s ->  codeFrame.addString(s.toString());
+            case Float s ->   codeFrame.addString(s.toString());
             case List tokens -> {
                 renderTokenList(tokens);
             }
@@ -144,67 +144,69 @@ public abstract class Renderer {
                 throw new RendererException("Do not use Hook directly, use Hook.set: " + h);
             }
             case HookUse(Hook hook, List<Object> tokens) -> {
-                Frame outerFrame = getCurrentFrame();
+                // TODO describe and maybe rename to HookSetUse
+                CodeFrame outerCodeFrame = getCurrentCodeFrame();
 
-                // We need a frame to which the hook can insert code. That way, name
-                // definitions at the hook cannot excape the hookFrame.
-                Frame hookFrame = new Frame(outerFrame);
-                hookFrame.addHook(hook);
+                // We need a CodeFrame to which the hook can insert code. That way, name
+                // definitions at the hook cannot excape the hookCodeFrame.
+                CodeFrame hookCodeFrame = new CodeFrame(outerCodeFrame);
+                hookCodeFrame.addHook(hook);
 
-                // We need a frame where the tokens can be rendered. That way, name
-                // definitions from the tokens cannot escape the innerFrame to the
-                // hookFrame.
-                Frame innerFrame = new Frame(hookFrame);
-                currentFrame = innerFrame;
+                // We need a CodeFrame where the tokens can be rendered. That way, name
+                // definitions from the tokens cannot escape the innerCodeFrame to the
+                // hookCodeFrame.
+                CodeFrame innerCodeFrame = new CodeFrame(hookCodeFrame);
+                currentCodeFrame = innerCodeFrame;
 
                 renderTokenList(tokens);
 
-                // Close the hookFrame and innerFrame. hookFrame code comes before the
-                // innerFrame code from the tokens.
-                currentFrame = outerFrame;
-                currentFrame.addCode(hookFrame.getCode());
-                currentFrame.addCode(innerFrame.getCode());
+                // Close the hookCodeFrame and innerCodeFrame. hookCodeFrame code comes before the
+                // innerCodeFrame code from the tokens.
+                currentCodeFrame = outerCodeFrame;
+                currentCodeFrame.addCode(hookCodeFrame.getCode());
+                currentCodeFrame.addCode(innerCodeFrame.getCode());
             }
             case HookInsert(Hook hook, TemplateUse t) -> {
-                // Switch to hook frame.
-                Frame hookFrame = frameForHook(hook);
+                // TODO describe and maybe rename to IntoHookUse
+                // Switch to hook CodeFrame.
+                CodeFrame hookCodeFrame = codeFrameForHook(hook);
 
-                // Use a transparent nested Frame. We need a frame so that the code generated
+                // Use a transparent nested CodeFrame. We need a CodeFrame so that the code generated
                 // by the TemplateUse can be collected, and hook insertions from it can still
-                // be made to the hookFrame before the code from the TemplateUse is added to
-                // the hookFrame.
-                // But the frame must be transparent, so that its name definitions go out to
-                // the hookFrame, and are not limited to the Frame for the TemplateUse.
-                currentFrame = new Frame(hookFrame);
+                // be made to the hookCodeFrame before the code from the TemplateUse is added to
+                // the hookCodeFrame.
+                // But the CodeFrame must be transparent, so that its name definitions go out to
+                // the hookCodeFrame, and are not limited to the CodeFrame for the TemplateUse.
+                currentCodeFrame = new CodeFrame(hookCodeFrame);
                 // TODO make transparent for names
 
                 renderTemplateUse(t);
 
-                hookFrame.addCode(currentFrame.getCode());
+                hookCodeFrame.addCode(currentCodeFrame.getCode());
 
-                // Switch back from hook frame to caller frame.
-                currentFrame = frame;
+                // Switch back from hook CodeFrame to caller CodeFrame.
+                currentCodeFrame = codeFrame;
             }
             case TemplateUse t -> {
-                // Use a nested Frame.
-                currentFrame = new Frame(frame);
+                // Use a nested CodeFrame.
+                currentCodeFrame = new CodeFrame(codeFrame);
 
                 renderTemplateUse(t);
 
-                frame.addCode(currentFrame.getCode());
-                currentFrame = frame;
+                codeFrame.addCode(currentCodeFrame.getCode());
+                currentCodeFrame = codeFrame;
             }
             default -> throw new RendererException("body contained unexpected token: " + token);
         }
     }
 
     private static void renderTokenList(List<Object> tokens) {
-        Frame frame = getCurrentFrame();
+        CodeFrame codeFrame = getCurrentCodeFrame();
         for (Object t : tokens) {
             renderToken(t);
         }
-        if (frame != getCurrentFrame()) {
-            throw new RendererException("Frame mismatch.");
+        if (codeFrame != getCurrentCodeFrame()) {
+            throw new RendererException("CodeFrame mismatch.");
         }
     }
 
@@ -218,13 +220,13 @@ public abstract class Renderer {
         );
     }
 
-    private static Frame frameForHook(Hook hook) {
-        Frame frame = getCurrentFrame();
-        while (frame != null) {
-            if (frame.hasHook(hook)) {
-                return frame;
+    private static CodeFrame codeFrameForHook(Hook hook) {
+        CodeFrame codeFrame = getCurrentCodeFrame();
+        while (codeFrame != null) {
+            if (codeFrame.hasHook(hook)) {
+                return codeFrame;
             }
-            frame = frame.parent;
+            codeFrame = codeFrame.parent;
         }
         throw new RendererException("hook " + hook.name() + " was referenced but not found!");
     }
