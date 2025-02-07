@@ -163,7 +163,7 @@ public:
   }
   ~RBTree() { this->remove_all(); }
 
-  size_t size() { return _num_nodes; }
+  size_t size() const { return _num_nodes; }
 
   // Inserts a node with the given k/v into the tree,
   // if the key already exist, the value is updated instead.

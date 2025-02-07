@@ -52,9 +52,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/quickSort.hpp"
-#include "utilities/resourceHash.hpp"
-
 
 static const char* phase_trc_id_to_string(int phase_trc_id) {
   return COMPILER2_PRESENT(Phase::get_phase_trace_id_text((Phase::PhaseTraceId)phase_trc_id))
@@ -407,6 +404,7 @@ public:
 
 class MemStatEntry : public CHeapObj<mtCompiler> {
 
+  MemStatEntry* _next;
   const FullMethodName _method;
   CompilerType _comp_type;
   int _comp_id;
@@ -440,7 +438,7 @@ class MemStatEntry : public CHeapObj<mtCompiler> {
 public:
 
   MemStatEntry(FullMethodName method)
-    : _method(method), _comp_type(compiler_none), _comp_id(-1),
+    : _next(nullptr), _method(method), _comp_type(compiler_none), _comp_id(-1),
       _time(0), _num_recomp(0), _thread(nullptr), _limit(0),
       _result(nullptr), _code_size(0), _peak(0), _live_nodes_at_global_peak(0),
       _detail_stats(nullptr) {
@@ -490,10 +488,14 @@ public:
     memset(_peak_composition_per_arena_tag, 0, sizeof(_peak_composition_per_arena_tag));
   }
 
-  void set_result(const char* s) { _result = s; }
-  void set_code_size(size_t s)   { _code_size = s; }
+  void set_result(const char* s)  { _result = s; }
+  void set_code_size(size_t s)    { _code_size = s; }
 
   size_t peak() const { return _peak; }
+  CompilerType comp_type() const  { return _comp_type; }
+
+  void set_next(MemStatEntry* e)  { assert(_next == nullptr || e == nullptr, "Sanity"); _next = e; }
+  MemStatEntry* next()            { return _next; }
 
   static void print_legend(outputStream* st) {
 #define LEGEND_KEY_FMT "%11s"
@@ -635,89 +637,81 @@ public:
       }
     }
   }
-
-  int compare_by_size(const MemStatEntry* b) const {
-    const size_t x1 = b->_peak;
-    const size_t x2 = _peak;
-    return x1 < x2 ? -1 : x1 == x2 ? 0 : 1;
-  }
 };
 
-static inline ssize_t diff_entries_by_size(const MemStatEntry* e1, const MemStatEntry* e2) {
-  return e1->compare_by_size(e2);
-}
+class MemStatStore : public CHeapObj<mtCompiler> {
 
-class MemStatTable : public CHeapObj<mtCompiler> {
+  // Total number of entries. Reaching this limit, we discard the least interesting (smallest allocation size) first.
+  static constexpr int max_entries = 16;
 
-  // Total number of entries. Reaching this limit, we discard oldest first.
-  static constexpr int max_entries = 512 * K;
-  SimpleFifo<MemStatEntry*, max_entries> _entries;
+  struct {
+    size_t s; MemStatEntry* e;
+  } _entries[max_entries];
+  uint64_t _num_entries_lost;
 
-  // (C2) Details structure is hefty. To conserve memory, we only store those for compilations
-  // above a certain size (the vast majority of compilations only consumes a few hundred KB).
-  static constexpr size_t detail_threshold = 2 * M;
-
+  struct iteration_result { unsigned num, num_c1, num_c2, num_filtered_out; };
   template<typename F>
-  int iterate_sorted_filtered(F f, size_t minsize) const {
+  void iterate_sorted_filtered(F f, size_t minsize, iteration_result& result) const {
     assert_lock_strong(NMTCompilationCostHistory_lock);
-
-    // Build up filtered array
-    const int num_all = _entries.size();
-    const MemStatEntry** filtered = NEW_C_HEAP_ARRAY(const MemStatEntry*, num_all, mtInternal);
-    int num_filtered = 0;
-    auto copy_to_flat_array = [&](const MemStatEntry* e) {
-      if (e->peak() >= minsize) {
-        filtered[num_filtered] = e;
-        assert(num_filtered < num_all, "Sanity");
-        num_filtered++;
+    result.num = result.num_c1 = result.num_c2 = result.num_filtered_out = 0;
+    for (int i = 0; i < max_entries && _entries[i].e != nullptr; i++) {
+      if (_entries[i].s >= minsize) {
+        f(_entries[i].e);
+        result.num++;
+        if (_entries[i].e->comp_type() == CompilerType::compiler_c1) {
+          result.num_c1++;
+        } else {
+          assert(_entries[i].e->comp_type() == CompilerType::compiler_c2, "Sanity");
+          result.num_c1++;
+        }
+      } else {
+        result.num_filtered_out++;
       }
-    };
-    _entries.iterate_all(copy_to_flat_array);
-    assert(num_filtered <= num_all, "Sanity");
-
-    // Sort it by entry size
-    if (num_filtered > 0) {
-      QuickSort::sort(filtered, num_filtered, diff_entries_by_size);
     }
-
-    // Run
-    for (int i = 0; i < num_filtered; i ++) {
-      f(filtered[i]);
-    }
-
-    // free temp array
-    FREE_C_HEAP_ARRAY(MemStatEntry, filtered);
-
-    return num_filtered;
   }
 
-  void print_footer(outputStream* st, int printed, size_t minsize) const {
-    const int num_all = _entries.size();
-    if (printed > 0) {
-      st->print_cr("Total: %d compilations ", printed);
+  void print_footer(outputStream* st, size_t minsize, const iteration_result& result) const {
+    if (result.num > 0) {
+      st->print_cr("Total: %u compilations (C1: %u, C2: %u)", result.num, result.num_c1, result.num_c2);
     } else {
       st->print_cr("No entries.");
     }
-    const int omitted = num_all - printed;
-    if (omitted > 0) {
-      st->print_cr(" (%d compilations smaller than %zu omitted)", omitted, minsize);
+    if (result.num_filtered_out > 0) {
+      st->print_cr(" (%d compilations smaller than %zu omitted)", result.num_filtered_out, minsize);
     }
-    if (_entries.lost() > 0) {
+    if (_num_entries_lost > 0) {
       st->print_cr(" (%zu old compilations lost - use method filters on the memstat CompileCommand to "
-                   "reduce the amount of information gathered)", _entries.lost());
+                   "reduce the amount of information gathered)", _num_entries_lost);
     }
   }
 
 public:
 
+  MemStatStore() : _num_entries_lost(0) {
+    memset(_entries, 0, sizeof(_entries));
+  }
+
   void add(const FullMethodName& fmn, const ArenaStatCounter* state, size_t code_size, const char* result) {
-    assert_lock_strong(NMTCompilationCostHistory_lock);
-    MemStatEntry*& e = _entries.current();
-    if (_entries.wrapped()) {
-      e->reset(); // Reuse entry
+
+    const size_t size = state->peak();
+
+    // search insert point
+    int i = 0;
+    while (i < max_entries && _entries[i].s > size) {
+      i++;
+    }
+    if (i == max_entries) {
+      return;
+    }
+    MemStatEntry* e = _entries[max_entries - 1].e; // recycle last one
+    if (e != nullptr) {
+      _num_entries_lost++;
     } else {
       e = new MemStatEntry(fmn);
     }
+    memmove(_entries + i + 1, _entries + i, sizeof(_entries[0]) * (max_entries - i - 1));
+
+    e->reset();
     e->set_current_time();
     e->set_current_thread();
     e->inc_recompilation();
@@ -725,12 +719,11 @@ public:
     e->set_code_size(code_size);
 
     // Since we don't have phases in C1, for now we just avoid saving details for C1.
-    const bool save_details = state->comp_type() == CompilerType::compiler_c2 && state->peak() >= detail_threshold;
-
+    const bool save_details = state->comp_type() == CompilerType::compiler_c2;
     e->set_from_state(state, save_details);
 
-    // advance position
-    _entries.advance();
+    _entries[i].s = e->peak();
+    _entries[i].e = e;
   }
 
   void print_table(outputStream* st, size_t minsize) const {
@@ -742,34 +735,36 @@ public:
     MemStatEntry::print_header(st);
     st->cr();
 
+    iteration_result itres;
     auto printer = [&](const MemStatEntry* e) {
       e->print_brief_oneline(st);
     };
-    const int num_printed = iterate_sorted_filtered(printer, minsize);
-
-    print_footer(st, num_printed, minsize);
+    iterate_sorted_filtered(printer, minsize, itres);
+    print_footer(st, minsize, itres);
   }
 
   void print_details(outputStream* st, size_t minsize) const {
     assert_lock_strong(NMTCompilationCostHistory_lock);
 
+unsigned num = 0;
+    iteration_result itres;
     auto printer = [&](const MemStatEntry* e) {
+st->print("%.4u ", num);
+st->print(PTR_FORMAT " ", p2i(e));
       e->print_detailed(st);
       st->print_cr("====================================================================================");
     };
-    const int num_printed = iterate_sorted_filtered(printer, minsize);
-
-    print_footer(st, num_printed, minsize);
+    iterate_sorted_filtered(printer, minsize, itres);
+    print_footer(st, minsize, itres);
   }
 };
 
 bool CompilationMemoryStatistic::_enabled = false;
-
-static MemStatTable* _the_table = nullptr;
+static MemStatStore* _the_store = nullptr;
 
 void CompilationMemoryStatistic::initialize() {
-  assert(_enabled == false && _the_table == nullptr, "Only once");
-  _the_table = new MemStatTable;
+  assert(_enabled == false && _the_store == nullptr, "Only once");
+  _the_store = new MemStatStore;
   _enabled = true;
   log_info(compilation, alloc)("Compilation memory statistic enabled");
 }
@@ -838,9 +833,8 @@ void CompilationMemoryStatistic::on_end_compilation() {
 
   {
     MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
-    assert(_the_table != nullptr, "not initialized");
-
-    _the_table->add(fmn, arena_stat, code_size, result);
+    assert(_the_store != nullptr, "not initialized");
+    _the_store->add(fmn, arena_stat, code_size, result);
   }
 
   if (print) {
@@ -1008,15 +1002,15 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool verbos
   st->print_cr("Compilation memory statistics, by allocation size");
   st->cr();
 
-  if (_the_table == nullptr) {
+  if (_the_store == nullptr) {
     st->print_cr("Compilation memory statistics not yet initialized. ");
     return;
   }
 
   if (verbose) {
-    _the_table->print_details(st, minsize);
+    _the_store->print_details(st, minsize);
   } else {
-    _the_table->print_table(st, minsize);
+    _the_store->print_table(st, minsize);
   }
 
   st->cr();
