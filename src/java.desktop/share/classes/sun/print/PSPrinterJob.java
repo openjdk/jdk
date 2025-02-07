@@ -1575,7 +1575,7 @@ public class PSPrinterJob extends RasterPrinterJob {
             ncomps+=1;
         }
         if (options != null && !options.isEmpty()) {
-            optionArgs = options.trim().split("\\s+");
+            optionArgs = options.trim().split(" ");
             ncomps+=optionArgs.length;
         }
         if (jobTitle != null && !jobTitle.isEmpty()) {
