@@ -1583,7 +1583,7 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
   // For older processors, instruction_type != size holds, and we
   // emulate the sub-word instructions by constructing a 4-byte value
   // that leaves the other bytes unchanged.
-  const int instruction_type =  size ;
+  const int instruction_type = size;
 
   Label retry;
   Register shift_amount = noreg,
