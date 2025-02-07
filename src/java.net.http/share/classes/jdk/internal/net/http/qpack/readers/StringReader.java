@@ -121,7 +121,7 @@ public final class StringReader {
                     plainReader.read(input, output);
                 }
             } catch (IOException ioe) {
-                readError.toQPackException(ioe);
+                throw readError.toQPackException(ioe);
             }
             if (isLast) {
                 input.limit(oldLimit);

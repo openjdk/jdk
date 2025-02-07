@@ -92,7 +92,7 @@ public final class DynamicTable implements HeadersTable {
     private long tail, head, drain = -1;
 
     // Used space percentage threshold when to start increasing the drain index
-    private int drainUsedSpaceThreshold = QPACK.ENCODER_DRAINING_THRESHOLD;
+    private final int drainUsedSpaceThreshold = QPACK.ENCODER_DRAINING_THRESHOLD;
 
     // true - table is used by the QPack encoder, otherwise used by the
     // QPack decoder

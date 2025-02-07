@@ -58,7 +58,6 @@ public class HeaderFrameReader {
         SELECT_FIELD_READER,
         INDEXED,
         INDEX_WITH_POST_BASE,
-        INDEX_COUNT_INCREMENT,
         LITERAL_WITH_LITERAL_NAME,
         LITERAL_WITH_NAME_REF,
         LITERAL_WITH_POST_BASE,

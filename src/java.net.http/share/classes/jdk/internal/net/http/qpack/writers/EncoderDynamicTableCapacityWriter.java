@@ -29,7 +29,6 @@ import java.nio.ByteBuffer;
 public final class EncoderDynamicTableCapacityWriter implements BinaryRepresentationWriter {
 
     private final IntegerWriter intWriter;
-    private long capacity;
 
     public EncoderDynamicTableCapacityWriter() {
         this.intWriter = new IntegerWriter();
@@ -38,9 +37,6 @@ public final class EncoderDynamicTableCapacityWriter implements BinaryRepresenta
     public EncoderDynamicTableCapacityWriter configure(long capacity) {
         // IntegerWriter.configure checks if the capacity value is not negative
         intWriter.configure(capacity, 5, 0b0010_0000);
-        // Need to store capacity value for updating dynamic table capacity once
-        // write operation is completed
-        this.capacity = capacity;
         return this;
     }
 

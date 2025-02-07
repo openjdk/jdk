@@ -381,7 +381,7 @@ public class Encoder {
             throw new IllegalStateException("Field Line Section Prefix");
         }
         fspBuffer.flip();
-        buffers.add(0, fspBuffer);
+        buffers.addFirst(fspBuffer);
     }
 
     public void registerNonAckFieldLineSection(long streamId, SectionReference sectionReference) {
@@ -568,8 +568,7 @@ public class Encoder {
             SectionReference unacked = globalUnacknowledgedRange(this);
 
             // Result is a combination of both sections above
-            var res = unacked.reduce(inFlight);
-            return res;
+            return unacked.reduce(inFlight);
         }
 
         public TableEntry tryInsertEntry(TableEntry entry) {
@@ -587,8 +586,7 @@ public class Encoder {
 
             if (QPACK.ALLOW_BLOCKING_ENCODING && canReferenceNewEntry()) {
                 // Create a new TableEntry that describes newly added header field
-                TableEntry newEntry = entry.toNewDynamicTableEntry(idx);
-                return newEntry;
+                return entry.toNewDynamicTableEntry(idx);
             } else {
                 return entry;
             }
