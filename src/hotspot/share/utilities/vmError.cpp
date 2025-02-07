@@ -60,6 +60,7 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
 #include "sanitizers/ub.hpp"
+#include "services/heapDumper.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
@@ -1911,7 +1912,9 @@ class VM_ReportJavaOutOfMemory : public VM_Operation {
  private:
   const char* _message;
  public:
-  VM_ReportJavaOutOfMemory(const char* message) { _message = message; }
+  VM_ReportJavaOutOfMemory(const char* message, bool dumpHeap) {
+     _message = message;
+  }
   VMOp_Type type() const                        { return VMOp_ReportJavaOutOfMemory; }
   void doit();
 };
@@ -1943,10 +1946,13 @@ void VM_ReportJavaOutOfMemory::doit() {
   }
 }
 
-void VMError::report_java_out_of_memory(const char* message) {
+void VMError::report_java_out_of_memory(const char* message, bool dumpHeap) {
+  if(dumpHeap) {
+    HeapDumper::dump_heap_from_oome();
+  }
   if (OnOutOfMemoryError && OnOutOfMemoryError[0]) {
     MutexLocker ml(Heap_lock);
-    VM_ReportJavaOutOfMemory op(message);
+    VM_ReportJavaOutOfMemory op(message, dumpHeap);
     VMThread::execute(&op);
   }
 }
