@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,10 @@
 # questions.
 #
 
-include MakeFileStart.gmk
+include $(SPEC)
+include MakeBase.gmk
+
+$(eval $(call IncludeCustomExtension, SourceRevision-pre.gmk))
 
 ################################################################################
 # Keep track of what source revision is used to create the build, by creating
@@ -35,7 +38,6 @@ include MakeFileStart.gmk
 # bundle. As a part of creating this source bundle, the current SCM revisions of
 # all repos will be stored in a file in the top dir, which is then used when
 # creating the tracker file.
-################################################################################
 
 STORED_SOURCE_REVISION := $(TOPDIR)/.src-rev
 
@@ -154,6 +156,10 @@ endif
 
 ################################################################################
 
+$(eval $(call IncludeCustomExtension, SourceRevision-post.gmk))
+
+################################################################################
+
 store-source-revision: $(STORE_SOURCE_REVISION_TARGET)
 
 create-source-revision-tracker: $(CREATE_SOURCE_REVISION_TRACKER_TARGET)
@@ -161,7 +167,3 @@ create-source-revision-tracker: $(CREATE_SOURCE_REVISION_TRACKER_TARGET)
 FRC: # Force target
 
 .PHONY: store-source-revision create-source-revision-tracker
-
-################################################################################
-
-include MakeFileEnd.gmk

@@ -23,12 +23,17 @@
 # questions.
 #
 
-include MakeIncludeStart.gmk
-ifeq ($(INCLUDE), true)
+ifndef _JDK_NATIVE_COMPILATION_GMK
+_JDK_NATIVE_COMPILATION_GMK := 1
 
-################################################################################
+ifeq ($(_MAKEBASE_GMK), )
+  $(error You must include MakeBase.gmk prior to including JdkNativeCompilation.gmk)
+endif
 
 include NativeCompilation.gmk
+
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, common/JdkNativeCompilation.gmk))
 
 FindSrcDirsForComponent += \
   $(call uniq, $(wildcard \
@@ -494,7 +499,4 @@ define SetupJdkExecutableBody
   $$(eval $$(call SetupJdkNativeCompilation, $1))
 endef
 
-################################################################################
-
-endif # include guard
-include MakeIncludeEnd.gmk
+endif # _JDK_NATIVE_COMPILATION_GMK
