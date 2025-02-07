@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 import java.awt.Button;
 import java.awt.FileDialog;
-import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.GridLayout;
 import java.awt.Image;
+import java.awt.Panel;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
@@ -38,7 +39,7 @@ import java.util.Objects;
 
 /*
  * @test
- * @bug 4035189
+ * @bug 6425126
  * @summary Test to verify that PIT File Dialog icon not matching with
  *          the new java icon (frame Icon) - PIT build
  * @requires (os.family == "windows")
@@ -55,15 +56,24 @@ public class FileDialogIconTest {
 
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
-                1. Select the Image for a Dialog and Frame using either
-                   Load/Save/Just Dialog.
-                2. Set the Icon Image/s to Frame and Dialog. Verify that the
-                   Icon is set for the respective Frame and Dialog.
-                   If selected Icon is set to Frame and Dialog press PASS
-                   else FAIL.
-                                """;
+                The 1st row of buttons in testUI are to open Load,
+                Save and Simple Dialog respectively.
+
+                The rest of the buttons are to set icons to
+                the Frame and Dialog.
+
+                1. Set an icon for the Frame and Dialog by clicking
+                   on one of the set icon buttons.
+                2. Verify that the icon is set for the Frame (testUI)
+                   and for the Dialog (by clicking on Load, Save or
+                   Simple Dialog button).
+
+                If selected icon is set to Frame and Dialog press PASS
+                else FAIL.
+                """;
+
         PassFailJFrame.builder()
-                .title("Test Instructions")
+                .title("Test Instructions Frame")
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(35)
@@ -73,16 +83,16 @@ public class FileDialogIconTest {
                 .awaitAndCheck();
     }
 
-    public static void setImagesToFD(java.util.List<Image> listIcon) {
-        FileDialogIconTest.images = listIcon;
+    public static void setImagesToFD(List<Image> listIcon) {
+        images = listIcon;
     }
 
-    public static void setImagesToFrame(java.util.List<Image> listIcon) {
+    public static void setImagesToFrame(List<Image> listIcon) {
         frame.setIconImages(listIcon);
     }
 
     public static void setImageToFD(Image img) {
-        FileDialogIconTest.image = img;
+        image = img;
     }
 
     public static void setImageToFrame(Image img) {
@@ -90,13 +100,13 @@ public class FileDialogIconTest {
     }
 
     public static Frame initialize() {
-        frame = new Frame("FileDialogIconTest");
+        frame = new Frame("FileDialogIconTest TestUI");
         Button setImageButton1 = new Button("setIconImageToFrame");
         Button setImageButton2 = new Button("setIconImageToDialog");
         Button setImageButton3 = new Button("setIconImagesToFrame");
         Button setImageButton4 = new Button("setIconImagesToDialog");
-        Button setImageButton5 = new Button("setIconBufferedImagesToDialog");
-        Button setImageButton6 = new Button("setIconBufferedImagesToFrame");
+        Button setImageButton5 = new Button("setIconBufferedImagesToFrame");
+        Button setImageButton6 = new Button("setIconBufferedImagesToDialog");
 
         if (System.getProperty("test.src") == null) {
             fileBase = "";
@@ -111,7 +121,7 @@ public class FileDialogIconTest {
                 try {
                     Image image = Toolkit.getDefaultToolkit().getImage(fileName);
                     setImageToFrame(image);
-                    PassFailJFrame.log("Loaded image . setting to frame");
+                    PassFailJFrame.log("Loaded image. Setting to frame");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -123,6 +133,7 @@ public class FileDialogIconTest {
                 try {
                     Image image = Toolkit.getDefaultToolkit().getImage(fileName);
                     setImageToFD(image);
+                    PassFailJFrame.log("Loaded image. Setting to dialog");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -133,11 +144,12 @@ public class FileDialogIconTest {
             public void actionPerformed(ActionEvent event) {
                 try {
                     Image image;
-                    java.util.List<Image> list = new java.util.ArrayList();
+                    List<Image> list = new ArrayList<>();
                     for (int i = 1; i <= 4; i++) {
                         String fileName = fileBase + "T" + i + ".gif";
                         image = Toolkit.getDefaultToolkit().getImage(fileName);
-                        PassFailJFrame.log("Loaded image " + fileName + ". setting to the list for frame");
+                        PassFailJFrame.log("Loaded image " + "T" + i + ".gif."
+                                           + "Setting to the list for frame");
                         list.add(image);
                     }
                     setImagesToFrame(list);
@@ -156,7 +168,8 @@ public class FileDialogIconTest {
                     for (int i = 1; i <= 4; i++) {
                         String fileName = fileBase + "T" + i + ".gif";
                         image = Toolkit.getDefaultToolkit().getImage(fileName);
-                        PassFailJFrame.log("Loaded image " + fileName + ". setting to the list for dialog");
+                        PassFailJFrame.log("Loaded image " + "T" + i + ".gif."
+                                           + "Setting to the list for dialog");
                         list.add(image);
                     }
                     setImagesToFD(list);
@@ -169,35 +182,18 @@ public class FileDialogIconTest {
 
         setImageButton5.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                List<BufferedImage> list = new ArrayList<>();
+                List<Image> list = new ArrayList<>();
                 try {
                     Robot robot = new Robot();
                     Rectangle rectangle;
                     for (int i = 1; i <= 4; i++) {
-                        rectangle = new Rectangle(i * 10, i * 10, i * 10 + 40, i * 10 + 40);
-                        java.awt.image.BufferedImage image = robot.createScreenCapture(rectangle);
+                        rectangle = new Rectangle(i * 10, i * 10,
+                                            i * 10 + 40, i * 10 + 40);
+                        BufferedImage image = robot.createScreenCapture(rectangle);
                         robot.delay(100);
                         list.add(image);
                     }
-                } catch (Throwable t) {
-                    t.printStackTrace();
-                }
-                PassFailJFrame.log("Captured images and set to the list for dialog");
-            }
-        });
-
-        setImageButton6.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                List<BufferedImage> list = new ArrayList<>();
-                try {
-                    Robot robot = new Robot();
-                    Rectangle rectangle;
-                    for (int i = 1; i <= 4; i++) {
-                        rectangle = new Rectangle(i * 10, i * 10, i * 10 + 40, i * 10 + 40);
-                        java.awt.image.BufferedImage image = robot.createScreenCapture(rectangle);
-                        robot.delay(100);
-                        list.add(image);
-                    }
+                    setImagesToFrame(list);
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
@@ -205,54 +201,84 @@ public class FileDialogIconTest {
             }
         });
 
+        setImageButton6.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                List<Image> list = new ArrayList<>();
+                try {
+                    Robot robot = new Robot();
+                    Rectangle rectangle;
+                    for (int i = 1; i <= 4; i++) {
+                        rectangle = new Rectangle(i * 10, i * 10,
+                                            i * 10 + 40, i * 10 + 40);
+                        BufferedImage image = robot.createScreenCapture(rectangle);
+                        robot.delay(100);
+                        list.add(image);
+                    }
+                    setImagesToFD(list);
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+                PassFailJFrame.log("Captured images and set to the list for dialog");
+            }
+        });
+
         Button buttonLoad = new Button("Load Dialog");
         Button buttonSave = new Button("Save Dialog");
-        Button buttonSimple = new Button("Just Dialog");
+        Button buttonSimple = new Button("Simple Dialog");
         buttonLoad.addActionListener(new MyActionListener(FileDialog.LOAD, "LOAD"));
         buttonSave.addActionListener(new MyActionListener(FileDialog.SAVE, "SAVE"));
         buttonSimple.addActionListener(new MyActionListener(-1, ""));
 
-        frame.setSize(400, 400);
-        frame.setLayout(new FlowLayout());
-        frame.add(buttonLoad);
-        frame.add(buttonSave);
-        frame.add(buttonSimple);
-        frame.add(setImageButton1);
-        frame.add(setImageButton2);
-        frame.add(setImageButton3);
-        frame.add(setImageButton4);
+        frame.setLayout(new GridLayout(2, 1));
+
+        Panel panel1 = new Panel(new GridLayout(1, 3));
+        panel1.add(buttonLoad);
+        panel1.add(buttonSave);
+        panel1.add(buttonSimple);
+
+        Panel panel2 = new Panel(new GridLayout(3, 2));
+        panel2.add(setImageButton1);
+        panel2.add(setImageButton2);
+        panel2.add(setImageButton3);
+        panel2.add(setImageButton4);
+        panel2.add(setImageButton5);
+        panel2.add(setImageButton6);
+
+        frame.add(panel1);
+        frame.add(panel2);
         frame.pack();
+
         return frame;
     }
-}
 
-class MyActionListener implements ActionListener {
-    int id;
-    String name;
+    static class MyActionListener implements ActionListener {
+        int id;
+        String name;
 
-    public MyActionListener(int id, String name) {
-        this.id = id;
-        this.name = name;
-    }
+        public MyActionListener(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
 
-    public void actionPerformed(ActionEvent ae) {
-        try {
-            FileDialog filedialog;
-            if (id == -1 && Objects.equals(name, "")) {
-                filedialog = new FileDialog(FileDialogIconTest.frame);
-            } else {
-                filedialog = new FileDialog(FileDialogIconTest.frame, name, id);
+        public void actionPerformed(ActionEvent ae) {
+            try {
+                FileDialog filedialog;
+                if (id == -1 && Objects.equals(name, "")) {
+                    filedialog = new FileDialog(FileDialogIconTest.frame);
+                } else {
+                    filedialog = new FileDialog(FileDialogIconTest.frame, name, id);
+                }
+                if (image != null) {
+                    filedialog.setIconImage(image);
+                }
+
+                if (FileDialogIconTest.images != null) {
+                    filedialog.setIconImages(images);
+                }
+                filedialog.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            if (FileDialogIconTest.image != null) {
-                filedialog.setIconImage(FileDialogIconTest.image);
-            }
-
-            if (FileDialogIconTest.images != null) {
-                filedialog.setIconImages(FileDialogIconTest.images);
-            }
-            filedialog.setVisible(true);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 }
