@@ -46,10 +46,8 @@
 
 class G1HeapRegion;
 class G1CollectionSet;
-class G1CollectionCandidateList;
 class G1CollectionSetCandidates;
 class G1CollectionSetChooser;
-class G1CollectionCandidateRegionList;
 class G1IHOPControl;
 class G1Analytics;
 class G1SurvivorRegions;
@@ -140,7 +138,6 @@ public:
 
   double predict_base_time_ms(size_t pending_cards, size_t card_rs_length) const;
 
-private:
   // Base time contains handling remembered sets and constant other time of the
   // whole young gen, refinement buffers, and copying survivors.
   // Basically everything but copying eden regions.
@@ -148,24 +145,16 @@ private:
 
   // Copy time for a region is copying live data.
   double predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
-  // Merge-scan time for a region is handling card-based remembered sets of that region
-  // (as a single unit).
-  double predict_region_merge_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
   // Code root scan time prediction for the given region.
   double predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
-  // Non-copy time for a region is handling remembered sets and other time.
-  double predict_region_non_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
 
-public:
-
+  double predict_merge_scan_time(size_t card_rs_length) const;
   // Predict other time for count young regions.
   double predict_young_region_other_time_ms(uint count) const;
+  double predict_non_young_other_time_ms(uint count) const;
   // Predict copying live data time for count eden regions. Return the predict bytes if
   // bytes_to_copy is non-null.
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
-  // Total time for a region is handling remembered sets (as a single unit), copying its live data
-  // and other time.
-  double predict_region_total_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
 
   void cset_regions_freed() {
     bool update = should_update_surv_rate_group_predictors();
@@ -247,11 +236,11 @@ private:
   // Limit the given desired young length to available free regions.
   uint calculate_young_target_length(uint desired_young_length) const;
 
-  size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
   double predict_survivor_regions_evac_time() const;
   double predict_retained_regions_evac_time() const;
 
 public:
+  size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
   size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
 
   // The minimum number of retained regions we will add to the CSet during a young GC.

@@ -25,79 +25,101 @@
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
-#include "utilities/bitMap.inline.hpp"
 #include "utilities/growableArray.hpp"
 
-G1CollectionCandidateList::G1CollectionCandidateList() : _candidates(2, mtGC) { }
+uint G1CSetCandidateGroup::_next_group_id = 2;
 
-void G1CollectionCandidateList::set(G1CollectionSetCandidateInfo* candidate_infos, uint num_infos) {
-  assert(_candidates.is_empty(), "must be");
+G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id) :
+  _candidates(4, mtGCCardSet),
+  _card_set_mm(config, card_set_freelist_pool),
+  _card_set(config, &_card_set_mm),
+  _reclaimable_bytes(size_t(0)),
+  _gc_efficiency(0.0),
+  _group_id(group_id)
+{ }
 
-  GrowableArrayFromArray<G1CollectionSetCandidateInfo> a(candidate_infos, (int)num_infos);
-  _candidates.appendAll(&a);
+G1CSetCandidateGroup::G1CSetCandidateGroup() :
+  G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), G1CollectedHeap::heap()->card_set_freelist_pool(), _next_group_id++)
+{ }
+
+void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
+  G1CollectionSetCandidateInfo c(hr);
+  add(c);
 }
 
-void G1CollectionCandidateList::append_unsorted(G1HeapRegion* r) {
-  G1CollectionSetCandidateInfo c(r, r->calc_gc_efficiency());
-  _candidates.append(c);
+void G1CSetCandidateGroup::add(G1CollectionSetCandidateInfo& hr_info) {
+  G1HeapRegion* hr = hr_info._r;
+  _candidates.append(hr_info);
+  hr->install_cset_group(this);
 }
 
-void G1CollectionCandidateList::sort_by_efficiency() {
-  _candidates.sort(compare_gc_efficiency);
-}
-
-void G1CollectionCandidateList::remove(G1CollectionCandidateRegionList* other) {
-  guarantee((uint)_candidates.length() >= other->length(), "must be");
-
-  if (other->length() == 0) {
-    // Nothing to remove or nothing in the original set.
-    return;
+void G1CSetCandidateGroup::calculate_efficiency() {
+  _reclaimable_bytes = 0;
+  uint num_candidates = _candidates.length();
+  for (uint i = 0; i < num_candidates; i++) {
+    G1HeapRegion* hr = region_at(i);
+    _reclaimable_bytes += hr->reclaimable_bytes();
   }
+  _gc_efficiency = _reclaimable_bytes / predict_group_total_time_ms();
+}
 
-  // Create a list from scratch, copying over the elements from the candidate
-  // list not in the other list. Finally deallocate and overwrite the old list.
-  int new_length = _candidates.length() - other->length();
-  GrowableArray<G1CollectionSetCandidateInfo> new_list(new_length, mtGC);
+size_t G1CSetCandidateGroup::liveness() const {
+  size_t capacity = length() * G1HeapRegion::GrainBytes;
 
-  uint other_idx = 0;
+  return (size_t) ceil(((capacity - _reclaimable_bytes) * 100.0) / capacity);
+}
 
-  for (uint candidate_idx = 0; candidate_idx < (uint)_candidates.length(); candidate_idx++) {
-    if ((other_idx == other->length()) || _candidates.at(candidate_idx)._r != other->at(other_idx)) {
-      new_list.append(_candidates.at(candidate_idx));
-    } else {
-      other_idx++;
+void G1CSetCandidateGroup::clear(bool uninstall_group_cardset) {
+  if (uninstall_group_cardset) {
+    for (G1CollectionSetCandidateInfo ci : _candidates) {
+      G1HeapRegion* r = ci._r;
+      r->uninstall_cset_group();
+      r->rem_set()->clear(true /* only_cardset */);
     }
   }
-  _candidates.swap(&new_list);
-
-  verify();
-  assert(_candidates.length() == new_length, "must be %u %u", _candidates.length(), new_length);
-}
-
-void G1CollectionCandidateList::clear() {
+  _card_set.clear();
   _candidates.clear();
 }
 
-#ifndef PRODUCT
-void G1CollectionCandidateList::verify() {
-  G1CollectionSetCandidateInfo* prev = nullptr;
+double G1CSetCandidateGroup::predict_group_total_time_ms() const {
+  G1Policy* p = G1CollectedHeap::heap()->policy();
 
-  for (uint i = 0; i < (uint)_candidates.length(); i++) {
-    G1CollectionSetCandidateInfo& ci = _candidates.at(i);
-    assert(prev == nullptr || prev->_gc_efficiency >= ci._gc_efficiency,
-           "Stored gc efficiency must be descending from region %u to %u",
-           prev->_r->hrm_index(), ci._r->hrm_index());
-    prev = &ci;
-    assert(ci._r->rem_set()->is_tracked(), "remset for region %u must be tracked", ci._r->hrm_index());
+  double predicted_copy_time_ms = 0.0;
+  double predict_code_root_scan_time_ms = 0.0;
+  size_t predict_bytes_to_copy = 0.0;
+
+  for (G1CollectionSetCandidateInfo ci : _candidates) {
+    G1HeapRegion* r = ci._r;
+    assert(r->rem_set()->cset_group() == this, "Must be!");
+
+    predict_bytes_to_copy += p->predict_bytes_to_copy(r);
+    predicted_copy_time_ms += p->predict_region_copy_time_ms(r, false /* for_young_only_phase */);
+    predict_code_root_scan_time_ms += p->predict_region_code_root_scan_time(r, false /* for_young_only_phase */);
   }
+
+  size_t card_rs_length = _card_set.occupied();
+
+  double merge_scan_time_ms = p->predict_merge_scan_time(card_rs_length);
+  double non_young_other_time_ms = p->predict_non_young_other_time_ms(length());
+
+  log_trace(gc, ergo, cset) ("Prediction for group with %u regions, card_rs_length %zu, merge_scan_time %.2fms, code_root_scan_time_ms %.2fms, evac_time_ms %.2fms, other_time %.2fms, bytes_to_cop %zu",
+                             length(),
+                             card_rs_length,
+                             merge_scan_time_ms,
+                             predict_code_root_scan_time_ms,
+                             predicted_copy_time_ms,
+                             non_young_other_time_ms,
+                             predict_bytes_to_copy);
+
+  return merge_scan_time_ms +
+         predict_code_root_scan_time_ms +
+         predicted_copy_time_ms +
+         non_young_other_time_ms;
 }
-#endif
 
-int G1CollectionCandidateList::compare_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
-  assert(ci1->_r != nullptr && ci2->_r != nullptr, "Should not be!");
-
-  double gc_eff1 = ci1->_gc_efficiency;
-  double gc_eff2 = ci2->_gc_efficiency;
+int G1CSetCandidateGroup::compare_gc_efficiency(G1CSetCandidateGroup** gr1, G1CSetCandidateGroup** gr2) {
+  double gc_eff1 = (*gr1)->gc_efficiency();
+  double gc_eff2 = (*gr2)->gc_efficiency();
 
   if (gc_eff1 > gc_eff2) {
     return -1;
@@ -108,7 +130,7 @@ int G1CollectionCandidateList::compare_gc_efficiency(G1CollectionSetCandidateInf
   }
 }
 
-int G1CollectionCandidateList::compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
+int G1CSetCandidateGroup::compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
   // Make sure that null entries are moved to the end.
   if (ci1->_r == nullptr) {
     if (ci2->_r == nullptr) {
@@ -132,47 +154,95 @@ int G1CollectionCandidateList::compare_reclaimble_bytes(G1CollectionSetCandidate
   }
 }
 
-G1CollectionCandidateRegionList::G1CollectionCandidateRegionList() : _regions(2, mtGC) { }
+G1CSetCandidateGroupList::G1CSetCandidateGroupList() : _groups(8, mtGC), _num_regions(0) { }
 
-void G1CollectionCandidateRegionList::append(G1HeapRegion* r) {
-  assert(!_regions.contains(r), "must be");
-  _regions.append(r);
+void G1CSetCandidateGroupList::append(G1CSetCandidateGroup* group) {
+  assert(group->length() > 0, "Do not add empty groups");
+  assert(!_groups.contains(group), "Already added to list");
+  _groups.append(group);
+  _num_regions += group->length();
 }
 
-void G1CollectionCandidateRegionList::remove_prefix(G1CollectionCandidateRegionList* other) {
-#ifdef ASSERT
-  // Check that the given list is a prefix of this list.
-  int i = 0;
-  for (G1HeapRegion* r : *other) {
-    assert(_regions.at(i) == r, "must be in order, but element %d is not", i);
-    i++;
+G1CSetCandidateGroup* G1CSetCandidateGroupList::at(uint index) {
+  return _groups.at(index);
+}
+
+void G1CSetCandidateGroupList::clear(bool uninstall_group_cardset) {
+  for (G1CSetCandidateGroup* gr : _groups) {
+    gr->clear(uninstall_group_cardset);
+    delete gr;
   }
-#endif
+  _groups.clear();
+  _num_regions = 0;
+}
+
+void G1CSetCandidateGroupList::prepare_for_scan() {
+  for (G1CSetCandidateGroup* gr : _groups) {
+    gr->card_set()->reset_table_scanner_for_groups();
+  }
+}
+
+void G1CSetCandidateGroupList::remove_selected(uint count, uint num_regions) {
+  _groups.remove_till(count);
+  _num_regions -= num_regions;
+}
+
+void G1CSetCandidateGroupList::remove(G1CSetCandidateGroupList* other) {
+  guarantee((uint)_groups.length() >= other->length(), "Other should be a subset of this list");
 
   if (other->length() == 0) {
+    // Nothing to remove or nothing in the original set.
     return;
   }
-  _regions.remove_till(other->length());
+
+  // Create a list from scratch, copying over the elements from the candidate
+  // list not in the other list. Finally deallocate and overwrite the old list.
+  int new_length = _groups.length() - other->length();
+  _num_regions = num_regions() - other->num_regions();
+  GrowableArray<G1CSetCandidateGroup*> new_list(new_length, mtGC);
+
+  uint other_idx = 0;
+  for (G1CSetCandidateGroup* gr : _groups) {
+    if (other_idx == other->length() || gr != other->at(other_idx)) {
+      new_list.append(gr);
+    } else {
+      other_idx++;
+    }
+  }
+  _groups.swap(&new_list);
+
+  verify();
+  assert(_groups.length() == new_length, "Must be");
 }
 
-G1HeapRegion* G1CollectionCandidateRegionList::at(uint index) {
-  return _regions.at(index);
+void G1CSetCandidateGroupList::sort_by_efficiency() {
+  _groups.sort(G1CSetCandidateGroup::compare_gc_efficiency);
 }
 
-void G1CollectionCandidateRegionList::clear() {
-  _regions.clear();
+#ifndef PRODUCT
+void G1CSetCandidateGroupList::verify() const {
+  G1CSetCandidateGroup* prev = nullptr;
+
+  for (G1CSetCandidateGroup* gr : _groups) {
+    assert(prev == nullptr || prev->gc_efficiency() >= gr->gc_efficiency(),
+           "Stored gc efficiency must be descending");
+    prev = gr;
+  }
 }
+#endif
 
 G1CollectionSetCandidates::G1CollectionSetCandidates() :
-  _marking_regions(),
-  _retained_regions(),
   _contains_map(nullptr),
+  _from_marking_groups(),
+  _retained_groups(),
   _max_regions(0),
   _last_marking_candidates_length(0)
 { }
 
 G1CollectionSetCandidates::~G1CollectionSetCandidates() {
   FREE_C_HEAP_ARRAY(CandidateOrigin, _contains_map);
+  _from_marking_groups.clear();
+  _retained_groups.clear();
 }
 
 bool G1CollectionSetCandidates::is_from_marking(G1HeapRegion* r) const {
@@ -188,8 +258,8 @@ void G1CollectionSetCandidates::initialize(uint max_regions) {
 }
 
 void G1CollectionSetCandidates::clear() {
-  _marking_regions.clear();
-  _retained_regions.clear();
+  _retained_groups.clear(true /* uninstall_group_cardset */);
+  _from_marking_groups.clear(true /* uninstall_group_cardset */);
   for (uint i = 0; i < _max_regions; i++) {
     _contains_map[i] = CandidateOrigin::Invalid;
   }
@@ -197,28 +267,62 @@ void G1CollectionSetCandidates::clear() {
 }
 
 void G1CollectionSetCandidates::sort_marking_by_efficiency() {
-  G1CollectionCandidateListIterator iter = _marking_regions.begin();
-  for (; iter != _marking_regions.end(); ++iter) {
-    G1HeapRegion* hr = (*iter)->_r;
-    (*iter)->_gc_efficiency = hr->calc_gc_efficiency();
+  for (G1CSetCandidateGroup* gr : _from_marking_groups) {
+    gr->calculate_efficiency();
   }
-  _marking_regions.sort_by_efficiency();
+  _from_marking_groups.sort_by_efficiency();
 
-  _marking_regions.verify();
+  _from_marking_groups.verify();
 }
 
 void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
                                                             uint num_infos) {
-  assert(_marking_regions.length() == 0, "must be empty before adding new ones");
+  if (num_infos == 0) {
+    log_debug(gc, ergo, cset) ("No regions selected from marking.");
+    return;
+  }
 
+  assert(_from_marking_groups.length() == 0, "must be empty at the start of a cycle");
   verify();
 
-  _marking_regions.set(candidate_infos, num_infos);
+  G1Policy* p = G1CollectedHeap::heap()->policy();
+  // During each Mixed GC, we must collect at least G1Policy::calc_min_old_cset_length regions to meet
+  // the G1MixedGCCountTarget. For the first collection in a Mixed GC cycle, we can add all regions
+  // required to meet this threshold to the same remset group. We are certain these will be collected in
+  // the same MixedGC.
+  uint group_limit = p->calc_min_old_cset_length(num_infos);
+
+  uint num_added_to_group = 0;
+
+  G1CSetCandidateGroup::reset_next_group_id();
+  G1CSetCandidateGroup* current = nullptr;
+
+  current = new G1CSetCandidateGroup();
+
   for (uint i = 0; i < num_infos; i++) {
     G1HeapRegion* r = candidate_infos[i]._r;
     assert(!contains(r), "must not contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
+
+    if (num_added_to_group == group_limit) {
+      if (group_limit != G1OldCSetGroupSize) {
+        group_limit = G1OldCSetGroupSize;
+      }
+
+      _from_marking_groups.append(current);
+
+      current = new G1CSetCandidateGroup();
+      num_added_to_group = 0;
+    }
+    current->add(candidate_infos[i]);
+    num_added_to_group++;
   }
+
+  _from_marking_groups.append(current);
+
+  assert(_from_marking_groups.num_regions() == num_infos, "Must be!");
+
+  log_debug(gc, ergo, cset) ("Finished creating %u collection groups from %u regions", _from_marking_groups.length(), num_infos);
   _last_marking_candidates_length = num_infos;
 
   verify();
@@ -227,44 +331,51 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
 void G1CollectionSetCandidates::sort_by_efficiency() {
   // From marking regions must always be sorted so no reason to actually sort
   // them.
-  _marking_regions.verify();
-  _retained_regions.sort_by_efficiency();
-  _retained_regions.verify();
+  _from_marking_groups.verify();
+  _retained_groups.sort_by_efficiency();
+  _retained_groups.verify();
 }
 
-void G1CollectionSetCandidates::add_retained_region_unsorted(G1HeapRegion* r) {
-  assert(!contains(r), "must not contain region %u", r->hrm_index());
-  _contains_map[r->hrm_index()] = CandidateOrigin::Retained;
-  _retained_regions.append_unsorted(r);
-}
-
-void G1CollectionSetCandidates::remove(G1CollectionCandidateRegionList* other) {
+void G1CollectionSetCandidates::remove(G1CSetCandidateGroupList* other) {
   // During removal, we exploit the fact that elements in the marking_regions,
   // retained_regions and other list are sorted by gc_efficiency. Furthermore,
   // all regions in the passed other list are in one of the two other lists.
   //
   // Split original list into elements for the marking list and elements from the
   // retained list.
-  G1CollectionCandidateRegionList other_marking_regions;
-  G1CollectionCandidateRegionList other_retained_regions;
+  G1CSetCandidateGroupList other_marking_groups;
+  G1CSetCandidateGroupList other_retained_groups;
 
-  for (G1HeapRegion* r : *other) {
+  for (G1CSetCandidateGroup* group : *other) {
+    assert(group->length() > 0, "Should not have empty groups");
+    // Regions in the same group have the same source (i.e from_marking or retained).
+    G1HeapRegion* r = group->region_at(0);
     if (is_from_marking(r)) {
-      other_marking_regions.append(r);
+      other_marking_groups.append(group);
     } else {
-      other_retained_regions.append(r);
+      other_retained_groups.append(group);
     }
   }
 
-  _marking_regions.remove(&other_marking_regions);
-  _retained_regions.remove(&other_retained_regions);
+  _from_marking_groups.remove(&other_marking_groups);
+  _retained_groups.remove(&other_retained_groups);
 
-  for (G1HeapRegion* r : *other) {
-    assert(contains(r), "must contain region %u", r->hrm_index());
+  other->iterate([&] (G1HeapRegion* r) {
+    assert(contains(r), "Must contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Invalid;
-  }
+  });
 
   verify();
+}
+
+void G1CollectionSetCandidates::add_retained_region_unsorted(G1HeapRegion* r) {
+  assert(!contains(r), "Must not already contain region %u", r->hrm_index());
+  _contains_map[r->hrm_index()] = CandidateOrigin::Retained;
+
+  G1CSetCandidateGroup* gr = new G1CSetCandidateGroup();
+  gr->add(r);
+
+  _retained_groups.append(gr);
 }
 
 bool G1CollectionSetCandidates::is_empty() const {
@@ -276,29 +387,31 @@ bool G1CollectionSetCandidates::has_more_marking_candidates() const {
 }
 
 uint G1CollectionSetCandidates::marking_regions_length() const {
-  return _marking_regions.length();
+  return _from_marking_groups.num_regions();
 }
 
 uint G1CollectionSetCandidates::retained_regions_length() const {
-  return _retained_regions.length();
+  return _retained_groups.num_regions();
 }
 
 #ifndef PRODUCT
-void G1CollectionSetCandidates::verify_helper(G1CollectionCandidateList* list, uint& from_marking, CandidateOrigin* verify_map) {
+void G1CollectionSetCandidates::verify_helper(G1CSetCandidateGroupList* list, uint& from_marking, CandidateOrigin* verify_map) {
   list->verify();
 
-  for (uint i = 0; i < (uint)list->length(); i++) {
-    G1HeapRegion* r = list->at(i)._r;
+  for (G1CSetCandidateGroup* gr : *list) {
+    for (G1CollectionSetCandidateInfo ci : *gr) {
+      G1HeapRegion* r = ci._r;
 
-    if (is_from_marking(r)) {
-      from_marking++;
+      if (is_from_marking(r)) {
+        from_marking++;
+      }
+      const uint hrm_index = r->hrm_index();
+      assert(_contains_map[hrm_index] == CandidateOrigin::Marking || _contains_map[hrm_index] == CandidateOrigin::Retained,
+             "must be %u is %u", hrm_index, (uint)_contains_map[hrm_index]);
+      assert(verify_map[hrm_index] == CandidateOrigin::Invalid, "already added");
+
+      verify_map[hrm_index] = CandidateOrigin::Verify;
     }
-    const uint hrm_index = r->hrm_index();
-    assert(_contains_map[hrm_index] == CandidateOrigin::Marking || _contains_map[hrm_index] == CandidateOrigin::Retained,
-           "must be %u is %u", hrm_index, (uint)_contains_map[hrm_index]);
-    assert(verify_map[hrm_index] == CandidateOrigin::Invalid, "already added");
-
-    verify_map[hrm_index] = CandidateOrigin::Verify;
   }
 }
 
@@ -310,11 +423,11 @@ void G1CollectionSetCandidates::verify() {
     verify_map[i] = CandidateOrigin::Invalid;
   }
 
-  verify_helper(&_marking_regions, from_marking, verify_map);
+  verify_helper(&_from_marking_groups, from_marking, verify_map);
   assert(from_marking == marking_regions_length(), "must be");
 
   uint from_marking_retained = 0;
-  verify_helper(&_retained_regions, from_marking_retained, verify_map);
+  verify_helper(&_retained_groups, from_marking_retained, verify_map);
   assert(from_marking_retained == 0, "must be");
 
   assert(length() >= marking_regions_length(), "must be");
