@@ -798,4 +798,6 @@ public class WhiteBox {
 
   public native void preTouchMemory(long addr, long size);
   public native long rss();
+
+  public native boolean isStatic();
 }
