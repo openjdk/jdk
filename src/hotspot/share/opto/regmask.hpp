@@ -94,16 +94,16 @@ class RegMask {
 
   union {
     // Array of Register Mask bits.  This array is large enough to cover all
-    // the machine registers and all parameters that need to be passed on the
-    // stack (stack registers) up to some interesting limit. On Intel, the
-    // limit is something like 90+ parameters.
+    // the machine registers and usually all parameters that need to be passed
+    // on the stack (stack registers) up to some interesting limit. On Intel,
+    // the limit is something like 90+ parameters.
     int       _RM_I[RM_SIZE];
     uintptr_t _RM_UP[_RM_SIZE];
   };
 
   // In rare situations (e.g., "more than 90+ parameters on Intel"), we need to
   // extend the register mask with dynamically allocated memory. We keep the
-  // base statically allocated _RM_UP, and arena-allocate the extended mask
+  // base statically allocated _RM_UP, and arena allocate the extended mask
   // (RM_UP_EXT) separately. Another, perhaps more elegant, option would be to
   // have two subclasses of RegMask, where one is statically allocated and one
   // is (entirely) dynamically allocated. Given that register mask extension is
@@ -117,7 +117,7 @@ class RegMask {
   //
   // - There is no efficient copy/clone operation.
   // - GrowableArray construction currently default-initializes everything
-  //   within their capacity, which is unnecessary in our case.
+  //   within the array's initial capacity, which is unnecessary in our case.
   //
   // After addressing these limitations, we should consider using a
   // GrowableArray here.
@@ -206,7 +206,9 @@ class RegMask {
   }
 
   // The maximum word index
-  unsigned int _rm_max() const { return _rm_size - 1U; }
+  unsigned int _rm_max() const {
+    return _rm_size - 1U;
+  }
 
   // Where to extend the register mask
   Arena* _arena;
@@ -300,20 +302,32 @@ class RegMask {
       assert(_RM_UP_EXT != nullptr, "sanity");
       assert(orig_ext_adr == &_RM_UP_EXT, "clone sanity check");
       memset(_RM_UP_EXT + MAX2((int)start - (int)_RM_SIZE, 0), value,
-             sizeof(uintptr_t) * MIN2((int)length,
-                                      (int)length - ((int)_RM_SIZE - (int)start)));
+             sizeof(uintptr_t) *
+                 MIN2((int)length, (int)length - ((int)_RM_SIZE - (int)start)));
     }
   }
 
 public:
-  unsigned int rm_size() const { return _rm_size; }
-  unsigned int rm_size_bits() const { return _rm_size * BitsPerWord; }
+  unsigned int rm_size() const {
+    return _rm_size;
+  }
+  unsigned int rm_size_bits() const {
+    return _rm_size * BitsPerWord;
+  }
 
-  bool is_offset() const { return _offset > 0; }
-  unsigned int offset_bits() const { return _offset * BitsPerWord; };
+  bool is_offset() const {
+    return _offset > 0;
+  }
+  unsigned int offset_bits() const {
+    return _offset * BitsPerWord;
+  };
 
-  bool is_AllStack() const { return _all_stack; }
-  void set_AllStack(bool value = true) { _all_stack = value; }
+  bool is_AllStack() const {
+    return _all_stack;
+  }
+  void set_AllStack(bool value = true) {
+    _all_stack = value;
+  }
 
   // SlotsPerLong is 2, since slots are 32 bits and longs are 64 bits.
   // Also, consider the maximum alignment size for a normally allocated
@@ -366,17 +380,18 @@ public:
         _lwm(_RM_MAX), _hwm(0), _arena(arena) {
     assert(valid_watermarks(), "post-condition");
   }
-  RegMask() : RegMask(nullptr) { assert(valid_watermarks(), "post-condition"); }
+  RegMask() : RegMask(nullptr) {
+    assert(valid_watermarks(), "post-condition");
+  }
 
   // Construct a mask with a single bit
-#ifdef ASSERT
-  RegMask(OptoReg::Name reg, Arena* arena, bool orig_const = false)
+  RegMask(OptoReg::Name reg,
+          Arena* arena
+          DEBUG_ONLY(COMMA bool orig_const = false))
       : RegMask(arena) {
     Insert(reg);
-    this->orig_const = orig_const;
+    DEBUG_ONLY(this->orig_const = orig_const;)
   }
-#else
-  RegMask(OptoReg::Name reg, Arena* arena) : RegMask(arena) { Insert(reg); }
 #endif
   RegMask(OptoReg::Name reg) : RegMask(reg, nullptr) {}
 
@@ -421,7 +436,8 @@ public:
     for (unsigned i = _lwm; i <= _hwm; i++) {
       uintptr_t bits = _rm_up(i);
       if (bits) {
-        return OptoReg::Name(offset_bits() + (i << _LogWordBits) + find_lowest_bit(bits));
+        return OptoReg::Name(offset_bits() + (i << _LogWordBits) +
+                             find_lowest_bit(bits));
       }
     }
     return OptoReg::Name(OptoReg::Bad);
@@ -436,7 +452,8 @@ public:
     while (i > _lwm) {
       uintptr_t bits = _rm_up(--i);
       if (bits) {
-        return OptoReg::Name(offset_bits() + (i << _LogWordBits) + find_highest_bit(bits));
+        return OptoReg::Name(offset_bits() + (i << _LogWordBits) +
+                             find_highest_bit(bits));
       }
     }
     return OptoReg::Name(OptoReg::Bad);
@@ -815,7 +832,9 @@ class RegMaskIterator {
         unsigned int next_bit = find_lowest_bit(_current_bits);
         assert(((_current_bits >> next_bit) & 0x1) == 1, "lowest bit must be set after shift");
         _current_bits = (_current_bits >> next_bit) - 1;
-        _reg = OptoReg::Name(_rm.offset_bits() + ((_next_index - 1) << RegMask::_LogWordBits) + next_bit);
+        _reg = OptoReg::Name(_rm.offset_bits() +
+                             ((_next_index - 1) << RegMask::_LogWordBits) +
+                             next_bit);
         return r;
       }
     }

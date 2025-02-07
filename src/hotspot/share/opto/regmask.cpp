@@ -244,7 +244,8 @@ OptoReg::Name RegMask::find_first_set(LRG &lrg, const int size) const {
   for (unsigned i = _lwm; i <= _hwm; i++) {
     if (_rm_up(i)) {                // Found some bits
       // Convert to bit number, return hi bit in pair
-      return OptoReg::Name(offset_bits() + (i<<_LogWordBits) + find_lowest_bit(_rm_up(i)) + (size - 1));
+      return OptoReg::Name(offset_bits() + (i << _LogWordBits) +
+                           find_lowest_bit(_rm_up(i)) + (size - 1));
     }
   }
   return OptoReg::Bad;
@@ -353,7 +354,7 @@ bool RegMask::is_bound_set(const unsigned int size) const {
         }
       } else {                  // Else its a split-set case
         // All bits from bit to highest bit in the word must be set
-        if ((all & ~(bit-1)) != _rm_up(i)) {
+        if ((all & ~(bit - 1)) != _rm_up(i)) {
           return false;
         }
         i++;                    // Skip iteration forward and check high part
@@ -457,7 +458,8 @@ void RegMask::dump(outputStream *st) const {
 void RegMask::dump_hex(outputStream* st) const {
   st->print("...%x|", is_AllStack() ? 0xf : 0x0);
   for (int i = _rm_max(); i >= 0; i--) {
-    st->print(LP64_ONLY("%0*lx") NOT_LP64("%0*x"), (int)sizeof(uintptr_t) * CHAR_BIT / 4, _rm_up(i));
+    st->print(LP64_ONLY("%0*lx") NOT_LP64("%0*x"),
+              (int)sizeof(uintptr_t) * CHAR_BIT / 4, _rm_up(i));
     if (i != 0) {
       st->print("|");
     }

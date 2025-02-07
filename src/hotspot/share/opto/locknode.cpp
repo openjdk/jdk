@@ -40,13 +40,9 @@ uint BoxLockNode::size_of() const { return sizeof(*this); }
 
 BoxLockNode::BoxLockNode(int slot)
     : Node(Compile::current()->root()), _slot(slot),
-#ifdef ASSERT
       // In debug mode, signal that the register mask is constant.
-      _inmask(OptoReg::stack2reg(_slot), Compile::current()->comp_arena(),
-              true),
-#else
-      _inmask(OptoReg::stack2reg(_slot), Compile::current()->comp_arena()),
-#endif
+      _inmask(OptoReg::stack2reg(_slot),
+              Compile::current()->comp_arena() DEBUG_ONLY(COMMA true)),
       _kind(BoxLockNode::Regular) {
   if (_slot > BoxLockNode_slot_limit) {
     Compile::current()->record_method_not_compilable(

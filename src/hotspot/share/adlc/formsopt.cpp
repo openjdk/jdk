@@ -163,7 +163,9 @@ bool   RegisterForm::verify() {
 }
 
 // Compute the least number of words required for registers in register masks.
-int RegisterForm::words_for_regs() { return (_reg_ctr + 31) >> 5; }
+int RegisterForm::words_for_regs() {
+  return (_reg_ctr + 31) >> 5;
+}
 
 // Compute RegMask size
 int RegisterForm::RegMask_Size() {
