@@ -35,6 +35,28 @@ typedef jint (JNICALL *GetCreatedJavaVMs_t)(JavaVM **vmBuf, jsize bufLen, jsize 
 
 GetCreatedJavaVMs_t GetCreatedJavaVMs = NULL;
 
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void* reserved) {
+#ifdef WINDOWS
+    HMODULE handle;
+    handle = GetModuleHandle("jvm.dll");
+    if (handle == NULL) {
+        // No loaded jvm.dll. Get the handle to the executable.
+        handle = GetModuleHandle(NULL);
+    }
+#endif
+#ifdef WINDOWS
+#define GET_VM_FUNCTION(f) GetProcAddress(handle, f)
+#else
+#define GET_VM_FUNCTION(f) dlsym(RTLD_DEFAULT, f)
+#endif
+    GetCreatedJavaVMs = (GetCreatedJavaVMs_t)GET_VM_FUNCTION("JNI_GetCreatedJavaVMs");
+    if (GetCreatedJavaVMs == NULL) {
+        fprintf(stderr, "Find JNI_GetCreatedJavaVMs failed\n");
+        return JNI_ERR;
+    }
+    return JNI_VERSION_1_8;
+}
+
 /**
  * Attach the current thread with JNI AttachCurrentThread, call a method, and detach.
  */
@@ -87,27 +109,6 @@ JNIEXPORT void JNICALL Java_ExplicitAttach_startThreads(JNIEnv *env, jclass claz
     pthread_t tid;
     pthread_attr_t attr;
     int i;
-
-    if (GetCreatedJavaVMs == NULL) {
-#ifdef WINDOWS
-        HMODULE handle;
-        handle = GetModuleHandle("jvm.dll");
-        if (handle == NULL) {
-            // No loaded jvm.dll. Get the handle to the executable.
-            handle = GetModuleHandle(NULL);
-        }
-#endif
-#ifdef WINDOWS
-#define GET_VM_FUNCTION(f) GetProcAddress(handle, f)
-#else
-#define GET_VM_FUNCTION(f) dlsym(RTLD_DEFAULT, f)
-#endif
-        GetCreatedJavaVMs = (GetCreatedJavaVMs_t)GET_VM_FUNCTION("JNI_GetCreatedJavaVMs");
-        if (GetCreatedJavaVMs == NULL) {
-            fprintf(stderr, "Find JNI_GetCreatedJavaVMs failed\n");
-            return;
-        }
-    }
 
     pthread_attr_init(&attr);
     pthread_attr_setstacksize(&attr, STACK_SIZE);
