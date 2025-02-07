@@ -81,16 +81,16 @@ public interface Template {
     }
 
     static String $(String name) {
-        return Renderer.$(name);
+        return Renderer.getCurrent().$(name);
     }
 
     static NothingToken let(String key, Object value) {
-        Renderer.addHashtagReplacement(key, value.toString());
+        Renderer.getCurrent().addHashtagReplacement(key, value.toString());
         return new NothingToken();
     }
 
     static <T> TemplateBody let(String key, T value, Function<T, TemplateBody> function) {
-        Renderer.addHashtagReplacement(key, value.toString());
+        Renderer.getCurrent().addHashtagReplacement(key, value.toString());
         return function.apply(value);
     }
 }

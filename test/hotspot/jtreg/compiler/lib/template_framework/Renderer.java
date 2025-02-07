@@ -30,34 +30,52 @@ import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-public abstract class Renderer {
+public class Renderer {
     private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile("\\$([a-zA-Z_][a-zA-Z0-9_]*)");
     private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile("#([a-zA-Z_][a-zA-Z0-9_]*)");
 
+    /**
+     * There can be at most one Renderer instance at any time. This is to avoid that users accidentally
+     * render templates to strings, rather than letting them all render together.
+     */
+    private static Renderer renderer = null;
+
     // TODO describe
-    private static CodeFrame baseCodeFrame = null;
-    private static CodeFrame currentCodeFrame = null;
+    private int nextTemplateFrameId = 0;
+    private TemplateFrame baseTemplateFrame = new TemplateFrame(null, nextTemplateFrameId++);
+    private TemplateFrame currentTemplateFrame = baseTemplateFrame;
+    private CodeFrame baseCodeFrame = new CodeFrame(null);
+    private CodeFrame currentCodeFrame = baseCodeFrame;
 
-    private static int nextTemplateId = 0; // TODO refactor
+    // We do not want any other instances.
+    private Renderer() {}
 
-    static TemplateFrame baseTemplateFrame = null;
-    static TemplateFrame currentTemplateFrame = null;
+    static Renderer getCurrent() {
+        if (renderer == null) {
+            // TODO update text - which methods are involved?
+            throw new RendererException("A method such as $ or let was called outside a template rendering. Make sure you are not calling templates yourself, but use use().");
+        }
+        return renderer;
+    }
 
     public static String render(TemplateWithArgs templateWithArgs) {
         // Check nobody else is using the Renderer.
-        if (baseCodeFrame != null) {
+        if (renderer != null) {
             throw new RendererException("Nested render not allowed.");
         }
 
-        // Setup the Renderer.
-        baseCodeFrame = new CodeFrame(null);
-        currentCodeFrame = baseCodeFrame;
-        nextTemplateId = 0;
-        baseTemplateFrame = new TemplateFrame(null, nextTemplateId++);
-        currentTemplateFrame = baseTemplateFrame;
+        renderer = new Renderer();
+        renderer.renderTemplateWithArgs(templateWithArgs);
+        renderer.checkFrameConsistencyAfterRendering();
+        String code = renderer.collectCode();
 
-        renderTemplateWithArgs(templateWithArgs);
+        // Release the Renderer.
+        renderer = null;
 
+        return code;
+    }
+
+    private void checkFrameConsistencyAfterRendering() {
         // Ensure CodeFrame consistency.
         if (baseCodeFrame != currentCodeFrame) {
             throw new RendererException("Renderer did not end up at base CodeFrame.");
@@ -66,52 +84,33 @@ public abstract class Renderer {
         if (baseTemplateFrame != currentTemplateFrame) {
             throw new RendererException("Renderer did not end up at base TemplateFrame.");
         }
+    }
 
-        // Collect Code to String.
+    private String collectCode() {
         StringBuilder builder = new StringBuilder();
         baseCodeFrame.getCode().renderTo(builder);
-        String code = builder.toString();
-
-        // Release the Renderer.
-        baseCodeFrame = null;
-        currentCodeFrame = null;
-        baseTemplateFrame = null;
-        currentTemplateFrame = null;
-
-        return code;
+        return builder.toString();
     }
 
-    static String $(String name) {
-        return getCurrentTemplateFrame().$(name);
+    String $(String name) {
+        return currentTemplateFrame.$(name);
     }
 
-    static void addHashtagReplacement(String key, String value) {
-        getCurrentTemplateFrame().addHashtagReplacement(key, value);
+    void addHashtagReplacement(String key, String value) {
+        currentTemplateFrame.addHashtagReplacement(key, value);
+    }
+
+    private String getHashtagReplacement(String key) {
+        return currentTemplateFrame.getHashtagReplacement(key);
     }
 
     // TODO fuel - based on codeFrame or templateFrame?
-    public static int depth() {
-        return getCurrentCodeFrame().depth();
+    int depth() {
+        return currentCodeFrame.depth();
     }
 
-    private static CodeFrame getCurrentCodeFrame() {
-        if (currentCodeFrame == null) {
-            // TODO update text - which methods are involved?
-            throw new RendererException("A method such as $ or let was called outside a template rendering. Make sure you are not calling templates yourself, but use use().");
-        }
-        return currentCodeFrame;
-    }
-
-    private static TemplateFrame getCurrentTemplateFrame() {
-        if (currentTemplateFrame == null) {
-            // TODO update text - which methods are involved?
-            throw new RendererException("A method such as $ or let was called outside a template rendering. Make sure you are not calling templates yourself, but use use().");
-        }
-        return currentTemplateFrame;
-    }
-
-    private static void renderTemplateWithArgs(TemplateWithArgs templateWithArgs) {
-        TemplateFrame templateFrame = new TemplateFrame(getCurrentTemplateFrame(), nextTemplateId++);
+    private void renderTemplateWithArgs(TemplateWithArgs templateWithArgs) {
+        TemplateFrame templateFrame = new TemplateFrame(currentTemplateFrame, nextTemplateFrameId++);
         currentTemplateFrame = templateFrame;
 
         templateWithArgs.visitArguments((name, value) -> addHashtagReplacement(name, value.toString()));
@@ -124,14 +123,17 @@ public abstract class Renderer {
         currentTemplateFrame = currentTemplateFrame.parent;
     }
 
-    private static void renderToken(Token token) {
-        CodeFrame codeFrame = getCurrentCodeFrame();
+    private void renderToken(Token token) {
         switch (token) {
-            case StringToken(String s) ->  codeFrame.addString(templateString(s));
-            case NothingToken() -> { /* nothing */ } // TODO check order?
+            case StringToken(String s) -> {
+                currentCodeFrame.addString(templateString(s));
+            }
+            case NothingToken() -> {
+                // Nothing.
+            }
             case HookSetToken(Hook hook, List<Token> tokens) -> {
                 // TODO describe and maybe rename to HookSetUse
-                CodeFrame outerCodeFrame = getCurrentCodeFrame();
+                CodeFrame outerCodeFrame = currentCodeFrame;
 
                 // We need a CodeFrame to which the hook can insert code. That way, name
                 // definitions at the hook cannot excape the hookCodeFrame.
@@ -153,8 +155,8 @@ public abstract class Renderer {
                 currentCodeFrame.addCode(innerCodeFrame.getCode());
             }
             case HookIntoToken(Hook hook, TemplateWithArgs t) -> {
-                // TODO describe and maybe rename to IntoHookUse
                 // Switch to hook CodeFrame.
+                CodeFrame callerCodeFrame = currentCodeFrame;
                 CodeFrame hookCodeFrame = codeFrameForHook(hook);
 
                 // Use a transparent nested CodeFrame. We need a CodeFrame so that the code generated
@@ -171,42 +173,43 @@ public abstract class Renderer {
                 hookCodeFrame.addCode(currentCodeFrame.getCode());
 
                 // Switch back from hook CodeFrame to caller CodeFrame.
-                currentCodeFrame = codeFrame;
+                currentCodeFrame = callerCodeFrame;
             }
             case TemplateWithArgs t -> {
                 // Use a nested CodeFrame.
-                currentCodeFrame = new CodeFrame(codeFrame);
+                CodeFrame callerCodeFrame = currentCodeFrame;
+                currentCodeFrame = new CodeFrame(currentCodeFrame);
 
                 renderTemplateWithArgs(t);
 
-                codeFrame.addCode(currentCodeFrame.getCode());
-                currentCodeFrame = codeFrame;
+                callerCodeFrame.addCode(currentCodeFrame.getCode());
+                currentCodeFrame = callerCodeFrame;
             }
         }
     }
 
-    private static void renderTokenList(List<Token> tokens) {
-        CodeFrame codeFrame = getCurrentCodeFrame();
+    private void renderTokenList(List<Token> tokens) {
+        CodeFrame codeFrame = currentCodeFrame;
         for (Token t : tokens) {
             renderToken(t);
         }
-        if (codeFrame != getCurrentCodeFrame()) {
+        if (codeFrame != currentCodeFrame) {
             throw new RendererException("CodeFrame mismatch.");
         }
     }
 
-    private static String templateString(String s) {
+    private String templateString(String s) {
         var temp = DOLLAR_NAME_PATTERN.matcher(s).replaceAll(
-            (MatchResult result) -> getCurrentTemplateFrame().$(result.group(1))
+            (MatchResult result) -> $(result.group(1))
 	);
         return HASHTAG_REPLACEMENT_PATTERN.matcher(temp).replaceAll(
             // We must escape "$", because it has a special meaning in replaceAll.
-            (MatchResult result) -> getCurrentTemplateFrame().getHashtagReplacement(result.group(1)).replace("$", "\\$")
+            (MatchResult result) -> getHashtagReplacement(result.group(1)).replace("$", "\\$")
         );
     }
 
-    private static CodeFrame codeFrameForHook(Hook hook) {
-        CodeFrame codeFrame = getCurrentCodeFrame();
+    private CodeFrame codeFrameForHook(Hook hook) {
+        CodeFrame codeFrame = currentCodeFrame;
         while (codeFrame != null) {
             if (codeFrame.hasHook(hook)) {
                 return codeFrame;
