@@ -53,9 +53,9 @@ import jdk.internal.net.http.quic.BuffersReader.ListBuffersReader;
  * {@linkplain PartialFrame#remaining() remaining} payload bytes to read for
  * the previous frame.
  * <br>
- * The sequence of calls: {@snippet
+ * The sequence of calls: {@snippet :
  *    framesDecoder.submit(buffer);
- *    while ((frame = framesDecoder.poll()) {
+ *    while ((frame = framesDecoder.poll()) != null) {
  *        if (frame instanceof PartialFrame partial) {
  *            var nextPayloadByte = framesDecoder.readPayloadBytes();
  *            // nextPayloadByte are the next bytes for the payload

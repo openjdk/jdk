@@ -185,10 +185,8 @@ public enum Http3FrameType {
 
     /**
      * Whether the given type is one of the reserved frame
-     * types defined by HTTP/3. For any positive N:
-     * {@snippet
-     *      0x21 + 0x1f * N
-     * }
+     * types defined by HTTP/3. For any non-negative integer N:
+     * {@code 0x21 + 0x1f * N }
      * is a reserved frame type that has no meaning.
      *
      * @param type an HTTP/3 frame type identifier read from an HTTP/3 frame

@@ -364,7 +364,7 @@ public abstract sealed class BuffersReader {
         /**
          * Adds a list of byte buffers to this reader.
          * This is equivalent to calling:
-         * {@snippet
+         * {@snippet :
          *     ListBuffersReader reader = ...;
          *     for (var buffer : buffers) {
          *         reader.add(buffer); // @link substring="add" target="#add(ByteBuffer)"
