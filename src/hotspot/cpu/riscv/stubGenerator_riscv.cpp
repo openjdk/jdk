@@ -2526,7 +2526,7 @@ class StubGenerator: public StubCodeGenerator {
              tmpL = isLU ? tmp1 : tmp2; // where to keep L for comparison
 
     if (AvoidUnalignedAccesses && (base_offset1 % 8) != 0) {
-      // Load another 4 bytes from strL to make sure main loop is 8-byte aligned
+      // Load 4 bytes from strL to make sure main loop is 8-byte aligned
       // cnt2 is >= 68 here, no need to check it for >= 0
       __ lwu(tmpL, Address(strL));
       __ addi(strL, strL, wordSize / 2);
