@@ -305,7 +305,7 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
      * concrete implementation of {@link #receiveHeaders(HeadersFrame, List)}.
      * @param value the new value
      */
-    void switchPauseReading(boolean value) {
+    void switchReadingPaused(boolean value) {
         readingPaused = value;
     }
 
