@@ -658,8 +658,6 @@ public class CompletableFutureTest extends JSR166TestCase {
         }
     }
 
-    static final boolean defaultExecutorIsCommonPool
-        = ForkJoinPool.getCommonPoolParallelism() > 1;
 
     /**
      * Permits the testing of parallel code for the 3 different
@@ -750,8 +748,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         },
         ASYNC {
             public void checkExecutionMode() {
-                mustEqual(defaultExecutorIsCommonPool,
-                             (ForkJoinPool.commonPool() == ForkJoinTask.getPool()));
+                mustEqual(ForkJoinPool.commonPool(), ForkJoinTask.getPool());
             }
             public CompletableFuture<Void> runAsync(Runnable a) {
                 return CompletableFuture.runAsync(a);
@@ -3794,10 +3791,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         CompletableFuture<Item> f = new CompletableFuture<>();
         Executor e = f.defaultExecutor();
         Executor c = ForkJoinPool.commonPool();
-        if (ForkJoinPool.getCommonPoolParallelism() > 1)
-            assertSame(e, c);
-        else
-            assertNotSame(e, c);
+        assertSame(e, c);
     }
 
     /**

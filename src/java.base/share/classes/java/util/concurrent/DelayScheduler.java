@@ -38,7 +38,6 @@ package java.util.concurrent;
 import java.util.Arrays;
 import jdk.internal.misc.Unsafe;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static java.util.concurrent.ForkJoinTask.InterruptibleTask;
 
 /**
  * An add-on for ForkJoinPools that provides scheduling for
@@ -47,17 +46,16 @@ import static java.util.concurrent.ForkJoinTask.InterruptibleTask;
 final class DelayScheduler extends Thread {
 
     /*
-     * The DelayScheduler maintains a binary heap based on trigger times
+     * A DelayScheduler maintains a binary heap based on trigger times
      * (field DelayedTask.when) along with a pending queue of tasks
-     * submitted by other threads. When ready, tasks are relayed
-     * to the pool.
+     * submitted by other threads. When ready, tasks are relayed to
+     * the pool.
      *
      * To reduce memory contention, the heap is maintained solely via
      * local variables in method loop() (forcing noticeable code
      * sprawl), recording only the current heap size when blocked to
      * allow method canShutDown to conservatively check emptiness, and
-     * to support an approximate reporting of current size for
-     * monitoring.
+     * to report approximate current size for monitoring.
      *
      * The pending queue uses a design similar to ForkJoinTask.Aux
      * queues: Incoming requests prepend (Treiber-stack-style) to the
@@ -86,22 +84,23 @@ final class DelayScheduler extends Thread {
      * which causes them to be pushed toward the bottom of the heap
      * where they can be simply swept out in the course of other add
      * and replace operations, even before processing the removal
-     * request (which is then a no-op).
+     * request (which is then a no-op). In the mean time, these
+     * elements might harmlessly be out of numerical heap order.
      *
      * To ensure that comparisons do not encounter integer wrap
      * errors, times are offset with the most negative possible value
-     * (nanoTimeOffset) determined during static initialization, and
-     * negative delays are screened out in public submission methods
+     * (nanoTimeOffset) determined during static initialization.
+     * Negative delays must be screened out in public submission methods
      *
      * For the sake of compatibility with ScheduledThreadPoolExecutor,
-     * shutdown follows the same rules, which add some further
-     * complexity beyond the cleanup associated with shutdownNow
-     * (runState STOP).  Upon noticing pool shutdown, all periodic
-     * tasks are purged; the scheduler then triggers pool.tryTerminate
-     * when the heap is empty. The asynchronicity of these steps with
-     * respect to pool runState weakens guarantees about exactly when
-     * remaining tasks report isCancelled to callers (they do not run,
-     * but there may be a lag setting their status).
+     * shutdown follows the same rules, which add some further steps
+     * beyond the cleanup associated with shutdownNow.  Upon noticing
+     * pool shutdown, all periodic tasks are purged; the scheduler
+     * then tries to terminate the pool if the heap is empty. The
+     * asynchronicity of these steps with respect to pool runState
+     * weakens guarantees about exactly when purged tasks report
+     * isCancelled to callers (they do not run, but there may be a lag
+     * setting their status).
      */
 
     private static final int INITIAL_HEAP_CAPACITY = 1 << 6;
@@ -257,18 +256,17 @@ final class DelayScheduler extends Thread {
 
             long parkTime = 0L;             // zero for untimed park
             if (n > 0 && h.length > 0) {
-                long now = now();
                 do {                        // submit ready tasks
                     DelayedTask<?> f; int stat;
                     if ((f = h[0]) != null) {
-                        long d = f.when - now;
+                        long d = f.when - now();
                         if ((stat = f.status) >= 0 && d > 0L) {
                             parkTime = d;
                             break;
                         }
                         f.heapIndex = -1;
                         if (stat >= 0)
-                            p.executeReadyDelayedTask(f);
+                            p.executeReadyDelayedTask(f, f.isImmediate);
                     }
                 } while ((n = replace(h, 0, n)) > 0);
             }
@@ -341,15 +339,14 @@ final class DelayScheduler extends Thread {
     }
 
     /**
-     * Call only when pool is shutdown or stopping. If called when
-     * shutdown but not stopping, removes periodic tasks if not
-     * already done so, and if not empty or pool not terminating,
-     * returns.  Otherwise, cancels all tasks in heap and pending
-     * queue.
+     * Call only when pool is shutdown. If called when not stopping,
+     * removes periodic tasks if not already done so, and if not empty
+     * or pool not terminating, returns.  Otherwise, cancels all tasks
+     * in heap and pending queue.
      * @return negative if stop, else current heap size.
      */
-    private int tryStop(ForkJoinPool p, DelayedTask<?>[] h,
-                        int n, boolean purgedPeriodic) {
+    private int tryStop(ForkJoinPool p, DelayedTask<?>[] h, int n,
+                        boolean purgedPeriodic) {
         if (p != null && h != null && h.length >= n) {
             if (!ForkJoinPool.poolIsStopping(p)) {
                 if (!purgedPeriodic && n > 0) {
@@ -385,7 +382,7 @@ final class DelayScheduler extends Thread {
      * Task class for DelayScheduler operations
      */
     @SuppressWarnings("serial")
-    static final class DelayedTask<T> extends InterruptibleTask<T>
+    static final class DelayedTask<T> extends ForkJoinTask.InterruptibleTask<T>
         implements ScheduledFuture<T> {
         final Runnable runnable; // only one of runnable or callable nonnull
         final Callable<? extends T> callable;
@@ -395,6 +392,7 @@ final class DelayScheduler extends Thread {
         final long nextDelay;     // 0: once; <0: fixedDelay; >0: fixedRate
         long when;                // nanoTime-based trigger time
         int heapIndex;            // if non-negative, index on heap
+        boolean isImmediate;      // true if action performed by scheduler
 
         DelayedTask(Runnable runnable, Callable<T> callable, ForkJoinPool pool,
                     long nextDelay, long delay) {

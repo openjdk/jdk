@@ -138,15 +138,20 @@ import static java.util.concurrent.DelayScheduler.DelayedTask;
  *
  * <p>Additionally, this class supports {@link
  * ScheduledExecutorService} methods to delay or periodically execute
- * tasks, as well as method {#link #submitAndCancelOnTimeout} to
- * cancel tasks that take too long. The submitted functions or actions
+ * tasks, as well as method {#link #submitWithTimeout} to
+ * cancel tasks that take too long. The scheduled functions or actions
  * may create and invoke other {@linkplain ForkJoinTask
- * ForkJoinTasks}. Resource exhaustian encountered after initial
+ * ForkJoinTasks}. Resource exhaustion encountered after initial
  * submission results in task cancellation. When time-based methods
  * are used, shutdown policies are based on the default policies of
  * class {@link ScheduledThreadPoolExecutor}: upon {@link #shutdown},
  * existing periodic tasks will not re-execute, and the pool
- * terminates when quiescent and existing delayed tasks complete.
+ * terminates when quiescent and existing delayed tasks
+ * complete. Method {@link #shutdownNow} may be used to instead
+ * unconditionally initiate pool termination. Monitoring methods such
+ * as {@link getQueuedTaskCount} do not include scheduled tasks that
+ * are not yet ready to execute, whcih are reported separately by
+ * method {@link getDelayedTaskCount}.
  *
  * <p>The parameters used to construct the common pool may be controlled by
  * setting the following {@linkplain System#getProperty system properties}:
@@ -843,7 +848,10 @@ public class ForkJoinPool extends AbstractExecutorService
      * fashion or use CountedCompleters (as is true for jdk
      * parallelStreams). Support infiltrates several methods,
      * including those that retry helping steps until we are sure that
-     * none apply if there are no workers.
+     * none apply if there are no workers. To deal with conflicting
+     * requirements, uses of the commonPool that require async because
+     * caller-runs does not apply, ensure at least one thread (method
+     * asyncCommonPool) before proceeding.
      *
      * As a more appropriate default in managed environments, unless
      * overridden by system properties, we use workers of subclass
@@ -3416,6 +3424,12 @@ public class ForkJoinPool extends AbstractExecutorService
     static boolean poolCanTerminate(ForkJoinPool p) { // true if terminated
         return p != null && (p.tryTerminate(false, false) & STOP) != 0L;
     }
+    static ForkJoinPool asyncCommonPool() { // override parallelism == 0
+        ForkJoinPool cp;
+        if ((cp = common).parallelism == 0)
+            U.compareAndSetInt(cp, PARALLELISM, 0, 1);
+        return cp;
+    }
 
     /**
      * Creates and starts DelayScheduler unless pool is in shutdown mode
@@ -3436,6 +3450,8 @@ public class ForkJoinPool extends AbstractExecutorService
             }
             if (start) { // start outside of lock
                 SharedThreadContainer ctr;
+                if (this == common)
+                    asyncCommonPool();
                 if ((ctr = container) != null)
                     ctr.start(ds);
                 else
@@ -3457,12 +3473,14 @@ public class ForkJoinPool extends AbstractExecutorService
     /**
      * Arranges execution of a ready task from DelayScheduler
      */
-    final void executeReadyDelayedTask(DelayedTask<?> task) {
+    final void executeReadyDelayedTask(DelayedTask<?> task, boolean immediate) {
         if (task != null) {
             WorkQueue q;
             boolean cancel = false;
             try {
-                if ((q = externalSubmissionQueue(false)) == null)
+                if (immediate)
+                    task.doExec();
+                else if ((q = externalSubmissionQueue(false)) == null)
                     cancel = true; // terminating
                 else
                     q.push(task, this, false);
@@ -3557,7 +3575,17 @@ public class ForkJoinPool extends AbstractExecutorService
     /**
      * Submits a task executing the given function, cancelling it (via
      * {@code cancel(true)}) if not completed within the given timeout
-     * period.
+     * period. If you would like to use some other value in the event
+     * of cancellation and/or other errors, you could use a construction
+     * such as the following for a submitted {@code task}.
+     *
+     * <pre> {@code
+     * T result;
+     * try {
+     *  result = task.get();
+     * ) catch (Error | RuntimeException ex) {
+     *    result = replacementValue;
+     * }}}</pre>
      *
      * @param callable the function to execute
      * @param <V> the type of the callable's result
@@ -3568,9 +3596,9 @@ public class ForkJoinPool extends AbstractExecutorService
      *         scheduled for execution
      * @throws NullPointerException if callable or unit is null
      */
-    public <V> ForkJoinTask<V> submitAndCancelOnTimeout(Callable<V> callable,
-                                                        long timeout,
-                                                        TimeUnit unit) {
+    public <V> ForkJoinTask<V> submitWithTimeout(Callable<V> callable,
+                                                 long timeout,
+                                                 TimeUnit unit) {
         ForkJoinTask.CallableWithCanceller<V> task; CancelAction onTimeout;
         DelayScheduler ds;
         if (callable == null || unit == null)
@@ -3582,6 +3610,7 @@ public class ForkJoinPool extends AbstractExecutorService
             throw new RejectedExecutionException();
         DelayedTask<Void> canceller = new DelayedTask<Void>(
             onTimeout = new CancelAction(), null, this, 0L, d);
+        canceller.isImmediate = true;
         onTimeout.task = task =
             new ForkJoinTask.CallableWithCanceller<V>(callable, canceller);
         if (d == 0L)
@@ -3728,7 +3757,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * to the pool that have not begun executing). This value is only
      * an approximation, obtained by iterating across all threads in
      * the pool. This method may be useful for tuning task
-     * granularities.
+     * granularities.The returned count does not include scheduled
+     * tasks that are not yet ready to execute, which are reported
+     * separately by method {@link getDelayedTaskCount}.
      *
      * @return the number of queued tasks
      * @see ForkJoinWorkerThread#getQueuedTaskCount()

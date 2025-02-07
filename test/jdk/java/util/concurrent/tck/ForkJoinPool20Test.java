@@ -565,4 +565,29 @@ public class ForkJoinPool20Test extends JSR166TestCase {
         assertTrue(p.isTerminated());
     }
 
+    /**
+     * submitWithTimeout cancels task after timeout
+     */
+    public void testSubmitWithTimeoutCancels() throws InterruptedException {
+        final ForkJoinPool p = ForkJoinPool.commonPool();
+        Callable<Boolean> c = new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                Thread.sleep(LONGER_DELAY_MS); return Boolean.TRUE; }};
+        ForkJoinTask<?> task = p.submitWithTimeout(c, 1, NANOSECONDS);
+        Thread.sleep(timeoutMillis());
+        assertTrue(task.isCancelled());
+    }
+    /**
+     * submitWithTimeout doesn't cancel if completed before timeout
+     */
+    public void testSubmitWithTimeout_NoTimeout() throws InterruptedException {
+        final ForkJoinPool p = ForkJoinPool.commonPool();
+        Callable<Boolean> c = new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                return Boolean.TRUE; }};
+        ForkJoinTask<?> task = p.submitWithTimeout(c, LONGER_DELAY_MS, MILLISECONDS);
+        Thread.sleep(timeoutMillis());
+        assertFalse(task.isCancelled());
+    }
+
 }

@@ -69,9 +69,8 @@ import java.util.Objects;
  * a completion method.
  *
  * <li>All <em>async</em> methods without an explicit Executor
- * argument are performed using the {@link ForkJoinPool#commonPool()}
- * (unless it does not support a parallelism level of at least two, in
- * which case, a new Thread is created to run each task).  This may be
+ * argument are performed using the {@link ForkJoinPool#commonPool()}.
+ * This may be
  * overridden for non-static methods in subclasses by defining method
  * {@link #defaultExecutor()}. To simplify monitoring, debugging,
  * and tracking, all generated asynchronous tasks are instances of the
@@ -473,31 +472,21 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     public static interface AsynchronousCompletionTask {
     }
 
-    private static final boolean USE_COMMON_POOL =
-        (ForkJoinPool.getCommonPoolParallelism() > 1);
-
     /**
-     * Default executor -- ForkJoinPool.commonPool() unless it cannot
-     * support parallelism.
+     * Default Executor
      */
-    private static final Executor ASYNC_POOL = USE_COMMON_POOL ?
-        ForkJoinPool.commonPool() : new ThreadPerTaskExecutor();
+    private static final ForkJoinPool ASYNC_POOL =
+        ForkJoinPool.asyncCommonPool();
 
-    /** Fallback if ForkJoinPool.commonPool() cannot support parallelism */
-    private static final class ThreadPerTaskExecutor implements Executor {
-        public void execute(Runnable r) {
-            Objects.requireNonNull(r);
-            new Thread(r).start();
-        }
+    private static ScheduledFuture<?> delay(Runnable command, long delay,
+                                            TimeUnit unit) {
+        return ASYNC_POOL.schedule(command, delay, unit);
     }
 
     /**
-     * Null-checks user executor argument, and translates uses of
-     * commonPool to ASYNC_POOL in case parallelism disabled.
+     * Null-checks user executor argument
      */
     static Executor screenExecutor(Executor e) {
-        if (!USE_COMMON_POOL && e == ForkJoinPool.commonPool())
-            return ASYNC_POOL;
         if (e == null) throw new NullPointerException();
         return e;
     }
@@ -2820,8 +2809,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         if (unit == null)
             throw new NullPointerException();
         if (result == null)
-            whenComplete(new Canceller(Delayer.delay(new Timeout(this),
-                                                     timeout, unit)));
+            whenComplete(new Canceller(delay(new Timeout(this),
+                                             timeout, unit)));
         return this;
     }
 
@@ -2842,7 +2831,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         if (unit == null)
             throw new NullPointerException();
         if (result == null)
-            whenComplete(new Canceller(Delayer.delay(
+            whenComplete(new Canceller(delay(
                                            new DelayedCompleter<T>(this, value),
                                            timeout, unit)));
         return this;
@@ -2929,33 +2918,6 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return new MinimalStage<U>(new AltResult(ex));
     }
 
-    /**
-     * Singleton delay scheduler, used only for starting and
-     * cancelling tasks.
-     */
-    static final class Delayer {
-        static ScheduledFuture<?> delay(Runnable command, long delay,
-                                        TimeUnit unit) {
-            return delayer.schedule(command, delay, unit);
-        }
-
-        static final class DaemonThreadFactory implements ThreadFactory {
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setDaemon(true);
-                t.setName("CompletableFutureDelayScheduler");
-                return t;
-            }
-        }
-
-        static final ScheduledThreadPoolExecutor delayer;
-        static {
-            (delayer = new ScheduledThreadPoolExecutor(
-                1, new DaemonThreadFactory())).
-                setRemoveOnCancelPolicy(true);
-        }
-    }
-
     // Little class-ified lambdas to better support monitoring
 
     static final class DelayedExecutor implements Executor {
@@ -2966,7 +2928,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
             this.delay = delay; this.unit = unit; this.executor = executor;
         }
         public void execute(Runnable r) {
-            Delayer.delay(new TaskSubmitter(executor, r), delay, unit);
+            delay(new TaskSubmitter(executor, r), delay, unit);
         }
     }
 
