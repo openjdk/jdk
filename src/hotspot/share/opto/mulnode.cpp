@@ -1363,8 +1363,8 @@ Node* RShiftNode::IdentityIL(PhaseGVN* phase, BasicType bt) {
 }
 
 const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
-  const Type *t1 = phase->type(in(1));
-  const Type *t2 = phase->type(in(2));
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
   // Either input is TOP ==> the result is TOP
   if (t1 == Type::TOP) return Type::TOP;
   if (t2 == Type::TOP) return Type::TOP;
