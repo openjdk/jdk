@@ -828,15 +828,15 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     assert(ac->_dest_type == TypeOopPtr::BOTTOM, "non escaping destination shouldn't have narrow slice");
     insert_mem_bar(ctrl, &out_mem, Op_MemBarStoreStore, Compile::AliasIdxBot);
   } else {
-    int alias_idx = Compile::AliasIdxBot;
+    int mem_bar_alias_idx = Compile::AliasIdxBot;
     if (ac->_dest_type != TypeOopPtr::BOTTOM) {
       // The graph was transformed under the assumption the ArrayCopy node only had an effect on a narrow slice. We can't
       // insert a wide membar now that it's being expanded: a load that uses the input memory state of the ArrayCopy
       // could then become anti dependent on the membar when it was not anti dependent on the ArrayCopy leading to a
       // broken graph.
-      alias_idx = C->get_alias_index(ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr());
+      mem_bar_alias_idx = C->get_alias_index(ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr());
     }
-    insert_mem_bar(ctrl, &out_mem, Op_MemBarCPUOrder, alias_idx);
+    insert_mem_bar(ctrl, &out_mem, Op_MemBarCPUOrder, mem_bar_alias_idx);
   }
 
   if (is_partial_array_copy) {
