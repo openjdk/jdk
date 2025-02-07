@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 public class TestNoNULL {
     private static final Set<String> excludedSourceFiles = new HashSet<>();
     private static final Set<String> excludedTestFiles = new HashSet<>();
-    private static final Set<String> excludedTestExtensions = Set.of(".c", ".java", ".jar");
+    private static final Set<String> excludedTestExtensions = Set.of(".c", ".java", ".jar", ".class");
     private static final Pattern NULL_PATTERN = Pattern.compile("\\bNULL\\b");
     private static Path dir = Paths.get(System.getProperty("test.src"));
     private static int errorCount = 0;
@@ -61,7 +61,9 @@ public class TestNoNULL {
 
         initializeExcludedPaths(dir);
 
-        processFiles(srcPath, excludedSourceFiles, false);
+        if (Files.exists(srcPath)) {
+            processFiles(srcPath, excludedSourceFiles, false);
+        }
         processFiles(testPath, excludedTestFiles, true);
 
         if (errorCount > 0) {
