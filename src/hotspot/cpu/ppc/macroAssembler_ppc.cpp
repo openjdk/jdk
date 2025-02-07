@@ -1719,14 +1719,8 @@ void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_curre
   // result register is different from the other ones.
   bool use_result_reg    = (int_flag_success != noreg);
   bool preset_result_reg = (int_flag_success != dest_current_value && int_flag_success != compare_value.register_or_noreg() &&
-<<<<<<< HEAD
                             int_flag_success != exchange_value && int_flag_success != addr_base);
-  assert(!weak || flag == CCR0, "weak only supported with CCR0");
-=======
-                            int_flag_success != exchange_value && int_flag_success != addr_base &&
-                            int_flag_success != tmp1 && int_flag_success != tmp2);
   assert(!weak || flag == CR0, "weak only supported with CR0");
->>>>>>> origin
   assert(int_flag_success == noreg || failed_ext == nullptr, "cannot have both");
   assert(size == 1 || size == 2 || size == 4, "unsupported");
 
