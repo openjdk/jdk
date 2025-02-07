@@ -26,6 +26,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP
 
+#include <runtime/mutexLocker.hpp>
+
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
@@ -59,12 +61,9 @@ public:
   };
 
 private:
-  // This lock is used to coordinate setting the _requested_gc_cause and _requested generation.
-  // It is important that these be changed together and have a consistent view.
-  Monitor _request_lock;
-
-  // Used to coordinate waiting for the control thread to change state
-  Monitor _gc_mode_lock;
+  // This lock is used to coordinate setting the _requested_gc_cause, _requested generation
+  // and _gc_mode. It is important that these be changed together and have a consistent view.
+  Monitor _control_lock;
 
   // This is true when the old generation cycle is in an interruptible phase (i.e., marking or
   // preparing for mark).
@@ -133,21 +132,25 @@ private:
   void process_phase_timings();
 
   void set_gc_mode(GCMode new_mode);
+  void set_gc_mode(MonitorLocker& ml, GCMode new_mode);
   static const char* gc_mode_name(GCMode mode);
 
   // Takes the request lock and updates the requested cause and generation, then notifies the control thread.
   void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
-  void notify_control_thread_with_lock(GCCause::Cause cause, ShenandoahGeneration* generation);
+  void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
 
   // Notifies the control thread, but does not update the requested cause or generation.
   void notify_cancellation(GCCause::Cause cause);
+  void notify_cancellation(MonitorLocker& ml, GCCause::Cause cause);
 
   void maybe_set_aging_cycle();
   void check_for_request(ShenandoahGCRequest& request);
 
-  void prepare_for_allocation_failure_request(ShenandoahGCRequest& request);
-  void prepare_for_explicit_gc_request(ShenandoahGCRequest& request);
-  void prepare_for_concurrent_gc_request(ShenandoahGCRequest& request);
+  GCMode prepare_for_allocation_failure_request(ShenandoahGCRequest &request);
+
+  GCMode prepare_for_explicit_gc_request(ShenandoahGCRequest &request);
+
+  GCMode prepare_for_concurrent_gc_request(ShenandoahGCRequest &request);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP
