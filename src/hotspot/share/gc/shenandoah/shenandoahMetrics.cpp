@@ -44,12 +44,14 @@ void ShenandoahMetricsSnapshot::snap_after() {
   _ef_after = _heap->free_set()->external_fragmentation();
 }
 
-bool ShenandoahMetricsSnapshot::is_good_progress() {
+// For degenerated GC, generation is Young for generational mode, Global for non-generational mode.
+// For full GC, generation is always Global.
+bool ShenandoahMetricsSnapshot::is_good_progress(ShenandoahGeneration* generation) {
   // Under the critical threshold?
   ShenandoahFreeSet* free_set = _heap->free_set();
   size_t free_actual   = free_set->available();
-  // The sum of free_set->capacity() and ->reserved represents capacity of young in generational, heap in non-generational.
-  size_t free_expected = ((free_set->capacity() + free_set->reserved()) / 100) * ShenandoahCriticalFreeThreshold;
+  size_t free_expected = (generation->max_capacity() / 100) * ShenandoahCriticalFreeThreshold;
+
   bool prog_free = free_actual >= free_expected;
   log_info(gc, ergo)("%s progress for free space: %zu%s, need %zu%s",
                      prog_free ? "Good" : "Bad",
