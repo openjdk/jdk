@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
     // A temporary buffer for response body bytes
     final ConcurrentLinkedQueue<List<ByteBuffer>> responseData = new ConcurrentLinkedQueue<>();
 
-    private AtomicInteger nonFinalResponseCount = new AtomicInteger();
+    private final AtomicInteger nonFinalResponseCount = new AtomicInteger();
 
 
     Http3Stream(Exchange<T> exchange) {
@@ -307,7 +307,7 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
     }
 
     private ByteBuffer pollIfNotReset(QuicStreamReader reader) throws IOException {
-        ByteBuffer buffer = null;
+        ByteBuffer buffer;
         try {
             if (reader.isReset()) return null;
             buffer = reader.poll();
@@ -378,8 +378,9 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
              if (debug.on())
                  debug.log("processQuicData - submitting buffer: %s bytes (ByteBuffer@%s)",
                          buffer.remaining(), System.identityHashCode(buffer));
-             // only updated gere
-             receivedQuicBytes += buffer.remaining();
+             // only updated here
+             var received = receivedQuicBytes;
+             receivedQuicBytes = received + buffer.remaining();
              framesDecoder.submit(buffer);
              while ((frame = framesDecoder.poll()) != null) {
                  if (debug.on()) debug.log("processQuicData - frame: " + frame);

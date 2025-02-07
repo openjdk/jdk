@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,7 @@ public final class Http3Connection implements AutoCloseable {
      * HTTP/3 connection instance.
      * @return a debug tag
      */
-    final String dbgTag() {
+    String dbgTag() {
         return dbgTag;
     }
 
@@ -286,7 +286,7 @@ public final class Http3Connection implements AutoCloseable {
                 HTTP_3);
         var debug = h3client.debug();
         var where = "Http3Connection.createAsync";
-        if (!(connection instanceof HttpQuicConnection)) {
+        if (!(connection instanceof HttpQuicConnection httpQuicConnection)) {
             if (debug.on())
                 debug.log("%s: Connection is not an HttpQuicConnection: %s", where, connection);
             if (request.isHttp3Only(exchange.version())) {
@@ -297,9 +297,9 @@ public final class Http3Connection implements AutoCloseable {
             }
             return MinimalFuture.completedFuture(null);
         }
-        final HttpQuicConnection httpQuicConnection = (HttpQuicConnection) connection;
-        if (debug.on())
+        if (debug.on()) {
             debug.log("%s: Got HttpQuicConnection: %s", where, connection);
+        }
 
         // Expose the underlying connection to the exchange's aborter so it can
         // be closed if a timeout occurs.
@@ -636,7 +636,7 @@ public final class Http3Connection implements AutoCloseable {
     }
 
     @Override
-    public final void close() {
+    public void close() {
         try {
             sendGoAway();
         } catch (IOException ioe) {
@@ -653,11 +653,11 @@ public final class Http3Connection implements AutoCloseable {
         close(Http3Error.H3_NO_ERROR, "H3 connection closed - no error");
     }
 
-    final void close(final Throwable throwable) {
+    void close(final Throwable throwable) {
         close(H3_INTERNAL_ERROR, null, throwable);
     }
 
-    final void close(final Http3Error error, final String message) {
+    void close(final Http3Error error, final String message) {
         if (error != H3_NO_ERROR) {
             // construct a IOException representing the connection termination cause
             final IOException cause = new IOException(message);
@@ -667,7 +667,7 @@ public final class Http3Connection implements AutoCloseable {
         }
     }
 
-    final void close(final Http3Error error, final String logMsg,
+    void close(final Http3Error error, final String logMsg,
                      final Throwable closeCause) {
         if (!markClosed()) {
             // already closed, nothing to do
@@ -939,7 +939,7 @@ public final class Http3Connection implements AutoCloseable {
 
         @Override
         public void handle() {
-            boolean okToIdleTimeout = false;
+            boolean okToIdleTimeout;
             lock();
             try {
                 if (cancelled) return;
@@ -1360,7 +1360,7 @@ public final class Http3Connection implements AutoCloseable {
         } catch (ExecutionException x) {
             throw new CompletionException(x.getMessage(), x.getCause());
         } catch (Throwable e) {
-            throw new CompletionException(e.getMessage(), e.getCause());
+            throw new CompletionException(e.getMessage(), e);
         }
     }
 
@@ -1454,7 +1454,7 @@ public final class Http3Connection implements AutoCloseable {
     private boolean markClosedState(int flag) {
         int state, desired;
         do {
-            state = desired = closedState;
+            state = closedState;
             if ((state & flag) == flag) return false;
             desired = state | flag;
         } while (!CLOSED_STATE.compareAndSet(this, state, desired));
@@ -1496,7 +1496,7 @@ public final class Http3Connection implements AutoCloseable {
     /**
      * Called when a pushId needs to be cancelled.
      * @param pushId  the pushId to cancel
-     * @param cause   the cause (may be {@coe null}).
+     * @param cause   the cause (may be {@code null}).
      */
     void pushCancelled(long pushId, Throwable cause) {
         pushManager.cancelPushPromise(pushId, cause, CancelPushReason.PUSH_CANCELLED);

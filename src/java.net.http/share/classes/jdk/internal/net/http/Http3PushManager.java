@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -436,7 +436,7 @@ public final class Http3PushManager {
      * @see Http3Connection#whenPushAccepted(long)
      * @param pushId  the pushId
      */
-    <U> CompletableFuture<Boolean> whenAccepted(long pushId) {
+    CompletableFuture<Boolean> whenAccepted(long pushId) {
         var promise = promises.get(pushId);
         if (promise instanceof PendingPushPromise<?> pp) {
             return pp.accepted;
@@ -496,7 +496,7 @@ public final class Http3PushManager {
                     var cancelled = new CancelledPushPromise(connection.newPushId(pushId));
                     promises.put(pushId, cancelled);
                     long pendingCount = pendingPromises.decrementAndGet();
-                    long ppc = 0;
+                    long ppc;
                     assert (ppc = promises.values().stream().filter(PendingPushPromise.class::isInstance).count()) == pendingCount
                             : "bad pending promise count: expected %s but found %s".formatted(pendingCount, ppc);
                     ppp.accepted.complete(false); // NO OP if already completed
@@ -555,7 +555,7 @@ public final class Http3PushManager {
                         ppp.promiseHeaders);
                 promises.put(pushId, processed);
                 var pendingCount = pendingPromises.decrementAndGet();
-                long ppc = 0;
+                long ppc;
                 assert (ppc = promises.values().stream().filter(PendingPushPromise.class::isInstance).count()) == pendingCount
                         : "bad pending promise count: expected %s but found %s".formatted(pendingCount, ppc);
                 // do not update MAX_PUSH_ID here - MAX_PUSH_ID will
@@ -650,7 +650,7 @@ public final class Http3PushManager {
                             var pp = new PendingPushPromise<>(exchange, pushId, promiseHeaders);
                             promises.put(pushId, pp);
                             long pendingCount = pendingPromises.incrementAndGet();
-                            long ppc = 0;
+                            long ppc;
                             assert (ppc = promises.values().stream().filter(PendingPushPromise.class::isInstance).count()) == pendingCount
                                     : "bad pending promise count: expected %s but found %s".formatted(pendingCount, ppc);
                             return pp;
@@ -724,7 +724,7 @@ public final class Http3PushManager {
                             var pp = new PendingPushPromise<U>(stream, pushId);
                             promises.put(pushId, pp);
                             long pendingCount = pendingPromises.incrementAndGet();
-                            long ppc = 0;
+                            long ppc;
                             assert (ppc = promises.values().stream().filter(PendingPushPromise.class::isInstance).count()) == pendingCount
                                     : "bad pending promise count: expected %s but found %s".formatted(pendingCount, ppc);
                             return pp;
@@ -787,7 +787,7 @@ public final class Http3PushManager {
             var pp = promises.remove(min);
             if (pp instanceof PendingPushPromise<?> ppp) {
                 var pendingCount = pendingPromises.decrementAndGet();
-                long ppc = 0;
+                long ppc;
                 assert (ppc = promises.values().stream().filter(PendingPushPromise.class::isInstance).count()) == pendingCount
                         : "bad pending promise count: expected %s but found %s".formatted(pendingCount, ppc);
                 var http3 = ppp.promiseStream;

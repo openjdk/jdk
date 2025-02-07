@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ package jdk.internal.net.http;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.net.ProtocolException;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
@@ -92,8 +90,6 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
     private final ReentrantLock stateLock = new ReentrantLock();
     private final H3FrameOrderVerifier frameOrderVerifier = H3FrameOrderVerifier.newForPushPromiseStream();
 
-    final ConcurrentLinkedQueue<List<ByteBuffer>> responseData = new ConcurrentLinkedQueue<>();
-
     final SubscriptionBase userSubscription =
             new SubscriptionBase(readScheduler, this::cancel, this::onSubscriptionError);
 
@@ -105,7 +101,6 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
     volatile int responseCode;
     volatile Response response;
     volatile boolean stopRequested;
-    volatile boolean deRegistered;
     private String dbgTag = null;
 
     Http3PushPromiseStream(Exchange<T> exchange,
@@ -525,7 +520,7 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
                     connection().quicConnection().logTag(),
                     String.valueOf(reader.stream().streamId()), pushId, String.valueOf(exchange.multi.id),
                     responseReceived, reader.receivingState(),
-                    Integer.valueOf(responseCode), connection.isFinalStream(), io);
+                    String.valueOf(responseCode), connection.isFinalStream(), io);
         }
     }
 
@@ -740,23 +735,6 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
                 cancelImpl(t, Http3Error.H3_REQUEST_CANCELLED);
                 responseData.clear();
             }
-        }
-    }
-
-    // This method is called by Http2Connection::decrementStreamCount in order
-    // to make sure that the stream count is decremented only once for
-    // a given stream.
-    boolean deRegister() {
-        return DEREGISTERED.compareAndSet(this, false, true);
-    }
-
-    private static final VarHandle DEREGISTERED;
-    static {
-        try {
-            DEREGISTERED = MethodHandles.lookup()
-                    .findVarHandle(Http3PushPromiseStream.class, "deRegistered", boolean.class);
-        } catch (Exception x) {
-            throw new ExceptionInInitializerError(x);
         }
     }
 

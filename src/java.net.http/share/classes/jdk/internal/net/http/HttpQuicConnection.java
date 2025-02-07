@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,7 +357,7 @@ abstract class HttpQuicConnection extends HttpConnection {
                     // directTimeout is only used for happy eyeball
                     Duration def = Duration.ofMillis(MAX_DIRECT_CONNECTION_TIMEOUT);
                     Duration timeout = client.connectTimeout()
-                            .map((d) -> d.compareTo(def) > 0 ? def : d)
+                            .filter(d -> d.compareTo(def) <= 0)
                             .orElse(def);
                     directTimeout = Optional.of(timeout);
                 }

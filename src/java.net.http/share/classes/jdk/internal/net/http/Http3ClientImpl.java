@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public final class Http3ClientImpl implements AutoCloseable {
     private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
     private final ReentrantLock lock = new ReentrantLock();
 
-    public Http3ClientImpl(HttpClientImpl client) {
+    Http3ClientImpl(HttpClientImpl client) {
         this.client = client;
         var executor = client.theExecutor().safeDelegate();
         var context = client.theSSLContext();
@@ -167,7 +167,7 @@ public final class Http3ClientImpl implements AutoCloseable {
     // is abandoned (marked with setFinalStream() and taken out of the pool) and a
     // new connection is initiated. Waiters are waiting for the new connection
     // handshake to finish and for the connection to be put in the pool.
-    final record Waiter(MinimalFuture<Http3Connection> cf, HttpRequestImpl request, Exchange<?> exchange,
+    record Waiter(MinimalFuture<Http3Connection> cf, HttpRequestImpl request, Exchange<?> exchange,
                         AtomicReference<CompletableFuture<Http3Connection>> h3CfRef) {
         void complete(Http3Connection conn, Throwable error) {
             if (error != null) cf.completeExceptionally(error);
@@ -494,7 +494,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                 }
             }
             if (request.secure() && request.proxy() == null) {
-                boolean reconnecting, waitForPendingConnect = false;
+                boolean reconnecting, waitForPendingConnect;
                 PendingConnection pendingConnection = null;
                 String key;
                 Waiter waiter = null;

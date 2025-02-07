@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ public final class Http3ClientProperties {
         MAX_STREAM_LIMIT_WAIT_TIMEOUT = maxStreamLimitTimeout < 0
                 ? defaultMaxDirectConnectionTimeout
                 : maxStreamLimitTimeout;
-        MAX_HTTP3_PUSH_STREAMS = maxHttp3PushStreams <= 0 ? 0 : maxHttp3PushStreams;
+        MAX_HTTP3_PUSH_STREAMS = Math.max(maxHttp3PushStreams, 0);
         QPACK_ENCODER_TABLE_CAPACITY_LIMIT = encoderTableCapacityLimit < 0
                 ? defaultEncoderTableCapacityLimit : encoderTableCapacityLimit;
         QPACK_DECODER_MAX_TABLE_CAPACITY = decoderMaxTableCapacity < 0 ?
