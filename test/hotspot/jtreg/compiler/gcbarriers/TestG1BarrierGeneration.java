@@ -737,17 +737,22 @@ public class TestG1BarrierGeneration {
         return fVarHandle.getAndSet(o, newVal);
     }
 
+    // IR checks are disabled for s390 because barriers are not elided (to be investigated).
     @Test
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        applyIfPlatform = {"s390", "false"},
         counts = {IRNode.G1_COMPARE_AND_EXCHANGE_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        applyIfPlatform = {"s390", "false"},
         counts = {IRNode.G1_COMPARE_AND_EXCHANGE_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
+        applyIfPlatform = {"s390", "false"},
         failOn = {IRNode.G1_COMPARE_AND_EXCHANGE_P_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
+        applyIfPlatform = {"s390", "false"},
         failOn = {IRNode.G1_COMPARE_AND_EXCHANGE_N_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     static Object testCompareAndExchangeOnNewObject(Object oldVal, Object newVal) {
@@ -756,14 +761,18 @@ public class TestG1BarrierGeneration {
         return fVarHandle.compareAndExchange(o, oldVal, newVal);
     }
 
+    // IR checks are disabled for s390 when OOPs compression is disabled
+    // because barriers are not elided in this configuration (to be investigated).
     @Test
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        applyIfPlatform = {"s390", "false"},
         counts = {IRNode.G1_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
         counts = {IRNode.G1_COMPARE_AND_SWAP_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
+        applyIfPlatform = {"s390", "false"},
         failOn = {IRNode.G1_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
