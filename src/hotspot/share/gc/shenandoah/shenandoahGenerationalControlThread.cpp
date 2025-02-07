@@ -206,7 +206,7 @@ void ShenandoahGenerationalControlThread::maybe_set_aging_cycle() {
 
 void ShenandoahGenerationalControlThread::run_gc_cycle(ShenandoahGCRequest request) {
 
-  log_debug(gc, thread)("Starting GC: %s", GCCause::to_string(request.cause));
+  log_debug(gc, thread)("Starting GC (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name());
   assert(gc_mode() != none, "GC mode cannot be none here");
 
   // Blow away all soft references on this cycle, if handling allocation failure,
@@ -311,6 +311,9 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(ShenandoahGCRequest reque
       _heap->notify_explicit_gc_requested();
     }
   }
+
+  log_debug(gc, thread)("Completed GC (%s): %s, %s, cancelled: %s",
+    gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name(), GCCause::to_string(_heap->cancelled_cause()));
 }
 
 void ShenandoahGenerationalControlThread::process_phase_timings() {
@@ -399,7 +402,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(Shenandoa
       // acknowledge the cancellation request, the subsequent young cycle will observe
       // the request and essentially cancel itself.
       if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) {
-        log_info(gc)("Preparation for old generation cycle was cancelled");
+        log_info(gc, thread)("Preparation for old generation cycle was cancelled");
         return;
       }
 
@@ -589,6 +592,7 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
 
   if (_heap->cancelled_cause() == GCCause::_shenandoah_stop_vm
     || _heap->cancelled_cause() == GCCause::_shenandoah_concurrent_gc) {
+    log_debug(gc, thread)("Cancellation detected, reason: %s", GCCause::to_string(_heap->cancelled_cause()));
     return true;
   }
 
@@ -596,6 +600,9 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
     assert(_degen_point == ShenandoahGC::_degenerated_unset,
            "Should not be set yet: %s", ShenandoahGC::degen_point_to_string(_degen_point));
     _degen_point = point;
+    log_debug(gc, thread)("Cancellation detected:, reason: %s, degen point: %s",
+                          GCCause::to_string(_heap->cancelled_cause()),
+                          ShenandoahGC::degen_point_to_string(_degen_point));
     return true;
   }
 
@@ -604,6 +611,7 @@ bool ShenandoahGenerationalControlThread::check_cancellation_or_degen(Shenandoah
 }
 
 void ShenandoahGenerationalControlThread::stop_service() {
+  log_debug(gc, thread)("Stopping control thread");
   MonitorLocker locker(&_request_lock, Mutex::_no_safepoint_check_flag);
   _requested_gc_cause = GCCause::_shenandoah_stop_vm;
   _request_lock.notify();
@@ -646,6 +654,7 @@ void ShenandoahGenerationalControlThread::request_gc(GCCause::Cause cause) {
     // GC should already be cancelled. Here we are just notifying the control thread to
     // wake up and handle the cancellation request, so we don't need to set _requested_gc_cause.
     assert(_heap->cancelled_gc(), "GC should already be cancelled");
+    log_debug(gc,thread)("Notify control (%s): %s", gc_mode_name(gc_mode()), GCCause::to_string(cause));
     MonitorLocker locker(&_request_lock, Mutex::_no_safepoint_check_flag);
     _request_lock.notify();
   } else if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
@@ -711,6 +720,7 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
 }
 
 void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) {
+  log_debug(gc, thread)("Notify control (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(cause), generation->name());
   MonitorLocker locker(&_request_lock, Mutex::_no_safepoint_check_flag);
   _requested_gc_cause = cause;
   _requested_generation = generation;

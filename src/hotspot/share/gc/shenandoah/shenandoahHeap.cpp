@@ -2127,7 +2127,7 @@ void ShenandoahHeap::cancel_concurrent_mark() {
 bool ShenandoahHeap::cancel_gc(GCCause::Cause cause) {
   if (try_cancel_gc(cause)) {
     FormatBuffer<> msg("Cancelling GC: %s", GCCause::to_string(cause));
-    log_info(gc)("%s", msg.buffer());
+    log_info(gc,thread)("%s", msg.buffer());
     Events::log(Thread::current(), "%s", msg.buffer());
     _cancel_requested_time = os::elapsedTime();
     return true;
