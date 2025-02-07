@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,10 +113,6 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     private final ReentrantLock stateLock = new ReentrantLock();
     private final ReentrantLock response_cfs_lock = new ReentrantLock();
     private final H3FrameOrderVerifier frameOrderVerifier = H3FrameOrderVerifier.newForRequestResponseStream();
-
-    // A boolean flag that can be used to pause reading when waiting for
-    // the status code to be decoded.
-    private volatile boolean readingPaused;
 
 
     final SubscriptionBase userSubscription =
@@ -1061,16 +1057,16 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
             long len = item.remaining();
             try {
                 writeHeadersIfNeeded(item);
+                var remaining = remainingContentLength;
                 if (contentLength >= 0) {
-                    // non-atomic operation is safe since we're in
-                    // Reactive Stream onNext()
-                    remainingContentLength -= len;
-                    if (remainingContentLength < 0) {
+                    remaining -= len;
+                    remainingContentLength = remaining;
+                    if (remaining < 0) {
                         lengthMismatch("Too many bytes in request body");
                         subscription.cancel();
                     }
                 }
-                var completed = remainingContentLength == 0;
+                var completed = remaining == 0;
                 if (completed) this.completed = true;
                 writer.scheduleForWriting(item, completed);
                 sentQuicBytes += len;
@@ -1086,6 +1082,7 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                         debug.log("RequestSubscriber: no more credit");
                 }
             } catch (Throwable t) {
+                errorRef.compareAndSet(null, t);
                 if (writer.stopSendingReceived()
                         && !Http3Streams.hasSndError(writer.stream())) {
                     if (debug.on())
@@ -1094,7 +1091,6 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                     subscription.cancel();
                     return;
                 }
-                errorRef.compareAndSet(null, t);
                 if (debug.on()) {
                     debug.log("Unexpected exception in onNext: " + t);
                     debug.log("resetting stream %s", streamId());
@@ -1105,7 +1101,7 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                     if (debug.on())
                         debug.log("Failed to reset stream: %s", t);
                 }
-                cancelImpl(t, Http3Error.H3_REQUEST_CANCELLED);
+                cancelImpl(errorRef.get(), Http3Error.H3_REQUEST_CANCELLED);
             }
 
         }
@@ -1123,7 +1119,7 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                         + contentLength + ")");
                 errorRef.compareAndSet(null, failed);
                 writer.reset(Http3Error.H3_REQUEST_CANCELLED.code());
-                requestBodyCF.completeExceptionally(failed);
+                requestBodyCF.completeExceptionally(errorRef.get());
             } catch (Throwable t) {
                 if (debug.on())
                     debug.log("Failed to reset stream: %s", t);
@@ -1172,7 +1168,7 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         public void onComplete() {
             if (debug.on()) debug.log("RequestSubscriber: send request body completed");
             var completed = this.completed;
-            if (completed) return;
+            if (completed || errorRef.get() != null) return;
             if (contentLength >= 0 && remainingContentLength != 0) {
                 if (remainingContentLength < 0) {
                     lengthMismatch("Too many bytes in request body");
@@ -1300,7 +1296,7 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                     connection().quicConnection().logTag(),
                     String.valueOf(reader.stream().streamId()), request, String.valueOf(exchange.multi.id),
                     requestSent, responseReceived, reader.receivingState(), writer.sendingState(),
-                    Integer.valueOf(responseCode), connection.isFinalStream(), String.valueOf(receivedQuicBytes),
+                    String.valueOf(responseCode), connection.isFinalStream(), String.valueOf(receivedQuicBytes),
                     String.valueOf(sentQuicBytes), io);
         }
     }
@@ -1601,14 +1597,14 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                             buf.remaining(), last);
                 // if we have finished receiving the header frame, pause reading until
                 // the status code has been decoded
-                if (endOfHeaders) readingPaused = true;
+                if (endOfHeaders) switchPauseReading(false);
                 qpackDecoder.decodeHeader(buf,
                         endOfHeaders,
                         headerFrameReader);
                 if (buf == QuicStreamReader.EOF) {
                     eof = true;
                     // we are at EOF - no need to pause reading
-                    readingPaused = false;
+                    switchPauseReading(true);
                 }
             }
         }

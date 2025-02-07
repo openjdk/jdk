@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.Objects;
  * HTTP connection is reached.
  * <p>
  * A {@code StreamLimitException} may be raised on any {@linkplain #version()
- * protocol version} that support multiplexing on a single connection. Both
+ * protocol version} that supports multiplexing on a single connection. Both
  * {@linkplain HttpClient.Version#HTTP_2 HTTP/2} and {@linkplain
  * HttpClient.Version#HTTP_3 HTTP/3} allow multiplexing concurrent requests
  * to the same server on a single connection. Each request/response exchange

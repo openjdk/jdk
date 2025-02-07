@@ -296,6 +296,19 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
      */
     boolean readingPaused() {return readingPaused;}
 
+    /**
+     * Switches the value of the {@link #readingPaused() readingPaused}
+     * flag
+     * <p>
+     * Subclasses of {@code Http3Stream} can call this method to switch
+     * the value of this flag if needed, typically in their
+     * concrete implementation of {@link #receiveHeaders(HeadersFrame, List)}.
+     * @param value the new value
+     */
+    void switchPauseReading(boolean value) {
+        readingPaused = value;
+    }
+
     // invoked when ByteBuffers containing the next payload bytes for the
     // given partial data frame are received.
     private void receiveData(DataFrame data, List<ByteBuffer> payload, Logger debug) {
