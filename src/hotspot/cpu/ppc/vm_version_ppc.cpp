@@ -82,7 +82,6 @@ void VM_Version::initialize() {
   // Power 8: Configure Data Stream Control Register.
   config_dscr();
 
-
   if (!UseSIGTRAP) {
     MSG(TrapBasedICMissChecks);
     MSG(TrapBasedNullChecks);
@@ -100,7 +99,6 @@ void VM_Version::initialize() {
       FLAG_SET_ERGO(UsePopCountInstruction, true);
   }
 
-
   if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
     FLAG_SET_ERGO(ConditionalMoveLimit, 0);
   }
@@ -110,7 +108,6 @@ void VM_Version::initialize() {
   }
 
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
-
   if (PowerArchitecturePPC64 >= 9) {
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstructionsPPC64)) {
       FLAG_SET_ERGO(UseCountTrailingZerosInstructionsPPC64, true);
@@ -180,7 +177,7 @@ void VM_Version::initialize() {
                (has_lxarxeh() ? " lxarxeh" : ""),
                "cmpb",
                "popcntb",
-                "popcntw",
+               "popcntw",
                (has_fcfids()  ? " fcfids"  : ""),
                (has_vand()    ? " vand"    : ""),
                "lqarx",
