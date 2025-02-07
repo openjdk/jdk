@@ -1459,7 +1459,7 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (progress != nullptr) {
     return progress;
   }
-  const TypeInt *t3;  // type of in(1).in(2)
+  const TypeInt* t3;  // type of in(1).in(2)
   int shift = maskShiftAmount(phase, this, BitsPerJavaInteger);
   assert(shift != 0, "handled by IdealIL");
 
