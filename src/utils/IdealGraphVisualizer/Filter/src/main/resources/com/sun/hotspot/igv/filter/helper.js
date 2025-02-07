@@ -230,3 +230,15 @@ function removeBlock(selector) {
     f.addRule(new RemoveBlockFilter.RemoveBlockRule(selector));
     f.apply(graph);
 }
+
+// Color the selected live ranges.
+function colorizeLiveRange(selector, color) {
+    var f = new ColorLiveRangeFilter("");
+    f.addRule(new ColorLiveRangeFilter.ColorRule(selector, color));
+    f.apply(graph);
+}
+
+// Select the live ranges whose given property matches a given regular expression.
+function matchesLiveRange(property, regexp) {
+    return new LiveRangeMatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp));
+}

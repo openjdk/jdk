@@ -132,7 +132,7 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
         g.setPaint(this.getBackground());
         boolean selected = scene.getSelectedObjects().contains(liveRangeSegment);
         g.setStroke(new BasicStroke(selected ? SELECTED_THICKNESS : NORMAL_THICKNESS));
-        g.setColor(highlighted ? HIGHLIGHTED_COLOR : NORMAL_COLOR);
+        g.setColor(highlighted ? HIGHLIGHTED_COLOR : liveRangeSegment.getColor());
         if (highlighted) {
             g.setStroke(new BasicStroke(2));
         }

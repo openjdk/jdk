@@ -26,6 +26,7 @@ package com.sun.hotspot.igv.graph;
 import com.sun.hotspot.igv.data.InputLiveRange;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.layout.Segment;
+import java.awt.Color;
 import java.awt.Point;
 import java.util.Set;
 
@@ -40,6 +41,7 @@ public class LiveRangeSegment extends Properties.Entity implements Segment {
     private boolean lastOfLiveRange;
     private boolean instantaneous;
     private Set<LiveRangeSegment> segmentSet;
+    private Color color;
 
     protected LiveRangeSegment(InputLiveRange liveRange, Block block, Figure start, Figure end) {
         this.block = block;
@@ -48,6 +50,7 @@ public class LiveRangeSegment extends Properties.Entity implements Segment {
         this.end = end;
         assert(start == null || end == null || (start.getBlock() == end.getBlock()));
         lastOfLiveRange = true;
+        this.color = Color.BLACK;
     }
 
     public InputLiveRange getLiveRange() {
@@ -108,6 +111,14 @@ public class LiveRangeSegment extends Properties.Entity implements Segment {
 
     public void setSegmentSet(Set<LiveRangeSegment> segmentSet) {
         this.segmentSet = segmentSet;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    public Color getColor() {
+        return color;
     }
 
     @Override
