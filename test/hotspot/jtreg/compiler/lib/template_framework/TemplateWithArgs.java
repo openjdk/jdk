@@ -79,4 +79,8 @@ public sealed interface TemplateWithArgs extends Token
     default String render() {
         return Renderer.render(this);
     }
+
+    default String render(float fuel) {
+        return Renderer.render(this, fuel);
+    }
 }

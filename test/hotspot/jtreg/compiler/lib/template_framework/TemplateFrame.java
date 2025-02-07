@@ -52,19 +52,21 @@ class TemplateFrame {
     final int id;
     final Map<String, String> hashtagReplacements = new HashMap<>();
     final float fuel;
+    float fuelCost;
 
     public static TemplateFrame makeBase(int id, float fuel) {
-        return new TemplateFrame(null, id, fuel);
+        return new TemplateFrame(null, id, fuel, 0.0f);
     }
 
-    public static TemplateFrame make(TemplateFrame parent, int id, float fuelCost) {
-        return new TemplateFrame(parent, id, parent.fuel - fuelCost);
+    public static TemplateFrame make(TemplateFrame parent, int id) {
+        return new TemplateFrame(parent, id, parent.fuel - parent.fuelCost, 10.0f);
     }
 
-    private TemplateFrame(TemplateFrame parent, int id, float fuel) {
+    private TemplateFrame(TemplateFrame parent, int id, float fuel, float fuelCost) {
         this.parent = parent;
         this.id = id;
         this.fuel = fuel;
+        this.fuelCost = fuelCost;
     }
 
     public String $(String name) {
@@ -84,5 +86,9 @@ class TemplateFrame {
             return hashtagReplacements.get(key);
         }
         throw new RendererException("Missing hashtag replacement for #" + key);
+    }
+
+    void setFuelCost(float fuelCost) {
+        this.fuelCost = fuelCost;
     }
 }

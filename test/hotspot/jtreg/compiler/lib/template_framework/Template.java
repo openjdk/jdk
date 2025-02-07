@@ -97,4 +97,9 @@ public interface Template {
     static float fuel() {
         return Renderer.getCurrent().fuel();
     }
+
+    static NothingToken setFuelCost(float fuelCost) {
+        Renderer.getCurrent().setFuelCost(fuelCost);
+        return new NothingToken();
+    }
 }

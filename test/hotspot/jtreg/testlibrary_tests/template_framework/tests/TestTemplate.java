@@ -47,6 +47,7 @@ import static compiler.lib.template_framework.Template.intoHook;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.fuel;
+import static compiler.lib.template_framework.Template.setFuelCost;
 
 public class TestTemplate {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -66,7 +67,8 @@ public class TestTemplate {
         testLet();
         testSelector();
         testRecursion();
-        //testFuel();
+        testFuel();
+        testFuelCustom();
 
         //testClassInstantiator();
         //testClassInstantiatorAndDispatch();
@@ -676,31 +678,106 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    //public static void testFuel() {
-    //    var template1 = Template.make(() -> body(
-    //        "<", fuel(),">\n"
-    //    ));
+    public static void testFuel() {
+        var template1 = Template.make(() -> body(
+            let("f", fuel()),
 
-    //    var template2 = Template.make("i", (Integer i) -> body(
-    //        "[ #i\n",
-    //        template1.withArgs(),
-    //        i < 0 ? "done" : template2.withArgs(i - 1),
-    //        "] #i\n"
-    //    ));
+            "<#f>\n"
+        ));
 
-    //    var template3 = Template.make(() -> body(
-    //        "{\n",
-    //        template2.withArgs(3),
-    //        "}\n"
-    //    ));
+        // Binding allows use of template2 inside template2, via the Binding indirection.
+        var binding2 = new TemplateBinding<Template.OneArgs<Integer>>();
+        var template2 = Template.make("i", (Integer i) -> body(
+            let("f", fuel()),
 
-    //    String code = template3.withArgs().render();
-    //    String expected =
-    //        """
+            "[ #i #f\n",
+            template1.withArgs(),
+            fuel() <= 60.f ? "done" : binding2.get().withArgs(i - 1),
+            "] #i #f\n"
+        ));
+        binding2.bind(template2);
 
-    //        """;
-    //    checkEQ(code, expected);
-    //}
+        var template3 = Template.make(() -> body(
+            "{\n",
+            template2.withArgs(3),
+            "}\n"
+        ));
+
+        String code = template3.withArgs().render();
+        String expected =
+            """
+            {
+            [ 3 90.0
+            <80.0>
+            [ 2 80.0
+            <70.0>
+            [ 1 70.0
+            <60.0>
+            [ 0 60.0
+            <50.0>
+            done] 0 60.0
+            ] 1 70.0
+            ] 2 80.0
+            ] 3 90.0
+            }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testFuelCustom() {
+        var template1 = Template.make(() -> body(
+            setFuelCost(2.0f),
+            let("f", fuel()),
+
+            "<#f>\n"
+        ));
+
+        // Binding allows use of template2 inside template2, via the Binding indirection.
+        var binding2 = new TemplateBinding<Template.OneArgs<Integer>>();
+        var template2 = Template.make("i", (Integer i) -> body(
+            setFuelCost(3.0f),
+            let("f", fuel()),
+
+            "[ #i #f\n",
+            template1.withArgs(),
+            fuel() <= 5.f ? "done\n" : binding2.get().withArgs(i - 1),
+            "] #i #f\n"
+        ));
+        binding2.bind(template2);
+
+        var template3 = Template.make(() -> body(
+            setFuelCost(5.0f),
+            let("f", fuel()),
+
+            "{ #f\n",
+            template2.withArgs(3),
+            "} #f\n"
+        ));
+
+        String code = template3.withArgs().render(20.0f);
+        String expected =
+            """
+            { 20.0
+            [ 3 15.0
+            <12.0>
+            [ 2 12.0
+            <9.0>
+            [ 1 9.0
+            <6.0>
+            [ 0 6.0
+            <3.0>
+            [ -1 3.0
+            <0.0>
+            done
+            ] -1 3.0
+            ] 0 6.0
+            ] 1 9.0
+            ] 2 12.0
+            ] 3 15.0
+            } 20.0
+            """;
+        checkEQ(code, expected);
+    }
 
     public static void checkEQ(String code, String expected) {
         if (!code.equals(expected)) {

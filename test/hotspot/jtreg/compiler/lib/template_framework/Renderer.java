@@ -64,11 +64,11 @@ public class Renderer {
         return renderer;
     }
 
-    public static String render(TemplateWithArgs templateWithArgs) {
-        return render(templateWithArgs, 1.0f);
+    static String render(TemplateWithArgs templateWithArgs) {
+        return render(templateWithArgs, 100.0f);
     }
 
-    public static String render(TemplateWithArgs templateWithArgs, float fuel) {
+    static String render(TemplateWithArgs templateWithArgs, float fuel) {
         // Check nobody else is using the Renderer.
         if (renderer != null) {
             throw new RendererException("Nested render not allowed.");
@@ -118,8 +118,12 @@ public class Renderer {
         return currentTemplateFrame.fuel;
     }
 
+    void setFuelCost(float fuelCost) {
+        currentTemplateFrame.setFuelCost(fuelCost);
+    }
+
     private void renderTemplateWithArgs(TemplateWithArgs templateWithArgs) {
-        TemplateFrame templateFrame = TemplateFrame.make(currentTemplateFrame, nextTemplateFrameId++, 0.1f);
+        TemplateFrame templateFrame = TemplateFrame.make(currentTemplateFrame, nextTemplateFrameId++);
         currentTemplateFrame = templateFrame;
 
         templateWithArgs.visitArguments((name, value) -> addHashtagReplacement(name, value.toString()));
