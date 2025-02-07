@@ -1514,7 +1514,7 @@ Node* RShiftLNode::Identity(PhaseGVN* phase) {
   return IdentityIL(phase, T_LONG);
 }
 
-Node *RShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* RShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* progress = IdealIL(phase, can_reshape, T_LONG);
   if (progress == NodeSentinel) {
     return nullptr;
