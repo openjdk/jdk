@@ -546,7 +546,11 @@ TEST_VM_F(RBTreeTest, LeftMostRightMost) {
 }
 
 struct PtrCmp {
-  static int cmp(const void* a, const void* b) { return a == b ? 0 : (a > b ? 1 : -1); }
+  static int cmp(const void* a, const void* b) {
+    const uintptr_t ai = p2u(a);
+    const uintptr_t bi = p2u(b);
+    return ai == bi ? 0 : (ai > bi ? 1 : -1);
+  }
 };
 
 TEST_VM(RBTreeTestNonFixture, TestPrintPointerTree) {
@@ -572,7 +576,6 @@ TEST_VM(RBTreeTestNonFixture, TestPrintPointerTree) {
   tree.upsert(p3, 3);
   stringStream ss;
   tree.print_on(&ss);
-  // tty->print_cr("%s", ss.base());
   const char* const N = nullptr;
   ASSERT_NE(strstr(ss.base(), s1), N);
   ASSERT_NE(strstr(ss.base(), s2), N);
@@ -597,7 +600,6 @@ TEST_VM(RBTreeTestNonFixture, TestPrintIntegerTree) {
     tree.upsert(i3, 3);
     stringStream ss;
     tree.print_on(&ss);
-    // tty->print_cr("%s", ss.base());
     const char* const N = nullptr;
     ASSERT_NE(strstr(ss.base(), s1), N);
     ASSERT_NE(strstr(ss.base(), s2), N);

@@ -114,7 +114,7 @@ public:
   #endif // ASSERT
   }; // End: RBNode
 
-  typedef RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode NodeType;
+  typedef TreeType::RBNode NodeType;
 
 private:
   RBNode* _root;
@@ -278,7 +278,7 @@ public:
   }
 
   // Returns leftmost node, nullptr if tree is empty.
-  // If COMPARATOR::cmp(a, b) behaves canonically ("1" for a < b), this will the smallest key value.
+  // If COMPARATOR::cmp(a, b) behaves canonically (positive value for a > b), this will the smallest key value.
   const RBNode* leftmost() const {
     RBNode* n = _root, *n2 = nullptr;
     while (n != nullptr) {
@@ -289,7 +289,7 @@ public:
   }
 
   // Returns rightmost node, nullptr if tree is empty.
-  // If COMPARATOR::cmp(a, b) behaves canonically ("1" for a < b), this will the largest key value.
+  // If COMPARATOR::cmp(a, b) behaves canonically (positive value for a > b), this will the largest key value.
   const RBNode* rightmost() const {
     RBNode* n = _root, *n2 = nullptr;
     while (n != nullptr) {
@@ -300,8 +300,6 @@ public:
   }
 
   RBNode* leftmost()  { return const_cast<NodeType*>(static_cast<const TreeType*>(this)->leftmost()); }
-
-  // Returns rightmost node (smallest key). Returns nullptr if tree is empty.
   RBNode* rightmost() { return const_cast<NodeType*>(static_cast<const TreeType*>(this)->rightmost()); }
 
   struct Range {

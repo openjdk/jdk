@@ -487,6 +487,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_in_order(F f) const {
   while (stack_idx > 0 || head != nullptr) {
     while (head != nullptr) {
       to_visit[stack_idx++] = head;
+      assert(stack_idx <= (int)(sizeof(to_visit)/sizeof(to_visit[0])), "stack too deep");
       head = head->_left;
     }
     head = to_visit[--stack_idx];
@@ -569,7 +570,7 @@ void RBTree<K, V, COMPARATOR, ALLOCATOR>::print_node_on(outputStream* st, int de
   st->print("] = ");
   print_T<V>(st, n->val());
   st->cr();
-  depth ++;
+  depth++;
   if (n->_right != nullptr) {
     print_node_on(st, depth, n->_right);
   }
