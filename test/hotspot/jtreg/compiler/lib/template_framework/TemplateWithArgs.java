@@ -72,10 +72,6 @@ public sealed interface TemplateWithArgs extends Token
 
     void visitArguments(ArgumentVisitor visitor);
 
-    // TODO ensure that there can be no nested rendering!
-    //      Otherwise people might fold recursive to String uses too soon... true?
-    //      Yes, the issue is that outer scope may create vars, the inner then does
-    //      not have access!
     default String render() {
         return Renderer.render(this);
     }

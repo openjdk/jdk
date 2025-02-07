@@ -26,26 +26,15 @@ package compiler.lib.template_framework;
 import java.util.HashMap;
 import java.util.Map;
 
-// TODO remove / move elsewhere
-// We need frames for
-// - Variables:
-//   - normal template borders are opaque, but not for intoHook
-//   - hook scopes are also opaque
-//
-// - hashtag replacement:
-//   - template border opaque
-//   - hook scope transparent
-//
-// - Parent:
-//   - via calls
-//   - code / variable scopes
-
 /**
  * The {@link TemplateFrame} is the frame for a {@link TemplateWithArgs}. It ensures
  * that each template use has its own unique {@link id} used to deconflict names
  * using {@link $}. It also has a set of hashtag replacements, which combine the
  * key-value pairs from the template argument and the {@link let} definitions.
  * The {@link parent} relationship provides a trace for the use chain of templates.
+ * The {@link fuel} is reduced over this chain, to give a heuristic on how much time
+ * is spend on the code from the template corrsponding to the frame, and to give a
+ * termination criterion to avoid nesting templates too deeply.
  */
 class TemplateFrame {
     final TemplateFrame parent;

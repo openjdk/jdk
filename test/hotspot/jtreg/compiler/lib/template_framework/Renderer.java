@@ -145,7 +145,6 @@ public class Renderer {
                 // Nothing.
             }
             case HookSetToken(Hook hook, List<Token> tokens) -> {
-                // TODO describe and maybe rename to HookSetUse
                 CodeFrame outerCodeFrame = currentCodeFrame;
 
                 // We need a CodeFrame to which the hook can insert code. That way, name
