@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,30 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_INLINE_HPP
-#define SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_INLINE_HPP
+#ifndef SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP
+#define SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP
 
-#include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "gc/g1/g1CollectionSet.hpp"
+#include "gc/g1/g1HeapRegionRemSet.hpp"
 
-#include "utilities/growableArray.hpp"
-
-template<typename Func>
-void G1CSetCandidateGroupList::iterate(Func&& f) const {
-  for (G1CSetCandidateGroup* group : _groups) {
-    for (G1CollectionSetCandidateInfo ci : *group) {
-      G1HeapRegion* r = ci._r;
-      f(r);
-    }
+template <class CardOrRangeVisitor>
+inline void G1CollectionSet::merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
+  uint length = collection_groups_increment_length();
+  uint offset =  _selected_groups_inc_part_start;
+  if (length == 0) {
+    return;
   }
+
+  uint start_pos = (worker_id * length) / num_workers;
+  uint cur_pos = start_pos;
+  uint count = 0;
+  do {
+    G1HeapRegionRemSet::iterate_for_merge(collection_set_groups()->at(offset + cur_pos)->card_set(), cl);
+    cur_pos++;
+    count++;
+    if (cur_pos == length) {
+      cur_pos = 0;
+    }
+  } while (cur_pos != start_pos);
 }
-
-template<typename Func>
-void G1CollectionSetCandidates::iterate_regions(Func&& f) const {
-  _from_marking_groups.iterate(f);
-
-  _retained_groups.iterate(f);
-}
-
-#endif /* SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_INLINE_HPP */
+#endif /* SHARE_GC_G1_G1COLLECTIONSET_INLINE_HPP */
