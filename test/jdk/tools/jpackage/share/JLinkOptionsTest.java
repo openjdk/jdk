@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,16 @@
  */
 
 
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
-import jdk.jpackage.test.Annotations.Parameters;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Comm;
+import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 
@@ -41,7 +47,6 @@ import jdk.jpackage.test.TKit;
 
 public final class JLinkOptionsTest {
 
-    @Parameters
     public static Collection input() {
         return List.of(new Object[][]{
             // default but with strip-native-commands removed
@@ -111,17 +116,11 @@ public final class JLinkOptionsTest {
         });
     }
 
-    public JLinkOptionsTest(String javaAppDesc, String[] jpackageArgs, String[] required, String[] prohibited) {
-        this.required = required;
-        this.prohibited = prohibited;
-        cmd = JPackageCommand
-                .helloAppImage(javaAppDesc)
-                .ignoreDefaultRuntime(true)
-                .addArguments(jpackageArgs);
-    }
-
     @Test
-    public void test() {
+    @ParameterSupplier("input")
+    public void test(String javaAppDesc, String[] jpackageArgs, String[] required, String[] prohibited) {
+        final var cmd = createJPackageCommand(javaAppDesc).addArguments(jpackageArgs);
+
         cmd.executeAndAssertHelloAppImageCreated();
 
         List<String> release = cmd.readRuntimeReleaseFile();
@@ -138,7 +137,37 @@ public final class JLinkOptionsTest {
         }
     }
 
-    private final String[] required;
-    private final String[] prohibited;
-    private final JPackageCommand cmd;
+    @Test
+    public void testNoBindServicesByDefault() {
+        final var defaultModules = getModulesInRuntime();
+        final var modulesWithBindServices = getModulesInRuntime("--bind-services");
+
+        final var moduleComm = Comm.compare(defaultModules, modulesWithBindServices);
+
+        TKit.assertStringListEquals(List.of(), moduleComm.unique1().stream().toList(),
+                "Check '--bind-services' option doesn't remove modules");
+        TKit.assertNotEquals("", moduleComm.unique2().stream().sorted().collect(Collectors.joining(",")),
+                "Check '--bind-services' option adds modules");
+    }
+
+    private final JPackageCommand createJPackageCommand(String javaAppDesc) {
+        return JPackageCommand.helloAppImage(javaAppDesc).ignoreDefaultRuntime(true);
+    }
+
+    private final Set<String> getModulesInRuntime(String ... jlinkOptions) {
+        final var cmd = createJPackageCommand(PRINT_ENV_APP + "*");
+        if (jlinkOptions.length != 0) {
+            cmd.addArguments("--jlink-options");
+            cmd.addArguments(jlinkOptions);
+        }
+
+        cmd.executeAndAssertImageCreated();
+
+        final var output = HelloApp.assertApp(cmd.appLauncherPath())
+                .saveOutput(true).execute("--print-modules").getFirstLineOfOutput();
+
+        return Stream.of(output.split(",")).collect(Collectors.toSet());
+    }
+
+    private static final Path PRINT_ENV_APP = TKit.TEST_SRC_ROOT.resolve("apps/PrintEnv.java");
 }
