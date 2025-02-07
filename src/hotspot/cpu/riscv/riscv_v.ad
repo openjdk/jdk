@@ -99,6 +99,11 @@ source %{
           return false;
         }
         break;
+      case Op_MulReductionVD:
+      case Op_MulReductionVF:
+      case Op_MulReductionVI:
+      case Op_MulReductionVL:
+        return UseRVV;
       default:
         break;
     }
