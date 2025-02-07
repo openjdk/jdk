@@ -85,13 +85,11 @@ public interface Template {
     }
 
     static NothingToken let(String key, Object value) {
-        // TODO check order?
         Renderer.addHashtagReplacement(key, value.toString());
         return new NothingToken();
     }
 
     static <T> TemplateBody let(String key, T value, Function<T, TemplateBody> function) {
-        // TODO check order?
         Renderer.addHashtagReplacement(key, value.toString());
         return function.apply(value);
     }

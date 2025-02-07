@@ -544,7 +544,24 @@ public class TestTemplate {
         String code = template3.withArgs().render();
         String expected =
             """
-
+            {
+            {
+            y alpha y
+            y <alpha> y
+            }
+            break
+            x1 = abc
+            x2 = abc
+            {
+            y beta y
+            y <beta> y
+            }
+            y1 = one
+            break
+            y2 = one
+            break
+            abc = 5 50 150
+            }
             """;
         checkEQ(code, expected);
     }

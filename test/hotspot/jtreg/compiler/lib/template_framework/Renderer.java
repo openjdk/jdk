@@ -89,12 +89,6 @@ public abstract class Renderer {
         getCurrentTemplateFrame().addHashtagReplacement(key, value);
     }
 
-    // TODO
-    //public static <T, R> R let(String key, T value, Function<T, R> block) {
-    //    getCurrentFrame().addContext(key, value.toString());
-    //    return block.apply(value);
-    //}
-
     // TODO fuel - based on codeFrame or templateFrame?
     public static int depth() {
         return getCurrentCodeFrame().depth();
@@ -120,7 +114,7 @@ public abstract class Renderer {
         TemplateFrame templateFrame = new TemplateFrame(getCurrentTemplateFrame(), nextTemplateId++);
         currentTemplateFrame = templateFrame;
 
-        templateWithArgs.visitArguments((name, value) -> templateFrame.addHashtagReplacement(name, value.toString()));
+        templateWithArgs.visitArguments((name, value) -> addHashtagReplacement(name, value.toString()));
         TemplateBody it = templateWithArgs.instantiate();
         renderTokenList(it.tokens());
 
