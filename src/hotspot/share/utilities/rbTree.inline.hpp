@@ -25,7 +25,6 @@
 #ifndef SHARE_UTILITIES_RBTREE_INLINE_HPP
 #define SHARE_UTILITIES_RBTREE_INLINE_HPP
 
-#include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -538,50 +537,5 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::verify_self() {
          ", actual: %zu", size(), num_nodes);
 }
 #endif // ASSERT
-
-template <typename T,
-          ENABLE_IF(std::is_integral<T>::value),
-          ENABLE_IF(std::is_signed<T>::value)>
-void print_T(outputStream* st, T x) {
-  st->print(INT64_FORMAT, (int64_t)x);
-}
-
-template <typename T,
-          ENABLE_IF(std::is_integral<T>::value),
-          ENABLE_IF(std::is_unsigned<T>::value)>
-void print_T(outputStream* st, T x) {
-  st->print(UINT64_FORMAT, (uint64_t)x);
-}
-
-template <typename T,
-          ENABLE_IF(std::is_pointer<T>::value)>
-void print_T(outputStream* st, T x) {
-  st->print(PTR_FORMAT, p2i(x));
-}
-
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-void RBTree<K, V, COMPARATOR, ALLOCATOR>::print_node_on(outputStream* st, int depth, const NodeType* n) const {
-  st->print("(%d)", depth);
-  st->sp(1 + depth * 2);
-  st->print("@" PTR_FORMAT ": [", p2i(n));
-  print_T<K>(st, n->key());
-  st->print("] = ");
-  print_T<V>(st, n->val());
-  st->cr();
-  depth ++;
-  if (n->_right != nullptr) {
-    print_node_on(st, depth, n->_right);
-  }
-  if (n->_left != nullptr) {
-    print_node_on(st, depth, n->_left);
-  }
-}
-
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-void RBTree<K, V, COMPARATOR, ALLOCATOR>::print_on(outputStream* st) const {
-  if (_root != nullptr) {
-    print_node_on(st, 0, _root);
-  }
-}
 
 #endif // SHARE_UTILITIES_RBTREE_INLINE_HPP
