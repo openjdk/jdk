@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8242332
+ * @bug 8242332 8348432
  * @summary Check that PKCS11 Hamc KeyGenerator picks appropriate default size
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
@@ -50,6 +50,21 @@ public class HmacDefKeySizeTest extends PKCS11Test {
         main(new HmacDefKeySizeTest(), args);
     }
 
+    // return key length in bytes
+    private static int getDefaultKeySize(String algo) {
+        return switch (algo) {
+            case "HmacMD5", "HmacSHA1", "HmacSHA224", "HmacSHA256" -> 64;
+            case "HmacSHA384", "HmacSHA512", "HmacSHA512/224", "HmacSHA512/256"
+                    -> 128;
+            case "HmacSHA3-224" -> 144;
+            case "HmacSHA3-256" -> 136;
+            case "HmacSHA3-384" -> 104;
+            case "HmacSHA3-512" -> 72;
+            default -> throw new RuntimeException("Unsupported algorithm " +
+                    algo);
+        };
+    }
+
     @Override
     public void main(Provider p) {
         List<String> algorithms = getSupportedAlgorithms("KeyGenerator",
@@ -58,14 +73,16 @@ public class HmacDefKeySizeTest extends PKCS11Test {
 
         for (String alg : algorithms) {
             System.out.println("Testing " + alg);
+
             try {
                 KeyGenerator kg = KeyGenerator.getInstance(alg, p);
-                SecretKey k1 = kg.generateKey();
-                int keysize = k1.getEncoded().length << 3;
-                System.out.println("=> default key size = " + keysize);
-                kg.init(keysize);
-                SecretKey k2 = kg.generateKey();
-                if ((k2.getEncoded().length << 3) != keysize) {
+                int defSizeInBytes = getDefaultKeySize(alg);
+                if (!checkKeySize(kg.generateKey(), defSizeInBytes)) {
+                    success = false;
+                    System.out.println("default keysize check failed");
+                }
+                kg.init(defSizeInBytes << 3);
+                if (!checkKeySize(kg.generateKey(), defSizeInBytes)) {
                     success = false;
                     System.out.println("keysize check failed");
                 }
@@ -79,5 +96,11 @@ public class HmacDefKeySizeTest extends PKCS11Test {
         if (!success) {
             throw new RuntimeException("One or more tests failed");
         }
+    }
+
+    // if key encoding is null; assume the key has the right length
+    private static boolean checkKeySize(SecretKey k, int lenInBytes) {
+        byte[] encoded = k.getEncoded();
+        return (encoded != null ? encoded.length == lenInBytes : true);
     }
 }

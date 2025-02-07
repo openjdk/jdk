@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,52 +136,52 @@ final class KeyGeneratorCore {
 
         public static final class SHA224 extends HmacKG {
             public SHA224() {
-                super("HmacSHA224", 224);
+                super("HmacSHA224", 512);
             }
         }
         public static final class SHA256 extends HmacKG {
             public SHA256() {
-                super("HmacSHA256", 256);
+                super("HmacSHA256", 512);
             }
         }
         public static final class SHA384 extends HmacKG {
             public SHA384() {
-                super("HmacSHA384", 384);
+                super("HmacSHA384", 1024);
             }
         }
         public static final class SHA512 extends HmacKG {
             public SHA512() {
-                super("HmacSHA512", 512);
+                super("HmacSHA512", 1024);
             }
         }
         public static final class SHA512_224 extends HmacKG {
             public SHA512_224() {
-                super("HmacSHA512/224", 224);
+                super("HmacSHA512/224", 1024);
             }
         }
         public static final class SHA512_256 extends HmacKG {
             public SHA512_256() {
-                super("HmacSHA512/256", 256);
+                super("HmacSHA512/256", 1024);
             }
         }
         public static final class SHA3_224 extends HmacKG {
             public SHA3_224() {
-                super("HmacSHA3-224", 224);
+                super("HmacSHA3-224", 1152);
             }
         }
         public static final class SHA3_256 extends HmacKG {
             public SHA3_256() {
-                super("HmacSHA3-256", 256);
+                super("HmacSHA3-256", 1088);
             }
         }
         public static final class SHA3_384 extends HmacKG {
             public SHA3_384() {
-                super("HmacSHA3-384", 384);
+                super("HmacSHA3-384", 832);
             }
         }
         public static final class SHA3_512 extends HmacKG {
             public SHA3_512() {
-                super("HmacSHA3-512", 512);
+                super("HmacSHA3-512", 576);
             }
         }
     }

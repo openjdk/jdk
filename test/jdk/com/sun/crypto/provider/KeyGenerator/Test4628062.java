@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 4628062 4963723 8267319 8288050
- * @summary Verify that AES KeyGenerator supports default initialization
- *      when init is not called
+ * @bug 4628062 4963723 8267319 8288050 8348432
+ * @summary Verify that AES and Hmac KeyGenerator supports default
+ *      initialization when init is not called
  * @author Valerie Peng
  */
 import java.security.*;
@@ -34,16 +34,35 @@ import java.util.*;
 
 public class Test4628062 {
 
-    // first value is the default key size
-    private static final int[] AES_SIZES = { 32, 16, 24 }; // in bytes
-    private static final int[] HMACSHA224_SIZES = { 28 };
-    private static final int[] HMACSHA256_SIZES = { 32 };
-    private static final int[] HMACSHA384_SIZES = { 48 };
-    private static final int[] HMACSHA512_SIZES = { 64 };
-    private static final int[] HMACSHA512_224_SIZES = { 28 };
-    private static final int[] HMACSHA512_256_SIZES = { 32 };
+    // valid key sizes (in bytes); first value is the default key size
+    private static final int[] AES_SIZES = { 32, 16, 24 };
+    private static final int[] HMACSHA224AND256_SIZES = { 64, 48 };
+    private static final int[] HMACSHA384AND512_SIZES = { 128, 112 };
+    private static final int[] HMACSHA3_224_SIZES = { 144, 128 };
+    private static final int[] HMACSHA3_256_SIZES = { 136, 110 };
+    private static final int[] HMACSHA3_384_SIZES = { 104, 88 };
+    private static final int[] HMACSHA3_512_SIZES = { 72, 64 };
 
-    public boolean execute(String algo, int[] keySizes) throws Exception {
+    record TestData(String algo, int[] validSizes) {
+    }
+
+    private static final TestData[] TEST_DATUM = {
+        new TestData("AES", AES_SIZES),
+        new TestData("HmacSHA224", HMACSHA224AND256_SIZES),
+        new TestData("HmacSHA256", HMACSHA224AND256_SIZES),
+        new TestData("HmacSHA384", HMACSHA384AND512_SIZES),
+        new TestData("HmacSHA512", HMACSHA384AND512_SIZES),
+        new TestData("HmacSHA512/224", HMACSHA384AND512_SIZES),
+        new TestData("HmacSHA512/256", HMACSHA384AND512_SIZES),
+        new TestData("HmacSHA3-224", HMACSHA3_224_SIZES),
+        new TestData("HmacSHA3-256", HMACSHA3_256_SIZES),
+        new TestData("HmacSHA3-384", HMACSHA3_384_SIZES),
+        new TestData("HmacSHA3-512", HMACSHA3_512_SIZES)
+    };
+
+    public void execute(String algo, int[] keySizes) throws Exception {
+        System.out.println("Testing " + algo);
+
         KeyGenerator kg = KeyGenerator.getInstance(algo,
                 System.getProperty("test.provider.name", "SunJCE"));
 
@@ -58,39 +77,35 @@ public class Test4628062 {
         }
 
         // BONUS TESTS
-        if (keySizes.length > 1) {
-            // 1. call init(int keysize) with various valid key sizes
-            // and see if the generated key is the right size.
-            for (int i=0; i<keySizes.length; i++) {
-                kg.init(keySizes[i]*8); // in bits
-                Key key = kg.generateKey();
-                if (key.getEncoded().length != keySizes[i]) {
-                    throw new Exception("key is generated with the wrong length!");
-                }
-            }
-            // 2. call init(int keysize) with invalid key size and see
-            // if the expected InvalidParameterException is thrown.
-            try {
-                kg.init(keySizes[0]*8+1);
-            } catch (InvalidParameterException ex) {
-            } catch (Exception ex) {
-                throw new Exception("wrong exception is thrown for invalid key size!");
+        // 1. call init(int keysize) with various valid key sizes
+        //    and see if the generated key is the right size.
+        for (int ks : keySizes) {
+            kg.init(ks*8); // in bits
+            Key key = kg.generateKey();
+            if (key.getEncoded().length != ks) {
+                throw new Exception("key is generated with the wrong length!");
             }
         }
-        System.out.println(algo + " Passed!");
-        // passed all tests...hooray!
-        return true;
+        // 2. for AES, call init(int keysize) with invalid key size and see
+        // if the expected InvalidParameterException is thrown.
+        if (algo.equals("AES")) {
+            try {
+                kg.init(keySizes[0]*8+1);
+                throw new Exception("expected IPE not thrown");
+            } catch (InvalidParameterException ex) {
+                // expected
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                throw new Exception("Wrong exception is thrown instead of IPE!");
+            }
+        }
+        System.out.println("=> Passed!");
     }
 
     public static void main (String[] args) throws Exception {
         Test4628062 test = new Test4628062();
-
-        test.execute("AES", AES_SIZES);
-        test.execute("HmacSHA224", HMACSHA224_SIZES);
-        test.execute("HmacSHA256", HMACSHA256_SIZES);
-        test.execute("HmacSHA384", HMACSHA384_SIZES);
-        test.execute("HmacSHA512", HMACSHA512_SIZES);
-        test.execute("HmacSHA512/224", HMACSHA512_224_SIZES);
-        test.execute("HmacSHA512/256", HMACSHA512_256_SIZES);
+        for (TestData td : TEST_DATUM) {
+            test.execute(td.algo, td.validSizes);
+        }
     }
 }
