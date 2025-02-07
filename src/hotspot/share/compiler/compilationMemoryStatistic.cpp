@@ -594,7 +594,7 @@ public:
     }
     st->cr();
 
-    st->print_cr("%*s: %zu", indent1, "Arena Peak Usage", _peak);
+    st->print_cr("%*s: %zu (" PROPERFMT ")", indent1, "Arena Peak Usage", _peak, PROPERFMTARGS(_peak));
     st->print_cr("%*s: %zu", indent1, "Code Size", _code_size);
     if (_comp_type == CompilerType::compiler_c2) {
       st->print("%*s: ", indent1, "Nodes at global peak");
@@ -602,18 +602,22 @@ public:
     }
 
     if (_detail_stats != nullptr) {
+      st->cr();
       st->print_cr("          ----- Arena Usage by Arena Tag and compilation phase, at arena usage peak ----------------");
       _detail_stats->counters_at_global_peak.print_on(st);
+      st->cr();
       st->print_cr("          ------Allocation timelime by phase, last %u compilation phases ---------------------------",
                    FootprintTimeline::max_num_phases);
       _detail_stats->timeline.print_on(st);
     } else {
+      st->cr();
       st->print_cr("           ------ Arena Usage by Arena Tag, at arena usage peak ------------------------------------");
       for (int tag = 0; tag < arena_tag_max; tag++) {
         const size_t v = _peak_composition_per_arena_tag[tag];
         st->print_cr("%*s: %zu ", indent2, Arena::tag_desc[tag], v);
       }
     }
+    st->cr();
   }
 };
 
@@ -986,8 +990,6 @@ const char* CompilationMemoryStatistic::failure_reason_memlimit() {
 #ifdef ASSERT
 void CompilationMemoryStatistic::do_test_allocations() {
 
-  // This does a number of large predefined allocations that should show up in the
-  // compilation memory statistics.
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   ArenaStatCounter* const arena_stat = th->arena_stat();
   if (arena_stat == nullptr) { // not started
@@ -995,37 +997,19 @@ void CompilationMemoryStatistic::do_test_allocations() {
   }
   const CompilerType ctyp = th->task()->compiler()->type();
 
-#ifdef COMPILER1
-  if (ctyp == CompilerType::compiler_c1) {
-    // Allocate a large area of ResouceArea and leak it to the end of the compilation. This
-    // shall be large enough to create a new peak X. Since we leak, this amount will, from
-    // now on, part of the peak composition of any follow-up peaks to come, and therefore show
-    // up in the final peak-composition printout for C1.
-    NEW_RESOURCE_ARRAY(char, M * 20); // Note: the thread ResourceArray of a CompilerThread runs as "mtCompiler"
-  }
-#endif
+  // Allocation amounts must be large enough to (comfortably) cause new arena chunks to be
+  // allocated, and large enough to trigger a new temporary peak.
+  const size_t large_size = MAX2((size_t)Chunk::max_default_size * 2, significant_peak_threshold);
+  NEW_RESOURCE_ARRAY(char, large_size); // Note: the thread ResourceArray of a CompilerThread runs as "mtCompiler"
 
 #ifdef COMPILER2
   if (ctyp == CompilerType::compiler_c2) {
-    // Allocation amounts must be large enough to (comfortably) cause new arena chunks to be
-    // allocated, and large enough to trigger a new peak.
-    const size_t large_size = MAX2((size_t)Chunk::max_default_size * 2, significant_peak_threshold) * 2;
-    // A) For C2 only, cause temporary spikes in test phases with non-RA test arenas. In step (B)
-    // below we will allocate a large area in ResourceArea, which - since the amount will be larger
-    // than the combined amount allocated here in step (A) - will create a new peak that removes
-    // the (A) allocations from the final peak composition. That is by design - we want to see
-    // these temporary allocations as part of the fooprint timeline as "temporary spikes".
+    // For C2 only, cause temporary spikes in a nested test phase with non-RA test arenas.
     Compile::TracePhase tp(Phase::_t_testTimer1);
     Arena testArena1(MemTag::mtCompiler /* sic */, Arena::Tag::tag_node);
     testArena1.Amalloc(large_size); // temp spike, should be gone when phase ends
-    NEW_RESOURCE_ARRAY(char, large_size); // leak till end of compilation.
-    {
-      Compile::TracePhase tp(Phase::_t_testTimer2);
-      Arena testArena2(MemTag::mtCompiler /* sic */, Arena::Tag::tag_comp);
-      testArena2.Amalloc(large_size); // temp spike, should be gone when phase ends
-    }
-    Arena testArena3(MemTag::mtCompiler /* sic */, Arena::Tag::tag_regsplit);
-    testArena3.Amalloc(large_size); // temp spike, should be gone when phase ends
+    Arena testArena2(MemTag::mtCompiler /* sic */, Arena::Tag::tag_regsplit);
+    testArena2.Amalloc(large_size); // temp spike, should be gone when phase ends
   }
 #endif // COMPILER2
 }

@@ -410,11 +410,7 @@ int Compilation::compile_java_method() {
     env()->dump_replay_data(env()->compile_id());
   }
 
-#ifdef ASSERT
-  if (DoMemStatTestAllocs) {
-    CompilationMemoryStatistic::do_test_allocations();
-  }
-#endif // ASSERT
+  DEBUG_ONLY(CompilationMemoryStatistic::do_test_allocations();)
 
   {
     PhaseTraceTime timeit(_t_codeemit);

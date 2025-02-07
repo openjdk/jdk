@@ -210,7 +210,6 @@ class ArenaStatCounter : public CHeapObj<mtCompiler> {
 
   const CompilerType _comp_type;
   const int _comp_id;
-
   int retrieve_live_node_count() const;
 
   DEBUG_ONLY(void verify() const;)

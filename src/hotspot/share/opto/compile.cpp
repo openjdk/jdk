@@ -3023,11 +3023,7 @@ void Compile::Code_Gen() {
     print_method(PHASE_FINAL_CODE, 1); // Compile::_output is not null here
   }
 
-#ifdef ASSERT
-  if (DoMemStatTestAllocs) {
-    CompilationMemoryStatistic::do_test_allocations();
-  }
-#endif // ASSERT
+  DEBUG_ONLY(CompilationMemoryStatistic::do_test_allocations();)
 
   // He's dead, Jim.
   _cfg     = (PhaseCFG*)((intptr_t)0xdeadbeef);

@@ -382,9 +382,6 @@
           "If compilation is stopped with an error, capture diagnostic "    \
           "information at the bailout point")                               \
                                                                             \
-  develop(bool, DoMemStatTestAllocs, false,                                 \
-          "If true, mem stat does test allocations.")                       \
-                                                                            \
 
 
 // end of COMPILER_FLAGS
