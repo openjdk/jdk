@@ -42,7 +42,6 @@
     cflags(Log,                     bool, LogCompilation, Unknown) \
     cflags(MemLimit,                intx, 0, MemLimit) \
     cflags(MemStat,                 uintx, 0, MemStat) \
-  DEBUG_ONLY(cflags(MemStatTest,    bool, false, MemStatTest)) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
     cflags(PrintCompilation,        bool, PrintCompilation, PrintCompilation) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \
@@ -156,7 +155,6 @@ public:
   bool should_print_memstat() const;
   size_t mem_limit() const;
   bool should_crash_at_mem_limit() const; // true: crash false: stop compilation
-  DEBUG_ONLY(bool is_memstat_test() const { return MemStatTestOption; })
 
   typedef enum {
 #define enum_of_flags(name, type, dvalue, cc_flag) name##Index,

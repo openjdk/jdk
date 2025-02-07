@@ -394,13 +394,10 @@ public:
 
 class MemStatEntry : public CHeapObj<mtCompiler> {
 
-  MemStatEntry* _next;
   const FullMethodName _method;
   CompilerType _comp_type;
   int _comp_id;
   double _time;
-  // How often this has been recompiled.
-  int _num_recomp;
   // Compiling thread. Only for diagnostic purposes. Thread may not be alive anymore.
   const Thread* _thread;
   // active limit for this compilation, if any
@@ -428,8 +425,8 @@ class MemStatEntry : public CHeapObj<mtCompiler> {
 public:
 
   MemStatEntry(FullMethodName method)
-    : _next(nullptr), _method(method), _comp_type(compiler_none), _comp_id(-1),
-      _time(0), _num_recomp(0), _thread(nullptr), _limit(0),
+    : _method(method), _comp_type(compiler_none), _comp_id(-1),
+      _time(0), _thread(nullptr), _limit(0),
       _result(nullptr), _code_size(0), _peak(0), _live_nodes_at_global_peak(0),
       _detail_stats(nullptr) {
   }
@@ -443,7 +440,6 @@ public:
   void set_current_time() { _time = os::elapsedTime(); }
   void set_current_thread() { _thread = Thread::current(); }
   void set_limit(size_t limit) { _limit = limit; }
-  void inc_recompilation() { _num_recomp++; }
 
   void set_from_state(const ArenaStatCounter* state, bool store_details) {
     _comp_type = state->comp_type();
@@ -482,10 +478,8 @@ public:
   void set_code_size(size_t s)    { _code_size = s; }
 
   size_t peak() const { return _peak; }
-  CompilerType comp_type() const  { return _comp_type; }
-
-  void set_next(MemStatEntry* e)  { assert(_next == nullptr || e == nullptr, "Sanity"); _next = e; }
-  MemStatEntry* next()            { return _next; }
+  bool is_c1() const { return _comp_type == CompilerType::compiler_c1; }
+  bool is_c2() const { return _comp_type == CompilerType::compiler_c2; }
 
   static void print_legend(outputStream* st) {
 #define LEGEND_KEY_FMT "%11s"
@@ -501,7 +495,6 @@ public:
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "limit", "memory limit, if set");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "time", "timestamp");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "id", "compile id");
-    st->print_cr("  " LEGEND_KEY_FMT ": %s", "rec", "how often recompiled");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "thread", "compiler thread");
 #undef LEGEND_KEY_FMT
   }
@@ -515,10 +508,10 @@ public:
       st->print(SIZE_FMT, Arena::tag_name[tag]);
     }
 #define HDR_FMT1 "%-8s%-8s%-8s%-8s%-8s"
-#define HDR_FMT2 "%-6s%-4s%-19s%s"
+#define HDR_FMT2 "%-6s%-19s%s"
 
     st->print(HDR_FMT1, "#nodes", "codesz", "result", "limit", "time");
-    st->print(HDR_FMT2, "id", "#rc", "thread", "method");
+    st->print(HDR_FMT2, "id", "thread", "method");
     st->print_cr("");
   }
 
@@ -572,10 +565,6 @@ public:
     st->print("%d ", _comp_id);
     col += 6; st->fill_to(col);
 
-    // Recomp
-    st->print("%u ", _num_recomp);
-    col += 4; st->fill_to(col);
-
     // Thread
     st->print(PTR_FORMAT " ", p2i(_thread));
 
@@ -596,7 +585,6 @@ public:
     st->print_cr("%*s: %s", indent1, "Method", _method.as_C_string(buf, sizeof(buf)));
     st->print_cr("%*s: %2s", indent1, "Compiler Type", compilertype2name(_comp_type));
     st->print_cr("%*s: %d", indent1, "Compile ID", _comp_id);
-    st->print_cr("%*s: %u", indent1, "Recompilation No.", _num_recomp);
     st->print_cr("%*s: %.3f", indent1, "Timestamp", _time);
     st->print_cr("%*s: " PTR_FORMAT, indent1, "Thread", p2i(_thread));
 
@@ -632,12 +620,11 @@ public:
 class MemStatStore : public CHeapObj<mtCompiler> {
 
   // Total number of entries. Reaching this limit, we discard the least interesting (smallest allocation size) first.
-  static constexpr int max_entries = 16;
+  static constexpr int max_entries = 32;
 
   struct {
     size_t s; MemStatEntry* e;
   } _entries[max_entries];
-  uint64_t _num_entries_lost;
 
   struct iteration_result { unsigned num, num_c1, num_c2, num_filtered_out; };
   template<typename F>
@@ -648,12 +635,8 @@ class MemStatStore : public CHeapObj<mtCompiler> {
       if (_entries[i].s >= minsize) {
         f(_entries[i].e);
         result.num++;
-        if (_entries[i].e->comp_type() == CompilerType::compiler_c1) {
-          result.num_c1++;
-        } else {
-          assert(_entries[i].e->comp_type() == CompilerType::compiler_c2, "Sanity");
-          result.num_c1++;
-        }
+        result.num_c1 += _entries[i].e->is_c1() ? 1 : 0;
+        result.num_c2 += _entries[i].e->is_c2() ? 1 : 0;
       } else {
         result.num_filtered_out++;
       }
@@ -662,22 +645,18 @@ class MemStatStore : public CHeapObj<mtCompiler> {
 
   void print_footer(outputStream* st, size_t minsize, const iteration_result& result) const {
     if (result.num > 0) {
-      st->print_cr("Total: %u compilations (C1: %u, C2: %u)", result.num, result.num_c1, result.num_c2);
+      st->print_cr("Total: %u (C1: %u, C2: %u)", result.num, result.num_c1, result.num_c2);
     } else {
       st->print_cr("No entries.");
     }
     if (result.num_filtered_out > 0) {
       st->print_cr(" (%d compilations smaller than %zu omitted)", result.num_filtered_out, minsize);
     }
-    if (_num_entries_lost > 0) {
-      st->print_cr(" (%zu old compilations lost - use method filters on the memstat CompileCommand to "
-                   "reduce the amount of information gathered)", _num_entries_lost);
-    }
   }
 
 public:
 
-  MemStatStore() : _num_entries_lost(0) {
+  MemStatStore() {
     memset(_entries, 0, sizeof(_entries));
   }
 
@@ -694,9 +673,7 @@ public:
       return;
     }
     MemStatEntry* e = _entries[max_entries - 1].e; // recycle last one
-    if (e != nullptr) {
-      _num_entries_lost++;
-    } else {
+    if (e == nullptr) {
       e = new MemStatEntry(fmn);
     }
     memmove(_entries + i + 1, _entries + i, sizeof(_entries[0]) * (max_entries - i - 1));
@@ -704,7 +681,6 @@ public:
     e->reset();
     e->set_current_time();
     e->set_current_thread();
-    e->inc_recompilation();
     e->set_result(result);
     e->set_code_size(code_size);
 
@@ -735,12 +711,8 @@ public:
 
   void print_details(outputStream* st, size_t minsize) const {
     assert_lock_strong(NMTCompilationCostHistory_lock);
-
-unsigned num = 0;
     iteration_result itres;
     auto printer = [&](const MemStatEntry* e) {
-st->print("%.4u ", num);
-st->print(PTR_FORMAT " ", p2i(e));
       e->print_detailed(st);
       st->print_cr("====================================================================================");
     };
@@ -1013,6 +985,7 @@ const char* CompilationMemoryStatistic::failure_reason_memlimit() {
 
 #ifdef ASSERT
 void CompilationMemoryStatistic::do_test_allocations() {
+
   // This does a number of large predefined allocations that should show up in the
   // compilation memory statistics.
   CompilerThread* const th = Thread::current()->as_Compiler_thread();

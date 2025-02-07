@@ -411,7 +411,7 @@ int Compilation::compile_java_method() {
   }
 
 #ifdef ASSERT
-  if (_directive->is_memstat_test()) {
+  if (DoMemStatTestAllocs) {
     CompilationMemoryStatistic::do_test_allocations();
   }
 #endif // ASSERT

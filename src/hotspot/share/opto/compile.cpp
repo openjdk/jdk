@@ -3024,7 +3024,7 @@ void Compile::Code_Gen() {
   }
 
 #ifdef ASSERT
-  if (_directive->is_memstat_test()) {
+  if (DoMemStatTestAllocs) {
     CompilationMemoryStatistic::do_test_allocations();
   }
 #endif // ASSERT

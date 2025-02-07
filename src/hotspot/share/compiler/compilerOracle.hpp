@@ -60,7 +60,6 @@ class methodHandle;
   option(BreakAtCompile, "BreakAtCompile", Bool) \
   option(MemLimit, "MemLimit", Intx) \
   option(MemStat, "MemStat", Uintx) \
-DEBUG_ONLY(option(MemStatTest, "MemStatTest", Bool)) \
   option(PrintAssembly, "PrintAssembly", Bool) \
   option(PrintCompilation, "PrintCompilation", Bool) \
   option(PrintInlining, "PrintInlining", Bool) \
