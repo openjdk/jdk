@@ -25,4 +25,4 @@ package compiler.lib.template_framework;
 
 import java.util.List;
 
-public record InstantiatedTemplate(List<Token> tokens) {}
+public record TemplateBody(List<Token> tokens) {}

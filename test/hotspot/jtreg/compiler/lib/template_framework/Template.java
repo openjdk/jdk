@@ -29,20 +29,20 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface Template {
-    static ZeroArgs make(Supplier<InstantiatedTemplate> t) {
+    static ZeroArgs make(Supplier<TemplateBody> t) {
         return new ZeroArgs(t);
     }
 
-    static <A> OneArg<A> make(String arg0Name, Function<A, InstantiatedTemplate> t) {
+    static <A> OneArg<A> make(String arg0Name, Function<A, TemplateBody> t) {
         return new OneArg<>(arg0Name, t);
     }
 
-    static <A, B> TwoArgs<A, B> make(String arg0Name, String arg1Name, BiFunction<A, B, InstantiatedTemplate> t) {
+    static <A, B> TwoArgs<A, B> make(String arg0Name, String arg1Name, BiFunction<A, B, TemplateBody> t) {
         return new TwoArgs<>(arg0Name, arg1Name, t);
     }
 
-    record ZeroArgs(Supplier<InstantiatedTemplate> function) implements Template {
-        InstantiatedTemplate instantiate() {
+    record ZeroArgs(Supplier<TemplateBody> function) implements Template {
+        TemplateBody instantiate() {
             return function.get();
         }
 
@@ -51,8 +51,8 @@ public interface Template {
         }
     }
 
-    record OneArg<A>(String arg0Name, Function<A, InstantiatedTemplate> function) implements Template {
-        InstantiatedTemplate instantiate(A a) {
+    record OneArg<A>(String arg0Name, Function<A, TemplateBody> function) implements Template {
+        TemplateBody instantiate(A a) {
             return function.apply(a);
         }
 
@@ -62,8 +62,8 @@ public interface Template {
     }
 
     record TwoArgs<A, B>(String arg0Name, String arg1Name,
-                         BiFunction<A, B, InstantiatedTemplate> function) implements Template {
-        InstantiatedTemplate instantiate(A a, B b) {
+                         BiFunction<A, B, TemplateBody> function) implements Template {
+        TemplateBody instantiate(A a, B b) {
             return function.apply(a, b);
         }
 
@@ -72,8 +72,8 @@ public interface Template {
         }
     }
 
-    static InstantiatedTemplate body(Object... tokens) {
-        return new InstantiatedTemplate(Token.parse(Arrays.asList(tokens)));
+    static TemplateBody body(Object... tokens) {
+        return new TemplateBody(Token.parse(Arrays.asList(tokens)));
     }
 
     static HookIntoToken intoHook(Hook hook, TemplateWithArgs t) {

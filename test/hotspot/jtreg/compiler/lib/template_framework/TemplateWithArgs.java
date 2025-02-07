@@ -31,7 +31,7 @@ public sealed interface TemplateWithArgs extends Token
 {
     record ZeroArgsUse(Template.ZeroArgs zeroArgs) implements TemplateWithArgs, Token {
         @Override
-        public InstantiatedTemplate instantiate() {
+        public TemplateBody instantiate() {
             return zeroArgs.instantiate();
         }
 
@@ -41,7 +41,7 @@ public sealed interface TemplateWithArgs extends Token
 
     record OneArgUse<A>(Template.OneArg<A> oneArg, A a) implements TemplateWithArgs, Token {
         @Override
-        public InstantiatedTemplate instantiate() {
+        public TemplateBody instantiate() {
             return oneArg.instantiate(a);
         }
 
@@ -53,7 +53,7 @@ public sealed interface TemplateWithArgs extends Token
 
     record TwoArgsUse<A, B>(Template.TwoArgs<A, B> twoArgs, A a, B b) implements TemplateWithArgs, Token {
         @Override
-        public InstantiatedTemplate instantiate() {
+        public TemplateBody instantiate() {
             return twoArgs.instantiate(a, b);
         }
 
@@ -64,7 +64,7 @@ public sealed interface TemplateWithArgs extends Token
         }
     }
 
-    InstantiatedTemplate instantiate();
+    TemplateBody instantiate();
 
     @FunctionalInterface
     interface ArgumentVisitor {

@@ -117,7 +117,7 @@ public abstract class Renderer {
         currentTemplateFrame = templateFrame;
 
         templateWithArgs.visitArguments((name, value) -> templateFrame.addHashtagReplacement(name, value.toString()));
-        InstantiatedTemplate it = templateWithArgs.instantiate();
+        TemplateBody it = templateWithArgs.instantiate();
         renderTokenList(it.tokens());
 
         if (currentTemplateFrame != templateFrame) {
