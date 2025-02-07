@@ -444,26 +444,28 @@ TEST_VM(os_linux, decoder_get_source_info_valid_overflow_minimal) {
 #endif // clang
 
 #ifdef __GLIBC__
+#ifndef ADDRESS_SANITIZER
 TEST_VM(os_linux, glibc_mallinfo_wrapper) {
   // Very basic test. Call it. That proves that resolution and invocation works.
   os::Linux::glibc_mallinfo mi;
   bool did_wrap = false;
 
-  os::Linux::get_mallinfo(&mi, &did_wrap);
-
   void* p = os::malloc(2 * K, mtTest);
   ASSERT_NOT_NULL(p);
+
+  os::Linux::get_mallinfo(&mi, &did_wrap);
 
   // We should see total allocation values > 0
   ASSERT_GE((mi.uordblks + mi.hblkhd), 2 * K);
 
-  // These values also should exceed some reasonable size.
+  // These values also should less than some reasonable size.
   ASSERT_LT(mi.fordblks, 2 * G);
   ASSERT_LT(mi.uordblks, 2 * G);
   ASSERT_LT(mi.hblkhd, 2 * G);
 
   os::free(p);
 }
+#endif // ADDRESS_SANITIZER
 #endif // __GLIBC__
 
 #endif // LINUX
