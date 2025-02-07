@@ -319,7 +319,7 @@ public:
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
 
-  virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
 
   const Type* bottom_type() const { return TypeInt::INT; }
