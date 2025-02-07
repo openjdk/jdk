@@ -53,7 +53,7 @@ public abstract class Renderer {
         baseFrame = new Frame(null);
         currentFrame = baseFrame;
         nextTemplateId = 0;
-        baseTemplateFrame = TemplateFrame.makeBorder(null, nextTemplateId++);
+        baseTemplateFrame = new TemplateFrame(null, nextTemplateId++);
         currentTemplateFrame = baseTemplateFrame;
 
         renderTemplateUse(templateUse);
@@ -113,7 +113,7 @@ public abstract class Renderer {
     }
 
     private static void renderTemplateUse(TemplateUse templateUse) {
-        TemplateFrame templateFrame = TemplateFrame.makeBorder(getCurrentTemplateFrame(), nextTemplateId++);
+        TemplateFrame templateFrame = new TemplateFrame(getCurrentTemplateFrame(), nextTemplateId++);
         currentTemplateFrame = templateFrame;
 
         templateUse.visitArguments((name, value) -> templateFrame.addHashtagReplacement(name, value.toString()));
