@@ -522,21 +522,35 @@ public class TestTemplate {
             "break\n",
             "x1 = #x\n",
             hook1.set(
-                "x2 = #x\n",
+                "x2 = #x\n", // leaks inside
                 template1.withArgs("beta"),
                 let("y", "one"),
                 "y1 = #y\n"
             ),
             "break\n",
-            let("y", "two"),
-            "y2 = #y\n",
+            "y2 = #y\n", // leaks outside
             "}\n"
         ));
 
         String code = template2.withArgs().render();
         String expected =
             """
-
+            {
+            {
+            y alpha y
+            y <alpha> y
+            }
+            break
+            x1 = abc
+            x2 = abc
+            {
+            y beta y
+            y <beta> y
+            }
+            y1 = one
+            break
+            y2 = one
+            }
             """;
         checkEQ(code, expected);
     }
