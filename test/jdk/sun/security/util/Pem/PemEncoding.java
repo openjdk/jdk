@@ -26,7 +26,6 @@
  * @bug 8158633
  * @summary BASE64 encoded cert not correctly parsed with UTF-16
  * @library /test/lib
- * @run main PemEncoding
  */
 
 import jdk.test.lib.process.ProcessTools;
