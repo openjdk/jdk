@@ -599,7 +599,8 @@ static jboolean expand(JLI_List args, const char *str, const char *var_name) {
 
 #ifdef _WIN32
 /*
- * getenv() without best-fit mapping
+ * getenv() without best-fit mapping. The return value is constructed by converting
+ * _wgetenv()'s return encoded in wide char to ANSI code page without best-fit map.
  */
 static char * winGetEnv(const char * var_name) {
     char * mbEnvVar = NULL;
