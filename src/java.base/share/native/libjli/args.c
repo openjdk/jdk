@@ -468,6 +468,15 @@ int isTerminalOpt(char *arg) {
 
 JNIEXPORT jboolean JNICALL
 JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name) {
+    if (firstAppArgIndex == 0) {
+        // Not 'java', return
+        return JNI_FALSE;
+    }
+
+    if (relaunch) {
+        return JNI_FALSE;
+    }
+
 #ifdef _WIN32
     char *env = winGetEnv(var_name);
 #else
@@ -476,9 +485,7 @@ JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name) {
 
     jboolean ret = JNI_FALSE;
 
-    if (firstAppArgIndex != 0 && // If not 'java', return
-        !relaunch &&
-        NULL != env) {
+    if (NULL != env) {
         JLI_ReportMessage(ARG_INFO_ENVVAR, var_name, env);
         ret = expand(args, env, var_name);
     }
