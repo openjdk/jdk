@@ -2458,7 +2458,15 @@ class StubGenerator: public StubCodeGenerator {
     assert((base_offset % (UseCompactObjectHeaders ? 4 :
                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
-    // strL is 8-byte aligned
+#ifdef ASSERT
+    if (AvoidUnalignedAccesses) {
+      Label align_ok;
+      __ andi(t0, strL, 0x7);
+      __ beqz(t0, align_ok);
+      __ stop("bad alignment");
+      __ bind(align_ok);
+    }
+#endif
     __ ld(tmpLval, Address(strL));
     __ addi(strL, strL, wordSize);
 
@@ -2542,7 +2550,7 @@ class StubGenerator: public StubCodeGenerator {
       __ subi(cnt2, cnt2, wordSize / 2);
     }
 
-    // we are now 8-bytes aligned on strL
+    // we are now 8-bytes aligned on strL when AvoidUnalignedAccesses is true
     __ subi(cnt2, cnt2, wordSize * 2);
     __ bltz(cnt2, TAIL);
     __ bind(SMALL_LOOP); // smaller loop
