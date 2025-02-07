@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -43,7 +42,7 @@ public class TestNoNULL {
     private static final Set<String> excludedSourceFiles = new HashSet<>();
     private static final Set<String> excludedTestFiles = new HashSet<>();
     private static final Set<String> excludedTestExtensions = Set.of(".c", ".java", ".jar");
-    private static final Pattern NULL_PATTERN = Pattern.compile("(?<![\\p{Alnum}_])NULL(?![\\p{Alnum}_])");
+    private static final Pattern NULL_PATTERN = Pattern.compile("\\bNULL\\b");
     private static Path dir = Paths.get(System.getProperty("test.src"));
     private static int errorCount = 0;
 
@@ -74,8 +73,7 @@ public class TestNoNULL {
         List<String> sourceExclusions = List.of(
                 "src/hotspot/share/prims/jvmti.xml",
                 "src/hotspot/share/prims/jvmti.xsl",
-                "src/hotspot/share/utilities/globalDefinitions_visCPP.hpp",
-                "src/hotspot/os/windows/os_windows.cpp" //TODO: remove after JDK-8349417
+                "src/hotspot/share/utilities/globalDefinitions_visCPP.hpp"
         );
 
         List<String> testExclusions = List.of(
