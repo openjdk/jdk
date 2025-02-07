@@ -1042,12 +1042,7 @@ Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const Type
   }
 }
 
-bool VectorNode::should_swap_inputs() {
-  // Must be a binary operation.
-  if (req() != 3) {
-    return false;
-  }
-
+bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
   // Predicated vector operations are sensitive to ordering of inputs.
   // When the mask corresponding to a vector lane is false then
   // the result of the operation is corresponding lane of its first operand.
@@ -1102,7 +1097,7 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Sort inputs of commutative non-predicated vector operations to help value numbering.
-  if (should_swap_inputs()) {
+  if (should_swap_inputs_to_help_global_value_numbering()) {
     swap_edges(1, 2);
   }
   return nullptr;
