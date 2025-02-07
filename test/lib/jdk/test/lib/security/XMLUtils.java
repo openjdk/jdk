@@ -554,7 +554,7 @@ public class XMLUtils {
         }
     }
 
-    //////////// MISC ////////////
+    // MISC
 
     /**
      * Adds a new rule to "jdk.xml.dsig.secureValidationPolicy"
