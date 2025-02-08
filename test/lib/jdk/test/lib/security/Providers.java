@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,18 @@
  * questions.
  */
 
+package jdk.test.lib.security;
+
 import java.security.Provider;
 import java.security.Security;
 
-public class ProvidersSnapshot {
-
-    private Provider[] oldProviders;
-
-    private ProvidersSnapshot() {
-        oldProviders = Security.getProviders();
-    }
-
-    public static ProvidersSnapshot create() {
-        return new ProvidersSnapshot();
-    }
-
-    public void restore() {
-        Provider[] newProviders = Security.getProviders();
-        for (Provider p: newProviders) {
+public class Providers {
+    public static void setAt(Provider p, int pos) throws Exception {
+        if (Security.getProvider(p.getName()) != null) {
             Security.removeProvider(p.getName());
         }
-        for (Provider p: oldProviders) {
-            Security.addProvider(p);
+        if (Security.insertProviderAt(p, pos) == -1) {
+            throw new Exception("cannot setAt");
         }
     }
 }
