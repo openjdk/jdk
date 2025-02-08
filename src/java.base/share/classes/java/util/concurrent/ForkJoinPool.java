@@ -910,7 +910,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *
      * This class supports ScheduledExecutorService methods by
      * creating and starting a DelayScheduler on first use of these
-     * methods (via startDelayScheduler, with callback
+     * methods (via scheduleDelayedTask, with callback
      * onDelaySchedulerStart). The scheduler operates independently in
      * its own thread, relaying tasks to the pool to execute as they
      * become ready (see method executeReadyDelayedTask). The only
@@ -3432,16 +3432,17 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
-     * Creates and starts DelayScheduler unless pool is in shutdown mode
+     * Arrange delayed execution of a DelayedTask via the
+     * DelayScheduler, creating and starting it if necessary.
      */
-    private DelayScheduler startDelayScheduler() {
+    final void scheduleDelayedTask(DelayedTask<?> task) {
         DelayScheduler ds;
         if ((ds = delayScheduler) == null) {
             boolean start = false;
             String name = poolName + "-delayScheduler";
-            long rs = lockRunState();
+            lockRunState();
             try {
-                if ((rs & SHUTDOWN) == 0 && (ds = delayScheduler) == null) {
+                if ((ds = delayScheduler) == null) {
                     ds = delayScheduler = new DelayScheduler(this, name);
                     start = true;
                 }
@@ -3450,7 +3451,7 @@ public class ForkJoinPool extends AbstractExecutorService
             }
             if (start) { // start outside of lock
                 SharedThreadContainer ctr;
-                if (this == common)
+                if (this == common) // override parallelism 0
                     asyncCommonPool();
                 if ((ctr = container) != null)
                     ctr.start(ds);
@@ -3458,7 +3459,9 @@ public class ForkJoinPool extends AbstractExecutorService
                     ds.start();
             }
         }
-        return ds;
+        if (ds == null || task == null || (runState & SHUTDOWN) != 0L)
+            throw new RejectedExecutionException();
+        ds.pend(task);
     }
 
     /**
@@ -3473,14 +3476,12 @@ public class ForkJoinPool extends AbstractExecutorService
     /**
      * Arranges execution of a ready task from DelayScheduler
      */
-    final void executeReadyDelayedTask(DelayedTask<?> task, boolean immediate) {
+    final void executeReadyDelayedTask(DelayedTask<?> task) {
         if (task != null) {
             WorkQueue q;
             boolean cancel = false;
             try {
-                if (immediate)
-                    task.doExec();
-                else if ((q = externalSubmissionQueue(false)) == null)
+                if ((q = externalSubmissionQueue(false)) == null)
                     cancel = true; // terminating
                 else
                     q.push(task, this, false);
@@ -3507,30 +3508,22 @@ public class ForkJoinPool extends AbstractExecutorService
     public ScheduledFuture<?> schedule(Runnable command,
                                        long delay,
                                        TimeUnit unit) {
-        DelayScheduler ds; DelayedTask<Void> t;
-        if (command == null || unit == null)
-            throw new NullPointerException();
-        long d = (delay <= 0L) ? 0L : unit.toNanos(delay);
-        if (((ds = delayScheduler) == null &&
-             (ds = startDelayScheduler()) == null) ||
-            (runState & SHUTDOWN) != 0L)
-            throw new RejectedExecutionException();
-        ds.pend(t = new DelayedTask<Void>(command, null, this, 0L, d));
+        Objects.requireNonNull(command);
+        DelayedTask<Void> t =
+            new DelayedTask<Void>(command, null, this, false, 0L,
+                                  unit.toNanos(delay <= 0L ? 0L : delay));
+        t.schedule();
         return t;
     }
 
     public <V> ScheduledFuture<V> schedule(Callable<V> callable,
                                            long delay,
                                            TimeUnit unit) {
-        DelayScheduler ds; DelayedTask<V> t;
-        if (callable == null || unit == null)
-            throw new NullPointerException();
-        long d = (delay <= 0L) ? 0L : unit.toNanos(delay);
-        if (((ds = delayScheduler) == null &&
-             (ds = startDelayScheduler()) == null) ||
-            (runState & SHUTDOWN) != 0L)
-            throw new RejectedExecutionException();
-        ds.pend(t = new DelayedTask<V>(null, callable, this, 0L, d));
+        Objects.requireNonNull(callable);
+        DelayedTask<V> t =
+            new DelayedTask<V>(null, callable, this, false, 0L,
+                               unit.toNanos(delay <= 0L ? 0L : delay));
+        t.schedule();
         return t;
     }
 
@@ -3538,18 +3531,15 @@ public class ForkJoinPool extends AbstractExecutorService
                                                   long initialDelay,
                                                   long period,
                                                   TimeUnit unit) {
-        DelayScheduler ds; DelayedTask<Void> t;
-        if (command == null || unit == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(command);
         if (period <= 0L)
             throw new IllegalArgumentException();
-        long p = -unit.toNanos(period); // negative for fixed rate
-        long d = (initialDelay <= 0L) ? 0L : unit.toNanos(initialDelay);
-        if (((ds = delayScheduler) == null &&
-             (ds = startDelayScheduler()) == null) ||
-            (runState & SHUTDOWN) != 0L)
-            throw new RejectedExecutionException();
-        ds.pend(t = new DelayedTask<Void>(command, null, this, p, d));
+        DelayedTask<Void> t =
+            new DelayedTask<Void>(command, null, this, false,
+                                  -unit.toNanos(period), // negative for fixed rate
+                                  unit.toNanos(initialDelay <= 0L ? 0L :
+                                               initialDelay));
+        t.schedule();
         return t;
     }
 
@@ -3557,18 +3547,15 @@ public class ForkJoinPool extends AbstractExecutorService
                                                      long initialDelay,
                                                      long delay,
                                                      TimeUnit unit) {
-        DelayScheduler ds; DelayedTask<Void> t;
-        if (command == null || unit == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(command);
         if (delay <= 0L)
             throw new IllegalArgumentException();
-        long p = unit.toNanos(delay);
-        long d = (initialDelay <= 0L) ? 0L : unit.toNanos(initialDelay);
-        if (((ds = delayScheduler) == null &&
-             (ds = startDelayScheduler()) == null) ||
-            (runState & SHUTDOWN) != 0L)
-            throw new RejectedExecutionException();
-        ds.pend(t = new DelayedTask<Void>(command, null, this, p, d));
+        DelayedTask<Void> t =
+            new DelayedTask<Void>(command, null, this, false,
+                                  unit.toNanos(delay),
+                                  unit.toNanos(initialDelay <= 0L ? 0L :
+                                               initialDelay));
+        t.schedule();
         return t;
     }
 
@@ -3599,26 +3586,16 @@ public class ForkJoinPool extends AbstractExecutorService
     public <V> ForkJoinTask<V> submitWithTimeout(Callable<V> callable,
                                                  long timeout,
                                                  TimeUnit unit) {
-        ForkJoinTask.CallableWithCanceller<V> task; CancelAction onTimeout;
-        DelayScheduler ds;
-        if (callable == null || unit == null)
-            throw new NullPointerException();
-        long d = (timeout <= 0L) ? 0L : unit.toNanos(timeout);
-        if (((ds = delayScheduler) == null &&
-             (ds = startDelayScheduler()) == null) ||
-            (runState & SHUTDOWN) != 0L)
-            throw new RejectedExecutionException();
-        DelayedTask<Void> canceller = new DelayedTask<Void>(
-            onTimeout = new CancelAction(), null, this, 0L, d);
-        canceller.isImmediate = true;
+        ForkJoinTask.CallableWithCanceller<V> task;
+        Objects.requireNonNull(callable);
+        long d = unit.toNanos(timeout <= 0L ? 0L : timeout);
+        CancelAction onTimeout = new CancelAction();
+        DelayedTask<Void> canceller =
+            new DelayedTask<Void>(onTimeout, null, this, true, 0L, d);
         onTimeout.task = task =
             new ForkJoinTask.CallableWithCanceller<V>(callable, canceller);
-        if (d == 0L)
-            task.trySetCancelled();
-        else {
-            poolSubmit(true, task);
-            ds.pend(canceller);
-        }
+        canceller.schedule();
+        poolSubmit(true, task);
         return task;
     }
 

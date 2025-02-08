@@ -265,8 +265,12 @@ final class DelayScheduler extends Thread {
                             break;
                         }
                         f.heapIndex = -1;
-                        if (stat >= 0)
-                            p.executeReadyDelayedTask(f, f.isImmediate);
+                        if (stat >= 0) {
+                            if (f.isImmediate)
+                                f.doExec();
+                            else
+                                p.executeReadyDelayedTask(f);
+                        }
                     }
                 } while ((n = replace(h, 0, n)) > 0);
             }
@@ -389,20 +393,27 @@ final class DelayScheduler extends Thread {
         final ForkJoinPool pool;
         T result;
         DelayedTask<?> nextPending; // for DelayScheduler submissions
-        final long nextDelay;     // 0: once; <0: fixedDelay; >0: fixedRate
-        long when;                // nanoTime-based trigger time
-        int heapIndex;            // if non-negative, index on heap
-        boolean isImmediate;      // true if action performed by scheduler
+        final long nextDelay;       // 0: once; <0: fixedDelay; >0: fixedRate
+        long when;                  // nanoTime-based trigger time
+        int heapIndex;              // if non-negative, index on heap
+        final boolean isImmediate;  // run by scheduler vs submitted when ready
 
-        DelayedTask(Runnable runnable, Callable<T> callable, ForkJoinPool pool,
-                    long nextDelay, long delay) {
+        public DelayedTask(Runnable runnable, Callable<T> callable, ForkJoinPool pool,
+                           boolean isImmediate, long nextDelay, long delay) {
             heapIndex = -1;
             this.runnable = runnable;
             this.callable = callable;
             this.pool = pool;
+            this.isImmediate = isImmediate;
             this.nextDelay = nextDelay;
-            this.when = delay + DelayScheduler.now();
+            this.when = delay; // offset by DelayScheduler.now on schedule()
         }
+
+        public final void schedule() {
+            when += DelayScheduler.now();
+            pool.scheduleDelayedTask(this);
+        }
+
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { result = v; }
         final Object adaptee() { return (runnable != null) ? runnable : callable; }
