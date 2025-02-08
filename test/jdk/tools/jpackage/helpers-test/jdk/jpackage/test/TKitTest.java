@@ -22,6 +22,9 @@
  */
 package jdk.jpackage.test;
 
+import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -35,15 +38,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Annotations.Parameters;
-import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
-import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
+import jdk.jpackage.test.Annotations.Test;
 
-public class TKitTest {
+public class TKitTest extends JUnitAdapter {
 
-    @Parameters
     public static Collection<Object[]> assertTestsData() {
         List<MethodCallConfig> data = new ArrayList<>();
 
@@ -63,6 +63,12 @@ public class TKitTest {
         data.addAll(List.of(assertFunc.args(7, 7).pass().expectLog("assertEquals(7)").createForMessage("Owl")));
         data.addAll(List.of(assertFunc.args(7, 10).fail().expectLog("Expected [7]. Actual [10]").createForMessage("Owl")));
 
+        assertFunc = MethodCallConfig.build("assertEquals", boolean.class, boolean.class, String.class);
+        data.addAll(List.of(assertFunc.args(true, true).pass().expectLog("assertEquals(true)").createForMessage("Emu")));
+        data.addAll(List.of(assertFunc.args(false, false).pass().expectLog("assertEquals(false)").createForMessage("Emu")));
+        data.addAll(List.of(assertFunc.args(true, false).fail().expectLog("Expected [true]. Actual [false]").createForMessage("Emu")));
+        data.addAll(List.of(assertFunc.args(false, true).fail().expectLog("Expected [false]. Actual [true]").createForMessage("Emu")));
+
         assertFunc = MethodCallConfig.build("assertNotEquals", String.class, String.class, String.class);
         data.addAll(List.of(assertFunc.args("a", "b").pass().expectLog("assertNotEquals(a, b)").createForMessage("Tit")));
         data.addAll(List.of(assertFunc.args("a", "a").fail().expectLog("Unexpected [a] value").createForMessage("Tit")));
@@ -70,6 +76,12 @@ public class TKitTest {
         assertFunc = MethodCallConfig.build("assertNotEquals", long.class, long.class, String.class);
         data.addAll(List.of(assertFunc.args(7, 10).pass().expectLog("assertNotEquals(7, 10)").createForMessage("Duck")));
         data.addAll(List.of(assertFunc.args(7, 7).fail().expectLog("Unexpected [7] value").createForMessage("Duck")));
+
+        assertFunc = MethodCallConfig.build("assertNotEquals", boolean.class, boolean.class, String.class);
+        data.addAll(List.of(assertFunc.args(true, false).pass().expectLog("assertNotEquals(true, false)").createForMessage("Sparrow")));
+        data.addAll(List.of(assertFunc.args(false, true).pass().expectLog("assertNotEquals(false, true)").createForMessage("Sparrow")));
+        data.addAll(List.of(assertFunc.args(true, true).fail().expectLog("Unexpected [true] value").createForMessage("Sparrow")));
+        data.addAll(List.of(assertFunc.args(false, false).fail().expectLog("Unexpected [false] value").createForMessage("Sparrow")));
 
         assertFunc = MethodCallConfig.build("assertNull", Object.class, String.class);
         data.addAll(List.of(assertFunc.args((Object) null).pass().expectLog("assertNull()").createForMessage("Ibis")));
@@ -191,12 +203,9 @@ public class TKitTest {
         }
     }
 
-    public TKitTest(MethodCallConfig methodCall) {
-        this.methodCall = methodCall;
-    }
-
     @Test
-    public void test() {
+    @ParameterSupplier("assertTestsData")
+    public void test(MethodCallConfig methodCall) {
         runAssertWithExpectedLogOutput(() -> {
             methodCall.method.invoke(null, methodCall.args);
         }, methodCall.expectFail, methodCall.expectLog);
@@ -237,8 +246,6 @@ public class TKitTest {
         }
         return msg;
     }
-
-    private final MethodCallConfig methodCall;
 
     private static final int LOG_MSG_TIMESTAMP_LENGTH = "[HH:mm:ss.SSS] ".length();
 }

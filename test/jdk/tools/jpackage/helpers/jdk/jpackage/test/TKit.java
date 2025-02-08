@@ -609,6 +609,28 @@ public final class TKit {
                 actual), msg));
     }
 
+    public static void assertEquals(boolean expected, boolean actual, String msg) {
+        currentTest.notifyAssert();
+        if (expected != actual) {
+            error(concatMessages(String.format(
+                    "Expected [%s]. Actual [%s]", expected, actual),
+                    msg));
+        }
+
+        traceAssert(concatMessages(String.format("assertEquals(%s)", expected), msg));
+    }
+
+    public static void assertNotEquals(boolean expected, boolean actual, String msg) {
+        currentTest.notifyAssert();
+        if (expected == actual) {
+            error(concatMessages(String.format("Unexpected [%s] value", actual),
+                    msg));
+        }
+
+        traceAssert(concatMessages(String.format("assertNotEquals(%s, %s)", expected,
+                actual), msg));
+    }
+
     public static void assertEquals(String expected, String actual, String msg) {
         currentTest.notifyAssert();
         if ((actual != null && !actual.equals(expected))

@@ -41,16 +41,10 @@ import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
-/*
- * @test
- * @summary Test jpackage test library's annotation processor
- * @library /test/jdk/tools/jpackage/helpers
- * @build jdk.jpackage.test.*
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.AnnotationsTest
- */
-public class AnnotationsTest {
+public class AnnotationsTest extends JUnitAdapter {
 
-    public static void main(String... args) {
+    @org.junit.jupiter.api.Test
+    public void test() {
         runTests(List.of(BasicTest.class, ParameterizedInstanceTest.class));
         for (var os : OperatingSystem.values()) {
             try {
