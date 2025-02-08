@@ -2106,15 +2106,15 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
 // We do not test for other cases.
 //
 // Correctness:
-// Given expr with at least w trailing bits,
+// Given "expr" with at least "w" trailing zeros,
 // let "mod = 2^w", "suffix_mask = mod - 1", and "mask" be any non-negative value <= suffix_mask.
 //
 //    expr % mod == 0                             (multiple of power of two)
 // => (a + expr) % mod         == a % mod         (zero element in modular arithmetic)
-// => (a + expr) & suffix_mask == a & suffix_mask (remainder means masking with suffix bits)
-// => (a + expr) & mask        == a & mask        (equivalency under suffix mask also holds under partial mask)
+// => (a + expr) & suffix_mask == a & suffix_mask (remainder is the same as masking with suffix mask)
+// => (a + expr) & mask        == a & mask        (terms equivalent under suffix mask are also equivalent under partial mask)
 //
-// Hence, if expr has at least w trailing bits, it is a zero element under any mask with width w.
+// Hence, an expr with at least w trailing zeros is a neutral additive element under any mask with bit width w.
 static bool AndIL_is_zero_element_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt) {
   // When the mask is negative, it has the most significant bit set.
   const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
