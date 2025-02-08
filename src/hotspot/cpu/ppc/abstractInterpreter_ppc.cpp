@@ -128,6 +128,13 @@ void AbstractInterpreter::layout_activation(Method* method,
     caller->interpreter_frame_esp() + caller_actual_parameters :
     caller->sp() + method->max_locals() - 1 + (frame::java_abi_size / Interpreter::stackElementSize);
 
+#ifdef ASSERT
+  if (caller->is_interpreted_frame()) {
+    assert(locals_base < caller->fp() - frame::ijava_state_size, "bad placement");
+    assert(locals_base >= interpreter_frame->sender_sp() + max_locals - 1, "bad placement");
+  }
+#endif
+
   intptr_t* monitor_base = caller->sp() - frame::ijava_state_size / Interpreter::stackElementSize;
   intptr_t* monitor      = monitor_base - (moncount * frame::interpreter_frame_monitor_size());
   intptr_t* esp_base     = monitor - 1;
