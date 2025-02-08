@@ -1928,6 +1928,38 @@ bool BoolNode::is_counted_loop_exit_test() {
   return false;
 }
 
+template<typename IntegerType>
+static const IntegerType* integral_abs_value(const IntegerType* t) {
+  typedef typename IntegerType::NativeType NativeType;
+
+  assert(!t->is_con(), "Constant types must have already been handled");
+
+  NativeType lo_abs = uabs(t->_lo);
+  NativeType hi_abs = uabs(t->_hi);
+
+  if (lo_abs < 0) {
+    assert(lo_abs == std::numeric_limits<NativeType>::min(), "uabs(t->_lo) must be min value if negative!");
+
+    // If lo is type_min, then hi must be type_max. This is because:
+    // - An integer type is defined as type_min <= lo <= hi <= type_max.
+    // - Since t is not a constant, it must be that lo < hi.
+    // - Therefore, hi must be >= type_min+1.
+    // - As abs(type_min+1) == type_max and for all n from type_min+1 to hi, abs(n) <= type_max, the upper bound must be type_max.
+    return IntegerType::TYPE_DOMAIN;
+  }
+
+  NativeType lo = 0;
+  if (t->_hi < 0 || t->_lo >= 0) {
+    // If both values are positive or negative, select the value that is closer to 0.
+    lo = MIN2(lo_abs, hi_abs);
+  }
+
+  // Select the value that extends the furthest from 0.
+  NativeType hi = MAX2(lo_abs, hi_abs);
+
+  return IntegerType::make(lo, hi, t->_widen);
+}
+
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* AbsNode::Value(PhaseGVN* phase) const {
@@ -1940,14 +1972,16 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
     if (ti->is_con()) {
       return TypeInt::make(uabs(ti->get_con()));
     }
-    break;
+
+    return integral_abs_value(ti);
   }
   case Type::Long: {
     const TypeLong* tl = t1->is_long();
     if (tl->is_con()) {
       return TypeLong::make(uabs(tl->get_con()));
     }
-    break;
+
+    return integral_abs_value(tl);
   }
   case Type::FloatCon:
     return TypeF::make(abs(t1->getf()));
