@@ -511,6 +511,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      *             {@code dst.length}
      *             </ul>
      */
+    @Override
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin)
     {
         Preconditions.checkFromToIndex(srcBegin, srcEnd, count, Preconditions.SIOOBE_FORMATTER);  // compatible to old version
