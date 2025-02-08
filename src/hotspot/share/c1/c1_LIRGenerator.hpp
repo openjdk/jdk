@@ -536,6 +536,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr syncTempOpr();
   LIR_Opr atomicLockOpr();
 
+  // Intrinsic for Class::isInstance
+  address isInstance_entry();
+
   // returns a register suitable for saving the thread in a
   // call_runtime_leaf if one is needed.
   LIR_Opr getThreadTemp();

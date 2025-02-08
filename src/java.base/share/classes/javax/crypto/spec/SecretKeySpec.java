@@ -91,7 +91,7 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      *
      * @param key the key material of the secret key. The contents of
      * the array are copied to protect against subsequent modification.
-     * @param algorithm the name of the secret-key algorithm to be associated
+     * @param algorithm the name of the secret key algorithm to be associated
      * with the given key material.
      * See the SecretKey Algorithms section in the
      * <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
@@ -136,7 +136,7 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * @param offset the offset in <code>key</code> where the key material
      * starts.
      * @param len the length of the key material.
-     * @param algorithm the name of the secret-key algorithm to be associated
+     * @param algorithm the name of the secret key algorithm to be associated
      * with the given key material.
      * See the SecretKey Algorithms section in the
      * <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
