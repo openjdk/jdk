@@ -148,7 +148,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
     /**
      * Returns a {@code Writer} that writes characters into an
      * {@code Appendable}. The writer is initially open and writing appends
-     * after the last character in the builder.
+     * after the last character in the appendable.
      *
      * <p> If the appendable is a {code Writer}, it is returned.
      *
