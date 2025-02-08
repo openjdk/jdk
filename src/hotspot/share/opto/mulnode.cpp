@@ -2107,7 +2107,7 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
 //
 // Correctness:
 // Given expr with at least w trailing bits,
-// let "mod = 2^w", "suffix_mask = mod - 1", and "mask" be any non-negative value <= full_mask.
+// let "mod = 2^w", "suffix_mask = mod - 1", and "mask" be any non-negative value <= suffix_mask.
 //
 //    expr % mod == 0                             (multiple of power of two)
 // => (a + expr) % mod         == a % mod         (zero element in modular arithmetic)
