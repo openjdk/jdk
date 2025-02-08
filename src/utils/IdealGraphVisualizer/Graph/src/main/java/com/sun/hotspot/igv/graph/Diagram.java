@@ -167,7 +167,13 @@ public class Diagram {
                 }
                 // Activate new segments.
                 if (l.def != null && !active.containsKey(l.def)) {
-                    active.put(l.def, n);
+                    InputNode startNode = n;
+                    if (l.join != null && !l.join.isEmpty()) {
+                        // Start of a "joined" live range. These start always at
+                        // the beginning of the basic block.
+                        startNode = null;
+                    }
+                    active.put(l.def, startNode);
                     if (!l.liveout.contains(l.def)) {
                         instant.add(l.def);
                     }
