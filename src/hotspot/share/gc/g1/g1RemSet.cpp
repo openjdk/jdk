@@ -1390,11 +1390,11 @@ public:
         if (_initial_evacuation) {
           G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
         }
-        g1h->collection_set_iterate_increment_from(&merge, worker_id);
 
         g1h->collection_set()->merge_cardsets_for_collection_groups(merge, worker_id, _num_workers);
 
         G1MergeCardSetStats stats = merge.stats();
+
         for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
           p->record_or_add_thread_work_item(merge_remset_phase, worker_id, stats.merged(i), i);
         }
@@ -1403,7 +1403,7 @@ public:
 
     // Preparation for evacuation failure handling.
     {
-      G1ClearBitmapClosure clear(g1h);
+      G1ClearBitmapClosure clear(g1h, _scan_state);
       g1h->collection_set_iterate_increment_from(&clear, &_hr_claimer, worker_id);
     }
 
