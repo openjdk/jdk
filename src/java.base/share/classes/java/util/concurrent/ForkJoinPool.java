@@ -3509,9 +3509,8 @@ public class ForkJoinPool extends AbstractExecutorService
                                        long delay,
                                        TimeUnit unit) {
         Objects.requireNonNull(command);
-        DelayedTask<Void> t =
-            new DelayedTask<Void>(command, null, this, false, 0L,
-                                  unit.toNanos(delay <= 0L ? 0L : delay));
+        DelayedTask<Void> t = new DelayedTask<Void>(
+            command, null, this, false, 0L, unit.toNanos(delay));
         t.schedule();
         return t;
     }
@@ -3520,9 +3519,8 @@ public class ForkJoinPool extends AbstractExecutorService
                                            long delay,
                                            TimeUnit unit) {
         Objects.requireNonNull(callable);
-        DelayedTask<V> t =
-            new DelayedTask<V>(null, callable, this, false, 0L,
-                               unit.toNanos(delay <= 0L ? 0L : delay));
+        DelayedTask<V> t = new DelayedTask<V>(
+            null, callable, this, false, 0L, unit.toNanos(delay));
         t.schedule();
         return t;
     }
@@ -3534,11 +3532,9 @@ public class ForkJoinPool extends AbstractExecutorService
         Objects.requireNonNull(command);
         if (period <= 0L)
             throw new IllegalArgumentException();
-        DelayedTask<Void> t =
-            new DelayedTask<Void>(command, null, this, false,
-                                  -unit.toNanos(period), // negative for fixed rate
-                                  unit.toNanos(initialDelay <= 0L ? 0L :
-                                               initialDelay));
+        long p = -unit.toNanos(period); // negative for fixed rate
+        DelayedTask<Void> t = new DelayedTask<Void>(
+            command, null, this, false, p, unit.toNanos(initialDelay));
         t.schedule();
         return t;
     }
@@ -3550,11 +3546,9 @@ public class ForkJoinPool extends AbstractExecutorService
         Objects.requireNonNull(command);
         if (delay <= 0L)
             throw new IllegalArgumentException();
-        DelayedTask<Void> t =
-            new DelayedTask<Void>(command, null, this, false,
-                                  unit.toNanos(delay),
-                                  unit.toNanos(initialDelay <= 0L ? 0L :
-                                               initialDelay));
+        long p = unit.toNanos(delay);
+        DelayedTask<Void> t = new DelayedTask<Void>(
+            command, null, this, false, p, unit.toNanos(initialDelay));
         t.schedule();
         return t;
     }
@@ -3588,7 +3582,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                                  TimeUnit unit) {
         ForkJoinTask.CallableWithCanceller<V> task;
         Objects.requireNonNull(callable);
-        long d = unit.toNanos(timeout <= 0L ? 0L : timeout);
+        long d = unit.toNanos(timeout);
         CancelAction onTimeout = new CancelAction();
         DelayedTask<Void> canceller =
             new DelayedTask<Void>(onTimeout, null, this, true, 0L, d);

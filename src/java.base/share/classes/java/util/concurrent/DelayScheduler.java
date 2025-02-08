@@ -49,7 +49,7 @@ final class DelayScheduler extends Thread {
      * A DelayScheduler maintains a binary heap based on trigger times
      * (field DelayedTask.when) along with a pending queue of tasks
      * submitted by other threads. When ready, tasks are relayed to
-     * the pool.
+     * the pool (or run directly if in task.isImmediate).
      *
      * To reduce memory contention, the heap is maintained solely via
      * local variables in method loop() (forcing noticeable code
@@ -90,7 +90,7 @@ final class DelayScheduler extends Thread {
      * To ensure that comparisons do not encounter integer wrap
      * errors, times are offset with the most negative possible value
      * (nanoTimeOffset) determined during static initialization.
-     * Negative delays must be screened out in public submission methods
+     * Negative delays are screened out before use.
      *
      * For the sake of compatibility with ScheduledThreadPoolExecutor,
      * shutdown follows the same rules, which add some further steps
@@ -201,7 +201,6 @@ final class DelayScheduler extends Thread {
      */
     private void loop(ForkJoinPool p) {
         p.onDelaySchedulerStart();
-        active = 1;
         DelayedTask<?>[] h = new DelayedTask<?>[INITIAL_HEAP_CAPACITY];
         boolean purgedPeriodic = false;
         for (int n = 0;;) {                    // n is heap size
@@ -401,16 +400,16 @@ final class DelayScheduler extends Thread {
         public DelayedTask(Runnable runnable, Callable<T> callable, ForkJoinPool pool,
                            boolean isImmediate, long nextDelay, long delay) {
             heapIndex = -1;
+            this.when = delay; // offset by now() on schedule()
             this.runnable = runnable;
             this.callable = callable;
             this.pool = pool;
             this.isImmediate = isImmediate;
             this.nextDelay = nextDelay;
-            this.when = delay; // offset by DelayScheduler.now on schedule()
         }
 
         public final void schedule() {
-            when += DelayScheduler.now();
+            when = Math.max(0L, when) + DelayScheduler.now();
             pool.scheduleDelayedTask(this);
         }
 
