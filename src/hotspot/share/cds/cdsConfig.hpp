@@ -82,6 +82,8 @@ public:
   static void check_unsupported_dumping_module_options() NOT_CDS_RETURN;
   static bool has_unsupported_runtime_module_options() NOT_CDS_RETURN_(false);
   static bool check_vm_args_consistency(bool patch_mod_javabase, bool mode_flag_cmd_line) NOT_CDS_RETURN_(true);
+  static const char* type_of_archive_being_loaded();
+  static const char* type_of_archive_being_written();
 
   // --- Basic CDS features
 
@@ -144,7 +146,6 @@ public:
   static bool is_using_full_module_graph()                   NOT_CDS_JAVA_HEAP_RETURN_(false);
   static void stop_dumping_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
   static void stop_using_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
-
 
   // Some CDS functions assume that they are called only within a single-threaded context. I.e.,
   // they are called from:

@@ -220,12 +220,6 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
 }
 
 void LambdaFormInvokers::dump_static_archive_invokers() {
-  if (CDSConfig::is_dumping_preimage_static_archive() ||
-      CDSConfig::is_dumping_final_static_archive()) {
-    // TODO: support for binary AOTConfiguration file
-    return;
-  }
-
   if (_lambdaform_lines != nullptr && _lambdaform_lines->length() > 0) {
     int count = 0;
     int len   = _lambdaform_lines->length();
@@ -269,4 +263,8 @@ void LambdaFormInvokers::read_static_archive_invokers() {
 
 void LambdaFormInvokers::serialize(SerializeClosure* soc) {
   soc->do_ptr(&_static_archive_invokers);
+  if (soc->reading() && CDSConfig::is_dumping_final_static_archive()) {
+    LambdaFormInvokers::read_static_archive_invokers();
+    _static_archive_invokers = nullptr;
+  }
 }
