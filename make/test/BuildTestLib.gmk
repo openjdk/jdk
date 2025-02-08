@@ -58,7 +58,7 @@ $(eval $(call SetupJavaCompilation, BUILD_WB_JAR, \
 TARGETS += $(BUILD_WB_JAR)
 
 ifeq ($(call isTargetOs, linux), false)
-    EXCLUDE_DIRS := jdk/test/lib/containers
+  EXCLUDE_DIRS := jdk/test/lib/containers
 endif
 
 $(eval $(call SetupJavaCompilation, BUILD_TEST_LIB_JAR, \
