@@ -144,6 +144,12 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
                 g.drawLine(-RANGE_WIDTH, length, RANGE_WIDTH, length);
             }
         }
+        if (liveRangeSegment.getStart() == null &&
+            liveRangeSegment.getEnd() == null &&
+            length == 0) {
+            // Continuation segment in empty basic block.
+            g.drawLine(0, -2, 0, 3);
+        }
     }
 
     @Override
