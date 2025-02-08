@@ -2106,16 +2106,15 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
 // We do not test for other cases.
 //
 // Correctness:
-// When mask is of the form 1111111 (2^m - 1) and expr has at least m trailing zeros,
-// then expr is a multiple of 2^m. (AndX sum mask) is equivalent to sum % (2^m) and any multiple
-// of the modulus is congruent with zero modulo 2^m (https://en.wikipedia.org/wiki/Modular_arithmetic).
+// Given expr with at least w trailing bits,
+// let "mod = 2^w", "suffix_mask = mod - 1", and "mask" be any non-negative value <= full_mask.
 //
-// This extends to when lower bits in mask are unset:
-// if (AndX (AddX expr addend) 2^m-1) == (AndX addend 2^m-1) for any addend, then also
-//    (AndX (AddX expr addend)  mask) == (AndX addend  mask) for any addend, provided mask's MSB is at most m.
+//    expr % mod == 0                             (multiple of power of two)
+// => (a + expr) % mod         == a % mod         (zero element in modular arithmetic)
+// => (a + expr) & suffix_mask == a & suffix_mask (remainder means masking with suffix bits)
+// => (a + expr) & mask        == a & mask        (equivalency under suffix mask also holds under partial mask)
 //
-// We therefore need to only compare the position of the LSB in expr against the position
-// of the MSB in mask.
+// Hence, if expr has at least w trailing bits, it is a zero element under any mask with width w.
 static bool AndIL_is_zero_element_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt) {
   // When the mask is negative, it has the most significant bit set.
   const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
