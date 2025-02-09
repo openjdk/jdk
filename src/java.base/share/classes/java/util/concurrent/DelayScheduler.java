@@ -95,18 +95,20 @@ final class DelayScheduler extends Thread {
      * For the sake of compatibility with ScheduledThreadPoolExecutor,
      * shutdown follows the same rules, which add some further steps
      * beyond the cleanup associated with shutdownNow.  Upon noticing
-     * pool shutdown, all periodic tasks are purged; the scheduler
-     * then tries to terminate the pool if the heap is empty. The
-     * asynchronicity of these steps with respect to pool runState
-     * weakens guarantees about exactly when purged tasks report
-     * isCancelled to callers (they do not run, but there may be a lag
-     * setting their status).
+     * pool shutdown, delayed and/or periodic tasks are purged; the
+     * scheduler then tries to terminate the pool if the heap is
+     * empty. The asynchronicity of these steps with respect to pool
+     * runState weakens guarantees about exactly when purged tasks
+     * report isCancelled to callers (they do not run, but there may
+     * be a lag setting their status).
      */
 
     private static final int INITIAL_HEAP_CAPACITY = 1 << 6;
     private final ForkJoinPool pool; // read only once
     int restingSize;                 // written only before parking
     private volatile int active;     // 0: inactive, -1: stopped, +1: running
+    private volatile int cancelDelayedOnShutdown;
+    private volatile int preservePeriodicOnShutdown;
     @jdk.internal.vm.annotation.Contended()
     private volatile DelayedTask<?> pending;
 
@@ -186,7 +188,7 @@ final class DelayScheduler extends Thread {
             } finally {
                 restingSize = 0;
                 active = -1;
-                ForkJoinPool.poolCanTerminate(p);
+                p.tryTerminateFromDelayScheduler();
             }
         }
     }
@@ -202,9 +204,8 @@ final class DelayScheduler extends Thread {
     private void loop(ForkJoinPool p) {
         p.onDelaySchedulerStart();
         DelayedTask<?>[] h = new DelayedTask<?>[INITIAL_HEAP_CAPACITY];
-        boolean purgedPeriodic = false;
         for (int n = 0;;) {                    // n is heap size
-            DelayedTask<?> t;
+            DelayedTask<?> t; int runStatus;
             while (pending != null &&          // process pending tasks
                    (t = (DelayedTask<?>)
                     U.getAndSetReference(this, PENDING, null)) != null) {
@@ -247,11 +248,9 @@ final class DelayScheduler extends Thread {
                 } while ((t = next) != null);
             }
 
-            if (ForkJoinPool.poolIsShutdown(p)) {
-                if ((n = tryStop(p, h, n, purgedPeriodic)) < 0)
-                    break;
-                purgedPeriodic = true;
-            }
+            if ((runStatus = p.delaySchedulerRunStatus()) != 0 &&
+                (n = tryStop(p, h, n, runStatus)) < 0)
+                break;
 
             long parkTime = 0L;             // zero for untimed park
             if (n > 0 && h.length > 0) {
@@ -343,20 +342,26 @@ final class DelayScheduler extends Thread {
 
     /**
      * Call only when pool is shutdown. If called when not stopping,
-     * removes periodic tasks if not already done so, and if not empty
-     * or pool not terminating, returns.  Otherwise, cancels all tasks
-     * in heap and pending queue.
+     * removes tasks according to policy not already done so, and if
+     * not empty or pool not terminating, returns.  Otherwise, cancels
+     * all tasks in heap and pending queue.
      * @return negative if stop, else current heap size.
      */
     private int tryStop(ForkJoinPool p, DelayedTask<?>[] h, int n,
-                        boolean purgedPeriodic) {
-        if (p != null && h != null && h.length >= n) {
-            if (!ForkJoinPool.poolIsStopping(p)) {
-                if (!purgedPeriodic && n > 0) {
-                    DelayedTask<?> t; int stat; // remove periodic tasks
+                        int runStatus) {
+        if (runStatus > 0 && p != null) {
+            if (n > 0) {
+                boolean cancelPeriodic = (preservePeriodicOnShutdown == 0);
+                boolean cancelDelayed  = (cancelDelayedOnShutdown != 0);
+                if (cancelDelayed && cancelPeriodic)
+                    n = cancelAll(h, n);
+                else if (h != null && h.length >= n) {
+                    DelayedTask<?> t; int stat;
                     for (int i = n - 1; i >= 0; --i) {
                         if ((t = h[i]) != null &&
-                            ((stat = t.status) < 0 || t.nextDelay != 0L)) {
+                            ((stat = t.status) < 0 ||
+                             ((t.nextDelay == 0L) ?
+                              cancelDelayed : cancelPeriodic))) {
                             t.heapIndex = -1;
                             if (stat >= 0)
                                 t.trySetCancelled();
@@ -364,21 +369,47 @@ final class DelayScheduler extends Thread {
                         }
                     }
                 }
-                if (n > 0 || !ForkJoinPool.poolCanTerminate(p))
-                    return n;
             }
-            for (int i = 0; i < n; ++i) {
-                DelayedTask<?> u = h[i];
-                h[i] = null;
-                if (u != null)
-                    u.trySetCancelled();
-            }
-            for (DelayedTask<?> a = (DelayedTask<?>)
-                     U.getAndSetReference(this, PENDING, null);
-                 a != null; a = a.nextPending)
-                a.trySetCancelled(); // clear pending requests
+            if (n > 0 || !p.tryTerminateFromDelayScheduler())
+                return n;
         }
+        if (n > 0)
+            cancelAll(h, n);
+        for (DelayedTask<?> a = (DelayedTask<?>)
+                 U.getAndSetReference(this, PENDING, null);
+             a != null; a = a.nextPending)
+            a.trySetCancelled(); // clear pending requests
         return -1;
+    }
+
+    private int cancelAll(DelayedTask<?>[] h, int n) {
+        if (h != null && h.length >= n) {
+            DelayedTask<?> t;
+            for (int i = 0; i < n; ++i) {
+                if ((t = h[i]) != null) {
+                    h[i] = null;
+                    t.heapIndex = -1;
+                    t.trySetCancelled();
+                }
+            }
+        }
+        return 0;
+    }
+
+    // policy methods
+    void setContinueExistingPeriodicTasksAfterShutdownPolicy(boolean value) {
+        preservePeriodicOnShutdown = (value ? 1 : 0);
+        ensureActive();
+    }
+    boolean getContinueExistingPeriodicTasksAfterShutdownPolicy() {
+        return (preservePeriodicOnShutdown != 0);
+    }
+    void setExecuteExistingDelayedTasksAfterShutdownPolicy(boolean value) {
+        cancelDelayedOnShutdown = (value ? 0 : 1);
+        ensureActive();
+    }
+    boolean getExecuteExistingDelayedTasksAfterShutdownPolicy() {
+        return (cancelDelayedOnShutdown == 0);
     }
 
     /**
@@ -431,7 +462,7 @@ final class DelayScheduler extends Thread {
             long d; ForkJoinPool p; DelayScheduler ds;
             if ((d = nextDelay) != 0L && status >= 0 &&
                 (p = pool) != null && (ds = p.delayScheduler) != null) {
-                if (!ForkJoinPool.poolIsShutdown(p)) {
+                if (p.delaySchedulerRunStatus() == 0) {
                     heapIndex = -1;
                     if (d < 0L)
                         when = DelayScheduler.now() - d;

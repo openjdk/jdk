@@ -478,7 +478,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     private static final ForkJoinPool ASYNC_POOL =
         ForkJoinPool.asyncCommonPool();
 
-    private static ScheduledFuture<?> delay(Runnable command, long delay,
+    static ScheduledFuture<?> delay(Runnable command, long delay,
                                             TimeUnit unit) {
         return ASYNC_POOL.schedule(command, delay, unit);
     }

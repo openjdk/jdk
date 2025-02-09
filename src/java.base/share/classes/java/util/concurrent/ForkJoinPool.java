@@ -138,20 +138,22 @@ import static java.util.concurrent.DelayScheduler.DelayedTask;
  *
  * <p>Additionally, this class supports {@link
  * ScheduledExecutorService} methods to delay or periodically execute
- * tasks, as well as method {#link #submitWithTimeout} to
- * cancel tasks that take too long. The scheduled functions or actions
- * may create and invoke other {@linkplain ForkJoinTask
- * ForkJoinTasks}. Resource exhaustion encountered after initial
- * submission results in task cancellation. When time-based methods
- * are used, shutdown policies are based on the default policies of
- * class {@link ScheduledThreadPoolExecutor}: upon {@link #shutdown},
- * existing periodic tasks will not re-execute, and the pool
- * terminates when quiescent and existing delayed tasks
- * complete. Method {@link #shutdownNow} may be used to instead
- * unconditionally initiate pool termination. Monitoring methods such
- * as {@link getQueuedTaskCount} do not include scheduled tasks that
- * are not yet ready to execute, whcih are reported separately by
- * method {@link getDelayedTaskCount}.
+ * tasks, as well as method {#link #submitWithTimeout} to cancel tasks
+ * that take too long. The scheduled functions or actions may create
+ * and invoke other {@linkplain ForkJoinTask ForkJoinTasks}. Resource
+ * exhaustion encountered after initial submission results in task
+ * cancellation. When time-based methods are used, shutdown policies
+ * are based on the default policies of class {@link
+ * ScheduledThreadPoolExecutor}: upon {@link #shutdown}, existing
+ * periodic tasks will not re-execute, and the pool terminates when
+ * quiescent and existing delayed tasks complete. Methods {@link
+ * #setContinueExistingPeriodicTasksAfterShutdownPolicy} and {@link
+ * #setExecuteExistingDelayedTasksAfterShutdownPolicy} may be used to
+ * alter these policies, and method {@link #shutdownNow} may be used
+ * to instead unconditionally initiate pool termination. Monitoring
+ * methods such as {@link getQueuedTaskCount} do not include scheduled
+ * tasks that are not yet ready to execute, whcih are reported
+ * separately by method {@link getDelayedTaskCount}.
  *
  * <p>The parameters used to construct the common pool may be controlled by
  * setting the following {@linkplain System#getProperty system properties}:
@@ -910,7 +912,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *
      * This class supports ScheduledExecutorService methods by
      * creating and starting a DelayScheduler on first use of these
-     * methods (via scheduleDelayedTask, with callback
+     * methods (via startDelayScheduler, with callback
      * onDelaySchedulerStart). The scheduler operates independently in
      * its own thread, relaying tasks to the pool to execute as they
      * become ready (see method executeReadyDelayedTask). The only
@@ -921,10 +923,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * which tasks are submitted before shutdown, but not ready until
      * afterwards, in which case they must bypass some screening to be
      * allowed to run. Conversely, the DelayScheduler interacts with
-     * the pool only to check runState status (via mehods
-     * poolIsStopping and poolIsShutdown) and complete termination
-     * (via poolCanTerminate) that invoke corresponding private pool
-     * implementations.
+     * the pool only to check runState status and complete termination.
      *
      * Memory placement
      * ================
@@ -1728,6 +1727,10 @@ public class ForkJoinPool extends AbstractExecutorService
                     waits <<= 1;
             }
         }
+    }
+
+    static boolean poolIsStopping(ForkJoinPool p) { // Used by ForkJoinTask
+        return p != null && (p.runState & STOP) != 0L;
     }
 
     // Creating, registering, and deregistering workers
@@ -3414,16 +3417,8 @@ public class ForkJoinPool extends AbstractExecutorService
 
     // Support for delayed tasks
 
-    // status methods used by Delayscheduler and other classes in this package
-    static boolean poolIsStopping(ForkJoinPool p) {
-        return p != null && (p.runState & STOP) != 0L;
-    }
-    static boolean poolIsShutdown(ForkJoinPool p) {
-        return p != null && (p.runState & SHUTDOWN) != 0L;
-    }
-    static boolean poolCanTerminate(ForkJoinPool p) { // true if terminated
-        return p != null && (p.tryTerminate(false, false) & STOP) != 0L;
-    }
+    // methods used by Delayscheduler
+
     static ForkJoinPool asyncCommonPool() { // override parallelism == 0
         ForkJoinPool cp;
         if ((cp = common).parallelism == 0)
@@ -3431,11 +3426,17 @@ public class ForkJoinPool extends AbstractExecutorService
         return cp;
     }
 
-    /**
-     * Arrange delayed execution of a DelayedTask via the
-     * DelayScheduler, creating and starting it if necessary.
-     */
-    final void scheduleDelayedTask(DelayedTask<?> task) {
+    final int delaySchedulerRunStatus() { // <0:stop, >0:shutdown, else 0
+        long rs;
+        return ((((rs = runState) & SHUTDOWN) == 0L) ? 0 :
+                (rs & STOP) != 0L ? -1 : 1);
+    }
+
+    final boolean tryTerminateFromDelayScheduler() {
+        return (tryTerminate(false, false) & STOP) != 0L;
+    }
+
+    private DelayScheduler startDelayScheduler() {
         DelayScheduler ds;
         if ((ds = delayScheduler) == null) {
             boolean start = false;
@@ -3459,9 +3460,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     ds.start();
             }
         }
-        if (ds == null || task == null || (runState & SHUTDOWN) != 0L)
-            throw new RejectedExecutionException();
-        ds.pend(task);
+        return ds;
     }
 
     /**
@@ -3471,6 +3470,19 @@ public class ForkJoinPool extends AbstractExecutorService
         WorkQueue q;           // set up default submission queue
         if ((q = submissionQueue(0, false)) != null)
             q.unlockPhase();
+    }
+
+    /**
+     * Arrange delayed execution of a DelayedTask via the
+     * DelayScheduler, creating and starting it if necessary.
+     */
+    final void scheduleDelayedTask(DelayedTask<?> task) {
+        DelayScheduler ds;
+        if (((ds = delayScheduler) == null &&
+             (ds = startDelayScheduler()) == null) ||
+            task == null || (runState & SHUTDOWN) != 0L)
+            throw new RejectedExecutionException();
+        ds.pend(task);
     }
 
     /**
@@ -3497,9 +3509,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * Body of a DelayedTask serving to cancel another task on timeout
      */
     static final class CancelAction implements Runnable {
-        ForkJoinTask<?> task; // set after construction
+        Future<?> task; // set after construction
         public void run() {
-            ForkJoinTask<?> t;
+            Future<?> t;
             if ((t = task) != null)
                 t.cancel(true);
         }
@@ -3591,6 +3603,74 @@ public class ForkJoinPool extends AbstractExecutorService
         canceller.schedule();
         poolSubmit(true, task);
         return task;
+    }
+
+    /**
+     * Sets the policy on whether to continue executing existing
+     * periodic tasks even when this executor has been {@code shutdown}.
+     * In this case, executions will continue until {@code shutdownNow}
+     * or the policy is set to {@code false} when already shutdown.
+     * This value is by default {@code false}.
+     *
+     * @param value if {@code true}, continue after shutdown, else don't
+     * @see #getContinueExistingPeriodicTasksAfterShutdownPolicy
+     */
+    public void setContinueExistingPeriodicTasksAfterShutdownPolicy(boolean value) {
+        DelayScheduler ds;
+        if ((ds = delayScheduler) != null || (ds = startDelayScheduler()) != null)
+            ds.setContinueExistingPeriodicTasksAfterShutdownPolicy(value);
+    }
+
+    /**
+     * Gets the policy on whether to continue executing existing
+     * periodic tasks even when this executor has been {@code shutdown}.
+     * In this case, executions will continue until {@code shutdownNow}
+     * or the policy is set to {@code false} when already shutdown.
+     * This value is by default {@code false}.
+     *
+     * @return {@code true} if will continue after shutdown
+     * @see #setContinueExistingPeriodicTasksAfterShutdownPolicy
+     */
+    public boolean getContinueExistingPeriodicTasksAfterShutdownPolicy() {
+        DelayScheduler ds;
+        if ((ds = delayScheduler) != null || (ds = startDelayScheduler()) != null)
+            return ds.getContinueExistingPeriodicTasksAfterShutdownPolicy();
+        return false;
+    }
+
+    /**
+     * Sets the policy on whether to execute existing delayed
+     * tasks even when this executor has been {@code shutdown}.
+     * In this case, these tasks will only terminate upon
+     * {@code shutdownNow}, or after setting the policy to
+     * {@code false} when already shutdown.
+     * This value is by default {@code true}.
+     *
+     * @param value if {@code true}, execute after shutdown, else don't
+     * @see #getExecuteExistingDelayedTasksAfterShutdownPolicy
+     */
+    public void setExecuteExistingDelayedTasksAfterShutdownPolicy(boolean value) {
+        DelayScheduler ds;
+        if ((ds = delayScheduler) != null || (ds = startDelayScheduler()) != null)
+            ds.setExecuteExistingDelayedTasksAfterShutdownPolicy(value);
+    }
+
+    /**
+     * Gets the policy on whether to execute existing delayed
+     * tasks even when this executor has been {@code shutdown}.
+     * In this case, these tasks will only terminate upon
+     * {@code shutdownNow}, or after setting the policy to
+     * {@code false} when already shutdown.
+     * This value is by default {@code true}.
+     *
+     * @return {@code true} if will execute after shutdown
+     * @see #setExecuteExistingDelayedTasksAfterShutdownPolicy
+     */
+    public boolean getExecuteExistingDelayedTasksAfterShutdownPolicy() {
+        DelayScheduler ds;
+        if ((ds = delayScheduler) != null || (ds = startDelayScheduler()) != null)
+            return ds.getExecuteExistingDelayedTasksAfterShutdownPolicy();
+        return true;
     }
 
     /**
