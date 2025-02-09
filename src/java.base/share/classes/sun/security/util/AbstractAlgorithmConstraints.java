@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,11 @@ package sun.security.util;
 
 import java.security.AlgorithmConstraints;
 import java.security.Security;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * The class contains common functionality for algorithm constraints classes.
@@ -85,8 +89,6 @@ public abstract class AbstractAlgorithmConstraints
         if (algorithm == null || algorithm.isEmpty()) {
             throw new IllegalArgumentException("No algorithm name specified");
         }
-        System.err.println("checkAlgorithm: looking for " + algorithm);
-        algorithms.stream().forEach(s -> System.err.println("entry -> " + s.toString()));
 
         // Check `algorithm` against disabled algorithms and their aliases
         for (String a : algorithms) {
@@ -101,7 +103,6 @@ public abstract class AbstractAlgorithmConstraints
 
         // check the element of the elements
         for (String element : elements) {
-            System.err.println("checkAlgorithm elements: " + element);
             if (algorithms.contains(element)) {
                 return false;
             }

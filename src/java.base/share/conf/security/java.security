@@ -735,9 +735,6 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # "TLS_RSA_". Only cipher suites starting with "TLS_" are allowed to have
 # wildcard characters.
 #
-#   UsageConstraint:
-#     usage [TLSHandshake]
-#
 # Note: The algorithm restrictions do not apply to trust anchors or
 # self-signed certificates.
 #
@@ -749,7 +746,7 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #       rsa_pkcs1_sha1, secp224r1, TLS_RSA_*
 jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
     MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
-    ECDH, TLS_RSA_*, rsa_pkcs1_sha1 usage TLSHandshake
+    ECDH, TLS_RSA_*
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
