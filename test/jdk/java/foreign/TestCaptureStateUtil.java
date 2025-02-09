@@ -124,7 +124,7 @@ final class TestCaptureStateUtil {
         assertTrue(wrongCaptureName.getMessage().startsWith("Bad layout path: cannot resolve 'foo' in layout ["), wrongCaptureName.getMessage());
 
         assertThrows(NullPointerException.class, () -> CaptureStateUtil.adaptSystemCall(null, ERRNO_NAME));
-        assertThrows(NullPointerException.class, () -> CaptureStateUtil.adaptSystemCall(noSegment, null));
+        assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(noSegment, null));
     }
 
     // Dummy method that is just returning the provided parameters

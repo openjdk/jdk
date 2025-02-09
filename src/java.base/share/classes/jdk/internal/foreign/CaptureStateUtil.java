@@ -47,6 +47,8 @@ public final class CaptureStateUtil {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
+    // The method handles below are bound to static methods residing in this class
+
     private static final MethodHandle NON_NEGATIVE_INT_MH =
             MhUtil.findStatic(LOOKUP, "nonNegative",
                     MethodType.methodType(boolean.class, int.class));
@@ -86,19 +88,40 @@ public final class CaptureStateUtil {
     // The `BASIC_HANDLE_CACHE` contains the common "basic handles" that can be reused for
     // all adapted method handles. Keeping as much as possible reusable reduces the number
     // of combinators needed to form an adapted method handle.
-    // The sub maps are lazily computed.
+    // The map is lazily computed.
     //
-    // The first-level key of the Map tells which return type the handle has
-    // (`int` or `long`). The second-level key of the Map tells what is the name of
-    // the captured state ("errno" (all platforms), "GetLastError", or "WSAGetLastError"
-    // (the two latest only on Windows):
-    //
-    // (int.class | long.class) ->
-    //   ({"GetLastError" | "WSAGetLastError"} | "errno") ->
-    //     MethodHandle
-    private static final Map<Class<?>, Map<String, MethodHandle>> BASIC_HANDLE_CACHE = Map.of(
-            int.class, new ConcurrentHashMap<>(),
-            long.class, new ConcurrentHashMap<>());
+    private static final Map<BasicKey, MethodHandle> BASIC_HANDLE_CACHE =
+            new ConcurrentHashMap<>();
+
+    // A key that holds both the `returnType` and the `stateName` needed to lookup a
+    // specific "basic handle".
+    //   returnType E {int.class | long.class}
+    //   stateName can be anything non-null but should E {"GetLastError" | "WSAGetLastError"} | "errno")}
+    record BasicKey(Class<?> returnType, String stateName) {
+
+        BasicKey(MethodHandle target, String stateName) {
+            this(returnType(target), Objects.requireNonNull(stateName));
+        }
+
+        static Class<?> returnType(MethodHandle target) {
+            // Implicit null check
+            final Class<?> returnType = target.type().returnType();
+
+            if (!(returnType.equals(int.class) || returnType.equals(long.class))) {
+                throw illegalArgDoesNot(target, "return an int or a long");
+            }
+            if (target.type().parameterCount() == 0 || target.type().parameterType(0) != MemorySegment.class) {
+                throw illegalArgDoesNot(target, "have a MemorySegment as the first parameter");
+            }
+            return returnType;
+        }
+
+        private static IllegalArgumentException illegalArgDoesNot(MethodHandle target, String info) {
+            return new IllegalArgumentException("The provided target " + target
+                    + " does not " + info);
+        }
+
+    }
 
     private CaptureStateUtil() {}
 
@@ -120,7 +143,7 @@ public final class CaptureStateUtil {
      *             .adaptSystemCall(CAPTURING_OPEN, "errno");
      *
      *      try {
-     *         int fh = (int)OPEN.invoke(pathName, flags);
+     *         int fh = (int)OPEN.invokeExact(pathName, flags);
      *         if (fh < 0) {
      *             throw new IOException("Error opening file: errno = " + (-fh));
      *         }
@@ -129,7 +152,9 @@ public final class CaptureStateUtil {
      *           throw new RuntimeException(t);
      *      }
      *
-     *} For a {@code target} method handle that takes a {@code MemorySegment} and two
+     *}
+     *
+     * For a {@code target} method handle that takes a {@code MemorySegment} and two
      * {@code int} parameters and returns an {@code int} value, the method returns a new
      * method handle that is doing the equivalent of:
      * <p>
@@ -171,77 +196,65 @@ public final class CaptureStateUtil {
      */
     public static MethodHandle adaptSystemCall(MethodHandle target,
                                                String stateName) {
-        // Implicit null check
-        final Class<?> returnType = target.type().returnType();
-        Objects.requireNonNull(stateName);
-
-        if (!(returnType.equals(int.class) || returnType.equals(long.class))) {
-            throw illegalArgDoesNot(target, "return an int or a long");
-        }
-        if (target.type().parameterCount() == 0 || target.type().parameterType(0) != MemorySegment.class) {
-            throw illegalArgDoesNot(target, "have a MemorySegment as the first parameter");
-        }
+        // Invariants checked in the BasicKey record
+        final BasicKey basicKey = new BasicKey(target, stateName);
 
         // ((int | long), MemorySegment)(int | long)
-        MethodHandle inner = BASIC_HANDLE_CACHE
-                .get(returnType)
-                .computeIfAbsent(stateName, new Function<>() {
+        final MethodHandle basicHandle = BASIC_HANDLE_CACHE
+                // Do not use a lambda to allow early use in the init sequence
+                .computeIfAbsent(basicKey, new Function<>() {
                     @Override
-                    public MethodHandle apply(String name) {
-                        return basicHandleFor(returnType, name);
+                    public MethodHandle apply(BasicKey basicKey) {
+                        return basicHandleFor(basicKey);
                     }
                 });
-        if (inner == null) {
-            throw new IllegalArgumentException("Unknown state name: " + stateName +
-                    ". Known on this platform: " + Linker.Option.captureStateLayout());
-        }
 
-        // Make `target` specific adaptations
+        // Make `target` specific adaptations of the basic handle
 
         // Pre-pend all the parameters from the `target` MH.
         // (C0=MemorySegment, C1-Cn, MemorySegment)(int|long)
-        inner = MethodHandles.collectArguments(inner, 0, target);
+        MethodHandle innerAdapted = MethodHandles.collectArguments(basicHandle, 0, target);
 
-        int[] perm = new int[target.type().parameterCount() + 1];
+        final int[] perm = new int[target.type().parameterCount() + 1];
         for (int i = 0; i < target.type().parameterCount(); i++) {
             perm[i] = i;
         }
+        // Last takes first
         perm[target.type().parameterCount()] = 0;
-        // Deduplicate the first and last coordinate and only use the first.
+        // Deduplicate the first and last coordinate and only use the first one.
         // (C0=MemorySegment, C1-Cn)(int|long)
-        inner = MethodHandles.permuteArguments(inner, target.type(), perm);
+        innerAdapted = MethodHandles.permuteArguments(innerAdapted, target.type(), perm);
 
         // Use an `Arena` for the first argument instead and extract a segment from it.
         // (C0=Arena, C1-Cn)(int|long)
-        inner = MethodHandles.collectArguments(inner, 0, ALLOCATE_MH);
+        innerAdapted = MethodHandles.collectArguments(innerAdapted, 0, ALLOCATE_MH);
 
         // Add an identity function for the result of the cleanup action.
         // ((int|long))(int|long)
-        MethodHandle cleanup = MethodHandles.identity(returnType);
+        MethodHandle cleanup = MethodHandles.identity(basicKey.returnType());
         // Add a dummy `Throwable` argument for the cleanup action.
         // This means, anything thrown will just be propagated.
         // (Throwable, (int|long))(int|long)
         cleanup = MethodHandles.dropArguments(cleanup, 0, Throwable.class);
-        // Add the first parameter of the `inner` method handle to the cleanup
-        // action and invoke `Arena::close` when it is run.
-        // Cleanup does not have to have all parameters. It can have zero or more.
+        // Add the first `Arena` parameter of the `innerAdapted` method handle to the
+        // cleanup action and invoke `Arena::close` when it is run. The `cleanup` handle
+        // does not have to have all parameters. It can have zero or more.
         // (Throwable, (int|long), Arena)(int|long)
         cleanup = MethodHandles.collectArguments(cleanup, 2, ARENA_CLOSE_MH);
 
-        // Combine the `inner` and `cleanup` action in a try/finally block.
+        // Combine the `innerAdapted` and `cleanup` action into a try/finally block.
         // (Arena, C1-Cn)(int|long)
-        MethodHandle tryFinally = MethodHandles.tryFinally(inner, cleanup);
+        final MethodHandle tryFinally = MethodHandles.tryFinally(innerAdapted, cleanup);
 
         // Acquire the arena from the global pool.
-        // Finally, we arrive at the intended method handle:
+        // With this, we finally arrive at the intended method handle:
         // (C1-Cn)(int|long)
         return MethodHandles.collectArguments(tryFinally, 0, ACQUIRE_ARENA_MH);
     }
 
-    private static MethodHandle basicHandleFor(Class<?> returnType,
-                                               String capturedStateName) {
+    private static MethodHandle basicHandleFor(BasicKey basicKey) {
         final VarHandle vh = CAPTURE_LAYOUT.varHandle(
-                MemoryLayout.PathElement.groupElement(capturedStateName));
+                MemoryLayout.PathElement.groupElement(basicKey.stateName()));
         // This MH is used to extract the named captured state
         // from the capturing `MemorySegment`.
         // (MemorySegment, long)int
@@ -263,7 +276,7 @@ public final class CaptureStateUtil {
         //         return -(X)intExtractor.invokeExact(segment);
         //     }
         // }
-        if (returnType.equals(int.class)) {
+        if (basicKey.returnType().equals(int.class)) {
             // (int, MemorySegment)int
             return MethodHandles.guardWithTest(
                     NON_NEGATIVE_INT_MH,
@@ -276,11 +289,6 @@ public final class CaptureStateUtil {
                     SUCCESS_LONG_MH,
                     ERROR_LONG_MH.bindTo(intExtractor));
         }
-    }
-
-    private static IllegalArgumentException illegalArgDoesNot(MethodHandle target, String info) {
-        return new IllegalArgumentException("The provided target " + target
-                + " does not " + info);
     }
 
     // The methods below are reflective used via static MethodHandles
