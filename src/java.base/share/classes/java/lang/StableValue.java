@@ -172,7 +172,7 @@ import java.util.function.Supplier;
  *}
  * <p>
  * A <em>stable function</em> is a function that takes a parameter (of type {@code T}) and
- * uses it to compute a result (of type {@code R}) that is then cached into a backing
+ * uses it to compute a result (of type {@code R}) that is then cached by the backing
  * stable value storage for that parameter value. A stable function is created via the
  * {@linkplain StableValue#function(Set, Function) StableValue.function()} factory.
  * Upon creation, the input {@linkplain Set} is specified together with an original
@@ -207,7 +207,7 @@ import java.util.function.Supplier;
  *             StableValue.list(10, StrictMath::sqrt);
  *
  *     double sqrt9() {
- *         return SQRT.apply(9); // May eventually constant fold to 3.0 at runtime
+ *         return SQRT.get(9); // May eventually constant fold to 3.0 at runtime
  *     }
  *
  * }
@@ -225,7 +225,7 @@ import java.util.function.Supplier;
  *             StableValue.map(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
  *
  *     double sqrt16() {
- *         return SQRT.apply(16); // May eventually constant fold to 4.0 at runtime
+ *         return SQRT.get(16); // May eventually constant fold to 4.0 at runtime
  *     }
  *
  * }
@@ -313,8 +313,9 @@ import java.util.function.Supplier;
  * thread safe and guarantee at-most-once-per-input invocation.
  *
  * <h2 id="miscellaneous">Miscellaneous</h2>
- * Except for a StableValue's content itself, all method parameters must be
- * <em>non-null</em> or a {@link NullPointerException} will be thrown.
+ * Except for a StableValue's content itself, an {@linkplain #orElse(Object) orElse(other)}
+ * parameter, and an {@linkplain #equals(Object) equals(obj)} parameter; all method
+ * parameters must be <em>non-null</em> or a {@link NullPointerException} will be thrown.
  * <p>
  * Stable functions and collections are not {@link Serializable} as this would require
  * {@linkplain #list(int, IntFunction) mappers} to be {@link Serializable} as well,
@@ -399,7 +400,7 @@ public sealed interface StableValue<T>
      * if (stable.isSet()) {
      *     return stable.get();
      * } else {
-     *     V newValue = supplier.get();
+     *     T newValue = supplier.get();
      *     stable.setOrThrow(newValue);
      *     return newValue;
      * }
@@ -416,7 +417,7 @@ public sealed interface StableValue<T>
     // Convenience methods
 
     /**
-     * Sets the cintent to the provided {@code value}, or, if already set,
+     * Sets the content to the provided {@code value}, or, if already set,
      * throws {@code IllegalStateException}.
      * <p>
      * When this method returns (or throws an exception), the content is always set.
