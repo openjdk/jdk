@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,15 @@ public class ZipEntry implements ZipConstants, Cloneable {
     byte[] extra;       // optional extra field data for entry
     String comment;     // optional comment string for entry
     int externalFileAttributes = -1; // File type, setuid, setgid, sticky, POSIX permissions
+    long locPOS = -1;   // The LOC position
+
+    /**
+     * {@return the position of LOC in file}
+     */
+     long getLocPOS() {
+        return locPOS;
+    }
+
     /**
      * Compression method for uncompressed entries.
      */

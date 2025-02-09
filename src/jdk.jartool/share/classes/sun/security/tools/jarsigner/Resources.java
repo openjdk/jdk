@@ -324,6 +324,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"Cannot.find.file.", "Cannot find file: "},
         {"event.ocsp.check", "Contacting OCSP server at %s ..."},
         {"event.crl.check", "Downloading CRL from %s ..."},
+        {"Different.content.observed.in.JarInputStream.and.JarFile.", "Different content observed in JarInputStream and JarFile."}
     };
 
     /**
