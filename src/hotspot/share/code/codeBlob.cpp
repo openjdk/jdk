@@ -64,10 +64,12 @@ static_assert(!std::is_polymorphic<VtableBlob>::value,         "no virtual metho
 static_assert(!std::is_polymorphic<MethodHandlesAdapterBlob>::value, "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<RuntimeStub>::value,        "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<DeoptimizationBlob>::value, "no virtual methods are allowed in code blobs");
-static_assert(!std::is_polymorphic<ExceptionBlob>::value,      "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<SafepointBlob>::value,      "no virtual methods are allowed in code blobs");
-static_assert(!std::is_polymorphic<UncommonTrapBlob>::value,   "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<UpcallStub>::value,         "no virtual methods are allowed in code blobs");
+#ifdef COMPILER2
+static_assert(!std::is_polymorphic<ExceptionBlob>::value,      "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<UncommonTrapBlob>::value,   "no virtual methods are allowed in code blobs");
+#endif
 
 // CodeBlob
 //  nmethod              : JIT Compiled Java methods
