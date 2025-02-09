@@ -27,10 +27,7 @@ package sun.security.util;
 
 import java.security.AlgorithmConstraints;
 import java.security.Security;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * The class contains common functionality for algorithm constraints classes.
@@ -70,14 +67,33 @@ public abstract class AbstractAlgorithmConstraints
         return algorithmsInPropertySet;
     }
 
+
+    private static final String[] aliasEdDSA = new String[]{"EdDSA", "Ed25519", "Ed448"};
+    private static final String[] aliasEd25519 = new String[]{"EdDSA", "Ed25519"};
+    private static final String[] aliasEd448 = new String[]{"EdDSA", "Ed448"};
+    public static List<String> getAliases(String algorithm) {
+        return switch (algorithm) {
+            case "EdDSA" -> Arrays.asList(aliasEdDSA);
+            case "Ed25519" -> Arrays.asList(aliasEd25519);
+            case "Ed448" -> Arrays.asList(aliasEd448);
+            default -> Collections.emptyList();
+        };
+    }
+
     static boolean checkAlgorithm(Set<String> algorithms, String algorithm,
             AlgorithmDecomposer decomposer) {
         if (algorithm == null || algorithm.isEmpty()) {
             throw new IllegalArgumentException("No algorithm name specified");
         }
+        System.err.println("checkAlgorithm: looking for " + algorithm);
+        algorithms.stream().forEach(s -> System.err.println("entry -> " + s.toString()));
 
-        if (algorithms.contains(algorithm)) {
-            return false;
+        // Check `algorithm` against disabled algorithms and their aliases
+        for (String a : algorithms) {
+            if (algorithm.equalsIgnoreCase(a) ||
+                getAliases(a).contains(algorithm)) {
+                return false;
+            }
         }
 
         // decompose the algorithm into sub-elements
@@ -85,6 +101,7 @@ public abstract class AbstractAlgorithmConstraints
 
         // check the element of the elements
         for (String element : elements) {
+            System.err.println("checkAlgorithm elements: " + element);
             if (algorithms.contains(element)) {
                 return false;
             }

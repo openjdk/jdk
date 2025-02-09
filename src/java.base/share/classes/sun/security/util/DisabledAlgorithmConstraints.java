@@ -29,11 +29,14 @@ import sun.security.validator.Validator;
 
 import java.lang.ref.SoftReference;
 import java.security.AlgorithmParameters;
+import java.security.AsymmetricKey;
 import java.security.CryptoPrimitive;
 import java.security.Key;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
+import java.security.cert.CertificateRevokedException;
 import java.security.interfaces.ECKey;
+import java.security.interfaces.EdECKey;
 import java.security.interfaces.XECKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
@@ -44,16 +47,7 @@ import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -154,7 +148,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 break;
             }
         }
-        algorithmConstraints = new Constraints(propertyName, disabledAlgorithms);
+        algorithmConstraints = new Constraints(disabledAlgorithms);
     }
 
     /*
@@ -164,6 +158,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     @Override
     public final boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
+        System.err.println("algo: " + algorithm);
         if (primitives == null || primitives.isEmpty()) {
             throw new IllegalArgumentException("The primitives cannot be null" +
                     " or empty.");
@@ -172,15 +167,17 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             throw new IllegalArgumentException("No algorithm name specified");
         }
 
+        System.err.println("cachedCheckAlgorithm(" + algorithm + ")");
         if (!cachedCheckAlgorithm(algorithm)) {
+            System.err.println("bounced");
             return false;
         }
 
         if (parameters != null) {
             return algorithmConstraints.permits(algorithm, parameters);
+        } else {
+            return algorithmConstraints.permits(algorithm);
         }
-
-        return true;
     }
 
     /*
@@ -268,16 +265,22 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     private static List<String> getNamedCurveFromKey(Key key) {
-        if (key instanceof ECKey) {
-            NamedCurve nc = CurveDB.lookup(((ECKey)key).getParams());
-            return (nc == null ? List.of()
-                               : Arrays.asList(nc.getNameAndAliases()));
-        } else if (key instanceof XECKey) {
-            return List.of(
-                ((NamedParameterSpec)((XECKey)key).getParams()).getName());
-        } else {
-            return List.of();
-        }
+        List<String> x = switch (key) {
+            case ECKey ecKey -> {
+                NamedCurve nc = CurveDB.lookup(ecKey.getParams());
+                if (nc == null) {
+                    yield List.of();
+                }
+                yield Arrays.asList(nc.getNameAndAliases());
+            }
+            case XECKey xecKey -> List.of(
+                ((NamedParameterSpec) xecKey.getParams()).getName());
+            case EdECKey edecKey -> List.of((edecKey.getParams()).getName());
+            default -> List.of();
+        };
+
+        x.stream().forEach(s -> System.err.println("NamedCurve: " + s));
+        return x;
     }
 
     // Check algorithm constraints with key and algorithm
@@ -338,7 +341,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     "denyAfter\\s+(\\d{4})-(\\d{2})-(\\d{2})");
         }
 
-        public Constraints(String propertyName, Set<String> constraintSet) {
+        public Constraints(Set<String> constraintSet) {
+            System.err.println("constructed");
             for (String constraintEntry : constraintSet) {
                 if (constraintEntry == null || constraintEntry.isEmpty()) {
                     continue;
@@ -361,15 +365,54 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                                 new ArrayList<>(1));
 
                 // Consider the impact of algorithm aliases.
-                for (String alias : AlgorithmDecomposer.getAliases(algorithm)) {
+                /*
+                Collection<String> aliasList =
+                    AlgorithmDecomposer.getAliases(algorithm);
+                aliasList.forEach(a -> {
+                    System.err.println("alias: " + a);
                     constraintsMap.putIfAbsent(
-                            alias.toUpperCase(Locale.ENGLISH), constraintList);
+                        a.toUpperCase(Locale.ENGLISH), constraintList);
+                });
+
+                /*
+                 Group algorithm mappings:
+                 Some algorithms have an umbrella name with and more than one
+                 implementation. One of those is EdDSA.  Unfortunately there
+                 may not be uniformity in these naming conventions.  For EdDSA,
+                 KeyPairGenerator.getInstance("EdDSA") will returns Ed25519.
+                 But when disabling EdDSA, the user would assume "EdDSA" would
+                 mean Ed25519 and Ed448.  The below code defines these group
+                 algorithms a possible name variants for
+                 DisabledAlgorithmConstraints.
+                 */
+                //XXX wrong place
+                /*
+                switch (algorithm) {
+                    case "EdDSA" -> {
+                        constraintList.add(new DisabledConstraint("Ed25519"));
+                        constraintList.add(new DisabledConstraint("Ed448"));
+                    }
+                    case "Ed25519" ->
+                        constraintList.add(new DisabledConstraint("EdDSA"));
+                    case "XDH" -> {
+                        constraintList.add(new DisabledConstraint("X25519"));
+                        constraintList.add(new DisabledConstraint("X448"));
+                    }
+                    case "X25519" ->
+                        constraintList.add(new DisabledConstraint("XDH"));
                 }
+                 */
+
+                System.err.println("map");
+                constraintsMap.keySet().forEach(s -> System.err.println(s + " constraintsMap: " + constraintsMap.get(s)));
+                System.err.println("list");
+                constraintList.forEach(s -> System.err.println("constraintList: " + s));
 
                 // If there is no whitespace, it is an algorithm name; however,
                 // if there is a whitespace, could be a multi-word EC curve too.
                 if (space <= 0 || CurveDB.lookup(constraintEntry) != null) {
                     constraintList.add(new DisabledConstraint(algorithm));
+                    System.err.println("Continued?");
                     continue;
                 }
 
@@ -453,6 +496,17 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             }
         }
 
+        public String toString() {
+            StringBuilder sb = new StringBuilder(100);
+            var s = constraintsMap.keySet();
+            s.stream().forEach(k -> {
+                sb.append(k);
+                sb.append(" : ");
+                sb.append(constraintsMap.get(k));
+            });
+            return sb.toString();
+        }
+
         // Get applicable constraints based off the algorithm
         private List<Constraint> getConstraints(String algorithm) {
             return constraintsMap.get(algorithm.toUpperCase(Locale.ENGLISH));
@@ -460,17 +514,22 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
         // Check if KeySizeConstraints permit the specified key
         public boolean permits(Key key) {
-            List<Constraint> list = getConstraints(key.getAlgorithm());
+            String algorithm = KeyUtil.getAlgorithm(key);
+            List<Constraint> list = getConstraints(algorithm);
+            System.err.println(list);
             if (list == null) {
                 return true;
             }
             for (Constraint constraint : list) {
-                if (!constraint.permits(key)) {
-                    if (debug != null) {
-                        debug.println("Constraints: failed key size " +
+                for (String a : AlgorithmDecomposer.decomposeName(algorithm)) {
+                    System.err.println("constraints.permits()" + constraint + a);
+                    if (!constraint.permits(key)) {
+                        if (debug != null) {
+                            debug.println("Constraints: failed key size " +
                                 "constraint check " + KeyUtil.getKeySize(key));
+                        }
+                        return false;
                     }
-                    return false;
                 }
             }
             return true;
@@ -497,6 +556,22 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             return true;
         }
 
+        public boolean permits(String algorithm) {
+            List<Constraint> list = getConstraints(algorithm);
+            if (list == null) {
+                return true;
+            }
+
+            for (Constraint c : list) {
+                for (String a : AlgorithmDecomposer.getAliases(algorithm)) {
+                    if (a.equalsIgnoreCase(c.algorithm)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         public void permits(String algorithm, ConstraintsParameters cp,
                 boolean checkKey) throws CertPathValidatorException {
 
@@ -514,7 +589,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
             if (checkKey) {
                 for (Key key : cp.getKeys()) {
-                    algorithms.add(key.getAlgorithm());
+                    algorithms.add(KeyUtil.getAlgorithm(key));
                 }
             }
 
@@ -659,6 +734,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
          */
         boolean next(Key key) {
             return nextConstraint != null && nextConstraint.permits(key);
+        }
+
+        public String toString() {
+            return this.getClass().getName() + ": algorithm: " + algorithm;
         }
     }
 
@@ -971,14 +1050,28 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 }
             }
         }
+
         Boolean result = cache.get(algorithm);
         if (result != null) {
+            System.err.println("result 1: " + result.toString());
             return result;
         }
+
         // We won't check patterns if algorithm check fails.
         result = checkAlgorithm(disabledAlgorithms, algorithm, decomposer)
-                && checkDisabledPatterns(algorithm);
+            && checkDisabledPatterns(algorithm);
+        System.err.println("result 2: " + algorithm + ": " + (result ? "allowed" : "denied"));
         cache.put(algorithm, result);
+
+/*        var algoList = AlgorithmDecomposer.getAliases(algorithm);
+        for (String algo : algoList) {
+            // We won't check patterns if algorithm check fails.
+            result = checkAlgorithm(disabledAlgorithms, algo, decomposer)
+                && checkDisabledPatterns(algo);
+            System.err.println("result 2: " + algo + ": " + (result ? "allowed" : "denied"));
+                cache.put(algo, result);
+        }
+*/
         return result;
     }
 

@@ -30,13 +30,13 @@ import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertPathValidatorException.BasicReason;
-import java.security.interfaces.DSAParams;
-import java.security.interfaces.DSAPublicKey;
+import java.security.interfaces.*;
 import java.security.spec.DSAPublicKeySpec;
 import java.util.*;
 
 import sun.security.util.Debug;
 import sun.security.util.DisabledAlgorithmConstraints;
+import sun.security.util.KeyUtil;
 import sun.security.validator.Validator;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509CertImpl;
@@ -206,7 +206,8 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
                 CertPathConstraintsParameters cp =
                     new CertPathConstraintsParameters(trustedPubKey, variant,
                         anchor, date);
-                dac.permits(trustedPubKey.getAlgorithm(), cp, true);
+                dac.permits(KeyUtil.getAlgorithm(trustedPubKey),
+                    cp, true);
             }
             // Check the signature algorithm and parameters against constraints
             CertPathConstraintsParameters cp =

@@ -424,5 +424,18 @@ public final class KeyUtil {
             throw new NoSuchAlgorithmException("Cannot decode public key", e);
         }
     }
+
+    /*
+     If the key is a sub-algorithm of a larger group of algorithms, this method
+     will return that sub-algorithm.  For example, key.getAlgorithm() returns
+     "EdDSA", but the underlying key maybe "Ed448".  For
+     DisabledAlgorithmConstraints, this distinction is important.
+     */
+    public static String getAlgorithm(Key key) {
+        return switch (key) {
+            case EdECKey ed -> ed.getParams().getName();
+            default -> key.getAlgorithm();
+        };
+    }
 }
 

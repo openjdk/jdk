@@ -118,19 +118,29 @@ public class AlgorithmDecomposer {
 
     /**
      * Get aliases of the specified algorithm.
-     *
-     * May support more algorithms in the future.
      */
+
+    private static final String[] aliasDH = new String[]{"DH", "DiffieHellman"};
+    private static final String[] aliasEdDSA = new String[]{"EdDSA", "Ed25519", "Ed448"};
+    private static final String[] aliasEd25519 = new String[]{"EdDSA", "Ed25519"};
+    private static final String[] aliasEd448 = new String[]{"EdDSA", "Ed448"};
     public static Collection<String> getAliases(String algorithm) {
         String[] aliases;
         if (algorithm.equalsIgnoreCase("DH") ||
                 algorithm.equalsIgnoreCase("DiffieHellman")) {
-            aliases = new String[] {"DH", "DiffieHellman"};
-        } else {
-            aliases = new String[] {algorithm};
+            return Arrays.asList(aliasDH);
+            /*
+        } else if (algorithm.equalsIgnoreCase("EdDSA")) {
+            return Arrays.asList(aliasEdDSA);
+        } else if (algorithm.equalsIgnoreCase("Ed25519")) {
+            return Arrays.asList(aliasEd25519);
+        } else if (algorithm.equalsIgnoreCase("Ed448")) {
+            return Arrays.asList(aliasEd448);
+            */
         }
 
-        return Arrays.asList(aliases);
+        return Arrays.asList(algorithm);
+
     }
 
     /**
@@ -143,6 +153,7 @@ public class AlgorithmDecomposer {
             return new HashSet<>();
         }
 
+        System.err.println("algo 2: " + algorithm);
         Set<String> elements = decomposeImpl(algorithm);
 
         // no need to check further if algorithm doesn't contain "SHA"
