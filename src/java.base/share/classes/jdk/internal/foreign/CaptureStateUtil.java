@@ -42,9 +42,8 @@ import java.util.stream.Collectors;
 
 public final class CaptureStateUtil {
 
-    private static final MemoryLayout CAPTURE_LAYOUT = Linker.Option.captureStateLayout();
-    //private static final CarrierLocalArenaPools POOL = CarrierLocalArenaPools.create(CAPTURE_LAYOUT);
-    private static final CarrierLocalArenaPools POOL = CarrierLocalArenaPools.create(16);
+    private static final StructLayout CAPTURE_LAYOUT = Linker.Option.captureStateLayout();
+    private static final CarrierLocalArenaPools POOL = CarrierLocalArenaPools.create(CAPTURE_LAYOUT);
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
@@ -84,27 +83,52 @@ public final class CaptureStateUtil {
             MhUtil.findVirtual(LOOKUP, Arena.class, "close",
                     MethodType.methodType(void.class));
 
+    // The `INNER_HANDLES` contains the common "templates" that can be reused for all
+    // adapted method handles. Keeping as much as possible reusable reduces the number
+    // of combinators needed to form an adapted method handle.
+    //
+    // The first-level key of the Map tells which return type the handle has
+    // (`int` or `long`). The second-level key of the Map tells what is the name of
+    // the captured state ("errno" (all platforms), "GetLastError", or "WSAGetLastError"
+    // (the two latest only on Windows):
+    //
     // (int.class | long.class) ->
     //   ({"GetLastError" | "WSAGetLastError"} | "errno") ->
     //     MethodHandle
     private static final Map<Class<?>, Map<String, MethodHandle>> INNER_HANDLES;
 
     static {
-
-        final StructLayout stateLayout = Linker.Option.captureStateLayout();
         final Map<Class<?>, Map<String, MethodHandle>> classMap = new HashMap<>();
         for (var returnType : new Class<?>[]{int.class, long.class}) {
-            Map<String, MethodHandle> handles = stateLayout
+            Map<String, MethodHandle> handles = CAPTURE_LAYOUT
                     .memberLayouts().stream()
                     .collect(Collectors.toUnmodifiableMap(
                             member -> member.name().orElseThrow(),
                             member -> {
-                                VarHandle vh = stateLayout.varHandle(MemoryLayout.PathElement.groupElement(member.name().orElseThrow()));
+                                VarHandle vh = CAPTURE_LAYOUT.varHandle(
+                                        MemoryLayout.PathElement.groupElement(
+                                                member.name().orElseThrow()));
+                                // This MH is used to extract the named captured state
+                                // from the capturing `MemorySegment`.
                                 // (MemorySegment, long)int
                                 MethodHandle intExtractor = vh.toMethodHandle(VarHandle.AccessMode.GET);
+                                // As the MH is already adapted to use the appropriate
+                                // offset, we just insert `0L` for the offset.
                                 // (MemorySegment)int
                                 intExtractor = MethodHandles.insertArguments(intExtractor, 1, 0L);
 
+                                // If X is the `returnType` (either `int` or `long`) then
+                                // the code below is equivalent to:
+                                //
+                                // X handle(X returnValue, MemorySegment segment)
+                                //     if (returnValue >= 0) {
+                                //         // Ignore the segment
+                                //         return returnValue;
+                                //     } else {
+                                //         // ignore the returnValue
+                                //         return -(X)intExtractor.invokeExact(segment);
+                                //     }
+                                // }
                                 if (returnType.equals(int.class)) {
                                     // (int, MemorySegment)int
                                     return MethodHandles.guardWithTest(
@@ -122,16 +146,17 @@ public final class CaptureStateUtil {
                     ));
             classMap.put(returnType, handles);
         }
+        // Use an unmodifiable Map to unlock constant folding capabilities.
         INNER_HANDLES = Map.copyOf(classMap);
     }
 
-    private CaptureStateUtil() {
-    }
+    private CaptureStateUtil() {}
 
     /**
      * {@return a new MethodHandle that adapts the provided {@code target} so that it
-     *          directly returns the same value as the {@code target} if it is
-     *          non-negative, otherwise returns the negated errno}
+     * directly returns the same value as the {@code target} if it is non-negative,
+     * otherwise returns the negated captured state defined by the provided
+     * {@code stateName}}
      * <p>
      * This method is suitable for adapting system-call method handles(e.g.
      * {@code open()}, {@code read()}, and {@code close()}). Clients can check the return
@@ -141,7 +166,8 @@ public final class CaptureStateUtil {
      *       static final MethodHandle CAPTURING_OPEN = ...
      *
      *      // (MemorySegment pathname, int flags)int
-     *      static final MethodHandle OPEN = CaptureStateUtil.adaptSystemCall(Pooling.GLOBAL, CAPTURING_OPEN, "errno");
+     *      static final MethodHandle OPEN = CaptureStateUtil
+     *             .adaptSystemCall(CAPTURING_OPEN, "errno");
      *
      *      try {
      *         int fh = (int)OPEN.invoke(pathName, flags);
@@ -153,35 +179,45 @@ public final class CaptureStateUtil {
      *           throw new RuntimeException(t);
      *      }
      *
-     *}
-     * For a method handle that takes a MemorySegment and two int parameters using GLOBAL,
-     * the method combinators are doing the equivalent of:
-     *
+     *} For a {@code target} method handle that takes a {@code MemorySegment} and two
+     * {@code int} parameters and returns an {@code int} value, the method returns a new
+     * method handle that is doing the equivalent of:
+     * <p>
      * {@snippet lang = java:
-     *         public int invoke(int a, int b) {
-     *             final MemorySegment segment = acquireSegment();
-     *             final int result = (int) handle.invoke(segment, a, b);
-     *             if (result >= 0) {
-     *                 return result;
+     *         private static final MemoryLayout CAPTURE_LAYOUT =
+     *                 Linker.Option.captureStateLayout();
+     *         private static final CarrierLocalArenaPools POOL =
+     *                 CarrierLocalArenaPools.create(CAPTURE_LAYOUT);
+     *
+     *         public int invoke(MethodHandle target,
+     *                           String stateName,
+     *                           int a, int b) {
+     *             try (var arena = POOL.take()) {
+     *                 final MemorySegment segment = arena.allocate(CAPTURE_LAYOUT);
+     *                 final int result = (int) handle.invoke(segment, a, b);
+     *                 if (result >= 0) {
+     *                     return result;
+     *                 }
+     *                 return -(int) CAPTURE_LAYOUT
+     *                     .varHandle(MemoryLayout.PathElement.groupElement(stateName))
+     *                         .get(segment, 0);
      *             }
-     *             return -(int) errorHandle.get(segment);
      *         }
      *}
-     * Where {@code handle} is the original method handle with the coordinated
-     * {@code (MemorySegment, int, int)int} and {@code errnoHandle} is a method handle
-     * that retrieves the error code from the capturing segment.
+     * except it is more performant. In the above {@code stateName} is the name of the
+     * captured state (e.g. {@code errno}). The static {@code CAPTURE_LAYOUT} is shared
+     * across all target method handles adapted by this method.
      *
-     *
-     * @param target    method handle that returns an {@code int} or a {@code long} and has
-     *                  a capturing state MemorySegment as its first parameter
-     * @param stateName the name of the capturing state member layout
-     *                  (i.e. "errno","GetLastError", or "WSAGetLastError")
+     * @param target    method handle that returns an {@code int} or a {@code long} and
+     *                  has a capturing state MemorySegment as its first parameter
+     * @param stateName the name of the capturing state member layout (i.e. "errno",
+     *                  "GetLastError", or "WSAGetLastError")
      * @throws IllegalArgumentException if the provided {@code target}'s return type is
      *                                  not {@code int} or {@code long}
      * @throws IllegalArgumentException if the provided {@code target}'s first parameter
      *                                  type is not {@linkplain MemorySegment}
-     * @throws IllegalArgumentException if the provided {@code stateName} is unknown
-     *                                  on the current platform
+     * @throws IllegalArgumentException if the provided {@code stateName} is unknown on
+     *                                  the current platform
      */
     public static MethodHandle adaptSystemCall(MethodHandle target,
                                                String stateName) {
@@ -207,6 +243,7 @@ public final class CaptureStateUtil {
 
         // Make `target` specific adaptations
 
+        // Pre-pend all the parameters from the `target` MH.
         // (C0=MemorySegment, C1-Cn, MemorySegment)(int|long)
         inner = MethodHandles.collectArguments(inner, 0, target);
 
@@ -215,24 +252,34 @@ public final class CaptureStateUtil {
             perm[i] = i;
         }
         perm[target.type().parameterCount()] = 0;
-        // Deduplicate the first and last coordinate and only use the first
+        // Deduplicate the first and last coordinate and only use the first.
         // (C0=MemorySegment, C1-Cn)(int|long)
         inner = MethodHandles.permuteArguments(inner, target.type(), perm);
+
+        // Use an `Arena` for the first argument instead and extract a segment from it.
         // (C0=Arena, C1-Cn)(int|long)
         inner = MethodHandles.collectArguments(inner, 0, ALLOCATE_MH);
 
+        // Add an identity function for the result of the cleanup action.
         // ((int|long))(int|long)
         MethodHandle cleanup = MethodHandles.identity(returnType);
+        // Add a dummy `Throwable` argument for the cleanup action.
+        // This means, anything thrown will just be propagated.
         // (Throwable, (int|long))(int|long)
         cleanup = MethodHandles.dropArguments(cleanup, 0, Throwable.class);
-        // (Throwable, (int|long), Arena)(int|long)
+        // Add the first parameter of the `inner` method handle to the cleanup
+        // action and invoke `Arena::close` when it is run.
         // Cleanup does not have to have all parameters. It can have zero or more.
+        // (Throwable, (int|long), Arena)(int|long)
         cleanup = MethodHandles.collectArguments(cleanup, 2, ARENA_CLOSE_MH);
 
+        // Combine the `inner` and `cleanup` action in a try/finally block.
         // (Arena, C1-Cn)(int|long)
         MethodHandle tryFinally = MethodHandles.tryFinally(inner, cleanup);
 
-        // Finally we arrive at (C1-Cn)(int|long)
+        // Acquire the arena from the global pool.
+        // Finally, we arrive at the intended method handle:
+        // (C1-Cn)(int|long)
         return MethodHandles.collectArguments(tryFinally, 0, ACQUIRE_ARENA_MH);
     }
 
@@ -261,12 +308,15 @@ public final class CaptureStateUtil {
     }
 
     @ForceInline
-    private static int success(int value, MemorySegment segment) {
+    private static int success(int value,
+                               MemorySegment segment) {
         return value;
     }
 
     @ForceInline
-    private static int error(MethodHandle errorHandle, int value, MemorySegment segment) throws Throwable {
+    private static int error(MethodHandle errorHandle,
+                             int value,
+                             MemorySegment segment) throws Throwable {
         return -(int) errorHandle.invokeExact(segment);
     }
 
@@ -276,12 +326,15 @@ public final class CaptureStateUtil {
     }
 
     @ForceInline
-    private static long success(long value, MemorySegment segment) {
+    private static long success(long value,
+                                MemorySegment segment) {
         return value;
     }
 
     @ForceInline
-    private static long error(MethodHandle errorHandle, long value, MemorySegment segment) throws Throwable {
+    private static long error(MethodHandle errorHandle,
+                              long value,
+                              MemorySegment segment) throws Throwable {
         return -(int) errorHandle.invokeExact(segment);
     }
 
