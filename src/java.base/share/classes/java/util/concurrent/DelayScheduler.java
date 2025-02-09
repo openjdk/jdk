@@ -79,13 +79,11 @@ final class DelayScheduler extends Thread {
      * IO-based timeouts).  Cancellations are added to the pending
      * queue in method DelayedTask.cancel(), to remove them from the
      * heap. (This requires some safeguards to deal with tasks
-     * cancelled while they are still pending.)  In addition,
-     * cancelled tasks set their "when" fields to Long.MAX_VALUE,
-     * which causes them to be pushed toward the bottom of the heap
-     * where they can be simply swept out in the course of other add
-     * and replace operations, even before processing the removal
-     * request (which is then a no-op). In the mean time, these
-     * elements might harmlessly be out of numerical heap order.
+     * cancelled while they are still pending.)  In addition, the heap
+     * replace method removes any cancelled tasks seen while
+     * performing sift-down operations, in which case elements are
+     * removed even before processing the removal request (which is
+     * then a no-op).
      *
      * To ensure that comparisons do not encounter integer wrap
      * errors, times are offset with the most negative possible value
@@ -105,12 +103,11 @@ final class DelayScheduler extends Thread {
 
     private static final int INITIAL_HEAP_CAPACITY = 1 << 6;
     private final ForkJoinPool pool; // read only once
-    int restingSize;                 // written only before parking
+    private volatile DelayedTask<?> pending; // for submited adds and removes
     private volatile int active;     // 0: inactive, -1: stopped, +1: running
     private volatile int cancelDelayedOnShutdown;
     private volatile int preservePeriodicOnShutdown;
-    @jdk.internal.vm.annotation.Contended()
-    private volatile DelayedTask<?> pending;
+    int restingSize;                 // written only before parking
 
     private static final Unsafe U;
     private static final long ACTIVE;
@@ -212,25 +209,21 @@ final class DelayScheduler extends Thread {
                 DelayedTask<?> next;
                 int cap = h.length;
                 do {
-                    int i = t.heapIndex;
+                    next = t.nextPending;
                     long d = t.when;
-                    if ((next = t.nextPending) != null)
+                    int i = t.heapIndex, stat = t.status;
+                    if (next != null)
                         t.nextPending = null;
                     if (i >= 0) {
                         t.heapIndex = -1;
                         if (i < n && i < cap && h[i] == t)
                             n = replace(h, i, n);
                     }
-                    else if (t.status >= 0) {
-                        DelayedTask<?> parent, u; int pk; DelayedTask<?>[] nh;
+                    else if (stat >= 0) {
+                        DelayedTask<?> parent; int pk; DelayedTask<?>[] nh;
                         if (n >= cap || n < 0) // couldn't resize
                             t.trySetCancelled();
                         else {
-                            while (n > 0 &&   // clear trailing cancellations
-                                   (u = h[n - 1]) != null && u.status < 0) {
-                                u.heapIndex = -1;
-                                h[--n] = null;
-                            }
                             int k = n++;
                             while (k > 0 &&   // sift up
                                    (parent = h[pk = (k - 1) >>> 1]) != null &&
@@ -301,41 +294,57 @@ final class DelayScheduler extends Thread {
     }
 
     /**
-     * Replaces removed heap element at index k
+     * Replaces removed heap element at index k, along with other
+     * cancelled nodes found while doing so.
      * @return current heap size
      */
     private static int replace(DelayedTask<?>[] h, int k, int n) {
-        if (k >= 0 && n > 0 && h != null && n <= h.length) {
-            DelayedTask<?> t = null, u;
-            long d = 0L;
-            while (--n > k) { // find uncancelled replacement
-                if ((u = h[n]) != null) {
-                    h[n] = null;
-                    d = u.when;
-                    if (u.status >= 0) {
-                        t = u;
-                        break;
+        if (h != null && n <= h.length) {
+            while (k >= 0 && k < n) {
+                int alsoReplace = -1;  // nonnegative if cancelled task seen
+                DelayedTask<?> t = null, u;
+                long d = 0L;
+                while (--n > k) {      // find uncancelled replacement
+                    if ((u = h[n]) != null) {
+                        h[n] = null;
+                        d = u.when;
+                        if (u.status >= 0) {
+                            t = u;
+                            break;
+                        }
+                        u.heapIndex = -1;
                     }
-                    u.heapIndex = -1;
                 }
-            }
-            if (t != null) {
-                int ck, rk; DelayedTask<?> c, r;
-                while ((ck = (k << 1) + 1) < n && (c = h[ck]) != null) {
-                    long cd = c.when, rd;
-                    if ((rk = ck + 1) < n && (r = h[rk]) != null &&
-                        (rd = r.when) < cd) {
-                        c = r; ck = rk; cd = rd; // use right child
+                if (t != null) {                 // sift down
+                    int ck, rk; long cd, rd; DelayedTask<?> c, r;
+                    while ((ck = (k << 1) + 1) < n && (c = h[ck]) != null) {
+                        cd = c.when;
+                        if (c.status < 0 && alsoReplace < 0) {
+                            alsoReplace = ck;    // at most one per pass
+                            c.heapIndex = -1;
+                            cd = Long.MAX_VALUE; // prevent swap below
+                        }
+                        if ((rk = ck + 1) < n && (r = h[rk]) != null) {
+                            rd = r.when;
+                            if (r.status < 0 && alsoReplace < 0) {
+                                alsoReplace = rk;
+                                r.heapIndex = -1;
+                            }
+                            else if (rd < cd) {  // use right child
+                                cd = rd; c = r; ck = rk;
+                            }
+                        }
+                        if (d <= cd)
+                            break;
+                        c.heapIndex = k;
+                        h[k] = c;
+                        k = ck;
                     }
-                    if (d <= cd)
-                        break;
-                    c.heapIndex = k;
-                    h[k] = c;
-                    k = ck;
+                    t.heapIndex = k;
                 }
-                t.heapIndex = k;
+                h[k] = t;
+                k = alsoReplace;
             }
-            h[k] = t;
         }
         return n;
     }
@@ -492,10 +501,8 @@ final class DelayScheduler extends Thread {
                     }
                 }
                 else if (heapIndex >= 0 && nextPending == null &&
-                         (p = pool) != null && (ds = p.delayScheduler) != null) {
-                    when = Long.MAX_VALUE; // set to max delay
+                         (p = pool) != null && (ds = p.delayScheduler) != null)
                     ds.pend(this);         // for heap cleanup
-                }
             }
             return isCancelled;
         }
