@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2348,7 +2348,7 @@ public abstract sealed class $Type$Buffer
      * implementation in {@code CharSequence}. It performs a direct
      * buffer-to-array copy of the complete specified region.
      *
-     * @since 24
+     * @since 25
      */
     @Override
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
