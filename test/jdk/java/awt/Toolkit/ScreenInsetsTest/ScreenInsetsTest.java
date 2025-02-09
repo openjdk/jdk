@@ -22,13 +22,13 @@
  */
 
 /*
-  @test
-  @key headful
-  @bug 8020443 6899304 4737732
-  @summary Tests that Toolkit.getScreenInsets() returns correct insets
-  @library /test/lib
-  @build jdk.test.lib.Platform
-  @run main ScreenInsetsTest
+ * @test
+ * @key headful
+ * @bug 8020443 6899304 4737732
+ * @summary Tests that Toolkit.getScreenInsets() returns correct insets
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main ScreenInsetsTest
  */
 
 import java.awt.Frame;
@@ -55,6 +55,8 @@ public class ScreenInsetsTest {
             GraphicsConfiguration gc = gd.getDefaultConfiguration();
             Rectangle bounds = gc.getBounds();
             Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+            int workAreaWidth = bounds.width - insets.left - insets.right;
+            int workAreaHeight = bounds.height - insets.top - insets.bottom;
             System.out.println("Screen #" + screen);
             System.out.println("Screen Bounds: " + bounds);
             System.out.println("Insets: " + insets);
@@ -102,8 +104,8 @@ public class ScreenInsetsTest {
 
             if (bounds.x + insets.left != frameBounds.x
                     || bounds.y + insets.top != frameBounds.y
-                    || Math.abs((bounds.width - insets.right - insets.left) - frameBounds.width) > MARGIN_TOLERANCE
-                    || Math.abs((bounds.height - insets.bottom - insets.top) - frameBounds.height) > MARGIN_TOLERANCE) {
+                    || Math.abs(workAreaWidth - frameBounds.width) > MARGIN_TOLERANCE
+                    || Math.abs(workAreaHeight - frameBounds.height) > MARGIN_TOLERANCE) {
                 throw new RuntimeException("Test FAILED! Wrong screen #" +
                         screen + " insets: " + insets);
             }
