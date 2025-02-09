@@ -143,7 +143,6 @@ public class AlgorithmDecomposer {
             return new HashSet<>();
         }
 
-        System.err.println("algo 2: " + algorithm);
         Set<String> elements = decomposeImpl(algorithm);
 
         // no need to check further if algorithm doesn't contain "SHA"

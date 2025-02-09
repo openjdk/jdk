@@ -179,9 +179,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
         if (parameters != null) {
             return algorithmConstraints.permits(algorithm, parameters);
-        } else {
-            return algorithmConstraints.permits(algorithm);
         }
+
+        return true;
     }
 
     /*
@@ -367,7 +367,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 // Consider the impact of algorithm aliases.
                 for (String alias : AlgorithmDecomposer.getAliases(algorithm)) {
                     constraintsMap.putIfAbsent(
-                        alias.toUpperCase(Locale.ENGLISH), constraintList);
+                            alias.toUpperCase(Locale.ENGLISH), constraintList);
                 }
 
                 // If there is no whitespace, it is an algorithm name; however,
@@ -472,7 +472,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 if (!constraint.permits(key)) {
                     if (debug != null) {
                         debug.println("Constraints: failed key size " +
-                            "constraint check " + KeyUtil.getKeySize(key));
+                                "constraint check " + KeyUtil.getKeySize(key));
                     }
                     return false;
                 }
@@ -498,22 +498,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 }
             }
 
-            return true;
-        }
-
-        public boolean permits(String algorithm) {
-            List<Constraint> list = getConstraints(algorithm);
-            if (list == null) {
-                return true;
-            }
-
-            for (Constraint c : list) {
-                for (String a : AlgorithmDecomposer.getAliases(algorithm)) {
-                    if (a.equalsIgnoreCase(c.algorithm)) {
-                        return false;
-                    }
-                }
-            }
             return true;
         }
 
@@ -999,7 +983,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         result = checkAlgorithm(disabledAlgorithms, algorithm, decomposer)
                 && checkDisabledPatterns(algorithm);
         cache.put(algorithm, result);
-
         return result;
     }
 

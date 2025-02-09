@@ -72,9 +72,13 @@ public abstract class AbstractAlgorithmConstraints
     }
 
 
-    private static final String[] aliasEdDSA = new String[]{"EdDSA", "Ed25519", "Ed448"};
-    private static final String[] aliasEd25519 = new String[]{"EdDSA", "Ed25519"};
-    private static final String[] aliasEd448 = new String[]{"EdDSA", "Ed448"};
+    private static final String[] aliasEdDSA =
+        new String[]{"EdDSA", "Ed25519", "Ed448"};
+    private static final String[] aliasEd25519 =
+        new String[]{"EdDSA", "Ed25519"};
+    private static final String[] aliasEd448 =
+        new String[]{"EdDSA", "Ed448"};
+
     public static List<String> getAliases(String algorithm) {
         return switch (algorithm) {
             case "EdDSA" -> Arrays.asList(aliasEdDSA);
