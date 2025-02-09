@@ -40,6 +40,10 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+/**
+ * An internal utility class that can be used to adapt system-call-styled method handles
+ * for efficient and easy use.
+ */
 public final class CaptureStateUtil {
 
     private static final StructLayout CAPTURE_LAYOUT = Linker.Option.captureStateLayout();
@@ -93,8 +97,8 @@ public final class CaptureStateUtil {
     private static final Map<BasicKey, MethodHandle> BASIC_HANDLE_CACHE =
             new ConcurrentHashMap<>();
 
-    // A key that holds both the `returnType` and the `stateName` needed to lookup a
-    // specific "basic handle".
+    // A key that holds both the `returnType` and the `stateName` needed to look up a
+    // specific "basic handle" in the `BASIC_HANDLE_CACHE`.
     //   returnType E {int.class | long.class}
     //   stateName can be anything non-null but should E {"GetLastError" | "WSAGetLastError"} | "errno")}
     record BasicKey(Class<?> returnType, String stateName) {
@@ -201,7 +205,9 @@ public final class CaptureStateUtil {
 
         // ((int | long), MemorySegment)(int | long)
         final MethodHandle basicHandle = BASIC_HANDLE_CACHE
-                // Do not use a lambda to allow early use in the init sequence
+                // Do not use a lambda in order to allow early use in the init sequence
+                // This is equivalent to:
+                //   computeIfAbsent(basicKey, CaptureStateUtil::basicHandleFor);
                 .computeIfAbsent(basicKey, new Function<>() {
                     @Override
                     public MethodHandle apply(BasicKey basicKey) {
