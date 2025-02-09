@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,9 @@ import java.security.Key;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.interfaces.ECKey;
-import java.security.interfaces.XECKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
-import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -154,7 +152,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 break;
             }
         }
-        algorithmConstraints = new Constraints(propertyName, disabledAlgorithms);
+        algorithmConstraints = new Constraints(disabledAlgorithms);
     }
 
     /*
@@ -268,16 +266,16 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     private static List<String> getNamedCurveFromKey(Key key) {
-        if (key instanceof ECKey) {
-            NamedCurve nc = CurveDB.lookup(((ECKey)key).getParams());
-            return (nc == null ? List.of()
-                               : Arrays.asList(nc.getNameAndAliases()));
-        } else if (key instanceof XECKey) {
-            return List.of(
-                ((NamedParameterSpec)((XECKey)key).getParams()).getName());
-        } else {
-            return List.of();
-        }
+        return switch (key) {
+            case ECKey ecKey -> {
+                NamedCurve nc = CurveDB.lookup(ecKey.getParams());
+                if (nc == null) {
+                    yield List.of();
+                }
+                yield Arrays.asList(nc.getNameAndAliases());
+            }
+            default -> List.of(KeyUtil.getAlgorithm(key));
+        };
     }
 
     // Check algorithm constraints with key and algorithm
@@ -301,7 +299,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         // check the key algorithm
-        if (!permits(primitives, key.getAlgorithm(), null)) {
+        if (!permits(primitives, KeyUtil.getAlgorithm(key), null)) {
             return false;
         }
 
@@ -338,7 +336,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     "denyAfter\\s+(\\d{4})-(\\d{2})-(\\d{2})");
         }
 
-        public Constraints(String propertyName, Set<String> constraintSet) {
+        public Constraints(Set<String> constraintSet) {
             for (String constraintEntry : constraintSet) {
                 if (constraintEntry == null || constraintEntry.isEmpty()) {
                     continue;
@@ -460,7 +458,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
         // Check if KeySizeConstraints permit the specified key
         public boolean permits(Key key) {
-            List<Constraint> list = getConstraints(key.getAlgorithm());
+            List<Constraint> list = getConstraints(KeyUtil.getAlgorithm(key));
             if (list == null) {
                 return true;
             }
@@ -514,7 +512,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
             if (checkKey) {
                 for (Key key : cp.getKeys()) {
-                    algorithms.add(key.getAlgorithm());
+                    algorithms.add(KeyUtil.getAlgorithm(key));
                 }
             }
 

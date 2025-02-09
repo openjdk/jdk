@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.security.AlgorithmConstraints;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -70,14 +71,38 @@ public abstract class AbstractAlgorithmConstraints
         return algorithmsInPropertySet;
     }
 
+
+    private static final String[] aliasEdDSA =
+        new String[]{"EdDSA", "Ed25519", "Ed448"};
+    private static final String[] aliasEd25519 =
+        new String[]{"EdDSA", "Ed25519"};
+    private static final String[] aliasXDH =
+        new String[]{"XDH", "X25519", "X448"};
+    private static final String[] aliasX25519 =
+        new String[]{"XDH", "X25519"};
+
+    public static List<String> getAliases(String algorithm) {
+        return switch (algorithm) {
+            case "EdDSA" -> Arrays.asList(aliasEdDSA);
+            case "Ed25519" -> Arrays.asList(aliasEd25519);
+            case "XDH" -> Arrays.asList(aliasXDH);
+            case "X25519" -> Arrays.asList(aliasX25519);
+            default -> Collections.emptyList();
+        };
+    }
+
     static boolean checkAlgorithm(Set<String> algorithms, String algorithm,
             AlgorithmDecomposer decomposer) {
         if (algorithm == null || algorithm.isEmpty()) {
             throw new IllegalArgumentException("No algorithm name specified");
         }
 
-        if (algorithms.contains(algorithm)) {
-            return false;
+        // Check `algorithm` against disabled algorithms and their aliases
+        for (String a : algorithms) {
+            if (algorithm.equalsIgnoreCase(a) ||
+                getAliases(a).contains(algorithm)) {
+                return false;
+            }
         }
 
         // decompose the algorithm into sub-elements
