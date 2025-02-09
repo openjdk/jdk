@@ -70,4 +70,25 @@ public class VectorSubword {
             bytes[i] = (byte) shorts[i];
         }
     }
+
+    @Benchmark
+    public void shortToInt() {
+        for (int i = 0; i < SIZE; i++) {
+            ints[i] = shorts[i];
+        }
+    }
+
+    @Benchmark
+    public void byteToInt() {
+        for (int i = 0; i < SIZE; i++) {
+            ints[i] = bytes[i];
+        }
+    }
+
+    @Benchmark
+    public void byteToShort() {
+        for (int i = 0; i < SIZE; i++) {
+            shorts[i] = bytes[i];
+        }
+    }
 }
