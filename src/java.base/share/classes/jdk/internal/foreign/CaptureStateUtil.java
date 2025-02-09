@@ -35,10 +35,10 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 public final class CaptureStateUtil {
 
@@ -83,9 +83,10 @@ public final class CaptureStateUtil {
             MhUtil.findVirtual(LOOKUP, Arena.class, "close",
                     MethodType.methodType(void.class));
 
-    // The `INNER_HANDLES` contains the common "templates" that can be reused for all
-    // adapted method handles. Keeping as much as possible reusable reduces the number
+    // The `BASIC_HANDLE_CACHE` contains the common "basic handles" that can be reused for
+    // all adapted method handles. Keeping as much as possible reusable reduces the number
     // of combinators needed to form an adapted method handle.
+    // The sub maps are lazily computed.
     //
     // The first-level key of the Map tells which return type the handle has
     // (`int` or `long`). The second-level key of the Map tells what is the name of
@@ -95,60 +96,9 @@ public final class CaptureStateUtil {
     // (int.class | long.class) ->
     //   ({"GetLastError" | "WSAGetLastError"} | "errno") ->
     //     MethodHandle
-    private static final Map<Class<?>, Map<String, MethodHandle>> INNER_HANDLES;
-
-    static {
-        final Map<Class<?>, Map<String, MethodHandle>> classMap = new HashMap<>();
-        for (var returnType : new Class<?>[]{int.class, long.class}) {
-            Map<String, MethodHandle> handles = CAPTURE_LAYOUT
-                    .memberLayouts().stream()
-                    .collect(Collectors.toUnmodifiableMap(
-                            member -> member.name().orElseThrow(),
-                            member -> {
-                                VarHandle vh = CAPTURE_LAYOUT.varHandle(
-                                        MemoryLayout.PathElement.groupElement(
-                                                member.name().orElseThrow()));
-                                // This MH is used to extract the named captured state
-                                // from the capturing `MemorySegment`.
-                                // (MemorySegment, long)int
-                                MethodHandle intExtractor = vh.toMethodHandle(VarHandle.AccessMode.GET);
-                                // As the MH is already adapted to use the appropriate
-                                // offset, we just insert `0L` for the offset.
-                                // (MemorySegment)int
-                                intExtractor = MethodHandles.insertArguments(intExtractor, 1, 0L);
-
-                                // If X is the `returnType` (either `int` or `long`) then
-                                // the code below is equivalent to:
-                                //
-                                // X handle(X returnValue, MemorySegment segment)
-                                //     if (returnValue >= 0) {
-                                //         // Ignore the segment
-                                //         return returnValue;
-                                //     } else {
-                                //         // ignore the returnValue
-                                //         return -(X)intExtractor.invokeExact(segment);
-                                //     }
-                                // }
-                                if (returnType.equals(int.class)) {
-                                    // (int, MemorySegment)int
-                                    return MethodHandles.guardWithTest(
-                                            NON_NEGATIVE_INT_MH,
-                                            SUCCESS_INT_MH,
-                                            ERROR_INT_MH.bindTo(intExtractor));
-                                } else {
-                                    // (long, MemorySegment)long
-                                    return MethodHandles.guardWithTest(
-                                            NON_NEGATIVE_LONG_MH,
-                                            SUCCESS_LONG_MH,
-                                            ERROR_LONG_MH.bindTo(intExtractor));
-                                }
-                            }
-                    ));
-            classMap.put(returnType, handles);
-        }
-        // Use an unmodifiable Map to unlock constant folding capabilities.
-        INNER_HANDLES = Map.copyOf(classMap);
-    }
+    private static final Map<Class<?>, Map<String, MethodHandle>> BASIC_HANDLE_CACHE = Map.of(
+            int.class, new ConcurrentHashMap<>(),
+            long.class, new ConcurrentHashMap<>());
 
     private CaptureStateUtil() {}
 
@@ -233,9 +183,14 @@ public final class CaptureStateUtil {
         }
 
         // ((int | long), MemorySegment)(int | long)
-        MethodHandle inner = INNER_HANDLES
+        MethodHandle inner = BASIC_HANDLE_CACHE
                 .get(returnType)
-                .get(stateName);
+                .computeIfAbsent(stateName, new Function<>() {
+                    @Override
+                    public MethodHandle apply(String name) {
+                        return basicHandleFor(returnType, name);
+                    }
+                });
         if (inner == null) {
             throw new IllegalArgumentException("Unknown state name: " + stateName +
                     ". Known on this platform: " + Linker.Option.captureStateLayout());
@@ -281,6 +236,46 @@ public final class CaptureStateUtil {
         // Finally, we arrive at the intended method handle:
         // (C1-Cn)(int|long)
         return MethodHandles.collectArguments(tryFinally, 0, ACQUIRE_ARENA_MH);
+    }
+
+    private static MethodHandle basicHandleFor(Class<?> returnType,
+                                               String capturedStateName) {
+        final VarHandle vh = CAPTURE_LAYOUT.varHandle(
+                MemoryLayout.PathElement.groupElement(capturedStateName));
+        // This MH is used to extract the named captured state
+        // from the capturing `MemorySegment`.
+        // (MemorySegment, long)int
+        MethodHandle intExtractor = vh.toMethodHandle(VarHandle.AccessMode.GET);
+        // As the MH is already adapted to use the appropriate
+        // offset, we just insert `0L` for the offset.
+        // (MemorySegment)int
+        intExtractor = MethodHandles.insertArguments(intExtractor, 1, 0L);
+
+        // If X is the `returnType` (either `int` or `long`) then
+        // the code below is equivalent to:
+        //
+        // X handle(X returnValue, MemorySegment segment)
+        //     if (returnValue >= 0) {
+        //         // Ignore the segment
+        //         return returnValue;
+        //     } else {
+        //         // ignore the returnValue
+        //         return -(X)intExtractor.invokeExact(segment);
+        //     }
+        // }
+        if (returnType.equals(int.class)) {
+            // (int, MemorySegment)int
+            return MethodHandles.guardWithTest(
+                    NON_NEGATIVE_INT_MH,
+                    SUCCESS_INT_MH,
+                    ERROR_INT_MH.bindTo(intExtractor));
+        } else {
+            // (long, MemorySegment)long
+            return MethodHandles.guardWithTest(
+                    NON_NEGATIVE_LONG_MH,
+                    SUCCESS_LONG_MH,
+                    ERROR_LONG_MH.bindTo(intExtractor));
+        }
     }
 
     private static IllegalArgumentException illegalArgDoesNot(MethodHandle target, String info) {
