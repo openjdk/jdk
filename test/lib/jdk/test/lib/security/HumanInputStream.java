@@ -43,8 +43,6 @@ import java.io.InputStreamReader;
  *
  */
 
-
-
 public class HumanInputStream extends InputStream {
     byte[] src;
     int pos;
@@ -85,6 +83,7 @@ public class HumanInputStream extends InputStream {
         }
         return re;
     }
+
     @Override public int read(byte[] buffer, int offset, int len) {
         inLine = true;
         try {
@@ -95,6 +94,7 @@ public class HumanInputStream extends InputStream {
             inLine = false;
         }
     }
+
     @Override public int available() {
         if (pos < length) return 1;
         return 0;
