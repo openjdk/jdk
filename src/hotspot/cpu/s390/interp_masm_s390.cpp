@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
 
 // Major contributions by AHa, AS, JL, ML.
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -780,7 +779,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
     get_method(R_method);
     verify_oop(Z_tos, state);
     push(state); // Save tos/result.
-    testbit(method2_(R_method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
+    testbit_ushort(method2_(R_method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
     z_bfalse(unlocked);
 
     // Don't unlock anything if the _do_not_unlock_if_synchronized flag
@@ -2131,18 +2130,6 @@ void InterpreterMacroAssembler::notify_method_exit(bool native_method,
     if (!native_method) pop(state);
     bind(jvmti_post_done);
   }
-
-#if 0
-  // Dtrace currently not supported on z/Architecture.
-  {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false);
-    push(state);
-    get_method(c_rarg1);
-    call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
-                 r15_thread, c_rarg1);
-    pop(state);
-  }
-#endif
 }
 
 void InterpreterMacroAssembler::skip_if_jvmti_mode(Label &Lskip, Register Rscratch) {

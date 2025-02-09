@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,36 +48,21 @@ import sun.security.util.SecurityConstants;
  * signify a wildcard match. For example: "java.*" and "*" signify a wildcard
  * match, while "*java" and "a*b" do not.
  * <P>
- * The actions to be granted are passed to the constructor in a string containing
+ * The actions are passed to the constructor in a string containing
  * a list of one or more comma-separated keywords. The possible keywords are
- * "read" and "write". Their meaning is defined as follows:
- *
- * <DL>
- *    <DT> read
- *    <DD> read permission. Allows {@code System.getProperty} to
- *         be called.
- *    <DT> write
- *    <DD> write permission. Allows {@code System.setProperty} to
- *         be called.
- * </DL>
+ * "read" and "write".
  * <P>
  * The actions string is converted to lowercase before processing.
- * <P>
- * Care should be taken before granting code permission to access
- * certain system properties.  For example, granting permission to
- * access the "java.home" system property gives potentially malevolent
- * code sensitive information about the system environment (the Java
- * installation directory).  Also, granting permission to access
- * the "user.name" and "user.home" system properties gives potentially
- * malevolent code sensitive information about the user environment
- * (the user's account name and home directory).
+ *
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @see java.security.BasicPermission
  * @see java.security.Permission
  * @see java.security.Permissions
  * @see java.security.PermissionCollection
  * @see java.lang.SecurityManager
- *
  *
  * @author Roland Schemers
  * @since 1.2

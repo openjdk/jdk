@@ -47,11 +47,13 @@
  * @summary Test JVM large page setup (+THP)
  * @library /test/lib
  * @requires os.family == "linux"
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver TestHugePageDecisionsAtVMStartup -XX:+UseTransparentHugePages
  */
 
+import jdk.test.lib.os.linux.HugePageConfiguration;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import java.util.ArrayList;

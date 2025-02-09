@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,12 @@
 
 package transform.util;
 
-import static jaxp.library.JAXPTestUtilities.runWithTmpPermission;
-import static jaxp.library.JAXPTestUtilities.tryRunWithTmpPermission;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.PropertyPermission;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -39,10 +36,8 @@ import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-
 import org.testng.Assert;
 import org.w3c.dom.Document;
-
 import transform.VersionDefaultHandler;
 
 public class StreamUtil extends TransformerUtil {
@@ -69,7 +64,7 @@ public class StreamUtil extends TransformerUtil {
 
     public Result prepareResult() throws Exception {
         FileOutputStream fos = new FileOutputStream(TEMP_FILE);
-        return runWithTmpPermission(() -> new StreamResult(fos), new PropertyPermission("user.dir", "read"));
+        return new StreamResult(fos);
     }
 
     public void checkResult(Result result, String inputVersion) throws Exception {
@@ -89,7 +84,7 @@ public class StreamUtil extends TransformerUtil {
         // use sax parser, as encoding info cannot be set on DOM document
         SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
         VersionDefaultHandler dh = new VersionDefaultHandler();
-        tryRunWithTmpPermission(() -> parser.parse(new File(TEMP_FILE), dh), new PropertyPermission("user.dir", "read"));
+        parser.parse(new File(TEMP_FILE), dh);
         Assert.assertTrue(dh.getVersion().equals(version), "Expected version is " + version + " actual version " + dh.getVersion());
         Assert.assertTrue(dh.getEncoding().equals(encoding), "Expected version is " + encoding + " actual version " + dh.getEncoding());
     }

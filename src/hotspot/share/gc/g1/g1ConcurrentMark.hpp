@@ -810,6 +810,21 @@ private:
   // Makes the limit of the region up-to-date
   void update_region_limit();
 
+  // Handles the processing of the current region.
+  void process_current_region(G1CMBitMapClosure& bitmap_closure);
+
+  // Claims a new region if available.
+  void claim_new_region();
+
+  // Attempts to steal work from other tasks.
+  void attempt_stealing();
+
+  // Handles the termination protocol.
+  void attempt_termination(bool is_serial);
+
+  // Handles the has_aborted scenario.
+  void handle_abort(bool is_serial, double elapsed_time_ms);
+
   // Called when either the words scanned or the refs visited limit
   // has been reached
   void reached_limit();
@@ -958,14 +973,14 @@ class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;
 
-  size_t _young_cardset_bytes_per_region;
-
   // Accumulator for code roots memory size
   size_t _total_code_roots_bytes;
 
   static double bytes_to_mb(size_t val) {
     return (double) val / (double) M;
   }
+
+  void do_cset_groups();
 
 public:
   // The header and footer are printed in the constructor and

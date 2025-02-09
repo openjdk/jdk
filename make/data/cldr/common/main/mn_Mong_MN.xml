@@ -390,9 +390,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>ᠣᠯᠠᠭᠠᠨᠪᠠᠭᠠᠳᠣᠷ</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>ᠴᠥᠢᠪᠠᠯᠰᠨᠩ</exemplarCity>
-			</zone>
 			<metazone type="America_Central">
 				<long>
 					<generic>ᠲᠥᠪ ᠴᠠᠭ</generic>
@@ -457,9 +454,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<symbols numberSystem="latn">
-			<decimal draft="contributed">,</decimal>
-		</symbols>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  */
 
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.Functional;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
 
 /**
  * Test --install-dir parameter. Output of the test should be
@@ -54,11 +53,10 @@ import jdk.jpackage.test.Annotations.Parameter;
 /*
  * @test
  * @summary jpackage with --install-dir
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile InstallDirTest.java
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=InstallDirTest.testCommon
  */
@@ -66,11 +64,10 @@ import jdk.jpackage.test.Annotations.Parameter;
 /*
  * @test
  * @summary jpackage with --install-dir
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile InstallDirTest.java
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "linux")
  * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
@@ -78,28 +75,18 @@ import jdk.jpackage.test.Annotations.Parameter;
  */
 public class InstallDirTest {
 
-    public static void testCommon() {
-        final Map<PackageType, Path> INSTALL_DIRS = Functional.identity(() -> {
-            Map<PackageType, Path> reply = new HashMap<>();
-            reply.put(PackageType.WIN_MSI, Path.of("TestVendor\\InstallDirTest1234"));
-            reply.put(PackageType.WIN_EXE, reply.get(PackageType.WIN_MSI));
-
-            reply.put(PackageType.LINUX_DEB, Path.of("/opt/jpackage"));
-            reply.put(PackageType.LINUX_RPM, reply.get(PackageType.LINUX_DEB));
-
-            reply.put(PackageType.MAC_PKG, Path.of("/Applications/jpackage"));
-            reply.put(PackageType.MAC_DMG, reply.get(PackageType.MAC_PKG));
-
-            return reply;
-        }).get();
-
+    @Test
+    @Parameter(value = "TestVendor\\InstallDirTest1234", ifOS = OperatingSystem.WINDOWS)
+    @Parameter(value = "/opt/jpackage", ifOS = OperatingSystem.LINUX)
+    @Parameter(value = "/Applications/jpackage", ifOS = OperatingSystem.MACOS)
+    public static void testCommon(Path installDir) {
         new PackageTest().configureHelloApp()
         .addInitializer(cmd -> {
-            cmd.addArguments("--install-dir", INSTALL_DIRS.get(
-                    cmd.packageType()));
+            cmd.addArguments("--install-dir", installDir);
         }).run();
     }
 
+    @Test(ifOS = OperatingSystem.LINUX)
     @Parameter("/")
     @Parameter(".")
     @Parameter("foo")

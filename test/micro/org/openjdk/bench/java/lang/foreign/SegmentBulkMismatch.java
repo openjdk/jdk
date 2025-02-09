@@ -79,25 +79,25 @@ public class SegmentBulkMismatch {
         dstHeap = MemorySegment.ofArray(dstArray);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=31"})
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.mismatch=31"})
     @Benchmark
     public long nativeSegmentJava() {
         return srcNative.mismatch(dstNative);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=31"})
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.mismatch=31"})
     @Benchmark
     public long heapSegmentJava() {
         return srcHeap.mismatch(dstHeap);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=0"})
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.mismatch=0"})
     @Benchmark
     public long nativeSegmentUnsafe() {
         return srcNative.mismatch(dstNative);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=0"})
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.mismatch=0"})
     @Benchmark
     public long heapSegmentUnsafe() {
         return srcHeap.mismatch(dstHeap);

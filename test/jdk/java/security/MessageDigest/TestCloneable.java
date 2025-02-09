@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,14 +43,16 @@ public class TestCloneable {
     private static final Class<CloneNotSupportedException> CNSE =
             CloneNotSupportedException.class;
 
+    private static String providerName = System.getProperty("test.provider.name", "SUN");
+
     @DataProvider
     public Object[][] testData() {
         return new Object[][] {
-            { "MD2", "SUN" }, { "MD5", "SUN" }, { "SHA-1", "SUN" },
-            { "SHA-224", "SUN" }, { "SHA-256", "SUN" },
-            { "SHA-384", "SUN" }, { "SHA-512", "SUN" },
-            { "SHA3-224", "SUN" }, { "SHA3-256", "SUN" },
-            { "SHA3-384", "SUN" }, { "SHA3-512", "SUN" }
+            { "MD2", providerName }, { "MD5", providerName }, { "SHA-1", providerName },
+            { "SHA-224", providerName }, { "SHA-256", providerName },
+            { "SHA-384", providerName }, { "SHA-512", providerName },
+            { "SHA3-224", providerName }, { "SHA3-256", providerName },
+            { "SHA3-384", providerName }, { "SHA3-512", providerName }
         };
     }
 

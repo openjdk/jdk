@@ -181,6 +181,8 @@ import java.util.Locale;
  *     <th scope="col">CLDR version</th></tr>
  * </thead>
  * <tbody>
+ * <tr><th scope="row" style="text-align:left">JDK 24</th>
+ *     <td>CLDR 46</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 23</th>
  *     <td>CLDR 45</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 22</th>
@@ -220,26 +222,10 @@ import java.util.Locale;
  */
 public abstract class LocaleServiceProvider {
 
-    private static Void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("localeServiceProvider"));
-        }
-        return null;
-    }
-    private LocaleServiceProvider(Void ignore) { }
-
     /**
      * Initializes a new locale service provider.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission RuntimePermission("localeServiceProvider")}
      */
-    protected LocaleServiceProvider() {
-        this(checkPermission());
-    }
+    protected LocaleServiceProvider() {}
 
     /**
      * {@return an array of all locales for which this locale service provider

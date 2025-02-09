@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -90,7 +89,7 @@ void ClassLoaderExt::setup_app_search_path(JavaThread* current) {
   os::free(app_class_path);
 }
 
-int ClassLoaderExt::compare_module_path_by_name(const char** p1, const char** p2) {
+int ClassLoaderExt::compare_module_names(const char** p1, const char** p2) {
   return strcmp(*p1, *p2);
 }
 
@@ -121,7 +120,7 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
 
   // Sort the module paths before storing into CDS archive for simpler
   // checking at runtime.
-  module_paths->sort(compare_module_path_by_name);
+  module_paths->sort(compare_module_names);
 
   for (int i = 0; i < module_paths->length(); i++) {
     ClassLoader::setup_module_search_path(current, module_paths->at(i));
@@ -244,6 +243,10 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
     vm_exit_during_cds_dumping(err_msg("-Xshare:dump does not support Extension-List in JAR manifest: %s", entry->name()));
   }
 
+  if (strstr(manifest, "Multi-Release: true") != nullptr) {
+    entry->set_multi_release_jar();
+  }
+
   char* cp_attr = get_class_path_attr(entry->name(), manifest, manifest_size);
 
   if (cp_attr != nullptr && strlen(cp_attr) > 0) {
@@ -299,6 +302,7 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
       file_start = file_end;
     }
   }
+  return;
 }
 
 void ClassLoaderExt::setup_search_paths(JavaThread* current) {
@@ -337,7 +341,7 @@ void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* resu
     ResourceMark rm;
     log_warning(cds)("CDS heap objects cannot be written because class %s maybe modified by ClassFileLoadHook.",
                      result->external_name());
-    HeapShared::disable_writing();
+    CDSConfig::disable_heap_dumping();
   }
 #endif // INCLUDE_CDS_JAVA_HEAP
 }

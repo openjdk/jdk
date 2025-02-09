@@ -3957,15 +3957,15 @@ void MatchNode::count_commutative_op(int& count) {
     "AndI","AndL",
     "MaxI","MinI","MaxF","MinF","MaxD","MinD",
     "MulI","MulL","MulF","MulD",
-    "OrI","OrL",
-    "XorI","XorL"
+    "OrI","OrL", "XorI","XorL",
+    "UMax","UMin"
   };
 
   static const char *commut_vector_op_list[] = {
     "AddVB", "AddVS", "AddVI", "AddVL", "AddVF", "AddVD",
     "MulVB", "MulVS", "MulVI", "MulVL", "MulVF", "MulVD",
     "AndV", "OrV", "XorV",
-    "MaxV", "MinV"
+    "MaxV", "MinV", "UMax","UMin"
   };
 
   if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {
@@ -4339,7 +4339,7 @@ bool MatchRule::is_vector() const {
     "NegVF","NegVD","NegVI","NegVL",
     "SqrtVD","SqrtVF",
     "AndV" ,"XorV" ,"OrV",
-    "MaxV", "MinV",
+    "MaxV", "MinV", "UMinV", "UMaxV",
     "CompressV", "ExpandV", "CompressM", "CompressBitsV", "ExpandBitsV",
     "AddReductionVI", "AddReductionVL",
     "AddReductionVF", "AddReductionVD",
@@ -4362,7 +4362,7 @@ bool MatchRule::is_vector() const {
     "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
     "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
     "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
-    "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD",
+    "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD", "SaturatingAddV", "SaturatingSubV",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
     "RoundVF", "RoundVD",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
 #include "cds/runTimeClassInfo.hpp"
@@ -30,9 +29,10 @@
 
 void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   ArchiveBuilder* builder = ArchiveBuilder::current();
-  builder->write_pointer_in_buffer(&_klass, info._klass);
+  InstanceKlass* k = info._klass;
+  _klass_offset = builder->any_to_offset_u4(k);
 
-  if (!SystemDictionaryShared::is_builtin(_klass)) {
+  if (!SystemDictionaryShared::is_builtin(k)) {
     CrcInfo* c = crc();
     c->_clsfile_size = info._clsfile_size;
     c->_clsfile_crc32 = info._clsfile_crc32;
@@ -61,16 +61,27 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
     }
   }
 
-  if (_klass->is_hidden()) {
-    builder->write_pointer_in_buffer(nest_host_addr(), info.nest_host());
+  if (k->is_hidden() && info.nest_host() != nullptr) {
+    _nest_host_offset = builder->any_to_offset_u4(info.nest_host());
   }
-  if (_klass->has_archived_enum_objs()) {
+  if (k->has_archived_enum_objs()) {
     int num = info.num_enum_klass_static_fields();
     set_num_enum_klass_static_fields(num);
     for (int i = 0; i < num; i++) {
       int root_index = info.enum_klass_static_field(i);
       set_enum_klass_static_field_root_index_at(i, root_index);
     }
+  }
+}
+
+InstanceKlass* RunTimeClassInfo::klass() const {
+  if (MetaspaceShared::is_in_shared_metaspace(this)) {
+    // <this> is inside a mmaped CDS archive.
+    return ArchiveUtils::offset_to_archived_address<InstanceKlass*>(_klass_offset);
+  } else {
+    // <this> is a temporary copy of a RunTimeClassInfo that's being initialized
+    // by the ArchiveBuilder.
+    return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(_klass_offset);
   }
 }
 

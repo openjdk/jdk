@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -376,14 +376,6 @@ import java.util.function.BiFunction;
  *         ...
  *     }
  * </pre></blockquote>
- *
- * <P>
- * Applications might choose to process delegated tasks in different
- * threads.  When an {@code SSLEngine}
- * is created, the current {@link java.security.AccessControlContext}
- * is saved.  All future delegated tasks will be processed using this
- * context:  that is, all access control decisions will be made using the
- * context captured at engine creation.
  *
  * <HR>
  *
@@ -818,9 +810,6 @@ public abstract class SSLEngine {
      * {@code run} method returns, the {@code Runnable} object
      * is no longer needed and may be discarded.
      * <P>
-     * Delegated tasks run in the {@code AccessControlContext}
-     * in place when this object was created.
-     * <P>
      * A call to this method will return each outstanding task
      * exactly once.
      * <P>
@@ -928,6 +917,7 @@ public abstract class SSLEngine {
      * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return  an array of cipher suite names
      * @see     #getEnabledCipherSuites()
      * @see     #setEnabledCipherSuites(String[])
@@ -954,6 +944,7 @@ public abstract class SSLEngine {
      * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return  an array of cipher suite names
      * @see     #getSupportedCipherSuites()
      * @see     #setEnabledCipherSuites(String[])
@@ -981,6 +972,7 @@ public abstract class SSLEngine {
      * on why a specific cipher suite may never be used on an engine.
      *
      * @param   suites Names of all the cipher suites to enable
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws  IllegalArgumentException when one or more of the ciphers
      *          named by the parameter is not supported, or when the
      *          parameter is null.

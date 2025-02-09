@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,18 +43,13 @@ $JAR ${TESTTOOLVMOPTS} -cf ${TESTCLASSES}/dummy.jar \
     -C ${TESTCLASSES} DummyScriptEngineFactory.class \
     -C "${TESTSRC}" META-INF/services/javax.script.ScriptEngineFactory
 
-echo "Running test with security manager ..."
-$JAVA ${TESTVMOPTS} -Djava.security.manager -classpath \
-  "${TESTCLASSES}${PS}${TESTCLASSES}/dummy.jar" \
-  ProviderTest
-
 ret=$?
 if [ $ret -ne 0 ]
 then
   exit $ret
 fi
 
-echo "Running test without security manager ..."
+echo "Running test ..."
 $JAVA ${TESTVMOPTS} -classpath \
   "${TESTCLASSES}${PS}${TESTCLASSES}/dummy.jar" \
   ProviderTest

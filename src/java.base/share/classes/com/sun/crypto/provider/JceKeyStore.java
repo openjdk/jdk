@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,12 @@ import sun.security.util.IOUtils;
 
 import java.io.*;
 import java.util.*;
-import java.security.AccessController;
 import java.security.DigestInputStream;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Key;
 import java.security.PrivateKey;
-import java.security.PrivilegedAction;
 import java.security.KeyStoreSpi;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
@@ -822,7 +820,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                         // Add the entry to the list
                         entries.put(alias, entry);
 
-                    } else if (tag == 3) { // secret-key entry
+                    } else if (tag == 3) { // secret key entry
                         secretKeyCount++;
                         SecretKeyEntry entry = new SecretKeyEntry();
 
@@ -835,15 +833,9 @@ public final class JceKeyStore extends KeyStoreSpi {
                         // read the sealed key
                         try {
                             ois = new ObjectInputStream(dis);
-                            final ObjectInputStream ois2 = ois;
                             // Set a deserialization checker
-                            @SuppressWarnings("removal")
-                            var dummy = AccessController.doPrivileged(
-                                (PrivilegedAction<Void>)() -> {
-                                    ois2.setObjectInputFilter(
-                                        new DeserializationChecker(fullLength));
-                                    return null;
-                            });
+                            ois.setObjectInputFilter(
+                                new DeserializationChecker(fullLength));
                             entry.sealedKey = (SealedObject)ois.readObject();
                             entry.maxLength = fullLength;
                             // NOTE: don't close ois here since we are still

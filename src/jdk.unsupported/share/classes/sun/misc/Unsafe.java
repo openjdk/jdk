@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
-import java.net.URL;
-import java.security.AccessController;
 import java.security.CodeSource;
-import java.security.ProtectionDomain;
-import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.Set;
 
@@ -867,7 +863,7 @@ public final class Unsafe {
      * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
      */
     @Deprecated(since="23", forRemoval=true)
-    public static final int INVALID_FIELD_OFFSET = jdk.internal.misc.Unsafe.INVALID_FIELD_OFFSET;
+    public static final int INVALID_FIELD_OFFSET = (int) jdk.internal.misc.Unsafe.INVALID_FIELD_OFFSET;
 
     /**
      * Reports the location of a given field in the storage allocation of its
@@ -998,7 +994,7 @@ public final class Unsafe {
     @ForceInline
     public int arrayBaseOffset(Class<?> arrayClass) {
         beforeMemoryAccess();
-        return theInternalUnsafe.arrayBaseOffset(arrayClass);
+        return (int) theInternalUnsafe.arrayBaseOffset(arrayClass);
     }
 
     /** The value of {@code arrayBaseOffset(boolean[].class)}.
@@ -1006,63 +1002,63 @@ public final class Unsafe {
      * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
      */
     @Deprecated(since="23", forRemoval=true)
-    public static final int ARRAY_BOOLEAN_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_BOOLEAN_BASE_OFFSET;
+    public static final int ARRAY_BOOLEAN_BASE_OFFSET = (int) jdk.internal.misc.Unsafe.ARRAY_BOOLEAN_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(byte[].class)}.
      *
      * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
      */
     @Deprecated(since="23", forRemoval=true)
-    public static final int ARRAY_BYTE_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
+    public static final int ARRAY_BYTE_BASE_OFFSET = (int) jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(short[].class)}.
      *
      * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
      */
     @Deprecated(since="23", forRemoval=true)
-    public static final int ARRAY_SHORT_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_SHORT_BASE_OFFSET;
+    public static final int ARRAY_SHORT_BASE_OFFSET = (int) jdk.internal.misc.Unsafe.ARRAY_SHORT_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(char[].class)}.
      *
      * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
      */
     @Deprecated(since="23", forRemoval=true)
-    public static final int ARRAY_CHAR_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_CHAR_BASE_OFFSET;
+    public static final int ARRAY_CHAR_BASE_OFFSET = (int) jdk.internal.misc.Unsafe.ARRAY_CHAR_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(int[].class)}.
      *
      * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
      */
     @Deprecated(since="23", forRemoval=true)
-    public static final int ARRAY_INT_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_INT_BASE_OFFSET;
+    public static final int ARRAY_INT_BASE_OFFSET = (int) jdk.internal.misc.Unsafe.ARRAY_INT_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(long[].class)}.
      *
      * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
      */
     @Deprecated(since="23", forRemoval=true)
-    public static final int ARRAY_LONG_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_LONG_BASE_OFFSET;
+    public static final int ARRAY_LONG_BASE_OFFSET = (int) jdk.internal.misc.Unsafe.ARRAY_LONG_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(float[].class)}.
      *
      * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
      */
     @Deprecated(since="23", forRemoval=true)
-    public static final int ARRAY_FLOAT_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_FLOAT_BASE_OFFSET;
+    public static final int ARRAY_FLOAT_BASE_OFFSET = (int) jdk.internal.misc.Unsafe.ARRAY_FLOAT_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(double[].class)}.
      *
      * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
      */
     @Deprecated(since="23", forRemoval=true)
-    public static final int ARRAY_DOUBLE_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_DOUBLE_BASE_OFFSET;
+    public static final int ARRAY_DOUBLE_BASE_OFFSET = (int) jdk.internal.misc.Unsafe.ARRAY_DOUBLE_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(Object[].class)}.
      *
      * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
      */
     @Deprecated(since="23", forRemoval=true)
-    public static final int ARRAY_OBJECT_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_OBJECT_BASE_OFFSET;
+    public static final int ARRAY_OBJECT_BASE_OFFSET = (int) jdk.internal.misc.Unsafe.ARRAY_OBJECT_BASE_OFFSET;
 
     /**
      * Reports the scale factor for addressing elements in the storage
@@ -1829,7 +1825,7 @@ public final class Unsafe {
     }
 
     /**
-     * Represents the options for the depreacted method-access methods.
+     * Represents the options for the deprecated method-access methods.
      */
     private enum MemoryAccessOption {
         /**
@@ -1850,7 +1846,7 @@ public final class Unsafe {
         DENY;
 
         private static MemoryAccessOption defaultValue() {
-            return ALLOW;
+            return WARN;
         }
 
         /**
@@ -1881,14 +1877,8 @@ public final class Unsafe {
      * Holder for StackWalker that retains class references.
      */
     private static class StackWalkerHolder {
-        static final StackWalker INSTANCE;
-        static {
-            PrivilegedAction<StackWalker> pa = () ->
-                    StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-            @SuppressWarnings("removal")
-            StackWalker walker = AccessController.doPrivileged(pa);
-            INSTANCE = walker;
-        }
+        static final StackWalker INSTANCE =
+                StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
     }
 
     /**
@@ -1918,9 +1908,7 @@ public final class Unsafe {
      * Returns a string with the caller class and the location URL from the CodeSource.
      */
     private static String callerAndLocation(Class<?> callerClass) {
-        PrivilegedAction<ProtectionDomain> pa = callerClass::getProtectionDomain;
-        @SuppressWarnings("removal")
-        CodeSource cs = AccessController.doPrivileged(pa).getCodeSource();
+        CodeSource cs = callerClass.getProtectionDomain().getCodeSource();
         String who = callerClass.getName();
         if (cs != null && cs.getLocation() != null) {
             who += " (" + cs.getLocation() + ")";

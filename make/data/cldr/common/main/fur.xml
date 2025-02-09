@@ -57,6 +57,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="es" draft="contributed">spagnûl</language>
 			<language type="es_419" draft="contributed">spagnûl de Americhe Latine</language>
 			<language type="es_ES" draft="contributed">spagnûl iberic</language>
+			<language type="es_MX" draft="unconfirmed">spagnûl messican</language>
 			<language type="et" draft="contributed">eston</language>
 			<language type="eu" draft="contributed">basc</language>
 			<language type="fa" draft="contributed">persian</language>
@@ -221,7 +222,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Gujr" draft="contributed">gujarati</script>
 			<script type="Hani" draft="contributed">han</script>
 			<script type="Hans" draft="contributed">Han semplificât</script>
+			<script type="Hans" alt="stand-alone" draft="unconfirmed">han semplificât</script>
 			<script type="Hant" draft="contributed">Han tradizionâl</script>
+			<script type="Hant" alt="stand-alone" draft="unconfirmed">han tradizionâl</script>
 			<script type="Hebr" draft="contributed">ebreu</script>
 			<script type="Hrkt" draft="contributed">katakana o hiragana</script>
 			<script type="Hung" draft="contributed">vieri ongjarês</script>
@@ -346,9 +349,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CR" draft="contributed">Costa Rica</territory>
 			<territory type="CU" draft="contributed">Cuba</territory>
 			<territory type="CV" draft="contributed">Cjâf vert</territory>
+			<territory type="CW" draft="unconfirmed">Curaçao</territory>
 			<territory type="CX" draft="contributed">Isule Christmas</territory>
 			<territory type="CY" draft="contributed">Cipri</territory>
 			<territory type="CZ" draft="contributed">Republiche ceche</territory>
+			<territory type="CZ" alt="variant" draft="unconfirmed">Republiche Ceche</territory>
 			<territory type="DE" draft="contributed">Gjermanie</territory>
 			<territory type="DG" draft="contributed">Diego Garcia</territory>
 			<territory type="DJ" draft="contributed">Gibuti</territory>
@@ -374,6 +379,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FR" draft="contributed">France</territory>
 			<territory type="GA" draft="contributed">Gabon</territory>
 			<territory type="GB" draft="contributed">Ream unît</territory>
+			<territory type="GB" alt="short" draft="unconfirmed">Ream Unît</territory>
 			<territory type="GD" draft="contributed">Grenada</territory>
 			<territory type="GE" draft="contributed">Gjeorgjie</territory>
 			<territory type="GF" draft="contributed">Guiana francês</territory>
@@ -442,6 +448,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MF" draft="contributed">Sant Martin</territory>
 			<territory type="MG" draft="contributed">Madagascar</territory>
 			<territory type="MH" draft="contributed">Isulis Marshall</territory>
+			<territory type="MK" draft="unconfirmed">Macedonie dal Nord</territory>
 			<territory type="ML" draft="contributed">Mali</territory>
 			<territory type="MM" draft="contributed">Birmanie</territory>
 			<territory type="MN" draft="contributed">Mongolie</territory>
@@ -509,6 +516,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SR" draft="contributed">Suriname</territory>
 			<territory type="ST" draft="contributed">Sao Tomè e Principe</territory>
 			<territory type="SV" draft="contributed">El Salvador</territory>
+			<territory type="SX" draft="unconfirmed">Saint Marteen</territory>
 			<territory type="SY" draft="contributed">Sirie</territory>
 			<territory type="SZ" draft="contributed">Swaziland</territory>
 			<territory type="TA" draft="contributed">Tristan da Cunha</territory>
@@ -531,6 +539,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="UA" draft="contributed">Ucraine</territory>
 			<territory type="UG" draft="contributed">Uganda</territory>
 			<territory type="UM" draft="contributed">Isulis periferichis minôrs dai Stâts Unîts</territory>
+			<territory type="UN" draft="unconfirmed">Nazions Unidis</territory>
 			<territory type="US" draft="contributed">Stâts Unîts</territory>
 			<territory type="UY" draft="contributed">Uruguay</territory>
 			<territory type="UZ" draft="contributed">Uzbechistan</territory>
@@ -543,6 +552,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU" draft="contributed">Vanuatu</territory>
 			<territory type="WF" draft="contributed">Wallis e Futuna</territory>
 			<territory type="WS" draft="contributed">Samoa</territory>
+			<territory type="XA" draft="unconfirmed">Pseudoacents</territory>
+			<territory type="XK" draft="unconfirmed">Cossovo</territory>
 			<territory type="YE" draft="contributed">Yemen</territory>
 			<territory type="YT" draft="contributed">Mayotte</territory>
 			<territory type="ZA" draft="contributed">Sud Afriche</territory>
@@ -994,6 +1005,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year">
 				<displayName draft="contributed">an</displayName>
+				<relative type="-1" draft="unconfirmed">l’an passât</relative>
+				<relative type="0" draft="unconfirmed">chest an</relative>
+				<relative type="1" draft="unconfirmed">l’an che al ven</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ca di {0} an</relativeTimePattern>
 					<relativeTimePattern count="other">ca di {0} agns</relativeTimePattern>
@@ -1002,6 +1016,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="one">{0} an indaûr</relativeTimePattern>
 					<relativeTimePattern count="other">{0} agns indaûr</relativeTimePattern>
 				</relativeTime>
+			</field>
+			<field type="year-short">
+				<relative type="-1" draft="unconfirmed">l’an passât</relative>
+				<relative type="0" draft="unconfirmed">chest an</relative>
+				<relative type="1" draft="unconfirmed">l’an che al ven</relative>
+			</field>
+			<field type="year-narrow">
+				<relative type="-1" draft="unconfirmed">l’an passât</relative>
+				<relative type="0" draft="unconfirmed">chest an</relative>
+				<relative type="1" draft="unconfirmed">l’an che al ven</relative>
 			</field>
 			<field type="month">
 				<displayName draft="contributed">mês</displayName>
@@ -1016,6 +1040,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week">
 				<displayName draft="contributed">setemane</displayName>
+				<relative type="-1" draft="unconfirmed">la setemane passade</relative>
+				<relative type="0" draft="unconfirmed">chest setemane</relative>
+				<relative type="1" draft="unconfirmed">la setemane che e ven</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ca di {0} setemane</relativeTimePattern>
 					<relativeTimePattern count="other">ca di {0} setemanis</relativeTimePattern>
@@ -1024,6 +1051,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="one">{0} setemane indaûr</relativeTimePattern>
 					<relativeTimePattern count="other">{0} setemanis indaûr</relativeTimePattern>
 				</relativeTime>
+			</field>
+			<field type="week-short">
+				<relative type="-1" draft="unconfirmed">la setemane passade</relative>
+				<relative type="0" draft="unconfirmed">chest setemane</relative>
+				<relative type="1" draft="unconfirmed">la setemane che e ven</relative>
+			</field>
+			<field type="week-narrow">
+				<relative type="-1" draft="unconfirmed">la setemane passade</relative>
+				<relative type="0" draft="unconfirmed">chest setemane</relative>
+				<relative type="1" draft="unconfirmed">la setemane che e ven</relative>
 			</field>
 			<field type="day">
 				<displayName draft="contributed">dì</displayName>
@@ -1079,6 +1116,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="one">{0} secont indaûr</relativeTimePattern>
 					<relativeTimePattern count="other">{0} seconts indaûr</relativeTimePattern>
 				</relativeTime>
+			</field>
+			<field type="zone">
+				<displayName draft="unconfirmed">fûs orari</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
@@ -1236,6 +1276,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CUP">
 				<displayName draft="contributed">Peso cuban</displayName>
+				<displayName count="one" draft="unconfirmed">peso cuban</displayName>
+				<displayName count="other" draft="unconfirmed">peso cuban</displayName>
 			</currency>
 			<currency type="CZK">
 				<displayName draft="contributed">Corone de Republiche Ceche</displayName>
@@ -1310,6 +1352,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="NIO">
 				<displayName draft="contributed">Córdoba oro nicaraguan</displayName>
+				<displayName count="one" draft="unconfirmed">córdoba oro nicaraguan</displayName>
+				<displayName count="other" draft="unconfirmed">córdoba oro nicaraguan</displayName>
 			</currency>
 			<currency type="NOK">
 				<displayName draft="contributed">corone norvegjese</displayName>

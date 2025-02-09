@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,7 +24,7 @@ import java.util.ListResourceBundle;
 
 /**
  * @author Morten Jorgensen
- * @LastModified: Jan 2022
+ * @LastModified: Dec 2024
  */
 public class ErrorMessages_ja extends ListResourceBundle {
 
@@ -549,6 +549,12 @@ public class ErrorMessages_ja extends ListResourceBundle {
         "\u30C7\u30FC\u30BF\u578B''{0}''\u3092''{1}''\u306B\u5909\u63DB\u3067\u304D\u307E\u305B\u3093\u3002"},
 
         /*
+         * Note to translators:  property name "jdk.xml.enableExtensionFunctions"
+         * and value "true" should not be translated.
+         */
+        {ErrorMsg.UNSUPPORTED_EXT_FUNC_ERR,
+        "\u30BB\u30AD\u30E5\u30A2\u51E6\u7406\u6A5F\u80FD\u307E\u305F\u306F\u30D7\u30ED\u30D1\u30C6\u30A3''jdk.xml.enableExtensionFunctions''\u306B\u3088\u3063\u3066\u62E1\u5F35\u95A2\u6570\u304C\u7121\u52B9\u306B\u306A\u3063\u3066\u3044\u308B\u3068\u304D\u3001\u62E1\u5F35\u95A2\u6570''{0}''\u306E\u4F7F\u7528\u306F\u8A31\u53EF\u3055\u308C\u307E\u305B\u3093\u3002\u62E1\u5F35\u95A2\u6570\u3092\u6709\u52B9\u306B\u3059\u308B\u306B\u306F\u3001''jdk.xml.enableExtensionFunctions''\u3092''true''\u306B\u8A2D\u5B9A\u3057\u307E\u3059\u3002"},
+        /*
          * Note to translators:  "Templates" is a Java class name that should
          * not be translated.
          */
@@ -980,8 +986,6 @@ public class ErrorMessages_ja extends ListResourceBundle {
         {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
          "\u5185\u90E8XSLTC\u30A8\u30E9\u30FC: \u30C8\u30E9\u30F3\u30B9\u30EC\u30C3\u30C8\u5185\u306E\u30E1\u30BD\u30C3\u30C9\u304C\u3001Java\u4EEE\u60F3\u30DE\u30B7\u30F3\u306E\u5236\u9650(1\u30E1\u30BD\u30C3\u30C9\u306E\u9577\u3055\u306F\u6700\u592764\u30AD\u30ED\u30D0\u30A4\u30C8)\u3092\u8D85\u3048\u3066\u3044\u307E\u3059\u3002\u4E00\u822C\u7684\u306B\u3001\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u5185\u306E\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u306E\u30B5\u30A4\u30BA\u304C\u5927\u304D\u904E\u304E\u308B\u3053\u3068\u304C\u539F\u56E0\u3068\u3057\u3066\u8003\u3048\u3089\u308C\u307E\u3059\u3002\u5C0F\u3055\u3044\u30B5\u30A4\u30BA\u306E\u30C6\u30F3\u30D7\u30EC\u30FC\u30C8\u3092\u4F7F\u7528\u3057\u3066\u3001\u30B9\u30BF\u30A4\u30EB\u30B7\u30FC\u30C8\u3092\u518D\u69CB\u6210\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
         },
-
-        {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "Java\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u304C\u6709\u52B9\u5316\u3055\u308C\u3066\u3044\u308B\u5834\u5408\u3001TemplatesImpl\u306E\u30C7\u30B7\u30EA\u30A2\u30E9\u30A4\u30BA\u306E\u30B5\u30DD\u30FC\u30C8\u306F\u7121\u52B9\u5316\u3055\u308C\u307E\u3059\u3002\u3053\u308C\u306F\u3001jdk.xml.enableTemplatesImplDeserialization\u30B7\u30B9\u30C6\u30E0\u30FB\u30D7\u30ED\u30D1\u30C6\u30A3\u3092true\u306B\u8A2D\u5B9A\u3057\u3066\u30AA\u30FC\u30D0\u30FC\u30E9\u30A4\u30C9\u3067\u304D\u307E\u3059\u3002"},
 
         {ErrorMsg.XPATH_GROUP_LIMIT,
             "JAXP0801001: \u30B3\u30F3\u30D1\u30A4\u30E9\u306F\u3001''{2}''\u3067\u8A2D\u5B9A\u3055\u308C\u305F''{1}''\u5236\u9650\u3092\u8D85\u3048\u308B''{0}''\u30B0\u30EB\u30FC\u30D7\u3092\u542B\u3080XPath\u5F0F\u3092\u691C\u51FA\u3057\u307E\u3057\u305F\u3002"},

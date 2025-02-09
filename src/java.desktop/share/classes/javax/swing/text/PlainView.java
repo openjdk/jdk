@@ -27,8 +27,6 @@ package javax.swing.text;
 import java.awt.*;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.Rectangle2D;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 import javax.swing.event.*;
 import java.lang.ref.SoftReference;
@@ -839,20 +837,13 @@ public class PlainView extends View implements TabExpander {
         return isFPMethodOverridden;
     }
 
-    @SuppressWarnings("removal")
     private static boolean checkFPMethodOverridden(final Class<?> className,
                                                    final String methodName,
                                                    final FPMethodArgs methodArgs) {
 
-        return AccessController
-                .doPrivileged(new PrivilegedAction<Boolean>() {
-                    @Override
-                    public Boolean run() {
-                        return isFPMethodOverridden(methodName, className,
-                                                    methodArgs.getMethodArguments(false),
-                                                    methodArgs.getMethodArguments(true));
-                    }
-                });
+        return isFPMethodOverridden(methodName, className,
+                                    methodArgs.getMethodArguments(false),
+                                    methodArgs.getMethodArguments(true));
     }
 
     private static boolean isFPMethodOverridden(String method,

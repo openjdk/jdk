@@ -47,7 +47,6 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public class TestDriver {
     private static final String ARCHIVE_NAME = "test.jar";
     private static final String TEST_NAME = "Test";
-    private static final String POLICY_FILE = "policy";
     public static void main(String[] args)
             throws Throwable {
 
@@ -61,26 +60,14 @@ public class TestDriver {
                 ),
                 ProcessTools.createTestJavaProcessBuilder(
                         "-cp", ".",
-                        "-Djava.security.policy=file:./policy",
-                        "-Djava.security.manager",
-                        TEST_NAME, "./" + ARCHIVE_NAME
-                ),
-                ProcessTools.createTestJavaProcessBuilder(
-                        "-cp", ".",
-                        "-Djava.security.policy=file:./policy",
-                        "-Djava.security.manager",
                         TEST_NAME, "./" + ARCHIVE_NAME
                 ),
                 ProcessTools.createTestJavaProcessBuilder(
                         "-cp", "..",
-                        "-Djava.security.policy=file:../policy",
-                        "-Djava.security.manager",
                         TEST_NAME, "../" + ARCHIVE_NAME
                 ).directory(userDir.resolve("tmp").toFile()),
                 ProcessTools.createTestJavaProcessBuilder(
                         "-cp", basename,
-                        "-Djava.security.policy=file:" + basename + "/policy",
-                        "-Djava.security.manager",
                         TEST_NAME, basename + "/" + ARCHIVE_NAME
                 ).directory(userDir.resolve("..").toFile())};
         for (ProcessBuilder test : tests) {
@@ -91,11 +78,9 @@ public class TestDriver {
     private static void setup(Path userDir) throws IOException {
         Path src = Paths.get(System.getProperty("test.src"));
         Path testJar = src.resolve(ARCHIVE_NAME);
-        Path policy = src.resolve(POLICY_FILE);
         Path testClass = Paths.get(System.getProperty("test.classes"),
                                    TEST_NAME + ".class");
         Files.copy(testJar, userDir.resolve(ARCHIVE_NAME), REPLACE_EXISTING);
-        Files.copy(policy, userDir.resolve(POLICY_FILE), REPLACE_EXISTING);
         Files.copy(testClass, userDir.resolve(TEST_NAME + ".class"),
                    REPLACE_EXISTING);
         Files.createDirectories(userDir.resolve("tmp"));

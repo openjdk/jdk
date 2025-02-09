@@ -77,8 +77,10 @@ public class TestMulAddS2I {
 
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector");
-        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector", "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaers");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector", "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaers");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaers");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaers");
     }
 
     @Run(test = {"testa", "testb", "testc", "testd", "teste", "testf", "testg", "testh",
@@ -163,17 +165,26 @@ public class TestMulAddS2I {
     @Test
     @IR(applyIfCPUFeature = {"sse2", "true"},
         applyIfPlatform = {"64-bit", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false" },
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
+        applyIfAnd = {"MaxVectorSize", "16", "UseCompactObjectHeaders", "false"}, // AD file requires vector_length = 16
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false" },
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
     public static int[] testd(int[] out) {
         for (int i = 0; i < ITER-2; i+=2) {
             // Unrolled, with the same structure.
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
             out[i+1] += ((sArr1[2*i+2] * sArr2[2*i+2]) + (sArr1[2*i+3] * sArr2[2*i+3]));
+            // Hand-unrolling can mess with AlignVector and UseCompactObjectHeaders.
+            // We need all addresses 8-byte aligned.
+            //
+            // out:
+            //   adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 8*iter
+            //                = 16 (or 12 if UseCompactObjectHeaders=true)
+            // -> never aligned!
         }
         return out;
     }
@@ -181,17 +192,26 @@ public class TestMulAddS2I {
     @Test
     @IR(applyIfCPUFeature = {"sse2", "true"},
         applyIfPlatform = {"64-bit", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false" },
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
+        applyIfAnd = {"MaxVectorSize", "16", "UseCompactObjectHeaders", "false" }, // AD file requires vector_length = 16
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false" },
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
     public static int[] teste(int[] out) {
         for (int i = 0; i < ITER-2; i+=2) {
             // Unrolled, with some swaps.
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
             out[i+1] += ((sArr2[2*i+2] * sArr1[2*i+2]) + (sArr1[2*i+3] * sArr2[2*i+3])); // swap(1 2)
+            // Hand-unrolling can mess with AlignVector and UseCompactObjectHeaders.
+            // We need all addresses 8-byte aligned.
+            //
+            // out:
+            //   adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 8*iter
+            //                = 16 (or 12 if UseCompactObjectHeaders=true)
+            // -> never aligned!
         }
         return out;
     }
@@ -199,17 +219,26 @@ public class TestMulAddS2I {
     @Test
     @IR(applyIfCPUFeature = {"sse2", "true"},
         applyIfPlatform = {"64-bit", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false" },
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
+        applyIfAnd = {"MaxVectorSize", "16", "UseCompactObjectHeaders", "false" }, // AD file requires vector_length = 16
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false" },
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
     public static int[] testf(int[] out) {
         for (int i = 0; i < ITER-2; i+=2) {
             // Unrolled, with some swaps.
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
             out[i+1] += ((sArr2[2*i+2] * sArr1[2*i+2]) + (sArr2[2*i+3] * sArr1[2*i+3])); // swap(1 2), swap(3 4)
+            // Hand-unrolling can mess with AlignVector and UseCompactObjectHeaders.
+            // We need all addresses 8-byte aligned.
+            //
+            // out:
+            //   adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 8*iter
+            //                = 16 (or 12 if UseCompactObjectHeaders=true)
+            // -> never aligned!
         }
         return out;
     }
@@ -217,17 +246,26 @@ public class TestMulAddS2I {
     @Test
     @IR(applyIfCPUFeature = {"sse2", "true"},
         applyIfPlatform = {"64-bit", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false" },
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
+        applyIfAnd = {"MaxVectorSize", "16", "UseCompactObjectHeaders", "false" }, // AD file requires vector_length = 16
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false" },
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
     public static int[] testg(int[] out) {
         for (int i = 0; i < ITER-2; i+=2) {
             // Unrolled, with some swaps.
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
             out[i+1] += ((sArr1[2*i+3] * sArr2[2*i+3]) + (sArr1[2*i+2] * sArr2[2*i+2])); // swap(1 3), swap(2 4)
+            // Hand-unrolling can mess with AlignVector and UseCompactObjectHeaders.
+            // We need all addresses 8-byte aligned.
+            //
+            // out:
+            //   adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 8*iter
+            //                = 16 (or 12 if UseCompactObjectHeaders=true)
+            // -> never aligned!
         }
         return out;
     }
@@ -235,17 +273,26 @@ public class TestMulAddS2I {
     @Test
     @IR(applyIfCPUFeature = {"sse2", "true"},
         applyIfPlatform = {"64-bit", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false" },
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
+        applyIfAnd = {"MaxVectorSize", "16", "UseCompactObjectHeaders", "false" }, // AD file requires vector_length = 16
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
+        applyIfOr = { "UseCompactObjectHeaders", "false", "AlignVector", "false" },
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
     public static int[] testh(int[] out) {
         for (int i = 0; i < ITER-2; i+=2) {
             // Unrolled, with some swaps.
             out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+0]) + (sArr1[2*i+1] * sArr2[2*i+1]));
             out[i+1] += ((sArr2[2*i+3] * sArr1[2*i+3]) + (sArr2[2*i+2] * sArr1[2*i+2])); // swap(1 4), swap(2 3)
+            // Hand-unrolling can mess with AlignVector and UseCompactObjectHeaders.
+            // We need all addresses 8-byte aligned.
+            //
+            // out:
+            //   adr = base + UNSAFE.ARRAY_INT_BASE_OFFSET + 8*iter
+            //                = 16 (or 12 if UseCompactObjectHeaders=true)
+            // -> never aligned!
         }
         return out;
     }
