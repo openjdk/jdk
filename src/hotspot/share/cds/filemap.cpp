@@ -1601,7 +1601,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     // This is an unused region (e.g., a heap region when !INCLUDE_CDS_JAVA_HEAP)
     requested_base = nullptr;
   } else if (HeapShared::is_heap_region(region)) {
-    assert(HeapShared::can_write(), "sanity");
+    assert(CDSConfig::is_dumping_heap(), "sanity");
 #if INCLUDE_CDS_JAVA_HEAP
     assert(!CDSConfig::is_dumping_dynamic_archive(), "must be");
     requested_base = (char*)ArchiveHeapWriter::requested_address();
