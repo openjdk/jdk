@@ -47,7 +47,6 @@ import java.util.Objects;
 public class StringWriter extends Writer {
 
     private final StringBuffer buf;
-    private final Writer w;
 
     /**
      * Create a new string writer using the default initial string-buffer
@@ -56,7 +55,6 @@ public class StringWriter extends Writer {
     public StringWriter() {
         buf = new StringBuffer();
         lock = buf;
-        w = Writer.of(buf);
     }
 
     /**
@@ -76,18 +74,13 @@ public class StringWriter extends Writer {
         }
         buf = new StringBuffer(initialSize);
         lock = buf;
-        w = Writer.of(buf);
     }
 
     /**
      * Write a single character.
      */
     public void write(int c) {
-        try {
-            w.write(c);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        buf.append((char) c);
     }
 
     /**
@@ -103,22 +96,18 @@ public class StringWriter extends Writer {
      *          of the given array
      */
     public void write(char[] cbuf, int off, int len) {
-        try {
-            w.write(cbuf, off, len);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        Objects.checkFromIndexSize(off, len, cbuf.length);
+        if (len == 0) {
+            return;
         }
+        buf.append(cbuf, off, len);
     }
 
     /**
      * Write a string.
      */
     public void write(String str) {
-        try {
-            w.write(str);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        buf.append(str);
     }
 
     /**
@@ -134,11 +123,7 @@ public class StringWriter extends Writer {
      *          of the given string
      */
     public void write(String str, int off, int len)  {
-        try {
-            w.write(str, off, len);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        buf.append(str, off, off + len);
     }
 
     /**
@@ -168,11 +153,7 @@ public class StringWriter extends Writer {
      * @since  1.5
      */
     public StringWriter append(CharSequence csq) {
-        try {
-            w.append(csq);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        write(String.valueOf(csq));
         return this;
     }
 
@@ -211,12 +192,8 @@ public class StringWriter extends Writer {
      * @since  1.5
      */
     public StringWriter append(CharSequence csq, int start, int end) {
-        try {
-            w.append(csq, start, end);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return this;
+        if (csq == null) csq = "null";
+        return append(csq.subSequence(start, end));
     }
 
     /**
@@ -237,11 +214,7 @@ public class StringWriter extends Writer {
      * @since 1.5
      */
     public StringWriter append(char c) {
-        try {
-            w.append(c);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        write(c);
         return this;
     }
 
