@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import sun.jvm.hotspot.utilities.Observer;
 
 public class CodeCache {
   private static GrowableArray<CodeHeap> heapArray;
-  private static VirtualConstructor virtualConstructor;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -51,22 +50,6 @@ public class CodeCache {
     // Get array of CodeHeaps
     AddressField heapsField = type.getAddressField("_heaps");
     heapArray = GrowableArray.create(heapsField.getValue(), new StaticBaseConstructor<>(CodeHeap.class));
-
-    virtualConstructor = new VirtualConstructor(db);
-    // Add mappings for all possible CodeBlob subclasses
-    virtualConstructor.addMapping("BufferBlob", BufferBlob.class);
-    virtualConstructor.addMapping("nmethod", NMethod.class);
-    virtualConstructor.addMapping("RuntimeStub", RuntimeStub.class);
-    virtualConstructor.addMapping("AdapterBlob", AdapterBlob.class);
-    virtualConstructor.addMapping("MethodHandlesAdapterBlob", MethodHandlesAdapterBlob.class);
-    virtualConstructor.addMapping("VtableBlob", VtableBlob.class);
-    virtualConstructor.addMapping("UpcallStub", UpcallStub.class);
-    virtualConstructor.addMapping("SafepointBlob", SafepointBlob.class);
-    virtualConstructor.addMapping("DeoptimizationBlob", DeoptimizationBlob.class);
-    if (VM.getVM().isServerCompiler()) {
-      virtualConstructor.addMapping("ExceptionBlob", ExceptionBlob.class);
-      virtualConstructor.addMapping("UncommonTrapBlob", UncommonTrapBlob.class);
-    }
   }
 
   public boolean contains(Address p) {
@@ -92,7 +75,6 @@ public class CodeCache {
   }
 
   public CodeBlob findBlobUnsafe(Address start) {
-    CodeBlob result = null;
     CodeHeap containing_heap = null;
     for (int i = 0; i < heapArray.length(); ++i) {
       if (heapArray.at(i).contains(start)) {
@@ -104,27 +86,22 @@ public class CodeCache {
       return null;
     }
 
-    try {
-      result = (CodeBlob) virtualConstructor.instantiateWrapperFor(containing_heap.findStart(start));
-    }
-    catch (WrongTypeException wte) {
-      Address cbAddr = null;
-      try {
-        cbAddr = containing_heap.findStart(start);
-      }
-      catch (Exception findEx) {
-        findEx.printStackTrace();
-      }
+    Address cbAddr = containing_heap.findStart(start);
+    if (cbAddr == null) return null;
 
+    return createCodeBlobWrapper(cbAddr, start);
+  }
+
+  public CodeBlob createCodeBlobWrapper(Address cbAddr, Address start) {
+    Class<?> cbClass = CodeBlob.getClassFor(cbAddr);
+    if (cbClass == null) {
       String message = "Couldn't deduce type of CodeBlob ";
-      if (cbAddr != null) {
-        message = message + "@" + cbAddr + " ";
-      }
+      message = message + "@" + cbAddr + " ";
       message = message + "for PC=" + start;
 
-      throw new RuntimeException(message, wte);
+      throw new RuntimeException(message);
     }
-    if (result == null) return null;
+    CodeBlob result = (CodeBlob) VMObjectFactory.newObject(cbClass, cbAddr);
     if (Assert.ASSERTS_ENABLED) {
       // The pointer to the HeapBlock that contains this blob is outside of the blob,
       // but it shouldn't be an error to find a blob based on the pointer to the HeapBlock.
@@ -151,27 +128,6 @@ public class CodeCache {
       Assert.that(cb == null || cb.isNMethod(), "did not find an nmethod");
     }
     return (NMethod) cb;
-  }
-
-  /** Routine for instantiating appropriately-typed wrapper for a
-      CodeBlob. Used by CodeCache, Runtime1, etc. */
-  public CodeBlob createCodeBlobWrapper(Address codeBlobAddr) {
-    try {
-      return (CodeBlob) virtualConstructor.instantiateWrapperFor(codeBlobAddr);
-    }
-    catch (Exception e) {
-      String message = "Unable to deduce type of CodeBlob from address " + codeBlobAddr +
-                       " (expected type nmethod, RuntimeStub, VtableBlob, ";
-      if (VM.getVM().isClientCompiler()) {
-        message = message + " or ";
-      }
-      message = message + "SafepointBlob";
-      if (VM.getVM().isServerCompiler()) {
-        message = message + ", DeoptimizationBlob, or ExceptionBlob";
-      }
-      message = message + ")";
-      throw new RuntimeException(message);
-    }
   }
 
   public void iterate(CodeCacheVisitor visitor) {

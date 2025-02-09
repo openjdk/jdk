@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import sun.jvm.hotspot.utilities.Observer;
 public class CodeBlob extends VMObject {
   private static AddressField nameField;
   private static CIntegerField sizeField;
+  private static CIntegerField kindField;
   private static CIntegerField relocationSizeField;
   private static CIntField     headerSizeField;
   private static CIntegerField contentOffsetField;
@@ -51,6 +52,19 @@ public class CodeBlob extends VMObject {
   private static CIntegerField dataOffsetField;
   private static CIntegerField frameSizeField;
   private static AddressField  oopMapsField;
+
+  // Kinds of Codeblob
+  private static int NMethodKind;
+  private static int BufferKind;
+  private static int AdapterKind;
+  private static int VtableKind;
+  private static int MHAdapterKind;
+  private static int RuntimeStubKind;
+  private static int DeoptimizationKind;
+  private static int ExceptionKind;
+  private static int SafepointKind;
+  private static int UncommonTrapKind;
+  private static int UpcallKind;
 
   public CodeBlob(Address addr) {
     super(addr);
@@ -63,6 +77,7 @@ public class CodeBlob extends VMObject {
 
     nameField                = type.getAddressField("_name");
     sizeField                = type.getCIntegerField("_size");
+    kindField                = type.getCIntegerField("_kind");
     relocationSizeField      = type.getCIntegerField("_relocation_size");
     headerSizeField          = new CIntField(type.getCIntegerField("_header_size"), 0);
     contentOffsetField       = type.getCIntegerField("_content_offset");
@@ -76,6 +91,20 @@ public class CodeBlob extends VMObject {
       matcherInterpreterFramePointerReg =
           db.lookupIntConstant("Matcher::interpreter_frame_pointer_reg").intValue();
     }
+
+    NMethodKind        = db.lookupIntConstant("CodeBlobKind::Nmethod").intValue();
+    BufferKind         = db.lookupIntConstant("CodeBlobKind::Buffer").intValue();
+    AdapterKind        = db.lookupIntConstant("CodeBlobKind::Adapter").intValue();
+    VtableKind         = db.lookupIntConstant("CodeBlobKind::Vtable").intValue();
+    MHAdapterKind      = db.lookupIntConstant("CodeBlobKind::MH_Adapter").intValue();
+    RuntimeStubKind    = db.lookupIntConstant("CodeBlobKind::Runtime_Stub").intValue();
+    DeoptimizationKind = db.lookupIntConstant("CodeBlobKind::Deoptimization").intValue();
+    SafepointKind      = db.lookupIntConstant("CodeBlobKind::Safepoint").intValue();
+    UpcallKind         = db.lookupIntConstant("CodeBlobKind::Upcall").intValue();
+    if (VM.getVM().isServerCompiler()) {
+      ExceptionKind    = db.lookupIntConstant("CodeBlobKind::Exception").intValue();
+      UncommonTrapKind = db.lookupIntConstant("CodeBlobKind::Uncommon_Trap").intValue();
+    }
   }
 
   static {
@@ -84,6 +113,37 @@ public class CodeBlob extends VMObject {
         initialize(VM.getVM().getTypeDataBase());
       }
     });
+  }
+
+  public static Class<?> getClassFor(Address addr) {
+      CodeBlob cb = new CodeBlob(addr);
+      if (cb.isNMethod()) {
+          return NMethod.class;
+      } else if (cb.isBufferBlob()) {
+          return BufferBlob.class;
+      } else if (cb.isAdapterBlob()) {
+          return AdapterBlob.class;
+      } else if (cb.isVtableBlob()) {
+          return VtableBlob.class;
+      } else if (cb.isMHAdapterBlob()) {
+          return MethodHandlesAdapterBlob.class;
+      } else if (cb.isRuntimeStub()) {
+          return RuntimeStub.class;
+      } else if (cb.isDeoptimizationBlob()) {
+          return DeoptimizationBlob.class;
+      } else if (cb.isSafepointBlob()) {
+          return SafepointBlob.class;
+      } else if (cb.isUpcallStub()) {
+          return UpcallStub.class;
+      }
+      if (VM.getVM().isServerCompiler()) {
+        if (cb.isExceptionBlob()) {
+            return ExceptionBlob.class;
+        } else if (cb.isUncommonTrapBlob()) {
+            return UncommonTrapBlob.class;
+        }
+      }
+      return null;
   }
 
   public Address headerBegin()    { return getAddress(); }
@@ -124,6 +184,10 @@ public class CodeBlob extends VMObject {
     return CStringUtilities.getString(nameField.getValue(addr));
   }
 
+  public int getKind() {
+    return (int) kindField.getValue(addr);
+  }
+
   /** OopMap for frame; can return null if none available */
   public ImmutableOopMapSet getOopMaps() {
     Address value = oopMapsField.getValue(addr);
@@ -135,27 +199,29 @@ public class CodeBlob extends VMObject {
 
 
   // Typing
-  public boolean isBufferBlob()         { return false; }
+  public boolean isBufferBlob()         { return getKind() == BufferKind; }
 
-  public boolean isCompiled()           { return false; }
+  public boolean isNMethod()            { return getKind() == NMethodKind; }
 
-  public boolean isNMethod()            { return false; }
+  public boolean isRuntimeStub()        { return getKind() == RuntimeStubKind; }
 
-  public boolean isRuntimeStub()        { return false; }
+  public boolean isUpcallStub()         { return getKind() == UpcallKind; }
 
-  public boolean isUpcallStub()         { return false; }
+  public boolean isDeoptimizationBlob() { return getKind() == DeoptimizationKind; }
 
-  public boolean isDeoptimizationStub() { return false; }
+  public boolean isUncommonTrapBlob()   { return getKind() == UncommonTrapKind; }
 
-  public boolean isUncommonTrapStub()   { return false; }
+  public boolean isExceptionBlob()      { return getKind() == ExceptionKind; }
 
-  public boolean isExceptionStub()      { return false; }
+  public boolean isSafepointBlob()      { return getKind() == SafepointKind; }
 
-  public boolean isSafepointStub()      { return false; }
+  public boolean isAdapterBlob()        { return getKind() == AdapterKind; }
 
-  public boolean isAdapterBlob()        { return false; }
+  public boolean isMHAdapterBlob()      { return getKind() == MHAdapterKind; }
 
-  // Fine grain nmethod support: isNmethod() == isJavaMethod() || isNativeMethod() || isOSRMethod()
+  public boolean isVtableBlob()         { return getKind() == VtableKind; }
+
+  // Fine grain nmethod support: isNMethod() == isJavaMethod() || isNativeMethod() || isOSRMethod()
   public boolean isJavaMethod()         { return false; }
 
   public boolean isNativeMethod()       { return false; }

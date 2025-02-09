@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ protected:
 
 public:
 
-  virtual ~CodeBlob() {
+  ~CodeBlob() {
     assert(_oop_maps == nullptr, "Not flushed");
   }
 
@@ -163,8 +163,8 @@ public:
   bool is_upcall_stub() const                 { return _kind == CodeBlobKind::Upcall; }
 
   // Casting
-  nmethod* as_nmethod_or_null()               { return is_nmethod() ? (nmethod*) this : nullptr; }
-  nmethod* as_nmethod()                       { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
+  nmethod* as_nmethod_or_null() const         { return is_nmethod() ? (nmethod*) this : nullptr; }
+  nmethod* as_nmethod() const                 { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
   CodeBlob* as_codeblob_or_null() const       { return (CodeBlob*) this; }
   UpcallStub* as_upcall_stub() const          { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
   RuntimeStub* as_runtime_stub() const        { assert(is_runtime_stub(), "must be runtime blob"); return (RuntimeStub*) this; }
@@ -233,21 +233,15 @@ public:
   void set_name(const char* name)                { _name = name; }
 
   // Debugging
-  virtual void verify() = 0;
-  virtual void print() const;
-  virtual void print_on(outputStream* st) const;
-  virtual void print_value_on(outputStream* st) const;
+  void verify();
+  void print() const;
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
   void dump_for_addr(address addr, outputStream* st, bool verbose) const;
   void print_code_on(outputStream* st);
 
   // Print to stream, any comments associated with offset.
-  virtual void print_block_comment(outputStream* stream, address block_begin) const {
-#ifndef PRODUCT
-    ptrdiff_t offset = block_begin - code_begin();
-    assert(offset >= 0, "Expecting non-negative offset!");
-    _asm_remarks.print(uint(offset), stream);
-#endif
-  }
+  void print_block_comment(outputStream* stream, address block_begin) const;
 
 #ifndef PRODUCT
   AsmRemarks &asm_remarks() { return _asm_remarks; }
@@ -317,12 +311,6 @@ class BufferBlob: public RuntimeBlob {
   static BufferBlob* create(const char* name, CodeBuffer* cb);
 
   static void free(BufferBlob* buf);
-
-  // Verification support
-  void verify() override;
-
-  void print_on(outputStream* st) const override;
-  void print_value_on(outputStream* st) const override;
 };
 
 
@@ -397,12 +385,6 @@ class RuntimeStub: public RuntimeBlob {
   static void free(RuntimeStub* stub) { RuntimeBlob::free(stub); }
 
   address entry_point() const                    { return code_begin(); }
-
-  // Verification support
-  void verify() override;
-
-  void print_on(outputStream* st) const override;
-  void print_value_on(outputStream* st) const override;
 };
 
 
@@ -429,12 +411,6 @@ class SingletonBlob: public RuntimeBlob {
   {};
 
   address entry_point()                          { return code_begin(); }
-
-  // Verification support
-  void verify() override; // does nothing
-
-  void print_on(outputStream* st) const override;
-  void print_value_on(outputStream* st) const override;
 };
 
 
@@ -478,9 +454,6 @@ class DeoptimizationBlob: public SingletonBlob {
     int         unpack_with_reexecution_offset,
     int         frame_size
   );
-
-  // Printing
-  void print_value_on(outputStream* st) const override;
 
   address unpack() const                         { return code_begin() + _unpack_offset;           }
   address unpack_with_exception() const          { return code_begin() + _unpack_with_exception;   }
@@ -619,17 +592,13 @@ class UpcallStub: public RuntimeBlob {
 
   static void free(UpcallStub* blob);
 
-  jobject receiver() { return _receiver; }
+  jobject  receiver()          { return _receiver; }
+  ByteSize frame_data_offset() { return _frame_data_offset; }
 
   JavaFrameAnchor* jfa_for_frame(const frame& frame) const;
 
-  // GC/Verification support
+  // GC support
   void oops_do(OopClosure* f, const frame& frame);
-  void verify() override;
-
-  // Misc.
-  void print_on(outputStream* st) const override;
-  void print_value_on(outputStream* st) const override;
 };
 
 #endif // SHARE_CODE_CODEBLOB_HPP

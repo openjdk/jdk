@@ -550,6 +550,7 @@
                                                                                                                                      \
   nonstatic_field(CodeBlob,                    _name,                                         const char*)                           \
   nonstatic_field(CodeBlob,                    _size,                                         int)                                   \
+  nonstatic_field(CodeBlob,                    _kind,                                         CodeBlobKind)                          \
   nonstatic_field(CodeBlob,                    _header_size,                                  u2)                                    \
   nonstatic_field(CodeBlob,                    _relocation_size,                              int)                                   \
   nonstatic_field(CodeBlob,                    _content_offset,                               int)                                   \
@@ -1917,6 +1918,7 @@
                                                                           \
   declare_integer_type(CompLevel)                                         \
   declare_integer_type(ByteSize)                                          \
+  declare_integer_type(CodeBlobKind)                                      \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo))                       \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo*))                      \
   declare_toplevel_type(CodeBlob*)                                        \
@@ -2373,6 +2375,22 @@
   declare_constant(CompLevel_limited_profile)                             \
   declare_constant(CompLevel_full_profile)                                \
   declare_constant(CompLevel_full_optimization)                           \
+                                                                          \
+  /****************/                                                      \
+  /* CodeBlobKind */                                                      \
+  /****************/                                                      \
+                                                                          \
+  declare_constant(CodeBlobKind::Nmethod)                                 \
+  declare_constant(CodeBlobKind::Buffer)                                  \
+  declare_constant(CodeBlobKind::Adapter)                                 \
+  declare_constant(CodeBlobKind::Vtable)                                  \
+  declare_constant(CodeBlobKind::MH_Adapter)                              \
+  declare_constant(CodeBlobKind::Runtime_Stub)                            \
+  declare_constant(CodeBlobKind::Deoptimization)                          \
+  declare_constant(CodeBlobKind::Exception)                               \
+  declare_constant(CodeBlobKind::Safepoint)                               \
+  declare_constant(CodeBlobKind::Uncommon_Trap)                           \
+  declare_constant(CodeBlobKind::Upcall)                                  \
                                                                           \
   /***************/                                                       \
   /* OopMapValue */                                                       \
