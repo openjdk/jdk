@@ -168,13 +168,11 @@ public class Check {
         boolean enforceMandatoryWarnings = true;
 
         deprecationHandler = new MandatoryWarningHandler(log, null, verboseDeprecated,
-                enforceMandatoryWarnings, "deprecated", LintCategory.DEPRECATION);
+                enforceMandatoryWarnings, LintCategory.DEPRECATION, "deprecated");
         removalHandler = new MandatoryWarningHandler(log, null, verboseRemoval,
-                enforceMandatoryWarnings, "removal", LintCategory.REMOVAL);
+                enforceMandatoryWarnings, LintCategory.REMOVAL);
         uncheckedHandler = new MandatoryWarningHandler(log, null, verboseUnchecked,
-                enforceMandatoryWarnings, "unchecked", LintCategory.UNCHECKED);
-        sunApiHandler = new MandatoryWarningHandler(log, null, false,
-                enforceMandatoryWarnings, "sunapi", null);
+                enforceMandatoryWarnings, LintCategory.UNCHECKED);
 
         deferredLintHandler = DeferredLintHandler.instance(context);
 
@@ -203,10 +201,6 @@ public class Check {
     /** A handler for messages about unchecked or unsafe usage.
      */
     private MandatoryWarningHandler uncheckedHandler;
-
-    /** A handler for messages about using proprietary API.
-     */
-    private MandatoryWarningHandler sunApiHandler;
 
     /** A handler for deferred lint warnings.
      */
@@ -304,7 +298,6 @@ public class Check {
         deprecationHandler.reportDeferredDiagnostic();
         removalHandler.reportDeferredDiagnostic();
         uncheckedHandler.reportDeferredDiagnostic();
-        sunApiHandler.reportDeferredDiagnostic();
     }
 
 
@@ -480,7 +473,6 @@ public class Check {
         deprecationHandler.clear();
         removalHandler.clear();
         uncheckedHandler.clear();
-        sunApiHandler.clear();
     }
 
     public void putCompiled(ClassSymbol csym) {

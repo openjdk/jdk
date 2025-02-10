@@ -77,7 +77,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     }
 
     /**
-     * Gets the address of the pointer to the native failed speculations list.
+     * Gets the address of the pointer to the native failed speculations list.  This always returns a non-zero address.
      *
      * @see #managesFailedSpeculations()
      */
@@ -85,8 +85,9 @@ public class HotSpotSpeculationLog implements SpeculationLog {
         if (managesFailedSpeculations) {
             synchronized (this) {
                 if (failedSpeculationsAddress == 0L) {
-                    failedSpeculationsAddress = UnsafeAccess.UNSAFE.allocateMemory(HotSpotJVMCIRuntime.getHostWordKind().getByteCount());
-                    UnsafeAccess.UNSAFE.putAddress(failedSpeculationsAddress, 0L);
+                    long address = UnsafeAccess.UNSAFE.allocateMemory(HotSpotJVMCIRuntime.getHostWordKind().getByteCount());
+                    UnsafeAccess.UNSAFE.putAddress(address, 0L);
+                    failedSpeculationsAddress = address;
                     LogCleaner c = new LogCleaner(this, failedSpeculationsAddress);
                     assert c.address == failedSpeculationsAddress;
                 }
@@ -171,8 +172,16 @@ public class HotSpotSpeculationLog implements SpeculationLog {
 
     @Override
     public void collectFailedSpeculations() {
-        if (failedSpeculationsAddress != 0 && UnsafeAccess.UNSAFE.getLong(failedSpeculationsAddress) != 0) {
-            failedSpeculations = compilerToVM().getFailedSpeculations(failedSpeculationsAddress, failedSpeculations);
+        if (failedSpeculationsAddress == 0) {
+            // If no memory has been allocated then don't force its creation
+            return;
+        }
+
+        // Go through getFailedSpeculationsAddress() to ensure that any concurrent
+        // initialization of failedSpeculationsAddress is seen by this thread.
+        long address = getFailedSpeculationsAddress();
+        if (UnsafeAccess.UNSAFE.getLong(address) != 0) {
+            failedSpeculations = compilerToVM().getFailedSpeculations(address, failedSpeculations);
             assert failedSpeculations.getClass() == byte[][].class;
         }
     }
