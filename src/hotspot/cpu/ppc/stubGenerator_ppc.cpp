@@ -599,7 +599,7 @@ address generate_ghash_processBlocks() {
   VectorRegister vState = VR16;
   VectorRegister vPerm = VR17;
   VectorRegister vConstC2 = VR19;
-  Label L_end, L_aligned, L_error;
+  Label L_end, L_aligned, L_error, L_trigger_assert, L_skip_assert;
 
   __ li(temp1, 0xc2);
   __ sldi(temp1, temp1, 56);
@@ -622,9 +622,13 @@ address generate_ghash_processBlocks() {
   __ vsldoi(vLowerH, vZero, vTmp11, 8);         // H.L
   __ vsldoi(vHigherH, vTmp11, vZero, 8);        // H.H
   #ifdef ASSERT
-    __ cmpwi(CR0, blocks, 0);
-    __ beq(CR0, L_error);
+      __ cmpwi(CR0, blocks, 0);                 // Compare 'blocks' (R6_ARG4) with zero
+      __ beq(CR0, L_trigger_assert);
+      __ b(L_skip_assert);                      // Skip assertion if 'blocks' is nonzero
+      __ bind(L_trigger_assert);
+      __ asm_assert_eq("blocks should NOT be zero");
   #endif
+  __ bind(L_skip_assert);
   __ clrldi(blocks, blocks, 32);
   __ mtctr(blocks);
   __ li(temp1, 0);
@@ -652,13 +656,37 @@ address generate_ghash_processBlocks() {
   // "Intel® Carry-Less Multiplication Instruction and its Usage for Computing the GCM Mode"
   // https://web.archive.org/web/20110609115824/https://software.intel.com/file/24918
   //
-  Label loop;
-  __ bind(loop);
+  //__ stop("ghash loop");
+  Label L_aligned_loop, L_store, L_unaligned_loop;
+  __ andi(temp1, data, 15);
+  __ cmpwi(CR0, temp1, 0);
+  __ beq(CR0, L_aligned_loop);
+  __ b(L_unaligned_loop);
+  __ bind(L_aligned_loop);
     __ vspltisb(vZero, 0);
     __ li(temp1, 0);
-    __ andi(temp1, data, 15);
-    __ cmpwi(CR0, temp1, 0);
-    __ beq(CR0, L_aligned);                    // Check if address is aligned (mask lower 4 bits)
+    __ lvx(vH, temp1, data);
+    __ vec_perm(vH, vH, vH, loadOrder);
+    __ vxor(vH, vH, vState);
+    __ vpmsumd(vTmp4, vLowerH, vH);             // L : Lower Half of subkey H
+    __ vpmsumd(vTmp5, vTmp11, vH);              // M : Combined halves of subkey H
+    __ vpmsumd(vTmp6, vHigherH, vH);            // H :  Higher Half of subkeyH
+    __ vpmsumd(vTmp7, vTmp4, vConstC2);         // reduction
+    __ vsldoi(vTmp8, vTmp5, vZero, 8);          // mL : Extract the lower 64 bits of M
+    __ vsldoi(vTmp9, vZero, vTmp5, 8);          // mH : Extract the higher 64 bits of M
+    __ vxor(vTmp4, vTmp4, vTmp8);               // LL + LL : Combine L and mL (partial result for lower half)
+    __ vxor(vTmp6, vTmp6, vTmp9);               // HH + HH : Combine H and mH (partial result for upper half)
+    __ vsldoi(vTmp4, vTmp4, vTmp4, 8);          // swap
+    __ vxor(vTmp4, vTmp4, vTmp7);               // reduction using  the reduction constant
+    __ vsldoi(vTmp10, vTmp4, vTmp4, 8);         // swap
+    __ vpmsumd(vTmp4, vTmp4, vConstC2);         // reduction using the reduction constant
+    __ vxor(vTmp10, vTmp10, vTmp6);             // Combine the reduced Low and High products
+    __ vxor(vState, vTmp4, vTmp10);
+    __ addi(data, data, 16);
+    __ bdnz(L_aligned_loop);
+  __ b(L_store);
+  __ bind(L_unaligned_loop);
+    __ vspltisb(vZero, 0);
     __ li(temp1, 0);
     __ lvx(vHigh, temp1, data);
     __ lvsl(vPerm, temp1, data);
@@ -668,12 +696,6 @@ address generate_ghash_processBlocks() {
     __ vec_perm(vLow, vLow, vLow, loadOrder);
     __ vec_perm(vH, vLow, vHigh, vPerm);
     __ subi(data, data, 16);
-    __ b(L_end);
-    __ bind(L_aligned);
-    __ li(temp1, 0);
-    __ lvx(vH, temp1, data);
-    __ vec_perm(vH, vH, vH, loadOrder);
-    __ bind(L_end);
     __ vxor(vH, vH, vState);
     // Perform GCM multiplication
     __ vpmsumd(vTmp4, vLowerH, vH);             // L : Lower Half of subkey H
@@ -690,15 +712,11 @@ address generate_ghash_processBlocks() {
     __ vpmsumd(vTmp4, vTmp4, vConstC2);         // reduction using the reduction constant
     __ vxor(vTmp10, vTmp10, vTmp6);             // Combine the reduced Low and High products
     __ vxor(vZero, vTmp4, vTmp10);
-    __ vmr(vState, vZero);
     __ addi(data, data, 16);
-    __ bdnz(loop);
-  __ stxvd2x(vZero->to_vsr(), state);
+    __ bdnz(L_unaligned_loop);
+  __ bind(L_store);
+  __ stxvd2x(vState->to_vsr(), state);
   __ blr();
-  #ifdef ASSERT
-    __ bind(L_error);
-    __ stop("ghash_processBlocks : number of blocks must be positive");
-  #endif
   return start;
 }
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
@@ -5083,6 +5101,7 @@ void generate_lookup_secondary_supers_table_stub() {
       StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
       StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
     }
+
     if (UseGHASHIntrinsics) {
       StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
