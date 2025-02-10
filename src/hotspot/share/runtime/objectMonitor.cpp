@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -58,6 +57,7 @@
 #include "services/threadService.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/dtrace.hpp"
+#include "utilities/globalCounter.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
@@ -440,7 +440,7 @@ bool ObjectMonitor::spin_enter(JavaThread* current) {
   // we forgo posting JVMTI events and firing DTRACE probes.
   if (TrySpin(current)) {
     assert(has_owner(current), "must be current: owner=" INT64_FORMAT, owner_raw());
-    assert(_recursions == 0, "must be 0: recursions=" INTX_FORMAT, _recursions);
+    assert(_recursions == 0, "must be 0: recursions=%zd", _recursions);
     assert_mark_word_consistency();
     return true;
   }
@@ -473,6 +473,21 @@ bool ObjectMonitor::enter(JavaThread* current) {
   return true;
 }
 
+void ObjectMonitor::notify_contended_enter(JavaThread *current) {
+  current->set_current_pending_monitor(this);
+
+  DTRACE_MONITOR_PROBE(contended__enter, this, object(), current);
+  if (JvmtiExport::should_post_monitor_contended_enter()) {
+    JvmtiExport::post_monitor_contended_enter(current, this);
+
+    // The current thread does not yet own the monitor and does not
+    // yet appear on any queues that would get it made the successor.
+    // This means that the JVMTI_EVENT_MONITOR_CONTENDED_ENTER event
+    // handler cannot accidentally consume an unpark() meant for the
+    // ParkEvent associated with this ObjectMonitor.
+  }
+}
+
 void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonitorContentionMark &cm) {
   assert(current == JavaThread::current(), "must be");
   assert(!has_owner(current), "must be");
@@ -492,47 +507,41 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
 
   freeze_result result;
 
-  { // Change java thread status to indicate blocked on monitor enter.
+  assert(current->current_pending_monitor() == nullptr, "invariant");
+
+  ContinuationEntry* ce = current->last_continuation();
+  bool is_virtual = ce != nullptr && ce->is_virtual_thread();
+  if (is_virtual) {
+    notify_contended_enter(current);
+    result = Continuation::try_preempt(current, ce->cont_oop(current));
+    if (result == freeze_ok) {
+      bool acquired = VThreadMonitorEnter(current);
+      if (acquired) {
+        // We actually acquired the monitor while trying to add the vthread to the
+        // _cxq so cancel preemption. We will still go through the preempt stub
+        // but instead of unmounting we will call thaw to continue execution.
+        current->set_preemption_cancelled(true);
+        if (JvmtiExport::should_post_monitor_contended_entered()) {
+          // We are going to call thaw again after this and finish the VMTS
+          // transition so no need to do it here. We will post the event there.
+          current->set_contended_entered_monitor(this);
+        }
+      }
+      current->set_current_pending_monitor(nullptr);
+      DEBUG_ONLY(int state = java_lang_VirtualThread::state(current->vthread()));
+      assert((acquired && current->preemption_cancelled() && state == java_lang_VirtualThread::RUNNING) ||
+             (!acquired && !current->preemption_cancelled() && state == java_lang_VirtualThread::BLOCKING), "invariant");
+      return;
+    }
+  }
+
+  {
+    // Change java thread status to indicate blocked on monitor enter.
     JavaThreadBlockedOnMonitorEnterState jtbmes(current, this);
 
-    assert(current->current_pending_monitor() == nullptr, "invariant");
-    current->set_current_pending_monitor(this);
-
-    DTRACE_MONITOR_PROBE(contended__enter, this, object(), current);
-    if (JvmtiExport::should_post_monitor_contended_enter()) {
-      JvmtiExport::post_monitor_contended_enter(current, this);
-
-      // The current thread does not yet own the monitor and does not
-      // yet appear on any queues that would get it made the successor.
-      // This means that the JVMTI_EVENT_MONITOR_CONTENDED_ENTER event
-      // handler cannot accidentally consume an unpark() meant for the
-      // ParkEvent associated with this ObjectMonitor.
+    if (!is_virtual) { // already notified contended_enter for virtual
+      notify_contended_enter(current);
     }
-
-    ContinuationEntry* ce = current->last_continuation();
-    if (ce != nullptr && ce->is_virtual_thread()) {
-      result = Continuation::try_preempt(current, ce->cont_oop(current));
-      if (result == freeze_ok) {
-        bool acquired = VThreadMonitorEnter(current);
-        if (acquired) {
-          // We actually acquired the monitor while trying to add the vthread to the
-          // _cxq so cancel preemption. We will still go through the preempt stub
-          // but instead of unmounting we will call thaw to continue execution.
-          current->set_preemption_cancelled(true);
-          if (JvmtiExport::should_post_monitor_contended_entered()) {
-            // We are going to call thaw again after this and finish the VMTS
-            // transition so no need to do it here. We will post the event there.
-            current->set_contended_entered_monitor(this);
-          }
-        }
-        current->set_current_pending_monitor(nullptr);
-        DEBUG_ONLY(int state = java_lang_VirtualThread::state(current->vthread()));
-        assert((acquired && current->preemption_cancelled() && state == java_lang_VirtualThread::RUNNING) ||
-               (!acquired && !current->preemption_cancelled() && state == java_lang_VirtualThread::BLOCKING), "invariant");
-        return;
-      }
-    }
-
     OSThreadContendState osts(current->osthread());
 
     assert(current->thread_state() == _thread_in_vm, "invariant");
@@ -597,10 +606,11 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
     enter_event.commit();
   }
 
-  ContinuationEntry* ce = current->last_continuation();
-  if (ce != nullptr && ce->is_virtual_thread()) {
-    assert(result != freeze_ok, "sanity check");
-    current->post_vthread_pinned_event(&vthread_pinned_event, "Contended monitor enter", result);
+  if (current->current_waiting_monitor() == nullptr) {
+    ContinuationEntry* ce = current->last_continuation();
+    if (ce != nullptr && ce->is_virtual_thread()) {
+      current->post_vthread_pinned_event(&vthread_pinned_event, "Contended monitor enter", result);
+    }
   }
 
   OM_PERFDATA_OP(ContendedLockAttempts, inc());
@@ -935,9 +945,9 @@ void ObjectMonitor::EnterI(JavaThread* current) {
     // Note that the counter is not protected by a lock or updated by atomics.
     // That is by design - we trade "lossy" counters which are exposed to
     // races during updates for a lower probe effect.
-    // This PerfData object can be used in parallel with a safepoint.
-    // See the work around in PerfDataManager::destroy().
-    OM_PERFDATA_OP(FutileWakeups, inc());
+    // We are in safepoint safe state, so shutdown can remove the counter
+    // under our feet. Make sure we make this access safely.
+    OM_PERFDATA_SAFE_OP(FutileWakeups, inc());
 
     // Assuming this is not a spurious wakeup we'll normally find _succ == current.
     // We can defer clearing _succ until after the spin completes
@@ -1064,8 +1074,6 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
     // Note that the counter is not protected by a lock or updated by atomics.
     // That is by design - we trade "lossy" counters which are exposed to
     // races during updates for a lower probe effect.
-    // This PerfData object can be used in parallel with a safepoint.
-    // See the work around in PerfDataManager::destroy().
     OM_PERFDATA_OP(FutileWakeups, inc());
   }
 
@@ -1658,6 +1666,11 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
   // check for a pending interrupt
   if (interruptible && current->is_interrupted(true) && !HAS_PENDING_EXCEPTION) {
+    JavaThreadInObjectWaitState jtiows(current, millis != 0, interruptible);
+
+    if (JvmtiExport::should_post_monitor_wait()) {
+      JvmtiExport::post_monitor_wait(current, object(), millis);
+    }
     // post monitor waited event.  Note that this is past-tense, we are done waiting.
     if (JvmtiExport::should_post_monitor_waited()) {
       // Note: 'false' parameter is passed here because the
@@ -1679,11 +1692,14 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     return;
   }
 
-  current->set_current_waiting_monitor(this);
-
   freeze_result result;
   ContinuationEntry* ce = current->last_continuation();
-  if (ce != nullptr && ce->is_virtual_thread()) {
+  bool is_virtual = ce != nullptr && ce->is_virtual_thread();
+  if (is_virtual) {
+    if (interruptible && JvmtiExport::should_post_monitor_wait()) {
+      JvmtiExport::post_monitor_wait(current, object(), millis);
+    }
+    current->set_current_waiting_monitor(this);
     result = Continuation::try_preempt(current, ce->cont_oop(current));
     if (result == freeze_ok) {
       VThreadWait(current, millis);
@@ -1691,7 +1707,21 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       return;
     }
   }
+  // The jtiows does nothing for non-interruptible.
+  JavaThreadInObjectWaitState jtiows(current, millis != 0, interruptible);
 
+  if (!is_virtual) { // it was already set for virtual thread
+    if (interruptible && JvmtiExport::should_post_monitor_wait()) {
+      JvmtiExport::post_monitor_wait(current, object(), millis);
+
+      // The current thread already owns the monitor and it has not yet
+      // been added to the wait queue so the current thread cannot be
+      // made the successor. This means that the JVMTI_EVENT_MONITOR_WAIT
+      // event handler cannot accidentally consume an unpark() meant for
+      // the ParkEvent associated with this ObjectMonitor.
+    }
+    current->set_current_waiting_monitor(this);
+  }
   // create a node to be put into the queue
   // Critically, after we reset() the event but prior to park(), we must check
   // for a pending interrupt.
@@ -1819,11 +1849,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       post_monitor_wait_event(&wait_event, this, node._notifier_tid, millis, ret == OS_TIMEOUT);
     }
 
-    if (ce != nullptr && ce->is_virtual_thread()) {
-      assert(result != freeze_ok, "sanity check");
-      current->post_vthread_pinned_event(&vthread_pinned_event, "Object.wait", result);
-    }
-
     OrderAccess::fence();
 
     assert(!has_owner(current), "invariant");
@@ -1862,6 +1887,10 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   assert(has_owner(current), "invariant");
   assert(!has_successor(current), "invariant");
   assert_mark_word_consistency();
+
+  if (ce != nullptr && ce->is_virtual_thread()) {
+    current->post_vthread_pinned_event(&vthread_pinned_event, "Object.wait", result);
+  }
 
   // check if the notification happened
   if (!WasNotified) {
@@ -2497,7 +2526,7 @@ void ObjectMonitor::Initialize2() {
 void ObjectMonitor::print_on(outputStream* st) const {
   // The minimal things to print for markWord printing, more can be added for debugging and logging.
   st->print("{contentions=0x%08x,waiters=0x%08x"
-            ",recursions=" INTX_FORMAT ",owner=" INT64_FORMAT "}",
+            ",recursions=%zd,owner=" INT64_FORMAT "}",
             contentions(), waiters(), recursions(),
             owner());
 }
@@ -2550,7 +2579,7 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("    [%d] = '\\0'", (int)sizeof(_pad_buf1) - 1);
   st->print_cr("  }");
   st->print_cr("  _next_om = " INTPTR_FORMAT, p2i(next_om()));
-  st->print_cr("  _recursions = " INTX_FORMAT, _recursions);
+  st->print_cr("  _recursions = %zd", _recursions);
   st->print_cr("  _EntryList = " INTPTR_FORMAT, p2i(_EntryList));
   st->print_cr("  _cxq = " INTPTR_FORMAT, p2i(_cxq));
   st->print_cr("  _succ = " INT64_FORMAT, successor());

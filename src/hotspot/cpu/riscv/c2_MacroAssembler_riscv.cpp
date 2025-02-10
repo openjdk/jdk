@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
@@ -211,16 +210,14 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
 
   // Handle existing monitor.
   bind(object_has_monitor);
-  STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
-  add(tmp, tmp, -(int)markWord::monitor_value); // monitor
-
+  subi(tmp, tmp, (int)markWord::monitor_value); // monitor
   ld(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
 
   Label notRecursive;
   beqz(disp_hdr, notRecursive); // Will be 0 if not recursive.
 
   // Recursive lock
-  addi(disp_hdr, disp_hdr, -1);
+  subi(disp_hdr, disp_hdr, 1);
   sd(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
   j(unlocked);
 
@@ -537,7 +534,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
     if (!UseObjectMonitorTable) {
       assert(tmp1_monitor == tmp1_mark, "should be the same here");
       // Untag the monitor.
-      add(tmp1_monitor, tmp1_mark, -(int)markWord::monitor_value);
+      subi(tmp1_monitor, tmp1_mark, (int)markWord::monitor_value);
     } else {
       ld(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
       // No valid pointer below alignof(ObjectMonitor*). Take the slow path.
@@ -553,7 +550,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
     beqz(tmp2_recursions, not_recursive);
 
     // Recursive unlock.
-    addi(tmp2_recursions, tmp2_recursions, -1);
+    subi(tmp2_recursions, tmp2_recursions, 1);
     sd(tmp2_recursions, Address(tmp1_monitor, ObjectMonitor::recursions_offset()));
     j(unlocked);
 
@@ -732,7 +729,7 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   BLOCK_COMMENT("string_indexof_char {");
   beqz(cnt1, NOMATCH);
 
-  addi(t0, cnt1, isL ? -32 : -16);
+  subi(t0, cnt1, isL ? 32 : 16);
   bgtz(t0, DO_LONG);
   string_indexof_char_short(str1, cnt1, ch, result, isL);
   j(DONE);
@@ -780,14 +777,15 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   bind(CH1_LOOP);
   ld(ch1, Address(str1));
   addi(str1, str1, 8);
-  addi(cnt1, cnt1, -8);
+  subi(cnt1, cnt1, 8);
   compute_match_mask(ch1, ch, match_mask, mask1, mask2);
   bnez(match_mask, HIT);
   bgtz(cnt1, CH1_LOOP);
   j(NOMATCH);
 
   bind(HIT);
-  ctzc_bit(trailing_char, match_mask, isL, ch1, result);
+  // count bits of trailing zero chars
+  ctzc_bits(trailing_char, match_mask, isL, ch1, result);
   srli(trailing_char, trailing_char, 3);
   addi(cnt1, cnt1, 8);
   ble(cnt1, trailing_char, NOMATCH);
@@ -956,7 +954,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   const int ASIZE = 256;
   const int STORE_BYTES = 8; // 8 bytes stored per instruction(sd)
 
-  sub(sp, sp, ASIZE);
+  subi(sp, sp, ASIZE);
 
   // init BC offset table with default value: needle_len
   slli(t0, needle_len, 8);
@@ -975,16 +973,16 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   for (int i = 0; i < 4; i++) {
     sd(tmp5, Address(ch1, i * wordSize));
   }
-  add(ch1, ch1, 32);
-  sub(tmp6, tmp6, 4);
+  addi(ch1, ch1, 32);
+  subi(tmp6, tmp6, 4);
   bgtz(tmp6, BM_INIT_LOOP);
 
-  sub(nlen_tmp, needle_len, 1); // m - 1, index of the last element in pattern
+  subi(nlen_tmp, needle_len, 1); // m - 1, index of the last element in pattern
   Register orig_haystack = tmp5;
   mv(orig_haystack, haystack);
   // result_tmp = tmp4
   shadd(haystack_end, result_tmp, haystack, haystack_end, haystack_chr_shift);
-  sub(ch2, needle_len, 1); // bc offset init value, ch2 is t1
+  subi(ch2, needle_len, 1); // bc offset init value, ch2 is t1
   mv(tmp3, needle);
 
   //  for (i = 0; i < m - 1; ) {
@@ -999,7 +997,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   //  }
   bind(BCLOOP);
   (this->*needle_load_1chr)(ch1, Address(tmp3), noreg);
-  add(tmp3, tmp3, needle_chr_size);
+  addi(tmp3, tmp3, needle_chr_size);
   if (!needle_isL) {
     // ae == StrIntrinsicNode::UU
     mv(tmp6, ASIZE);
@@ -1009,7 +1007,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   sb(ch2, Address(tmp4)); // store skip offset to BC offset table
 
   bind(BCSKIP);
-  sub(ch2, ch2, 1); // for next pattern element, skip distance -1
+  subi(ch2, ch2, 1); // for next pattern element, skip distance -1
   bgtz(ch2, BCLOOP);
 
   // tmp6: pattern end, address after needle
@@ -1027,7 +1025,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
     srli(ch2, ch2, XLEN - 8); // pattern[m-2], 0x0000000b
     slli(ch1, tmp6, XLEN - 16);
     srli(ch1, ch1, XLEN - 8); // pattern[m-3], 0x0000000c
-    andi(tmp6, tmp6, 0xff); // pattern[m-4], 0x0000000d
+    zext(tmp6, tmp6, 8); // pattern[m-4], 0x0000000d
     slli(ch2, ch2, 16);
     orr(ch2, ch2, ch1); // 0x00000b0c
     slli(result, tmp3, 48); // use result as temp register
@@ -1046,7 +1044,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   // compare pattern to source string backward
   shadd(result, nlen_tmp, haystack, result, haystack_chr_shift);
   (this->*haystack_load_1chr)(skipch, Address(result), noreg);
-  sub(nlen_tmp, nlen_tmp, firstStep); // nlen_tmp is positive here, because needle_len >= 8
+  subi(nlen_tmp, nlen_tmp, firstStep); // nlen_tmp is positive here, because needle_len >= 8
   if (needle_isL == haystack_isL) {
     // re-init tmp3. It's for free because it's executed in parallel with
     // load above. Alternative is to initialize it before loop, but it'll
@@ -1065,7 +1063,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   if (isLL) {
     j(BMLOOPSTR1_AFTER_LOAD);
   } else {
-    sub(nlen_tmp, nlen_tmp, 1); // no need to branch for UU/UL case. cnt1 >= 8
+    subi(nlen_tmp, nlen_tmp, 1); // no need to branch for UU/UL case. cnt1 >= 8
     j(BMLOOPSTR1_CMP);
   }
 
@@ -1076,7 +1074,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
 
   bind(BMLOOPSTR1_AFTER_LOAD);
-  sub(nlen_tmp, nlen_tmp, 1);
+  subi(nlen_tmp, nlen_tmp, 1);
   bltz(nlen_tmp, BMLOOPSTR1_LASTCMP);
 
   bind(BMLOOPSTR1_CMP);
@@ -1098,11 +1096,11 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   lbu(result_tmp, Address(result_tmp)); // load skip offset
 
   bind(BMADV);
-  sub(nlen_tmp, needle_len, 1);
+  subi(nlen_tmp, needle_len, 1);
   // move haystack after bad char skip offset
   shadd(haystack, result_tmp, haystack, result, haystack_chr_shift);
   ble(haystack, haystack_end, BMLOOPSTR2);
-  add(sp, sp, ASIZE);
+  addi(sp, sp, ASIZE);
   j(NOMATCH);
 
   bind(BMLOOPSTR1_LASTCMP);
@@ -1113,11 +1111,11 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   if (!haystack_isL) {
     srli(result, result, 1);
   }
-  add(sp, sp, ASIZE);
+  addi(sp, sp, ASIZE);
   j(DONE);
 
   bind(LINEARSTUB);
-  sub(t0, needle_len, 16); // small patterns still should be handled by simple algorithm
+  subi(t0, needle_len, 16); // small patterns still should be handled by simple algorithm
   bltz(t0, LINEARSEARCH);
   mv(result, zr);
   RuntimeAddress stub = nullptr;
@@ -1196,7 +1194,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
   if (needle_con_cnt == -1) {
     Label DOSHORT, FIRST_LOOP, STR2_NEXT, STR1_LOOP, STR1_NEXT;
 
-    sub(t0, needle_len, needle_isL == haystack_isL ? 4 : 2);
+    subi(t0, needle_len, needle_isL == haystack_isL ? 4 : 2);
     bltz(t0, DOSHORT);
 
     (this->*needle_load_1chr)(first, Address(needle), noreg);
@@ -1213,13 +1211,13 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     beq(first, ch2, STR1_LOOP);
 
     bind(STR2_NEXT);
-    add(hlen_neg, hlen_neg, haystack_chr_size);
+    addi(hlen_neg, hlen_neg, haystack_chr_size);
     blez(hlen_neg, FIRST_LOOP);
     j(NOMATCH);
 
     bind(STR1_LOOP);
-    add(nlen_tmp, nlen_neg, needle_chr_size);
-    add(hlen_tmp, hlen_neg, haystack_chr_size);
+    addi(nlen_tmp, nlen_neg, needle_chr_size);
+    addi(hlen_tmp, hlen_neg, haystack_chr_size);
     bgez(nlen_tmp, MATCH);
 
     bind(STR1_NEXT);
@@ -1228,14 +1226,14 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     add(ch2, haystack, hlen_tmp);
     (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
     bne(ch1, ch2, STR2_NEXT);
-    add(nlen_tmp, nlen_tmp, needle_chr_size);
-    add(hlen_tmp, hlen_tmp, haystack_chr_size);
+    addi(nlen_tmp, nlen_tmp, needle_chr_size);
+    addi(hlen_tmp, hlen_tmp, haystack_chr_size);
     bltz(nlen_tmp, STR1_NEXT);
     j(MATCH);
 
     bind(DOSHORT);
     if (needle_isL == haystack_isL) {
-      sub(t0, needle_len, 2);
+      subi(t0, needle_len, 2);
       bltz(t0, DO1);
       bgtz(t0, DO3);
     }
@@ -1244,7 +1242,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
   if (needle_con_cnt == 4) {
     Label CH1_LOOP;
     (this->*load_4chr)(ch1, Address(needle), noreg);
-    sub(result_tmp, haystack_len, 4);
+    subi(result_tmp, haystack_len, 4);
     slli(tmp3, result_tmp, haystack_chr_shift); // result as tmp
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
@@ -1273,7 +1271,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
       (this->*load_4chr)(ch2, Address(tmp3), noreg);
     }
     beq(ch1, ch2, MATCH);
-    add(hlen_neg, hlen_neg, haystack_chr_size);
+    addi(hlen_neg, hlen_neg, haystack_chr_size);
     blez(hlen_neg, CH1_LOOP);
     j(NOMATCH);
   }
@@ -1284,7 +1282,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     bind(DO2);
     (this->*load_2chr)(ch1, Address(needle), noreg);
     if (needle_con_cnt == 2) {
-      sub(result_tmp, haystack_len, 2);
+      subi(result_tmp, haystack_len, 2);
     }
     slli(tmp3, result_tmp, haystack_chr_shift);
     add(haystack, haystack, tmp3);
@@ -1307,7 +1305,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
       (this->*load_2chr)(ch2, Address(tmp3), noreg);
     }
     beq(ch1, ch2, MATCH);
-    add(hlen_neg, hlen_neg, haystack_chr_size);
+    addi(hlen_neg, hlen_neg, haystack_chr_size);
     blez(hlen_neg, CH1_LOOP);
     j(NOMATCH);
     BLOCK_COMMENT("} string_indexof DO2");
@@ -1321,7 +1319,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     (this->*load_2chr)(first, Address(needle), noreg);
     (this->*needle_load_1chr)(ch1, Address(needle, 2 * needle_chr_size), noreg);
     if (needle_con_cnt == 3) {
-      sub(result_tmp, haystack_len, 3);
+      subi(result_tmp, haystack_len, 3);
     }
     slli(hlen_tmp, result_tmp, haystack_chr_shift);
     add(haystack, haystack, hlen_tmp);
@@ -1340,12 +1338,12 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     beq(first, ch2, STR1_LOOP);
 
     bind(STR2_NEXT);
-    add(hlen_neg, hlen_neg, haystack_chr_size);
+    addi(hlen_neg, hlen_neg, haystack_chr_size);
     blez(hlen_neg, FIRST_LOOP);
     j(NOMATCH);
 
     bind(STR1_LOOP);
-    add(hlen_tmp, hlen_neg, 2 * haystack_chr_size);
+    addi(hlen_tmp, hlen_neg, 2 * haystack_chr_size);
     add(ch2, haystack, hlen_tmp);
     (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
     bne(ch1, ch2, STR2_NEXT);
@@ -1359,7 +1357,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     BLOCK_COMMENT("string_indexof DO1 {");
     bind(DO1);
     (this->*needle_load_1chr)(ch1, Address(needle), noreg);
-    sub(result_tmp, haystack_len, 1);
+    subi(result_tmp, haystack_len, 1);
     slli(tmp3, result_tmp, haystack_chr_shift);
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
@@ -1368,7 +1366,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     add(tmp3, haystack, hlen_neg);
     (this->*haystack_load_1chr)(ch2, Address(tmp3), noreg);
     beq(ch1, ch2, MATCH);
-    add(hlen_neg, hlen_neg, haystack_chr_size);
+    addi(hlen_neg, hlen_neg, haystack_chr_size);
     blez(hlen_neg, DO1_LOOP);
     BLOCK_COMMENT("} string_indexof DO1");
   }
@@ -1411,6 +1409,14 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   load_chr_insn str1_load_chr = str1_isL ? (load_chr_insn)&MacroAssembler::lbu : (load_chr_insn)&MacroAssembler::lhu;
   load_chr_insn str2_load_chr = str2_isL ? (load_chr_insn)&MacroAssembler::lbu : (load_chr_insn)&MacroAssembler::lhu;
 
+  int base_offset1 = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+  int base_offset2 = arrayOopDesc::base_offset_in_bytes(T_CHAR);
+
+  assert((base_offset1 % (UseCompactObjectHeaders ? 4 :
+                          (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+  assert((base_offset2 % (UseCompactObjectHeaders ? 4 :
+                          (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+
   BLOCK_COMMENT("string_compare {");
 
   // Bizarrely, the counts are passed in bytes, regardless of whether they
@@ -1428,6 +1434,24 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   mv(cnt2, cnt1);
   bind(L);
 
+  // Load 4 bytes once to compare for alignment before main loop. Note that this
+  // is only possible for LL/UU case. We need to resort to load_long_misaligned
+  // for both LU and UL cases.
+  if (str1_isL == str2_isL) { // LL or UU
+    beq(str1, str2, DONE);
+    int base_offset = isLL ? base_offset1 : base_offset2;
+    if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
+      mv(t0, minCharsInWord / 2);
+      ble(cnt2, t0, SHORT_STRING);
+      lwu(tmp1, Address(str1));
+      lwu(tmp2, Address(str2));
+      bne(tmp1, tmp2, DIFFERENCE);
+      addi(str1, str1, 4);
+      addi(str2, str2, 4);
+      subi(cnt2, cnt2, minCharsInWord / 2);
+    }
+  }
+
   // A very short string
   mv(t0, minCharsInWord);
   ble(cnt2, t0, SHORT_STRING);
@@ -1436,14 +1460,22 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   // load first parts of strings and finish initialization while loading
   {
     if (str1_isL == str2_isL) { // LL or UU
-      // check if str1 and str2 is same pointer
-      beq(str1, str2, DONE);
+#ifdef ASSERT
+      if (AvoidUnalignedAccesses) {
+        Label align_ok;
+        orr(t0, str1, str2);
+        andi(t0, t0, 0x7);
+        beqz(t0, align_ok);
+        stop("bad alignment");
+        bind(align_ok);
+      }
+#endif
       // load 8 bytes once to compare
       ld(tmp1, Address(str1));
       ld(tmp2, Address(str2));
       mv(t0, STUB_THRESHOLD);
       bge(cnt2, t0, STUB);
-      sub(cnt2, cnt2, minCharsInWord);
+      subi(cnt2, cnt2, minCharsInWord);
       beqz(cnt2, TAIL_CHECK);
       // convert cnt2 from characters to bytes
       if (!str1_isL) {
@@ -1454,10 +1486,10 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       sub(cnt2, zr, cnt2);
     } else if (isLU) { // LU case
       lwu(tmp1, Address(str1));
-      ld(tmp2, Address(str2));
+      load_long_misaligned(tmp2, Address(str2), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
       mv(t0, STUB_THRESHOLD);
       bge(cnt2, t0, STUB);
-      addi(cnt2, cnt2, -4);
+      subi(cnt2, cnt2, 4);
       add(str1, str1, cnt2);
       sub(cnt1, zr, cnt2);
       slli(cnt2, cnt2, 1);
@@ -1467,11 +1499,11 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       sub(cnt2, zr, cnt2);
       addi(cnt1, cnt1, 4);
     } else { // UL case
-      ld(tmp1, Address(str1));
+      load_long_misaligned(tmp1, Address(str1), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
       lwu(tmp2, Address(str2));
       mv(t0, STUB_THRESHOLD);
       bge(cnt2, t0, STUB);
-      addi(cnt2, cnt2, -4);
+      subi(cnt2, cnt2, 4);
       slli(t0, cnt2, 1);
       sub(cnt1, zr, t0);
       add(str1, str1, t0);
@@ -1488,6 +1520,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     // main loop
     bind(NEXT_WORD);
     if (str1_isL == str2_isL) { // LL or UU
+      // 8-byte aligned loads when AvoidUnalignedAccesses is enabled
       add(t0, str1, cnt2);
       ld(tmp1, Address(t0));
       add(t0, str2, cnt2);
@@ -1497,7 +1530,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       add(t0, str1, cnt1);
       lwu(tmp1, Address(t0));
       add(t0, str2, cnt2);
-      ld(tmp2, Address(t0));
+      load_long_misaligned(tmp2, Address(t0), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
       addi(cnt1, cnt1, 4);
       inflate_lo32(tmp3, tmp1);
       mv(tmp1, tmp3);
@@ -1506,7 +1539,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       add(t0, str2, cnt2);
       lwu(tmp2, Address(t0));
       add(t0, str1, cnt1);
-      ld(tmp1, Address(t0));
+      load_long_misaligned(tmp1, Address(t0), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
       inflate_lo32(tmp3, tmp2);
       mv(tmp2, tmp3);
       addi(cnt1, cnt1, 8);
@@ -1536,15 +1569,16 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     // compute their difference.
     bind(DIFFERENCE);
     xorr(tmp3, tmp1, tmp2);
-    ctzc_bit(result, tmp3, isLL); // count zero from lsb to msb
+    // count bits of trailing zero chars
+    ctzc_bits(result, tmp3, isLL);
     srl(tmp1, tmp1, result);
     srl(tmp2, tmp2, result);
     if (isLL) {
-      andi(tmp1, tmp1, 0xFF);
-      andi(tmp2, tmp2, 0xFF);
+      zext(tmp1, tmp1, 8);
+      zext(tmp2, tmp2, 8);
     } else {
-      andi(tmp1, tmp1, 0xFFFF);
-      andi(tmp2, tmp2, 0xFFFF);
+      zext(tmp1, tmp1, 16);
+      zext(tmp2, tmp2, 16);
     }
     sub(result, tmp1, tmp2);
     j(DONE);
@@ -1584,13 +1618,13 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   // while comparing previous
   (this->*str1_load_chr)(tmp1, Address(str1), t0);
   addi(str1, str1, str1_chr_size);
-  addi(cnt2, cnt2, -1);
+  subi(cnt2, cnt2, 1);
   beqz(cnt2, SHORT_LAST_INIT);
   (this->*str2_load_chr)(cnt1, Address(str2), t0);
   addi(str2, str2, str2_chr_size);
   j(SHORT_LOOP_START);
   bind(SHORT_LOOP);
-  addi(cnt2, cnt2, -1);
+  subi(cnt2, cnt2, 1);
   beqz(cnt2, SHORT_LAST);
   bind(SHORT_LOOP_START);
   (this->*str1_load_chr)(tmp2, Address(str1), t0);
@@ -1598,7 +1632,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   (this->*str2_load_chr)(t0, Address(str2), t0);
   addi(str2, str2, str2_chr_size);
   bne(tmp1, cnt1, SHORT_LOOP_TAIL);
-  addi(cnt2, cnt2, -1);
+  subi(cnt2, cnt2, 1);
   beqz(cnt2, SHORT_LAST2);
   (this->*str1_load_chr)(tmp1, Address(str1), t0);
   addi(str1, str1, str1_chr_size);
@@ -1633,10 +1667,13 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2,
   assert(elem_size == 1 || elem_size == 2, "must be char or byte");
   assert_different_registers(a1, a2, result, tmp1, tmp2, tmp3, t0);
 
-  int elem_per_word = wordSize/elem_size;
+  int elem_per_word = wordSize / elem_size;
   int log_elem_size = exact_log2(elem_size);
   int length_offset = arrayOopDesc::length_offset_in_bytes();
   int base_offset   = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
+
+  assert((base_offset % (UseCompactObjectHeaders ? 4 :
+                         (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
   Register cnt1 = tmp3;
   Register cnt2 = tmp1;  // cnt2 only used in array length compare
@@ -1661,15 +1698,38 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2,
 
   la(a1, Address(a1, base_offset));
   la(a2, Address(a2, base_offset));
+
+  // Load 4 bytes once to compare for alignment before main loop.
+  if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
+    subi(cnt1, cnt1, elem_per_word / 2);
+    bltz(cnt1, TAIL03);
+    lwu(tmp1, Address(a1));
+    lwu(tmp2, Address(a2));
+    addi(a1, a1, 4);
+    addi(a2, a2, 4);
+    bne(tmp1, tmp2, DONE);
+  }
+
   // Check for short strings, i.e. smaller than wordSize.
-  addi(cnt1, cnt1, -elem_per_word);
+  subi(cnt1, cnt1, elem_per_word);
   bltz(cnt1, SHORT);
+
+#ifdef ASSERT
+  if (AvoidUnalignedAccesses) {
+    Label align_ok;
+    orr(t0, a1, a2);
+    andi(t0, t0, 0x7);
+    beqz(t0, align_ok);
+    stop("bad alignment");
+    bind(align_ok);
+  }
+#endif
 
   // Main 8 byte comparison loop.
   bind(NEXT_WORD); {
     ld(tmp1, Address(a1));
     ld(tmp2, Address(a2));
-    addi(cnt1, cnt1, -elem_per_word);
+    subi(cnt1, cnt1, elem_per_word);
     addi(a1, a1, wordSize);
     addi(a2, a2, wordSize);
     bne(tmp1, tmp2, DONE);
@@ -1730,25 +1790,52 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2,
 void C2_MacroAssembler::string_equals(Register a1, Register a2,
                                       Register result, Register cnt1)
 {
-  Label SAME, DONE, SHORT, NEXT_WORD;
+  Label SAME, DONE, SHORT, NEXT_WORD, TAIL03, TAIL01;
   Register tmp1 = t0;
   Register tmp2 = t1;
 
   assert_different_registers(a1, a2, result, cnt1, tmp1, tmp2);
 
+  int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+
+  assert((base_offset % (UseCompactObjectHeaders ? 4 :
+                         (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+
   BLOCK_COMMENT("string_equals {");
 
   mv(result, false);
 
+  // Load 4 bytes once to compare for alignment before main loop.
+  if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
+    subi(cnt1, cnt1, 4);
+    bltz(cnt1, TAIL03);
+    lwu(tmp1, Address(a1));
+    lwu(tmp2, Address(a2));
+    addi(a1, a1, 4);
+    addi(a2, a2, 4);
+    bne(tmp1, tmp2, DONE);
+  }
+
   // Check for short strings, i.e. smaller than wordSize.
-  addi(cnt1, cnt1, -wordSize);
+  subi(cnt1, cnt1, wordSize);
   bltz(cnt1, SHORT);
+
+#ifdef ASSERT
+  if (AvoidUnalignedAccesses) {
+    Label align_ok;
+    orr(t0, a1, a2);
+    andi(t0, t0, 0x7);
+    beqz(t0, align_ok);
+    stop("bad alignment");
+    bind(align_ok);
+  }
+#endif
 
   // Main 8 byte comparison loop.
   bind(NEXT_WORD); {
     ld(tmp1, Address(a1));
     ld(tmp2, Address(a2));
-    addi(cnt1, cnt1, -wordSize);
+    subi(cnt1, cnt1, wordSize);
     addi(a1, a1, wordSize);
     addi(a2, a2, wordSize);
     bne(tmp1, tmp2, DONE);
@@ -1758,8 +1845,6 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   beqz(tmp1, SAME);
 
   bind(SHORT);
-  Label TAIL03, TAIL01;
-
   // 0-7 bytes left.
   test_bit(tmp1, cnt1, 2);
   beqz(tmp1, TAIL03);
@@ -1836,7 +1921,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
 
   beqz(cnt, DONE);
 
-  andi(chunks, cnt, ~(stride-1));
+  andi(chunks, cnt, ~(stride - 1));
   beqz(chunks, TAIL);
 
   mv(pow31_4, 923521);           // [31^^4]
@@ -1845,7 +1930,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
 
   slli(chunks_end, chunks, chunks_end_shift);
   add(chunks_end, ary, chunks_end);
-  andi(cnt, cnt, stride-1);      // don't forget about tail!
+  andi(cnt, cnt, stride - 1);    // don't forget about tail!
 
   bind(WIDE_LOOP);
   mulw(result, result, pow31_4); // 31^^4 * h
@@ -2059,7 +2144,7 @@ void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRe
   is_double ? fclass_d(t1, src2)
             : fclass_s(t1, src2);
   orr(t0, t0, t1);
-  andi(t0, t0, fclass_mask::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
+  andi(t0, t0, FClassBits::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
   beqz(t0, Compare);
   is_double ? fadd_d(dst, src1, src2)
             : fadd_s(dst, src1, src2);
@@ -2153,7 +2238,7 @@ void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister one, bool is_
             : fclass_s(t0, dst);
 
   // check if input is -0, +0, signaling NaN or quiet NaN
-  andi(t0, t0, fclass_mask::zero | fclass_mask::nan);
+  andi(t0, t0, FClassBits::zero | FClassBits::nan);
 
   bnez(t0, done);
 
@@ -2369,7 +2454,7 @@ void C2_MacroAssembler::signum_fp_v(VectorRegister dst, VectorRegister one, Basi
 
   // check if input is -0, +0, signaling NaN or quiet NaN
   vfclass_v(v0, dst);
-  mv(t0, fclass_mask::zero | fclass_mask::nan);
+  mv(t0, FClassBits::zero | FClassBits::nan);
   vand_vx(v0, v0, t0);
   vmseq_vi(v0, v0, 0);
 
@@ -2512,6 +2597,9 @@ void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register resul
   Register cnt2 = tmp2;
   int length_offset = arrayOopDesc::length_offset_in_bytes();
   int base_offset = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
+
+  assert((base_offset % (UseCompactObjectHeaders ? 4 :
+                         (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
   BLOCK_COMMENT("arrays_equals_v {");
 

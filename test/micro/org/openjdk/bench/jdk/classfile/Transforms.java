@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,26 +41,11 @@ import java.lang.classfile.CodeTransform;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.MethodTransform;
 import jdk.internal.classfile.components.ClassRemapper;
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
-import jdk.internal.org.objectweb.asm.Handle;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.ModuleVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.RecordComponentVisitor;
-import jdk.internal.org.objectweb.asm.TypePath;
-import jdk.internal.org.objectweb.asm.tree.ClassNode;
 
 /**
  * Transforms
  */
 public class Transforms {
-
-    static int ASM9 = 9 << 16 | 0 << 8;
 
     public static final ClassTransform threeLevelNoop = (cb, ce) -> {
         if (ce instanceof MethodModel mm) {
@@ -123,38 +108,6 @@ public class Transforms {
         UNSHARED_3(false, threeLevelNoop),
         SHARED_3_NO_STACKMAP(true, threeLevelNoop, ClassFile.StackMapsOption.DROP_STACK_MAPS),
         SHARED_3_NO_DEBUG(true, threeLevelNoop, ClassFile.DebugElementsOption.DROP_DEBUG, ClassFile.LineNumbersOption.DROP_LINE_NUMBERS),
-        ASM_1(bytes -> {
-            ClassReader cr = new ClassReader(bytes);
-            jdk.internal.org.objectweb.asm.ClassWriter cw = new jdk.internal.org.objectweb.asm.ClassWriter(cr, jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES);
-            cr.accept(cw, 0);
-            return cw.toByteArray();
-        }),
-        ASM_UNSHARED_1(bytes -> {
-            ClassReader cr = new ClassReader(bytes);
-            jdk.internal.org.objectweb.asm.ClassWriter cw = new jdk.internal.org.objectweb.asm.ClassWriter(jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES);
-            cr.accept(cw, 0);
-            return cw.toByteArray();
-        }),
-        ASM_3(bytes -> {
-            ClassReader cr = new ClassReader(bytes);
-            jdk.internal.org.objectweb.asm.ClassWriter cw = new jdk.internal.org.objectweb.asm.ClassWriter(cr, jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES);
-            cr.accept(new CustomClassVisitor(cw), 0);
-            return cw.toByteArray();
-        }),
-        ASM_UNSHARED_3(bytes -> {
-            ClassReader cr = new ClassReader(bytes);
-            jdk.internal.org.objectweb.asm.ClassWriter cw = new jdk.internal.org.objectweb.asm.ClassWriter(jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES);
-            cr.accept(new CustomClassVisitor(cw), 0);
-            return cw.toByteArray();
-        }),
-        ASM_TREE(bytes -> {
-            ClassNode node = new ClassNode();
-            ClassReader cr = new ClassReader(bytes);
-            cr.accept(node, 0);
-            jdk.internal.org.objectweb.asm.ClassWriter cw = new jdk.internal.org.objectweb.asm.ClassWriter(cr, jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES);
-            node.accept(cw);
-            return cw.toByteArray();
-        }),
         CLASS_REMAPPER(bytes ->
                 ClassRemapper.of(Map.of()).remapClass(ClassFile.of(), ClassFile.of().parse(bytes)));
 
@@ -186,12 +139,6 @@ public class Transforms {
     }
 
     public enum InjectNopTransform {
-        ASM_NOP_SHARED(bytes -> {
-            ClassReader cr = new ClassReader(bytes);
-            jdk.internal.org.objectweb.asm.ClassWriter cw = new jdk.internal.org.objectweb.asm.ClassWriter(cr, jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES);
-            cr.accept(new NopClassVisitor(cw), 0);
-            return cw.toByteArray();
-        }),
         NOP_SHARED(bytes -> {
             var cc = ClassFile.of();
             ClassModel cm = cc.parse(bytes);
@@ -226,13 +173,6 @@ public class Transforms {
     }
 
     public enum SimpleTransform {
-        ASM_ADD_FIELD(bytes -> {
-            ClassReader cr = new ClassReader(bytes);
-            jdk.internal.org.objectweb.asm.ClassWriter cw = new jdk.internal.org.objectweb.asm.ClassWriter(cr, jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES);
-            cr.accept(cw, 0);
-            cw.visitField(0, "argleBargleWoogaWooga", "I", null, null);
-            return cw.toByteArray();
-        }),
         HIGH_SHARED_ADD_FIELD(bytes -> {
             var cc = ClassFile.of();
             ClassModel cm = cc.parse(bytes);
@@ -256,20 +196,6 @@ public class Transforms {
                                        cm.forEach(cb);
                                        cb.withField("argleBargleWoogaWooga", ConstantDescs.CD_int, b -> { });
                                    });
-        }),
-        ASM_DEL_METHOD(bytes -> {
-            ClassReader cr = new ClassReader(bytes);
-            jdk.internal.org.objectweb.asm.ClassWriter cw = new jdk.internal.org.objectweb.asm.ClassWriter(cr, jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES);
-            ClassVisitor v = new ClassVisitor(ASM9, cw) {
-                @Override
-                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-                    return (name.equals("hashCode") && descriptor.equals("()Z"))
-                           ? null
-                           : super.visitMethod(access, name, descriptor, signature, exceptions);
-                }
-            };
-            cr.accept(cw, 0);
-            return cw.toByteArray();
         }),
         HIGH_SHARED_DEL_METHOD(bytes -> {
             var cc = ClassFile.of();
@@ -300,279 +226,6 @@ public class Transforms {
 
         SimpleTransform(UnaryOperator<byte[]> transform) {
             this.transform = transform;
-        }
-    }
-
-    static class CustomClassVisitor extends ClassVisitor {
-
-        public CustomClassVisitor(ClassVisitor writer) {
-            super(ASM9, writer);
-        }
-
-        @Override
-        public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-            super.visit(version, access, name, signature, superName, interfaces);
-        }
-
-        @Override
-        public void visitSource(String source, String debug) {
-            super.visitSource(source, debug);
-        }
-
-        @Override
-        public ModuleVisitor visitModule(String name, int access, String version) {
-            return super.visitModule(name, access, version);
-        }
-
-        @Override
-        public void visitNestHost(String nestHost) {
-            super.visitNestHost(nestHost);
-        }
-
-        @Override
-        public void visitOuterClass(String owner, String name, String descriptor) {
-            super.visitOuterClass(owner, name, descriptor);
-        }
-
-        @Override
-        public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
-            return super.visitAnnotation(descriptor, visible);
-        }
-
-        @Override
-        public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
-            return super.visitTypeAnnotation(typeRef, typePath, descriptor, visible);
-        }
-
-        @Override
-        public void visitAttribute(Attribute attribute) {
-            super.visitAttribute(attribute);
-        }
-
-        @Override
-        public void visitNestMember(String nestMember) {
-            super.visitNestMember(nestMember);
-        }
-
-        @Override
-        public void visitInnerClass(String name, String outerName, String innerName, int access) {
-            super.visitInnerClass(name, outerName, innerName, access);
-        }
-
-        @Override
-        public RecordComponentVisitor visitRecordComponent(String name, String descriptor, String signature) {
-            return super.visitRecordComponent(name, descriptor, signature);
-        }
-
-        @Override
-        public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
-            return super.visitField(access, name, descriptor, signature, value);
-        }
-
-        @Override
-        public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-            MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
-            return new CustomMethodVisitor(mv);
-        }
-
-        @Override
-        public void visitEnd() {
-            super.visitEnd();
-        }
-    };
-
-
-    static class CustomMethodVisitor extends MethodVisitor {
-
-        public CustomMethodVisitor(MethodVisitor methodVisitor) {
-            super(ASM9, methodVisitor);
-        }
-
-        @Override
-        public void visitParameter(String name, int access) {
-            super.visitParameter(name, access);
-        }
-
-        @Override
-        public AnnotationVisitor visitAnnotationDefault() {
-            return super.visitAnnotationDefault();
-        }
-
-        @Override
-        public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
-            return super.visitAnnotation(descriptor, visible);
-        }
-
-        @Override
-        public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
-            return super.visitTypeAnnotation(typeRef, typePath, descriptor, visible);
-        }
-
-        @Override
-        public void visitAnnotableParameterCount(int parameterCount, boolean visible) {
-            super.visitAnnotableParameterCount(parameterCount, visible);
-        }
-
-        @Override
-        public AnnotationVisitor visitParameterAnnotation(int parameter, String descriptor, boolean visible) {
-            return super.visitParameterAnnotation(parameter, descriptor, visible);
-        }
-
-        @Override
-        public void visitAttribute(Attribute attribute) {
-            super.visitAttribute(attribute);
-        }
-
-        @Override
-        public void visitCode() {
-            super.visitCode();
-        }
-
-        @Override
-        public void visitFrame(int type, int numLocal, Object[] local, int numStack, Object[] stack) {
-            super.visitFrame(type, numLocal, local, numStack, stack);
-        }
-
-        @Override
-        public void visitInsn(int opcode) {
-            super.visitInsn(opcode);
-        }
-
-        @Override
-        public void visitIntInsn(int opcode, int operand) {
-            super.visitIntInsn(opcode, operand);
-        }
-
-        @Override
-        public void visitVarInsn(int opcode, int var) {
-            super.visitVarInsn(opcode, var);
-        }
-
-        @Override
-        public void visitTypeInsn(int opcode, String type) {
-            super.visitTypeInsn(opcode, type);
-        }
-
-        @Override
-        public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
-            super.visitFieldInsn(opcode, owner, name, descriptor);
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public void visitMethodInsn(int opcode, String owner, String name, String descriptor) {
-            super.visitMethodInsn(opcode, owner, name, descriptor);
-        }
-
-        @Override
-        public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
-            super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
-        }
-
-        @Override
-        public void visitInvokeDynamicInsn(String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments) {
-            super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments);
-        }
-
-        @Override
-        public void visitJumpInsn(int opcode, Label label) {
-            super.visitJumpInsn(opcode, label);
-        }
-
-        @Override
-        public void visitLabel(Label label) {
-            super.visitLabel(label);
-        }
-
-        @Override
-        public void visitLdcInsn(Object value) {
-            super.visitLdcInsn(value);
-        }
-
-        @Override
-        public void visitIincInsn(int var, int increment) {
-            super.visitIincInsn(var, increment);
-        }
-
-        @Override
-        public void visitTableSwitchInsn(int min, int max, Label dflt, Label... labels) {
-            super.visitTableSwitchInsn(min, max, dflt, labels);
-        }
-
-        @Override
-        public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
-            super.visitLookupSwitchInsn(dflt, keys, labels);
-        }
-
-        @Override
-        public void visitMultiANewArrayInsn(String descriptor, int numDimensions) {
-            super.visitMultiANewArrayInsn(descriptor, numDimensions);
-        }
-
-        @Override
-        public AnnotationVisitor visitInsnAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
-            return super.visitInsnAnnotation(typeRef, typePath, descriptor, visible);
-        }
-
-        @Override
-        public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
-            super.visitTryCatchBlock(start, end, handler, type);
-        }
-
-        @Override
-        public AnnotationVisitor visitTryCatchAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
-            return super.visitTryCatchAnnotation(typeRef, typePath, descriptor, visible);
-        }
-
-        @Override
-        public void visitLocalVariable(String name, String descriptor, String signature, Label start, Label end, int index) {
-            super.visitLocalVariable(name, descriptor, signature, start, end, index);
-        }
-
-        @Override
-        public AnnotationVisitor visitLocalVariableAnnotation(int typeRef, TypePath typePath, Label[] start, Label[] end, int[] index, String descriptor, boolean visible) {
-            return super.visitLocalVariableAnnotation(typeRef, typePath, start, end, index, descriptor, visible);
-        }
-
-        @Override
-        public void visitLineNumber(int line, Label start) {
-            super.visitLineNumber(line, start);
-        }
-
-        @Override
-        public void visitMaxs(int maxStack, int maxLocals) {
-            super.visitMaxs(maxStack, maxLocals);
-        }
-
-        @Override
-        public void visitEnd() {
-            super.visitEnd();
-        }
-    };
-
-    static class NopClassVisitor extends CustomClassVisitor {
-
-        public NopClassVisitor(ClassVisitor writer) {
-            super(writer);
-        }
-
-        @Override
-        public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-            MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
-            return new NopMethodVisitor(mv);
-        }
-    }
-
-    static class NopMethodVisitor extends CustomMethodVisitor {
-
-        public NopMethodVisitor(MethodVisitor methodVisitor) {
-            super(methodVisitor);
-        }
-
-        @Override
-        public void visitCode() {
-            super.visitCode();
-            visitInsn(Opcodes.NOP);
         }
     }
 
