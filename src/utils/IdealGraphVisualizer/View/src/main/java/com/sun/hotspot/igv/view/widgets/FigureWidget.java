@@ -341,9 +341,8 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
                     }
                 }
                 if (!liveRanges.isEmpty()) {
-                    Set<LiveRangeSegment> segments = diagramScene.liveRangeSegmentSet(liveRanges);
                     menu.addSeparator();
-                    menu.add(diagramScene.createGotoLiveRangeAction("Select live ranges", segments));
+                    menu.add(diagramScene.createGotoLiveRangeAction("Select live ranges", liveRanges));
                     menu.addSeparator();
                     if (l.def != null) {
                         menu.add(diagramScene.createGotoLiveRangeAction(graph.getLiveRange(l.def)));

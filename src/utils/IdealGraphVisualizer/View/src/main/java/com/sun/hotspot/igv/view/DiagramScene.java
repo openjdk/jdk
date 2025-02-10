@@ -623,12 +623,20 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return action;
     }
 
-    public Action createGotoLiveRangeAction(String name, Set<LiveRangeSegment> segments) {
-        String iconResource = "com/sun/hotspot/igv/view/images/selectLiveRanges.png";
+    private Action createGotoLiveRangeAction(String name, String iconResource, Set<InputLiveRange> liveRanges) {
         Action action = new AbstractAction(name, new ImageIcon(ImageUtilities.loadImage(iconResource))) {
             @Override
             public void actionPerformed(ActionEvent e) {
+                Set<LiveRangeSegment> segments = liveRangeSegmentSet(liveRanges);
                 setLiveRangeSegmentSelection(segments);
+                Diagram diagram = getModel().getDiagram();
+                Set<Figure> figures = new HashSet<>();
+                for (InputLiveRange liveRange : liveRanges) {
+                    for (InputNode node : diagram.getInputGraph().getRelatedNodes(liveRange.getId())) {
+                        figures.add((diagram.getFigure(node)));
+                    }
+                }
+                model.showFigures(figures);
                 centerSelectedLiveRanges();
             }
         };
@@ -637,19 +645,14 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return action;
     }
 
-    public Action createGotoLiveRangeAction(InputLiveRange liveRange) {
-        String name = "L" + liveRange.getId();
-        String iconResource = "com/sun/hotspot/igv/view/images/liveRange.png";
-        Action action = new AbstractAction(name, new ImageIcon(ImageUtilities.loadImage(iconResource))) {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                setLiveRangeSegmentSelection(liveRangeSegmentSet(Collections.singleton(liveRange)));
-                centerSelectedLiveRanges();
-            }
-        };
+    public Action createGotoLiveRangeAction(String name, Set<InputLiveRange> liveRanges) {
+        return createGotoLiveRangeAction(name, "com/sun/hotspot/igv/view/images/selectLiveRanges.png", liveRanges);
+    }
 
-        action.setEnabled(true);
-        return action;
+    public Action createGotoLiveRangeAction(InputLiveRange liveRange) {
+        return createGotoLiveRangeAction("L" + liveRange.getId(),
+                                         "com/sun/hotspot/igv/view/images/liveRange.png",
+                                         Collections.singleton(liveRange));
     }
 
     private void clearObjects() {
