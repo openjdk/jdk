@@ -120,7 +120,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 
   metrics.snap_after();
 
-  if (metrics.is_good_progress(heap->global_generation())) {
+  if (metrics.is_good_progress()) {
     heap->notify_gc_progress();
   } else {
     // Nothing to do. Tell the allocation path that we have failed to make
