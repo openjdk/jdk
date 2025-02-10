@@ -22,38 +22,14 @@
  */
 #include <stdio.h>
 #include <pthread.h>
-#ifdef WINDOWS
-#include <windows.h>
-#else
-#include <dlfcn.h>
-#endif // WINDOWS
 #include "jni.h"
 
 #define STACK_SIZE 0x100000
 
-typedef jint (JNICALL *GetCreatedJavaVMs_t)(JavaVM **vmBuf, jsize bufLen, jsize *nVMs);
+static JavaVM *vm;
 
-GetCreatedJavaVMs_t GetCreatedJavaVMs = NULL;
-
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void* reserved) {
-#ifdef WINDOWS
-    HMODULE handle;
-    handle = GetModuleHandle("jvm.dll");
-    if (handle == NULL) {
-        // No loaded jvm.dll. Get the handle to the executable.
-        handle = GetModuleHandle(NULL);
-    }
-#endif
-#ifdef WINDOWS
-#define GET_VM_FUNCTION(f) GetProcAddress(handle, f)
-#else
-#define GET_VM_FUNCTION(f) dlsym(RTLD_DEFAULT, f)
-#endif
-    GetCreatedJavaVMs = (GetCreatedJavaVMs_t)GET_VM_FUNCTION("JNI_GetCreatedJavaVMs");
-    if (GetCreatedJavaVMs == NULL) {
-        fprintf(stderr, "Find JNI_GetCreatedJavaVMs failed\n");
-        return JNI_ERR;
-    }
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void* reserved) {
+    vm = jvm;
     return JNI_VERSION_1_8;
 }
 
@@ -61,17 +37,10 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void* reserved) {
  * Attach the current thread with JNI AttachCurrentThread, call a method, and detach.
  */
 void* thread_main(void* arg) {
-    JavaVM *vm;
     JNIEnv *env;
     JavaVMInitArgs vm_args;
     jsize count;
     jint res;
-
-    res = (*GetCreatedJavaVMs)(&vm, 1, &count);
-    if (res != JNI_OK) {
-        fprintf(stderr, "JNI_GetCreatedJavaVMs failed: %d\n", res);
-        return NULL;
-    }
 
     res = (*vm)->AttachCurrentThread(vm, (void **) &env, NULL);
     if (res != JNI_OK) {
