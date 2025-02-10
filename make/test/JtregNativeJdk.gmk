@@ -84,7 +84,6 @@ else
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerModule := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLoaderLookupInvoker := -pthread
 
-  BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libExplicitAttach := java.base:libjvm
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libExplicitAttach := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libImplicitAttach := -pthread
   BUILD_JDK_JTREG_EXCLUDE += exerevokeall.c
