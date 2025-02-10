@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -103,7 +102,7 @@ bool ConnectionGraph::has_candidates(Compile *C) {
 }
 
 void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
-  Compile::TracePhase tp("escapeAnalysis", &Phase::timers[Phase::_t_escapeAnalysis]);
+  Compile::TracePhase tp(Phase::_t_escapeAnalysis);
   ResourceMark rm;
 
   // Add ConP and ConN null oop nodes before ConnectionGraph construction
@@ -148,7 +147,7 @@ bool ConnectionGraph::compute_escape() {
   GrowableArray<MergeMemNode*>   mergemem_worklist;
   DEBUG_ONLY( GrowableArray<Node*> addp_worklist; )
 
-  { Compile::TracePhase tp("connectionGraph", &Phase::timers[Phase::_t_connectionGraph]);
+  { Compile::TracePhase tp(Phase::_t_connectionGraph);
 
   // 1. Populate Connection Graph (CG) with PointsTo nodes.
   ideal_nodes.map(C->live_nodes(), nullptr);  // preallocate space
@@ -644,7 +643,7 @@ bool ConnectionGraph::can_reduce_phi(PhiNode* ophi) const {
 //
 // 'curr_ctrl' is the control of the CastPP that we want to split through phi.
 // If the CastPP currently doesn't have a control then the CmpP/N will be
-// against the NULL constant, otherwise it will be against the constant input of
+// against the null constant, otherwise it will be against the constant input of
 // the existing CmpP/N. It's guaranteed that there will be a CmpP/N in the later
 // case because we have constraints on it and because the CastPP has a control
 // input.
@@ -672,7 +671,7 @@ Node* ConnectionGraph::specialize_cmp(Node* base, Node* curr_ctrl) {
 // means that the CastPP now will be specific for a given base instead of a Phi.
 // An If-Then-Else-Region block is inserted to control the CastPP. The control
 // of the CastPP is a copy of the current one (if there is one) or a check
-// against NULL.
+// against null.
 //
 // Before:
 //
@@ -806,10 +805,10 @@ Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr
 // After splitting the CastPP we'll put it under an If-Then-Else-Region control
 // flow. If the CastPP originally had an IfTrue/False control input then we'll
 // use a similar CmpP/N to control the new If-Then-Else-Region. Otherwise, we'll
-// juse use a CmpP/N against the NULL constant.
+// juse use a CmpP/N against the null constant.
 //
 // The If-Then-Else-Region isn't always needed. For instance, if input to
-// splitted cast was not nullable (or if it was the NULL constant) then we don't
+// splitted cast was not nullable (or if it was the null constant) then we don't
 // need (shouldn't) use a CastPP at all.
 //
 // After the casts are splitted we'll split the AddP->Loads through the Phi and
@@ -837,7 +836,7 @@ Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr
 //
 // After (Very much simplified):
 //
-//                         Call  NULL
+//                         Call  Null
 //                            \  /
 //                            CmpP
 //                             |
@@ -873,7 +872,7 @@ void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, Growabl
   // array, depending on the nullability status of the corresponding input in
   // ophi.
   //
-  //  - nullptr:    Meaning that the base is actually the NULL constant and therefore
+  //  - nullptr:    Meaning that the base is actually the null constant and therefore
   //                we won't try to load from it.
   //
   //  - CFG Node:   Meaning that the base is a CastPP that was specialized for
@@ -890,7 +889,7 @@ void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, Growabl
 
     if (base_t->maybe_null()) {
       if (base->is_Con()) {
-        // Nothing todo as bases_for_loads[i] is already nullptr
+        // Nothing todo as bases_for_loads[i] is already null
       } else {
         Node* new_castpp = specialize_castpp(curr_castpp, base, ophi->in(0)->in(i));
         bases_for_loads.at_put(i, new_castpp->in(0)); // Use the ctrl of the new node just as a flag
@@ -982,10 +981,11 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
 
   Node* other = cmp->in(1)->is_Con() ? cmp->in(1) : cmp->in(2);
   Node* zero = _igvn->intcon(0);
+  Node* one = _igvn->intcon(1);
   BoolTest::mask mask = cmp->unique_out()->as_Bool()->_test._test;
 
   // This Phi will merge the result of the Cmps split through the Phi
-  Node* res_phi  = _igvn->transform(PhiNode::make(ophi->in(0), zero, TypeInt::INT));
+  Node* res_phi = PhiNode::make(ophi->in(0), zero, TypeInt::INT);
 
   for (uint i=1; i<ophi->req(); i++) {
     Node* ophi_input = ophi->in(i);
@@ -993,7 +993,12 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
 
     const TypeInt* tcmp = optimize_ptr_compare(ophi_input, other);
     if (tcmp->singleton()) {
-      res_phi_input = _igvn->makecon(tcmp);
+      if ((mask == BoolTest::mask::eq && tcmp == TypeInt::CC_EQ) ||
+          (mask == BoolTest::mask::ne && tcmp == TypeInt::CC_GT)) {
+        res_phi_input = one;
+      } else {
+        res_phi_input = zero;
+      }
     } else {
       Node* ncmp = _igvn->transform(cmp->clone());
       ncmp->set_req(1, ophi_input);
@@ -1005,7 +1010,8 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
     res_phi->set_req(i, res_phi_input);
   }
 
-  Node* new_cmp = _igvn->transform(new CmpINode(res_phi, zero));
+  // This CMP always compares whether the output of "res_phi" is TRUE as far as the "mask".
+  Node* new_cmp = _igvn->transform(new CmpINode(_igvn->transform(res_phi), (mask == BoolTest::mask::eq) ? one : zero));
   _igvn->replace_node(cmp, new_cmp);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,18 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotArtifactFinder.hpp"
+#include "cds/aotClassLinker.hpp"
+#include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
-#include "cds/cds_globals.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
-#include "cds/classPrelinker.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -61,6 +62,7 @@
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
@@ -87,6 +89,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/resourceHash.hpp"
 
@@ -97,6 +100,7 @@ bool MetaspaceShared::_remapped_readwrite = false;
 void* MetaspaceShared::_shared_metaspace_static_top = nullptr;
 intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
+Array<Method*>* MetaspaceShared::_archived_method_handle_intrinsics = nullptr;
 bool MetaspaceShared::_use_optimized_module_handling = true;
 
 // The CDS archive is divided into the following regions:
@@ -118,7 +122,7 @@ bool MetaspaceShared::_use_optimized_module_handling = true;
 // [5] SymbolTable, StringTable, SystemDictionary, and a few other read-only data
 //     are copied into the ro region as read-only tables.
 //
-// The heap region is populated by HeapShared::archive_objects.
+// The heap region is written by HeapShared::write_heap().
 //
 // The bitmap region is used to relocate the ro/rw/hp regions.
 
@@ -142,15 +146,16 @@ size_t MetaspaceShared::core_region_alignment() {
 }
 
 static bool shared_base_valid(char* shared_base) {
-  // We check user input for SharedBaseAddress at dump time. We must weed out values
-  // we already know to be invalid later.
+  // We check user input for SharedBaseAddress at dump time.
 
   // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
   // be the encoding base, since the the headers of archived base objects (and with Lilliput,
   // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
   // start as base.
   //
-  // Therefore, "shared_base" must be later usable as encoding base.
+  // On AARCH64, The "shared_base" may not be later usable as encoding base, depending on the
+  // total size of the reserved area and the precomputed_narrow_klass_shift. This is checked
+  // before reserving memory.  Here we weed out values already known to be invalid later.
   return AARCH64_ONLY(is_aligned(shared_base, 4 * G)) NOT_AARCH64(true);
 }
 
@@ -209,26 +214,54 @@ void MetaspaceShared::dump_loaded_classes(const char* file_name, TRAPS) {
   }
 }
 
-static bool shared_base_too_high(char* specified_base, char* aligned_base, size_t cds_max) {
-  if (specified_base != nullptr && aligned_base < specified_base) {
-    // SharedBaseAddress is very high (e.g., 0xffffffffffffff00) so
-    // align_up(SharedBaseAddress, MetaspaceShared::core_region_alignment()) has wrapped around.
-    return true;
-  }
-  if (max_uintx - uintx(aligned_base) < uintx(cds_max)) {
-    // The end of the archive will wrap around
-    return true;
+// If p is not aligned, move it up to the next address that's aligned with alignment.
+// If this is not possible (because p is too high), return nullptr. Example:
+//     p = 0xffffffffffff0000, alignment= 0x10000    => return nullptr.
+static char* align_up_or_null(char* p, size_t alignment) {
+  assert(p != nullptr, "sanity");
+  if (is_aligned(p, alignment)) {
+    return p;
   }
 
-  return false;
+  char* down = align_down(p, alignment);
+  if (max_uintx - uintx(down) < uintx(alignment)) {
+    // Run out of address space to align up.
+    return nullptr;
+  }
+
+  char* aligned = align_up(p, alignment);
+  assert(aligned >= p, "sanity");
+  assert(aligned != nullptr, "sanity");
+  return aligned;
+}
+
+static bool shared_base_too_high(char* specified_base, char* aligned_base, size_t cds_max) {
+  // Caller should have checked if align_up_or_null( returns nullptr (comparing specified_base
+  // with nullptr is UB).
+  assert(aligned_base != nullptr, "sanity");
+  assert(aligned_base >= specified_base, "sanity");
+
+  if (max_uintx - uintx(aligned_base) < uintx(cds_max)) {
+    // Not enough address space to hold an archive of cds_max bytes from aligned_base.
+    return true;
+  } else {
+    return false;
+  }
 }
 
 static char* compute_shared_base(size_t cds_max) {
   char* specified_base = (char*)SharedBaseAddress;
-  char* aligned_base = align_up(specified_base, MetaspaceShared::core_region_alignment());
+  size_t alignment = MetaspaceShared::core_region_alignment();
   if (UseCompressedClassPointers) {
-    aligned_base = align_up(specified_base, Metaspace::reserve_alignment());
+    alignment = MAX2(alignment, Metaspace::reserve_alignment());
   }
+
+  if (SharedBaseAddress == 0) {
+    // Special meaning of -XX:SharedBaseAddress=0 -> Always map archive at os-selected address.
+    return specified_base;
+  }
+
+  char* aligned_base = align_up_or_null(specified_base, alignment);
 
   if (aligned_base != specified_base) {
     log_info(cds)("SharedBaseAddress (" INTPTR_FORMAT ") aligned up to " INTPTR_FORMAT,
@@ -236,7 +269,9 @@ static char* compute_shared_base(size_t cds_max) {
   }
 
   const char* err = nullptr;
-  if (shared_base_too_high(specified_base, aligned_base, cds_max)) {
+  if (aligned_base == nullptr) {
+    err = "too high";
+  } else if (shared_base_too_high(specified_base, aligned_base, cds_max)) {
     err = "too high";
   } else if (!shared_base_valid(aligned_base)) {
     err = "invalid for this platform";
@@ -244,12 +279,15 @@ static char* compute_shared_base(size_t cds_max) {
     return aligned_base;
   }
 
+  // Arguments::default_SharedBaseAddress() is hard-coded in cds_globals.hpp. It must be carefully
+  // picked that (a) the align_up() below will always return a valid value; (b) none of
+  // the following asserts will fail.
   log_warning(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is %s. Reverted to " INTPTR_FORMAT,
                    p2i((void*)SharedBaseAddress), err,
                    p2i((void*)Arguments::default_SharedBaseAddress()));
 
   specified_base = (char*)Arguments::default_SharedBaseAddress();
-  aligned_base = align_up(specified_base, MetaspaceShared::core_region_alignment());
+  aligned_base = align_up(specified_base, alignment);
 
   // Make sure the default value of SharedBaseAddress specified in globals.hpp is sane.
   assert(!shared_base_too_high(specified_base, aligned_base, cds_max), "Sanity");
@@ -259,7 +297,7 @@ static char* compute_shared_base(size_t cds_max) {
 
 void MetaspaceShared::initialize_for_static_dump() {
   assert(CDSConfig::is_dumping_static_archive(), "sanity");
-  log_info(cds)("Core region alignment: " SIZE_FORMAT, core_region_alignment());
+  log_info(cds)("Core region alignment: %zu", core_region_alignment());
   // The max allowed size for CDS archive. We use this to limit SharedBaseAddress
   // to avoid address space wrap around.
   size_t cds_max;
@@ -278,9 +316,12 @@ void MetaspaceShared::initialize_for_static_dump() {
   SharedBaseAddress = (size_t)_requested_base_address;
 
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
-  _symbol_rs = ReservedSpace(symbol_rs_size);
+  _symbol_rs = MemoryReserver::reserve(symbol_rs_size,
+                                       os::vm_allocation_granularity(),
+                                       os::vm_page_size(),
+                                       mtClassShared);
   if (!_symbol_rs.is_reserved()) {
-    log_error(cds)("Unable to reserve memory for symbols: " SIZE_FORMAT " bytes.", symbol_rs_size);
+    log_error(cds)("Unable to reserve memory for symbols: %zu bytes.", symbol_rs_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
   _symbol_region.init(&_symbol_rs, &_symbol_vs);
@@ -307,8 +348,12 @@ void MetaspaceShared::post_initialize(TRAPS) {
   }
 }
 
+// Extra java.lang.Strings to be added to the archive
 static GrowableArrayCHeap<OopHandle, mtClassShared>* _extra_interned_strings = nullptr;
+// Extra Symbols to be added to the archive
 static GrowableArrayCHeap<Symbol*, mtClassShared>* _extra_symbols = nullptr;
+// Methods managed by SystemDictionary::find_method_handle_intrinsic() to be added to the archive
+static GrowableArray<Method*>* _pending_method_handle_intrinsics = nullptr;
 
 void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename) {
   _extra_interned_strings = new GrowableArrayCHeap<OopHandle, mtClassShared>(10000);
@@ -359,6 +404,30 @@ void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename)
   }
 }
 
+void MetaspaceShared::make_method_handle_intrinsics_shareable() {
+  for (int i = 0; i < _pending_method_handle_intrinsics->length(); i++) {
+    Method* m = ArchiveBuilder::current()->get_buffered_addr(_pending_method_handle_intrinsics->at(i));
+    m->remove_unshareable_info();
+    // Each method has its own constant pool (which is distinct from m->method_holder()->constants());
+    m->constants()->remove_unshareable_info();
+  }
+}
+
+void MetaspaceShared::write_method_handle_intrinsics() {
+  int len = _pending_method_handle_intrinsics->length();
+  _archived_method_handle_intrinsics = ArchiveBuilder::new_ro_array<Method*>(len);
+  int word_size = _archived_method_handle_intrinsics->size();
+  for (int i = 0; i < len; i++) {
+    Method* m = _pending_method_handle_intrinsics->at(i);
+    ArchiveBuilder::current()->write_pointer_in_buffer(_archived_method_handle_intrinsics->adr_at(i), m);
+    word_size += m->size() + m->constMethod()->size() + m->constants()->size();
+    if (m->constants()->cache() != nullptr) {
+      word_size += m->constants()->cache()->size();
+    }
+  }
+  log_info(cds)("Archived %d method handle intrinsics (%d bytes)", len, word_size * BytesPerWord);
+}
+
 // About "serialize" --
 //
 // This is (probably a badly named) way to read/write a data stream of pointers and
@@ -392,8 +461,7 @@ void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename)
 void MetaspaceShared::early_serialize(SerializeClosure* soc) {
   int tag = 0;
   soc->do_tag(--tag);
-  CDS_JAVA_HEAP_ONLY(Modules::serialize(soc);)
-  CDS_JAVA_HEAP_ONLY(Modules::serialize_addmods_names(soc);)
+  CDS_JAVA_HEAP_ONLY(Modules::serialize_archived_module_info(soc);)
   soc->do_tag(666);
 }
 
@@ -430,7 +498,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   StringTable::serialize_shared_table_header(soc);
   HeapShared::serialize_tables(soc);
   SystemDictionaryShared::serialize_dictionary_headers(soc);
-
+  AOTLinkedClassBulkLoader::serialize(soc, true);
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
@@ -438,6 +506,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   soc->do_tag(--tag);
 
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
+  soc->do_ptr((void**)&_archived_method_handle_intrinsics);
 
   LambdaFormInvokers::serialize(soc);
   soc->do_tag(666);
@@ -483,7 +552,7 @@ private:
   FileMapInfo* _map_info;
   StaticArchiveBuilder& _builder;
 
-  void dump_java_heap_objects(GrowableArray<Klass*>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
+  void dump_java_heap_objects();
   void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
     log_info(cds)("Dumping symbol table ...");
     SymbolTable::write_to_archive(symbols);
@@ -511,6 +580,7 @@ public:
 
   virtual void iterate_roots(MetaspaceClosure* it) {
     FileMapInfo::metaspace_pointers_do(it);
+    AOTArtifactFinder::all_cached_classes_do(it);
     SystemDictionaryShared::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
@@ -525,16 +595,17 @@ public:
         it->push(_extra_symbols->adr_at(i));
       }
     }
+
+    for (int i = 0; i < _pending_method_handle_intrinsics->length(); i++) {
+      it->push(_pending_method_handle_intrinsics->adr_at(i));
+    }
   }
 };
 
 char* VM_PopulateDumpSharedSpace::dump_early_read_only_tables() {
   ArchiveBuilder::OtherROAllocMark mark;
 
-  // Write module name into archive
-  CDS_JAVA_HEAP_ONLY(Modules::dump_main_module_name();)
-  // Write module names from --add-modules into archive
-  CDS_JAVA_HEAP_ONLY(Modules::dump_addmods_names();)
+  CDS_JAVA_HEAP_ONLY(Modules::dump_archived_module_info());
 
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
@@ -547,6 +618,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   ArchiveBuilder::OtherROAllocMark mark;
 
   SystemDictionaryShared::write_to_archive();
+  AOTClassLinker::write_to_archive();
+  MetaspaceShared::write_method_handle_intrinsics();
 
   // Write lambform lines into archive
   LambdaFormInvokers::dump_static_archive_invokers();
@@ -565,13 +638,28 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
+  _pending_method_handle_intrinsics = new (mtClassShared) GrowableArray<Method*>(256, mtClassShared);
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
+    // When dumping AOT-linked classes, some classes may have direct references to a method handle
+    // intrinsic. The easiest thing is to save all of them into the AOT cache.
+    SystemDictionary::get_all_method_handle_intrinsics(_pending_method_handle_intrinsics);
+  }
+
   FileMapInfo::check_nonempty_dir_in_shared_path_table();
 
   NOT_PRODUCT(SystemDictionary::verify();)
 
   // Block concurrent class unloading from changing the _dumptime_table
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  SystemDictionaryShared::check_excluded_classes();
+
+#if INCLUDE_CDS_JAVA_HEAP
+  if (CDSConfig::is_dumping_heap() && _extra_interned_strings != nullptr) {
+    for (int i = 0; i < _extra_interned_strings->length(); i ++) {
+      OopHandle string = _extra_interned_strings->at(i);
+      HeapShared::add_to_dumped_interned_strings(string.resolve());
+    }
+  }
+#endif
 
   _builder.gather_source_objs();
   _builder.reserve_buffer();
@@ -583,11 +671,12 @@ void VM_PopulateDumpSharedSpace::doit() {
   _builder.dump_ro_metadata();
   _builder.relocate_metaspaceobj_embedded_pointers();
 
-  dump_java_heap_objects(_builder.klasses());
-  dump_shared_symbol_table(_builder.symbols());
-
   log_info(cds)("Make classes shareable");
   _builder.make_klasses_shareable();
+  MetaspaceShared::make_method_handle_intrinsics_shareable();
+
+  dump_java_heap_objects();
+  dump_shared_symbol_table(_builder.symbols());
 
   char* early_serialized_data = dump_early_read_only_tables();
   char* serialized_data = dump_read_only_tables();
@@ -655,12 +744,12 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
   // cpcache to be created. Class verification is done according
   // to -Xverify setting.
   bool res = MetaspaceShared::try_link_class(THREAD, ik);
-  ClassPrelinker::dumptime_resolve_constants(ik, CHECK_(false));
+  AOTConstantPoolResolver::dumptime_resolve_constants(ik, CHECK_(false));
   return res;
 }
 
 void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
-  ClassPrelinker::initialize();
+  AOTClassLinker::initialize();
 
   if (!jcmd_request) {
     LambdaFormInvokers::regenerate_holder_classes(CHECK);
@@ -708,19 +797,29 @@ void MetaspaceShared::prepare_for_dumping() {
 // Preload classes from a list, populate the shared spaces and dump to a
 // file.
 void MetaspaceShared::preload_and_dump(TRAPS) {
+  CDSConfig::DumperThreadMark dumper_thread_mark(THREAD);
   ResourceMark rm(THREAD);
   StaticArchiveBuilder builder;
   preload_and_dump_impl(builder, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
       log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
-                     SIZE_FORMAT "M", MaxHeapSize/M);
+                     "%zuM", MaxHeapSize/M);
       MetaspaceShared::writing_error();
     } else {
       log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
       MetaspaceShared::writing_error("Unexpected exception, use -Xlog:cds,exceptions=trace for detail");
     }
+  }
+
+  if (!CDSConfig::old_cds_flags_used()) {
+    // The JLI launcher only recognizes the "old" -Xshare:dump flag.
+    // When the new -XX:AOTMode=create flag is used, we can't return
+    // to the JLI launcher, as the launcher will fail when trying to
+    // run the main class, which is not what we want.
+    tty->print_cr("AOTCache creation is complete: %s", AOTCache);
+    vm_exit(0);
   }
 }
 
@@ -734,15 +833,15 @@ void MetaspaceShared::adjust_heap_sizes_for_dumping() {
   julong max_heap_size = (julong)(4 * G);
 
   if (MinHeapSize > max_heap_size) {
-    log_debug(cds)("Setting MinHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", MinHeapSize/M);
+    log_debug(cds)("Setting MinHeapSize to 4G for CDS dumping, original size = %zuM", MinHeapSize/M);
     FLAG_SET_ERGO(MinHeapSize, max_heap_size);
   }
   if (InitialHeapSize > max_heap_size) {
-    log_debug(cds)("Setting InitialHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", InitialHeapSize/M);
+    log_debug(cds)("Setting InitialHeapSize to 4G for CDS dumping, original size = %zuM", InitialHeapSize/M);
     FLAG_SET_ERGO(InitialHeapSize, max_heap_size);
   }
   if (MaxHeapSize > max_heap_size) {
-    log_debug(cds)("Setting MaxHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", MaxHeapSize/M);
+    log_debug(cds)("Setting MaxHeapSize to 4G for CDS dumping, original size = %zuM", MaxHeapSize/M);
     FLAG_SET_ERGO(MaxHeapSize, max_heap_size);
   }
 }
@@ -850,6 +949,29 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
       HeapShared::reset_archived_object_states(CHECK);
     }
 
+    if (CDSConfig::is_dumping_invokedynamic()) {
+      // This assert means that the MethodType and MethodTypeForm tables won't be
+      // updated concurrently when we are saving their contents into a side table.
+      assert(CDSConfig::allow_only_single_java_thread(), "Required");
+
+      JavaValue result(T_VOID);
+      JavaCalls::call_static(&result, vmClasses::MethodType_klass(),
+                             vmSymbols::createArchivedObjects(),
+                             vmSymbols::void_method_signature(),
+                             CHECK);
+
+      // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
+      // to null, and it will be initialized again at runtime.
+      log_debug(cds)("Resetting Class::reflectionFactory");
+      TempNewSymbol method_name = SymbolTable::new_symbol("resetArchivedStates");
+      Symbol* method_sig = vmSymbols::void_method_signature();
+      JavaCalls::call_static(&result, vmClasses::Class_klass(),
+                             method_name, method_sig, CHECK);
+
+      // Perhaps there is a way to avoid hard-coding these names here.
+      // See discussion in JDK-8342481.
+    }
+
     // Do this at the very end, when no Java code will be executed. Otherwise
     // some new strings may be added to the intern table.
     StringTable::allocate_shared_strings_array(CHECK);
@@ -910,8 +1032,10 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
                     ik->external_name());
       CLEAR_PENDING_EXCEPTION;
       SystemDictionaryShared::set_class_has_failed_verification(ik);
+    } else {
+      assert(!SystemDictionaryShared::has_class_failed_verification(ik), "sanity");
+      ik->compute_has_loops_flag_for_methods();
     }
-    ik->compute_has_loops_flag_for_methods();
     BytecodeVerificationLocal = saved;
     return true;
   } else {
@@ -919,39 +1043,13 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   }
 }
 
-#if INCLUDE_CDS_JAVA_HEAP
-void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* klasses) {
-  if(!HeapShared::can_write()) {
-    log_info(cds)(
-      "Archived java heap is not supported as UseG1GC "
-      "and UseCompressedClassPointers are required."
-      "Current settings: UseG1GC=%s, UseCompressedClassPointers=%s.",
-      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedClassPointers));
-    return;
+void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
+  if (CDSConfig::is_dumping_heap()) {
+    HeapShared::write_heap(&_heap_info);
+  } else {
+    CDSConfig::log_reasons_for_not_dumping_heap();
   }
-  // Find all the interned strings that should be dumped.
-  int i;
-  for (i = 0; i < klasses->length(); i++) {
-    Klass* k = klasses->at(i);
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      if (ik->is_linked()) {
-        ik->constants()->add_dumped_interned_strings();
-      }
-    }
-  }
-  if (_extra_interned_strings != nullptr) {
-    for (i = 0; i < _extra_interned_strings->length(); i ++) {
-      OopHandle string = _extra_interned_strings->at(i);
-      HeapShared::add_to_dumped_interned_strings(string.resolve());
-    }
-  }
-
-  HeapShared::archive_objects(&_heap_info);
-  ArchiveBuilder::OtherROAllocMark mark;
-  HeapShared::write_subgraph_info_table();
 }
-#endif // INCLUDE_CDS_JAVA_HEAP
 
 void MetaspaceShared::set_shared_metaspace_range(void* base, void *static_top, void* top) {
   assert(base <= static_top && static_top <= top, "must be");
@@ -1013,7 +1111,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   FileMapInfo* dynamic_mapinfo = nullptr;
 
   if (static_mapinfo != nullptr) {
-    log_info(cds)("Core region alignment: " SIZE_FORMAT, static_mapinfo->core_region_alignment());
+    log_info(cds)("Core region alignment: %zu", static_mapinfo->core_region_alignment());
     dynamic_mapinfo = open_dynamic_archive();
 
     // First try to map at the requested address
@@ -1167,9 +1265,9 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
     }
 #endif // ASSERT
 
-    log_info(cds)("Reserved archive_space_rs [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (" SIZE_FORMAT ") bytes",
+    log_info(cds)("Reserved archive_space_rs [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (%zu) bytes",
                    p2i(archive_space_rs.base()), p2i(archive_space_rs.end()), archive_space_rs.size());
-    log_info(cds)("Reserved class_space_rs   [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (" SIZE_FORMAT ") bytes",
+    log_info(cds)("Reserved class_space_rs   [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (%zu) bytes",
                    p2i(class_space_rs.base()), p2i(class_space_rs.end()), class_space_rs.size());
 
     if (MetaspaceShared::use_windows_memory_mapping()) {
@@ -1192,7 +1290,9 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
       if (use_requested_addr) {
         assert(!total_space_rs.is_reserved(), "Should not be reserved for Windows");
         log_info(cds)("Windows mmap workaround: releasing archive space.");
-        archive_space_rs.release();
+        MemoryReserver::release(archive_space_rs);
+        // Mark as not reserved
+        archive_space_rs = {};
       }
     }
     MapArchiveResult static_result = map_archive(static_mapinfo, mapped_base_address, archive_space_rs);
@@ -1247,19 +1347,25 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           address cds_base = (address)static_mapinfo->mapped_base();
           address ccs_end = (address)class_space_rs.end();
           assert(ccs_end > cds_base, "Sanity check");
-#if INCLUDE_CDS_JAVA_HEAP
-          // We archived objects with pre-computed narrow Klass id. Set up encoding such that these Ids stay valid.
-          address precomputed_narrow_klass_base = cds_base;
-          const int precomputed_narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
-          CompressedKlassPointers::initialize_for_given_encoding(
-            cds_base, ccs_end - cds_base, // Klass range
-            precomputed_narrow_klass_base, precomputed_narrow_klass_shift // precomputed encoding, see ArchiveHeapWriter
+          if (INCLUDE_CDS_JAVA_HEAP || UseCompactObjectHeaders) {
+            // The CDS archive may contain narrow Klass IDs that were precomputed at archive generation time:
+            // - every archived java object header (only if INCLUDE_CDS_JAVA_HEAP)
+            // - every archived Klass' prototype   (only if +UseCompactObjectHeaders)
+            //
+            // In order for those IDs to still be valid, we need to dictate base and shift: base should be the
+            // mapping start, shift the shift used at archive generation time.
+            address precomputed_narrow_klass_base = cds_base;
+            const int precomputed_narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
+            CompressedKlassPointers::initialize_for_given_encoding(
+              cds_base, ccs_end - cds_base, // Klass range
+              precomputed_narrow_klass_base, precomputed_narrow_klass_shift // precomputed encoding, see ArchiveBuilder
             );
-#else
-          CompressedKlassPointers::initialize (
-            cds_base, ccs_end - cds_base // Klass range
-            );
-#endif // INCLUDE_CDS_JAVA_HEAP
+          } else {
+            // Let JVM freely chose encoding base and shift
+            CompressedKlassPointers::initialize (
+              cds_base, ccs_end - cds_base // Klass range
+              );
+          }
           // map_or_load_heap_region() compares the current narrow oop and klass encodings
           // with the archived ones, so it must be done after all encodings are determined.
           static_mapinfo->map_or_load_heap_region();
@@ -1314,7 +1420,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 //
 // If UseCompressedClassPointers=1, the range encompassing both spaces will be
 //  suitable to en/decode narrow Klass pointers: the base will be valid for
-//  encoding, the range [Base, End) not surpass KlassEncodingMetaspaceMax.
+//  encoding, the range [Base, End) and not surpass the max. range for that encoding.
 //
 // Return:
 //
@@ -1358,8 +1464,10 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
              "Archive base address unaligned: " PTR_FORMAT ", needs alignment: %zu.",
              p2i(base_address), archive_space_alignment);
 
-    archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
-                                     os::vm_page_size(), (char*)base_address);
+    archive_space_rs = MemoryReserver::reserve((char*)base_address,
+                                               archive_space_size,
+                                               archive_space_alignment,
+                                               os::vm_page_size());
     if (archive_space_rs.is_reserved()) {
       assert(base_address == nullptr ||
              (address)archive_space_rs.base() == base_address, "Sanity");
@@ -1388,8 +1496,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   size_t class_space_size = CompressedClassSpaceSize;
   assert(CompressedClassSpaceSize > 0 &&
          is_aligned(CompressedClassSpaceSize, class_space_alignment),
-         "CompressedClassSpaceSize malformed: "
-         SIZE_FORMAT, CompressedClassSpaceSize);
+         "CompressedClassSpaceSize malformed: %zu", CompressedClassSpaceSize);
 
   const size_t ccs_begin_offset = align_up(archive_space_size, class_space_alignment);
   const size_t gap_size = ccs_begin_offset - archive_space_size;
@@ -1399,13 +1506,22 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   guarantee(archive_space_size < max_encoding_range_size - class_space_alignment, "Archive too large");
   if ((archive_space_size + gap_size + class_space_size) > max_encoding_range_size) {
     class_space_size = align_down(max_encoding_range_size - archive_space_size - gap_size, class_space_alignment);
-    log_info(metaspace)("CDS initialization: reducing class space size from " SIZE_FORMAT " to " SIZE_FORMAT,
+    log_info(metaspace)("CDS initialization: reducing class space size from %zu to %zu",
         CompressedClassSpaceSize, class_space_size);
     FLAG_SET_ERGO(CompressedClassSpaceSize, class_space_size);
   }
 
   const size_t total_range_size =
       archive_space_size + gap_size + class_space_size;
+
+  // Test that class space base address plus shift can be decoded by aarch64, when restored.
+  const int precomputed_narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
+  if (!CompressedKlassPointers::check_klass_decode_mode(base_address, precomputed_narrow_klass_shift,
+                                                        total_range_size)) {
+    log_info(cds)("CDS initialization: Cannot use SharedBaseAddress " PTR_FORMAT " with precomputed shift %d.",
+                  p2i(base_address), precomputed_narrow_klass_shift);
+    use_archive_base_addr = false;
+  }
 
   assert(total_range_size > ccs_begin_offset, "must be");
   if (use_windows_memory_mapping() && use_archive_base_addr) {
@@ -1416,10 +1532,14 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       // caller will not split the combined space for mapping, instead read the archive data
       // via sequential file IO.
       address ccs_base = base_address + archive_space_size + gap_size;
-      archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
-                                       os::vm_page_size(), (char*)base_address);
-      class_space_rs   = ReservedSpace(class_space_size, class_space_alignment,
-                                       os::vm_page_size(), (char*)ccs_base);
+      archive_space_rs = MemoryReserver::reserve((char*)base_address,
+                                                 archive_space_size,
+                                                 archive_space_alignment,
+                                                 os::vm_page_size());
+      class_space_rs   = MemoryReserver::reserve((char*)ccs_base,
+                                                 class_space_size,
+                                                 class_space_alignment,
+                                                 os::vm_page_size());
     }
     if (!archive_space_rs.is_reserved() || !class_space_rs.is_reserved()) {
       release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
@@ -1430,12 +1550,14 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     MemTracker::record_virtual_memory_tag(class_space_rs.base(), mtClass);
   } else {
     if (use_archive_base_addr && base_address != nullptr) {
-      total_space_rs = ReservedSpace(total_range_size, base_address_alignment,
-                                     os::vm_page_size(), (char*) base_address);
+      total_space_rs = MemoryReserver::reserve((char*) base_address,
+                                               total_range_size,
+                                               base_address_alignment,
+                                               os::vm_page_size());
     } else {
       // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
       // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass
-      // encoding base since the archived heap objects contain nKlass IDs pre-calculated toward the start
+      // encoding base since the archived heap objects contain narrow Klass IDs pre-calculated toward the start
       // of the shared Metaspace. That prevents us from using zero-based encoding and therefore we won't
       // try allocating in low-address regions.
       total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, false /* optimize_for_zero_base */);
@@ -1446,7 +1568,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     }
 
     // Paranoid checks:
-    assert(base_address == nullptr || (address)total_space_rs.base() == base_address,
+    assert(!use_archive_base_addr || (address)total_space_rs.base() == base_address,
            "Sanity (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_space_rs.base()));
     assert(is_aligned(total_space_rs.base(), base_address_alignment), "Sanity");
     assert(total_space_rs.size() == total_range_size, "Sanity");
@@ -1479,15 +1601,18 @@ void MetaspaceShared::release_reserved_spaces(ReservedSpace& total_space_rs,
                                               ReservedSpace& class_space_rs) {
   if (total_space_rs.is_reserved()) {
     log_debug(cds)("Released shared space (archive + class) " INTPTR_FORMAT, p2i(total_space_rs.base()));
-    total_space_rs.release();
+    MemoryReserver::release(total_space_rs);
+    total_space_rs = {};
   } else {
     if (archive_space_rs.is_reserved()) {
       log_debug(cds)("Released shared space (archive) " INTPTR_FORMAT, p2i(archive_space_rs.base()));
-      archive_space_rs.release();
+      MemoryReserver::release(archive_space_rs);
+      archive_space_rs = {};
     }
     if (class_space_rs.is_reserved()) {
       log_debug(cds)("Released shared space (classes) " INTPTR_FORMAT, p2i(class_space_rs.base()));
-      class_space_rs.release();
+      MemoryReserver::release(class_space_rs);
+      class_space_rs = {};
     }
   }
 }
@@ -1503,8 +1628,8 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
 
   mapinfo->set_is_mapped(false);
   if (mapinfo->core_region_alignment() != (size_t)core_region_alignment()) {
-    log_info(cds)("Unable to map CDS archive -- core_region_alignment() expected: " SIZE_FORMAT
-                  " actual: " SIZE_FORMAT, mapinfo->core_region_alignment(), core_region_alignment());
+    log_info(cds)("Unable to map CDS archive -- core_region_alignment() expected: %zu"
+                  " actual: %zu", mapinfo->core_region_alignment(), core_region_alignment());
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
@@ -1527,6 +1652,11 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
     intptr_t* array = (intptr_t*)buffer;
     ReadClosure rc(&array, (intptr_t)mapped_base_address);
     early_serialize(&rc);
+  }
+
+  if (!mapinfo->validate_aot_class_linking()) {
+    unmap_archive(mapinfo);
+    return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
   mapinfo->set_is_mapped(true);
@@ -1587,6 +1717,18 @@ void MetaspaceShared::initialize_shared_spaces() {
     DynamicArchive::setup_array_klasses();
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
+  }
+
+  LogStreamHandle(Info, cds) lsh;
+  if (lsh.is_enabled()) {
+    lsh.print("Using AOT-linked classes: %s (static archive: %s aot-linked classes",
+              BOOL_TO_STR(CDSConfig::is_using_aot_linked_classes()),
+              static_mapinfo->header()->has_aot_linked_classes() ? "has" : "no");
+    if (dynamic_mapinfo != nullptr) {
+      lsh.print(", dynamic archive: %s aot-linked classes",
+                dynamic_mapinfo->header()->has_aot_linked_classes() ? "has" : "no");
+    }
+    lsh.print_cr(")");
   }
 
   // Set up LambdaFormInvokers::_lambdaform_lines for dynamic dump
@@ -1656,7 +1798,7 @@ void MetaspaceShared::print_on(outputStream* st) {
     address static_top = (address)_shared_metaspace_static_top;
     address top = (address)MetaspaceObj::shared_metaspace_top();
     st->print("[" PTR_FORMAT "-" PTR_FORMAT "-" PTR_FORMAT "), ", p2i(base), p2i(static_top), p2i(top));
-    st->print("size " SIZE_FORMAT ", ", top - base);
+    st->print("size %zu, ", top - base);
     st->print("SharedBaseAddress: " PTR_FORMAT ", ArchiveRelocationMode: %d.", SharedBaseAddress, ArchiveRelocationMode);
   } else {
     st->print("CDS archive(s) not mapped");

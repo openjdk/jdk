@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,7 @@ import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -97,7 +94,6 @@ import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.common.OperationTrackers.Trackable;
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.internal.net.http.websocket.BuilderImpl;
-import jdk.internal.misc.InnocuousThread;
 
 /**
  * Client implementation. Contains all configuration information and also
@@ -131,16 +127,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             namePrefix = "HttpClient-" + clientID + "-Worker-";
         }
 
-        @SuppressWarnings("removal")
         @Override
         public Thread newThread(Runnable r) {
             String name = namePrefix + nextId.getAndIncrement();
-            Thread t;
-            if (System.getSecurityManager() == null) {
-                t = new Thread(null, r, name, 0, false);
-            } else {
-                t = InnocuousThread.newThread(name, r);
-            }
+            Thread t = new Thread(null, r, name, 0, false);
             t.setDaemon(true);
             return t;
         }
@@ -188,15 +178,9 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             }
         }
 
-        @SuppressWarnings("removal")
         private void shutdown() {
             if (delegate instanceof ExecutorService service) {
-                PrivilegedAction<?> action = () -> {
-                    service.shutdown();
-                    return null;
-                };
-                AccessController.doPrivileged(action, null,
-                        new RuntimePermission("modifyThread"));
+                service.shutdown();
             }
         }
     }
@@ -336,7 +320,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     private final ConnectionPool connections;
     private final DelegatingExecutor delegatingExecutor;
     private final boolean isDefaultExecutor;
-    // Security parameters
     private final SSLContext sslContext;
     private final SSLParameters sslParams;
     private final SelectorManager selmgr;
@@ -445,16 +428,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                            SingleFacadeFactory facadeFactory) {
         id = CLIENT_IDS.incrementAndGet();
         dbgTag = "HttpClientImpl(" + id +")";
-        @SuppressWarnings("removal")
-        var sm = System.getSecurityManager();
-        if (sm != null && builder.localAddr != null) {
-            // when a specific local address is configured, it will eventually
-            // lead to the SocketChannel.bind(...) call with an InetSocketAddress
-            // whose InetAddress is the local address and the port is 0. That ultimately
-            // leads to a SecurityManager.checkListen permission check for that port.
-            // so we do that security manager check here with port 0.
-            sm.checkListen(0);
-        }
         localAddr = builder.localAddr;
         if (builder.sslContext == null) {
             try {
@@ -484,7 +457,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 Redirect.NEVER : builder.followRedirects;
         this.userProxySelector = builder.proxy;
         this.proxySelector = Optional.ofNullable(userProxySelector)
-                .orElseGet(HttpClientImpl::getDefaultProxySelector);
+                .orElseGet(ProxySelector::getDefault);
         if (debug.on())
             debug.log("proxySelector is %s (user-supplied=%s)",
                       this.proxySelector, userProxySelector != null);
@@ -640,12 +613,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     private static SSLParameters getDefaultParams(SSLContext ctx) {
         SSLParameters params = ctx.getDefaultSSLParameters();
         return params;
-    }
-
-    @SuppressWarnings("removal")
-    private static ProxySelector getDefaultProxySelector() {
-        PrivilegedAction<ProxySelector> action = ProxySelector::getDefault;
-        return AccessController.doPrivileged(action);
     }
 
     // Returns the facade that was returned to the application code.
@@ -992,7 +959,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return sendAsync(userRequest, responseHandler, pushPromiseHandler, delegatingExecutor.delegate);
     }
 
-    @SuppressWarnings("removal")
     private <T> CompletableFuture<HttpResponse<T>>
     sendAsync(HttpRequest userRequest,
               BodyHandler<T> responseHandler,
@@ -1012,11 +978,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             return MinimalFuture.failedFuture(selmgr.selectorClosedException());
         }
 
-        AccessControlContext acc = null;
-        if (System.getSecurityManager() != null)
-            acc = AccessController.getContext();
-
-        // Clone the, possibly untrusted, HttpRequest
+        // Clone the possibly untrusted HttpRequest
         HttpRequestImpl requestImpl = new HttpRequestImpl(userRequest, proxySelector);
         if (requestImpl.method().equals("CONNECT"))
             throw new IllegalArgumentException("Unsupported method CONNECT");
@@ -1049,8 +1011,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                                                             requestImpl,
                                                             this,
                                                             responseHandler,
-                                                            pushPromiseHandler,
-                                                            acc);
+                                                            pushPromiseHandler);
             CompletableFuture<HttpResponse<T>> mexCf = mex.responseAsync(executor);
             CompletableFuture<HttpResponse<T>> res = mexCf.whenComplete((b,t) -> requestUnreference());
             if (DEBUGELAPSED) {

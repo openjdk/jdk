@@ -30,7 +30,7 @@
  * @requires vm.jvmti
  * @library /test/lib /test/hotspot/jtreg/serviceability/jvmti/RedefineClasses /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver RedefineClassHelper
- * @build jdk.test.whitebox.WhiteBox jdk.test.lib.compiler.InMemoryJavaCompiler  RedefineBasic
+ * @build jdk.test.whitebox.WhiteBox RedefineBasic
  * @run driver RedefineBasicTest
  */
 

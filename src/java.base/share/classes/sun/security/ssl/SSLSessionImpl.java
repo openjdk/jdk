@@ -49,7 +49,6 @@ import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLPermission;
 import javax.net.ssl.SSLSessionBindingEvent;
 import javax.net.ssl.SSLSessionBindingListener;
 import javax.net.ssl.SSLSessionContext;
@@ -913,24 +912,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * are currently valid in this process.  For client sessions,
      * this returns null.
      */
-    @SuppressWarnings("removal")
     @Override
     public SSLSessionContext getSessionContext() {
-        /*
-         * An interim security policy until we can do something
-         * more specific in 1.2. Only allow trusted code (code which
-         * can set system properties) to get an
-         * SSLSessionContext. This is to limit the ability of code to
-         * look up specific sessions or enumerate over them. Otherwise,
-         * code can only get session objects from successful SSL
-         * connections which implies that they must have had permission
-         * to make the network connection in the first place.
-         */
-        SecurityManager sm;
-        if ((sm = System.getSecurityManager()) != null) {
-            sm.checkPermission(new SSLPermission("getSSLSessionContext"));
-        }
-
         return context;
     }
 
@@ -1236,10 +1219,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
     /*
      * Table of application-specific session data indexed by an application
-     * key and the calling security context. This is important since
-     * sessions can be shared across different protection domains.
+     * key.
      */
-    private final ConcurrentHashMap<SecureKey, Object> boundValues;
+    private final ConcurrentHashMap<String, Object> boundValues;
 
     /**
      * Assigns a session value.  Session change events are given if
@@ -1251,8 +1233,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             throw new IllegalArgumentException("arguments can not be null");
         }
 
-        SecureKey secureKey = new SecureKey(key);
-        Object oldValue = boundValues.put(secureKey, value);
+        Object oldValue = boundValues.put(key, value);
 
         if (oldValue instanceof SSLSessionBindingListener) {
             SSLSessionBindingEvent e;
@@ -1280,8 +1261,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             throw new IllegalArgumentException("argument can not be null");
         }
 
-        SecureKey secureKey = new SecureKey(key);
-        return boundValues.get(secureKey);
+        return boundValues.get(key);
     }
 
 
@@ -1295,8 +1275,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             throw new IllegalArgumentException("argument can not be null");
         }
 
-        SecureKey secureKey = new SecureKey(key);
-        Object value = boundValues.remove(secureKey);
+        Object value = boundValues.remove(key);
 
         if (value instanceof SSLSessionBindingListener) {
             SSLSessionBindingEvent e;
@@ -1315,15 +1294,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     @Override
     public String[] getValueNames() {
-        ArrayList<Object> v = new ArrayList<>();
-        Object securityCtx = SecureKey.getCurrentSecurityContext();
-        for (SecureKey key : boundValues.keySet()) {
-            if (securityCtx.equals(key.getSecurityContext())) {
-                v.add(key.getAppKey());
-            }
-        }
-
-        return v.toArray(new String[0]);
+        return boundValues.keySet().toArray(new String[0]);
     }
 
     /**
@@ -1520,51 +1491,5 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     @Override
     public String toString() {
         return "Session(" + creationTime + "|" + getCipherSuite() + ")";
-    }
-}
-
-/**
- * This "struct" class serves as a Hash Key that combines an
- * application-specific key and a security context.
- */
-class SecureKey {
-    private static final Object     nullObject = new Object();
-    private final Object            appKey;
-    private final Object            securityCtx;
-
-    static Object getCurrentSecurityContext() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        Object context = null;
-
-        if (sm != null)
-            context = sm.getSecurityContext();
-        if (context == null)
-            context = nullObject;
-        return context;
-    }
-
-    SecureKey(Object key) {
-        this.appKey = key;
-        this.securityCtx = getCurrentSecurityContext();
-    }
-
-    Object getAppKey() {
-        return appKey;
-    }
-
-    Object getSecurityContext() {
-        return securityCtx;
-    }
-
-    @Override
-    public int hashCode() {
-        return appKey.hashCode() ^ securityCtx.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof SecureKey && ((SecureKey)o).appKey.equals(appKey)
-                        && ((SecureKey)o).securityCtx.equals(securityCtx);
     }
 }

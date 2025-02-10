@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ class RISCV64HotSpotVMConfig extends HotSpotVMConfigAccess {
     final boolean useRVC = getFlag("UseRVC", Boolean.class);
     final boolean useZba = getFlag("UseZba", Boolean.class);
     final boolean useZbb = getFlag("UseZbb", Boolean.class);
-    final boolean useRVVForBigIntegerShiftIntrinsics = getFlag("UseRVVForBigIntegerShiftIntrinsics", Boolean.class);
 
     final long vmVersionFeatures = getFieldValue("Abstract_VM_Version::_features", Long.class, "uint64_t");
 }

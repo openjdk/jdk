@@ -538,6 +538,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public NamedImportScope namedImportScope;
         /** A scope for all import-on-demands. */
         public StarImportScope starImportScope;
+        /** A scope for all single module imports. */
+        public StarImportScope moduleImportScope;
         /** Line starting positions, defined only if option -g is set. */
         public Position.LineMap lineMap = null;
         /** A table that stores all documentation comments indexed by the tree
@@ -884,7 +886,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCExpression> getImplementsClause() {
             return implementing;
         }
-        @SuppressWarnings("removal")
         @DefinedBy(Api.COMPILER_TREE)
         public List<JCExpression> getPermitsClause() {
             return permitting;

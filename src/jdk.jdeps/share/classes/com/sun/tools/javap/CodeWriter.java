@@ -25,16 +25,13 @@
 
 package com.sun.tools.javap;
 
+import java.lang.classfile.*;
 import java.util.ArrayList;
 import java.util.List;
 
 import java.util.Locale;
 import java.util.stream.Collectors;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.*;
-import java.lang.classfile.Instruction;
-import java.lang.classfile.MethodModel;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.instruction.*;
 
@@ -260,15 +257,34 @@ public class CodeWriter extends BasicWriter {
     private void writeInternal(CodeAttribute attr, boolean minimal) {
         println("Code:");
         indent(+1);
-        if (!minimal) {
-            writeVerboseHeader(attr);
-        }
-        writeInstrs(attr);
-        writeExceptionTable(attr);
-        if (!minimal) {
-            attrWriter.write(attr.attributes(), attr);
+        if (minimal) {
+            writeMinimalMode(attr);
+        } else {
+            writeVerboseMode(attr);
         }
         indent(-1);
+    }
+
+    private void writeMinimalMode(CodeAttribute attr) {
+        writeInstrs(attr);
+        writeExceptionTable(attr);
+        if (options.showLineAndLocalVariableTables) {
+            writeLineAndLocalVariableTables(attr);
+        }
+    }
+
+    private void writeVerboseMode(CodeAttribute attr) {
+        writeVerboseHeader(attr);
+        writeInstrs(attr);
+        writeExceptionTable(attr);
+        attrWriter.write(attr.attributes(), attr);
+    }
+
+    private void writeLineAndLocalVariableTables(CodeAttribute attr) {
+        attr.findAttribute(Attributes.lineNumberTable())
+            .ifPresent(a -> attrWriter.write(a, attr));
+        attr.findAttribute(Attributes.localVariableTable())
+            .ifPresent(a -> attrWriter.write(a, attr));
     }
 
     private AttributeWriter attrWriter;

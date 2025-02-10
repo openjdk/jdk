@@ -159,9 +159,10 @@ class Direct$Type$Buffer$RW$$BO$
     }
 
     // Invoked only by JNI: NewDirectByteBuffer(void*, long)
+    // and JavaNioAccess.newDirectByteBuffer(int).
     // The long-valued capacity is restricted to int range.
     //
-    private Direct$Type$Buffer(long addr, long cap) {
+    Direct$Type$Buffer(long addr, long cap) {
         super(-1, 0, checkCapacity(cap), (int)cap, null);
         address = addr;
         cleaner = null;

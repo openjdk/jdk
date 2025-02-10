@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -100,7 +100,7 @@ import org.xml.sax.ext.LexicalHandler;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author Santiago Pericas-Geertsen
- * @LastModified: July 2023
+ * @LastModified: Dec 2024
  */
 public final class TransformerImpl extends Transformer
     implements DOMCache
@@ -206,7 +206,7 @@ public final class TransformerImpl extends Transformer
     /**
      * State of the secure processing feature.
      */
-    private boolean _isSecureProcessing = false;
+    private boolean _isSecureProcessing = true;
 
     /**
      * Indicates whether 3rd party parser may be used to override the system-default
@@ -292,6 +292,7 @@ public final class TransformerImpl extends Transformer
         _propertiesClone = (Properties) _properties.clone();
         _indentNumber = indentNumber;
         _tfactory = tfactory;
+        _isSecureProcessing = _tfactory.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING);
         _overrideDefaultParser = _tfactory.overrideDefaultParser();
         _accessExternalDTD = (String)_tfactory.getAttribute(XMLConstants.ACCESS_EXTERNAL_DTD);
         _securityManager = (XMLSecurityManager)_tfactory.getAttribute(JdkConstants.SECURITY_MANAGER);

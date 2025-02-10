@@ -95,11 +95,6 @@ public class FileInputStream extends InputStream
      * object is created to represent this file
      * connection.
      * <p>
-     * First, if there is a security
-     * manager, its {@code checkRead} method
-     * is called with the {@code name} argument
-     * as its argument.
-     * <p>
      * If the named file does not exist, is a directory rather than a regular
      * file, or for some other reason cannot be opened for reading then a
      * {@code FileNotFoundException} is thrown.
@@ -109,10 +104,6 @@ public class FileInputStream extends InputStream
      *             is a directory rather than a regular file,
      *             or for some other reason cannot be opened for
      *             reading.
-     * @throws     SecurityException      if a security manager exists and its
-     *             {@code checkRead} method denies read access
-     *             to the file.
-     * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      */
     public FileInputStream(String name) throws FileNotFoundException {
         this(name != null ? new File(name) : null);
@@ -126,11 +117,6 @@ public class FileInputStream extends InputStream
      * A new {@code FileDescriptor} object
      * is created to represent this file connection.
      * <p>
-     * First, if there is a security manager,
-     * its {@code checkRead} method  is called
-     * with the path represented by the {@code file}
-     * argument as its argument.
-     * <p>
      * If the named file does not exist, is a directory rather than a regular
      * file, or for some other reason cannot be opened for reading then a
      * {@code FileNotFoundException} is thrown.
@@ -140,29 +126,17 @@ public class FileInputStream extends InputStream
      *             is a directory rather than a regular file,
      *             or for some other reason cannot be opened for
      *             reading.
-     * @throws     SecurityException      if a security manager exists and its
-     *             {@code checkRead} method denies read access to the file.
      * @see        java.io.File#getPath()
-     * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      */
     @SuppressWarnings("this-escape")
     public FileInputStream(File file) throws FileNotFoundException {
-        String name = (file != null ? file.getPath() : null);
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(name);
-        }
-        if (name == null) {
-            throw new NullPointerException();
-        }
         if (file.isInvalid()) {
             throw new FileNotFoundException("Invalid file path");
         }
+        path = file.getPath();
         fd = new FileDescriptor();
         fd.attach(this);
-        path = name;
-        open(name);
+        open(path);
         FileCleanable.register(fd);       // open set the fd, register the cleanup
     }
 
@@ -170,11 +144,6 @@ public class FileInputStream extends InputStream
      * Creates a {@code FileInputStream} by using the file descriptor
      * {@code fdObj}, which represents an existing connection to an
      * actual file in the file system.
-     * <p>
-     * If there is a security manager, its {@code checkRead} method is
-     * called with the file descriptor {@code fdObj} as its argument to
-     * see if it's ok to read the file descriptor. If read access is denied
-     * to the file descriptor a {@code SecurityException} is thrown.
      * <p>
      * If {@code fdObj} is null then a {@code NullPointerException}
      * is thrown.
@@ -185,20 +154,11 @@ public class FileInputStream extends InputStream
      * I/O on the stream, an {@code IOException} is thrown.
      *
      * @param      fdObj   the file descriptor to be opened for reading.
-     * @throws     SecurityException      if a security manager exists and its
-     *             {@code checkRead} method denies read access to the
-     *             file descriptor.
-     * @see        SecurityManager#checkRead(java.io.FileDescriptor)
      */
     @SuppressWarnings("this-escape")
     public FileInputStream(FileDescriptor fdObj) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
         if (fdObj == null) {
             throw new NullPointerException();
-        }
-        if (security != null) {
-            security.checkRead(fdObj);
         }
         fd = fdObj;
         path = null;

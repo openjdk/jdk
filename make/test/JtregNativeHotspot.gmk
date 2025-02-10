@@ -880,7 +880,6 @@ endif
 
 
 BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exesigtest := java.base:libjvm
-BUILD_HOTSPOT_JTREG_LIBRARIES_JDK_LIBS_libatExit := java.base:libjvm
 BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exedaemonDestroy := java.base:libjvm
 
 ifeq ($(call isTargetOs, windows), true)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,7 @@ var getJibProfilesCommon = function (input, data) {
     // List of the main profile names used for iteration
     common.main_profile_names = [
         "linux-x64", "linux-x86", "macosx-x64", "macosx-aarch64",
-        "windows-x64", "windows-x86", "windows-aarch64",
+        "windows-x64", "windows-aarch64",
         "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x",
         "linux-riscv64"
     ];
@@ -252,8 +252,8 @@ var getJibProfilesCommon = function (input, data) {
         default_make_targets: ["product-bundles", "test-bundles", "static-libs-bundles"],
         configure_args: concat(
             "--with-exclude-translations=es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
-            "--disable-manpages",
             "--disable-jvm-feature-shenandoahgc",
+            "--disable-cds-archive-coh",
             versionArgs(input, common))
     };
 
@@ -463,15 +463,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit),
-        },
-
-        "windows-x86": {
-            target_os: "windows",
-            target_cpu: "x86",
-            build_cpu: "x64",
-            dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_32bit,
-                "--enable-deprecated-ports"),
         },
 
         "windows-aarch64": {
@@ -716,10 +707,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             platform: "windows-x64",
             jdk_suffix: "zip",
         },
-        "windows-x86": {
-            platform: "windows-x86",
-            jdk_suffix: "zip",
-        },
         "windows-aarch64": {
             platform: "windows-aarch64",
             jdk_suffix: "zip",
@@ -793,7 +780,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
             dependencies: [
-                "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
+                "autoconf", "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
             ],
             configure_args: concat(
                 "--enable-full-docs",
@@ -1105,9 +1092,9 @@ var getJibProfilesDependencies = function (input, common) {
         windows_x64: "VS2022-17.6.5+1.0",
         linux_aarch64: "gcc13.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
-        linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
-        linux_s390x: "gcc8.2.0-Fedora27+1.0",
-        linux_riscv64: "gcc11.3.0-Fedora_rawhide_68692+1.1"
+        linux_ppc64le: "gcc13.2.0-Fedora_41+1.0",
+        linux_s390x: "gcc13.2.0-Fedora_41+1.0",
+        linux_riscv64: "gcc13.2.0-Fedora_41+1.0"
     };
 
     var devkit_platform = (input.target_cpu == "x86"
@@ -1214,9 +1201,11 @@ var getJibProfilesDependencies = function (input, common) {
         },
 
         jcov: {
-            organization: common.organization,
-            revision: "3.0-17-jdk-asm+1.0",
-            ext: "zip",
+            server: "jpg",
+            product: "jcov",
+            version: "3.0",
+            build_number: "1",
+            file: "bundles/jcov-3.0+1.zip",
             environment_name: "JCOV_HOME",
         },
 

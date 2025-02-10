@@ -29,13 +29,13 @@
  * @library /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- *          /test/hotspot/jtreg/runtime/cds/appcds/jvmti
+ * @requires vm.cds
  * @requires vm.jvmti
  * @compile ../../test-classes/OldSuper.jasm
+ * @run driver RedefineClassHelper
  * @build RedefineOldSuperTest
  *        RedefineOldSuperApp
  *        NewChild
- * @run driver RedefineClassHelper
  * @run driver RedefineOldSuperTest
  */
 

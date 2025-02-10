@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -613,7 +612,7 @@ JVMCIEnv::~JVMCIEnv() {
   if (_init_error_msg != nullptr) {
     // The memory allocated in libjvmci was not allocated with os::malloc
     // so must not be freed with os::free.
-    ALLOW_C_FUNCTION(::free((void*) _init_error_msg));
+    ALLOW_C_FUNCTION(::free, ::free((void*) _init_error_msg);)
   }
   if (_init_error != JNI_OK) {
     return;
@@ -941,9 +940,8 @@ void JVMCIEnv::fthrow_error(const char* file, int line, const char* format, ...)
   va_end(ap);
   JavaThread* THREAD = JavaThread::current();
   if (is_hotspot()) {
-    Handle h_loader = Handle();
-    Handle h_protection_domain = Handle();
-    Exceptions::_throw_msg(THREAD, file, line, vmSymbols::jdk_vm_ci_common_JVMCIError(), msg, h_loader, h_protection_domain);
+    Handle h_loader;
+    Exceptions::_throw_msg(THREAD, file, line, vmSymbols::jdk_vm_ci_common_JVMCIError(), msg, h_loader );
   } else {
     JNIAccessMark jni(this, THREAD);
     jni()->ThrowNew(JNIJVMCI::JVMCIError::clazz(), msg);
@@ -1593,7 +1591,7 @@ JVMCIObject JVMCIEnv::new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS) {
     HotSpotJVMCI::FieldInfo::set_nameIndex(JVMCIENV, obj_h(), (jint)fieldinfo->name_index());
     HotSpotJVMCI::FieldInfo::set_signatureIndex(JVMCIENV, obj_h(), (jint)fieldinfo->signature_index());
     HotSpotJVMCI::FieldInfo::set_offset(JVMCIENV, obj_h(), (jint)fieldinfo->offset());
-    HotSpotJVMCI::FieldInfo::set_classfileFlags(JVMCIENV, obj_h(), (jint)fieldinfo->access_flags().as_int());
+    HotSpotJVMCI::FieldInfo::set_classfileFlags(JVMCIENV, obj_h(), (jint)fieldinfo->access_flags().as_field_flags());
     HotSpotJVMCI::FieldInfo::set_internalFlags(JVMCIENV, obj_h(), (jint)fieldinfo->field_flags().as_uint());
     HotSpotJVMCI::FieldInfo::set_initializerIndex(JVMCIENV, obj_h(), (jint)fieldinfo->initializer_index());
     return wrap(obj_h());
@@ -1604,7 +1602,7 @@ JVMCIObject JVMCIEnv::new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS) {
                                       (jint)fieldinfo->name_index(),
                                       (jint)fieldinfo->signature_index(),
                                       (jint)fieldinfo->offset(),
-                                      (jint)fieldinfo->access_flags().as_int(),
+                                      (jint)fieldinfo->access_flags().as_field_flags(),
                                       (jint)fieldinfo->field_flags().as_uint(),
                                       (jint)fieldinfo->initializer_index());
 

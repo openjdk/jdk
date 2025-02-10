@@ -340,8 +340,8 @@ public class TestMergeStores {
             set_random(aL);
             set_random(bL);
 
-            offset1 = Math.abs(RANDOM.nextInt()) % 100;
-            offset2 = Math.abs(RANDOM.nextInt()) % 100;
+            offset1 = RANDOM.nextInt(100);
+            offset2 = RANDOM.nextInt(100);
             vB1 = (byte)RANDOM.nextInt();
             vB2 = (byte)RANDOM.nextInt();
             vS1 = (short)RANDOM.nextInt();

@@ -178,7 +178,7 @@ public class TypePollution {
             probe ^= probe << 13;   // xorshift
             probe ^= probe >>> 17;
             probe ^= probe << 5;
-            dummy += switch(objectArray[Math.abs(probe) % objectArray.length]) {
+            dummy += switch(objectArray[(probe & Integer.MAX_VALUE) % objectArray.length]) {
             case I01 inst -> 1;
             case I02 inst -> 2;
             case I03 inst -> 3;
@@ -192,7 +192,7 @@ public class TypePollution {
             probe ^= probe << 13;   // xorshift
             probe ^= probe >>> 17;
             probe ^= probe << 5;
-            dummy += switch(objectArray[Math.abs(probe) % objectArray.length]) {
+            dummy += switch(objectArray[(probe & Integer.MAX_VALUE) % objectArray.length]) {
             case I18 inst -> 8;
             case I17 inst -> 7;
             case I16 inst -> 6;

@@ -93,6 +93,15 @@
   flags(BEFORE_MATCHING,                "Before matching") \
   flags(MATCHING,                       "After matching") \
   flags(GLOBAL_CODE_MOTION,             "Global code motion") \
+  flags(INITIAL_LIVENESS,               "Initial liveness") \
+  flags(AGGRESSIVE_COALESCING,          "Aggressive coalescing") \
+  flags(INITIAL_SPILLING,               "Initial spilling") \
+  flags(CONSERVATIVE_COALESCING,        "Conservative coalescing") \
+  flags(ITERATIVE_SPILLING,             "Iterative spilling") \
+  flags(AFTER_ITERATIVE_SPILLING,       "After iterative spilling") \
+  flags(POST_ALLOCATION_COPY_REMOVAL,   "Post-allocation copy removal") \
+  flags(MERGE_MULTI_DEFS,               "Merge multiple definitions") \
+  flags(FIX_UP_SPILLS,                  "Fix up spills") \
   flags(REGISTER_ALLOCATION,            "Register Allocation") \
   flags(BLOCK_ORDERING,                 "Block Ordering") \
   flags(PEEPHOLE,                       "Peephole") \
