@@ -48,6 +48,9 @@ sealed interface Token permits StringToken,
     }
 
     private static void parseToken(Object o, List<Token> outputList) {
+        if (o == null) {
+            throw new IllegalArgumentException("Unexpected token: null");
+        }
         switch (o) {
             case Token t   -> outputList.add(t);
             case String s  -> outputList.add(new StringToken(s));
@@ -56,7 +59,6 @@ sealed interface Token permits StringToken,
             case Double s  -> outputList.add(new StringToken(s.toString()));
             case Float s   -> outputList.add(new StringToken(s.toString()));
             case List l    -> parseList(l, outputList);
-            //case Hook h -> { // TODO some known cases
             default -> throw new IllegalArgumentException("Unexpected token: " + o);
         }
     }

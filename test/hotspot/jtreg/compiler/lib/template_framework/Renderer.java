@@ -45,7 +45,6 @@ public class Renderer {
      */
     private static Renderer renderer = null;
 
-    // TODO describe
     private int nextTemplateFrameId;
     private TemplateFrame baseTemplateFrame;
     private TemplateFrame currentTemplateFrame;

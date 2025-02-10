@@ -73,6 +73,9 @@ public interface Template {
     }
 
     static TemplateBody body(Object... tokens) {
+        if (tokens == null) {
+            throw new IllegalArgumentException("Unexpected tokens: null");
+        }
         return new TemplateBody(Token.parse(Arrays.asList(tokens)));
     }
 

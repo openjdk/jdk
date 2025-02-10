@@ -83,22 +83,25 @@ public class TestTemplate {
         testNames3();
         testListArgument();
 
-        checkFails(() -> testFailingNestedRendering(), "Nested render not allowed.");
-        checkFails(() -> $("name"),                          "A Template method such as");
-        checkFails(() -> let("x","y"),                       "A Template method such as");
-        checkFails(() -> fuel(),                             "A Template method such as");
-        checkFails(() -> setFuelCost(1.0f),                  "A Template method such as");
-        checkFails(() -> defineName("name", "int", MUTABLE), "A Template method such as");
-        checkFails(() -> countNames("int", MUTABLE),         "A Template method such as");
-        checkFails(() -> sampleName("int", MUTABLE),         "A Template method such as");
-        checkFails(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
-        checkFails(() -> testFailingSample(), "No variable of type 'int'.");
-        checkFails(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
-        checkFails(() -> testFailingHashtag2(), "Duplicate hashtag replacement for #a");
-        checkFails(() -> testFailingHashtag3(), "Duplicate hashtag replacement for #a");
-        checkFails(() -> testFailingHashtag4(), "Missing hashtag replacement for #a");
-        checkFails(() -> testFailingBinding1(), "Duplicate 'bind' not allowed.");
-        checkFails(() -> testFailingBinding2(), "Cannot 'get' before 'bind'.");
+        expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
+        expectRendererException(() -> $("name"),                          "A Template method such as");
+        expectRendererException(() -> let("x","y"),                       "A Template method such as");
+        expectRendererException(() -> fuel(),                             "A Template method such as");
+        expectRendererException(() -> setFuelCost(1.0f),                  "A Template method such as");
+        expectRendererException(() -> defineName("name", "int", MUTABLE), "A Template method such as");
+        expectRendererException(() -> countNames("int", MUTABLE),         "A Template method such as");
+        expectRendererException(() -> sampleName("int", MUTABLE),         "A Template method such as");
+        expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
+        expectRendererException(() -> testFailingSample(), "No variable of type 'int'.");
+        expectRendererException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
+        expectRendererException(() -> testFailingHashtag2(), "Duplicate hashtag replacement for #a");
+        expectRendererException(() -> testFailingHashtag3(), "Duplicate hashtag replacement for #a");
+        expectRendererException(() -> testFailingHashtag4(), "Missing hashtag replacement for #a");
+        expectRendererException(() -> testFailingBinding1(), "Duplicate 'bind' not allowed.");
+        expectRendererException(() -> testFailingBinding2(), "Cannot 'get' before 'bind'.");
+        expectIllegalArgumentException(() -> body(null),              "Unexpected tokens: null");
+        expectIllegalArgumentException(() -> body("x", null),         "Unexpected token: null");
+        expectIllegalArgumentException(() -> body(new Hook("Hook1")), "Unexpected token:");
     }
 
     public static void testSingleLine() {
@@ -1146,16 +1149,31 @@ public class TestTemplate {
         ));
         String code = template1.withArgs().render();
     }
-    public static void checkFails(FailingTest test, String errorPrefix) {
+
+    public static void expectRendererException(FailingTest test, String errorPrefix) {
         try {
             test.run();
-            System.out.println("checkFails should have thrown with prefix: " + errorPrefix);
+            System.out.println("Should have thrown with prefix: " + errorPrefix);
             throw new RuntimeException("Should have thrown!");
         } catch(RendererException e) {
             if (!e.getMessage().startsWith(errorPrefix)) {
-                System.out.println("checkFails should have thrown with prefix: " + errorPrefix);
+                System.out.println("Should have thrown with prefix: " + errorPrefix);
                 System.out.println("got: " + e.getMessage());
-                throw new RuntimeException("checkFails prefix mismatch", e);
+                throw new RuntimeException("Prefix mismatch", e);
+            }
+        }
+    }
+
+    public static void expectIllegalArgumentException(FailingTest test, String errorPrefix) {
+        try {
+            test.run();
+            System.out.println("Should have thrown with prefix: " + errorPrefix);
+            throw new RuntimeException("Should have thrown!");
+        } catch(IllegalArgumentException e) {
+            if (!e.getMessage().startsWith(errorPrefix)) {
+                System.out.println("Should have thrown with prefix: " + errorPrefix);
+                System.out.println("got: " + e.getMessage());
+                throw new RuntimeException("Prefix mismatch", e);
             }
         }
     }
