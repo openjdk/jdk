@@ -929,8 +929,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
         updateVisibleFigureWidgets();
         updateNodeHull();
-        updateVisibleBlockWidgets();
         updateVisibleLiveRangeWidgets();
+        updateVisibleBlockWidgets();
         validateAll();
 
         Set<Figure> visibleFigures = getVisibleFigures();
@@ -1706,6 +1706,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 FigureWidget figureWidget = getWidget(figure);
                 if (figureWidget.isVisible()) {
                     visibleBlocks.add(figure.getBlock());
+                }
+            }
+            for (LiveRangeSegment segment : getModel().getDiagram().getLiveRangeSegments()) {
+                LiveRangeWidget liveRangeWidget = getWidget(segment);
+                if (liveRangeWidget.isVisible()) {
+                    visibleBlocks.add(segment.getCluster());
                 }
             }
             if (getModel().getShowCFG() && getModel().getShowEmptyBlocks()) {
