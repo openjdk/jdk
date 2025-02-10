@@ -2017,7 +2017,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   }
 
   char* const hi_end = MIN2(max, absolute_max);
-  if ((uintptr_t)hi_end < bytes) {
+  if ((uintptr_t)hi_end <= bytes) {
     return nullptr; // no need to go on
   }
   char* const hi_att = align_down(hi_end - bytes, alignment_adjusted);
