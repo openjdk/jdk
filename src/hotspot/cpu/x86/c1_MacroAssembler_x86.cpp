@@ -338,6 +338,11 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
     empty_FPU_stack();
   }
 #endif // !_LP64 && COMPILER2
+
+  if (ProfileCaptureRatio < 1.0) {
+    movl(r14, Address(r15_thread, JavaThread::profile_rng_offset()));
+  }
+
   decrement(rsp, frame_size_in_bytes); // does not emit code for frame_size == 0
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -347,6 +352,9 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 
 
 void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
+ if (ProfileCaptureRatio < 1.0) {
+   movl(Address(r15_thread, JavaThread::profile_rng_offset()), r14);
+  }
   increment(rsp, frame_size_in_bytes);  // Does not emit code for frame_size == 0
   pop(rbp);
 }
