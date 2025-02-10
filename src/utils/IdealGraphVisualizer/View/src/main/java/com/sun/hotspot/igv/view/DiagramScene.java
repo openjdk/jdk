@@ -1360,13 +1360,13 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         for (InputLiveRange liveRange : liveRanges) {
             liveRangeIds.add(liveRange.getId());
         }
-        Map<Integer, LiveRangeSegment> representativeSegments = new HashMap<>();
+        Set<LiveRangeSegment> segments = new HashSet<>();
         for (LiveRangeSegment segment : model.getDiagram().getLiveRangeSegments()) {
             if (liveRangeIds.contains(segment.getLiveRange().getId())) {
-                representativeSegments.put(segment.getLiveRange().getId(), segment);
+                segments.add(segment);
             }
         }
-        return new HashSet<>(representativeSegments.values());
+        return segments;
     }
 
     private Set<Figure> figureSet(Collection<InputNode> nodes) {
