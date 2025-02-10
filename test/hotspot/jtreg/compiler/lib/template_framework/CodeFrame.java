@@ -36,10 +36,33 @@ class CodeFrame {
     final NameSet mutableNames;
     final NameSet allNames;
 
-    CodeFrame(CodeFrame parent) {
+    private CodeFrame(CodeFrame parent, boolean isTransparentForNames) {
         this.parent = parent;
-        this.mutableNames = new NameSet(parent != null ? parent.mutableNames : null);
-        this.allNames     = new NameSet(parent != null ? parent.allNames     : null);
+        if (parent == null) {
+            // NameSets without any parent.
+            this.mutableNames = new NameSet(null);
+            this.allNames     = new NameSet(null);
+        } else if (isTransparentForNames) {
+            // We use the same NameSets as the parent - makes it transparent.
+            this.mutableNames = parent.mutableNames;
+            this.allNames     = parent.allNames;
+        } else {
+            // New NameSets, to make sure we have a nested scope for the names.
+            this.mutableNames = new NameSet(parent.mutableNames);
+            this.allNames     = new NameSet(parent.allNames);
+        }
+    }
+
+    public static CodeFrame makeBase() {
+        return new CodeFrame(null, false);
+    }
+
+    public static CodeFrame make(CodeFrame parent) {
+        return new CodeFrame(parent, false);
+    }
+
+    public static CodeFrame makeTransparentForNames(CodeFrame parent) {
+        return new CodeFrame(parent, true);
     }
 
     void addString(String s) {

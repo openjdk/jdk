@@ -57,7 +57,7 @@ public class Renderer {
         nextTemplateFrameId = 0;
         baseTemplateFrame = TemplateFrame.makeBase(nextTemplateFrameId++, fuel);
         currentTemplateFrame = baseTemplateFrame;
-        baseCodeFrame = new CodeFrame(null);
+        baseCodeFrame = CodeFrame.makeBase();
         currentCodeFrame = baseCodeFrame;
     }
 
@@ -166,13 +166,13 @@ public class Renderer {
 
                 // We need a CodeFrame to which the hook can insert code. That way, name
                 // definitions at the hook cannot excape the hookCodeFrame.
-                CodeFrame hookCodeFrame = new CodeFrame(outerCodeFrame);
+                CodeFrame hookCodeFrame = CodeFrame.make(outerCodeFrame);
                 hookCodeFrame.addHook(hook);
 
                 // We need a CodeFrame where the tokens can be rendered. That way, name
                 // definitions from the tokens cannot escape the innerCodeFrame to the
                 // hookCodeFrame.
-                CodeFrame innerCodeFrame = new CodeFrame(hookCodeFrame);
+                CodeFrame innerCodeFrame = CodeFrame.make(hookCodeFrame);
                 currentCodeFrame = innerCodeFrame;
 
                 renderTokenList(tokens);
@@ -194,8 +194,7 @@ public class Renderer {
                 // the hookCodeFrame.
                 // But the CodeFrame must be transparent, so that its name definitions go out to
                 // the hookCodeFrame, and are not limited to the CodeFrame for the TemplateWithArgs.
-                currentCodeFrame = new CodeFrame(hookCodeFrame);
-                // TODO make transparent for names
+                currentCodeFrame = CodeFrame.makeTransparentForNames(hookCodeFrame);
 
                 renderTemplateWithArgs(t);
 
@@ -207,7 +206,7 @@ public class Renderer {
             case TemplateWithArgs t -> {
                 // Use a nested CodeFrame.
                 CodeFrame callerCodeFrame = currentCodeFrame;
-                currentCodeFrame = new CodeFrame(currentCodeFrame);
+                currentCodeFrame = CodeFrame.make(currentCodeFrame);
 
                 renderTemplateWithArgs(t);
 

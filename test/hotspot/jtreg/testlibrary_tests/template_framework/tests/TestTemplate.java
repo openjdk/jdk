@@ -788,40 +788,62 @@ public class TestTemplate {
     public static void testNames() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make("name", "type", (String name, Object type) -> body(
-            defineName(name, type, MUTABLE),
-            "define #type #name\n"
+        var template1 = Template.make(() -> body(
+            "[", countNames("int", MUTABLE), "]\n"
         ));
 
-        var template2 = Template.make(() -> body(
-            "<\n",
-            intoHook(hook1, template1.withArgs($("name"), "int")),
-            "$name = 5",
-            ">\n"
+        var template2 = Template.make("name", "type", (String name, Object type) -> body(
+            defineName(name, type, MUTABLE),
+            "define #type #name\n",
+            template1.withArgs()
         ));
 
         var template3 = Template.make(() -> body(
-            "[", countNames("int", MUTABLE), "]\n"
+            "<\n",
+            intoHook(hook1, template2.withArgs($("name"), "int")),
+            "$name = 5\n",
+            ">\n"
         ));
 
         var template4 = Template.make(() -> body(
             "{\n",
-            template3.withArgs(),
+            template1.withArgs(),
             hook1.set(
-                template3.withArgs(),
+                template1.withArgs(),
                 "something\n",
-                template2.withArgs(),
+                template3.withArgs(),
                 "more\n",
-                template3.withArgs()
+                template1.withArgs(),
+                "more\n",
+                template2.withArgs($("name"), "int"),
+                "more\n",
+                template1.withArgs()
             ),
-            template3.withArgs(),
+            template1.withArgs(),
             "}\n"
         ));
 
         String code = template4.withArgs().render();
         String expected =
             """
-
+            {
+            [0]
+            define int name_4
+            [1]
+            [0]
+            something
+            <
+            name_4 = 5
+            >
+            more
+            [1]
+            more
+            define int name_1
+            [2]
+            more
+            [1]
+            [0]
+            }
             """;
         checkEQ(code, expected);
     }
