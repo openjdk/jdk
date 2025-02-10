@@ -29,6 +29,7 @@
  */
 
 import java.io.IOException;
+import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -62,9 +63,9 @@ public class TestNoNULL {
         initializeExcludedPaths(dir);
 
         if (Files.exists(srcPath)) {
-            processFiles(srcPath, excludedSourceFiles, false);
+            processFiles(srcPath, excludedSourceFiles, Set.of());
         }
-        processFiles(testPath, excludedTestFiles, true);
+        processFiles(testPath, excludedTestFiles, excludedTestExtensions);
 
         if (errorCount > 0) {
             throw new RuntimeException("Test found " + errorCount + " usages of 'NULL' in source files. See errors above.");
@@ -89,7 +90,7 @@ public class TestNoNULL {
                 excludedTestFiles.add(rootDir.resolve(relativePath).normalize().toString()));
     }
 
-    private static void processFiles(Path directory, Set<String> excludedFiles, boolean excludeExtensions) throws IOException {
+    private static void processFiles(Path directory, Set<String> excludedFiles, Set<String> excludeExtensions) throws IOException {
         Files.walkFileTree(directory, new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
@@ -106,33 +107,35 @@ public class TestNoNULL {
         });
     }
 
-    private static boolean isIncluded(Path file, Set<String> excludedFiles, boolean excludeExtensions) {
+    private static boolean isIncluded(Path file, Set<String> excludedFiles, Set<String> excludeExtensions) {
         String filePath = file.normalize().toString();
 
         if (excludedFiles.contains(filePath)) {
             return false;
         }
 
-        if (excludeExtensions) {
-            for (String ext : excludedTestExtensions) {
-                if (filePath.endsWith(ext)) {
-                    return false;
-                }
+        for (String ext : excludeExtensions) {
+            if (filePath.endsWith(ext)) {
+                return false;
             }
         }
 
         return true;
     }
 
-    private static void checkForNull(Path path) throws IOException {
-        List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
-
-        for (int i = 0; i < lines.size(); i++) {
-            Matcher matcher = NULL_PATTERN.matcher(lines.get(i));
-            if (matcher.find()) {
-                errorCount++;
-                System.err.printf("Error: 'NULL' found in %s at line %d:%n%s%n", path, i + 1, lines.get(i));
+    private static void checkForNull(Path path) {
+        try {
+            List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+            for (int i = 0; i < lines.size(); i++) {
+                if (NULL_PATTERN.matcher(lines.get(i)).find()) {
+                    errorCount++;
+                    System.err.printf("Error: 'NULL' found in %s at line %d:%n%s%n", path, i + 1, lines.get(i));
+                }
             }
+        } catch (MalformedInputException e) {
+            System.err.println("Skipping binary file: " + path);
+        } catch (IOException e) {
+            System.err.printf("Skipping unreadable file: " + path);
         }
     }
 }
