@@ -105,7 +105,11 @@ final class StableFunctionTest {
     @MethodSource("emptySets")
     void empty(Set<Value> inputs) {
         Function<Value, Integer> f0 = StableValue.function(inputs, Value::asInt);
+        Function<Value, Integer> f1 = StableValue.function(inputs, Value::asInt);
         assertTrue(f0.toString().contains("{}"));
+        assertThrows(IllegalArgumentException.class, () -> f0.apply(null));
+        assertNotEquals(f0, f1);
+        assertNotEquals(null, f0);
     }
 
     @ParameterizedTest

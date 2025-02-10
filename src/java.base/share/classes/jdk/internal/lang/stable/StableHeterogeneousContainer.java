@@ -1,5 +1,6 @@
 package jdk.internal.lang.stable;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
@@ -15,10 +16,10 @@ import java.util.function.Supplier;
  * A stable heterogeneous container that can associate types to implementing instances.
  * <p>
  * Attempting to associate a type with an instance that is {@code null} or attempting to
- * provide a {@code type} that is {@code null} will result in a {@linkplain NullPointerException}
- * for all methods in this class.
+ * provide a {@code type} that is {@code null} will result in a
+ * {@linkplain NullPointerException} for all methods in this class.
  *
- * @implNote Implementations of this interface are thread-safe
+ * @implNote Implementations of this interface are thread-safe and can be a value class
  */
 public sealed interface StableHeterogeneousContainer {
 
@@ -36,7 +37,7 @@ public sealed interface StableHeterogeneousContainer {
      * @throws IllegalArgumentException if the provided {@code type} is not a type
      *                                  specified at creation
      */
-    <T> boolean tryPut(Class<T> type, T instance);
+    <T> boolean trySet(Class<T> type, T instance);
 
     /**
      * {@return the instance associated with the provided {@code type}, {@code null}
@@ -49,7 +50,7 @@ public sealed interface StableHeterogeneousContainer {
      * @throws IllegalArgumentException if the provided {@code type} is not a type
      *                                  specified at creation
      */
-    <T> T get(Class<T> type);
+    <T> T orElseNull(Class<T> type);
 
     /**
      * {@return the instance associated with the provided {@code type}, or throws
@@ -64,7 +65,7 @@ public sealed interface StableHeterogeneousContainer {
      * @throws NoSuchElementException   if the provided {@code type} is not associated
      *                                  with an instance
      */
-    <T> T getOrThrow(Class<T> type);
+    <T> T orElseThrow(Class<T> type);
 
     /**
      * {@return the instance associated with the provided {@code type}, if no association
@@ -84,8 +85,9 @@ public sealed interface StableHeterogeneousContainer {
      * @param <T>    type of the associated instance
      * @param mapper to be used for computing the associated instance
      */
-    <T> T computeIfAbsent(Class<T> type, Function<Class<T>, T> mapper);
+    <T> T orElseSet(Class<T> type, Function<? super Class<T>, ? extends T> mapper);
 
+    @ValueBased
     final class Impl implements StableHeterogeneousContainer {
 
         @Stable
@@ -97,7 +99,7 @@ public sealed interface StableHeterogeneousContainer {
 
         @ForceInline
         @Override
-        public <T> boolean tryPut(Class<T> type, T instance) {
+        public <T> boolean trySet(Class<T> type, T instance) {
             Objects.requireNonNull(type);
             Objects.requireNonNull(instance, "The provided instance for '" + type + "' was null");
             return of(type)
@@ -109,22 +111,22 @@ public sealed interface StableHeterogeneousContainer {
         @SuppressWarnings("unchecked")
         @ForceInline
         @Override
-        public <T> T computeIfAbsent(Class<T> type, Function<Class<T>, T> mapper) {
+        public <T> T orElseSet(Class<T> type, Function<? super Class<T>, ? extends T> mapper) {
             Objects.requireNonNull(type);
             Objects.requireNonNull(mapper);
             final StableValue<Object> stableValue = of(type);
             if (stableValue.isSet()) {
                 return (T) stableValue.orElseThrow();
             }
-            return computeIfAbsentSlowPath(type, mapper, stableValue);
+            return orElseSetSlowPath(type, mapper, stableValue);
         }
 
         @SuppressWarnings("unchecked")
         @DontInline
-        public <T> T computeIfAbsentSlowPath(Class<T> type,
-                                             Function<Class<T>, T> constructor,
-                                             StableValue<Object> stableValue) {
-            return (T) stableValue.orElseSet(new Supplier<Object>() {
+        public <T> T orElseSetSlowPath(Class<T> type,
+                                       Function<? super Class<T>, ? extends T> constructor,
+                                       StableValue<Object> stableValue) {
+            return (T) stableValue.orElseSet(new Supplier<>() {
                 @Override
                 public Object get() {
                     return type.cast(
@@ -138,7 +140,7 @@ public sealed interface StableHeterogeneousContainer {
 
         @ForceInline
         @Override
-        public <T> T get(Class<T> type) {
+        public <T> T orElseNull(Class<T> type) {
             Objects.requireNonNull(type);
             return type.cast(
                     of(type)
@@ -148,8 +150,8 @@ public sealed interface StableHeterogeneousContainer {
 
         @ForceInline
         @Override
-        public <T> T getOrThrow(Class<T> type) {
-            final T t = get(type);
+        public <T> T orElseThrow(Class<T> type) {
+            final T t = orElseNull(type);
             if (t == null) {
                 throw new NoSuchElementException("The type `" + type + "` is know but there is no instance associated with it");
             }
