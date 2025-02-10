@@ -749,7 +749,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_clone:
   case vmIntrinsics::_isAssignableFrom:
   case vmIntrinsics::_isInstance:
-  case vmIntrinsics::_isInterface:
   case vmIntrinsics::_isPrimitive:
   case vmIntrinsics::_isHidden:
   case vmIntrinsics::_getSuperclass:

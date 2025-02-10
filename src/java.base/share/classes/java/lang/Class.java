@@ -790,8 +790,9 @@ public final class Class<T> implements java.io.Serializable,
      * @return  {@code true} if this {@code Class} object represents an interface;
      *          {@code false} otherwise.
      */
-    @IntrinsicCandidate
-    public native boolean isInterface();
+    public boolean isInterface() {
+        return Modifier.isInterface(getModifiers());
+    }
 
 
     /**

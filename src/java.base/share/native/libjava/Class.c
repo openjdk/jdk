@@ -56,7 +56,6 @@ static JNINativeMethod methods[] = {
     {"initClassName",    "()" STR,          (void *)&JVM_InitClassName},
     {"getSuperclass",    "()" CLS,          NULL},
     {"getInterfaces0",   "()[" CLS,         (void *)&JVM_GetClassInterfaces},
-    {"isInterface",      "()Z",             (void *)&JVM_IsInterface},
     {"isHidden",         "()Z",             (void *)&JVM_IsHiddenClass},
     {"isPrimitive",      "()Z",             (void *)&JVM_IsPrimitiveClass},
     {"getDeclaredFields0","(Z)[" FLD,       (void *)&JVM_GetClassDeclaredFields},
