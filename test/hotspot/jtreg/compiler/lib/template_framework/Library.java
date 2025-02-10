@@ -35,17 +35,22 @@ public abstract class Library {
     public static final Hook CLASS_HOOK = new Hook("Class");
     public static final Hook METHOD_HOOK = new Hook("Method");
 
-    public record TestClassInfo(String classpath, String packageName, String className, List<String> imports) {};
+    public record IRTestClassInfo(String classpath, String packageName, String className, List<String> imports) {};
 
-    public static final Template.TwoArgs<TestClassInfo, List<TemplateWithArgs>> TEST_CLASS =
-        Template.make("info", "templates", (TestClassInfo info, List<TemplateWithArgs> templates) -> body(
+    public static final Template.TwoArgs<IRTestClassInfo, List<TemplateWithArgs>> IR_TEST_CLASS =
+        Template.make("info", "templates", (IRTestClassInfo info, List<TemplateWithArgs> templates) -> body(
             let("classpath", info.classpath),
             let("packageName", info.packageName),
             let("className", info.className),
             """
             package #packageName;
 
+            // --- IMPORTS start ---
             import compiler.lib.ir_framework.*;
+            """,
+            info.imports.stream().map(i -> "import " + i + ";\n").toList(),
+            """
+            // --- IMPORTS end   ---
 
             public class #className {
 

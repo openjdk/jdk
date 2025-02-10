@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @summary Test templates which creates many tests and runs them with the TestFramework.
+ * @summary Test templates which creates many tests and runs them with the IR TestFramework.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
+ * @compile ../../../compiler/lib/generators/Generators.java
+ * @compile ../../../compiler/lib/verify/Verify.java
  * @run driver template_framework.examples.TestManyTests
  */
 
@@ -35,15 +37,26 @@ package template_framework.examples;
 import java.util.List;
 
 import compiler.lib.compile_framework.*;
+import compiler.lib.generators.*;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateWithArgs;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Library.CLASS_HOOK;
 import static compiler.lib.template_framework.Library.METHOD_HOOK;
-import static compiler.lib.template_framework.Library.TEST_CLASS;
-import compiler.lib.template_framework.Library.TestClassInfo;
+import static compiler.lib.template_framework.Library.IR_TEST_CLASS;
+import compiler.lib.template_framework.Library.IRTestClassInfo;
 
+/**
+ * This is a basic IR verification test, in combination with Generators for random input generation
+ * and Verify for output verification.
+ * <p>
+ * The "@compile" command for JTREG is required so that the frameworks used in the Template code
+ * are compiled and available for the Test-VM.
+ * <p>
+ * Additionally, we must set the classpath for the Test-VM, so that it has access to all compiled
+ * classes (see {@link CompileFramework#getEscapedClassPathOfCompiledClasses}).
+ */
 public class TestManyTests {
 
     public static void main(String[] args) {
@@ -63,26 +76,74 @@ public class TestManyTests {
     // Generate a source Java file as String
     public static String generate(CompileFramework comp) {
         // Create the info required for the test class.
-        TestClassInfo info = new TestClassInfo(comp.getEscapedClassPathOfCompiledClasses(),
-                                               "p.xyz", "InnerTest", List.of());
+        // It is imporant that we pass the classpath to the Test-VM, so that it has access
+        // to all compiled classes.
+        IRTestClassInfo info = new IRTestClassInfo(comp.getEscapedClassPathOfCompiledClasses(),
+                                                   "p.xyz", "InnerTest",
+                                                   List.of("compiler.lib.generators.*",
+                                                           "compiler.lib.verify.*"));
 
-        var template1 = Template.make(() -> body(
+        // We define a Test-Template:
+        // - static fields for inputs: INPUT_A and INPUT_B
+        //   - Data generated with Generators and hashtag replacement #con1.
+        // - GOLD value precomputed with dedicated call to test.
+        //   - This ensures that the GOLD value is computed in the interpreter
+        //     most likely, since the test method is not yet compiled.
+        //     This allows us later to compare to the results of the compiled
+        //     code.
+        //     The input data is cloned, so that the original INPUT_A is never
+        //     modified and can serve as identical input in later calls to test.
+        // - In the Setup method, we clone the input data, since the input data
+        //   could be modified inside the test method.
+        // - The test method makes use of hashtag replacements (#con2 and #op).
+        // - The Check method verifies the results of the test method with the
+        //   GOLD value.
+        var template1 = Template.make("op", (String op) -> body(
+            let("size", Generators.G.safeRestrict(Generators.G.ints(), 10_000, 20_000).next()),
+            let("con1", Generators.G.ints().next()),
+            let("con2", Generators.G.safeRestrict(Generators.G.ints(), 1, Integer.MAX_VALUE).next()),
             """
             // --- $test start ---
 
+            // $test with size=#size and op=#op
+            private static int[] $INPUT_A = new int[#size];
+            static {
+                Generators.G.fill(Generators.G.ints(), $INPUT_A);
+            }
+
+            private static int $INPUT_B = #con1;
+            private static Object $GOLD = $test($INPUT_A.clone(), $INPUT_B);
+
+            @Setup
+            public static Object[] $setup() {
+                // Must make sure to clone input arrays, if it is mutated in the test.
+                return new Object[] {$INPUT_A.clone(), $INPUT_B};
+            }
+
             @Test
-            public static Object $test() { return null; }
+            @Arguments(setup = "$setup")
+            public static Object $test(int[] a, int b) {
+                for (int i = 0; i < a.length; i++) {
+                    int con = #con2;
+                    a[i] = (a[i] * con) #op b;
+                }
+                return a;
+            }
+
+            @Check(test = "$test")
+            public static void $check(Object result) {
+                Verify.checkEQ(result, $GOLD);
+            }
 
             // --- $test end   ---
             """
         ));
 
-        List<TemplateWithArgs> templates = List.of(
-            template1.withArgs(),
-            template1.withArgs()
-        );
+        // From a list of operators, create a list of templates with applied arguments.
+        List<String> ops = List.of("+", "-", "*", "&", "|");
+        List<TemplateWithArgs> templates = ops.stream().map(op -> (TemplateWithArgs)template1.withArgs(op)).toList();
 
         // Create the test class, which runs all templates.
-        return TEST_CLASS.withArgs(info, templates).render();
+        return IR_TEST_CLASS.withArgs(info, templates).render();
     }
 }
