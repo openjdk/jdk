@@ -44,6 +44,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/metaspaceStats.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/events.hpp"
 
 ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _control_lock(Mutex::nosafepoint - 2, "ShenandoahGCRequest_lock", true),
@@ -795,6 +796,7 @@ void ShenandoahGenerationalControlThread::set_gc_mode(GCMode new_mode) {
 void ShenandoahGenerationalControlThread::set_gc_mode(MonitorLocker& ml, GCMode new_mode) {
   if (_mode != new_mode) {
     log_debug(gc, thread)("Transition from: %s to: %s", gc_mode_name(_mode), gc_mode_name(new_mode));
+    EventMark event("Control thread transition from: %s, to %s", gc_mode_name(_mode), gc_mode_name(new_mode));
     _mode = new_mode;
     ml.notify_all();
   }
