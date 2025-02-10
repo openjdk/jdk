@@ -43,6 +43,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * An add-on for ForkJoinPools that provides scheduling for
  * delayed and periodic tasks
  */
+@jdk.internal.vm.annotation.Contended()
 final class DelayScheduler extends Thread {
 
     /*
@@ -102,11 +103,9 @@ final class DelayScheduler extends Thread {
      */
 
     private static final int INITIAL_HEAP_CAPACITY = 1 << 6;
-    private final ForkJoinPool pool; // read only once
-    private volatile DelayedTask<?> pending; // for submited adds and removes
-    private volatile int active;     // 0: inactive, -1: stopped, +1: running
-    private volatile int cancelDelayedOnShutdown;
-    private volatile int preservePeriodicOnShutdown;
+    private ForkJoinPool pool;       // read once and detached upon starting
+    volatile DelayedTask<?> pending; // for submited adds and removes
+    volatile int active;             // 0: inactive, -1: stopped, +1: running
     int restingSize;                 // written only before parking
 
     private static final Unsafe U;
@@ -178,14 +177,15 @@ final class DelayScheduler extends Thread {
      * Sets up and runs scheduling loop
      */
     public final void run() {
-        ForkJoinPool p;
-        if ((p = pool) != null) {
+        ForkJoinPool p = pool;
+        pool = null; // detach
+        if (p != null) {
             try {
                 loop(p);
             } finally {
                 restingSize = 0;
                 active = -1;
-                p.tryTerminateFromDelayScheduler();
+                p.tryStopIfEnabled();
             }
         }
     }
@@ -360,17 +360,13 @@ final class DelayScheduler extends Thread {
                         int runStatus) {
         if (runStatus > 0 && p != null) {
             if (n > 0) {
-                boolean cancelPeriodic = (preservePeriodicOnShutdown == 0);
-                boolean cancelDelayed  = (cancelDelayedOnShutdown != 0);
-                if (cancelDelayed && cancelPeriodic)
+                if (runStatus > 1)
                     n = cancelAll(h, n);
                 else if (h != null && h.length >= n) {
                     DelayedTask<?> t; int stat;
                     for (int i = n - 1; i >= 0; --i) {
                         if ((t = h[i]) != null &&
-                            ((stat = t.status) < 0 ||
-                             ((t.nextDelay == 0L) ?
-                              cancelDelayed : cancelPeriodic))) {
+                            ((stat = t.status) < 0 || t.nextDelay != 0L)) {
                             t.heapIndex = -1;
                             if (stat >= 0)
                                 t.trySetCancelled();
@@ -379,7 +375,7 @@ final class DelayScheduler extends Thread {
                     }
                 }
             }
-            if (n > 0 || !p.tryTerminateFromDelayScheduler())
+            if (n > 0 || !p.tryStopIfEnabled())
                 return n;
         }
         if (n > 0)
@@ -403,22 +399,6 @@ final class DelayScheduler extends Thread {
             }
         }
         return 0;
-    }
-
-    // policy methods
-    void setContinueExistingPeriodicTasksAfterShutdownPolicy(boolean value) {
-        preservePeriodicOnShutdown = (value ? 1 : 0);
-        ensureActive();
-    }
-    boolean getContinueExistingPeriodicTasksAfterShutdownPolicy() {
-        return (preservePeriodicOnShutdown != 0);
-    }
-    void setExecuteExistingDelayedTasksAfterShutdownPolicy(boolean value) {
-        cancelDelayedOnShutdown = (value ? 0 : 1);
-        ensureActive();
-    }
-    boolean getExecuteExistingDelayedTasksAfterShutdownPolicy() {
-        return (cancelDelayedOnShutdown == 0);
     }
 
     /**
@@ -449,8 +429,7 @@ final class DelayScheduler extends Thread {
         }
 
         public final void schedule() {
-            when = Math.max(0L, when) + DelayScheduler.now();
-            pool.scheduleDelayedTask(this);
+            pool.scheduleDelayedTask(this, when);
         }
 
         public final T getRawResult() { return result; }

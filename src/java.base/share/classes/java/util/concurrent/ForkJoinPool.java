@@ -146,11 +146,10 @@ import static java.util.concurrent.DelayScheduler.DelayedTask;
  * are based on the default policies of class {@link
  * ScheduledThreadPoolExecutor}: upon {@link #shutdown}, existing
  * periodic tasks will not re-execute, and the pool terminates when
- * quiescent and existing delayed tasks complete. Methods {@link
- * #setContinueExistingPeriodicTasksAfterShutdownPolicy} and {@link
- * #setExecuteExistingDelayedTasksAfterShutdownPolicy} may be used to
- * alter these policies, and method {@link #shutdownNow} may be used
- * to instead unconditionally initiate pool termination. Monitoring
+ * quiescent and existing delayed tasks complete. Method {@link
+ * #cancelDelayedTasksOnShutdown} may be used to disable all delayed
+ * tasks upon shutdown, and method {@link #shutdownNow} may be used to
+ * instead unconditionally initiate pool termination. Monitoring
  * methods such as {@link getQueuedTaskCount} do not include scheduled
  * tasks that are not yet ready to execute, whcih are reported
  * separately by method {@link getDelayedTaskCount}.
@@ -1650,6 +1649,8 @@ public class ForkJoinPool extends AbstractExecutorService
     final long config;                   // static configuration bits
     volatile long stealCount;            // collects worker nsteals
     volatile long threadIds;             // for worker thread names
+    volatile boolean cancelDelayedTasksOnShutdown;
+
     @jdk.internal.vm.annotation.Contended("fjpctl") // segregate
     volatile long ctl;                   // main pool control
     @jdk.internal.vm.annotation.Contended("fjpctl") // colocate
@@ -1856,8 +1857,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 unlockRunState();
             }
         }
-        if ((tryTerminate(false, false) & STOP) == 0L &&
-            phase != 0 && w != null && w.source != DROPPED) {
+        if (!tryStopIfEnabled() && phase != 0 && w != null && w.source != DROPPED) {
             signalWork();                  // possibly replace
             w.cancelTasks();               // clean queue
         }
@@ -2794,6 +2794,13 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
+     * Tries to stop and possibly terminate if already enabled, return success.
+     */
+    final boolean tryStopIfEnabled() {
+        return (tryTerminate(false, false) & STOP) != 0L;
+    }
+
+    /**
      * Scans queues in a psuedorandom order based on thread id,
      * cancelling tasks until empty, or returning early upon
      * interference or still-active external queues, in which case
@@ -3426,14 +3433,18 @@ public class ForkJoinPool extends AbstractExecutorService
         return cp;
     }
 
-    final int delaySchedulerRunStatus() { // <0:stop, >0:shutdown, else 0
+    /**
+     * Returns status code for DelayScheduler:
+     * * 0 not shutdown
+     * * -1 stopping
+     * * 1 shutdown without cancelling delayed tasks
+     * * 2 shutdown cancelling delayed tasks
+     */
+    final int delaySchedulerRunStatus() {
         long rs;
         return ((((rs = runState) & SHUTDOWN) == 0L) ? 0 :
-                (rs & STOP) != 0L ? -1 : 1);
-    }
-
-    final boolean tryTerminateFromDelayScheduler() {
-        return (tryTerminate(false, false) & STOP) != 0L;
+                (rs & STOP) != 0L ? -1 :
+                cancelDelayedTasksOnShutdown ? 2 : 1);
     }
 
     private DelayScheduler startDelayScheduler() {
@@ -3476,12 +3487,13 @@ public class ForkJoinPool extends AbstractExecutorService
      * Arrange delayed execution of a DelayedTask via the
      * DelayScheduler, creating and starting it if necessary.
      */
-    final void scheduleDelayedTask(DelayedTask<?> task) {
+    final void scheduleDelayedTask(DelayedTask<?> task, long nanoDelay) {
         DelayScheduler ds;
         if (((ds = delayScheduler) == null &&
              (ds = startDelayScheduler()) == null) ||
             task == null || (runState & SHUTDOWN) != 0L)
             throw new RejectedExecutionException();
+        task.when = DelayScheduler.now() + Math.max(0L, nanoDelay);
         ds.pend(task);
     }
 
@@ -3606,71 +3618,20 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
-     * Sets the policy on whether to continue executing existing
-     * periodic tasks even when this executor has been {@code shutdown}.
-     * In this case, executions will continue until {@code shutdownNow}
-     * or the policy is set to {@code false} when already shutdown.
-     * This value is by default {@code false}.
-     *
-     * @param value if {@code true}, continue after shutdown, else don't
-     * @see #getContinueExistingPeriodicTasksAfterShutdownPolicy
+     * Arranges that scheduled tasks that are not executing and have
+     * not already been enabled for execution are not executed and
+     * will be cancelled upon {@link #shutdown}. This method may be
+     * invoked either before {@link #shutdown} to take effect upon the
+     * next call, or afterwards, to cancel such tasks, that may allow
+     * termination. Note that the next executions of periodic tasks
+     * are always disabled upon shutdown, so this method applies
+     * meaningfully only to non-periodic tasks.
      */
-    public void setContinueExistingPeriodicTasksAfterShutdownPolicy(boolean value) {
+    public void cancelDelayedTasksOnShutdown() {
         DelayScheduler ds;
-        if ((ds = delayScheduler) != null || (ds = startDelayScheduler()) != null)
-            ds.setContinueExistingPeriodicTasksAfterShutdownPolicy(value);
-    }
-
-    /**
-     * Gets the policy on whether to continue executing existing
-     * periodic tasks even when this executor has been {@code shutdown}.
-     * In this case, executions will continue until {@code shutdownNow}
-     * or the policy is set to {@code false} when already shutdown.
-     * This value is by default {@code false}.
-     *
-     * @return {@code true} if will continue after shutdown
-     * @see #setContinueExistingPeriodicTasksAfterShutdownPolicy
-     */
-    public boolean getContinueExistingPeriodicTasksAfterShutdownPolicy() {
-        DelayScheduler ds;
-        if ((ds = delayScheduler) != null || (ds = startDelayScheduler()) != null)
-            return ds.getContinueExistingPeriodicTasksAfterShutdownPolicy();
-        return false;
-    }
-
-    /**
-     * Sets the policy on whether to execute existing delayed
-     * tasks even when this executor has been {@code shutdown}.
-     * In this case, these tasks will only terminate upon
-     * {@code shutdownNow}, or after setting the policy to
-     * {@code false} when already shutdown.
-     * This value is by default {@code true}.
-     *
-     * @param value if {@code true}, execute after shutdown, else don't
-     * @see #getExecuteExistingDelayedTasksAfterShutdownPolicy
-     */
-    public void setExecuteExistingDelayedTasksAfterShutdownPolicy(boolean value) {
-        DelayScheduler ds;
-        if ((ds = delayScheduler) != null || (ds = startDelayScheduler()) != null)
-            ds.setExecuteExistingDelayedTasksAfterShutdownPolicy(value);
-    }
-
-    /**
-     * Gets the policy on whether to execute existing delayed
-     * tasks even when this executor has been {@code shutdown}.
-     * In this case, these tasks will only terminate upon
-     * {@code shutdownNow}, or after setting the policy to
-     * {@code false} when already shutdown.
-     * This value is by default {@code true}.
-     *
-     * @return {@code true} if will execute after shutdown
-     * @see #setExecuteExistingDelayedTasksAfterShutdownPolicy
-     */
-    public boolean getExecuteExistingDelayedTasksAfterShutdownPolicy() {
-        DelayScheduler ds;
-        if ((ds = delayScheduler) != null || (ds = startDelayScheduler()) != null)
-            return ds.getExecuteExistingDelayedTasksAfterShutdownPolicy();
-        return true;
+        cancelDelayedTasksOnShutdown = true;
+        if ((ds = delayScheduler) != null)
+                ds.ensureActive();
     }
 
     /**
