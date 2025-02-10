@@ -33,9 +33,11 @@
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.Semaphore;
+import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -51,6 +53,7 @@ import java.util.logging.StreamHandler;
  * manner if the problem occurs, and SHOULD NOT time out.
  */
 public class LoggingDeadlock5 {
+    private static final String UTF_8 = StandardCharsets.UTF_8.name();
 
     // Formatter which calls toString() on all arguments.
     private static final Formatter TEST_FORMATTER = new Formatter() {
@@ -81,20 +84,31 @@ public class LoggingDeadlock5 {
     };
 
     public static void main(String[] args) throws InterruptedException, IOException {
-        // Self test that deadlocks are correct caught (and don't lock the entire test).
+        // Self test that deadlocks are correctly caught (and don't deadlock the test itself).
         new DeadLocker(SELF_TEST_HANDLER).checkDeadlock(true);
 
-        // In theory, we should test FileHandler and SocketHandler here as well
-        // because, while they are just subclasses of StreamHandler, they could
-        // be adding locking around the call to super.publish(). However, they
-        // are quite problematic in a test environment since they need to create
-        // files and open sockets. They are not being tested for now.
-        StreamHandler streamHandler = new StreamHandler(new ByteArrayOutputStream(0), TEST_FORMATTER);
-        streamHandler.setEncoding(StandardCharsets.UTF_8.name());
-        new DeadLocker(streamHandler).checkDeadlock(false);
+        // In theory, we should test SocketHandler here as well because, while
+        // it is just a subclass, it could be adding locking around the call to
+        // super.publish(). However, it is problematic in a test environment
+        // since it needs to open sockets. It is not being tested for now.
+        assertNoDeadlock(new StreamHandler(new ByteArrayOutputStream(0), TEST_FORMATTER));
+
+        // Single log file in current directory, no rotation. JTreg will delete
+        // temporary files after test completion.
+        assertNoDeadlock(new FileHandler("temp_log_file"));
 
         // Any other problematic handler classes can be easily added here if
         // they are simple enough to be constructed in a test environment.
+    }
+
+    static void assertNoDeadlock(Handler handler) throws InterruptedException, UnsupportedEncodingException {
+        try {
+            handler.setEncoding(UTF_8);
+            new DeadLocker(handler).checkDeadlock(false);
+        } finally {
+            // Handlers may have open resources, so must be closed.
+            handler.close();
+        }
     }
 
     private static class DeadLocker {
