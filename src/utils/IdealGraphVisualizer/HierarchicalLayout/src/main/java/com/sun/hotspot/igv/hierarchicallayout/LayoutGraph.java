@@ -49,7 +49,7 @@ public class LayoutGraph {
                     .thenComparingInt(l -> l.getFrom().getRelativePosition().x)
                     .thenComparingInt(l -> l.getTo().getRelativePosition().x);
 
-    // Registered Graph Components: Links, Vertices, and Port Mappings.
+    // Registered Graph Components: Links, Vertices, and Port Mappings
     private final Set<Link> links;
     private final SortedSet<Vertex> vertices;
     private final LinkedHashMap<Vertex, Set<Port>> inputPorts;
