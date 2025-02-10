@@ -588,6 +588,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_ProfileCall    (ProfileCall*     x);
   virtual void do_ProfileReturnType (ProfileReturnType* x);
   virtual void do_ProfileInvoke  (ProfileInvoke*   x);
+  virtual void do_IncProfileCtr  (ProfileInvoke*   x);
   virtual void do_RuntimeCall    (RuntimeCall*     x);
   virtual void do_MemBar         (MemBar*          x);
   virtual void do_RangeCheckPredicate(RangeCheckPredicate* x);

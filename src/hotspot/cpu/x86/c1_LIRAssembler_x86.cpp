@@ -3495,6 +3495,12 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
+void LIR_Assembler::inc_profile_ctr(LIR_Opr incr, LIR_Opr dest) {
+  Register inc = incr->as_register();
+  Address dest_adr = as_Address(dest->as_address_ptr());
+  __ addl(dest_adr, inc);
+}
+
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();
   int bci          = op->profiled_bci();
