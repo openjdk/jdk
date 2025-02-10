@@ -82,7 +82,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _old_gen_is_full(false),
     _partial_array_splitter(g1h->partial_array_state_manager(), num_workers),
     _string_dedup_requests(),
-    _max_num_optional_regions(collection_set->optional_region_length()),
+    _max_num_optional_regions(collection_set->num_optional_regions()),
     _numa(g1h->numa()),
     _obj_alloc_stat(nullptr),
     ALLOCATION_FAILURE_INJECTOR_ONLY(_allocation_failure_inject_counter(0) COMMA)
