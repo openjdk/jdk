@@ -76,6 +76,7 @@ final class StableValueTest {
     void orElse() {
         StableValue<Integer> stable = StableValue.of();
         assertEquals(VALUE, stable.orElse(VALUE));
+        assertNull(stable.orElse(null));
         stable.trySet(VALUE);
         assertEquals(VALUE, stable.orElse(VALUE2));
     }
@@ -103,9 +104,10 @@ final class StableValueTest {
     }
 
    @Test
-   void testComputeIfUnsetSupplier() {
+   void testOrElseSetSupplier() {
        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> VALUE);
        StableValue<Integer> stable = StableValue.of();
+       assertThrows(NullPointerException.class, () -> stable.orElseSet(null));
        assertEquals(VALUE, stable.orElseSet(cs));
        assertEquals(1, cs.cnt());
        assertEquals(VALUE, stable.orElseSet(cs));
@@ -122,12 +124,13 @@ final class StableValueTest {
     @Test
     void testEquals() {
         StableValue<Integer> s0 = StableValue.of();
+        assertNotEquals(null, s0);
         StableValue<Integer> s1 = StableValue.of();
         assertNotEquals(s0, s1); // Identity based
         s0.setOrThrow(42);
         s1.setOrThrow(42);
         assertNotEquals(s0, s1);
-        assertNotEquals(s0, "a");
+        assertNotEquals("a", s0);
         StableValue<Integer> null0 = StableValue.of();
         StableValue<Integer> null1 = StableValue.of();
         null0.setOrThrow(null);

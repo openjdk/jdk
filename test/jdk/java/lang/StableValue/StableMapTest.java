@@ -165,12 +165,29 @@ final class StableMapTest {
     }
 
     @Test
-    void iterator() {
-        System.out.println("ITERATOR");
+    void iteratorNext() {
+        Set<Integer> encountered = new HashSet<>();
         var iterator = newMap().entrySet().iterator();
         while (iterator.hasNext()) {
-            System.out.println("iterator.next() = " + iterator.next());
+            var entry = iterator.next();
+            assertEquals(entry.getKey(), entry.getValue());
+            encountered.add(entry.getValue());
         }
+        assertEquals(KEYS, encountered);
+    }
+
+    @Test
+    void iteratorForEachRemaining() {
+        Set<Integer> encountered = new HashSet<>();
+        var iterator = newMap().entrySet().iterator();
+        var entry = iterator.next();
+        assertEquals(entry.getKey(), entry.getValue());
+        encountered.add(entry.getValue());
+        iterator.forEachRemaining(e -> {
+            assertEquals(e.getKey(), e.getValue());
+            encountered.add(e.getValue());
+        });
+        assertEquals(KEYS, encountered);
     }
 
     // Immutability

@@ -201,6 +201,14 @@ final class StableListTest {
         assertThrows(NoSuchElementException.class, iterator::next);
     }
 
+    @Test
+    void subList() {
+        var lazy = newList();
+        var lazySubList = lazy.subList(1, SIZE);
+        var regularList = newRegularList();
+        var regularSubList = regularList.subList(1, SIZE);
+        assertEquals(regularSubList, lazySubList);
+    }
 
     @Test
     void recursiveCall() {

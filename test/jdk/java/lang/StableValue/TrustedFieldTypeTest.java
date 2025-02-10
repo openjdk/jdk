@@ -92,6 +92,7 @@ final class TrustedFieldTypeTest {
             private final StableValue<Integer> value = StableValue.of();
         }
         final class ArrayHolder {
+            @SuppressWarnings("unchecked")
             private final StableValue<Integer>[] array = (StableValue<Integer>[]) new StableValue[]{};
         }
 
