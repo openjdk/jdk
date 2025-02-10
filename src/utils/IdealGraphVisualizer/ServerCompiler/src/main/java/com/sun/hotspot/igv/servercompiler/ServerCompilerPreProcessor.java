@@ -33,12 +33,6 @@ import java.util.stream.*;
 @ServiceProvider(service = PreProcessor.class)
 public class ServerCompilerPreProcessor implements PreProcessor {
 
-    // Map from input live range ids to regular node ids. Note that this is
-    // possible only at the 'Initial liveness' phase, where there is still a
-    // one-to-one relation between these. Later on, C2 might assign the same
-    // live range to multiple regular node ids when coalescing.
-    Map<Integer, Integer> liveRangeIdToNodeId = new HashMap<>(42);
-
     private static boolean isPhi(InputNode node) {
         String nodeName = node.getProperties().get("name");
         if (nodeName == null) {
@@ -60,10 +54,6 @@ public class ServerCompilerPreProcessor implements PreProcessor {
         return liveRangeId > 0;
     }
 
-    private int liveRangeIdentifier(int liveRangeId) {
-        return InputBlock.USE_LIVE_RANGE_IDENTIFIERS ? liveRangeId : liveRangeIdToNodeId.get(liveRangeId);
-    }
-
     private String liveRangeList(Stream<Integer> s) {
         return s.sorted().map(String::valueOf).collect(Collectors.joining(", "));
     }
@@ -80,18 +70,6 @@ public class ServerCompilerPreProcessor implements PreProcessor {
         if (empty) { // No block-level liveness information available, move on.
             return;
         }
-        if (!InputBlock.USE_LIVE_RANGE_IDENTIFIERS) {
-            liveRangeIdToNodeId.clear();
-            for (InputNode n : graph.getNodes()) {
-                int lrg = getNumericPropertyOrZero(n, "lrg");
-                assert !liveRangeIdToNodeId.containsKey(lrg);
-                if (lrg > 0) {
-                    int idx = getNumericPropertyOrZero(n, "idx");
-                    liveRangeIdToNodeId.put(lrg, idx);
-                }
-            }
-        }
-
         // Build a map from nodes to live ranges used.
         Map<Integer, List<Integer>> usedLiveRanges = new HashMap<>(graph.getNodes().size());
         for (InputEdge e : graph.getEdges()) {
@@ -101,14 +79,14 @@ public class ServerCompilerPreProcessor implements PreProcessor {
                 if (usedLiveRanges.get(toId) == null) {
                     usedLiveRanges.put(toId, new ArrayList<Integer>());
                 }
-                usedLiveRanges.get(toId).add(liveRangeIdentifier(liveRangeId));
+                usedLiveRanges.get(toId).add(liveRangeId);
             }
         }
         // Propagate block-level live-out information to each node.
         for (InputBlock b : graph.getBlocks()) {
             Set<Integer> liveOut = new HashSet<>();
             for (int lrg : b.getLiveOut()) {
-                liveOut.add(liveRangeIdentifier(lrg));
+                liveOut.add(lrg);
             }
             for (int i = b.getNodes().size() - 1; i >= 0; i--) {
                 LivenessInfo livenessInfo = new LivenessInfo();
@@ -120,7 +98,7 @@ public class ServerCompilerPreProcessor implements PreProcessor {
                 if (isAllocatableLiveRange(defLiveRange)) {
                     livenessInfo.def = defLiveRange;
                     // Otherwise it is missing or a non-allocatable live range.
-                    liveOut.remove(liveRangeIdentifier(defLiveRange));
+                    liveOut.remove(defLiveRange);
                 }
                 List<Integer> uses = usedLiveRanges.get(n.getId());
                 if (uses != null) {

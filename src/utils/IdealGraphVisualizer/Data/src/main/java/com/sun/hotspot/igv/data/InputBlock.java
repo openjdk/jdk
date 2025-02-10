@@ -38,8 +38,6 @@ public class InputBlock {
     private Set<Integer> liveOut;
     private boolean artificial;
 
-    public static final boolean USE_LIVE_RANGE_IDENTIFIERS = true;
-
     @Override
     public int hashCode() {
         return name.hashCode();
