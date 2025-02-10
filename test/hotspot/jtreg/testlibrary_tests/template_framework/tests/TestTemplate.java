@@ -41,7 +41,7 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 import compiler.lib.template_framework.*;
-import compiler.lib.template_framework.Template;
+
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.intoHook;
 import static compiler.lib.template_framework.Template.$;
@@ -84,6 +84,13 @@ public class TestTemplate {
         testListArgument();
 
         checkFails(() -> testFailingNestedRendering(), "Nested render not allowed.");
+        checkFails(() -> $("name"),                          "A Template method such as");
+        checkFails(() -> let("x","y"),                       "A Template method such as");
+        checkFails(() -> fuel(),                             "A Template method such as");
+        checkFails(() -> setFuelCost(1.0f),                  "A Template method such as");
+        checkFails(() -> defineName("name", "int", MUTABLE), "A Template method such as");
+        checkFails(() -> countNames("int", MUTABLE),         "A Template method such as");
+        checkFails(() -> sampleName("int", MUTABLE),         "A Template method such as");
     }
 
     public static void testSingleLine() {

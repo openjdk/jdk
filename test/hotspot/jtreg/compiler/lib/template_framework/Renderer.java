@@ -63,8 +63,7 @@ public class Renderer {
 
     static Renderer getCurrent() {
         if (renderer == null) {
-            // TODO update text - which methods are involved?
-            throw new RendererException("A method such as $ or let was called outside a template rendering. Make sure you are not calling templates yourself, but use use().");
+            throw new RendererException("A Template method such as '$' or 'let' was called outside a template rendering.");
         }
         return renderer;
     }
@@ -78,16 +77,15 @@ public class Renderer {
         if (renderer != null) {
             throw new RendererException("Nested render not allowed. Please only use 'withArgs' inside Templates, and call 'render' only once at the end.");
         }
-
-        renderer = new Renderer(fuel);
-        renderer.renderTemplateWithArgs(templateWithArgs);
-        renderer.checkFrameConsistencyAfterRendering();
-        String code = renderer.collectCode();
-
-        // Release the Renderer.
-        renderer = null;
-
-        return code;
+        try {
+            renderer = new Renderer(fuel);
+            renderer.renderTemplateWithArgs(templateWithArgs);
+            renderer.checkFrameConsistencyAfterRendering();
+            return renderer.collectCode();
+        } finally {
+            // Release the Renderer.
+            renderer = null;
+        }
     }
 
     private void checkFrameConsistencyAfterRendering() {
