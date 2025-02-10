@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,9 +187,9 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
   _stack_arg_slots = compute_num_stack_arg_slots(_signature, _param_size, static_flag);
 #endif
 
-  // Detect overflow.  (We counted _param_size correctly.)
+  // Detect overflow.  (We counted _param_count correctly.)
   if (_method == nullptr && _param_count > fp_max_size_of_parameters) {
-    // We did a one-pass computation of argument size, return type,
+    // We did a one-pass computation of argument count, return type,
     // and fingerprint.
     _fingerprint = overflow_fingerprint();
     return;
