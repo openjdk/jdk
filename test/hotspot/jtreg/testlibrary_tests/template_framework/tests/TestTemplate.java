@@ -77,14 +77,7 @@ public class TestTemplate {
         testNames();
         testNames2();
         testNames3();
-
-        //testClassInstantiator();
-        //testClassInstantiatorAndDispatch();
-        //testFieldsAndVariables();
-        //testFieldsAndVariablesDispatch();
-        //testIntCon();
-        //testLongCon();
-        //testRecursiveCalls();
+        testListArgument();
     }
 
     public static void testSingleLine() {
@@ -962,6 +955,7 @@ public class TestTemplate {
         ));
 
         // Example that shows that defineName runs before any code gets generated.
+        // To avoid this behaviour, you have to wrap the defineName in their own template.
         var template2 = Template.make(() -> body(
             "class $Y {\n",
             template1.withArgs("int"),
@@ -991,6 +985,48 @@ public class TestTemplate {
             define immutable
             [int: 1 and 1]
             [int: 1 and 1]
+            }
+            """;
+        checkEQ(code, expected);
+    }
+
+    record MyItem(Object type, String op) {}
+
+    public static void testListArgument() {
+        var template1 = Template.make("item", (MyItem item) -> body(
+            let("type", item.type()),
+            let("op", item.op()),
+            "#type apply #op\n"
+        ));
+
+        var template2 = Template.make("list", (List<MyItem> list) -> body(
+            "class $Z {\n",
+            // Use template1 for every item in the list.
+            list.stream().map(item -> template1.withArgs(item)).toList(),
+            "}\n"
+        ));
+
+        List<MyItem> list = List.of(new MyItem("int", "+"),
+                                    new MyItem("int", "-"),
+                                    new MyItem("int", "*"),
+                                    new MyItem("int", "/"),
+                                    new MyItem("long", "+"),
+                                    new MyItem("long", "-"),
+                                    new MyItem("long", "*"),
+                                    new MyItem("long", "/"));
+
+        String code = template2.withArgs(list).render();
+        String expected =
+            """
+            class Z_1 {
+            int apply +
+            int apply -
+            int apply *
+            int apply /
+            long apply +
+            long apply -
+            long apply *
+            long apply /
             }
             """;
         checkEQ(code, expected);
