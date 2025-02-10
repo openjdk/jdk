@@ -53,8 +53,8 @@ private:
   size_t _num_nodes;
 
   // If the value in a node is not desired (like in an intrusive tree),
-  // we can inherit from Empty instead of Value to avoid wasting space
-  // using base class optimization.
+  // we can use empty base optimization to avoid wasting space
+  // by inheriting from Empty instead of Value
   struct Empty {};
 
   class Value {
