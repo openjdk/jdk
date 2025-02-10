@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2038,7 +2038,8 @@ void ClassVerifier::verify_cp_type(
 
   verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   unsigned int tag = cp->tag_at(index).value();
-  if ((types & (1 << tag)) == 0) {
+  // Resolution errors start with JVM_CONSTANT_InternalMin = 100, which is not valid for shift op
+  if (tag >= JVM_CONSTANT_InternalMin || (types & (1 << tag)) == 0) {
     verify_error(ErrorContext::bad_cp_index(bci, index),
       "Illegal type at constant pool entry %d in class %s",
       index, cp->pool_holder()->external_name());
