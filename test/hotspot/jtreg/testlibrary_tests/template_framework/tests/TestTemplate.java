@@ -57,6 +57,10 @@ import static compiler.lib.template_framework.Template.ALL;
 public class TestTemplate {
     private static final Random RANDOM = Utils.getRandomInstance();
 
+    interface FailingTest {
+        void run();
+    }
+
     public static void main(String[] args) {
         testSingleLine();
         testMultiLine();
@@ -78,6 +82,8 @@ public class TestTemplate {
         testNames2();
         testNames3();
         testListArgument();
+
+        checkFails(() -> testFailingNestedRendering(), "Nested render not allowed.");
     }
 
     public static void testSingleLine() {
@@ -1030,6 +1036,35 @@ public class TestTemplate {
             }
             """;
         checkEQ(code, expected);
+    }
+
+    public static void testFailingNestedRendering() {
+        var template1 = Template.make(() -> body(
+            "alpha\n"
+        ));
+
+        var template2 = Template.make(() -> body(
+            "beta\n",
+            // Nested "render" call not allowed!
+            template1.withArgs().render(),
+            "gamma\n"
+        ));
+
+        String code = template2.withArgs().render();
+    }
+
+    public static void checkFails(FailingTest test, String errorPrefix) {
+        try {
+            test.run();
+            System.out.println("checkFails should have thrown with prefix: " + errorPrefix);
+            throw new RuntimeException("Should have thrown!");
+        } catch(RendererException e) {
+            if (!e.getMessage().startsWith(errorPrefix)) {
+                System.out.println("checkFails should have thrown with prefix: " + errorPrefix);
+                System.out.println("got: " + e.getMessage());
+                throw new RuntimeException("checkFails prefix mismatch", e);
+            }
+        }
     }
 
     public static void checkEQ(String code, String expected) {

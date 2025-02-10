@@ -76,7 +76,7 @@ public class Renderer {
     static String render(TemplateWithArgs templateWithArgs, float fuel) {
         // Check nobody else is using the Renderer.
         if (renderer != null) {
-            throw new RendererException("Nested render not allowed.");
+            throw new RendererException("Nested render not allowed. Please only use 'withArgs' inside Templates, and call 'render' only once at the end.");
         }
 
         renderer = new Renderer(fuel);
