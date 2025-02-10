@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -1232,13 +1231,6 @@ void LIRGenerator::do_Reference_get(Intrinsic* x) {
 void LIRGenerator::do_isInstance(Intrinsic* x) {
   assert(x->number_of_arguments() == 2, "wrong type");
 
-  // TODO could try to substitute this node with an equivalent InstanceOf
-  // if clazz is known to be a constant Class. This will pick up newly found
-  // constants after HIR construction. I'll leave this to a future change.
-
-  // as a first cut, make a simple leaf call to runtime to stay platform independent.
-  // could follow the aastore example in a future change.
-
   LIRItem clazz(x->argument_at(0), this);
   LIRItem object(x->argument_at(1), this);
   clazz.load_item();
@@ -1251,8 +1243,9 @@ void LIRGenerator::do_isInstance(Intrinsic* x) {
     __ null_check(clazz.result(), info);
   }
 
+  address pd_instanceof_fn = isInstance_entry();
   LIR_Opr call_result = call_runtime(clazz.value(), object.value(),
-                                     CAST_FROM_FN_PTR(address, Runtime1::is_instance_of),
+                                     pd_instanceof_fn,
                                      x->type(),
                                      nullptr); // null CodeEmitInfo results in a leaf call
   __ move(call_result, result);
@@ -1337,7 +1330,7 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
   __ cmove(lir_cond_equal, prim_klass, recv_klass, klass, T_ADDRESS);
 
   // Get the answer.
-  __ move(new LIR_Address(klass, in_bytes(Klass::modifier_flags_offset()), T_INT), result);
+  __ move(new LIR_Address(klass, in_bytes(Klass::modifier_flags_offset()), T_CHAR), result);
 }
 
 void LIRGenerator::do_getObjectSize(Intrinsic* x) {

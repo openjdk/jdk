@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,16 +52,14 @@ ifneq ($(FDLIBM_CFLAGS), )
 endif
 
 ifeq ($(call isTargetOs, linux), true)
-  BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := -DNO_PCH $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
-  BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := -DNO_PCH $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
+  BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
+  BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := $(FDLIBM_CFLAGS) $(LIBJVM_FDLIBM_COPY_OPT_FLAG)
 
-  ifeq ($(TOOLCHAIN_TYPE), clang)
-    JVM_PRECOMPILED_HEADER_EXCLUDE := \
-	sharedRuntimeTrig.cpp \
-	sharedRuntimeTrans.cpp \
-        $(OPT_SPEED_SRC) \
-	#
-  endif
+  JVM_PRECOMPILED_HEADER_EXCLUDE := \
+      sharedRuntimeTrig.cpp \
+      sharedRuntimeTrans.cpp \
+      $(OPT_SPEED_SRC) \
+      #
 
   ifeq ($(call isTargetCpu, x86), true)
     # Performance measurements show that by compiling GC related code, we could
@@ -110,11 +108,7 @@ else ifeq ($(call isTargetOs, macosx), true)
   endif
 
 else ifeq ($(call isTargetOs, aix), true)
-  ifeq ($(TOOLCHAIN_TYPE), clang)
-    BUILD_LIBJVM_synchronizer.cpp_CXXFLAGS := -fno-inline
-  else
-    BUILD_LIBJVM_synchronizer.cpp_CXXFLAGS := -qnoinline
-  endif
+  BUILD_LIBJVM_synchronizer.cpp_CXXFLAGS := -fno-inline
   BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := $(CXX_O_FLAG_NONE)
   # Disable aggressive optimizations for functions in sharedRuntimeTrig.cpp
   # and sharedRuntimeTrans.cpp on ppc64.
@@ -128,25 +122,24 @@ else ifeq ($(call isTargetOs, aix), true)
   # mode, so don't optimize sharedRuntimeTrig.cpp at all.
   BUILD_LIBJVM_sharedRuntimeTrig.cpp_CXXFLAGS := $(CXX_O_FLAG_NONE)
 
-  ifneq ($(DEBUG_LEVEL), slowdebug)
-    # Compiling jvmtiEnterTrace.cpp with full optimization needs more than 30min
-    # (mostly because of '-qhot=level=1' and the more than 1300 'log_trace' calls
-    # which cause a lot of template expansion).
-    BUILD_LIBJVM_jvmtiEnterTrace.cpp_OPTIMIZATION := LOW
-  endif
-
   # Disable ELF decoder on AIX (AIX uses XCOFF).
   JVM_EXCLUDE_PATTERNS += elf
 
+  JVM_PRECOMPILED_HEADER_EXCLUDE := \
+      sharedRuntimeTrig.cpp \
+      sharedRuntimeTrans.cpp \
+      synchronizer.cpp \
+      $(OPT_SPEED_SRC) \
+      #
+
 else ifeq ($(call isTargetOs, windows), true)
   JVM_PRECOMPILED_HEADER_EXCLUDE := \
-      bytecodeInterpreter.cpp \
-      bytecodeInterpreterWithChecks.cpp \
       opcodes.cpp \
       os_windows.cpp \
       os_windows_x86.cpp \
       osThread_windows.cpp \
       jvmciCompilerToVMInit.cpp \
+      $(OPT_SPEED_SRC) \
       #
 
   # Workaround for jvmciCompilerToVM.cpp long compilation time

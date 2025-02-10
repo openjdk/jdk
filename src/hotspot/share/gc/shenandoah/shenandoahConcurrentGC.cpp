@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectorCounters.hpp"
@@ -192,20 +191,26 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       return false;
     }
 
+    // Evacuation is complete, retire gc labs
+    heap->concurrent_prepare_for_update_refs();
+
     // Perform update-refs phase.
-    vmop_entry_init_updaterefs();
-    entry_updaterefs();
-    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_updaterefs)) {
+    if (ShenandoahVerify || ShenandoahPacing) {
+      vmop_entry_init_update_refs();
+    }
+
+    entry_update_refs();
+    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_update_refs)) {
       return false;
     }
 
     // Concurrent update thread roots
     entry_update_thread_roots();
-    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_updaterefs)) {
+    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_update_refs)) {
       return false;
     }
 
-    vmop_entry_final_updaterefs();
+    vmop_entry_final_update_refs();
 
     // Update references freed up collection set, kick the cleanup to reclaim the space.
     entry_cleanup_complete();
@@ -259,7 +264,7 @@ void ShenandoahConcurrentGC::vmop_entry_final_mark() {
   VMThread::execute(&op); // jump to entry_final_mark under safepoint
 }
 
-void ShenandoahConcurrentGC::vmop_entry_init_updaterefs() {
+void ShenandoahConcurrentGC::vmop_entry_init_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->stw_collection_counters());
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::init_update_refs_gross);
@@ -269,7 +274,7 @@ void ShenandoahConcurrentGC::vmop_entry_init_updaterefs() {
   VMThread::execute(&op);
 }
 
-void ShenandoahConcurrentGC::vmop_entry_final_updaterefs() {
+void ShenandoahConcurrentGC::vmop_entry_final_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->stw_collection_counters());
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_update_refs_gross);
@@ -314,16 +319,16 @@ void ShenandoahConcurrentGC::entry_final_mark() {
   op_final_mark();
 }
 
-void ShenandoahConcurrentGC::entry_init_updaterefs() {
+void ShenandoahConcurrentGC::entry_init_update_refs() {
   static const char* msg = "Pause Init Update Refs";
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::init_update_refs);
   EventMark em("%s", msg);
 
   // No workers used in this phase, no setup required
-  op_init_updaterefs();
+  op_init_update_refs();
 }
 
-void ShenandoahConcurrentGC::entry_final_updaterefs() {
+void ShenandoahConcurrentGC::entry_final_update_refs() {
   static const char* msg = "Pause Final Update Refs";
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_update_refs);
   EventMark em("%s", msg);
@@ -332,7 +337,7 @@ void ShenandoahConcurrentGC::entry_final_updaterefs() {
                               ShenandoahWorkerPolicy::calc_workers_for_final_update_ref(),
                               "final reference update");
 
-  op_final_updaterefs();
+  op_final_update_refs();
 }
 
 void ShenandoahConcurrentGC::entry_final_roots() {
@@ -551,7 +556,7 @@ void ShenandoahConcurrentGC::entry_update_thread_roots() {
   op_update_thread_roots();
 }
 
-void ShenandoahConcurrentGC::entry_updaterefs() {
+void ShenandoahConcurrentGC::entry_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
   static const char* msg = "Concurrent update references";
@@ -563,7 +568,7 @@ void ShenandoahConcurrentGC::entry_updaterefs() {
                               "concurrent reference update");
 
   heap->try_inject_alloc_failure();
-  op_updaterefs();
+  op_update_refs();
 }
 
 void ShenandoahConcurrentGC::entry_cleanup_complete() {
@@ -593,7 +598,7 @@ public:
   ShenandoahInitMarkUpdateRegionStateClosure() : _ctx(ShenandoahHeap::heap()->marking_context()) {}
 
   void heap_region_do(ShenandoahHeapRegion* r) {
-    assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->index());
+    assert(!r->has_live(), "Region %zu should have no live data", r->index());
     if (r->is_active()) {
       // Check if region needs updating its TAMS. We have updated it already during concurrent
       // reset, so it is very likely we don't need to do another write here.  Since most regions
@@ -603,7 +608,7 @@ public:
       }
     } else {
       assert(_ctx->top_at_mark_start(r) == r->top(),
-             "Region " SIZE_FORMAT " should already have correct TAMS", r->index());
+             "Region %zu should already have correct TAMS", r->index());
     }
   }
 
@@ -747,10 +752,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
         } else {
           heap->verifier()->verify_after_concmark();
         }
-      }
-
-      if (VerifyAfterGC) {
-        Universe::verify();
       }
     }
   }
@@ -920,8 +921,8 @@ public:
     }
 
     // If we are going to perform concurrent class unloading later on, we need to
-    // cleanup the weak oops in CLD and determinate nmethod's unloading state, so that we
-    // can cleanup immediate garbage sooner.
+    // clean up the weak oops in CLD and determine nmethod's unloading state, so that we
+    // can clean up immediate garbage sooner.
     if (ShenandoahHeap::heap()->unload_classes()) {
       // Applies ShenandoahIsCLDAlive closure to CLDs, native barrier will either null the
       // CLD's holder or evacuate it.
@@ -947,21 +948,10 @@ void ShenandoahConcurrentGC::op_weak_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(heap->is_concurrent_weak_root_in_progress(), "Only during this phase");
   // Concurrent weak root processing
-  {
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_work);
-    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
-    ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
-    heap->workers()->run_task(&task);
-  }
-
-  // Perform handshake to flush out dead oops
-  {
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
-    heap->rendezvous_threads("Shenandoah Concurrent Weak Roots");
-  }
-  // We can only toggle concurrent_weak_root_in_progress flag
-  // at a safepoint, so that mutators see a consistent
-  // value. The flag will be cleared at the next safepoint.
+  ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_work);
+  ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
+  ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
+  heap->workers()->run_task(&task);
 }
 
 void ShenandoahConcurrentGC::op_class_unloading() {
@@ -1046,28 +1036,27 @@ void ShenandoahConcurrentGC::op_strong_roots() {
 }
 
 void ShenandoahConcurrentGC::op_cleanup_early() {
-  ShenandoahHeap::heap()->free_set()->recycle_trash();
+  ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup(),
+                              "cleanup early.");
+  ShenandoahHeap::heap()->recycle_trash();
 }
 
 void ShenandoahConcurrentGC::op_evacuate() {
   ShenandoahHeap::heap()->evacuate_collection_set(true /*concurrent*/);
 }
 
-void ShenandoahConcurrentGC::op_init_updaterefs() {
+void ShenandoahConcurrentGC::op_init_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->set_evacuation_in_progress(false);
-  heap->set_concurrent_weak_root_in_progress(false);
-  heap->prepare_update_heap_references(true /*concurrent*/);
-  heap->set_update_refs_in_progress(true);
   if (ShenandoahVerify) {
-    heap->verifier()->verify_before_updaterefs();
+    heap->verifier()->verify_before_update_refs();
   }
   if (ShenandoahPacing) {
-    heap->pacer()->setup_for_updaterefs();
+    heap->pacer()->setup_for_update_refs();
   }
 }
 
-void ShenandoahConcurrentGC::op_updaterefs() {
+void ShenandoahConcurrentGC::op_update_refs() {
   ShenandoahHeap::heap()->update_heap_references(true /*concurrent*/);
 }
 
@@ -1099,7 +1088,7 @@ void ShenandoahConcurrentGC::op_update_thread_roots() {
   Handshake::execute(&cl);
 }
 
-void ShenandoahConcurrentGC::op_final_updaterefs() {
+void ShenandoahConcurrentGC::op_final_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
   assert(!heap->_update_refs_iterator.has_next(), "Should have finished update references");
@@ -1147,7 +1136,7 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
   }
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_updaterefs();
+    heap->verifier()->verify_after_update_refs();
   }
 
   if (VerifyAfterGC) {
@@ -1175,10 +1164,17 @@ void ShenandoahConcurrentGC::op_final_roots() {
       ShenandoahGenerationalHeap::heap()->update_region_ages(_generation->complete_marking_context());
     }
   }
+
+  if (VerifyAfterGC) {
+    Universe::verify();
+  }
 }
 
 void ShenandoahConcurrentGC::op_cleanup_complete() {
-  ShenandoahHeap::heap()->free_set()->recycle_trash();
+  ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup(),
+                              "cleanup complete.");
+  ShenandoahHeap::heap()->recycle_trash();
 }
 
 bool ShenandoahConcurrentGC::check_cancellation_and_abort(ShenandoahDegenPoint point) {

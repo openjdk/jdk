@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -354,6 +354,14 @@ $(eval $(call SetupTarget, vscode-project-ccls, \
     MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject, \
     ARGS := VSCODE_INDEXER=ccls, \
     DEPS := compile-commands, \
+))
+
+################################################################################
+# IDEA IntelliJ projects
+
+$(eval $(call SetupTarget, idea-gen-config, \
+    MAKEFILE := ide/idea/jdk/IdeaGenConfig, \
+    ARGS := IDEA_OUTPUT="$(IDEA_OUTPUT)" MODULES="$(MODULES)", \
 ))
 
 ################################################################################
@@ -1310,7 +1318,10 @@ endif
 ################################################################################
 
 # all-images builds all our deliverables as images.
-all-images: product-images static-jdk-image test-image all-docs-images
+all-images: product-images test-image all-docs-images
+ifeq ($(call isTargetOs, linux macosx windows), true)
+  all-images: static-jdk-image
+endif
 
 # all-bundles packages all our deliverables as tar.gz bundles.
 all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles
@@ -1472,6 +1483,7 @@ print-tests:
 
 create-main-targets-include:
 	  $(call LogInfo, Generating main target list)
+	  $(call MakeDir, $(MAKESUPPORT_OUTPUTDIR))
 	  @$(ECHO) ALL_MAIN_TARGETS := $(sort $(ALL_TARGETS)) > \
 	      $(MAKESUPPORT_OUTPUTDIR)/main-targets.gmk
 

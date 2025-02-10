@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -982,10 +981,11 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
 
   Node* other = cmp->in(1)->is_Con() ? cmp->in(1) : cmp->in(2);
   Node* zero = _igvn->intcon(0);
+  Node* one = _igvn->intcon(1);
   BoolTest::mask mask = cmp->unique_out()->as_Bool()->_test._test;
 
   // This Phi will merge the result of the Cmps split through the Phi
-  Node* res_phi  = _igvn->transform(PhiNode::make(ophi->in(0), zero, TypeInt::INT));
+  Node* res_phi = PhiNode::make(ophi->in(0), zero, TypeInt::INT);
 
   for (uint i=1; i<ophi->req(); i++) {
     Node* ophi_input = ophi->in(i);
@@ -993,7 +993,12 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
 
     const TypeInt* tcmp = optimize_ptr_compare(ophi_input, other);
     if (tcmp->singleton()) {
-      res_phi_input = _igvn->makecon(tcmp);
+      if ((mask == BoolTest::mask::eq && tcmp == TypeInt::CC_EQ) ||
+          (mask == BoolTest::mask::ne && tcmp == TypeInt::CC_GT)) {
+        res_phi_input = one;
+      } else {
+        res_phi_input = zero;
+      }
     } else {
       Node* ncmp = _igvn->transform(cmp->clone());
       ncmp->set_req(1, ophi_input);
@@ -1005,7 +1010,8 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
     res_phi->set_req(i, res_phi_input);
   }
 
-  Node* new_cmp = _igvn->transform(new CmpINode(res_phi, zero));
+  // This CMP always compares whether the output of "res_phi" is TRUE as far as the "mask".
+  Node* new_cmp = _igvn->transform(new CmpINode(_igvn->transform(res_phi), (mask == BoolTest::mask::eq) ? one : zero));
   _igvn->replace_node(cmp, new_cmp);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
@@ -1113,12 +1112,6 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
   assert(k != nullptr, "Use create_basic_type_mirror for primitive types");
   assert(k->java_mirror() == nullptr, "should only assign mirror once");
 
-  // Use this moment of initialization to cache modifier_flags also,
-  // to support Class.getModifiers().  Instance classes recalculate
-  // the cached flags after the class file is parsed, but before the
-  // class is put into the system dictionary.
-  int computed_modifiers = k->compute_modifier_flags();
-  k->set_modifier_flags(computed_modifiers);
   // Class_klass has to be loaded because it is used to allocate
   // the mirror.
   if (vmClasses::Class_klass_loaded()) {
@@ -1248,8 +1241,8 @@ void java_lang_Class::fixup_module_field(Klass* k, Handle module) {
 
 void java_lang_Class::set_oop_size(HeapWord* java_class, size_t size) {
   assert(_oop_size_offset != 0, "must be set");
-  assert(size > 0, "Oop size must be greater than zero, not " SIZE_FORMAT, size);
-  assert(size <= INT_MAX, "Lossy conversion: " SIZE_FORMAT, size);
+  assert(size > 0, "Oop size must be greater than zero, not %zu", size);
+  assert(size <= INT_MAX, "Lossy conversion: %zu", size);
   *(int*)(((char*)java_class) + _oop_size_offset) = (int)size;
 }
 
@@ -3175,7 +3168,7 @@ void java_lang_ClassFrameInfo::serialize_offsets(SerializeClosure* f) {
 #endif
 
 static int get_flags(const methodHandle& m) {
-  int flags = (jushort)( m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS );
+  int flags = m->access_flags().as_method_flags();
   if (m->is_object_initializer()) {
     flags |= java_lang_invoke_MemberName::MN_IS_CONSTRUCTOR;
   } else {
@@ -4674,28 +4667,31 @@ int java_lang_invoke_MethodType::rtype_slot_count(oop mt) {
 // Support for java_lang_invoke_CallSite
 
 int java_lang_invoke_CallSite::_target_offset;
-int java_lang_invoke_CallSite::_context_offset;
+int java_lang_invoke_CallSite::_vmdependencies_offset;
+int java_lang_invoke_CallSite::_last_cleanup_offset;
 
 #define CALLSITE_FIELDS_DO(macro) \
   macro(_target_offset,  k, "target", java_lang_invoke_MethodHandle_signature, false); \
-  macro(_context_offset, k, "context", java_lang_invoke_MethodHandleNatives_CallSiteContext_signature, false)
 
 void java_lang_invoke_CallSite::compute_offsets() {
   InstanceKlass* k = vmClasses::CallSite_klass();
   CALLSITE_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  CALLSITE_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
 void java_lang_invoke_CallSite::serialize_offsets(SerializeClosure* f) {
   CALLSITE_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+  CALLSITE_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
 }
 #endif
 
-oop java_lang_invoke_CallSite::context_no_keepalive(oop call_site) {
+DependencyContext java_lang_invoke_CallSite::vmdependencies(oop call_site) {
   assert(java_lang_invoke_CallSite::is_instance(call_site), "");
-
-  oop dep_oop = call_site->obj_field_access<AS_NO_KEEPALIVE>(_context_offset);
-  return dep_oop;
+  nmethodBucket* volatile* vmdeps_addr = call_site->field_addr<nmethodBucket* volatile>(_vmdependencies_offset);
+  volatile uint64_t* last_cleanup_addr = call_site->field_addr<volatile uint64_t>(_last_cleanup_offset);
+  DependencyContext dep_ctx(vmdeps_addr, last_cleanup_addr);
+  return dep_ctx;
 }
 
 // Support for java_lang_invoke_ConstantCallSite
@@ -4715,30 +4711,6 @@ void java_lang_invoke_ConstantCallSite::serialize_offsets(SerializeClosure* f) {
   CONSTANTCALLSITE_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 }
 #endif
-
-// Support for java_lang_invoke_MethodHandleNatives_CallSiteContext
-
-int java_lang_invoke_MethodHandleNatives_CallSiteContext::_vmdependencies_offset;
-int java_lang_invoke_MethodHandleNatives_CallSiteContext::_last_cleanup_offset;
-
-void java_lang_invoke_MethodHandleNatives_CallSiteContext::compute_offsets() {
-  InstanceKlass* k = vmClasses::Context_klass();
-  CALLSITECONTEXT_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void java_lang_invoke_MethodHandleNatives_CallSiteContext::serialize_offsets(SerializeClosure* f) {
-  CALLSITECONTEXT_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
-}
-#endif
-
-DependencyContext java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(oop call_site) {
-  assert(java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(call_site), "");
-  nmethodBucket* volatile* vmdeps_addr = call_site->field_addr<nmethodBucket* volatile>(_vmdependencies_offset);
-  volatile uint64_t* last_cleanup_addr = call_site->field_addr<volatile uint64_t>(_last_cleanup_offset);
-  DependencyContext dep_ctx(vmdeps_addr, last_cleanup_addr);
-  return dep_ctx;
-}
 
 // Support for java_lang_ClassLoader
 
@@ -5389,7 +5361,6 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
   f(java_lang_invoke_MethodType) \
   f(java_lang_invoke_CallSite) \
   f(java_lang_invoke_ConstantCallSite) \
-  f(java_lang_invoke_MethodHandleNatives_CallSiteContext) \
   f(java_lang_reflect_AccessibleObject) \
   f(java_lang_reflect_Method) \
   f(java_lang_reflect_Constructor) \
@@ -5455,8 +5426,7 @@ bool JavaClasses::is_supported_for_archiving(oop obj) {
   if (!CDSConfig::is_dumping_invokedynamic()) {
     // These are supported by CDS only when CDSConfig::is_dumping_invokedynamic() is enabled.
     if (klass == vmClasses::ResolvedMethodName_klass() ||
-        klass == vmClasses::MemberName_klass() ||
-        klass == vmClasses::Context_klass()) {
+        klass == vmClasses::MemberName_klass()) {
       return false;
     }
   }
@@ -5543,7 +5513,7 @@ int InjectedField::compute_offset() {
   ik->print();
   tty->print_cr("all fields:");
   for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
-    tty->print_cr("  name: %s, sig: %s, flags: %08x", fs.name()->as_C_string(), fs.signature()->as_C_string(), fs.access_flags().as_int());
+    tty->print_cr("  name: %s, sig: %s, flags: %08x", fs.name()->as_C_string(), fs.signature()->as_C_string(), fs.access_flags().as_field_flags());
   }
 #endif //PRODUCT
   vm_exit_during_initialization("Invalid layout of well-known class: use -Xlog:class+load=info to see the origin of the problem class");

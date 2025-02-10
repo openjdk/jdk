@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -39,7 +38,7 @@
 #include <unistd.h>
 
 #ifndef UNIX_PATH_MAX
-#define UNIX_PATH_MAX   sizeof(((struct sockaddr_un *)0)->sun_path)
+#define UNIX_PATH_MAX   sizeof(sockaddr_un::sun_path)
 #endif
 
 // The attach mechanism on AIX  uses a UNIX domain socket. An attach listener

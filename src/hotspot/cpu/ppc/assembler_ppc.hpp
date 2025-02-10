@@ -39,18 +39,10 @@ class Address {
   intptr_t _disp;         // Displacement.
 
  public:
-  Address(Register b, Register i, address d = 0)
-    : _base(b), _index(i), _disp((intptr_t)d) {
-    assert(i == noreg || d == 0, "can't have both");
-  }
-
-  Address(Register b, address d = 0)
-    : _base(b), _index(noreg), _disp((intptr_t)d) {}
-
   Address(Register b, ByteSize d)
     : _base(b), _index(noreg), _disp((intptr_t)d) {}
 
-  Address(Register b, intptr_t d)
+  Address(Register b, intptr_t d = 0)
     : _base(b), _index(noreg), _disp(d) {}
 
   Address(Register b, RegisterOrConstant roc)
@@ -302,6 +294,8 @@ class Assembler : public AbstractAssembler {
     CLRRWI_OPCODE = RLWINM_OPCODE,
     CLRLWI_OPCODE = RLWINM_OPCODE,
 
+    RLWNM_OPCODE  = (23u << OPCODE_SHIFT),
+
     RLWIMI_OPCODE = (20u << OPCODE_SHIFT),
 
     SLW_OPCODE    = (31u << OPCODE_SHIFT |  24u << 1),
@@ -431,6 +425,9 @@ class Assembler : public AbstractAssembler {
     RLDICL_OPCODE = (30u << OPCODE_SHIFT |   0u << XO_27_29_SHIFT), // MD-FORM
     RLDIC_OPCODE  = (30u << OPCODE_SHIFT |   2u << XO_27_29_SHIFT), // MD-FORM
     RLDIMI_OPCODE = (30u << OPCODE_SHIFT |   3u << XO_27_29_SHIFT), // MD-FORM
+
+    RLDCL_OPCODE  = (30u << OPCODE_SHIFT |   8u << 1),
+    RLDCR_OPCODE  = (30u << OPCODE_SHIFT |   9u << 1),
 
     SRADI_OPCODE  = (31u << OPCODE_SHIFT | 413u << XO_21_29_SHIFT), // XS-FORM
 
@@ -1703,6 +1700,14 @@ class Assembler : public AbstractAssembler {
   inline void rlwimi(  Register a, Register s, int sh5, int mb5, int me5);
   inline void insrdi(  Register a, Register s, int n,   int b);
   inline void insrwi(  Register a, Register s, int n,   int b);
+
+  // Rotate variable
+  inline void rlwnm( Register a, Register s, Register b, int mb, int me);
+  inline void rlwnm_(Register a, Register s, Register b, int mb, int me);
+  inline void rldcl( Register a, Register s, Register b, int mb);
+  inline void rldcl_(Register a, Register s, Register b, int mb);
+  inline void rldcr( Register a, Register s, Register b, int me);
+  inline void rldcr_(Register a, Register s, Register b, int me);
 
   // PPC 1, section 3.3.2 Fixed-Point Load Instructions
   // 4 bytes
