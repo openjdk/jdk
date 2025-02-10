@@ -3466,6 +3466,7 @@ public final class URI
                 if (q < m) break;
                 return q;
             }
+            if (strict) fail("Malformed IPv4 address", q);
             return -1;
         }
 
