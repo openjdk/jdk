@@ -546,6 +546,31 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+static void computeGCMProduct(MacroAssembler* masm, 
+                              VectorRegister vLowerH, VectorRegister vH, VectorRegister vHigherH,
+                              VectorRegister vConstC2, VectorRegister vZero, VectorRegister vState,
+                              VectorRegister vTmp4, VectorRegister vTmp5, VectorRegister vTmp6,
+                              VectorRegister vTmp7, VectorRegister vTmp8, VectorRegister vTmp9,
+                              VectorRegister vTmp10, VectorRegister vTmp11, Register data) {
+    assert(masm != nullptr, "MacroAssembler pointer is null");
+    masm->vxor(vH, vH, vState);
+    masm->vpmsumd(vTmp4, vLowerH, vH);     // L : Lower Half of subkey H
+    masm->vpmsumd(vTmp5, vTmp11, vH);      // M : Combined halves of subkey H
+    masm->vpmsumd(vTmp6, vHigherH, vH);    // H : Higher Half of subkey H
+    masm->vpmsumd(vTmp7, vTmp4, vConstC2); // Reduction
+    masm->vsldoi(vTmp8, vTmp5, vZero, 8);  // mL : Extract the lower 64 bits of M
+    masm->vsldoi(vTmp9, vZero, vTmp5, 8);  // mH : Extract the higher 64 bits of M
+    masm->vxor(vTmp4, vTmp4, vTmp8);       // LL + LL : Partial result for lower half
+    masm->vxor(vTmp6, vTmp6, vTmp9);       // HH + HH : Partial result for upper half
+    masm->vsldoi(vTmp4, vTmp4, vTmp4, 8);  // Swap
+    masm->vxor(vTmp4, vTmp4, vTmp7);       // Reduction using constant
+    masm->vsldoi(vTmp10, vTmp4, vTmp4, 8); // Swap
+    masm->vpmsumd(vTmp4, vTmp4, vConstC2); // Reduction
+    masm->vxor(vTmp10, vTmp10, vTmp6);     // Combine reduced Low & High products
+    masm->vxor(vState, vTmp4, vTmp10);
+    masm->addi(data, data, 16);
+}
+
 // Generate stub for ghash process blocks.
 //
 // Arguments for generated stub:
@@ -656,63 +681,32 @@ address generate_ghash_processBlocks() {
   // "Intel® Carry-Less Multiplication Instruction and its Usage for Computing the GCM Mode"
   // https://web.archive.org/web/20110609115824/https://software.intel.com/file/24918
   //
-  //__ stop("ghash loop");
   Label L_aligned_loop, L_store, L_unaligned_loop;
   __ andi(temp1, data, 15);
   __ cmpwi(CR0, temp1, 0);
   __ beq(CR0, L_aligned_loop);
+  __ li(temp1,0);
+  __ lvsl(vPerm, temp1, data);
   __ b(L_unaligned_loop);
   __ bind(L_aligned_loop);
     __ vspltisb(vZero, 0);
-    __ li(temp1, 0);
     __ lvx(vH, temp1, data);
     __ vec_perm(vH, vH, vH, loadOrder);
-    __ vxor(vH, vH, vState);
-    __ vpmsumd(vTmp4, vLowerH, vH);             // L : Lower Half of subkey H
-    __ vpmsumd(vTmp5, vTmp11, vH);              // M : Combined halves of subkey H
-    __ vpmsumd(vTmp6, vHigherH, vH);            // H :  Higher Half of subkeyH
-    __ vpmsumd(vTmp7, vTmp4, vConstC2);         // reduction
-    __ vsldoi(vTmp8, vTmp5, vZero, 8);          // mL : Extract the lower 64 bits of M
-    __ vsldoi(vTmp9, vZero, vTmp5, 8);          // mH : Extract the higher 64 bits of M
-    __ vxor(vTmp4, vTmp4, vTmp8);               // LL + LL : Combine L and mL (partial result for lower half)
-    __ vxor(vTmp6, vTmp6, vTmp9);               // HH + HH : Combine H and mH (partial result for upper half)
-    __ vsldoi(vTmp4, vTmp4, vTmp4, 8);          // swap
-    __ vxor(vTmp4, vTmp4, vTmp7);               // reduction using  the reduction constant
-    __ vsldoi(vTmp10, vTmp4, vTmp4, 8);         // swap
-    __ vpmsumd(vTmp4, vTmp4, vConstC2);         // reduction using the reduction constant
-    __ vxor(vTmp10, vTmp10, vTmp6);             // Combine the reduced Low and High products
-    __ vxor(vState, vTmp4, vTmp10);
-    __ addi(data, data, 16);
+    computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
+                  vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11, data);
     __ bdnz(L_aligned_loop);
   __ b(L_store);
   __ bind(L_unaligned_loop);
     __ vspltisb(vZero, 0);
-    __ li(temp1, 0);
     __ lvx(vHigh, temp1, data);
-    __ lvsl(vPerm, temp1, data);
     __ addi(data, data, 16);
     __ lvx(vLow, temp1, data);
     __ vec_perm(vHigh, vHigh, vHigh, loadOrder);
     __ vec_perm(vLow, vLow, vLow, loadOrder);
     __ vec_perm(vH, vLow, vHigh, vPerm);
     __ subi(data, data, 16);
-    __ vxor(vH, vH, vState);
-    // Perform GCM multiplication
-    __ vpmsumd(vTmp4, vLowerH, vH);             // L : Lower Half of subkey H
-    __ vpmsumd(vTmp5, vTmp11, vH);              // M : Combined halves of subkey H
-    __ vpmsumd(vTmp6, vHigherH, vH);            // H :  Higher Half of subkeyH
-    __ vpmsumd(vTmp7, vTmp4, vConstC2);         // reduction
-    __ vsldoi(vTmp8, vTmp5, vZero, 8);          // mL : Extract the lower 64 bits of M
-    __ vsldoi(vTmp9, vZero, vTmp5, 8);          // mH : Extract the higher 64 bits of M
-    __ vxor(vTmp4, vTmp4, vTmp8);               // LL + LL : Combine L and mL (partial result for lower half)
-    __ vxor(vTmp6, vTmp6, vTmp9);               // HH + HH : Combine H and mH (partial result for upper half)
-    __ vsldoi(vTmp4, vTmp4, vTmp4, 8);          // swap
-    __ vxor(vTmp4, vTmp4, vTmp7);               // reduction using  the reduction constant
-    __ vsldoi(vTmp10, vTmp4, vTmp4, 8);         // swap
-    __ vpmsumd(vTmp4, vTmp4, vConstC2);         // reduction using the reduction constant
-    __ vxor(vTmp10, vTmp10, vTmp6);             // Combine the reduced Low and High products
-    __ vxor(vZero, vTmp4, vTmp10);
-    __ addi(data, data, 16);
+    computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
+                  vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11, data);
     __ bdnz(L_unaligned_loop);
   __ bind(L_store);
   __ stxvd2x(vState->to_vsr(), state);
