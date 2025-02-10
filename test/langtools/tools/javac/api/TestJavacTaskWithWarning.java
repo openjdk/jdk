@@ -50,7 +50,7 @@ public class TestJavacTaskWithWarning {
     public static void warningTest() throws Exception {
 
         // Create a source file that will generate a warning
-        String srcdir = System.getProperty("test.classes");
+        String srcdir = System.getProperty(".");
         File file = new File(srcdir, "GeneratesWarning.java");
         try (PrintStream out = new PrintStream(new FileOutputStream(file))) {
             out.print(
