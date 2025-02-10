@@ -849,6 +849,8 @@ public class WindowsIconFactory implements Serializable
                 assert menuItem == null || c == menuItem;
                 Icon icon = getIcon();
                 int skinWidth = -1;
+                boolean isWindows11 = System.getProperty("os.name").
+                                                         equals("Windows 11");
                 if (type == JCheckBoxMenuItem.class
                       || type == JRadioButtonMenuItem.class) {
                     AbstractButton b = (AbstractButton) c;
@@ -874,18 +876,31 @@ public class WindowsIconFactory implements Serializable
                         if (xp != null) {
                             Skin skin;
                             skin =  xp.getSkin(c, backgroundPart);
-                            skin.paintSkin(g, x - 2 * OFFSET, y,
-                                getIconWidth(), getIconHeight(), backgroundState);
-                            skinWidth = getIconWidth();
-                            skin = xp.getSkin(c, part);
-                            skin.paintSkin(g, x - OFFSET, y + OFFSET, state);
+                            if (!isWindows11) {
+                                skin.paintSkin(g, x, y,
+                                        getIconWidth(), getIconHeight(), backgroundState);
+                                if (icon == null) {
+                                    skin = xp.getSkin(c, part);
+                                    skin.paintSkin(g, x - OFFSET, y + OFFSET, state);
+                                }
+                            } else {
+                                skin.paintSkin(g, x - 2 * OFFSET, y,
+                                        getIconWidth(), getIconHeight(), backgroundState);
+                                skinWidth = getIconWidth();
+                                skin = xp.getSkin(c, part);
+                                skin.paintSkin(g, x - OFFSET, y + OFFSET, state);
+                            }
                         }
                     }
                 }
                 if (icon != null) {
-                    icon.paintIcon(c, g, x - OFFSET +
-                            ((skinWidth != -1) ? skinWidth : 16 + 2 * OFFSET),
-                            y + OFFSET);
+                    if (!isWindows11) {
+                        icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
+                    } else {
+                        icon.paintIcon(c, g, x - OFFSET +
+                                        ((skinWidth != -1) ? skinWidth : 16 + 2 * OFFSET),
+                                y + OFFSET);
+                    }
                 }
             }
             private static WindowsMenuItemUIAccessor getAccessor(

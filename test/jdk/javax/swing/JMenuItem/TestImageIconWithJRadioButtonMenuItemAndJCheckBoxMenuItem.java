@@ -112,10 +112,6 @@ public class TestImageIconWithJRadioButtonMenuItemAndJCheckBoxMenuItem {
         check1.setSelected(true);
         AbstractButton check2 = new JCheckBoxMenuItem("JCheckBoxMenuItem 2", imageIcon1);
         AbstractButton check3 = new JCheckBoxMenuItem("JCheckBoxMenuItem 3");
-        ButtonGroup buttonGroup1 = new ButtonGroup();
-        buttonGroup1.add(check1);
-        buttonGroup1.add(check2);
-        buttonGroup1.add(check3);
 
         JMenu topLevel = new JMenu("Menus");
 
@@ -134,7 +130,6 @@ public class TestImageIconWithJRadioButtonMenuItemAndJCheckBoxMenuItem {
 
         frame.setJMenuBar(menuBar);
         frame.setSize(300, 300);
-        frame.setLocationRelativeTo(null);
         return frame;
 
     }
