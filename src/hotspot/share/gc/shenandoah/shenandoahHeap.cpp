@@ -1262,11 +1262,19 @@ void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
 }
 
 void ShenandoahHeap::concurrent_prepare_for_update_refs() {
-  // It's possible that evacuation succeeded, but we could still be cancelled when we get here.
-  // A cancellation at this point means the degenerated cycle must resume from update-refs.
-  set_gc_state_concurrent(EVACUATION, false);
-  set_gc_state_concurrent(WEAK_ROOTS, false);
-  set_gc_state_concurrent(UPDATE_REFS, true);
+  {
+    // Taking the thread lock here assures that any thread created after we change the gc
+    // state will have the correct state. It also prevents attaching threads from seeing
+    // an inconsistent state. If another thread holds this lock while it is being created,
+    // they will have the wrong GC state, but they will be added to the list of java threads
+    // and so will be corrected by the handshake.
+    MutexLocker lock(Threads_lock);
+
+    // A cancellation at this point means the degenerated cycle must resume from update-refs.
+    set_gc_state_concurrent(EVACUATION, false);
+    set_gc_state_concurrent(WEAK_ROOTS, false);
+    set_gc_state_concurrent(UPDATE_REFS, true);
+  }
 
   // This will propagate the gc state and retire gclabs and plabs for threads that require it.
   ShenandoahPrepareForUpdateRefs prepare_for_update_refs(_gc_state.raw_value());
