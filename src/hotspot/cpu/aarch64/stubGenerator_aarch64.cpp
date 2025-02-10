@@ -4571,15 +4571,15 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void dilithium_load4zetas(int o0, Register zetas) {
+  void dilithium_load16zetas(int o0, Register zetas) {
     __ ldpq(as_FloatRegister(o0), as_FloatRegister(o0 + 1), __ post (zetas, 32));
     __ ldpq(as_FloatRegister(o0 + 2), as_FloatRegister(o0 + 3), __ post (zetas, 32));
 
   }
 
-  void dilithium_load8zetas(Register zetas) {
-    dilithium_load4zetas(16, zetas);
-    dilithium_load4zetas(20, zetas);
+  void dilithium_load32zetas(Register zetas) {
+    dilithium_load16zetas(16, zetas);
+    dilithium_load16zetas(20, zetas);
   }
 
   // 2x16 32-bit Montgomery multiplications in parallel
@@ -4742,7 +4742,7 @@ class StubGenerator: public StubCodeGenerator {
         __ ldpq(v2, v3, Address(coeffs, c2Start + incr1));
         __ ldpq(v4, v5, Address(coeffs, c2Start + incr2));
         __ ldpq(v6, v7, Address(coeffs, c2Start + incr3));
-        dilithium_load8zetas(zetas);
+        dilithium_load32zetas(zetas);
         dilithium_montmul32(false);
         __ ldpq(v0, v1, Address(coeffs, c1Start));
         __ ldpq(v2, v3, Address(coeffs, c1Start + incr1));
@@ -4817,7 +4817,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ldr(v5, __ Q, Address(coeffs, i + 176));
       __ ldr(v6, __ Q, Address(coeffs, i + 208));
       __ ldr(v7, __ Q, Address(coeffs, i + 240));
-      dilithium_load8zetas(zetas);
+      dilithium_load32zetas(zetas);
       dilithium_montmul32(false);
       __ ldr(v0, __ Q, Address(coeffs, i));
       __ ldr(v1, __ Q, Address(coeffs, i + 32));
@@ -4857,7 +4857,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ld2(v4, v5, __ T2D, tmpAddr);
       __ add(tmpAddr, coeffs, i + 96);
       __ ld2(v6, v7, __ T2D, tmpAddr);
-      dilithium_load4zetas(16, zetas);
+      dilithium_load16zetas(16, zetas);
       dilithium_montmul_sub_add16();
       __ add(tmpAddr, coeffs, i);
       __ st2(v0, v1, __ T2D, tmpAddr);
@@ -4880,7 +4880,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ld2(v4, v5, __ T4S, tmpAddr);
       __ add(tmpAddr, coeffs, i + 96);
       __ ld2(v6, v7, __ T4S, tmpAddr);
-      dilithium_load4zetas(16, zetas);
+      dilithium_load16zetas(16, zetas);
       dilithium_montmul_sub_add16();
       __ add(tmpAddr, coeffs, i);
       __ st2(v0, v1, __ T4S, tmpAddr);
@@ -4986,7 +4986,7 @@ class StubGenerator: public StubCodeGenerator {
         __ stpq(v28, v29, Address(coeffs, c1Start + incr2));
         __ stpq(v30, v31, Address(coeffs, c1Start + incr3));
         __ ldpq(v30, v31, Address(dilithiumConsts, 0));
-        dilithium_load8zetas(zetas);
+        dilithium_load32zetas(zetas);
         dilithium_montmul32(false);
         __ stpq(v16, v17, Address(coeffs, c2Start));
         __ stpq(v18, v19, Address(coeffs, c2Start + incr1));
@@ -5048,7 +5048,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ld2(v4, v5, __ T4S, tmpAddr);
       __ add(tmpAddr, coeffs, i + 96);
       __ ld2(v6, v7, __ T4S, tmpAddr);
-      dilithium_load4zetas(16, zetas);
+      dilithium_load16zetas(16, zetas);
       dilithium_sub_add_montmul16();
       __ add(tmpAddr, coeffs, i);
       __ st2(v0, v1, __ T4S, tmpAddr);
@@ -5070,7 +5070,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ld2(v4, v5, __ T2D, tmpAddr);
       __ add(tmpAddr, coeffs, i + 96);
       __ ld2(v6, v7, __ T2D, tmpAddr);
-      dilithium_load4zetas(16, zetas);
+      dilithium_load16zetas(16, zetas);
       dilithium_sub_add_montmul16();
       __ add(tmpAddr, coeffs, i);
       __ st2(v0, v1, __ T2D, tmpAddr);
@@ -5109,7 +5109,7 @@ class StubGenerator: public StubCodeGenerator {
       __ str(v29, __ Q, Address(coeffs, i + 160));
       __ str(v30, __ Q, Address(coeffs, i + 192));
       __ str(v31, __ Q, Address(coeffs, i + 224));
-      dilithium_load8zetas(zetas);
+      dilithium_load32zetas(zetas);
       __ ldpq(v30, v31, Address(dilithiumConsts, 0));
       dilithium_montmul32(false);
       __ str(v16, __ Q, Address(coeffs, i + 16));
