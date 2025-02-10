@@ -46,38 +46,34 @@ public class CertificateExtensions {
 
     public static void main(String[] args) throws Exception {
         X509CertImpl x509Certimpl = createCertificate();
-        try {
-            /**
-             * Certificate is created without extensions. Invoking getExtensionValue
-             * with oid must return NULL else it is incorrect
-             */
-            Asserts.assertNull(x509Certimpl.getExtensionValue("2.5.29.17"));
-            /**
-             * Certificate is created with extensions. Invoking getExtensionValue
-             * with oid must not return NULL else it is incorrect
-             */
-            x509Certimpl.getInfo().setExtensions(createCertificateExtensions(
-                    x509Certimpl.getInfo().getKey().getKey()));
-            Asserts.assertNotNull(x509Certimpl.getExtensionValue("2.5.29.17"));
-            /**
-             * Certificate is created with extensions. Invoking getExtensionValue
-             * with invalid oid must return NULL else it is incorrect
-             */
-            Asserts.assertNull(x509Certimpl.getExtensionValue("1.2.3.4"));
-            /**
-             * Certificate is created with extensions. Invoking getKeyUsage
-             * must not return NULL else it is incorrect
-             */
-            Asserts.assertNotNull(x509Certimpl.getKeyUsage());
-            /**
-             * Certificate is created without extensions. Invoking getKeyUsage
-             * must return NULL else it is incorrect
-             */
-            x509Certimpl.getInfo().setExtensions(null);
-            Asserts.assertNull(x509Certimpl.getKeyUsage());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        /**
+         * Certificate is created without extensions. Invoking getExtensionValue
+         * with oid must return NULL else it is incorrect
+         */
+        Asserts.assertNull(x509Certimpl.getExtensionValue("2.5.29.17"));
+        /**
+         * Certificate is created with extensions. Invoking getExtensionValue
+         * with oid must not return NULL else it is incorrect
+         */
+        x509Certimpl.getInfo().setExtensions(createCertificateExtensions(
+                x509Certimpl.getInfo().getKey().getKey()));
+        Asserts.assertNotNull(x509Certimpl.getExtensionValue("2.5.29.17"));
+        /**
+         * Certificate is created with extensions. Invoking getExtensionValue
+         * with invalid oid must return NULL else it is incorrect
+         */
+        Asserts.assertNull(x509Certimpl.getExtensionValue("1.2.3.4"));
+        /**
+         * Certificate is created with extensions. Invoking getKeyUsage
+         * must not return NULL else it is incorrect
+         */
+        Asserts.assertNotNull(x509Certimpl.getKeyUsage());
+        /**
+         * Certificate is created without extensions. Invoking getKeyUsage
+         * must return NULL else it is incorrect
+         */
+        x509Certimpl.getInfo().setExtensions(null);
+        Asserts.assertNull(x509Certimpl.getKeyUsage());
     }
 
     private static X509CertImpl createCertificate() throws Exception {
@@ -124,7 +120,6 @@ public class CertificateExtensions {
             signature.update(x509CertInfo.getEncodedInfo());
             byte[] signedData = signature.sign();
             byte[] signedCert = {};
-
             x509Certimpl = new X509CertImpl(x509CertInfo,
                     AlgorithmId.get("SHA256withRSA"), signedData, signedCert);
         } catch (Exception e) {
