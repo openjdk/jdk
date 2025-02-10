@@ -113,6 +113,10 @@ final class TestCaptureStateUtil {
         var noSegEx = assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(noSegment, ERRNO_NAME));
         assertTrue(noSegEx.getMessage().contains("does not have a MemorySegment as the first parameter"));
 
+        MethodHandle noArgMH = MethodHandles.empty(MethodType.methodType(int.class));
+        var emptyEx = assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(noArgMH, ERRNO_NAME));
+        assertTrue(emptyEx.getMessage().contains("does not have a MemorySegment as the first parameter"));
+
         MethodHandle wrongReturnType = MethodHandles.lookup()
                 .findStatic(TestCaptureStateUtil.class, "wrongType",
                         MethodType.methodType(short.class, MemorySegment.class, long.class, int.class));
