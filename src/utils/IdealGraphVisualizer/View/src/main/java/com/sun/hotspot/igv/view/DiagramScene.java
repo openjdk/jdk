@@ -492,7 +492,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 getModel().setSelectedNodes(nodeSelection);
                 getModel().setSelectedLiveRanges(liveRangeSelection);
 
-                // TODO: extend with live ranges?
                 boolean b = selectedCoordinatorListener.isEnabled();
                 selectedCoordinatorListener.setEnabled(false);
                 SelectionCoordinator.getInstance().setSelectedObjects(nodeSelection);
@@ -1438,7 +1437,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     @Override
     public void centerSelectedLiveRanges() {
-        // TODO: double check that this works as intended
         Set<LiveRangeSegment> selectedLiveRanges = model.getSelectedLiveRangeSegments();
         Rectangle overallRect = null;
         for (LiveRangeSegment segment : selectedLiveRanges) {
@@ -1631,8 +1629,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void updateVisibleLiveRangeWidgets() {
-        // TODO: pre-compute visibility for each live range, to avoid
-        // re-computing it for each segment in each live range.
         if (getModel().getShowCFG() && getModel().getShowLiveRanges()) {
             for (LiveRangeSegment segment : getModel().getDiagram().getLiveRangeSegments()) {
                 LiveRangeWidget liveRangeWidget = getWidget(segment);
