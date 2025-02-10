@@ -63,7 +63,7 @@ public class JComboBoxScrollFocusTest {
     private static JFrame createAndShowGUI() {
         JFrame frame = new JFrame("JComboBoxScrollFocusTest Test Frame");
         JComboBox<String> combobox = new JComboBox<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1000; i++) {
             combobox.addItem(String.valueOf(i));
         }
         frame.add(combobox);
