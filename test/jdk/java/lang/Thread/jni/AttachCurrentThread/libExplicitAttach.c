@@ -38,8 +38,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void* reserved) {
  */
 void* thread_main(void* arg) {
     JNIEnv *env;
-    JavaVMInitArgs vm_args;
-    jsize count;
     jint res;
 
     res = (*vm)->AttachCurrentThread(vm, (void **) &env, NULL);
