@@ -76,6 +76,7 @@ public class TestTemplate {
         testFuelCustom();
         testNames();
         testNames2();
+        testNames3();
 
         //testClassInstantiator();
         //testClassInstantiatorAndDispatch();
@@ -948,6 +949,48 @@ public class TestTemplate {
             } sample_12
             [int: 1 and 1]
             [int: 0 and 0]
+            }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testNames3() {
+        var hook1 = new Hook("Hook1");
+
+        var template1 = Template.make("type", (Object type) -> body(
+            "[#type: ", countNames(type, MUTABLE), " and ", countNames(type, ALL), "]\n"
+        ));
+
+        // Example that shows that defineName runs before any code gets generated.
+        var template2 = Template.make(() -> body(
+            "class $Y {\n",
+            template1.withArgs("int"),
+            hook1.set(
+                "begin $body\n",
+                template1.withArgs("int"),
+                "define mutable\n",
+                defineName($("v1"), "int", MUTABLE),
+                template1.withArgs("int"),
+                "define immutable\n",
+                defineName($("v1"), "int", ALL),
+                template1.withArgs("int")
+            ),
+            template1.withArgs("int"),
+            "}\n"
+        ));
+
+        String code = template2.withArgs().render();
+        String expected =
+            """
+            class Y_1 {
+            [int: 1 and 1]
+            begin body_1
+            [int: 1 and 1]
+            define mutable
+            [int: 1 and 1]
+            define immutable
+            [int: 1 and 1]
+            [int: 1 and 1]
             }
             """;
         checkEQ(code, expected);
