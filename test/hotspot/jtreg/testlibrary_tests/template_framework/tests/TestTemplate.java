@@ -92,6 +92,7 @@ public class TestTemplate {
         checkFails(() -> countNames("int", MUTABLE),         "A Template method such as");
         checkFails(() -> sampleName("int", MUTABLE),         "A Template method such as");
         checkFails(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
+        checkFails(() -> testFailingSample(), "No variable of type 'int'.");
     }
 
     public static void testSingleLine() {
@@ -1076,6 +1077,15 @@ public class TestTemplate {
         ));
 
         String code = template2.withArgs().render();
+    }
+
+    public static void testFailingSample() {
+        var template1 = Template.make(() -> body(
+            let("v", sampleName("int", MUTABLE)),
+            "v is #v\n"
+        ));
+
+        String code = template1.withArgs().render();
     }
 
     public static void checkFails(FailingTest test, String errorPrefix) {

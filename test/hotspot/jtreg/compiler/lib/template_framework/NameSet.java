@@ -53,7 +53,7 @@ class NameSet {
     public String sample(Object type) {
         int c = count(type);
         if (c == 0) {
-            throw new RendererException("No variable of type " + type.toString());
+            throw new RendererException("No variable of type '" + type.toString() + "'.");
         }
 
         // Maybe sample from parent.
