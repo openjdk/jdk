@@ -35,9 +35,15 @@ import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.lang.invoke.VarHandle;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.CarrierLocalArenaPools;
@@ -47,6 +53,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class TestCarrierLocalArenaPools {
@@ -268,6 +276,43 @@ final class TestCarrierLocalArenaPools {
         assertTrue(pool.toString().contains("ArenaPool"));
         try (var arena = pool.take()) {
             assertTrue(arena.toString().contains("SlicingArena"));
+        }
+    }
+
+    private static final VarHandle LONG_HANDLE = JAVA_LONG.varHandle();
+
+    /**
+     * The objective of this test is to try to provoke a situation where threads are
+     * competing to use allocated pooled memory and then trying to make sure no thread
+     * can see the same shared memory another thread is using.
+     */
+    @Test
+    void stress() throws InterruptedException {
+        // Just use one pool variant as testing here is fairly expensive.
+        final CarrierLocalArenaPools pool = pools().limit(1).findFirst().orElseThrow();
+        // Make sure it works for both virtual and platform threads (as they are handled differently)
+        for (var threadBuilder : List.of(Thread.ofVirtual(), Thread.ofPlatform())) {
+            final Thread[] threads = IntStream.range(0, 1024).mapToObj(_ ->
+                    threadBuilder.start(() -> {
+                        final long threadId = Thread.currentThread().threadId();
+                        while (!Thread.interrupted()) {
+                            for (int i = 0; i < 1_000_000; i++) {
+                                try (Arena arena = pool.take()) {
+                                    // Try to assert no two threads get allocated the same memory region.
+                                    final MemorySegment segment = arena.allocate(JAVA_LONG);
+                                    LONG_HANDLE.setVolatile(segment, 0L, threadId);
+                                    assertEquals(threadId, (long) LONG_HANDLE.getVolatile(segment, 0L));
+                                }
+                            }
+                            Thread.yield(); // make sure the driver thread gets a chance.
+                        }
+                    })).toArray(Thread[]::new);
+            Thread.sleep(Duration.of(5, SECONDS));
+            Arrays.stream(threads).forEach(
+                    thread -> {
+                        assertTrue(thread.isAlive());
+                        thread.interrupt();
+                    });
         }
     }
 
