@@ -93,6 +93,10 @@ public class TestTemplate {
         checkFails(() -> sampleName("int", MUTABLE),         "A Template method such as");
         checkFails(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
         checkFails(() -> testFailingSample(), "No variable of type 'int'.");
+        checkFails(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
+        checkFails(() -> testFailingHashtag2(), "Duplicate hashtag replacement for #a");
+        checkFails(() -> testFailingHashtag3(), "Duplicate hashtag replacement for #a");
+        checkFails(() -> testFailingHashtag4(), "Missing hashtag replacement for #a");
     }
 
     public static void testSingleLine() {
@@ -1083,6 +1087,41 @@ public class TestTemplate {
         var template1 = Template.make(() -> body(
             let("v", sampleName("int", MUTABLE)),
             "v is #v\n"
+        ));
+
+        String code = template1.withArgs().render();
+    }
+
+    public static void testFailingHashtag1() {
+        var template1 = Template.make("a", "a", (String _, String _) -> body(
+            "nothing\n"
+        ));
+
+        String code = template1.withArgs("x", "y").render();
+    }
+
+    public static void testFailingHashtag2() {
+        var template1 = Template.make("a", (String _) -> body(
+            let("a", "x"),
+            "nothing\n"
+        ));
+
+        String code = template1.withArgs("y").render();
+    }
+
+    public static void testFailingHashtag3() {
+        var template1 = Template.make(() -> body(
+            let("a", "x"),
+            let("a", "y"),
+            "nothing\n"
+        ));
+
+        String code = template1.withArgs().render();
+    }
+
+    public static void testFailingHashtag4() {
+        var template1 = Template.make(() -> body(
+            "#a\n"
         ));
 
         String code = template1.withArgs().render();
