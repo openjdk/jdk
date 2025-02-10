@@ -146,13 +146,21 @@ class G1CollectionSet {
   volatile uint _collection_set_cur_length;
   uint _collection_set_max_length;
 
+  // Old gen groups selected for evacuation.
+  G1CSetCandidateGroupList _collection_set_groups;
+
+  // Groups are added to the collection set in increments when performing optional evacuations.
+  // We use the value below to track these increments.
+  uint _selected_groups_cur_length;
+  uint _selected_groups_inc_part_start;
+
   uint _eden_region_length;
   uint _survivor_region_length;
   uint _initial_old_region_length;
 
   // When doing mixed collections we can add old regions to the collection set, which
   // will be collected only if there is enough time. We call these optional (old) regions.
-  G1CollectionCandidateRegionList _optional_old_regions;
+  G1CSetCandidateGroupList _optional_groups;
 
   enum CSetBuildType {
     Active,             // We are actively building the collection set
@@ -173,16 +181,20 @@ class G1CollectionSet {
   // Add the given old region to the head of the current collection set.
   void add_old_region(G1HeapRegion* hr);
 
-  void move_candidates_to_collection_set(G1CollectionCandidateRegionList* regions);
-  // Prepares old regions in the given set for optional collection later. Does not
-  // add the region to collection set yet.
-  void prepare_optional_regions(G1CollectionCandidateRegionList* regions);
-  // Moves given old regions from the marking candidates to the retained candidates.
-  // This makes sure that marking candidates will not remain there to unnecessarily
-  // prolong the mixed phase.
-  void move_pinned_marking_to_retained(G1CollectionCandidateRegionList* regions);
-  // Removes the given list of regions from the retained candidates.
-  void drop_pinned_retained_regions(G1CollectionCandidateRegionList* regions);
+  void prepare_optional_group(G1CSetCandidateGroup* gr, uint cur_index);
+
+  void add_group_to_collection_set(G1CSetCandidateGroup* gr);
+
+  void add_region_to_collection_set(G1HeapRegion* r);
+
+  double select_candidates_from_marking(double time_remaining_ms);
+
+  void select_candidates_from_retained(double time_remaining_ms);
+
+  // Select regions for evacuation from the optional candidates given the remaining time
+  // and return the number  of actually selected regions.
+  uint select_optional_collection_set_regions(double time_remaining_ms);
+  double select_candidates_from_optional_groups(double time_remaining_ms, uint& num_regions_selected);
 
   // Finalize the young part of the initial collection set. Relabel survivor regions
   // as Eden and calculate a prediction on how long the evacuation of all young regions
@@ -195,22 +207,6 @@ class G1CollectionSet {
   // Select the regions comprising the initial and optional collection set from marking
   // and retained collection set candidates.
   void finalize_old_part(double time_remaining_ms);
-
-  // Calculate and fill in the initial, optional and pinned old gen candidate regions from
-  // the given candidate list and the remaining time.
-  // Returns the remaining time.
-  double select_candidates_from_marking(double time_remaining_ms,
-                                        G1CollectionCandidateRegionList* initial_old_regions,
-                                        G1CollectionCandidateRegionList* pinned_old_regions);
-
-  void select_candidates_from_retained(double time_remaining_ms,
-                                       G1CollectionCandidateRegionList* initial_old_regions,
-                                       G1CollectionCandidateRegionList* pinned_old_regions);
-
-  // Calculate the number of optional regions from the given collection set candidates,
-  // the remaining time and the maximum number of these regions.
-  void select_candidates_from_optional_regions(double time_remaining_ms,
-                                               G1CollectionCandidateRegionList* selected);
 
   // Iterate the part of the collection set given by the offset and length applying the given
   // G1HeapRegionClosure. The worker_id will determine where in the part to start the iteration
@@ -232,6 +228,11 @@ public:
   G1CollectionSetCandidates* candidates() { return &_candidates; }
   const G1CollectionSetCandidates* candidates() const { return &_candidates; }
 
+  G1CSetCandidateGroupList* collection_set_groups() { return &_collection_set_groups; }
+  const G1CSetCandidateGroupList* collection_set_groups() const { return &_collection_set_groups; }
+
+  void prepare_groups_for_scan();
+
   void init_region_lengths(uint eden_cset_region_length,
                            uint survivor_cset_region_length);
 
@@ -243,9 +244,12 @@ public:
   uint eden_region_length() const     { return _eden_region_length; }
   uint survivor_region_length() const { return _survivor_region_length; }
   uint initial_old_region_length() const      { return _initial_old_region_length; }
-  uint optional_region_length() const { return _optional_old_regions.length(); }
+  uint num_optional_regions() const { return _optional_groups.num_regions(); }
 
-  bool only_contains_young_regions() const { return (initial_old_region_length() + optional_region_length()) == 0; }
+  bool only_contains_young_regions() const { return (initial_old_region_length() + num_optional_regions()) == 0; }
+
+  template <class CardOrRangeVisitor>
+  inline void merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers);
 
   // Reset the contents of the collection set.
   void clear();
@@ -255,7 +259,11 @@ public:
   // Initialize incremental collection set info.
   void start_incremental_building();
   // Start a new collection set increment.
-  void update_incremental_marker() { _inc_build_state = Active; _inc_part_start = _collection_set_cur_length; }
+  void update_incremental_marker() {
+    _inc_build_state = Active;
+    _inc_part_start = _collection_set_cur_length;
+    _selected_groups_inc_part_start = _selected_groups_cur_length;
+  }
   // Stop adding regions to the current collection set increment.
   void stop_incremental_building() { _inc_build_state = Inactive; }
 
@@ -267,6 +275,8 @@ public:
   size_t increment_length() const { return _collection_set_cur_length - _inc_part_start; }
   // Returns the length of the whole current collection set in number of regions
   size_t cur_length() const { return _collection_set_cur_length; }
+
+  uint collection_groups_increment_length() const { return _selected_groups_cur_length - _selected_groups_inc_part_start; }
 
   // Iterate over the entire collection set (all increments calculated so far), applying
   // the given G1HeapRegionClosure on all of them.
