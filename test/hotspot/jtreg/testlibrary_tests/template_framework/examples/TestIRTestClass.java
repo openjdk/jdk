@@ -29,7 +29,7 @@
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
  * @compile ../../../compiler/lib/generators/Generators.java
  * @compile ../../../compiler/lib/verify/Verify.java
- * @run driver template_framework.examples.TestManyTests
+ * @run driver template_framework.examples.TestIRTestClass
  */
 
 package template_framework.examples;
@@ -57,7 +57,7 @@ import compiler.lib.template_framework.Library.IRTestClassInfo;
  * Additionally, we must set the classpath for the Test-VM, so that it has access to all compiled
  * classes (see {@link CompileFramework#getEscapedClassPathOfCompiledClasses}).
  */
-public class TestManyTests {
+public class TestIRTestClass {
 
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
