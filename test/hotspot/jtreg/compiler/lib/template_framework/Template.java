@@ -111,8 +111,8 @@ public interface Template {
         return new NothingToken();
     }
 
-    static boolean hasNameFor(Object type, NameSelection nameSelection) {
-        return Renderer.getCurrent().hasNameFor(type, nameSelection);
+    static int countNames(Object type, NameSelection nameSelection) {
+        return Renderer.getCurrent().countNames(type, nameSelection);
     }
 
     static String sampleName(Object type, NameSelection nameSelection) {

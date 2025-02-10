@@ -131,8 +131,8 @@ public class Renderer {
         currentCodeFrame.defineName(name, type, nameSelection);
     }
 
-    boolean hasNameFor(Object type, NameSelection nameSelection) {
-        return currentCodeFrame.hasNameFor(type, nameSelection);
+    int countNames(Object type, NameSelection nameSelection) {
+        return currentCodeFrame.countNames(type, nameSelection);
     }
 
     String sampleName(Object type, NameSelection nameSelection) {

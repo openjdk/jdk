@@ -48,6 +48,11 @@ import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.fuel;
 import static compiler.lib.template_framework.Template.setFuelCost;
+import static compiler.lib.template_framework.Template.defineName;
+import static compiler.lib.template_framework.Template.countNames;
+import static compiler.lib.template_framework.Template.sampleName;
+import static compiler.lib.template_framework.Template.MUTABLE;
+import static compiler.lib.template_framework.Template.ALL;
 
 public class TestTemplate {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -63,12 +68,13 @@ public class TestTemplate {
         testHookNested();
         testHookWithNestedTemplates();
         testHookRecursion();
-        testNames();
+        testDollar();
         testLet();
         testSelector();
         testRecursion();
         testFuel();
         testFuelCustom();
+        testNames();
 
         //testClassInstantiator();
         //testClassInstantiatorAndDispatch();
@@ -441,7 +447,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testNames() {
+    public static void testDollar() {
         var hook1 = new Hook("Hook1");
 
         var template1 = Template.make("a", (String a) -> body("x $name #a x\n"));
@@ -775,6 +781,47 @@ public class TestTemplate {
             ] 2 12.0
             ] 3 15.0
             } 20.0
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testNames() {
+        var hook1 = new Hook("Hook1");
+
+        var template1 = Template.make("name", "type", (String name, Object type) -> body(
+            defineName(name, type, MUTABLE),
+            "define #type #name\n"
+        ));
+
+        var template2 = Template.make(() -> body(
+            "<\n",
+            intoHook(hook1, template1.withArgs($("name"), "int")),
+            "$name = 5",
+            ">\n"
+        ));
+
+        var template3 = Template.make(() -> body(
+            "[", countNames("int", MUTABLE), "]\n"
+        ));
+
+        var template4 = Template.make(() -> body(
+            "{\n",
+            template3.withArgs(),
+            hook1.set(
+                template3.withArgs(),
+                "something\n",
+                template2.withArgs(),
+                "more\n",
+                template3.withArgs()
+            ),
+            template3.withArgs(),
+            "}\n"
+        ));
+
+        String code = template4.withArgs().render();
+        String expected =
+            """
+
             """;
         checkEQ(code, expected);
     }

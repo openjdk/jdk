@@ -73,8 +73,8 @@ class CodeFrame {
         nameSet(nameSelection).add(name, type);
     }
 
-    boolean hasNameFor(Object type, NameSelection nameSelection) {
-        return nameSet(nameSelection).count(type) > 0;
+    int countNames(Object type, NameSelection nameSelection) {
+        return nameSet(nameSelection).count(type);
     }
 
     String sampleName(Object type, NameSelection nameSelection) {
