@@ -672,22 +672,23 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
     return false;
   }
 
-  if (preempt_old_marking(generation)) {
-    log_info(gc)("Preempting old generation mark to allow %s GC", generation->name());
+  MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+  if (gc_mode() == servicing_old) {
+    if (!preempt_old_marking(generation)) {
+      log_debug(gc, thread)("Cannot start young, old collection is not preemptible");
+      return false;
+    }
 
     // Cancel the old GC and wait for the control thread to start servicing the new request.
-    // We are using the fact old is only preemptible when the control thread mode is servicing_old
-    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-    while (gc_mode() != concurrent_normal) {
+    log_info(gc)("Preempting old generation mark to allow %s GC", generation->name());
+    while (gc_mode() == servicing_old) {
       ShenandoahHeap::heap()->cancel_gc(GCCause::_shenandoah_concurrent_gc);
       notify_cancellation(ml, GCCause::_shenandoah_concurrent_gc);
       ml.wait();
     }
-
     return true;
   }
 
-  MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
   if (gc_mode() == none) {
     while (gc_mode() == none) {
       if (_requested_gc_cause != GCCause::_no_gc) {
