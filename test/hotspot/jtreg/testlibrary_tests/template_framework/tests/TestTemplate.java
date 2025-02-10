@@ -75,6 +75,7 @@ public class TestTemplate {
         testFuel();
         testFuelCustom();
         testNames();
+        testNames2();
 
         //testClassInstantiator();
         //testClassInstantiatorAndDispatch();
@@ -843,6 +844,110 @@ public class TestTemplate {
             more
             [1]
             [0]
+            }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testNames2() {
+        var hook1 = new Hook("Hook1");
+
+        var template1 = Template.make("type", (Object type) -> body(
+            "[#type: ", countNames(type, MUTABLE), " and ", countNames(type, ALL), "]\n"
+        ));
+
+
+        var template2 = Template.make("name", "type", (String name, Object type) -> body(
+            defineName(name, type, MUTABLE),
+            "define mutable #type #name\n",
+            template1.withArgs(type)
+        ));
+
+        var template3 = Template.make("name", "type", (String name, Object type) -> body(
+            defineName(name, type, ALL),
+            "define immutable #type #name\n",
+            template1.withArgs(type)
+        ));
+
+        var template4 = Template.make("type", (Object type) -> body(
+            "{ $store\n",
+            intoHook(hook1, template2.withArgs($("name"), type)),
+            "$name = 5\n",
+            "} $store\n"
+        ));
+
+        var template5 = Template.make("type", (Object type) -> body(
+            "{ $load\n",
+            intoHook(hook1, template3.withArgs($("name"), type)),
+            "blackhole($name)\n",
+            "} $load\n"
+        ));
+
+        var template6 = Template.make("type", (Object type) -> body(
+            let("v", sampleName(type, MUTABLE)),
+            "{ $sample\n",
+            "#v = 7\n",
+            "} $sample\n"
+        ));
+
+        var template7 = Template.make("type", (Object type) -> body(
+            let("v", sampleName(type, ALL)),
+            "{ $sample\n",
+            "blackhole(#v)\n",
+            "} $sample\n"
+        ));
+
+        var template8 = Template.make(() -> body(
+            "class $X {\n",
+            template1.withArgs("int"),
+            hook1.set(
+                "begin $body\n",
+                template1.withArgs("int"),
+                "start with immutable\n",
+                template5.withArgs("int"),
+                "then load from it\n",
+                template7.withArgs("int"),
+                template1.withArgs("int"),
+                "now make something mutable\n",
+                template4.withArgs("int"),
+                "then store to it\n",
+                template6.withArgs("int"),
+                template1.withArgs("int")
+            ),
+            template1.withArgs("int"),
+            "}\n"
+        ));
+
+        String code = template8.withArgs().render();
+        String expected =
+            """
+            class X_1 {
+            [int: 0 and 0]
+            define immutable int name_4
+            [int: 0 and 1]
+            define mutable int name_9
+            [int: 1 and 1]
+            begin body_1
+            [int: 0 and 0]
+            start with immutable
+            { load_4
+            blackhole(name_4)
+            } load_4
+            then load from it
+            { sample_7
+            blackhole(name_4)
+            } sample_7
+            [int: 0 and 1]
+            now make something mutable
+            { store_9
+            name_9 = 5
+            } store_9
+            then store to it
+            { sample_12
+            name_9 = 7
+            } sample_12
+            [int: 1 and 1]
+            [int: 0 and 0]
             }
             """;
         checkEQ(code, expected);
