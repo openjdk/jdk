@@ -25,8 +25,10 @@
 #ifndef SHARE_UTILITIES_RBTREE_INLINE_HPP
 #define SHARE_UTILITIES_RBTREE_INLINE_HPP
 
+#include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/rbTree.hpp"
 
@@ -87,9 +89,9 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::rotate_right() {
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
-RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::prev() {
-  RBNode* node = this;
+inline const typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
+RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::prev() const {
+  const RBNode* node = this;
   if (_left != nullptr) { // right subtree exists
     node = _left;
     while (node->_right != nullptr) {
@@ -105,9 +107,9 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::prev() {
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
-RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::next() {
-  RBNode* node = this;
+inline const typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
+RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::next() const {
+  const RBNode* node = this;
   if (_right != nullptr) { // right subtree exists
     node = _right;
     while (node->_left != nullptr) {
@@ -126,7 +128,7 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::next() {
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::verify(
     size_t& num_nodes, size_t& black_nodes_until_leaf, size_t& shortest_leaf_path, size_t& longest_leaf_path,
-    size_t& tree_depth, bool expect_visited) {
+    size_t& tree_depth, bool expect_visited) const {
   assert(expect_visited != _visited, "node already visited");
   _visited = !_visited;
 
@@ -211,10 +213,6 @@ template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::insert_at_cursor(RBNode* node, const Cursor& cursor) {
   assert(cursor.valid() && !cursor.found(), "must be");
   _num_nodes++;
-
-  if (_first == nullptr || cursor._insert_location == &_first->_left) {
-    _first = node;
-  }
 
   *cursor._insert_location = node;
 
@@ -434,9 +432,6 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_at_cursor(const Cursor& 
   _num_nodes--;
 
   RBNode* node = cursor.node();
-  if (node == _first) {
-    _first = node->next();
-  }
 
   if (node->_left != nullptr && node->_right != nullptr) { // node has two children
     // Swap place with the in-order successor and delete there instead
@@ -474,7 +469,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_at_cursor(const Cursor& 
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline const typename RBTree<K, V, COMPARATOR, ALLOCATOR>::Cursor
-RBTree<K, V, COMPARATOR, ALLOCATOR>::get_cursor(RBNode* node) const {
+RBTree<K, V, COMPARATOR, ALLOCATOR>::get_cursor(const RBNode* node) const {
   if (node == nullptr) {
     return Cursor();
   }
@@ -548,10 +543,6 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::replace_at_cursor(RBNode* new_n
     new_node->_right->set_parent(new_node);
   }
 
-  if (old_node == _first) {
-    _first = new_node;
-  }
-
   free_node(old_node);
 
 #ifdef ASSERT
@@ -567,7 +558,7 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::cursor_find(const K& key) {
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::Cursor
-RBTree<K, V, COMPARATOR, ALLOCATOR>::get_cursor(RBNode* node) {
+RBTree<K, V, COMPARATOR, ALLOCATOR>::get_cursor(const RBNode* node) {
   return static_cast<const RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->get_cursor(node);
 }
 
@@ -586,7 +577,7 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::prev(const Cursor& cursor) {
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 template <typename F>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_in_order(F f) const {
-  RBNode* node = _first;
+  const RBNode* node = leftmost();
   while (node != nullptr) {
     f(node);
     node = node->next();
@@ -603,8 +594,8 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_range_in_order(const K& f
 
   Cursor cursor_start = cursor_find(from);
   Cursor cursor_end = cursor_find(to);
-  RBNode* start = cursor_start.found() ? cursor_start.node() : next(cursor_start).node();
-  RBNode* end = cursor_end.found() ? cursor_end.node() : next(cursor_end).node();
+  const RBNode* start = cursor_start.found() ? cursor_start.node() : next(cursor_start).node();
+  const RBNode* end = cursor_end.found() ? cursor_end.node() : next(cursor_end).node();
 
   while (start != end) {
     f(start);
@@ -614,7 +605,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_range_in_order(const K& f
 
 #ifdef ASSERT
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::verify_self() {
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::verify_self() const {
   if (_root == nullptr) {
     assert(_num_nodes == 0, "rbtree has %zu nodes but no root", _num_nodes);
     return;
@@ -642,5 +633,50 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::verify_self() {
          ", actual: %zu", size(), num_nodes);
 }
 #endif // ASSERT
+
+template <typename T,
+          ENABLE_IF(std::is_integral<T>::value),
+          ENABLE_IF(std::is_signed<T>::value)>
+void print_T(outputStream* st, T x) {
+  st->print(INT64_FORMAT, (int64_t)x);
+}
+
+template <typename T,
+          ENABLE_IF(std::is_integral<T>::value),
+          ENABLE_IF(std::is_unsigned<T>::value)>
+void print_T(outputStream* st, T x) {
+  st->print(UINT64_FORMAT, (uint64_t)x);
+}
+
+template <typename T,
+          ENABLE_IF(std::is_pointer<T>::value)>
+void print_T(outputStream* st, T x) {
+  st->print(PTR_FORMAT, p2i(x));
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+void RBTree<K, V, COMPARATOR, ALLOCATOR>::print_node_on(outputStream* st, int depth, const NodeType* n) const {
+  st->print("(%d)", depth);
+  st->sp(1 + depth * 2);
+  st->print("@" PTR_FORMAT ": [", p2i(n));
+  print_T<K>(st, n->key());
+  st->print("] = ");
+  print_T<V>(st, n->val());
+  st->cr();
+  depth++;
+  if (n->_right != nullptr) {
+    print_node_on(st, depth, n->_right);
+  }
+  if (n->_left != nullptr) {
+    print_node_on(st, depth, n->_left);
+  }
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+void RBTree<K, V, COMPARATOR, ALLOCATOR>::print_on(outputStream* st) const {
+  if (_root != nullptr) {
+    print_node_on(st, 0, _root);
+  }
+}
 
 #endif // SHARE_UTILITIES_RBTREE_INLINE_HPP
