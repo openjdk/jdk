@@ -91,11 +91,11 @@ public class Renderer {
     private void checkFrameConsistencyAfterRendering() {
         // Ensure CodeFrame consistency.
         if (baseCodeFrame != currentCodeFrame) {
-            throw new RendererException("Renderer did not end up at base CodeFrame.");
+            throw new RuntimeException("Internal error: Renderer did not end up at base CodeFrame.");
         }
         // Ensure TemplateFrame consistency.
         if (baseTemplateFrame != currentTemplateFrame) {
-            throw new RendererException("Renderer did not end up at base TemplateFrame.");
+            throw new RuntimeException("Internal error: Renderer did not end up at base TemplateFrame.");
         }
     }
 
@@ -146,7 +146,7 @@ public class Renderer {
         renderTokenList(it.tokens());
 
         if (currentTemplateFrame != templateFrame) {
-            throw new RendererException("TemplateFrame mismatch!");
+            throw new RuntimeException("Internal error: TemplateFrame mismatch!");
         }
         currentTemplateFrame = currentTemplateFrame.parent;
     }
@@ -220,7 +220,7 @@ public class Renderer {
             renderToken(t);
         }
         if (codeFrame != currentCodeFrame) {
-            throw new RendererException("CodeFrame mismatch.");
+            throw new RuntimeException("Internal error: CodeFrame mismatch.");
         }
     }
 
@@ -242,6 +242,6 @@ public class Renderer {
             }
             codeFrame = codeFrame.parent;
         }
-        throw new RendererException("hook " + hook.name() + " was referenced but not found!");
+        throw new RendererException("Hook '" + hook.name() + "' was referenced but not found!");
     }
 }

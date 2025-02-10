@@ -91,6 +91,7 @@ public class TestTemplate {
         checkFails(() -> defineName("name", "int", MUTABLE), "A Template method such as");
         checkFails(() -> countNames("int", MUTABLE),         "A Template method such as");
         checkFails(() -> sampleName("int", MUTABLE),         "A Template method such as");
+        checkFails(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
     }
 
     public static void testSingleLine() {
@@ -1054,6 +1055,23 @@ public class TestTemplate {
             "beta\n",
             // Nested "render" call not allowed!
             template1.withArgs().render(),
+            "gamma\n"
+        ));
+
+        String code = template2.withArgs().render();
+    }
+
+    public static void testFailingHook() {
+        var hook1 = new Hook("Hook1");
+
+        var template1 = Template.make(() -> body(
+            "alpha\n"
+        ));
+
+        var template2 = Template.make(() -> body(
+            "beta\n",
+            // Use hook without hook1.set
+            intoHook(hook1, template1.withArgs()),
             "gamma\n"
         ));
 
