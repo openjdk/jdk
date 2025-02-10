@@ -516,7 +516,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_isInterface:
-  case vmIntrinsics::_isArray:
   case vmIntrinsics::_isPrimitive:
   case vmIntrinsics::_isHidden:
   case vmIntrinsics::_getSuperclass:
@@ -3893,10 +3892,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
   case vmIntrinsics::_isInterface:
     prim_return_value = intcon(0);
     break;
-  case vmIntrinsics::_isArray:
-    prim_return_value = intcon(0);
-    expect_prim = true;  // cf. ObjectStreamClass.getClassSignature
-    break;
   case vmIntrinsics::_isPrimitive:
     prim_return_value = intcon(1);
     expect_prim = true;  // obviously
@@ -3973,15 +3968,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     // (To verify this code sequence, check the asserts in JVM_IsInterface.)
     if (generate_interface_guard(kls, region) != nullptr)
       // A guard was added.  If the guard is taken, it was an interface.
-      phi->add_req(intcon(1));
-    // If we fall through, it's a plain class.
-    query_value = intcon(0);
-    break;
-
-  case vmIntrinsics::_isArray:
-    // (To verify this code sequence, check the asserts in JVM_IsArrayClass.)
-    if (generate_array_guard(kls, region) != nullptr)
-      // A guard was added.  If the guard is taken, it was an array.
       phi->add_req(intcon(1));
     // If we fall through, it's a plain class.
     query_value = intcon(0);

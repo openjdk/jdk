@@ -801,8 +801,9 @@ public final class Class<T> implements java.io.Serializable,
      *          {@code false} otherwise.
      * @since   1.1
      */
-    @IntrinsicCandidate
-    public native boolean isArray();
+    public boolean isArray() {
+        return componentType != null;
+    }
 
 
     /**
@@ -1284,12 +1285,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.1
      */
     public Class<?> getComponentType() {
-        // Only return for array types. Storage may be reused for Class for instance types.
-        if (isArray()) {
-            return componentType;
-        } else {
-            return null;
-        }
+        return componentType;
     }
 
     private final Class<?> componentType;
