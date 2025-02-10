@@ -97,6 +97,8 @@ public class TestTemplate {
         checkFails(() -> testFailingHashtag2(), "Duplicate hashtag replacement for #a");
         checkFails(() -> testFailingHashtag3(), "Duplicate hashtag replacement for #a");
         checkFails(() -> testFailingHashtag4(), "Missing hashtag replacement for #a");
+        checkFails(() -> testFailingBinding1(), "Duplicate 'bind' not allowed.");
+        checkFails(() -> testFailingBinding2(), "Cannot 'get' before 'bind'.");
     }
 
     public static void testSingleLine() {
@@ -1127,6 +1129,23 @@ public class TestTemplate {
         String code = template1.withArgs().render();
     }
 
+    public static void testFailingBinding1() {
+        var binding = new TemplateBinding<Template.ZeroArgs>();
+        var template1 = Template.make(() -> body(
+            "nothing\n"
+        ));
+        binding.bind(template1);
+        binding.bind(template1);
+    }
+
+    public static void testFailingBinding2() {
+        var binding = new TemplateBinding<Template.ZeroArgs>();
+        var template1 = Template.make(() -> body(
+            "nothing\n",
+            binding.get().withArgs()
+        ));
+        String code = template1.withArgs().render();
+    }
     public static void checkFails(FailingTest test, String errorPrefix) {
         try {
             test.run();

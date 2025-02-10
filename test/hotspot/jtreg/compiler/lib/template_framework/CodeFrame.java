@@ -75,7 +75,7 @@ class CodeFrame {
 
     void addHook(Hook hook) {
         if (hasHook(hook)) {
-            throw new RendererException("Duplicate Hook in Template: " + hook.name());
+            throw new RuntimeException("Internal error: Duplicate Hook in CodeFrame: " + hook.name());
         }
         hookCodeLists.put(hook, new Code.CodeList(new ArrayList<Code>()));
     }
