@@ -64,7 +64,8 @@ public class TestAvailableProcessors {
 
         List<String> command = new ArrayList<>();
         //Execution command to prevent garbled characters
-        command.addAll(List.of("cmd.exe", "/c", "chcp", "437", ">nul", "2>&1", "&&"));
+        command.addAll(List.of("cmd.exe", "/c", "set", "PATH=%PATH%;C:\\Windows\\System32", "&&"));
+        command.addAll(List.of("chcp", "437", ">nul", "2>&1", "&&"));
         //Execute command to obtain OS Version
         command.add(systeminfoPath);
 
