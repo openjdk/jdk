@@ -24,12 +24,9 @@
 package compiler.lib.template_framework;
 
 import java.util.List;
-import java.util.Arrays;
 
 public record Hook(String name) {
     public HookSetToken set(Object... tokens) {
-        return new HookSetToken(this, Token.parse(Arrays.asList(tokens)));
+        return new HookSetToken(this, Token.parse(tokens));
     }
-
-    // TODO hook.send(...) vs intoHook(hook, ...)
 }

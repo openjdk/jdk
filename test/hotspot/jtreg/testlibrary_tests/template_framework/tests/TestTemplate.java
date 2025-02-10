@@ -102,6 +102,10 @@ public class TestTemplate {
         expectIllegalArgumentException(() -> body(null),              "Unexpected tokens: null");
         expectIllegalArgumentException(() -> body("x", null),         "Unexpected token: null");
         expectIllegalArgumentException(() -> body(new Hook("Hook1")), "Unexpected token:");
+        Hook hook1 = new Hook("Hook1");
+        expectIllegalArgumentException(() -> hook1.set(null),         "Unexpected tokens: null");
+        expectIllegalArgumentException(() -> hook1.set("x", null),    "Unexpected token: null");
+        expectIllegalArgumentException(() -> hook1.set(hook1),        "Unexpected token:");
     }
 
     public static void testSingleLine() {

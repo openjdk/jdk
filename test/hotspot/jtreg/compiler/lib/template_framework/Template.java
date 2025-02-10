@@ -23,7 +23,6 @@
 
 package compiler.lib.template_framework;
 
-import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -73,10 +72,7 @@ public interface Template {
     }
 
     static TemplateBody body(Object... tokens) {
-        if (tokens == null) {
-            throw new IllegalArgumentException("Unexpected tokens: null");
-        }
-        return new TemplateBody(Token.parse(Arrays.asList(tokens)));
+        return new TemplateBody(Token.parse(tokens));
     }
 
     static HookIntoToken intoHook(Hook hook, TemplateWithArgs t) {

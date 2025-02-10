@@ -23,6 +23,7 @@
 
 package compiler.lib.template_framework;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,9 +36,12 @@ sealed interface Token permits StringToken,
                                HookIntoToken,
                                NothingToken
 {
-    static List<Token> parse(Object object) {
+    static List<Token> parse(Object[] objects) {
+        if (objects == null) {
+            throw new IllegalArgumentException("Unexpected tokens: null");
+        }
         List<Token> outputList = new ArrayList<Token>();
-        parseToken(object, outputList);
+        parseToken(Arrays.asList(objects), outputList);
         return outputList;
     }
 
