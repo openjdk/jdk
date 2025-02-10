@@ -49,7 +49,7 @@ int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
 ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   _start_gc_is_pending(false),
   _declined_trigger_count(0),
-  _previous_trigger_declinations(0),
+  _most_recent_declined_trigger_count(0),
   _space_info(space_info),
   _region_data(nullptr),
   _guaranteed_gc_interval(0),
@@ -220,7 +220,7 @@ void ShenandoahHeuristics::adjust_penalty(intx step) {
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
          "In range before adjustment: %zd", _gc_time_penalties);
 
-  if ((_previous_trigger_declinations <= Penalty_Free_Declinations) && (step > 0)) {
+  if ((_most_recent_declined_trigger_count <= Penalty_Free_Declinations) && (step > 0)) {
     // Don't penalize if heuristics are not responsible for a negative outcome.  Allow Penalty_Free_Declinations following
     // previous GC for self calibration without penalty.
     step = 0;
@@ -258,7 +258,6 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
 }
 
 void ShenandoahHeuristics::record_success_concurrent() {
-  _start_gc_is_pending = false;
   _gc_cycle_time_history->add(elapsed_cycle_time());
   _gc_times_learned++;
 
@@ -266,12 +265,10 @@ void ShenandoahHeuristics::record_success_concurrent() {
 }
 
 void ShenandoahHeuristics::record_success_degenerated() {
-  _start_gc_is_pending = false;
   adjust_penalty(Degenerated_Penalty);
 }
 
 void ShenandoahHeuristics::record_success_full() {
-  _start_gc_is_pending = false;
   adjust_penalty(Full_Penalty);
 }
 
