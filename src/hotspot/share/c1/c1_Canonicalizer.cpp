@@ -523,7 +523,7 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
       ciType* t = c->value()->java_mirror_type();
       if (t->is_klass()) {
         // substitute cls.isInstance(obj) of a constant Class into
-        // an InstantOf instruction
+        // an InstanceOf instruction
         InstanceOf* i = new InstanceOf(t->as_klass(), x->argument_at(1), x->state_before());
         set_canonical(i);
         // and try to canonicalize even further

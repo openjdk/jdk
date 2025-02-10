@@ -103,6 +103,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZba, false, DIAGNOSTIC, "Use Zba instructions")               \
   product(bool, UseZbb, false, DIAGNOSTIC, "Use Zbb instructions")               \
   product(bool, UseZbs, false, DIAGNOSTIC, "Use Zbs instructions")               \
+  product(bool, UseZfa, false, EXPERIMENTAL, "Use Zfa instructions")             \
   product(bool, UseZfh, false, DIAGNOSTIC, "Use Zfh instructions")               \
   product(bool, UseZfhmin, false, DIAGNOSTIC, "Use Zfhmin instructions")         \
   product(bool, UseZacas, false, EXPERIMENTAL, "Use Zacas instructions")         \

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,8 +147,8 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     assert(sizeof(AccessFlags) == 2, "wrong size");
     __ lhz(R11_scratch1/*access_flags*/, method_(access_flags));
     // testbit with condition register.
-    __ testbitdi(CCR0, R0, R11_scratch1/*access_flags*/, JVM_ACC_STATIC_BIT);
-    __ btrue(CCR0, L);
+    __ testbitdi(CR0, R0, R11_scratch1/*access_flags*/, JVM_ACC_STATIC_BIT);
+    __ btrue(CR0, L);
     // For non-static functions, pass "this" in R4_ARG2 and copy it
     // to 2nd C-arg slot.
     // We need to box the Java object here, so we use arg_java
@@ -175,8 +175,8 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   // signature points to '(' at entry
 #ifdef ASSERT
   __ lbz(sig_byte, 0, signature);
-  __ cmplwi(CCR0, sig_byte, '(');
-  __ bne(CCR0, do_dontreachhere);
+  __ cmplwi(CR0, sig_byte, '(');
+  __ bne(CR0, do_dontreachhere);
 #endif
 
   __ bind(loop_start);
@@ -184,41 +184,41 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   __ addi(argcnt, argcnt, 1);
   __ lbzu(sig_byte, 1, signature);
 
-  __ cmplwi(CCR0, sig_byte, ')'); // end of signature
-  __ beq(CCR0, loop_end);
+  __ cmplwi(CR0, sig_byte, ')'); // end of signature
+  __ beq(CR0, loop_end);
 
-  __ cmplwi(CCR0, sig_byte, 'B'); // byte
-  __ beq(CCR0, do_int);
+  __ cmplwi(CR0, sig_byte, 'B'); // byte
+  __ beq(CR0, do_int);
 
-  __ cmplwi(CCR0, sig_byte, 'C'); // char
-  __ beq(CCR0, do_int);
+  __ cmplwi(CR0, sig_byte, 'C'); // char
+  __ beq(CR0, do_int);
 
-  __ cmplwi(CCR0, sig_byte, 'D'); // double
-  __ beq(CCR0, do_double);
+  __ cmplwi(CR0, sig_byte, 'D'); // double
+  __ beq(CR0, do_double);
 
-  __ cmplwi(CCR0, sig_byte, 'F'); // float
-  __ beq(CCR0, do_float);
+  __ cmplwi(CR0, sig_byte, 'F'); // float
+  __ beq(CR0, do_float);
 
-  __ cmplwi(CCR0, sig_byte, 'I'); // int
-  __ beq(CCR0, do_int);
+  __ cmplwi(CR0, sig_byte, 'I'); // int
+  __ beq(CR0, do_int);
 
-  __ cmplwi(CCR0, sig_byte, 'J'); // long
-  __ beq(CCR0, do_long);
+  __ cmplwi(CR0, sig_byte, 'J'); // long
+  __ beq(CR0, do_long);
 
-  __ cmplwi(CCR0, sig_byte, 'S'); // short
-  __ beq(CCR0, do_int);
+  __ cmplwi(CR0, sig_byte, 'S'); // short
+  __ beq(CR0, do_int);
 
-  __ cmplwi(CCR0, sig_byte, 'Z'); // boolean
-  __ beq(CCR0, do_int);
+  __ cmplwi(CR0, sig_byte, 'Z'); // boolean
+  __ beq(CR0, do_int);
 
-  __ cmplwi(CCR0, sig_byte, 'L'); // object
-  __ beq(CCR0, do_object);
+  __ cmplwi(CR0, sig_byte, 'L'); // object
+  __ beq(CR0, do_object);
 
-  __ cmplwi(CCR0, sig_byte, '['); // array
-  __ beq(CCR0, do_array);
+  __ cmplwi(CR0, sig_byte, '['); // array
+  __ beq(CR0, do_array);
 
-  //  __ cmplwi(CCR0, sig_byte, 'V'); // void cannot appear since we do not parse the return type
-  //  __ beq(CCR0, do_void);
+  //  __ cmplwi(CR0, sig_byte, 'V'); // void cannot appear since we do not parse the return type
+  //  __ beq(CR0, do_void);
 
   __ bind(do_dontreachhere);
 
@@ -231,16 +231,16 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 
     __ bind(start_skip);
     __ lbzu(sig_byte, 1, signature);
-    __ cmplwi(CCR0, sig_byte, '[');
-    __ beq(CCR0, start_skip); // skip further brackets
-    __ cmplwi(CCR0, sig_byte, '9');
-    __ bgt(CCR0, end_skip);   // no optional size
-    __ cmplwi(CCR0, sig_byte, '0');
-    __ bge(CCR0, start_skip); // skip optional size
+    __ cmplwi(CR0, sig_byte, '[');
+    __ beq(CR0, start_skip); // skip further brackets
+    __ cmplwi(CR0, sig_byte, '9');
+    __ bgt(CR0, end_skip);   // no optional size
+    __ cmplwi(CR0, sig_byte, '0');
+    __ bge(CR0, start_skip); // skip optional size
     __ bind(end_skip);
 
-    __ cmplwi(CCR0, sig_byte, 'L');
-    __ beq(CCR0, do_object);  // for arrays of objects, the name of the object must be skipped
+    __ cmplwi(CR0, sig_byte, 'L');
+    __ beq(CR0, do_object);  // for arrays of objects, the name of the object must be skipped
     __ b(do_boxed);          // otherwise, go directly to do_boxed
   }
 
@@ -249,8 +249,8 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     Label L;
     __ bind(L);
     __ lbzu(sig_byte, 1, signature);
-    __ cmplwi(CCR0, sig_byte, ';');
-    __ bne(CCR0, L);
+    __ cmplwi(CR0, sig_byte, ';');
+    __ bne(CR0, L);
    }
   // Need to box the Java object here, so we use arg_java (address of
   // current Java stack slot) as argument and don't dereference it as
@@ -258,16 +258,16 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   Label do_null;
   __ bind(do_boxed);
   __ ld(R0,0, arg_java);
-  __ cmpdi(CCR0, R0, 0);
+  __ cmpdi(CR0, R0, 0);
   __ li(intSlot,0);
-  __ beq(CCR0, do_null);
+  __ beq(CR0, do_null);
   __ mr(intSlot, arg_java);
   __ bind(do_null);
   __ std(intSlot, 0, arg_c);
   __ addi(arg_java, arg_java, -BytesPerWord);
   __ addi(arg_c, arg_c, BytesPerWord);
-  __ cmplwi(CCR0, argcnt, max_int_register_arguments);
-  __ blt(CCR0, move_intSlot_to_ARG);
+  __ cmplwi(CR0, argcnt, max_int_register_arguments);
+  __ blt(CR0, move_intSlot_to_ARG);
   __ b(loop_start);
 
   __ bind(do_int);
@@ -275,8 +275,8 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   __ std(intSlot, 0, arg_c);
   __ addi(arg_java, arg_java, -BytesPerWord);
   __ addi(arg_c, arg_c, BytesPerWord);
-  __ cmplwi(CCR0, argcnt, max_int_register_arguments);
-  __ blt(CCR0, move_intSlot_to_ARG);
+  __ cmplwi(CR0, argcnt, max_int_register_arguments);
+  __ blt(CR0, move_intSlot_to_ARG);
   __ b(loop_start);
 
   __ bind(do_long);
@@ -284,8 +284,8 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   __ std(intSlot, 0, arg_c);
   __ addi(arg_java, arg_java, - 2 * BytesPerWord);
   __ addi(arg_c, arg_c, BytesPerWord);
-  __ cmplwi(CCR0, argcnt, max_int_register_arguments);
-  __ blt(CCR0, move_intSlot_to_ARG);
+  __ cmplwi(CR0, argcnt, max_int_register_arguments);
+  __ blt(CR0, move_intSlot_to_ARG);
   __ b(loop_start);
 
   __ bind(do_float);
@@ -293,8 +293,8 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   __ stfs(floatSlot, Argument::float_on_stack_offset_in_bytes_c, arg_c);
   __ addi(arg_java, arg_java, -BytesPerWord);
   __ addi(arg_c, arg_c, BytesPerWord);
-  __ cmplwi(CCR0, fpcnt, max_fp_register_arguments);
-  __ blt(CCR0, move_floatSlot_to_FARG);
+  __ cmplwi(CR0, fpcnt, max_fp_register_arguments);
+  __ blt(CR0, move_floatSlot_to_FARG);
   __ b(loop_start);
 
   __ bind(do_double);
@@ -302,8 +302,8 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   __ stfd(floatSlot, 0, arg_c);
   __ addi(arg_java, arg_java, - 2 * BytesPerWord);
   __ addi(arg_c, arg_c, BytesPerWord);
-  __ cmplwi(CCR0, fpcnt, max_fp_register_arguments);
-  __ blt(CCR0, move_floatSlot_to_FARG);
+  __ cmplwi(CR0, fpcnt, max_fp_register_arguments);
+  __ blt(CR0, move_floatSlot_to_FARG);
   __ b(loop_start);
 
   __ bind(loop_end);
@@ -510,8 +510,8 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   __ ld(R3_RET, Interpreter::stackElementSize, R15_esp); // get receiver
 
   // Check if receiver == nullptr and go the slow path.
-  __ cmpdi(CCR0, R3_RET, 0);
-  __ beq(CCR0, slow_path);
+  __ cmpdi(CR0, R3_RET, 0);
+  __ beq(CR0, slow_path);
 
   __ load_heap_oop(R3_RET, referent_offset, R3_RET,
                    /* non-volatile temp */ R31, R11_scratch1,
@@ -725,8 +725,8 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
   if (ProfileInterpreter) {
     const Register Rmdo = R3_counters;
     __ ld(Rmdo, in_bytes(Method::method_data_offset()), R19_method);
-    __ cmpdi(CCR0, Rmdo, 0);
-    __ beq(CCR0, no_mdo);
+    __ cmpdi(CR0, Rmdo, 0);
+    __ beq(CR0, no_mdo);
 
     // Increment invocation counter in the MDO.
     const int mdo_ic_offs = in_bytes(MethodData::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
@@ -735,7 +735,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
     __ addi(Rscratch2, Rscratch2, increment);
     __ stw(Rscratch2, mdo_ic_offs, Rmdo);
     __ and_(Rscratch1, Rscratch2, Rscratch1);
-    __ bne(CCR0, done);
+    __ bne(CR0, done);
     __ b(*overflow);
   }
 
@@ -748,7 +748,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
   __ addi(Rscratch2, Rscratch2, increment);
   __ stw(Rscratch2, mo_ic_offs, R3_counters);
   __ and_(Rscratch1, Rscratch2, Rscratch1);
-  __ beq(CCR0, *overflow);
+  __ beq(CR0, *overflow);
 
   __ bind(done);
 }
@@ -789,8 +789,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rmem_f
   BLOCK_COMMENT("stack_overflow_check_with_compare {");
   __ sub(Rmem_frame_size, R1_SP, Rmem_frame_size);
   __ ld(Rscratch1, thread_(stack_overflow_limit));
-  __ cmpld(CCR0/*is_stack_overflow*/, Rmem_frame_size, Rscratch1);
-  __ bgt(CCR0/*is_stack_overflow*/, done);
+  __ cmpld(CR0/*is_stack_overflow*/, Rmem_frame_size, Rscratch1);
+  __ bgt(CR0/*is_stack_overflow*/, done);
 
   // The stack overflows. Load target address of the runtime stub and call it.
   assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "generated in wrong order");
@@ -799,13 +799,13 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rmem_f
   // Restore caller_sp (c2i adapter may exist, but no shrinking of interpreted caller frame).
 #ifdef ASSERT
   Label frame_not_shrunk;
-  __ cmpld(CCR0, R1_SP, R21_sender_SP);
-  __ ble(CCR0, frame_not_shrunk);
+  __ cmpld(CR0, R1_SP, R21_sender_SP);
+  __ ble(CR0, frame_not_shrunk);
   __ stop("frame shrunk");
   __ bind(frame_not_shrunk);
   __ ld(Rscratch1, 0, R1_SP);
   __ ld(R0, 0, R21_sender_SP);
-  __ cmpd(CCR0, R0, Rscratch1);
+  __ cmpd(CR0, R0, Rscratch1);
   __ asm_assert_eq("backlink");
 #endif // ASSERT
   __ mr(R1_SP, R21_sender_SP);
@@ -829,8 +829,8 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
     // Check if methods needs synchronization.
     {
       Label Lok;
-      __ testbitdi(CCR0, R0, Rflags, JVM_ACC_SYNCHRONIZED_BIT);
-      __ btrue(CCR0,Lok);
+      __ testbitdi(CR0, R0, Rflags, JVM_ACC_SYNCHRONIZED_BIT);
+      __ btrue(CR0,Lok);
       __ stop("method doesn't need synchronization");
       __ bind(Lok);
     }
@@ -842,8 +842,8 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
     Label Lstatic;
     Label Ldone;
 
-    __ testbitdi(CCR0, R0, Rflags, JVM_ACC_STATIC_BIT);
-    __ btrue(CCR0, Lstatic);
+    __ testbitdi(CR0, R0, Rflags, JVM_ACC_STATIC_BIT);
+    __ btrue(CR0, Lstatic);
 
     // Non-static case: load receiver obj from stack and we're done.
     __ ld(Robj_to_lock, R18_locals);
@@ -950,8 +950,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
     // environment and one for a possible native mirror.
     Label skip_native_calculate_max_stack;
     __ addi(Rtop_frame_size, Rsize_of_parameters, 2);
-    __ cmpwi(CCR0, Rtop_frame_size, Argument::n_int_register_parameters_c);
-    __ bge(CCR0, skip_native_calculate_max_stack);
+    __ cmpwi(CR0, Rtop_frame_size, Argument::n_int_register_parameters_c);
+    __ bge(CR0, skip_native_calculate_max_stack);
     __ li(Rtop_frame_size, Argument::n_int_register_parameters_c);
     __ bind(skip_native_calculate_max_stack);
     __ sldi(Rsize_of_parameters, Rsize_of_parameters, Interpreter::logStackElementSize);
@@ -999,8 +999,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   if (ProfileInterpreter) {
     Label zero_continue;
     __ ld(R28_mdx, method_(method_data));
-    __ cmpdi(CCR0, R28_mdx, 0);
-    __ beq(CCR0, zero_continue);
+    __ cmpdi(CR0, R28_mdx, 0);
+    __ beq(CR0, zero_continue);
     __ addi(R28_mdx, R28_mdx, in_bytes(MethodData::data_offset()));
     __ bind(zero_continue);
   }
@@ -1330,8 +1330,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ ld(signature_handler_fd, method_(signature_handler));
   Label call_signature_handler;
 
-  __ cmpdi(CCR0, signature_handler_fd, 0);
-  __ bne(CCR0, call_signature_handler);
+  __ cmpdi(CR0, signature_handler_fd, 0);
+  __ bne(CR0, call_signature_handler);
 
   // Method has never been called. Either generate a specialized
   // handler or point to the slow one.
@@ -1342,8 +1342,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Check for an exception while looking up the target method. If we
   // incurred one, bail.
   __ ld(pending_exception, thread_(pending_exception));
-  __ cmpdi(CCR0, pending_exception, 0);
-  __ bne(CCR0, exception_return_sync_check); // Has pending exception.
+  __ cmpdi(CR0, pending_exception, 0);
+  __ bne(CR0, exception_return_sync_check); // Has pending exception.
 
   // Reload signature handler, it may have been created/assigned in the meanwhile.
   __ ld(signature_handler_fd, method_(signature_handler));
@@ -1398,8 +1398,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // Access_flags is non-volatile and still, no need to restore it.
 
     // Restore access flags.
-    __ testbitdi(CCR0, R0, access_flags, JVM_ACC_STATIC_BIT);
-    __ bfalse(CCR0, method_is_not_static);
+    __ testbitdi(CR0, R0, access_flags, JVM_ACC_STATIC_BIT);
+    __ bfalse(CR0, method_is_not_static);
 
     // Load mirror from interpreter frame (FP in R11_scratch1)
     __ ld(R21_tmp1, _ijava_state_neg(mirror), R11_scratch1);
@@ -1508,8 +1508,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Not suspended.
   // TODO PPC port assert(4 == Thread::sz_suspend_flags(), "unexpected field size");
   __ lwz(suspend_flags, thread_(suspend_flags));
-  __ cmpwi(CCR1, suspend_flags, 0);
-  __ beq(CCR1, sync_check_done);
+  __ cmpwi(CR1, suspend_flags, 0);
+  __ beq(CR1, sync_check_done);
 
   __ bind(do_safepoint);
   __ isync();
@@ -1552,8 +1552,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // Check preemption for Object.wait()
     Label not_preempted;
     __ ld(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
-    __ cmpdi(CCR0, R0, 0);
-    __ beq(CCR0, not_preempted);
+    __ cmpdi(CR0, R0, 0);
+    __ beq(CR0, not_preempted);
     __ mtlr(R0);
     __ li(R0, 0);
     __ std(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
@@ -1611,8 +1611,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   Label exception_return_sync_check_already_unlocked;
   __ ld(R0/*pending_exception*/, thread_(pending_exception));
-  __ cmpdi(CCR0, R0/*pending_exception*/, 0);
-  __ bne(CCR0, exception_return_sync_check_already_unlocked);
+  __ cmpdi(CR0, R0/*pending_exception*/, 0);
+  __ bne(CR0, exception_return_sync_check_already_unlocked);
 
   //-----------------------------------------------------------------------------
   // No exception pending.
@@ -1706,7 +1706,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   __ subf(Rnum, Rsize_of_parameters, Rsize_of_locals);
   __ subf(Rslot_addr, Rsize_of_parameters, R18_locals);
   __ srdi_(Rnum, Rnum, Interpreter::logStackElementSize);
-  __ beq(CCR0, Lno_locals);
+  __ beq(CR0, Lno_locals);
   __ li(R0, 0);
   __ mtctr(Rnum);
 
@@ -2080,8 +2080,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ ld(return_pc, 0, R1_SP);
     __ ld(return_pc, _abi0(lr), return_pc);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::interpreter_contains), return_pc);
-    __ cmpdi(CCR0, R3_RET, 0);
-    __ bne(CCR0, Lcaller_not_deoptimized);
+    __ cmpdi(CR0, R3_RET, 0);
+    __ bne(CR0, Lcaller_not_deoptimized);
 
     // The deoptimized case.
     // In this case, we can't call dispatch_next() after the frame is
@@ -2127,16 +2127,16 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     Label L_done;
 
     __ lbz(R11_scratch1, 0, R14_bcp);
-    __ cmpwi(CCR0, R11_scratch1, Bytecodes::_invokestatic);
-    __ bne(CCR0, L_done);
+    __ cmpwi(CR0, R11_scratch1, Bytecodes::_invokestatic);
+    __ bne(CR0, L_done);
 
     // The member name argument must be restored if _invokestatic is re-executed after a PopFrame call.
     // Detect such a case in the InterpreterRuntime function and return the member name argument, or null.
     __ ld(R4_ARG2, 0, R18_locals);
     __ call_VM(R4_ARG2, CAST_FROM_FN_PTR(address, InterpreterRuntime::member_name_arg_or_null), R4_ARG2, R19_method, R14_bcp);
 
-    __ cmpdi(CCR0, R4_ARG2, 0);
-    __ beq(CCR0, L_done);
+    __ cmpdi(CR0, R4_ARG2, 0);
+    __ beq(CR0, L_done);
     __ std(R4_ARG2, wordSize, R15_esp);
     __ bind(L_done);
 #endif // INCLUDE_JVMTI
@@ -2321,8 +2321,8 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
     int offs2 = __ load_const_optimized(R12_scratch2, (address) &BytecodeCounter::_counter_value, R0, true);
     __ ld(R11_scratch1, offs1, R11_scratch1);
     __ lwa(R12_scratch2, offs2, R12_scratch2);
-    __ cmpd(CCR0, R12_scratch2, R11_scratch1);
-    __ blt(CCR0, Lskip_vm_call);
+    __ cmpd(CR0, R12_scratch2, R11_scratch1);
+    __ blt(CR0, Lskip_vm_call);
   }
 
   __ push(state);
@@ -2396,8 +2396,8 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   int offs2 = __ load_const_optimized(R12_scratch2, (address) &BytecodeCounter::_counter_value, R0, true);
   __ ld(R11_scratch1, offs1, R11_scratch1);
   __ lwa(R12_scratch2, offs2, R12_scratch2);
-  __ cmpd(CCR0, R12_scratch2, R11_scratch1);
-  __ bne(CCR0, L);
+  __ cmpd(CR0, R12_scratch2, R11_scratch1);
+  __ bne(CR0, L);
   __ illtrap();
   __ bind(L);
 }

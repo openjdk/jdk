@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,15 @@ import com.sun.tools.javac.util.JCDiagnostic.Warning;
  * to be printed at the end of the compilation if some warnings get suppressed
  * because too many warnings have already been generated.
  *
+ * <p>
  * Note that the SuppressWarnings annotation can be used to suppress warnings
  * about conditions that would otherwise merit a warning. Such processing
  * is done when the condition is detected, and in those cases, no call is
  * made on any API to generate a warning at all. In consequence, this handler only
  * Returns to handle those warnings that JLS says must be generated.
+ *
+ * <p>
+ * All warnings must be in the same {@link LintCategory} provided to the constructor.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -102,30 +106,50 @@ public class MandatoryWarningHandler {
 
     /**
      * Create a handler for mandatory warnings.
+     *
      * @param log     The log on which to generate any diagnostics
+     * @param source  Associated source file, or null for none
      * @param verbose Specify whether or not detailed messages about
      *                individual instances should be given, or whether an aggregate
      *                message should be generated at the end of the compilation.
      *                Typically set via  -Xlint:option.
      * @param enforceMandatory
      *                True if mandatory warnings and notes are being enforced.
-     * @param prefix  A common prefix for the set of message keys for
-     *                the messages that may be generated.
-     * @param lc      An associated lint category for the warnings, or null if none.
+     * @param lc      The lint category for all warnings
      */
-    public MandatoryWarningHandler(Log log, Source source, boolean verbose,
-                                   boolean enforceMandatory, String prefix,
-                                   LintCategory lc) {
+    public MandatoryWarningHandler(Log log, Source source, boolean verbose, boolean enforceMandatory, LintCategory lc) {
+        this(log, source, verbose, enforceMandatory, lc, null);
+    }
+
+    /**
+     * Create a handler for mandatory warnings.
+     *
+     * @param log     The log on which to generate any diagnostics
+     * @param source  Associated source file, or null for none
+     * @param verbose Specify whether or not detailed messages about
+     *                individual instances should be given, or whether an aggregate
+     *                message should be generated at the end of the compilation.
+     *                Typically set via  -Xlint:option.
+     * @param enforceMandatory
+     *                True if mandatory warnings and notes are being enforced.
+     * @param lc      The lint category for all warnings
+     * @param prefix  A common prefix for the set of message keys for the messages
+     *                that may be generated, or null to infer from the lint category.
+     */
+    public MandatoryWarningHandler(Log log, Source source, boolean verbose, boolean enforceMandatory, LintCategory lc, String prefix) {
         this.log = log;
         this.source = source;
         this.verbose = verbose;
-        this.prefix = prefix;
+        this.prefix = prefix != null ? prefix : lc.option;
         this.enforceMandatory = enforceMandatory;
         this.lintCategory = lc;
     }
 
     /**
      * Report a mandatory warning.
+     *
+     * @param pos source code position
+     * @param warnKey lint warning
      */
     public void report(DiagnosticPosition pos, LintWarning warnKey) {
         JavaFileObject currentSource = log.currentSourceFile();
@@ -258,8 +282,7 @@ public class MandatoryWarningHandler {
      * Reports a mandatory warning to the log.  If mandatory warnings
      * are not being enforced, treat this as an ordinary warning.
      */
-    private void logMandatoryWarning(DiagnosticPosition pos, Warning warnKey) {
-        // Note: the following log methods are safe if lintCategory is null.
+    private void logMandatoryWarning(DiagnosticPosition pos, LintWarning warnKey) {
         if (enforceMandatory)
             log.mandatoryWarning(pos, warnKey);
         else

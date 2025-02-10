@@ -920,6 +920,11 @@ public:
   void movptr1(Register Rd, uintptr_t addr, int32_t &offset);
   void movptr2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
  public:
+  // float imm move
+  static bool can_fp_imm_load(float imm);
+  static bool can_dp_imm_load(double imm);
+  void fli_s(FloatRegister Rd, float imm);
+  void fli_d(FloatRegister Rd, double imm);
 
   // arith
   void add (Register Rd, Register Rn, int64_t increment, Register tmp = t0);

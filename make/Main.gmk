@@ -1483,6 +1483,7 @@ print-tests:
 
 create-main-targets-include:
 	  $(call LogInfo, Generating main target list)
+	  $(call MakeDir, $(MAKESUPPORT_OUTPUTDIR))
 	  @$(ECHO) ALL_MAIN_TARGETS := $(sort $(ALL_TARGETS)) > \
 	      $(MAKESUPPORT_OUTPUTDIR)/main-targets.gmk
 
