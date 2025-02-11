@@ -36,7 +36,8 @@
  * @summary Test that Thread.yield loop polls for safepoints
  * @requires vm.continuations & vm.compMode != "Xcomp"
  * @library /test/lib
- * @run junit/othervm/native --enable-native-access=ALL-UNNAMED -Xcomp -XX:-TieredCompilation -XX:CompileCommand=inline,*::yield* -XX:CompileCommand=inline,*::*Yield ThreadPollOnYield
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED -Xcomp -XX:-TieredCompilation
+ *                           -XX:CompileCommand=inline,*::yield* -XX:CompileCommand=inline,*::*Yield ThreadPollOnYield
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;
