@@ -868,6 +868,7 @@ int java_lang_Class::_classData_offset;
 int java_lang_Class::_classRedefinedCount_offset;
 int java_lang_Class::_reflectionData_offset;
 int java_lang_Class::_modifiers_offset;
+int java_lang_Class::_is_primitive_offset;
 
 bool java_lang_Class::_offsets_computed = false;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = nullptr;
@@ -1347,6 +1348,12 @@ void java_lang_Class::set_source_file(oop java_class, oop source_file) {
   java_class->obj_field_put(_source_file_offset, source_file);
 }
 
+void java_lang_Class::set_is_primitive(oop java_class) {
+  assert(_is_primitive_offset != 0, "must be set");
+  java_class->bool_field_put(_is_primitive_offset, true);
+}
+
+
 oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS) {
   // This should be improved by adding a field at the Java level or by
   // introducing a new VM klass (see comment in ClassFileParser)
@@ -1361,6 +1368,7 @@ oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, Basic
   assert(static_oop_field_count(java_class) == 0, "should have been zeroed by allocation");
 #endif
   set_modifiers(java_class, JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
+  set_is_primitive(java_class);
   return java_class;
 }
 
@@ -1501,7 +1509,8 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
   macro(_reflectionData_offset,      k, "reflectionData",      java_lang_ref_SoftReference_signature, false); \
   macro(_signers_offset,             k, "signers",             object_array_signature, false); \
   macro(_modifiers_offset,           k, vmSymbols::modifiers_name(), int_signature,    false); \
-  macro(_protection_domain_offset,   k, "protectionDomain",    java_security_ProtectionDomain_signature,  false);
+  macro(_protection_domain_offset,   k, "protectionDomain",    java_security_ProtectionDomain_signature,  false); \
+  macro(_is_primitive_offset,        k, "isPrimitiveType",     bool_signature,         false);
 
 void java_lang_Class::compute_offsets() {
   if (_offsets_computed) {

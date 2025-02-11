@@ -515,7 +515,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isAssignableFrom:         return inline_native_subtype_check();
 
   case vmIntrinsics::_isInstance:
-  case vmIntrinsics::_isPrimitive:
   case vmIntrinsics::_isHidden:
   case vmIntrinsics::_getSuperclass:
   case vmIntrinsics::_getClassAccessFlags:      return inline_native_Class_query(intrinsic_id());
@@ -3888,10 +3887,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     prim_return_value = intcon(0);
     obj = argument(1);
     break;
-  case vmIntrinsics::_isPrimitive:
-    prim_return_value = intcon(1);
-    expect_prim = true;  // obviously
-    break;
   case vmIntrinsics::_isHidden:
     prim_return_value = intcon(0);
     break;
@@ -3958,10 +3953,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
   case vmIntrinsics::_isInstance:
     // nothing is an instance of a primitive type
     query_value = gen_instanceof(obj, kls, safe_for_replace);
-    break;
-
-  case vmIntrinsics::_isPrimitive:
-    query_value = intcon(0); // "normal" path produces false
     break;
 
   case vmIntrinsics::_isHidden:

@@ -236,13 +236,14 @@ public final class Class<T> implements java.io.Serializable,
      * This constructor is not used and prevents the default constructor being
      * generated.
      */
-    private Class(ClassLoader loader, Class<?> arrayComponentType, int mods, ProtectionDomain pd) {
+    private Class(ClassLoader loader, Class<?> arrayComponentType, int mods, ProtectionDomain pd, boolean primitive) {
         // Initialize final field for classLoader.  The initialization value of non-null
         // prevents future JIT optimizations from assuming this final field is null.
         classLoader = loader;
         componentType = arrayComponentType;
         modifiers = mods;
         protectionDomain = pd;
+        isPrimitiveType = primitive;
     }
 
     /**
@@ -845,8 +846,9 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.1
      * @jls 15.8.2 Class Literals
      */
-    @IntrinsicCandidate
-    public native boolean isPrimitive();
+    public boolean isPrimitive() {
+        return isPrimitiveType;
+    }
 
     /**
      * Returns true if this {@code Class} object represents an annotation
@@ -1005,6 +1007,7 @@ public final class Class<T> implements java.io.Serializable,
     private transient Object classData; // Set by VM
     private transient Object[] signers; // Read by VM, mutable
     private final transient int modifiers;  // Set by the VM
+    private final transient boolean isPrimitiveType;  // Set by the VM
 
     // package-private
     Object getClassData() {

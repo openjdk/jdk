@@ -1245,12 +1245,6 @@ JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
   return nullptr;
 JVM_END
 
-JVM_ENTRY(jboolean, JVM_IsPrimitiveClass(JNIEnv *env, jclass cls))
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  return (jboolean) java_lang_Class::is_primitive(mirror);
-JVM_END
-
-
 JVM_ENTRY(jobjectArray, JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass))
   JvmtiVMObjectAllocEventCollector oam;
   // ofClass is a reference to a java_lang_Class object. The mirror object
