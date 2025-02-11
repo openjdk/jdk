@@ -2,10 +2,7 @@
 // uses, defs, and live-out sets, if available.
 
 function formatLiveRange(lrg) {
-  flrg = ""
-  if (InputBlock.USE_LIVE_RANGE_IDENTIFIERS) {
-    flrg += "L";
-  }
+  flrg = "L";
   flrg += lrg.trim();
   return flrg;
 }
@@ -21,7 +18,7 @@ function addLivenessInfo(lrg, idx, liveout, uses, joins, kills) {
   }
   elements = [];
   if (Number(lrg) > 0) {
-    elements.push("def: " + (InputBlock.USE_LIVE_RANGE_IDENTIFIERS ? ("L" + lrg) : idx));
+    elements.push("def: " + formatLiveRange(lrg));
   }
   if (uses != null) {
     elements.push("use: " + liveRangeSet(uses));
