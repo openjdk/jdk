@@ -1279,8 +1279,6 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
   default:
     strncpy(buf, "unknown", buflen);
  }
-  printf("%s",buf);
-  exit(1);
 }
 
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
