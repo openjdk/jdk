@@ -42,9 +42,15 @@ public:
   }
 
   ~AsyncLogLocker() {
-    assert(_holder == Thread::current_or_null(), "must be");
+    assert(_holder == nullptr || _holder == Thread::current_or_null(), "must be");
     _holder = nullptr;
     _instance->_lock.unlock();
+  }
+
+  void wait() {
+    _holder = nullptr;
+    _instance->_lock.wait(0/* no timeout */);
+    _holder = Thread::current_or_null();
   }
 };
 
@@ -205,7 +211,7 @@ void AsyncLogWriter::run() {
       AsyncLogLocker locker;
 
       while (!_data_available) {
-        _lock.wait(0/* no timeout */);
+        locker.wait();
       }
       // Only doing a swap and statistics under the lock to
       // guarantee that I/O jobs don't block logsites.
