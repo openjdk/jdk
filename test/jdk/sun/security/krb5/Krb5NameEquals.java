@@ -57,7 +57,7 @@ public class Krb5NameEquals {
         // Checking if native GSS is installed, throwing skip exception if it's not.
         final var mechs = mgr.getMechs();
         if (mechs == null || mechs.length == 0) {
-            throw new SkippedException("NativeGSS not not supported");
+            throw new SkippedException("NativeGSS not supported");
         }
 
         // Create GSSName and check their equals(), hashCode() impl
