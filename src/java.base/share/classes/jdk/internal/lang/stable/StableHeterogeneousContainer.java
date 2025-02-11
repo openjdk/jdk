@@ -37,7 +37,7 @@ public sealed interface StableHeterogeneousContainer {
      * @throws IllegalArgumentException if the provided {@code type} is not a type
      *                                  specified at creation
      */
-    <T> boolean trySet(Class<T> type, T instance);
+    <T> boolean tryPut(Class<T> type, T instance);
 
     /**
      * {@return the instance associated with the provided {@code type}, {@code null}
@@ -50,7 +50,7 @@ public sealed interface StableHeterogeneousContainer {
      * @throws IllegalArgumentException if the provided {@code type} is not a type
      *                                  specified at creation
      */
-    <T> T orElseNull(Class<T> type);
+    <T> T get(Class<T> type);
 
     /**
      * {@return the instance associated with the provided {@code type}, or throws
@@ -65,7 +65,7 @@ public sealed interface StableHeterogeneousContainer {
      * @throws NoSuchElementException   if the provided {@code type} is not associated
      *                                  with an instance
      */
-    <T> T orElseThrow(Class<T> type);
+    <T> T getOrElseThrow(Class<T> type);
 
     /**
      * {@return the instance associated with the provided {@code type}, if no association
@@ -85,7 +85,7 @@ public sealed interface StableHeterogeneousContainer {
      * @param <T>    type of the associated instance
      * @param mapper to be used for computing the associated instance
      */
-    <T> T orElseSet(Class<T> type, Function<? super Class<T>, ? extends T> mapper);
+    <T> T getOrElseSet(Class<T> type, Function<? super Class<T>, ? extends T> mapper);
 
     @ValueBased
     final class Impl implements StableHeterogeneousContainer {
@@ -99,10 +99,10 @@ public sealed interface StableHeterogeneousContainer {
 
         @ForceInline
         @Override
-        public <T> boolean trySet(Class<T> type, T instance) {
+        public <T> boolean tryPut(Class<T> type, T instance) {
             Objects.requireNonNull(type);
             Objects.requireNonNull(instance, "The provided instance for '" + type + "' was null");
-            return of(type)
+            return stableOf(type)
                     .trySet(
                             type.cast(instance)
                     );
@@ -111,10 +111,10 @@ public sealed interface StableHeterogeneousContainer {
         @SuppressWarnings("unchecked")
         @ForceInline
         @Override
-        public <T> T orElseSet(Class<T> type, Function<? super Class<T>, ? extends T> mapper) {
+        public <T> T getOrElseSet(Class<T> type, Function<? super Class<T>, ? extends T> mapper) {
             Objects.requireNonNull(type);
             Objects.requireNonNull(mapper);
-            final StableValue<Object> stableValue = of(type);
+            final StableValue<Object> stableValue = stableOf(type);
             if (stableValue.isSet()) {
                 return (T) stableValue.orElseThrow();
             }
@@ -140,18 +140,18 @@ public sealed interface StableHeterogeneousContainer {
 
         @ForceInline
         @Override
-        public <T> T orElseNull(Class<T> type) {
+        public <T> T get(Class<T> type) {
             Objects.requireNonNull(type);
             return type.cast(
-                    of(type)
+                    stableOf(type)
                             .orElse(null)
             );
         }
 
         @ForceInline
         @Override
-        public <T> T orElseThrow(Class<T> type) {
-            final T t = orElseNull(type);
+        public <T> T getOrElseThrow(Class<T> type) {
+            final T t = get(type);
             if (t == null) {
                 throw new NoSuchElementException("The type `" + type + "` is know but there is no instance associated with it");
             }
@@ -159,7 +159,7 @@ public sealed interface StableHeterogeneousContainer {
         }
 
         @ForceInline
-        private StableValue<Object> of(Class<?> type) {
+        private StableValue<Object> stableOf(Class<?> type) {
             final StableValue<Object> stableValue = map.get(type);
             if (stableValue == null) {
                 throw new IllegalArgumentException("No such type: " + type);

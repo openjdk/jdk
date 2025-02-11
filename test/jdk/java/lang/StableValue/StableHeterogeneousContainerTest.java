@@ -80,43 +80,43 @@ final class StableHeterogeneousContainerTest {
     @MethodSource("nonEmptySets")
     void trySet(Set<Value> inputs) {
         var container = StableValueFactories.ofHeterogeneousContainer(classes(inputs));
-        assertTrue(container.trySet(Integer.class, Value.INTEGER.valueAs(Integer.class)));
-        assertFalse(container.trySet(Integer.class, Value.INTEGER.valueAs(Integer.class)));
-        assertEquals(Value.INTEGER.value(), container.orElseNull(Integer.class));
-        var iae = assertThrows(IllegalArgumentException.class, () -> container.trySet(Long.class, 8L));
+        assertTrue(container.tryPut(Integer.class, Value.INTEGER.valueAs(Integer.class)));
+        assertFalse(container.tryPut(Integer.class, Value.INTEGER.valueAs(Integer.class)));
+        assertEquals(Value.INTEGER.value(), container.get(Integer.class));
+        var iae = assertThrows(IllegalArgumentException.class, () -> container.tryPut(Long.class, 8L));
         assertEquals("No such type: " + Long.class, iae.getMessage());
-        var npe = assertThrows(NullPointerException.class, () -> container.trySet(Short.class, null));
+        var npe = assertThrows(NullPointerException.class, () -> container.tryPut(Short.class, null));
         assertEquals("The provided instance for '" + Short.class + "' was null", npe.getMessage());
     }
 
     @ParameterizedTest
     @MethodSource("nonEmptySets")
-    void orElseSet(Set<Value> inputs) {
+    void getOrElseSet(Set<Value> inputs) {
         var container = StableValueFactories.ofHeterogeneousContainer(classes(inputs));
-        assertEquals(Value.INTEGER.value(), container.orElseSet(Integer.class, Value.INTEGER::valueAs));
-        assertEquals(Value.INTEGER.value(), container.orElseSet(Integer.class, Value.INTEGER::valueAs));
-        var iae = assertThrows(IllegalArgumentException.class, () -> container.orElseSet(Long.class, _ -> 8L));
+        assertEquals(Value.INTEGER.value(), container.getOrElseSet(Integer.class, Value.INTEGER::valueAs));
+        assertEquals(Value.INTEGER.value(), container.getOrElseSet(Integer.class, Value.INTEGER::valueAs));
+        var iae = assertThrows(IllegalArgumentException.class, () -> container.getOrElseSet(Long.class, _ -> 8L));
         assertEquals("No such type: " + Long.class, iae.getMessage());
-        var npe = assertThrows(NullPointerException.class, () -> container.orElseSet(Short.class, _ -> null));
+        var npe = assertThrows(NullPointerException.class, () -> container.getOrElseSet(Short.class, _ -> null));
         assertEquals("The constructor for `" + Short.class + "` returned null", npe.getMessage());
     }
 
     @ParameterizedTest
     @MethodSource("nonEmptySets")
-    void orElseNull(Set<Value> inputs) {
+    void get(Set<Value> inputs) {
         var container = StableValueFactories.ofHeterogeneousContainer(classes(inputs));
-        assertTrue(container.trySet(Integer.class, Value.INTEGER.valueAs(Integer.class)));
-        assertEquals(Value.INTEGER.value(), container.orElseNull(Integer.class));
-        assertNull(container.orElseNull(Value.SHORT.clazz()));
+        assertTrue(container.tryPut(Integer.class, Value.INTEGER.valueAs(Integer.class)));
+        assertEquals(Value.INTEGER.value(), container.get(Integer.class));
+        assertNull(container.get(Value.SHORT.clazz()));
     }
 
     @ParameterizedTest
     @MethodSource("nonEmptySets")
-    void orElseThrow(Set<Value> inputs) {
+    void getOrElseThrow(Set<Value> inputs) {
         var container = StableValueFactories.ofHeterogeneousContainer(classes(inputs));
-        assertTrue(container.trySet(Integer.class, Value.INTEGER.valueAs(Integer.class)));
-        assertEquals(Value.INTEGER.value(), container.orElseThrow(Integer.class));
-        var e = assertThrows(NoSuchElementException.class , () -> container.orElseThrow(Value.SHORT.clazz()));
+        assertTrue(container.tryPut(Integer.class, Value.INTEGER.valueAs(Integer.class)));
+        assertEquals(Value.INTEGER.value(), container.getOrElseThrow(Integer.class));
+        var e = assertThrows(NoSuchElementException.class , () -> container.getOrElseThrow(Value.SHORT.clazz()));
         assertEquals("The type `" + Short.class + "` is know but there is no instance associated with it", e.getMessage());
     }
 
@@ -125,7 +125,7 @@ final class StableHeterogeneousContainerTest {
     void toString(Set<Value> inputs) {
         var container = StableValueFactories.ofHeterogeneousContainer(classes(inputs));
         assertTrue(container.toString().contains("class java.lang.Integer=StableValue.unset"));
-        container.trySet(Integer.class, Value.INTEGER.valueAs(Integer.class));
+        container.tryPut(Integer.class, Value.INTEGER.valueAs(Integer.class));
         assertTrue(container.toString().contains("class java.lang.Integer=StableValue[" + Value.INTEGER.value() + "]"), container.toString());
     }
 
