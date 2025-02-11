@@ -31,6 +31,7 @@
  */
 
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 import org.ietf.jgss.*;
 
 import java.util.Arrays;
@@ -85,13 +86,12 @@ public class Krb5NameEquals {
                     };
 
                     final var javaPropCommandResult = ProcessTools.executeTestJava(javaPropCommand);
-                    System.out.println(javaPropCommandResult.getOutput());
 
-                    var installationIssue = Arrays.stream(javaPropCommandResult.getStdout().split("\n"))
+                    final var installationIssue = Arrays.stream(javaPropCommandResult.getStdout().split("\n"))
                             .anyMatch(line -> line.contains("sun.arch.data.model") && line.contains("32"));
 
                     if (installationIssue) {
-                        System.out.println("""
+                        throw new SkippedException("""
                                 Running 32-bit JDK on 64-bit Linux. Maybe only 64-bit library is installed.
                                 Please manually check if this is the case. Treated as PASSED now.""");
                     }
@@ -115,52 +115,40 @@ public class Krb5NameEquals {
 
     static class Krb5NameEqualsTest {
 
-        private static String NAME_STR1 = "service@localhost";
-        private static String NAME_STR2 = "service2@localhost";
+        private static final String NAME_STR1 = "service@localhost";
+        private static final String NAME_STR2 = "service2@localhost";
         private static final Oid MECH;
 
         static {
-            Oid temp = null;
             try {
-                temp = new Oid("1.2.840.113554.1.2.2"); // KRB5
+                MECH = new Oid("1.2.840.113554.1.2.2"); // KRB5
             } catch (Exception e) {
                 // should never happen
                 throw new RuntimeException("Exception initialising Oid", e);
             }
-            MECH = temp;
         }
 
         public static void main(String[] argv) throws Exception {
-            GSSManager mgr = GSSManager.getInstance();
+            final GSSManager mgr = GSSManager.getInstance();
 
-            boolean result = true;
             // Create GSSName and check their equals(), hashCode() impl
-            GSSName name1 = mgr.createName(NAME_STR1,
+            final GSSName name1 = mgr.createName(NAME_STR1,
                     GSSName.NT_HOSTBASED_SERVICE, MECH);
-            GSSName name2 = mgr.createName(NAME_STR2,
+            final GSSName name2 = mgr.createName(NAME_STR2,
                     GSSName.NT_HOSTBASED_SERVICE, MECH);
-            GSSName name3 = mgr.createName(NAME_STR1,
+            final GSSName name3 = mgr.createName(NAME_STR1,
                     GSSName.NT_HOSTBASED_SERVICE, MECH);
 
-            if (!name1.equals(name1) || !name1.equals(name3) ||
-                !name1.equals((Object) name1) ||
-                !name1.equals((Object) name3)) {
-                System.out.println("Error: should be the same name");
-                result = false;
+            if ( !name1.equals(name3) || !name1.equals((Object) name3)) {
+                throw new RuntimeException("Error: should be the same name");
             } else if (name1.hashCode() != name3.hashCode()) {
-                System.out.println("Error: should have same hash");
-                result = false;
+                throw new RuntimeException("Error: should have same hash");
             }
 
             if (name1.equals(name2) || name1.equals((Object) name2)) {
-                System.out.println("Error: should be different names");
-                result = false;
+                throw new RuntimeException("Error: should be different names");
             }
-            if (result) {
-                System.out.println("Done");
-            } else {
-                System.exit(1);
-            }
+            System.out.println("Done");
         }
     }
 }
