@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,8 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ifeq ($(call isBuildOs, linux), true)
     ADLC_CFLAGS := -fno-exceptions -DLINUX
   else ifeq ($(call isBuildOs, aix), true)
-    ifeq ($(TOOLCHAIN_TYPE), clang)
-      ADLC_LDFLAGS += -m64
-      ADLC_CFLAGS := -fno-rtti -fexceptions -ffunction-sections -m64 -DAIX -mcpu=pwr8
-    else
-      ADLC_LDFLAGS += -q64
-      ADLC_CFLAGS := -qnortti -qeh -q64 -DAIX
-    endif
+    ADLC_LDFLAGS += -m64
+    ADLC_CFLAGS := -fno-rtti -fexceptions -ffunction-sections -m64 -DAIX -mcpu=pwr8
   else ifeq ($(call isBuildOs, windows), true)
     ADLC_CFLAGS := -nologo -EHsc
     ADLC_CFLAGS_WARNINGS := -W3 -D_CRT_SECURE_NO_WARNINGS

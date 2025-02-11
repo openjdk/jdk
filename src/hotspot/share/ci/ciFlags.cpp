@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciFlags.hpp"
 
 // ciFlags

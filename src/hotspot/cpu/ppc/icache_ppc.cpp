@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/icache.hpp"
 
 // Use inline assembler to implement icache flush.

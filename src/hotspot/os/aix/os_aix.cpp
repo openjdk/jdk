@@ -23,7 +23,6 @@
  *
  */
 
-// no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"

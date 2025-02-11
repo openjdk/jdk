@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -462,13 +462,13 @@ java/awt/PopupMenu/PopupMenuLocation.java 8259913,8315878 windows-all,macosx-aar
 java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720,8324782 windows-all,macosx-all
 java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720,8324782 windows-all,macosx-all
 java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java 8238720 windows-all
+java/awt/Headless/HeadlessMalfunctionTest.java 8349099 generic-all
 
 # Several tests which fail sometimes on macos11
 java/awt/Window/MainKeyWindowTest/TestMainKeyWindow.java 8265985 macosx-all
 java/awt/Robot/Delay/InterruptOfDelay.java 8265986 macosx-all
 java/awt/Robot/InfiniteLoopException.java 8342638 windows-all,linux-all
 java/awt/MenuBar/TestNoScreenMenuBar.java 8265987 macosx-all
-java/awt/Robot/ScreenCaptureRobotTest.java 8344581 macosx-all
 
 java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8266283 generic-all
 java/awt/Graphics2D/DrawString/RotTransText.java 8316878 linux-all
@@ -636,8 +636,6 @@ sun/security/smartcardio/TestTransmit.java                      8039280 generic-
 com/sun/security/sasl/gsskerb/AuthOnly.java                     8039280 generic-all
 com/sun/security/sasl/gsskerb/ConfSecurityLayer.java            8039280 generic-all
 com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-all
-sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
-sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
 
@@ -799,7 +797,7 @@ java/awt/image/VolatileImage/VolatileImageConfigurationTest.java 8171069 macosx-
 java/awt/Modal/InvisibleParentTest/InvisibleParentTest.java 8172245 linux-all
 java/awt/Frame/FrameStateTest/FrameStateTest.java 8203920 macosx-all,linux-all
 java/awt/print/PrinterJob/ScaledText/ScaledText.java 8231226 macosx-all
-java/awt/print/PrinterJob/PrintTextTest.java 8148334 generic-all
+java/awt/print/PrinterJob/PrintTextTest.java 8148334 macosx-all
 java/awt/font/TextLayout/TestJustification.java 8250791 macosx-all
 java/awt/TrayIcon/DragEventSource/DragEventSource.java 8252242 macosx-all
 java/awt/FileDialog/DefaultFocusOwner/DefaultFocusOwner.java 7187728 macosx-all,linux-all

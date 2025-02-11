@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/hSpaceCounters.hpp"

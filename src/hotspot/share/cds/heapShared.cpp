@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -87,7 +86,6 @@ struct ArchivableStaticFieldInfo {
   }
 };
 
-bool HeapShared::_disable_writing = false;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = nullptr;
 
 size_t HeapShared::_alloc_count[HeapShared::ALLOC_STAT_SLOTS];
@@ -237,9 +235,6 @@ int HeapShared::append_root(oop obj) {
 objArrayOop HeapShared::root_segment(int segment_idx) {
   if (CDSConfig::is_dumping_heap()) {
     assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
-    if (!HeapShared::can_write()) {
-      return nullptr;
-    }
   } else {
     assert(CDSConfig::is_using_archive(), "must be");
   }
@@ -715,7 +710,7 @@ void HeapShared::scan_java_class(Klass* orig_k) {
 }
 
 void HeapShared::archive_subgraphs() {
-  assert(HeapShared::can_write(), "must be");
+  assert(CDSConfig::is_dumping_heap(), "must be");
 
   archive_object_subgraphs(archive_subgraph_entry_fields,
                            false /* is_full_module_graph */);
@@ -1875,7 +1870,7 @@ void HeapShared::init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
 }
 
 void HeapShared::init_subgraph_entry_fields(TRAPS) {
-  assert(HeapShared::can_write(), "must be");
+  assert(CDSConfig::is_dumping_heap(), "must be");
   _dump_time_subgraph_info_table = new (mtClass)DumpTimeKlassSubGraphInfoTable();
   init_subgraph_entry_fields(archive_subgraph_entry_fields, CHECK);
   if (CDSConfig::is_dumping_full_module_graph()) {
@@ -1964,7 +1959,7 @@ void HeapShared::initialize_test_class_from_archive(JavaThread* current) {
 #endif
 
 void HeapShared::init_for_dumping(TRAPS) {
-  if (HeapShared::can_write()) {
+  if (CDSConfig::is_dumping_heap()) {
     setup_test_class(ArchiveHeapTestClass);
     _dumped_interned_strings = new (mtClass)DumpedInternedStrings(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
     init_subgraph_entry_fields(CHECK);

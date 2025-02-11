@@ -78,6 +78,9 @@ $(eval $(call IncludeCustomExtension, RunTests.gmk))
 
 # This is the JDK that we will test
 JDK_UNDER_TEST := $(JDK_IMAGE_DIR)
+# The JDK used to compile jtreg test code. By default it is the same as
+# JDK_UNDER_TEST.
+JDK_FOR_COMPILE := $(JDK_IMAGE_DIR)
 
 TEST_RESULTS_DIR := $(OUTPUTDIR)/test-results
 TEST_SUPPORT_DIR := $(OUTPUTDIR)/test-support
@@ -979,6 +982,7 @@ define SetupRunJtregTestBody
       $$(JTREG_JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
           -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
           $$($1_JTREG_BASIC_OPTIONS) \
+          -compilejdk:$$(JDK_FOR_COMPILE) \
           -testjdk:$$(JDK_UNDER_TEST) \
           -dir:$$(JTREG_TOPDIR) \
           -reportDir:$$($1_TEST_RESULTS_DIR) \
