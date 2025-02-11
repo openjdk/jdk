@@ -1415,10 +1415,15 @@ final class VirtualThread extends BaseVirtualThread {
      */
     private static ForkJoinPool createDefaultScheduler() {
         ForkJoinWorkerThreadFactory factory = pool -> new CarrierThread(pool);
-        int parallelism, maxPoolSize, minRunnable;
+        int parallelism, maxPoolSize, minRunnable, corePoolSize;
+        long keepAliveTime;
+        TimeUnit timeUnit;
         String parallelismValue = System.getProperty("jdk.virtualThreadScheduler.parallelism");
         String maxPoolSizeValue = System.getProperty("jdk.virtualThreadScheduler.maxPoolSize");
         String minRunnableValue = System.getProperty("jdk.virtualThreadScheduler.minRunnable");
+        String corePoolSizeValue = System.getProperty("jdk.virtualThreadScheduler.corePoolSize");
+        String keepAliveTimeValue = System.getProperty("jdk.virtualThreadScheduler.keepAliveTime");
+        String timeUnitValue = System.getProperty("jdk.virtualThreadScheduler.timeUnit");
         if (parallelismValue != null) {
             parallelism = Integer.parseInt(parallelismValue);
         } else {
@@ -1435,10 +1440,30 @@ final class VirtualThread extends BaseVirtualThread {
         } else {
             minRunnable = Integer.max(parallelism / 2, 1);
         }
+        if (corePoolSizeValue != null) {
+            corePoolSize = Integer.parseInt(corePoolSizeValue);
+        } else {
+            corePoolSize = 0;
+        }
+        if (keepAliveTimeValue != null) {
+            keepAliveTime = Long.parseLong(keepAliveTimeValue);
+        } else {
+            keepAliveTime = 30;
+        }
+        switch(timeUnitValue) {
+            case "NANOSECONDS": timeUnit = NANOSECONDS; break;
+            case "MICROSECONDS": timeUnit = MICROSECONDS; break;
+            case "MILLISECONDS": timeUnit = MILLISECONDS; break;
+            case "SECONDS": timeUnit = SECONDS; break;
+            case "MINUTES": timeUnit = MINUTES; break;
+            case "HOURS": timeUnit = HOURS; break;
+            case "DAYS": timeUnit = DAYS; break;
+            default: timeUnit = SECONDS;
+        }
         Thread.UncaughtExceptionHandler handler = (t, e) -> { };
         boolean asyncMode = true; // FIFO
         return new ForkJoinPool(parallelism, factory, handler, asyncMode,
-                     0, maxPoolSize, minRunnable, pool -> true, 30, SECONDS);
+                    corePoolSize, maxPoolSize, minRunnable, pool -> true, keepAliveTime, timeUnit);
     }
 
     /**
