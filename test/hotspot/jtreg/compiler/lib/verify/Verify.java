@@ -29,7 +29,8 @@ import java.lang.foreign.*;
 /**
  * The {@link Verify} class provides a single {@link Verify#checkEQ} static method, which recursively
  * compares the two {@link Object}s by value. It deconstructs {@link Object[]}, compares boxed primitive
- * types, and compares the content of arrays and {@link MemorySegment}s.
+ * types, compares the content of arrays and {@link MemorySegment}s, and checks that the messages of two
+ * {@link Exception}s are equal.
  *
  * When a comparison fail, then methods print helpful messages, before throwing a {@link VerifyException}.
  */
@@ -93,11 +94,12 @@ public final class Verify {
             case float[]   x -> checkEQimpl(x, (float[])b,                 context);
             case double[]  x -> checkEQimpl(x, (double[])b,                context);
             case MemorySegment x -> checkEQimpl(x, (MemorySegment) b,      context);
+            case Exception x -> checkEQimpl(x, (Exception) b,              context);
             default -> {
                 System.err.println("ERROR: Verify.checkEQ failed: type not supported: " + ca.getName());
                 print(a, "a " + context);
                 print(b, "b " + context);
-                throw new VerifyException("Object array type not supported: " + ca.getName());
+                throw new VerifyException("Object type not supported: " + ca.getName());
             }
         }
     }
@@ -200,6 +202,26 @@ public final class Verify {
         printMemorySegmentValue(a, offset, 16);
         printMemorySegmentValue(b, offset, 16);
         throw new VerifyException("MemorySegment value mismatch.");
+    }
+
+    /**
+     * Verify that the content of two MemorySegments is identical. Note: we do not check the
+     * backing type, only the size and content.
+     */
+    private static void checkEQimpl(Exception a, Exception b, String context) {
+        String am = a.getMessage();
+        String bm = b.getMessage();
+
+        // Missing messages is expected, but if they both have one, they must agree.
+        if (am == null || bm == null) { return; }
+        if (am.equals(bm)) { return; }
+
+        System.err.println("ERROR: Verify.checkEQ failed for: " + context);
+        System.out.println("a: " + a.getMessage());
+        System.out.println("b: " + b.getMessage());
+        System.out.println(a);
+        System.out.println(b);
+        throw new VerifyException("Exception message mismatch: " + a + " vs " + b);
     }
 
     /**

@@ -104,7 +104,16 @@ public class TestFuzzExpression {
             public static Object $test() {
             """,
             METHOD_HOOK.set(
-                "return ", EXPRESSION.withArgs(type), ";\n"
+                // We need to catch Exceptions like ArithmeticException, so that we do
+                // not get ExceptionInInitializerError when loading the class and running
+                // the static code blocks.
+                "try {\n",
+                "    return ", EXPRESSION.withArgs(type), ";\n",
+                """
+                } catch (Exception e) {
+                    return e;
+                }
+                """
             ),
             """
             }
@@ -121,7 +130,7 @@ public class TestFuzzExpression {
             """
         ));
 
-        // Use template1 with every type.
+        // Use template1 100 times with every type.
         List<TemplateWithArgs> templates = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             for (ExpressionType type : ALL_EXPRESSION_TYPES) {
