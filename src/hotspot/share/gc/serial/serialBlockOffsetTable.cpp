@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
 #include "gc/shared/blockOffsetTable.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -47,14 +46,17 @@ SerialBlockOffsetTable::SerialBlockOffsetTable(MemRegion reserved,
                                                size_t init_word_size):
   _reserved(reserved) {
   size_t size = compute_size(reserved.word_size());
+
   ReservedSpace rs = MemoryReserver::reserve(size, mtGC);
+
   if (!rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for heap offset array");
   }
 
-  if (!_vs.initialize(rs, 0)) {
-    vm_exit_during_initialization("Could not reserve enough space for heap offset array");
-  }
+  const bool initialized = _vs.initialize(rs, 0 /* committed_size */);
+
+  assert(initialized, "Should never fail when commmitted_size is 0");
+
   _offset_base = (uint8_t*)(_vs.low_boundary() - (uintptr_t(reserved.start()) >> CardTable::card_shift()));
   resize(init_word_size);
   log_trace(gc, bot)("SerialBlockOffsetTable::SerialBlockOffsetTable: ");

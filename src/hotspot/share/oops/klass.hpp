@@ -123,9 +123,6 @@ class Klass : public Metadata {
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
                                 // Some flags created by the JVM, not in the class file itself,
                                 // are in _misc_flags below.
-  // Processed access flags, for use by Class.getModifiers.
-  u2          _modifier_flags;
-
   KlassFlags  _misc_flags;
 
   // The fields _super_check_offset, _secondary_super_cache, _secondary_supers
@@ -283,7 +280,6 @@ protected:
   void set_java_mirror(Handle m);
 
   oop archived_java_mirror() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  void set_archived_java_mirror(int mirror_index) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Temporary mirror switch used by RedefineClasses
   OopHandle java_mirror_handle() const { return _java_mirror; }
@@ -292,10 +288,6 @@ protected:
   // Set java mirror OopHandle to null for CDS
   // This leaves the OopHandle in the CLD, but that's ok, you can't release them.
   void clear_java_mirror_handle() { _java_mirror = OopHandle(); }
-
-  // modifier flags
-  u2 modifier_flags() const          { return _modifier_flags; }
-  void set_modifier_flags(u2 flags)  { _modifier_flags = flags; }
 
   // size helper
   int layout_helper() const            { return _layout_helper; }
@@ -449,7 +441,6 @@ protected:
   static ByteSize secondary_supers_offset()      { return byte_offset_of(Klass, _secondary_supers); }
   static ByteSize java_mirror_offset()           { return byte_offset_of(Klass, _java_mirror); }
   static ByteSize class_loader_data_offset()     { return byte_offset_of(Klass, _class_loader_data); }
-  static ByteSize modifier_flags_offset()        { return byte_offset_of(Klass, _modifier_flags); }
   static ByteSize layout_helper_offset()         { return byte_offset_of(Klass, _layout_helper); }
   static ByteSize access_flags_offset()          { return byte_offset_of(Klass, _access_flags); }
 #if INCLUDE_JVMCI
@@ -759,6 +750,7 @@ public:
 
  public:
   virtual u2 compute_modifier_flags() const = 0;
+  int modifier_flags() const;
 
   // JVMTI support
   virtual jint jvmti_class_status() const;
