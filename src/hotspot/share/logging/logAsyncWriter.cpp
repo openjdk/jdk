@@ -135,6 +135,7 @@ bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& 
   }
 
   AsyncLogLocker locker;
+  NOT_PRODUCT(log_debug(deathtest)("Induce a recursive log for testing");)
   AsyncLogWriter::instance()->enqueue_locked(&output, decorations, msg);
   return true;
 }
