@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,30 +147,6 @@ inline void G1CollectedHeap::old_set_add(G1HeapRegion* hr) {
 
 inline void G1CollectedHeap::old_set_remove(G1HeapRegion* hr) {
   _old_set.remove(hr);
-}
-
-// It dirties the cards that cover the block so that the post
-// write barrier never queues anything when updating objects on this
-// block. It is assumed (and in fact we assert) that the block
-// belongs to a young region.
-inline void
-G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
-  assert_heap_not_locked();
-
-  // Assign the containing region to containing_hr so that we don't
-  // have to keep calling heap_region_containing() in the
-  // asserts below.
-  DEBUG_ONLY(G1HeapRegion* containing_hr = heap_region_containing(start);)
-  assert(word_size > 0, "pre-condition");
-  assert(containing_hr->is_in(start), "it should contain start");
-  assert(containing_hr->is_young(), "it should be young");
-  assert(!containing_hr->is_humongous(), "it should not be humongous");
-
-  HeapWord* end = start + word_size;
-  assert(containing_hr->is_in(end - 1), "it should also contain end - 1");
-
-  MemRegion mr(start, end);
-  card_table()->g1_mark_as_young(mr);
 }
 
 inline G1ScannerTasksQueueSet* G1CollectedHeap::task_queues() const {

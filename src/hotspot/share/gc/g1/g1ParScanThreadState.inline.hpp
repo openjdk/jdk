@@ -96,12 +96,11 @@ G1OopStarChunkedList* G1ParScanThreadState::oops_into_optional_region(const G1He
   return &_oops_into_optional_regions[hr->index_in_opt_cset()];
 }
 
-template <class T> bool G1ParScanThreadState::enqueue_if_new(T* p) {
-  size_t card_index = ct()->index_for(p);
-  // If the card hasn't been added to the buffer, do it.
-  if (_last_enqueued_card != card_index) {
-    _rdc_local_qset.enqueue(ct()->byte_for_index(card_index));
-    _last_enqueued_card = card_index;
+template <class T> bool G1ParScanThreadState::enqueue_if_new(T* p, bool into_new_survivor) {
+  G1CardTable::CardValue* card = ct()->byte_for(p);
+  G1CardTable::CardValue value = *card;
+  if (value == G1CardTable::clean_card_val()) {
+    *card = into_new_survivor ? G1CardTable::g1_to_cset_card : G1CardTable::g1_dirty_card;
     return true;
   } else {
     return false;
@@ -113,7 +112,7 @@ template <class T> void G1ParScanThreadState::enqueue_card_into_evac_fail_region
   assert(!_g1h->heap_region_containing(p)->is_survivor(), "Should have filtered out from-newly allocated survivor references already.");
   assert(_g1h->heap_region_containing(obj)->in_collection_set(), "Only for enqeueing reference into collection set region");
 
-  if (enqueue_if_new(p)) {
+  if (enqueue_if_new(p, false /* into_new_survivor */)) { // The reference is never into survivor regions.
     _evac_failure_enqueued_cards++;
   }
 }
@@ -161,7 +160,14 @@ template <class T> void G1ParScanThreadState::enqueue_card_if_tracked(G1HeapRegi
   if (!region_attr.remset_is_tracked()) {
     return;
   }
-  enqueue_if_new(p);
+  bool into_survivor = region_attr.is_new_survivor();
+  if (enqueue_if_new(p, into_survivor)) {
+    if (into_survivor) {
+      _num_enqueued_as_into_cset_cards++;
+    } else {
+      _num_enqueued_as_dirty_cards++;
+    }
+  }
 }
 
 #endif // SHARE_GC_G1_G1PARSCANTHREADSTATE_INLINE_HPP

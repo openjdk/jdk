@@ -46,6 +46,7 @@ public class Test2GbHeap {
     ArrayList<String> testArguments = new ArrayList<String>();
 
     testArguments.add("-XX:+UseG1GC");
+    testArguments.add("-Xlog:gc=debug");
     testArguments.add("-Xmx2g");
     testArguments.add("-version");
 

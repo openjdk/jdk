@@ -27,13 +27,14 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
+#include "gc/g1/g1CardTableClaimTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
+#include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
-#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
@@ -481,7 +482,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   // _finger set in set_non_marking_state
 
-  _worker_id_offset(G1DirtyCardQueueSet::num_par_ids() + G1ConcRefinementThreads),
+  _worker_id_offset(G1ConcRefinementThreads), // The refinement control thread does not refine cards, so it's just the worker threads.
   _max_num_tasks(MAX2(ConcGCThreads, ParallelGCThreads)),
   // _num_active_tasks set in set_non_marking_state()
   // _tasks set inside the constructor
@@ -1232,6 +1233,16 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
       _num_humongous_regions_removed(0),
       _local_cleanup_list(local_cleanup_list) {}
 
+    void reclaim_empty_region_common(G1HeapRegion* hr) {
+      _freed_bytes += hr->used();
+      hr->set_containing_set(nullptr);
+      hr->clear_cardtable();
+      hr->clear_refinement_table();
+      _g1h->concurrent_mark()->clear_statistics(hr);
+      G1HeapRegionPrinter::mark_reclaim(hr);
+      _g1h->concurrent_refine()->notify_region_reclaimed(hr);
+    }
+
     void reclaim_empty_humongous_region(G1HeapRegion* hr) {
       assert(!hr->has_pinned_objects(), "precondition");
       assert(hr->is_starts_humongous(), "precondition");
@@ -1242,11 +1253,7 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
         assert(hr->is_humongous(), "precondition");
 
         _num_humongous_regions_removed++;
-        _freed_bytes += hr->used();
-        hr->set_containing_set(nullptr);
-        hr->clear_cardtable();
-        _g1h->concurrent_mark()->clear_statistics(hr);
-        G1HeapRegionPrinter::mark_reclaim(hr);
+        reclaim_empty_region_common(hr);
         _g1h->free_humongous_region(hr, _local_cleanup_list);
       };
 
@@ -1259,11 +1266,7 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
       assert(hr->is_old(), "precondition");
 
       _num_old_regions_removed++;
-      _freed_bytes += hr->used();
-      hr->set_containing_set(nullptr);
-      hr->clear_cardtable();
-      _g1h->concurrent_mark()->clear_statistics(hr);
-      G1HeapRegionPrinter::mark_reclaim(hr);
+      reclaim_empty_region_common(hr);
       _g1h->free_region(hr, _local_cleanup_list);
     }
 

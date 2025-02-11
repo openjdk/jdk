@@ -262,9 +262,6 @@ HeapWord* G1Allocator::survivor_attempt_allocation(size_t min_word_size,
       }
     }
   }
-  if (result != nullptr) {
-    _g1h->dirty_young_block(result, *actual_word_size);
-  }
   return result;
 }
 

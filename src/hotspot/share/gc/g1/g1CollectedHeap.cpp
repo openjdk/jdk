@@ -38,7 +38,6 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
-#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1GCCounters.hpp"
@@ -60,7 +59,6 @@
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1PeriodicGCTask.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -145,7 +143,7 @@ void G1CollectedHeap::run_batch_task(G1BatchedTask* cl) {
   workers()->run_task(cl, num_workers);
 }
 
-uint G1CollectedHeap::get_chunks_per_region() {
+uint G1CollectedHeap::get_chunks_per_region_for_scan() {
   uint log_region_size = G1HeapRegion::LogOfHRGrainBytes;
   // Limit the expected input values to current known possible values of the
   // (log) region size. Adjust as necessary after testing if changing the permissible
@@ -153,6 +151,18 @@ uint G1CollectedHeap::get_chunks_per_region() {
   assert(log_region_size >= 20 && log_region_size <= 29,
          "expected value in [20,29], but got %u", log_region_size);
   return 1u << (log_region_size / 2 - 4);
+}
+
+uint G1CollectedHeap::get_chunks_per_region_for_merge() {
+  uint log_region_size = G1HeapRegion::LogOfHRGrainBytes;
+  // Limit the expected input values to current known possible values of the
+  // (log) region size. Adjust as necessary after testing if changing the permissible
+  // values for region size.
+  assert(log_region_size >= 20 && log_region_size <= 29,
+         "expected value in [20,29], but got %u", log_region_size);
+
+  uint half_log_region_size = (log_region_size + 1) / 2;
+  return 1 << (half_log_region_size - 9);
 }
 
 G1HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
@@ -597,7 +607,6 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
   assert_heap_not_locked();
   if (result != nullptr) {
     assert(*actual_word_size != 0, "Actual size must have been set here");
-    dirty_young_block(result, *actual_word_size);
   } else {
     *actual_word_size = 0;
   }
@@ -789,11 +798,13 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection() {
 }
 
 void G1CollectedHeap::abort_refinement() {
-  // Discard all remembered set updates and reset refinement statistics.
-  G1BarrierSet::dirty_card_queue_set().abandon_logs_and_stats();
-  assert(G1BarrierSet::dirty_card_queue_set().num_cards() == 0,
-         "DCQS should be empty");
-  concurrent_refine()->get_and_reset_refinement_stats();
+  G1ConcurrentRefineWorkState& refine_state = concurrent_refine()->refine_state();
+  if (refine_state.is_in_progress()) {
+    // Record any available refinement statistics.
+    policy()->record_refinement_stats(refine_state.stats());
+    refine_state.complete(false /* concurrent */, false /* print_log */);
+  }
+  refine_state.reset_stats();
 }
 
 void G1CollectedHeap::verify_after_full_collection() {
@@ -1128,7 +1139,12 @@ G1CollectedHeap::G1CollectedHeap() :
   _periodic_gc_task(nullptr),
   _free_arena_memory_task(nullptr),
   _workers(nullptr),
-  _card_table(nullptr),
+  _refinement_epoch(0),
+  _last_synchronized_start(0),
+  _safepoint_duration(0),
+  _last_refinement_epoch_start(0),
+  _yield_duration_in_refinement_epoch(0),
+  _last_safepoint_refinement_epoch(0),
   _collection_pause_end(Ticks::now()),
   _old_set("Old Region Set", new OldRegionSetChecker()),
   _humongous_set("Humongous Region Set", new HumongousRegionSetChecker()),
@@ -1247,7 +1263,7 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
 
 jint G1CollectedHeap::initialize_concurrent_refinement() {
   jint ecode = JNI_OK;
-  _cr = G1ConcurrentRefine::create(policy(), &ecode);
+  _cr = G1ConcurrentRefine::create(this, &ecode);
   return ecode;
 }
 
@@ -1300,18 +1316,12 @@ jint G1CollectedHeap::initialize() {
   initialize_reserved_region(heap_rs);
 
   // Create the barrier set for the entire reserved region.
-  G1CardTable* ct = new G1CardTable(_reserved);
-  G1BarrierSet* bs = new G1BarrierSet(ct);
+  G1CardTable* card_table = new G1CardTable(_reserved);
+  G1CardTable* refinement_table = new G1CardTable(_reserved);
+
+  G1BarrierSet* bs = new G1BarrierSet(card_table, refinement_table);
   bs->initialize();
   assert(bs->is_a(BarrierSet::G1BarrierSet), "sanity");
-  BarrierSet::set_barrier_set(bs);
-  _card_table = ct;
-
-  {
-    G1SATBMarkQueueSet& satbqs = bs->satb_mark_queue_set();
-    satbqs.set_process_completed_buffers_threshold(G1SATBProcessCompletedThreshold);
-    satbqs.set_buffer_enqueue_threshold_percentage(G1SATBBufferEnqueueingThresholdPercent);
-  }
 
   // Create space mappers.
   size_t page_size = heap_rs.page_size();
@@ -1346,12 +1356,26 @@ jint G1CollectedHeap::initialize() {
                              G1CardTable::compute_size(heap_rs.size() / HeapWordSize),
                              G1CardTable::heap_map_factor());
 
+  G1RegionToSpaceMapper* refinement_cards_storage =
+    create_aux_memory_mapper("Refinement Card Table",
+                             G1CardTable::compute_size(heap_rs.size() / HeapWordSize),
+                             G1CardTable::heap_map_factor());
+
   size_t bitmap_size = G1CMBitMap::compute_size(heap_rs.size());
   G1RegionToSpaceMapper* bitmap_storage =
     create_aux_memory_mapper("Mark Bitmap", bitmap_size, G1CMBitMap::heap_map_factor());
 
-  _hrm.initialize(heap_storage, bitmap_storage, bot_storage, cardtable_storage);
-  _card_table->initialize(cardtable_storage);
+  _hrm.initialize(heap_storage, bitmap_storage, bot_storage, cardtable_storage, refinement_cards_storage);
+  card_table->initialize(cardtable_storage);
+  refinement_table->initialize(refinement_cards_storage);
+
+  BarrierSet::set_barrier_set(bs);
+
+  {
+    G1SATBMarkQueueSet& satbqs = bs->satb_mark_queue_set();
+    satbqs.set_process_completed_buffers_threshold(G1SATBProcessCompletedThreshold);
+    satbqs.set_buffer_enqueue_threshold_percentage(G1SATBBufferEnqueueingThresholdPercent);
+  }
 
   // 6843694 - ensure that the maximum region index can fit
   // in the remembered set structures.
@@ -1363,7 +1387,7 @@ jint G1CollectedHeap::initialize() {
   guarantee((uintptr_t)(heap_rs.base()) >= G1CardTable::card_size(), "Java heap must not start within the first card.");
   G1FromCardCache::initialize(max_reserved_regions());
   // Also create a G1 rem set.
-  _rem_set = new G1RemSet(this, _card_table);
+  _rem_set = new G1RemSet(this);
   _rem_set->initialize(max_reserved_regions());
 
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
@@ -1448,6 +1472,7 @@ jint G1CollectedHeap::initialize() {
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_conc_mark);
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_conc_refine);
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_conc_refine_control);
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_service);
 
   G1InitLogger::print();
@@ -1472,10 +1497,35 @@ void G1CollectedHeap::stop() {
 
 void G1CollectedHeap::safepoint_synchronize_begin() {
   SuspendibleThreadSet::synchronize();
+
+  _last_synchronized_start = os::elapsed_counter();
 }
 
 void G1CollectedHeap::safepoint_synchronize_end() {
+  jlong now = os::elapsed_counter();
+  jlong synchronize_duration = now - _last_synchronized_start;
+
+  _safepoint_duration += synchronize_duration;
+
+  if (_last_safepoint_refinement_epoch == refinement_epoch()) {
+    _yield_duration_in_refinement_epoch += synchronize_duration;
+  } else {
+    _last_refinement_epoch_start = now;
+    _last_safepoint_refinement_epoch = refinement_epoch();
+    _yield_duration_in_refinement_epoch = 0;
+  }
+
   SuspendibleThreadSet::desynchronize();
+}
+
+void G1CollectedHeap::set_last_refinement_epoch_start(jlong epoch_start, jlong last_yield_duration) {
+  _last_refinement_epoch_start = epoch_start;
+  guarantee(_yield_duration_in_refinement_epoch >= last_yield_duration, "should be");
+  _yield_duration_in_refinement_epoch -= last_yield_duration;
+}
+
+jlong G1CollectedHeap::yield_duration_in_refinement_epoch() {
+  return _yield_duration_in_refinement_epoch;
 }
 
 void G1CollectedHeap::post_initialize() {
@@ -2240,6 +2290,8 @@ void G1CollectedHeap::gc_epilogue(bool full) {
                                             &_collection_set_candidates_card_set_stats);
 
   update_parallel_gc_threads_cpu_time();
+
+  _refinement_epoch++;
 }
 
 uint G1CollectedHeap::uncommit_regions(uint region_limit) {
@@ -2367,7 +2419,6 @@ void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyTyp
   Ticks start = Ticks::now();
   _verifier->prepare_for_verify();
   _verifier->verify_region_sets_optional();
-  _verifier->verify_dirty_young_regions();
   _verifier->verify_before_gc();
   verify_numa_regions("GC Start");
   phase_times()->record_verify_before_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
@@ -2639,6 +2690,11 @@ void G1CollectedHeap::free_region(G1HeapRegion* hr, G1FreeRegionList* free_list)
 
   if (free_list != nullptr) {
     free_list->add_ordered(hr);
+  }
+  if (VerifyDuringGC) {
+    // Card and refinement table must be clear for freed regions.
+    card_table()->verify_region(MemRegion(hr->bottom(), hr->end()), G1CardTable::clean_card_val(), true);
+    refinement_table()->verify_region(MemRegion(hr->bottom(), hr->end()), G1CardTable::clean_card_val(), true);
   }
 }
 

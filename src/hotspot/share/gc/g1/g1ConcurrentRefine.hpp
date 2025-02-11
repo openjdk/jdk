@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,23 +34,28 @@
 #include "utilities/macros.hpp"
 
 // Forward decl
+class G1CollectedHeap;
 class G1ConcurrentRefine;
 class G1ConcurrentRefineThread;
-class G1DirtyCardQueueSet;
+class G1HeapRegion;
 class G1Policy;
+class G1CardTableClaimTable;
 class ThreadClosure;
+class WorkerTask;
+class WorkerThreads;
 
 // Helper class for refinement thread management. Used to start, stop and
 // iterate over them.
 class G1ConcurrentRefineThreadControl {
   G1ConcurrentRefine* _cr;
-  GrowableArrayCHeap<G1ConcurrentRefineThread*, mtGC> _threads;
+  G1ConcurrentRefineThread* _control_thread;
+
+  WorkerThreads* _workers;
+  uint _max_num_threads;
 
   // Create the refinement thread for the given worker id.
   // If initializing is true, ignore InjectGCWorkerCreationFailure.
-  G1ConcurrentRefineThread* create_refinement_thread(uint worker_id, bool initializing);
-
-  bool ensure_threads_created(uint worker_id, bool initializing);
+  G1ConcurrentRefineThread* create_refinement_thread();
 
   NONCOPYABLE(G1ConcurrentRefineThreadControl);
 
@@ -60,19 +65,95 @@ public:
 
   jint initialize(G1ConcurrentRefine* cr);
 
-  void assert_current_thread_is_primary_refinement_thread() const NOT_DEBUG_RETURN;
+  void assert_current_thread_is_control_refinement_thread() const NOT_DEBUG_RETURN;
 
-  uint max_num_threads() const { return _threads.capacity(); }
+  uint max_num_threads() const { return _max_num_threads; }
 
-  // Activate the indicated thread.  If the thread has not yet been allocated,
-  // allocate and then activate.  If allocation is needed and fails, return
-  // false.  Otherwise return true.
-  // precondition: worker_id < max_num_threads().
-  // precondition: current thread is not the designated worker.
-  bool activate(uint worker_id);
+  // Activate the control thread.
+  void activate();
 
+  void run_task(WorkerTask* task, uint num_workers);
+
+  void control_thread_do(ThreadClosure* tc);
   void worker_threads_do(ThreadClosure* tc);
   void stop();
+};
+
+// Tracks the current refinement state from idle to completion (and reset back
+// to idle).
+class G1ConcurrentRefineWorkState {
+
+  enum class State : uint {
+    Idle,                        // Refinement is doing nothing.
+    SwapGlobalCT,                // Swap global card table.
+    SwapJavaThreadsCT,           // Swap java thread's card tables.
+    SwapGCThreadsCT,             // Swap GC thread's card tables.
+    SnapshotHeap,                // Take a snapshot of the region's top() values.
+    SweepRT,                     // Sweep the refinement table for pending (dirty) cards.
+    CompleteRefineWork,          // Cleanup of refinement work, reset to idle.
+    Last
+  } _state;
+
+  static const char* state_name(State state) {
+    static const char* _state_names[] = {
+      "Idle",
+      "Swap Global CT",
+      "Swap JavaThread CT",
+      "Swap GC Thread CT",
+      "Snapshot Heap",
+      "Sweep RT",
+      "Complete Refine Work"
+    };
+
+    return _state_names[static_cast<uint>(state)];
+  }
+
+  // Current epoch the work has been started; used to determine if there has been
+  // a forced card table swap due to a garbage collection while doing work.
+  size_t _refine_work_epoch;
+
+  // Current heap snapshot.
+  G1CardTableClaimTable* _sweep_state;
+
+  // Start times for all states.
+  Ticks _state_start[static_cast<uint>(State::Last)];
+
+  void set_state_start_time();
+  Tickspan get_duration(State start, State end);
+
+  G1ConcurrentRefineStats _stats;
+
+  static size_t refinement_epoch();
+
+  // Advances the state to next_state if not interrupted by a changed epoch. Returns
+  // to Idle otherwise.
+  bool advance_state(State next_state);
+
+  void assert_state(State expected);
+
+public:
+  G1ConcurrentRefineWorkState(uint max_reserved_regions);
+  ~G1ConcurrentRefineWorkState();
+
+  void start_refine_work();
+
+  void swap_global_ct();
+  bool swap_java_threads_ct();
+  bool swap_gc_threads_ct();
+  void snapshot_heap();
+  bool sweep_rt_step();
+
+  bool complete(bool concurrent, bool print_log = true);
+
+  static void snapshot_heap_into(G1CardTableClaimTable* sweep_state);
+
+  G1CardTableClaimTable* sweep_state() { return _sweep_state; }
+  G1ConcurrentRefineStats* stats() { return &_stats; }
+  void reset_stats();
+
+  void add_yield_duration(jlong duration);
+
+  bool is_in_progress() const;
 };
 
 // Controls concurrent refinement.
@@ -84,49 +165,43 @@ public:
 // pending dirty cards at the start of a GC can be processed within that time
 // budget.
 //
-// Concurrent refinement is performed by a combination of dedicated threads
-// and by mutator threads as they produce dirty cards.  If configured to not
-// have any dedicated threads (-XX:G1ConcRefinementThreads=0) then all
-// concurrent refinement work is performed by mutator threads.  When there are
-// dedicated threads, they generally do most of the concurrent refinement
-// work, to minimize throughput impact of refinement work on mutator threads.
+// Concurrent refinement is performed by a set of dedicated threads.  If configured
+// to not have any dedicated threads (-XX:G1ConcRefinementThreads=0) then no
+// refinement work is performed at all.
 //
 // This class determines the target number of dirty cards pending for the next
 // GC.  It also owns the dedicated refinement threads and controls their
 // activation in order to achieve that target.
 //
-// There are two kinds of dedicated refinement threads, a single primary
-// thread and some number of secondary threads.  When active, all refinement
-// threads take buffers of dirty cards from the dirty card queue and process
-// them.  Between buffers they query this owning object to find out whether
-// they should continue running, deactivating themselves if not.
+// There are two kinds of dedicated refinement threads, a single control
+// thread and some number of refinement worker threads.
+// The control thread determines whether there is need to do work, and then starts
+// an appropriate number of refinement worker threads to get back to the target
+// number of pending dirty cards.
 //
-// The primary thread drives the control system that determines how many
-// refinement threads should be active.  If inactive, it wakes up periodically
-// to recalculate the number of active threads needed, and activates
-// additional threads as necessary.  While active it also periodically
-// recalculates the number wanted and activates more threads if needed.  It
-// also reduces the number of wanted threads when the target has been reached,
-// triggering deactivations.
+// The control wakes up periodically whether there is need to do refinement
+// work, starting the refinement process as necessary.
+//
 class G1ConcurrentRefine : public CHeapObj<mtGC> {
   G1Policy* _policy;
-  volatile uint _threads_wanted;
+  volatile uint _num_threads_wanted;
   size_t _pending_cards_target;
   Ticks _last_adjust;
   Ticks _last_deactivate;
   bool _needs_adjust;
+  bool _heap_was_locked;                // The heap has been locked the last time we tried to adjust the number of refinement threads.
+
   G1ConcurrentRefineThreadsNeeded _threads_needed;
   G1ConcurrentRefineThreadControl _thread_control;
-  G1DirtyCardQueueSet& _dcqs;
 
-  G1ConcurrentRefine(G1Policy* policy);
+  G1ConcurrentRefineWorkState _refine_state;
 
-  static uint worker_id_offset();
+  G1ConcurrentRefine(G1CollectedHeap* g1h);
 
   jint initialize();
 
-  void assert_current_thread_is_primary_refinement_thread() const {
-    _thread_control.assert_current_thread_is_primary_refinement_thread();
+  void assert_current_thread_is_control_refinement_thread() const {
+    _thread_control.assert_current_thread_is_control_refinement_thread();
   }
 
   // For the first few collection cycles we don't have a target (and so don't
@@ -140,11 +215,9 @@ class G1ConcurrentRefine : public CHeapObj<mtGC> {
 
   void update_pending_cards_target(double logged_cards_scan_time_ms,
                                    size_t processed_logged_cards,
-                                   size_t predicted_thread_buffer_cards,
                                    double goal_ms);
 
   uint64_t adjust_threads_period_ms() const;
-  bool is_in_last_adjustment_period() const;
 
   class RemSetSamplingClosure;  // Helper class for adjusting young length.
   void adjust_young_list_target_length();
@@ -156,67 +229,63 @@ class G1ConcurrentRefine : public CHeapObj<mtGC> {
 public:
   ~G1ConcurrentRefine();
 
+  G1ConcurrentRefineWorkState& refine_state() { return _refine_state; }
+
+  void run_with_refinement_workers(WorkerTask* task);
+
+  void notify_region_reclaimed(G1HeapRegion* r);
+
   // Returns a G1ConcurrentRefine instance if succeeded to create/initialize the
   // G1ConcurrentRefine instance. Otherwise, returns null with error code.
-  static G1ConcurrentRefine* create(G1Policy* policy, jint* ecode);
+  static G1ConcurrentRefine* create(G1CollectedHeap* g1h, jint* ecode);
 
   // Stop all the refinement threads.
   void stop();
 
   // Called at the end of a GC to prepare for refinement during the next
   // concurrent phase.  Updates the target for the number of pending dirty
-  // cards.  Updates the mutator refinement threshold.  Ensures the primary
-  // refinement thread (if it exists) is active, so it will adjust the number
+  // cards.  Updates the mutator refinement threshold.  Ensures the refinement
+  // control thread (if it exists) is active, so it will adjust the number
   // of running threads.
   void adjust_after_gc(double logged_cards_scan_time_ms,
                        size_t processed_logged_cards,
-                       size_t predicted_thread_buffer_cards,
                        double goal_ms);
 
   // Target number of pending dirty cards at the start of the next GC.
   size_t pending_cards_target() const { return _pending_cards_target; }
 
-  // May recalculate the number of refinement threads that should be active in
-  // order to meet the pending cards target.  Returns true if adjustment was
-  // performed, and clears any pending request.  Returns false if the
-  // adjustment period has not expired, or because a timed or requested
-  // adjustment could not be performed immediately and so was deferred.
-  // precondition: current thread is the primary refinement thread.
-  bool adjust_threads_periodically();
+  // Recalculates the number of refinement threads that should be active in
+  // order to meet the pending cards target.
+  // Returns true if it could recalculate the number of threads and
+  // refinement threads should be started.
+  // Returns false if the adjustment period has not expired, or because a timed
+  // or requested adjustment could not be performed immediately and so was deferred.
+  bool adjust_num_threads_periodically();
 
-  // The amount of time (in ms) the primary refinement thread should sleep
+  // The amount of time (in ms) the refinement control thread should sleep
   // when it is inactive.  It requests adjustment whenever it is reactivated.
-  // precondition: current thread is the primary refinement thread.
+  // precondition: current thread is the refinement control thread.
   uint64_t adjust_threads_wait_ms() const;
 
   // Record a request for thread adjustment as soon as possible.
-  // precondition: current thread is the primary refinement thread.
+  // precondition: current thread is the refinement control thread.
   void record_thread_adjustment_needed();
 
   // Test whether there is a pending request for thread adjustment.
-  // precondition: current thread is the primary refinement thread.
+  // precondition: current thread is the refinement control thread.
   bool is_thread_adjustment_needed() const;
 
-  // Reduce the number of active threads wanted.
-  // precondition: current thread is the primary refinement thread.
-  void reduce_threads_wanted();
+  // Indicate that last refinement adjustment had been deferred due to not
+  // obtaining the heap lock.
+  bool wait_for_heap_lock() const { return _heap_was_locked; }
 
-  // Test whether the thread designated by worker_id should be active.
-  bool is_thread_wanted(uint worker_id) const;
-
-  // Return total of concurrent refinement stats for the
-  // ConcurrentRefineThreads.  Also reset the stats for the threads.
-  G1ConcurrentRefineStats get_and_reset_refinement_stats();
-
-  // Perform a single refinement step; called by the refinement
-  // threads.  Returns true if there was refinement work available.
-  // Updates stats.
-  bool try_refinement_step(uint worker_id,
-                           size_t stop_at,
-                           G1ConcurrentRefineStats* stats);
+  uint num_threads_wanted() const { return _num_threads_wanted; }
 
   // Iterate over all concurrent refinement threads applying the given closure.
   void threads_do(ThreadClosure *tc);
+  // Iterate over specific refinement threads applying the given closure.
+  void worker_threads_do(ThreadClosure *tc);
+  void control_thread_do(ThreadClosure *tc);
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTREFINE_HPP

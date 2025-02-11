@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ class G1HeapRegion;
 class G1CollectionSet;
 class G1CollectionSetCandidates;
 class G1CollectionSetChooser;
+class G1ConcurrentRefineStats;
 class G1IHOPControl;
 class G1Analytics;
 class G1SurvivorRegions;
@@ -101,9 +102,8 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
-  size_t _card_rs_length;
-
-  size_t _pending_cards_at_gc_start;
+  size_t _pending_cards_from_gc;
+  size_t _to_collection_set_cards;
 
   G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
 
@@ -129,12 +129,6 @@ public:
     assert(hr->is_survivor(), "pre-condition");
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
-
-  void record_card_rs_length(size_t card_rs_length) {
-    _card_rs_length = card_rs_length;
-  }
-
-  double predict_base_time_ms(size_t pending_cards) const;
 
   double predict_base_time_ms(size_t pending_cards, size_t card_rs_length) const;
 
@@ -241,7 +235,13 @@ private:
 
 public:
   size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
-  size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
+
+  double last_mutator_dirty_start_time_ms();
+  size_t pending_cards_from_gc() const { return _pending_cards_from_gc; }
+
+  size_t current_pending_cards();
+
+  size_t current_to_collection_set_cards();
 
   // The minimum number of retained regions we will add to the CSet during a young GC.
   uint min_retained_old_cset_length() const;
@@ -284,7 +284,7 @@ public:
   // Check the current value of the young list RSet length and
   // compare it against the last prediction. If the current value is
   // higher, recalculate the young list target length prediction.
-  void revise_young_list_target_length(size_t card_rs_length, size_t code_root_rs_length);
+  void revise_young_list_target_length(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length);
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
@@ -365,11 +365,15 @@ public:
 
   void transfer_survivors_to_cset(const G1SurvivorRegions* survivors);
 
-  // Record and log stats and pending cards before not-full collection.
-  // thread_buffer_cards is the number of cards that were in per-thread
-  // buffers.  pending_cards includes thread_buffer_cards.
-  void record_concurrent_refinement_stats(size_t pending_cards,
-                                          size_t thread_buffer_cards);
+  // Record and log stats and pending cards to update predictors.
+  void record_refinement_stats(G1ConcurrentRefineStats* stats);
+
+  void record_dirtying_stats(double last_mutator_start_dirty_ms,
+                             double last_mutator_end_dirty_ms,
+                             size_t pending_cards,
+                             double yield_duration,
+                             size_t next_pending_cards_from_gc,
+                             size_t next_to_collection_set_cards);
 
   bool should_retain_evac_failed_region(G1HeapRegion* r) const {
     return should_retain_evac_failed_region(r->hrm_index());

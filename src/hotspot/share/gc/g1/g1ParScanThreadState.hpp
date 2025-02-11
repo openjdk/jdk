@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_GC_G1_G1PARSCANTHREADSTATE_HPP
 
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/shared/ageTable.hpp"
@@ -52,7 +51,6 @@ class outputStream;
 class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
   G1ScannerTasksQueue* _task_queue;
-  G1RedirtyCardsLocalQueueSet _rdc_local_qset;
   G1CardTable* _ct;
   G1EvacuationRootClosures* _closures;
 
@@ -65,9 +63,8 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
   uint _worker_id;
 
-  // Remember the last enqueued card to avoid enqueuing the same card over and over;
-  // since we only ever scan a card once, this is sufficient.
-  size_t _last_enqueued_card;
+  size_t _num_enqueued_as_dirty_cards;
+  size_t _num_enqueued_as_into_cset_cards;
 
   // Upper and lower threshold to start and end work queue draining.
   uint const _stack_trim_upper_threshold;
@@ -104,14 +101,12 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
   EvacuationFailedInfo _evacuation_failed_info;
   G1EvacFailureRegions* _evac_failure_regions;
-  // Number of additional cards into evacuation failed regions enqueued into
-  // the local DCQS. This is an approximation, as cards that would be added later
-  // outside of evacuation failure will not be subtracted again.
+  // Number of additional cards into evacuation failed regions.
   size_t _evac_failure_enqueued_cards;
 
   // Enqueue the card if not already in the set; this is a best-effort attempt on
   // detecting duplicates.
-  template <class T> bool enqueue_if_new(T* p);
+  template <class T> bool enqueue_if_new(T* p, bool into_survivor);
   // Enqueue the card of p into the (evacuation failed) region.
   template <class T> void enqueue_card_into_evac_fail_region(T* p, oop obj);
 
@@ -119,7 +114,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
-                       G1RedirtyCardsQueueSet* rdcqs,
                        uint worker_id,
                        uint num_workers,
                        G1CollectionSet* collection_set,
@@ -156,11 +150,13 @@ public:
   size_t lab_waste_words() const;
   size_t lab_undo_waste_words() const;
 
+  size_t num_pending_cards() const;
   size_t evac_failure_enqueued_cards() const;
+  size_t num_enqueued_cards() const;
 
   // Pass locally gathered statistics to global state. Returns the total number of
   // HeapWords copied.
-  size_t flush_stats(size_t* surviving_young_words, uint num_workers, BufferNodeList* buffer_log);
+  size_t flush_stats(size_t* surviving_young_words, uint num_workers);
 
 #if TASKQUEUE_STATS
   PartialArrayTaskStats* partial_array_task_stats();
@@ -242,9 +238,7 @@ public:
 class G1ParScanThreadStateSet : public StackObj {
   G1CollectedHeap* _g1h;
   G1CollectionSet* _collection_set;
-  G1RedirtyCardsQueueSet _rdcqs;
   G1ParScanThreadState** _states;
-  BufferNodeList* _rdc_buffers;
   size_t* _surviving_young_words_total;
   uint _num_workers;
   bool _flushed;
@@ -256,9 +250,6 @@ class G1ParScanThreadStateSet : public StackObj {
                           G1CollectionSet* collection_set,
                           G1EvacFailureRegions* evac_failure_regions);
   ~G1ParScanThreadStateSet();
-
-  G1RedirtyCardsQueueSet* rdcqs() { return &_rdcqs; }
-  BufferNodeList* rdc_buffers() { return _rdc_buffers; }
 
   void flush_stats();
   void record_unused_optional_region(G1HeapRegion* hr);

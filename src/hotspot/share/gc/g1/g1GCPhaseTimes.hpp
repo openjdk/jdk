@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
  public:
   enum GCParPhases {
-    RetireTLABsAndFlushLogs,
-    NonJavaThreadFlushLogs,
+    RetireTLABs,
     GCWorkerStart,
     ExtRootScan,
     ThreadRoots,
@@ -59,7 +58,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergeER = StrongOopStorageSetRoots + EnumRange<OopStorageSet::StrongId>().size(),
     MergeRS,
     OptMergeRS,
-    MergeLB,
+    SweepRT,
     ScanHR,
     OptScanHR,
     CodeRoots,
@@ -71,7 +70,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     Other,
     GCWorkerTotal,
     GCWorkerEnd,
-    RedirtyCards,
     FreeCollectionSet,
     YoungFreeCSet,
     NonYoungFreeCSet,
@@ -111,27 +109,25 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergeRSHowlArrayOfCards,
     MergeRSHowlBitmap,
     MergeRSHowlFull,
-    MergeRSCards,
+    MergeRSFromRemSetCards,
+    MergeRSTotalCards,
     MergeRSContainersSentinel
   };
 
   static constexpr const char* GCMergeRSWorkItemsStrings[MergeRSContainersSentinel] =
     { "Merged Inline:", "Merged ArrayOfCards:", "Merged Howl:", "Merged Full:",
       "Merged Howl Inline:", "Merged Howl ArrayOfCards:", "Merged Howl BitMap:", "Merged Howl Full:",
-      "Merged Cards:" };
+      "Merged From RS Cards:", "Total Cards:" };
 
   enum GCScanHRWorkItems {
+    ScanHRPendingCards,
+    ScanHRScannedEmptyCards,
     ScanHRScannedCards,
     ScanHRScannedBlocks,
     ScanHRClaimedChunks,
     ScanHRFoundRoots,
     ScanHRScannedOptRefs,
     ScanHRUsedMemory
-  };
-
-  enum GCMergeLBWorkItems {
-    MergeLBDirtyCards,
-    MergeLBSkippedCards
   };
 
   enum GCCodeRootsWorkItems {
@@ -143,7 +139,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergePSSLABSize,
     MergePSSLABWasteBytes,
     MergePSSLABUndoWasteBytes,
-    MergePSSEvacFailExtra
+    MergePSSPendingCards,
+    MergePSSToYoungGenCards,
+    MergePSSEvacFailExtra,
+    MergePSSEnqueued,
   };
 
   enum RestoreEvacFailureRegionsWorkItems {
@@ -176,6 +175,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_collection_nmethod_list_cleanup_time_ms;
 
   double _cur_merge_heap_roots_time_ms;
+  // Merge refinement table time. Note that this time is included in _cur_merge_heap_roots_time_ms.
+  double _cur_merge_refinement_table_time_ms;
   double _cur_optional_merge_heap_roots_time_ms;
 
   double _cur_prepare_merge_heap_roots_time_ms;
@@ -298,16 +299,16 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_merge_heap_roots_time_ms += ms;
   }
 
+  void record_merge_refinement_table_time(double ms) {
+    _cur_merge_refinement_table_time_ms = ms;
+  }
+
   void record_or_add_optional_merge_heap_roots_time(double ms) {
     _cur_optional_merge_heap_roots_time_ms += ms;
   }
 
   void record_prepare_merge_heap_roots_time(double ms) {
     _cur_prepare_merge_heap_roots_time_ms += ms;
-  }
-
-  void record_distribute_log_buffers_time_ms(double ms) {
-    _cur_distribute_log_buffers_time_ms += ms;
   }
 
   void record_or_add_optional_prepare_merge_heap_roots_time(double ms) {
@@ -382,15 +383,15 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     return _cur_collection_start_sec;
   }
 
-  double cur_distribute_log_buffers_time_ms() {
-    return _cur_distribute_log_buffers_time_ms;
-  }
-
   double cur_collection_par_time_ms() {
     return _cur_collection_initial_evac_time_ms +
            _cur_optional_evac_time_ms +
            _cur_merge_heap_roots_time_ms +
            _cur_optional_merge_heap_roots_time_ms;
+  }
+
+  double cur_merge_refinement_table_time() const {
+    return _cur_merge_refinement_table_time_ms;
   }
 
   double cur_expand_heap_time_ms() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -577,6 +577,8 @@ public:
   inline void update_top_at_rebuild_start(G1HeapRegion* r);
   // TARS for the given region during remembered set rebuilding.
   inline HeapWord* top_at_rebuild_start(G1HeapRegion* r) const;
+
+  uint worker_id_offset() const { return _worker_id_offset; }
 
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.

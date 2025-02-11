@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,27 @@
  *
  */
 
-package gc.stress.gcbasher;
+#ifndef SHARE_GC_G1_G1CONCURRENTREFINEWORKTASK_HPP
+#define SHARE_GC_G1_G1CONCURRENTREFINEWORKTASK_HPP
 
-import java.io.IOException;
+#include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/shared/workerThread.hpp"
 
-/*
- * @test TestGCBasherWithG1
- * @key stress
- * @library /
- * @requires vm.gc.G1
- * @requires vm.flavor == "server" & !vm.emulatedClient
- * @summary Stress the G1 GC by trying to make old objects more likely to be garbage than young objects.
- * @run main/othervm/timeout=200 -Xlog:gc*=debug,gc+refine=debug,gc+ergo*=debug -Xmx256m -server -XX:+UseG1GC gc.stress.gcbasher.TestGCBasherWithG1 120000
- */
-public class TestGCBasherWithG1 {
-    public static void main(String[] args) throws IOException {
-        TestGCBasher.main(args);
-    }
-}
+class G1CardTableClaimTable;
+
+class G1ConcurrentRefineWorkTask : public WorkerTask {
+  G1CardTableClaimTable* _scan_state;
+  G1ConcurrentRefineStats* _stats;
+  uint _max_workers;
+  bool _sweep_completed;
+
+public:
+
+  G1ConcurrentRefineWorkTask(G1CardTableClaimTable* scan_state, G1ConcurrentRefineStats* stats, uint max_workers);
+
+  void work(uint worker_id) override;
+
+  bool sweep_completed() const;
+};
+
+#endif /* SHARE_GC_G1_G1CONCURRENTREFINEWORKTASK_HPP */

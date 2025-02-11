@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,8 @@ class G1HeapRegionManager: public CHeapObj<mtGC> {
   friend class G1HeapRegionClaimer;
 
   G1RegionToSpaceMapper* _bot_mapper;
-  G1RegionToSpaceMapper* _cardtable_mapper;
+  G1RegionToSpaceMapper* _card_table_mapper;
+  G1RegionToSpaceMapper* _refinement_table_mapper;
 
   // Keeps track of the currently committed regions in the heap. The committed regions
   // can either be active (ready for use) or inactive (ready for uncommit).
@@ -162,7 +163,8 @@ public:
   void initialize(G1RegionToSpaceMapper* heap_storage,
                   G1RegionToSpaceMapper* bitmap,
                   G1RegionToSpaceMapper* bot,
-                  G1RegionToSpaceMapper* cardtable);
+                  G1RegionToSpaceMapper* card_table,
+                  G1RegionToSpaceMapper* refinement_table);
 
   // Return the "dummy" region used for G1AllocRegion. This is currently a hardwired
   // new G1HeapRegion that owns G1HeapRegion at index 0. Since at the moment we commit

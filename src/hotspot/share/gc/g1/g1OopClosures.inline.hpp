@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,11 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
 
 template <class T>
 inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
+  // Early out if we already found a to-young reference.
+  if (_has_to_cset_ref) {
+    return;
+  }
+
   T o = RawAccess<MO_RELAXED>::oop_load(p);
   if (CompressedOops::is_null(o)) {
     return;
@@ -146,7 +151,12 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
     return;
   }
 
-  G1HeapRegionRemSet* to_rem_set = _g1h->heap_region_containing(obj)->rem_set();
+  G1HeapRegion* to_region = _g1h->heap_region_containing(obj);
+  _has_to_cset_ref = to_region->is_young();
+  if (_has_to_cset_ref) {
+    return;
+  }
+  G1HeapRegionRemSet* to_rem_set = to_region->rem_set();
 
   assert(to_rem_set != nullptr, "Need per-region 'into' remsets.");
   if (to_rem_set->is_tracked()) {
@@ -154,6 +164,7 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
 
     if (from->rem_set()->cset_group() != to_rem_set->cset_group()) {
       to_rem_set->add_reference(p, _worker_id);
+      _has_to_old_ref = true;
     }
   }
 }
@@ -272,10 +283,14 @@ template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
   G1HeapRegion* to = _g1h->heap_region_containing(obj);
   G1HeapRegionRemSet* rem_set = to->rem_set();
   if (rem_set->is_tracked()) {
-    G1HeapRegion* from = _g1h->heap_region_containing(p);
+    if (to->is_young()) {
+      G1BarrierSet::g1_barrier_set()->write_ref_field_post(p);
+    } else {
+      G1HeapRegion* from = _g1h->heap_region_containing(p);
 
-    if (from->rem_set()->cset_group() != rem_set->cset_group()) {
-      rem_set->add_reference(p, _worker_id);
+      if (from->rem_set()->cset_group() != rem_set->cset_group()) {
+        rem_set->add_reference(p, _worker_id);
+      }
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,12 +203,12 @@ public:
 
   virtual bool is_in_young(const void* p) const = 0;
 
-  // Print a description of the memory for the card table
-  virtual void print_on(outputStream* st) const;
+  // Print card table information.
+  void print_on(outputStream* st, const char* description = "Card") const;
 
   // val_equals -> it will check that all cards covered by mr equal val
   // !val_equals -> it will check that all cards covered by mr do not equal val
-  void verify_region(MemRegion mr, CardValue val, bool val_equals) PRODUCT_RETURN;
+  virtual void verify_region(MemRegion mr, CardValue val, bool val_equals) PRODUCT_RETURN;
   void verify_not_dirty_region(MemRegion mr) PRODUCT_RETURN;
   void verify_dirty_region(MemRegion mr) PRODUCT_RETURN;
 };
