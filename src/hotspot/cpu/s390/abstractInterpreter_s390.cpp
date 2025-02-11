@@ -182,8 +182,13 @@ void AbstractInterpreter::layout_activation(Method* method,
   intptr_t* sender_sp;
   if (caller->is_interpreted_frame()) {
     sender_sp = caller->interpreter_frame_top_frame_sp();
+#ifdef ASSERT
     assert(locals_base <= (address)caller->fp() - frame::z_ijava_state_size, "bad placement");
-    assert(locals_base >= sender_sp + max_locals - 1, "bad placement");
+    // Test caller-aligned placement vs callee-aligned
+    intptr_t* l2 = (caller->sp() + method->max_locals() - 1 +
+      frame::z_parent_ijava_frame_abi_size / Interpreter::stackElementSize);
+    assert(l2 >= locals_base, "bad placement");
+#endif
   } else if (caller->is_compiled_frame()) {
     sender_sp = caller->fp() - caller->cb()->frame_size();
     // The bottom frame's sender_sp is its caller's unextended_sp.
