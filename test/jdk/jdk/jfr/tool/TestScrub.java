@@ -40,7 +40,7 @@ import jdk.jfr.consumer.RecordingFile;
 /**
  * @test
  * @summary Test jfr scrub
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.tool.TestScrub

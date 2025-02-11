@@ -25,7 +25,6 @@
  * @test
  * @bug 8072480 8277106 8331027
  * @summary Unit test for CreateSymbols
- * @enablePreview
  * @modules java.compiler
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.jvm
@@ -102,9 +101,6 @@ public class CreateSymbolsTest {
                                       null,
                                       List.of("-d",
                                               compileDir.toAbsolutePath().toString(),
-                                              "--enable-preview",
-                                              "--source",
-                                              "" + System.getProperty("java.specification.version"),
                                               "-g",
                                               "--add-modules", "jdk.jdeps",
                                               "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",

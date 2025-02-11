@@ -1565,7 +1565,7 @@ public abstract class Provider extends Properties {
         return null;
     }
 
-    @SuppressWarnings("unchecked") // Function must actually operate over strings
+    // Function must actually operate over strings
     private void implReplaceAll(BiFunction<? super Object, ? super Object,
             ? extends Object> function) {
         Properties propertiesCopy = copyProperties();
@@ -1573,7 +1573,7 @@ public abstract class Provider extends Properties {
         putAll(propertiesCopy);
     }
 
-    @SuppressWarnings("unchecked") // Function must actually operate over strings
+    // Function must actually operate over strings
     private Object implMerge(Object key, Object value,
             BiFunction<? super Object, ? super Object, ? extends Object>
             remappingFunction) {
@@ -1589,7 +1589,7 @@ public abstract class Provider extends Properties {
         return super.get(key);
     }
 
-    @SuppressWarnings("unchecked") // Function must actually operate over strings
+    // Function must actually operate over strings
     private Object implCompute(Object key, BiFunction<? super Object,
             ? super Object, ? extends Object> remappingFunction) {
         Object oldValue = super.get(key);
@@ -1604,7 +1604,7 @@ public abstract class Provider extends Properties {
         return super.get(key);
     }
 
-    @SuppressWarnings("unchecked") // Function must actually operate over strings
+    // Function must actually operate over strings
     private Object implComputeIfAbsent(Object key, Function<? super Object,
             ? extends Object> mappingFunction) {
         Object oldValue = super.get(key);
@@ -1618,7 +1618,7 @@ public abstract class Provider extends Properties {
         return oldValue;
     }
 
-    @SuppressWarnings("unchecked") // Function must actually operate over strings
+    // Function must actually operate over strings
     private Object implComputeIfPresent(Object key, BiFunction<? super Object,
             ? super Object, ? extends Object> remappingFunction) {
         Object oldValue = super.get(key);

@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /*
  * @test
- * @bug 8345139
+ * @bug 8344361 8345139
  * @run main/othervm/timeout=60 -enablesystemassertions ServicesConsistency
  */
 
