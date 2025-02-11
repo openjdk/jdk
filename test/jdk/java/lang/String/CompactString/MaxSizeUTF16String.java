@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,5 +117,34 @@ public class MaxSizeUTF16String {
                 }
             }
         }
+    }
+
+    /*
+     * Test that UTF-8 of too large strings throws OOME, (not NegativeArraySizeException).
+     */
+    @Test
+    public void testMaxUTF8_UTF16Encode() {
+        String s = "\uFFFF";
+        final byte[] bytes1 = s.getBytes(StandardCharsets.UTF_8);
+        assertEquals(3, bytes1.length, "UTF_8 encoded length of 0xffff");
+
+        int min = Integer.MAX_VALUE / bytes1.length - 1;
+        int max = min + 3;
+
+        // String of size min can be UTF_8 encoded.
+        System.out.println("testing size: " + min);
+        String s1 = s.repeat(min);
+        byte[] bytes = s1.getBytes(StandardCharsets.UTF_8);
+        int remaining = Integer.MAX_VALUE - bytes.length;
+        assertTrue(remaining >= bytes1.length, "remainder too large: " + remaining);
+
+        // Strings of size min+1...min+2, throw OOME
+        // The resulting byte array would exceed implementation limits
+        for (int count = min + 1; count < max; count++) {
+            System.out.println("testing size: " + count);
+            final String s2 = s.repeat(count);
+            OutOfMemoryError ex = assertThrows(OutOfMemoryError.class, () -> s2.getBytes(StandardCharsets.UTF_8));
+            ex.printStackTrace();
+        };
     }
 }

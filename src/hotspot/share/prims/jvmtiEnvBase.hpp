@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,8 +216,6 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
 
   static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread, JavaThread* cur_thread,
                                                  JavaThread** jt_pp, oop* thread_oop_p);
-  static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
-                                                 JavaThread** jt_pp, oop* thread_oop_p);
 
   // Return true if java thread is a carrier thread with a mounted virtual thread.
   static bool is_cthread_with_mounted_vthread(JavaThread* jt);
@@ -360,7 +358,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                    JavaThread* java_thread,
                                    javaVFrame *jvf,
                                    GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list,
-                                   jint depth);
+                                   jint depth, oop vthread = nullptr);
  public:
   static javaVFrame* jvf_for_thread_and_depth(JavaThread* java_thread, jint depth);
 
@@ -368,9 +366,9 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static bool get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd);
 
   // check and skip frames hidden in mount/unmount transitions
+  static javaVFrame* skip_yield_frames_for_unmounted_vthread(oop vthread, javaVFrame* jvf);
   static javaVFrame* check_and_skip_hidden_frames(bool is_in_VTMS_transition, javaVFrame* jvf);
   static javaVFrame* check_and_skip_hidden_frames(JavaThread* jt, javaVFrame* jvf);
-  static javaVFrame* check_and_skip_hidden_frames(oop vthread, javaVFrame* jvf);
 
   // check if virtual thread is not terminated (alive)
   static bool is_vthread_alive(oop vt);
@@ -412,6 +410,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   jvmtiError get_frame_location(oop vthread_oop, jint depth,
                                 jmethodID* method_ptr, jlocation* location_ptr);
   jvmtiError set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth);
+  jvmtiError clear_all_frame_pops(JvmtiThreadState* state);
   jvmtiError get_object_monitor_usage(JavaThread* calling_thread,
                                       jobject object, jvmtiMonitorUsage* info_ptr);
   jvmtiError get_stack_trace(javaVFrame* jvf,
@@ -424,8 +423,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                            jobject* monitor_ptr, bool is_virtual);
   jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread,
                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
-  jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread, javaVFrame* jvf,
-                                GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
+  jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* carrier, javaVFrame* jvf,
+                                GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list, oop vthread);
   static jvmtiError check_top_frame(Thread* current_thread, JavaThread* java_thread,
                                     jvalue value, TosState tos, Handle* ret_ob_h);
   jvmtiError force_early_return(jthread thread, jvalue value, TosState tos);
@@ -454,16 +453,6 @@ class JvmtiEnvIterator : public StackObj {
   }
   JvmtiEnv* first()                 { return JvmtiEnvBase::head_environment(); }
   JvmtiEnv* next(JvmtiEnvBase* env) { return env->next_environment(); }
-};
-
-class JvmtiHandshakeClosure : public HandshakeClosure {
- protected:
-  jvmtiError _result;
- public:
-  JvmtiHandshakeClosure(const char* name)
-    : HandshakeClosure(name),
-      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {}
-  jvmtiError result() { return _result; }
 };
 
 // Used in combination with the JvmtiHandshake class.
@@ -499,50 +488,66 @@ class JvmtiHandshake : public Handshake {
   static void execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target);
 };
 
-class SetForceEarlyReturn : public JvmtiHandshakeClosure {
+class SetForceEarlyReturn : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiThreadState* _state;
   jvalue _value;
   TosState _tos;
 public:
   SetForceEarlyReturn(JvmtiThreadState* state, jvalue value, TosState tos)
-    : JvmtiHandshakeClosure("SetForceEarlyReturn"),
+    : JvmtiUnitedHandshakeClosure("SetForceEarlyReturn"),
      _state(state),
      _value(value),
      _tos(tos) {}
+  void doit(Thread *target);
   void do_thread(Thread *target) {
-    doit(target, false /* self */);
+    doit(target);
   }
-  void doit(Thread *target, bool self);
+  void do_vthread(Handle target_h) {
+    assert(_target_jt != nullptr, "sanity check");
+    // Use jvmti_vthread() instead of vthread() as target could have temporarily changed
+    // identity to carrier thread (see VirtualThread.switchToCarrierThread).
+    assert(_target_jt->jvmti_vthread() == target_h(), "sanity check");
+    doit(_target_jt); // mounted virtual thread
+  }
 };
 
 // HandshakeClosure to update for pop top frame.
-class UpdateForPopTopFrameClosure : public JvmtiHandshakeClosure {
+class UpdateForPopTopFrameClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiThreadState* _state;
 
 public:
   UpdateForPopTopFrameClosure(JvmtiThreadState* state)
-    : JvmtiHandshakeClosure("UpdateForPopTopFrame"),
+    : JvmtiUnitedHandshakeClosure("UpdateForPopTopFrame"),
      _state(state) {}
+  void doit(Thread *target);
   void do_thread(Thread *target) {
-    doit(target, false /* self */);
+    doit(target);
   }
-  void doit(Thread *target, bool self);
+  void do_vthread(Handle target_h) {
+    assert(_target_jt != nullptr, "sanity check");
+    // Use jvmti_vthread() instead of vthread() as target could have temporarily changed
+    // identity to carrier thread (see VirtualThread.switchToCarrierThread).
+    assert(_target_jt->jvmti_vthread() == target_h(), "sanity check");
+    doit(_target_jt); // mounted virtual thread
+  }
 };
 
 // HandshakeClosure to set frame pop.
-class SetFramePopClosure : public JvmtiUnitedHandshakeClosure {
+class SetOrClearFramePopClosure : public JvmtiUnitedHandshakeClosure {
 private:
-  JvmtiEnv *_env;
+  JvmtiEnvBase *_env;
   JvmtiThreadState* _state;
-  jint _depth;
+  bool _set;
+  jint _depth; // used for NotiftyFramePop only
 
 public:
-  SetFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, jint depth)
-    : JvmtiUnitedHandshakeClosure("SetFramePopClosure"),
-      _env(env),
+  SetOrClearFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, bool set, jint depth = 0)
+    : JvmtiUnitedHandshakeClosure("SetOrClearFramePopClosure"),
+      _env((JvmtiEnvBase*)env),
       _state(state),
+      _set(set),
       _depth(depth) {}
   void do_thread(Thread *target);
   void do_vthread(Handle target_h);
@@ -724,7 +729,7 @@ public:
 };
 
 // HandshakeClosure to get single stack trace.
-class GetSingleStackTraceClosure : public HandshakeClosure {
+class GetSingleStackTraceClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JavaThread *_calling_thread;
   jthread _jthread;
@@ -733,14 +738,16 @@ private:
 public:
   GetSingleStackTraceClosure(JvmtiEnv *env, JavaThread *calling_thread,
                              jthread thread, jint max_frame_count)
-    : HandshakeClosure("GetSingleStackTrace"),
+    : JvmtiUnitedHandshakeClosure("GetSingleStackTrace"),
       _calling_thread(calling_thread),
       _jthread(thread),
       _collector(env, max_frame_count) {
   }
   void do_thread(Thread *target);
+  void do_vthread(Handle target_h);
+  void doit();
   jvmtiStackInfo *stack_info()    { return _collector.stack_info(); }
-  jvmtiError result()             { return _collector.result(); }
+  jvmtiError result()             { return _result; }
 };
 
 // HandshakeClosure to count stack frames.
@@ -776,24 +783,6 @@ public:
       _location_ptr(location_ptr) {}
   void do_thread(Thread *target);
   void do_vthread(Handle target_h);
-};
-
-// HandshakeClosure to get virtual thread thread at safepoint.
-class VirtualThreadGetThreadClosure : public HandshakeClosure {
-private:
-  Handle _vthread_h;
-  jthread* _carrier_thread_ptr;
-  jvmtiError _result;
-
-public:
-  VirtualThreadGetThreadClosure(Handle vthread_h, jthread* carrier_thread_ptr)
-    : HandshakeClosure("VirtualThreadGetThread"),
-      _vthread_h(vthread_h),
-      _carrier_thread_ptr(carrier_thread_ptr),
-      _result(JVMTI_ERROR_NONE) {}
-
-  void do_thread(Thread *target);
-  jvmtiError result() { return _result; }
 };
 
 // ResourceTracker

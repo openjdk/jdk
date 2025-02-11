@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native" })
+@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native" })
 public class QSort extends CLayouts {
 
     static final Linker abi = Linker.nativeLinker();
@@ -58,7 +58,7 @@ public class QSort extends CLayouts {
     static final int[] INPUT = { 5, 3, 2, 7, 8, 12, 1, 7 };
     static final MemorySegment INPUT_SEGMENT;
 
-    static MemorySegment qsort_addr = abi.defaultLookup().find("qsort").get();
+    static MemorySegment qsort_addr = abi.defaultLookup().findOrThrow("qsort");
 
     static {
         MemoryLayout layout = MemoryLayout.sequenceLayout(INPUT.length, JAVA_INT);
@@ -74,7 +74,7 @@ public class QSort extends CLayouts {
                     FunctionDescriptor.ofVoid(C_POINTER, C_LONG_LONG, C_LONG_LONG, C_POINTER)
             );
             System.loadLibrary("QSort");
-            native_compar = SymbolLookup.loaderLookup().find("compar").orElseThrow();
+            native_compar = SymbolLookup.loaderLookup().findOrThrow("compar");
             panama_upcall_compar = abi.upcallStub(
                     lookup().findStatic(QSort.class,
                             "panama_upcall_compar",

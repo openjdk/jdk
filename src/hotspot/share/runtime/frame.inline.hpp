@@ -71,6 +71,16 @@ inline bool frame::is_compiled_frame() const {
   return false;
 }
 
+inline address frame::get_deopt_original_pc() const {
+  if (_cb == nullptr)  return nullptr;
+
+  nmethod* nm = _cb->as_nmethod_or_null();
+  if (nm != nullptr && nm->is_deopt_pc(_pc)) {
+    return nm->get_original_pc(this);
+  }
+  return nullptr;
+}
+
 template <typename RegisterMapT>
 inline address frame::oopmapreg_to_location(VMReg reg, const RegisterMapT* reg_map) const {
   if (reg->is_reg()) {

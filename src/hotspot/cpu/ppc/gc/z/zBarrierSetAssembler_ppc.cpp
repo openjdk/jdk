@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "asm/register.hpp"
 #include "code/codeBlob.hpp"
@@ -73,7 +72,7 @@ class ZRuntimeCallSpill {
         __ save_volatile_gprs(R1_SP, -_nbytes_save, _preserve_fp_registers, preserve_R3);
       }
 
-      __ save_LR_CR(R0);
+      __ save_LR(R0);
       __ push_frame_reg_args(_nbytes_save, R0);
     }
   }
@@ -84,7 +83,7 @@ class ZRuntimeCallSpill {
     Register result = R3_RET;
     if (_needs_frame) {
       __ pop_frame();
-      __ restore_LR_CR(R0);
+      __ restore_LR(R0);
 
       if (_preserve_gp_registers) {
         bool restore_R3 = _result != R3_ARG1;
@@ -170,7 +169,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators
   // if the pointer is not dirty.
   // Only dirty pointers must be processed by this barrier, so we can skip it in case the latter condition holds true.
   __ and_(tmp1, tmp1, dst);
-  __ beq(CCR0, uncolor);
+  __ beq(CR0, uncolor);
 
   /* ==== Invoke barrier ==== */
   {
@@ -194,8 +193,8 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators
 
   // Slow-path has already uncolored
   if (L_handle_null != nullptr) {
-    __ cmpdi(CCR0, dst, 0);
-    __ beq(CCR0, *L_handle_null);
+    __ cmpdi(CR0, dst, 0);
+    __ beq(CR0, *L_handle_null);
   }
   __ b(done);
 
@@ -204,7 +203,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators
     __ srdi(dst, dst, ZPointerLoadShift);
   } else {
     __ srdi_(dst, dst, ZPointerLoadShift);
-    __ beq(CCR0, *L_handle_null);
+    __ beq(CR0, *L_handle_null);
   }
 
   __ bind(done);
@@ -235,7 +234,7 @@ static void emit_store_fast_path_check(MacroAssembler* masm, Register base, Regi
     // A not relocatable object could have spurious raw null pointers in its fields after
     // getting promoted to the old generation.
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBits);
-    __ cmplwi(CCR0, R0, barrier_Relocation::unpatched);
+    __ cmplwi(CR0, R0, barrier_Relocation::unpatched);
   } else {
     __ ld(R0, ind_or_offs, base);
     // Stores on relocatable objects never need to deal with raw null pointers in fields.
@@ -245,7 +244,7 @@ static void emit_store_fast_path_check(MacroAssembler* masm, Register base, Regi
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadMask);
     __ andi_(R0, R0, barrier_Relocation::unpatched);
   }
-  __ bc_far_optimized(Assembler::bcondCRbiIs0, __ bi0(CCR0, Assembler::equal), medium_path);
+  __ bc_far_optimized(Assembler::bcondCRbiIs0, __ bi0(CR0, Assembler::equal), medium_path);
 }
 
 void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
@@ -275,7 +274,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     __ ld(R0, ind_or_offset, ref_base);
     __ ld(rnew_zpointer, in_bytes(ZThreadLocalData::store_bad_mask_offset()), R16_thread);
     __ and_(R0, R0, rnew_zpointer);
-    __ bne(CCR0, medium_path);
+    __ bne(CR0, medium_path);
     __ bind(medium_path_continuation);
     __ ld(rnew_zpointer, in_bytes(ZThreadLocalData::store_good_mask_offset()), R16_thread);
   }
@@ -294,7 +293,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   // Combined pointer bump and check if the buffer is disabled or full
   __ ld(R0, in_bytes(ZStoreBarrierBuffer::current_offset()), tmp1);
   __ addic_(R0, R0, -(int)sizeof(ZStoreBarrierEntry));
-  __ blt(CCR0, slow_path);
+  __ blt(CR0, slow_path);
   __ std(R0, in_bytes(ZStoreBarrierBuffer::current_offset()), tmp1);
 
   // Entry is at ZStoreBarrierBuffer (tmp1) + buffer_offset + scaled index (R0)
@@ -328,23 +327,23 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // Atomic accesses can get to the medium fast path because the value was a
     // raw null value. If it was not null, then there is no doubt we need to take a slow path.
     __ ld(tmp, ind_or_offs, ref_base);
-    __ cmpdi(CCR0, tmp, 0);
-    __ bne(CCR0, slow_path);
+    __ cmpdi(CR0, tmp, 0);
+    __ bne(CR0, slow_path);
 
     // If we get this far, we know there is a young raw null value in the field.
     // Try to self-heal null values for atomic accesses
     bool need_restore = false;
     if (!ind_or_offs.is_constant() || ind_or_offs.as_constant() != 0) {
-      __ add(ref_base, ind_or_offs, ref_base);
+      __ add(ref_base, ref_base, ind_or_offs);
       need_restore = true;
     }
     __ ld(R0, in_bytes(ZThreadLocalData::store_good_mask_offset()), R16_thread);
-    __ cmpxchgd(CCR0, tmp, (intptr_t)0, R0, ref_base,
+    __ cmpxchgd(CR0, tmp, (intptr_t)0, R0, ref_base,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, need_restore ? nullptr : &slow_path);
     if (need_restore) {
-      __ subf(ref_base, ind_or_offs, ref_base);
-      __ bne(CCR0, slow_path);
+      __ sub(ref_base, ref_base, ind_or_offs);
+      __ bne(CR0, slow_path);
     }
   } else {
     // A non-atomic relocatable object won't get to the medium fast path due to a
@@ -448,7 +447,7 @@ void ZBarrierSetAssembler::copy_load_at_fast(MacroAssembler* masm,
                                              Label& continuation) const {
   __ ldx(zpointer, addr);
   __ and_(R0, zpointer, load_bad_mask);
-  __ bne(CCR0, slow_path);
+  __ bne(CR0, slow_path);
   __ bind(continuation);
 }
 void ZBarrierSetAssembler::copy_load_at_slow(MacroAssembler* masm,
@@ -481,7 +480,7 @@ void ZBarrierSetAssembler::copy_store_at_fast(MacroAssembler* masm,
   if (!dest_uninitialized) {
     __ ldx(R0, addr);
     __ and_(R0, R0, store_bad_mask);
-    __ bne(CCR0, medium_path);
+    __ bne(CR0, medium_path);
     __ bind(continuation);
   }
   __ rldimi(zpointer, store_good_mask, 0, 64 - ZPointerLoadShift); // Replace color bits.
@@ -516,8 +515,8 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
 void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized) {
   const Register zpointer = R2, tmp = R9;
   Label done, loop, load_bad, load_good, store_bad, store_good;
-  __ cmpdi(CCR0, R5_ARG3, 0);
-  __ beq(CCR0, done);
+  __ cmpdi(CR0, R5_ARG3, 0);
+  __ beq(CR0, done);
   __ mtctr(R5_ARG3);
 
   __ align(32);
@@ -540,7 +539,7 @@ void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool
   const Register zpointer = R2, tmp = R9;
   Label done, loop, load_bad, load_good, store_bad, store_good;
   __ sldi_(R0, R5_ARG3, 3);
-  __ beq(CCR0, done);
+  __ beq(CR0, done);
   __ mtctr(R5_ARG3);
   // Point behind last elements and copy backwards.
   __ add(R3_ARG1, R3_ARG1, R0);
@@ -571,12 +570,12 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const c
   Label done, skip_uncolor;
   // Skip (colored) null.
   __ srdi_(R0, obj, ZPointerLoadShift);
-  __ beq(CCR0, done);
+  __ beq(CR0, done);
 
   // Check if ZAddressHeapBase << ZPointerLoadShift is set. If so, we need to uncolor.
   __ rldicl_(R0, obj, 64 - ZAddressHeapBaseShift - ZPointerLoadShift, 63);
   __ mr(R0, obj);
-  __ beq(CCR0, skip_uncolor);
+  __ beq(CR0, skip_uncolor);
   __ srdi(R0, obj, ZPointerLoadShift);
   __ bind(skip_uncolor);
 
@@ -595,7 +594,7 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, R
 
   // Test for tag
   __ andi_(tmp, obj, JNIHandles::tag_mask);
-  __ bne(CCR0, tagged);
+  __ bne(CR0, tagged);
 
   // Resolve local handle
   __ ld(dst, 0, obj);
@@ -606,22 +605,22 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, R
   // Test for weak tag
   __ andi_(tmp, obj, JNIHandles::TypeTag::weak_global);
   __ clrrdi(dst, obj, JNIHandles::tag_size); // Untag.
-  __ bne(CCR0, weak_tagged);
+  __ bne(CR0, weak_tagged);
 
   // Resolve global handle
   __ ld(dst, 0, dst);
-  __ ld(tmp, load_bad_mask.disp(), load_bad_mask.base());
+  __ ld(tmp, load_bad_mask);
   __ b(check_color);
 
   __ bind(weak_tagged);
 
   // Resolve weak handle
   __ ld(dst, 0, dst);
-  __ ld(tmp, mark_bad_mask.disp(), mark_bad_mask.base());
+  __ ld(tmp, mark_bad_mask);
 
   __ bind(check_color);
   __ and_(tmp, tmp, dst);
-  __ bne(CCR0, slowpath);
+  __ bne(CR0, slowpath);
 
   // Uncolor
   __ srdi(dst, dst, ZPointerLoadShift);
@@ -667,7 +666,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assembler* ce,
                                                     ZLoadBarrierStubC1* stub,
                                                     bool on_non_strong) const {
   check_color(ce, ref, on_non_strong);
-  __ bc_far_optimized(Assembler::bcondCRbiIs0, __ bi0(CCR0, Assembler::equal), *stub->entry());
+  __ bc_far_optimized(Assembler::bcondCRbiIs0, __ bi0(CR0, Assembler::equal), *stub->entry());
   z_uncolor(ce, ref);
   __ bind(*stub->continuation());
 }
@@ -785,7 +784,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
   const int nbytes_save = (MacroAssembler::num_volatile_regs + stack_parameters) * BytesPerWord;
 
   __ save_volatile_gprs(R1_SP, -nbytes_save);
-  __ save_LR_CR(R0);
+  __ save_LR(R0);
 
   // Load arguments back again from the stack.
   __ ld(R3_ARG1, -1 * BytesPerWord, R1_SP); // ref
@@ -799,7 +798,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
   __ mr(R0, R3_RET);
 
   __ pop_frame();
-  __ restore_LR_CR(R3_RET);
+  __ restore_LR(R3_RET);
   __ restore_volatile_gprs(R1_SP, -nbytes_save);
 
   __ blr();
@@ -815,7 +814,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
   __ save_volatile_gprs(R1_SP, -nbytes_save);
   __ mr(R3_ARG1, R0); // store address
 
-  __ save_LR_CR(R0);
+  __ save_LR(R0);
   __ push_frame_reg_args(nbytes_save, R0);
 
   if (self_healing) {
@@ -825,7 +824,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
   }
 
   __ pop_frame();
-  __ restore_LR_CR(R3_RET);
+  __ restore_LR(R3_RET);
   __ restore_volatile_gprs(R1_SP, -nbytes_save);
 
   __ blr();
@@ -837,132 +836,6 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
 #endif // COMPILER1
 
 #ifdef COMPILER2
-
-OptoReg::Name ZBarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) const {
-  if (!OptoReg::is_reg(opto_reg)) {
-    return OptoReg::Bad;
-  }
-
-  VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
-  if ((vm_reg->is_Register() || vm_reg ->is_FloatRegister()) && (opto_reg & 1) != 0) {
-    return OptoReg::Bad;
-  }
-
-  return opto_reg;
-}
-
-#define __ _masm->
-
-class ZSaveLiveRegisters {
-  MacroAssembler* _masm;
-  RegMask _reg_mask;
-  Register _result_reg;
-  int _frame_size;
-
- public:
-  ZSaveLiveRegisters(MacroAssembler *masm, ZBarrierStubC2 *stub)
-    : _masm(masm), _reg_mask(stub->live()), _result_reg(stub->result()) {
-
-    const int register_save_size = iterate_over_register_mask(ACTION_COUNT_ONLY) * BytesPerWord;
-    _frame_size = align_up(register_save_size, frame::alignment_in_bytes)
-                  + frame::native_abi_reg_args_size;
-
-    __ save_LR_CR(R0);
-    __ push_frame(_frame_size, R0);
-
-    iterate_over_register_mask(ACTION_SAVE, _frame_size);
-  }
-
-  ~ZSaveLiveRegisters() {
-    iterate_over_register_mask(ACTION_RESTORE, _frame_size);
-
-    __ addi(R1_SP, R1_SP, _frame_size);
-    __ restore_LR_CR(R0);
-  }
-
- private:
-  enum IterationAction : int {
-    ACTION_SAVE,
-    ACTION_RESTORE,
-    ACTION_COUNT_ONLY
-  };
-
-  int iterate_over_register_mask(IterationAction action, int offset = 0) {
-    int reg_save_index = 0;
-    RegMaskIterator live_regs_iterator(_reg_mask);
-
-    while(live_regs_iterator.has_next()) {
-      const OptoReg::Name opto_reg = live_regs_iterator.next();
-
-      // Filter out stack slots (spilled registers, i.e., stack-allocated registers).
-      if (!OptoReg::is_reg(opto_reg)) {
-        continue;
-      }
-
-      const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
-      if (vm_reg->is_Register()) {
-        Register std_reg = vm_reg->as_Register();
-
-        // '_result_reg' will hold the end result of the operation. Its content must thus not be preserved.
-        if (std_reg == _result_reg) {
-          continue;
-        }
-
-        if (std_reg->encoding() >= R2->encoding() && std_reg->encoding() <= R12->encoding()) {
-          reg_save_index++;
-
-          if (action == ACTION_SAVE) {
-            _masm->std(std_reg, offset - reg_save_index * BytesPerWord, R1_SP);
-          } else if (action == ACTION_RESTORE) {
-            _masm->ld(std_reg, offset - reg_save_index * BytesPerWord, R1_SP);
-          } else {
-            assert(action == ACTION_COUNT_ONLY, "Sanity");
-          }
-        }
-      } else if (vm_reg->is_FloatRegister()) {
-        FloatRegister fp_reg = vm_reg->as_FloatRegister();
-        if (fp_reg->encoding() >= F0->encoding() && fp_reg->encoding() <= F13->encoding()) {
-          reg_save_index++;
-
-          if (action == ACTION_SAVE) {
-            _masm->stfd(fp_reg, offset - reg_save_index * BytesPerWord, R1_SP);
-          } else if (action == ACTION_RESTORE) {
-            _masm->lfd(fp_reg, offset - reg_save_index * BytesPerWord, R1_SP);
-          } else {
-            assert(action == ACTION_COUNT_ONLY, "Sanity");
-          }
-        }
-      } else if (vm_reg->is_ConditionRegister()) {
-        // NOP. Conditions registers are covered by save_LR_CR
-      } else if (vm_reg->is_VectorSRegister()) {
-        assert(SuperwordUseVSX, "or should not reach here");
-        VectorSRegister vs_reg = vm_reg->as_VectorSRegister();
-        if (vs_reg->encoding() >= VSR32->encoding() && vs_reg->encoding() <= VSR51->encoding()) {
-          reg_save_index += 2;
-
-          Register spill_addr = R0;
-          if (action == ACTION_SAVE) {
-            _masm->addi(spill_addr, R1_SP, offset - reg_save_index * BytesPerWord);
-            _masm->stxvd2x(vs_reg, spill_addr);
-          } else if (action == ACTION_RESTORE) {
-            _masm->addi(spill_addr, R1_SP, offset - reg_save_index * BytesPerWord);
-            _masm->lxvd2x(vs_reg, spill_addr);
-          } else {
-            assert(action == ACTION_COUNT_ONLY, "Sanity");
-          }
-        }
-      } else {
-        if (vm_reg->is_SpecialRegister()) {
-          fatal("Special registers are unsupported. Found register %s", vm_reg->name());
-        } else {
-          fatal("Register type is not known");
-        }
-      }
-    }
-
-    return reg_save_index;
-  }
-};
 
 #undef __
 #define __ _masm->
@@ -1024,7 +897,7 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   assert_different_registers(ref, ref_addr.base());
 
   {
-    ZSaveLiveRegisters save_live_registers(masm, stub);
+    SaveLiveRegisters save_live_registers(masm, stub);
     ZSetupArguments setup_arguments(masm, stub);
 
     __ call_VM_leaf(stub->slow_path());
@@ -1063,12 +936,14 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
 
   __ bind(slow);
   {
-    ZSaveLiveRegisters save_live_registers(masm, stub);
+    SaveLiveRegisters save_live_registers(masm, stub);
     __ add(R3_ARG1, ind_or_offs, rbase);
     if (stub->is_native()) {
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr(), R3_ARG1);
     } else if (stub->is_atomic()) {
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr(), R3_ARG1);
+    } else if (stub->is_nokeepalive()) {
+      __ call_VM_leaf(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr(), R3_ARG1);
     } else {
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), R3_ARG1);
     }

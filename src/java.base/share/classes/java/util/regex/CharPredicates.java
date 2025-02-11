@@ -166,7 +166,7 @@ class CharPredicates {
                          JOIN_CONTROL());
     }
 
-    /////////////////////////////////////////////////////////////////////////////
+    //---------------------------------------------------------------------------
 
     private static CharPredicate getPosixPredicate(String name, boolean caseIns) {
         return switch (name) {
@@ -234,7 +234,7 @@ class CharPredicates {
         return getPosixPredicate(propName.toUpperCase(Locale.ENGLISH), caseIns);
     }
 
-    /////////////////////////////////////////////////////////////////////////////
+    //---------------------------------------------------------------------------
 
     /**
      * Returns a predicate matching all characters belong to a named
@@ -411,7 +411,7 @@ class CharPredicates {
         return (BmpCharPredicate)ch -> ch < 128 && ASCII.isType(ch, ctype);
     }
 
-    /////////////////////////////////////////////////////////////////////////////
+    //---------------------------------------------------------------------------
 
     /**
      * Posix ASCII variants, not in the lookup map
@@ -426,7 +426,7 @@ class CharPredicates {
         return ch -> ch < 128 && ASCII.isSpace(ch);
     }
 
-    /////////////////////////////////////////////////////////////////////////////
+    //---------------------------------------------------------------------------
 
     /**
      * Emoji related binary properties

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,7 @@ public /*@ spec_bigint_math @*/ class FDBigInteger {
      @ requires (\forall int i; 0 <= i && i < nDigits; '0' <= digits[i] && digits[i] <= '9');
      @ ensures this.value() == \old(lValue * pow10(nDigits - kDigits) + (\sum int i; kDigits <= i && i < nDigits; (digits[i] - '0') * pow10(nDigits - i - 1)));
      @*/
-    public FDBigInteger(long lValue, char[] digits, int kDigits, int nDigits) {
+    public FDBigInteger(long lValue, byte[] digits, int kDigits, int nDigits) {
         int n = Math.max((nDigits + 8) / 9, 2);        // estimate size needed.
         data = new int[n];      // allocate enough space
         data[0] = (int) lValue;    // starting value

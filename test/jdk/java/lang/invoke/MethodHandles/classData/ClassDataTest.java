@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8230501
  * @library /test/lib
- * @enablePreview
  * @run testng/othervm ClassDataTest
  */
 
@@ -390,8 +389,8 @@ public class ClassDataTest {
             MethodTypeDesc mt = MethodTypeDesc.of(returnDesc);
             cw = cw.andThen(clb -> {
                 clb.withMethodBody("classData", mt, accessFlags, cob -> {
-                    cob.constantInstruction(DynamicConstantDesc.ofNamed(BSM_CLASS_DATA, DEFAULT_NAME, returnDesc));
-                    cob.returnInstruction(TypeKind.from(returnType));
+                    cob.loadConstant(DynamicConstantDesc.ofNamed(BSM_CLASS_DATA, DEFAULT_NAME, returnDesc));
+                    cob.return_(TypeKind.from(returnType));
                 });
             });
             return this;
@@ -405,8 +404,8 @@ public class ClassDataTest {
             MethodTypeDesc mt = MethodTypeDesc.of(returnDesc);
             cw = cw.andThen(clb -> {
                 clb.withMethodBody("classData", mt, accessFlags, cob -> {
-                    cob.constantInstruction(DynamicConstantDesc.ofNamed(BSM_CLASS_DATA_AT, DEFAULT_NAME, returnDesc, index));
-                    cob.returnInstruction(TypeKind.from(returnType));
+                    cob.loadConstant(DynamicConstantDesc.ofNamed(BSM_CLASS_DATA_AT, DEFAULT_NAME, returnDesc, index));
+                    cob.return_(TypeKind.from(returnType));
                 });
             });
             return this;
@@ -417,8 +416,8 @@ public class ClassDataTest {
             MethodTypeDesc mt = MethodTypeDesc.of(returnDesc);
             cw = cw.andThen(clb -> {
                 clb.withMethodBody(name, mt, accessFlags, cob -> {
-                    cob.constantInstruction(dynamic);
-                    cob.returnInstruction(TypeKind.from(returnType));
+                    cob.loadConstant(dynamic);
+                    cob.return_(TypeKind.from(returnType));
                 });
             });
             return this;

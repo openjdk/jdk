@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @bug 8319187
  * @summary Interoperability tests with eMudhra emSign Root CA G2 CS root
  * @build ValidatePathWithParams
- * @run main/othervm -Djava.security.debug=certpath EmSignRootG2CA OCSP
- * @run main/othervm -Djava.security.debug=certpath EmSignRootG2CA CRL
+ * @run main/othervm/manual -Djava.security.debug=certpath EmSignRootG2CA OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath EmSignRootG2CA CRL
  */
 
 public class EmSignRootG2CA {

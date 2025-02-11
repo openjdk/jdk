@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -146,7 +145,7 @@ private:
 
   oop load_oop(oop* p) {
     const oop o = Atomic::load(p);
-    assert_is_valid(to_zaddress(o));
+    check_is_valid_zaddress(o);
     return RawAccess<>::oop_load(p);
   }
 
@@ -204,7 +203,7 @@ private:
     assert(ZCollectedHeap::heap()->is_in(p), "Should be in heap");
 
     if (VisitReferents) {
-      return HeapAccess<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>::oop_load_at(_base, _base->field_offset(p));
+      return HeapAccess<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>::oop_load_at(_base, (ptrdiff_t)_base->field_offset(p));
     }
 
     return HeapAccess<AS_NO_KEEPALIVE>::oop_load(p);
@@ -375,16 +374,16 @@ public:
 
 class ZHeapIteratorThreadClosure : public ThreadClosure {
 private:
-  OopClosure* const        _cl;
-  CodeBlobToNMethodClosure _cb_cl;
+  OopClosure* const     _cl;
+  NMethodClosure* const _nm_cl;
 
 public:
   ZHeapIteratorThreadClosure(OopClosure* cl, NMethodClosure* nm_cl)
     : _cl(cl),
-      _cb_cl(nm_cl) {}
+      _nm_cl(nm_cl) {}
 
   void do_thread(Thread* thread) {
-    thread->oops_do(_cl, &_cb_cl);
+    thread->oops_do(_cl, _nm_cl);
   }
 };
 
@@ -447,7 +446,7 @@ void ZHeapIterator::follow_array_chunk(const ZHeapIteratorContext& context, cons
   const objArrayOop obj = objArrayOop(array.obj());
   const int length = obj->length();
   const int start = array.index();
-  const int stride = MIN2<int>(length - start, ObjArrayMarkingStride);
+  const int stride = MIN2<int>(length - start, (int)ObjArrayMarkingStride);
   const int end = start + stride;
 
   // Push remaining array chunk first

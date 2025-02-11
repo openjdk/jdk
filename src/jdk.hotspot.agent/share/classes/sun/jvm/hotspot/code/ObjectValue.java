@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@ import sun.jvm.hotspot.utilities.*;
 /** An ObjectValue describes an object eliminated by escape analysis. */
 
 public class ObjectValue extends ScopeValue {
-  private int              id;
+  protected final int      id;
+  private boolean          isRoot;
   private ScopeValue       klass;
   private List<ScopeValue> fieldsValue;
 
@@ -61,8 +62,9 @@ public class ObjectValue extends ScopeValue {
   /** Serialization of debugging information */
 
   void readObject(DebugInfoReadStream stream) {
+    isRoot = stream.readBoolean();
     klass = readFrom(stream);
-    Assert.that(klass.isConstantOop(), "should be constant klass oop");
+    Assert.that(klass.isConstantOop(), "should be constant klass oop: " + klass);
     int length = stream.readInt();
     for (int i = 0; i < length; i++) {
       ScopeValue val = readFrom(stream);

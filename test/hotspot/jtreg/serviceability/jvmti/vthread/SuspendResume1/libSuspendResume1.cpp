@@ -138,7 +138,7 @@ check_suspended_state(JNIEnv* jni, jthread thread, int thr_idx, char* tname, con
 
       LOG("## Agent: %s:  virtual thread of carrier thread has state: %s (%d)\n",
           func_name, TranslateState(state), (int)state);
-      fflush(0);
+      fflush(nullptr);
     }
     set_agent_fail_status();
     fatal(jni, "check_resumed_state: expected SUSPENDED flag in thread state");
@@ -169,7 +169,7 @@ check_resumed_state(JNIEnv* jni, jthread thread, int thr_idx, char* tname, const
 
       LOG("## Agent: %s:  virtual thread of carrier thread has state: %s (%d)\n",
           func_name, TranslateState(state), (int)state);
-      fflush(0);
+      fflush(nullptr);
     }
     set_agent_fail_status();
     fatal(jni, "check_resumed_state: NOT expected SUSPENDED flag in thread state");
@@ -210,7 +210,7 @@ test_thread_resume(JNIEnv* jni, jthread thread, int thr_idx, char* tname) {
 
     LOG("## Agent: test_thread_resume:  virtual thread of carrier thread has state: %s (%d)\n",
         TranslateState(state), (int)state);
-    fflush(0);
+    fflush(nullptr);
   }
   check_jvmti_status(jni, err, "test_thread_resume: error in JVMTI ResumeThread");
 

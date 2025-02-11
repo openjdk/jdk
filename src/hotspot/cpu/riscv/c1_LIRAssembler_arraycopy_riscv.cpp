@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -194,7 +193,10 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
   // We don't know the array types are compatible
   if (basic_type != T_OBJECT) {
     // Simple test for basic type arrays
-    if (UseCompressedClassPointers) {
+    if (UseCompactObjectHeaders) {
+      __ load_narrow_klass_compact(tmp, src);
+      __ load_narrow_klass_compact(t0, dst);
+    } else if (UseCompressedClassPointers) {
       __ lwu(tmp, Address(src, oopDesc::klass_offset_in_bytes()));
       __ lwu(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
     } else {
@@ -208,7 +210,7 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
     Label cont, slow;
 
 #define PUSH(r1, r2)                                     \
-    __ addi(sp, sp, -2 * wordSize);                      \
+    __ subi(sp, sp, 2 * wordSize);                       \
     __ sd(r1, Address(sp, 1 * wordSize));                \
     __ sd(r2, Address(sp, 0));
 
@@ -223,7 +225,7 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
     __ check_klass_subtype_fast_path(src, dst, tmp, &cont, &slow, nullptr);
 
     PUSH(src, dst);
-    __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+    __ far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
     POP(src, dst);
     __ bnez(dst, cont);
 
@@ -244,7 +246,6 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
 void LIR_Assembler::arraycopy_assert(Register src, Register dst, Register tmp, ciArrayKlass *default_type, int flags) {
   assert(default_type != nullptr, "null default_type!");
   BasicType basic_type = default_type->element_type()->basic_type();
-
   if (basic_type == T_ARRAY) { basic_type = T_OBJECT; }
   if (basic_type != T_OBJECT || !(flags & LIR_OpArrayCopy::type_check)) {
     // Sanity check the known type with the incoming class.  For the
@@ -261,25 +262,10 @@ void LIR_Assembler::arraycopy_assert(Register src, Register dst, Register tmp, c
     }
 
     if (basic_type != T_OBJECT) {
-      if (UseCompressedClassPointers) {
-        __ lwu(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
-      } else {
-        __ ld(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
-      }
-      __ bne(tmp, t0, halt);
-      if (UseCompressedClassPointers) {
-        __ lwu(t0, Address(src, oopDesc::klass_offset_in_bytes()));
-      } else {
-        __ ld(t0, Address(src, oopDesc::klass_offset_in_bytes()));
-      }
-      __ beq(tmp, t0, known_ok);
+      __ cmp_klass_compressed(dst, tmp, t0, halt, false);
+      __ cmp_klass_compressed(src, tmp, t0, known_ok, true);
     } else {
-      if (UseCompressedClassPointers) {
-        __ lwu(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
-      } else {
-        __ ld(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
-      }
-      __ beq(tmp, t0, known_ok);
+      __ cmp_klass_compressed(dst, tmp, t0, known_ok, true);
       __ beq(src, dst, known_ok);
     }
     __ bind(halt);
@@ -333,15 +319,16 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   const char *name = nullptr;
   address entry = StubRoutines::select_arraycopy_function(basic_type, aligned, disjoint, name, false);
 
-  CodeBlob *cb = CodeCache::find_blob(entry);
-  if (cb != nullptr) {
+  if (CodeCache::contains(entry)) {
     __ far_call(RuntimeAddress(entry));
   } else {
     const int args_num = 3;
     __ call_VM_leaf(entry, args_num);
   }
 
-  __ bind(*stub->continuation());
+  if (stub != nullptr) {
+    __ bind(*stub->continuation());
+  }
 }
 
 
@@ -349,10 +336,10 @@ void LIR_Assembler::arraycopy_prepare_params(Register src, Register src_pos, Reg
                                              Register dst, Register dst_pos, BasicType basic_type) {
   int scale = array_element_size(basic_type);
   __ shadd(c_rarg0, src_pos, src, t0, scale);
-  __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(basic_type));
+  __ addi(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(basic_type));
   assert_different_registers(c_rarg0, dst, dst_pos, length);
   __ shadd(c_rarg1, dst_pos, dst, t0, scale);
-  __ add(c_rarg1, c_rarg1, arrayOopDesc::base_offset_in_bytes(basic_type));
+  __ addi(c_rarg1, c_rarg1, arrayOopDesc::base_offset_in_bytes(basic_type));
   assert_different_registers(c_rarg1, dst, length);
   __ mv(c_rarg2, length);
   assert_different_registers(c_rarg2, dst);

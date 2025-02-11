@@ -94,8 +94,6 @@ import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 
-import sun.reflect.misc.ReflectUtil;
-
 /**
  * A text component to edit various kinds of content.
  * You can find how-to information and examples of using editor panes in
@@ -1251,7 +1249,6 @@ public class JEditorPane extends JTextComponent {
             try {
                 Class<?> c;
                 if (loader != null) {
-                    ReflectUtil.checkPackageAccess(classname);
                     c = loader.loadClass(classname);
                 } else {
                     // Will only happen if developer has invoked

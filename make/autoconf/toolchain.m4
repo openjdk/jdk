@@ -23,14 +23,14 @@
 # questions.
 #
 
-########################################################################
+################################################################################
 # This file is responsible for detecting, verifying and setting up the
 # toolchain, i.e. the compiler, linker and related utilities. It will setup
 # proper paths to the binaries, but it will not setup any flags.
 #
 # The binaries used is determined by the toolchain type, which is the family of
 # compilers and related tools that are used.
-########################################################################
+################################################################################
 
 m4_include([toolchain_microsoft.m4])
 
@@ -174,40 +174,23 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
     LIBRARY_PREFIX=
     SHARED_LIBRARY_SUFFIX='.dll'
     STATIC_LIBRARY_SUFFIX='.lib'
-    SHARED_LIBRARY='[$]1.dll'
-    STATIC_LIBRARY='[$]1.lib'
     OBJ_SUFFIX='.obj'
     EXECUTABLE_SUFFIX='.exe'
   else
     LIBRARY_PREFIX=lib
-    SHARED_LIBRARY_SUFFIX='.so'
+    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      SHARED_LIBRARY_SUFFIX='.dylib'
+    else
+      SHARED_LIBRARY_SUFFIX='.so'
+    fi
     STATIC_LIBRARY_SUFFIX='.a'
-    SHARED_LIBRARY='lib[$]1.so'
-    STATIC_LIBRARY='lib[$]1.a'
     OBJ_SUFFIX='.o'
     EXECUTABLE_SUFFIX=''
-    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      # For full static builds, we're overloading the SHARED_LIBRARY
-      # variables in order to limit the amount of changes required.
-      # It would be better to remove SHARED and just use LIBRARY and
-      # LIBRARY_SUFFIX for libraries that can be built either
-      # shared or static and use STATIC_* for libraries that are
-      # always built statically.
-      if test "x$STATIC_BUILD" = xtrue; then
-        SHARED_LIBRARY='lib[$]1.a'
-        SHARED_LIBRARY_SUFFIX='.a'
-      else
-        SHARED_LIBRARY='lib[$]1.dylib'
-        SHARED_LIBRARY_SUFFIX='.dylib'
-      fi
-    fi
   fi
 
   AC_SUBST(LIBRARY_PREFIX)
   AC_SUBST(SHARED_LIBRARY_SUFFIX)
   AC_SUBST(STATIC_LIBRARY_SUFFIX)
-  AC_SUBST(SHARED_LIBRARY)
-  AC_SUBST(STATIC_LIBRARY)
   AC_SUBST(OBJ_SUFFIX)
   AC_SUBST(EXECUTABLE_SUFFIX)
 ])
@@ -324,7 +307,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
 [
   # Restore old path, except for the microsoft toolchain, which requires the
   # toolchain path to remain in place. Otherwise the compiler will not work in
-  # some siutations in later configure checks.
+  # some situations in later configure checks.
   if test "x$TOOLCHAIN_TYPE" != "xmicrosoft"; then
     PATH="$OLD_PATH"
   fi
@@ -333,10 +316,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
   # This is necessary since AC_PROG_CC defaults CFLAGS to "-g -O2"
   CFLAGS="$ORG_CFLAGS"
   CXXFLAGS="$ORG_CXXFLAGS"
-
-  # filter out some unwanted additions autoconf may add to CXX; we saw this on macOS with autoconf 2.72
-  UTIL_GET_NON_MATCHING_VALUES(cxx_filtered, $CXX, -std=c++11 -std=gnu++11)
-  CXX="$cxx_filtered"
 ])
 
 # Check if a compiler is of the toolchain type we expect, and save the version
@@ -375,6 +354,11 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     #     Copyright (C) 2013 Free Software Foundation, Inc.
     #     This is free software; see the source for copying conditions.  There is NO
     #     warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    # or look like
+    #     gcc (GCC) 10.2.1 20200825 (Alibaba 10.2.1-3.8 2.32)
+    #     Copyright (C) 2020 Free Software Foundation, Inc.
+    #     This is free software; see the source for copying conditions.  There is NO
+    #     warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
     COMPILER_VERSION_OUTPUT=`$COMPILER --version 2>&1`
     # Check that this is likely to be GCC.
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Free Software Foundation" > /dev/null
@@ -388,7 +372,8 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT | \
         $SED -e 's/ *Copyright .*//'`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.* \(@<:@1-9@:>@<:@0-9@:>@*\.@<:@0-9.@:>@*\)@<:@^0-9.@:>@.*$/\1/'`
+        $AWK -F ')' '{print [$]2}' | \
+        $AWK '{print [$]1}'`
   elif test  "x$TOOLCHAIN_TYPE" = xclang; then
     # clang --version output typically looks like
     #    Apple clang version 15.0.0 (clang-1500.3.9.4)
@@ -460,6 +445,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
         AC_MSG_ERROR([User supplied compiler $1=[$]$1 does not exist])
       fi
     fi
+    $1_IS_USER_SUPPLIED=true
   else
     # No user supplied value. Locate compiler ourselves.
 
@@ -477,6 +463,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
       HELP_MSG_MISSING_DEPENDENCY([devkit])
       AC_MSG_ERROR([Could not find a $COMPILER_NAME compiler. $HELP_MSG])
     fi
+    $1_IS_USER_SUPPLIED=false
   fi
 
   # Now we have a compiler binary in $1. Make sure it's okay.
@@ -695,6 +682,9 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
       test_metal=`$METAL --version 2>&1`
       if test $? -ne 0; then
         AC_MSG_RESULT([no])
+        AC_MSG_NOTICE([A full XCode is required to build the JDK (not only command line tools)])
+        AC_MSG_NOTICE([If you have XCode installed, you might need to reset the Xcode active developer directory])
+        AC_MSG_NOTICE([using 'sudo xcode-select -r'])
         AC_MSG_ERROR([XCode tool 'metal' neither found in path nor with xcrun])
       else
         AC_MSG_RESULT([yes, will be using '$METAL'])
@@ -953,11 +943,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
   # Setup hotspot lecagy names for toolchains
   HOTSPOT_TOOLCHAIN_TYPE=$TOOLCHAIN_TYPE
   if test "x$TOOLCHAIN_TYPE" = xclang; then
-    if test "x$OPENJDK_TARGET_OS" = xaix; then
-      HOTSPOT_TOOLCHAIN_TYPE=xlc
-    else
-      HOTSPOT_TOOLCHAIN_TYPE=gcc
-    fi
+    HOTSPOT_TOOLCHAIN_TYPE=gcc
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     HOTSPOT_TOOLCHAIN_TYPE=visCPP
   fi

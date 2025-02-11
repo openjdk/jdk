@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/mallocLimit.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/os.hpp"
-#include "services/mallocLimit.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -42,9 +41,9 @@ static bool compare_limits(const malloclimit* a, const malloclimit* b) {
 
 static bool compare_sets(const MallocLimitSet* a, const MallocLimitSet* b) {
   if (compare_limits(a->global_limit(), b->global_limit())) {
-    for (int i = 0; i < mt_number_of_types; i++) {
-      if (!compare_limits(a->category_limit(NMTUtil::index_to_flag(i)),
-                          b->category_limit(NMTUtil::index_to_flag(i)))) {
+    for (int i = 0; i < mt_number_of_tags; i++) {
+      if (!compare_limits(a->category_limit(NMTUtil::index_to_tag(i)),
+                          b->category_limit(NMTUtil::index_to_tag(i)))) {
         return false;
       }
     }
@@ -96,11 +95,11 @@ TEST(NMT, MallocLimitPerCategory) {
 TEST(NMT, MallocLimitCategoryEnumNames) {
   MallocLimitSet expected;
   stringStream option;
-  for (int i = 0; i < mt_number_of_types; i++) {
-    MEMFLAGS f = NMTUtil::index_to_flag(i);
-    if (f != MEMFLAGS::mtNone) {
-      expected.set_category_limit(f, (i + 1) * M, MallocLimitMode::trigger_fatal);
-      option.print("%s%s:%dM", (i > 0 ? "," : ""), NMTUtil::flag_to_enum_name(f), i + 1);
+  for (int i = 0; i < mt_number_of_tags; i++) {
+    MemTag mem_tag = NMTUtil::index_to_tag(i);
+    if (mem_tag != MemTag::mtNone) {
+      expected.set_category_limit(mem_tag, (i + 1) * M, MallocLimitMode::trigger_fatal);
+      option.print("%s%s:%dM", (i > 0 ? "," : ""), NMTUtil::tag_to_enum_name(mem_tag), i + 1);
     }
   }
   test(option.base(), expected);
@@ -109,11 +108,11 @@ TEST(NMT, MallocLimitCategoryEnumNames) {
 TEST(NMT, MallocLimitAllCategoriesHaveHumanReadableNames) {
   MallocLimitSet expected;
   stringStream option;
-  for (int i = 0; i < mt_number_of_types; i++) {
-    MEMFLAGS f = NMTUtil::index_to_flag(i);
-    if (f != MEMFLAGS::mtNone) {
-      expected.set_category_limit(f, (i + 1) * M, MallocLimitMode::trigger_fatal);
-      option.print("%s%s:%dM", (i > 0 ? "," : ""), NMTUtil::flag_to_name(f), i + 1);
+  for (int i = 0; i < mt_number_of_tags; i++) {
+    MemTag mem_tag = NMTUtil::index_to_tag(i);
+    if (mem_tag != MemTag::mtNone) {
+      expected.set_category_limit(mem_tag, (i + 1) * M, MallocLimitMode::trigger_fatal);
+      option.print("%s%s:%dM", (i > 0 ? "," : ""), NMTUtil::tag_to_name(mem_tag), i + 1);
     }
   }
   test(option.base(), expected);

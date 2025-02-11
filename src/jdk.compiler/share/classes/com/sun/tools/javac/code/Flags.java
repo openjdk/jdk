@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ public class Flags {
     public static final int ACC_VARARGS  = 0x0080;
     public static final int ACC_MODULE   = 0x8000;
 
-    /*****************************************
+    /* ***************************************
      * Internal compiler flags (no bits in the lower 16).
      *****************************************/
 
@@ -278,14 +278,19 @@ public class Flags {
      */
     public static final long THROWS = 1L<<47;
 
-    /**
+    /*
      * Currently available: Bit 48.
      */
 
     /**
      * Flag that marks a synthetic method body for a lambda expression
      */
-    public static final long LAMBDA_METHOD = 1L<<49;
+    public static final long LAMBDA_METHOD = 1L<<49; //MethodSymbols only
+
+    /**
+     * Flag that marks a synthetic local capture field in a local/anon class
+     */
+    public static final long LOCAL_CAPTURE_FIELD = 1L<<49; //VarSymbols only
 
     /**
      * Flag to control recursion in TransTypes
@@ -393,6 +398,11 @@ public class Flags {
      * Flag to indicate restricted method declaration.
      */
     public static final long RESTRICTED = 1L<<62; // MethodSymbols
+
+    /**
+     * Flag to indicate type annotations have been queued for field initializers.
+     */
+    public static final long FIELD_INIT_TYPE_ANNOTATIONS_QUEUED = 1L<<53; // VarSymbols
 
     /**
      * Flag to indicate that the class/interface was declared with the non-sealed modifier.

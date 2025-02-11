@@ -27,8 +27,6 @@ package sun.security.jca;
 
 import java.util.*;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Provider.Service;
 import java.security.Security;
@@ -87,15 +85,8 @@ public final class ProviderList {
 
     // construct a ProviderList from the security properties
     // (static provider configuration in the java.security file)
-    @SuppressWarnings("removal")
     static ProviderList fromSecurityProperties() {
-        // doPrivileged() because of Security.getProperty()
-        return AccessController.doPrivileged(
-                        new PrivilegedAction<ProviderList>() {
-            public ProviderList run() {
-                return new ProviderList();
-            }
-        });
+        return new ProviderList();
     }
 
     public static ProviderList add(ProviderList providerList, Provider p) {
@@ -369,17 +360,19 @@ public final class ProviderList {
         int i;
 
         // Preferred provider list
-        if (preferredPropList != null &&
-                (pList = preferredPropList.getAll(type, name)) != null) {
+        if (preferredPropList != null) {
+            pList = preferredPropList.getAll(type, name);
             for (i = 0; i < pList.size(); i++) {
                 Provider p = getProvider(pList.get(i).provider);
+                if (p == null) {
+                    continue;
+                }
                 Service s = p.getService(type, name);
                 if (s != null) {
                     return s;
                 }
             }
         }
-
         for (i = 0; i < configs.length; i++) {
             Provider p = getProvider(i);
             Service s = p.getService(type, name);

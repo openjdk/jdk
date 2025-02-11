@@ -72,11 +72,9 @@ static void freeCEN(jzfile *);
 static jint INITIAL_META_COUNT = 2;   /* initial number of entries in meta name array */
 
 /*
- * Declare library specific JNI_Onload entry if static build
+ * Declare library specific JNI_Onload entry
  */
-#ifdef STATIC_BUILD
 DEF_STATIC_JNI_OnLoad
-#endif
 
 /*
  * The ZFILE_* functions exist to provide some platform-independence with
@@ -437,7 +435,7 @@ hash(const char *s)
 static unsigned int
 hashN(const char *s, int length)
 {
-    int h = 0;
+    unsigned int h = 0;
     while (length-- > 0)
         h = 31*h + *s++;
     return h;

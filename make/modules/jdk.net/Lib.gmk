@@ -32,12 +32,9 @@ include LibCommon.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBEXTNET, \
     NAME := extnet, \
     OPTIMIZATION := LOW, \
-    JDK_LIBS_unix := -ljava, \
-    JDK_LIBS_linux := -ljvm, \
-    JDK_LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
+    EXTRA_HEADER_DIRS := java.base:libjvm, \
+    JDK_LIBS := java.base:libjava, \
     LIBS_windows := ws2_32.lib, \
 ))
-
-$(BUILD_LIBEXTNET): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBEXTNET)

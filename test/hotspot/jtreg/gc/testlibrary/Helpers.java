@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class Helpers {
      * @param className class name
      * @param root      root directory - where .java and .class files will be put
      * @param source    class source
-     * @throws IOException if cannot write file to specified directory
+     * @throws Exception if cannot write file to specified directory
      */
     public static void compileClass(String className, Path root, String source) throws Exception {
         Path sourceFile = root.resolve(className + ".java");

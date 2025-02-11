@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8186046
  * @summary Test nested dynamic constant declarations that are recursive
  * @compile CondyNestedTest_Code.jcod
- * @enablePreview
  * @run testng CondyNestedTest
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyNestedTest
  */
@@ -138,7 +137,7 @@ public class CondyNestedTest {
 //                                .withCode(codeBuilder -> {
 //                                            codeBuilder
 //                                                    .aload(2)
-//                                                    .instanceof_(ConstantDescs.CD_MethodType)
+//                                                    .instanceOf(ConstantDescs.CD_MethodType)
 //                                                    .iconst_0();
 //                                            Label condy = codeBuilder.newLabel();
 //                                            codeBuilder

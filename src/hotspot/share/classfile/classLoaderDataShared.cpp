@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -102,7 +101,7 @@ void ArchivedClassLoaderData::init_archived_entries(ClassLoaderData* loader_data
 }
 
 void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entries, bool do_oops) {
-  assert(UseSharedSpaces, "must be");
+  assert(CDSConfig::is_using_archive(), "must be");
   assert_valid(loader_data);
   if (_modules != nullptr) { // Could be null if we have archived no modules for platform/system loaders
     ModuleEntryTable* modules = loader_data->modules();
@@ -120,7 +119,7 @@ void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entr
 }
 
 void ArchivedClassLoaderData::clear_archived_oops() {
-  assert(UseSharedSpaces, "must be");
+  assert(CDSConfig::is_using_archive(), "must be");
   if (_modules != nullptr) {
     for (int i = 0; i < _modules->length(); i++) {
       _modules->at(i)->clear_archived_oops();

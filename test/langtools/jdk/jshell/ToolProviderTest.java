@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import java.util.ServiceLoader;
+import java.util.function.Consumer;
 import javax.tools.Tool;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertTrue;
@@ -56,6 +57,13 @@ public class ToolProviderTest extends StartOptionTest {
                 (expectedConsole    == null? "" : expectedConsole) +
                 (expectedUserOutput == null? "" : expectedUserOutput),
                 null, expectedError, null, args);
+    }
+
+    @Override
+    protected void startCheckUserOutput(Consumer<String> checkUserOutput, String... args) {
+        runShell(args);
+        check(cmdout, checkUserOutput, "userout");
+        check(usererr, null, "usererr");
     }
 
     @Override

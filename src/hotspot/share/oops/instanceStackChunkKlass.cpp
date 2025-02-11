@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/vmClasses.hpp"
@@ -53,7 +52,7 @@ void InstanceStackChunkKlass::serialize_offsets(SerializeClosure* f) {
 #endif
 
 InstanceStackChunkKlass::InstanceStackChunkKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
 InstanceStackChunkKlass::InstanceStackChunkKlass(const ClassFileParser& parser)
@@ -163,6 +162,23 @@ void InstanceStackChunkKlass::oop_oop_iterate_stack_slow(stackChunkOop chunk, Oo
   chunk->iterate_stack(&frame_closure);
 }
 
+template <typename OopT>
+void InstanceStackChunkKlass::oop_oop_iterate_lockstack(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr) {
+  if (LockingMode != LM_LIGHTWEIGHT) {
+    return;
+  }
+
+  StackChunkOopIterateFilterClosure<OopIterateClosure> cl(closure, mr);
+  if (chunk->has_bitmap()) {
+    chunk->iterate_lockstack<OopT>(&cl);
+  } else {
+    chunk->iterate_lockstack<oop>(&cl);
+  }
+}
+
+template void InstanceStackChunkKlass::oop_oop_iterate_lockstack<oop>(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr);
+template void InstanceStackChunkKlass::oop_oop_iterate_lockstack<narrowOop>(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr);
+
 #ifdef ASSERT
 
 class DescribeStackChunkClosure {
@@ -224,9 +240,9 @@ public:
     frame f = fs.to_frame();
     _st->print_cr("-- frame sp: " PTR_FORMAT " interpreted: %d size: %d argsize: %d",
                   p2i(fs.sp()), fs.is_interpreted(), f.frame_size(),
-                  fs.is_interpreted() ? 0 : f.compiled_frame_stack_argsize());
+                  fs.is_interpreted() || fs.is_stub() ? 0 : f.compiled_frame_stack_argsize());
   #ifdef ASSERT
-    f.print_value_on(_st, nullptr);
+    f.print_value_on(_st);
   #else
     f.print_on(_st);
   #endif
@@ -250,8 +266,8 @@ void InstanceStackChunkKlass::print_chunk(const stackChunkOop c, bool verbose, o
   st->print_cr("       barriers: %d gc_mode: %d bitmap: %d parent: " PTR_FORMAT,
                c->requires_barriers(), c->is_gc_mode(), c->has_bitmap(), p2i(c->parent()));
   st->print_cr("       flags mixed: %d", c->has_mixed_frames());
-  st->print_cr("       size: %d argsize: %d max_size: %d sp: %d pc: " PTR_FORMAT,
-               c->stack_size(), c->argsize(), c->max_thawing_size(), c->sp(), p2i(c->pc()));
+  st->print_cr("       size: %d bottom: %d max_size: %d sp: %d pc: " PTR_FORMAT,
+               c->stack_size(), c->bottom(), c->max_thawing_size(), c->sp(), p2i(c->pc()));
 
   if (verbose) {
     st->cr();

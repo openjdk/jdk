@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 
 #ifdef LINUX
 
@@ -360,10 +359,10 @@ TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   EXPECT_TRUE(os::commit_memory(heap, size, false));
 
   {
-    auto pretouch = [heap, size](Thread*, int) {
+    auto pretouch = [&](Thread*, int) {
       os::pretouch_memory(heap, heap + size, os::vm_page_size());
     };
-    auto useMemory = [heap, size](Thread*, int) {
+    auto useMemory = [&](Thread*, int) {
       int* iptr = reinterpret_cast<int*>(heap);
       for (int i = 0; i < 1000; i++) *iptr++ = i;
     };

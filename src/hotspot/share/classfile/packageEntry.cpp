@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
@@ -299,7 +299,8 @@ Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
   _table.iterate_all(grab);
 
   if (n > 1) {
-    QuickSort::sort(archived_packages->data(), n, (_sort_Fn)compare_package_by_name, true);
+    // Always allocate in the same order to produce deterministic archive.
+    QuickSort::sort(archived_packages->data(), n, compare_package_by_name);
   }
   for (int i = 0; i < n; i++) {
     archived_packages->at_put(i, archived_packages->at(i)->allocate_archived_entry());
@@ -316,7 +317,7 @@ void PackageEntryTable::init_archived_entries(Array<PackageEntry*>* archived_pac
 }
 
 void PackageEntryTable::load_archived_entries(Array<PackageEntry*>* archived_packages) {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
 
   for (int i = 0; i < archived_packages->length(); i++) {
     PackageEntry* archived_entry = archived_packages->at(i);

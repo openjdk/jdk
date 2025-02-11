@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,26 +24,33 @@
 /*
  * @test
  * @summary Testing Classfile stack maps generator.
- * @bug 8305990 8320222 8320618
+ * @bug 8305990 8320222 8320618 8335475 8338623 8338661 8343436
  * @build testdata.*
  * @run junit StackMapsTest
  */
 
 import java.lang.classfile.*;
-import java.lang.classfile.components.ClassPrinter;
-import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-import static helpers.TestUtil.assertEmpty;
-import static java.lang.classfile.ClassFile.ACC_STATIC;
-
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapTableAttribute;
+import jdk.internal.classfile.components.ClassPrinter;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static helpers.TestUtil.assertEmpty;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.*;
 
 /**
  * StackMapsTest
@@ -221,7 +228,7 @@ class StackMapsTest {
         var actualVersion = cc.parse(StackMapsTest.class.getResourceAsStream("/testdata/Pattern1.class").readAllBytes());
 
         //test transformation to class version 49 with removal of StackMapTable attributes
-        var version49 = cc.parse(cc.transform(
+        var version49 = cc.parse(cc.transformClass(
                                     actualVersion,
                                     ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                                                   .andThen(ClassTransform.endHandler(clb -> clb.withVersion(49, 0)))));
@@ -229,7 +236,7 @@ class StackMapsTest {
                                 .walk().anyMatch(n -> n.name().equals("stack map frames")));
 
         //test transformation to class version 50 with re-generation of StackMapTable attributes
-         assertEmpty(cc.verify(cc.transform(
+         assertEmpty(cc.verify(cc.transformClass(
                                     version49,
                                     ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                                                   .andThen(ClassTransform.endHandler(clb -> clb.withVersion(50, 0))))));
@@ -238,7 +245,7 @@ class StackMapsTest {
     @Test
     void testInvalidAALOADStack() {
         ClassFile.of().build(ClassDesc.of("Test"), clb
-                -> clb.withMethodBody("test", ConstantDescs.MTD_void, 0, cob
+                -> clb.withMethodBody("test", MTD_void, 0, cob
                         -> cob.bipush(10)
                               .anewarray(ConstantDescs.CD_Object)
                               .lconst_1() //long on stack caused NPE, see 8320618
@@ -266,7 +273,7 @@ class StackMapsTest {
 //                                                   classModel.superclass().ifPresent(cb::withSuperclass);
 //                                                   cb.withInterfaces(classModel.interfaces());
 //                                                   cb.withVersion(classModel.majorVersion(), classModel.minorVersion());
-                                                   classModel.forEachElement(cb);
+                                                   classModel.forEach(cb);
                                                });
 
         //then verify transformed bytecode
@@ -286,10 +293,10 @@ class StackMapsTest {
                                            Label next = cb.newLabel();
                                            cb.iload(0);
                                            cb.ifeq(next);
-                                           cb.constantInstruction(0.0d);
+                                           cb.loadConstant(0.0d);
                                            cb.goto_(target);
                                            cb.labelBinding(next);
-                                           cb.constantInstruction(0);
+                                           cb.loadConstant(0);
                                            cb.labelBinding(target);
                                            cb.pop();
                                        })));
@@ -304,12 +311,108 @@ class StackMapsTest {
                                            Label next = cb.newLabel();
                                            cb.iload(0);
                                            cb.ifeq(next);
-                                           cb.constantInstruction(0.0f);
+                                           cb.loadConstant(0.0f);
                                            cb.goto_(target);
                                            cb.labelBinding(next);
-                                           cb.constantInstruction(0);
+                                           cb.loadConstant(0);
                                            cb.labelBinding(target);
                                            cb.pop();
                                        })));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ClassFile.StackMapsOption.class)
+    void testEmptyCounters(ClassFile.StackMapsOption option) {
+        var cf = ClassFile.of(option);
+        var bytes = cf.build(ClassDesc.of("Test"), clb -> clb
+            .withMethodBody("a", MTD_void, ACC_STATIC, CodeBuilder::return_)
+            .withMethodBody("b", MTD_void, 0, CodeBuilder::return_)
+        );
+
+        var cm = ClassFile.of().parse(bytes);
+        for (var method : cm.methods()) {
+            var name = method.methodName();
+            var code = (CodeAttribute) method.code().orElseThrow();
+            if (name.equalsString("a")) {
+                assertEquals(0, code.maxLocals()); // static method
+                assertEquals(0, code.maxStack());
+            } else {
+                assertTrue(name.equalsString("b"));
+                assertEquals(1, code.maxLocals()); // instance method
+                assertEquals(0, code.maxStack());
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ClassFile.StackMapsOption.class)
+    void testI2LCounters(ClassFile.StackMapsOption option) {
+        var cf = ClassFile.of(option);
+        var bytes = cf.build(ClassDesc.of("Test"), clb -> clb
+            .withMethodBody("a", MTD_long_int, ACC_STATIC, cob ->
+                    cob.iload(0)
+                       .i2l()
+                       .lreturn()));
+
+        var cm = ClassFile.of().parse(bytes);
+        for (var method : cm.methods()) {
+            var code = (CodeAttribute) method.code().orElseThrow();
+            assertEquals(1, code.maxLocals());
+            assertEquals(2, code.maxStack());
+        }
+    }
+
+    private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
+    private static final MethodTypeDesc MTD_int_String = MethodTypeDesc.of(CD_int, CD_String);
+    private static final MethodTypeDesc MTD_long_int = MethodTypeDesc.of(CD_long, CD_int);
+
+    @ParameterizedTest
+    @EnumSource(ClassFile.StackMapsOption.class)
+    void testInvocationCounters(ClassFile.StackMapsOption option) {
+        var cf = ClassFile.of(option);
+        var cd = ClassDesc.of("Test");
+        var bytes = cf.build(cd, clb -> clb
+            .withMethodBody("a", MTD_int_String, ACC_STATIC, cob -> cob
+                    .aload(0)
+                    .invokevirtual(CD_String, "hashCode", MTD_int)
+                    .ireturn())
+            .withMethodBody("b", MTD_int, 0, cob -> cob
+                    .aload(0)
+                    .invokevirtual(cd, "hashCode", MTD_int)
+                    .ireturn())
+        );
+
+        var cm = ClassFile.of().parse(bytes);
+        for (var method : cm.methods()) {
+            var code = method.findAttribute(Attributes.code()).orElseThrow();
+            assertEquals(1, code.maxLocals());
+            assertEquals(1, code.maxStack());
+        }
+    }
+
+    @Test
+    void testDeadCodeCountersWithCustomSMTA() {
+        ClassDesc bar = ClassDesc.of("Bar");
+        byte[] bytes = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS).build(bar, clb -> clb
+                .withMethodBody(
+                        "foo", MethodTypeDesc.of(ConstantDescs.CD_long), ACC_STATIC, cob -> {
+                            cob.lconst_0().lreturn();
+                            Label f2 = cob.newBoundLabel();
+                            cob.lstore(0);
+                            Label f3 = cob.newBoundLabel();
+                            cob.lload(0).lreturn().with(
+                                    StackMapTableAttribute.of(List.of(
+                                    StackMapFrameInfo.of(f2,
+                                            List.of(),
+                                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.LONG)),
+                                    StackMapFrameInfo.of(f3,
+                                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.LONG),
+                                            List.of()))));
+                        }
+                ));
+        assertEmpty(ClassFile.of().verify(bytes));
+        var code = (CodeAttribute) ClassFile.of().parse(bytes).methods().getFirst().code().orElseThrow();
+        assertEquals(2, code.maxLocals());
+        assertEquals(2, code.maxStack());
     }
 }

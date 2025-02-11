@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/oopMap.hpp"
@@ -244,14 +243,11 @@ static
 struct dir_stats_struct {
   int chunks_queried;
   int chunks_shared;
-  int chunks_reshared;
   int chunks_elided;
 
   void print() {
-    tty->print_cr("Debug Data Chunks: %d, shared %d+%d, non-SP's elided %d",
-                  chunks_queried,
-                  chunks_shared, chunks_reshared,
-                  chunks_elided);
+    tty->print_cr("Debug Data Chunks: %d, shared %d, non-SP's elided %d",
+                  chunks_queried, chunks_shared, chunks_elided);
   }
 } dir_stats;
 #endif //PRODUCT

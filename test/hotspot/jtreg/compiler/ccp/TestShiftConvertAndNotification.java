@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
  * @bug 8313672
  * @summary Test CCP notification for value update of AndL through LShiftI and
  *          ConvI2L (no flags).
- * @run driver compiler.ccp.TestShiftConvertAndNotification
+ * @run main compiler.ccp.TestShiftConvertAndNotification
  *
  */
 

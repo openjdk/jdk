@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "memory/allocation.hpp"
 #include "oops/constantPool.hpp"
@@ -66,8 +65,8 @@ void ResolutionErrorTable::initialize() {
 
 // create new error entry
 void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_index,
-                                     Symbol* error, Symbol* message,
-                                     Symbol* cause, Symbol* cause_msg)
+                                     Symbol* error, const char* message,
+                                     Symbol* cause, const char* cause_msg)
 {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(!pool.is_null() && error != nullptr, "adding null obj");
@@ -97,26 +96,30 @@ ResolutionErrorEntry* ResolutionErrorTable::find_entry(const constantPoolHandle&
   return entry == nullptr ? nullptr : *entry;
 }
 
-ResolutionErrorEntry::ResolutionErrorEntry(Symbol* error, Symbol* message,
-      Symbol* cause, Symbol* cause_msg):
+ResolutionErrorEntry::ResolutionErrorEntry(Symbol* error, const char* message,
+                                           Symbol* cause, const char* cause_msg):
         _error(error),
-        _message(message),
+        _message(message != nullptr ? os::strdup(message) : nullptr),
         _cause(cause),
-        _cause_msg(cause_msg),
+        _cause_msg(cause_msg != nullptr ? os::strdup(cause_msg) : nullptr),
         _nest_host_error(nullptr) {
 
   Symbol::maybe_increment_refcount(_error);
-  Symbol::maybe_increment_refcount(_message);
   Symbol::maybe_increment_refcount(_cause);
-  Symbol::maybe_increment_refcount(_cause_msg);
 }
 
 ResolutionErrorEntry::~ResolutionErrorEntry() {
   // decrement error refcount
   Symbol::maybe_decrement_refcount(_error);
-  Symbol::maybe_decrement_refcount(_message);
   Symbol::maybe_decrement_refcount(_cause);
-  Symbol::maybe_decrement_refcount(_cause_msg);
+
+  if (_message != nullptr) {
+    FREE_C_HEAP_ARRAY(char, _message);
+  }
+
+  if (_cause_msg != nullptr) {
+    FREE_C_HEAP_ARRAY(char, _cause_msg);
+  }
 
   if (nest_host_error() != nullptr) {
     FREE_C_HEAP_ARRAY(char, nest_host_error());

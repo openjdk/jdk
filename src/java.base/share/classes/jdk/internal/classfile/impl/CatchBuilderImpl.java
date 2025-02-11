@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.internal.classfile.impl;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
-
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.util.HashSet;
@@ -62,7 +61,7 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
 
         if (catchBlock == null) {
             if (tryBlock.reachable()) {
-                b.branchInstruction(Opcode.GOTO, tryCatchEnd);
+                b.branch(Opcode.GOTO, tryCatchEnd);
             }
         }
 
@@ -76,7 +75,7 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
         if (catchBlock != null) {
             catchBlock.end();
             if (catchBlock.reachable()) {
-                b.branchInstruction(Opcode.GOTO, tryCatchEnd);
+                b.branch(Opcode.GOTO, tryCatchEnd);
             }
         }
 

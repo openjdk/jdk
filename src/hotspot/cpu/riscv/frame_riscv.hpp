@@ -111,7 +111,8 @@
     sender_sp_offset                                 =  0,
 
     // Interpreter frames
-    interpreter_frame_oop_temp_offset                =  1, // for native calls only
+    interpreter_frame_result_handler_offset          =  1, // for native calls only
+    interpreter_frame_oop_temp_offset                =  0, // for native calls only
 
     interpreter_frame_sender_sp_offset               = -3,
     // outgoing sp before a call to an invoked method
@@ -131,7 +132,7 @@
     // Entry frames
     // n.b. these values are determined by the layout defined in
     // stubGenerator for the Java call stub
-    entry_frame_after_call_words                     =  34,
+    entry_frame_after_call_words                     =  35,
     entry_frame_call_wrapper_offset                  = -10,
 
     // we don't need a save area

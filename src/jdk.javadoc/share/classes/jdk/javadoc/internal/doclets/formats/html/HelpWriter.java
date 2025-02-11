@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,16 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.List;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 
 /**
@@ -103,13 +103,17 @@ public class HelpWriter extends HtmlDocletWriter {
         var mainHeading = getContent("doclet.help.main_heading");
         tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, mainHeading);
         tableOfContents.pushNestedList();
-        content.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title, mainHeading))
-                .add(new HtmlTree(TagName.HR))
+        content.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyles.title, mainHeading))
+                .add(HtmlTree.HR())
                 .add(getNavigationSection())
-                .add(new HtmlTree(TagName.HR))
+                .add(HtmlTree.HR())
                 .add(getPageKindSection())
-                .add(new HtmlTree(TagName.HR))
-                .add(HtmlTree.SPAN(HtmlStyle.helpFootnote,
+                .add(options.noSince()
+                        ? new ContentBuilder()
+                        : new ContentBuilder(HtmlTree.HR(),
+                                             getReleasesSection()))
+                .add(HtmlTree.HR())
+                .add(HtmlTree.SPAN(HtmlStyles.helpFootnote,
                         getContent("doclet.help.footnote")));
         tableOfContents.popNestedList();
     }
@@ -129,7 +133,7 @@ public class HelpWriter extends HtmlDocletWriter {
         Content content = new ContentBuilder();
 
         Content navHeading = contents.getContent("doclet.help.navigation.head");
-        var navSection = HtmlTree.DIV(HtmlStyle.subTitle)
+        var navSection = HtmlTree.DIV(HtmlStyles.subTitle)
                 .add(HtmlTree.HEADING(Headings.CONTENT_HEADING, navHeading).setId(HtmlIds.HELP_NAVIGATION))
                 .add(contents.getContent("doclet.help.navigation.intro", overviewLink));
         if (options.createIndex()) {
@@ -153,7 +157,7 @@ public class HelpWriter extends HtmlDocletWriter {
         if (options.createIndex()) {
             section = newHelpSection(getContent("doclet.help.search.head"), PageMode.SEARCH);
             var searchIntro = HtmlTree.P(getContent("doclet.help.search.intro"));
-            var searchExamples = HtmlTree.OL(HtmlStyle.tocList);
+            var searchExamples = HtmlTree.OL(HtmlStyles.tocList);
             for (String[] example : SEARCH_EXAMPLES) {
                 searchExamples.add(HtmlTree.LI(
                         getContent("doclet.help.search.example",
@@ -182,7 +186,7 @@ public class HelpWriter extends HtmlDocletWriter {
      * <li>Declaration pages: module, package, classes
      * <li>Derived info for declarations: use and tree
      * <li>General summary info: deprecated, preview
-     * <li>Detailed summary info: constant values, serialized form, system properties
+     * <li>Detailed summary info: constant values, search tags, serialized form, system properties
      * <li>Index info: all packages, all classes, full index
      * </ul>
      *
@@ -190,7 +194,7 @@ public class HelpWriter extends HtmlDocletWriter {
      */
     private Content getPageKindSection() {
         Content pageKindsHeading = contents.getContent("doclet.help.page_kinds.head");
-        var pageKindsSection = HtmlTree.DIV(HtmlStyle.subTitle)
+        var pageKindsSection = HtmlTree.DIV(HtmlStyles.subTitle)
                 .add(HtmlTree.HEADING(Headings.CONTENT_HEADING, pageKindsHeading).setId(HtmlIds.HELP_PAGES))
                 .add(contents.getContent("doclet.help.page_kinds.intro"));
 
@@ -235,7 +239,7 @@ public class HelpWriter extends HtmlDocletWriter {
 
         // Class/interface
         Content notes = new ContentBuilder(
-                HtmlTree.SPAN(HtmlStyle.helpNote, getContent("doclet.help.class_interface.note")),
+                HtmlTree.SPAN(HtmlStyles.helpNote, getContent("doclet.help.class_interface.note")),
                 Text.of(" "),
                 getContent("doclet.help.class_interface.anno"),
                 Text.of(" "),
@@ -254,7 +258,7 @@ public class HelpWriter extends HtmlDocletWriter {
                         getContent("doclet.help.class_interface.implementations"),
                         getContent("doclet.help.class_interface.declaration"),
                         getContent("doclet.help.class_interface.description")))
-                .add(new HtmlTree(TagName.BR))
+                .add(HtmlTree.BR())
                 .add(newHelpSectionList(
                         contents.nestedClassSummary,
                         contents.enumConstantSummary,
@@ -264,7 +268,7 @@ public class HelpWriter extends HtmlDocletWriter {
                         contents.methodSummary,
                         contents.annotateTypeRequiredMemberSummaryLabel,
                         contents.annotateTypeOptionalMemberSummaryLabel))
-                .add(new HtmlTree(TagName.BR))
+                .add(HtmlTree.BR())
                 .add(newHelpSectionList(
                         contents.enumConstantDetailLabel,
                         contents.fieldDetailsLabel,
@@ -345,6 +349,15 @@ public class HelpWriter extends HtmlDocletWriter {
             pageKindsSection.add(section);
         }
 
+        // Search Tags
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.SEARCH_TAGS)) {
+            section = newHelpSection(contents.searchTagsLabel, PageMode.SEARCH_TAGS);
+            Content searchTagsBody = getContent("doclet.help.searchTags.body",
+                    links.createLink(DocPaths.SEARCH_TAGS, resources.getText("doclet.searchTags")));
+            section.add(HtmlTree.P(searchTagsBody));
+            pageKindsSection.add(section);
+        }
+
         // Serialized Form
         if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.SERIALIZED_FORM)) {
             section = newHelpSection(contents.serializedForm, PageMode.SERIALIZED_FORM)
@@ -397,6 +410,26 @@ public class HelpWriter extends HtmlDocletWriter {
         return pageKindsSection;
     }
 
+    private Content getReleasesSection() {
+        Content releasesHeading = contents.getContent("doclet.help.releases.head");
+        var releasesSection = HtmlTree.DIV(HtmlStyles.subTitle)
+                .add(HtmlTree.HEADING(Headings.CONTENT_HEADING, releasesHeading).setId(HtmlIds.HELP_RELEASES))
+                .add(HtmlTree.P(contents.getContent("doclet.help.releases.body.specify.top-level")))
+                .add(HtmlTree.P(contents.getContent("doclet.help.releases.body.specify.member")));
+
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)
+                || configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.NEW)) {
+            releasesSection.add(HtmlTree.P(contents.getContent("doclet.help.releases.body.refer")));
+        }
+
+        tableOfContents.addLink(HtmlIds.HELP_RELEASES, releasesHeading);
+        tableOfContents.pushNestedList();
+        tableOfContents.popNestedList();
+
+        return releasesSection;
+
+    }
+
     private Content getContent(String key) {
         return contents.getContent(key);
     }
@@ -412,7 +445,7 @@ public class HelpWriter extends HtmlDocletWriter {
     private HtmlTree newHelpSection(Content headingContent, HtmlId id) {
         tableOfContents.addLink(id, headingContent);
 
-        return HtmlTree.SECTION(HtmlStyle.helpSection,
+        return HtmlTree.SECTION(HtmlStyles.helpSection,
                 HtmlTree.HEADING(Headings.SUB_HEADING, headingContent))
                 .setId(id);
     }
@@ -422,7 +455,7 @@ public class HelpWriter extends HtmlDocletWriter {
     }
 
     private HtmlTree newHelpSectionList(Content first, Content... rest) {
-        var list = HtmlTree.UL(HtmlStyle.helpSectionList, HtmlTree.LI(first));
+        var list = HtmlTree.UL(HtmlStyles.helpSectionList, HtmlTree.LI(first));
         List.of(rest).forEach(i -> list.add(HtmlTree.LI(i)));
         return list;
     }

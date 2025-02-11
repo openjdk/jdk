@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
@@ -229,7 +228,7 @@ class LoopPredicate : AllStatic {
 public:
   static bool apply_scaled(const methodHandle& method, CompLevel cur_level, int i, int b, double scale) {
     double threshold_scaling;
-    if (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, threshold_scaling)) {
+    if (CompilerOracle::has_option_value(method, CompileCommandEnum::CompileThresholdScaling, threshold_scaling)) {
       scale *= threshold_scaling;
     }
     switch(cur_level) {
@@ -267,7 +266,7 @@ class CallPredicate : AllStatic {
 public:
   static bool apply_scaled(const methodHandle& method, CompLevel cur_level, int i, int b, double scale) {
     double threshold_scaling;
-    if (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, threshold_scaling)) {
+    if (CompilerOracle::has_option_value(method, CompileCommandEnum::CompileThresholdScaling, threshold_scaling)) {
       scale *= threshold_scaling;
     }
     switch(cur_level) {

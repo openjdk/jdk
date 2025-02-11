@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
@@ -211,11 +210,6 @@ void InterpreterMacroAssembler::get_index_at_bcp(Register index, int bcp_offset,
     orr(index, tmp_reg, AsmOperand(index, lsl, BitsPerByte));
     ldrb(tmp_reg, Address(Rbcp, bcp_offset));
     orr(index, tmp_reg, AsmOperand(index, lsl, BitsPerByte));
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    mvn_32(index, index);  // convert to plain index
   } else if (index_size == sizeof(u1)) {
     ldrb(index, Address(Rbcp, bcp_offset));
   } else {
@@ -741,7 +735,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state, Register ret_a
   ldrb(Rflag, do_not_unlock_if_synchronized);
 
   // get method access flags
-  ldr_u32(Raccess_flags, Address(Rmethod, Method::access_flags_offset()));
+  ldrh(Raccess_flags, Address(Rmethod, Method::access_flags_offset()));
 
   strb(zero_register(Rtemp), do_not_unlock_if_synchronized); // reset the flag
 
@@ -914,8 +908,8 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(R0, Robj);
-      ldr_u32(R0, Address(R0, Klass::access_flags_offset()));
-      tst(R0, JVM_ACC_IS_VALUE_BASED_CLASS);
+      ldrb(R0, Address(R0, Klass::misc_flags_offset()));
+      tst(R0, KlassFlags::_misc_is_value_based_class);
       b(slow_case, ne);
     }
 
@@ -990,15 +984,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // Pass oop, not lock, in fast lock case. call_VM wants R1 though.
-      push(R1);
-      mov(R1, Robj);
-      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj), R1);
-      pop(R1);
-    } else {
-      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), Rlock);
-    }
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), Rlock);
     bind(done);
   }
 }

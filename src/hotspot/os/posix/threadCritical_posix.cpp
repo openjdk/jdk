@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,9 +23,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/threadCritical.hpp"
+#include "utilities/compilerWarnings.hpp"
 
 // put OS-includes here
 # include <pthread.h>
@@ -35,7 +35,12 @@
 //
 
 static pthread_t             tc_owner = 0;
+
+PRAGMA_DIAG_PUSH
+PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED
 static pthread_mutex_t       tc_mutex = PTHREAD_MUTEX_INITIALIZER;
+PRAGMA_DIAG_POP
+
 static int                   tc_count = 0;
 
 ThreadCritical::ThreadCritical() {

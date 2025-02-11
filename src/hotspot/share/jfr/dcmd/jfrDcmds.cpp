@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jfr.hpp"
@@ -220,6 +219,11 @@ void JfrDCmd::execute(DCmdSource source, TRAPS) {
   if (invalid_state(output(), THREAD)) {
     return;
   }
+  if (source == DCmd_Source_Internal && _args != nullptr && strcmp(_args, "help") == 0) {
+     print_java_help("getStartupHelp");
+     vm_exit(0);
+  }
+
   static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;C)[Ljava/lang/String;";
   JavaValue result(T_OBJECT);
   JfrJavaArguments execute(&result, javaClass(), "execute", signature, CHECK);
@@ -241,13 +245,17 @@ void JfrDCmd::execute(DCmdSource source, TRAPS) {
   handle_dcmd_result(output(), result.get_oop(), source, THREAD);
 }
 
-void JfrDCmd::print_help(const char* name) const {
+void JfrDCmd::print_java_help(const char* get_help_method) const {
   static const char signature[] = "()[Ljava/lang/String;";
   JavaThread* thread = JavaThread::current();
   JavaValue result(T_OBJECT);
-  JfrJavaArguments printHelp(&result, javaClass(), "printHelp", signature, thread);
-  invoke(printHelp, thread);
+  JfrJavaArguments java_method(&result, javaClass(), get_help_method, signature, thread);
+  invoke(java_method, thread);
   handle_dcmd_result(output(), result.get_oop(), DCmd_Source_MBean, thread);
+}
+
+void JfrDCmd::print_help(const char* name) const {
+  print_java_help("getHelp");
 }
 
 static void initialize_dummy_descriptors(GrowableArray<DCmdArgumentInfo*>* array) {
@@ -283,10 +291,10 @@ static const char* get_as_dcmd_arena_string(oop string) {
   char* str = nullptr;
   const typeArrayOop value = java_lang_String::value(string);
   if (value != nullptr) {
-    const size_t length = static_cast<size_t>(java_lang_String::utf8_length(string, value)) + 1;
+    const size_t length = java_lang_String::utf8_length(string, value) + 1;
     str = dcmd_arena_allocate(length);
     assert(str != nullptr, "invariant");
-    java_lang_String::as_utf8_string(string, value, str, static_cast<int>(length));
+    java_lang_String::as_utf8_string(string, value, str, length);
   }
   return str;
 }

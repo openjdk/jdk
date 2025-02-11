@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
  *          user cancels the first one
  * @library /test/lib
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
- * @run main/othervm -Djava.security.manager=allow -Djdk.net.hosts.file=TestHosts HttpNegotiateServer
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts HttpNegotiateServer
  */
 
 import com.sun.net.httpserver.Headers;
@@ -317,10 +317,6 @@ public class HttpNegotiateServer {
         final String username = WEB_USER;
         final char[] password = WEB_PASS;
 
-        SecurityManager security = new SecurityManager();
-        Policy.setPolicy(new SecurityPolicy());
-        System.setSecurityManager(security);
-
         CallbackHandler callback = new CallbackHandler() {
             @Override
             public void handle(Callback[] pCallbacks)
@@ -518,23 +514,4 @@ public class HttpNegotiateServer {
             }
         }
     }
-}
-
-class SecurityPolicy extends Policy {
-
-    private static Permissions perms;
-
-    public SecurityPolicy() {
-        super();
-        if (perms == null) {
-            perms = new Permissions();
-            perms.add(new AllPermission());
-        }
-    }
-
-    @Override
-    public PermissionCollection getPermissions(CodeSource codesource) {
-        return perms;
-    }
-
 }

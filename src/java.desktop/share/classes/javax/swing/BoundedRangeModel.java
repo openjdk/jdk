@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package javax.swing;
 
-import javax.swing.event.*;
+import javax.swing.event.ChangeListener;
 
 
 /**
@@ -40,7 +40,7 @@ import javax.swing.event.*;
  * range is <code>value,value+extent</code>.  The inner range
  * must lie within the outer one, i.e. <code>value</code> must be
  * less than or equal to <code>maximum</code> and <code>value+extent</code>
- * must greater than or equal to <code>minimum</code>, and <code>maximum</code>
+ * must be greater than or equal to <code>minimum</code>, and <code>maximum</code>
  * must be greater than or equal to <code>minimum</code>.
  * There are a few features of this model that one might find a little
  * surprising.  These quirks exist for the convenience of the
@@ -228,7 +228,7 @@ public interface BoundedRangeModel
 
 
     /**
-     * This method sets all of the model's data with a single method call.
+     * This method sets all the model's data with a single method call.
      * The method results in a single change event being generated. This is
      * convenient when you need to adjust all the model data simultaneously and
      * do not want individual change events to occur.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -303,5 +304,10 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         assertThrows(UnsupportedOperationException.class, () ->
                 mtd.parameterList().set(1, CD_void));
         assertEquals(mtd, MethodTypeDesc.of(CD_void, CD_Object, CD_int));
+    }
+
+    public void testMissingClass() {
+        var mtd = MTD_void.insertParameterTypes(0, ClassDesc.of("does.not.exist.DoesNotExist"));
+        assertThrows(ReflectiveOperationException.class, () -> mtd.resolveConstantDesc(MethodHandles.publicLookup()));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,7 +221,6 @@ public class TableSorter extends DefaultTableModel implements MouseListener {
         return dataVector.elementAt(row);
     }
 
-    @SuppressWarnings("unchecked")
     private void setRow(Vector<?> data, int row) {
         dataVector.setElementAt(data,row);
     }

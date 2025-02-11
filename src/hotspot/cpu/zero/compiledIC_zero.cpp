@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
@@ -42,7 +41,7 @@
 
 // ----------------------------------------------------------------------------
 
-address CompiledDirectCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) {
+address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address mark) {
   ShouldNotReachHere(); // Only needed for COMPILER2.
   return nullptr;
 }

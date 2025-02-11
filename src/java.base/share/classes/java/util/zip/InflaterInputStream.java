@@ -208,9 +208,16 @@ public class InflaterInputStream extends FilterInputStream {
 
     /**
      * Skips specified number of bytes of uncompressed data.
-     * @param n the number of bytes to skip
-     * @return the actual number of bytes skipped.
-     * @throws    IOException if an I/O error has occurred
+     * This method may block until the specified number of bytes are skipped
+     * or end of stream is reached.
+     *
+     * @implNote
+     * This method skips at most {@code Integer.MAX_VALUE} bytes.
+     *
+     * @param n the number of bytes to skip. If {@code n} is zero then no bytes are skipped.
+     * @return the actual number of bytes skipped, which might be zero
+     * @throws IOException if an I/O error occurs or if this stream is
+     *                     already closed
      * @throws    IllegalArgumentException if {@code n < 0}
      */
     public long skip(long n) throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,15 @@ public class DeferredLintHandler {
         return instance;
     }
 
+    /** The Lint to use when {@link #immediate(Lint)} is used,
+     * instead of {@link #setPos(DiagnosticPosition)}. */
+    private Lint immediateLint;
+
     @SuppressWarnings("this-escape")
     protected DeferredLintHandler(Context context) {
         context.put(deferredLintHandlerKey, this);
         this.currentPos = IMMEDIATE_POSITION;
+        immediateLint = Lint.instance(context);
     }
 
     /**An interface for deferred lint reporting - loggers passed to
@@ -63,7 +68,7 @@ public class DeferredLintHandler {
      * {@link #flush(DiagnosticPosition) } is invoked.
      */
     public interface LintLogger {
-        void report();
+        void report(Lint lint);
     }
 
     private DiagnosticPosition currentPos;
@@ -77,7 +82,7 @@ public class DeferredLintHandler {
      */
     public void report(LintLogger logger) {
         if (currentPos == IMMEDIATE_POSITION) {
-            logger.report();
+            logger.report(immediateLint);
         } else {
             ListBuffer<LintLogger> loggers = loggersQueue.get(currentPos);
             if (loggers == null) {
@@ -89,11 +94,11 @@ public class DeferredLintHandler {
 
     /**Invoke all {@link LintLogger}s that were associated with the provided {@code pos}.
      */
-    public void flush(DiagnosticPosition pos) {
+    public void flush(DiagnosticPosition pos, Lint lint) {
         ListBuffer<LintLogger> loggers = loggersQueue.get(pos);
         if (loggers != null) {
             for (LintLogger lintLogger : loggers) {
-                lintLogger.report();
+                lintLogger.report(lint);
             }
             loggersQueue.remove(pos);
         }
@@ -112,7 +117,8 @@ public class DeferredLintHandler {
     /**{@link LintLogger}s passed to subsequent invocations of
      * {@link #report(LintLogger) } will be invoked immediately.
      */
-    public DiagnosticPosition immediate() {
+    public DiagnosticPosition immediate(Lint lint) {
+        immediateLint = lint;
         return setPos(IMMEDIATE_POSITION);
     }
 

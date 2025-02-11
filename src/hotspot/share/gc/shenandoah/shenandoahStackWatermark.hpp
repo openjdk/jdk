@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,13 @@
 class frame;
 class JavaThread;
 
-class ShenandoahOnStackCodeBlobClosure : public CodeBlobClosure {
+class ShenandoahOnStackNMethodClosure : public NMethodClosure {
 private:
   BarrierSetNMethod* _bs_nm;
 
-  void do_code_blob(CodeBlob* cb);
+  void do_nmethod(nmethod* nm);
 public:
-  ShenandoahOnStackCodeBlobClosure();
+  ShenandoahOnStackNMethodClosure();
 };
 
 class ShenandoahStackWatermark : public StackWatermark {
@@ -56,7 +56,7 @@ private:
   // Closures
   ShenandoahKeepAliveClosure           _keep_alive_cl;
   ShenandoahEvacuateUpdateRootsClosure _evac_update_oop_cl;
-  ShenandoahOnStackCodeBlobClosure     _cb_cl;
+  ShenandoahOnStackNMethodClosure      _nm_cl;
 public:
   ShenandoahStackWatermark(JavaThread* jt);
   ThreadLocalAllocStats& stats();

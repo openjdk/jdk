@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,6 +164,7 @@ public class Resources_de extends java.util.ListResourceBundle {
 
         {"history.with.ts", "- Von \"%1$s\" signiert\n    Digestalgorithmus: %2$s\n    Signaturalgorithmus: %3$s, %4$s\n  Zeitstempel von \"%6$s\" am %5$tc\n    Digestalgorithmus f\u00FCr Zeitstempel: %7$s\n    Signaturalgorithmus f\u00FCr Zeitstempel: %8$s, %9$s"},
         {"history.without.ts", "- Von \"%1$s\" signiert\n    Digestalgorithmus: %2$s\n    Signaturalgorithmus: %3$s, %4$s"},
+        {"history.nonexistent.entries", "    Warnung: Nicht vorhandene signierte Eintr\u00E4ge: "},
         {"history.unparsable", "- Signaturbezogene Datei %s kann nicht geparst werden"},
         {"history.nosf", "- Signaturbezogene Datei META-INF/%s.SF fehlt"},
         {"history.nobk", "- Blockdatei f\u00FCr signaturbezogene Datei META-INF/%s.SF fehlt"},
@@ -178,7 +179,8 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"key.bit.disabled", "%d-Bit-Schl\u00FCssel (deaktiviert)"},
         {"key.bit.eccurve.disabled", "%1$d-Bit-%2$s-Schl\u00FCssel (deaktiviert)"},
         {"unknown.size", "unbekannte Gr\u00F6\u00DFe"},
-        {"extra.attributes.detected", "POSIX-Dateiberechtigung und/oder Symlink-Attribute erkannt. Diese Attribute werden bei der Signatur ignoriert und sind nicht durch die Signatur gesch\u00FCtzt."},
+        {"nonexistent.entries.found", "Diese JAR-Datei enth\u00E4lt signierte Eintr\u00E4ge f\u00FCr Dateien, die nicht vorhanden sind. Weitere Details finden Sie in der Verbose-Ausgabe (-verbose)."},
+        {"external.file.attributes.detected", "POSIX-Dateiberechtigung und/oder Symlink-Attribute erkannt. Diese Attribute werden bei der Signatur ignoriert und sind nicht durch die Signatur gesch\u00FCtzt."},
 
         {"jarsigner.", "jarsigner: "},
         {"signature.filename.must.consist.of.the.following.characters.A.Z.0.9.or.",

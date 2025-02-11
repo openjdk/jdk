@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  * @since   1.5
  */
 final class Token implements Serializable {
+    public enum CTSVariant {CS1, CS2, CS3}
 
     // need to be serializable to allow SecureRandom to be serialized
     @Serial
@@ -64,6 +65,8 @@ final class Token implements Serializable {
 
     @SuppressWarnings("serial") // Type of field is not Serializable
     final Config config;
+
+    final transient CTSVariant ctsVariant;
 
     @SuppressWarnings("serial") // Type of field is not Serializable
     final CK_TOKEN_INFO tokenInfo;
@@ -146,6 +149,7 @@ final class Token implements Serializable {
         config = provider.config;
         tokenInfo = p11.C_GetTokenInfo(provider.slotID);
         writeProtected = (tokenInfo.flags & CKF_WRITE_PROTECTED) != 0;
+        ctsVariant = getCTSVariant();
         // create session manager and open a test session
         SessionManager sessionManager;
         try {
@@ -410,6 +414,19 @@ final class Token implements Serializable {
             result = null;
         }
         return result;
+    }
+
+    private CTSVariant getCTSVariant() {
+        CTSVariant ctsVariant = config.getCTSVariant();
+        if (ctsVariant != null) {
+            return ctsVariant;
+        }
+        // 'cipherTextStealingVariant' needs an explicit value for the
+        // CKM_AES_CTS mechanism to be enabled. In the case of NSS we know
+        // that this value is 'CS1', so we can set it for the user. See:
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=373108#c7
+        // https://github.com/nss-dev/nss/blob/NSS_3_99_RTM/lib/freebl/cts.c#L65
+        return P11Util.isNSS(this) ? CTSVariant.CS1 : null;
     }
 
     private synchronized byte[] getTokenId() {

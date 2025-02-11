@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/memRegion.hpp"
@@ -102,8 +101,8 @@ MemRegion MemRegion::minus(const MemRegion mr2) const {
   return MemRegion();
 }
 
-MemRegion* MemRegion::create_array(size_t length, MEMFLAGS flags) {
-  MemRegion* result = NEW_C_HEAP_ARRAY(MemRegion, length, flags);
+MemRegion* MemRegion::create_array(size_t length, MemTag mem_tag) {
+  MemRegion* result = NEW_C_HEAP_ARRAY(MemRegion, length, mem_tag);
   for (size_t i = 0; i < length; i++) {
     ::new (&result[i]) MemRegion();
   }

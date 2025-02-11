@@ -26,7 +26,7 @@
 #define SHARE_GC_SERIAL_SERIALFULLGC_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -37,7 +37,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/stack.hpp"
 
-class DataLayout;
 class SerialOldTracer;
 class STWGCTimer;
 
@@ -49,7 +48,6 @@ class STWGCTimer;
 // Class unloading will only occur when a full gc is invoked.
 
 // declared at end
-class PreservedMark;
 class MarkAndPushClosure;
 class AdjustPointerClosure;
 
@@ -82,19 +80,7 @@ class SerialFullGC : AllStatic {
     virtual void do_oop(narrowOop* p);
   };
 
-  //
-  // Friend decls
-  //
-  friend class AdjustPointerClosure;
-  friend class KeepAliveClosure;
-
-  //
-  // Vars
-  //
  protected:
-  // Total invocations of serial full GC
-  static uint _total_invocations;
-
   // Traversal stacks used during phase1
   static Stack<oop, mtGC>                      _marking_stack;
   static Stack<ObjArrayTask, mtGC>             _objarray_stack;
@@ -130,9 +116,6 @@ class SerialFullGC : AllStatic {
 
   static void invoke_at_safepoint(bool clear_all_softrefs);
 
-  // Accessors
-  static uint total_invocations() { return _total_invocations; }
-
   // Reference Processing
   static ReferenceProcessor* ref_processor() { return _ref_processor; }
 
@@ -144,11 +127,9 @@ class SerialFullGC : AllStatic {
   static void adjust_marks();   // Adjust the pointers in the preserved marks table
   static void restore_marks();  // Restore the marks that we saved in preserve_mark
 
-  static size_t adjust_pointers(oop obj);
-
   static void follow_stack();   // Empty marking stack.
 
-  template <class T> static inline void adjust_pointer(T* p);
+  template <class T> static void adjust_pointer(T* p);
 
   // Check mark and maybe push on marking stack
   template <class T> static void mark_and_push(T* p);

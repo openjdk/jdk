@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
-#include "utilities/attributeNoreturn.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -37,6 +36,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <type_traits>
 
 class oopDesc;
@@ -99,6 +99,7 @@ class oopDesc;
 //  _X_0  - print as hexadecimal, with leading 0s: 0x00012345
 //  _W(w) - prints w sized string with the given value right
 //          adjusted. Use -w to print left adjusted.
+//  _0    - print as hexadecimal, with leading 0s, without 0x prefix: 0012345
 //
 // Note that the PTR format specifiers print using 0x with leading zeros,
 // just like the _X_0 version for integers.
@@ -131,26 +132,7 @@ class oopDesc;
 #define UINT64_FORMAT_X          "0x%"        PRIx64
 #define UINT64_FORMAT_X_0        "0x%016"     PRIx64
 #define UINT64_FORMAT_W(width)   "%"   #width PRIu64
-
-// Format integers which change size between 32- and 64-bit.
-#define SSIZE_FORMAT             "%"          PRIdPTR
-#define SSIZE_PLUS_FORMAT        "%+"         PRIdPTR
-#define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
-#define SIZE_FORMAT              "%"          PRIuPTR
-#define SIZE_FORMAT_X            "0x%"        PRIxPTR
-#ifdef _LP64
-#define SIZE_FORMAT_X_0          "0x%016"     PRIxPTR
-#else
-#define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
-#endif
-#define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
-
-#define INTX_FORMAT              "%"          PRIdPTR
-#define INTX_FORMAT_X            "0x%"        PRIxPTR
-#define INTX_FORMAT_W(width)     "%"   #width PRIdPTR
-#define UINTX_FORMAT             "%"          PRIuPTR
-#define UINTX_FORMAT_X           "0x%"        PRIxPTR
-#define UINTX_FORMAT_W(width)    "%"   #width PRIuPTR
+#define UINT64_FORMAT_0          "%016"       PRIx64
 
 // Format jlong, if necessary
 #ifndef JLONG_FORMAT
@@ -166,18 +148,27 @@ class oopDesc;
 #define JULONG_FORMAT_X          UINT64_FORMAT_X
 #endif
 
-// Format pointers which change size between 32- and 64-bit.
+// Format pointers and padded integral values which change size between 32- and 64-bit.
 #ifdef  _LP64
 #define INTPTR_FORMAT            "0x%016"     PRIxPTR
 #define PTR_FORMAT               "0x%016"     PRIxPTR
+#define UINTX_FORMAT_X_0         "0x%016"     PRIxPTR
+#define SIZE_FORMAT_X_0          "0x%016"     PRIxPTR
 #else   // !_LP64
 #define INTPTR_FORMAT            "0x%08"      PRIxPTR
 #define PTR_FORMAT               "0x%08"      PRIxPTR
+#define UINTX_FORMAT_X_0         "0x%08"      PRIxPTR
+#define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
 #endif  // _LP64
 
 // Convert pointer to intptr_t, for use in printing pointers.
 inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;
+}
+
+// Convert pointer to uintptr_t
+inline uintptr_t p2u(const volatile void* p) {
+  return (uintptr_t) p;
 }
 
 #define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
@@ -205,7 +196,7 @@ FORBID_C_FUNCTION(char* strdup(const char *s), "use os::strdup");
 FORBID_C_FUNCTION(char* strndup(const char *s, size_t n), "don't use");
 FORBID_C_FUNCTION(int posix_memalign(void **memptr, size_t alignment, size_t size), "don't use");
 FORBID_C_FUNCTION(void* aligned_alloc(size_t alignment, size_t size), "don't use");
-FORBID_C_FUNCTION(char* realpath(const char* path, char* resolved_path), "use os::Posix::realpath");
+FORBID_C_FUNCTION(char* realpath(const char* path, char* resolved_path), "use os::realpath");
 FORBID_C_FUNCTION(char* get_current_dir_name(void), "use os::get_current_directory()");
 FORBID_C_FUNCTION(char* getwd(char *buf), "use os::get_current_directory()");
 FORBID_C_FUNCTION(wchar_t* wcsdup(const wchar_t *s), "don't use");
@@ -217,9 +208,9 @@ FORBID_C_FUNCTION(void* reallocf(void *ptr, size_t size), "don't use");
 const int LogBytesPerShort   = 1;
 const int LogBytesPerInt     = 2;
 #ifdef _LP64
-const int LogBytesPerWord    = 3;
+constexpr int LogBytesPerWord    = 3;
 #else
-const int LogBytesPerWord    = 2;
+constexpr int LogBytesPerWord    = 2;
 #endif
 const int LogBytesPerLong    = 3;
 
@@ -228,16 +219,16 @@ const int BytesPerInt        = 1 << LogBytesPerInt;
 const int BytesPerWord       = 1 << LogBytesPerWord;
 const int BytesPerLong       = 1 << LogBytesPerLong;
 
-const int LogBitsPerByte     = 3;
+constexpr int LogBitsPerByte     = 3;
 const int LogBitsPerShort    = LogBitsPerByte + LogBytesPerShort;
 const int LogBitsPerInt      = LogBitsPerByte + LogBytesPerInt;
-const int LogBitsPerWord     = LogBitsPerByte + LogBytesPerWord;
+constexpr int LogBitsPerWord     = LogBitsPerByte + LogBytesPerWord;
 const int LogBitsPerLong     = LogBitsPerByte + LogBytesPerLong;
 
 const int BitsPerByte        = 1 << LogBitsPerByte;
 const int BitsPerShort       = 1 << LogBitsPerShort;
 const int BitsPerInt         = 1 << LogBitsPerInt;
-const int BitsPerWord        = 1 << LogBitsPerWord;
+constexpr int BitsPerWord        = 1 << LogBitsPerWord;
 const int BitsPerLong        = 1 << LogBitsPerLong;
 
 const int WordAlignmentMask  = (1 << LogBytesPerWord) - 1;
@@ -376,11 +367,16 @@ inline T byte_size_in_proper_unit(T s) {
   }
 }
 
-#define PROPERFMT             SIZE_FORMAT "%s"
+#define PROPERFMT             "%zu%s"
 #define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
 
-#define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
+// Printing a range, with start and bytes given
+#define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (%zu bytes)"
 #define RANGEFMTARGS(p1, size) p2i(p1), p2i(p1 + size), size
+
+// Printing a range, with start and end given
+#define RANGE2FMT             "[" PTR_FORMAT " - " PTR_FORMAT "), (%zu bytes)"
+#define RANGE2FMTARGS(p1, p2) p2i(p1), p2i(p2), ((uintptr_t)p2 - (uintptr_t)p1)
 
 inline const char* exact_unit_for_byte_size(size_t s) {
 #ifdef _LP64
@@ -412,12 +408,12 @@ inline size_t byte_size_in_exact_unit(size_t s) {
   return s;
 }
 
-#define EXACTFMT            SIZE_FORMAT "%s"
+#define EXACTFMT            "%zu%s"
 #define EXACTFMTARGS(s)     byte_size_in_exact_unit(s), exact_unit_for_byte_size(s)
 
 // Memory size transition formatting.
 
-#define HEAP_CHANGE_FORMAT "%s: " SIZE_FORMAT "K(" SIZE_FORMAT "K)->" SIZE_FORMAT "K(" SIZE_FORMAT "K)"
+#define HEAP_CHANGE_FORMAT "%s: %zuK(%zuK)->%zuK(%zuK)"
 
 #define HEAP_CHANGE_FORMAT_ARGS(_name_, _prev_used_, _prev_capacity_, _used_, _capacity_) \
   (_name_), (_prev_used_) / K, (_prev_capacity_) / K, (_used_) / K, (_capacity_) / K
@@ -450,6 +446,7 @@ typedef unsigned int uint;   NEEDS_CLEANUP
 typedef   signed char s_char;
 typedef unsigned char u_char;
 typedef u_char*       address;
+typedef const u_char* const_address;
 
 // Pointer subtraction.
 // The idea here is to avoid ptrdiff_t, which is signed and so doesn't have
@@ -548,6 +545,9 @@ const jint min_jintFloat = (jint)(0x00000001);
 const jfloat min_jfloat = jfloat_cast(min_jintFloat);
 const jint max_jintFloat = (jint)(0x7f7fffff);
 const jfloat max_jfloat = jfloat_cast(max_jintFloat);
+
+// A named constant for the integral representation of a Java null.
+const intptr_t NULL_WORD = 0;
 
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions
@@ -1105,7 +1105,18 @@ template<class T> constexpr T MIN3(T a, T b, T c)      { return MIN2(MIN2(a, b),
 template<class T> constexpr T MAX4(T a, T b, T c, T d) { return MAX2(MAX3(a, b, c), d); }
 template<class T> constexpr T MIN4(T a, T b, T c, T d) { return MIN2(MIN3(a, b, c), d); }
 
-template<class T> inline T ABS(T x)                 { return (x > 0) ? x : -x; }
+#define ABS(x) asserted_abs(x, __FILE__, __LINE__)
+
+template<class T> inline T asserted_abs(T x, const char* file, int line) {
+  bool valid_arg = !(std::is_integral<T>::value && x == std::numeric_limits<T>::min());
+#ifdef ASSERT
+  if (!valid_arg) {
+    report_vm_error(file, line, "ABS: argument should not allow overflow");
+  }
+#endif
+  // Prevent exposure to UB by checking valid_arg here as well.
+  return (x < 0 && valid_arg) ? -x : x;
+}
 
 // Return the given value clamped to the range [min ... max]
 template<typename T>

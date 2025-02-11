@@ -94,7 +94,6 @@ public class createVM001 {
 
         argsHandler = new ArgumentHandler(argv);
         logHandler = new Log(out, argsHandler);
-        logHandler.enableErrorsSummary(false);
 
         logAlways("==> nsk/jdi/VirtualMachineManager/createVirtualMachine/createVM001 test...");
         logOnVerbose

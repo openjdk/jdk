@@ -37,7 +37,7 @@ inline bool nmethod::is_deopt_pc(address pc) { return is_deopt_entry(pc) || is_d
 inline bool nmethod::is_deopt_entry(address pc) {
   return pc == deopt_handler_begin()
 #if INCLUDE_JVMCI
-    || (is_compiled_by_jvmci() && pc == (deopt_handler_begin() + NativeCall::instruction_size))
+    || (is_compiled_by_jvmci() && pc == (deopt_handler_begin() + NativeCall::byte_size()))
 #endif
     ;
 }
@@ -45,28 +45,10 @@ inline bool nmethod::is_deopt_entry(address pc) {
 inline bool nmethod::is_deopt_mh_entry(address pc) {
   return pc == deopt_mh_handler_begin()
 #if INCLUDE_JVMCI
-    || (is_compiled_by_jvmci() && pc == (deopt_mh_handler_begin() + NativeCall::instruction_size))
+    || (is_compiled_by_jvmci() && pc == (deopt_mh_handler_begin() + NativeCall::byte_size()))
 #endif
     ;
 }
-
-// -----------------------------------------------------------------------------
-// nmethod::get_deopt_original_pc
-//
-// Return the original PC for the given PC if:
-// (a) the given PC belongs to an nmethod and
-// (b) it is a deopt PC
-
-inline address nmethod::get_deopt_original_pc(const frame* fr) {
-  if (fr->cb() == nullptr)  return nullptr;
-
-  nmethod* nm = fr->cb()->as_nmethod_or_null();
-  if (nm != nullptr && nm->is_deopt_pc(fr->pc())) {
-    return nm->get_original_pc(fr);
-  }
-  return nullptr;
-}
-
 
 // class ExceptionCache methods
 

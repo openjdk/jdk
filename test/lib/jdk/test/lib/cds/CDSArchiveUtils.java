@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,7 @@ public class CDSArchiveUtils {
     public static int dynamicArchiveHeaderSize()    { return dynamicArchiveHeaderSize;    }
     public static int cdsFileMapRegionSize()        { return cdsFileMapRegionSize;        }
     public static long alignment()                  { return alignment;                   }
+    public static int num_regions()                 { return num_regions;                 }
 
 
 
@@ -495,9 +496,14 @@ public class CDSArchiveUtils {
     }
 
     // used region size
-    public static long usedRegionSizeAligned(File archiveFile, int region) throws Exception {
+    public static long usedRegionSize(File archiveFile, int region) throws Exception {
         long offset = spOffset + cdsFileMapRegionSize * region + spUsedOffset;
-        long used = readInt(archiveFile, offset, sizetSize);
+        return readInt(archiveFile, offset, sizetSize);
+    }
+
+    // used region size
+    public static long usedRegionSizeAligned(File archiveFile, int region) throws Exception {
+        long used = usedRegionSize(archiveFile, region);
         return alignUpWithAlignment(used);
     }
 }

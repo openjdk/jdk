@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,8 @@ import jdk.jfr.internal.Type;
         " The checks are usually performed just once per serializable class," +
         " the first time it is used by serialization." +
         " Under high memory pressure, a class might be re-checked again.")
-@MirrorEvent(className = "jdk.internal.event.SerializationMisdeclarationEvent")
 @RemoveFields({"duration", "stackTrace", "eventThread"})
-public final class SerializationMisdeclarationEvent extends AbstractJDKEvent {
+public final class SerializationMisdeclarationEvent extends MirrorEvent {
 
     @Label("Misdeclared Class")
     public Class<?> misdeclaredClass;

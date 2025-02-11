@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.lang.classfile.attribute.*;
  * @test NewArray
  * @bug 6843077
  * @summary Test type annotations on local array are in method's code attribute.
- * @enablePreview
  */
 
 public class NewArray {
@@ -52,8 +51,8 @@ public class NewArray {
     }
 
     void test(MethodModel mm) {
-        test(mm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
-        test(mm, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
+        test(mm, Attributes.runtimeVisibleTypeAnnotations());
+        test(mm, Attributes.runtimeInvisibleTypeAnnotations());
     }
 
     // test the result of Attributes.getIndex according to expectations
@@ -62,7 +61,7 @@ public class NewArray {
         Attribute<T> attr_instance;
         CodeAttribute cAttr;
 
-        cAttr = mm.findAttribute(Attributes.CODE).orElse(null);
+        cAttr = mm.findAttribute(Attributes.code()).orElse(null);
         if (cAttr != null) {
             attr_instance = cAttr.findAttribute(attr_name).orElse(null);
             if (attr_instance != null) {

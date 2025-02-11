@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,8 @@ import javax.tools.StandardLocation;
  *                                                      from other files
  * <tr><th scope="row">{@code cast}                 <td>use of unnecessary casts
  * <tr><th scope="row">{@code classfile}            <td>issues related to classfile contents
+ * <tr><th scope="row">{@code dangling-doc-comments} <td>issues related to "dangling" documentation comments,
+ *                                                       not attached to a declaration
  * <tr><th scope="row">{@code deprecation}          <td>use of deprecated items
  * <tr><th scope="row">{@code dep-ann}              <td>items marked as deprecated in a documentation comment but not
  *                                                      using the {@code @Deprecated} annotation
@@ -231,7 +233,8 @@ module jdk.compiler {
         jdk.javadoc;
     exports com.sun.tools.javac.api to
         jdk.javadoc,
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
     exports com.sun.tools.javac.resources to
         jdk.jshell;
     exports com.sun.tools.javac.code to
@@ -251,24 +254,26 @@ module jdk.compiler {
     exports com.sun.tools.javac.model to
         jdk.javadoc;
     exports com.sun.tools.javac.parser to
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
     exports com.sun.tools.javac.platform to
         jdk.jdeps,
         jdk.javadoc;
     exports com.sun.tools.javac.tree to
         jdk.javadoc,
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
     exports com.sun.tools.javac.util to
         jdk.jdeps,
         jdk.javadoc,
-        jdk.jshell;
-    exports jdk.internal.shellsupport.doc to
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
 
     uses javax.annotation.processing.Processor;
     uses com.sun.source.util.Plugin;
     uses com.sun.tools.doclint.DocLint;
     uses com.sun.tools.javac.platform.PlatformProvider;
+    uses com.sun.tools.javac.api.JavacTrees.DocCommentTreeTransformer;
 
     provides java.util.spi.ToolProvider with
         com.sun.tools.javac.main.JavacToolProvider;

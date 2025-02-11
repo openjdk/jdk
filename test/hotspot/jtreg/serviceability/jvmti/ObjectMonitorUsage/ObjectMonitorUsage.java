@@ -53,9 +53,9 @@ public class ObjectMonitorUsage {
     static Object lockCheck = new Object();
 
     native static int getRes();
-    native static int waitsToEnter();
-    native static int waitsToBeNotified();
     native static int setTestedMonitor(Object monitor);
+    native static void ensureBlockedOnEnter(Thread thread);
+    native static void ensureWaitingToBeNotified(Thread thread);
     native static void check(Object obj, Thread owner,
                              int entryCount, int waiterCount, int notifyWaiterCount);
 
@@ -87,10 +87,9 @@ public class ObjectMonitorUsage {
         Thread[] threads = new Thread[NUMBER_OF_WAITING_THREADS];
         for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
             // the WaitingTask has to wait to be notified in lockCheck.wait()
-            threads[i] = startTask(i, new WaitingTask(), isVirtual, "Waiting");
-        }
-        while (waitsToBeNotified() < NUMBER_OF_WAITING_THREADS) {
-            sleep(1);
+            Thread thread = startTask(i, new WaitingTask(), isVirtual, "Waiting");
+            ensureWaitingToBeNotified(thread);
+            threads[i] = thread;
         }
         return threads;
     }
@@ -99,10 +98,9 @@ public class ObjectMonitorUsage {
         Thread[] threads = new Thread[NUMBER_OF_ENTERING_THREADS];
         for (int i = 0; i < NUMBER_OF_ENTERING_THREADS; i++) {
             // the EnteringTask has to be blocked at the lockCheck enter
-            threads[i] = startTask(i, new EnteringTask(), isVirtual, "Entering");
-        }
-        while (waitsToEnter() < NUMBER_OF_ENTERING_THREADS) {
-            sleep(1);
+            Thread thread = startTask(i, new EnteringTask(), isVirtual, "Entering");
+            ensureBlockedOnEnter(thread);
+            threads[i] = thread;
         }
         return threads;
     }
@@ -115,6 +113,13 @@ public class ObjectMonitorUsage {
         } catch (InterruptedException e) {
             throw new Error("Unexpected " + e);
         }
+    }
+    static Thread expOwnerThread() {
+        return Thread.currentThread().isVirtual() ? null : Thread.currentThread();
+    }
+
+    static int expEntryCount() {
+        return Thread.currentThread().isVirtual() ? 0 : 1;
     }
 
     /* Scenario #0:
@@ -129,14 +134,18 @@ public class ObjectMonitorUsage {
 
         setTestedMonitor(lockCheck);
         Thread[] wThreads = startWaitingThreads(isVirtual);
+        final int expWaitingCount = isVirtual ? 0 : NUMBER_OF_WAITING_THREADS;
 
+        // The numbers below describe the testing scenario, not the expected results.
+        // The expected numbers are different for virtual threads because
+        // they are not supported by JVMTI GetObjectMonitorUsage.
         // entry count: 0
         // count of threads waiting to enter:       0
         // count of threads waiting to re-enter:    0
         // count of threads waiting to be notified: NUMBER_OF_WAITING_THREADS
         check(lockCheck, null, 0, // no owner thread
               0, // count of threads waiting to enter: 0
-              NUMBER_OF_WAITING_THREADS);
+              expWaitingCount);
 
         synchronized (lockCheck) {
             lockCheck.notifyAll();
@@ -160,20 +169,30 @@ public class ObjectMonitorUsage {
         Thread[] eThreads = null;
 
         synchronized (lockCheck) {
+            // Virtual threads are not supported by GetObjectMonitorUsage.
+            // Correct the expected values for the virtual thread case.
+            int expEnteringCount = isVirtual ? 0 : NUMBER_OF_ENTERING_THREADS;
+
+            // The numbers below describe the testing scenario, not the expected results.
+            // The expected numbers are different for virtual threads because
+            // they are not supported by JVMTI GetObjectMonitorUsage.
             // entry count: 1
             // count of threads waiting to enter: 0
             // count of threads waiting to re-enter: 0
             // count of threads waiting to be notified: 0
-            check(lockCheck, Thread.currentThread(), 1, 0, 0);
+            check(lockCheck, expOwnerThread(), expEntryCount(), 0, 0);
 
             eThreads = startEnteringThreads(isVirtual);
 
+            // The numbers below describe the testing scenario, not the expected results.
+            // The expected numbers are different for virtual threads because
+            // they are not supported by JVMTI GetObjectMonitorUsage.
             // entry count: 1
             // count of threads waiting to enter:       NUMBER_OF_ENTERING_THREADS
             // count of threads waiting to re-enter:    0
             // count of threads waiting to be notified: 0
-            check(lockCheck, Thread.currentThread(), 1,
-                  NUMBER_OF_ENTERING_THREADS,
+            check(lockCheck, expOwnerThread(), expEntryCount(),
+                  expEnteringCount,
                   0 /* count of threads waiting to be notified: 0 */);
 
         }
@@ -197,15 +216,23 @@ public class ObjectMonitorUsage {
         Thread[] eThreads = null;
 
         synchronized (lockCheck) {
+            // Virtual threads are not supported by the GetObjectMonitorUsage.
+            // Correct the expected values for the virtual thread case.
+            int expEnteringCount = isVirtual ? 0 : NUMBER_OF_ENTERING_THREADS;
+            int expWaitingCount  = isVirtual ? 0 : NUMBER_OF_WAITING_THREADS;
+
             eThreads = startEnteringThreads(isVirtual);
 
+            // The numbers below describe the testing scenario, not the expected results.
+            // The expected numbers are different for virtual threads because
+            // they are not supported by JVMTI GetObjectMonitorUsage.
             // entry count: 1
             // count of threads waiting to enter:       NUMBER_OF_ENTERING_THREADS
             // count of threads waiting to re-enter:    0
             // count of threads waiting to be notified: NUMBER_OF_WAITING_THREADS
-            check(lockCheck, Thread.currentThread(), 1,
-                  NUMBER_OF_ENTERING_THREADS,
-                  NUMBER_OF_WAITING_THREADS);
+            check(lockCheck, expOwnerThread(), expEntryCount(),
+                  expEnteringCount,
+                  expWaitingCount);
 
             lockCheck.notifyAll();
         }
@@ -236,35 +263,51 @@ public class ObjectMonitorUsage {
         Thread[] eThreads = null;
 
         synchronized (lockCheck) {
+            // Virtual threads are not supported by GetObjectMonitorUsage.
+            // Correct the expected values for the virtual thread case.
+            int expEnteringCount = isVirtual ? 0 : NUMBER_OF_ENTERING_THREADS;
+            int expWaitingCount  = isVirtual ? 0 : NUMBER_OF_WAITING_THREADS;
+
+            // The numbers below describe the testing scenario, not the expected results.
+            // The expected numbers are different for virtual threads because
+            // they are not supported by JVMTI GetObjectMonitorUsage.
             // entry count: 1
             // count of threads waiting to enter:       0
             // count of threads waiting to re-enter:    0
             // count of threads waiting to be notified: NUMBER_OF_WAITING_THREADS
-            check(lockCheck, Thread.currentThread(), 1,
+            check(lockCheck, expOwnerThread(), expEntryCount(),
                   0, // number of threads waiting to enter or re-enter
-                  NUMBER_OF_WAITING_THREADS);
+                  expWaitingCount);
 
             eThreads = startEnteringThreads(isVirtual);
 
+            // The numbers below describe the testing scenario, not the expected results.
+            // The expected numbers are different for virtual threads because
+            // they are not supported by JVMTI GetObjectMonitorUsage.
             // entry count: 1
             // count of threads waiting to enter:       NUMBER_OF_ENTERING_THREADS
             // count of threads waiting to re-enter:    0
             // count of threads waiting to be notified: NUMBER_OF_WAITING_THREADS
-            check(lockCheck, Thread.currentThread(), 1,
-                  NUMBER_OF_ENTERING_THREADS,
-                  NUMBER_OF_WAITING_THREADS);
+            check(lockCheck, expOwnerThread(), expEntryCount(),
+                  expEnteringCount,
+                  expWaitingCount);
 
             for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
+                expEnteringCount = isVirtual ? 0 : NUMBER_OF_ENTERING_THREADS + i + 1;
+                expWaitingCount  = isVirtual ? 0 : NUMBER_OF_WAITING_THREADS - i - 1;
                 lockCheck.notify(); // notify waiting threads one by one
                 // now the notified WaitingTask has to be blocked on the lockCheck re-enter
 
+                // The numbers below describe the testing scenario, not the expected results.
+                // The expected numbers are different for virtual threads because
+                // they are not supported by JVMTI GetObjectMonitorUsage.
                 // entry count: 1
                 // count of threads waiting to enter:       NUMBER_OF_ENTERING_THREADS
                 // count of threads waiting to re-enter:    i + 1
                 // count of threads waiting to be notified: NUMBER_OF_WAITING_THREADS - i - 1
-                check(lockCheck, Thread.currentThread(), 1,
-                      NUMBER_OF_ENTERING_THREADS + i + 1,
-                      NUMBER_OF_WAITING_THREADS  - i - 1);
+                check(lockCheck, expOwnerThread(), expEntryCount(),
+                      expEnteringCount,
+                      expWaitingCount);
             }
         }
         joinThreads(wThreads);

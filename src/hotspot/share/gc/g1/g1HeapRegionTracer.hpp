@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class HeapRegionTracer : AllStatic {
+class G1HeapRegionTracer : AllStatic {
   public:
     static void send_region_type_change(uint index,
                                         G1HeapRegionTraceType::Type from,

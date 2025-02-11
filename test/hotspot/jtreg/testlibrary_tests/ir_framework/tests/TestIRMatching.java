@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public class TestIRMatching {
         runCheck(new String[] {"-XX:TLABRefillWasteFraction=50", "-XX:+UsePerfData", "-XX:+UseTLAB"}, BadFailOnConstraint.create(AndOr1.class, "test1(int)", 1, "CallStaticJava"));
         runCheck(new String[] {"-XX:TLABRefillWasteFraction=50", "-XX:-UsePerfData", "-XX:+UseTLAB"}, BadFailOnConstraint.create(AndOr1.class, "test2()", 1, "CallStaticJava"));
 
-        String[] allocMatches = { "MyClass", "wrapper for: _new_instance_Java" };
+        String[] allocMatches = { "MyClass", "wrapper for: C2 Runtime new_instance" };
         runCheck(BadFailOnConstraint.create(MultipleFailOnBad.class, "fail1()", 1, 1, "Store"),
                  BadFailOnConstraint.create(MultipleFailOnBad.class, "fail1()", 1,  3, "Store"),
                  GoodFailOnRegexConstraint.create(MultipleFailOnBad.class, "fail1()", 1,  2, 4),
@@ -114,7 +114,7 @@ public class TestIRMatching {
                  GoodRuleConstraint.create(Calls.class, "calls()", 3)
         );
 
-        String[] allocArrayMatches = { "MyClass", "wrapper for: _new_array_Java"};
+        String[] allocArrayMatches = { "MyClass", "wrapper for: C2 Runtime new_array"};
         runCheck(BadFailOnConstraint.create(AllocArray.class, "allocArray()", 1, allocArrayMatches),
                  BadFailOnConstraint.create(AllocArray.class, "allocArray()", 2,  allocArrayMatches),
                  GoodFailOnConstraint.create(AllocArray.class, "allocArray()", 3),

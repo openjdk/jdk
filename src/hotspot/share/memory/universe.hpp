@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_UNIVERSE_HPP
 
 #include "gc/shared/verifyOption.hpp"
+#include "memory/reservedSpace.hpp"
 #include "oops/array.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
@@ -42,7 +43,6 @@
 class CollectedHeap;
 class DeferredObjAllocEvent;
 class OopStorage;
-class ReservedHeapSpace;
 class SerializeClosure;
 
 class Universe: AllStatic {
@@ -51,7 +51,6 @@ class Universe: AllStatic {
   friend class oopDesc;
   friend class ClassLoader;
   friend class SystemDictionary;
-  friend class ReservedHeapSpace;
   friend class VMStructs;
   friend class VM_PopulateDumpSharedSpace;
   friend class Metaspace;
@@ -65,8 +64,8 @@ class Universe: AllStatic {
 
  private:
   // Known classes in the VM
-  static Klass* _typeArrayKlasses[T_LONG+1];
-  static Klass* _objectArrayKlass;
+  static TypeArrayKlass* _typeArrayKlasses[T_LONG+1];
+  static ObjArrayKlass* _objectArrayKlass;
   // Special int-Array that represents filler objects that are used by GC to overwrite
   // dead objects. References to them are generally an error.
   static Klass* _fillerArrayKlass;
@@ -95,6 +94,9 @@ class Universe: AllStatic {
   static Array<Method*>*        _the_empty_method_array;         // Canonicalized method array
 
   static Array<Klass*>*  _the_array_interfaces_array;
+
+  static uintx _the_array_interfaces_bitmap;
+  static uintx _the_empty_klass_bitmap;
 
   // array of preallocated error objects with backtrace
   static OopHandle     _preallocated_out_of_memory_error_array;
@@ -174,20 +176,20 @@ class Universe: AllStatic {
   static void set_verify_data(uintptr_t mask, uintptr_t bits) PRODUCT_RETURN;
 
   // Known classes in the VM
-  static Klass* boolArrayKlass()                 { return typeArrayKlass(T_BOOLEAN); }
-  static Klass* byteArrayKlass()                 { return typeArrayKlass(T_BYTE); }
-  static Klass* charArrayKlass()                 { return typeArrayKlass(T_CHAR); }
-  static Klass* intArrayKlass()                  { return typeArrayKlass(T_INT); }
-  static Klass* shortArrayKlass()                { return typeArrayKlass(T_SHORT); }
-  static Klass* longArrayKlass()                 { return typeArrayKlass(T_LONG); }
-  static Klass* floatArrayKlass()                { return typeArrayKlass(T_FLOAT); }
-  static Klass* doubleArrayKlass()               { return typeArrayKlass(T_DOUBLE); }
+  static TypeArrayKlass* boolArrayKlass()        { return typeArrayKlass(T_BOOLEAN); }
+  static TypeArrayKlass* byteArrayKlass()        { return typeArrayKlass(T_BYTE); }
+  static TypeArrayKlass* charArrayKlass()        { return typeArrayKlass(T_CHAR); }
+  static TypeArrayKlass* intArrayKlass()         { return typeArrayKlass(T_INT); }
+  static TypeArrayKlass* shortArrayKlass()       { return typeArrayKlass(T_SHORT); }
+  static TypeArrayKlass* longArrayKlass()        { return typeArrayKlass(T_LONG); }
+  static TypeArrayKlass* floatArrayKlass()       { return typeArrayKlass(T_FLOAT); }
+  static TypeArrayKlass* doubleArrayKlass()      { return typeArrayKlass(T_DOUBLE); }
 
-  static Klass* objectArrayKlass()               { return _objectArrayKlass; }
+  static ObjArrayKlass* objectArrayKlass()       { return _objectArrayKlass; }
 
   static Klass* fillerArrayKlass()               { return _fillerArrayKlass; }
 
-  static Klass* typeArrayKlass(BasicType t) {
+  static TypeArrayKlass* typeArrayKlass(BasicType t) {
     assert((uint)t >= T_BOOLEAN, "range check for type: %s", type2name(t));
     assert((uint)t < T_LONG+1,   "range check for type: %s", type2name(t));
     assert(_typeArrayKlasses[t] != nullptr, "domain check");
@@ -226,10 +228,14 @@ class Universe: AllStatic {
 
   static oop          null_ptr_exception_instance();
   static oop          arithmetic_exception_instance();
-  static oop          virtual_machine_error_instance();
-  static oop          vm_exception()                  { return virtual_machine_error_instance(); }
+  static oop          internal_error_instance();
+  static oop          array_index_out_of_bounds_exception_instance();
+  static oop          array_store_exception_instance();
+  static oop          class_cast_exception_instance();
+  static oop          vm_exception()                  { return internal_error_instance(); }
 
-  static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array;   }
+  static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array; }
+  static uintx        the_array_interfaces_bitmap()   { return _the_array_interfaces_bitmap; }
 
   static Method*      finalizer_register_method();
   static Method*      loader_addClass_method();
@@ -262,10 +268,13 @@ class Universe: AllStatic {
   static Array<Klass*>*          the_empty_klass_array()  { return _the_empty_klass_array; }
   static Array<InstanceKlass*>*  the_empty_instance_klass_array() { return _the_empty_instance_klass_array; }
 
+  static uintx                   the_empty_klass_bitmap() { return _the_empty_klass_bitmap; }
+
   // OutOfMemoryError support. Returns an error with the required message. The returned error
   // may or may not have a backtrace. If error has a backtrace then the stack trace is already
   // filled in.
   static oop out_of_memory_error_java_heap();
+  static oop out_of_memory_error_java_heap_without_backtrace();
   static oop out_of_memory_error_c_heap();
   static oop out_of_memory_error_metaspace();
   static oop out_of_memory_error_class_metaspace();
@@ -273,8 +282,6 @@ class Universe: AllStatic {
   static oop out_of_memory_error_gc_overhead_limit();
   static oop out_of_memory_error_realloc_objects();
 
-  // Throw default _out_of_memory_error_retry object as it will never propagate out of the VM
-  static oop out_of_memory_error_retry();
   static oop delayed_stack_overflow_error_message();
 
   // Saved StackOverflowError and OutOfMemoryError for use when
@@ -289,7 +296,7 @@ class Universe: AllStatic {
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
 
-  DEBUG_ONLY(static bool is_gc_active();)
+  DEBUG_ONLY(static bool is_stw_gc_active();)
   DEBUG_ONLY(static bool is_in_heap(const void* p);)
   DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == nullptr || is_in_heap(p); })
 

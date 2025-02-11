@@ -37,12 +37,11 @@ endif
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT, \
     NAME := management, \
     OPTIMIZATION := $(LIBMANAGEMENT_OPTIMIZATION), \
-    JDK_LIBS := $(JDKLIB_LIBS), \
-    JDK_LIBS_windows := $(WIN_JAVA_LIB) jvm.lib, \
-    LIBS_aix := -lperfstat,\
+    DISABLED_WARNINGS_gcc_VMManagementImpl.c := unused-variable, \
+    DISABLED_WARNINGS_clang_VMManagementImpl.c := unused-variable, \
+    JDK_LIBS := java.base:libjava java.base:libjvm, \
+    LIBS_aix := -lperfstat, \
     LIBS_windows := advapi32.lib psapi.lib, \
 ))
-
-$(BUILD_LIBMANAGEMENT): $(call FindLib, java.base, java)
 
 TARGETS += $(BUILD_LIBMANAGEMENT)

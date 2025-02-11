@@ -25,15 +25,13 @@
 
 include LauncherCommon.gmk
 
-DISABLED_WARNINGS_java += this-escape
-
 ################################################################################
 ## Build javap
 ################################################################################
 
 $(eval $(call SetupBuildLauncher, javap, \
     MAIN_CLASS := com.sun.tools.javap.Main, \
-    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
+    EXPAND_CLASSPATH_WILDCARDS := true, \
 ))
 
 ################################################################################
@@ -42,7 +40,7 @@ $(eval $(call SetupBuildLauncher, javap, \
 
 $(eval $(call SetupBuildLauncher, jdeps, \
     MAIN_CLASS := com.sun.tools.jdeps.Main, \
-    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
+    EXPAND_CLASSPATH_WILDCARDS := true, \
 ))
 
 ################################################################################
@@ -51,5 +49,14 @@ $(eval $(call SetupBuildLauncher, jdeps, \
 
 $(eval $(call SetupBuildLauncher, jdeprscan, \
     MAIN_CLASS := com.sun.tools.jdeprscan.Main, \
-    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
+    EXPAND_CLASSPATH_WILDCARDS := true, \
+))
+
+################################################################################
+## Build jnativescan
+################################################################################
+
+$(eval $(call SetupBuildLauncher, jnativescan, \
+    MAIN_CLASS := com.sun.tools.jnativescan.Main, \
+    EXPAND_CLASSPATH_WILDCARDS := true, \
 ))

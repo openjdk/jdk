@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -219,21 +218,22 @@ bool MethodMatcher::match(Symbol* candidate, Symbol* match, Mode match_mode) con
 
 static MethodMatcher::Mode check_mode(char name[], const char*& error_msg) {
   int match = MethodMatcher::Exact;
+  size_t len = strlen(name);
   if (name[0] == '*') {
-    if (strlen(name) == 1) {
+    if (len == 1) {
       return MethodMatcher::Any;
     }
     match |= MethodMatcher::Suffix;
-    memmove(name, name + 1, strlen(name + 1) + 1);
+    memmove(name, name + 1, len); // Include terminating nul in move.
+    len--;
   }
 
-  size_t len = strlen(name);
   if (len > 0 && name[len - 1] == '*') {
     match |= MethodMatcher::Prefix;
     name[--len] = '\0';
   }
 
-  if (strlen(name) == 0) {
+  if (len == 0) {
     error_msg = "** Not a valid pattern";
     return MethodMatcher::Any;
   }
@@ -286,7 +286,7 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
     // In very rare case, the method name happens to be same as option type/name, so look ahead to make sure
     // it doesn't show up again.
     if ((OptionType::Unknown != CompilerOracle::parse_option_type(method_name) ||
-        CompileCommand::Unknown != CompilerOracle::parse_option_name(method_name)) &&
+        CompileCommandEnum::Unknown != CompilerOracle::parse_option_name(method_name)) &&
         *(line + bytes_read) != '\0' &&
         strstr(line + bytes_read, method_name) == nullptr) {
       error_msg = "Did not specify any method name";

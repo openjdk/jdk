@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -256,6 +255,9 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_copyMemory:
     if (StubRoutines::unsafe_arraycopy() == nullptr) return false;
+    break;
+  case vmIntrinsics::_setMemory:
+    if (StubRoutines::unsafe_setmemory() == nullptr) return false;
     break;
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
     if (StubRoutines::electronicCodeBook_encryptAESCrypt() == nullptr) return false;
@@ -607,6 +609,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
@@ -728,6 +731,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_setCurrentThread:
   case vmIntrinsics::_scopedValueCache:
   case vmIntrinsics::_setScopedValueCache:
+  case vmIntrinsics::_Continuation_pin:
+  case vmIntrinsics::_Continuation_unpin:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
   case vmIntrinsics::_getEventWriter:
@@ -744,7 +749,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_clone:
   case vmIntrinsics::_isAssignableFrom:
   case vmIntrinsics::_isInstance:
-  case vmIntrinsics::_getModifiers:
   case vmIntrinsics::_isInterface:
   case vmIntrinsics::_isArray:
   case vmIntrinsics::_isPrimitive:
@@ -760,6 +764,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_Reference_get:
   case vmIntrinsics::_Reference_refersTo0:
   case vmIntrinsics::_PhantomReference_refersTo0:
+  case vmIntrinsics::_Reference_clear0:
+  case vmIntrinsics::_PhantomReference_clear0:
   case vmIntrinsics::_Class_cast:
   case vmIntrinsics::_aescrypt_encryptBlock:
   case vmIntrinsics::_aescrypt_decryptBlock:
@@ -783,6 +789,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
   case vmIntrinsics::_poly1305_processBlocks:
+  case vmIntrinsics::_intpoly_montgomeryMult_P256:
+  case vmIntrinsics::_intpoly_assign:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
@@ -801,18 +809,18 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_VectorBinaryOp:
   case vmIntrinsics::_VectorTernaryOp:
   case vmIntrinsics::_VectorFromBitsCoerced:
-  case vmIntrinsics::_VectorShuffleIota:
-  case vmIntrinsics::_VectorShuffleToVector:
   case vmIntrinsics::_VectorLoadOp:
   case vmIntrinsics::_VectorLoadMaskedOp:
   case vmIntrinsics::_VectorStoreOp:
   case vmIntrinsics::_VectorStoreMaskedOp:
+  case vmIntrinsics::_VectorSelectFromTwoVectorOp:
   case vmIntrinsics::_VectorGatherOp:
   case vmIntrinsics::_VectorScatterOp:
   case vmIntrinsics::_VectorReductionCoerced:
   case vmIntrinsics::_VectorTest:
   case vmIntrinsics::_VectorBlend:
   case vmIntrinsics::_VectorRearrange:
+  case vmIntrinsics::_VectorSelectFrom:
   case vmIntrinsics::_VectorCompare:
   case vmIntrinsics::_VectorBroadcastInt:
   case vmIntrinsics::_VectorConvert:
@@ -828,7 +836,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_notifyJvmtiVThreadEnd:
   case vmIntrinsics::_notifyJvmtiVThreadMount:
   case vmIntrinsics::_notifyJvmtiVThreadUnmount:
-  case vmIntrinsics::_notifyJvmtiVThreadHideFrames:
   case vmIntrinsics::_notifyJvmtiVThreadDisableSuspend:
 #endif
     break;

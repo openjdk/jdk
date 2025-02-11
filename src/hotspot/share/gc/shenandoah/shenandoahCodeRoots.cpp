@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -102,13 +102,6 @@ public:
     WorkerTask("Shenandoah Disarm NMethods"),
     _iterator(ShenandoahCodeRoots::table()) {
     assert(SafepointSynchronize::is_at_safepoint(), "Only at a safepoint");
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    _iterator.nmethods_do_begin();
-  }
-
-  ~ShenandoahDisarmNMethodsTask() {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    _iterator.nmethods_do_end();
   }
 
   virtual void work(uint worker_id) {
@@ -148,18 +141,21 @@ public:
       return;
     }
 
-    ShenandoahReentrantLocker locker(nm_data->lock());
+    {
+      ShenandoahReentrantLocker locker(nm_data->lock());
 
-    // Heal oops and disarm
-    if (_bs->is_armed(nm)) {
-      ShenandoahEvacOOMScope oom_evac_scope;
-      ShenandoahNMethod::heal_nmethod_metadata(nm_data);
-      // Code cache unloading needs to know about on-stack nmethods. Arm the nmethods to get
-      // mark_as_maybe_on_stack() callbacks when they are used again.
-      _bs->set_guard_value(nm, 0);
+      // Heal oops and disarm
+      if (_bs->is_armed(nm)) {
+        ShenandoahEvacOOMScope oom_evac_scope;
+        ShenandoahNMethod::heal_nmethod_metadata(nm_data);
+        // Code cache unloading needs to know about on-stack nmethods. Arm the nmethods to get
+        // mark_as_maybe_on_stack() callbacks when they are used again.
+        _bs->set_guard_value(nm, 0);
+      }
     }
 
     // Clear compiled ICs and exception caches
+    ShenandoahReentrantLocker locker(nm_data->ic_lock());
     nm->unload_nmethod_caches(_unloading_occurred);
   }
 };
@@ -173,15 +169,7 @@ public:
   ShenandoahUnlinkTask(bool unloading_occurred) :
     WorkerTask("Shenandoah Unlink NMethods"),
     _cl(unloading_occurred),
-    _iterator(ShenandoahCodeRoots::table()) {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    _iterator.nmethods_do_begin();
-  }
-
-  ~ShenandoahUnlinkTask() {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    _iterator.nmethods_do_end();
-  }
+    _iterator(ShenandoahCodeRoots::table()) {}
 
   virtual void work(uint worker_id) {
     _iterator.nmethods_do(&_cl);
@@ -215,8 +203,8 @@ ShenandoahCodeRootsIterator::~ShenandoahCodeRootsIterator() {
   locker.notify_all();
 }
 
-void ShenandoahCodeRootsIterator::possibly_parallel_blobs_do(CodeBlobClosure *f) {
+void ShenandoahCodeRootsIterator::possibly_parallel_nmethods_do(NMethodClosure *f) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint");
   assert(_table_snapshot != nullptr, "Sanity");
-  _table_snapshot->parallel_blobs_do(f);
+  _table_snapshot->parallel_nmethods_do(f);
 }

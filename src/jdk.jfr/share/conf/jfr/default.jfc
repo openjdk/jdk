@@ -200,16 +200,6 @@
       <setting name="threshold">10 ms</setting>
     </event>
 
-    <event name="jdk.SafepointCleanup">
-      <setting name="enabled">false</setting>
-      <setting name="threshold">10 ms</setting>
-    </event>
-
-    <event name="jdk.SafepointCleanupTask">
-      <setting name="enabled">false</setting>
-      <setting name="threshold">10 ms</setting>
-    </event>
-
     <event name="jdk.SafepointEnd">
       <setting name="enabled">false</setting>
       <setting name="threshold">10 ms</setting>
@@ -523,6 +513,10 @@
     </event>
 
     <event name="jdk.ShenandoahHeapRegionStateChange">
+      <setting name="enabled" control="gc-enabled-high">false</setting>
+    </event>
+
+    <event name="jdk.ShenandoahEvacuationInformation">
       <setting name="enabled" control="gc-enabled-high">false</setting>
     </event>
 

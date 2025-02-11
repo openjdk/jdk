@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,14 +299,6 @@ public final class RSAPrivateCrtKeyImpl
     @Override
     public AlgorithmParameterSpec getParams() {
         return keyParams;
-    }
-
-    // return a string representation of this key for debugging
-    @Override
-    public String toString() {
-        return "SunRsaSign " + type.keyAlgo + " private CRT key, "
-               + n.bitLength() + " bits" + "\n  params: " + keyParams
-               + "\n  modulus: " + n + "\n  private exponent: " + d;
     }
 
     // utility method for parsing DER encoding of RSA private keys in PKCS#1

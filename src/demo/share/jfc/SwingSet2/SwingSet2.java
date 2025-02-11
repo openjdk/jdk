@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -848,7 +848,14 @@ public class SwingSet2 extends JPanel {
         if (frame == null) {
             SwingUtilities.updateComponentTreeUI(this);
         } else {
+            if (currentLookAndFeel.name.contains("GTK")) {
+                this.setPreferredSize(new Dimension(PREFERRED_WIDTH + 260, PREFERRED_HEIGHT + 80));
+            } else {
+                this.setPreferredSize(new Dimension(PREFERRED_WIDTH, PREFERRED_HEIGHT));
+            }
+
             SwingUtilities.updateComponentTreeUI(frame);
+            frame.pack();
         }
 
         SwingUtilities.updateComponentTreeUI(popupMenu);

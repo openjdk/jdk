@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -41,41 +40,41 @@
 #include "utilities/utf8.hpp"
 
 typeArrayOop oopFactory::new_boolArray(int length, TRAPS) {
-  return TypeArrayKlass::cast(Universe::boolArrayKlass())->allocate(length, THREAD);
+  return Universe::boolArrayKlass()->allocate(length, THREAD);
 }
 
 typeArrayOop oopFactory::new_charArray(int length, TRAPS) {
-  return TypeArrayKlass::cast(Universe::charArrayKlass())->allocate(length, THREAD);
+  return Universe::charArrayKlass()->allocate(length, THREAD);
 }
 
 typeArrayOop oopFactory::new_floatArray(int length, TRAPS) {
-  return TypeArrayKlass::cast(Universe::floatArrayKlass())->allocate(length, THREAD);
+  return Universe::floatArrayKlass()->allocate(length, THREAD);
 }
 
 typeArrayOop oopFactory::new_doubleArray(int length, TRAPS) {
-  return TypeArrayKlass::cast(Universe::doubleArrayKlass())->allocate(length, THREAD);
+  return Universe::doubleArrayKlass()->allocate(length, THREAD);
 }
 
 typeArrayOop oopFactory::new_byteArray(int length, TRAPS) {
-  return TypeArrayKlass::cast(Universe::byteArrayKlass())->allocate(length, THREAD);
+  return Universe::byteArrayKlass()->allocate(length, THREAD);
 }
 
 typeArrayOop oopFactory::new_shortArray(int length, TRAPS) {
-  return TypeArrayKlass::cast(Universe::shortArrayKlass())->allocate(length, THREAD);
+  return Universe::shortArrayKlass()->allocate(length, THREAD);
 }
 
 typeArrayOop oopFactory::new_intArray(int length, TRAPS) {
-  return TypeArrayKlass::cast(Universe::intArrayKlass())->allocate(length, THREAD);
+  return Universe::intArrayKlass()->allocate(length, THREAD);
 }
 
 typeArrayOop oopFactory::new_longArray(int length, TRAPS) {
-  return TypeArrayKlass::cast(Universe::longArrayKlass())->allocate(length, THREAD);
+  return Universe::longArrayKlass()->allocate(length, THREAD);
 }
 
 // create java.lang.Object[]
 objArrayOop oopFactory::new_objectArray(int length, TRAPS)  {
   assert(Universe::objectArrayKlass() != nullptr, "Too early?");
-  return ObjArrayKlass::cast(Universe::objectArrayKlass())->allocate(length, THREAD);
+  return Universe::objectArrayKlass()->allocate(length, THREAD);
 }
 
 typeArrayOop oopFactory::new_charArray(const char* utf8_str, TRAPS) {
@@ -88,10 +87,8 @@ typeArrayOop oopFactory::new_charArray(const char* utf8_str, TRAPS) {
 }
 
 typeArrayOop oopFactory::new_typeArray(BasicType type, int length, TRAPS) {
-  Klass* klass = Universe::typeArrayKlass(type);
-  TypeArrayKlass* typeArrayKlass = TypeArrayKlass::cast(klass);
-  typeArrayOop result = typeArrayKlass->allocate(length, THREAD);
-  return result;
+  TypeArrayKlass* klass = Universe::typeArrayKlass(type);
+  return klass->allocate(length, THREAD);
 }
 
 // Create a Java array that points to Symbol.
@@ -100,17 +97,12 @@ typeArrayOop oopFactory::new_typeArray(BasicType type, int length, TRAPS) {
 // this.  They cast Symbol* into this type.
 typeArrayOop oopFactory::new_symbolArray(int length, TRAPS) {
   BasicType type = LP64_ONLY(T_LONG) NOT_LP64(T_INT);
-  Klass* klass = Universe::typeArrayKlass(type);
-  TypeArrayKlass* typeArrayKlass = TypeArrayKlass::cast(klass);
-  typeArrayOop result = typeArrayKlass->allocate(length, THREAD);
-  return result;
+  return new_typeArray(type, length, THREAD);
 }
 
 typeArrayOop oopFactory::new_typeArray_nozero(BasicType type, int length, TRAPS) {
-  Klass* klass = Universe::typeArrayKlass(type);
-  TypeArrayKlass* typeArrayKlass = TypeArrayKlass::cast(klass);
-  typeArrayOop result = typeArrayKlass->allocate_common(length, false, THREAD);
-  return result;
+  TypeArrayKlass* klass = Universe::typeArrayKlass(type);
+  return klass->allocate_common(length, false, THREAD);
 }
 
 

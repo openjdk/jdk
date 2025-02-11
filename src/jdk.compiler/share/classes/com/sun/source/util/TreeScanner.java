@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.source.util;
 
 import com.sun.source.tree.*;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A TreeVisitor that visits all the child tree nodes.
@@ -377,6 +376,8 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
+     *
+     * @since 14
      */
     @Override
     public R visitSwitchExpression(SwitchExpressionTree node, P p) {
@@ -773,24 +774,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     @Override
     public R visitAnyPattern(AnyPatternTree node, P p) {
         return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @implSpec This implementation scans the children in left to right order.
-     *
-     * @param node  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return the result of scanning
-     * @since 21
-     */
-    @Override
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES, reflective=true)
-    public R visitStringTemplate(StringTemplateTree node, P p) {
-        R r = scan(node.getProcessor(), p);
-        r = scanAndReduce(node.getExpressions(), p, r);
-        return r;
     }
 
     /**
@@ -1219,6 +1202,8 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
+     *
+     * @since 14
      */
     @Override
     public R visitYield(YieldTree node, P p) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,9 @@
 #endif
 
 #define PRAGMA_NONNULL_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
+
+#define PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED \
+  PRAGMA_DISABLE_GCC_WARNING("-Wzero-as-null-pointer-constant")
 
 #if (__GNUC__ >= 10)
 // TODO: Re-enable warning attribute for Clang once

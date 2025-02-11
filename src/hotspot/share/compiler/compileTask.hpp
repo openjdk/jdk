@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
       Reason_Whitebox,         // Whitebox API
       Reason_MustBeCompiled,   // Used for -Xcomp or AlwaysCompileLoopMethods (see CompilationPolicy::must_be_compiled())
       Reason_Bootstrap,        // JVMCI bootstrap
-      Reason_DirectivesChanged, // Changed CompilerDirectivesStack
       Reason_Count
   };
 
@@ -75,8 +74,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
       "replay",
       "whitebox",
       "must_be_compiled",
-      "bootstrap",
-      "directives_changed"
+      "bootstrap"
     };
     return reason_names[compile_reason];
   }
@@ -100,6 +98,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   // Compilation state for a blocking JVMCI compilation
   JVMCICompileState*   _blocking_jvmci_compile_state;
 #endif
+  int                  _waiting_count;  // See waiting_for_completion_count()
   int                  _comp_level;
   int                  _num_inlined_bytecodes;
   CompileTask*         _next, *_prev;
@@ -114,6 +113,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   const char*          _failure_reason;
   // Specifies if _failure_reason is on the C heap.
   bool                 _failure_reason_on_C_heap;
+  size_t               _arena_bytes;  // peak size of temporary memory during compilation (e.g. node arenas)
 
  public:
   CompileTask() : _failure_reason(nullptr), _failure_reason_on_C_heap(false) {
@@ -175,6 +175,23 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
   Monitor*     lock() const                      { return _lock; }
 
+  // See how many threads are waiting for this task. Must have lock to read this.
+  int waiting_for_completion_count() {
+    assert(_lock->owned_by_self(), "must have lock to use waiting_for_completion_count()");
+    return _waiting_count;
+  }
+  // Indicates that a thread is waiting for this task to complete. Must have lock to use this.
+  void inc_waiting_for_completion() {
+    assert(_lock->owned_by_self(), "must have lock to use inc_waiting_for_completion()");
+    _waiting_count++;
+  }
+  // Indicates that a thread stopped waiting for this task to complete. Must have lock to use this.
+  void dec_waiting_for_completion() {
+    assert(_lock->owned_by_self(), "must have lock to use dec_waiting_for_completion()");
+    assert(_waiting_count > 0, "waiting count is not positive");
+    _waiting_count--;
+  }
+
   void         mark_complete()                   { _is_complete = true; }
   void         mark_success()                    { _is_success = true; }
   void         mark_started(jlong time)          { _time_started = time; }
@@ -200,6 +217,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         metadata_do(MetadataClosure* f);
   void         mark_on_stack();
 
+  void         set_arena_bytes(size_t s)         { _arena_bytes = s; }
+  size_t       arena_bytes() const               { return _arena_bytes; }
+
 private:
   static void  print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
                                       bool is_osr_method = false, int osr_bci = -1, bool is_blocking = false,
@@ -216,6 +236,9 @@ public:
   }
   static void  print_ul(const nmethod* nm, const char* msg = nullptr);
 
+  /**
+   * @deprecated Please rely on Compile::inline_printer. Do not directly write inlining information to tty.
+   */
   static void  print_inline_indent(int inline_level, outputStream* st = tty);
 
   void         print_tty();
@@ -233,7 +256,11 @@ public:
 
   bool         check_break_at_flags();
 
+  static void print_inlining_header(outputStream* st, ciMethod* method, int inline_level, int bci);
   static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr);
+  static void print_inline_inner_method_info(outputStream* st, ciMethod* method);
+  static void print_inlining_inner_message(outputStream* st, InliningResult result, const char* msg);
+
   static void print_inlining_tty(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
     print_inlining_inner(tty, method, inline_level, bci, result, msg);
   }

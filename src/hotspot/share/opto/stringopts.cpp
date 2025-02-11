@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciSymbols.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
@@ -203,7 +202,7 @@ class StringConcat : public ResourceObj {
       Node* uct = _uncommon_traps.at(u);
 
       // Build a new call using the jvms state of the allocate
-      address call_addr = SharedRuntime::uncommon_trap_blob()->entry_point();
+      address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
       const TypeFunc* call_type = OptoRuntime::uncommon_trap_Type();
       const TypePtr* no_memory_effects = nullptr;
       Compile* C = _stringopts->C;
@@ -1325,7 +1324,7 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
   Node* ch = __ AddI(r, __ intcon('0'));
   Node* st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
-                                ch, bt, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
+                                ch, bt, MemNode::unordered, false /* require_atomic_access */,
                                 false /* unaligned */, (bt != T_BYTE) /* mismatched */);
 
   iff = kit.create_and_map_if(head, __ Bool(__ CmpI(q, __ intcon(0)), BoolTest::ne),
@@ -1364,8 +1363,8 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   } else {
     Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
     st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
-                            sign, bt, byte_adr_idx, MemNode::unordered, false /* require_atomic_access */,
-                            false /* unaligned */, (bt != T_BYTE) /* mismatched */);
+                            sign, bt, MemNode::unordered, false /* require_atomic_access */, false /* unaligned */,
+                            (bt != T_BYTE) /* mismatched */);
 
     final_merge->init_req(merge_index + 1, kit.control());
     final_mem->init_req(merge_index + 1, st);
@@ -2010,7 +2009,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     // of the initialization is committed to memory before any code publishes
     // a reference to the newly constructed object (see Parse::do_exits()).
     assert(AllocateNode::Ideal_allocation(result) != nullptr, "should be newly allocated");
-    kit.insert_mem_bar(Op_MemBarRelease, result);
+    kit.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease, result);
   } else {
     result = C->top();
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
 
 /*
  * @test
+ * @key randomness
+ *
+ * @library /test/lib
  * @modules jdk.incubator.vector
  * @run testng/othervm/timeout=300 -ea -esa -Xbatch -XX:-TieredCompilation FloatMaxVectorTests
  */
@@ -65,10 +68,23 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
 
     private static final int Max = 256;  // juts so we can do N/Max
 
-    // for floating point reduction ops that may introduce rounding errors
-    private static final float RELATIVE_ROUNDING_ERROR = (float)0.000001;
+    // for floating point addition reduction ops that may introduce rounding errors
+    private static final float RELATIVE_ROUNDING_ERROR_FACTOR_ADD = (float)10.0;
+
+    // for floating point multiplication reduction ops that may introduce rounding errors
+    private static final float RELATIVE_ROUNDING_ERROR_FACTOR_MUL = (float)50.0;
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / Max);
+
+    static void assertArraysStrictlyEquals(float[] r, float[] a) {
+        for (int i = 0; i < a.length; i++) {
+            int ir = Float.floatToRawIntBits(r[i]);
+            int ia = Float.floatToRawIntBits(a[i]);
+            if (ir != ia) {
+                Assert.fail(String.format("at index #%d, expected = %08X, actual = %08X", i, ia, ir));
+            }
+        }
+    }
 
     interface FUnOp {
         float apply(float a);
@@ -131,16 +147,16 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
 
     static void assertReductionArraysEquals(float[] r, float rc, float[] a,
                                             FReductionOp f, FReductionAllOp fa,
-                                            float relativeError) {
+                                            float relativeErrorFactor) {
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError));
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor);
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError));
+                Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError), "at index #" + i);
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor, "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor, "at index #" + i);
         }
     }
 
@@ -247,25 +263,6 @@ relativeError));
         }
     }
 
-    static void assertInsertArraysEquals(float[] r, float[] a, float element, int index, int start, int end) {
-        int i = start;
-        try {
-            for (; i < end; i += 1) {
-                if(i%SPECIES.length() == index) {
-                    Assert.assertEquals(r[i], element);
-                } else {
-                    Assert.assertEquals(r[i], a[i]);
-                }
-            }
-        } catch (AssertionError e) {
-            if (i%SPECIES.length() == index) {
-                Assert.assertEquals(r[i], element, "at index #" + i);
-            } else {
-                Assert.assertEquals(r[i], a[i], "at index #" + i);
-            }
-        }
-    }
-
     static void assertRearrangeArraysEquals(float[] r, float[] a, int[] order, int vector_len) {
         int i = 0, j = 0;
         try {
@@ -326,6 +323,25 @@ relativeError));
             } else {
                 Assert.assertEquals(r[idx], (float)0, "at index #" + idx);
             }
+        }
+    }
+
+    static void assertSelectFromTwoVectorEquals(float[] r, float[] order, float[] a, float[] b, int vector_len) {
+        int i = 0, j = 0;
+        boolean is_exceptional_idx = false;
+        int idx = 0, wrapped_index = 0, oidx = 0;
+        try {
+            for (; i < a.length; i += vector_len) {
+                for (j = 0; j < vector_len; j++) {
+                    idx = i + j;
+                    wrapped_index = Math.floorMod((int)order[idx], 2 * vector_len);
+                    is_exceptional_idx = wrapped_index >= vector_len;
+                    oidx = is_exceptional_idx ? (wrapped_index - vector_len) : wrapped_index;
+                    Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + order[idx] + ", a = " + a[i + oidx] + ", b = " + b[i + oidx]);
         }
     }
 
@@ -794,21 +810,6 @@ relativeError));
         }
     }
 
-    interface FBinArrayOp {
-        float apply(float[] a, int b);
-    }
-
-    static void assertArraysEquals(float[] r, float[] a, FBinArrayOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a, i));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a,i), "at index #" + i);
-        }
-    }
-
     interface FGatherScatterOp {
         float[] apply(float[] a, int ix, int[] b, int iy);
     }
@@ -1142,6 +1143,18 @@ relativeError));
                 flatMap(pair -> FLOAT_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
                 collect(Collectors.toList());
 
+    static final List<IntFunction<float[]>> SELECT_FROM_INDEX_GENERATORS = List.of(
+            withToString("float[0..VECLEN*2)", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (float)(RAND.nextInt()));
+            })
+    );
+
+    static final List<List<IntFunction<float[]>>> FLOAT_GENERATOR_SELECT_FROM_TRIPLES =
+        FLOAT_GENERATOR_PAIRS.stream().
+                flatMap(pair -> SELECT_FROM_INDEX_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+                collect(Collectors.toList());
+
     @DataProvider
     public Object[][] floatBinaryOpProvider() {
         return FLOAT_GENERATOR_PAIRS.stream().map(List::toArray).
@@ -1166,6 +1179,12 @@ relativeError));
     @DataProvider
     public Object[][] floatTernaryOpProvider() {
         return FLOAT_GENERATOR_TRIPLES.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] floatSelectFromTwoVectorOpProvider() {
+        return FLOAT_GENERATOR_SELECT_FROM_TRIPLES.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 
@@ -1366,26 +1385,16 @@ relativeError));
     }
 
     static float cornerCaseValue(int i) {
-        switch(i % 7) {
-            case 0:
-                return Float.MAX_VALUE;
-            case 1:
-                return Float.MIN_VALUE;
-            case 2:
-                return Float.NEGATIVE_INFINITY;
-            case 3:
-                return Float.POSITIVE_INFINITY;
-            case 4:
-                return Float.NaN;
-            case 5:
-                return (float)0.0;
-            default:
-                return (float)-0.0;
-        }
-    }
-
-    static float get(float[] a, int i) {
-        return (float) a[i];
+        return switch(i % 8) {
+            case 0  -> Float.MAX_VALUE;
+            case 1  -> Float.MIN_VALUE;
+            case 2  -> Float.NEGATIVE_INFINITY;
+            case 3  -> Float.POSITIVE_INFINITY;
+            case 4  -> Float.NaN;
+            case 5  -> Float.intBitsToFloat(0x7F812345);
+            case 6  -> (float)0.0;
+            default -> (float)-0.0;
+        };
     }
 
     static final IntFunction<float[]> fr = (vl) -> {
@@ -2207,7 +2216,7 @@ relativeError));
         }
 
         assertReductionArraysEquals(r, ra, a,
-                FloatMaxVectorTests::ADDReduce, FloatMaxVectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR);
+                FloatMaxVectorTests::ADDReduce, FloatMaxVectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
     }
 
     static float ADDReduceMasked(float[] a, int idx, boolean[] mask) {
@@ -2253,7 +2262,7 @@ relativeError));
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                FloatMaxVectorTests::ADDReduceMasked, FloatMaxVectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR);
+                FloatMaxVectorTests::ADDReduceMasked, FloatMaxVectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
     }
 
     static float MULReduce(float[] a, int idx) {
@@ -2296,7 +2305,7 @@ relativeError));
         }
 
         assertReductionArraysEquals(r, ra, a,
-                FloatMaxVectorTests::MULReduce, FloatMaxVectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR);
+                FloatMaxVectorTests::MULReduce, FloatMaxVectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
     }
 
     static float MULReduceMasked(float[] a, int idx, boolean[] mask) {
@@ -2342,7 +2351,7 @@ relativeError));
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                FloatMaxVectorTests::MULReduceMasked, FloatMaxVectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR);
+                FloatMaxVectorTests::MULReduceMasked, FloatMaxVectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
     }
 
     static float MINReduce(float[] a, int idx) {
@@ -2612,22 +2621,23 @@ relativeError));
                 FloatMaxVectorTests::FIRST_NONZEROReduceMasked, FloatMaxVectorTests::FIRST_NONZEROReduceAllMasked);
     }
 
-    @Test(dataProvider = "floatUnaryOpProvider")
-    static void withFloatMaxVectorTests(IntFunction<float []> fa) {
+    @Test(dataProvider = "floatBinaryOpProvider")
+    static void withFloatMaxVectorTests(IntFunction<float []> fa, IntFunction<float []> fb) {
         float[] a = fa.apply(SPECIES.length());
+        float[] b = fb.apply(SPECIES.length());
         float[] r = fr.apply(SPECIES.length());
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.withLane((j++ & (SPECIES.length()-1)), (float)(65535+i)).intoArray(r, i);
+                av.withLane(j, b[i + j]).intoArray(r, i);
+                a[i + j] = b[i + j];
+                j = (j + 1) & (SPECIES.length() - 1);
             }
         }
 
 
-        for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
-            assertInsertArraysEquals(r, a, (float)(65535+i), (j++ & (SPECIES.length()-1)), i , i + SPECIES.length());
-        }
+        assertArraysStrictlyEquals(r, a);
     }
 
     static boolean testIS_DEFAULT(float a) {
@@ -3517,7 +3527,7 @@ relativeError));
             }
         }
 
-        assertArraysEquals(r, a, FloatMaxVectorTests::get);
+        assertArraysStrictlyEquals(r, a);
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
@@ -3563,7 +3573,7 @@ relativeError));
     static void sliceUnaryFloatMaxVectorTests(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
         float[] r = new float[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
@@ -3592,7 +3602,7 @@ relativeError));
         float[] a = fa.apply(SPECIES.length());
         float[] b = fb.apply(SPECIES.length());
         float[] r = new float[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
@@ -3626,7 +3636,7 @@ relativeError));
         VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
 
         float[] r = new float[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
@@ -3655,7 +3665,7 @@ relativeError));
     static void unsliceUnaryFloatMaxVectorTests(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
         float[] r = new float[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
@@ -3693,8 +3703,8 @@ relativeError));
         float[] a = fa.apply(SPECIES.length());
         float[] b = fb.apply(SPECIES.length());
         float[] r = new float[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
-        int part = (new java.util.Random()).nextInt(2);
+        int origin = RAND.nextInt(SPECIES.length());
+        int part = RAND.nextInt(2);
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
@@ -3750,8 +3760,8 @@ relativeError));
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
         float[] r = new float[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
-        int part = (new java.util.Random()).nextInt(2);
+        int origin = RAND.nextInt(SPECIES.length());
+        int part = RAND.nextInt(2);
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
@@ -4808,6 +4818,24 @@ relativeError));
         }
 
         assertSelectFromArraysEquals(r, a, order, SPECIES.length());
+    }
+
+    @Test(dataProvider = "floatSelectFromTwoVectorOpProvider")
+    static void SelectFromTwoVectorFloatMaxVectorTests(IntFunction<float[]> fa, IntFunction<float[]> fb, IntFunction<float[]> fc) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] b = fb.apply(SPECIES.length());
+        float[] idx = fc.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < idx.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                FloatVector bv = FloatVector.fromArray(SPECIES, b, i);
+                FloatVector idxv = FloatVector.fromArray(SPECIES, idx, i);
+                idxv.selectFrom(av, bv).intoArray(r, i);
+            }
+        }
+        assertSelectFromTwoVectorEquals(r, idx, a, b, SPECIES.length());
     }
 
     @Test(dataProvider = "floatUnaryOpSelectFromMaskProvider")

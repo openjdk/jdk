@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
 
 /*
  * @test
+ * @key randomness
+ *
+ * @library /test/lib
  * @modules jdk.incubator.vector
  * @run testng/othervm/timeout=300 -ea -esa -Xbatch -XX:-TieredCompilation $vectorteststype$
  */
@@ -35,6 +38,9 @@ import jdk.incubator.vector.VectorShuffle;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.Vector;
+#if[!FP]
+import jdk.incubator.vector.VectorMath;
+#end[!FP]
 
 #if[Byte]
 import jdk.incubator.vector.ByteVector;
@@ -93,11 +99,34 @@ public class $vectorteststype$ extends AbstractVectorTest {
     private static final $type$ CONST_SHIFT = $Boxtype$.SIZE / 2;
 #end[BITWISE]
 #if[FP]
-    // for floating point reduction ops that may introduce rounding errors
-    private static final $type$ RELATIVE_ROUNDING_ERROR = ($type$)0.000001;
+    // for floating point addition reduction ops that may introduce rounding errors
+    private static final $type$ RELATIVE_ROUNDING_ERROR_FACTOR_ADD = ($type$)10.0;
+
+    // for floating point multiplication reduction ops that may introduce rounding errors
+    private static final $type$ RELATIVE_ROUNDING_ERROR_FACTOR_MUL = ($type$)50.0;
 #end[FP]
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / $bits$);
+
+    static void assertArraysStrictlyEquals($type$[] r, $type$[] a) {
+        for (int i = 0; i < a.length; i++) {
+#if[FP]
+            $bitstype$ ir = $Wideboxtype$.$type$ToRaw$Bitstype$Bits(r[i]);
+            $bitstype$ ia = $Wideboxtype$.$type$ToRaw$Bitstype$Bits(a[i]);
+            if (ir != ia) {
+#if[Float]
+                Assert.fail(String.format("at index #%d, expected = %08X, actual = %08X", i, ia, ir));
+#else[Float]
+                Assert.fail(String.format("at index #%d, expected = %016X, actual = %016X", i, ia, ir));
+#end[Float]
+            }
+#else[FP]
+            if (r[i] != a[i]) {
+                Assert.fail("at index #" + i + ", expected = " + a[i] + ", actual = " + r[i]);
+            }
+#end[FP]
+        }
+    }
 
     interface FUnOp {
         $type$ apply($type$ a);
@@ -174,16 +203,16 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
     static void assertReductionArraysEquals($type$[] r, $type$ rc, $type$[] a,
                                             FReductionOp f, FReductionAllOp fa,
-                                            $type$ relativeError) {
+                                            $type$ relativeErrorFactor) {
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError));
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor);
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError));
+                Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError), "at index #" + i);
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor, "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor, "at index #" + i);
         }
     }
 #end[FP]
@@ -308,25 +337,6 @@ relativeError));
         }
     }
 
-    static void assertInsertArraysEquals($type$[] r, $type$[] a, $type$ element, int index, int start, int end) {
-        int i = start;
-        try {
-            for (; i < end; i += 1) {
-                if(i%SPECIES.length() == index) {
-                    Assert.assertEquals(r[i], element);
-                } else {
-                    Assert.assertEquals(r[i], a[i]);
-                }
-            }
-        } catch (AssertionError e) {
-            if (i%SPECIES.length() == index) {
-                Assert.assertEquals(r[i], element, "at index #" + i);
-            } else {
-                Assert.assertEquals(r[i], a[i], "at index #" + i);
-            }
-        }
-    }
-
     static void assertRearrangeArraysEquals($type$[] r, $type$[] a, int[] order, int vector_len) {
         int i = 0, j = 0;
         try {
@@ -387,6 +397,25 @@ relativeError));
             } else {
                 Assert.assertEquals(r[idx], ($type$)0, "at index #" + idx);
             }
+        }
+    }
+
+    static void assertSelectFromTwoVectorEquals($type$[] r, $type$[] order, $type$[] a, $type$[] b, int vector_len) {
+        int i = 0, j = 0;
+        boolean is_exceptional_idx = false;
+        int idx = 0, wrapped_index = 0, oidx = 0;
+        try {
+            for (; i < a.length; i += vector_len) {
+                for (j = 0; j < vector_len; j++) {
+                    idx = i + j;
+                    wrapped_index = Math.floorMod((int)order[idx], 2 * vector_len);
+                    is_exceptional_idx = wrapped_index >= vector_len;
+                    oidx = is_exceptional_idx ? (wrapped_index - vector_len) : wrapped_index;
+                    Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + order[idx] + ", a = " + a[i + oidx] + ", b = " + b[i + oidx]);
         }
     }
 
@@ -857,21 +886,6 @@ relativeError));
     }
 #end[FP]
 
-    interface FBinArrayOp {
-        $type$ apply($type$[] a, int b);
-    }
-
-    static void assertArraysEquals($type$[] r, $type$[] a, FBinArrayOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a, i));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a,i), "at index #" + i);
-        }
-    }
-
     interface FGatherScatterOp {
         $type$[] apply($type$[] a, int ix, int[] b, int iy);
     }
@@ -1210,6 +1224,35 @@ relativeError));
             })
     );
 
+#if[!FP]
+    static final List<IntFunction<$type$[]>> $TYPE$_SATURATING_GENERATORS = List.of(
+            withToString("$type$[$Boxtype$.MIN_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)($Boxtype$.MIN_VALUE));
+            }),
+            withToString("$type$[$Boxtype$.MAX_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)($Boxtype$.MAX_VALUE));
+            }),
+            withToString("$type$[$Boxtype$.MAX_VALUE - 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)($Boxtype$.MAX_VALUE - 100));
+            }),
+            withToString("$type$[$Boxtype$.MIN_VALUE + 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)($Boxtype$.MIN_VALUE + 100));
+            }),
+            withToString("$type$[-i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(-i * 5));
+            }),
+            withToString("$type$[i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(i * 5));
+            })
+    );
+
+#end[!FP]
     // Create combinations of pairs
     // @@@ Might be sensitive to order e.g. div by 0
     static final List<List<IntFunction<$type$[]>>> $TYPE$_GENERATOR_PAIRS =
@@ -1217,6 +1260,13 @@ relativeError));
                 flatMap(fa -> $TYPE$_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
+#if[!FP]
+    static final List<List<IntFunction<$type$[]>>> $TYPE$_SATURATING_GENERATOR_PAIRS =
+        Stream.of($TYPE$_GENERATORS.get(0)).
+                flatMap(fa -> $TYPE$_SATURATING_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
+                collect(Collectors.toList());
+
+#end[!FP]
     @DataProvider
     public Object[][] boolUnaryOpProvider() {
         return BOOL_ARRAY_GENERATORS.stream().
@@ -1229,18 +1279,49 @@ relativeError));
                 flatMap(pair -> $TYPE$_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
                 collect(Collectors.toList());
 
+    static final List<IntFunction<$type$[]>> SELECT_FROM_INDEX_GENERATORS = List.of(
+            withToString("$type$[0..VECLEN*2)", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(RAND.nextInt()));
+            })
+    );
+
+    static final List<List<IntFunction<$type$[]>>> $TYPE$_GENERATOR_SELECT_FROM_TRIPLES =
+        $TYPE$_GENERATOR_PAIRS.stream().
+                flatMap(pair -> SELECT_FROM_INDEX_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+                collect(Collectors.toList());
+
     @DataProvider
     public Object[][] $type$BinaryOpProvider() {
         return $TYPE$_GENERATOR_PAIRS.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 
+#if[!FP]
+    @DataProvider
+    public Object[][] $type$SaturatingBinaryOpProvider() {
+        return $TYPE$_SATURATING_GENERATOR_PAIRS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+#end[!FP]
     @DataProvider
     public Object[][] $type$IndexedOpProvider() {
         return $TYPE$_GENERATOR_PAIRS.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 
+#if[!FP]
+    @DataProvider
+    public Object[][] $type$SaturatingBinaryOpMaskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                flatMap(fm -> $TYPE$_SATURATING_GENERATOR_PAIRS.stream().map(lfa -> {
+                    return Stream.concat(lfa.stream(), Stream.of(fm)).toArray();
+                })).
+                toArray(Object[][]::new);
+    }
+
+#end[!FP]
     @DataProvider
     public Object[][] $type$BinaryOpMaskProvider() {
         return BOOLEAN_MASK_GENERATORS.stream().
@@ -1253,6 +1334,12 @@ relativeError));
     @DataProvider
     public Object[][] $type$TernaryOpProvider() {
         return $TYPE$_GENERATOR_TRIPLES.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] $type$SelectFromTwoVectorOpProvider() {
+        return $TYPE$_GENERATOR_SELECT_FROM_TRIPLES.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 
@@ -1466,22 +1553,20 @@ relativeError));
 
     static $type$ cornerCaseValue(int i) {
 #if[FP]
-        switch(i % 7) {
-            case 0:
-                return $Wideboxtype$.MAX_VALUE;
-            case 1:
-                return $Wideboxtype$.MIN_VALUE;
-            case 2:
-                return $Wideboxtype$.NEGATIVE_INFINITY;
-            case 3:
-                return $Wideboxtype$.POSITIVE_INFINITY;
-            case 4:
-                return $Wideboxtype$.NaN;
-            case 5:
-                return ($type$)0.0;
-            default:
-                return ($type$)-0.0;
-        }
+        return switch(i % 8) {
+            case 0  -> $Wideboxtype$.MAX_VALUE;
+            case 1  -> $Wideboxtype$.MIN_VALUE;
+            case 2  -> $Wideboxtype$.NEGATIVE_INFINITY;
+            case 3  -> $Wideboxtype$.POSITIVE_INFINITY;
+            case 4  -> $Wideboxtype$.NaN;
+#if[Float]
+            case 5  -> Float.intBitsToFloat(0x7F812345);
+#else[Float]
+            case 5  -> Double.longBitsToDouble(0x7FF123456789ABCDL);
+#end[Float]
+            case 6  -> ($type$)0.0;
+            default -> ($type$)-0.0;
+        };
 #else[FP]
         switch(i % 5) {
             case 0:
@@ -1496,10 +1581,6 @@ relativeError));
                 return ($type$)0;
         }
 #end[FP]
-    }
-
-    static $type$ get($type$[] a, int i) {
-        return ($type$) a[i];
     }
 
     static final IntFunction<$type$[]> fr = (vl) -> {

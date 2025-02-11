@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @bug 5015403
  * @summary Tests Enum value encoding
- * @run main/othervm -Djava.security.manager=allow java_lang_Enum
+ * @run main/othervm java_lang_Enum
  * @author Sergey Malenkov
  */
 
 public final class java_lang_Enum extends AbstractTest {
     public static void main(String[] args) {
-        new java_lang_Enum().test(true);
+        new java_lang_Enum().test();
     }
 
     protected Object getObject() {

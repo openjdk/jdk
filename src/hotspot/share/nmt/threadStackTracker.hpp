@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,61 +26,17 @@
 #ifndef SHARE_NMT_THREADSTACKTRACKER_HPP
 #define SHARE_NMT_THREADSTACKTRACKER_HPP
 
-#include "nmt/allocationSite.hpp"
-#include "nmt/mallocSiteTable.hpp"
-#include "nmt/nmtCommon.hpp"
-#include "utilities/linkedlist.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 
-class SimpleThreadStackSite : public AllocationSite {
-  const address _base;
-  const size_t  _size;
-public:
-  SimpleThreadStackSite(address base, size_t size, const NativeCallStack& stack) :
-    AllocationSite(stack, mtThreadStack),
-    _base(base),
-    _size(size) {}
-
-  bool equals(const SimpleThreadStackSite& mts) const {
-    bool eq = base() == mts.base();
-    assert(!eq || size() == mts.size(), "Must match");
-    return eq;
-  }
-
-  size_t  size() const { return _size; }
-  address base() const { return _base; }
-};
-
-  /*
-   * Most of platforms, that hotspot support, have their thread stacks backed by
-   * virtual memory by default. For these cases, thread stack tracker simply
-   * delegates tracking to virtual memory tracker.
-   * However, there are exceptions, (e.g. AIX), that platforms can provide stacks
-   * that are not page aligned. A hypothetical VM implementation, it can provide
-   * it own stacks. In these case, track_as_vm() should return false and manage
-   * stack tracking by this tracker internally.
-   * During memory snapshot, tracked thread stacks memory data is walked and stored
-   * along with malloc'd data inside baseline. The regions are not scanned and assumed
-   * all committed for now. Can add scanning phase when there is a need.
-   */
 class ThreadStackTracker : AllStatic {
 private:
   static volatile size_t _thread_count;
-
-  static int compare_thread_stack_base(const SimpleThreadStackSite& s1, const SimpleThreadStackSite& s2);
-  static SortedLinkedList<SimpleThreadStackSite, compare_thread_stack_base>* _simple_thread_stacks;
 public:
-  static bool initialize(NMT_TrackingLevel level);
-
   static void new_thread_stack(void* base, size_t size, const NativeCallStack& stack);
   static void delete_thread_stack(void* base, size_t size);
-
-  static bool   track_as_vm()  { return AIX_ONLY(false) NOT_AIX(true); }
   static size_t thread_count() { return _thread_count; }
-
-  // Snapshot support. Piggyback thread stack data in malloc slot, NMT always handles
-  // thread stack slot specially since beginning.
-  static bool walk_simple_thread_stack_site(MallocSiteWalker* walker);
 };
 
 #endif // SHARE_NMT_THREADSTACKTRACKER_HPP

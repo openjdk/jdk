@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,9 @@
  * @bug 8292275
  * @summary check that implicit parameter flags are available by default
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.code
- *          java.base/jdk.internal.classfile.impl
  * @run main ImplicitParameters
  */
 
@@ -195,7 +193,7 @@ public class ImplicitParameters extends TestRunner {
     }
 
     private void checkParameters(MethodModel method, int... parametersFlags) {
-        MethodParametersAttribute methodParameters = method.findAttribute(Attributes.METHOD_PARAMETERS).orElseThrow();
+        MethodParametersAttribute methodParameters = method.findAttribute(Attributes.methodParameters()).orElseThrow();
         Assert.checkNonNull(methodParameters, "MethodParameters attribute must be present");
         List<MethodParameterInfo> table = methodParameters.parameters();
         Assert.check(table.size() == parametersFlags.length, () -> "Expected " + parametersFlags.length

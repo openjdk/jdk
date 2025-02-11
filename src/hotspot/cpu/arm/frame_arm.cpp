@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -229,7 +228,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   DEBUG_ONLY(address old_pc = _pc;)
   *pc_addr = pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
-  address original_pc = nmethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     assert(original_pc == old_pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
@@ -323,6 +322,11 @@ UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) cons
 bool frame::upcall_stub_frame_is_first() const {
   ShouldNotCallThis();
   return false;
+}
+
+JavaThread** frame::saved_thread_address(const frame& f) {
+  Unimplemented();
+  return nullptr;
 }
 
 //------------------------------------------------------------------------------

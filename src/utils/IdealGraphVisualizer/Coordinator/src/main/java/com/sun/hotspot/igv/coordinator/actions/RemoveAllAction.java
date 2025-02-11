@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.hotspot.igv.coordinator.actions;
 import com.sun.hotspot.igv.coordinator.OutlineTopComponent;
 import javax.swing.Action;
 import org.openide.util.HelpCtx;
+import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.CallableSystemAction;
 
@@ -42,7 +43,8 @@ public final class RemoveAllAction extends CallableSystemAction {
     }
 
     public RemoveAllAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Remove all graphs and groups");
+        putValue(Action.SHORT_DESCRIPTION, "Clear workspace");
+        putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
     }
 
     @Override
@@ -62,6 +64,6 @@ public final class RemoveAllAction extends CallableSystemAction {
 
     @Override
     public void performAction() {
-        OutlineTopComponent.findInstance().clear();
+        OutlineTopComponent.findInstance().clearWorkspace();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -61,7 +60,7 @@ void VMOperationTimeoutTask::task() {
   if (is_armed()) {
     jlong delay = nanos_to_millis(os::javaTimeNanos() - _arm_time);
     if (delay > AbortVMOnVMOperationTimeoutDelay) {
-      fatal("%s VM operation took too long: " JLONG_FORMAT " ms elapsed since VM-op start (timeout: " INTX_FORMAT " ms)",
+      fatal("%s VM operation took too long: " JLONG_FORMAT " ms elapsed since VM-op start (timeout: %zd ms)",
             _vm_op_name, delay, AbortVMOnVMOperationTimeoutDelay);
     }
   }
@@ -88,7 +87,7 @@ void VMOperationTimeoutTask::disarm() {
   // VMOperationTimeoutTask might miss the arm-disarm window depending on
   // the scheduling.
   if (vm_op_duration > AbortVMOnVMOperationTimeoutDelay) {
-    fatal("%s VM operation took too long: completed in " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
+    fatal("%s VM operation took too long: completed in " JLONG_FORMAT " ms (timeout: %zd ms)",
           _vm_op_name, vm_op_duration, AbortVMOnVMOperationTimeoutDelay);
   }
   _vm_op_name = nullptr;
@@ -308,38 +307,24 @@ class HandshakeALotClosure : public HandshakeClosure {
   }
 };
 
-bool VMThread::handshake_alot() {
+bool VMThread::handshake_or_safepoint_alot() {
   assert(_cur_vm_operation == nullptr, "should not have an op yet");
   assert(_next_vm_operation == nullptr, "should not have an op yet");
-  if (!HandshakeALot) {
+  if (!HandshakeALot && !SafepointALot) {
     return false;
   }
-  static jlong last_halot_ms = 0;
+  static jlong last_alot_ms = 0;
   jlong now_ms = nanos_to_millis(os::javaTimeNanos());
-  // If only HandshakeALot is set, but GuaranteedSafepointInterval is 0,
-  // we emit a handshake if it's been more than a second since the last one.
+  // If HandshakeALot or SafepointALot are set, but GuaranteedSafepointInterval is explicitly
+  // set to 0 on the command line, we emit the operation if it's been more than a second
+  // since the last one.
   jlong interval = GuaranteedSafepointInterval != 0 ? GuaranteedSafepointInterval : 1000;
-  jlong deadline_ms = interval + last_halot_ms;
+  jlong deadline_ms = interval + last_alot_ms;
   if (now_ms > deadline_ms) {
-    last_halot_ms = now_ms;
+    last_alot_ms = now_ms;
     return true;
   }
   return false;
-}
-
-void VMThread::setup_periodic_safepoint_if_needed() {
-  assert(_cur_vm_operation  == nullptr, "Already have an op");
-  assert(_next_vm_operation == nullptr, "Already have an op");
-  // Check for a cleanup before SafepointALot to keep stats correct.
-  jlong interval_ms = SafepointTracing::time_since_last_safepoint_ms();
-  bool max_time_exceeded = GuaranteedSafepointInterval != 0 &&
-                           (interval_ms >= GuaranteedSafepointInterval);
-  if (!max_time_exceeded) {
-    return;
-  }
-  if (SafepointALot) {
-    _next_vm_operation = &safepointALot_op;
-  }
 }
 
 bool VMThread::set_next_operation(VM_Operation *op) {
@@ -415,17 +400,17 @@ void VMThread::inner_execute(VM_Operation* op) {
   HandleMark hm(VMThread::vm_thread());
 
   const char* const cause = op->cause();
-  EventMarkVMOperation em("Executing %sVM operation: %s%s%s%s",
-      prev_vm_operation != nullptr ? "nested " : "",
-      op->name(),
-      cause != nullptr ? " (" : "",
-      cause != nullptr ? cause : "",
-      cause != nullptr ? ")" : "");
+  stringStream ss;
+  ss.print("Executing%s%s VM operation: %s",
+           prev_vm_operation != nullptr ? " nested" : "",
+           op->evaluate_at_safepoint() ? " safepoint" : " non-safepoint",
+           op->name());
+  if (cause != nullptr) {
+    ss.print(" (%s)", cause);
+  }
 
-  log_debug(vmthread)("Evaluating %s %s VM operation: %s",
-                       prev_vm_operation != nullptr ? "nested" : "",
-                      _cur_vm_operation->evaluate_at_safepoint() ? "safepoint" : "non-safepoint",
-                      _cur_vm_operation->name());
+  EventMarkVMOperation em("%s", ss.freeze());
+  log_debug(vmthread)("%s", ss.freeze());
 
   bool end_safepoint = false;
   bool has_timeout_task = (_timeout_task != nullptr);
@@ -465,8 +450,8 @@ void VMThread::wait_for_operation() {
     if (_next_vm_operation != nullptr) {
       return;
     }
-    if (handshake_alot()) {
-      {
+    if (handshake_or_safepoint_alot()) {
+      if (HandshakeALot) {
         MutexUnlocker mul(VMOperation_lock);
         HandshakeALotClosure hal_cl;
         Handshake::execute(&hal_cl);
@@ -475,14 +460,13 @@ void VMThread::wait_for_operation() {
       if (_next_vm_operation != nullptr) {
         return;
       }
+      if (SafepointALot) {
+        _next_vm_operation = &safepointALot_op;
+        return;
+      }
     }
     assert(_next_vm_operation == nullptr, "Must be");
     assert(_cur_vm_operation  == nullptr, "Must be");
-
-    setup_periodic_safepoint_if_needed();
-    if (_next_vm_operation != nullptr) {
-      return;
-    }
 
     // We didn't find anything to execute, notify any waiter so they can install an op.
     ml_op_lock.notify_all();

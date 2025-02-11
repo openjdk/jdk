@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,16 +46,18 @@ static IsWow64ProcessFunc _IsWow64Process;
 typedef BOOL  (WINAPI *EnumProcessModulesFunc)  (HANDLE, HMODULE *, DWORD, LPDWORD );
 typedef DWORD (WINAPI *GetModuleFileNameExFunc) ( HANDLE, HMODULE, LPTSTR, DWORD );
 
-/* exported function in target VM */
+/* exported functions in target VM */
 typedef jint (WINAPI* EnqueueOperationFunc)
     (const char* cmd, const char* arg1, const char* arg2, const char* arg3, const char* pipename);
+typedef jint (WINAPI* EnqueueOperationFunc_v2)
+    (const char* pipename);
 
 /* OpenProcess with SE_DEBUG_NAME privilege */
 static HANDLE
 doPrivilegedOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId);
 
-/* convert jstring to C string */
-static void jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len);
+/* Converts jstring to C string, returns JNI_FALSE if the string has been truncated. */
+static jboolean jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, size_t cstr_buf_size);
 
 
 /*
@@ -70,14 +72,15 @@ static void jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len);
 #define MAX_PIPE_NAME_LENGTH    256
 
 typedef struct {
+   jint version;
    GetModuleHandleFunc _GetModuleHandle;
    GetProcAddressFunc _GetProcAddress;
    char jvmLib[MAX_LIBNAME_LENGTH];         /* "jvm.dll" */
-   char func1[MAX_FUNC_LENGTH];
-   char func2[MAX_FUNC_LENGTH];
-   char cmd[MAX_CMD_LENGTH];                /* "load", "dump", ...      */
-   char arg[MAX_ARGS][MAX_ARG_LENGTH];      /* arguments to command     */
-   char pipename[MAX_PIPE_NAME_LENGTH];
+   char func[MAX_FUNC_LENGTH];
+   char func_v2[MAX_FUNC_LENGTH];
+   char cmd[MAX_CMD_LENGTH + 1];            /* "load", "dump", ...      */
+   char arg[MAX_ARGS][MAX_ARG_LENGTH + 1];  /* arguments to command     */
+   char pipename[MAX_PIPE_NAME_LENGTH + 1];
 } DataBlock;
 
 /*
@@ -102,27 +105,33 @@ DEF_STATIC_JNI_OnLoad
 DWORD WINAPI jvm_attach_thread_func(DataBlock *pData)
 {
     HINSTANCE h;
-    EnqueueOperationFunc addr;
 
     h = pData->_GetModuleHandle(pData->jvmLib);
     if (h == NULL) {
         return ERR_OPEN_JVM_FAIL;
     }
 
-    addr = (EnqueueOperationFunc)(pData->_GetProcAddress(h, pData->func1));
-    if (addr == NULL) {
-        addr = (EnqueueOperationFunc)(pData->_GetProcAddress(h, pData->func2));
-    }
-    if (addr == NULL) {
+    if (pData->version == 1) {
+        EnqueueOperationFunc addr = (EnqueueOperationFunc)(pData->_GetProcAddress(h, pData->func));
+        if (addr == NULL) {
+            return ERR_GET_ENQUEUE_FUNC_FAIL;
+        }
+        /* "null" command - does nothing in the target VM */
+        if (pData->cmd[0] == '\0') {
+            return 0;
+        } else {
+            return (*addr)(pData->cmd, pData->arg[0], pData->arg[1], pData->arg[2], pData->pipename);
+        }
+    } else if (pData->version == 2) {
+        EnqueueOperationFunc_v2 addr = (EnqueueOperationFunc_v2)(pData->_GetProcAddress(h, pData->func_v2));
+        if (addr == NULL) {
+            return ERR_GET_ENQUEUE_FUNC_FAIL;
+        }
+        return (*addr)(pData->pipename);
+    } else {
         return ERR_GET_ENQUEUE_FUNC_FAIL;
     }
 
-    /* "null" command - does nothing in the target VM */
-    if (pData->cmd[0] == '\0') {
-        return 0;
-    } else {
-        return (*addr)(pData->cmd, pData->arg[0], pData->arg[1], pData->arg[2], pData->pipename);
-    }
 }
 
 /* This function marks the end of jvm_attach_thread_func. */
@@ -218,24 +227,17 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_openProcess
     }
 
     /*
-     * On Windows 64-bit we need to handle 32-bit tools trying to attach to 64-bit
-     * processes (and visa versa). X-architecture attaching is currently not supported
-     * by this implementation.
+     * On Windows we need to handle 64-bit tools trying to attach to 32-bit
+     * processes, which is currently not supported by this implementation.
      */
     if (_IsWow64Process != NULL) {
-        BOOL isCurrent32bit, isTarget32bit;
-        (*_IsWow64Process)(GetCurrentProcess(), &isCurrent32bit);
+        BOOL isTarget32bit;
         (*_IsWow64Process)(hProcess, &isTarget32bit);
 
-        if (isCurrent32bit != isTarget32bit) {
+        if (isTarget32bit) {
             CloseHandle(hProcess);
-            #ifdef _WIN64
-              JNU_ThrowByName(env, "com/sun/tools/attach/AttachNotSupportedException",
-                  "Unable to attach to 32-bit process running under WOW64");
-            #else
-              JNU_ThrowByName(env, "com/sun/tools/attach/AttachNotSupportedException",
-                  "Unable to attach to 64-bit process");
-            #endif
+            JNU_ThrowByName(env, "com/sun/tools/attach/AttachNotSupportedException",
+                "Unable to attach to 32-bit process running under WOW64");
         }
     }
 
@@ -261,7 +263,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_closeProcess
  * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_createPipe
-  (JNIEnv *env, jclass cls, jstring pipename)
+  (JNIEnv *env, jclass cls, jint ver, jstring pipename)
 {
     HANDLE hPipe;
     char name[MAX_PIPE_NAME_LENGTH];
@@ -289,7 +291,8 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_createPipe
 
     hPipe = CreateNamedPipe(
           name,                         // pipe name
-          PIPE_ACCESS_INBOUND,          // read access
+          ver == 1 ? PIPE_ACCESS_INBOUND  // read access
+                   : PIPE_ACCESS_DUPLEX,  // read-write access
           PIPE_TYPE_BYTE |              // byte mode
             PIPE_READMODE_BYTE |
             PIPE_WAIT,                  // blocking mode
@@ -377,6 +380,37 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_readPipe
     return (jint)nread;
 }
 
+/*
+ * Class:     sun_tools_attach_VirtualMachineImpl
+ * Method:    writePipe
+ * Signature: (J[BII)V
+ */
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_writePipe
+  (JNIEnv *env, jclass cls, jlong hPipe, jbyteArray buffer, jint offset, jint length)
+{
+    jsize remaining = length;
+    do {
+        jbyte buf[128];
+        jsize len = sizeof(buf);
+        DWORD written;
+
+        if (len > remaining) {
+            len = remaining;
+        }
+        (*env)->GetByteArrayRegion(env, buffer, offset, len, buf);
+
+        BOOL fSuccess = WriteFile((HANDLE)hPipe, buf, len, &written, NULL);
+
+        if (!fSuccess) {
+            JNU_ThrowIOExceptionWithLastError(env, "WriteFile");
+            return;
+        }
+
+        offset += written;
+        remaining -= written;
+
+    } while (remaining > 0);
+}
 
 /*
  * Class:     sun_tools_attach_VirtualMachineImpl
@@ -384,8 +418,8 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_readPipe
  * Signature: (JZLjava/lang/String;[Ljava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
-  (JNIEnv *env, jclass cls, jlong handle, jbyteArray stub, jstring cmd,
-   jstring pipename, jobjectArray args)
+  (JNIEnv *env, jclass cls, jlong handle, jbyteArray stub, jint ver,
+   jstring cmd, jstring pipename, jobjectArray args)
 {
     DataBlock data;
     DataBlock* pData;
@@ -400,17 +434,23 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
      * Setup data to copy to target process
      */
     memset(&data, 0, sizeof(data));
+    data.version = ver;
+
     data._GetModuleHandle = _GetModuleHandle;
     data._GetProcAddress = _GetProcAddress;
 
     strcpy(data.jvmLib, "jvm");
-    strcpy(data.func1, "JVM_EnqueueOperation");
-    strcpy(data.func2, "_JVM_EnqueueOperation@20");
+    strcpy(data.func, "JVM_EnqueueOperation");
+    strcpy(data.func_v2, "JVM_EnqueueOperation_v2");
 
     /*
      * Command and arguments
      */
-    jstring_to_cstring(env, cmd, data.cmd, MAX_CMD_LENGTH);
+    if (!jstring_to_cstring(env, cmd, data.cmd, sizeof(data.cmd))) {
+        JNU_ThrowByName(env, "com/sun/tools/attach/AttachOperationFailedException",
+                        "command is too long");
+        return;
+    }
     argsLen = (*env)->GetArrayLength(env, args);
 
     if (argsLen > 0) {
@@ -423,9 +463,13 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
             if (obj == NULL) {
                 data.arg[i][0] = '\0';
             } else {
-                jstring_to_cstring(env, obj, data.arg[i], MAX_ARG_LENGTH);
+                if (!jstring_to_cstring(env, obj, data.arg[i], sizeof(data.arg[i]))) {
+                    JNU_ThrowByName(env, "com/sun/tools/attach/AttachOperationFailedException",
+                                    "argument is too long");
+                    return;
+                }
             }
-            if ((*env)->ExceptionOccurred(env)) return;
+            if ((*env)->ExceptionCheck(env)) return;
         }
     }
     for (i = argsLen; i < MAX_ARGS; i++) {
@@ -433,7 +477,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
     }
 
     /* pipe name */
-    jstring_to_cstring(env, pipename, data.pipename, MAX_PIPE_NAME_LENGTH);
+    if (!jstring_to_cstring(env, pipename, data.pipename, sizeof(data.pipename))) {
+        JNU_ThrowByName(env, "com/sun/tools/attach/AttachOperationFailedException",
+                        "pipe name is too long");
+        return;
+    }
 
     /*
      * Allocate memory in target process for data and code stub
@@ -452,7 +500,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
     stubLen = (DWORD)(*env)->GetArrayLength(env, stub);
     stubCode = (*env)->GetByteArrayElements(env, stub, &isCopy);
 
-    if ((*env)->ExceptionOccurred(env)) return;
+    if ((*env)->ExceptionCheck(env)) return;
 
     pCode = (PDWORD) VirtualAllocEx( hProcess, 0, stubLen, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
     if (pCode == NULL) {
@@ -615,21 +663,28 @@ doPrivilegedOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProc
     return hProcess;
 }
 
-/* convert jstring to C string */
-static void jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len) {
+/* Converts jstring to C string, returns JNI_FALSE if the string has been truncated. */
+static jboolean jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, size_t cstr_buf_size) {
     jboolean isCopy;
     const char* str;
+    jboolean result = JNI_TRUE;
 
     if (jstr == NULL) {
         cstr[0] = '\0';
     } else {
         str = JNU_GetStringPlatformChars(env, jstr, &isCopy);
-        if ((*env)->ExceptionOccurred(env)) return;
+        if ((*env)->ExceptionCheck(env)) {
+            return result;
+        }
+        if (strlen(str) >= cstr_buf_size) {
+            result = JNI_FALSE;
+        }
 
-        strncpy(cstr, str, len);
-        cstr[len-1] = '\0';
+        strncpy(cstr, str, cstr_buf_size);
+        cstr[cstr_buf_size - 1] = '\0';
         if (isCopy) {
             JNU_ReleaseStringPlatformChars(env, jstr, str);
         }
     }
+    return result;
 }

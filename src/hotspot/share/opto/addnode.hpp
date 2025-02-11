@@ -43,7 +43,7 @@ typedef const Pair<Node*, jint> ConstAddOperands;
 class AddNode : public Node {
   virtual uint hash() const;
 public:
-  AddNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {
+  AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
     init_class_id(Class_Add);
   }
 
@@ -165,7 +165,7 @@ public:
          Base,                  // Base oop, for GC purposes
          Address,               // Actually address, derived from base
          Offset } ;             // Offset added to address
-  AddPNode( Node *base, Node *ptr, Node *off ) : Node(0,base,ptr,off) {
+  AddPNode( Node *base, Node *ptr, Node *off ) : Node(nullptr,base,ptr,off) {
     init_class_id(Class_AddP);
   }
   virtual int Opcode() const;
@@ -181,7 +181,7 @@ public:
 
   // Collect the AddP offset values into the elements array, giving up
   // if there are more than length.
-  int unpack_offsets(Node* elements[], int length);
+  int unpack_offsets(Node* elements[], int length) const;
 
   // Do not match base-ptr edge
   virtual uint match_edge(uint idx) const;
@@ -255,8 +255,7 @@ public:
 
 //------------------------------MaxNode----------------------------------------
 // Max (or min) of 2 values.  Included with the ADD nodes because it inherits
-// all the behavior of addition on a ring.  Only new thing is that we allow
-// 2 equal inputs to be equal.
+// all the behavior of addition on a ring.
 class MaxNode : public AddNode {
 private:
   static Node* build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn);
@@ -269,6 +268,9 @@ public:
   virtual int max_opcode() const = 0;
   virtual int min_opcode() const = 0;
   Node* IdealI(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+  Node* find_identity_operation(Node* operation, Node* operand);
+  int opposite_opcode() const;
 
   static Node* unsigned_max(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
     return build_min_max(a, b, true, true, t, gvn);
@@ -313,6 +315,7 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
   int max_opcode() const { return Op_MaxI; }
   int min_opcode() const { return Op_MinI; }
+  virtual Node* Identity(PhaseGVN* phase);
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
@@ -329,7 +332,8 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
   int max_opcode() const { return Op_MaxI; }
   int min_opcode() const { return Op_MinI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------MaxLNode---------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "logging/log.hpp"
-#include "memory/virtualspace.hpp"
+#include "memory/memoryReserver.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
@@ -44,7 +43,7 @@ uint CardTable::_card_size = 0;
 uint CardTable::_card_size_in_words = 0;
 
 void CardTable::initialize_card_size() {
-  assert(UseG1GC || UseParallelGC || UseSerialGC,
+  assert(UseG1GC || UseParallelGC || UseSerialGC || UseShenandoahGC,
          "Initialize card size should only be called by card based collectors.");
 
   _card_size = GCCardSizeInBytes;
@@ -80,24 +79,24 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
   HeapWord* low_bound  = _whole_heap.start();
   HeapWord* high_bound = _whole_heap.end();
 
-  const size_t rs_align = _page_size == os::vm_page_size() ? 0 :
-    MAX2(_page_size, os::vm_allocation_granularity());
-  ReservedSpace heap_rs(_byte_map_size, rs_align, _page_size);
+  const size_t rs_align = MAX2(_page_size, os::vm_allocation_granularity());
+  ReservedSpace rs = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size);
 
-  MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtGC);
-
-  os::trace_page_sizes("Card Table", num_bytes, num_bytes,
-                       heap_rs.base(), heap_rs.size(), _page_size);
-  if (!heap_rs.is_reserved()) {
+  if (!rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for the "
                                   "card marking array");
   }
+
+  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
+
+  os::trace_page_sizes("Card Table", num_bytes, num_bytes,
+                       rs.base(), rs.size(), _page_size);
 
   // The assembler store_check code will do an unsigned shift of the oop,
   // then add it to _byte_map_base, i.e.
   //
   //   _byte_map = _byte_map_base + (uintptr_t(low_bound) >> card_shift)
-  _byte_map = (CardValue*) heap_rs.base();
+  _byte_map = (CardValue*) rs.base();
   _byte_map_base = _byte_map - (uintptr_t(low_bound) >> _card_shift);
   assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
   assert(byte_for(high_bound-1) <= &_byte_map[last_valid_index()], "Checking end of map");
@@ -202,6 +201,7 @@ void CardTable::resize_covered_region(MemRegion new_region) {
 void CardTable::dirty_MemRegion(MemRegion mr) {
   assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
   assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
+  assert(_covered[0].contains(mr) || _covered[1].contains(mr), "precondition");
   CardValue* cur  = byte_for(mr.start());
   CardValue* last = byte_after(mr.last());
   memset(cur, dirty_card, pointer_delta(last, cur, sizeof(CardValue)));
@@ -224,15 +224,6 @@ void CardTable::clear_MemRegion(MemRegion mr) {
 uintx CardTable::ct_max_alignment_constraint() {
   // Calculate maximum alignment using GCCardSizeInBytes as card_size hasn't been set yet
   return GCCardSizeInBytes * os::vm_page_size();
-}
-
-void CardTable::invalidate(MemRegion mr) {
-  assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
-  assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
-  for (int i = 0; i < max_covered_regions; i++) {
-    MemRegion mri = mr.intersection(_covered[i]);
-    if (!mri.is_empty()) dirty_MemRegion(mri);
-  }
 }
 
 #ifndef PRODUCT

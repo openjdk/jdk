@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -508,17 +508,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Taipei">
 				<exemplarCity draft="unconfirmed">Тайпей</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity draft="unconfirmed">Ужгород</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity draft="unconfirmed">Киев</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity draft="unconfirmed">Симферополь</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity draft="unconfirmed">Запорожье</exemplarCity>
 			</zone>
 			<zone type="America/Boise">
 				<exemplarCity draft="unconfirmed">Бойси</exemplarCity>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -117,8 +117,8 @@ static void print_entry(const loaded_module_t* lm, outputStream* os) {
             ", data: " INTPTR_FORMAT " - " INTPTR_FORMAT " "
             "%s",
       (lm->is_in_vm ? '*' : ' '),
-      lm->text, (uintptr_t)lm->text + lm->text_len,
-      lm->data, (uintptr_t)lm->data + lm->data_len,
+      p2i(lm->text), (uintptr_t)lm->text + lm->text_len,
+      p2i(lm->data), (uintptr_t)lm->data + lm->data_len,
       lm->path);
   if (lm->member) {
     os->print("(%s)", lm->member);
@@ -203,7 +203,7 @@ static bool reload_table() {
     }
   }
 
-  trcVerbose("loadquery buffer size is " SIZE_FORMAT ".", buflen);
+  trcVerbose("loadquery buffer size is %zu.", buflen);
 
   // Iterate over the loadquery result. For details see sys/ldr.h on AIX.
   ldi = (struct ld_info*) buffer;
@@ -262,7 +262,7 @@ static bool reload_table() {
       lm->is_in_vm = true;
     }
 
-    trcVerbose("entry: %p " SIZE_FORMAT ", %p " SIZE_FORMAT ", %s %s %s, %d",
+    trcVerbose("entry: %p %zu, %p %zu, %s %s %s, %d",
       lm->text, lm->text_len,
       lm->data, lm->data_len,
       lm->path, lm->shortname,

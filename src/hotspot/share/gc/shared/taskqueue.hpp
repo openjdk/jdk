@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,20 +33,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/stack.hpp"
-
-// Simple TaskQueue stats that are collected by default in debug builds.
-
-#if !defined(TASKQUEUE_STATS) && defined(ASSERT)
-#define TASKQUEUE_STATS 1
-#elif !defined(TASKQUEUE_STATS)
-#define TASKQUEUE_STATS 0
-#endif
-
-#if TASKQUEUE_STATS
-#define TASKQUEUE_STATS_ONLY(code) code
-#else
-#define TASKQUEUE_STATS_ONLY(code)
-#endif // TASKQUEUE_STATS
 
 #if TASKQUEUE_STATS
 class TaskQueueStats {
@@ -116,8 +102,8 @@ void TaskQueueStats::reset() {
 
 // TaskQueueSuper collects functionality common to all GenericTaskQueue instances.
 
-template <unsigned int N, MEMFLAGS F>
-class TaskQueueSuper: public CHeapObj<F> {
+template <unsigned int N, MemTag MT>
+class TaskQueueSuper: public CHeapObj<MT> {
 protected:
   // Internal type for indexing the queue; also used for the tag.
   typedef NOT_LP64(uint16_t) LP64_ONLY(uint32_t) idx_t;
@@ -324,39 +310,39 @@ public:
 // practice of parallel programming (PPoPP 2013), 69-80
 //
 
-template <class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
-class GenericTaskQueue: public TaskQueueSuper<N, F> {
+template <class E, MemTag MT, unsigned int N = TASKQUEUE_SIZE>
+class GenericTaskQueue: public TaskQueueSuper<N, MT> {
 protected:
-  typedef typename TaskQueueSuper<N, F>::Age Age;
-  typedef typename TaskQueueSuper<N, F>::idx_t idx_t;
+  typedef typename TaskQueueSuper<N, MT>::Age Age;
+  typedef typename TaskQueueSuper<N, MT>::idx_t idx_t;
 
-  using TaskQueueSuper<N, F>::MOD_N_MASK;
+  using TaskQueueSuper<N, MT>::MOD_N_MASK;
 
-  using TaskQueueSuper<N, F>::bottom_relaxed;
-  using TaskQueueSuper<N, F>::bottom_acquire;
+  using TaskQueueSuper<N, MT>::bottom_relaxed;
+  using TaskQueueSuper<N, MT>::bottom_acquire;
 
-  using TaskQueueSuper<N, F>::set_bottom_relaxed;
-  using TaskQueueSuper<N, F>::release_set_bottom;
+  using TaskQueueSuper<N, MT>::set_bottom_relaxed;
+  using TaskQueueSuper<N, MT>::release_set_bottom;
 
-  using TaskQueueSuper<N, F>::age_relaxed;
-  using TaskQueueSuper<N, F>::set_age_relaxed;
-  using TaskQueueSuper<N, F>::cmpxchg_age;
-  using TaskQueueSuper<N, F>::age_top_relaxed;
+  using TaskQueueSuper<N, MT>::age_relaxed;
+  using TaskQueueSuper<N, MT>::set_age_relaxed;
+  using TaskQueueSuper<N, MT>::cmpxchg_age;
+  using TaskQueueSuper<N, MT>::age_top_relaxed;
 
-  using TaskQueueSuper<N, F>::increment_index;
-  using TaskQueueSuper<N, F>::decrement_index;
-  using TaskQueueSuper<N, F>::dirty_size;
-  using TaskQueueSuper<N, F>::clean_size;
-  using TaskQueueSuper<N, F>::assert_not_underflow;
+  using TaskQueueSuper<N, MT>::increment_index;
+  using TaskQueueSuper<N, MT>::decrement_index;
+  using TaskQueueSuper<N, MT>::dirty_size;
+  using TaskQueueSuper<N, MT>::clean_size;
+  using TaskQueueSuper<N, MT>::assert_not_underflow;
 
 public:
-  typedef typename TaskQueueSuper<N, F>::PopResult PopResult;
+  typedef typename TaskQueueSuper<N, MT>::PopResult PopResult;
 
-  using TaskQueueSuper<N, F>::max_elems;
-  using TaskQueueSuper<N, F>::size;
+  using TaskQueueSuper<N, MT>::max_elems;
+  using TaskQueueSuper<N, MT>::size;
 
 #if  TASKQUEUE_STATS
-  using TaskQueueSuper<N, F>::stats;
+  using TaskQueueSuper<N, MT>::stats;
 #endif
 
 private:
@@ -428,12 +414,12 @@ public:
 // Note that size() is not hidden--it returns the number of elements in the
 // TaskQueue, and does not include the size of the overflow stack.  This
 // simplifies replacement of GenericTaskQueues with OverflowTaskQueues.
-template<class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
-class OverflowTaskQueue: public GenericTaskQueue<E, F, N>
+template<class E, MemTag MT, unsigned int N = TASKQUEUE_SIZE>
+class OverflowTaskQueue: public GenericTaskQueue<E, MT, N>
 {
 public:
-  typedef Stack<E, F>               overflow_t;
-  typedef GenericTaskQueue<E, F, N> taskqueue_t;
+  typedef Stack<E, MT>               overflow_t;
+  typedef GenericTaskQueue<E, MT, N> taskqueue_t;
 
   TASKQUEUE_STATS_ONLY(using taskqueue_t::stats;)
 
@@ -467,11 +453,11 @@ public:
   virtual uint tasks() const = 0;
 };
 
-template <MEMFLAGS F> class TaskQueueSetSuperImpl: public CHeapObj<F>, public TaskQueueSetSuper {
+template <MemTag MT> class TaskQueueSetSuperImpl: public CHeapObj<MT>, public TaskQueueSetSuper {
 };
 
-template<class T, MEMFLAGS F>
-class GenericTaskQueueSet: public TaskQueueSetSuperImpl<F> {
+template<class T, MemTag MT>
+class GenericTaskQueueSet: public TaskQueueSetSuperImpl<MT> {
 public:
   typedef typename T::element_type E;
   typedef typename T::PopResult PopResult;
@@ -518,29 +504,29 @@ public:
 #endif // TASKQUEUE_STATS
 };
 
-template<class T, MEMFLAGS F> void
-GenericTaskQueueSet<T, F>::register_queue(uint i, T* q) {
+template<class T, MemTag MT> void
+GenericTaskQueueSet<T, MT>::register_queue(uint i, T* q) {
   assert(i < _n, "index out of range.");
   _queues[i] = q;
 }
 
-template<class T, MEMFLAGS F> T*
-GenericTaskQueueSet<T, F>::queue(uint i) {
+template<class T, MemTag MT> T*
+GenericTaskQueueSet<T, MT>::queue(uint i) {
   assert(i < _n, "index out of range.");
   return _queues[i];
 }
 
 #ifdef ASSERT
-template<class T, MEMFLAGS F>
-void GenericTaskQueueSet<T, F>::assert_empty() const {
+template<class T, MemTag MT>
+void GenericTaskQueueSet<T, MT>::assert_empty() const {
   for (uint j = 0; j < _n; j++) {
     _queues[j]->assert_empty();
   }
 }
 #endif // ASSERT
 
-template<class T, MEMFLAGS F>
-uint GenericTaskQueueSet<T, F>::tasks() const {
+template<class T, MemTag MT>
+uint GenericTaskQueueSet<T, MT>::tasks() const {
   uint n = 0;
   for (uint j = 0; j < _n; j++) {
     n += _queues[j]->size();
@@ -573,21 +559,12 @@ private:
   int _index;
 };
 
-// Wrapper over an oop that is a partially scanned array.
-// Can be converted to a ScannerTask for placement in associated task queues.
-// Refers to the partially copied source array oop.
-class PartialArrayScanTask {
-  oop _src;
+class PartialArrayState;
 
-public:
-  explicit PartialArrayScanTask(oop src_array) : _src(src_array) {}
-  // Trivially copyable.
-
-  oop to_source_array() const { return _src; }
-};
-
-// Discriminated union over oop*, narrowOop*, and PartialArrayScanTask.
+// Discriminated union over oop/oop*, narrowOop*, and PartialArrayState.
 // Uses a low tag in the associated pointer to identify the category.
+// Oop/oop* are overloaded using the same tag because they can not appear at the
+// same time.
 // Used as a task queue element type.
 class ScannerTask {
   void* _p;
@@ -620,12 +597,14 @@ class ScannerTask {
 public:
   ScannerTask() : _p(nullptr) {}
 
+  explicit ScannerTask(oop p) : _p(encode(p, OopTag)) {}
+
   explicit ScannerTask(oop* p) : _p(encode(p, OopTag)) {}
 
   explicit ScannerTask(narrowOop* p) : _p(encode(p, NarrowOopTag)) {}
 
-  explicit ScannerTask(PartialArrayScanTask t) :
-    _p(encode(t.to_source_array(), PartialArrayTag)) {}
+  explicit ScannerTask(PartialArrayState* state) :
+    _p(encode(state, PartialArrayTag)) {}
 
   // Trivially copyable.
 
@@ -639,7 +618,7 @@ public:
     return (raw_value() & NarrowOopTag) != 0;
   }
 
-  bool is_partial_array_task() const {
+  bool is_partial_array_state() const {
     return (raw_value() & PartialArrayTag) != 0;
   }
 
@@ -647,12 +626,16 @@ public:
     return static_cast<oop*>(decode(OopTag));
   }
 
+  oop to_oop() const {
+    return cast_to_oop(decode(OopTag));
+  }
+
   narrowOop* to_narrow_oop_ptr() const {
     return static_cast<narrowOop*>(decode(NarrowOopTag));
   }
 
-  PartialArrayScanTask to_partial_array_task() const {
-    return PartialArrayScanTask(cast_to_oop(decode(PartialArrayTag)));
+  PartialArrayState* to_partial_array_state() const {
+    return static_cast<PartialArrayState*>(decode(PartialArrayTag));
   }
 };
 

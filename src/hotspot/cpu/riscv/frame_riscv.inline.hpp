@@ -69,7 +69,7 @@ inline void frame::init(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc) {
 inline void frame::setup(address pc) {
   adjust_unextended_sp();
 
-  address original_pc = nmethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
@@ -170,7 +170,7 @@ inline frame::frame(intptr_t* ptr_sp, intptr_t* ptr_fp) {
   _cb = CodeCache::find_blob(_pc);
   adjust_unextended_sp();
 
-  address original_pc = nmethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
@@ -232,7 +232,7 @@ inline int frame::frame_size() const {
 
 inline int frame::compiled_frame_stack_argsize() const {
   assert(cb()->is_nmethod(), "");
-  return (cb()->as_nmethod()->method()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
+  return (cb()->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
 }
 
 inline void frame::interpreted_frame_oop_map(InterpreterOopMap* mask) const {

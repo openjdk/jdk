@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4631471 4921212 4994637
  * @summary Tests HashMap encoding
- * @run main/othervm -Djava.security.manager=allow java_util_HashMap
+ * @run main/othervm java_util_HashMap
  * @author Sergey Malenkov
  */
 
@@ -34,7 +34,7 @@ import java.util.Map;
 
 public final class java_util_HashMap extends AbstractTest<Map<String, String>> {
     public static void main(String[] args) {
-        new java_util_HashMap().test(true);
+        new java_util_HashMap().test();
     }
 
     @Override

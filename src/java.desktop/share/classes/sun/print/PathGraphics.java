@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferInt;
 import java.awt.image.ImageObserver;
 import java.awt.image.IndexColorModel;
+import java.awt.image.MultiResolutionImage;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.SampleModel;
@@ -933,7 +934,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
 
         /* If we reach here we have mapped all the glyphs back
          * one-to-one to simple unicode chars that we know are in the font.
-         * We can call "drawChars" on each one of them in turn, setting
+         * We can call "drawString" on each one of them in turn, setting
          * the position based on the glyph positions.
          * There's typically overhead in this. If numGlyphs is 'large',
          * it may even be better to try printGlyphVector() in this case.
@@ -941,15 +942,28 @@ public abstract class PathGraphics extends ProxyGraphics2D {
          * should be able to recover the text from simple glyph vectors
          * and we can avoid penalising the more common case - although
          * this is already a minority case.
+         * If we do use "drawString" on each character, we need to use a
+         * font without translation transform, since the font translation
+         * transform will already be reflected in the glyph positions, and
+         * we do not want to apply the translation twice.
          */
         if (numGlyphs > 10 && printGlyphVector(g, x, y)) {
             return true;
         }
 
+        Font font2 = font;
+        if (font.isTransformed()) {
+            AffineTransform t = font.getTransform();
+            if ((t.getType() & AffineTransform.TYPE_TRANSLATION) != 0) {
+                t.setTransform(t.getScaleX(), t.getShearY(), t.getShearX(), t.getScaleY(), 0, 0);
+                font2 = font.deriveFont(t);
+            }
+        }
+
         for (int i=0; i<numGlyphs; i++) {
             String s = new String(chars, i, 1);
             drawString(s, x+positions[i*2], y+positions[i*2+1],
-                       font, gvFrc, 0f);
+                       font2, gvFrc, 0f);
         }
         return true;
     }
@@ -1132,6 +1146,9 @@ public abstract class PathGraphics extends ProxyGraphics2D {
             // VI needs to make a new BI: this is unavoidable but
             // I don't expect VI's to be "huge" in any case.
             return ((VolatileImage)img).getSnapshot();
+        } else if (img instanceof MultiResolutionImage) {
+            return convertToBufferedImage((MultiResolutionImage) img,
+                                           img.getWidth(null), img.getHeight(null));
         } else {
             // may be null or may be some non-standard Image which
             // shouldn't happen as Image is implemented by the platform
@@ -1140,6 +1157,18 @@ public abstract class PathGraphics extends ProxyGraphics2D {
             // will need to support it here similarly to VI.
             return null;
         }
+    }
+
+    protected BufferedImage convertToBufferedImage(MultiResolutionImage multiResolutionImage,
+                                                       double width, double height ) {
+        Image resolutionImage = multiResolutionImage.getResolutionVariant(width, height);
+        BufferedImage bufferedImage = new BufferedImage(resolutionImage.getWidth(null),
+                                                        resolutionImage.getHeight(null),
+                                                        BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = bufferedImage.createGraphics();
+        g2d.drawImage(resolutionImage, 0, 0, (int) width, (int) height, null);
+        g2d.dispose();
+        return bufferedImage;
     }
 
     /**

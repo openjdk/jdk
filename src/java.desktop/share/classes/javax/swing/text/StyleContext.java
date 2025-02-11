@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import java.util.EventListener;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Vector;
 import java.util.WeakHashMap;
 
 import javax.swing.SwingUtilities;
@@ -212,10 +211,9 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
         String family = StyleConstants.getFontFamily(attr);
         int size = StyleConstants.getFontSize(attr);
 
-        /**
-         * if either superscript or subscript is
-         * is set, we need to reduce the font size
-         * by 2.
+        /*
+         * If either superscript or subscript is set,
+         * we need to reduce the font size by 2.
          */
         if (StyleConstants.isSuperscript(attr) ||
             StyleConstants.isSubscript(attr)) {
@@ -763,7 +761,6 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
             throw new InvalidObjectException("Null styles");
         }
         styles = newStyles;
-        unusedSets = f.get("unusedSets", 0);
     }
 
     // --- variables ---------------------------------------------------
@@ -784,14 +781,6 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
     private transient Map<SmallAttributeSet, WeakReference<SmallAttributeSet>> attributesPool = Collections.
             synchronizedMap(new WeakHashMap<SmallAttributeSet, WeakReference<SmallAttributeSet>>());
     private transient MutableAttributeSet search = new SimpleAttributeSet();
-
-    /**
-     * Number of immutable sets that are not currently
-     * being used.  This helps indicate when the sets need
-     * to be cleaned out of the hashtable they are stored
-     * in.
-     */
-    private int unusedSets;
 
     /**
      * The threshold for no longer sharing the set of attributes
@@ -1055,7 +1044,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
     /**
      * An enumeration of the keys in a SmallAttributeSet.
      */
-    static class KeyEnumeration implements Enumeration<Object> {
+    static final class KeyEnumeration implements Enumeration<Object> {
 
         KeyEnumeration(Object[] attr) {
             this.attr = attr;
@@ -1094,148 +1083,9 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
     }
 
     /**
-     * Sorts the key strings so that they can be very quickly compared
-     * in the attribute set searches.
-     */
-    static class KeyBuilder {
-
-        public void initialize(AttributeSet a) {
-            if (a instanceof SmallAttributeSet) {
-                initialize(((SmallAttributeSet)a).attributes);
-            } else {
-                keys.removeAllElements();
-                data.removeAllElements();
-                Enumeration<?> names = a.getAttributeNames();
-                while (names.hasMoreElements()) {
-                    Object name = names.nextElement();
-                    addAttribute(name, a.getAttribute(name));
-                }
-            }
-        }
-
-        /**
-         * Initialize with a set of already sorted
-         * keys (data from an existing SmallAttributeSet).
-         */
-        private void initialize(Object[] sorted) {
-            keys.removeAllElements();
-            data.removeAllElements();
-            int n = sorted.length;
-            for (int i = 0; i < n; i += 2) {
-                keys.addElement(sorted[i]);
-                data.addElement(sorted[i+1]);
-            }
-        }
-
-        /**
-         * Creates a table of sorted key/value entries
-         * suitable for creation of an instance of
-         * SmallAttributeSet.
-         */
-        public Object[] createTable() {
-            int n = keys.size();
-            Object[] tbl = new Object[2 * n];
-            for (int i = 0; i < n; i ++) {
-                int offs = 2 * i;
-                tbl[offs] = keys.elementAt(i);
-                tbl[offs + 1] = data.elementAt(i);
-            }
-            return tbl;
-        }
-
-        /**
-         * The number of key/value pairs contained
-         * in the current key being forged.
-         */
-        int getCount() {
-            return keys.size();
-        }
-
-        /**
-         * Adds a key/value to the set.
-         */
-        public void addAttribute(Object key, Object value) {
-            keys.addElement(key);
-            data.addElement(value);
-        }
-
-        /**
-         * Adds a set of key/value pairs to the set.
-         */
-        public void addAttributes(AttributeSet attr) {
-            if (attr instanceof SmallAttributeSet) {
-                // avoid searching the keys, they are already interned.
-                Object[] tbl = ((SmallAttributeSet)attr).attributes;
-                int n = tbl.length;
-                for (int i = 0; i < n; i += 2) {
-                    addAttribute(tbl[i], tbl[i+1]);
-                }
-            } else {
-                Enumeration<?> names = attr.getAttributeNames();
-                while (names.hasMoreElements()) {
-                    Object name = names.nextElement();
-                    addAttribute(name, attr.getAttribute(name));
-                }
-            }
-        }
-
-        /**
-         * Removes the given name from the set.
-         */
-        public void removeAttribute(Object key) {
-            int n = keys.size();
-            for (int i = 0; i < n; i++) {
-                if (keys.elementAt(i).equals(key)) {
-                    keys.removeElementAt(i);
-                    data.removeElementAt(i);
-                    return;
-                }
-            }
-        }
-
-        /**
-         * Removes the set of keys from the set.
-         */
-        public void removeAttributes(Enumeration<?> names) {
-            while (names.hasMoreElements()) {
-                Object name = names.nextElement();
-                removeAttribute(name);
-            }
-        }
-
-        /**
-         * Removes the set of matching attributes from the set.
-         */
-        public void removeAttributes(AttributeSet attr) {
-            Enumeration<?> names = attr.getAttributeNames();
-            while (names.hasMoreElements()) {
-                Object name = names.nextElement();
-                Object value = attr.getAttribute(name);
-                removeSearchAttribute(name, value);
-            }
-        }
-
-        private void removeSearchAttribute(Object ikey, Object value) {
-            int n = keys.size();
-            for (int i = 0; i < n; i++) {
-                if (keys.elementAt(i).equals(ikey)) {
-                    if (data.elementAt(i).equals(value)) {
-                        keys.removeElementAt(i);
-                        data.removeElementAt(i);
-                    }
-                    return;
-                }
-            }
-        }
-
-        private Vector<Object> keys = new Vector<Object>();
-        private Vector<Object> data = new Vector<Object>();
-    }
-
-    /**
      * key for a font table
      */
-    static class FontKey {
+    static final class FontKey {
 
         private String family;
         private int style;

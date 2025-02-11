@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
@@ -93,9 +92,7 @@ static void initialize_check_oop_function() {
 #ifdef CHECK_UNHANDLED_OOPS
   if (ZVerifyOops) {
     // Enable extra verification of usages of oops in oopsHierarchy.hpp
-    check_oop_function = [](oopDesc* obj) {
-      (void)to_zaddress(obj);
-    };
+    check_oop_function = &check_is_valid_zaddress;
   }
 #endif
 }
@@ -108,7 +105,7 @@ void ZGlobalsPointers::initialize() {
   // Check max supported heap size
   if (MaxHeapSize > ZAddressOffsetMax) {
     vm_exit_during_initialization(
-        err_msg("Java heap too large (max supported heap size is " SIZE_FORMAT "G)",
+        err_msg("Java heap too large (max supported heap size is %zuG)",
                 ZAddressOffsetMax / G));
   }
 

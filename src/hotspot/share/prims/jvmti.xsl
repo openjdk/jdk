@@ -421,7 +421,7 @@
       </div>
       <div class="divTableCell">
         <code><a href="#SetEventNotificationMode">SetEventNotificationMode</a>(JVMTI_ENABLE, 
-        <xsl:value-of select="@const"/>, nullptr)</code>
+        <xsl:value-of select="@const"/>, NULL)</code>
       </div>
       <div class="divTableCell">
         <xsl:value-of select="@since"/>
@@ -1586,7 +1586,7 @@ typedef struct {
   </xsl:if>
   <xsl:apply-templates select="." mode="paramlink"/>
   <xsl:text> is </xsl:text>
-  <code>nullptr</code>
+  a null pointer
   <xsl:text>.</xsl:text>
 </xsl:template>
 

@@ -20,12 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
+/*
  * @test
  * @bug 4052404 4052440 4084688 4092475 4101316 4105828 4107014 4107953 4110613
  * 4118587 4118595 4122371 4126371 4126880 4135316 4135752 4139504 4139940 4143951
  * 4147315 4147317 4147552 4335196 4778440 4940539 5010672 6475525 6544471 6627549
  * 6786276 7066203 7085757 8008577 8030696 8170840 8174269 8255086 8263202 8287868
+ * 8337603
  * @summary test Locales
  * @modules jdk.localedata
  * @run junit LocaleTest
@@ -84,9 +85,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class LocaleTest {
@@ -732,6 +737,32 @@ test commented out pending API-change approval
             }
         }
 
+    }
+
+    /**
+     * @bug 8337603
+     */
+    static Stream<Arguments> changedISOCodes() {
+        var hebrew = "\u05e2\u05d1\u05e8\u05d9\u05ea";
+        var yiddish = "\u05d9\u05d9\u05b4\u05d3\u05d9\u05e9";
+        var indonesian = "Indonesia";
+
+        return Stream.of(
+            Arguments.of("he", hebrew),
+            Arguments.of("iw", hebrew),
+            Arguments.of("yi", yiddish),
+            Arguments.of("ji", yiddish),
+            Arguments.of("id", indonesian),
+            Arguments.of("in", indonesian)
+        );
+    }
+    @ParameterizedTest
+    @MethodSource("changedISOCodes")
+    public void TestOldISOCodeLanguageName(String code, String expected) {
+        var loc = Locale.of(code);
+        assertEquals(expected,
+            loc.getDisplayName(loc),
+            "java.locale.useOldISOCodes=" + System.getProperty("java.locale.useOldISOCodes"));
     }
 
     /**

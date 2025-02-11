@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -120,9 +119,6 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
     int index_old = s_old->get_index_u4();
     int index_new = s_new->get_index_u4();
 
-    int indy_index_old = old_cp->decode_invokedynamic_index(index_old);
-    int indy_index_new = new_cp->decode_invokedynamic_index(index_new);
-
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.
@@ -131,8 +127,8 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
         (old_cp->signature_ref_at(index_old, c_old) != new_cp->signature_ref_at(index_new, c_old)))
       return false;
 
-    int cpi_old = old_cp->cache()->resolved_indy_entry_at(indy_index_old)->constant_pool_index();
-    int cpi_new = new_cp->cache()->resolved_indy_entry_at(indy_index_new)->constant_pool_index();
+    int cpi_old = old_cp->cache()->resolved_indy_entry_at(index_old)->constant_pool_index();
+    int cpi_new = new_cp->cache()->resolved_indy_entry_at(index_new)->constant_pool_index();
     if ((old_cp->uncached_name_ref_at(cpi_old) != new_cp->uncached_name_ref_at(cpi_new)) ||
         (old_cp->uncached_signature_ref_at(cpi_old) != new_cp->uncached_signature_ref_at(cpi_new)))
       return false;

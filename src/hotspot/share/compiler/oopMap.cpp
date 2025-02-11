@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
@@ -246,10 +245,13 @@ private:
 };
 
 void OopMapSort::sort() {
+#ifdef ASSERT
   for (OopMapStream oms(_map); !oms.is_done(); oms.next()) {
     OopMapValue omv = oms.current();
-    assert(omv.type() == OopMapValue::oop_value || omv.type() == OopMapValue::narrowoop_value || omv.type() == OopMapValue::derived_oop_value || omv.type() == OopMapValue::callee_saved_value, "");
+    assert(omv.type() == OopMapValue::oop_value || omv.type() == OopMapValue::narrowoop_value ||
+           omv.type() == OopMapValue::derived_oop_value || omv.type() == OopMapValue::callee_saved_value, "");
   }
+#endif
 
   for (OopMapStream oms(_map); !oms.is_done(); oms.next()) {
     if (oms.current().type() == OopMapValue::callee_saved_value) {
@@ -926,7 +928,7 @@ void DerivedPointerTable::add(derived_pointer* derived_loc, derived_base* base_l
     tty->print_cr(
       "Add derived pointer@" INTPTR_FORMAT
       " - Derived: " INTPTR_FORMAT
-      " Base: " INTPTR_FORMAT " (@" INTPTR_FORMAT ") (Offset: " INTX_FORMAT ")",
+      " Base: " INTPTR_FORMAT " (@" INTPTR_FORMAT ") (Offset: %zd)",
       p2i(derived_loc), derived_pointer_value(*derived_loc), intptr_t(*base_loc), p2i(base_loc), offset
     );
   }
@@ -956,7 +958,7 @@ void DerivedPointerTable::update_pointers() {
 
     if (TraceDerivedPointers) {
       tty->print_cr("Updating derived pointer@" INTPTR_FORMAT
-                    " - Derived: " INTPTR_FORMAT "  Base: " INTPTR_FORMAT " (Offset: " INTX_FORMAT ")",
+                    " - Derived: " INTPTR_FORMAT "  Base: " INTPTR_FORMAT " (Offset: %zd)",
                     p2i(derived_loc), derived_pointer_value(*derived_loc), p2i(base), offset);
     }
 

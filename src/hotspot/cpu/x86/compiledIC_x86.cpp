@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
@@ -34,20 +33,16 @@
 
 // ----------------------------------------------------------------------------
 
-#define __ _masm.
-address CompiledDirectCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) {
+#define __ masm->
+address CompiledDirectCall::emit_to_interp_stub(MacroAssembler *masm, address mark) {
   // Stub is fixed up when the corresponding call is converted from
   // calling compiled code to calling interpreted code.
   // movq rbx, 0
   // jmp -5 # to self
 
   if (mark == nullptr) {
-    mark = cbuf.insts_mark();  // Get mark within main instrs section.
+    mark = __ inst_mark();  // Get mark within main instrs section.
   }
-
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a stub.
-  MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(to_interp_stub_size());
   if (base == nullptr) {

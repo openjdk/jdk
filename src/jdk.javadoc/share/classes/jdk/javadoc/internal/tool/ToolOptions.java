@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,6 +402,13 @@ public class ToolOptions {
                 }
             },
 
+            new ToolOption("--disable-line-doc-comments", EXTENDED) {
+                @Override
+                public void process() throws InvalidValueException {
+                    processCompilerOption(Option.DISABLE_LINE_DOC_COMMENTS, primaryName);
+                }
+            },
+
             // ----- doclet options -----
 
             // This option exists so that it is documented in the command-line help.
@@ -671,7 +678,7 @@ public class ToolOptions {
 
         /**
          * Show command-line help for the extended options, as requested by
-         * the {@code --help-extended} option and its aliases.
+         * the {@code --help-extra} option and its aliases.
          */
         void Xusage();
 

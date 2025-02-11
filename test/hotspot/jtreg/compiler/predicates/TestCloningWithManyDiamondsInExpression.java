@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8327110
+ * @bug 8327110 8327111
  * @requires vm.compiler2.enabled
  * @summary Test that DFS algorithm for cloning Template Assertion Predicate Expression does not endlessly process paths.
  * @run main/othervm/timeout=30 -Xcomp -XX:LoopMaxUnroll=0
@@ -35,8 +35,22 @@
  *                              -XX:CompileCommand=compileonly,*TestCloningWithManyDiamondsInExpression::test*
  *                              -XX:CompileCommand=inline,*TestCloningWithManyDiamondsInExpression::create*
  *                              compiler.predicates.TestCloningWithManyDiamondsInExpression
- * @run main compiler.predicates.TestCloningWithManyDiamondsInExpression
+ * @run main/timeout=30 compiler.predicates.TestCloningWithManyDiamondsInExpression
  */
+
+ /*
+  * @test
+  * @bug 8327111
+  * @summary Test that DFS algorithm for cloning Template Assertion Predicate Expression does not endlessly process paths.
+  * @run main/othervm/timeout=30 -Xcomp
+  *                              -XX:CompileCommand=compileonly,*TestCloningWithManyDiamondsInExpression::test*
+  *                              -XX:CompileCommand=inline,*TestCloningWithManyDiamondsInExpression::create*
+  *                              compiler.predicates.TestCloningWithManyDiamondsInExpression
+  * @run main/othervm/timeout=30 -Xbatch
+  *                              -XX:CompileCommand=compileonly,*TestCloningWithManyDiamondsInExpression::test*
+  *                              -XX:CompileCommand=inline,*TestCloningWithManyDiamondsInExpression::create*
+  *                              compiler.predicates.TestCloningWithManyDiamondsInExpression
+  */
 
 package compiler.predicates;
 
@@ -51,6 +65,8 @@ public class TestCloningWithManyDiamondsInExpression {
         for (int i = 0; i < 10_000; i++) {
             testSplitIf(i % 2);
             testLoopUnswitching(i % 2);
+            testLoopUnrolling(i % 2);
+            testLoopPeeling(i % 2);
         }
     }
 
@@ -98,6 +114,22 @@ public class TestCloningWithManyDiamondsInExpression {
         }
     }
 
+    static void testLoopUnrolling(int x) {
+        int[] a = new int[createExpressionWithManyDiamonds(x) + 1000];
+        for (int i = 0; i < limit; i++) {
+            a[i] = i; // Loop Predication hoists this check and creates a Template Assertion Predicate.
+        }
+    }
+
+    static void testLoopPeeling(int x) {
+        int[] a = new int[createExpressionWithManyDiamonds(x) + 1000];
+        for (int i = 0; i < limit; i++) {
+            a[i] = i; // Loop Predication hoists this check and creates a Template Assertion Predicate.
+            if (x == 0) { // Reason to peel with LoopMaxUnroll=0
+                return;
+            }
+        }
+    }
 
     // Creates in int expression with many diamonds. This method is forced-inlined.
     static int createExpressionWithManyDiamonds(int x) {

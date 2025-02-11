@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+
+    <xs:annotation>
+        <xs:documentation>
+          This is the XML Schema Tables module for XHTML
+          $Id: xhtml-table-1.xsd,v 1.3 2005/09/26 22:54:53 ahby Exp $
+        </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+    </xs:annotation>
+    <xs:annotation>
+        <xs:documentation>
+          Tables
+      
+           * table, caption, thead, tfoot, tbody, colgroup, col, tr, th, td
+      
+          This module declares element types and attributes used to provide
+          table markup similar to HTML 4.0, including features that enable
+          better accessibility for non-visual user agents.
+        </xs:documentation>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstract_modules.html#s_tablemodule"/>
+    </xs:annotation>
+    <xs:attributeGroup name="xhtml.frame.attrib">
+        <xs:attribute name="frame">
+            <xs:simpleType>
+                <xs:restriction base="xs:NMTOKEN">
+                    <xs:enumeration value="void"/>
+                    <xs:enumeration value="above"/>
+                    <xs:enumeration value="below"/>
+                    <xs:enumeration value="hsides"/>
+                    <xs:enumeration value="lhs"/>
+                    <xs:enumeration value="rhs"/>
+                    <xs:enumeration value="vsides"/>
+                    <xs:enumeration value="box"/>
+                    <xs:enumeration value="border"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="xhtml.rules.attrib">
+        <xs:attribute name="rules">
+            <xs:simpleType>
+                <xs:restriction base="xs:NMTOKEN">
+                    <xs:enumeration value="none"/>
+                    <xs:enumeration value="groups"/>
+                    <xs:enumeration value="rows"/>
+                    <xs:enumeration value="cols"/>
+                    <xs:enumeration value="all"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="xhtml.CellVAlign.attrib">
+        <xs:attribute name="valign">
+            <xs:simpleType>
+                <xs:restriction base="xs:NMTOKEN">
+                    <xs:enumeration value="top"/>
+                    <xs:enumeration value="middle"/>
+                    <xs:enumeration value="bottom"/>
+                    <xs:enumeration value="baseline"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="xhtml.CellHAlign.attrib">
+        <xs:attribute name="align">
+            <xs:simpleType>
+                <xs:restriction base="xs:NMTOKEN">
+                    <xs:enumeration value="left"/>
+                    <xs:enumeration value="center"/>
+                    <xs:enumeration value="right"/>
+                    <xs:enumeration value="justify"/>
+                    <xs:enumeration value="char"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="char" type="xh11d:Character"/>
+        <xs:attribute name="charoff" type="xh11d:Length"/>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="xhtml.scope.attrib">
+        <xs:attribute name="scope">
+            <xs:simpleType>
+                <xs:restriction base="xs:NMTOKEN">
+                    <xs:enumeration value="row"/>
+                    <xs:enumeration value="col"/>
+                    <xs:enumeration value="rowgroup"/>
+                    <xs:enumeration value="colgroup"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="xhtml.td.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attribute name="abbr" type="xh11d:Text"/>
+        <xs:attribute name="axis" type="xh11d:CDATA"/>
+        <xs:attribute name="headers" type="xs:IDREFS"/>
+        <xs:attributeGroup ref="xhtml.scope.attrib"/>
+        <xs:attribute name="rowspan" type="xh11d:Number" default="1"/>
+        <xs:attribute name="colspan" type="xh11d:Number" default="1"/>
+        <xs:attributeGroup ref="xhtml.CellHAlign.attrib"/>
+        <xs:attributeGroup ref="xhtml.CellVAlign.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.td.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Flow.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.td.type" mixed="true">
+        <xs:group ref="xhtml.td.content"/>
+        <xs:attributeGroup ref="xhtml.td.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.th.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attribute name="abbr" type="xh11d:Text"/>
+        <xs:attribute name="axis" type="xh11d:CDATA"/>
+        <xs:attribute name="headers" type="xs:IDREFS"/>
+        <xs:attributeGroup ref="xhtml.scope.attrib"/>
+        <xs:attribute name="rowspan" type="xh11d:Number" default="1"/>
+        <xs:attribute name="colspan" type="xh11d:Number" default="1"/>
+        <xs:attributeGroup ref="xhtml.CellHAlign.attrib"/>
+        <xs:attributeGroup ref="xhtml.CellVAlign.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.th.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Flow.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.th.type" mixed="true">
+        <xs:group ref="xhtml.th.content"/>
+        <xs:attributeGroup ref="xhtml.th.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.tr.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attributeGroup ref="xhtml.CellHAlign.attrib"/>
+        <xs:attributeGroup ref="xhtml.CellVAlign.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.tr.content">
+        <xs:sequence>
+            <xs:choice maxOccurs="unbounded">
+                <xs:element name="th" type="xhtml.th.type"/>
+                <xs:element name="td" type="xhtml.td.type"/>
+            </xs:choice>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.tr.type">
+        <xs:group ref="xhtml.tr.content"/>
+        <xs:attributeGroup ref="xhtml.tr.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.col.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attribute name="span" type="xh11d:Number" default="1"/>
+        <xs:attribute name="width" type="xh11d:MultiLength"/>
+        <xs:attributeGroup ref="xhtml.CellHAlign.attrib"/>
+        <xs:attributeGroup ref="xhtml.CellVAlign.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.col.content">
+        <xs:sequence/>
+    </xs:group>
+    <xs:complexType name="xhtml.col.type">
+        <xs:group ref="xhtml.col.content"/>
+        <xs:attributeGroup ref="xhtml.col.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.colgroup.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attribute name="span" type="xh11d:Number" default="1"/>
+        <xs:attribute name="width" type="xh11d:MultiLength"/>
+        <xs:attributeGroup ref="xhtml.CellHAlign.attrib"/>
+        <xs:attributeGroup ref="xhtml.CellVAlign.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.colgroup.content">
+        <xs:sequence>
+            <xs:element name="col" type="xhtml.col.type" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.colgroup.type">
+        <xs:group ref="xhtml.colgroup.content"/>
+        <xs:attributeGroup ref="xhtml.colgroup.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.tbody.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attributeGroup ref="xhtml.CellHAlign.attrib"/>
+        <xs:attributeGroup ref="xhtml.CellVAlign.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.tbody.content">
+        <xs:sequence>
+            <xs:element name="tr" type="xhtml.tr.type" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.tbody.type">
+        <xs:group ref="xhtml.tbody.content"/>
+        <xs:attributeGroup ref="xhtml.tbody.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.tfoot.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attributeGroup ref="xhtml.CellHAlign.attrib"/>
+        <xs:attributeGroup ref="xhtml.CellVAlign.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.tfoot.content">
+        <xs:sequence>
+            <xs:element name="tr" type="xhtml.tr.type" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.tfoot.type">
+        <xs:group ref="xhtml.tfoot.content"/>
+        <xs:attributeGroup ref="xhtml.tfoot.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.thead.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attributeGroup ref="xhtml.CellHAlign.attrib"/>
+        <xs:attributeGroup ref="xhtml.CellVAlign.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.thead.content">
+        <xs:sequence>
+            <xs:element name="tr" type="xhtml.tr.type" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.thead.type">
+        <xs:group ref="xhtml.thead.content"/>
+        <xs:attributeGroup ref="xhtml.thead.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.caption.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.caption.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.caption.type" mixed="true">
+        <xs:group ref="xhtml.caption.content"/>
+        <xs:attributeGroup ref="xhtml.caption.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.table.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+        <xs:attribute name="summary" type="xh11d:Text"/>
+        <xs:attribute name="width" type="xh11d:Length"/>
+        <xs:attribute name="border" type="xh11d:Pixels"/>
+        <xs:attributeGroup ref="xhtml.frame.attrib"/>
+        <xs:attributeGroup ref="xhtml.rules.attrib"/>
+        <xs:attribute name="cellspacing" type="xh11d:Length"/>
+        <xs:attribute name="cellpadding" type="xh11d:Length"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.table.content">
+        <xs:sequence>
+            <xs:element name="caption" type="xhtml.caption.type" minOccurs="0"/>
+            <xs:choice>
+                <xs:element name="col" type="xhtml.col.type" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="colgroup" type="xhtml.colgroup.type" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:choice>
+            <xs:choice>
+                <xs:sequence>
+                    <xs:element name="thead" type="xhtml.thead.type" minOccurs="0"/>
+                    <xs:element name="tfoot" type="xhtml.tfoot.type" minOccurs="0"/>
+                    <xs:element name="tbody" type="xhtml.tbody.type" maxOccurs="unbounded"/>
+                </xs:sequence>
+                <xs:choice>
+                    <xs:element name="tr" type="xhtml.tr.type" maxOccurs="unbounded"/>
+                </xs:choice>
+            </xs:choice>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.table.type">
+        <xs:group ref="xhtml.table.content"/>
+        <xs:attributeGroup ref="xhtml.table.attlist"/>
+    </xs:complexType>
+</xs:schema>

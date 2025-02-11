@@ -24,27 +24,20 @@
  */
 package java.util.stream;
 
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.Optional;
 import java.util.Spliterator;
 import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
-import java.util.function.ToIntFunction;
-import java.util.function.ToLongFunction;
 import java.util.stream.Gatherer.Integrator;
 
 /**
@@ -52,7 +45,7 @@ import java.util.stream.Gatherer.Integrator;
  * The performance-critical code below contains some more complicated encodings:
  * therefore, make sure to run benchmarks to verify changes to prevent regressions.
  *
- * @since 22
+ * @since 24
  */
 final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     @SuppressWarnings("unchecked")
@@ -461,16 +454,8 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             private Spliterator<T> spliterator;
             private Hybrid next;
 
-            private static final VarHandle NEXT;
-
-            static {
-                try {
-                    MethodHandles.Lookup l = MethodHandles.lookup();
-                    NEXT = l.findVarHandle(Hybrid.class, "next", Hybrid.class);
-                } catch (Exception e) {
-                    throw new InternalError(e);
-                }
-            }
+            private static final VarHandle NEXT = MhUtil.findVarHandle(
+                    MethodHandles.lookup(), "next", Hybrid.class);
 
             protected Hybrid(Spliterator<T> spliterator) {
                 super(null);

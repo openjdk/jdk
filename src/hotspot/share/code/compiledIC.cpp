@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBehaviours.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
@@ -83,6 +82,7 @@ void CompiledICData::initialize(CallInfo* call_info, Klass* receiver_klass) {
     _speculated_klass = (uintptr_t)receiver_klass;
   }
   if (call_info->call_kind() == CallInfo::itable_call) {
+    assert(call_info->resolved_method() != nullptr, "virtual or interface method must be found");
     _itable_defc_klass = call_info->resolved_method()->method_holder();
     _itable_refc_klass = call_info->resolved_klass();
   }
@@ -238,6 +238,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info) {
       return;
     }
 #ifdef ASSERT
+    assert(call_info->resolved_method() != nullptr, "virtual or interface method must be found");
     int index = call_info->resolved_method()->itable_index();
     assert(index == itable_index, "CallInfo pre-computes this");
     InstanceKlass* k = call_info->resolved_method()->method_holder();
@@ -254,6 +255,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info) {
     }
   }
 
+  assert(call_info->selected_method() != nullptr, "virtual or interface method must be found");
   log_trace(inlinecache)("IC@" INTPTR_FORMAT ": to megamorphic %s entry: " INTPTR_FORMAT,
                          p2i(_call->instruction_address()), call_info->selected_method()->print_value_string(), p2i(entry));
 
@@ -290,7 +292,7 @@ bool CompiledIC::is_monomorphic() const {
 }
 
 bool CompiledIC::is_megamorphic() const {
-  return VtableStubs::entry_point(destination()) != nullptr;;
+  return VtableStubs::entry_point(destination()) != nullptr;
 }
 
 bool CompiledIC::is_speculated_klass(Klass* receiver_klass) {
@@ -345,6 +347,7 @@ void CompiledDirectCall::set_to_clean() {
 void CompiledDirectCall::set(const methodHandle& callee_method) {
   nmethod* code = callee_method->code();
   nmethod* caller = CodeCache::find_nmethod(instruction_address());
+  assert(caller != nullptr, "did not find caller nmethod");
 
   bool to_interp_cont_enter = caller->method()->is_continuation_enter_intrinsic() &&
                               ContinuationEntry::is_interpreted_call(instruction_address());
@@ -378,11 +381,13 @@ bool CompiledDirectCall::is_call_to_interpreted() const {
   // It is a call to interpreted, if it calls to a stub. Hence, the destination
   // must be in the stub part of the nmethod that contains the call
   nmethod* nm = CodeCache::find_nmethod(instruction_address());
+  assert(nm != nullptr, "did not find nmethod");
   return nm->stub_contains(destination());
 }
 
 bool CompiledDirectCall::is_call_to_compiled() const {
   nmethod* caller = CodeCache::find_nmethod(instruction_address());
+  assert(caller != nullptr, "did not find caller nmethod");
   CodeBlob* dest_cb = CodeCache::find_blob(destination());
   return !caller->stub_contains(destination()) && dest_cb->is_nmethod();
 }

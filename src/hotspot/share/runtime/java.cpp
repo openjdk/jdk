@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
@@ -46,6 +47,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memMapPrinter.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
@@ -78,6 +80,7 @@
 #include "runtime/vm_version.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
@@ -155,7 +158,6 @@ static void print_method_profiling_data() {
   }
 }
 
-
 #ifndef PRODUCT
 
 // Statistics printing (method invocation histogram)
@@ -179,7 +181,7 @@ static void print_method_invocation_histogram() {
   collected_invoked_methods->sort(&compare_methods);
   //
   tty->cr();
-  tty->print_cr("Histogram Over Method Invocation Counters (cutoff = " INTX_FORMAT "):", MethodHistogramCutoff);
+  tty->print_cr("Histogram Over Method Invocation Counters (cutoff = %zd):", MethodHistogramCutoff);
   tty->cr();
   tty->print_cr("____Count_(I+C)____Method________________________Module_________________");
   uint64_t total        = 0,
@@ -264,7 +266,7 @@ void print_statistics() {
 #endif //COMPILER1
   }
 
-  if (PrintLockStatistics || PrintPreciseRTMLockingStatistics) {
+  if (PrintLockStatistics) {
     OptoRuntime::print_named_counters();
   }
 #ifdef ASSERT
@@ -355,6 +357,12 @@ void print_statistics() {
   }
 
   ThreadsSMRSupport::log_statistics();
+
+  if (log_is_enabled(Info, perf, class, link)) {
+    LogStreamHandle(Info, perf, class, link) log;
+    log.print_cr("At VM exit:");
+    ClassLoader::print_counters(&log);
+  }
 }
 
 // Note: before_exit() can be executed only once, if more than one threads
@@ -365,6 +373,8 @@ void before_exit(JavaThread* thread, bool halt) {
   #define BEFORE_EXIT_RUNNING 1
   #define BEFORE_EXIT_DONE    2
   static jint volatile _before_exit_status = BEFORE_EXIT_NOT_RUN;
+
+  Events::log(thread, "Before exit entered");
 
   // Note: don't use a Mutex to guard the entire before_exit(), as
   // JVMTI post_thread_end_event and post_vm_death_event will run native code.
@@ -428,6 +438,10 @@ void before_exit(JavaThread* thread, bool halt) {
   }
 #endif
 
+#if INCLUDE_CDS
+  ClassListWriter::write_resolved_constants();
+#endif
+
   // Hang forever on exit if we're reporting an error.
   if (ShowMessageBoxOnError && VMError::is_error_reported()) {
     os::infinite_sleep();
@@ -473,7 +487,10 @@ void before_exit(JavaThread* thread, bool halt) {
 
 #ifdef LINUX
   if (DumpPerfMapAtExit) {
-    CodeCache::write_perf_map();
+    CodeCache::write_perf_map(nullptr, tty);
+  }
+  if (PrintMemoryMapAtExit) {
+    MemMapPrinter::print_all_mappings(tty);
   }
 #endif
 
@@ -501,7 +518,7 @@ void before_exit(JavaThread* thread, bool halt) {
   if (VerifyStringTableAtExit) {
     size_t fail_cnt = StringTable::verify_and_compare_entries();
     if (fail_cnt != 0) {
-      tty->print_cr("ERROR: fail_cnt=" SIZE_FORMAT, fail_cnt);
+      tty->print_cr("ERROR: fail_cnt=%zu", fail_cnt);
       guarantee(fail_cnt == 0, "unexpected StringTable verification failures");
     }
   }

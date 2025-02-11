@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ AC_DEFUN_ONCE([LIB_SETUP_GIFLIB],
 AC_DEFUN_ONCE([LIB_SETUP_LIBPNG],
 [
   AC_ARG_WITH(libpng, [AS_HELP_STRING([--with-libpng],
-     [use libpng from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
+      [use libpng from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
 
   PKG_CHECK_MODULES(PNG, libpng, [LIBPNG_FOUND=yes], [LIBPNG_FOUND=no])
   AC_MSG_CHECKING([for which libpng to use])

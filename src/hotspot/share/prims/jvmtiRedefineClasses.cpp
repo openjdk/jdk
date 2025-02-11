@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -245,7 +245,7 @@ void VM_RedefineClasses::doit() {
   }
 
 #if INCLUDE_CDS
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     // Sharing is enabled so we remap the shared readonly space to
     // shared readwrite, private just in case we need to redefine
     // a shared class. We do the remap during the doit() phase of
@@ -1004,8 +1004,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   }
 
   // Check whether class modifiers are the same.
-  jushort old_flags = (jushort) the_class->access_flags().get_flags();
-  jushort new_flags = (jushort) scratch_class->access_flags().get_flags();
+  u2 old_flags = the_class->access_flags().as_class_flags();
+  u2 new_flags = scratch_class->access_flags().as_class_flags();
   if (old_flags != new_flags) {
     log_info(redefine, class, normalize)
         ("redefined class %s modifiers change error: modifiers changed from %d to %d.",
@@ -1039,9 +1039,9 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
     }
     // access
-    old_flags = old_fs.access_flags().as_short();
-    new_flags = new_fs.access_flags().as_short();
-    if ((old_flags ^ new_flags) & JVM_RECOGNIZED_FIELD_MODIFIERS) {
+    old_flags = old_fs.access_flags().as_field_flags();
+    new_flags = new_fs.access_flags().as_field_flags();
+    if (old_flags != new_flags) {
       log_info(redefine, class, normalize)
           ("redefined class %s field %s change error: modifiers changed from %d to %d.",
            the_class->external_name(), name_sym2->as_C_string(), old_flags, new_flags);
@@ -1146,8 +1146,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
     switch (method_was) {
     case matched:
       // methods match, be sure modifiers do too
-      old_flags = (jushort) k_old_method->access_flags().get_flags();
-      new_flags = (jushort) k_new_method->access_flags().get_flags();
+      old_flags = k_old_method->access_flags().as_method_flags();
+      new_flags = k_new_method->access_flags().as_method_flags();
       if ((old_flags ^ new_flags) & ~(JVM_ACC_NATIVE)) {
         log_info(redefine, class, normalize)
           ("redefined class %s  method %s modifiers error: modifiers changed from %d to %d",
@@ -1173,7 +1173,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
           }
         }
       }
-      JFR_ONLY(k_new_method->copy_trace_flags(*k_old_method->trace_flags_addr());)
+      JFR_ONLY(k_new_method->copy_trace_flags(k_old_method->trace_flags());)
       log_trace(redefine, class, normalize)
         ("Method matched: new: %s [%d] == old: %s [%d]",
          k_new_method->name_and_sig_as_C_string(), ni, k_old_method->name_and_sig_as_C_string(), oi);
@@ -1361,8 +1361,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
 
     ClassFileStream st((u1*)_class_defs[i].class_bytes,
                        _class_defs[i].class_byte_count,
-                       "__VM_RedefineClasses__",
-                       ClassFileStream::verify);
+                       "__VM_RedefineClasses__");
 
     // Set redefined class handle in JvmtiThreadState class.
     // This redefined class is sent to agent event handler for class file

@@ -36,6 +36,7 @@ ifeq ($(_MAKEBASE_GMK), )
   $(error You must include MakeBase.gmk prior to including NativeCompilation.gmk)
 endif
 
+include MakeIO.gmk
 include native/CompileFile.gmk
 include native/DebugSymbols.gmk
 include native/Flags.gmk
@@ -84,6 +85,7 @@ include native/Paths.gmk
 #   EXTRA_FILES List of extra files not in any of the SRC dirs
 #   EXTRA_OBJECT_FILES List of extra object files to include when linking
 #   EXTRA_DEPS List of extra dependencies to be added to each compiled file
+#   EXTRA_LINK_DEPS List of extra dependencies to be added to the link stage
 #   VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
 #   RCFLAGS flags for RC.
 #   EMBED_MANIFEST if true, embed manifest on Windows.
@@ -180,7 +182,7 @@ define SetupNativeCompilationBody
 
   # Now call CreateCompiledNativeFile for each source file we are going to compile.
   $$(foreach file, $$($1_SRCS), \
-      $$(eval $$(call CreateCompiledNativeFile,$1_$$(notdir $$(file)),\
+      $$(eval $$(call CreateCompiledNativeFile,$1_$$(notdir $$(file)), \
           FILE := $$(file), \
           BASE := $1, \
       )) \
@@ -220,13 +222,16 @@ define SetupNativeCompilationBody
 
   ifeq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
     # Override all targets (this is a hack)
-    $1 := $$($1_ALL_OBJS_JSON)
+    $1 := $$($1_ALL_OBJS_JSON) $$($1_LDFLAGS_FILE)
   endif
 endef
 
 ################################################################################
 # Verify that user passed arguments are valid
 define VerifyArguments
+  ifeq ($$($1_NAME), )
+    $$(error NAME must not be empty in $1)
+  endif
   ifneq ($$($1_NAME), $(basename $$($1_NAME)))
     $$(error NAME must not contain any directory path in $1)
   endif
@@ -252,14 +257,6 @@ define SetupBasicVariables
   # If type is unspecified, default to LIBRARY
   ifeq ($$($1_TYPE), )
     $1_TYPE := LIBRARY
-  endif
-
-  # If we're doing a static build and producing a library
-  # force it to be a static library and remove the -l libraries
-  ifeq ($(STATIC_BUILD), true)
-    ifeq ($$($1_TYPE), LIBRARY)
-      $1_TYPE := STATIC_LIBRARY
-    endif
   endif
 
   # STATIC_LIBS is set from Main.gmk when building static versions of certain
@@ -295,6 +292,7 @@ define SetupBasicVariables
   $1_TARGET := $$($1_OUTPUT_DIR)/$$($1_BASENAME)
   $1_NOSUFFIX := $$($1_PREFIX)$$($1_NAME)
   $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
+  $1_UNIQUE_NAME = $$($1_TYPE)_$$(subst /,_,$$(patsubst $$(OUTPUTDIR)/%/,%,$$(dir $$($1_OBJECT_DIR))))_$$($1_NOSUFFIX)
 endef
 
 ################################################################################

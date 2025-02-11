@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,46 @@
 
 package com.apple.laf;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import java.util.*;
+import java.awt.Adjustable;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 
-import javax.swing.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.swing.BoundedRangeModel;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JScrollBar;
+import javax.swing.LookAndFeel;
 import javax.swing.Timer;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.ScrollBarUI;
 
-import apple.laf.*;
-import apple.laf.JRSUIConstants.*;
+import apple.laf.JRSUIStateFactory;
+import apple.laf.JRSUIConstants.Hit;
+import apple.laf.JRSUIConstants.NothingToScroll;
+import apple.laf.JRSUIConstants.Orientation;
+import apple.laf.JRSUIConstants.ScrollBarHit;
+import apple.laf.JRSUIConstants.ScrollBarPart;
+import apple.laf.JRSUIConstants.ShowArrows;
+import apple.laf.JRSUIConstants.State;
 import apple.laf.JRSUIState.ScrollBarState;
+import apple.laf.JRSUIUtils;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
@@ -527,6 +554,21 @@ public class AquaScrollBarUI extends ScrollBarUI {
         }
 
         public void actionPerformed(final ActionEvent e) {
+            Component parent = fScrollBar.getParent();
+            do {
+                if (parent instanceof JFrame par) {
+                    if (!par.isEnabled()) {
+                        ((Timer)e.getSource()).stop();
+                        fScrollBar.setValueIsAdjusting(false);
+                        return;
+                    }
+                    break;
+                } else {
+                    if (parent != null) {
+                        parent = parent.getParent();
+                    }
+                }
+            } while (parent != null);
             if (fUseBlockIncrement) {
                 Hit newPart = getPartHit(fTrackListener.fCurrentMouseX, fTrackListener.fCurrentMouseY);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -166,7 +165,7 @@ static void move_stack(MacroAssembler* masm, Register tmp_reg, int in_stk_bias, 
     case StorageType::INTEGER:
       switch (from_reg.stack_size()) {
         case 8: __ mem2reg_opt(as_Register(to_reg), from_addr, true);break;
-        case 4: __ mem2reg_opt(as_Register(to_reg), from_addr, false);break;
+        case 4: __ mem2reg_signed_opt(as_Register(to_reg), from_addr);break;
         default: ShouldNotReachHere();
       }
       break;

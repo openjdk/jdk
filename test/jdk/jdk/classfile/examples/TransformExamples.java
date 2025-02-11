@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,18 +38,18 @@ import java.lang.classfile.Attribute;
  */
 public class TransformExamples {
     public byte[] noop(ClassModel cm) {
-        return ClassFile.of().transform(cm, ClassTransform.ACCEPT_ALL);
+        return ClassFile.of().transformClass(cm, ClassTransform.ACCEPT_ALL);
     }
 
     public byte[] deleteAllMethods(ClassModel cm) {
-        return ClassFile.of().transform(cm, (b, e) -> {
+        return ClassFile.of().transformClass(cm, (b, e) -> {
             if (!(e instanceof MethodModel))
                 b.with(e);
         });
     }
 
     public byte[] deleteFieldsWithDollarInName(ClassModel cm) {
-        return ClassFile.of().transform(cm, (b, e) ->
+        return ClassFile.of().transformClass(cm, (b, e) ->
                         {
                             if (!(e instanceof FieldModel fm && fm.fieldName().stringValue().contains("$")))
                                 b.with(e);
@@ -57,14 +57,14 @@ public class TransformExamples {
     }
 
     public byte[] deleteAttributes(ClassModel cm) {
-        return ClassFile.of().transform(cm, (b, e) -> {
+        return ClassFile.of().transformClass(cm, (b, e) -> {
             if (!(e instanceof Attribute))
                 b.with(e);
         });
     }
 
     public byte[] keepMethodsAndFields(ClassModel cm) {
-        return ClassFile.of().transform(cm, (b, e) -> {
+        return ClassFile.of().transformClass(cm, (b, e) -> {
             if (e instanceof MethodModel || e instanceof FieldModel)
                 b.with(e);
         });

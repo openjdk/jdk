@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,11 @@ import java.util.Objects;
  * @run main/othervm -Djava.net.preferIPv6Addresses=system JdwpNetProps
  */
 public class JdwpNetProps {
+
+    // Set to true to allow testing of attach from wrong address (expected to fail).
+    // It's off by default as it causes test interference (see JDK-8311990).
+    private static boolean allowNegativeAttachTesting =
+        "true".equalsIgnoreCase(System.getProperty("jdk.jdi.allowNegativeTesting"));
 
     public static void main(String[] args) throws Exception {
         InetAddress addrs[] = InetAddress.getAllByName("localhost");
@@ -171,6 +176,14 @@ public class JdwpNetProps {
         }
 
         public void run(TestResult expectedResult) throws Exception {
+            log("\nTest: listen at " + listenAddress + ", attaching to " + connectAddress
+                + ", preferIPv4Stack = " + preferIPv4Stack
+                + ", preferIPv6Addresses = " + preferIPv6Addresses
+                + ", expectedResult = " + expectedResult);
+            if (expectedResult == TestResult.AttachFailed && !allowNegativeAttachTesting) {
+                log("SKIPPED: negative attach testing is disabled");
+                return;
+            }
             List<String> options = new LinkedList<>();
             if (preferIPv4Stack != null) {
                 options.add("-Djava.net.preferIPv4Stack=" + preferIPv4Stack.toString());

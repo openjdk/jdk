@@ -155,6 +155,7 @@ public class AsyncCloseAndInterrupt {
             return;
         }
         fifoFile = new File("x.fifo");
+        fifoFile.deleteOnExit();
         if (fifoFile.exists()) {
             if (!fifoFile.delete())
                 throw new IOException("Cannot delete existing fifo " + fifoFile);

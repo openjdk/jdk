@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,11 @@
 package java.nio;
 
 import java.lang.foreign.MemorySegment;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.vm.annotation.ForceInline;
 import java.util.Objects;
-import jdk.internal.util.ArraysSupport;
 
 /**
 #if[rw]
@@ -706,9 +709,6 @@ class Heap$Type$Buffer$RW$
                                                                    addr, segment)));
     }
 
-    public int hashCode() {
-        return ArraysSupport.vectorizedHashCode(hb, ix(position()), remaining(), 1, ArraysSupport.T_BYTE);
-    }
 
 #end[byte]
 
@@ -737,11 +737,25 @@ class Heap$Type$Buffer$RW$
                                       offset, segment);
     }
 
-    public int hashCode() {
-        return ArraysSupport.vectorizedHashCode(hb, ix(position()), remaining(), 1, ArraysSupport.T_CHAR);
-    }
 #end[char]
 
+#if[byte]
+    @ForceInline
+    @Override
+    int scaleShifts() {
+        return 0;
+    }
+
+    @ForceInline
+    @Override
+    AbstractMemorySegmentImpl heapSegment(Object base,
+                                          long offset,
+                                          long length,
+                                          boolean readOnly,
+                                          MemorySessionImpl bufferScope) {
+        return SegmentFactories.arrayOf$Type$Segment(base, offset, length, readOnly, bufferScope);
+    }
+#end[byte]
 
 #if[!byte]
 
