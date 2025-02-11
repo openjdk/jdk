@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ final class ProxyGenerator {
             MTD_Method_String_Class_array = MethodTypeDescImpl.ofValidated(CD_Method, CD_String, CD_Class_array),
             MTD_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup),
             MTD_MethodHandles$Lookup_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, CD_MethodHandles_Lookup),
+            MTD_Object_Object = MethodTypeDescImpl.ofValidated(CD_Object, CD_Object),
             MTD_Object_Object_Method_ObjectArray = MethodTypeDescImpl.ofValidated(CD_Object, CD_Object, CD_Method, CD_Object_array),
             MTD_String = MethodTypeDescImpl.ofValidated(CD_String);
 
@@ -763,8 +764,21 @@ final class ProxyGenerator {
                    .invokevirtual(prim.unwrapMethodRef(cp))
                    .return_(TypeKind.from(type).asLoadable());
             } else {
-                cob.checkcast(referenceClassDesc(type))
-                   .areturn();
+                if (Modifier.isPublic(accessFlags) && !Modifier.isPublic(type.getModifiers())) {
+                    // Happens when a superinterface returns an inaccessible package-private type
+                    cob.getstatic(methodField)
+                       .invokevirtual(CD_Method, "getReturnType", MTD_Class)
+                       .swap()
+                       .invokevirtual(CD_Class, "cast", MTD_Object_Object);
+                    if (type.isArray()) {
+                        // Verifier shouts without this cast
+                        assert Object[].class.isAssignableFrom(type) : "No primitive arrays";
+                        cob.checkcast(CD_Object_array);
+                    }
+                } else {
+                    cob.checkcast(referenceClassDesc(type));
+                }
+                cob.areturn();
             }
         }
 
