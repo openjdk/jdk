@@ -365,6 +365,11 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
 }
 
 void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
+  if (should_terminate()) {
+    log_info(gc)("Control thread is terminating, no more GCs");
+    return;
+  }
+
   // For normal requested GCs (System.gc) we want to block the caller. However,
   // for whitebox requested GC, we want to initiate the GC and return immediately.
   // The whitebox caller thread will arrange for itself to wait until the GC notifies

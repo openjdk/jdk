@@ -48,12 +48,17 @@ size_t ShenandoahController::get_gc_id() {
 }
 
 void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& req, bool block) {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-
   assert(current()->is_Java_thread(), "expect Java thread here");
+
+  if (should_terminate()) {
+    log_info(gc)("Control thread is terminating, no help for this allocation");
+    return;
+  }
+
   const bool is_humongous = ShenandoahHeapRegion::requires_humongous(req.size());
   const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_allocation_failure;
 
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (heap->cancel_gc(cause)) {
     log_info(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req.size() * HeapWordSize));
     request_gc(cause);
@@ -68,6 +73,11 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& re
 }
 
 void ShenandoahController::handle_alloc_failure_evac(size_t words) {
+  if (should_terminate()) {
+    log_info(gc)("Control thread is terminating, no help for this allocation");
+    return;
+  }
+
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   const bool is_humongous = ShenandoahHeapRegion::requires_humongous(words);
   const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_shenandoah_allocation_failure_evac;
