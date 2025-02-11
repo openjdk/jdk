@@ -104,14 +104,12 @@ public final class Utils {
      */
     public static VarHandle makeRawSegmentViewVarHandle(MemoryLayout enclosing, ValueLayout layout) {
         if (enclosing instanceof ValueLayout direct) {
-            var key = direct.withoutName();
-            if (key.equals(layout.withoutName())) {
-                final class VarHandleCache {
-                    private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
-                }
-                return VarHandleCache.HANDLE_MAP
-                        .computeIfAbsent(key, vl1 -> Utils.makeRawSegmentViewVarHandleInternal(vl1, vl1));
+            assert direct.equals(layout);
+            final class VarHandleCache {
+                private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
             }
+            return VarHandleCache.HANDLE_MAP
+                    .computeIfAbsent(direct.withoutName(), vl -> Utils.makeRawSegmentViewVarHandleInternal(vl, vl));
         }
         return makeRawSegmentViewVarHandleInternal(enclosing, layout);
     }
