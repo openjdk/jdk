@@ -11,14 +11,12 @@ extern "C" {
 
 #include <stdint.h>
 
-#if !defined(AIX)
-#include <spa/utils/endian.h>
-#endif
-
-#if defined(AIX)
+#ifdef AIX
 #include <sys/machine.h>
 #define __BIG_ENDIAN      BIG_ENDIAN
 #define __BYTE_ORDER      BIG_ENDIAN
+#else
+#include <spa/utils/endian.h>
 #endif
 
 /**
