@@ -27,7 +27,7 @@
  * @summary Test java.lang.management.ThreadMXBean with virtual threads
  * @modules java.base/java.lang:+open java.management
  * @library /test/lib
- * @run junit/othervm VirtualThreads
+ * @run junit/othervm/native VirtualThreads
  */
 
 /**
