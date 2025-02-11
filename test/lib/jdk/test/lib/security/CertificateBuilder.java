@@ -51,7 +51,6 @@ import sun.security.x509.DNSName;
 import sun.security.x509.GeneralName;
 import sun.security.x509.GeneralNames;
 import sun.security.x509.KeyUsageExtension;
-import sun.security.x509.SerialNumber;
 import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.URIName;
 import sun.security.x509.KeyIdentifier;
@@ -389,7 +388,30 @@ public class CertificateBuilder {
     }
 
     /**
-     * Build the certificate.
+     * Build the certificate using the default algorithm for the provided
+     * signing key.
+     *
+     * @param issuerCert The certificate of the issuing authority, or
+     * {@code null} if the resulting certificate is self-signed.
+     * @param issuerKey The private key of the issuing authority
+     *
+     * @return The resulting {@link X509Certificate}
+     *
+     * @throws IOException if an encoding error occurs.
+     * @throws CertificateException If the certificate cannot be generated
+     * by the underlying {@link CertificateFactory}
+     * @throws NoSuchAlgorithmException If an invalid signature algorithm
+     * is provided.
+     */
+    public X509Certificate build(X509Certificate issuerCert,
+            PrivateKey issuerKey) throws IOException, CertificateException,
+            NoSuchAlgorithmException {
+        return build(issuerCert, issuerKey,
+                SignatureUtil.getDefaultSigAlgForKey(issuerKey));
+    }
+
+    /**
+     * Build the certificate using the key and specified signing algorithm.
      *
      * @param issuerCert The certificate of the issuing authority, or
      * {@code null} if the resulting certificate is self-signed.
@@ -407,8 +429,6 @@ public class CertificateBuilder {
     public X509Certificate build(X509Certificate issuerCert,
             PrivateKey issuerKey, String algName)
             throws IOException, CertificateException, NoSuchAlgorithmException {
-        // TODO: add some basic checks (key usage, basic constraints maybe)
-
         byte[] encodedCert = encodeTopLevel(issuerCert, issuerKey, algName);
         ByteArrayInputStream bais = new ByteArrayInputStream(encodedCert);
         return (X509Certificate)factory.generateCertificate(bais);
@@ -439,13 +459,12 @@ public class CertificateBuilder {
             PrivateKey issuerKey, String algName)
             throws CertificateException, IOException, NoSuchAlgorithmException {
 
-        AlgorithmId signAlg = AlgorithmId.get(algName);
+        AlgorithmId signAlg;
         DerOutputStream outerSeq = new DerOutputStream();
         DerOutputStream topLevelItems = new DerOutputStream();
 
         try {
-            Signature sig = SignatureUtil.fromKey(signAlg.getName(), issuerKey, (Provider)null);
-            // Rewrite signAlg, RSASSA-PSS needs some parameters.
+            Signature sig = SignatureUtil.fromKey(algName, issuerKey, "");
             signAlg = SignatureUtil.fromSignature(sig, issuerKey);
             tbsCertBytes = encodeTbsCert(issuerCert, signAlg);
             sig.update(tbsCertBytes);
