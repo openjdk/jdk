@@ -546,7 +546,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-static void computeGCMProduct(MacroAssembler* masm, 
+static void computeGCMProduct(MacroAssembler* masm,
                               VectorRegister vLowerH, VectorRegister vH, VectorRegister vHigherH,
                               VectorRegister vConstC2, VectorRegister vZero, VectorRegister vState,
                               VectorRegister vTmp4, VectorRegister vTmp5, VectorRegister vTmp6,
