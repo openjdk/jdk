@@ -593,12 +593,12 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
     {
       // Mirror: Z_ARG1(R2)
       // Object: Z_ARG2
-      // Temps: Z_ARG3, Z_ARG4, Z_ARG5, Z_tmp_1, Z_tmp_2
+      // Temps: Z_ARG3, Z_ARG4, Z_ARG5, Z_R10, Z_R11
       // Result: Z_RET(R2)
 
       // Get the Klass* into Z_ARG3
       Register klass = Z_ARG3 , obj = Z_ARG2, result = Z_RET;
-      Register temp0 = Z_ARG4, temp1 = Z_ARG5, temp2 = Z_tmp_1, temp3 = Z_tmp_2;
+      Register temp0 = Z_ARG4, temp1 = Z_ARG5, temp2 = Z_R10, temp3 = Z_R11;
 
       __ z_lg(klass, Address(Z_ARG1, java_lang_Class::klass_offset()));
 
@@ -635,10 +635,11 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       const int frame_size = 2*BytesPerWord + frame::z_abi_160_size;
       __ save_return_pc();
       __ push_frame(frame_size);
-      int i = 0;
-      __ z_stg(Z_tmp_1, (i++)*BytesPerWord + frame::z_abi_160_size, Z_SP);
-      __ z_stg(Z_tmp_2, (i++)*BytesPerWord + frame::z_abi_160_size, Z_SP);
-      assert(i*BytesPerWord + frame::z_abi_160_size == frame_size, "check");
+
+      // Z_R10 and Z_R11 are call saved, so we must push them before any use
+      __ z_stg(temp2 /*Z_R10*/, 0*BytesPerWord + frame::z_abi_160_size, Z_SP);
+      __ z_stg(temp3 /*Z_R11*/, 1*BytesPerWord + frame::z_abi_160_size, Z_SP);
+      assert(2*BytesPerWord + frame::z_abi_160_size == frame_size, "check");
 
       __ lookup_secondary_supers_table_var(obj, klass,
                                           /*temps*/ temp0, temp1, temp2, temp3,
@@ -649,10 +650,9 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       // so we have to inverse the result we got from lookup_secondary_supers_table_var.
       __ z_xilf(result, 1);  // inverse the result
 
-      i = 0;
-      __ z_lg(Z_tmp_1, (i++)*BytesPerWord + frame::z_abi_160_size, Z_SP);
-      __ z_lg(Z_tmp_2, (i++)*BytesPerWord + frame::z_abi_160_size, Z_SP);
-      assert(i*BytesPerWord + frame::z_abi_160_size == frame_size, "check");
+      __ z_lg(temp2 /*Z_R10*/, 0*BytesPerWord + frame::z_abi_160_size, Z_SP);
+      __ z_lg(temp3 /*Z_R11*/, 1*BytesPerWord + frame::z_abi_160_size, Z_SP);
+      assert(2*BytesPerWord + frame::z_abi_160_size == frame_size, "check");
       __ pop_frame();
       __ restore_return_pc();
 
