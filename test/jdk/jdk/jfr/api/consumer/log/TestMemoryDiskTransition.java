@@ -27,7 +27,7 @@ import jdk.jfr.Recording;
 /**
  * @test
  * @summary Tests that transition between disk=true/false works
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.jfr.api.consumer.log.LogAnalyzer

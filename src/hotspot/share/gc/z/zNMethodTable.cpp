@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "code/relocInfo.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/barrierSet.hpp"

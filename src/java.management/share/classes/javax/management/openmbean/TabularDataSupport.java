@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,16 +143,9 @@ public class TabularDataSupport
         List<String> tmpNames = tabularType.getIndexNames();
         this.indexNamesArray = tmpNames.toArray(new String[tmpNames.size()]);
 
-        // Since LinkedHashMap was introduced in SE 1.4, it's conceivable even
-        // if very unlikely that we might be the server of a 1.3 client.  In
-        // that case you'll need to set this property.  See CR 6334663.
-        boolean useHashMap = Boolean.getBoolean("jmx.tabular.data.hash.map");
-
         // Construct the empty contents HashMap
         //
-        this.dataMap = useHashMap ?
-            new HashMap<>(initialCapacity, loadFactor) :
-            new LinkedHashMap<>(initialCapacity, loadFactor);
+        this.dataMap = new LinkedHashMap<>(initialCapacity, loadFactor);
     }
 
 

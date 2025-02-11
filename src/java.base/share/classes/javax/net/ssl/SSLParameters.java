@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,7 @@ public class SSLParameters {
      * Algorithm Names Specification.  Providers may support cipher suite
      * names not found in this list.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @param cipherSuites the array of ciphersuites (or null)
      */
     @SuppressWarnings("this-escape")
@@ -134,6 +135,7 @@ public class SSLParameters {
      * Algorithm Names Specification.  Providers may support cipher suite
      * names not found in this list.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @param cipherSuites the array of ciphersuites (or null)
      * @param protocols the array of protocols (or null)
      */
@@ -158,6 +160,7 @@ public class SSLParameters {
      * Algorithm Names Specification, and may also include other cipher suites
      * that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a copy of the array of ciphersuites or null if none
      * have been set.
      */
@@ -175,6 +178,7 @@ public class SSLParameters {
      * Algorithm Names Specification.  Providers may support cipher suite
      * names not found in this list or might not use the recommended name
      * for a certain cipher suite.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public void setCipherSuites(String[] cipherSuites) {
         this.cipherSuites = clone(cipherSuites);
@@ -749,6 +753,7 @@ public class SSLParameters {
      * with the SunJSSE provider to override the provider-specific default
      * signature schemes.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return an array of signature scheme {@code Strings} or {@code null} if
      *         none have been set.  For non-null returns, this method will
      *         return a new array each time it is invoked.  The array is
@@ -794,6 +799,7 @@ public class SSLParameters {
      *        method will make a copy of this array.  Providers should ignore
      *        unknown signature scheme names while establishing the
      *        SSL/TLS/DTLS connections.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws IllegalArgumentException if any element in the
      *        {@code signatureSchemes} array is {@code null} or
      *        {@linkplain String#isBlank() blank}.
@@ -868,6 +874,7 @@ public class SSLParameters {
      * {@systemProperty jdk.tls.namedGroups} system property with the SunJSSE
      * provider to override the provider-specific default named groups.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return an array of key exchange named group names {@code Strings} or
      *         {@code null} if none have been set.  For non-null returns, this
      *         method will return a new array each time it is invoked.  The
@@ -913,6 +920,7 @@ public class SSLParameters {
      *        This method will make a copy of this array. Providers should
      *        ignore unknown named group scheme names while establishing the
      *        SSL/TLS/DTLS connections.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws IllegalArgumentException if any element in the
      *        {@code namedGroups} array is a duplicate, {@code null} or
      *        {@linkplain String#isBlank() blank}.
