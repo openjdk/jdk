@@ -45,7 +45,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import javax.swing.BoundedRangeModel;
-import javax.swing.FocusManager;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -1610,19 +1609,18 @@ public class BasicScrollBarUI
 
         /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
+            // If scrollbar isn't visible, stop the timer
+            if (!scrollbar.isShowing()) {
+                ((Timer)e.getSource()).stop();
+                buttonListener.handledEvent = false;
+                scrollbar.setValueIsAdjusting(false);
+                return;
+            }
             // If frame is disabled and timer is started in mousePressed
             // and mouseReleased is not called, then timer will not be stopped
             // Stop the timer if frame is disabled
             Component parent = scrollbar.getParent();
-            Component focusOwner = FocusManager.getCurrentManager().getFocusOwner();
             do {
-                // If application isn't in focus, stop the timer
-                if (focusOwner == null) {
-                    ((Timer)e.getSource()).stop();
-                    buttonListener.handledEvent = false;
-                    scrollbar.setValueIsAdjusting(false);
-                    return;
-                }
                 if (parent instanceof JFrame par) {
                     if (!par.isEnabled()) {
                         ((Timer)e.getSource()).stop();

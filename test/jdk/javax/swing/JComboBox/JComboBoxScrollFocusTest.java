@@ -21,54 +21,135 @@
  * questions.
  */
 
+import java.awt.Component;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
+import javax.swing.plaf.basic.BasicComboPopup;
 
 /*
  * @test
+ * @key headful
  * @bug 6672644
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @requires os.family != "mac"
  * @summary Tests JComboBox scrollbar behavior when alt-tabbing
- * @run main/manual JComboBoxScrollFocusTest
+ * @run main JComboBoxScrollFocusTest
  */
 
 public class JComboBoxScrollFocusTest {
-    private static final String INSTRUCTIONS =
-            """
-             Click on the dropdown button for the JComboBox in the test frame.
-             Then, press and hold the left click button on the down arrow button
-             in the popup list. While holding the left click button, the list
-             should be scrolling down. Press ALT + TAB while holding down the
-             left click to switch focus to a different window. Then release the
-             left click button. Focus the test frame again and click the
-             dropdown button for the JComboBox again. The list should be
-             stationary and not be automatically scrolling.
-             If you are able to execute all steps successfully then the test
-             passes, otherwise it fails.
-            """;
+    private static Robot robot;
+    private static JFrame comboboxFrame;
+    private static JComboBox<String> combobox;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame
-                .builder()
-                .title("JComboBoxScrollFocusTest Test Instructions")
-                .instructions(INSTRUCTIONS)
-                .columns(40)
-                .testUI(JComboBoxScrollFocusTest::createAndShowGUI)
-                .build()
-                .awaitAndCheck();
+        robot = new Robot();
+        try {
+            SwingUtilities.invokeAndWait(JComboBoxScrollFocusTest::createAndShowGUI);
+            doTest();
+        } finally {
+            SwingUtilities.invokeAndWait(comboboxFrame::dispose);
+        }
     }
 
-    private static JFrame createAndShowGUI() {
-        JFrame frame = new JFrame("JComboBoxScrollFocusTest Test Frame");
-        JComboBox<String> combobox = new JComboBox<>();
-        for (int i = 0; i < 1000; i++) {
+    private static void createAndShowGUI() {
+        comboboxFrame = new JFrame("JComboBoxScrollFocusTest Test Frame");
+        combobox = new JComboBox<>();
+        for (int i = 0; i < 100; i++) {
             combobox.addItem(String.valueOf(i));
         }
-        frame.add(combobox);
-        frame.setSize(400, 200);
-        frame.setLocationRelativeTo(null);
-        return frame;
+        comboboxFrame.add(combobox);
+        comboboxFrame.setSize(400, 200);
+        comboboxFrame.setLocationRelativeTo(null);
+        comboboxFrame.setVisible(true);
+    }
+
+    static Rectangle getOnScreenBoundsOnEDT(Component component)
+            throws InterruptedException, TimeoutException, ExecutionException {
+        robot.waitForIdle();
+        FutureTask<Rectangle> task = new FutureTask<>(()
+                -> new Rectangle(component.getLocationOnScreen(),
+                component.getSize()));
+        SwingUtilities.invokeLater(task);
+        return task.get(500, TimeUnit.MILLISECONDS);
+    }
+
+    private static int getScrollbarValue()
+            throws InterruptedException, InvocationTargetException,
+            ExecutionException, TimeoutException {
+
+        FutureTask<Integer> task = new FutureTask<>(() -> {
+            BasicComboPopup popup = (BasicComboPopup) combobox.getAccessibleContext().getAccessibleChild(0);
+            JScrollPane scrollPane = (JScrollPane) popup.getAccessibleContext().getAccessibleChild(0);
+            JScrollBar scrollBar = scrollPane.getVerticalScrollBar();
+            return scrollBar.getValue();
+        });
+        SwingUtilities.invokeAndWait(task);
+
+        return task.get(500, TimeUnit.MILLISECONDS);
+    }
+
+    private static void doTest() throws Exception {
+        robot.waitForIdle();
+        robot.delay(500);
+
+        Rectangle rectangle = getOnScreenBoundsOnEDT(combobox);
+
+        Point ptOpenComboboxPopup = new Point(rectangle.x + rectangle.width - 5,
+                rectangle.y + rectangle.height / 2);
+
+        robot.mouseMove(ptOpenComboboxPopup.x, ptOpenComboboxPopup.y);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+        robot.delay(500);
+
+
+        BasicComboPopup popup = (BasicComboPopup) combobox.getAccessibleContext().getAccessibleChild(0);
+        JScrollBar scrollBar = ((JScrollPane) popup.getAccessibleContext().getAccessibleChild(0)).getVerticalScrollBar();
+
+        // Start scrolling
+        Rectangle scrollbarBounds = getOnScreenBoundsOnEDT(scrollBar);
+        robot.mouseMove(scrollbarBounds.x + scrollbarBounds.width / 2,
+                scrollbarBounds.y + scrollbarBounds.height - 5);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+
+        robot.delay(1000);
+
+        if (getScrollbarValue() == 0) {
+            throw new RuntimeException("The scrollbar is not scrolling");
+        }
+
+        // closing popup by moving focus to the main window
+        comboboxFrame.requestFocus();
+        robot.waitForIdle();
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+        robot.waitForIdle();
+        robot.delay(500);
+
+        // open popup again
+        robot.mouseMove(ptOpenComboboxPopup.x, ptOpenComboboxPopup.y);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+        robot.delay(500);
+
+        if (getScrollbarValue() != 0) {
+            throw new RuntimeException("The scroll bar is scrolling");
+        }
     }
 }
