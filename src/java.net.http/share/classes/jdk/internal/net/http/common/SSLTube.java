@@ -641,7 +641,6 @@ public class SSLTube implements FlowTube {
 
         @Override
         public void request(long n) {
-            final long demand = n;
             // Avoid race condition and requesting demand twice if
             // request() runs concurrently with setSubscription()
             Flow.Subscription sub;
@@ -653,11 +652,11 @@ public class SSLTube implements FlowTube {
             }
             if (debug.on()) {
                 debug.log("request: n=%s to %s (%s already demanded)",
-                        demand, sub, demanded);
+                        n, sub, demanded);
             }
-            if (sub != null && demand > 0) {
-                if (debug.on()) debug.log("requesting %s from %s", demand, sub);
-                sub.request(demand);
+            if (sub != null && n > 0) {
+                if (debug.on()) debug.log("requesting %s from %s", n, sub);
+                sub.request(n);
             }
         }
 
