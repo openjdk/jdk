@@ -949,15 +949,11 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         __ load_klass(x15, obj);
         __ add(x17, x15, x13);
         __ ld(x17, Address(x17));
-        Label L_OK;
-        __ mv(result, 1);
-        __ beq(klass, x17, L_OK);
+        __ beq(klass, x17, success);
         __ mv(result, 0);
-        __ bind(L_OK);
         __ ret();
 
         __ bind(is_secondary);
-
         __ load_klass(obj, obj);
 
         // This is necessary because I am never in my own secondary_super list.
