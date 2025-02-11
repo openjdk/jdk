@@ -47,6 +47,14 @@ final class CustomStableFunctions {
         return delegate::apply;
     }
 
+    /*
+    Benchmark                                          Mode  Cnt  Score   Error  Units
+    CustomStableBiFunctionBenchmark.function           avgt   10  6.970 ? 0.121  ns/op
+    CustomStableBiFunctionBenchmark.staticFunction     avgt   10  0.339 ? 0.010  ns/op
+    CustomStableBiFunctionBenchmark.staticStableValue  avgt   10  0.337 ? 0.004  ns/op
+    */
+
+
     static <T, U, R> BiFunction<T, U, R> cachingBiFunction(Set<Pair<T, U>> inputs,
                                                            BiFunction<? super T, ? super U, ? extends R> original) {
 

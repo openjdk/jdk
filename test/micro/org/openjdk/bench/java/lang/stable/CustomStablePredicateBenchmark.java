@@ -34,6 +34,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.security.spec.ECField;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -59,7 +60,6 @@ import static org.openjdk.bench.java.lang.stable.CustomStableFunctions.cachingPr
 //        ,"-XX:PerMethodTrapLimit=0"
 })
 @Threads(Threads.MAX)   // Benchmark under contention
-//@OperationsPerInvocation(2)
 public class CustomStablePredicateBenchmark {
 
     private static final Set<Integer> SET = IntStream.range(0, 64).boxed().collect(Collectors.toSet());
@@ -74,6 +74,13 @@ public class CustomStablePredicateBenchmark {
     private static final Predicate<Integer> PREDICATE = cachingPredicate(SET, EVEN);
     private final Predicate<Integer> predicate = cachingPredicate(SET, EVEN);
 
+    private static final Function<Integer, Boolean> FUNCTION_PREDICATE = StableValue.function(SET, EVEN::test);
+    private final Function<Integer, Boolean> functionPredicate = StableValue.function(SET, EVEN::test);
+
+
+    private static final Predicate<Integer> WRAPPED_PREDICATE = FUNCTION_PREDICATE::apply;
+    private final Predicate<Integer> wrappedPredicate = FUNCTION_PREDICATE::apply;
+
     @Benchmark
     public boolean predicate() {
         return predicate.test(VALUE);
@@ -84,18 +91,43 @@ public class CustomStablePredicateBenchmark {
         return PREDICATE.test(VALUE);
     }
 
+    @Benchmark
+    public boolean functionPredicate() {
+        return functionPredicate.apply(VALUE);
+    }
 
-    //Benchmark                                        Mode  Cnt  Score   Error  Units
-    //CustomCachingPredicateBenchmark.predicate        avgt   10  3.054 ? 0.155  ns/op
-    //CustomCachingPredicateBenchmark.staticPredicate  avgt   10  2.205 ? 0.361  ns/op
+    @Benchmark
+    public boolean functionStaticPredicate() {
+        return FUNCTION_PREDICATE.apply(VALUE);
+    }
+
+    @Benchmark
+    public boolean wrappedPredicate() {
+        return wrappedPredicate.test(VALUE);
+    }
+
+    @Benchmark
+    public boolean wrappedStaticPredicate() {
+        return WRAPPED_PREDICATE.test(VALUE);
+    }
+/*
+    Benchmark                                               Mode  Cnt  Score   Error  Units
+    CustomStablePredicateBenchmark.functionPredicate        avgt   10  4.223 ? 0.242  ns/op
+    CustomStablePredicateBenchmark.functionStaticPredicate  avgt   10  0.699 ? 0.041  ns/op
+    CustomStablePredicateBenchmark.predicate                avgt   10  5.077 ? 0.330  ns/op
+    CustomStablePredicateBenchmark.staticPredicate          avgt   10  0.715 ? 0.062  ns/op
+    CustomStablePredicateBenchmark.wrappedPredicate         avgt   10  5.229 ? 0.451  ns/op
+    CustomStablePredicateBenchmark.wrappedStaticPredicate   avgt   10  0.776 ? 0.112  ns/op
+ */
 
     // This is not constant foldable
-    record CachingPredicate<T>(Map<? extends T, StableValue<Boolean>> delegate,
-                               Predicate<T> original) implements Predicate<T> {
+    record StablePredicate<T>(Map<? extends T, StableValue<Boolean>> delegate,
+                              Predicate<T> original) implements Predicate<T> {
 
-        public CachingPredicate(Set<? extends T> inputs, Predicate<T> original) {
+        public StablePredicate(Set<? extends T> inputs, Predicate<T> original) {
             this(inputs.stream()
-                            .collect(Collectors.toUnmodifiableMap(Function.identity(), _ -> StableValue.of())),
+                            .collect(Collectors.toUnmodifiableMap(Function.identity(),
+                                    _ -> StableValue.of())),
                     original
             );
         }
@@ -110,7 +142,7 @@ public class CustomStablePredicateBenchmark {
             if (stable.isSet()) {
                 return stable.orElseThrow();
             }
-            synchronized (this) {
+            synchronized (stable) {
                 if (stable.isSet()) {
                     return stable.orElseThrow();
                 }

@@ -84,11 +84,16 @@ public class CustomStableBiFunctionBenchmark {
         return l * 2 + r;
     };
 
-    private static final BiFunction<Integer, Integer, Integer> FUNCTION = cachingBiFunction(SET, ORIGINAL);
-    private static final BiFunction<Integer, Integer, Integer> FUNCTION2 = cachingBiFunction(SET, ORIGINAL);
+    private static final BiFunction<Integer, Integer, Integer> FUNCTION = new StableBiFunction<>(SET, ORIGINAL);
+    private static final BiFunction<Integer, Integer, Integer> FUNCTION2 = new StableBiFunction<>(SET, ORIGINAL);
+//    private static final BiFunction<Integer, Integer, Integer> FUNCTION = cachingBiFunction(SET, ORIGINAL);
+//    private static final BiFunction<Integer, Integer, Integer> FUNCTION2 = cachingBiFunction(SET, ORIGINAL);
 
-    private static final BiFunction<Integer, Integer, Integer> function = cachingBiFunction(SET, ORIGINAL);;
-    private static final BiFunction<Integer, Integer, Integer> function2 = cachingBiFunction(SET, ORIGINAL);;
+    private final BiFunction<Integer, Integer, Integer> function = new StableBiFunction<>(SET, ORIGINAL); //cachingBiFunction(SET, ORIGINAL);;
+    private final BiFunction<Integer, Integer, Integer> function2 = new StableBiFunction<>(SET, ORIGINAL); //cachingBiFunction(SET, ORIGINAL);;
+
+//    private final BiFunction<Integer, Integer, Integer> function = cachingBiFunction(SET, ORIGINAL);;
+//    private final BiFunction<Integer, Integer, Integer> function2 = cachingBiFunction(SET, ORIGINAL);;
 
     private static final StableValue<Integer> STABLE_VALUE = StableValue.of();
     private static final StableValue<Integer> STABLE_VALUE2 = StableValue.of();
@@ -225,6 +230,42 @@ public class CustomStableBiFunctionBenchmark {
                 final R r = original.apply(t, u);
                 stable.setOrThrow(r);
                 return r;
+            }
+        }
+    }
+
+/*
+This seams like a good solution:
+
+Benchmark                                          Mode  Cnt  Score   Error  Units
+CustomStableBiFunctionBenchmark.function           avgt   10  6.460 ? 0.163  ns/op
+CustomStableBiFunctionBenchmark.staticFunction     avgt   10  0.361 ? 0.015  ns/op
+CustomStableBiFunctionBenchmark.staticStableValue  avgt   10  0.348 ? 0.053  ns/op
+
+ */
+
+    record StableBiFunction<T, U, R>(
+            Map<T, Map<U, StableValue<R>>> delegate,
+            BiFunction<T, U, R> original) implements BiFunction<T, U, R> {
+
+        public StableBiFunction(Set<Pair<T, U>> inputs, BiFunction<T, U, R> original) {
+            this(delegate(inputs), original);
+        }
+
+        static <T, U, R> Map<T, Map<U, StableValue<R>>> delegate(Set<Pair<T, U>> inputs) {
+            return Map.copyOf(inputs.stream()
+                    .collect(Collectors.groupingBy(Pair::left,
+                            Collectors.toUnmodifiableMap(Pair::right,
+                                    _ -> StableValue.of()))));
+        }
+
+        @Override
+        public R apply(T t, U u) {
+            try {
+                return Objects.requireNonNull(delegate.get(t).get(u))
+                        .orElseSet(() -> original.apply(t, u));
+            } catch (NullPointerException _) {
+                throw new IllegalArgumentException(t.toString() + ", " + u.toString());
             }
         }
     }
