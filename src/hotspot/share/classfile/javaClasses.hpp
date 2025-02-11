@@ -257,6 +257,7 @@ class java_lang_Class : AllStatic {
   static int _classData_offset;
   static int _classRedefinedCount_offset;
   static int _reflectionData_offset;
+  static int _modifiers_offset;
 
   static bool _offsets_computed;
 
@@ -336,6 +337,9 @@ class java_lang_Class : AllStatic {
 
   static oop source_file(oop java_class);
   static void set_source_file(oop java_class, oop source_file);
+
+  static int modifiers(oop java_class);
+  static void set_modifiers(oop java_class, int value);
 
   static size_t oop_size(oop java_class);
   static void set_oop_size(HeapWord* java_class, size_t size);

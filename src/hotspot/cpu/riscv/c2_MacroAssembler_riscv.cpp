@@ -1485,10 +1485,10 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       add(str1, str1, cnt2);
       sub(cnt2, zr, cnt2);
     } else if (isLU) { // LU case
-      lwu(tmp1, Address(str1));
-      load_long_misaligned(tmp2, Address(str2), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
       mv(t0, STUB_THRESHOLD);
       bge(cnt2, t0, STUB);
+      lwu(tmp1, Address(str1));
+      load_long_misaligned(tmp2, Address(str2), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
       subi(cnt2, cnt2, 4);
       add(str1, str1, cnt2);
       sub(cnt1, zr, cnt2);
@@ -1499,10 +1499,10 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       sub(cnt2, zr, cnt2);
       addi(cnt1, cnt1, 4);
     } else { // UL case
-      load_long_misaligned(tmp1, Address(str1), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
-      lwu(tmp2, Address(str2));
       mv(t0, STUB_THRESHOLD);
       bge(cnt2, t0, STUB);
+      load_long_misaligned(tmp1, Address(str1), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
+      lwu(tmp2, Address(str2));
       subi(cnt2, cnt2, 4);
       slli(t0, cnt2, 1);
       sub(cnt1, zr, t0);
