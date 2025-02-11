@@ -298,21 +298,21 @@ public class ML_DSA {
         int[][][] keygenA = generateA(rho); //A is in NTT domain
 
         //Sample S1 and S2
-        int[][] s1 = matrixAlloc(mlDsa_l, ML_DSA_N);
-        int[][] s2 = matrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] s1 = integerMatrixAlloc(mlDsa_l, ML_DSA_N);
+        int[][] s2 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         //hash is reset before being used in sampleS1S2
         sampleS1S2(s1, s2, hash, rhoPrime);
 
         //Compute t and tr
         mlDsaVectorNtt(s1); //s1 now in NTT domain
-        int[][] As1 = new int[mlDsa_k][ML_DSA_N];
+        int[][] As1 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         matrixVectorPointwiseMultiply(As1, keygenA, s1);
         mlDsaVectorInverseNtt(s1); //take s1 out of NTT domain
 
         mlDsaVectorInverseNtt(As1);
         int[][] t = vectorAddPos(As1, s2);
-        int[][] t0 = matrixAlloc(mlDsa_k, ML_DSA_N);
-        int[][] t1 = matrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] t0 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] t1 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         power2Round(t, t0, t1);
 
         //Encode PK and SK
@@ -350,19 +350,19 @@ public class ML_DSA {
         hash.reset();
 
         //Initialize vectors used in loop
-        int[][] z = matrixAlloc(mlDsa_l, ML_DSA_N);
-        boolean[][] h = new boolean[mlDsa_k][ML_DSA_N];
+        int[][] z = integerMatrixAlloc(mlDsa_l, ML_DSA_N);
+        boolean[][] h = booleanMatrixAlloc(mlDsa_k, ML_DSA_N);
         byte[] commitmentHash = new byte[lambda/4];
-        int[][] y = matrixAlloc(mlDsa_l, ML_DSA_N);
-        int[][] yy = matrixAlloc(mlDsa_l, ML_DSA_N);
-        int[][] w = matrixAlloc(mlDsa_k, ML_DSA_N);
-        int[][] w0 = matrixAlloc(mlDsa_k, ML_DSA_N);
-        int[][] w1 = matrixAlloc(mlDsa_k, ML_DSA_N);
-        int[][] w_ct0 = matrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] y = integerMatrixAlloc(mlDsa_l, ML_DSA_N);
+        int[][] yy = integerMatrixAlloc(mlDsa_l, ML_DSA_N);
+        int[][] w = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] w0 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] w1 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] w_ct0 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         int[] c =  new int[ML_DSA_N];
-        int[][] cs1 = matrixAlloc(mlDsa_l, ML_DSA_N);
-        int[][] cs2 = matrixAlloc(mlDsa_k, ML_DSA_N);
-        int[][] ct0 = matrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] cs1 = integerMatrixAlloc(mlDsa_l, ML_DSA_N);
+        int[][] cs2 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] ct0 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
 
         int kappa = 0;
         while (true) {
@@ -450,13 +450,13 @@ public class ML_DSA {
         mlDsaVectorNtt(sig.response());
 
         //Reconstruct signer's commitment
-        int[][] aHatZ = matrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] aHatZ = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         matrixVectorPointwiseMultiply(aHatZ, aHat, sig.response());
 
         int[][] t1Hat = vectorConstMul(1 << ML_DSA_D, pk.t1());
         mlDsaVectorNtt(t1Hat);
 
-        int[][] ct1 = matrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] ct1 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         nttConstMultiply(ct1, cHat, t1Hat);
 
         int[][] wApprox = vectorSub(aHatZ, ct1, true);
@@ -520,7 +520,7 @@ public class ML_DSA {
     //This is simpleBitUnpack from FIPS 204. Since it is only called on the
     //vector t1 we can optimize for that case
     public int[][] t1Unpack(byte[] v) {
-        int[][] t1 = matrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] t1 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         for (int i = 0; i < mlDsa_k; i++) {
             for (int j = 0; j < ML_DSA_N / 4; j++) {
                 int tOffset = j*4;
@@ -629,7 +629,7 @@ public class ML_DSA {
     }
 
     private boolean[][] hintBitUnpack(byte[] y, int offset) {
-        boolean[][] h = new boolean[mlDsa_k][ML_DSA_N];
+        boolean[][] h = booleanMatrixAlloc(mlDsa_k, ML_DSA_N);
         int idx = 0;
         for (int i = 0; i < mlDsa_k; i++) {
             int j = y[offset + omega + i];
@@ -713,18 +713,18 @@ public class ML_DSA {
         //Parse s1
         int start = A_SEED_LEN + K_LEN + TR_LEN;
         int end = start + (32 * mlDsa_l * s1s2CoeffSize);
-        int[][] s1 = matrixAlloc(mlDsa_l, ML_DSA_N);
+        int[][] s1 = integerMatrixAlloc(mlDsa_l, ML_DSA_N);
         bitUnpack(s1, sk, start, mlDsa_l, eta, s1s2CoeffSize);
 
         //Parse s2
         start = end;
         end += 32 * s1s2CoeffSize * mlDsa_k;
-        int[][] s2 = matrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] s2 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         bitUnpack(s2, sk, start, mlDsa_k, eta, s1s2CoeffSize);
 
         //Parse t0
         start = end;
-        int[][] t0 = matrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] t0 = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         bitUnpack(t0, sk, start, mlDsa_k, 1 << 12, T0_COEFF_SIZE);
 
         return new ML_DSA_PrivateKey(rho, k, tr, s1, s2, t0);
@@ -759,7 +759,7 @@ public class ML_DSA {
         //Decode z
         int start = cSize;
         int end = start + zSize;
-        int[][] z = matrixAlloc(mlDsa_l, ML_DSA_N);
+        int[][] z = integerMatrixAlloc(mlDsa_l, ML_DSA_N);
         bitUnpack(z, sig, start, mlDsa_l, gamma1, gamma1Bits + 1);
 
         //Decode h
@@ -853,7 +853,9 @@ public class ML_DSA {
         var xof = new SHAKE128(0);
         byte[] xofSeed = new byte[A_SEED_LEN + 2];
         System.arraycopy(seed, 0, xofSeed, 0, A_SEED_LEN);
-        int[][][] a = new int[mlDsa_k][][];// int[mlDsa_k][mlDsa_l][]; //todo
+
+        // Manually do multidimensional array initialization for performance
+        int[][][] a = new int[mlDsa_k][][];
         for (int i = 0; i < mlDsa_k; i++) {
             a[i] = new int[mlDsa_l][];
         }
@@ -988,8 +990,8 @@ public class ML_DSA {
     }
 
     private int[][] highBits(int[][] input) {
-        int[][] lowPart = matrixAlloc(mlDsa_k, ML_DSA_N);
-        int[][] highPart = matrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] lowPart = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] highPart = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         decompose(input, lowPart, highPart);
         return highPart;
     }
@@ -1014,8 +1016,8 @@ public class ML_DSA {
 
     private int[][] useHint(boolean[][] h, int[][] r) {
         int m = (ML_DSA_Q - 1) / (2*gamma2);
-        int[][] lowPart = matrixAlloc(mlDsa_k, ML_DSA_N);
-        int[][] highPart = matrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] lowPart = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
+        int[][] highPart = integerMatrixAlloc(mlDsa_k, ML_DSA_N);
         decompose(r, lowPart, highPart);
 
         for (int i = 0; i < mlDsa_k; i++) {
@@ -1138,7 +1140,7 @@ public class ML_DSA {
     }
 
     private int[][] vectorConstMul(int c, int[][] vec) {
-        int[][] res = matrixAlloc(vec.length, vec[0].length);
+        int[][] res = integerMatrixAlloc(vec.length, vec[0].length);
         for (int i = 0; i < vec.length; i++) {
             for (int j = 0; j < vec[0].length; j++) {
                 res[i][j] = montMul(c, toMont(vec[i][j]));
@@ -1152,7 +1154,7 @@ public class ML_DSA {
     // The coefficients in the output will be nonnegative and less than MONT_Q
     int[][] vectorAddPos(int[][] vec1, int[][] vec2) {
         int dim = vec1.length;
-        int[][] result = matrixAlloc(dim, ML_DSA_N);
+        int[][] result = integerMatrixAlloc(dim, ML_DSA_N);
         for (int i = 0; i < dim; i++) {
             for (int m = 0; m < ML_DSA_N; m++) {
                 int r = vec1[i][m] + vec2[i][m]; // -2 * MONT_Q < r < 2 * MONT_Q
@@ -1224,7 +1226,17 @@ public class ML_DSA {
         return montMul(a, MONT_R_SQUARE_MOD_Q);
     }
 
-    static int[][] matrixAlloc(int first, int second) {
+    // For multidimensional array initialization, manually allocating each entry is
+    // faster than doing the entire initialization in one go
+    static boolean[][] booleanMatrixAlloc(int first, int second) {
+        boolean[][] res = new boolean[first][];
+        for (int i = 0; i < first; i++) {
+            res[i] = new boolean[second];
+        }
+        return res;
+    }
+
+    static int[][] integerMatrixAlloc(int first, int second) {
         int[][] res = new int[first][];
         for (int i = 0; i < first; i++) {
             res[i] = new int[second];
