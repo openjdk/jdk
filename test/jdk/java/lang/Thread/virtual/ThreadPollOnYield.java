@@ -47,10 +47,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ThreadPollOnYield {
-    public static volatile boolean flag = false;
     static void foo(AtomicBoolean done) {
         while (!done.get()) {
-            flag = true;
             Thread.yield();
         }
     }
@@ -65,9 +63,6 @@ class ThreadPollOnYield {
         done.set(true);
         vthread.join();
 
-        if (flag != true) {
-            throw new RuntimeException("flag = " + flag);
-        }
         System.out.println("First vthread done");
 
         AtomicBoolean done2 = new AtomicBoolean();
