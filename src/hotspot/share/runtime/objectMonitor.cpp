@@ -127,19 +127,19 @@ ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 //   its owner_id (return value from owner_id_from()).
 //
 // * Invariant: A thread appears on at most one monitor list --
-//   cxq, EntryList or WaitSet -- at any one time.
+//   EntryList or WaitSet -- at any one time.
 //
-// * Contending threads "push" themselves onto the cxq with CAS
+// * Contending threads "push" themselves onto the EntryList with CAS
 //   and then spin/park.
 //   If the thread is a virtual thread it will first attempt to
 //   unmount itself. The virtual thread will first try to freeze
 //   all frames in the heap. If the operation fails it will just
 //   follow the regular path for platform threads. If the operation
-//   succeeds, it will push itself onto the cxq with CAS and then
+//   succeeds, it will push itself onto the EntryList with CAS and then
 //   return back to Java to continue the unmount logic.
 //
 // * After a contending thread eventually acquires the lock it must
-//   dequeue itself from either the EntryList or the cxq.
+//   dequeue itself from the EntryList.
 //
 // * The exiting thread identifies and unparks an "heir presumptive"
 //   tentative successor thread on the EntryList. In case the successor
@@ -154,61 +154,98 @@ ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 //
 //   Succession is provided for by a policy of competitive handoff.
 //   The exiting thread does _not_ grant or pass ownership to the
-//   successor thread.  (This is also referred to as "handoff" succession").
+//   successor thread.  (This is also referred to as "handoff succession").
 //   Instead the exiting thread releases ownership and possibly wakes
 //   a successor, so the successor can (re)compete for ownership of the lock.
-//   If the EntryList is empty but the cxq is populated the exiting
-//   thread will drain the cxq into the EntryList.  It does so by
-//   by detaching the cxq (installing null with CAS) and folding
-//   the threads from the cxq into the EntryList.  The EntryList is
-//   doubly linked, while the cxq is singly linked because of the
-//   CAS-based "push" used to enqueue recently arrived threads (RATs).
+//
+//   The EntryList is a linked list, the first contending thread that
+//   "pushed" itself onto EntryList, will be the last thread in the
+//   list. Each newly pushed thread in EntryList will be linked trough
+//   its next pointer, and have its prev pointer set to null. Thus
+//   pushing six threads A-F (in that order) onto EntryList, will
+//   form a singly-linked list, see 1) below.
+//
+//   Since the successor is chosen in FIFO order, the exiting thread
+//   needs to find the tail of the EntryList. This is done by walking
+//   from the EntryList head. While walking the list we also assign
+//   the prev pointers of each thread, essentially forming a doubly-
+//   linked list, see 2) below.
+//
+//   Once we have formed a doubly-linked list it's easy to find the
+//   successor, wake it up, have it remove itself, and update the
+//   tail pointer, as seen in 2) and 3) below.
+//
+//   At any time new threads can add themselves to the EntryList, see
+//   4) and 5).
+//
+//   If the thread that removes itself from the end of the list hasn't
+//   got any prev pointer, we just set the tail pointer to null, see
+//   5) and 6).
+//
+//   Next time we need to find the successor and the tail is null, we
+//   just start walking from the EntryList head again forming a new
+//   doubly-linked list, see 6) and 7) below.
+//
+//      1)  EntryList      ->F->E->D->C->B->A->null
+//          EntryListTail  ->null
+//
+//      2)  EntryList      ->F<=>E<=>D<=>C<=>B<=>A->null
+//          EntryListTail  ----------------------^
+//
+//      3)  EntryList      ->F<=>E<=>D<=>C<=>B->null
+//          EntryListTail  ------------------^
+//
+//      4)  EntryList      ->F->null
+//          EntryListTail  --^
+//
+//      5)  EntryList      ->I->H->G->F->null
+//          EntryListTail  -----------^
+//
+//      6)  EntryList      ->I->H->G->null
+//          EntryListTail  ->null
+//
+//      7)  EntryList      ->I<=>H<=>G->null
+//          EntryListTail  ----------^
 //
 // * Concurrency invariants:
 //
-//   -- only the monitor owner may access or mutate the EntryList.
+//   -- only the monitor owner may assign prev pointers in EntryList.
 //      The mutex property of the monitor itself protects the EntryList
 //      from concurrent interference.
-//   -- Only the monitor owner may detach the cxq.
+//   -- Only the monitor owner may detach nodes from the EntryList.
 //
 // * The monitor entry list operations avoid locks, but strictly speaking
 //   they're not lock-free.  Enter is lock-free, exit is not.
 //   For a description of 'Methods and apparatus providing non-blocking access
 //   to a resource,' see U.S. Pat. No. 7844973.
 //
-// * The cxq can have multiple concurrent "pushers" but only one concurrent
-//   detaching thread.  This mechanism is immune from the ABA corruption.
-//   More precisely, the CAS-based "push" onto cxq is ABA-oblivious.
+// * The EntryList can have multiple concurrent "pushers" but only one
+//   concurrent detaching thread. This mechanism is immune from the
+//   ABA corruption. More precisely, the CAS-based "push" onto
+//   EntryList is ABA-oblivious.
 //
-// * Taken together, the cxq and the EntryList constitute or form a
-//   single logical queue of threads stalled trying to acquire the lock.
-//   We use two distinct lists to improve the odds of a constant-time
-//   dequeue operation after acquisition (in the ::enter() epilogue) and
-//   to reduce heat on the list ends.  (c.f. Michael Scott's "2Q" algorithm).
-//   A key desideratum is to minimize queue & monitor metadata manipulation
-//   that occurs while holding the monitor lock -- that is, we want to
-//   minimize monitor lock holds times.  Note that even a small amount of
-//   fixed spinning will greatly reduce the # of enqueue-dequeue operations
-//   on EntryList|cxq.  That is, spinning relieves contention on the "inner"
-//   locks and monitor metadata.
+// * The EntryList form a queue of threads stalled trying to acquire
+//   the lock. Within the EntryList the next pointers always form a
+//   consistent singly-linked list. At unlock-time when the unlocking
+//   thread notices that the tail of the EntryList is not known, we
+//   convert the singly-linked EntryList into a doubly-linked list by
+//   assigning the prev pointers and the EntryListTail pointer.
 //
-//   Cxq points to the set of Recently Arrived Threads attempting entry.
-//   Because we push threads onto _cxq with CAS, the RATs must take the form of
-//   a singly-linked LIFO.  We drain _cxq into EntryList at unlock-time when
-//   the unlocking thread notices that EntryList is null but _cxq is != null.
+//   As long as the EntryListTail is known the odds are good that we
+//   should be able to dequeue after acquisition (in the ::enter()
+//   epilogue) in constant-time. This is good since a key desideratum
+//   is to minimize queue & monitor metadata manipulation that occurs
+//   while holding the monitor lock -- that is, we want to minimize
+//   monitor lock holds times.  Note that even a small amount of fixed
+//   spinning will greatly reduce the # of enqueue-dequeue operations
+//   on EntryList. That is, spinning relieves contention on the
+//   "inner" locks and monitor metadata.
 //
-//   The EntryList is ordered by the prevailing queue discipline and
-//   can be organized in any convenient fashion, such as a doubly-linked list or
-//   a circular doubly-linked list.  Critically, we want insert and delete operations
-//   to operate in constant-time.  If we need a priority queue then something akin
-//   to Solaris' sleepq would work nicely.  Viz.,
-//   http://agg.eng/ws/on10_nightly/source/usr/src/uts/common/os/sleepq.c.
-//   Queue discipline is enforced at ::exit() time, when the unlocking thread
-//   drains the cxq into the EntryList, and orders or reorders the threads on the
-//   EntryList accordingly.
-//
-//   Barring "lock barging", this mechanism provides fair cyclic ordering,
-//   somewhat similar to an elevator-scan.
+//   Insert and delete operations may not operate in constant-time if
+//   we have interference because some other thread is adding or
+//   removing the head element of EntryList or if we need to convert
+//   the singly-linked EntryList into a doubly-linked list to find the
+//   tail.
 //
 // * The monitor synchronization subsystem avoids the use of native
 //   synchronization primitives except for the narrow platform-specific
@@ -219,11 +256,11 @@ ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 // * Waiting threads reside on the WaitSet list -- wait() puts
 //   the caller onto the WaitSet.
 //
-// * notify() or notifyAll() simply transfers threads from the WaitSet to
-//   either the EntryList or cxq.  Subsequent exit() operations will
-//   unpark/re-schedule the notifyee. Unparking/re-scheduling a notifyee in
-//   notify() is inefficient - it's likely the notifyee would simply impale
-//   itself on the lock held by the notifier.
+// * notify() or notifyAll() simply transfers threads from the WaitSet
+//   to either the EntryList. Subsequent exit() operations will
+//   unpark/re-schedule the notifyee. Unparking/re-scheduling a
+//   notifyee in notify() is inefficient - it's likely the notifyee
+//   would simply impale itself on the lock held by the notifier.
 
 // Check that object() and set_object() are called from the right context:
 static void check_object_context() {
