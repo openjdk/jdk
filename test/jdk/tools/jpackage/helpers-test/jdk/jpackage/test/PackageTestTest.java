@@ -22,24 +22,28 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.test.TKit.assertAssert;
+import static java.util.stream.Collectors.toMap;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
@@ -51,37 +55,46 @@ public class PackageTestTest extends JUnitAdapter {
         void verify();
     }
 
-    enum Callback {
-        ONCE(1),
-        TWICE(2),
-        NEVER(0);
+    private static class CallbackFactory {
 
-        Callback(int tickCount) {
+        CallbackFactory(int tickCount) {
             this.tickCount = tickCount;
         }
 
-        RecordingConsumer createInitializer() {
-            return new RecordingConsumer(tickCount, "init");
+        CountingInstaller createInstaller(int exitCode) {
+            return new CountingInstaller(tickCount, exitCode);
         }
 
-        RecordingInstaller createInstaller(int exitCode) {
-            return new RecordingInstaller(tickCount, exitCode);
+        CountingConsumer createUninstaller() {
+            return new CountingConsumer(tickCount, "uninstall");
         }
 
-        RecordingConsumer createUninstaller() {
-            return new RecordingConsumer(tickCount, "uninstall");
+        CountingUnpacker createUnpacker() {
+            return new CountingUnpacker(tickCount);
         }
 
-        RecordingConsumer createInstallVerifier() {
-            return new RecordingConsumer(tickCount, "on-install");
+        CountingConsumer createInitializer() {
+            return new CountingConsumer(tickCount, "init");
         }
 
-        RecordingConsumer createUninstallVerifier() {
-            return new RecordingConsumer(tickCount, "on-uninstall");
+        CountingRunnable createRunOnceInitializer() {
+            return new CountingRunnable(tickCount, "once-init");
         }
 
-        RecordingUnpacker createUnpacker() {
-            return new RecordingUnpacker(tickCount);
+        CountingConsumer createInstallVerifier() {
+            return new CountingConsumer(tickCount, "on-install");
+        }
+
+        CountingConsumer createUninstallVerifier() {
+            return new CountingConsumer(tickCount, "on-uninstall");
+        }
+
+        CountingConsumer createBundleVerifier() {
+            return new CountingConsumer(tickCount, "on-bundle");
+        }
+
+        CountingBundleVerifier createBundleVerifier(int jpackageExitCode) {
+            return new CountingBundleVerifier(tickCount, jpackageExitCode);
         }
 
         private final int tickCount;
@@ -90,39 +103,32 @@ public class PackageTestTest extends JUnitAdapter {
     private final static int ERROR_EXIT_CODE_JPACKAGE = 35;
     private final static int ERROR_EXIT_CODE_INSTALL = 27;
 
-    enum BundleVerifier implements BiConsumer<PackageTest, Consumer<Verifiable>> {
-        ONCE_SUCCESS,
-        ONCE_FAIL,
-        NEVER,
-        ONCE_SUCCESS_EXIT_CODE,
-        ONCE_FAIL_EXIT_CODE,
-        NEVER_EXIT_CODE;
+    private final static CallbackFactory NEVER = new CallbackFactory(0);
+    private final static CallbackFactory ONCE = new CallbackFactory(1);
+    private final static CallbackFactory TWICE = new CallbackFactory(2);
 
-        @Override
-        public void accept(PackageTest test, Consumer<Verifiable> verifiableAccumulator) {
-            final int expectedTickCount;
-            if (Set.of(NEVER, NEVER_EXIT_CODE).contains(this)) {
-                expectedTickCount = 0;
-            } else {
-                expectedTickCount = 1;
-            }
+    enum BundleVerifier {
+        ONCE_SUCCESS(ONCE),
+        ONCE_FAIL(ONCE),
+        NEVER(PackageTestTest.NEVER),
+        ONCE_SUCCESS_EXIT_CODE(ONCE, 0),
+        ONCE_FAIL_EXIT_CODE(ONCE, ERROR_EXIT_CODE_JPACKAGE),
+        NEVER_EXIT_CODE(PackageTestTest.NEVER, 0);
 
-            if (Set.of(ONCE_SUCCESS, ONCE_FAIL, NEVER).contains(this)) {
-                final var verifier = new RecordingConsumer(expectedTickCount, "on-bundle");
-                test.addBundleVerifier(verifier::accept);
-                verifiableAccumulator.accept(verifier);
-            } else {
-                final int jpackageExitCode;
-                if (this == ONCE_FAIL_EXIT_CODE) {
-                    jpackageExitCode = ERROR_EXIT_CODE_JPACKAGE;
-                } else {
-                    jpackageExitCode = 0;
-                }
-                final var verifier = new RecordingBundleVerifier(expectedTickCount, jpackageExitCode);
-                test.addBundleVerifier(verifier);
-                verifiableAccumulator.accept(verifier);
-            }
+        BundleVerifier(CallbackFactory factory) {
+            specSupplier = () -> new BundleVerifierSpec(Optional.of(factory.createBundleVerifier()), Optional.empty());
         }
+
+        BundleVerifier(CallbackFactory factory, int jpackageExitCode) {
+            specSupplier = () -> new BundleVerifierSpec(Optional.empty(),
+                    Optional.of(factory.createBundleVerifier(jpackageExitCode)));
+        }
+
+        BundleVerifierSpec spec() {
+            return specSupplier.get();
+        }
+
+        private final Supplier<BundleVerifierSpec> specSupplier;
     }
 
     private static class TickCounter implements Verifiable {
@@ -153,7 +159,11 @@ public class PackageTestTest extends JUnitAdapter {
             }
         }
 
-        static String getDescription(TickCounter o) {
+        protected int tickCount() {
+            return ticks;
+        }
+
+        protected static String getDescription(TickCounter o) {
             return "tk=" + o.expectedTicks;
         }
 
@@ -161,7 +171,7 @@ public class PackageTestTest extends JUnitAdapter {
         protected final int expectedTicks;
     }
 
-    private final static class RecordingConsumer extends TickCounter implements ThrowingConsumer<JPackageCommand> {
+    private static class CountingConsumer extends TickCounter implements ThrowingConsumer<JPackageCommand> {
 
         @Override
         public void accept(JPackageCommand cmd) {
@@ -173,7 +183,7 @@ public class PackageTestTest extends JUnitAdapter {
             return String.format("%s(%s)", label, TickCounter.getDescription(this));
         }
 
-        RecordingConsumer(int expectedTicks, String label) {
+        CountingConsumer(int expectedTicks, String label) {
             super(expectedTicks);
             this.label = Objects.requireNonNull(label);
         }
@@ -181,7 +191,27 @@ public class PackageTestTest extends JUnitAdapter {
         private final String label;
     }
 
-    private final static class RecordingBundleVerifier extends TickCounter implements ThrowingBiConsumer<JPackageCommand, Executor.Result> {
+    private static class CountingRunnable extends TickCounter implements ThrowingRunnable {
+
+        @Override
+        public void run() {
+            tick();
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s(%s)", label, TickCounter.getDescription(this));
+        }
+
+        CountingRunnable(int expectedTicks, String label) {
+            super(expectedTicks);
+            this.label = Objects.requireNonNull(label);
+        }
+
+        private final String label;
+    }
+
+    private static class CountingBundleVerifier extends TickCounter implements ThrowingBiConsumer<JPackageCommand, Executor.Result> {
 
         @Override
         public void accept(JPackageCommand cmd, Executor.Result result) {
@@ -202,7 +232,7 @@ public class PackageTestTest extends JUnitAdapter {
             return String.format("on-bundle-ex(exit=%d, %s)", expectedJPackageExitCode, TickCounter.getDescription(this));
         }
 
-        RecordingBundleVerifier(int expectedTicks, int expectedJPackageExitCode) {
+        CountingBundleVerifier(int expectedTicks, int expectedJPackageExitCode) {
             super(expectedTicks);
             this.expectedJPackageExitCode = expectedJPackageExitCode;
         }
@@ -211,7 +241,7 @@ public class PackageTestTest extends JUnitAdapter {
         private final int expectedJPackageExitCode;
     }
 
-    private final static class RecordingInstaller extends TickCounter implements Function<JPackageCommand, Integer> {
+    private final static class CountingInstaller extends TickCounter implements Function<JPackageCommand, Integer> {
 
         @Override
         public Integer apply(JPackageCommand cmd) {
@@ -224,7 +254,7 @@ public class PackageTestTest extends JUnitAdapter {
             return String.format("install(exit=%d, %s)", exitCode, TickCounter.getDescription(this));
         }
 
-        RecordingInstaller(int expectedTicks, int exitCode) {
+        CountingInstaller(int expectedTicks, int exitCode) {
             super(expectedTicks);
             this.exitCode = exitCode;
         }
@@ -232,7 +262,7 @@ public class PackageTestTest extends JUnitAdapter {
         private final int exitCode;
     }
 
-    private final static class RecordingUnpacker extends TickCounter implements BiFunction<JPackageCommand, Path, Path> {
+    private static class CountingUnpacker extends TickCounter implements BiFunction<JPackageCommand, Path, Path> {
 
         @Override
         public Path apply(JPackageCommand cmd, Path path) {
@@ -242,6 +272,7 @@ public class PackageTestTest extends JUnitAdapter {
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
+            servedPaths.add(path);
             return path;
         }
 
@@ -250,37 +281,61 @@ public class PackageTestTest extends JUnitAdapter {
             return String.format("unpack(%s)", TickCounter.getDescription(this));
         }
 
-        RecordingUnpacker(int expectedTicks) {
+        CountingUnpacker(int expectedTicks) {
             super(expectedTicks);
+        }
+
+        List<Path> servedPaths() {
+            return servedPaths;
+        }
+
+        private final List<Path> servedPaths = new ArrayList<>();
+    }
+
+    record BundleVerifierSpec(Optional<CountingConsumer> verifier, Optional<CountingBundleVerifier> verifierWithExitCode) {
+        BundleVerifierSpec {
+            if (verifier.isPresent() == verifierWithExitCode.isPresent()) {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        Verifiable apply(PackageTest test) {
+            verifier.ifPresent(test::addBundleVerifier);
+            verifierWithExitCode.ifPresent(test::addBundleVerifier);
+            return verifier.map(Verifiable.class::cast).orElseGet(verifierWithExitCode::orElseThrow);
+        }
+
+        @Override
+        public String toString() {
+            return verifier.map(Verifiable.class::cast).orElseGet(verifierWithExitCode::orElseThrow).toString();
         }
     }
 
-    record PackageHandlersSpec(Callback install, Callback uninstall,
-            Optional<Callback> unpack, int installExitCode) {
-        PackageHandlers createPackageHandlers(Consumer<Verifiable> verifiableAccumulator) {
-            final var installer = install.createInstaller(installExitCode);
-            final var uninstaller = uninstall.createUninstaller();
-            final var unpacker = unpack.map(u -> u.createUnpacker());
+    record PackageHandlersSpec(CountingInstaller installer, CountingConsumer uninstaller,
+            Optional<CountingUnpacker> unpacker, int installExitCode) {
 
+        PackageHandlers createPackageHandlers(Consumer<Verifiable> verifiableAccumulator) {
             List.of(installer, uninstaller).forEach(verifiableAccumulator::accept);
             unpacker.ifPresent(verifiableAccumulator::accept);
-
             return new PackageHandlers(installer, uninstaller::accept, unpacker);
         }
     }
 
     record TestSpec(PackageType type, PackageHandlersSpec handlersSpec,
-            List<Callback> initializers, List<BundleVerifier> bundleVerifiers,
-            List<Callback> installVerifiers, List<Callback> uninstallVerifiers,
+            List<CountingConsumer> initializers, List<BundleVerifierSpec> bundleVerifierSpecs,
+            List<CountingConsumer> installVerifiers, List<CountingConsumer> uninstallVerifiers,
             int expectedJPackageExitCode, int actualJPackageExitCode, List<Action> actions) {
 
         PackageTest createTest(Consumer<Verifiable> verifiableAccumulator) {
-            final var handlers = handlersSpec.createPackageHandlers(verifiableAccumulator);
-            return new PackageTest(packageType -> true, Map.of(type, handlers), () -> {
+            return createTest(handlersSpec.createPackageHandlers(verifiableAccumulator));
+        }
+
+        PackageTest createTest(PackageHandlers handlers) {
+            return new PackageTest(packageType -> true, PackageType.NATIVE.stream().collect(toMap(x -> x, x -> handlers)), () -> {
                 return new JPackageCommand() {
                     @Override
                     public Path outputBundle() {
-                        return outputDir().resolve("mockup-bundle");
+                        return outputDir().resolve("mockup-bundle" + super.packageType().getSuffix());
                     }
 
                     @Override
@@ -326,30 +381,27 @@ public class PackageTestTest extends JUnitAdapter {
         }
 
         void configureInitializers(PackageTest test, Consumer<Verifiable> verifiableAccumulator) {
-            for (final var initializerSpec : initializers) {
-                final var initializer = initializerSpec.createInitializer();
+            for (final var initializer : initializers) {
                 verifiableAccumulator.accept(initializer);
                 test.addInitializer(initializer);
             }
         }
 
         void configureBundleVerifiers(PackageTest test, Consumer<Verifiable> verifiableAccumulator) {
-            for (final var verifierSpec : bundleVerifiers) {
-                verifierSpec.accept(test, verifiableAccumulator);
+            for (final var verifierSpec : bundleVerifierSpecs) {
+                verifiableAccumulator.accept(verifierSpec.apply(test));
             }
         }
 
         void configureInstallVerifiers(PackageTest test, Consumer<Verifiable> verifiableAccumulator) {
-            for (final var verifierSpec : installVerifiers) {
-                final var verifier = verifierSpec.createInstallVerifier();
+            for (final var verifier : installVerifiers) {
                 verifiableAccumulator.accept(verifier);
                 test.addInstallVerifier(verifier);
             }
         }
 
         void configureUninstallVerifiers(PackageTest test, Consumer<Verifiable> verifiableAccumulator) {
-            for (final var verifierSpec : uninstallVerifiers) {
-                final var verifier = verifierSpec.createUninstallVerifier();
+            for (final var verifier  : uninstallVerifiers) {
                 verifiableAccumulator.accept(verifier);
                 test.addUninstallVerifier(verifier);
             }
@@ -358,12 +410,20 @@ public class PackageTestTest extends JUnitAdapter {
         void run(PackageTest test) {
             final boolean expectedSuccess = (expectedJPackageExitCode == actualJPackageExitCode);
 
-            assertAssert(expectedSuccess, () -> {
+            TKit.assertAssert(expectedSuccess, () -> {
                 test.run(actions.toArray(Action[]::new));
             });
         }
 
-        void run(Optional<Consumer<PackageTest>> customConfigure) {
+        List<Verifiable> run() {
+            return run(Optional.empty());
+        }
+
+        List<Verifiable> run(Consumer<PackageTest> customConfigure) {
+            return run(Optional.of(customConfigure));
+        }
+
+        private List<Verifiable> run(Optional<Consumer<PackageTest>> customConfigure) {
             final List<Verifiable> verifiers = new ArrayList<>();
 
             final var test = createTest(verifiers::add);
@@ -375,6 +435,7 @@ public class PackageTestTest extends JUnitAdapter {
             customConfigure.ifPresent(callback -> callback.accept(test));
             run(test);
             verifiers.forEach(Verifiable::verify);
+            return verifiers;
         }
     }
 
@@ -385,17 +446,17 @@ public class PackageTestTest extends JUnitAdapter {
             return this;
         }
 
-        TestSpecBuilder install(Callback v) {
+        TestSpecBuilder install(CallbackFactory v) {
             install = Objects.requireNonNull(v);
             return this;
         }
 
-        TestSpecBuilder uninstall(Callback v) {
+        TestSpecBuilder uninstall(CallbackFactory v) {
             uninstall = Objects.requireNonNull(v);
             return this;
         }
 
-        TestSpecBuilder unpack(Callback v) {
+        TestSpecBuilder unpack(CallbackFactory v) {
             unpack = v;
             return this;
         }
@@ -431,30 +492,30 @@ public class PackageTestTest extends JUnitAdapter {
 
         TestSpecBuilder doCreateAndUnpack() {
             actions(Action.CREATE_AND_UNPACK);
-            install(Callback.NEVER);
-            uninstall(Callback.NEVER);
+            install(NEVER);
+            uninstall(NEVER);
             if (willHaveBundle()) {
-                overrideNonNullUnpack(Callback.ONCE);
+                overrideNonNullUnpack(ONCE);
             } else {
-                overrideNonNullUnpack(Callback.NEVER);
+                overrideNonNullUnpack(NEVER);
             }
-            initializers(Callback.ONCE);
+            initializers(ONCE);
             if (expectedJPackageExitCode != actualJPackageExitCode) {
-                bundleVerifiers(BundleVerifier.NEVER);
+                bundleVerifiers(BundleVerifier.NEVER.spec());
             } else if (expectedJPackageExitCode == 0) {
-                bundleVerifiers(BundleVerifier.ONCE_SUCCESS);
-                bundleVerifiers(BundleVerifier.ONCE_SUCCESS_EXIT_CODE);
+                bundleVerifiers(BundleVerifier.ONCE_SUCCESS.spec());
+                bundleVerifiers(BundleVerifier.ONCE_SUCCESS_EXIT_CODE.spec());
             } else {
-                bundleVerifiers(BundleVerifier.ONCE_FAIL);
+                bundleVerifiers(BundleVerifier.ONCE_FAIL.spec());
                 if (expectedJPackageExitCode == ERROR_EXIT_CODE_JPACKAGE) {
-                    bundleVerifiers(BundleVerifier.ONCE_FAIL_EXIT_CODE);
+                    bundleVerifiers(BundleVerifier.ONCE_FAIL_EXIT_CODE.spec());
                 }
             }
-            uninstallVerifiers(Callback.NEVER);
+            uninstallVerifiers(NEVER);
             if (willVerifyUnpack()) {
-                installVerifiers(Callback.ONCE);
+                installVerifiers(ONCE);
             } else {
-                installVerifiers(Callback.NEVER);
+                installVerifiers(NEVER);
             }
             return this;
         }
@@ -462,97 +523,102 @@ public class PackageTestTest extends JUnitAdapter {
         TestSpecBuilder doCreateUnpackInstallUninstall() {
             actions(Action.CREATE, Action.UNPACK, Action.VERIFY_INSTALL, Action.INSTALL,
                     Action.VERIFY_INSTALL, Action.UNINSTALL, Action.VERIFY_UNINSTALL);
-            initializers(Callback.ONCE);
-            uninstallVerifiers(Callback.NEVER);
+            initializers(ONCE);
+            uninstallVerifiers(NEVER);
             if (willHaveBundle()) {
-                overrideNonNullUnpack(Callback.ONCE);
-                install(Callback.ONCE);
+                overrideNonNullUnpack(ONCE);
+                install(ONCE);
                 if (installExitCode == 0) {
-                    uninstall(Callback.ONCE);
-                    uninstallVerifiers(Callback.ONCE);
+                    uninstall(ONCE);
+                    uninstallVerifiers(ONCE);
                 } else {
-                    uninstall(Callback.NEVER);
+                    uninstall(NEVER);
                 }
             } else {
-                overrideNonNullUnpack(Callback.NEVER);
-                install(Callback.NEVER);
-                uninstall(Callback.NEVER);
+                overrideNonNullUnpack(NEVER);
+                install(NEVER);
+                uninstall(NEVER);
             }
 
             if (expectedJPackageExitCode != actualJPackageExitCode) {
-                bundleVerifiers(BundleVerifier.NEVER);
-                installVerifiers(Callback.NEVER);
+                bundleVerifiers(BundleVerifier.NEVER.spec());
+                installVerifiers(NEVER);
             } else if (expectedJPackageExitCode == 0) {
-                bundleVerifiers(BundleVerifier.ONCE_SUCCESS);
-                bundleVerifiers(BundleVerifier.ONCE_SUCCESS_EXIT_CODE);
+                bundleVerifiers(BundleVerifier.ONCE_SUCCESS.spec());
+                bundleVerifiers(BundleVerifier.ONCE_SUCCESS_EXIT_CODE.spec());
                 if (installExitCode == 0) {
                     if (willVerifyUnpack()) {
-                        installVerifiers(Callback.TWICE);
+                        installVerifiers(TWICE);
                     } else {
-                        installVerifiers(Callback.ONCE);
+                        installVerifiers(ONCE);
                     }
                 } else {
                     if (willVerifyUnpack()) {
-                        installVerifiers(Callback.ONCE);
+                        installVerifiers(ONCE);
                     } else {
-                        installVerifiers(Callback.NEVER);
+                        installVerifiers(NEVER);
                     }
                 }
             } else {
-                bundleVerifiers(BundleVerifier.ONCE_FAIL);
+                bundleVerifiers(BundleVerifier.ONCE_FAIL.spec());
                 if (expectedJPackageExitCode == ERROR_EXIT_CODE_JPACKAGE) {
-                    bundleVerifiers(BundleVerifier.ONCE_FAIL_EXIT_CODE);
+                    bundleVerifiers(BundleVerifier.ONCE_FAIL_EXIT_CODE.spec());
                 }
-                installVerifiers(Callback.NEVER);
+                installVerifiers(NEVER);
             }
             return this;
         }
 
-        TestSpecBuilder addInitializers(Callback... v) {
+        TestSpecBuilder addInitializers(CallbackFactory... v) {
             initializers.addAll(List.of(v));
             return this;
         }
 
-        TestSpecBuilder addBundleVerifiers(BundleVerifier... v) {
+        TestSpecBuilder addBundleVerifiers(BundleVerifierSpec... v) {
             bundleVerifiers.addAll(List.of(v));
             return this;
         }
 
-        TestSpecBuilder addInstallVerifiers(Callback... v) {
+        TestSpecBuilder addInstallVerifiers(CallbackFactory... v) {
             installVerifiers.addAll(List.of(v));
             return this;
         }
 
-        TestSpecBuilder addUninstallVerifiers(Callback... v) {
+        TestSpecBuilder addUninstallVerifiers(CallbackFactory... v) {
             uninstallVerifiers.addAll(List.of(v));
             return this;
         }
 
-        TestSpecBuilder initializers(Callback... v) {
+        TestSpecBuilder initializers(CallbackFactory... v) {
             initializers.clear();
             return addInitializers(v);
         }
 
-        TestSpecBuilder bundleVerifiers(BundleVerifier... v) {
+        TestSpecBuilder bundleVerifiers(BundleVerifierSpec... v) {
             bundleVerifiers.clear();
             return addBundleVerifiers(v);
         }
 
-        TestSpecBuilder installVerifiers(Callback... v) {
+        TestSpecBuilder installVerifiers(CallbackFactory... v) {
             installVerifiers.clear();
             return addInstallVerifiers(v);
         }
 
-        TestSpecBuilder uninstallVerifiers(Callback... v) {
+        TestSpecBuilder uninstallVerifiers(CallbackFactory... v) {
             uninstallVerifiers.clear();
             return addUninstallVerifiers(v);
         }
 
         TestSpec create() {
-            final var handlersSpec = new PackageHandlersSpec(install, uninstall,
-                    Optional.ofNullable(unpack), installExitCode);
-            return new TestSpec(type, handlersSpec, initializers, bundleVerifiers,
-                    installVerifiers, uninstallVerifiers, expectedJPackageExitCode,
+            final var handlersSpec = new PackageHandlersSpec(
+                    install.createInstaller(installExitCode), uninstall.createUninstaller(),
+                    Optional.ofNullable(unpack).map(CallbackFactory::createUnpacker), installExitCode);
+            return new TestSpec(type, handlersSpec,
+                    initializers.stream().map(CallbackFactory::createInitializer).toList(),
+                    bundleVerifiers,
+                    installVerifiers.stream().map(CallbackFactory::createInstallVerifier).toList(),
+                    uninstallVerifiers.stream().map(CallbackFactory::createUninstallVerifier).toList(),
+                    expectedJPackageExitCode,
                     actualJPackageExitCode, actions);
         }
 
@@ -572,21 +638,21 @@ public class PackageTestTest extends JUnitAdapter {
             return (actions.contains(Action.INSTALL) && installExitCode == 0) && willHaveBundle();
         }
 
-        private void overrideNonNullUnpack(Callback v) {
+        private void overrideNonNullUnpack(CallbackFactory v) {
             if (unpack != null) {
                 unpack(v);
             }
         }
 
         private PackageType type = PackageType.LINUX_RPM;
-        private Callback install = Callback.ONCE;
-        private Callback uninstall = Callback.ONCE;
-        private Callback unpack = Callback.ONCE;
+        private CallbackFactory install = NEVER;
+        private CallbackFactory uninstall = NEVER;
+        private CallbackFactory unpack = NEVER;
         private int installExitCode;
-        private final List<Callback> initializers = new ArrayList<>();
-        private final List<BundleVerifier> bundleVerifiers = new ArrayList<>();
-        private final List<Callback> installVerifiers = new ArrayList<>();
-        private final List<Callback> uninstallVerifiers = new ArrayList<>();
+        private final List<CallbackFactory> initializers = new ArrayList<>();
+        private final List<BundleVerifierSpec> bundleVerifiers = new ArrayList<>();
+        private final List<CallbackFactory> installVerifiers = new ArrayList<>();
+        private final List<CallbackFactory> uninstallVerifiers = new ArrayList<>();
         private int expectedJPackageExitCode;
         private int actualJPackageExitCode;
         private final List<Action> actions = new ArrayList<>();
@@ -595,7 +661,7 @@ public class PackageTestTest extends JUnitAdapter {
     @Test
     @ParameterSupplier("test")
     public void test(TestSpec spec) {
-        spec.run(Optional.empty());
+        spec.run();
     }
 
     public static List<Object[]> test() {
@@ -605,7 +671,7 @@ public class PackageTestTest extends JUnitAdapter {
             for (int actualJPackageExitCode : List.of(0, 1, ERROR_EXIT_CODE_INSTALL)) {
                 for (int expectedJPackageExitCode : List.of(0, 1, ERROR_EXIT_CODE_INSTALL)) {
                     data.add(new TestSpecBuilder()
-                            .unpack(withUnpack ? Callback.ONCE : null)
+                            .unpack(withUnpack ? ONCE : null)
                             .actualJPackageExitCode(actualJPackageExitCode)
                             .expectedJPackageExitCode(expectedJPackageExitCode)
                             .doCreateAndUnpack().create());
@@ -618,7 +684,7 @@ public class PackageTestTest extends JUnitAdapter {
                 for (int actualJPackageExitCode : List.of(0, 1, ERROR_EXIT_CODE_JPACKAGE)) {
                     for (int expectedJPackageExitCode : List.of(0, 1, ERROR_EXIT_CODE_JPACKAGE)) {
                         data.add(new TestSpecBuilder()
-                                .unpack(withUnpack ? Callback.ONCE : null)
+                                .unpack(withUnpack ? ONCE : null)
                                 .installExitCode(installExitCode)
                                 .actualJPackageExitCode(actualJPackageExitCode)
                                 .expectedJPackageExitCode(expectedJPackageExitCode)
@@ -630,13 +696,11 @@ public class PackageTestTest extends JUnitAdapter {
 
         data.add(new TestSpecBuilder()
                 .actions(Action.VERIFY_INSTALL, Action.UNINSTALL, Action.VERIFY_INSTALL, Action.VERIFY_UNINSTALL)
-                .install(Callback.NEVER)
-                .unpack(Callback.NEVER)
-                .uninstall(Callback.ONCE)
-                .initializers(Callback.ONCE)
-                .bundleVerifiers(BundleVerifier.NEVER)
-                .installVerifiers(Callback.TWICE)
-                .uninstallVerifiers(Callback.ONCE)
+                .uninstall(ONCE)
+                .initializers(ONCE)
+                .bundleVerifiers(BundleVerifier.NEVER.spec())
+                .installVerifiers(TWICE)
+                .uninstallVerifiers(ONCE)
                 .create());
 
         return data.stream().map(v -> {
@@ -647,14 +711,14 @@ public class PackageTestTest extends JUnitAdapter {
     @Test
     @ParameterSupplier("testDisableInstallerUninstaller")
     public void testDisableInstallerUninstaller(TestSpec spec, boolean disableInstaller, boolean disableUninstaller) {
-        spec.run(Optional.of(test -> {
+        spec.run(test -> {
             if (disableInstaller) {
                 test.disablePackageInstaller();
             }
             if (disableUninstaller) {
                 test.disablePackageUninstaller();
             }
-        }));
+        });
     }
 
     public static List<Object[]> testDisableInstallerUninstaller() {
@@ -665,10 +729,10 @@ public class PackageTestTest extends JUnitAdapter {
                 if (disableInstaller || disableUninstaller) {
                     final var builder = new TestSpecBuilder().doCreateUnpackInstallUninstall();
                     if (disableInstaller) {
-                        builder.install(Callback.NEVER);
+                        builder.install(NEVER);
                     }
                     if (disableUninstaller) {
-                        builder.uninstall(Callback.NEVER);
+                        builder.uninstall(NEVER);
                     }
                     data.add(new Object[] { builder.create(), disableInstaller, disableUninstaller });
                 }
@@ -676,5 +740,155 @@ public class PackageTestTest extends JUnitAdapter {
         }
 
         return data;
+    }
+
+    private static List<Path> getUnpackPaths(Collection<Verifiable> verifiers) {
+        return verifiers.stream()
+                .filter(CountingUnpacker.class::isInstance)
+                .map(CountingUnpacker.class::cast)
+                .map(CountingUnpacker::servedPaths)
+                .reduce((x , y) -> {
+                    throw new UnsupportedOperationException();
+                }).orElseThrow();
+    }
+
+    @Test
+    public void testUnpackTwice() {
+        final var testSpec = new TestSpecBuilder()
+                .actions(Action.CREATE, Action.UNPACK, Action.VERIFY_INSTALL, Action.UNPACK, Action.VERIFY_INSTALL)
+                .unpack(TWICE)
+                .initializers(ONCE)
+                .installVerifiers(TWICE)
+                .create();
+
+        final var servedPaths = getUnpackPaths(testSpec.run());
+
+        TKit.assertEquals(2, servedPaths.size(), "Check the bundle was unpacked in different directories");
+
+        servedPaths.forEach(dir -> {
+            TKit.assertTrue(dir.startsWith(TKit.workDir()), "Check unpack directory is inside of the test work directory");
+        });
+    }
+
+    @Test
+    public void testDeleteUnpackDirs() {
+        final int unpackActionCount = 4;
+        final var testSpec = new TestSpecBuilder()
+                .actions(Action.UNPACK, Action.UNPACK, Action.UNPACK, Action.UNPACK)
+                .unpack(new CallbackFactory(unpackActionCount) {
+                    @Override
+                    CountingUnpacker createUnpacker() {
+                        return new CountingUnpacker(unpackActionCount) {
+                            @Override
+                            public Path apply(JPackageCommand cmd, Path path) {
+                                switch (tickCount()) {
+                                    case 0 -> {
+                                    }
+
+                                    case 2 -> {
+                                        path = path.resolve("foo");
+                                    }
+
+                                    case 1, 3 -> {
+                                        try {
+                                            path = Files.createTempDirectory("jpackage-test");
+                                        } catch (IOException ex) {
+                                            throw new UncheckedIOException(ex);
+                                        }
+                                    }
+
+                                    default -> {
+                                        throw new IllegalStateException();
+                                    }
+                                }
+                                return super.apply(cmd, path);
+                            }
+                        };
+                    }
+                })
+                .initializers(ONCE)
+                .create();
+
+        final var servedPaths = getUnpackPaths(testSpec.run());
+
+        TKit.assertEquals(unpackActionCount, servedPaths.size(), "Check the bundle was unpacked in different directories");
+
+        // Unpack directories within the test work directory must exist.
+        TKit.assertDirectoryExists(servedPaths.get(0));
+        TKit.assertDirectoryExists(servedPaths.get(2));
+
+        // Unpack directories outside of the test work directory must be deleted.
+        TKit.assertPathExists(servedPaths.get(1), false);
+        TKit.assertPathExists(servedPaths.get(3), false);
+    }
+
+    @Test
+    public void testRunOnceInitializer() {
+        final var testSpec = new TestSpecBuilder().doCreateAndUnpack().unpack(TWICE).create();
+
+        final var initializer = TWICE.createInitializer();
+        final var runOnceInitializer = ONCE.createRunOnceInitializer();
+        testSpec.run(test -> {
+            test.forTypes(PackageType.LINUX_RPM, PackageType.WIN_MSI)
+                    .addRunOnceInitializer(runOnceInitializer)
+                    .addInitializer(initializer);
+        });
+
+        initializer.verify();
+        runOnceInitializer.verify();
+    }
+
+    @Test
+    @Parameter("0")
+    @Parameter("1")
+    public void testPurge(int jpackageExitCode) {
+
+        Path[] outputBundle = new Path[1];
+
+        final var builder = new TestSpecBuilder();
+
+        builder.actions(Action.CREATE).initializers(new CallbackFactory(1) {
+            @Override
+            CountingConsumer createInitializer() {
+                    return new CountingConsumer(1, "custom-init") {
+                        @Override
+                        public void accept(JPackageCommand cmd) {
+                            outputBundle[0] = cmd.outputBundle();
+                            super.accept(cmd);
+                        }
+                    };
+                }
+            }).create().run();
+        TKit.assertFileExists(outputBundle[0]);
+
+        builder.actions(Action.PURGE).initializers(ONCE).jpackageExitCode(jpackageExitCode).create().run();
+        TKit.assertPathExists(outputBundle[0], false);
+    }
+
+    @Test
+    public void testPackageTestOrder() {
+
+        Set<PackageType> packageTypes = new LinkedHashSet<>();
+
+        final var initializer = new CountingConsumer(PackageType.NATIVE.size(), "custom-init") {
+            @Override
+            public void accept(JPackageCommand cmd) {
+                packageTypes.add(new JPackageCommand().setArgumentValue(
+                        "--type", cmd.getArgumentValue("--type")).packageType());
+                super.accept(cmd);
+            }
+        };
+
+        new TestSpecBuilder().actions(Action.CREATE).create().run(test -> {
+            test.forTypes().addInitializer(initializer);
+        });
+
+        initializer.verify();
+
+        final var expectedOrder = PackageType.NATIVE.stream()
+                .sorted().map(PackageType::name).toList();
+        final var actualOrder = packageTypes.stream().map(PackageType::name).toList();
+
+        TKit.assertStringListEquals(expectedOrder, actualOrder, "Check the order or packaging");
     }
 }
