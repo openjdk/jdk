@@ -2390,11 +2390,11 @@ void MacroAssembler::cmp32_mxcsr_std(Address mxcsr_save, Register tmp, Register 
 
   stmxcsr(mxcsr_save);
   movl(tmp, mxcsr_save);
-  // Mask out any pending exceptions (only check control and mask bits)
   if (EnableX86ECoreOpts) {
-    // On Ecore, status bits are set by default (for performance)
-    orl(tmp, 0x003f);  // On Ecore, exception bits are set by default
+    // The mxcsr_std has status bits set for performance on ECore
+    orl(tmp, 0x003f);
   } else {
+    // Mask out status bits (only check control and mask bits)
     andl(tmp, 0xFFC0);
   }
   cmp32(tmp, mxcsr_std, rscratch);

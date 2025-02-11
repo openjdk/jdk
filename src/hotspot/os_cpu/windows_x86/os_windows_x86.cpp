@@ -180,7 +180,7 @@ bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
     //
     jint MxCsr = INITIAL_MXCSR; // set to 0x1f80` in winnt.h
     if (EnableX86ECoreOpts) {
-      // On ECore, restore with signaling flags enabled
+      // On ECore restore with status bits enabled
       MxCsr |= 0x3F;
     }
 
