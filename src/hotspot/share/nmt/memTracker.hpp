@@ -135,7 +135,7 @@ class MemTracker : AllStatic {
     }
   }
 
-  static inline void record_virtual_memory_release(address addr, size_t size) {
+  static inline void record_virtual_memory_release(void* addr, size_t size) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
@@ -143,7 +143,7 @@ class MemTracker : AllStatic {
     }
   }
 
-  static inline void record_virtual_memory_uncommit(address addr, size_t size) {
+  static inline void record_virtual_memory_uncommit(void* addr, size_t size) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {

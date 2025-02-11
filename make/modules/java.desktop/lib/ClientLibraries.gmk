@@ -23,11 +23,15 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This file will build all AWT/2D native libraries that does not have "awt" in
 # the name. Note that this does not imply anything about the logical ownership
 # of the code they compile.
 # This split is purely made to keep the size of the Makefiles reasonable.
+################################################################################
 
 ################################################################################
 ## Build libmlib_image
@@ -467,3 +471,8 @@ ifeq ($(call isTargetOs, macosx), true)
 
   $(BUILD_LIBOSXUI): $(SHADERS_LIB)
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

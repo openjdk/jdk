@@ -35,7 +35,6 @@ import jdk.test.lib.jfr.EventNames;
 /**
  * @test
  * @summary Test copyTo and parse file
- * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.dump.TestDump
