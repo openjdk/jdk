@@ -647,8 +647,8 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
 
       // lookup_secondary_supers_table_var return 0 on success and 1 on failure.
       // but this method returns 0 on failure and 1 on success.
-      // so we have to inverse the result we got from lookup_secondary_supers_table_var.
-      __ z_xilf(result, 1);  // inverse the result
+      // so we have to invert the result from lookup_secondary_supers_table_var.
+      __ z_xilf(result, 1);  // invert the result
 
       __ z_lg(temp2 /*Z_R10*/, 0*BytesPerWord + frame::z_abi_160_size, Z_SP);
       __ z_lg(temp3 /*Z_R11*/, 1*BytesPerWord + frame::z_abi_160_size, Z_SP);
