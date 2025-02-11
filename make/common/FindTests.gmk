@@ -62,10 +62,11 @@ $(foreach root, $(JTREG_TESTROOTS), \
 # Cache the expensive to calculate test names in a generated makefile.
 FIND_TESTS_CACHE_FILE := $(MAKESUPPORT_OUTPUTDIR)/find-tests.gmk
 
-# If this file is deemed outdated, it will automatically get regenerated
-# by this rule before being included below.
-$(FIND_TESTS_CACHE_FILE): $(JTREG_ROOT_FILES) $(JTREG_GROUP_FILES) \
-    $(TOPDIR)/test/make/TestMake.gmk
+ifeq ($(GENERATE_FIND_TESTS_FILE), true)
+  # If this file is deemed outdated, it will automatically get regenerated
+  # by this rule before being included below.
+  $(FIND_TESTS_CACHE_FILE): $(JTREG_ROOT_FILES) $(JTREG_GROUP_FILES) \
+      $(TOPDIR)/test/make/TestMake.gmk
 	$(call MakeTargetDir)
 	( $(foreach root, $(JTREG_TESTROOTS), \
 	    $(PRINTF) "\n$(root)_JTREG_TEST_GROUPS := " ; \
@@ -78,6 +79,7 @@ $(FIND_TESTS_CACHE_FILE): $(JTREG_ROOT_FILES) $(JTREG_GROUP_FILES) \
 	$(MAKE) -s --no-print-directory $(MAKE_ARGS) \
 	    SPEC=$(SPEC) -f $(TOPDIR)/test/make/TestMake.gmk print-targets \
 	    TARGETS_FILE=$@
+endif
 
 -include $(FIND_TESTS_CACHE_FILE)
 

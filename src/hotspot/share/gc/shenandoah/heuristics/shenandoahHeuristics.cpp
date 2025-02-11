@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"

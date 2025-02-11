@@ -851,6 +851,7 @@ public class Attr extends JCTree.Visitor {
      *  @see VarSymbol#setLazyConstValue
      */
     public Object attribLazyConstantValue(Env<AttrContext> env,
+                                      Env<AttrContext> enclosingEnv,
                                       JCVariableDecl variable,
                                       Type type) {
 
@@ -859,6 +860,7 @@ public class Attr extends JCTree.Visitor {
 
         final JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
         try {
+            doQueueScanTreeAndTypeAnnotateForVarInit(variable, enclosingEnv);
             Type itype = attribExpr(variable.init, env, type);
             if (variable.isImplicitlyTyped()) {
                 //fixup local variable type
@@ -1282,11 +1284,7 @@ public class Attr extends JCTree.Visitor {
                 }
             }
         } else {
-            if (tree.init != null) {
-                // Field initializer expression need to be entered.
-                annotate.queueScanTreeAndTypeAnnotate(tree.init, env, tree.sym, tree.pos());
-                annotate.flush();
-            }
+            doQueueScanTreeAndTypeAnnotateForVarInit(tree, env);
         }
 
         VarSymbol v = tree.sym;
@@ -1336,6 +1334,17 @@ public class Attr extends JCTree.Visitor {
         }
         finally {
             chk.setLint(prevLint);
+        }
+    }
+
+    private void doQueueScanTreeAndTypeAnnotateForVarInit(JCVariableDecl tree, Env<AttrContext> env) {
+        if (tree.init != null &&
+            (tree.mods.flags & Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED) == 0 &&
+            env.info.scope.owner.kind != MTH && env.info.scope.owner.kind != VAR) {
+            tree.mods.flags |= Flags.FIELD_INIT_TYPE_ANNOTATIONS_QUEUED;
+            // Field initializer expression need to be entered.
+            annotate.queueScanTreeAndTypeAnnotate(tree.init, env, tree.sym, tree.pos());
+            annotate.flush();
         }
     }
 
@@ -1940,7 +1949,7 @@ public class Attr extends JCTree.Visitor {
     public void visitSynchronized(JCSynchronized tree) {
         chk.checkRefType(tree.pos(), attribExpr(tree.lock, env));
         if (isValueBased(tree.lock.type)) {
-            env.info.lint.logIfEnabled(log, tree.pos(), LintWarnings.AttemptToSynchronizeOnInstanceOfValueBasedClass);
+            env.info.lint.logIfEnabled(tree.pos(), LintWarnings.AttemptToSynchronizeOnInstanceOfValueBasedClass);
         }
         attribStat(tree.body, env);
         result = null;
@@ -2047,7 +2056,7 @@ public class Attr extends JCTree.Visitor {
             if (close.kind == MTH &&
                     close.overrides(syms.autoCloseableClose, resource.tsym, types, true) &&
                     chk.isHandled(syms.interruptedExceptionType, types.memberType(resource, close).getThrownTypes())) {
-                env.info.lint.logIfEnabled(log, pos, LintWarnings.TryResourceThrowsInterruptedExc(resource));
+                env.info.lint.logIfEnabled(pos, LintWarnings.TryResourceThrowsInterruptedExc(resource));
             }
         }
     }
@@ -4447,7 +4456,7 @@ public class Attr extends JCTree.Visitor {
                 sym.kind == MTH &&
                 sym.name.equals(names.close) &&
                 sym.overrides(syms.autoCloseableClose, sitesym.type.tsym, types, true)) {
-            env.info.lint.logIfEnabled(log, tree, LintWarnings.TryExplicitCloseCall);
+            env.info.lint.logIfEnabled(tree, LintWarnings.TryExplicitCloseCall);
         }
 
         // Disallow selecting a type from an expression
@@ -4474,9 +4483,9 @@ public class Attr extends JCTree.Visitor {
             // If the qualified item is not a type and the selected item is static, report
             // a warning. Make allowance for the class of an array type e.g. Object[].class)
             if (!sym.owner.isAnonymous()) {
-                chk.lint.logIfEnabled(log, tree, LintWarnings.StaticNotQualifiedByType(sym.kind.kindName(), sym.owner));
+                chk.lint.logIfEnabled(tree, LintWarnings.StaticNotQualifiedByType(sym.kind.kindName(), sym.owner));
             } else {
-                chk.lint.logIfEnabled(log, tree, LintWarnings.StaticNotQualifiedByType2(sym.kind.kindName()));
+                chk.lint.logIfEnabled(tree, LintWarnings.StaticNotQualifiedByType2(sym.kind.kindName()));
             }
         }
 
