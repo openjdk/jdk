@@ -1063,7 +1063,7 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
   set_klass(mirror(), k);
 
   // Set the modifiers flag.
-  int computed_modifiers = k->compute_modifier_flags();
+  u2 computed_modifiers = k->compute_modifier_flags();
   set_modifiers(mirror(), computed_modifiers);
 
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
@@ -1508,7 +1508,7 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
   macro(_classData_offset,           k, "classData",           object_signature,       false); \
   macro(_reflectionData_offset,      k, "reflectionData",      java_lang_ref_SoftReference_signature, false); \
   macro(_signers_offset,             k, "signers",             object_array_signature, false); \
-  macro(_modifiers_offset,           k, vmSymbols::modifiers_name(), int_signature,    false); \
+  macro(_modifiers_offset,           k, vmSymbols::modifiers_name(), char_signature,    false); \
   macro(_protection_domain_offset,   k, "protectionDomain",    java_security_ProtectionDomain_signature,  false); \
   macro(_is_primitive_offset,        k, "isPrimitiveType",     bool_signature,         false);
 
@@ -1546,12 +1546,12 @@ void java_lang_Class::set_classRedefinedCount(oop the_class_mirror, int value) {
 
 int java_lang_Class::modifiers(oop the_class_mirror) {
   assert(_modifiers_offset != 0, "offsets should have been initialized");
-  return the_class_mirror->int_field(_modifiers_offset);
+  return the_class_mirror->char_field(_modifiers_offset);
 }
 
-void java_lang_Class::set_modifiers(oop the_class_mirror, int value) {
+void java_lang_Class::set_modifiers(oop the_class_mirror, u2 value) {
   assert(_modifiers_offset != 0, "offsets should have been initialized");
-  the_class_mirror->int_field_put(_modifiers_offset, value);
+  the_class_mirror->char_field_put(_modifiers_offset, value);
 }
 
 
