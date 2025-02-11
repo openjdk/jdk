@@ -63,6 +63,7 @@ public class SBC {
             badCombinations(dir);
             unsupportedOptions(dir);
             nullTests(dir);
+            emptyPathTest();
 
         } finally {
             TestUtil.removeAll(dir);
@@ -422,6 +423,14 @@ public class SBC {
             Files.newByteChannel(file, opts, attrs);
             throw new RuntimeException("NullPointerException expected");
         } catch (NullPointerException x) { }
+    }
+
+    static void emptyPathTest() throws Exception {
+        try {
+            OpenOption[] opts = { WRITE, CREATE_NEW };
+            Files.newByteChannel(Path.of(""), opts);
+            throw new RuntimeException("FileAlreadyExistsException expected");
+        } catch (FileAlreadyExistsException x) { }
     }
 
     static void write(WritableByteChannel wbc, String msg) throws IOException {
