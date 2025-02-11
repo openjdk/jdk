@@ -118,7 +118,7 @@ void G1HeapRegion::hr_clear(bool clear_space) {
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   uninstall_surv_rate_group();
-  uninstall_group_cardset();
+  uninstall_cset_group();
   set_free();
   reset_pre_dummy_top();
 
@@ -135,18 +135,6 @@ void G1HeapRegion::hr_clear(bool clear_space) {
 void G1HeapRegion::clear_cardtable() {
   G1CardTable* ct = G1CollectedHeap::heap()->card_table();
   ct->clear_MemRegion(MemRegion(bottom(), end()));
-}
-
-double G1HeapRegion::calc_gc_efficiency() {
-  // GC efficiency is the ratio of how much space would be
-  // reclaimed over how long we predict it would take to reclaim it.
-  G1Policy* policy = G1CollectedHeap::heap()->policy();
-
-  // Retrieve a prediction of the elapsed time for this region for
-  // a mixed gc because the region will only be evacuated during a
-  // mixed gc.
-  double region_elapsed_time_ms = policy->predict_region_total_time_ms(this, false /* for_young_only_phase */);
-  return (double)reclaimable_bytes() / region_elapsed_time_ms;
 }
 
 void G1HeapRegion::set_free() {
@@ -191,6 +179,9 @@ void G1HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
+  G1CSetCandidateGroup* cset_group = new G1CSetCandidateGroup();
+  cset_group->add(this);
+
   _bot->update_for_block(bottom(), obj_top);
   if (fill_size > 0) {
     _bot->update_for_block(obj_top, obj_top + fill_size);
@@ -211,12 +202,19 @@ void G1HeapRegion::clear_humongous() {
   assert(is_humongous(), "pre-condition");
 
   assert(capacity() == G1HeapRegion::GrainBytes, "pre-condition");
+  if (is_starts_humongous()) {
+    G1CSetCandidateGroup* cset_group = _rem_set->cset_group();
+    assert(cset_group != nullptr, "pre-condition %u missing cardset", hrm_index());
+    uninstall_cset_group();
+    cset_group->clear();
+    delete cset_group;
+  }
   _humongous_start_region = nullptr;
 }
 
 void G1HeapRegion::prepare_remset_for_scan() {
   if (is_young()) {
-    uninstall_group_cardset();
+    uninstall_cset_group();
   }
   _rem_set->reset_table_scanner();
 }
@@ -250,7 +248,7 @@ G1HeapRegion::G1HeapRegion(uint hrm_index,
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
 
-  _rem_set = new G1HeapRegionRemSet(this, config);
+  _rem_set = new G1HeapRegionRemSet(this);
   initialize();
 }
 
@@ -600,7 +598,9 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     }
 
     bool failed() const {
-      if (_from != _to && !_from->is_young() && _to->rem_set()->is_complete()) {
+      if (_from != _to && !_from->is_young() &&
+          _to->rem_set()->is_complete() &&
+          _from->rem_set()->cset_group() != _to->rem_set()->cset_group()) {
         const CardValue dirty = G1CardTable::dirty_card_val();
         return !(_to->rem_set()->contains_reference(this->_p) ||
                  (this->_containing_obj->is_objArray() ?
