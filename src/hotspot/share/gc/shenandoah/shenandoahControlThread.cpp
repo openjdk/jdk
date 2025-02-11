@@ -392,7 +392,7 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   MonitorLocker ml(&_gc_waiters_lock);
   size_t current_gc_id = get_gc_id();
   size_t required_gc_id = current_gc_id + 1;
-  while (current_gc_id < required_gc_id) {
+  while (current_gc_id < required_gc_id && !should_terminate()) {
     // Although setting gc request is under _gc_waiters_lock, but read side (run_service())
     // does not take the lock. We need to enforce following order, so that read side sees
     // latest requested gc cause when the flag is set.

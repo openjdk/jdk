@@ -994,13 +994,13 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       //   a) We experienced a GC that had good progress, or
       //   b) We experienced at least one Full GC (whether or not it had good progress)
 
-      size_t original_count = shenandoah_policy()->full_gc_count();
-      while ((result == nullptr) && (original_count == shenandoah_policy()->full_gc_count())) {
+      const size_t original_count = shenandoah_policy()->full_gc_count();
+      while (result == nullptr && retry_allocation(original_count)) {
         control_thread()->handle_alloc_failure(req, true);
         result = allocate_memory_under_lock(req, in_new_region);
       }
       if (result != nullptr) {
-        // If our allocation request has been satisifed after it initially failed, we count this as good gc progress
+        // If our allocation request has been satisfied after it initially failed, we count this as good gc progress
         notify_gc_progress();
       }
       if (log_develop_is_enabled(Debug, gc, alloc)) {
@@ -1049,6 +1049,11 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   }
 
   return result;
+}
+
+inline bool ShenandoahHeap::retry_allocation(size_t original_full_gc_count) const {
+  return shenandoah_policy()->full_gc_count() == original_full_gc_count
+      && !shenandoah_policy()->is_at_shutdown();
 }
 
 HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req, bool& in_new_region) {

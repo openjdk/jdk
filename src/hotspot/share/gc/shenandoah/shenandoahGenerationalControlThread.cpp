@@ -72,8 +72,6 @@ void ShenandoahGenerationalControlThread::run_service() {
     check_for_request(request);
 
     if (request.cause == GCCause::_shenandoah_stop_vm) {
-      notify_gc_waiters();
-      notify_alloc_failure_waiters();
       break;
     }
 
@@ -97,6 +95,9 @@ void ShenandoahGenerationalControlThread::run_service() {
     }
   }
 
+  // In case any threads are waiting for a cycle to happen, let them know it isn't.
+  notify_gc_waiters();
+  notify_alloc_failure_waiters();
   set_gc_mode(stopped);
 }
 
@@ -741,11 +742,6 @@ bool ShenandoahGenerationalControlThread::preempt_old_marking(ShenandoahGenerati
 }
 
 void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cause) {
-  if (should_terminate()) {
-    log_info(gc)("Control thread is terminating, no more GCs");
-    return;
-  }
-
   // For normal requested GCs (System.gc) we want to block the caller. However,
   // for whitebox requested GC, we want to initiate the GC and return immediately.
   // The whitebox caller thread will arrange for itself to wait until the GC notifies
@@ -766,11 +762,9 @@ void ShenandoahGenerationalControlThread::handle_requested_gc(GCCause::Cause cau
 
   MonitorLocker ml(&_gc_waiters_lock);
   size_t current_gc_id = get_gc_id();
-  size_t required_gc_id = current_gc_id + 1;
-  while (current_gc_id < required_gc_id) {
-    // This races with the regulator thread to start a concurrent gc and the
-    // control thread to clear it at the start of a cycle. Threads here are
-    // allowed to escalate a heuristic's request for concurrent gc.
+  const size_t required_gc_id = current_gc_id + 1;
+  while (current_gc_id < required_gc_id && !should_terminate()) {
+    // Make requests to run a global cycle until at least one is completed
     notify_control_thread(cause, ShenandoahHeap::heap()->global_generation());
     ml.wait();
     current_gc_id = get_gc_id();
