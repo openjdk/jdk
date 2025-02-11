@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ SedEscape = $(subst !,\!,$(subst \,\\,$1))
 # Param 1: Fragment name
 ################################################################################
 GetIndexerFragment = \
-    $(TOPDIR)/make/ide/vscode/hotspot/indexers/$(VSCODE_INDEXER)-$(1).txt
+    $(TOPDIR)/make/ide/vscode/indexers/$(VSCODE_INDEXER)-$(1).txt
 
 ################################################################################
 # Show indexer-specific notes if they exist, otherwise do nothing
@@ -67,10 +67,15 @@ endif
 # from TOPDIR.
 ################################################################################
 ifneq ($(WORKSPACE_ROOT), $(TOPDIR))
-  GetExtraWorkspaceRoot = $(TOPDIR)/make/ide/vscode/hotspot/template-workspace-folder.txt
+  GetExtraWorkspaceRoot = $(TOPDIR)/make/ide/vscode/template-workspace-folder.txt
 else
   GetExtraWorkspaceRoot = /dev/null
 endif
+
+################################################################################
+# Compute the workspace folders content
+################################################################################
+WORKSPACE_FOLDERS=$(shell $(JAVA) $(TOPDIR)/make/ide/vscode/GetWorkspaceFolders.java "$(TOPDIR)" "$(OUTPUTDIR)" "$(MODULES)")
 
 ################################################################################
 # Create a project configuration from a given template, replacing a known set
@@ -98,19 +103,20 @@ define CreateFromTemplate
 	    -e '/{{INDEXER_EXTENSIONS}}/d' \
 	    -e '/{{INDEXER_SETTINGS}}/d' \
 	    -e '/{{EXTRA_WORKSPACE_ROOT}}/d' \
+	    -e 's!{{WORKSPACE_FOLDERS}}!$(WORKSPACE_FOLDERS)!g' \
 	    > $2
 endef
 
 $(OUTPUTDIR)/jdk.code-workspace:
 	$(call LogWarn, Creating workspace $@)
-	$(call CreateFromTemplate, $(TOPDIR)/make/ide/vscode/hotspot/template-workspace.jsonc, $@)
+	$(call CreateFromTemplate, $(TOPDIR)/make/ide/vscode/template-workspace.jsonc, $@)
 	$(call ShowIndexerNotes)
 
 $(OUTPUTDIR)/.vscode/tasks.json:
-	$(call CreateFromTemplate, $(TOPDIR)/make/ide/vscode/hotspot/template-tasks.jsonc, $@)
+	$(call CreateFromTemplate, $(TOPDIR)/make/ide/vscode/template-tasks.jsonc, $@)
 
 $(OUTPUTDIR)/.vscode/launch.json:
-	$(call CreateFromTemplate, $(TOPDIR)/make/ide/vscode/hotspot/template-launch.jsonc, $@)
+	$(call CreateFromTemplate, $(TOPDIR)/make/ide/vscode/template-launch.jsonc, $@)
 
 TARGETS := $(OUTPUTDIR)/jdk.code-workspace $(OUTPUTDIR)/.vscode/tasks.json \
     $(OUTPUTDIR)/.vscode/launch.json
