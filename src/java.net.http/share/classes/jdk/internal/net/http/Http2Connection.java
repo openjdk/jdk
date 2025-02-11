@@ -1602,12 +1602,7 @@ class Http2Connection  {
             stateLock.unlock();
         }
         if (debug.on()) debug.log("connection closed: closing stream %d", stream);
-        Throwable reason = cause.get();
-        if (reason == null) {
-            stream.cancel();
-        } else {
-            stream.cancelImpl(reason);
-        }
+        stream.cancel(new IOException("Stream " + streamid + " cancelled", cause.get()));
     }
 
     /**
