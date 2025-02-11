@@ -146,8 +146,8 @@ public:
 
   // Represents the location of a (would be) node in the tree.
   // If a cursor is valid (valid() == true) it points somewhere in the tree.
-  // If the cursor points to an existing node (found() == true), node() can be used to access that node,
-  // Otherwise nullptr is returned, regardless if the node is valid or not.
+  // If the cursor points to an existing node (found() == true), node() can be used to access that node.
+  // If no node is pointed to, node() returns null, regardless if the cursor is valid or not.
   class Cursor {
     friend RBTree<K, V, COMPARATOR, ALLOCATOR>;
     RBNode** _insert_location;
@@ -222,105 +222,104 @@ public:
 
   size_t size() const { return _num_nodes; }
 
-  // Gets the cursor to the given node.
-  Cursor get_cursor(const RBNode* node);
-  const Cursor get_cursor(const RBNode* node) const;
+  // Gets the cursor associated with the given node or key.
+  Cursor cursor(const K& key);
+  Cursor cursor(const RBNode* node);
+  const Cursor cursor(const K& key) const;
+  const Cursor cursor(const RBNode* node) const;
 
-  // Moves to the next valid node.
+  // Moves to the next existing node.
   // If no next node exist, the cursor becomes invalid.
-  Cursor next(const Cursor& cursor);
-  const Cursor next(const Cursor& cursor) const;
+  Cursor next(const Cursor& node_cursor);
+  const Cursor next(const Cursor& node_cursor) const;
 
-  // Moves to the previous valid node.
+  // Moves to the previous existing node.
   // If no previous node exist, the cursor becomes invalid.
-  Cursor prev(const Cursor& cursor);
-  const Cursor prev(const Cursor& cursor) const;
+  Cursor prev(const Cursor& node_cursor);
+  const Cursor prev(const Cursor& node_cursor) const;
 
-  // Finds the cursor to the node associated with the given key.
-  Cursor cursor_find(const K& key);
-  const Cursor cursor_find(const K& key) const;
-
-  // Inserts the given node at the cursor location
-  // The cursor must not point to an existing node
-  void insert_at_cursor(RBNode* node, const Cursor& cursor);
+  // Initializes and inserts a node at the cursor location.
+  // The cursor must not point to an existing node.
+  // Node is given the same key used in `cursor()`.
+  void insert_at_cursor(RBNode* node, const Cursor& node_cursor);
 
   // Removes the node referenced by the cursor
   // The cursor must point to a valid existing node
-  void remove_at_cursor(const Cursor& cursor);
+  void remove_at_cursor(const Cursor& node_cursor);
 
   // Replace the node referenced by the cursor with a new node.
   // The old node is destroyed.
   // The user must ensure that no tree properties are broken:
-  // There must not exist any node with the same key
-  // For all nodes with key < old_node, must also have key < new_node
-  // For all nodes with key > old_node, must also have key > new_node
-  void replace_at_cursor(RBNode* new_node, const Cursor& cursor);
+  // There must not exist any node with the new key
+  // For all nodes with key < old_key, must also have key < new_key
+  // For all nodes with key > old_key, must also have key > new_key
+  void replace_at_cursor(RBNode* new_node, const Cursor& node_cursor);
 
   // Finds the value of the node associated with the given key.
   V* find(const K& key) {
-    Cursor cursor = cursor_find(key);
-    return cursor.found() ? &cursor.node()->_value : nullptr;
+    Cursor node_cursor = cursor(key);
+    return node_cursor.found() ? &node_cursor.node()->_value : nullptr;
   }
 
   V* find(const K& key) const {
-    const Cursor cursor = cursor_find(key);
-    return cursor.found() ? &cursor.node()->_value : nullptr;
+    const Cursor node_cursor = cursor(key);
+    return node_cursor.found() ? &node_cursor.node()->_value : nullptr;
   }
 
   // Finds the node associated with the given key.
   RBNode* find_node(const K& key) const {
-    Cursor cursor = cursor_find(key);
-    return cursor.node();
+    Cursor node_cursor = cursor(key);
+    return node_cursor.node();
   }
 
   RBNode* find_node(const K& key) {
-    Cursor cursor = cursor_find(key);
-    return cursor.node();
+    Cursor node_cursor = cursor(key);
+    return node_cursor.node();
   }
 
   // Inserts a node with the given key into the tree,
   // does nothing if the key already exist.
   void upsert(const K& key) {
-    Cursor cursor = cursor_find(key);
-    if (cursor.found()) {
+    Cursor node_cursor = cursor(key);
+    if (node_cursor.found()) {
       return;
     }
 
     RBNode* node = allocate_node(key);
-    insert_at_cursor(node, cursor);
+    insert_at_cursor(node, node_cursor);
   }
 
   // Inserts a node with the given key/value into the tree,
   // if the key already exist, the value is updated instead.
   template <typename VV = V, ENABLE_IF(!std::is_same<VV, void>::value)>
   void upsert(const K& key, const VV& val) {
-    Cursor cursor = cursor_find(key);
-    RBNode* node = cursor.node();
+    Cursor node_cursor = cursor(key);
+    RBNode* node = node_cursor.node();
     if (node != nullptr) {
       node->_value = val;
       return;
     }
 
     node = allocate_node(key, val);
-    insert_at_cursor(node, cursor);
+    insert_at_cursor(node, node_cursor);
   }
 
   // Removes the node with the given key from the tree if it exists.
   // Returns true if the node was successfully removed, false otherwise.
   bool remove(const K& key) {
-    Cursor cursor = cursor_find(key);
-    if (!cursor.found()) {
+    Cursor node_cursor = cursor(key);
+    if (!node_cursor.found()) {
       return false;
     }
-    RBNode* node = cursor.node();
-    remove_at_cursor(cursor);
+    RBNode* node = node_cursor.node();
+    remove_at_cursor(node_cursor);
     free_node(node);
     return true;
   }
 
   void remove(RBNode* node) {
-    Cursor cursor = get_cursor(node);
-    remove_at_cursor(cursor);
+    Cursor node_cursor = cursor(node);
+    remove_at_cursor(node_cursor);
     free_node(node);
   }
 
@@ -343,24 +342,24 @@ public:
 
   // Finds the node with the closest key <= the given key
   RBNode* closest_leq(const K& key) const {
-    Cursor cursor = cursor_find(key);
-    return cursor.found() ? cursor.node() : prev(cursor).node();
+    Cursor node_cursor = cursor(key);
+    return node_cursor.found() ? node_cursor.node() : prev(node_cursor).node();
   }
 
   RBNode* closest_leq(const K& key) {
-    Cursor cursor = cursor_find(key);
-    return cursor.found() ? cursor.node() : prev(cursor).node();
+    Cursor node_cursor = cursor(key);
+    return node_cursor.found() ? node_cursor.node() : prev(node_cursor).node();
   }
 
   // Finds the node with the closest key > the given key
   RBNode* closest_gt(const K& key) const {
-    Cursor cursor = cursor_find(key);
-    return next(cursor).node();
+    Cursor node_cursor = cursor(key);
+    return next(node_cursor).node();
   }
 
   RBNode* closest_gt(const K& key) {
-    Cursor cursor = cursor_find(key);
-    return next(cursor).node();
+    Cursor node_cursor = cursor(key);
+    return next(node_cursor).node();
   }
 
   // Returns leftmost node, nullptr if tree is empty.

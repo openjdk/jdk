@@ -483,12 +483,12 @@ public:
     });
   }
 
-  void test_cursor_find() {
+  void test_cursor() {
     constexpr const int num_nodes = 10;
     RBTreeInt tree;
 
     for (int n = 0; n <= num_nodes; n++) {
-      RBTreeInt::Cursor find_cursor = tree.cursor_find(n);
+      RBTreeInt::Cursor find_cursor = tree.cursor(n);
       EXPECT_FALSE(find_cursor.found());
     }
 
@@ -497,12 +497,12 @@ public:
     }
 
     for (int n = 0; n <= num_nodes; n++) {
-      RBTreeInt::Cursor find_cursor = tree.cursor_find(n);
+      RBTreeInt::Cursor find_cursor = tree.cursor(n);
       EXPECT_TRUE(find_cursor.found());
     }
 
-    EXPECT_FALSE(tree.cursor_find(-1).found());
-    EXPECT_FALSE(tree.cursor_find(101).found());
+    EXPECT_FALSE(tree.cursor(-1).found());
+    EXPECT_FALSE(tree.cursor(101).found());
   }
 
   void test_get_cursor() {
@@ -514,28 +514,28 @@ public:
       IntrusiveHolder* place = (IntrusiveHolder*)os::malloc(sizeof(IntrusiveHolder), mtTest);
       new (place) IntrusiveHolder(n);
 
-      tree.insert_at_cursor(place->get_node(), tree.cursor_find(n));
+      tree.insert_at_cursor(place->get_node(), tree.cursor(n));
       nodes.push(place);
     }
 
     for (int n = 0; n <= num_nodes; n++) {
       IntrusiveNode* node = nodes.at(n)->get_node();
-      IntrusiveCursor get_cursor = tree.get_cursor(node);
-      IntrusiveCursor find_cursor = tree.cursor_find(n);
-      EXPECT_TRUE(get_cursor.found());
-      EXPECT_TRUE(get_cursor.valid());
+      IntrusiveCursor cursor = tree.cursor(node);
+      IntrusiveCursor find_cursor = tree.cursor(n);
+      EXPECT_TRUE(cursor.found());
+      EXPECT_TRUE(cursor.valid());
       EXPECT_TRUE(find_cursor.found());
       EXPECT_TRUE(find_cursor.valid());
-      EXPECT_EQ(get_cursor.node(), find_cursor.node());
+      EXPECT_EQ(cursor.node(), find_cursor.node());
     }
   }
 
   void test_cursor_empty_tree() {
     RBTreeInt tree;
-    RBTreeInt::Cursor cursor = tree.get_cursor(tree.leftmost());
+    RBTreeInt::Cursor cursor = tree.cursor(tree.leftmost());
     EXPECT_FALSE(cursor.valid());
 
-    cursor = tree.cursor_find(0);
+    cursor = tree.cursor(0);
     EXPECT_TRUE(cursor.valid());
     EXPECT_FALSE(cursor.found());
     EXPECT_FALSE(tree.next(cursor).valid());
@@ -548,7 +548,7 @@ public:
       tree.upsert(n, n);
     }
 
-    RBTreeInt::Cursor cursor = tree.cursor_find(0);
+    RBTreeInt::Cursor cursor = tree.cursor(0);
     for (int n = 0; n <= num_nodes; n++) {
       EXPECT_TRUE(cursor.valid());
       EXPECT_EQ(cursor.node()->val(), n);
@@ -556,7 +556,7 @@ public:
     }
     EXPECT_FALSE(cursor.valid());
 
-    cursor = tree.cursor_find(num_nodes);
+    cursor = tree.cursor(num_nodes);
     for (int n = num_nodes; n >= 0; n--) {
       EXPECT_TRUE(cursor.valid());
       EXPECT_EQ(cursor.node()->val(), n);
@@ -651,7 +651,7 @@ public:
 
     // Insert values
     for (int n = 0; n < num_iterations; n++) {
-      IntrusiveCursor cursor = intrusive_tree.cursor_find(n);
+      IntrusiveCursor cursor = intrusive_tree.cursor(n);
       EXPECT_NULL(cursor.node());
 
       // Custom allocation here is just malloc
@@ -659,7 +659,7 @@ public:
       new (place) IntrusiveHolder(n);
 
       intrusive_tree.insert_at_cursor(place->get_node(), cursor);
-      IntrusiveCursor cursor2 = intrusive_tree.cursor_find(n);
+      IntrusiveCursor cursor2 = intrusive_tree.cursor(n);
 
       EXPECT_NOT_NULL(cursor2.node());
 
@@ -668,18 +668,18 @@ public:
 
     // Check inserted values
     for (int n = 0; n < num_iterations; n++) {
-      IntrusiveCursor cursor = intrusive_tree.cursor_find(n);
+      IntrusiveCursor cursor = intrusive_tree.cursor(n);
       EXPECT_NOT_NULL(cursor.node());
       EXPECT_EQ(n, IntrusiveHolder::cast_to_self(cursor.node())->data);
     }
 
     // Remove all values
     for (int n = 0; n < num_iterations; n++) {
-      IntrusiveCursor cursor = intrusive_tree.cursor_find(n);
+      IntrusiveCursor cursor = intrusive_tree.cursor(n);
       EXPECT_NOT_NULL(cursor.node());
 
       intrusive_tree.remove_at_cursor(cursor);
-      IntrusiveCursor cursor2 = intrusive_tree.cursor_find(n);
+      IntrusiveCursor cursor2 = intrusive_tree.cursor(n);
 
       EXPECT_NULL(cursor2.node());
 
@@ -688,7 +688,7 @@ public:
 
     // Check removed values
     for (int n = 0; n < num_iterations; n++) {
-      IntrusiveCursor cursor = intrusive_tree.cursor_find(n);
+      IntrusiveCursor cursor = intrusive_tree.cursor(n);
       EXPECT_NULL(cursor.node());
     }
   }
@@ -772,11 +772,11 @@ TEST_VM_F(RBTreeTest, NodeStableAddressTest) {
 
 
 TEST_VM_F(RBTreeTest, CursorFind) {
-  this->test_cursor_find();
+  this->test_cursor();
 }
 
 TEST_VM_F(RBTreeTest, CursorGet) {
-  this->test_get_cursor();
+  this->test_cursor();
 }
 
 TEST_VM_F(RBTreeTest, CursorEmptyTreeTest) {
