@@ -24,23 +24,23 @@
 /*
  * @test
  * @bug 8349755
- * @summary Perform recursive logging in async UL and observe a crash
+ * @summary Perform recursive logging in async UL and do NOT observe a crash (as opposed to AsyncDeathTestDebug)
  * @requires vm.flagless
- * @requires vm.debug
+ * @requires !vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver AsyncDeathTest
+ * @run driver AsyncDeathTestDebug
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-public class AsyncDeathTest {
+public class AsyncDeathNonProduct {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb =
             ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:deathtest=debug");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldNotHaveExitValue(0);
+        output.shouldHaveExitValue(0);
     }
 }
