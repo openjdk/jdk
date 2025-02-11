@@ -33,39 +33,85 @@
 
 package template_framework.tests;
 
+import java.util.List;
+import java.util.ArrayList;
+
 import compiler.lib.compile_framework.*;
 import compiler.lib.generators.*;
 import compiler.lib.verify.*;
 import compiler.lib.template_framework.Template;
 import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.let;
 
 import static compiler.lib.template_framework.Library.format;
 
 public class TestLibrary {
+    private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
+    private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
+    private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
+    private static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
+
     public static void main(String[] args) {
-        testFormatInt();
+        testFormat();
     }
 
-    private static void testFormatInt() {
-        int gold = 1;
+    record FormatInfo(int id, String type, Object value, String formatted) {}
+
+    private static void testFormat() {
+        List<FormatInfo> list = new ArrayList();
+
+        for (int i = 0; i < 1000; i++) {
+            int v = GEN_INT.next();
+            list.add(new FormatInfo(i, "int", v, format(v)));
+        }
+
+        for (int i = 1000; i < 2000; i++) {
+            long v = GEN_LONG.next();
+            list.add(new FormatInfo(i, "long", v, format(v)));
+        }
+
+        for (int i = 2000; i < 3000; i++) {
+            float v = GEN_FLOAT.next();
+            list.add(new FormatInfo(i, "float", v, format(v)));
+        }
+
+        for (int i = 3000; i < 4000; i++) {
+            double v = GEN_DOUBLE.next();
+            list.add(new FormatInfo(i, "double", v, format(v)));
+        }
+
         CompileFramework comp = new CompileFramework();
-        comp.addJavaSourceCode("p.xyz.InnerTest", generate("int", format(gold)));
+        comp.addJavaSourceCode("p.xyz.InnerTest", generate(list));
         comp.compile();
-        Object ret = comp.invoke("p.xyz.InnerTest", "get", new Object[] {});
-        int result = (int)ret;
-        Verify.checkEQ(result, gold);
+
+        for (FormatInfo info : list) {
+            Object ret = comp.invoke("p.xyz.InnerTest", "get_" + info.id, new Object[] {});
+            System.out.println("id: " + info.id + " -> " + info.value + " == " + ret);
+            Verify.checkEQ(ret, info.value);
+        }
     }
 
-    private static String generate(String type, String value) {
-        var template1 = Template.make("type", "value", (String t, String v) -> body(
+    private static String generate(List<FormatInfo> list) {
+        var template1 = Template.make("info", (FormatInfo info) -> body(
+            let("id", info.id()),
+            let("type", info.type()),
+            let("formatted", info.formatted()),
+            """
+            public static #type get_#id() { return #formatted; }
+            """
+        ));
+
+        var template2 = Template.make(() -> body(
             """
             package p.xyz;
             public class InnerTest {
-                public static #type get() { return #value; }
+            """,
+            list.stream().map(info -> template1.withArgs(info)).toList(),
+            """
             }
             """
         ));
 
-        return template1.withArgs(type, value).render();
+        return template2.withArgs().render();
     }
 }
