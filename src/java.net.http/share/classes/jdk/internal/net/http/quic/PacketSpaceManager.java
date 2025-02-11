@@ -1232,7 +1232,6 @@ public sealed class PacketSpaceManager implements PacketSpace
                 .anyMatch(ConnectionCloseFrame.class::isInstance);
     }
 
-    // OK to use synchronized: no method calls
     private synchronized void lastAckElicitingSent(long packetNumber) {
         if (largestAckElicitingSentPN < packetNumber) {
             largestAckElicitingSentPN = packetNumber;
@@ -1909,7 +1908,6 @@ public sealed class PacketSpaceManager implements PacketSpace
     @Override
     public CompletableFuture<Long> requestSendPing() {
         CompletableFuture<Long> pingRequested;
-        // OK to use synchronized: no method calls
         synchronized (this) {
             if ((pingRequested = this.pingRequested) == null) {
                 pingRequested = this.pingRequested = new MinimalFuture<>();

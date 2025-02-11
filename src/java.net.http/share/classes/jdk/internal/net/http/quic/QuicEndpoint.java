@@ -385,7 +385,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             assert key == null;
             // this block is needed to coordinate with detach() and
             // selected(). See comment in selected().
-            // OK to use synchronized: only safe method calls
             synchronized (this) {
                 this.key = super.channel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
             }
@@ -455,7 +454,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                     // This can only happen once, when attaching the channel,
                     // so there should be no performance issue in synchronizing
                     // here.
-                    // OK to use synchronized: no method calls
                     synchronized (this) {
                         key = this.key;
                     }
@@ -592,7 +590,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             }
             // this block is needed to coordinate with attach() and
             // selected(). See comment in selected().
-            // OK to use synchronized: only safe method calls
             synchronized (this) {
                 key.cancel();
                 this.key = null;
@@ -1289,7 +1286,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     @Override
     public void close() {
         if (closed) return;
-        // OK to use synchronized: no method calls
         synchronized (this) {
             if (closed) return;
             closed = true;
@@ -1368,7 +1364,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     public void abort(Throwable error) {
 
         if (closed) return;
-        // OK to use synchronized: no method calls
         synchronized (this) {
             if (closed) return;
             closed = true;

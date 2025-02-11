@@ -99,7 +99,6 @@ public class QuicRttEstimator {
      * @param ackDelayMicros ack delay received in ack frame, decoded to microseconds
      * @param now time at which latestRttMicros was calculated
      */
-    // OK to use synchronized: only safe method calls
     public synchronized void consumeRttSample(long latestRttMicros, long ackDelayMicros, Deadline now) {
         this.rttSampleCount += 1;
         this.latestRttMicros = latestRttMicros;
@@ -127,7 +126,6 @@ public class QuicRttEstimator {
      *     RFC 9002 section 6.1.2</a>
      *
      */
-    // OK to use synchronized: only safe method calls
     public synchronized Duration getLossThreshold() {
         // max(kTimeThreshold * max(smoothed_rtt, latest_rtt), kGranularity)
         long maxRttMicros = Math.max(smoothedRttMicros, latestRttMicros);
@@ -141,7 +139,6 @@ public class QuicRttEstimator {
      * See <a href="https://www.rfc-editor.org/rfc/rfc9002#section-6.2.1">
      *     RFC 9002 section 6.1.2</a>
      */
-    // OK to use synchronized: only safe method calls
     public synchronized Duration getBasePtoDuration() {
         // PTO = smoothed_rtt + max(4*rttvar, kGranularity) + max_ack_delay
         // max_ack_delay is applied by the caller
@@ -154,12 +151,10 @@ public class QuicRttEstimator {
         return MIN_PTO_BACKOFF_TIMEOUT.compareTo(getBasePtoDuration().multipliedBy(ptoBackoffFactor)) < 0;
     }
 
-    // OK to use synchronized: no method calls
     public synchronized long getPtoBackoff() {
         return ptoBackoffFactor;
     }
 
-    // OK to use synchronized: no method calls
     public synchronized long increasePtoBackoff() {
         // limit to make sure we don't accidentally overflow
         if (ptoBackoffFactor <= MAX_PTO_BACKOFF || !isMinBackoffTimeoutExceeded()) {
@@ -168,7 +163,6 @@ public class QuicRttEstimator {
         return ptoBackoffFactor;
     }
 
-    // OK to use synchronized: no method calls
     public synchronized void resetPtoBackoff() {
         ptoBackoffFactor = 1;
     }

@@ -582,7 +582,6 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
     private void increaseProcessedDataBy(int diff) {
         assert diff >= 0;
         if (diff <= 0) return;
-        // OK to use synchronized: no method calls
         synchronized (this) {
             assert processed + diff <= received;
             processed += diff;
@@ -595,7 +594,6 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
      */
     private void increaseProcessedData(long newProcessed) {
         long diff;
-        // OK to use synchronized: no method calls
         synchronized (this) {
             if (newProcessed > processed) {
                 diff = newProcessed - processed;
@@ -749,7 +747,6 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
         public boolean started() {
             int state = this.state;
             if ((state & STARTED) == STARTED) return true;
-            // OK to use synchronized: no method calls
             synchronized (this) {
                 state = this.state;
                 return (state & STARTED) == STARTED;
@@ -769,7 +766,6 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
             int state = this.state;
             if ((state & STARTED) == 0) {
                 boolean wakeup = false;
-                // OK to use synchronized: wakeupOnStart is a safe method call
                 synchronized (this) {
                     state = this.state;
                     if ((state & STARTED) == 0) {
@@ -795,7 +791,6 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
             int state = this.state;
             boolean notstarted, pending = false;
             if (notstarted = ((state & STARTED) == 0)) {
-                // OK to use synchronized: started is a safe method call
                 synchronized (this) {
                     state = this.state;
                     if (notstarted = ((state & STARTED) == 0)) {

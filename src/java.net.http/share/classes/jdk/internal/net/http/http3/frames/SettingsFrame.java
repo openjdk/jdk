@@ -160,7 +160,6 @@ public class SettingsFrame extends AbstractHttp3Frame {
      *         {@linkplain #isIllegal(long) illegal}
      *
      */
-    // OK to use synchronized: only safe method calls
     public synchronized long getParameter(int paramID) {
         if (isIllegal(paramID)) {
             throw new IllegalArgumentException("illegal parameter: " + paramID);
@@ -182,7 +181,6 @@ public class SettingsFrame extends AbstractHttp3Frame {
      * @throws IllegalArgumentException if the parameter id is negative or
      *         {@linkplain #isIllegal(long) illegal}
      */
-    // OK to use synchronized: only safe method calls
     public synchronized SettingsFrame setParameter(long paramID, long value) {
         // subclasses can override this to actually send
         // an illegal parameter

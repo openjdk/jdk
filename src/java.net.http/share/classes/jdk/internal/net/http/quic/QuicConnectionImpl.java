@@ -1061,7 +1061,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             assert diff > 0;
             long max, processed;
             boolean exceeded;
-            // OK to use synchronized: no method calls
             synchronized (this) {
                 max = maxData;
                 processed = receivedData;
@@ -1154,7 +1153,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             long processed;
             boolean wasblocked, unblocked = false;
             do {
-                // OK to use synchronized: no method calls
                 synchronized (this) {
                     max = this.maxData;
                     processed = dataProcessed;
@@ -1177,7 +1175,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
          * {@return the remaining credit for this connection}
          */
         public long credit() {
-            // OK to use synchronized: no method calls
             synchronized (this) {
                 return maxData - dataProcessed;
             }
