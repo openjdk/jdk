@@ -57,11 +57,11 @@ sealed interface Token permits StringToken,
         }
         switch (o) {
             case Token t   -> outputList.add(t);
-            case String s  -> outputList.add(new StringToken(s));
-            case Integer s -> outputList.add(new StringToken(s.toString()));
-            case Long s    -> outputList.add(new StringToken(s.toString()));
-            case Double s  -> outputList.add(new StringToken(s.toString()));
-            case Float s   -> outputList.add(new StringToken(s.toString()));
+            case String s  -> outputList.add(new StringToken(Renderer.format(s)));
+            case Integer s -> outputList.add(new StringToken(Renderer.format(s)));
+            case Long s    -> outputList.add(new StringToken(Renderer.format(s)));
+            case Double s  -> outputList.add(new StringToken(Renderer.format(s)));
+            case Float s   -> outputList.add(new StringToken(Renderer.format(s)));
             case List l    -> parseList(l, outputList);
             default -> throw new IllegalArgumentException("Unexpected token: " + o);
         }

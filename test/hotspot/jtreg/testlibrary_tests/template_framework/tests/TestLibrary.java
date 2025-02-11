@@ -23,9 +23,7 @@
 
 /*
  * @test
- * @summary Test some basic Template instantiations. We do not necessarily generate correct
- *          java code, we just test that the code generation deterministically creates the
- *          expected String.
+ * @summary Test formatting of Integer, Long, Float and Double.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver template_framework.tests.TestLibrary
@@ -43,51 +41,47 @@ import compiler.lib.template_framework.Template;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 
-import static compiler.lib.template_framework.Library.format;
-
 public class TestLibrary {
-    private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
-    private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
-    private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
-    private static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
-
     public static void main(String[] args) {
         testFormat();
     }
 
-    record FormatInfo(int id, String type, Object value, String formatted) {}
+    record FormatInfo(int id, String type, Object value) {}
 
     private static void testFormat() {
         List<FormatInfo> list = new ArrayList();
 
         for (int i = 0; i < 1000; i++) {
-            int v = GEN_INT.next();
-            list.add(new FormatInfo(i, "int", v, format(v)));
+            int v = Generators.G.ints().next();
+            list.add(new FormatInfo(i, "int", v));
         }
 
         for (int i = 1000; i < 2000; i++) {
-            long v = GEN_LONG.next();
-            list.add(new FormatInfo(i, "long", v, format(v)));
+            long v = Generators.G.longs().next();
+            list.add(new FormatInfo(i, "long", v));
         }
 
         for (int i = 2000; i < 3000; i++) {
-            float v = GEN_FLOAT.next();
-            list.add(new FormatInfo(i, "float", v, format(v)));
+            float v = Generators.G.floats().next();
+            list.add(new FormatInfo(i, "float", v));
         }
 
         for (int i = 3000; i < 4000; i++) {
-            double v = GEN_DOUBLE.next();
-            list.add(new FormatInfo(i, "double", v, format(v)));
+            double v = Generators.G.doubles().next();
+            list.add(new FormatInfo(i, "double", v));
         }
 
         CompileFramework comp = new CompileFramework();
         comp.addJavaSourceCode("p.xyz.InnerTest", generate(list));
         comp.compile();
 
+        // Run each of the "get" methods, and check the result.
         for (FormatInfo info : list) {
-            Object ret = comp.invoke("p.xyz.InnerTest", "get_" + info.id, new Object[] {});
-            System.out.println("id: " + info.id + " -> " + info.value + " == " + ret);
-            Verify.checkEQ(ret, info.value);
+            Object ret1 = comp.invoke("p.xyz.InnerTest", "get_let_" + info.id, new Object[] {});
+            Object ret2 = comp.invoke("p.xyz.InnerTest", "get_token_" + info.id, new Object[] {});
+            System.out.println("id: " + info.id + " -> " + info.value + " == " + ret1 + " == " + ret2);
+            Verify.checkEQ(ret1, info.value);
+            Verify.checkEQ(ret2, info.value);
         }
     }
 
@@ -95,10 +89,11 @@ public class TestLibrary {
         var template1 = Template.make("info", (FormatInfo info) -> body(
             let("id", info.id()),
             let("type", info.type()),
-            let("formatted", info.formatted()),
+            let("value", info.value()),
             """
-            public static #type get_#id() { return #formatted; }
-            """
+            public static #type get_let_#id() { return #value; }
+            """,
+            "public static #type get_token_#id() { return ", info.value(), "; }\n"
         ));
 
         var template2 = Template.make(() -> body(

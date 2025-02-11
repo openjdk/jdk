@@ -108,8 +108,8 @@ public class Renderer {
         return currentTemplateFrame.$(name);
     }
 
-    void addHashtagReplacement(String key, String value) {
-        currentTemplateFrame.addHashtagReplacement(key, value);
+    void addHashtagReplacement(String key, Object value) {
+        currentTemplateFrame.addHashtagReplacement(key, format(value));
     }
 
     private String getHashtagReplacement(String key) {
@@ -136,11 +136,54 @@ public class Renderer {
         return currentCodeFrame.sampleName(type, nameSelection);
     }
 
+    static String format(Object value) {
+        return switch (value) {
+            case String s -> s;
+            case Integer i -> i.toString();
+            case Long l -> l.toString() + "L";
+            case Float f -> formatFloat(f);
+            case Double d -> formatDouble(d);
+            default -> value.toString();
+        };
+    }
+
+    private static String formatFloat(Float f) {
+        if (Float.isFinite(f)) {
+            return f.toString() + "f";
+        } else if (f.isNaN()) {
+            return "Float.intBitsToFloat(" + Float.floatToRawIntBits(f) + " /* NaN */)";
+        } else if (f.isInfinite()) {
+            if (f > 0) {
+                return "Float.POSITIVE_INFINITY";
+            } else {
+                return "Float.NEGATIVE_INFINITY";
+            }
+        } else {
+            throw new RuntimeException("Not handled: " + f);
+        }
+    }
+
+    private static String formatDouble(Double d) {
+        if (Double.isFinite(d)) {
+            return d.toString();
+        } else if (d.isNaN()) {
+            return "Double.longBitsToDouble(" + Double.doubleToRawLongBits(d) + "L /* NaN */)";
+        } else if (d.isInfinite()) {
+            if (d > 0) {
+                return "Double.POSITIVE_INFINITY";
+            } else {
+                return "Double.NEGATIVE_INFINITY";
+            }
+        } else {
+            throw new RuntimeException("Not handled: " + d);
+        }
+    }
+
     private void renderTemplateWithArgs(TemplateWithArgs templateWithArgs) {
         TemplateFrame templateFrame = TemplateFrame.make(currentTemplateFrame, nextTemplateFrameId++);
         currentTemplateFrame = templateFrame;
 
-        templateWithArgs.visitArguments((name, value) -> addHashtagReplacement(name, value.toString()));
+        templateWithArgs.visitArguments((name, value) -> addHashtagReplacement(name, format(value)));
         TemplateBody it = templateWithArgs.instantiate();
         renderTokenList(it.tokens());
 

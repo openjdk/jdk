@@ -85,11 +85,11 @@ public abstract class Library {
         )
     );
 
-    public static String format(int v) { return String.valueOf(v); }
-    public static String format(long v) { return String.valueOf(v) + "L"; }
+    static String format(int v) { return String.valueOf(v); }
+    static String format(long v) { return String.valueOf(v) + "L"; }
 
-    public static String format(float v) { return String.valueOf(v) + "f"; }
-    public static String format(double v) { return String.valueOf(v); }
+    static String format(float v) { return String.valueOf(v) + "f"; }
+    static String format(double v) { return String.valueOf(v); }
 
     public enum ExpressionType {
         INT("int"),
@@ -110,10 +110,10 @@ public abstract class Library {
     public static final Template.OneArgs<ExpressionType> CONSTANT =
         Template.make("type", (ExpressionType type) -> body(
             switch (type) {
-                case ExpressionType.INT -> format(GEN_INT.next());
-                case ExpressionType.LONG -> format(GEN_LONG.next());
-                case ExpressionType.FLOAT -> format(GEN_FLOAT.next());
-                case ExpressionType.DOUBLE -> format(GEN_DOUBLE.next());
+                case ExpressionType.INT -> GEN_INT.next();
+                case ExpressionType.LONG -> GEN_LONG.next();
+                case ExpressionType.FLOAT -> GEN_FLOAT.next();
+                case ExpressionType.DOUBLE -> GEN_DOUBLE.next();
             }
         )
     );

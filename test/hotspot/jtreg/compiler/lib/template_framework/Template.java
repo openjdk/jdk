@@ -84,12 +84,12 @@ public interface Template {
     }
 
     static NothingToken let(String key, Object value) {
-        Renderer.getCurrent().addHashtagReplacement(key, value.toString());
+        Renderer.getCurrent().addHashtagReplacement(key, value);
         return new NothingToken();
     }
 
     static <T> TemplateBody let(String key, T value, Function<T, TemplateBody> function) {
-        Renderer.getCurrent().addHashtagReplacement(key, value.toString());
+        Renderer.getCurrent().addHashtagReplacement(key, value);
         return function.apply(value);
     }
 
