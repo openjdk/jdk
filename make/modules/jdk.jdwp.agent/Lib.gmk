@@ -52,7 +52,7 @@ TARGETS += $(BUILD_LIBDT_SOCKET)
 # JDWP_LOGGING causes log messages to be compiled into the library.
 $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
     NAME := jdwp, \
-    OPTIMIZATION := LOW, \
+    OPTIMIZATION := SIZE, \
     CFLAGS := -DJDWP_LOGGING, \
     DISABLED_WARNINGS_gcc_eventFilter.c := unused-variable, \
     DISABLED_WARNINGS_gcc_SDE.c := unused-function, \
