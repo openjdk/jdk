@@ -43,8 +43,8 @@ http://www.iana.org/assignments/character-sets/character-sets.xhtml
 http://www.iana.org/assignments/media-types/
 http://www.iana.org/assignments/uri-schemes.html
 http://www.ietf.org/
-http://www.ietf.org/rfc/rfc0793.txt
-http://www.ietf.org/rfc/rfc0822.txt
+https://www.ietf.org/rfc/rfc793.txt
+https://www.ietf.org/rfc/rfc822.txt
 http://www.ietf.org/rfc/rfc1122.txt
 http://www.ietf.org/rfc/rfc1123.txt
 http://www.ietf.org/rfc/rfc1323.txt
@@ -83,8 +83,7 @@ http://www.ietf.org/rfc/rfc2440.txt
 http://www.ietf.org/rfc/rfc2474.txt
 http://www.ietf.org/rfc/rfc2609.txt
 http://www.ietf.org/rfc/rfc2616.txt
-http://www.ietf.org/rfc/rfc2696
-http://www.ietf.org/rfc/rfc2696.txt
+https://www.ietf.org/rfc/rfc2696.txt
 http://www.ietf.org/rfc/rfc2710.txt
 http://www.ietf.org/rfc/rfc2732.txt
 http://www.ietf.org/rfc/rfc2743.txt

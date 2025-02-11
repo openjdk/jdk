@@ -70,7 +70,7 @@ void C2_MacroAssembler::string_compress_16(Register src, Register dst, Register 
   // Check if cnt >= 8 (= 16 bytes)
   lis(tmp1, byte_mask);           // tmp1 = 0x00FF00FF00FF00FF (non ascii case)
   srwi_(tmp2, cnt, 3);
-  beq(CCR0, Lslow);
+  beq(CR0, Lslow);
   ori(tmp1, tmp1, byte_mask);
   rldimi(tmp1, tmp1, 32, 0);
   mtctr(tmp2);
@@ -87,7 +87,7 @@ void C2_MacroAssembler::string_compress_16(Register src, Register dst, Register 
   rldimi(tmp4, tmp4, 2*8, 2*8);   // _4_6_7_7
 
   andc_(tmp0, tmp0, tmp1);
-  bne(CCR0, Lfailure);            // Not latin1/ascii.
+  bne(CR0, Lfailure);            // Not latin1/ascii.
   addi(src, src, 16);
 
   rlwimi(tmp3, tmp2, 0*8, 24, 31);// _____1_3
@@ -115,8 +115,8 @@ void C2_MacroAssembler::string_compress(Register src, Register dst, Register cnt
 
   bind(Lloop);
   lhz(tmp, 0, src);
-  cmplwi(CCR0, tmp, byte_mask);
-  bgt(CCR0, Lfailure);            // Not latin1/ascii.
+  cmplwi(CR0, tmp, byte_mask);
+  bgt(CR0, Lfailure);            // Not latin1/ascii.
   addi(src, src, 2);
   stb(tmp, 0, dst);
   addi(dst, dst, 1);
@@ -130,7 +130,7 @@ void C2_MacroAssembler::encode_iso_array(Register src, Register dst, Register le
 
   string_compress_16(src, dst, len, tmp1, tmp2, tmp3, tmp4, tmp5, Lfailure1, ascii);
   rldicl_(result, len, 0, 64-3); // Remaining characters.
-  beq(CCR0, Ldone);
+  beq(CR0, Ldone);
   bind(Lslow);
   string_compress(src, dst, result, tmp2, Lfailure2, ascii);
   li(result, 0);
@@ -140,7 +140,7 @@ void C2_MacroAssembler::encode_iso_array(Register src, Register dst, Register le
   mr(result, len);
   mfctr(tmp1);
   rldimi_(result, tmp1, 3, 0); // Remaining characters.
-  beq(CCR0, Ldone);
+  beq(CR0, Ldone);
   b(Lslow);
 
   bind(Lfailure2);
@@ -159,7 +159,7 @@ void C2_MacroAssembler::string_inflate_16(Register src, Register dst, Register c
 
   // Check if cnt >= 8
   srwi_(tmp2, cnt, 3);
-  beq(CCR0, Lslow);
+  beq(CR0, Lslow);
   lis(tmp1, 0xFF);                // tmp1 = 0x00FF00FF
   ori(tmp1, tmp1, 0xFF);
   mtctr(tmp2);
@@ -235,10 +235,10 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   subf_(diff, cnt2, cnt1); // diff = cnt1 - cnt2
   // if (diff > 0) { cnt1 = cnt2; }
   if (VM_Version::has_isel()) {
-    isel(cnt1, CCR0, Assembler::greater, /*invert*/ false, cnt2);
+    isel(cnt1, CR0, Assembler::greater, /*invert*/ false, cnt2);
   } else {
     Label Lskip;
-    blt(CCR0, Lskip);
+    blt(CR0, Lskip);
     mr(cnt1, cnt2);
     bind(Lskip);
   }
@@ -254,7 +254,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     Label Lfastloop, Lskipfast;
 
     srwi_(tmp0, cnt1, log2_chars_per_iter);
-    beq(CCR0, Lskipfast);
+    beq(CR0, Lskipfast);
     rldicl(cnt2, cnt1, 0, 64 - log2_chars_per_iter); // Remaining characters.
     li(cnt1, 1 << log2_chars_per_iter); // Initialize for failure case: Rescan characters from current iteration.
     mtctr(tmp0);
@@ -262,8 +262,8 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     bind(Lfastloop);
     ld(chr1, 0, str1);
     ld(chr2, 0, str2);
-    cmpd(CCR0, chr1, chr2);
-    bne(CCR0, Lslow);
+    cmpd(CR0, chr1, chr2);
+    bne(CR0, Lslow);
     addi(str1, str1, stride1);
     addi(str2, str2, stride2);
     bdnz(Lfastloop);
@@ -272,8 +272,8 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   }
 
   // Loop which searches the first difference character by character.
-  cmpwi(CCR0, cnt1, 0);
-  beq(CCR0, Lreturn_diff);
+  cmpwi(CR0, cnt1, 0);
+  beq(CR0, Lreturn_diff);
   bind(Lslow);
   mtctr(cnt1);
 
@@ -289,7 +289,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   if (stride1 == 1) { lbz(chr1, 0, str1); } else { lhz(chr1, 0, str1); }
   if (stride2 == 1) { lbz(chr2, 0, str2); } else { lhz(chr2, 0, str2); }
   subf_(result, chr2, chr1); // result = chr1 - chr2
-  bne(CCR0, Ldone);
+  bne(CR0, Ldone);
   addi(str1, str1, stride1);
   addi(str2, str2, stride2);
   bdnz(Lloop);
@@ -317,23 +317,23 @@ void C2_MacroAssembler::array_equals(bool is_array_equ, Register ary1, Register 
     const int base_offset   = arrayOopDesc::base_offset_in_bytes(is_byte ? T_BYTE : T_CHAR);
 
     // Return true if the same array.
-    cmpd(CCR0, ary1, ary2);
-    beq(CCR0, Lskiploop);
+    cmpd(CR0, ary1, ary2);
+    beq(CR0, Lskiploop);
 
     // Return false if one of them is null.
-    cmpdi(CCR0, ary1, 0);
-    cmpdi(CCR1, ary2, 0);
+    cmpdi(CR0, ary1, 0);
+    cmpdi(CR1, ary2, 0);
     li(result, 0);
-    cror(CCR0, Assembler::equal, CCR1, Assembler::equal);
-    beq(CCR0, Ldone);
+    cror(CR0, Assembler::equal, CR1, Assembler::equal);
+    beq(CR0, Ldone);
 
     // Load the lengths of arrays.
     lwz(limit, length_offset, ary1);
     lwz(tmp0, length_offset, ary2);
 
     // Return false if the two arrays are not equal length.
-    cmpw(CCR0, limit, tmp0);
-    bne(CCR0, Ldone);
+    cmpw(CR0, limit, tmp0);
+    bne(CR0, Ldone);
 
     // Load array addresses.
     addi(ary1, ary1, base_offset);
@@ -351,7 +351,7 @@ void C2_MacroAssembler::array_equals(bool is_array_equ, Register ary1, Register 
   const int log2_chars_per_iter = is_byte ? 3 : 2;
 
   srwi_(tmp0, limit, log2_chars_per_iter + (limit_needs_shift ? 1 : 0));
-  beq(CCR0, Lskipfast);
+  beq(CR0, Lskipfast);
   mtctr(tmp0);
 
   bind(Lfastloop);
@@ -359,13 +359,13 @@ void C2_MacroAssembler::array_equals(bool is_array_equ, Register ary1, Register 
   ld(chr2, 0, ary2);
   addi(ary1, ary1, 8);
   addi(ary2, ary2, 8);
-  cmpd(CCR0, chr1, chr2);
-  bne(CCR0, Ldone);
+  cmpd(CR0, chr1, chr2);
+  bne(CR0, Ldone);
   bdnz(Lfastloop);
 
   bind(Lskipfast);
   rldicl_(limit, limit, limit_needs_shift ? 64 - 1 : 0, 64 - log2_chars_per_iter); // Remaining characters.
-  beq(CCR0, Lskiploop);
+  beq(CR0, Lskiploop);
   mtctr(limit);
 
   // Character by character.
@@ -381,8 +381,8 @@ void C2_MacroAssembler::array_equals(bool is_array_equ, Register ary1, Register 
     addi(ary1, ary1, 2);
     addi(ary2, ary2, 2);
   }
-  cmpw(CCR0, chr1, chr2);
-  bne(CCR0, Ldone);
+  cmpw(CR0, chr1, chr2);
+  bne(CR0, Ldone);
   bdnz(Lloop);
 
   bind(Lskiploop);
@@ -414,9 +414,9 @@ void C2_MacroAssembler::string_indexof(Register result, Register haystack, Regis
   clrldi(haycnt, haycnt, 32);         // Ensure positive int is valid as 64 bit value.
   addi(addr, haystack, -h_csize);     // Accesses use pre-increment.
   if (needlecntval == 0) { // variable needlecnt
-   cmpwi(CCR6, needlecnt, 2);
+   cmpwi(CR6, needlecnt, 2);
    clrldi(needlecnt, needlecnt, 32);  // Ensure positive int is valid as 64 bit value.
-   blt(CCR6, L_TooShort);             // Variable needlecnt: handle short needle separately.
+   blt(CR6, L_TooShort);             // Variable needlecnt: handle short needle separately.
   }
 
   if (n_csize == 2) { lwz(n_start, 0, needle); } else { lhz(n_start, 0, needle); } // Load first 2 characters of needle.
@@ -447,7 +447,7 @@ void C2_MacroAssembler::string_indexof(Register result, Register haystack, Regis
    subf(addr_diff, addr, last_addr);  // Difference between already checked address and last address to check.
    addi(addr, addr, h_csize);         // This is the new address we want to use for comparing.
    srdi_(ch2, addr_diff, h_csize);
-   beq(CCR0, L_FinalCheck);           // 2 characters left?
+   beq(CR0, L_FinalCheck);           // 2 characters left?
    mtctr(ch2);                        // num of characters / 2
   bind(L_InnerLoop);                  // Main work horse (2x unrolled search loop)
    if (h_csize == 2) {                // Load 2 characters of haystack (ignore alignment).
@@ -457,18 +457,18 @@ void C2_MacroAssembler::string_indexof(Register result, Register haystack, Regis
     lhz(ch1, 0, addr);
     lhz(ch2, 1, addr);
    }
-   cmpw(CCR0, ch1, n_start);          // Compare 2 characters (1 would be sufficient but try to reduce branches to CompLoop).
-   cmpw(CCR1, ch2, n_start);
-   beq(CCR0, L_Comp1);                // Did we find the needle start?
-   beq(CCR1, L_Comp2);
+   cmpw(CR0, ch1, n_start);          // Compare 2 characters (1 would be sufficient but try to reduce branches to CompLoop).
+   cmpw(CR1, ch2, n_start);
+   beq(CR0, L_Comp1);                // Did we find the needle start?
+   beq(CR1, L_Comp2);
    addi(addr, addr, 2 * h_csize);
    bdnz(L_InnerLoop);
   bind(L_FinalCheck);
    andi_(addr_diff, addr_diff, h_csize); // Remaining characters not covered by InnerLoop: (num of characters) & 1.
-   beq(CCR0, L_NotFound);
+   beq(CR0, L_NotFound);
    if (h_csize == 2) { lwz(ch1, 0, addr); } else { lhz(ch1, 0, addr); } // One position left at which we have to compare.
-   cmpw(CCR1, ch1, n_start);
-   beq(CCR1, L_Comp1);
+   cmpw(CR1, ch1, n_start);
+   beq(CR1, L_Comp1);
   bind(L_NotFound);
    li(result, -1);                    // not found
    b(L_End);
@@ -483,8 +483,8 @@ void C2_MacroAssembler::string_indexof(Register result, Register haystack, Regis
    if (n_csize == 2) { lhz(n_start, 0, needle); } else { lbz(n_start, 0, needle); } // First character of needle
   bind(L_OneCharLoop);
    if (h_csize == 2) { lhzu(ch1, 2, addr); } else { lbzu(ch1, 1, addr); }
-   cmpw(CCR1, ch1, n_start);
-   beq(CCR1, L_Found);               // Did we find the one character needle?
+   cmpw(CR1, ch1, n_start);
+   beq(CR1, L_Found);               // Did we find the one character needle?
    bdnz(L_OneCharLoop);
    li(result, -1);                   // Not found.
    b(L_End);
@@ -500,7 +500,7 @@ void C2_MacroAssembler::string_indexof(Register result, Register haystack, Regis
   bind(L_Comp1);                     // Addr points to possible needle start.
   if (needlecntval != 2) {           // Const needlecnt==2?
    if (needlecntval != 3) {
-    if (needlecntval == 0) { beq(CCR6, L_Found); } // Variable needlecnt==2?
+    if (needlecntval == 0) { beq(CR6, L_Found); } // Variable needlecnt==2?
     Register n_ind = tmp4,
              h_ind = n_ind;
     li(n_ind, 2 * n_csize);          // First 2 characters are already compared, use index 2.
@@ -513,15 +513,15 @@ void C2_MacroAssembler::string_indexof(Register result, Register haystack, Regis
     }
     if (n_csize == 2) { lhzx(ch2, needle, n_ind); } else { lbzx(ch2, needle, n_ind); }
     if (h_csize == 2) { lhzx(ch1, addr, h_ind); } else { lbzx(ch1, addr, h_ind); }
-    cmpw(CCR1, ch1, ch2);
-    bne(CCR1, L_OuterLoop);
+    cmpw(CR1, ch1, ch2);
+    bne(CR1, L_OuterLoop);
     addi(n_ind, n_ind, n_csize);
     bdnz(L_CompLoop);
    } else { // No loop required if there's only one needle character left.
     if (n_csize == 2) { lhz(ch2, 2 * 2, needle); } else { lbz(ch2, 2 * 1, needle); }
     if (h_csize == 2) { lhz(ch1, 2 * 2, addr); } else { lbz(ch1, 2 * 1, addr); }
-    cmpw(CCR1, ch1, ch2);
-    bne(CCR1, L_OuterLoop);
+    cmpw(CR1, ch1, ch2);
+    bne(CR1, L_OuterLoop);
    }
   }
   // Return index ...
@@ -545,7 +545,7 @@ void C2_MacroAssembler::string_indexof_char(Register result, Register haystack, 
 //4:
    srwi_(tmp2, haycnt, 1);   // Shift right by exact_log2(UNROLL_FACTOR).
    mr(addr, haystack);
-   beq(CCR0, L_FinalCheck);
+   beq(CR0, L_FinalCheck);
    mtctr(tmp2);              // Move to count register.
 //8:
   bind(L_InnerLoop);         // Main work horse (2x unrolled search loop).
@@ -556,19 +556,19 @@ void C2_MacroAssembler::string_indexof_char(Register result, Register haystack, 
     lbz(ch1, 0, addr);
     lbz(ch2, 1, addr);
    }
-   (needle != R0) ? cmpw(CCR0, ch1, needle) : cmplwi(CCR0, ch1, (unsigned int)needleChar);
-   (needle != R0) ? cmpw(CCR1, ch2, needle) : cmplwi(CCR1, ch2, (unsigned int)needleChar);
-   beq(CCR0, L_Found1);      // Did we find the needle?
-   beq(CCR1, L_Found2);
+   (needle != R0) ? cmpw(CR0, ch1, needle) : cmplwi(CR0, ch1, (unsigned int)needleChar);
+   (needle != R0) ? cmpw(CR1, ch2, needle) : cmplwi(CR1, ch2, (unsigned int)needleChar);
+   beq(CR0, L_Found1);      // Did we find the needle?
+   beq(CR1, L_Found2);
    addi(addr, addr, 2 * h_csize);
    bdnz(L_InnerLoop);
 //16:
   bind(L_FinalCheck);
    andi_(R0, haycnt, 1);
-   beq(CCR0, L_NotFound);
+   beq(CR0, L_NotFound);
    if (!is_byte) { lhz(ch1, 0, addr); } else { lbz(ch1, 0, addr); } // One position left at which we have to compare.
-   (needle != R0) ? cmpw(CCR1, ch1, needle) : cmplwi(CCR1, ch1, (unsigned int)needleChar);
-   beq(CCR1, L_Found1);
+   (needle != R0) ? cmpw(CR1, ch1, needle) : cmplwi(CR1, ch1, (unsigned int)needleChar);
+   beq(CR1, L_Found1);
 //21:
   bind(L_NotFound);
    li(result, -1);           // Not found.
@@ -594,7 +594,7 @@ void C2_MacroAssembler::count_positives(Register src, Register cnt, Register res
   lis(tmp1, (int)(short)0x8080);  // tmp1 = 0x8080808080808080
   srwi_(tmp2, cnt, 4);
   mr(result, src);                // Use result reg to point to the current position.
-  beq(CCR0, Lslow);
+  beq(CR0, Lslow);
   ori(tmp1, tmp1, 0x8080);
   rldimi(tmp1, tmp1, 32, 0);
   mtctr(tmp2);
@@ -607,19 +607,19 @@ void C2_MacroAssembler::count_positives(Register src, Register cnt, Register res
   orr(tmp0, tmp2, tmp0);
 
   and_(tmp0, tmp0, tmp1);
-  bne(CCR0, Lslow);               // Found negative byte.
+  bne(CR0, Lslow);               // Found negative byte.
   addi(result, result, 16);
   bdnz(Lfastloop);
 
   bind(Lslow);                    // Fallback to slow version.
   subf(tmp0, src, result);        // Bytes known positive.
   subf_(tmp0, tmp0, cnt);         // Remaining Bytes.
-  beq(CCR0, Ldone);
+  beq(CR0, Ldone);
   mtctr(tmp0);
   bind(Lloop);
   lbz(tmp0, 0, result);
   andi_(tmp0, tmp0, 0x80);
-  bne(CCR0, Ldone);               // Found negative byte.
+  bne(CR0, Ldone);               // Found negative byte.
   addi(result, result, 1);
   bdnz(Lloop);
 

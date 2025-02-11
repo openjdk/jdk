@@ -1317,6 +1317,60 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
+    case C1StubId::is_instance_of_id:
+      {
+        // Mirror: c_rarg0  (Windows: rcx, SysV: rdi)
+        // Object: c_rarg1  (Windows: rdx, SysV: rsi)
+        // ObjClass: r9
+        // Temps:  rcx, r8, r10, r11
+        // Result: rax
+
+        Register klass = r9, obj = c_rarg1, result = rax;
+        Register temp0 = rcx, temp1 = r8, temp2 = r10, temp3 = r11;
+
+        // Get the Klass* into r9. c_rarg0 is now dead.
+        __ movptr(klass, Address(c_rarg0, java_lang_Class::klass_offset()));
+
+        Label done, is_secondary, same;
+
+        __ xorq(result, result);
+        __ testq(klass, klass);
+        __ jcc(Assembler::equal, done); // Klass is null
+
+        __ testq(obj, obj);
+        __ jcc(Assembler::equal, done); // obj is null
+
+        __ movl(temp0, Address(klass, in_bytes(Klass::super_check_offset_offset())));
+        __ cmpl(temp0, in_bytes(Klass::secondary_super_cache_offset()));
+        __ jcc(Assembler::equal, is_secondary); // Klass is a secondary superclass
+
+        // Klass is a concrete class
+        __ load_klass(temp2, obj, /*tmp*/temp1);
+        __ cmpptr(klass, Address(temp2, temp0));
+        __ setcc(Assembler::equal, result);
+        __ ret(0);
+
+        __ bind(is_secondary);
+
+        __ load_klass(obj, obj, /*tmp*/temp1);
+
+        // This is necessary because I am never in my own secondary_super list.
+        __ cmpptr(obj, klass);
+        __ jcc(Assembler::equal, same);
+
+        __ lookup_secondary_supers_table_var(obj, klass,
+                                             /*temps*/temp0, temp1, temp2, temp3,
+                                             result);
+        __ testq(result, result);
+
+        __ bind(same);
+        __ setcc(Assembler::equal, result);
+
+        __ bind(done);
+        __ ret(0);
+      }
+      break;
+
     case C1StubId::monitorenter_nofpu_id:
       save_fpu_registers = false;
       // fall through

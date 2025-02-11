@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -566,7 +566,7 @@ public final class SunJCE extends Provider {
                 null);
 
         /*
-         * Secret-key factories
+         * Secret key factories
          */
         ps("SecretKeyFactory", "DES",
                 "com.sun.crypto.provider.DESKeyFactory");

@@ -322,6 +322,13 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   if (!k->is_linked()) {
     if (has_class_failed_verification(k)) {
       return warn_excluded(k, "Failed verification");
+    } else if (CDSConfig::is_dumping_aot_linked_classes()) {
+      // Most loaded classes should have been speculatively linked by MetaspaceShared::link_class_for_cds().
+      // However, we do not speculatively link old classes, as they are not recorded by
+      // SystemDictionaryShared::record_linking_constraint(). As a result, such an unlinked
+      // class may fail to verify in AOTLinkedClassBulkLoader::init_required_classes_for_loader(),
+      // causing the JVM to fail at bootstrap.
+      return warn_excluded(k, "Unlinked class not supported by AOTClassLinking");
     }
   } else {
     if (!k->can_be_verified_at_dumptime()) {
