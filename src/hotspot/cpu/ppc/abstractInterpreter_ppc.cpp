@@ -131,7 +131,9 @@ void AbstractInterpreter::layout_activation(Method* method,
 #ifdef ASSERT
   if (caller->is_interpreted_frame()) {
     assert(locals_base < caller->fp() - frame::ijava_state_size, "bad placement");
-    assert(locals_base >= interpreter_frame->sender_sp() + max_locals - 1, "bad placement");
+    // Test caller-aligned placement vs callee-aligned
+    intptr_t* l2 = caller->sp() + method->max_locals() - 1 + (frame::java_abi_size / Interpreter::stackElementSize);
+    assert(l2 >= locals_base, "bad placement");
   }
 #endif
 
