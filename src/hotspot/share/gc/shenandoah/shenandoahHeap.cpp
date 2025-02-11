@@ -1263,11 +1263,10 @@ void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
 
 void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   {
-    // Taking the thread lock here assures that any thread created after we change the gc
-    // state will have the correct state. It also prevents attaching threads from seeing
-    // an inconsistent state. If another thread holds this lock while it is being created,
-    // they will have the wrong GC state, but they will be added to the list of java threads
-    // and so will be corrected by the handshake.
+    // Java threads take this lock while they are being attached and added to the list of thread.
+    // If another thread holds this lock before we update the gc state, it will receive a stale
+    // gc state, but they will have been added to the list of java threads and so will be corrected
+    // by the following handshake.
     MutexLocker lock(Threads_lock);
 
     // A cancellation at this point means the degenerated cycle must resume from update-refs.
@@ -2033,6 +2032,12 @@ void ShenandoahHeap::set_gc_state_at_safepoint(uint mask, bool value) {
 }
 
 void ShenandoahHeap::set_gc_state_concurrent(uint mask, bool value) {
+  // Holding the thread lock here assures that any thread created after we change the gc
+  // state will have the correct state. It also prevents attaching threads from seeing
+  // an inconsistent state. See ShenandoahBarrierSet::on_thread_attach for reference. Established
+  // threads will use their thread local copy of the gc state (changed by a handshake, or on a
+  // safepoint).
+  assert(Threads_lock->is_locked(), "Must hold thread lock for concurrent gc state change");
   _gc_state.set_cond(mask, value);
 }
 
