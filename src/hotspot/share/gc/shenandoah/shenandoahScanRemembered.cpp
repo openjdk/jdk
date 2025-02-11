@@ -772,7 +772,7 @@ size_t ShenandoahRegionChunkIterator::calc_num_groups() {
     // Any remaining regions will be treated as if they are part of the most recently created group.  This group will
     // have more than _regular_group_size chunks within it.
   }
-  assert (num_groups <= _maximum_groups, "Cannot have more than " SIZE_FORMAT " groups", _maximum_groups);
+  assert (num_groups <= _maximum_groups, "Cannot have more than %zu groups", _maximum_groups);
   return num_groups;
 }
 
@@ -869,9 +869,8 @@ ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* hea
   assert(_num_groups <= _maximum_groups,
          "The number of remembered set scanning groups must be less than or equal to maximum groups");
   assert(smallest_chunk_size_words() << (_adjusted_num_groups - 1) == _largest_chunk_size_words,
-         "The number of groups (" SIZE_FORMAT ") needs to span smallest chunk size ("
-         SIZE_FORMAT ") to largest chunk size (" SIZE_FORMAT ")", _adjusted_num_groups, smallest_chunk_size_words(),
-         _largest_chunk_size_words);
+         "The number of groups (%zu) needs to span smallest chunk size (%zu) to largest chunk size (%zu)",
+         _adjusted_num_groups, smallest_chunk_size_words(), _largest_chunk_size_words);
 #endif
 
   size_t words_in_region = ShenandoahHeapRegion::region_size_words();
