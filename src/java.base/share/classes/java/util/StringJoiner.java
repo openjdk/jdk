@@ -158,7 +158,9 @@ public final class StringJoiner {
         if (initialCapacity < 0) {
             throw new IllegalArgumentException("Capacity must be non-negative");
         }
-        elts = new String[initialCapacity];
+        // Capacity is doubled when growing the array, so ensure it is at least
+        // 1.
+        elts = new String[Math.max(initialCapacity, 1)];
     }
 
     /**
