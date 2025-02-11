@@ -1,0 +1,129 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @summary Test with example expressions that are fuzzed. The example expressions
+ *          have inputs, which we can fill with random expressions.
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib /
+ * @compile ../../../compiler/lib/ir_framework/TestFramework.java
+ * @compile ../../../compiler/lib/generators/Generators.java
+ * @compile ../../../compiler/lib/verify/Verify.java
+ * @run driver template_framework.examples.TestFuzzExpression
+ */
+
+package template_framework.examples;
+
+import java.util.List;
+
+import compiler.lib.compile_framework.*;
+import compiler.lib.generators.*;
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.TemplateWithArgs;
+import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.let;
+import static compiler.lib.template_framework.Library.CLASS_HOOK;
+import static compiler.lib.template_framework.Library.METHOD_HOOK;
+import compiler.lib.template_framework.Library.IRTestClassInfo;
+import static compiler.lib.template_framework.Library.IR_TEST_CLASS;
+import compiler.lib.template_framework.Library.ExpressionType;
+import static compiler.lib.template_framework.Library.ALL_EXPRESSION_TYPES;
+import static compiler.lib.template_framework.Library.EXPRESSION;
+
+/**
+ * This is a basic IR verification test, in combination with Generators for random input generation
+ * and Verify for output verification.
+ * <p>
+ * The "@compile" command for JTREG is required so that the frameworks used in the Template code
+ * are compiled and available for the Test-VM.
+ * <p>
+ * Additionally, we must set the classpath for the Test-VM, so that it has access to all compiled
+ * classes (see {@link CompileFramework#getEscapedClassPathOfCompiledClasses}).
+ */
+public class TestFuzzExpression {
+
+    public static void main(String[] args) {
+        // Create a new CompileFramework instance.
+        CompileFramework comp = new CompileFramework();
+
+        // Add a java source file.
+        comp.addJavaSourceCode("p.xyz.InnerTest", generate(comp));
+
+        // Compile the source file.
+        comp.compile();
+
+        // Object ret = p.xyz.InnterTest.main();
+        Object ret = comp.invoke("p.xyz.InnerTest", "main", new Object[] {});
+    }
+
+    // Generate a source Java file as String
+    public static String generate(CompileFramework comp) {
+        // Create the info required for the test class.
+        // It is imporant that we pass the classpath to the Test-VM, so that it has access
+        // to all compiled classes.
+        IRTestClassInfo info = new IRTestClassInfo(comp.getEscapedClassPathOfCompiledClasses(),
+                                                   "p.xyz", "InnerTest",
+                                                   List.of("compiler.lib.generators.*",
+                                                           "compiler.lib.verify.*"));
+
+        var template1 = Template.make("type", (ExpressionType type)-> body(
+            """
+            // --- $test start ---
+            // type: #type
+            """,
+            // We set a dedicated class hook here, so that fields are
+            // NOT available across the tests.
+            CLASS_HOOK.set(
+            """
+
+            private static Object $GOLD = $test();
+
+            @Test
+            public static Object $test() {
+            """,
+            METHOD_HOOK.set(
+                "return ", EXPRESSION.withArgs(type), ";\n"
+            ),
+            """
+            }
+
+            @Check(test = "$test")
+            public static void $check(Object result) {
+                Verify.checkEQ(result, $GOLD);
+            }
+
+            """
+            ),
+            """
+            // --- $test end   ---
+            """
+        ));
+
+        // Use template1 with every type.
+        List<TemplateWithArgs> templates = ALL_EXPRESSION_TYPES.stream().map(type -> (TemplateWithArgs)template1.withArgs(type)).toList();
+
+        // Create the test class, which runs all templates.
+        return IR_TEST_CLASS.withArgs(info, templates).render();
+    }
+}

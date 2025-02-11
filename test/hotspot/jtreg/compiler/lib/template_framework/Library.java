@@ -23,7 +23,10 @@
 
 package compiler.lib.template_framework;
 
+import java.util.Arrays;
 import java.util.List;
+
+import compiler.lib.generators.*;
 
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
@@ -32,6 +35,11 @@ import static compiler.lib.template_framework.Template.let;
  * The Library provides a collection of helpful Templates and Hooks.
  */
 public abstract class Library {
+    private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
+    private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
+    private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
+    private static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
+
     public static final Hook CLASS_HOOK = new Hook("Class");
     public static final Hook METHOD_HOOK = new Hook("Method");
 
@@ -74,5 +82,45 @@ public abstract class Library {
             // --- LIST OF TEMPLATES end   ---
             }
             """
-        ));
+        )
+    );
+
+    public static String format(int v) { return String.valueOf(v); }
+    public static String format(long v) { return String.valueOf(v) + "L"; }
+
+    public static String format(float v) { return String.valueOf(v) + "f"; }
+    public static String format(double v) { return String.valueOf(v); }
+
+    public enum ExpressionType {
+        INT("int"),
+        LONG("long"),
+        FLOAT("float"),
+        DOUBLE("double");
+
+        private final String text;
+
+        ExpressionType(final String text) { this.text = text; }
+
+        @Override
+        public String toString() { return text; }
+    };
+
+    public static final List<ExpressionType> ALL_EXPRESSION_TYPES = Arrays.asList(ExpressionType.class.getEnumConstants());
+
+    public static final Template.OneArgs<ExpressionType> CONSTANT =
+        Template.make("type", (ExpressionType type) -> body(
+            switch (type) {
+                case ExpressionType.INT -> format(GEN_INT.next());
+                case ExpressionType.LONG -> format(GEN_LONG.next());
+                case ExpressionType.FLOAT -> format(GEN_FLOAT.next());
+                case ExpressionType.DOUBLE -> format(GEN_DOUBLE.next());
+            }
+        )
+    );
+
+    public static final Template.OneArgs<ExpressionType> EXPRESSION =
+        Template.make("type", (ExpressionType type) -> body(
+            CONSTANT.withArgs(type)
+        )
+    );
 }
