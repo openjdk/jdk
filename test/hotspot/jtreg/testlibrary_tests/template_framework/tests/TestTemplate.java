@@ -143,7 +143,7 @@ public class TestTemplate {
             " end"
         ));
         String code = template.withArgs().render();
-        checkEQ(code, "start 123.45.6 1 and 2 end");
+        checkEQ(code, "start 12L3.45.6f 1 and 2 end");
     }
 
     public static void testWithOneArguments() {
@@ -736,18 +736,18 @@ public class TestTemplate {
         String expected =
             """
             {
-            [ 3 90.0
-            <80.0>
-            [ 2 80.0
-            <70.0>
-            [ 1 70.0
-            <60.0>
-            [ 0 60.0
-            <50.0>
-            done] 0 60.0
-            ] 1 70.0
-            ] 2 80.0
-            ] 3 90.0
+            [ 3 90.0f
+            <80.0f>
+            [ 2 80.0f
+            <70.0f>
+            [ 1 70.0f
+            <60.0f>
+            [ 0 60.0f
+            <50.0f>
+            done] 0 60.0f
+            ] 1 70.0f
+            ] 2 80.0f
+            ] 3 90.0f
             }
             """;
         checkEQ(code, expected);
@@ -786,24 +786,24 @@ public class TestTemplate {
         String code = template3.withArgs().render(20.0f);
         String expected =
             """
-            { 20.0
-            [ 3 15.0
-            <12.0>
-            [ 2 12.0
-            <9.0>
-            [ 1 9.0
-            <6.0>
-            [ 0 6.0
-            <3.0>
-            [ -1 3.0
-            <0.0>
+            { 20.0f
+            [ 3 15.0f
+            <12.0f>
+            [ 2 12.0f
+            <9.0f>
+            [ 1 9.0f
+            <6.0f>
+            [ 0 6.0f
+            <3.0f>
+            [ -1 3.0f
+            <0.0f>
             done
-            ] -1 3.0
-            ] 0 6.0
-            ] 1 9.0
-            ] 2 12.0
-            ] 3 15.0
-            } 20.0
+            ] -1 3.0f
+            ] 0 6.0f
+            ] 1 9.0f
+            ] 2 12.0f
+            ] 3 15.0f
+            } 20.0f
             """;
         checkEQ(code, expected);
     }

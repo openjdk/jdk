@@ -26,7 +26,7 @@
  * @summary Test formatting of Integer, Long, Float and Double.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver template_framework.tests.TestLibrary
+ * @run driver template_framework.tests.TestFormat
  */
 
 package template_framework.tests;
@@ -41,14 +41,10 @@ import compiler.lib.template_framework.Template;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 
-public class TestLibrary {
-    public static void main(String[] args) {
-        testFormat();
-    }
-
+public class TestFormat {
     record FormatInfo(int id, String type, Object value) {}
 
-    private static void testFormat() {
+    public static void main(String[] args) {
         List<FormatInfo> list = new ArrayList();
 
         for (int i = 0; i < 1000; i++) {
@@ -86,6 +82,7 @@ public class TestLibrary {
     }
 
     private static String generate(List<FormatInfo> list) {
+        // Generate 2 "get" methods, one that formats via "let" (hashtag), the other via direct token.
         var template1 = Template.make("info", (FormatInfo info) -> body(
             let("id", info.id()),
             let("type", info.type()),
@@ -96,6 +93,7 @@ public class TestLibrary {
             "public static #type get_token_#id() { return ", info.value(), "; }\n"
         ));
 
+        // For each FormatInfo in list, generate the "get" methods inside InnerTest class.
         var template2 = Template.make(() -> body(
             """
             package p.xyz;
