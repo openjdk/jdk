@@ -106,6 +106,8 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
   ADD_EXCL("java/lang/System",                           "bootLayer");             // A
 
+  ADD_EXCL("java/util/Collections",                      "EMPTY_LIST");           // E
+
   // A dummy object used by HashSet. The value doesn't matter and it's never
   // tested for equality.
   ADD_EXCL("java/util/HashSet",                          "PRESENT");               // E
