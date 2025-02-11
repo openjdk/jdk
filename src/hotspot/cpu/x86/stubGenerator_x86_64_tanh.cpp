@@ -24,7 +24,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -303,7 +302,8 @@ ATTRIBUTE_ALIGNED(16) static const juint _T2_neg_f[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmTanh() {
-  StubCodeMark mark(this, "StubRoutines", "libmTanh");
+  StubGenStubId stub_id = StubGenStubId::dtanh_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1, L_2TAG_PACKET_3_0_1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,8 +304,6 @@ class methodHandle;
    do_name(     isAssignableFrom_name,                           "isAssignableFrom")                                    \
   do_intrinsic(_isInstance,               java_lang_Class,        isInstance_name, object_boolean_signature,     F_RN)  \
    do_name(     isInstance_name,                                 "isInstance")                                          \
-  do_intrinsic(_getModifiers,             java_lang_Class,        getModifiers_name, void_int_signature,         F_RN)  \
-   do_name(     getModifiers_name,                               "getModifiers")                                        \
   do_intrinsic(_isInterface,              java_lang_Class,        isInterface_name, void_boolean_signature,      F_RN)  \
    do_name(     isInterface_name,                                "isInterface")                                         \
   do_intrinsic(_isArray,                  java_lang_Class,        isArray_name, void_boolean_signature,          F_RN)  \
@@ -1494,7 +1492,7 @@ private:
   static ID find_id_impl(vmSymbolID holder,
                          vmSymbolID name,
                          vmSymbolID sig,
-                         jshort flags);
+                         u2 flags);
 
   // check if the intrinsic is disabled by course-grained flags.
   static bool disabled_by_jvm_flags(vmIntrinsics::ID id);
@@ -1505,7 +1503,7 @@ public:
   static ID find_id(vmSymbolID holder,
                     vmSymbolID name,
                     vmSymbolID sig,
-                    jshort flags) {
+                    u2 flags) {
     ID id = find_id_impl(holder, name, sig, flags);
 #ifdef ASSERT
     // ID _none does not hold the following asserts.
