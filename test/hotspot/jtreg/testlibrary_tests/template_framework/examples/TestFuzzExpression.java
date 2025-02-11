@@ -124,6 +124,10 @@ public class TestFuzzExpression {
         List<TemplateWithArgs> templates = ALL_EXPRESSION_TYPES.stream().map(type -> (TemplateWithArgs)template1.withArgs(type)).toList();
 
         // Create the test class, which runs all templates.
-        return IR_TEST_CLASS.withArgs(info, templates).render();
+        // Fuel:
+        //  - 10 for IR_TEST_CLASS
+        //  - 10 for template1
+        //  - 3 for EXPRESSION: depth of 3
+        return IR_TEST_CLASS.withArgs(info, templates).render(23.0f);
     }
 }

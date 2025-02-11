@@ -30,6 +30,8 @@ import compiler.lib.generators.*;
 
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
+import static compiler.lib.template_framework.Template.fuel;
+import static compiler.lib.template_framework.Template.setFuelCost;
 
 /**
  * The Library provides a collection of helpful Templates and Hooks.
@@ -85,12 +87,6 @@ public abstract class Library {
         )
     );
 
-    static String format(int v) { return String.valueOf(v); }
-    static String format(long v) { return String.valueOf(v) + "L"; }
-
-    static String format(float v) { return String.valueOf(v) + "f"; }
-    static String format(double v) { return String.valueOf(v); }
-
     public enum ExpressionType {
         INT("int"),
         LONG("long"),
@@ -107,7 +103,7 @@ public abstract class Library {
 
     public static final List<ExpressionType> ALL_EXPRESSION_TYPES = Arrays.asList(ExpressionType.class.getEnumConstants());
 
-    public static final Template.OneArgs<ExpressionType> CONSTANT =
+    public static final Template.OneArgs<ExpressionType> CONSTANT_EXPRESSION =
         Template.make("type", (ExpressionType type) -> body(
             switch (type) {
                 case ExpressionType.INT -> GEN_INT.next();
@@ -118,9 +114,34 @@ public abstract class Library {
         )
     );
 
-    public static final Template.OneArgs<ExpressionType> EXPRESSION =
+    public static final Template.OneArgs<ExpressionType> TERMINAL_EXPRESSION =
         Template.make("type", (ExpressionType type) -> body(
-            CONSTANT.withArgs(type)
+            // TODO load
+            CONSTANT_EXPRESSION.withArgs(type)
         )
     );
+
+    // Use Binding to break recursive cycles.
+    private static final TemplateBinding<Template.OneArgs<ExpressionType>> OPERATOR_EXPRESSION_BINDING = new TemplateBinding<Template.OneArgs<ExpressionType>>();
+
+    public static final Template.OneArgs<ExpressionType> EXPRESSION =
+        Template.make("type", (ExpressionType type) -> body(
+            setFuelCost(0),
+            // TODO not alway operator
+            (fuel() <= 0) ? TERMINAL_EXPRESSION.withArgs(type)
+                          : OPERATOR_EXPRESSION_BINDING.get().withArgs(type)
+        )
+    );
+
+    public static final Template.OneArgs<ExpressionType> OPERATOR_EXPRESSION =
+        Template.make("type", (ExpressionType type) -> body(
+            setFuelCost(1.0f),
+            "(",
+            EXPRESSION.withArgs(type),
+            " + ", // TODO operators based on type
+            EXPRESSION.withArgs(type),
+            ")"
+        )
+    );
+    static { OPERATOR_EXPRESSION_BINDING.bind(OPERATOR_EXPRESSION); }
 }
