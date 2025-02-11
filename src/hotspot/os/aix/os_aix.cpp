@@ -166,7 +166,7 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 #endif
 #ifndef PV_11
   #define PV_11           0x600000        /* Power PC 11 */
-endif
+#endif
 #ifndef PV_11_Compat
   #define PV_11_Compat    0x608000        /* Power PC 11 */
 #endif
@@ -1278,7 +1278,9 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
     break;
   default:
     strncpy(buf, "unknown", buflen);
-  }
+ }
+  printf("%s",buf);
+  exit(1);
 }
 
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
