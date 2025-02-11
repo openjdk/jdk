@@ -72,6 +72,8 @@ void ShenandoahGenerationalControlThread::run_service() {
     check_for_request(request);
 
     if (request.cause == GCCause::_shenandoah_stop_vm) {
+      notify_gc_waiters();
+      notify_alloc_failure_waiters();
       break;
     }
 
