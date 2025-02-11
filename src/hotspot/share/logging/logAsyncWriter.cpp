@@ -101,7 +101,7 @@ bool AsyncLogWriter::resort_to_synchronous_logging() {
     // The current thread is unattached.
     return true;
   }
-  
+
   if (holding_thread == this_thread) {
     // A thread, while enqueuing a message, has attempted to log something.
     // Do not log while holding the Async log lock.
@@ -109,17 +109,17 @@ bool AsyncLogWriter::resort_to_synchronous_logging() {
     DEBUG_ONLY(ShouldNotReachHere();)
     return true;
   }
-  
+
   if (alw == nullptr) {
     // There is no AsyncLogWriter instance yet.
     return true;
   }
-  
+
   if (this_thread == alw) {
     // The async log producer is attempting to log, leading to recursive logging.
     return true;
   }
-  
+
   return false;
 }
 
@@ -139,7 +139,7 @@ bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iter
   if (resort_to_synchronous_logging()) {
     return false;
   }
-  
+
   // If we get here we know the AsyncLogWriter is initialized.
   AsyncLogLocker locker;
 
