@@ -27,12 +27,6 @@
  * Defines the JDK-specific HTTP server API, and provides the jwebserver tool
  * for running a minimal HTTP server.
  *
- * <p>The API, Service Provider Interface (SPI), and the server implementation
- * in this module are intended for simple usages like local testing, development,
- * and debugging. Accordingly, the design and the implementation of the server are
- * explicitly minimal so as to avoid confusion with a full-featured, high
- * performance HTTP server.
- *
  * <p>The {@link com.sun.net.httpserver} package defines a high-level API for
  * building servers that support HTTP and HTTPS. The SimpleFileServer class
  * implements a simple HTTP-only file server intended for testing, development
@@ -40,8 +34,8 @@
  * {@code jwebserver} tool and the main entry point of the module, which can
  * also be invoked with {@code java -m jdk.httpserver}.
  *
- * <p>The {@link com.sun.net.httpserver.spi} package specifies a SPI for
- * locating HTTP server implementations based on the
+ * <p>The {@link com.sun.net.httpserver.spi} package specifies a Service Provider
+ * Interface (SPI) for locating HTTP server implementations based on the
  * {@code com.sun.net.httpserver} API.
  * <p>
  * <b id="httpserverprops">System properties used by the HTTP server API</b>
@@ -106,6 +100,14 @@
  * Boolean value, which if true, sets the {@link java.net.StandardSocketOptions#TCP_NODELAY TCP_NODELAY}
  * socket option on all incoming connections.
  * </li></ul>
+ *
+ * @apiNote The API and SPI in this module are designed and implemented to support a minimal
+ * HTTP server and simple HTTP semantics primarily.
+ *
+ * @implNote The default implementation of the HTTP server provided in this module is intended
+ * for simple usages like local testing, development, and debugging. Accordingly, the design
+ * and implementation of the server does not intend to be a full-featured, high performance
+ * HTTP server.
  *
  * @toolGuide jwebserver
  *
