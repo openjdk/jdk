@@ -40,10 +40,12 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.CarrierLocalArenaPools;
@@ -128,14 +130,18 @@ final class TestCarrierLocalArenaPools {
     @MethodSource("pools")
     void closeConfinement(CarrierLocalArenaPools pool) {
         Consumer<Arena> closeAction = arena -> {
-            CompletableFuture<Arena> future = CompletableFuture.supplyAsync(pool::take);
-            Arena otherThreadArena = null;
+            // Do not use CompletableFuture here as it might accidentally run on the
+            // same carrier thread as a virtual thread.
+            AtomicReference<Arena> otherThreadArena = new AtomicReference<>();
+            var thread = Thread.ofPlatform().start(() -> {
+                otherThreadArena.set(pool.take());
+            });
             try {
-                otherThreadArena = future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                fail(e);
+                thread.join();
+            } catch (InterruptedException ie) {
+                fail(ie);
             }
-            assertThrows(WrongThreadException.class, otherThreadArena::close);
+            assertThrows(WrongThreadException.class, otherThreadArena.get()::close);
         };
         doInTwoStackedArenas(pool, closeAction, closeAction);
     }
@@ -288,8 +294,27 @@ final class TestCarrierLocalArenaPools {
      */
     @Test
     void stress() throws InterruptedException {
+
+        // Force the ForkJoin pool to expand/contract so that VT:s will be allocated
+        // on FJP threads that are later terminated.
+        long sum = LongStream.range(0, ForkJoinPool.getCommonPoolParallelism() * 2L)
+                .parallel()
+                .boxed()
+                // Using a CompletableFuture expands the FJP
+                .map(i -> CompletableFuture.supplyAsync(() -> {
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException ie) {
+                        throw new RuntimeException(ie);
+                    }
+                    return i;
+                }))
+                .map(CompletableFuture::join)
+                .mapToLong(Long::longValue)
+                .sum();
+
         // Just use one pool variant as testing here is fairly expensive.
-        final CarrierLocalArenaPools pool = pools().limit(1).findFirst().orElseThrow();
+        final CarrierLocalArenaPools pool = CarrierLocalArenaPools.create(POOL_SIZE);
         // Make sure it works for both virtual and platform threads (as they are handled differently)
         for (var threadBuilder : List.of(Thread.ofVirtual(), Thread.ofPlatform())) {
             final Thread[] threads = IntStream.range(0, 1024).mapToObj(_ ->

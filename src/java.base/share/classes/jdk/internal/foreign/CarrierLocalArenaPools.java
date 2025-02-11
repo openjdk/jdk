@@ -48,6 +48,8 @@ public final class CarrierLocalArenaPools {
 
             private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
+            // This method can be invoked by either a virtual thread, a platform thread
+            // , or a carrier thread (e.g. ForkJoinPool-1-worker-1).
             @Override
             protected LocalArenaPoolImpl initialValue() {
                 if (JLA.currentCarrierThread() instanceof CarrierThread) {
@@ -69,9 +71,13 @@ public final class CarrierLocalArenaPools {
                 }
             }
 
+            // This method is never invoked by a virtual thread but can be invoked by
+            // a platform thread or a carrier thread (e.g. ForkJoinPool-1-worker-1).
+            // Note: the fork join pool can expand/contract dynamically
             @Override
-            protected void threadTerminated(LocalArenaPoolImpl stack) {
-                stack.close();
+            protected void threadTerminated(LocalArenaPoolImpl pool) {
+                // As we are using Arena.ofAuto, we do not need to explicitly
+                // close the pool.
             }
         };
     }
@@ -88,16 +94,14 @@ public final class CarrierLocalArenaPools {
         static final int TAKEN = 1;
 
         @Stable
-        private final Arena pooledArena;
-        @Stable
         private final MemorySegment segment;
         // Used both directly and reflectively
         int segmentAvailability;
 
         private LocalArenaPoolImpl(long byteSize,
                                    long byteAlignment) {
-            this.pooledArena = Arena.ofConfined();
-            this.segment = pooledArena.allocate(byteSize, byteAlignment);
+            this.segment = Arena.ofAuto()
+                    .allocate(byteSize, byteAlignment);
         }
 
         @ForceInline
@@ -106,10 +110,6 @@ public final class CarrierLocalArenaPools {
             return tryAcquireSegment()
                     ? new SlicingArena((ArenaImpl) arena, segment)
                     : arena;
-        }
-
-        public final void close() {
-            pooledArena.close();
         }
 
         /**
@@ -195,6 +195,8 @@ public final class CarrierLocalArenaPools {
             private final ArenaImpl delegate;
             @Stable
             private final MemorySegment segment;
+            @Stable
+            private final Thread owner;
 
             private long sp = 0L;
 
@@ -203,6 +205,7 @@ public final class CarrierLocalArenaPools {
                                  MemorySegment segment) {
                 this.delegate = arena;
                 this.segment = segment;
+                this.owner = Thread.currentThread();
             }
 
             @ForceInline
@@ -220,6 +223,7 @@ public final class CarrierLocalArenaPools {
             @SuppressWarnings("restricted")
             @ForceInline
             public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
+                assertOwnerThread();
                 final long min = segment.address();
                 final long start = Utils.alignUp(min + sp, byteAlignment) - min;
                 if (start + byteSize <= segment.byteSize()) {
@@ -235,6 +239,7 @@ public final class CarrierLocalArenaPools {
             @ForceInline
             @Override
             public void close() {
+                assertOwnerThread();
                 delegate.close();
                 // Intentionally do not releaseSegment() in a finally clause as
                 // the segment still is in play if close() initially fails (e.g. is closed
@@ -242,6 +247,14 @@ public final class CarrierLocalArenaPools {
                 // successfully re-invoked (e.g. from its owner thread).
                 LocalArenaPoolImpl.this.releaseSegment();
             }
+
+            @ForceInline
+            void assertOwnerThread() {
+                if (owner != Thread.currentThread()) {
+                    throw new WrongThreadException();
+                }
+            }
+
         }
     }
 
