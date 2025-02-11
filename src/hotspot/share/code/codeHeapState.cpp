@@ -2219,7 +2219,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
         } else if (blob_is_safe) {
           //---<  blob size in hex  >---
           ast->print(UINT32_FORMAT_X_0, blob_size);
-          ast->print("(" SIZE_FORMAT_W(4) "K)", blob_size/K);
+          ast->print("(%4zuK)", blob_size/K);
           ast->fill_to(51);
           //---<  blob type  >---
           ast->print("  %c", blobTypeChar[cbType]);
