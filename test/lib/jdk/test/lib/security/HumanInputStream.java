@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+package jdk.test.lib.security;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -82,6 +83,7 @@ public class HumanInputStream extends InputStream {
         }
         return re;
     }
+
     @Override public int read(byte[] buffer, int offset, int len) {
         inLine = true;
         try {
@@ -92,6 +94,7 @@ public class HumanInputStream extends InputStream {
             inLine = false;
         }
     }
+
     @Override public int available() {
         if (pos < length) return 1;
         return 0;
