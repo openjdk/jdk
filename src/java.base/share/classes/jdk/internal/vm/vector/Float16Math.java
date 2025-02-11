@@ -25,32 +25,23 @@
 package jdk.internal.vm.vector;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import java.util.function.UnaryOperator;
 
-/**
- * The class {@code Float16Math} constains intrinsic entry points corresponding
- * to scalar numeric operations defined in Float16 class.
- * @since   25
- */
-public final class Float16Math {
-    private Float16Math() {
-    }
+public class Float16Math {
 
-    public interface Float16UnaryMathOp {
-        Object apply(Object a);
-    }
-
-    public interface Float16TernaryMathOp {
-        Object apply(Object a, Object b, Object c);
+    @FunctionalInterface
+    public interface TernaryOperator<T> {
+        T apply(T a, T b, T c);
     }
 
     @IntrinsicCandidate
-    public static Object sqrt(Class<?> box_class, Object oa, Float16UnaryMathOp defaultImpl) {
+    public static <T> T sqrt(Class<T> box_class, T oa, UnaryOperator<T> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(oa);
     }
 
     @IntrinsicCandidate
-    public static Object fma(Class<?> box_class, Object oa, Object ob, Object oc, Float16TernaryMathOp defaultImpl) {
+    public static <T> T fma(Class<T> box_class, T oa, T ob, T oc, TernaryOperator<T> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(oa, ob, oc);
     }

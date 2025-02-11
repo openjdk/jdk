@@ -1199,14 +1199,14 @@ public final class Float16
      * @see Math#sqrt(double)
      */
     public static Float16 sqrt(Float16 radicand) {
-        return (Float16) Float16Math.sqrt(Float16.class, radicand,
+        return Float16Math.sqrt(Float16.class, radicand,
             (_radicand) -> {
                 // Rounding path of sqrt(Float16 -> double) -> Float16 is fine
                 // for preserving the correct final value. The conversion
                 // Float16 -> double preserves the exact numerical value. The
                 // conversion of double -> Float16 also benefits from the
                 // 2p+2 property of IEEE 754 arithmetic.
-               return valueOf(Math.sqrt(((Float16)(_radicand)).doubleValue()));
+               return valueOf(Math.sqrt(_radicand.doubleValue()));
             }
         );
     }
@@ -1410,13 +1410,13 @@ public final class Float16
          *   harmless.
          */
 
-         return (Float16) Float16Math.fma(Float16.class, a, b, c,
+         return Float16Math.fma(Float16.class, a, b, c,
                 (_a, _b, _c) -> {
                     // product is numerically exact in float before the cast to
                     // double; not necessary to widen to double before the
                     // multiply.
-                    double product = (double)(((Float16)_a).floatValue() * ((Float16)_b).floatValue());
-                    return valueOf(product + ((Float16)_c).doubleValue());
+                    double product = (double)(_a.floatValue() * _b.floatValue());
+                    return valueOf(product + _c.doubleValue());
                 });
     }
 

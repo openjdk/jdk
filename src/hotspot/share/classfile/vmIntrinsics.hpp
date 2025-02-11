@@ -939,21 +939,21 @@ class methodHandle;
   do_intrinsic(_getAndSetReference,       jdk_internal_misc_Unsafe,     getAndSetReference_name, getAndSetReference_signature, F_R)   \
    do_name(     getAndSetReference_name,                                "getAndSetReference")                                         \
    do_signature(getAndSetReference_signature,                           "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
-                                                                                                                         \
-  /* Float16Math API intrinsification support */                                                                         \
-  /* Float16 signatures */                                                                                               \
-  do_signature(float16_unary_math_op_sig, "(Ljava/lang/Class;"                                                           \
-                                           "Ljava/lang/Object;"                                                          \
-                                           "Ljdk/internal/vm/vector/Float16Math$Float16UnaryMathOp;)"                    \
-                                           "Ljava/lang/Object;")                                                         \
-  do_signature(float16_ternary_math_op_sig, "(Ljava/lang/Class;"                                                         \
-                                             "Ljava/lang/Object;"                                                        \
-                                             "Ljava/lang/Object;"                                                        \
-                                             "Ljava/lang/Object;"                                                        \
-                                             "Ljdk/internal/vm/vector/Float16Math$Float16TernaryMathOp;)"                \
-                                             "Ljava/lang/Object;")                                                       \
-  do_intrinsic(_sqrt_float16, jdk_internal_vm_vector_Float16Math, sqrt_name, float16_unary_math_op_sig, F_S)             \
-  do_intrinsic(_fma_float16, jdk_internal_vm_vector_Float16Math, fma_name, float16_ternary_math_op_sig, F_S)             \
+                                                                                                                             \
+  /* Float16Math API intrinsification support */                                                                             \
+  /* Float16 signatures */                                                                                                   \
+  do_signature(float16_unary_math_op_sig, "(Ljava/lang/Class;"                                                               \
+                                           "Ljava/lang/Object;"                                                              \
+                                           "Ljava/util/function/UnaryOperator;)"                                             \
+                                           "Ljava/lang/Object;")                                                             \
+  do_signature(float16_ternary_math_op_sig, "(Ljava/lang/Class;"                                                             \
+                                             "Ljava/lang/Object;"                                                            \
+                                             "Ljava/lang/Object;"                                                            \
+                                             "Ljava/lang/Object;"                                                            \
+                                             "Ljdk/internal/vm/vector/Float16Math$TernaryOperator;)"                         \
+                                             "Ljava/lang/Object;")                                                           \
+  do_intrinsic(_sqrt_float16, jdk_internal_vm_vector_Float16Math, sqrt_name, float16_unary_math_op_sig, F_S)                 \
+  do_intrinsic(_fma_float16, jdk_internal_vm_vector_Float16Math, fma_name, float16_ternary_math_op_sig, F_S)                 \
                                                                                                                                                \
   /* Vector API intrinsification support */                                                                                                    \
                                                                                                                                                \
