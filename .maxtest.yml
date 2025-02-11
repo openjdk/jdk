@@ -12,3 +12,4 @@ tests:
   clusterParameters:
     cpus: 1.0
     mem: 1024.0
+    rocky9: 1.0
