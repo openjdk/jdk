@@ -475,7 +475,7 @@ public class JEditorPane extends JTextComponent {
         final Object postData = getPostData();
         final String reference = page.getRef();
 
-        if ((postData == null) && page.sameFile(loaded)) {
+        if ((postData == null) && (loaded != null) && (page.sameFile(loaded))) {
             // The same page with different reference
             if (reference != null) {
                 scrollToReference(reference);
