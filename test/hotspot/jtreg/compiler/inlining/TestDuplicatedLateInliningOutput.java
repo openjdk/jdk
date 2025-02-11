@@ -28,8 +28,7 @@
  * @summary late inlining output shouldn't produce both failure and success messages
  * @library /test/lib
  * @requires vm.compiler2.enabled
- * @requires vm.compMode != "Xcomp"
- * @requires vm.opt.PerMethodSpecTrapLimit!=0 & vm.opt.PerMethodTrapLimit!=0
+ * @requires vm.flagless
  * @run driver compiler.inlining.TestDuplicatedLateInliningOutput
  */
 
@@ -59,7 +58,7 @@ public class TestDuplicatedLateInliningOutput {
     }
 
     private static void test(Class<?> launcher, String pattern1, String pattern2) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+PrintInlining",
                 "-XX:CICompilerCount=1",
