@@ -2430,6 +2430,9 @@ instruct vreduce_minD_masked(fRegD dst, fRegD src1, vReg src2, vRegMask_V0 v0, v
 
 instruct reduce_mulI(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
                      vReg tmp1, vReg tmp2) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
+            Matcher::vector_element_basic_type(n) == T_SHORT ||
+            Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (MulReductionVI isrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
   format %{ "reduce_mulI $dst, $isrc, $vsrc\t" %}
@@ -2445,6 +2448,7 @@ instruct reduce_mulI(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
 
 instruct reduce_mulL(iRegLNoSp dst, iRegLNoSp isrc, vReg vsrc,
                      vReg tmp1, vReg tmp2) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (MulReductionVL isrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
   format %{ "reduce_mulL $dst, $isrc, $vsrc\t" %}
@@ -2460,6 +2464,7 @@ instruct reduce_mulL(iRegLNoSp dst, iRegLNoSp isrc, vReg vsrc,
 
 instruct reduce_mulF(fRegF dst, fRegF fsrc, vReg vsrc,
                      vReg tmp1, vReg tmp2) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
   match(Set dst (MulReductionVF fsrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
   format %{ "reduce_mulF $dst, $fsrc, $vsrc\t" %}
@@ -2475,6 +2480,7 @@ instruct reduce_mulF(fRegF dst, fRegF fsrc, vReg vsrc,
 
 instruct reduce_mulD(fRegD dst, fRegD fsrc, vReg vsrc,
                      vReg tmp1, vReg tmp2) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (MulReductionVD fsrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
   format %{ "reduce_mulD $dst, $fsrc, $vsrc\t" %}
