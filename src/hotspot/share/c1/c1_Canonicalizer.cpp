@@ -523,7 +523,7 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
       ciType* t = c->value()->java_mirror_type();
       if (t->is_klass()) {
         // substitute cls.isInstance(obj) of a constant Class into
-        // an InstantOf instruction
+        // an InstanceOf instruction
         InstanceOf* i = new InstanceOf(t->as_klass(), x->argument_at(1), x->state_before());
         set_canonical(i);
         // and try to canonicalize even further
@@ -544,22 +544,6 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
     if (c != nullptr && !c->value()->is_null_object()) {
       ciType* t = c->value()->java_mirror_type();
       set_constant(t->is_primitive_type());
-    }
-    break;
-  }
-  case vmIntrinsics::_getModifiers: {
-    assert(x->number_of_arguments() == 1, "wrong type");
-
-    // Optimize for Foo.class.getModifier()
-    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
-    if (c != nullptr && !c->value()->is_null_object()) {
-      ciType* t = c->value()->java_mirror_type();
-      if (t->is_klass()) {
-        set_constant(t->as_klass()->modifier_flags());
-      } else {
-        assert(t->is_primitive_type(), "should be a primitive type");
-        set_constant(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
-      }
     }
     break;
   }
