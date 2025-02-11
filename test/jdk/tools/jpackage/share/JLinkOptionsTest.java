@@ -148,6 +148,7 @@ public final class JLinkOptionsTest {
 
         TKit.assertStringListEquals(List.of(), moduleComm.unique1().stream().toList(),
                 "Check '--bind-services' option doesn't remove modules");
+        // with the limited set of modules, we expect that jdk.crypto.cryptoki be added through --bind-services
         TKit.assertNotEquals("", moduleComm.unique2().stream().sorted().collect(Collectors.joining(",")),
                 "Check '--bind-services' option adds modules");
     }
