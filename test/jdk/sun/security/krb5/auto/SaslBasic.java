@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,20 +85,20 @@ public class SaslBasic {
             String boundName = (String)ss.getNegotiatedProperty(
                     Sasl.BOUND_SERVER_NAME);
             if (!boundName.equals(name)) {
-                throw new Exception("Wrong bound server name");
+                throw new RuntimeException("Wrong bound server name");
             }
         }
         Object key = ss.getNegotiatedProperty(
                 "com.sun.security.jgss.inquiretype.krb5_get_session_key");
         if (key == null) {
-            throw new Exception("Extended negotiated property not read");
+            throw new RuntimeException("Extended negotiated property not read");
         }
 
         if (args[1].equals("auth")) {
             // 8170732. These are the maximum size bytes after jgss/krb5 wrap.
             if (lastClientToken[17] != 0 || lastClientToken[18] != 0
                     || lastClientToken[19] != 0) {
-                throw new Exception("maximum size for auth must be 0");
+                throw new RuntimeException("maximum size for auth must be 0");
             }
             testWrapUnwrapNoSecLayer(sc, ss);
         } else {
@@ -106,7 +106,8 @@ public class SaslBasic {
         }
     }
 
-    private static void testWrapUnwrapWithSecLayer(SaslClient sc, SaslServer ss) throws Exception {
+    private static void testWrapUnwrapWithSecLayer(SaslClient sc, SaslServer ss)
+        throws SaslException {
         byte[] token;
         byte[] hello = "hello".getBytes();
 
@@ -115,7 +116,7 @@ public class SaslBasic {
         token = ss.unwrap(token, 0, token.length);
 
         if (!Arrays.equals(hello, token)) {
-            throw new Exception("Client message altered");
+            throw new RuntimeException("Client message altered");
         }
 
         // test server wrap and client unwrap
@@ -123,18 +124,19 @@ public class SaslBasic {
         token = sc.unwrap(token, 0, token.length);
 
         if (!Arrays.equals(hello, token)) {
-            throw new Exception("Server message altered");
+            throw new RuntimeException("Server message altered");
         }
     }
 
-    private static void testWrapUnwrapNoSecLayer(SaslClient sc, SaslServer ss) throws Exception {
+    private static void testWrapUnwrapNoSecLayer(SaslClient sc, SaslServer ss)
+        throws SaslException {
         byte[] clntBuf = new byte[]{0, 1, 2, 3};
         byte[] srvBuf = new byte[]{10, 11, 12, 13};
         String expectedError = "No security layer negotiated";
 
         try {
             sc.wrap(clntBuf, 0, clntBuf.length);
-            throw new Exception(
+            throw new RuntimeException(
                     "client wrap should not be allowed w/no security layer");
         } catch (IllegalStateException e) {
             assertEquals(expectedError, e.getMessage());
@@ -142,7 +144,7 @@ public class SaslBasic {
 
         try {
             ss.wrap(srvBuf, 0, srvBuf.length);
-            throw new Exception(
+            throw new RuntimeException(
                     "server wrap should not be allowed w/no security layer");
         } catch (IllegalStateException e) {
             assertEquals(expectedError, e.getMessage());
@@ -150,7 +152,7 @@ public class SaslBasic {
 
         try {
             sc.unwrap(clntBuf, 0, clntBuf.length);
-            throw new Exception(
+            throw new RuntimeException(
                     "client unwrap should not be allowed w/no security layer");
         } catch (IllegalStateException e) {
             assertEquals(expectedError, e.getMessage());
@@ -158,7 +160,7 @@ public class SaslBasic {
 
         try {
             ss.unwrap(srvBuf, 0, srvBuf.length);
-            throw new Exception(
+            throw new RuntimeException(
                     "server unwrap should not be allowed w/no security layer");
         } catch (IllegalStateException e) {
             assertEquals(expectedError, e.getMessage());
