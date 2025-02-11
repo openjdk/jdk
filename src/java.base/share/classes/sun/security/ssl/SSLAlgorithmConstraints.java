@@ -274,7 +274,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         return permitted;
     }
 
-    // Check algorithm against TLS scopes.
+    // Checks if algorithm is disabled for the given TLS scopes.
     boolean permits(String algorithm, Set<SSLCryptoScope> scopes) {
         return tlsDisabledAlgConstraints.permits(algorithm,
                 scopes.stream()

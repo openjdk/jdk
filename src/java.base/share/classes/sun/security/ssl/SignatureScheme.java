@@ -364,6 +364,8 @@ enum SignatureScheme {
     private boolean isPermitted(
             SSLAlgorithmConstraints constraints, Set<SSLCryptoScope> scopes) {
         return constraints.permits(this.name, scopes)
+                && constraints.permits(this.keyAlgorithm, scopes)
+                && constraints.permits(this.algorithm, scopes)
                 && constraints.permits(SIGNATURE_PRIMITIVE_SET, this.name, null)
                 && constraints.permits(SIGNATURE_PRIMITIVE_SET, this.keyAlgorithm, null)
                 && constraints.permits(SIGNATURE_PRIMITIVE_SET, this.algorithm,
