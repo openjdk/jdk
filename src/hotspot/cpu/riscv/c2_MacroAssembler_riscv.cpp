@@ -2638,7 +2638,7 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
 
   int minCharsInWord = encLL ? wordSize : wordSize / 2;
 
-  BLOCK_COMMENT("string_compare {");
+  BLOCK_COMMENT("string_compare_v {");
 
   // for Latin strings, 1 byte for 1 character
   // for UTF16 strings, 2 bytes for 1 character
@@ -2698,6 +2698,8 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
   sub(result, tmp1, tmp2);
 
   bind(DONE);
+
+  BLOCK_COMMENT("} string_compare_v");
 }
 
 void C2_MacroAssembler::byte_array_inflate_v(Register src, Register dst, Register len, Register tmp) {
