@@ -36,6 +36,7 @@
 package template_framework.examples;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.generators.*;
@@ -121,7 +122,12 @@ public class TestFuzzExpression {
         ));
 
         // Use template1 with every type.
-        List<TemplateWithArgs> templates = ALL_EXPRESSION_TYPES.stream().map(type -> (TemplateWithArgs)template1.withArgs(type)).toList();
+        List<TemplateWithArgs> templates = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            for (ExpressionType type : ALL_EXPRESSION_TYPES) {
+                templates.add(template1.withArgs(type));
+            }
+        }
 
         // Create the test class, which runs all templates.
         // Fuel:
