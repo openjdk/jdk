@@ -39,7 +39,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class AsyncDeathNonProduct {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb =
-            ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:deathtest=debug");
+            ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:all=debug");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
     }
