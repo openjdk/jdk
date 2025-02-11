@@ -36,9 +36,6 @@ package template_framework.tests;
 import java.util.Arrays;
 import java.util.List;
 import java.util.HashSet;
-import java.util.Random;
-
-import jdk.test.lib.Utils;
 
 import compiler.lib.template_framework.*;
 
@@ -55,8 +52,6 @@ import static compiler.lib.template_framework.Template.MUTABLE;
 import static compiler.lib.template_framework.Template.ALL;
 
 public class TestTemplate {
-    private static final Random RANDOM = Utils.getRandomInstance();
-
     interface FailingTest {
         void run();
     }

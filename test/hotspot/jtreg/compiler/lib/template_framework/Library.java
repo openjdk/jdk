@@ -25,6 +25,8 @@ package compiler.lib.template_framework;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 import compiler.lib.generators.*;
 
@@ -37,6 +39,7 @@ import static compiler.lib.template_framework.Template.setFuelCost;
  * The Library provides a collection of helpful Templates and Hooks.
  */
 public abstract class Library {
+    private static final Random RANDOM = Utils.getRandomInstance();
     private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
     private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
     private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
@@ -84,8 +87,7 @@ public abstract class Library {
             // --- LIST OF TEMPLATES end   ---
             }
             """
-        )
-    );
+        ));
 
     public enum ExpressionType {
         INT("int"),
@@ -111,37 +113,94 @@ public abstract class Library {
                 case ExpressionType.FLOAT -> GEN_FLOAT.next();
                 case ExpressionType.DOUBLE -> GEN_DOUBLE.next();
             }
-        )
-    );
+        ));
 
     public static final Template.OneArgs<ExpressionType> TERMINAL_EXPRESSION =
         Template.make("type", (ExpressionType type) -> body(
             // TODO load
             CONSTANT_EXPRESSION.withArgs(type)
-        )
-    );
+        ));
 
     // Use Binding to break recursive cycles.
-    private static final TemplateBinding<Template.OneArgs<ExpressionType>> OPERATOR_EXPRESSION_BINDING = new TemplateBinding<Template.OneArgs<ExpressionType>>();
+    private static final TemplateBinding<Template.OneArgs<ExpressionType>> BINARY_OPERATOR_EXPRESSION_BINDING = new TemplateBinding<Template.OneArgs<ExpressionType>>();
 
     public static final Template.OneArgs<ExpressionType> EXPRESSION =
         Template.make("type", (ExpressionType type) -> body(
             setFuelCost(0),
             // TODO not alway operator
             (fuel() <= 0) ? TERMINAL_EXPRESSION.withArgs(type)
-                          : OPERATOR_EXPRESSION_BINDING.get().withArgs(type)
-        )
+                          : BINARY_OPERATOR_EXPRESSION_BINDING.get().withArgs(type)
+        ));
+
+    private record BinaryOperator(String start, ExpressionType t1, String middle, ExpressionType t2, String end) {}
+
+    private static final List<BinaryOperator> INT_BINARY_OPERATORS = List.of(
+        new BinaryOperator("(", ExpressionType.INT, " + ",   ExpressionType.INT, ")"),
+        new BinaryOperator("(", ExpressionType.INT, " - ",   ExpressionType.INT, ")"),
+        new BinaryOperator("(", ExpressionType.INT, " * ",   ExpressionType.INT, ")"),
+        new BinaryOperator("(", ExpressionType.INT, " / ",   ExpressionType.INT, ")"),
+        new BinaryOperator("(", ExpressionType.INT, " % ",   ExpressionType.INT, ")"),
+        new BinaryOperator("(", ExpressionType.INT, " & ",   ExpressionType.INT, ")"),
+        new BinaryOperator("(", ExpressionType.INT, " | ",   ExpressionType.INT, ")"),
+        new BinaryOperator("(", ExpressionType.INT, " ^ ",   ExpressionType.INT, ")"),
+        new BinaryOperator("(", ExpressionType.INT, " << ",  ExpressionType.INT, ")"),
+        new BinaryOperator("(", ExpressionType.INT, " >> ",  ExpressionType.INT, ")"),
+        new BinaryOperator("(", ExpressionType.INT, " >>> ", ExpressionType.INT, ")")
     );
 
-    public static final Template.OneArgs<ExpressionType> OPERATOR_EXPRESSION =
-        Template.make("type", (ExpressionType type) -> body(
-            setFuelCost(1.0f),
-            "(",
-            EXPRESSION.withArgs(type),
-            " + ", // TODO operators based on type
-            EXPRESSION.withArgs(type),
-            ")"
-        )
+    private static final List<BinaryOperator> LONG_BINARY_OPERATORS = List.of(
+        new BinaryOperator("(", ExpressionType.LONG, " + ",   ExpressionType.LONG, ")"),
+        new BinaryOperator("(", ExpressionType.LONG, " - ",   ExpressionType.LONG, ")"),
+        new BinaryOperator("(", ExpressionType.LONG, " * ",   ExpressionType.LONG, ")"),
+        new BinaryOperator("(", ExpressionType.LONG, " / ",   ExpressionType.LONG, ")"),
+        new BinaryOperator("(", ExpressionType.LONG, " % ",   ExpressionType.LONG, ")"),
+        new BinaryOperator("(", ExpressionType.LONG, " & ",   ExpressionType.LONG, ")"),
+        new BinaryOperator("(", ExpressionType.LONG, " | ",   ExpressionType.LONG, ")"),
+        new BinaryOperator("(", ExpressionType.LONG, " ^ ",   ExpressionType.LONG, ")"),
+        new BinaryOperator("(", ExpressionType.LONG, " << ",  ExpressionType.LONG, ")"),
+        new BinaryOperator("(", ExpressionType.LONG, " >> ",  ExpressionType.LONG, ")"),
+        new BinaryOperator("(", ExpressionType.LONG, " >>> ", ExpressionType.LONG, ")")
     );
-    static { OPERATOR_EXPRESSION_BINDING.bind(OPERATOR_EXPRESSION); }
+
+    private static final List<BinaryOperator> FLOAT_BINARY_OPERATORS = List.of(
+        new BinaryOperator("(", ExpressionType.FLOAT, " + ",   ExpressionType.FLOAT, ")"),
+        new BinaryOperator("(", ExpressionType.FLOAT, " - ",   ExpressionType.FLOAT, ")"),
+        new BinaryOperator("(", ExpressionType.FLOAT, " * ",   ExpressionType.FLOAT, ")"),
+        new BinaryOperator("(", ExpressionType.FLOAT, " / ",   ExpressionType.FLOAT, ")"),
+        new BinaryOperator("(", ExpressionType.FLOAT, " % ",   ExpressionType.FLOAT, ")")
+    );
+
+    private static final List<BinaryOperator> DOUBLE_BINARY_OPERATORS = List.of(
+        new BinaryOperator("(", ExpressionType.DOUBLE, " + ",   ExpressionType.DOUBLE, ")"),
+        new BinaryOperator("(", ExpressionType.DOUBLE, " - ",   ExpressionType.DOUBLE, ")"),
+        new BinaryOperator("(", ExpressionType.DOUBLE, " * ",   ExpressionType.DOUBLE, ")"),
+        new BinaryOperator("(", ExpressionType.DOUBLE, " / ",   ExpressionType.DOUBLE, ")"),
+        new BinaryOperator("(", ExpressionType.DOUBLE, " % ",   ExpressionType.DOUBLE, ")")
+    );
+
+    private static List<BinaryOperator> binaryOperators(ExpressionType type) {
+        return switch (type) {
+            case ExpressionType.INT -> INT_BINARY_OPERATORS;
+            case ExpressionType.LONG -> LONG_BINARY_OPERATORS;
+            case ExpressionType.FLOAT -> FLOAT_BINARY_OPERATORS;
+            case ExpressionType.DOUBLE -> DOUBLE_BINARY_OPERATORS;
+        };
+    }
+
+    private static <T> T choice(List<T> list) {
+        if (list.isEmpty()) { return null; }
+        int i = RANDOM.nextInt(list.size());
+        return list.get(i);
+    }
+
+    public static final Template.OneArgs<ExpressionType> BINARY_OPERATOR_EXPRESSION =
+        Template.make("type", (ExpressionType type) -> let("op", choice(binaryOperators(type)), op -> body(
+            setFuelCost(1.0f),
+            op.start,
+            EXPRESSION.withArgs(op.t1),
+            op.middle,
+            EXPRESSION.withArgs(op.t2),
+            op.end
+        )));
+    static { BINARY_OPERATOR_EXPRESSION_BINDING.bind(BINARY_OPERATOR_EXPRESSION); }
 }
