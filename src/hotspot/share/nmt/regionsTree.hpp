@@ -27,7 +27,7 @@
 #include "logging/log.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/vmatree.hpp"
-#include "nmt/vmtCommon.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 
 // RegionsTree extends VMATree to add some more specific API and also defines a helper
 // for processing the tree nodes in a shorter and more meaningful way.

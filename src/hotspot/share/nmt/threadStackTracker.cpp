@@ -26,7 +26,6 @@
 
 #include "nmt/memTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
-#include "nmt/vmtCommon.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"

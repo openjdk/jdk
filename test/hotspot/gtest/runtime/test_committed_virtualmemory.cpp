@@ -22,7 +22,7 @@
  */
 
 #include "nmt/memTracker.hpp"
-#include "nmt/vmtCommon.hpp"
+#include "nmt/regionsTree.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"

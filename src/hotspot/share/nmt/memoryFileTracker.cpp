@@ -176,16 +176,11 @@ const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTrack
 };
 
 void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const {
-  for (int d = 0; d < _files.length(); d++) {
-    const MemoryFile* file = _files.at(d);
-    for (int i = 0; i < mt_number_of_tags; i++) {
-      VirtualMemory* snap = snapshot->by_tag(NMTUtil::index_to_tag(i));
-      const VirtualMemory* current = file->_summary.by_tag(NMTUtil::index_to_tag(i));
-      // Only account the committed memory.
-      snap->commit_memory(current->committed());
-    }
-  }
-}
+  iterate_summary([&](MemTag tag, const VirtualMemory* current) {
+    VirtualMemory* snap = snapshot->by_tag(tag);
+    // Only account the committed memory.
+    snap->commit_memory(current->committed());
+  });}
 
 void MemoryFileTracker::Instance::summary_snapshot(VirtualMemorySnapshot* snapshot) {
   _tracker->summary_snapshot(snapshot);

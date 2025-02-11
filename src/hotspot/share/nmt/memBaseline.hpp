@@ -29,7 +29,7 @@
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "nmt/vmtCommon.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/linkedlist.hpp"
 

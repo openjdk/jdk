@@ -34,7 +34,7 @@
 #include "nmt/memTagBitmap.hpp"
 #include "nmt/memMapPrinter.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/vmtCommon.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/thread.hpp"

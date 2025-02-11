@@ -27,9 +27,9 @@
 
 #include "memory/allocation.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "nmt/vmtCommon.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.inline.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"

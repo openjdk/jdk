@@ -30,7 +30,7 @@
 #include "nmt/memBaseline.hpp"
 #include "nmt/nativeCallStackPrinter.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "nmt/vmtCommon.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 /*
