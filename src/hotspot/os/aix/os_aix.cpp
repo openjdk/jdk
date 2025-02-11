@@ -1273,6 +1273,9 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
   case PV_10_Compat:
     strncpy(buf, "PV_10_Compat", buflen);
     break;
+  case PV_11_Compat:
+    strncpy(buf, "PV_11_Compat", buflen);
+    break;
   default:
     strncpy(buf, "unknown", buflen);
   }
