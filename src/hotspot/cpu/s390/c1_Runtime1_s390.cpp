@@ -602,15 +602,15 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
 
       __ z_lg(klass, Address(Z_ARG1, java_lang_Class::klass_offset()));
 
-      Label done, is_secondary, same;
+      Label is_secondary;
 
-      __ clear_reg(result /* Z_R2 */, true /* whole_reg */, false /* set_cc */);  // sets r_result=0 (failure)
+      __ clear_reg(result /* Z_R2 */, true /* whole_reg */, false /* set_cc */);  // sets result=0 (failure)
 
       __ z_ltgr(klass, klass); // Klass is null
-      __ branch_optimized(Assembler::bcondEqual, done);
+      __ z_bcr(Assembler::bcondEqual, Z_R14);
 
       __ z_ltgr(obj, obj); // obj is null
-      __ branch_optimized(Assembler::bcondEqual, done);
+      __ z_bcr(Assembler::bcondEqual, Z_R14);
 
       __ z_llgf(temp0, Address(klass, in_bytes(Klass::super_check_offset_offset())));
       __ compare32_and_branch(temp0, in_bytes(Klass::secondary_super_cache_offset()), Assembler::bcondEqual, is_secondary); // Klass is a secondary superclass
@@ -629,7 +629,8 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
 
       // This is necessary because I am never in my own secondary_super list.
       __ z_cgr(obj, klass);
-      __ branch_optimized(Assembler::bcondEqual, same);
+      __ z_lochi(result, 1, Assembler::bcondEqual);
+      __ z_bcr(Assembler::bcondEqual, Z_R14);
 
       const int frame_size = 2*BytesPerWord + frame::z_abi_160_size;
       __ save_return_pc();
@@ -654,13 +655,9 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       assert(i*BytesPerWord + frame::z_abi_160_size == frame_size, "check");
       __ pop_frame();
       __ restore_return_pc();
-      __ z_br(Z_R14); // we have correct result in r2, so let's branch from right here.
 
-      __ bind(same);
-      __ z_lochi(result, 1, Assembler::bcondEqual);
-
-      __ bind(done);
       __ z_br(Z_R14);
+
     }
     case C1StubId::monitorenter_nofpu_id:
     case C1StubId::monitorenter_id:
