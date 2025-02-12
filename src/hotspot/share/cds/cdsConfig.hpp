@@ -48,6 +48,7 @@ class CDSConfig : public AllStatic {
   static char* _dynamic_archive_path;
 
   static bool  _old_cds_flags_used;
+  static bool  _new_aot_flags_used;
   static bool  _disable_heap_dumping;
 
   static JavaThread* _dumper_thread;
@@ -77,6 +78,7 @@ public:
   static void initialize() NOT_CDS_RETURN;
   static void set_old_cds_flags_used()                       { CDS_ONLY(_old_cds_flags_used = true); }
   static bool old_cds_flags_used()                           { return CDS_ONLY(_old_cds_flags_used) NOT_CDS(false); }
+  static bool new_aot_flags_used()                           { return CDS_ONLY(_new_aot_flags_used) NOT_CDS(false); }
   static void check_internal_module_property(const char* key, const char* value) NOT_CDS_RETURN;
   static void check_incompatible_property(const char* key, const char* value) NOT_CDS_RETURN;
   static void check_unsupported_dumping_module_options() NOT_CDS_RETURN;

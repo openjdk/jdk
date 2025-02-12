@@ -1384,10 +1384,10 @@ bool FileMapInfo::init_from_file(int fd) {
         (gen_header->_magic == CDS_PREIMAGE_ARCHIVE_MAGIC && CDSConfig::is_dumping_final_static_archive())) {
       // Good
     } else {
-      if (CDSConfig::old_cds_flags_used()) {
-        log_warning(cds)("Not a base shared archive: %s", _full_path);
-      } else {
+      if (CDSConfig::new_aot_flags_used()) {
         log_warning(cds)("Not a valid %s %s", file_type, _full_path);
+      } else {
+        log_warning(cds)("Not a base shared archive: %s", _full_path);
       }
       return false;
     }
@@ -1782,7 +1782,7 @@ void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
 
     if (CDSConfig::is_dumping_preimage_static_archive()) {
       MetaspaceShared::writing_error("Unable to write to AOT configuration file.");
-    } else if (!CDSConfig::old_cds_flags_used()) {
+    } else if (CDSConfig::new_aot_flags_used()) {
       MetaspaceShared::writing_error("Unable to write to AOT cache.");
     } else {
       MetaspaceShared::writing_error("Unable to write to shared archive.");

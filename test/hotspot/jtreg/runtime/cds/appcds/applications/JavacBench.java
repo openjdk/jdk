@@ -42,6 +42,7 @@
 
 /*
  * @test id=aot
+ * @requires vm.cds.supports.aot.class.linking
  * @summary Run JavacBenchApp with AOT cache (JEP 483)
  * @requires vm.cds
  * @library /test/lib

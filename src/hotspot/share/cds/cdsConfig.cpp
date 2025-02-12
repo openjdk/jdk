@@ -48,6 +48,7 @@ bool CDSConfig::_is_using_full_module_graph = true;
 bool CDSConfig::_has_aot_linked_classes = false;
 bool CDSConfig::_has_archived_invokedynamic = false;
 bool CDSConfig::_old_cds_flags_used = false;
+bool CDSConfig::_new_aot_flags_used = false;
 bool CDSConfig::_disable_heap_dumping = false;
 
 char* CDSConfig::_default_archive_path = nullptr;
@@ -211,7 +212,7 @@ void CDSConfig::init_shared_archive_paths() {
               warning("-XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
               AutoCreateSharedArchive = false;
             }
-            log_error(cds)("Not a valid %s (%s)", old_cds_flags_used() ? "archive" : "AOT cache", SharedArchiveFile);
+            log_error(cds)("Not a valid %s (%s)", new_aot_flags_used() ? "AOT cache" : "archive", SharedArchiveFile);
             Arguments::no_shared_spaces("invalid archive");
           }
         } else if (base_archive_path == nullptr) {
@@ -335,10 +336,10 @@ bool CDSConfig::has_unsupported_runtime_module_options() {
     if (RequireSharedSpaces) {
       warning("CDS is disabled when the %s option is specified.", option);
     } else {
-      if (old_cds_flags_used()) {
-        log_info(cds)("CDS is disabled when the %s option is specified.", option);
-      } else {
+      if (new_aot_flags_used()) {
         log_warning(cds)("AOT cache is disabled when the %s option is specified.", option);
+      } else {
+        log_info(cds)("CDS is disabled when the %s option is specified.", option);
       }
     }
     return true;
@@ -349,7 +350,7 @@ bool CDSConfig::has_unsupported_runtime_module_options() {
 #define CHECK_ALIAS(f) check_flag_alias(FLAG_IS_DEFAULT(f), #f)
 
 void CDSConfig::check_flag_alias(bool alias_is_default, const char* alias_name) {
-  if (_old_cds_flags_used && !alias_is_default) {
+  if (old_cds_flags_used() && !alias_is_default) {
     vm_exit_during_initialization(err_msg("Option %s cannot be used at the same time with "
                                           "-Xshare:on, -Xshare:auto, -Xshare:off, -Xshare:dump, "
                                           "DumpLoadedClassList, SharedClassListFile, or SharedArchiveFile",
@@ -371,6 +372,8 @@ void CDSConfig::check_aot_flags() {
   if (FLAG_IS_DEFAULT(AOTCache) && FLAG_IS_DEFAULT(AOTConfiguration) && FLAG_IS_DEFAULT(AOTMode)) {
     // AOTCache/AOTConfiguration/AOTMode not used.
     return;
+  } else {
+    _new_aot_flags_used = true;
   }
 
   if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0) {
@@ -589,7 +592,7 @@ bool CDSConfig::current_thread_is_vm_or_dumper() {
 const char* CDSConfig::type_of_archive_being_loaded() {
   if (is_dumping_final_static_archive()) {
     return "AOT configuration file";
-  } else if (!CDSConfig::old_cds_flags_used()) {
+  } else if (new_aot_flags_used()) {
     return "AOT cache";
   } else {
     return "shared archive file";
@@ -599,7 +602,7 @@ const char* CDSConfig::type_of_archive_being_loaded() {
 const char* CDSConfig::type_of_archive_being_written() {
   if (is_dumping_preimage_static_archive()) {
     return "AOT configuration file";
-  } else if (!CDSConfig::old_cds_flags_used()) {
+  } else if (new_aot_flags_used()) {
     return "AOT cache";
   } else {
     return "shared archive file";
