@@ -137,12 +137,6 @@ public class TestFuzzExpression {
                 templates.add(template1.withArgs(type));
             }
         }
-
-        // Create the test class, which runs all templates.
-        // Fuel:
-        //  - 10 for IR_TEST_CLASS
-        //  - 10 for template1
-        //  - 3 for EXPRESSION: depth of 3
-        return IR_TEST_CLASS.withArgs(info, templates).render(23.0f);
+        return IR_TEST_CLASS.withArgs(info, templates).render();
     }
 }

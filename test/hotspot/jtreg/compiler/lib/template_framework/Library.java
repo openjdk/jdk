@@ -218,9 +218,8 @@ public abstract class Library {
     public static final Template.OneArgs<ExpressionType> EXPRESSION =
         Template.make("type", (ExpressionType type) -> body(
             setFuelCost(0),
-            // TODO not alway operator
-            (fuel() <= 0) ? TERMINAL_EXPRESSION.withArgs(type)
-                          : BINARY_OPERATOR_EXPRESSION_BINDING.get().withArgs(type)
+            (fuel() <= 0 || RANDOM.nextInt(3) == 0) ? TERMINAL_EXPRESSION.withArgs(type)
+                                                    : BINARY_OPERATOR_EXPRESSION_BINDING.get().withArgs(type)
         ));
 
     private record BinaryOperator(String start, ExpressionType t1, String middle, ExpressionType t2, String end) {}
@@ -287,7 +286,6 @@ public abstract class Library {
 
     public static final Template.OneArgs<ExpressionType> BINARY_OPERATOR_EXPRESSION =
         Template.make("type", (ExpressionType type) -> let("op", choice(binaryOperators(type)), op -> body(
-            setFuelCost(1.0f),
             op.start,
             EXPRESSION.withArgs(op.t1),
             op.middle,
