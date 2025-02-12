@@ -6235,9 +6235,11 @@ void C2_MacroAssembler::vector_count_leading_zeros_int_avx(XMMRegister dst, XMMR
   vpsrld(xtmp1, xtmp1, 24, vec_enc);
 
   // As ±2^24 is the range in which all contiguous integers can be represented by floats, special handling has to be
-  // done to avoid losing precision by potentially rounding up when outside of this range. To avoid that, we construct a
-  // mask to remove low set bits when the number has the upper 8 bits set. This is a valid transformation as it only removes
-  // low bits, and keeps the high bits intact.
+  // done to avoid losing precision by potentially rounding up when outside of this range. To avoid that, we shift the
+  // input by 24 bits, to isolate any high bits that are set. The source is then masked with the inverse of this shift,
+  // to remove low set bits. This removes a corresponding amount of low bits as there are set bits above position 24.
+  // As the rounding issue only occurs when the high bits are all set to 1, this prevents the floating point representation
+  // from overflowing while not changing the output as the high bits are kept intact.
   vpsrld(xtmp2, src, 24, vec_enc);
   vpandn(xtmp3, xtmp2, src, vec_enc);
 
