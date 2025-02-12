@@ -226,6 +226,17 @@ public abstract class Library {
         TemplateBody instanciate();
     }
 
+    private record UnaryOperator(String prefix, ExpressionType type, String postfix) implements Operator {
+        @Override
+        public TemplateBody instanciate() {
+            return body(
+                prefix,
+                EXPRESSION.withArgs(type),
+                postfix
+            );
+        }
+    }
+
     private record BinaryOperator(String prefix, ExpressionType t1, String middle, ExpressionType t2, String postfix) implements Operator {
         @Override
         public TemplateBody instanciate() {
@@ -239,7 +250,25 @@ public abstract class Library {
         }
     }
 
+    private record TernaryOperator(String prefix, ExpressionType t1, String mid1, ExpressionType t2, String mid2, ExpressionType t3, String postfix) implements Operator {
+        @Override
+        public TemplateBody instanciate() {
+            return body(
+                prefix,
+                EXPRESSION.withArgs(t1),
+                mid1,
+                EXPRESSION.withArgs(t2),
+                mid2,
+                EXPRESSION.withArgs(t3),
+                postfix
+            );
+        }
+    }
+
     private static final List<Operator> INT_OPERATORS = List.of(
+        new UnaryOperator("(-(", ExpressionType.INT, "))"),
+        new UnaryOperator("(~", ExpressionType.INT, ")"),
+
         new BinaryOperator("(", ExpressionType.INT, " + ",   ExpressionType.INT, ")"),
         new BinaryOperator("(", ExpressionType.INT, " - ",   ExpressionType.INT, ")"),
         new BinaryOperator("(", ExpressionType.INT, " * ",   ExpressionType.INT, ")"),
@@ -250,10 +279,15 @@ public abstract class Library {
         new BinaryOperator("(", ExpressionType.INT, " ^ ",   ExpressionType.INT, ")"),
         new BinaryOperator("(", ExpressionType.INT, " << ",  ExpressionType.INT, ")"),
         new BinaryOperator("(", ExpressionType.INT, " >> ",  ExpressionType.INT, ")"),
-        new BinaryOperator("(", ExpressionType.INT, " >>> ", ExpressionType.INT, ")")
+        new BinaryOperator("(", ExpressionType.INT, " >>> ", ExpressionType.INT, ")"),
+
+        new TernaryOperator("(", ExpressionType.BOOLEAN, " ? ", ExpressionType.INT, " : ", ExpressionType.INT, ")")
     );
 
     private static final List<Operator> LONG_OPERATORS = List.of(
+        new UnaryOperator("(-(", ExpressionType.LONG, "))"),
+        new UnaryOperator("(~", ExpressionType.LONG, ")"),
+
         new BinaryOperator("(", ExpressionType.LONG, " + ",   ExpressionType.LONG, ")"),
         new BinaryOperator("(", ExpressionType.LONG, " - ",   ExpressionType.LONG, ")"),
         new BinaryOperator("(", ExpressionType.LONG, " * ",   ExpressionType.LONG, ")"),
@@ -264,29 +298,43 @@ public abstract class Library {
         new BinaryOperator("(", ExpressionType.LONG, " ^ ",   ExpressionType.LONG, ")"),
         new BinaryOperator("(", ExpressionType.LONG, " << ",  ExpressionType.LONG, ")"),
         new BinaryOperator("(", ExpressionType.LONG, " >> ",  ExpressionType.LONG, ")"),
-        new BinaryOperator("(", ExpressionType.LONG, " >>> ", ExpressionType.LONG, ")")
+        new BinaryOperator("(", ExpressionType.LONG, " >>> ", ExpressionType.LONG, ")"),
+
+        new TernaryOperator("(", ExpressionType.BOOLEAN, " ? ", ExpressionType.LONG, " : ", ExpressionType.LONG, ")")
     );
 
     private static final List<Operator> FLOAT_OPERATORS = List.of(
+        new UnaryOperator("(-(", ExpressionType.FLOAT, "))"),
+
         new BinaryOperator("(", ExpressionType.FLOAT, " + ",   ExpressionType.FLOAT, ")"),
         new BinaryOperator("(", ExpressionType.FLOAT, " - ",   ExpressionType.FLOAT, ")"),
         new BinaryOperator("(", ExpressionType.FLOAT, " * ",   ExpressionType.FLOAT, ")"),
         new BinaryOperator("(", ExpressionType.FLOAT, " / ",   ExpressionType.FLOAT, ")"),
-        new BinaryOperator("(", ExpressionType.FLOAT, " % ",   ExpressionType.FLOAT, ")")
+        new BinaryOperator("(", ExpressionType.FLOAT, " % ",   ExpressionType.FLOAT, ")"),
+
+        new TernaryOperator("(", ExpressionType.BOOLEAN, " ? ", ExpressionType.FLOAT, " : ", ExpressionType.FLOAT, ")")
     );
 
     private static final List<Operator> DOUBLE_OPERATORS = List.of(
+        new UnaryOperator("(-(", ExpressionType.DOUBLE, "))"),
+
         new BinaryOperator("(", ExpressionType.DOUBLE, " + ",   ExpressionType.DOUBLE, ")"),
         new BinaryOperator("(", ExpressionType.DOUBLE, " - ",   ExpressionType.DOUBLE, ")"),
         new BinaryOperator("(", ExpressionType.DOUBLE, " * ",   ExpressionType.DOUBLE, ")"),
         new BinaryOperator("(", ExpressionType.DOUBLE, " / ",   ExpressionType.DOUBLE, ")"),
-        new BinaryOperator("(", ExpressionType.DOUBLE, " % ",   ExpressionType.DOUBLE, ")")
+        new BinaryOperator("(", ExpressionType.DOUBLE, " % ",   ExpressionType.DOUBLE, ")"),
+
+        new TernaryOperator("(", ExpressionType.BOOLEAN, " ? ", ExpressionType.DOUBLE, " : ", ExpressionType.DOUBLE, ")")
     );
 
     private static final List<Operator> BOOLEAN_OPERATORS = List.of(
+        new UnaryOperator("(!(", ExpressionType.BOOLEAN, "))"),
+
         new BinaryOperator("(", ExpressionType.BOOLEAN, " || ",   ExpressionType.BOOLEAN, ")"),
         new BinaryOperator("(", ExpressionType.BOOLEAN, " && ",   ExpressionType.BOOLEAN, ")"),
-        new BinaryOperator("(", ExpressionType.BOOLEAN, " ^ ",    ExpressionType.BOOLEAN, ")")
+        new BinaryOperator("(", ExpressionType.BOOLEAN, " ^ ",    ExpressionType.BOOLEAN, ")"),
+
+        new TernaryOperator("(", ExpressionType.BOOLEAN, " ? ", ExpressionType.BOOLEAN, " : ", ExpressionType.BOOLEAN, ")")
     );
 
     private static List<Operator> operators(ExpressionType type) {
