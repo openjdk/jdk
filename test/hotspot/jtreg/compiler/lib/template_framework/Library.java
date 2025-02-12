@@ -213,18 +213,33 @@ public abstract class Library {
         ));
 
     // Use Binding to break recursive cycles.
-    private static final TemplateBinding<Template.OneArgs<ExpressionType>> BINARY_OPERATOR_EXPRESSION_BINDING = new TemplateBinding<Template.OneArgs<ExpressionType>>();
+    private static final TemplateBinding<Template.OneArgs<ExpressionType>> OPERATOR_EXPRESSION_BINDING = new TemplateBinding<Template.OneArgs<ExpressionType>>();
 
     public static final Template.OneArgs<ExpressionType> EXPRESSION =
         Template.make("type", (ExpressionType type) -> body(
             setFuelCost(0),
             (fuel() <= 0 || RANDOM.nextInt(3) == 0) ? TERMINAL_EXPRESSION.withArgs(type)
-                                                    : BINARY_OPERATOR_EXPRESSION_BINDING.get().withArgs(type)
+                                                    : OPERATOR_EXPRESSION_BINDING.get().withArgs(type)
         ));
 
-    private record BinaryOperator(String start, ExpressionType t1, String middle, ExpressionType t2, String end) {}
+    private interface Operator {
+        TemplateBody instanciate();
+    }
 
-    private static final List<BinaryOperator> INT_BINARY_OPERATORS = List.of(
+    private record BinaryOperator(String prefix, ExpressionType t1, String middle, ExpressionType t2, String postfix) implements Operator {
+        @Override
+        public TemplateBody instanciate() {
+            return body(
+                prefix,
+                EXPRESSION.withArgs(t1),
+                middle,
+                EXPRESSION.withArgs(t2),
+                postfix
+            );
+        }
+    }
+
+    private static final List<Operator> INT_OPERATORS = List.of(
         new BinaryOperator("(", ExpressionType.INT, " + ",   ExpressionType.INT, ")"),
         new BinaryOperator("(", ExpressionType.INT, " - ",   ExpressionType.INT, ")"),
         new BinaryOperator("(", ExpressionType.INT, " * ",   ExpressionType.INT, ")"),
@@ -238,7 +253,7 @@ public abstract class Library {
         new BinaryOperator("(", ExpressionType.INT, " >>> ", ExpressionType.INT, ")")
     );
 
-    private static final List<BinaryOperator> LONG_BINARY_OPERATORS = List.of(
+    private static final List<Operator> LONG_OPERATORS = List.of(
         new BinaryOperator("(", ExpressionType.LONG, " + ",   ExpressionType.LONG, ")"),
         new BinaryOperator("(", ExpressionType.LONG, " - ",   ExpressionType.LONG, ")"),
         new BinaryOperator("(", ExpressionType.LONG, " * ",   ExpressionType.LONG, ")"),
@@ -252,7 +267,7 @@ public abstract class Library {
         new BinaryOperator("(", ExpressionType.LONG, " >>> ", ExpressionType.LONG, ")")
     );
 
-    private static final List<BinaryOperator> FLOAT_BINARY_OPERATORS = List.of(
+    private static final List<Operator> FLOAT_OPERATORS = List.of(
         new BinaryOperator("(", ExpressionType.FLOAT, " + ",   ExpressionType.FLOAT, ")"),
         new BinaryOperator("(", ExpressionType.FLOAT, " - ",   ExpressionType.FLOAT, ")"),
         new BinaryOperator("(", ExpressionType.FLOAT, " * ",   ExpressionType.FLOAT, ")"),
@@ -260,7 +275,7 @@ public abstract class Library {
         new BinaryOperator("(", ExpressionType.FLOAT, " % ",   ExpressionType.FLOAT, ")")
     );
 
-    private static final List<BinaryOperator> DOUBLE_BINARY_OPERATORS = List.of(
+    private static final List<Operator> DOUBLE_OPERATORS = List.of(
         new BinaryOperator("(", ExpressionType.DOUBLE, " + ",   ExpressionType.DOUBLE, ")"),
         new BinaryOperator("(", ExpressionType.DOUBLE, " - ",   ExpressionType.DOUBLE, ")"),
         new BinaryOperator("(", ExpressionType.DOUBLE, " * ",   ExpressionType.DOUBLE, ")"),
@@ -268,29 +283,24 @@ public abstract class Library {
         new BinaryOperator("(", ExpressionType.DOUBLE, " % ",   ExpressionType.DOUBLE, ")")
     );
 
-    private static final List<BinaryOperator> BOOLEAN_BINARY_OPERATORS = List.of(
+    private static final List<Operator> BOOLEAN_OPERATORS = List.of(
         new BinaryOperator("(", ExpressionType.BOOLEAN, " || ",   ExpressionType.BOOLEAN, ")"),
         new BinaryOperator("(", ExpressionType.BOOLEAN, " && ",   ExpressionType.BOOLEAN, ")"),
         new BinaryOperator("(", ExpressionType.BOOLEAN, " ^ ",    ExpressionType.BOOLEAN, ")")
     );
 
-    private static List<BinaryOperator> binaryOperators(ExpressionType type) {
+    private static List<Operator> operators(ExpressionType type) {
         return switch (type) {
-            case ExpressionType.INT -> INT_BINARY_OPERATORS;
-            case ExpressionType.LONG -> LONG_BINARY_OPERATORS;
-            case ExpressionType.FLOAT -> FLOAT_BINARY_OPERATORS;
-            case ExpressionType.DOUBLE -> DOUBLE_BINARY_OPERATORS;
-            case ExpressionType.BOOLEAN -> BOOLEAN_BINARY_OPERATORS;
+            case ExpressionType.INT -> INT_OPERATORS;
+            case ExpressionType.LONG -> LONG_OPERATORS;
+            case ExpressionType.FLOAT -> FLOAT_OPERATORS;
+            case ExpressionType.DOUBLE -> DOUBLE_OPERATORS;
+            case ExpressionType.BOOLEAN -> BOOLEAN_OPERATORS;
         };
     }
 
-    public static final Template.OneArgs<ExpressionType> BINARY_OPERATOR_EXPRESSION =
-        Template.make("type", (ExpressionType type) -> let("op", choice(binaryOperators(type)), op -> body(
-            op.start,
-            EXPRESSION.withArgs(op.t1),
-            op.middle,
-            EXPRESSION.withArgs(op.t2),
-            op.end
-        )));
-    static { BINARY_OPERATOR_EXPRESSION_BINDING.bind(BINARY_OPERATOR_EXPRESSION); }
+    public static final Template.OneArgs<ExpressionType> OPERATOR_EXPRESSION =
+        Template.make("type", (ExpressionType type) -> choice(operators(type)).instanciate());
+
+    static { OPERATOR_EXPRESSION_BINDING.bind(OPERATOR_EXPRESSION); }
 }
