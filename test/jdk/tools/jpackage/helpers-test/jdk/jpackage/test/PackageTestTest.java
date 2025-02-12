@@ -331,7 +331,7 @@ public class PackageTestTest extends JUnitAdapter {
         }
 
         PackageTest createTest(PackageHandlers handlers) {
-            return new PackageTest(packageType -> true, PackageType.NATIVE.stream().collect(toMap(x -> x, x -> handlers)), () -> {
+            return new PackageTest().jpackageFactory(() -> {
                 return new JPackageCommand() {
                     @Override
                     public Path outputBundle() {
@@ -377,7 +377,10 @@ public class PackageTestTest extends JUnitAdapter {
                                 this::getPrintableCommandLine).assertExitCodeIs(expectedExitCode);
                     }
                 };
-            }).setExpectedExitCode(expectedJPackageExitCode).setExpectedInstallExitCode(handlersSpec.installExitCode);
+            }).setExpectedExitCode(expectedJPackageExitCode)
+                    .setExpectedInstallExitCode(handlersSpec.installExitCode)
+                    .isPackageTypeSupported(type -> true)
+                    .forTypes().packageHandlers(handlers);
         }
 
         void configureInitializers(PackageTest test, Consumer<Verifiable> verifiableAccumulator) {

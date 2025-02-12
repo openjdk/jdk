@@ -27,14 +27,9 @@ import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsume
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.test.PackageType.LINUX;
-import static jdk.jpackage.test.PackageType.LINUX_DEB;
-import static jdk.jpackage.test.PackageType.LINUX_RPM;
-import static jdk.jpackage.test.PackageType.MAC_DMG;
 import static jdk.jpackage.test.PackageType.MAC_PKG;
 import static jdk.jpackage.test.PackageType.NATIVE;
 import static jdk.jpackage.test.PackageType.WINDOWS;
-import static jdk.jpackage.test.PackageType.WIN_EXE;
-import static jdk.jpackage.test.PackageType.WIN_MSI;
 
 import java.awt.GraphicsEnvironment;
 import java.io.IOException;
@@ -75,23 +70,19 @@ import jdk.jpackage.internal.util.function.ThrowingRunnable;
  */
 public final class PackageTest extends RunnablePackageTest {
 
-    PackageTest(Predicate<PackageType> isPackageTypeSupported,
-            Map<PackageType, PackageHandlers> packageHandlers,
-            Supplier<JPackageCommand> jpackageFactory) {
-        this.packageHandlers = new HashMap<>(Objects.requireNonNull(packageHandlers));
-        this.isPackageTypeSupported = Objects.requireNonNull(isPackageTypeSupported);
-        this.jpackageFactory = Objects.requireNonNull(jpackageFactory);
+    public PackageTest() {
+        isPackageTypeSupported = PackageType::isSupported;
+        jpackageFactory = JPackageCommand::new;
+        packageHandlers = new HashMap<>();
+        disabledInstallers = new HashSet<>();
+        disabledUninstallers = new HashSet<>();
         excludeTypes = new HashSet<>();
         forTypes();
         setExpectedExitCode(0);
         setExpectedInstallExitCode(0);
         namedInitializers = new HashSet<>();
-        handlers = currentTypes.stream()
+        handlers = NATIVE.stream()
                 .collect(Collectors.toMap(v -> v, v -> new Handler()));
-    }
-
-    public PackageTest() {
-        this(PackageType::isSupported, createDefaultPackageHandlers(), JPackageCommand::new);
     }
 
     public PackageTest excludeTypes(PackageType... types) {
@@ -150,8 +141,8 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    private PackageTest addInitializer(ThrowingConsumer<JPackageCommand> v,
-            String id) {
+    private PackageTest addInitializer(ThrowingConsumer<JPackageCommand> v, String id) {
+        Objects.requireNonNull(v);
         if (id != null) {
             if (namedInitializers.contains(id)) {
                 return this;
@@ -159,12 +150,12 @@ public final class PackageTest extends RunnablePackageTest {
 
             namedInitializers.add(id);
         }
-        currentTypes.forEach(type -> handlers.get(type).addInitializer(
-                toConsumer(v)));
+        currentTypes.forEach(type -> handlers.get(type).addInitializer(toConsumer(v)));
         return this;
     }
 
     private PackageTest addRunOnceInitializer(ThrowingRunnable v, String id) {
+        Objects.requireNonNull(v);
         return addInitializer(new ThrowingConsumer<JPackageCommand>() {
             @Override
             public void accept(JPackageCommand unused) throws Throwable {
@@ -186,19 +177,21 @@ public final class PackageTest extends RunnablePackageTest {
         return addRunOnceInitializer(v, null);
     }
 
-    public PackageTest addBundleVerifier(
-            ThrowingBiConsumer<JPackageCommand, Executor.Result> v) {
-        currentTypes.forEach(type -> handlers.get(type).addBundleVerifier(
-                toBiConsumer(v)));
+    public PackageTest addBundleVerifier(ThrowingBiConsumer<JPackageCommand, Executor.Result> v) {
+        Objects.requireNonNull(v);
+        currentTypes.forEach(type -> handlers.get(type).addBundleVerifier(toBiConsumer(v)));
         return this;
     }
 
     public PackageTest addBundleVerifier(ThrowingConsumer<JPackageCommand> v) {
+        Objects.requireNonNull(v);
         return addBundleVerifier((cmd, unused) -> toConsumer(v).accept(cmd));
     }
 
     public PackageTest addBundlePropertyVerifier(String propertyName,
             Predicate<String> pred, String predLabel) {
+        Objects.requireNonNull(propertyName);
+        Objects.requireNonNull(pred);
         return addBundleVerifier(cmd -> {
             final String value;
             if (isOfType(cmd, LINUX)) {
@@ -240,19 +233,23 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     public PackageTest disablePackageInstaller() {
-        currentTypes.forEach(
-                type -> packageHandlers.put(type, packageHandlers.get(type).copyWithNopInstaller()));
+        currentTypes.forEach(disabledInstallers::add);
         return this;
     }
 
     public PackageTest disablePackageUninstaller() {
-        currentTypes.forEach(
-                type -> packageHandlers.put(type, packageHandlers.get(type).copyWithNopUninstaller()));
+        currentTypes.forEach(disabledUninstallers::add);
+        return this;
+    }
+
+    public PackageTest createMsiLog(boolean v) {
+        createMsiLog = v;
         return this;
     }
 
     static void withFileAssociationsTestRuns(FileAssociations fa,
             ThrowingBiConsumer<FileAssociations.TestRun, List<Path>> consumer) {
+        Objects.requireNonNull(consumer);
         for (var testRun : fa.getTestRuns()) {
             TKit.withTempDirectory("fa-test-files", tempDir -> {
                 List<Path> testFiles = StreamSupport.stream(testRun.getFileNames().spliterator(), false).map(fname -> {
@@ -271,6 +268,7 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     PackageTest addHelloAppFileAssociationsVerifier(FileAssociations fa) {
+        Objects.requireNonNull(fa);
 
         // Setup test app to have valid jpackage command line before
         // running check of type of environment.
@@ -324,8 +322,7 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     public PackageTest forTypes(Collection<PackageType> types, Runnable action) {
-        Set<PackageType> oldTypes = Set.of(currentTypes.toArray(
-                PackageType[]::new));
+        final var oldTypes = Set.of(currentTypes.toArray(PackageType[]::new));
         try {
             forTypes(types);
             action.run();
@@ -391,6 +388,24 @@ public final class PackageTest extends RunnablePackageTest {
         private final List<Consumer<Action>> handlers;
     }
 
+    PackageTest packageHandlers(PackageHandlers v) {
+        Objects.requireNonNull(v);
+        currentTypes.forEach(type -> packageHandlers.put(type, v));
+        return this;
+    }
+
+    PackageTest isPackageTypeSupported(Predicate<PackageType> v) {
+        Objects.requireNonNull(v);
+        isPackageTypeSupported = v;
+        return this;
+    }
+
+    PackageTest jpackageFactory(Supplier<JPackageCommand> v) {
+        Objects.requireNonNull(v);
+        jpackageFactory = v;
+        return this;
+    }
+
     record PackageHandlers(Function<JPackageCommand, Integer> installHandler,
             Consumer<JPackageCommand> uninstallHandler,
             Optional<? extends BiFunction<JPackageCommand, Path, Path>> unpackHandler) {
@@ -450,136 +465,157 @@ public final class PackageTest extends RunnablePackageTest {
                 }).toList();
     }
 
-    private Consumer<Action> createPackageTypeHandler(
-            PackageType type, Handler handler) {
-        return toConsumer(new ThrowingConsumer<Action>() {
-            @Override
-            public void accept(Action action) throws Throwable {
-                if (terminated) {
-                    throw new IllegalStateException();
-                }
+    private record PackageTypePipeline(PackageType type, int expectedJPackageExitCode,
+            int expectedInstallExitCode, PackageHandlers packageHandlers, Handler handler,
+            JPackageCommand cmd, State state) implements ThrowingConsumer<Action> {
 
-                if (action == Action.FINALIZE) {
-                    deleteUnpackDirs.forEach(TKit::deleteDirectoryRecursive);
-                    deleteUnpackDirs.clear();
-                    terminated = true;
-                }
+        PackageTypePipeline {
+            Objects.requireNonNull(type);
+            Objects.requireNonNull(packageHandlers);
+            Objects.requireNonNull(handler);
+            Objects.requireNonNull(cmd);
+            Objects.requireNonNull(state);
+        }
 
-                boolean skip = false;
+        PackageTypePipeline(PackageType type, int expectedJPackageExitCode, int expectedInstallExitCode,
+                PackageHandlers packageHandlers, Handler handler, JPackageCommand cmd) {
+            this(type, expectedJPackageExitCode, expectedInstallExitCode, packageHandlers, handler, cmd, new State());
+        }
 
-                if (unhandledAction != null) {
-                    switch (unhandledAction) {
-                        case CREATE:
-                            skip = true;
-                            break;
-                        case UNPACK:
-                        case INSTALL:
-                            skip = (action == Action.VERIFY_INSTALL);
-                            break;
-                        case UNINSTALL:
-                            skip = (action == Action.VERIFY_UNINSTALL);
-                            break;
-                        default: // NOP
-                    }
-                }
-
-                if (skip) {
-                    TKit.trace(String.format("Skip [%s] action of %s command",
-                            action, cmd.getPrintableCommandLine()));
-                    return;
-                }
-
-                switch (action) {
-                    case UNPACK: {
-                        cmd.setUnpackedPackageLocation(null);
-                        final  var pkgHandler = packageHandlers.get(type);
-                        if (pkgHandler.unpackHandler.isEmpty()) {
-                            unhandledAction = action;
-                        } else {
-                            unhandledAction = null;
-                            final var unpackRootDir = TKit.createTempDirectory(
-                                    String.format("unpacked-%s", type.getName()));
-                            final Path unpackDir = pkgHandler.unpack(cmd, unpackRootDir);
-                            if (!unpackDir.startsWith(TKit.workDir())) {
-                                deleteUnpackDirs.add(unpackDir);
-                            }
-                            cmd.setUnpackedPackageLocation(unpackDir);
-                        }
-                        break;
-                    }
-
-                    case INSTALL: {
-                        cmd.setUnpackedPackageLocation(null);
-                        if (expectedInstallExitCode == 0) {
-                            unhandledAction = null;
-                        } else {
-                            unhandledAction = action;
-                        }
-                        final int installExitCode = packageHandlers.get(type).install(cmd);
-                        TKit.assertEquals(expectedInstallExitCode, installExitCode,
-                                String.format("Check installer exited with %d code", expectedInstallExitCode));
-                        break;
-                    }
-
-                    case UNINSTALL: {
-                        cmd.setUnpackedPackageLocation(null);
-                        if (unhandledAction == Action.INSTALL) {
-                            unhandledAction = action;
-                        } else {
-                            unhandledAction = null;
-                            packageHandlers.get(type).uninstall(cmd);
-                        }
-                        break;
-                    }
-
-                    case CREATE:
-                        cmd.setUnpackedPackageLocation(null);
-                        if (expectedJPackageExitCode == 0) {
-                            unhandledAction = null;
-                        } else {
-                            unhandledAction = action;
-                        }
-                        handler.accept(action, cmd);
-                        return;
-
-                    case INITIALIZE:
-                        handler.accept(action, cmd);
-                        break;
-
-                    default:
-                        handler.accept(action, cmd.createImmutableCopy());
-                        break;
-                }
-
-                Optional.ofNullable(unhandledAction).ifPresent(v -> {
-                    TKit.trace(String.format(
-                            "No handler of [%s] action for %s command", v,
-                            cmd.getPrintableCommandLine()));
-                });
+        @Override
+        public void accept(Action action) throws Throwable {
+            if (state.terminated) {
+                throw new IllegalStateException();
             }
 
+            if (action == Action.FINALIZE) {
+                state.deleteUnpackDirs.forEach(TKit::deleteDirectoryRecursive);
+                state.deleteUnpackDirs.clear();
+                state.terminated = true;
+            }
+
+            boolean skip = false;
+
+            if (state.unhandledAction != null) {
+                switch (state.unhandledAction) {
+                    case CREATE:
+                        skip = true;
+                        break;
+                    case UNPACK:
+                    case INSTALL:
+                        skip = (action == Action.VERIFY_INSTALL);
+                        break;
+                    case UNINSTALL:
+                        skip = (action == Action.VERIFY_UNINSTALL);
+                        break;
+                    default: // NOP
+                }
+            }
+
+            if (skip) {
+                TKit.trace(String.format("Skip [%s] action of %s command",
+                        action, cmd.getPrintableCommandLine()));
+                return;
+            }
+
+            switch (action) {
+                case UNPACK: {
+                    cmd.setUnpackedPackageLocation(null);
+                    if (packageHandlers.unpackHandler.isEmpty()) {
+                        state.unhandledAction = action;
+                    } else {
+                        state.unhandledAction = null;
+                        final var unpackRootDir = TKit.createTempDirectory(
+                                String.format("unpacked-%s", type.getName()));
+                        final Path unpackDir = packageHandlers.unpack(cmd, unpackRootDir);
+                        if (!unpackDir.startsWith(TKit.workDir())) {
+                            state.deleteUnpackDirs.add(unpackDir);
+                        }
+                        cmd.setUnpackedPackageLocation(unpackDir);
+                    }
+                    break;
+                }
+
+                case INSTALL: {
+                    cmd.setUnpackedPackageLocation(null);
+                    if (expectedInstallExitCode == 0) {
+                        state.unhandledAction = null;
+                    } else {
+                        state.unhandledAction = action;
+                    }
+                    final int installExitCode = packageHandlers.install(cmd);
+                    TKit.assertEquals(expectedInstallExitCode, installExitCode,
+                            String.format("Check installer exited with %d code", expectedInstallExitCode));
+                    break;
+                }
+
+                case UNINSTALL: {
+                    cmd.setUnpackedPackageLocation(null);
+                    if (state.unhandledAction == Action.INSTALL) {
+                        state.unhandledAction = action;
+                    } else {
+                        state.unhandledAction = null;
+                        packageHandlers.uninstall(cmd);
+                    }
+                    break;
+                }
+
+                case CREATE:
+                    cmd.setUnpackedPackageLocation(null);
+                    if (expectedJPackageExitCode == 0) {
+                        state.unhandledAction = null;
+                    } else {
+                        state.unhandledAction = action;
+                    }
+                    handler.processAction(action, cmd, expectedJPackageExitCode);
+                    return;
+
+                case INITIALIZE:
+                    handler.processAction(action, cmd, expectedJPackageExitCode);
+                    break;
+
+                default:
+                    handler.processAction(action, cmd.createImmutableCopy(), expectedJPackageExitCode);
+                    break;
+            }
+
+            Optional.ofNullable(state.unhandledAction).ifPresent(v -> {
+                TKit.trace(String.format(
+                        "No handler of [%s] action for %s command", v,
+                        cmd.getPrintableCommandLine()));
+            });
+        }
+
+        private final static class State {
             private final List<Path> deleteUnpackDirs = new ArrayList<>();
             private Action unhandledAction;
             private boolean terminated;
-            private final JPackageCommand cmd = Functional.identity(() -> {
-                JPackageCommand result = jpackageFactory.get();
-                result.setDefaultInputOutput().setDefaultAppName();
-                if (BUNDLE_OUTPUT_DIR != null && !ignoreBundleOutputDir) {
-                    result.setArgumentValue("--dest", BUNDLE_OUTPUT_DIR.toString());
-                }
-                type.applyTo(result);
-                return result;
-            }).get();
-        });
+        }
     }
 
-    private class Handler implements BiConsumer<Action, JPackageCommand> {
+    private Consumer<Action> createPackageTypeHandler(PackageType type, Handler handler) {
+        final var cmd = jpackageFactory.get();
+        cmd.setDefaultInputOutput().setDefaultAppName();
+        if (BUNDLE_OUTPUT_DIR != null && !ignoreBundleOutputDir) {
+            cmd.setArgumentValue("--dest", BUNDLE_OUTPUT_DIR.toString());
+        }
+        type.applyTo(cmd);
+        return toConsumer(new PackageTypePipeline(type, expectedJPackageExitCode,
+                expectedInstallExitCode, getPackageHandlers(type), handler.copy(), cmd));
+    }
+
+    private record Handler(List<Consumer<JPackageCommand>> initializers,
+            List<BiConsumer<JPackageCommand, Executor.Result>> bundleVerifiers,
+            List<Consumer<JPackageCommand>> installVerifiers,
+            List<Consumer<JPackageCommand>> uninstallVerifiers) {
 
         Handler() {
-            initializers = new ArrayList<>();
-            bundleVerifiers = new ArrayList<>();
-            installVerifiers = new ArrayList<>();
-            uninstallVerifiers = new ArrayList<>();
+            this(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        }
+
+        Handler copy() {
+            return new Handler(List.copyOf(initializers), List.copyOf(bundleVerifiers),
+                    List.copyOf(installVerifiers), List.copyOf(uninstallVerifiers));
         }
 
         boolean isVoid() {
@@ -602,8 +638,7 @@ public final class PackageTest extends RunnablePackageTest {
             uninstallVerifiers.add(v);
         }
 
-        @Override
-        public void accept(Action action, JPackageCommand cmd) {
+        public void processAction(Action action, JPackageCommand cmd, int expectedJPackageExitCode) {
             switch (action) {
                 case INITIALIZE:
                     initializers.forEach(v -> v.accept(cmd));
@@ -622,7 +657,7 @@ public final class PackageTest extends RunnablePackageTest {
                             TKit.assertPathExists(outputBundle, false);
                         });
                     }
-                    verifyPackageBundle(cmd, result);
+                    verifyPackageBundle(cmd, result, expectedJPackageExitCode);
                     break;
 
                 case VERIFY_INSTALL:
@@ -649,7 +684,7 @@ public final class PackageTest extends RunnablePackageTest {
         }
 
         private void verifyPackageBundle(JPackageCommand cmd,
-                Executor.Result result) {
+                Executor.Result result, int expectedJPackageExitCode) {
             if (expectedJPackageExitCode == 0) {
                 if (isOfType(cmd, LINUX)) {
                     LinuxHelper.verifyPackageBundleEssential(cmd);
@@ -779,31 +814,58 @@ public final class PackageTest extends RunnablePackageTest {
 
             uninstallVerifiers.forEach(v -> v.accept(cmd));
         }
-
-        private final List<Consumer<JPackageCommand>> initializers;
-        private final List<BiConsumer<JPackageCommand, Executor.Result>> bundleVerifiers;
-        private final List<Consumer<JPackageCommand>> installVerifiers;
-        private final List<Consumer<JPackageCommand>> uninstallVerifiers;
     }
 
-    private static Map<PackageType, PackageHandlers> createDefaultPackageHandlers() {
-        HashMap<PackageType, PackageHandlers> handlers = new HashMap<>();
-        if (TKit.isLinux()) {
-            handlers.put(LINUX_DEB, LinuxHelper.createDebPackageHandlers());
-            handlers.put(LINUX_RPM, LinuxHelper.createRpmPackageHandlers());
+    private PackageHandlers getDefaultPackageHandlers(PackageType type) {
+        switch (type) {
+            case LINUX_DEB -> {
+                return LinuxHelper.createDebPackageHandlers();
+            }
+            case LINUX_RPM -> {
+                return LinuxHelper.createRpmPackageHandlers();
+            }
+            case WIN_MSI -> {
+                return WindowsHelper.createMsiPackageHandlers(createMsiLog);
+            }
+            case WIN_EXE -> {
+                return WindowsHelper.createExePackageHandlers(createMsiLog);
+            }
+            case MAC_DMG -> {
+                return MacHelper.createDmgPackageHandlers();
+            }
+            case MAC_PKG -> {
+                return MacHelper.createPkgPackageHandlers();
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
+        }
+    }
+
+    private PackageHandlers getPackageHandlers(PackageType type) {
+        Objects.requireNonNull(type);
+
+        var reply = Optional.ofNullable(packageHandlers.get(type)).orElseGet(() -> {
+            if (TKit.isLinux() && !PackageType.LINUX.contains(type)) {
+                throw new IllegalArgumentException();
+            } else if (TKit.isWindows() && !PackageType.WINDOWS.contains(type)) {
+                throw new IllegalArgumentException();
+            } else if (TKit.isOSX() && !PackageType.MAC.contains(type)) {
+                throw new IllegalArgumentException();
+            } else {
+                return getDefaultPackageHandlers(type);
+            }
+        });
+
+        if (disabledInstallers.contains(type)) {
+            reply = reply.copyWithNopInstaller();
         }
 
-        if (TKit.isWindows()) {
-            handlers.put(WIN_MSI, WindowsHelper.createMsiPackageHandlers());
-            handlers.put(WIN_EXE, WindowsHelper.createExePackageHandlers());
+        if (disabledUninstallers.contains(type)) {
+            reply = reply.copyWithNopUninstaller();
         }
 
-        if (TKit.isOSX()) {
-            handlers.put(MAC_DMG,  MacHelper.createDmgPackageHandlers());
-            handlers.put(MAC_PKG,  MacHelper.createPkgPackageHandlers());
-        }
-
-        return handlers;
+        return reply;
     }
 
     private static boolean isOfType(JPackageCommand cmd, PackageType packageTypes) {
@@ -818,12 +880,15 @@ public final class PackageTest extends RunnablePackageTest {
     private Set<PackageType> excludeTypes;
     private int expectedJPackageExitCode;
     private int expectedInstallExitCode;
-    private Map<PackageType, Handler> handlers;
-    private Set<String> namedInitializers;
+    private final Map<PackageType, Handler> handlers;
+    private final Set<String> namedInitializers;
     private final Map<PackageType, PackageHandlers> packageHandlers;
-    private final Predicate<PackageType> isPackageTypeSupported;
-    private final Supplier<JPackageCommand> jpackageFactory;
+    private final Set<PackageType> disabledInstallers;
+    private final Set<PackageType> disabledUninstallers;
+    private Predicate<PackageType> isPackageTypeSupported;
+    private Supplier<JPackageCommand> jpackageFactory;
     private boolean ignoreBundleOutputDir;
+    private boolean createMsiLog;
 
     private static final Path BUNDLE_OUTPUT_DIR;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.WindowsHelper;
 
 /*
  * @test
@@ -52,7 +51,7 @@ public class WinOSConditionTest {
         //  1. If jpackage picks custom OS version condition from the resource directory;
         //  2. If the installer created by jpackage uses OS version condition.
         new PackageTest()
-        .forTypes(PackageType.WIN_MSI)
+        .forTypes(PackageType.WINDOWS)
         .configureHelloApp()
         .addInitializer(cmd -> {
             final var resourceDir = TKit.createTempDirectory("resource-dir");
@@ -64,13 +63,14 @@ public class WinOSConditionTest {
         .addUninstallVerifier(cmd -> {
             // MSI error code 1603 is generic.
             // Dig into the last msi log file for log messages specific to failed condition.
-            final var msiLog = WindowsHelper.lastMsiLogFile();
+            final var msiLog = cmd.winMsiLogFile().orElseThrow();
             // MSI log files are UTF16LE-encoded
             try (final var lines = Files.lines(msiLog, StandardCharsets.UTF_16LE)) {
                 TKit.assertTextStream("Doing action: LaunchConditions").predicate(String::endsWith)
                     .andThen(TKit.assertTextStream("Not supported on this version of Windows").predicate(String::endsWith)).apply(lines);
             }
         })
+        .createMsiLog(true)
         .setExpectedInstallExitCode(1603)
         .run(Action.CREATE, Action.INSTALL, Action.VERIFY_UNINSTALL);
     }
