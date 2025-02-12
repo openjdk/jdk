@@ -25,13 +25,10 @@ package jdk.jpackage.test;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -209,6 +206,49 @@ public class TKitTest extends JUnitAdapter {
         runAssertWithExpectedLogOutput(() -> {
             methodCall.method.invoke(null, methodCall.args);
         }, methodCall.expectFail, methodCall.expectLog);
+    }
+
+    @Test
+    @ParameterSupplier("testCreateTempFile")
+    public void testCreateTempFile(String tempFileRole, Path expectedFile, List<Path> existingFiles,
+            Class<Exception> expectedExceptionClass) throws IOException {
+        for (var existingFile : existingFiles) {
+            existingFile = TKit.workDir().resolve(existingFile);
+
+            Files.createDirectories(existingFile.getParent());
+            Files.createFile(existingFile);
+        }
+
+        if (expectedExceptionClass != null) {
+            try {
+                TKit.createTempFile(tempFileRole);
+                TKit.assertUnexpected("Exception expected");
+            } catch (Exception ex) {
+                TKit.assertTrue(expectedExceptionClass.isInstance(ex),
+                        String.format("Check exception [%s] is instance of %s class", ex, expectedExceptionClass));
+            }
+        } else {
+            final var tempPath = TKit.createTempFile(tempFileRole);
+
+            TKit.assertFileExists(tempPath);
+            TKit.assertTrue(tempPath.startsWith(TKit.workDir()), "Check temp file created in work directory");
+
+            final var relativeTempPath = TKit.workDir().relativize(tempPath);
+            TKit.assertTrue(expectedFile.equals(relativeTempPath),
+                    String.format("Check [%s]=[%s]", expectedFile, relativeTempPath));
+        }
+    }
+
+    public static Collection<Object[]> testCreateTempFile() {
+        return List.<Object[]>of(
+                new Object[] { "foo", Path.of("foo"), List.of(), null },
+                new Object[] { "foo", Path.of("foo-0"), List.of(Path.of("foo")), null },
+                new Object[] { "foo", Path.of("foo-1"), List.of(Path.of("foo"), Path.of("foo-0")), null },
+                new Object[] { "foo-0", Path.of("foo-0-0"), List.of(Path.of("foo-0")), null },
+                new Object[] { "foo/bar/buz", Path.of("foo/bar/buz"), List.of(), null },
+                new Object[] { "foo/bar/buz", Path.of("foo/bar/buz-0"), List.of(Path.of("foo/bar/buz")), null },
+                new Object[] { Path.of("").toAbsolutePath().toString(), null, List.of(), IllegalArgumentException.class }
+        );
     }
 
     private static void runAssertWithExpectedLogOutput(ThrowingRunnable action,

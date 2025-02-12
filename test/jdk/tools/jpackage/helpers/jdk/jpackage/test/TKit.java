@@ -290,7 +290,11 @@ public final class TKit {
 
     private static final String TEMP_FILE_PREFIX = null;
 
-    private static Path createUniqueFileName(String defaultName) {
+    private static Path createUniquePath(String defaultName) {
+        return createUniquePath(defaultName, workDir());
+    }
+
+    private static Path createUniquePath(String defaultName, Path basedir) {
         final String[] nameComponents;
 
         int separatorIdx = defaultName.lastIndexOf('.');
@@ -304,7 +308,6 @@ public final class TKit {
                 separatorIdx + 1)};
         }
 
-        final Path basedir = workDir();
         int i = 0;
         for (; i < 100; ++i) {
             Path path = basedir.resolve(String.join(".", nameComponents));
@@ -324,29 +327,28 @@ public final class TKit {
         if (role == null) {
             return Files.createTempDirectory(workDir(), TEMP_FILE_PREFIX);
         }
-        return Files.createDirectory(createUniqueFileName(role));
+        return Files.createDirectory(createUniquePath(role));
     }
 
-    public static Path createTempFile(Path templateFile) throws
-            IOException {
-        return Files.createFile(createUniqueFileName(
-                templateFile.getFileName().toString()));
+    public static Path createTempFile(String role) throws IOException {
+        return createTempFile(Path.of(role));
     }
 
-    public static Path withTempFile(Path templateFile,
-            ThrowingConsumer<Path> action) {
-        final Path tempFile = ThrowingSupplier.toSupplier(() -> createTempFile(
-                templateFile)).get();
-        boolean keepIt = true;
-        try {
-            ThrowingConsumer.toConsumer(action).accept(tempFile);
-            keepIt = false;
-            return tempFile;
-        } finally {
-            if (tempFile != null && !keepIt) {
-                ThrowingRunnable.toRunnable(() -> Files.deleteIfExists(tempFile)).run();
-            }
+    public static Path createTempFile(Path templateFile) throws IOException {
+        if (templateFile.isAbsolute()) {
+            throw new IllegalArgumentException();
         }
+        final Path basedir;
+        if (templateFile.getNameCount() > 1) {
+            basedir = workDir().resolve(templateFile.getParent());
+        } else {
+            basedir = workDir();
+        }
+
+        final var path = createUniquePath(templateFile.getFileName().toString(), basedir);
+
+        Files.createDirectories(path.getParent());
+        return Files.createFile(path);
     }
 
     public static Path withTempDirectory(String role,
@@ -509,7 +511,7 @@ public final class TKit {
 
     public static Path createRelativePathCopy(final Path file) {
         Path fileCopy = ThrowingSupplier.toSupplier(() -> {
-            Path localPath = createTempFile(file);
+            Path localPath = createTempFile(file.getFileName());
             Files.copy(file, localPath, StandardCopyOption.REPLACE_EXISTING);
             return localPath;
         }).get().toAbsolutePath().normalize();
@@ -725,7 +727,7 @@ public final class TKit {
         assertDirectoryExists(path, Optional.of(true));
     }
 
-    public static void assertDirectoryExists(Path path, Optional<Boolean> isEmptyCheck) {
+    private static void assertDirectoryExists(Path path, Optional<Boolean> isEmptyCheck) {
         assertPathExists(path, true);
         boolean isDirectory = Files.isDirectory(path);
         if (isEmptyCheck.isEmpty() || !isDirectory) {
