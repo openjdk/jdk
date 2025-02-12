@@ -167,8 +167,10 @@ public:
   bool is_buffer_blob() const                 { return _kind == CodeBlobKind::Buffer; }
   bool is_runtime_stub() const                { return _kind == CodeBlobKind::RuntimeStub; }
   bool is_deoptimization_stub() const         { return _kind == CodeBlobKind::Deoptimization; }
+#ifdef COMPILER2
   bool is_uncommon_trap_stub() const          { return _kind == CodeBlobKind::UncommonTrap; }
   bool is_exception_stub() const              { return _kind == CodeBlobKind::Exception; }
+#endif
   bool is_safepoint_stub() const              { return _kind == CodeBlobKind::Safepoint; }
   bool is_adapter_blob() const                { return _kind == CodeBlobKind::Adapter; }
   bool is_vtable_blob() const                 { return _kind == CodeBlobKind::Vtable; }
