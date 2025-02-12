@@ -37,7 +37,8 @@
 // os::malloc() to allocate memory
 class MallocSite : public AllocationSite {
   MemoryCounter _c;
- public:
+public:
+  MallocSite() : AllocationSite(NativeCallStack(), mtNone) {}
   MallocSite(const NativeCallStack& stack, MemTag mem_tag) :
     AllocationSite(stack, mem_tag) {}
 
