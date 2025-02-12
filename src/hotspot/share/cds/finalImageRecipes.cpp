@@ -28,6 +28,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/finalImageRecipes.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -95,6 +96,7 @@ void FinalImageRecipes::record_recipes_impl() {
 }
 
 void FinalImageRecipes::load_all_classes(TRAPS) {
+  assert(CDSConfig::is_dumping_final_static_archive(), "sanity");
   Handle class_loader(THREAD, SystemDictionary::java_system_loader());
   for (int i = 0; i < _all_klasses->length(); i++) {
     Klass* k = _all_klasses->at(i);
@@ -106,8 +108,8 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
           ResourceMark rm(THREAD);
           log_error(cds)("Unable to resolve class from CDS archive: %s", ik->external_name());
           log_error(cds)("Expected: " INTPTR_FORMAT ", actual: " INTPTR_FORMAT, p2i(ik), p2i(actual));
-          log_error(cds)("Please check if your VM command-line is the same as in the training run"); // FIXME better wording
-          MetaspaceShared::unrecoverable_loading_error();
+          log_error(cds)("Please check if your VM command-line is the same as in the training run");
+          MetaspaceShared::unrecoverable_writing_error();
         }
         assert(ik->is_loaded(), "must be");
         ik->link_class(CHECK);
@@ -139,17 +141,25 @@ void FinalImageRecipes::record_recipes() {
   _final_image_recipes->record_recipes_impl();
 }
 
-// FIXME -- catch resolution errors if classpath, etc, has changed, and print an error, and exit
-
 void FinalImageRecipes::apply_recipes(TRAPS) {
   assert(CDSConfig::is_dumping_final_static_archive(), "must be");
   if (_final_image_recipes != nullptr) {
-    _final_image_recipes->load_all_classes(CHECK);
-    _final_image_recipes->apply_recipes_for_invokedynamic(CHECK);
+    _final_image_recipes->apply_recipes_impl(THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+                     java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
+      log_error(cds)("Please check if your VM command-line is the same as in the training run");
+      MetaspaceShared::unrecoverable_writing_error("Unexpected exception, use -Xlog:cds,exceptions=trace for detail");
+    }
   }
 
   // Set it to null as we don't need to write this table into the final image.
   _final_image_recipes = nullptr;
+}
+
+void FinalImageRecipes::apply_recipes_impl(TRAPS) {
+  load_all_classes(CHECK);
+  apply_recipes_for_invokedynamic(CHECK);
 }
 
 void FinalImageRecipes::serialize(SerializeClosure* soc, bool is_static_archive) {

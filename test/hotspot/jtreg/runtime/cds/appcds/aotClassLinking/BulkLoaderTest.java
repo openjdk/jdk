@@ -135,6 +135,13 @@ public class BulkLoaderTest {
                 mainClass,
             };
         }
+
+        @Override
+        public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
+            if (isAOTWorkflow() && runMode == RunMode.TRAINING) {
+                out.shouldContain("Skipping BadOldClassA: Unlinked class not supported by AOTConfiguration");
+            }
+        }
     }
 }
 

@@ -59,6 +59,7 @@ class FinalImageRecipes {
   void record_recipes_impl();
 
   // Called when dumping final image
+  void apply_recipes_impl(TRAPS);
   void load_all_classes(TRAPS);
   void apply_recipes_for_invokedynamic(TRAPS);
 
