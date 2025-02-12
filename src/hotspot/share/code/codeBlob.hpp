@@ -170,6 +170,9 @@ public:
 #ifdef COMPILER2
   bool is_uncommon_trap_stub() const          { return _kind == CodeBlobKind::UncommonTrap; }
   bool is_exception_stub() const              { return _kind == CodeBlobKind::Exception; }
+#else
+  bool is_uncommon_trap_stub() const          { return false; }
+  bool is_exception_stub() const              { return false; }
 #endif
   bool is_safepoint_stub() const              { return _kind == CodeBlobKind::Safepoint; }
   bool is_adapter_blob() const                { return _kind == CodeBlobKind::Adapter; }
