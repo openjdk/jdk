@@ -6234,6 +6234,13 @@ void C2_MacroAssembler::vector_count_leading_zeros_int_avx(XMMRegister dst, XMMR
   vpcmpeqd(xtmp1, xtmp1, xtmp1, vec_enc);
   vpsrld(xtmp1, xtmp1, 24, vec_enc);
 
+  // As 2^24 is the largest possible integer that can be exactly represented by a float value, special handling has to be
+  // done to avoid losing precision by potentially rounding up. To avoid that, we construct a mask to remove low set bits
+  // when the number has the upper 8 bits set. This is a valid transformation as it only removes low bits, and keeps the high bits intact.
+  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
+  vpsrld(xtmp2, src, 24, vec_enc);
+  vpandn(src, xtmp2, src, vec_enc);
+
   // Extract biased exponent.
   vcvtdq2ps(dst, src, vec_enc);
   vpsrld(dst, dst, 23, vec_enc);
