@@ -49,11 +49,11 @@ public class ThreeLetterZoneID {
 
     @Test
     public void testExplicitGetTimeZone() throws Exception {
-        ProcessTools.executeTestJava("ThreeLetterZoneID", "dummy").shouldMatch(WARNING);
+        ProcessTools.executeTestJava("ThreeLetterZoneID", "dummy").stderrShouldMatch(WARNING);
     }
 
     @Test
     public void testSysProp() throws Exception {
-        ProcessTools.executeTestJava("-Duser.timezone=PST", "ThreeLetterZoneID").shouldMatch(WARNING);
+        ProcessTools.executeTestJava("-Duser.timezone=PST", "ThreeLetterZoneID").stderrShouldMatch(WARNING);
     }
 }
