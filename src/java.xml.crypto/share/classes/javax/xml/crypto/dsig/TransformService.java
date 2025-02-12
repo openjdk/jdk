@@ -39,6 +39,7 @@ import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.XMLCryptoContext;
 import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 
+import sun.security.jca.ProvidersFilter;
 
 /**
  * A Service Provider Interface for transform and canonicalization algorithms.
@@ -177,7 +178,7 @@ public abstract class TransformService implements Transform {
         Provider[] provs = Security.getProviders();
         for (Provider p : provs) {
             Service s = p.getService("TransformService", algorithm);
-            if (s != null) {
+            if (s != null && ProvidersFilter.isAllowed(s)) {
                 String value = s.getAttribute("MechanismType");
                 if ((value == null && dom) ||
                     (value != null && value.equals(mechanismType))) {
@@ -239,7 +240,7 @@ public abstract class TransformService implements Transform {
             dom = true;
         }
         Service s = provider.getService("TransformService", algorithm);
-        if (s != null) {
+        if (s != null && ProvidersFilter.isAllowed(s)) {
             String value = s.getAttribute("MechanismType");
             if ((value == null && dom) ||
                 (value != null && value.equals(mechanismType))) {
@@ -310,7 +311,7 @@ public abstract class TransformService implements Transform {
                                               provider);
         }
         Service s = p.getService("TransformService", algorithm);
-        if (s != null) {
+        if (s != null && ProvidersFilter.isAllowed(s)) {
             String value = s.getAttribute("MechanismType");
             if ((value == null && dom) ||
                 (value != null && value.equals(mechanismType))) {

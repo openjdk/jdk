@@ -47,6 +47,7 @@ import java.security.Provider.Service;
 import java.security.Security;
 import java.util.List;
 
+import sun.security.jca.ProvidersFilter;
 
 /**
  * A factory for creating {@link XMLSignature} objects from scratch or
@@ -203,7 +204,7 @@ public abstract class XMLSignatureFactory {
         Provider[] provs = Security.getProviders();
         for (Provider p : provs) {
             Service s = p.getService("XMLSignatureFactory", mechanismType);
-            if (s != null) {
+            if (s != null && ProvidersFilter.isAllowed(s)) {
                 Object obj = null;
                 try {
                     obj = s.newInstance(null);
@@ -254,7 +255,7 @@ public abstract class XMLSignatureFactory {
         }
 
         Service s = provider.getService("XMLSignatureFactory", mechanismType);
-        if (s != null) {
+        if (s != null && ProvidersFilter.isAllowed(s)) {
             Object obj = null;
             try {
                 obj = s.newInstance(null);
@@ -317,7 +318,7 @@ public abstract class XMLSignatureFactory {
                                               provider);
         }
         Service s = p.getService("XMLSignatureFactory", mechanismType);
-        if (s != null) {
+        if (s != null && ProvidersFilter.isAllowed(s)) {
             Object obj = null;
             try {
                 obj = s.newInstance(null);
