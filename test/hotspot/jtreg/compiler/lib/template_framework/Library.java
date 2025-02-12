@@ -129,7 +129,7 @@ public abstract class Library {
                 case ExpressionType.LONG -> GEN_LONG.next();
                 case ExpressionType.FLOAT -> GEN_FLOAT.next();
                 case ExpressionType.DOUBLE -> GEN_DOUBLE.next();
-                case ExpressionType.BOOLEAN -> GEN_INT.next() % 2 == 0;
+                case ExpressionType.BOOLEAN -> RANDOM.nextInt() % 2 == 0;
             }
         ));
 
@@ -138,7 +138,7 @@ public abstract class Library {
             "public static #type #name = ", CONSTANT_EXPRESSION.withArgs(type), ";\n"
         ));
 
-    public static final Template.OneArgs<String> GENERATE_DELAYED_BOOLEAN_USING_BOXING_INLINE =
+    public static final Template.OneArgs<String> GENERATE_BOOLEAN_USING_BOXING_INLINE =
         Template.make("name", (String name) -> body(
             intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(ExpressionType.BOOLEAN, $("flag"))),
             """
@@ -149,7 +149,7 @@ public abstract class Library {
             """
         ));
 
-    public static final Template.OneArgs<String> GENERATE_DELAYED_BOOLEAN_USING_EMPTY_LOOP =
+    public static final Template.OneArgs<String> GENERATE_BOOLEAN_USING_EMPTY_LOOP =
         Template.make("name", (String name) -> body(
             """
             // #name is constant, but only known after first loop opts, when loop detected as empty.
@@ -163,18 +163,20 @@ public abstract class Library {
             """
         ));
 
-    public static final Template.OneArgs<String> GENERATE_DELAYED_BOOLEAN =
+    public static final Template.OneArgs<String> GENERATE_BOOLEAN =
         Template.make("name", (String name) -> body(
             choice(List.of(
-                GENERATE_DELAYED_BOOLEAN_USING_BOXING_INLINE.withArgs(name),
-                GENERATE_DELAYED_BOOLEAN_USING_EMPTY_LOOP.withArgs(name),
+                // These are expected to constant fold at some point during the compilation:
+                GENERATE_BOOLEAN_USING_BOXING_INLINE.withArgs(name),
+                GENERATE_BOOLEAN_USING_EMPTY_LOOP.withArgs(name),
+                // This will never constant fold, as it just loads a boolean:
                 intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(ExpressionType.BOOLEAN, name))
             ))
         ));
 
-    public static final Template.TwoArgs<ExpressionType, String> GENERATE_EARLILER_VALUE_FROM_DELAYED_BOOLEAN =
+    public static final Template.TwoArgs<ExpressionType, String> GENERATE_EARLILER_VALUE_FROM_BOOLEAN =
         Template.make("type", "name", (ExpressionType type, String name) -> body(
-            GENERATE_DELAYED_BOOLEAN.withArgs($("delayed")),
+            GENERATE_BOOLEAN.withArgs($("delayed")),
             "#type #name = ($delayed) ? ",
             CONSTANT_EXPRESSION.withArgs(type),
             " : ",
@@ -186,7 +188,7 @@ public abstract class Library {
         Template.make("type", "name", (ExpressionType type, String name) -> body(
             choice(List.of(
               intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(type, name)),
-              intoHook(METHOD_HOOK, GENERATE_EARLILER_VALUE_FROM_DELAYED_BOOLEAN.withArgs(type, name))
+              intoHook(METHOD_HOOK, GENERATE_EARLILER_VALUE_FROM_BOOLEAN.withArgs(type, name))
             ))
         ));
 

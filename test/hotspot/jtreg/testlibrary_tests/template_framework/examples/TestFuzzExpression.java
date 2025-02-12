@@ -53,8 +53,8 @@ import static compiler.lib.template_framework.Library.ALL_EXPRESSION_TYPES;
 import static compiler.lib.template_framework.Library.EXPRESSION;
 
 /**
- * This is a basic IR verification test, in combination with Generators for random input generation
- * and Verify for output verification.
+ * This is a basic expression fuzzer: it generates random expressions using {@link Library.Expression},
+ * and verifies the results using {@link Verify.checkEQ}.
  * <p>
  * The "@compile" command for JTREG is required so that the frameworks used in the Template code
  * are compiled and available for the Test-VM.
