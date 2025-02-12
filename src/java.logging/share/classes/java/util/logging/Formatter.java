@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,6 @@ package java.util.logging;
  * Some formatters (such as the XMLFormatter) need to wrap head
  * and tail strings around a set of formatted records. The getHeader
  * and getTail methods can be used to obtain these strings.
- * <p>
- * See individual method documentation for information about object
- * locking and synchronization for implementations of this class.
  *
  * @since 1.4
  */
@@ -58,9 +55,6 @@ public abstract class Formatter {
      * localized and formatted version of the LogRecord's message field.
      * It is recommended to use the {@link Formatter#formatMessage}
      * convenience method to localize and format the message field.
-     * <p>
-     * This method is expected to be invoked without any logging
-     * related locks held (since is calls back to user code).
      *
      * @param record the log record to be formatted.
      * @return the formatted log record
@@ -73,10 +67,6 @@ public abstract class Formatter {
      * <p>
      * This base class returns an empty string, but this may be
      * overridden by subclasses.
-     * <p>
-     * This method may be invoked with handler related locks held
-     * and must not be implemented in such a way as to risk
-     * deadlocks, such as by calling back into user code.
      *
      * @param   h  The target handler (can be null)
      * @return  header string
@@ -90,10 +80,6 @@ public abstract class Formatter {
      * <p>
      * This base class returns an empty string, but this may be
      * overridden by subclasses.
-     * <p>
-     * This method may be invoked with handler related locks held
-     * and must not be implemented in such a way as to risk
-     * deadlocks, such as by calling back into user code.
      *
      * @param   h  The target handler (can be null)
      * @return  tail string
@@ -120,12 +106,6 @@ public abstract class Formatter {
      *     java.text.MessageFormat is used to format the string.
      * <li>Otherwise no formatting is performed.
      * </ul>
-     * <p>
-     * This method is expected to be invoked without any logging
-     * related locks held (since is calls back to user code). Any
-     * overridden implementation of this method must avoid locking
-     * around any calls to {@link Object#toString()} on parameters, or
-     * {@code super.formatMessage()}.
      *
      * @param  record  the log record containing the raw message
      * @return   a localized and formatted message
