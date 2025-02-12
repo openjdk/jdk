@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     static final boolean DGRAM_SEND_ASYNC;
     static final int MAX_BUFFERED_HIGH;
     static final int MAX_BUFFERED_LOW;
-    static final boolean IS_WINDOWS;
     static {
         // This default value is the maximum payload size of
         // an IPv6 datagram, which is 65527 (which is bigger
@@ -143,7 +142,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         if (maxBufferLow >= maxBufferHigh) maxBufferLow = maxBufferHigh >> 1;
         MAX_BUFFERED_HIGH = maxBufferHigh;
         MAX_BUFFERED_LOW = maxBufferLow;
-        IS_WINDOWS = OperatingSystem.isWindows();
     }
 
     /**
