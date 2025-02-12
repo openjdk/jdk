@@ -103,7 +103,7 @@ public class AnnotationsTest extends JUnitAdapter {
         }
 
         @Test
-        @ParameterSupplier("testDates2")
+        @ParameterSupplier
         public void testDates2(LocalDate v) {
             recordTestCase(v);
         }
