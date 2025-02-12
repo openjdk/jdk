@@ -59,7 +59,7 @@ public class OpensslArtifactFetcher {
         if (path != null) {
             return path;
         }
-        if (Platform.is64bit()) {
+        if (Platform.isX64()) {
             if (Platform.isLinux()) {
                 path = fetchOpenssl(LINUX_X64.class);
             } else if (Platform.isOSX()) {
