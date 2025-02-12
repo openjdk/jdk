@@ -124,9 +124,8 @@ public abstract class Handler {
      * The {@code Handler}  is responsible for formatting the message, when and
      * if necessary.  The formatting should include localization.
      * <p>
-     * Implementations of this method should avoid synchronizing this method
-     * directly (via the synchronized keyword) or holding any locks around the
-     * formatting of user arguments.
+     * Implementations of this method should avoid holding any locks around the
+     * formatting of {@code LogRecord}.
      *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
