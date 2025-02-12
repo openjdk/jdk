@@ -110,6 +110,16 @@ public class BuffersReaderTest {
         test("hello world".getBytes(StandardCharsets.US_ASCII), 2, 10);
     }
 
+    @Test
+    public void testGetPos6() {
+        test("May the road rise up to meet you".getBytes(StandardCharsets.US_ASCII), 6, 23);
+    }
+
+    @Test
+    public void testGetPos0() {
+        test("May the wind always be at your back".getBytes(StandardCharsets.US_ASCII), 0, 29);
+    }
+
     public void test(byte[] values, int position, int limit) {
         ByteBuffer bb = ByteBuffer.wrap(values);
         bb.position(position);
@@ -147,7 +157,7 @@ public class BuffersReaderTest {
         br.add(bb);
 
         final int N = 3;
-        for (int i = 1 ; i< N; i++) {
+        for (int i = 1 ; i < N; i++) {
             ByteBuffer bbb = ByteBuffer.allocate(bb.limit() + 4);
             bbb.put((byte)-1);
             bbb.put((byte)-2);
@@ -179,12 +189,29 @@ public class BuffersReaderTest {
             System.err.printf("testing getAndRelease()%n");
             br.position(values.length + position);
             assertEquals(br.position(), values.length + position);
-            assertEquals(br.read() - read,values.length + position - start);
+            assertEquals(br.read() - read, values.length + position - start);
             var bbl = br.getAndRelease(values.length);
             assertEquals(bbl.size(), (position == 0 ? 1 : 2));
+            // We expect bbl.getFirst() to be the second byte buffer, which will
+            // have an offset of 2. The position in that byte buffer
+            // should  therefore be position + 2, since we moved the
+            // position of the buffers reader to values.length +
+            // position before calling getAndRelease.
+            assertEquals(position + 2, bbl.getFirst().position());
+            int rstart = (int) bbl.getFirst().position();
             ListBuffersReader br2 = BuffersReader.list(bbl);
-            assertEquals(br2.position(), 0);
-            assertEquals(br2.limit(), values.length);
+            System.err.printf("position=%s, bbl[0].position=%s%n", position, rstart);
+            // br2 initial position should reflect the initial position
+            // of the first buffer in the bbl list.
+            assertEquals(br2.position(), rstart);
+            try {
+                br2.position(rstart - 1);
+                throw new AssertionError("Expected IllegalArgumentException not thrown");
+            } catch (IllegalArgumentException iae) {
+                System.err.printf("Got expected exception" +
+                        " trying to move before initial position: %s%n", iae);
+            }
+            assertEquals(br2.limit(), values.length + rstart);
             for (int i = 0; i < values.length; i++) {
                 assertEquals(br2.get(), values[(i + position) % values.length]);
             }

@@ -54,11 +54,7 @@ import java.util.Objects;
  * of the reader is reset to 0, allowing to read the next frame from the remaining
  * data.
  */
-// TODO: we could remove debug and printf in this class before integrating
 public abstract sealed class BuffersReader {
-
-    // TODO: eventually remove those traces, or pass a debug logger
-    static final boolean debug = false;
 
     /**
      * Release all buffers held by this {@code BuffersReader}, whether
@@ -221,8 +217,7 @@ public abstract sealed class BuffersReader {
         @Override
         public byte get() {
             if (single == null) throw new BufferUnderflowException();
-            byte b = single.get();
-            return b;
+            return single.get();
         }
 
         @Override
@@ -244,7 +239,7 @@ public abstract sealed class BuffersReader {
 
         @Override
         public boolean hasRemaining() {
-            return single == null ? false : single.hasRemaining();
+            return single != null && single.hasRemaining();
         }
 
         @Override
@@ -370,12 +365,12 @@ public abstract sealed class BuffersReader {
          *         reader.add(buffer); // @link substring="add" target="#add(ByteBuffer)"
          *     }
          * }
-         * @param buffers a list of {@code ByteBuffers}
+         * @param buffers a list of {@link ByteBuffer ByteBuffers}
          * @return this reader
          */
         public ListBuffersReader addAll(List<ByteBuffer> buffers) {
             for (var buffer : buffers) {
-                if (buffers.isEmpty()) {
+                if (isEmpty()) {
                     add(buffer);
                     continue;
                 }
@@ -402,7 +397,6 @@ public abstract sealed class BuffersReader {
         public byte get(long pos) {
             if (pos >= limit || pos < start)
                 throw new IndexOutOfBoundsException();
-            if (debug) System.out.printf("looking for byte at %s%n", pos);
             ByteBuffer buffer = current(false);
             if (position == limit && current != null) {
                 // let the current buffer throw
@@ -410,24 +404,17 @@ public abstract sealed class BuffersReader {
             }
             assert buffer != null : "limit check failed";
             if (pos == position) {
-                if (debug) System.out.printf("happy case: get(%s)%n", buffer.position() );
                 return buffer.get(buffer.position());
             }
             long offset = currentOffset;
             int index = nextIndex;
             Buffer cur = current;
             while (pos >= offset) {
-                if (debug) System.out.printf("%s >= %s%n", pos, offset);
                 int bpos = buffer.position();
                 int boffset = cur.offset;
                 int blimit = buffer.limit();
                 assert index == nextIndex || bpos == boffset;
-                if (debug) System.out.printf("rpos: %s, pos: %s, offset:%s, blimit:%s, boffset:%s%n",
-                        position, pos, offset, blimit, boffset);
-                if (debug) System.out.printf("pos - offset:%s, blimit - boffset:%s, in buffer:%s%n",
-                        pos - offset, blimit - boffset, pos - offset < blimit - boffset);
                 if (pos - offset < blimit - boffset) {
-                    if (debug) System.out.printf("buffer.get(%s)%n", pos - offset + boffset);
                     return buffer.get((int) (pos - offset + boffset));
                 }
                 if (index >= buffers.size()) {
@@ -436,7 +423,6 @@ public abstract sealed class BuffersReader {
                 }
                 int skipped = cur.limit - cur.offset;
                 offset += skipped;
-                if (debug) System.out.printf("looking into next buffer: %s%n", index);
                 cur = buffers.get(index++);
                 buffer = cur.buffer;
             }
@@ -444,13 +430,11 @@ public abstract sealed class BuffersReader {
             int blimit = cur.offset;
             int boffset = cur.offset;
             while (pos < offset) {
-                if (debug) System.out.printf("%s <= %s%n", pos, offset);
                 assert blimit == cur.limit || index == nextIndex && blimit == boffset;
                 if (index <= 1) {
                     assert false : "buffers exhausted";
                     throw new IndexOutOfBoundsException();
                 }
-                if (debug) System.out.printf("looking into previous buffer: %s%n", index - 2);
                 cur = buffers.get(--index - 1);
                 buffer = cur.buffer;
                 int bpos = buffer.position();
@@ -460,7 +444,6 @@ public abstract sealed class BuffersReader {
                 offset -= skipped;
                 assert index == nextIndex || bpos == blimit;
                 if (pos - offset >= 0 && pos - offset < blimit - boffset) {
-                    if (debug) System.out.printf("buffer.get(%s)%n", pos - offset + boffset);
                     return buffer.get((int) (pos - offset + boffset));
                 }
             }
@@ -575,10 +558,6 @@ public abstract sealed class BuffersReader {
             for (var it = buffers.listIterator(); it.hasNext(); ) {
                 var b = it.next();
                 var buf = b.buffer;
-                if (debug) {
-                    System.out.println("releasing buffer pos=" + buf.position()
-                            + " offset=" + b.offset + " remaining=" + buf.remaining());
-                }
                 released += (buf.position() - b.offset);
                 if (buf.hasRemaining()) {
                     it.set(new Buffer(buf));
