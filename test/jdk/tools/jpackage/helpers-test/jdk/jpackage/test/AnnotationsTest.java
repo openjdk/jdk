@@ -41,6 +41,7 @@ import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -49,17 +50,17 @@ public class AnnotationsTest extends JUnitAdapter {
 
     @ParameterizedTest
     @ValueSource(classes = {BasicTest.class, ParameterizedInstanceTest.class})
-    public void test(Class<? extends TestExecutionRecorder> clazz) {
-        runTests(List.of(clazz));
+    public void test(Class<? extends TestExecutionRecorder> clazz, @TempDir Path workDir) {
+        runTest(clazz, workDir);
     }
 
     @ParameterizedTest
     @EnumSource(OperatingSystem.class)
-    public void testIfOSTest(OperatingSystem os) {
+    public void testIfOSTest(OperatingSystem os, @TempDir Path workDir) {
         try {
             TestBuilderConfig.setOperatingSystem(os);
             TKit.log("Current operating system: " + os);
-            runTests(List.of(IfOSTest.class));
+            runTest(IfOSTest.class, workDir);
         } finally {
             TestBuilderConfig.setDefaults();
         }
@@ -302,23 +303,19 @@ public class AnnotationsTest extends JUnitAdapter {
         });
     }
 
-    private static void runTests(List<Class<? extends TestExecutionRecorder>> tests) {
+    private static void runTest(Class<? extends TestExecutionRecorder> test, Path workDir) {
         ACTUAL_TEST_DESCS.get().clear();
 
-        var expectedTestDescs = tests.stream()
-                .map(AnnotationsTest::getExpectedTestDescs)
-                .flatMap(x -> x)
+        var expectedTestDescs = getExpectedTestDescs(test)
                 // Collect in the map to check for collisions for free
                 .collect(toMap(x -> x, x -> ""))
                 .keySet();
 
-        var args = tests.stream().map(test -> {
-            return String.format("--jpt-run=%s", test.getName());
-        }).toArray(String[]::new);
+        var args = new String[] { String.format("--jpt-run=%s", test.getName()) };
 
         final List<String> log;
         try {
-            log = captureJPackageTestLog(() -> Main.main(args));
+            log = captureJPackageTestLog(() -> Main.main(TestBuilder.build().workDirRoot(workDir), args));
             assertRecordedTestDescs(expectedTestDescs);
         } catch (Throwable t) {
             t.printStackTrace(System.err);
