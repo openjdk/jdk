@@ -251,12 +251,8 @@ public class Annotate {
             // been handled, meaning that the set of annotations pending completion is now empty.
             Assert.check(s.kind == PCK || s.annotationsPendingCompletion());
             JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
-            if (deferDecl != null) {
-                deferredLintHandler.push(deferDecl);
-            } else {
-                deferredLintHandler.pushImmediate(lint);
-            }
-            Lint prevLint = deferDecl != null ? null : chk.setLint(lint);
+            Assert.check(deferDecl != null);
+            deferredLintHandler.push(deferDecl);
             try {
                 if (s.hasAnnotations() && annotations.nonEmpty())
                     log.error(annotations.head.pos, Errors.AlreadyAnnotated(Kinds.kindName(s), s));
@@ -267,8 +263,6 @@ public class Annotate {
                 // never called for a type parameter
                 annotateNow(s, annotations, localEnv, false, false);
             } finally {
-                if (prevLint != null)
-                    chk.setLint(prevLint);
                 deferredLintHandler.pop();
                 log.useSource(prev);
             }
