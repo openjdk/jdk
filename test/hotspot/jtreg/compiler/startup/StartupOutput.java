@@ -60,11 +60,15 @@ public class StartupOutput {
             throw new Exception("VM crashed with exit code " + exitCode);
         }
 
-        for (int i = 0; i < 2000; i++) {
+        Process[] pr = new Process[10000];
+        for (int i = 0; i < 10000; i++) {
             int initialCodeCacheSizeInKb = 800 + rand.nextInt(400);
             int reservedCodeCacheSizeInKb = initialCodeCacheSizeInKb + rand.nextInt(200);
             pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:InitialCodeCacheSize=" + initialCodeCacheSizeInKb + "K", "-XX:ReservedCodeCacheSize=" + reservedCodeCacheSizeInKb + "k", "-version");
-            out = new OutputAnalyzer(pb.start());
+            pr[i] = pb.start();
+        }
+        for (int i = 0; i < 10000; i++) {
+            out = new OutputAnalyzer(pr[i]);
             // The VM should not crash but will probably fail with a "CodeCache is full. Compiler has been disabled." message
             out.stdoutShouldNotContain("# A fatal error");
             exitCode = out.getExitValue();
