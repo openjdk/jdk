@@ -21,6 +21,17 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8240256 8269034
+ * @summary
+ * @library /test/lib/ /sun/security/pkcs11/
+ * @modules jdk.crypto.cryptoki/sun.security.pkcs11
+ * @run main/othervm
+ *        -DCUSTOM_P11_CONFIG=${test.src}/MultipleLogins-nss.txt
+ *        -DCUSTOM_DB_DIR=${test.src}
+ *        MultipleLogins
+ */
 
 import sun.security.pkcs11.SunPKCS11;
 
@@ -30,9 +41,14 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
+import jdk.test.lib.Utils;
+
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.*;
+import java.util.List;
 
 import jdk.test.lib.util.ForceGC;
 import jtreg.SkippedException;
@@ -42,7 +58,25 @@ public class MultipleLogins {
     private static final int NUM_PROVIDERS = 20;
     private static final SunPKCS11[] providers = new SunPKCS11[NUM_PROVIDERS];
 
+    private static void copyDbFiles() throws IOException {
+        final var testFolder = System.getProperty("test.src", ".");
+        final var destination = Paths.get(testFolder);
+        final var sourceFiles = List.of(
+                Paths.get(testFolder + "/../nss/db/cert9.db"),
+                Paths.get(testFolder + "/../nss/db/key4.db"),
+                Paths.get(testFolder + "/../nss/db/cert8.db"),
+                Paths.get(testFolder + "/../nss/db/key3.db")
+        );
+
+        final var list = Utils.copyFiles(sourceFiles, destination, StandardCopyOption.REPLACE_EXISTING);
+
+        System.out.println("NSS db files copied to: ");
+        list.forEach(System.out::println);
+    }
+
     public static void main(String[] args) throws Exception {
+        copyDbFiles();
+
         String nssConfig = null;
         try {
             nssConfig = PKCS11Test.getNssConfig();
