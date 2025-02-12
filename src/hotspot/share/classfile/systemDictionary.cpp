@@ -423,47 +423,40 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
 
   assert(next_name != nullptr, "null superclass for resolving");
   assert(!Signature::is_array(next_name), "invalid superclass name");
-#if INCLUDE_CDS
-  if (CDSConfig::is_dumping_static_archive()) {
-    // Special processing for handling UNREGISTERED shared classes.
-    InstanceKlass* k = SystemDictionaryShared::lookup_super_for_unregistered_class(class_name,
-                           next_name, is_superclass);
-    if (k) {
-      return k;
-    }
-  }
-#endif // INCLUDE_CDS
-
-  // If class_name is already loaded, just return the superclass or superinterface.
-  // Make sure there's a placeholder for the class_name before resolving.
-  // This is used as a claim that this thread is currently loading superclass/classloader
-  // and for ClassCircularity checks.
 
   ClassLoaderData* loader_data = class_loader_data(class_loader);
-  Dictionary* dictionary = loader_data->dictionary();
+
+  if (is_superclass) {
+    InstanceKlass* klassk = loader_data->dictionary()->find_class(THREAD, class_name);
+    if (klassk != nullptr) {
+      // We can come here for two reasons:
+      // (a) RedefineClasses -- the class is already loaded
+      // (b) Rarely, the class might have been loaded by a parallel thread
+      // We can do a quick check against the already assigned superclass's name and loader.
+      InstanceKlass* superk = klassk->java_super();
+      if (superk != nullptr &&
+          superk->name() == next_name &&
+          superk->class_loader() == class_loader()) {
+        return superk;
+      }
+    }
+  }
 
   // can't throw error holding a lock
   bool throw_circularity_error = false;
   {
     MutexLocker mu(THREAD, SystemDictionary_lock);
-    InstanceKlass* klassk = dictionary->find_class(THREAD, class_name);
-    InstanceKlass* quicksuperk;
-    // To support parallel loading: if class is done loading, just return the superclass
-    // if the next_name matches class->super()->name() and if the class loaders match.
-    if (klassk != nullptr && is_superclass &&
-       ((quicksuperk = klassk->java_super()) != nullptr) &&
-       ((quicksuperk->name() == next_name) &&
-         (quicksuperk->class_loader() == class_loader()))) {
-      return quicksuperk;
-    } else {
-      // Must check ClassCircularity before checking if superclass is already loaded.
-      PlaceholderEntry* probe = PlaceholderTable::get_entry(class_name, loader_data);
-      if (probe && probe->check_seen_thread(THREAD, PlaceholderTable::DETECT_CIRCULARITY)) {
-          log_circularity_error(class_name, probe);
-          throw_circularity_error = true;
-      }
+
+    // Must check ClassCircularity before resolving next_name (superclass or interface).
+    PlaceholderEntry* probe = PlaceholderTable::get_entry(class_name, loader_data);
+    if (probe != nullptr && probe->check_seen_thread(THREAD, PlaceholderTable::DETECT_CIRCULARITY)) {
+        log_circularity_error(class_name, probe);
+        throw_circularity_error = true;
     }
 
+    // Make sure there's a placeholder for the class_name before resolving.
+    // This is used as a claim that this thread is currently loading superclass/classloader
+    // and for ClassCircularity checks.
     if (!throw_circularity_error) {
       // Be careful not to exit resolve_with_circularity_detection without removing this placeholder.
       PlaceholderEntry* newprobe = PlaceholderTable::find_and_add(class_name,
@@ -511,12 +504,11 @@ static void handle_parallel_super_load(Symbol* name,
                                        TRAPS) {
 
   // The result superk is not used; resolve_with_circularity_detection is called for circularity check only.
-  // This passes true to is_superclass even though it might not be the super class in order to perform the
-  // optimization anyway.
+  // This passes false to is_superclass to skip doing the unlikely optimization.
   Klass* superk = SystemDictionary::resolve_with_circularity_detection(name,
                                                                        superclassname,
                                                                        class_loader,
-                                                                       true,
+                                                                       false,
                                                                        CHECK);
 }
 

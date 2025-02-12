@@ -547,10 +547,6 @@ Node *Node::clone() const {
     if (cg != nullptr) {
       CallGenerator* cloned_cg = cg->with_call_node(n->as_Call());
       n->as_Call()->set_generator(cloned_cg);
-
-      C->print_inlining_assert_ready();
-      C->print_inlining_move_to(cg);
-      C->print_inlining_update(cloned_cg);
     }
   }
   if (n->is_SafePoint()) {

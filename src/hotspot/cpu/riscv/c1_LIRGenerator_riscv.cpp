@@ -1102,6 +1102,11 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
                 x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
 }
 
+// Intrinsic for Class::isInstance
+address LIRGenerator::isInstance_entry() {
+  return CAST_FROM_FN_PTR(address, Runtime1::is_instance_of);
+}
+
 void LIRGenerator::do_If(If* x) {
   // If should have two successors
   assert(x->number_of_sux() == 2, "inconsistency");

@@ -378,9 +378,10 @@ static void next_line(FILE *f) {
   } while (c != '\n' && c != EOF);
 }
 
-void os::Linux::kernel_version(long* major, long* minor) {
-  *major = -1;
-  *minor = -1;
+void os::Linux::kernel_version(long* major, long* minor, long* patch) {
+  *major = 0;
+  *minor = 0;
+  *patch = 0;
 
   struct utsname buffer;
   int ret = uname(&buffer);
@@ -388,10 +389,27 @@ void os::Linux::kernel_version(long* major, long* minor) {
     log_warning(os)("uname(2) failed to get kernel version: %s", os::errno_name(ret));
     return;
   }
-  int nr_matched = sscanf(buffer.release, "%ld.%ld", major, minor);
-  if (nr_matched != 2) {
-    log_warning(os)("Parsing kernel version failed, expected 2 version numbers, only matched %d", nr_matched);
+  int nr_matched = sscanf(buffer.release, "%ld.%ld.%ld", major, minor, patch);
+  if (nr_matched != 3) {
+    log_warning(os)("Parsing kernel version failed, expected 3 version numbers, only matched %d", nr_matched);
   }
+}
+
+int os::Linux::kernel_version_compare(long major1, long minor1, long patch1,
+                                      long major2, long minor2, long patch2) {
+  // Compare major versions
+  if (major1 > major2) return 1;
+  if (major1 < major2) return -1;
+
+  // Compare minor versions
+  if (minor1 > minor2) return 1;
+  if (minor1 < minor2) return -1;
+
+  // Compare patchlevel versions
+  if (patch1 > patch2) return 1;
+  if (patch1 < patch2) return -1;
+
+  return 0;
 }
 
 bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu) {

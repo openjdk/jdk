@@ -204,13 +204,31 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   // Only perform a PerfData operation if the PerfData object has been
   // allocated and if the PerfDataManager has not freed the PerfData
-  // objects which can happen at normal VM shutdown.
-  //
+  // objects which can happen at normal VM shutdown. This operation is
+  // only safe when thread is not in safepoint-safe code, i.e. PerfDataManager
+  // could not reach the safepoint and free the counter while we are using it.
+  // If this is not guaranteed, use OM_PERFDATA_SAFE_OP instead.
   #define OM_PERFDATA_OP(f, op_str)                 \
     do {                                            \
-      if (ObjectMonitor::_sync_ ## f != nullptr &&  \
-          PerfDataManager::has_PerfData()) {        \
-        ObjectMonitor::_sync_ ## f->op_str;         \
+      if (ObjectMonitor::_sync_ ## f != nullptr) {  \
+        if (PerfDataManager::has_PerfData()) {      \
+          ObjectMonitor::_sync_ ## f->op_str;       \
+        }                                           \
+      }                                             \
+    } while (0)
+
+  // Only perform a PerfData operation if the PerfData object has been
+  // allocated and if the PerfDataManager has not freed the PerfData
+  // objects which can happen at normal VM shutdown. Additionally, we
+  // enter the critical section to resolve the race against PerfDataManager
+  // entering the safepoint and deleting the counter during shutdown.
+  #define OM_PERFDATA_SAFE_OP(f, op_str)            \
+    do {                                            \
+      if (ObjectMonitor::_sync_ ## f != nullptr) {  \
+        GlobalCounter::CriticalSection cs(Thread::current()); \
+        if (PerfDataManager::has_PerfData()) {      \
+          ObjectMonitor::_sync_ ## f->op_str;       \
+        }                                           \
       }                                             \
     } while (0)
 
@@ -377,6 +395,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   };
 
   bool      enter_is_async_deflating();
+  void      notify_contended_enter(JavaThread *current);
  public:
   void      enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   bool      enter_for(JavaThread* locking_thread);

@@ -558,7 +558,9 @@ static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
     // The memory address is computed by 'base' and fed to 'mach' via an
     // indirect memory operand (indicated by offset == 0). The ultimate base and
     // offset can be fetched directly from the inputs and Ideal type of 'base'.
-    offset = base->bottom_type()->isa_oopptr()->offset();
+    const TypeOopPtr* oopptr = base->bottom_type()->isa_oopptr();
+    if (oopptr == nullptr) return nullptr;
+    offset = oopptr->offset();
     // Even if 'base' is not an Ideal AddP node anymore, Matcher::ReduceInst()
     // guarantees that the base address is still available at the same slot.
     base = base->in(AddPNode::Base);
