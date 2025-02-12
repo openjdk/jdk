@@ -673,7 +673,10 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue) {
   methodHandle max_method_h(Thread::current(), max_method);
 
   if (max_task != nullptr && max_task->comp_level() == CompLevel_full_profile && TieredStopAtLevel > CompLevel_full_profile &&
-      max_method != nullptr && is_method_profiled(max_method_h) && !Arguments::is_compiler_only()) {
+      max_method != nullptr && is_method_profiled(max_method_h) &&
+      !Arguments::is_compiler_only() &&
+      (max_task->compile_reason() != CompileTask::Reason_Whitebox))  // CTW should not drop the compilation level
+  {
     max_task->set_comp_level(CompLevel_limited_profile);
 
     if (CompileBroker::compilation_is_complete(max_method_h, max_task->osr_bci(), CompLevel_limited_profile)) {
