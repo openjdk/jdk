@@ -36,9 +36,11 @@ import java.util.List;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.Hook;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
+import static compiler.lib.template_framework.Template.intoHook;
 
 public class TestAdvanced {
 
@@ -50,6 +52,7 @@ public class TestAdvanced {
         comp.addJavaSourceCode("p.xyz.InnerTest1", generate1());
         comp.addJavaSourceCode("p.xyz.InnerTest2", generate2());
         comp.addJavaSourceCode("p.xyz.InnerTest3", generate3());
+        comp.addJavaSourceCode("p.xyz.InnerTest4", generate4());
 
         // Compile the source files.
         comp.compile();
@@ -58,6 +61,7 @@ public class TestAdvanced {
         comp.invoke("p.xyz.InnerTest1", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest2", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest3", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest4", "main", new Object[] {});
     }
 
     // This example shows the use of various Tokens.
@@ -205,4 +209,58 @@ public class TestAdvanced {
         // Render templateClass to String.
         return templateClass.withArgs().render();
     }
+
+    // In this example, we look at the use of Hooks.
+    public static String generate4() {
+        // We can define a custom hook.
+        // Note: generally we prefer using the pre-defined CLASS_HOOK and METHOD_HOOK from the Library,
+        //       when ever possible. See also the example after this one.
+        var myHook = new Hook("MyHook");
+
+        var template1 = Template.make("name", "value", (String name, Integer value) -> body(
+            """
+            public static int #name = #value;
+            """
+        ));
+
+        var template2 = Template.make("x", (Integer x) -> body(
+            """
+            // Let us go back to the hook, and define a field named $field...
+            """,
+            intoHook(myHook, template1.withArgs($("field"), x)),
+            """
+            System.out.println("$field: " + $field);
+            if ($field != #x) { throw new RuntimeException("Wrong value!"); }
+            """
+        ));
+
+        var templateClass = Template.make(() -> body(
+            """
+            package p.xyz;
+
+            public class InnerTest4 {
+            """,
+            // We set a Hook outside the main method, but inside the Class.
+            // The Hook is set for the Tokens inside the set braces.
+            // As long as the hook is set, we can generate code into the hook,
+            // here we can define static fields for example.
+            myHook.set(
+                """
+                public static void main() {
+                """,
+                    template2.withArgs(5),
+                    template2.withArgs(7),
+                """
+                }
+                """
+            ),
+            """
+            }
+            """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.withArgs().render();
+    }
+
 }
