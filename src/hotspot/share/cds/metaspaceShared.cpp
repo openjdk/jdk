@@ -965,6 +965,14 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
     }
   }
 
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    if (ExtraSharedClassListFile) {
+      log_info(cds)("Loading extra classes from %s ...", ExtraSharedClassListFile);
+      ClassListParser::parse_classlist(ExtraSharedClassListFile,
+                                       ClassListParser::_parse_all, CHECK);
+    }
+  }
+
   // Rewrite and link classes
   log_info(cds)("Rewriting and linking classes ...");
 

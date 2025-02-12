@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 
 import jdk.internal.access.SharedSecrets;
@@ -447,6 +448,20 @@ public class CDS {
             }
 
             throw new ClassNotFoundException(name);
+        }
+    }
+
+    public static class TestTrainingApp {
+        static ClassLoader loader = jdk.internal.loader.ClassLoaders.appClassLoader();
+        public static void main(String[] args) throws Throwable {
+            String[] tools = {
+                "javac", "javap", "jlink", "jar",
+            };
+            for (String tool : tools) {
+                ToolProvider t  = ToolProvider.findFirst(tool)
+                    .orElseThrow(() -> new RuntimeException(tool + " not found"));
+                t.run(System.out, System.out, "--help");
+            }
         }
     }
 }

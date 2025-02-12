@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -721,35 +721,21 @@ define SetupAotBody
   $1_AOT_JDK_CONF  := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotconf
   $1_AOT_JDK_CACHE := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotcache
 
-  $1_JAVA_TOOL_OPTS := $$(addprefix -J, $$($1_VM_OPTIONS))
-
   $$($1_AOT_JDK_CACHE): $$(JDK_IMAGE_DIR)/release
 	$$(call MakeDir, $$($1_TEST_SUPPORT_DIR)/aot)
 
-	$(foreach jtool, javac javap jlink jar, \
-	    $(info AOT: Create cache configuration for $(jtool)) \
-	    $$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot.$(jtool), ( \
-	        $$(FIXPATH) $(JDK_UNDER_TEST)/bin/$(jtool) $$($1_JAVA_TOOL_OPTS) \
-	                    -J-XX:AOTMode=record -J-XX:AOTConfiguration=$$($1_AOT_JDK_CONF).$(jtool) --help \
-	    ))
-	)
-
-	$$(info AOT: Copy $(JDK_UNDER_TEST)/lib/classlist to $$($1_AOT_JDK_CONF).jdk )
+	$(info AOT: Create cache configuration) \
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot, ( \
-		$$(FIXPATH) $(CP) $(JDK_UNDER_TEST)/lib/classlist $$($1_AOT_JDK_CONF).jdk \
+	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
+	                -XX:AOTMode=record -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) \
+	                'jdk.internal.misc.CDS$$$$TestTrainingApp' \
 	))
-
-	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).* > $$($1_AOT_JDK_CONF).temp
-	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).temp | $(GREP) -v '#' | $(GREP) -v '@' | $(SORT) | \
-	        $(SED) -e 's/id:.*//g' | uniq \
-		> $$($1_AOT_JDK_CONF)
-	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).temp | $(GREP) '@cp' | $(SORT) \
-	        >> $$($1_AOT_JDK_CONF)
 
 	$$(info AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot, ( \
 		$$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
 	        $$($1_VM_OPTIONS) -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CACHE).log \
+	        -XX:ExtraSharedClassListFile=$(JDK_UNDER_TEST)/lib/classlist \
 		-XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
 	))
 
