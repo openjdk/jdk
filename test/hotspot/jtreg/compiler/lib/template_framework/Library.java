@@ -38,8 +38,8 @@ import static compiler.lib.template_framework.Template.fuel;
 import static compiler.lib.template_framework.Template.setFuelCost;
 import static compiler.lib.template_framework.Template.countNames;
 import static compiler.lib.template_framework.Template.sampleName;
-import static compiler.lib.template_framework.Template.ALL;
-import static compiler.lib.template_framework.Template.MUTABLE;
+import static compiler.lib.template_framework.NameSelection.ALL;
+import static compiler.lib.template_framework.NameSelection.MUTABLE;
 
 /**
  * The Library provides a collection of helpful Templates and Hooks.
@@ -196,6 +196,7 @@ public abstract class Library {
         Template.make("type", (ExpressionType type) -> {
             if (countNames(type, ALL) == 0 || RANDOM.nextInt(5) == 0) {
                 return body(
+                    // TODO defineName !!!
                     GENERATE_EARLIER_VALUE.withArgs(type, $("early")),
                     $("early")
                 );

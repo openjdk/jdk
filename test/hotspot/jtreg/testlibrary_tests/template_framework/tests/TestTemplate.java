@@ -48,8 +48,8 @@ import static compiler.lib.template_framework.Template.setFuelCost;
 import static compiler.lib.template_framework.Template.defineName;
 import static compiler.lib.template_framework.Template.countNames;
 import static compiler.lib.template_framework.Template.sampleName;
-import static compiler.lib.template_framework.Template.MUTABLE;
-import static compiler.lib.template_framework.Template.ALL;
+import static compiler.lib.template_framework.NameSelection.MUTABLE;
+import static compiler.lib.template_framework.NameSelection.ALL;
 
 public class TestTemplate {
     interface FailingTest {

@@ -23,4 +23,4 @@
 
 package compiler.lib.template_framework;
 
-enum NameSelection { MUTABLE, ALL }
+public enum NameSelection { MUTABLE, ALL }

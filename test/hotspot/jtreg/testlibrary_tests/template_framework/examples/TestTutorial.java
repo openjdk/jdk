@@ -23,39 +23,49 @@
 
 /*
  * @test
- * @summary Test advanced use of Templates with the Compile Framework.
+ * @summary Demonstrate the use of Templates with the Compile Framework.
  *          It displays the use of most features in the Template Framework.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver template_framework.examples.TestAdvanced
+ * @run driver template_framework.examples.TestTutorial
  */
 
 package template_framework.examples;
 
+import java.util.Collections;
 import java.util.List;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.Hook;
+import compiler.lib.template_framework.TemplateBinding;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.intoHook;
+import static compiler.lib.template_framework.Template.fuel;
+import static compiler.lib.template_framework.Template.defineName;
+import static compiler.lib.template_framework.Template.sampleName;
+import static compiler.lib.template_framework.Template.countNames;
 import static compiler.lib.template_framework.Library.CLASS_HOOK;
 import static compiler.lib.template_framework.Library.METHOD_HOOK;
+import static compiler.lib.template_framework.NameSelection.MUTABLE;
+import static compiler.lib.template_framework.NameSelection.ALL;
 
-public class TestAdvanced {
+public class TestTutorial {
 
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
         // Add java source files.
-        comp.addJavaSourceCode("p.xyz.InnerTest1", generate1());
-        comp.addJavaSourceCode("p.xyz.InnerTest2", generate2());
-        comp.addJavaSourceCode("p.xyz.InnerTest3", generate3());
-        comp.addJavaSourceCode("p.xyz.InnerTest4", generate4());
-        comp.addJavaSourceCode("p.xyz.InnerTest5", generate5());
+        comp.addJavaSourceCode("p.xyz.InnerTest1", generateWithListOfTokens());
+        comp.addJavaSourceCode("p.xyz.InnerTest2", generateWithTemplateArguments());
+        comp.addJavaSourceCode("p.xyz.InnerTest3", generateWithHashtagAndDollarReplacements());
+        comp.addJavaSourceCode("p.xyz.InnerTest4", generateWithCustomHooks());
+        comp.addJavaSourceCode("p.xyz.InnerTest5", generateWithLibraryHooks());
+        comp.addJavaSourceCode("p.xyz.InnerTest6", generateWithRecursionAndBindingsAndFuel());
+        comp.addJavaSourceCode("p.xyz.InnerTest7", generateWithNames());
 
         // Compile the source files.
         comp.compile();
@@ -66,10 +76,12 @@ public class TestAdvanced {
         comp.invoke("p.xyz.InnerTest3", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest4", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest5", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest6", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest7", "main", new Object[] {});
     }
 
     // This example shows the use of various Tokens.
-    public static String generate1() {
+    public static String generateWithListOfTokens() {
         // A Template is essencially a function / lambda that produces a
         // token body, which is a list of Tokens that are concatenated.
         var templateClass = Template.make(() -> body(
@@ -104,7 +116,7 @@ public class TestAdvanced {
     }
 
     // This example shows the use of Templates, with and without arguments.
-    public static String generate2() {
+    public static String generateWithTemplateArguments() {
         // A Template with no arguments.
         var templateHello = Template.make(() -> body(
             """
@@ -145,7 +157,7 @@ public class TestAdvanced {
     // Note: hashtag replacements are a workaround for the missing string templates.
     //       If we had string templates, we could just capture the typed lambda
     //       arguments, and use them directly in the String via string templating.
-    public static String generate3() {
+    public static String generateWithHashtagAndDollarReplacements() {
         var template1 = Template.make("x", (Integer x) -> body(
             // We have the "#x" hashtag replacement from the argument capture above.
             // Additionally, we can define "#con" as a hashtag replacement from let:
@@ -215,7 +227,7 @@ public class TestAdvanced {
     }
 
     // In this example, we look at the use of Hooks.
-    public static String generate4() {
+    public static String generateWithCustomHooks() {
         // We can define a custom hook.
         // Note: generally we prefer using the pre-defined CLASS_HOOK and METHOD_HOOK from the Library,
         //       when ever possible. See also the example after this one.
@@ -269,7 +281,7 @@ public class TestAdvanced {
 
     // We saw the use of custom hooks above, but now we look at the use of CLASS_HOOK and METHOD_HOOK
     // from the Temlate Library.
-    public static String generate5() {
+    public static String generateWithLibraryHooks() {
         var templateStaticField = Template.make("name", "value", (String name, Integer value) -> body(
             """
             static { System.out.println("Defining static field #name"); }
@@ -348,4 +360,165 @@ public class TestAdvanced {
         // Render templateClass to String.
         return templateClass.withArgs().render();
     }
+
+    // This example shows the use of bindings to allow cyclic references of Templates,
+    // allowing recursive template generation. We also show the use of fuel to limit
+    // recursion.
+    public static String generateWithRecursionAndBindingsAndFuel() {
+        // Binding allows the use of template1 inside of template1, via the binding indirection.
+        var binding1 = new TemplateBinding<Template.OneArgs<Integer>>();
+        var template1 = Template.make("depth", (Integer depth) -> body(
+            let("fuel", fuel()),
+            """
+            System.out.println("At depth #depth with fuel #fuel.");
+            """,
+            // We cannot yet use template1 directly, as it is being defined.
+            // So we use binding1 instead.
+            // For every recursion depth, some fuel is automatically subtracted
+            // so that the fuel slowly depletes with the depth.
+            // We keep the recursion going until the fuel is depleted.
+            (fuel() > 0) ? binding1.get().withArgs(depth + 1)
+                        : "System.out.println(\"Fuel depleted.\");\n",
+            """
+            System.out.println("Exit depth #depth.");
+            """
+        ));
+        binding1.bind(template1);
+
+        var templateClass = Template.make(() -> body(
+            """
+            package p.xyz;
+
+            public class InnerTest6 {
+                public static void main() {
+                    System.out.println("Welcome to main!");
+                    """,
+                    template1.withArgs(0),
+                    """
+                }
+            }
+            """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.withArgs().render();
+    }
+
+    // Example with names, i.e. defineName, countNames, and sampleName.
+    // These can be used to define and sample variables from outer scopes.
+    public static String generateWithNames() {
+        var templateSample = Template.make("type", (Object type) -> body(
+            let("name", sampleName(type, ALL)),
+            """
+            System.out.println("Sampling type #type: #name = " + #name);
+            """
+        ));
+
+        var templateStaticField = Template.make("type", (Object type) -> body(
+            defineName($("field"), type, MUTABLE),
+            """
+            public static #type $field = 0;
+            """
+        ));
+
+        var templateLocalVariable = Template.make("type", (Object type) -> body(
+            defineName($("var"), type, MUTABLE),
+            """
+            #type $var = 0;
+            """
+        ));
+
+        var templateStatus = Template.make(() -> body(
+            let("ints", countNames("int", ALL)),
+            let("longs", countNames("long", ALL)),
+            """
+            System.out.println("Status: #ints ints, #longs longs.");
+            """
+        ));
+
+        var templateMain = Template.make(() -> body(
+            """
+            System.out.println("Starting inside main...");
+            """,
+            templateStatus.withArgs(),
+            intoHook(METHOD_HOOK, templateLocalVariable.withArgs("int")),
+            intoHook(METHOD_HOOK, templateLocalVariable.withArgs("long")),
+            intoHook(CLASS_HOOK, templateStaticField.withArgs("int")),
+            intoHook(CLASS_HOOK, templateStaticField.withArgs("long")),
+            templateStatus.withArgs(),
+            // We should see a mix if fields and variables sampled.
+            Collections.nCopies(5, templateSample.withArgs("int")),
+            Collections.nCopies(5, templateSample.withArgs("long")),
+            templateStatus.withArgs(),
+            """
+            System.out.println("Finishing inside main.");
+            """
+        ));
+
+        var templateOther = Template.make(() -> body(
+            """
+            System.out.println("Starting inside other...");
+            """,
+            templateStatus.withArgs(),
+            // We still have all the field definitions from main.
+            Collections.nCopies(5, templateSample.withArgs("int")),
+            Collections.nCopies(5, templateSample.withArgs("long")),
+            templateStatus.withArgs(),
+            """
+            System.out.println("Finishing inside other.");
+            """
+        ));
+
+        var templateClass = Template.make(() -> body(
+            """
+            package p.xyz;
+
+            public class InnerTest7 {
+            """,
+            // Class Hook for fields.
+            CLASS_HOOK.set(
+                """
+                public static void main() {
+                """,
+                // Method Hook for local variables, and earlier computations.
+                METHOD_HOOK.set(
+                    """
+                    // This is the beginning of the "main" method body.
+                    System.out.println("Welcome to main!");
+                    """,
+                    templateMain.withArgs(),
+                    """
+                    System.out.println("Going to call other...");
+                    other();
+                    """
+                ),
+                """
+                }
+
+                private static void other() {
+                """,
+                // Have a separate method hook for other, so that it can generate
+                // its own local variables.
+                METHOD_HOOK.set(
+                    """
+                    System.out.println("Welcome to other!");
+                    """,
+                    templateOther.withArgs(),
+                    """
+                    System.out.println("Done with other.");
+                    """
+                ),
+                """
+                }
+                """
+            ),
+            """
+            }
+            """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.withArgs().render();
+    }
+
 }

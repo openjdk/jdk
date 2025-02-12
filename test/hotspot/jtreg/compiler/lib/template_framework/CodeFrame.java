@@ -94,7 +94,12 @@ class CodeFrame {
     }
 
     void defineName(String name, Object type, NameSelection nameSelection) {
-        nameSet(nameSelection).add(name, type);
+        if (nameSelection == NameSelection.MUTABLE) {
+            mutableNames.add(name, type);
+            allNames.add(name, type);
+        } else {
+            allNames.add(name, type);
+        }
     }
 
     int countNames(Object type, NameSelection nameSelection) {
