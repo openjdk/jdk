@@ -107,6 +107,7 @@ JDKEXPORT void jdk_hb_shape(
 
      buffer = hb_buffer_create();
      hb_buffer_set_script(buffer, getHBScriptCode(script));
+     hb_buffer_set_invisible_glyph(buffer, INVISIBLE_GLYPH_ID);
      hb_buffer_set_language(buffer,
                             hb_ot_tag_to_language(HB_OT_TAG_DEFAULT_LANGUAGE));
      if ((flags & TYPO_RTL) != 0) {

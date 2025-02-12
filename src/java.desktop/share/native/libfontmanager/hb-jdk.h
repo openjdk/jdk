@@ -50,6 +50,9 @@ typedef struct JDKFontInfo_Struct {
 #define HBFloatToFixedScale ((float)(1 << 16))
 #define HBFloatToFixed(f) ((unsigned int)((f) * HBFloatToFixedScale))
 
+// Matches sun.font.CharToGlyphMapper.INVISIBLE_GLYPH_ID
+#define INVISIBLE_GLYPH_ID 0xffff
+
 /*
  * Note:
  *
