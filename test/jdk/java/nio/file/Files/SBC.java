@@ -427,10 +427,22 @@ public class SBC {
 
     static void emptyPathTest() throws Exception {
         try {
-            OpenOption[] opts = { WRITE, CREATE_NEW };
-            Files.newByteChannel(Path.of(""), opts);
+            Files.newByteChannel(Path.of(""), WRITE, CREATE_NEW);
             throw new RuntimeException("FileAlreadyExistsException expected");
         } catch (FileAlreadyExistsException x) { }
+
+        try {
+            Files.newByteChannel(Path.of(""), WRITE, CREATE, DELETE_ON_CLOSE);
+            throw new RuntimeException("FileSystemException expected");
+        } catch (FileSystemException x) { }
+
+        try {
+            Files.newByteChannel(Path.of(""), WRITE, LinkOption.NOFOLLOW_LINKS);
+            throw new RuntimeException("FileSystemException expected");
+        } catch (FileSystemException x) { }
+
+        try (var channel = Files.newByteChannel(Path.of(""), READ, LinkOption.NOFOLLOW_LINKS)) {
+        }
     }
 
     static void write(WritableByteChannel wbc, String msg) throws IOException {
