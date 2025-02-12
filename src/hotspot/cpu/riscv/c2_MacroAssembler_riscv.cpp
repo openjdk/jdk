@@ -2956,15 +2956,26 @@ void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
 
 void C2_MacroAssembler::reduce_mul_integer_v(Register dst, Register src1, VectorRegister src2,
                                              VectorRegister vtmp1, VectorRegister vtmp2,
-                                             BasicType bt, uint vector_length) {
+                                             BasicType bt, uint vector_length, VectorMask vm) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
   uint len = vector_length/type2aelembytes(bt);
   vsetvli_helper(bt, len);
 
   len /= 2;
-  vslidedown_vi(vtmp1, src2, len);
-  vsetvli_helper(bt, len);
-  vmul_vv(vtmp1, vtmp1, src2);
+  if (vm != Assembler::unmasked) {
+    vmv_v_i(vtmp1, 1);
+    vmerge_vvm(vtmp2, vtmp1, src2); // vm == v0
+    vslidedown_vi(vtmp1, vtmp2, len);
+
+    vsetvli_helper(bt, len);
+    vmul_vv(vtmp1, vtmp1, vtmp2);
+  } else {
+    vslidedown_vi(vtmp1, src2, len);
+
+    vsetvli_helper(bt, len);
+    vmul_vv(vtmp1, vtmp1, src2);
+  }
+
   while (len > 1) {
     len /= 2;
     vslidedown_vi(vtmp2, vtmp1, len);
@@ -2982,15 +2993,32 @@ void C2_MacroAssembler::reduce_mul_integer_v(Register dst, Register src1, Vector
 
 void C2_MacroAssembler::reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, VectorRegister src2,
                                         VectorRegister vtmp1, VectorRegister vtmp2,
-                                        BasicType bt, uint vector_length) {
+                                        BasicType bt, uint vector_length, VectorMask vm) {
   assert(bt == T_FLOAT || bt == T_DOUBLE, "unsupported element type");
   uint len = vector_length/type2aelembytes(bt);
   vsetvli_helper(bt, len);
 
   len /= 2;
-  vslidedown_vi(vtmp1, src2, len);
-  vsetvli_helper(bt, len);
-  vfmul_vv(vtmp1, vtmp1, src2);
+  if (vm != Assembler::unmasked) {
+    if (bt == T_FLOAT) {
+      lui(t0, 0x3f800000); // 1.0f
+    } else {
+      lui(t0, 0x3ff00000); // 1.0d
+      slli(t0, t0, 32);
+    }
+    vmv_v_x(vtmp1, t0);
+    vmerge_vvm(vtmp2, vtmp1, src2); // vm == v0
+    vslidedown_vi(vtmp1, vtmp2, len);
+
+    vsetvli_helper(bt, len);
+    vfmul_vv(vtmp1, vtmp1, vtmp2);
+  } else {
+    vslidedown_vi(vtmp1, src2, len);
+
+    vsetvli_helper(bt, len);
+    vfmul_vv(vtmp1, vtmp1, src2);
+  }
+
   while (len > 1) {
     len /= 2;
     vslidedown_vi(vtmp2, vtmp1, len);
