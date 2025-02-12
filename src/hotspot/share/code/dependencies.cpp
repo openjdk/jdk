@@ -878,7 +878,7 @@ void Dependencies::DepStream::print_dependency(outputStream* st, Klass* witness,
   if (verbose) {
     if (_code != nullptr) {
       st->print("  code: ");
-      _code->print_value_on(st);
+      _code->print_value_on_v(st);
       st->cr();
     }
   }

@@ -649,7 +649,7 @@ static void decipher(jlong v, bool ignoreZero) {
         tty->print("%s [" INTPTR_FORMAT "+" JLONG_FORMAT "]", cb->as_nmethod()->method()->name_and_sig_as_C_string(buf, O_BUFLEN), p2i(cb->code_begin()), (jlong)((address)v - cb->code_begin()));
         return;
       }
-      cb->print_value_on(tty);
+      cb->print_value_on_v(tty);
       return;
     }
     if (Universe::heap()->is_in(p)) {

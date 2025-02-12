@@ -96,14 +96,14 @@ public class CodeBlob extends VMObject {
     BufferKind         = db.lookupIntConstant("CodeBlobKind::Buffer").intValue();
     AdapterKind        = db.lookupIntConstant("CodeBlobKind::Adapter").intValue();
     VtableKind         = db.lookupIntConstant("CodeBlobKind::Vtable").intValue();
-    MHAdapterKind      = db.lookupIntConstant("CodeBlobKind::MH_Adapter").intValue();
-    RuntimeStubKind    = db.lookupIntConstant("CodeBlobKind::Runtime_Stub").intValue();
+    MHAdapterKind      = db.lookupIntConstant("CodeBlobKind::MHAdapter").intValue();
+    RuntimeStubKind    = db.lookupIntConstant("CodeBlobKind::RuntimeStub").intValue();
     DeoptimizationKind = db.lookupIntConstant("CodeBlobKind::Deoptimization").intValue();
     SafepointKind      = db.lookupIntConstant("CodeBlobKind::Safepoint").intValue();
     UpcallKind         = db.lookupIntConstant("CodeBlobKind::Upcall").intValue();
     if (VM.getVM().isServerCompiler()) {
       ExceptionKind    = db.lookupIntConstant("CodeBlobKind::Exception").intValue();
-      UncommonTrapKind = db.lookupIntConstant("CodeBlobKind::Uncommon_Trap").intValue();
+      UncommonTrapKind = db.lookupIntConstant("CodeBlobKind::UncommonTrap").intValue();
     }
   }
 

@@ -71,20 +71,35 @@ static_assert(!std::is_polymorphic<ExceptionBlob>::value,      "no virtual metho
 static_assert(!std::is_polymorphic<UncommonTrapBlob>::value,   "no virtual methods are allowed in code blobs");
 #endif
 
-// CodeBlob
-//  nmethod              : JIT Compiled Java methods
-//  RuntimeBlob          : Non-compiled method code; generated glue code
-//   BufferBlob          : Used for non-relocatable code such as interpreter, stubroutines, etc.
-//    AdapterBlob        : Used to hold C2I/I2C adapters
-//    VtableBlob         : Used for holding vtable chunks
-//    MethodHandlesAdapterBlob : Used to hold MethodHandles adapters
-//   RuntimeStub         : Call to VM runtime methods
-//   SingletonBlob       : Super-class for all blobs that exist in only one instance
-//    DeoptimizationBlob : Used for deoptimization
-//    ExceptionBlob      : Used for stack unrolling
-//    SafepointBlob      : Used to handle illegal instruction exceptions
-//    UncommonTrapBlob   : Used to handle uncommon traps
-//   UpcallStub  : Used for upcalls from native code
+// Add proxy vtables.
+// We need only few for now - they are used only from prints.
+const nmethod::Vptr                  nmethod::_vptr;
+const BufferBlob::Vptr               BufferBlob::_vptr;
+const RuntimeStub::Vptr              RuntimeStub::_vptr;
+const SingletonBlob::Vptr            SingletonBlob::_vptr;
+const DeoptimizationBlob::Vptr       DeoptimizationBlob::_vptr;
+const UpcallStub::Vptr               UpcallStub::_vptr;
+
+const CodeBlob::Vptr* CodeBlob::vptr() const {
+  constexpr const CodeBlob::Vptr* array[(size_t)CodeBlobKind::Number_Of_Kinds] = {
+      nullptr/* None */,
+      &nmethod::_vptr,
+      &BufferBlob::_vptr,
+      &AdapterBlob::_vptr,
+      &VtableBlob::_vptr,
+      &MethodHandlesAdapterBlob::_vptr,
+      &RuntimeStub::_vptr,
+      &DeoptimizationBlob::_vptr,
+      &SafepointBlob::_vptr,
+#ifdef COMPILER2
+      &ExceptionBlob::_vptr,
+      &UncommonTrapBlob::_vptr,
+#endif
+      &UpcallStub::_vptr
+  };
+
+  return array[(size_t)_kind];
+}
 
 unsigned int CodeBlob::align_code_offset(int offset) {
   // align the size to CodeEntryAlignment
@@ -418,7 +433,7 @@ RuntimeStub::RuntimeStub(
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments
 )
-: RuntimeBlob(name, CodeBlobKind::Runtime_Stub, cb, size, sizeof(RuntimeStub),
+: RuntimeBlob(name, CodeBlobKind::RuntimeStub, cb, size, sizeof(RuntimeStub),
               frame_complete, frame_size, oop_maps, caller_must_gc_arguments)
 {
 }
@@ -514,18 +529,18 @@ DeoptimizationBlob* DeoptimizationBlob::create(
   return blob;
 }
 
+#ifdef COMPILER2
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of UncommonTrapBlob
 
-#ifdef COMPILER2
 UncommonTrapBlob::UncommonTrapBlob(
   CodeBuffer* cb,
   int         size,
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("UncommonTrapBlob", CodeBlobKind::Uncommon_Trap, cb,
+: SingletonBlob("UncommonTrapBlob", CodeBlobKind::UncommonTrap, cb,
                 size, sizeof(UncommonTrapBlob), frame_size, oop_maps)
 {}
 
@@ -548,14 +563,9 @@ UncommonTrapBlob* UncommonTrapBlob::create(
   return blob;
 }
 
-
-#endif // COMPILER2
-
-
 //----------------------------------------------------------------------------------------------------
 // Implementation of ExceptionBlob
 
-#ifdef COMPILER2
 ExceptionBlob::ExceptionBlob(
   CodeBuffer* cb,
   int         size,
@@ -585,9 +595,7 @@ ExceptionBlob* ExceptionBlob::create(
   return blob;
 }
 
-
 #endif // COMPILER2
-
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of SafepointBlob
@@ -682,100 +690,23 @@ void CodeBlob::verify() {
   }
 }
 
-void CodeBlob::print() const {
-  if (is_nmethod()) {
-    ttyLocker ttyl;   // keep the following output all in one block
-    as_nmethod()->print_on2(tty);
-  } else {
-    print_on(tty);
-  }
+void CodeBlob::print_on_v(outputStream* st) const {
+  vptr()->print_on(this, st);
 }
 
-void CodeBlob::print_value_on(outputStream* st) const {
-  switch (_kind) {
-    case CodeBlobKind::Nmethod: {
-      st->print_cr("nmethod (" INTPTR_FORMAT  ")", p2i(this));
-#if defined(SUPPORT_DATA_STRUCTS)
-      as_nmethod()->print_on_with_msg(st, nullptr);
-#endif
-    }
-    case CodeBlobKind::MH_Adapter: // fall through for subclasses
-    case CodeBlobKind::Adapter:
-    case CodeBlobKind::Vtable:
-    case CodeBlobKind::Buffer: {
-      st->print_cr("BufferBlob (" INTPTR_FORMAT  ") used for %s", p2i(this), name());;
-      break;
-    }
-    case CodeBlobKind::Runtime_Stub: {
-      st->print("RuntimeStub (" INTPTR_FORMAT "): %s", p2i(this), name());
-      break;
-    }
-    case CodeBlobKind::Deoptimization: {
-      st->print_cr("DeoptimizationBlob (frame not available) (" INTPTR_FORMAT  ")", p2i(this));
-      break;
-    }
-#ifdef COMPILER2
-    case CodeBlobKind::Uncommon_Trap: // fall through for subclasses
-    case CodeBlobKind::Exception:
-#endif
-    case CodeBlobKind::Safepoint: {
-      st->print_cr("%s (" INTPTR_FORMAT  ")", name(), p2i(this));
-      break;
-    }
-    case CodeBlobKind::Upcall: {
-      st->print_cr("UpcallStub (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
-      break;
-    }
-    default: {
-      assert(false, "Unknown kind of CodeBlob %d (" INTPTR_FORMAT  ")", (int)_kind, p2i(this));
-    }
-  }
+void CodeBlob::print() const { print_on_v(tty); }
+
+void CodeBlob::print_value_on_v(outputStream* st) const {
+  vptr()->print_value_on(this, st);;
 }
 
-void CodeBlob::print_on(outputStream* st) const {
-  ttyLocker ttyl;
-
+void CodeBlob::print_on_nv(outputStream* st) const {
   st->print_cr("[CodeBlob (" INTPTR_FORMAT ")]", p2i(this));
   st->print_cr("Framesize: %d", _frame_size);
+}
 
-  print_value_on(st);
-
-  switch (_kind) {
-    case CodeBlobKind::Nmethod: {
-      break; // do nothing - print_value_on() produces output for nmethod
-    }
-    case CodeBlobKind::MH_Adapter: // fall through for subclasses
-    case CodeBlobKind::Adapter:
-    case CodeBlobKind::Vtable:
-    case CodeBlobKind::Buffer: {
-      break;
-    }
-    case CodeBlobKind::Runtime_Stub: {
-      Disassembler::decode((RuntimeBlob*)this, st);
-      break;
-    }
-    case CodeBlobKind::Deoptimization: // fall through for subclasses
-#ifdef COMPILER2
-    case CodeBlobKind::Uncommon_Trap:
-    case CodeBlobKind::Exception:
-#endif
-    case CodeBlobKind::Safepoint: {
-      Disassembler::decode((RuntimeBlob*)this, st);
-      break;
-    }
-    case CodeBlobKind::Upcall: {
-      UpcallStub* upcall = this->as_upcall_stub();
-      st->print_cr("Frame data offset: %d", (int) upcall->frame_data_offset());
-      oop recv = JNIHandles::resolve(upcall->receiver());
-      st->print("Receiver MH=");
-      recv->print_on(st);
-      Disassembler::decode((RuntimeBlob*)this, st);
-      break;
-    }
-    default: {
-      assert(false, "Unknown kind of CodeBlob %d (" INTPTR_FORMAT  ")", (int)_kind, p2i(this));
-    }
-  }
+void CodeBlob::print_value_on_nv(outputStream* st) const {
+  st->print_cr("[CodeBlob]");
 }
 
 void CodeBlob::print_block_comment(outputStream* stream, address block_begin) const {
@@ -845,11 +776,60 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
       // verbose is only ever true when called from findpc in debug.cpp
       nm->print_nmethod(true);
     } else {
-      nm->print_on2(st);
+      nm->print_on_v(st);
     }
     return;
   }
   st->print_cr(INTPTR_FORMAT " is at code_begin+%d in ", p2i(addr), (int)(addr - code_begin()));
-  print_on(st);
+  print_on_v(st);
 }
 
+void BufferBlob::print_on(outputStream* st) const {
+  RuntimeBlob::print_on_nv(st);
+  print_value_on(st);
+}
+
+void BufferBlob::print_value_on(outputStream* st) const {
+  st->print_cr("BufferBlob (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
+}
+
+void RuntimeStub::print_on(outputStream* st) const {
+  ttyLocker ttyl;
+  RuntimeBlob::print_on_nv(st);
+  st->print("Runtime Stub (" INTPTR_FORMAT "): ", p2i(this));
+  st->print_cr("%s", name());
+  Disassembler::decode((RuntimeBlob*)this, st);
+}
+
+void RuntimeStub::print_value_on(outputStream* st) const {
+  st->print("RuntimeStub (" INTPTR_FORMAT "): ", p2i(this)); st->print("%s", name());
+}
+
+void SingletonBlob::print_on(outputStream* st) const {
+  ttyLocker ttyl;
+  RuntimeBlob::print_on_nv(st);
+  st->print_cr("%s", name());
+  Disassembler::decode((RuntimeBlob*)this, st);
+}
+
+void SingletonBlob::print_value_on(outputStream* st) const {
+  st->print_cr("%s", name());
+}
+
+void DeoptimizationBlob::print_value_on(outputStream* st) const {
+  st->print_cr("Deoptimization (frame not available)");
+}
+
+void UpcallStub::print_on(outputStream* st) const {
+  RuntimeBlob::print_on_nv(st);
+  print_value_on(st);
+  st->print_cr("Frame data offset: %d", (int) _frame_data_offset);
+  oop recv = JNIHandles::resolve(_receiver);
+  st->print("Receiver MH=");
+  recv->print_on(st);
+  Disassembler::decode((RuntimeBlob*)this, st);
+}
+
+void UpcallStub::print_value_on(outputStream* st) const {
+  st->print_cr("UpcallStub (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
+}

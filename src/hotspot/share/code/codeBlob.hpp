@@ -61,8 +61,8 @@ enum class CodeBlobType {
 //   RuntimeStub         : Call to VM runtime methods
 //   SingletonBlob       : Super-class for all blobs that exist in only one instance
 //    DeoptimizationBlob : Used for deoptimization
-//    ExceptionBlob      : Used for stack unrolling
 //    SafepointBlob      : Used to handle illegal instruction exceptions
+//    ExceptionBlob      : Used for stack unrolling
 //    UncommonTrapBlob   : Used to handle uncommon traps
 //   UpcallStub  : Used for upcalls from native code
 //
@@ -80,12 +80,14 @@ enum class CodeBlobKind : u1 {
   Buffer,
   Adapter,
   Vtable,
-  MH_Adapter,
-  Runtime_Stub,
+  MHAdapter,
+  RuntimeStub,
   Deoptimization,
-  Exception,
   Safepoint,
-  Uncommon_Trap,
+#ifdef COMPILER2
+  Exception,
+  UncommonTrap,
+#endif
   Upcall,
   Number_Of_Kinds
 };
@@ -128,6 +130,17 @@ protected:
   DbgStrings _dbg_strings;
 #endif
 
+ struct Vptr {
+    virtual void print_on(const CodeBlob* instance, outputStream* st) const {
+      instance->print_on_nv(st);
+    }
+    virtual void print_value_on(const CodeBlob* instance, outputStream* st) const {
+      instance->print_value_on_nv(st);
+    }
+  };
+
+  const Vptr* vptr() const;
+
   CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
            int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
 
@@ -152,14 +165,14 @@ public:
   // Typing
   bool is_nmethod() const                     { return _kind == CodeBlobKind::Nmethod; }
   bool is_buffer_blob() const                 { return _kind == CodeBlobKind::Buffer; }
-  bool is_runtime_stub() const                { return _kind == CodeBlobKind::Runtime_Stub; }
+  bool is_runtime_stub() const                { return _kind == CodeBlobKind::RuntimeStub; }
   bool is_deoptimization_stub() const         { return _kind == CodeBlobKind::Deoptimization; }
-  bool is_uncommon_trap_stub() const          { return _kind == CodeBlobKind::Uncommon_Trap; }
+  bool is_uncommon_trap_stub() const          { return _kind == CodeBlobKind::UncommonTrap; }
   bool is_exception_stub() const              { return _kind == CodeBlobKind::Exception; }
   bool is_safepoint_stub() const              { return _kind == CodeBlobKind::Safepoint; }
   bool is_adapter_blob() const                { return _kind == CodeBlobKind::Adapter; }
   bool is_vtable_blob() const                 { return _kind == CodeBlobKind::Vtable; }
-  bool is_method_handles_adapter_blob() const { return _kind == CodeBlobKind::MH_Adapter; }
+  bool is_method_handles_adapter_blob() const { return _kind == CodeBlobKind::MHAdapter; }
   bool is_upcall_stub() const                 { return _kind == CodeBlobKind::Upcall; }
 
   // Casting
@@ -235,8 +248,11 @@ public:
   // Debugging
   void verify();
   void print() const;
-  void print_on(outputStream* st) const;
-  void print_value_on(outputStream* st) const;
+  void print_on_v(outputStream* st) const;
+  void print_value_on_v(outputStream* st) const;
+  void print_on_nv(outputStream* st) const;
+  void print_value_on_nv(outputStream* st) const;
+
   void dump_for_addr(address addr, outputStream* st, bool verbose) const;
   void print_code_on(outputStream* st);
 
@@ -311,6 +327,20 @@ class BufferBlob: public RuntimeBlob {
   static BufferBlob* create(const char* name, CodeBuffer* cb);
 
   static void free(BufferBlob* buf);
+
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
+
+  class Vptr : public CodeBlob::Vptr {
+    void print_on(const CodeBlob* instance, outputStream* st) const override {
+      ((const BufferBlob*)instance)->print_on(st);
+    }
+    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+      ((const BufferBlob*)instance)->print_value_on(st);
+    }
+  };
+
+  static const Vptr _vptr;
 };
 
 
@@ -343,7 +373,7 @@ public:
 
 class MethodHandlesAdapterBlob: public BufferBlob {
 private:
-  MethodHandlesAdapterBlob(int size): BufferBlob("MethodHandles adapters", CodeBlobKind::MH_Adapter, size) {}
+  MethodHandlesAdapterBlob(int size): BufferBlob("MethodHandles adapters", CodeBlobKind::MHAdapter, size) {}
 
 public:
   // Creation
@@ -385,6 +415,20 @@ class RuntimeStub: public RuntimeBlob {
   static void free(RuntimeStub* stub) { RuntimeBlob::free(stub); }
 
   address entry_point() const                    { return code_begin(); }
+
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
+
+  class Vptr : public CodeBlob::Vptr {
+    void print_on(const CodeBlob* instance, outputStream* st) const override {
+      instance->as_runtime_stub()->print_on(st);
+    }
+    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+      instance->as_runtime_stub()->print_value_on(st);
+    }
+  };
+
+  static const Vptr _vptr;
 };
 
 
@@ -411,6 +455,20 @@ class SingletonBlob: public RuntimeBlob {
   {};
 
   address entry_point()                          { return code_begin(); }
+
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
+
+  class Vptr : public CodeBlob::Vptr {
+    void print_on(const CodeBlob* instance, outputStream* st) const override {
+      ((const SingletonBlob*)instance)->print_on(st);
+    }
+    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+      ((const SingletonBlob*)instance)->print_value_on(st);
+    }
+  };
+
+  static const Vptr _vptr;
 };
 
 
@@ -484,6 +542,16 @@ class DeoptimizationBlob: public SingletonBlob {
   }
   address implicit_exception_uncommon_trap() const { return code_begin() + _implicit_exception_uncommon_trap_offset; }
 #endif // INCLUDE_JVMCI
+
+  void print_value_on(outputStream* st) const;
+
+  class Vptr : public CodeBlob::Vptr {
+    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+      ((const DeoptimizationBlob*)instance)->print_value_on(st);
+    }
+  };
+
+  static const Vptr _vptr;
 };
 
 
@@ -599,6 +667,20 @@ class UpcallStub: public RuntimeBlob {
 
   // GC support
   void oops_do(OopClosure* f, const frame& frame);
+
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
+
+  class Vptr : public CodeBlob::Vptr {
+    void print_on(const CodeBlob* instance, outputStream* st) const override {
+      instance->as_upcall_stub()->print_on(st);
+    }
+    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+      instance->as_upcall_stub()->print_value_on(st);
+    }
+  };
+
+  static const Vptr _vptr;
 };
 
 #endif // SHARE_CODE_CODEBLOB_HPP

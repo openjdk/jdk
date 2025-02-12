@@ -2365,7 +2365,7 @@ void Method::print_on(outputStream* st) const {
   }
   if (code() != nullptr) {
     st->print   (" - compiled code: ");
-    code()->print_value_on(st);
+    code()->print_value_on_v(st);
   }
   if (is_native()) {
     st->print_cr(" - native function:   " PTR_FORMAT, p2i(native_function()));

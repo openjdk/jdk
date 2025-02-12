@@ -564,7 +564,7 @@ void OopMapSet::trace_codeblob_maps(const frame *fr, const RegisterMap *reg_map)
   tty->cr();
   fr->print_on(tty);
   tty->print("     ");
-  cb->print_value_on(tty);  tty->cr();
+  cb->print_value_on_v(tty);  tty->cr();
   if (reg_map != nullptr) {
     reg_map->print();
   }

@@ -2384,12 +2384,12 @@
   declare_constant(CodeBlobKind::Buffer)                                  \
   declare_constant(CodeBlobKind::Adapter)                                 \
   declare_constant(CodeBlobKind::Vtable)                                  \
-  declare_constant(CodeBlobKind::MH_Adapter)                              \
-  declare_constant(CodeBlobKind::Runtime_Stub)                            \
+  declare_constant(CodeBlobKind::MHAdapter)                               \
+  declare_constant(CodeBlobKind::RuntimeStub)                             \
   declare_constant(CodeBlobKind::Deoptimization)                          \
   declare_constant(CodeBlobKind::Exception)                               \
   declare_constant(CodeBlobKind::Safepoint)                               \
-  declare_constant(CodeBlobKind::Uncommon_Trap)                           \
+  declare_constant(CodeBlobKind::UncommonTrap)                            \
   declare_constant(CodeBlobKind::Upcall)                                  \
                                                                           \
   /***************/                                                       \

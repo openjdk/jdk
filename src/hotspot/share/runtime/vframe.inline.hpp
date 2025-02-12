@@ -175,7 +175,7 @@ inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
       ss.print_cr("Error in fill_from_frame: pc_desc for "
                   INTPTR_FORMAT " not found or invalid at %d",
                   p2i(_frame.pc()), decode_offset);
-      nm()->print_on(&ss);
+      nm()->print_on_v(&ss);
       nm()->method()->print_codes_on(&ss);
       nm()->print_code_on(&ss);
       nm()->print_pcs_on(&ss);
