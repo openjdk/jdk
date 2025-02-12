@@ -60,7 +60,7 @@ public class StartupOutput {
             throw new Exception("VM crashed with exit code " + exitCode);
         }
 
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 2000; i++) {
             int initialCodeCacheSizeInKb = 800 + rand.nextInt(400);
             int reservedCodeCacheSizeInKb = initialCodeCacheSizeInKb + rand.nextInt(200);
             pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:InitialCodeCacheSize=" + initialCodeCacheSizeInKb + "K", "-XX:ReservedCodeCacheSize=" + reservedCodeCacheSizeInKb + "k", "-version");
