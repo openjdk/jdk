@@ -48,10 +48,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ThreadPollOnYield {
-    public static CountDownLatch latch = new CountDownLatch(1);
+    private static CountDownLatch started = new CountDownLatch(1);
     static void foo(AtomicBoolean done) {
+        started.countDown();
         while (!done.get()) {
-            latch.countDown();
             Thread.yield();
         }
     }
@@ -62,7 +62,7 @@ class ThreadPollOnYield {
         var vthread = Thread.ofVirtual().start(() -> {
             VThreadPinner.runPinned(() -> foo(done));
         });
-        latch.await();
+        started.await();
         done.set(true);
         vthread.join();
 
