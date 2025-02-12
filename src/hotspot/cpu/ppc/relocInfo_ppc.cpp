@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,25 @@
 
 void Relocation::pd_set_data_value(address x, bool verify_only) {
   if (!verify_only) {
-    if (format() != 1) {
-      nativeMovConstReg_at(addr())->set_data_plain(((intptr_t)x), code());
-    } else {
-      assert(type() == relocInfo::oop_type, "how to encode else?");
-      narrowOop no = CompressedOops::encode(cast_to_oop(x));
-      nativeMovConstReg_at(addr())->set_narrow_oop(no, code());
+    switch (format()) {
+      case 2: { // plain address
+        *((address*)addr()) = x;
+        break;
+      }
+      case 1: { // native move compressed
+        assert(type() == relocInfo::oop_type, "how to encode else?");
+        narrowOop no = CompressedOops::encode(cast_to_oop(x));
+        nativeMovConstReg_at(addr())->set_narrow_oop(no, code());
+        break;
+      }
+      case 0: { // normal native move
+        nativeMovConstReg_at(addr())->set_data_plain(((intptr_t)x), code());
+        break;
+      }
+      default: ShouldNotReachHere();
     }
   } else {
+    // Only used by DataRelocation.
     guarantee((address) (nativeMovConstReg_at(addr())->data()) == x, "data must match");
   }
 }
@@ -96,7 +107,16 @@ address* Relocation::pd_address_in_code() {
 }
 
 address Relocation::pd_get_address_from_code() {
-  return (address)(nativeMovConstReg_at(addr())->data());
+  switch (format()) { // plain address
+    case 2: {
+      return *((address*)addr());
+    }
+    case 0: { // normal native move
+      return (address)(nativeMovConstReg_at(addr())->data());
+    }
+    default: ShouldNotReachHere();
+  }
+  return nullptr;
 }
 
 void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
