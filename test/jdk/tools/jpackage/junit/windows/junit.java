@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,9 @@
  * questions.
  */
 
-import java.security.Provider;
-import java.security.Security;
-
-public class Providers {
-    public static void setAt(Provider p, int pos) throws Exception {
-        if (Security.getProvider(p.getName()) != null) {
-            Security.removeProvider(p.getName());
-        }
-        if (Security.insertProviderAt(p, pos) == -1) {
-            throw new Exception("cannot setAt");
-        }
-    }
-}
+/* @test
+ * @summary Test function reading OS version from PE file
+ * @requires (os.family == "windows")
+ * @compile/module=jdk.jpackage jdk/jpackage/internal/ExecutableOSVersionTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.ExecutableOSVersionTest
+ */
