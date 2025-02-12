@@ -834,11 +834,11 @@ public abstract class Provider extends Properties {
          * changes with the Properties map.
          */
         void clear() {
+            serviceSet.set(null);
             services.clear();
             legacySvcKeys.clear();
             serviceProps.clear();
             serviceAttrProps.clear();
-            serviceSet.set(null);
         }
 
         /*
