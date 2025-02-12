@@ -25,7 +25,27 @@
 -->
 <html lang="en">
 <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>Security Properties</title>
+    <style>
+        #debug {
+         border: 1px solid black;
+         border-collapse: collapse;
+         margin: 0 auto;
+        }
+        #debug caption {
+          font-weight: bold;
+          font-size: smaller;
+        }
+        #debug, #debug th, #debug td {
+         border: 1px solid black;
+         padding: 2px .5em;
+        }
+        #debug tbody th {
+         font-weight: normal;
+         text-align:left;
+        }
+    </style>
 </head>
 <body LANG="en-US" DIR="LTR">
 <H1 style="text-align:center">Security Properties</H1>
@@ -48,6 +68,7 @@
         specify the -XshowSettings:security option in the java command.
         You can enable debugging in JGSS and other related technologies with various system properties or environment variables.
         The following table lists java.security.debug options table:</p>
+
 <table id="debug">
     <caption><b>Security Debug Options</b></caption>
     <thead>
