@@ -1025,7 +1025,7 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
 
   if (r0->is_con() && r1->is_con()) {
     // Constant fold: (c1 ^ c2) -> c3
-    return TypeInt::make( r0->get_con() ^ r1->get_con() );
+    return TypeInt::make(r0->get_con() ^ r1->get_con());
   }
 
   // At least one of the arguments is not constant
@@ -1053,7 +1053,7 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
 
   if (r0->is_con() && r1->is_con()) {
     // Constant fold: (c1 ^ c2) -> c3
-    return TypeLong::make( r0->get_con() ^ r1->get_con() );
+    return TypeLong::make(r0->get_con() ^ r1->get_con());
   }
 
   // At least one of the arguments is not constant
