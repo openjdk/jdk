@@ -624,7 +624,6 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   if (CDSConfig::is_dumping_preimage_static_archive()) {
     FinalImageRecipes::record_recipes();
   }
-  AOTLinkedClassBulkLoader::record_unregistered_classes();
   MetaspaceShared::write_method_handle_intrinsics();
 
   // Write lambform lines into archive

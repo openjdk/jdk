@@ -1365,11 +1365,19 @@ void Arguments::set_mode_flags(Mode mode) {
 // incompatible command line options were chosen.
 void Arguments::no_shared_spaces(const char* message) {
   if (RequireSharedSpaces) {
-    jio_fprintf(defaultStream::error_stream(),
-      "Class data sharing is inconsistent with other specified options.\n");
-    vm_exit_during_initialization("Unable to use shared archive", message);
+    log_error(cds)("%s is incompatible with other specified options.",
+                   CDSConfig::old_cds_flags_used() ? "CDS" : "AOT cache");
+    if (CDSConfig::old_cds_flags_used()) {
+      vm_exit_during_initialization("Unable to use shared archive", message);
+    } else {
+      vm_exit_during_initialization("Unable to use AOT cache", message);
+    }
   } else {
-    log_info(cds)("Unable to use shared archive: %s", message);
+    if (CDSConfig::old_cds_flags_used()) {
+      log_info(cds)("Unable to use shared archive: %s", message);
+    } else {
+      log_warning(cds)("Unable to use AOT cache: %s", message);
+    }
     UseSharedSpaces = false;
   }
 }

@@ -211,7 +211,7 @@ void CDSConfig::init_shared_archive_paths() {
               warning("-XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
               AutoCreateSharedArchive = false;
             }
-            log_info(cds)("Not a valid archive (%s)", SharedArchiveFile);
+            log_error(cds)("Not a valid %s (%s)", old_cds_flags_used() ? "archive" : "AOT cache", SharedArchiveFile);
             Arguments::no_shared_spaces("invalid archive");
           }
         } else if (base_archive_path == nullptr) {
@@ -335,7 +335,11 @@ bool CDSConfig::has_unsupported_runtime_module_options() {
     if (RequireSharedSpaces) {
       warning("CDS is disabled when the %s option is specified.", option);
     } else {
-      log_info(cds)("CDS is disabled when the %s option is specified.", option);
+      if (old_cds_flags_used()) {
+        log_info(cds)("CDS is disabled when the %s option is specified.", option);
+      } else {
+        log_warning(cds)("AOT cache is disabled when the %s option is specified.", option);
+      }
     }
     return true;
   }
@@ -582,6 +586,26 @@ bool CDSConfig::current_thread_is_vm_or_dumper() {
   return t != nullptr && (t->is_VM_thread() || t == _dumper_thread);
 }
 
+const char* CDSConfig::type_of_archive_being_loaded() {
+  if (is_dumping_final_static_archive()) {
+    return "AOT configuration file";
+  } else if (!CDSConfig::old_cds_flags_used()) {
+    return "AOT cache";
+  } else {
+    return "shared archive file";
+  }
+}
+
+const char* CDSConfig::type_of_archive_being_written() {
+  if (is_dumping_preimage_static_archive()) {
+    return "AOT configuration file";
+  } else if (!CDSConfig::old_cds_flags_used()) {
+    return "AOT cache";
+  } else {
+    return "shared archive file";
+  }
+}
+
 // If an incompatible VM options is found, return a text message that explains why
 static const char* check_options_incompatible_with_dumping_heap() {
 #if INCLUDE_CDS_JAVA_HEAP
@@ -708,25 +732,4 @@ bool CDSConfig::is_dumping_invokedynamic() {
 bool CDSConfig::is_loading_invokedynamic() {
   return UseSharedSpaces && is_using_full_module_graph() && _has_archived_invokedynamic;
 }
-
-const char* CDSConfig::type_of_archive_being_loaded() {
-  if (is_dumping_final_static_archive()) {
-    return "AOT configuration file";
-  } else if (!CDSConfig::old_cds_flags_used()) {
-    return "AOT cache";
-  } else {
-    return "shared archive file";
-  }
-}
-
-const char* CDSConfig::type_of_archive_being_written() {
-  if (is_dumping_preimage_static_archive()) {
-    return "AOT configuration file";
-  } else if (!CDSConfig::old_cds_flags_used()) {
-    return "AOT cache";
-  } else {
-    return "shared archive file";
-  }
-}
-
 #endif // INCLUDE_CDS_JAVA_HEAP
