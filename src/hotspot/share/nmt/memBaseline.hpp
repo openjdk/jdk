@@ -68,7 +68,7 @@ class MemBaseline : public CHeapObj<mtNMT> {
 
   // Allocation sites information
   // Malloc allocation sites
-  GrowableArray<MallocSite>                  _malloc_sites;
+  GrowableArrayCHeap<MallocSite, mtNMT>                  _malloc_sites;
 
   // All virtual memory allocations
   LinkedListImpl<ReservedMemoryRegion>        _virtual_memory_allocations;
