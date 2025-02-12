@@ -96,7 +96,12 @@ public final class ZipPlugin extends AbstractPlugin {
             }
             return stream.toByteArray(); // the compressed output
         } catch (IOException e) {
-            return bytesIn; // return the original uncompressed input
+            // the IOException is only declared by ByteArrayOutputStream.close()
+            // but the impl of ByteArrayOutputStream.close() is a no-op, so for
+            // all practical purposes there should never be an IOException thrown
+            assert false : "unexpected " + e;
+            // don't propagate the exception, instead return the original uncompressed input
+            return bytesIn;
         }
     }
 
