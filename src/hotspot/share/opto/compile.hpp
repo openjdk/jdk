@@ -46,6 +46,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/ticks.hpp"
 #include "utilities/vmEnums.hpp"
+#include "opto/printinlining.hpp"
 
 class AbstractLockNode;
 class AddPNode;
@@ -472,29 +473,6 @@ private:
   // "MemLimit" directive was specified and the memory limit was hit during compilation
   bool                          _oom;
 
-  // Inlining may not happen in parse order which would make
-  // PrintInlining output confusing. Keep track of PrintInlining
-  // pieces in order.
-  class PrintInliningBuffer : public CHeapObj<mtCompiler> {
-   private:
-    CallGenerator* _cg;
-    stringStream   _ss;
-    static const size_t default_stream_buffer_size = 128;
-
-   public:
-    PrintInliningBuffer()
-      : _cg(nullptr), _ss(default_stream_buffer_size) {}
-
-    stringStream* ss()             { return &_ss; }
-    CallGenerator* cg()            { return _cg; }
-    void set_cg(CallGenerator* cg) { _cg = cg; }
-  };
-
-  stringStream* _print_inlining_stream;
-  GrowableArray<PrintInliningBuffer*>* _print_inlining_list;
-  int _print_inlining_idx;
-  char* _print_inlining_output;
-
   // Only keep nodes in the expensive node list that need to be optimized
   void cleanup_expensive_nodes(PhaseIterGVN &igvn);
   // Use for sorting expensive nodes to bring similar nodes together
@@ -506,37 +484,17 @@ private:
 
   void* _replay_inline_data; // Pointer to data loaded from file
 
-  void print_inlining_init();
-  void print_inlining_reinit();
-  void print_inlining_commit();
-  void print_inlining_push();
-  PrintInliningBuffer* print_inlining_current();
-
   void log_late_inline_failure(CallGenerator* cg, const char* msg);
   DEBUG_ONLY(bool _exception_backedge;)
 
   void record_method_not_compilable_oom();
 
- public:
+  InlinePrinter _inline_printer;
 
+public:
   void* barrier_set_state() const { return _barrier_set_state; }
 
-  stringStream* print_inlining_stream() {
-    assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
-    return _print_inlining_stream;
-  }
-
-  void print_inlining_update(CallGenerator* cg);
-  void print_inlining_update_delayed(CallGenerator* cg);
-  void print_inlining_move_to(CallGenerator* cg);
-  void print_inlining_assert_ready();
-  void print_inlining_reset();
-
-  void print_inlining(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
-    stringStream ss;
-    CompileTask::print_inlining_inner(&ss, method, inline_level, bci, result, msg);
-    print_inlining_stream()->print("%s", ss.freeze());
-  }
+  InlinePrinter* inline_printer() { return &_inline_printer; }
 
 #ifndef PRODUCT
   IdealGraphPrinter* igv_printer() { return _igv_printer; }
@@ -1100,7 +1058,6 @@ private:
 
   void remove_useless_coarsened_locks(Unique_Node_List& useful);
 
-  void process_print_inlining();
   void dump_print_inlining();
 
   bool over_inlining_cutoff() const {
