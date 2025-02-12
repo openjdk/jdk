@@ -39,6 +39,8 @@ class MallocSite : public AllocationSite {
   MemoryCounter _c;
 public:
   MallocSite() : AllocationSite(NativeCallStack(), mtNone) {}
+  MallocSite(const MallocSite& other)
+  : AllocationSite(*other.call_stack(), other.mem_tag()), _c(other._c) {}
   MallocSite(const NativeCallStack& stack, MemTag mem_tag) :
     AllocationSite(stack, mem_tag) {}
 
