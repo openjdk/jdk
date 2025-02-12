@@ -351,16 +351,6 @@ public final class HelloApp {
             this.outputFilePath = TKit.workDir().resolve(OUTPUT_FILENAME);
             this.params = new HashMap<>();
             this.defaultLauncherArgs = new ArrayList<>();
-
-            if (TKit.isWindows()) {
-                // When running app launchers on Windows, clear users environment (JDK-8254920)
-                removePathEnvVar(true);
-            }
-        }
-
-        public AppOutputVerifier removePathEnvVar(boolean v) {
-            removePathEnvVar = v;
-            return this;
         }
 
         public AppOutputVerifier saveOutput(boolean v) {
@@ -442,10 +432,7 @@ public final class HelloApp {
             if (launcherNoExit) {
                 return getExecutor(args).executeWithoutExitCodeCheck();
             } else {
-                final int attempts = 3;
-                final int waitBetweenAttemptsSeconds = 5;
-                return getExecutor(args).executeAndRepeatUntilExitCode(expectedExitCode, attempts,
-                        waitBetweenAttemptsSeconds);
+                return HelloApp.execute(expectedExitCode, getExecutor(args));
             }
         }
 
@@ -483,7 +470,6 @@ public final class HelloApp {
         }
 
         private boolean launcherNoExit;
-        private boolean removePathEnvVar;
         private boolean saveOutput;
         private final Path launcherPath;
         private Path outputFilePath;
@@ -496,7 +482,22 @@ public final class HelloApp {
         return new AppOutputVerifier(helloAppLauncher);
     }
 
-    public static Executor configureEnvironment(Executor executor) {
+    public static Executor.Result configureAndExecute(int expectedExitCode, Executor executor) {
+        return execute(expectedExitCode, configureEnvironment(executor));
+    }
+
+    private static Executor.Result execute(int expectedExitCode, Executor executor) {
+        if (TKit.isLinux()) {
+            final int attempts = 3;
+            final int waitBetweenAttemptsSeconds = 5;
+            return executor.executeAndRepeatUntilExitCode(expectedExitCode, attempts,
+                    waitBetweenAttemptsSeconds);
+        } else {
+            return executor.execute(expectedExitCode);
+        }
+    }
+
+    private static Executor configureEnvironment(Executor executor) {
         if (CLEAR_JAVA_ENV_VARS) {
             executor.removeEnvVar("JAVA_TOOL_OPTIONS");
             executor.removeEnvVar("_JAVA_OPTIONS");
