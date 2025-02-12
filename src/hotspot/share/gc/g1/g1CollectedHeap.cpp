@@ -2163,6 +2163,45 @@ void G1CollectedHeap::print_on_error(outputStream* st) const {
   }
 }
 
+void G1CollectedHeap::print_worker_threads_elapsed_time() const {
+
+  class GatherCPUTimeClosure : public ThreadClosure {
+    jlong _sum;
+
+  public:
+    GatherCPUTimeClosure() : ThreadClosure(), _sum(0) { }
+
+    void do_thread(Thread* thread) override {
+      _sum += os::thread_cpu_time(thread);
+    }
+
+    double sum() const { return TimeHelper::counter_to_millis(_sum); }
+  };
+
+  LogTarget(Debug, gc, cpu) lt;
+  if (!lt.is_enabled() || !os::is_thread_cpu_time_supported()) {
+    return;
+  }
+
+  LogStream ls(lt);
+
+  GatherCPUTimeClosure gcwt;
+  workers()->threads_do(&gcwt);
+  ls.print_cr("GC worker threads total CPU time: %.2fms", gcwt.sum());
+
+  GatherCPUTimeClosure mwt;
+  concurrent_mark()->threads_do(&mwt);
+  ls.print_cr("Marking worker threads total CPU time: %.2fms", mwt.sum());
+
+  GatherCPUTimeClosure rwt;
+  concurrent_refine()->threads_do(&rwt);
+  ls.print_cr("Refinement worker threads total CPU time: %.2fms", rwt.sum());
+
+  GatherCPUTimeClosure swt;
+  swt.do_thread(service_thread());
+  ls.print_cr("Service thread total CPU time: %.2fms", swt.sum());
+}
+
 void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
   workers()->threads_do(tc);
   tc->do_thread(_cm_thread);
@@ -2240,6 +2279,8 @@ void G1CollectedHeap::gc_epilogue(bool full) {
                                             &_collection_set_candidates_card_set_stats);
 
   update_parallel_gc_threads_cpu_time();
+
+  print_worker_threads_elapsed_time();
 }
 
 uint G1CollectedHeap::uncommit_regions(uint region_limit) {

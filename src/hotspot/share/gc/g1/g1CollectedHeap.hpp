@@ -1311,6 +1311,8 @@ private:
   void print_heap_regions() const;
   void print_regions_on(outputStream* st) const;
 
+  void print_worker_threads_elapsed_time() const;
+
 public:
   void print_on(outputStream* st) const override;
   void print_extended_on(outputStream* st) const override;
