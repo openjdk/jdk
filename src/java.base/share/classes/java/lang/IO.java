@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,34 +31,52 @@ import java.io.IOError;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 import jdk.internal.javac.PreviewFeature;
 
 /**
  * A collection of static methods that provide convenience access to
  * {@linkplain System#in} and {@linkplain System#out} for line-based
  * input and output.
- *
- * TODO:
- *
- * Encoding of System.out is either default charset or stdout.encoding.
- * Which is it?
- *
- * What should be the encoding of the internal BufferedReader? It should ideally
- * be consistent with stdout, but unclear whether that's the default charset
- * or stdout.encoding. There is no stdin.encoding property.
- *
- * There probably needs to be a way to control the encoding of the internal
- * BufferedReader. This can either be an explicit API or some way to specify
- * it using system properties.
- *
- * Do we want printf as well? And its locale overload?
- *
+ * <p>
+ * The {@code readln} methods in this class use an internal {@linkplain java.io.Reader Reader}
+ * instance that does character decoding from bytes read from {@code System.in}. The charset
+ * used for decoding is XXXTODOXXX. This internal Reader is created upon the first call
+ * to the {link #readln} or {link #readln(String)} methods and is stored and reused for
+ * subsequent use by these methods.
+ * <p>
+ * The result of interleaving calls to the {@code readln} methods with operations on
+ * {@code System.in} is unspecified.
  *
  * @since 25
  */
 @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
 public final class IO {
+
+    /*
+     * We are deliberately not including printf, at least not initially, for
+     * the following reasons. First, it introduces a rather cryptic and arcane
+     * formatting language that isn't really suited to beginners. Second, it
+     * is inherently localizable, which drags in a whole bunch of issues about
+     * what locale should be used for formatting, the possible inclusion of
+     * an overload with an explicit Locale parameter, and so forth. These issues
+     * are best avoided for the time being. Third, when string templates come
+     * along, they might offer a better alternative to printf-style formatting,
+     * so it's best not be saddled with this unnecessarily.
+     */
+
+    /**
+     * TODO: should output be flushed automatically? Need to probe System.out to
+     * see what it's connected to and make a determination based on that.
+     */
+    private static final boolean AUTOFLUSH = true;
+
+    /**
+     * TODO: What should be the encoding of the internal BufferedReader? Need to
+     * probe System.in and see what it's connected to, and possibly query some
+     * system properties to make a determination. The initialization of this field
+     * might be moved into the reader() method.
+     */
+    private static final Charset CHARSET = StandardCharsets.UTF_8;
 
     private IO() {
         throw new Error("no instances");
@@ -76,6 +94,9 @@ public final class IO {
      */
     public static void println(Object obj) {
         System.out.println(obj);
+        if (AUTOFLUSH) {
+            System.out.flush();
+        }
     }
 
     /**
@@ -86,6 +107,9 @@ public final class IO {
      */
     public static void println() {
         System.out.println();
+        if (AUTOFLUSH) {
+            System.out.flush();
+        }
     }
 
     /**
@@ -99,33 +123,9 @@ public final class IO {
      */
     public static void print(Object obj) {
         System.out.print(obj);
-    }
-
-    /**
-     * Formats the arguments according to the provided format string and locale,
-     * and then writes the result to the standard output. The effect is as if
-     * {@code System.out.printf(l, format, args)} were called.
-     *
-     * @param l the locale to use for formatting, may be null
-     * @param format format string as described in
-     *        <a href="../util/Formatter.html#syntax">Format string syntax</a>
-     * @param args the arguments for formatting
-     */
-    public static void printf(Locale l, String format, Object ... args) {
-        System.out.printf(l, format, args);
-    }
-
-    /**
-     * Formats the arguments according to the provided format string,
-     * and then writes the result to the standard output. The effect is as if
-     * {@code System.out.printf(format, args)} were called.
-     *
-     * @param format format string as described in
-     *        <a href="../util/Formatter.html#syntax">Format string syntax</a>
-     * @param args the arguments for formatting
-     */
-    public static void printf(String format, Object ... args) {
-        System.out.printf(format, args);
+        if (AUTOFLUSH) {
+            System.out.flush();
+        }
     }
 
     /**
@@ -151,13 +151,8 @@ public final class IO {
      * Writes a prompt and then reads a line of input.
      *
      * <p>
-     * Writes a prompt as if by calling {@code print}, flushes output as if by
-     * calling {@link java.io.PrintStream#flush flush()} on {@code System.out},
-     * and then reads a single line of text as if by calling {@link readln readln()}.
-     *
-     * <p> TBD synchronized?
-     *
-     * <p> TBD should argument be Object?
+     * Writes a prompt as if by calling {@code print}, and then reads a single
+     * line of text as if by calling {@link readln readln()}.
      *
      * @param prompt the prompt string, may be {@code null}
      *
@@ -169,7 +164,6 @@ public final class IO {
      */
     public static String readln(String prompt) {
         print(prompt);
-        System.out.flush();
         return readln();
     }
 
@@ -192,27 +186,10 @@ public final class IO {
      *
      * @return the internal BufferedReader instance
      */
-    public static synchronized BufferedReader reader() {
+    private static synchronized BufferedReader reader() {
         if (br == null) {
-            br = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
+            br = new BufferedReader(new InputStreamReader(System.in, CHARSET));
         }
         return br;
-    }
-
-    /**
-     * Sets the charset to be used for reading text from standard input.
-     * This method must be called prior to any of the the reader(), readln(), or readln(String)
-     * methods. If one if these methods has already been called, calls to this method throw
-     * IllegalStateException.
-     *
-     * @param cs the charset to be used for reading
-     * @throws IllegalStateException if one of the read methods has already been called
-     */
-    public static synchronized void setInputEncoding(Charset cs) {
-        if (br == null) {
-            br = new BufferedReader(new InputStreamReader(System.in, cs));
-        } else {
-            throw new IllegalStateException("input reader has already been created");
-        }
     }
 }
