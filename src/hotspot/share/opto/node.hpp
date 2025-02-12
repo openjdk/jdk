@@ -28,6 +28,7 @@
 
 #include "libadt/vectset.hpp"
 #include "opto/compile.hpp"
+#include "opto/relaxedMath.hpp"
 #include "opto/type.hpp"
 #include "utilities/copy.hpp"
 
@@ -1076,6 +1077,11 @@ public:
   // Is 'n' possibly a loop entry (i.e. a Parse Predicate projection)?
   static bool may_be_loop_entry(Node* n) {
     return n != nullptr && n->is_IfProj() && n->in(0)->is_ParsePredicate();
+  }
+
+  virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const {
+    // Only implemented for selected nodes.
+    ShouldNotReachHere();
   }
 
 //----------------- Optimization

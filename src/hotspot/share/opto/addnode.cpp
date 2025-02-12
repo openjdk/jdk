@@ -521,6 +521,21 @@ const Type *AddLNode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeLong::make( lo, hi, MAX2(r0->_widen,r1->_widen) );
 }
 
+uint AddFNode::hash() const {
+  return AddNode::hash() + _optimization_mode.mode();
+}
+
+bool AddFNode::cmp(const Node& n) const {
+  return AddNode::cmp(n) &&
+         relaxed_math_optimization_mode().cmp(n.relaxed_math_optimization_mode());
+}
+
+#ifndef PRODUCT
+void AddFNode::dump_spec(outputStream* st) const {
+  AddNode::dump_spec(st);
+  _optimization_mode.dump_on(st);
+}
+#endif
 
 //=============================================================================
 //------------------------------add_of_identity--------------------------------
@@ -555,6 +570,21 @@ Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return commute(phase, this) ? this : nullptr;
 }
 
+uint AddDNode::hash() const {
+  return AddNode::hash() + _optimization_mode.mode();
+}
+
+bool AddDNode::cmp(const Node& n) const {
+  return AddNode::cmp(n) &&
+         relaxed_math_optimization_mode().cmp(n.relaxed_math_optimization_mode());
+}
+
+#ifndef PRODUCT
+void AddDNode::dump_spec(outputStream* st) const {
+  AddNode::dump_spec(st);
+  _optimization_mode.dump_on(st);
+}
+#endif
 
 //=============================================================================
 //------------------------------add_of_identity--------------------------------
