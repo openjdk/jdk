@@ -75,10 +75,9 @@ public final class CarrierLocalArenaPools {
             // This method is never invoked by a virtual thread but can be invoked by
             // a platform thread or a carrier thread (e.g. ForkJoinPool-1-worker-1).
             // Note: the fork join pool can expand/contract dynamically
+            // We do not use the method here as we are using an automatic arena.
             @Override
-            protected void threadTerminated(LocalArenaPoolImpl pool) {
-                pool.close();
-            }
+            protected void threadTerminated(LocalArenaPoolImpl pool) {}
         };
     }
 
@@ -93,36 +92,27 @@ public final class CarrierLocalArenaPools {
         static final int AVAILABLE = 0;
         static final int TAKEN = 1;
 
-        private final Arena arena;
+        // Hold a reference so that the arena is not GC:ed before the thread dies.
         @Stable
-        private final MemorySegment segment;
+        private final Arena originalArena;
+        @Stable
+        private final MemorySegment recyclableSegment;
 
         // Used both directly and reflectively
         int segmentAvailability;
 
         private LocalArenaPoolImpl(long byteSize,
                                    long byteAlignment) {
-            this.arena = Arena.ofAuto();
-            this.segment = arena.allocate(byteSize, byteAlignment);
+            this.originalArena = Arena.ofAuto();
+            this.recyclableSegment = originalArena.allocate(byteSize, byteAlignment);
         }
 
         @ForceInline
         public final Arena take() {
             final Arena arena = Arena.ofConfined();
             return tryAcquireSegment()
-                    ? new SlicingArena((ArenaImpl) arena, segment)
+                    ? new SlicingArena(originalArena, (ArenaImpl) arena, recyclableSegment)
                     : arena;
-        }
-
-        void close() {
-            // As we are using an automatic arena, we cannot close it here.
-            // In order to prevent use-after-free issues, we make sure the arena
-            // is reachable until the dying moments of a carrier thread. The reason for
-            // this is reinterpreted segments carved out from the `arena` can be used
-            // independently of the `arena` but are freed when the `arena` is collected.
-            // Note: carved-out segments can only be used by threads on the
-            // carrier thread.
-            Reference.reachabilityFence(arena);
         }
 
         /**
@@ -201,6 +191,19 @@ public final class CarrierLocalArenaPools {
          */
         private final class SlicingArena implements Arena, NoInitSegmentAllocator {
 
+            // In order to prevent use-after-free issues, we make sure the original arena
+            // is reachable until the dying moments of a carrier thread AND remains
+            // reachable whenever a carved out segment can be reached. The reason for
+            // this is reinterpreted segments carved out from the original arena can be
+            // used independently of the original arena but are freed when the
+            // original arena is collected.
+            //
+            // To solve this, we also hold a reference to the original arena from which we
+            // carved out the `segment`. This covers the case when a VT was remounted on
+            // another CarrierThread and the original CarrierThread
+            // died and therefore the original arena was not referenced anymore.
+            @Stable
+            private final Arena originalArena;
             @Stable
             private final ArenaImpl delegate;
             @Stable
@@ -211,9 +214,11 @@ public final class CarrierLocalArenaPools {
             private long sp = 0L;
 
             @ForceInline
-            private SlicingArena(ArenaImpl arena,
+            private SlicingArena(Arena originalArena,
+                                 ArenaImpl delegate,
                                  MemorySegment segment) {
-                this.delegate = arena;
+                this.originalArena = originalArena;
+                this.delegate = delegate;
                 this.segment = segment;
                 this.owner = Thread.currentThread();
             }
@@ -250,6 +255,8 @@ public final class CarrierLocalArenaPools {
             public void close() {
                 assertOwnerThread();
                 delegate.close();
+                // This is probably not strictly needed but shows intent
+                Reference.reachabilityFence(originalArena);
                 // Intentionally do not releaseSegment() in a finally clause as
                 // the segment still is in play if close() initially fails (e.g. is closed
                 // from a non-owner thread). Later on the close() method might be
