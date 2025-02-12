@@ -48,7 +48,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ThreadPollOnYield {
-    private static CountDownLatch started = new CountDownLatch(1);
+    private static final CountDownLatch started = new CountDownLatch(1);
     static void foo(AtomicBoolean done) {
         started.countDown();
         while (!done.get()) {
