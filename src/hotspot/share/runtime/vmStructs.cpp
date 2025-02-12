@@ -2387,9 +2387,9 @@
   declare_constant(CodeBlobKind::MHAdapter)                               \
   declare_constant(CodeBlobKind::RuntimeStub)                             \
   declare_constant(CodeBlobKind::Deoptimization)                          \
-  declare_constant(CodeBlobKind::Exception)                               \
   declare_constant(CodeBlobKind::Safepoint)                               \
-  declare_constant(CodeBlobKind::UncommonTrap)                            \
+  COMPILER2_PRESENT(declare_constant(CodeBlobKind::Exception))            \
+  COMPILER2_PRESENT(declare_constant(CodeBlobKind::UncommonTrap))         \
   declare_constant(CodeBlobKind::Upcall)                                  \
                                                                           \
   /***************/                                                       \

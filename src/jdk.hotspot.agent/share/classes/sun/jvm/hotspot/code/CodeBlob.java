@@ -209,9 +209,15 @@ public class CodeBlob extends VMObject {
 
   public boolean isDeoptimizationBlob() { return getKind() == DeoptimizationKind; }
 
-  public boolean isUncommonTrapBlob()   { return getKind() == UncommonTrapKind; }
+  public boolean isUncommonTrapBlob()   {
+    if (!VM.getVM().isServerCompiler()) return false;
+    return getKind() == UncommonTrapKind;
+  }
 
-  public boolean isExceptionBlob()      { return getKind() == ExceptionKind; }
+  public boolean isExceptionBlob()      {
+    if (!VM.getVM().isServerCompiler()) return false;
+    return getKind() == ExceptionKind;
+  }
 
   public boolean isSafepointBlob()      { return getKind() == SafepointKind; }
 
