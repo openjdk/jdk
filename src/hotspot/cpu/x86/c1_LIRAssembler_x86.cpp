@@ -3495,10 +3495,34 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
-void LIR_Assembler::inc_profile_ctr(LIR_Opr incr, LIR_Opr dest) {
-  Register inc = incr->as_register();
-  Address dest_adr = as_Address(dest->as_address_ptr());
-  __ addl(dest_adr, inc);
+void LIR_Assembler::inc_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op) {
+  Register temp = temp_op->as_register();
+  Address dest_adr = as_Address(addr->as_address_ptr());
+
+  /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
+  __ movl(temp, r14);
+  __ sall(temp, 13);
+  __ xorl(r14, temp);
+  __ movl(temp, r14);
+  __ shrl(temp, 7);
+  __ xorl(r14, temp);
+  __ movl(temp, r14);
+  __ sall(temp, 5);
+  __ xorl(r14, temp);
+
+  if (incr->is_register()) {
+    Register inc = incr->as_register();
+    __ movl(temp, dest_adr);
+    __ addl(temp, inc);
+    __ movl(dest_adr, temp);
+    __ movl(dest->as_register(), temp);
+  } else {
+    jint inc = incr->as_constant_ptr()->as_jint_bits();
+    __ movl(temp, dest_adr);
+    __ addl(temp, inc);
+    __ movl(dest_adr, temp);
+    __ movl(dest->as_register(), temp);
+  }
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {

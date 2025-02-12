@@ -947,7 +947,6 @@ enum LIR_Code {
       , lir_safepoint
       , lir_unwind
       , lir_load_klass
-      , lir_inc_profile_ctr
   , end_op1
   , begin_op2
       , lir_branch
@@ -971,6 +970,7 @@ enum LIR_Code {
       , lir_throw
       , lir_xadd
       , lir_xchg
+      , lir_inc_profile_ctr
   , end_op2
   , begin_op3
       , lir_idiv
@@ -2301,7 +2301,7 @@ class LIR_List: public CompilationResourceObj {
   void volatile_store_mem_reg(LIR_Opr src, LIR_Address* address, CodeEmitInfo* info, LIR_PatchCode patch_code = lir_patch_none);
   void volatile_store_unsafe_reg(LIR_Opr src, LIR_Opr base, LIR_Opr offset, BasicType type, CodeEmitInfo* info, LIR_PatchCode patch_code);
 
-  void inc_profile_ctr(LIR_Opr src, LIR_Address* addr, CodeEmitInfo* info = nullptr, LIR_PatchCode patch_code = lir_patch_none);
+  void inc_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp, CodeEmitInfo* info = nullptr);
 
   void idiv(LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp, CodeEmitInfo* info);
   void idiv(LIR_Opr left, int   right, LIR_Opr res, LIR_Opr tmp, CodeEmitInfo* info);
@@ -2434,7 +2434,7 @@ class LIR_InsertionBuffer : public CompilationResourceObj {
   // instruction
   void move(int index, LIR_Opr src, LIR_Opr dst, CodeEmitInfo* info = nullptr) { append(index, new LIR_Op1(lir_move, src, dst, dst->type(), lir_patch_none, info)); }
 
-  void inc_profile_ctr(LIR_Opr src, LIR_Address* addr, CodeEmitInfo* info = nullptr);
+  void inc_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, CodeEmitInfo* info = nullptr);
 };
 
 

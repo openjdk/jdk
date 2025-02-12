@@ -597,10 +597,6 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       unwind_op(op->in_opr());
       break;
 
-    case lir_inc_profile_ctr:
-      inc_profile_ctr(op->in_opr(), op->result_opr());
-      break;
-
     default:
       Unimplemented();
       break;
@@ -754,6 +750,10 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
     case lir_xadd:
     case lir_xchg:
       atomic_op(op->code(), op->in_opr1(), op->in_opr2(), op->result_opr(), op->tmp1_opr());
+      break;
+
+    case lir_inc_profile_ctr:
+      inc_profile_ctr(op->in_opr1(), op->in_opr2(), op->result_opr(), op->tmp1_opr());
       break;
 
     default:

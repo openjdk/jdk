@@ -3289,10 +3289,11 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   }
   LIR_Address* counter = new LIR_Address(counter_holder, offset, T_INT);
   LIR_Opr result = new_register(T_INT);
-  __ load(counter, result);
-  __ add(result, step, result);
-  __ store(result, counter);
-  __ inc_profile_ctr(result, counter);
+  LIR_Opr tmp = new_register(T_INT);
+  // __ load(counter, result);
+  // __ add(result, step, result);
+  // __ store(result, counter);
+  __ inc_profile_ctr(step, counter, result, tmp);
   if (notify && (!backedge || UseOnStackReplacement)) {
     LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());
     // The bci for info can point to cmp for if's we want the if bci
