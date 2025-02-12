@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -74,6 +75,10 @@ public final class Executor extends CommandArguments<Executor> {
 
     public Executor setToolProvider(JavaTool v) {
         return setToolProvider(v.asToolProvider());
+    }
+
+    public Optional<Path> getExecutable() {
+        return Optional.ofNullable(executable);
     }
 
     public Executor setDirectory(Path v) {
@@ -422,7 +427,7 @@ public final class Executor extends CommandArguments<Executor> {
     }
 
     private Result createResult(int exitCode, List<String> output) {
-        return new Result(exitCode, null, this::getPrintableCommandLine);
+        return new Result(exitCode, output, this::getPrintableCommandLine);
     }
 
     private Result runToolProvider() throws IOException {
