@@ -62,6 +62,7 @@ sealed interface Token permits StringToken,
             case Long s    -> outputList.add(new StringToken(Renderer.format(s)));
             case Double s  -> outputList.add(new StringToken(Renderer.format(s)));
             case Float s   -> outputList.add(new StringToken(Renderer.format(s)));
+            case Boolean s -> outputList.add(new StringToken(Renderer.format(s)));
             case List l    -> parseList(l, outputList);
             default -> throw new IllegalArgumentException("Unexpected token: " + o);
         }

@@ -43,6 +43,9 @@ import static compiler.lib.template_framework.Template.MUTABLE;
 
 /**
  * The Library provides a collection of helpful Templates and Hooks.
+ *
+ * TODO more operators
+ * TODO more templates
  */
 public abstract class Library {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -105,7 +108,8 @@ public abstract class Library {
         INT("int"),
         LONG("long"),
         FLOAT("float"),
-        DOUBLE("double");
+        DOUBLE("double"),
+        BOOLEAN("boolean");
 
         private final String text;
 
@@ -124,6 +128,7 @@ public abstract class Library {
                 case ExpressionType.LONG -> GEN_LONG.next();
                 case ExpressionType.FLOAT -> GEN_FLOAT.next();
                 case ExpressionType.DOUBLE -> GEN_DOUBLE.next();
+                case ExpressionType.BOOLEAN -> GEN_INT.next() % 2 == 0; // TODO better distribution?
             }
         ));
 
@@ -217,12 +222,19 @@ public abstract class Library {
         new BinaryOperator("(", ExpressionType.DOUBLE, " % ",   ExpressionType.DOUBLE, ")")
     );
 
+    private static final List<BinaryOperator> BOOLEAN_BINARY_OPERATORS = List.of(
+        new BinaryOperator("(", ExpressionType.BOOLEAN, " || ",   ExpressionType.BOOLEAN, ")"),
+        new BinaryOperator("(", ExpressionType.BOOLEAN, " && ",   ExpressionType.BOOLEAN, ")"),
+        new BinaryOperator("(", ExpressionType.BOOLEAN, " ^ ",    ExpressionType.BOOLEAN, ")")
+    );
+
     private static List<BinaryOperator> binaryOperators(ExpressionType type) {
         return switch (type) {
             case ExpressionType.INT -> INT_BINARY_OPERATORS;
             case ExpressionType.LONG -> LONG_BINARY_OPERATORS;
             case ExpressionType.FLOAT -> FLOAT_BINARY_OPERATORS;
             case ExpressionType.DOUBLE -> DOUBLE_BINARY_OPERATORS;
+            case ExpressionType.BOOLEAN -> BOOLEAN_BINARY_OPERATORS;
         };
     }
 

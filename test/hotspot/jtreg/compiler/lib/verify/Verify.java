@@ -86,6 +86,7 @@ public final class Verify {
             case Long      x -> checkEQimpl(x, ((Long)b).longValue(),      context);
             case Float     x -> checkEQimpl(x, ((Float)b).floatValue(),    context);
             case Double    x -> checkEQimpl(x, ((Double)b).doubleValue(),  context);
+            case Boolean   x -> checkEQimpl(x, ((Boolean)b).booleanValue(),context);
             case byte[]    x -> checkEQimpl(x, (byte[])b,                  context);
             case char[]    x -> checkEQimpl(x, (char[])b,                  context);
             case short[]   x -> checkEQimpl(x, (short[])b,                 context);
@@ -178,6 +179,16 @@ public final class Verify {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch for " + context);
             System.err.println("       Values: " + a + " vs " + b);
             System.err.println("       Values: " + Double.doubleToRawLongBits(a) + " vs " + Double.doubleToRawLongBits(b));
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    /**
+     * Verify that two booleans are identical.
+     */
+    private static void checkEQimpl(boolean a, boolean b, String context) {
+        if (a != b) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
             throw new VerifyException("Value mismatch: " + a + " vs " + b);
         }
     }
