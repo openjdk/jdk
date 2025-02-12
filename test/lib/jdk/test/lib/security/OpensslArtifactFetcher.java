@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,27 +33,29 @@ import jdk.test.lib.artifacts.ArtifactResolverException;
 
 public class OpensslArtifactFetcher {
 
+    private static final String OPENSSL_BUNDLE_VERSION = "3.0.14";
+    private static final String OPENSSL_ORG = "jpg.tests.jdk.openssl";
+
     /**
-     * Gets the openssl binary path of version 1.1.*
+     * Gets the openssl binary path of the defined version
      *
      * Openssl selection flow:
         1. Check whether property test.openssl.path is set and it's the
-           preferred version(1.1.*) of openssl, then return that path.
-        2. Else look for already installed openssl (version 1.1.*) in system
+           preferred version of openssl, then return that path.
+        2. Else look for already installed openssl in system
            path /usr/bin/openssl or /usr/local/bin/openssl, then return that
            path.
-        3. Else try to download openssl (version 1.1.*) from the artifactory
+        3. Else try to download the defined version of openssl from the artifactory
            and return that path, if download fails then return null.
      *
-     * @return openssl binary path of version 1.1.*
+     * @return openssl binary path of the defined version
      */
-    public static String getOpenssl1dot1dotStar() {
-        String version = "1.1.";
-        String path = getOpensslFromSystemProp(version);
+    public static String getOpensslPath() {
+        String path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
         if (path != null) {
             return path;
         } else {
-            path = getDefaultSystemOpensslPath(version);
+            path = getDefaultSystemOpensslPath(OPENSSL_BUNDLE_VERSION);
             if (path != null) {
                 return path;
             } else if (Platform.is64bit()) {
@@ -64,7 +66,7 @@ public class OpensslArtifactFetcher {
                 } else if (Platform.isWindows()) {
                     path = fetchOpenssl(WINDOWS_X64.class);
                 }
-                if (verifyOpensslVersion(path, version)) {
+                if (verifyOpensslVersion(path, OPENSSL_BUNDLE_VERSION)) {
                     return path;
                 }
             }
@@ -125,23 +127,37 @@ public class OpensslArtifactFetcher {
     }
 
     @Artifact(
-            organization = "jpg.tests.jdk.openssl",
+            organization = OPENSSL_ORG,
             name = "openssl-linux_x64",
-            revision = "1.1.1g",
+            revision = OPENSSL_BUNDLE_VERSION,
             extension = "zip")
     private static class LINUX_X64 { }
 
     @Artifact(
-            organization = "jpg.tests.jdk.openssl",
+            organization = OPENSSL_ORG,
+            name = "openssl-linux_aarch64",
+            revision = OPENSSL_BUNDLE_VERSION,
+            extension = "zip")
+    private static class LINUX_AARCH64{ }
+
+    @Artifact(
+            organization = OPENSSL_ORG,
             name = "openssl-macosx_x64",
-            revision = "1.1.1g",
+            revision = OPENSSL_BUNDLE_VERSION,
             extension = "zip")
     private static class MACOSX_X64 { }
 
     @Artifact(
-            organization = "jpg.tests.jdk.openssl",
+            organization = OPENSSL_ORG,
+            name = "openssl-macosx_aarch64",
+            revision = OPENSSL_BUNDLE_VERSION,
+            extension = "zip")
+    private static class MACOSX_AARCH64 { }
+
+    @Artifact(
+            organization = OPENSSL_ORG,
             name = "openssl-windows_x64",
-            revision = "1.1.1g",
+            revision = OPENSSL_BUNDLE_VERSION,
             extension = "zip")
     private static class WINDOWS_X64 { }
 }
