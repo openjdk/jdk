@@ -323,7 +323,7 @@ void MemDetailReporter::report_detail() {
 }
 
 int MemDetailReporter::report_malloc_sites() {
-  GrowableArray<MallocSite>& malloc_sites = _baseline.malloc_sites(MemBaseline::by_size);
+  GrowableArrayCHeap<MallocSite, mtNMT>& malloc_sites = _baseline.malloc_sites(MemBaseline::by_size);
   if (malloc_sites.is_empty()) return 0;
 
   outputStream* out = output();
@@ -796,8 +796,8 @@ void MemDetailDiffReporter::report_diff() {
 }
 
 void MemDetailDiffReporter::diff_malloc_sites() const {
-  GrowableArray<MallocSite>& early = _early_baseline.malloc_sites(MemBaseline::by_site_and_type);
-  GrowableArray<MallocSite>& current = _current_baseline.malloc_sites(MemBaseline::by_site_and_type);
+  GrowableArrayCHeap<MallocSite, mtNMT>& early = _early_baseline.malloc_sites(MemBaseline::by_site_and_type);
+  GrowableArrayCHeap<MallocSite, mtNMT>& current = _current_baseline.malloc_sites(MemBaseline::by_site_and_type);
 
   int early_i = 0;
   int current_i = 0;
