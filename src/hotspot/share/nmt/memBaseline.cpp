@@ -102,7 +102,6 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
 // Walk all virtual memory regions for baselining
 class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
 private:
-  GrowableArray<ReservedMemoryRegion> _virtual_memory_regions_a;
   typedef LinkedListImpl<ReservedMemoryRegion, AnyObj::C_HEAP, mtNMT,
                          AllocFailStrategy::RETURN_NULL> EntryList;
   EntryList _virtual_memory_regions;
