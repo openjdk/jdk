@@ -137,10 +137,27 @@ public abstract class Library {
             "public static #type #name = ", CONSTANT_EXPRESSION.withArgs(type), ";\n"
         ));
 
+    public static final Template.TwoArgs<ExpressionType, String> GENERATE_DELAYED_CONSTANT_VIA_BOXING_INLINE =
+        Template.make("type", "name", (ExpressionType type, String name) -> body(
+            intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(ExpressionType.BOOLEAN, $("flag"))),
+            """
+            // #name is constant, but only known after Incremental Boxing Inline (after parsing)
+            Integer $box;
+            if ($flag) { $box = 1; } else { $box = 2; }
+            #type #name = ($box == 3) ? """,
+            CONSTANT_EXPRESSION.withArgs(type),
+            " : ",
+            CONSTANT_EXPRESSION.withArgs(type),
+            ";\n"
+        ));
+
     public static final Template.TwoArgs<ExpressionType, String> GENERATE_EARLIER_VALUE =
         Template.make("type", "name", (ExpressionType type, String name) -> body(
             // TODO alternatives
-            intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(type, name))
+            choice(List.of(
+              intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(type, name)),
+              intoHook(METHOD_HOOK, GENERATE_DELAYED_CONSTANT_VIA_BOXING_INLINE.withArgs(type, name))
+            ))
         ));
 
     public static final Template.OneArgs<ExpressionType> LOAD_EXPRESSION =
