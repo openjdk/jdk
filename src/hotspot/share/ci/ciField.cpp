@@ -404,6 +404,18 @@ bool ciField::will_link(ciMethod* accessing_method,
   fieldDescriptor result;
   LinkResolver::resolve_field(result, link_info, bc, false, CHECK_AND_CLEAR_(false));
 
+  // Strict statics may require tracking if their class is not fully initialized.
+  // For now we can bail out of the compiler and let the interpreter handle it.
+  if (is_static && result.is_strict_static_unset()) {
+    // If we left out this logic, we would get (a) spurious <clinit>
+    // failures for C2 code because compiled putstatic would not write
+    // the "unset" bits, and (b) missed failures for too-early reads,
+    // since the compiled getstatic would not check the "unset" bits.
+    // Test C1 on <clinit> with "-XX:TieredStopAtLevel=2 -Xcomp -Xbatch".
+    // Test C2 on <clinit> with "-XX:-TieredCompilation -Xcomp -Xbatch".
+    return false;
+  }
+
   // update the hit-cache, unless there is a problem with memory scoping:
   if (accessing_method->holder()->is_shared() || !is_shared()) {
     if (is_put) {

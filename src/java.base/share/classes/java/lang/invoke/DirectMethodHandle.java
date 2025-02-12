@@ -373,7 +373,7 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
 
     private void ensureInitialized() {
-        if (checkInitialized(member)) {
+        if (checkInitialized()) {
             // The coast is clear.  Delete the <clinit> barrier.
             updateForm(new Function<>() {
                 public LambdaForm apply(LambdaForm oldForm) {
@@ -383,14 +383,19 @@ sealed class DirectMethodHandle extends MethodHandle {
             });
         }
     }
-    private static boolean checkInitialized(MemberName member) {
+    private boolean checkInitialized() {
         Class<?> defc = member.getDeclaringClass();
         UNSAFE.ensureClassInitialized(defc);
         // Once we get here either defc was fully initialized by another thread, or
         // defc was already being initialized by the current thread. In the latter case
         // the barrier must remain. We can detect this simply by checking if initialization
         // is still needed.
-        return !UNSAFE.shouldBeInitialized(defc);
+        boolean initializingStill = UNSAFE.shouldBeInitialized(defc);
+        if (initializingStill && member.isStrict()) {
+            // while <clinit> is running, we track access to strict static fields
+            UNSAFE.notifyStrictStaticAccess(defc, staticOffset(this), member.isSetter());
+        }
+        return !initializingStill;
     }
 
     /*non-public*/
@@ -787,8 +792,9 @@ sealed class DirectMethodHandle extends MethodHandle {
         final int F_OFFSET  = nameCursor++;  // Either static offset or field offset.
         final int OBJ_CHECK = (OBJ_BASE >= 0 ? nameCursor++ : -1);
         final int U_HOLDER  = nameCursor++;  // UNSAFE holder
-        final int INIT_BAR  = (needsInit ? nameCursor++ : -1);
+        // N.B. pre-cast must happen before init barrier, if both are present
         final int PRE_CAST  = (needsCast && !isGetter ? nameCursor++ : -1);
+        final int INIT_BAR  = (needsInit ? nameCursor++ : -1);  //no exceptions after barrier
         final int LINKER_CALL = nameCursor++;
         final int POST_CAST = (needsCast && isGetter ? nameCursor++ : -1);
         final int RESULT    = nameCursor-1;  // either the call or the cast

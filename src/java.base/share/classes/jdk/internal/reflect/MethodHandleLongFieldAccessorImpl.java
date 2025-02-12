@@ -82,7 +82,7 @@ class MethodHandleLongFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
             } else {
                 return (long) getter.invokeExact(obj);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             throw newGetIllegalArgumentException(obj);
@@ -174,7 +174,7 @@ class MethodHandleLongFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
             } else {
                 setter.invokeExact(obj, l);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             // receiver is of invalid type

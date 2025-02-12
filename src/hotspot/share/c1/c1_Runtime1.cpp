@@ -954,6 +954,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
   BasicType patch_field_type = T_ILLEGAL;
   bool deoptimize_for_volatile = false;
   bool deoptimize_for_atomic = false;
+  bool deoptimize_for_strict = false;
   int patch_field_offset = -1;
   Klass* init_klass = nullptr; // klass needed by load_klass_patching code
   Klass* load_klass = nullptr; // klass needed by load_klass_patching code
@@ -996,6 +997,11 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
 
     patch_field_type = result.field_type();
     deoptimize_for_atomic = (AlwaysAtomicAccesses && (patch_field_type == T_DOUBLE || patch_field_type == T_LONG));
+
+    // Strict statics may require tracking if their class is not fully initialized.
+    // For now we can bail out of the compiler and let the interpreter handle it.
+    //@@ FIXME: do we need this logic, or is ciField::will_link sufficient?
+    deoptimize_for_strict = result.is_strict_static_unset();
 
   } else if (load_klass_or_mirror_patch_id) {
     Klass* k = nullptr;
@@ -1069,7 +1075,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
     ShouldNotReachHere();
   }
 
-  if (deoptimize_for_volatile || deoptimize_for_atomic) {
+  if (deoptimize_for_volatile || deoptimize_for_atomic || deoptimize_for_strict) {
     // At compile time we assumed the field wasn't volatile/atomic but after
     // loading it turns out it was volatile/atomic so we have to throw the
     // compiled code out and let it be regenerated.
@@ -1079,6 +1085,9 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
       }
       if (deoptimize_for_atomic) {
         tty->print_cr("Deoptimizing for patching atomic field reference");
+      }
+      if (deoptimize_for_strict) {
+        tty->print_cr("Deoptimizing for patching strict static field reference");
       }
     }
 

@@ -74,7 +74,7 @@ class MethodHandleShortFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
             } else {
                 return (short) getter.invokeExact(obj);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             throw newGetIllegalArgumentException(obj);
@@ -153,7 +153,7 @@ class MethodHandleShortFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
             } else {
                 setter.invokeExact(obj, s);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             // receiver is of invalid type

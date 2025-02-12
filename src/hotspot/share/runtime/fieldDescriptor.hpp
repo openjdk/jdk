@@ -67,6 +67,7 @@ class fieldDescriptor {
   // Initial field value
   inline bool has_initial_value()        const;
   inline int initial_value_index()       const;
+  inline bool is_strict_static_unset()   const;
   constantTag initial_value_tag() const;  // The tag will return true on one of is_int(), is_long(), is_single(), is_double()
   jint int_initial_value()        const;
   jlong long_initial_value()      const;
@@ -82,6 +83,7 @@ class fieldDescriptor {
   bool is_protected()             const    { return access_flags().is_protected(); }
 
   bool is_static()                const    { return access_flags().is_static(); }
+  bool is_strict()                const    { return access_flags().is_strict(); }
   bool is_final()                 const    { return access_flags().is_final(); }
   bool is_stable()                const    { return field_flags().is_stable(); }
   bool is_volatile()              const    { return access_flags().is_volatile(); }

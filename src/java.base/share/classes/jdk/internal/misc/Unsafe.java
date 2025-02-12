@@ -1167,6 +1167,21 @@ public final class Unsafe {
     }
 
     /**
+     * The reading or writing of strict static fields may require
+     * special processing.  Notify the VM that such an event is about
+     * to happen.  The VM may respond by throwing an exception, in the
+     * case of a read of an uninitialized field.  If the VM allows the
+     * method to return normally, no further calls are needed, with
+     * the same arguments.
+     */
+    public void notifyStrictStaticAccess(Class<?> c, long staticFieldOffset, boolean writing) {
+        if (c == null) {
+            throw new NullPointerException();
+        }
+        notifyStrictStaticAccess0(c, staticFieldOffset, writing);
+    }
+
+    /**
      * Reports the offset of the first element in the storage allocation of a
      * given array class.  If {@link #arrayIndexScale} returns a non-zero value
      * for the same class, you may use that scale factor, together with this
@@ -3840,6 +3855,7 @@ public final class Unsafe {
     private native Object staticFieldBase0(Field f);
     private native boolean shouldBeInitialized0(Class<?> c);
     private native void ensureClassInitialized0(Class<?> c);
+    private native void notifyStrictStaticAccess0(Class<?> c, long staticFieldOffset, boolean writing);
     private native int arrayBaseOffset0(Class<?> arrayClass);
     private native int arrayIndexScale0(Class<?> arrayClass);
     private native int getLoadAverage0(double[] loadavg, int nelems);

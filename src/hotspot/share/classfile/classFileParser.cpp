@@ -1402,6 +1402,12 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
       name_index, CHECK);
     const Symbol* const name = cp->symbol_at(name_index);
     verify_legal_field_name(name, CHECK);
+    if (name->ends_with("__STRICT")) {
+      // FIXME: remove this test code after tools support strict fields
+      u2 bits = access_flags.as_field_flags();
+      bits |= JVM_ACC_STRICT;
+      access_flags.set_flags(bits);
+    }
 
     const u2 signature_index = cfs->get_u2_fast();
     guarantee_property(valid_symbol_at(signature_index),
@@ -1472,6 +1478,9 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     parsed_annotations.apply_to(&fi);
     if (fi.field_flags().is_contended()) {
       _has_contended_fields = true;
+    }
+    if (access_flags.is_strict() && access_flags.is_static()) {
+      _has_strict_static_fields = true;
     }
     _temp_field_info->append(fi);
   }
@@ -4367,9 +4376,15 @@ void ClassFileParser::verify_legal_field_modifiers(jint flags,
   const bool is_volatile  = (flags & JVM_ACC_VOLATILE)  != 0;
   const bool is_transient = (flags & JVM_ACC_TRANSIENT) != 0;
   const bool is_enum      = (flags & JVM_ACC_ENUM)      != 0;
+  const bool is_strict    = (flags & JVM_ACC_STRICT)    != 0;
   const bool major_gte_1_5 = _major_version >= JAVA_1_5_VERSION;
 
   bool is_illegal = false;
+
+  if (is_strict && !is_static) {
+    // FIXME: this prototype of strict fields handles statics only
+    is_illegal = true;
+  }
 
   if (is_interface) {
     if (!is_public || !is_static || !is_final || is_private ||
@@ -5044,6 +5059,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   // Not yet: supers are done below to support the new subtype-checking fields
   ik->set_nonstatic_field_size(_field_info->_nonstatic_field_size);
   ik->set_has_nonstatic_fields(_field_info->_has_nonstatic_fields);
+  ik->set_has_strict_static_fields(_has_strict_static_fields);
   ik->set_static_oop_field_count(_static_oop_count);
 
   // this transfers ownership of a lot of arrays from
@@ -5323,6 +5339,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_localvariable_table(false),
   _has_final_method(false),
   _has_contended_fields(false),
+  _has_strict_static_fields(false),
   _has_finalizer(false),
   _has_empty_finalizer(false),
   _max_bootstrap_specifier_index(-1) {
@@ -5778,6 +5795,22 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   _fields_status =
     MetadataFactory::new_array<FieldStatus>(_loader_data, _temp_field_info->length(),
                                             FieldStatus(0), CHECK);
+
+  // Strict static fields track initialization status from the beginning of time.
+  // After this class runs <clinit>, they will be verified as being "not unset".
+  // See Step 8 of InstanceKlass::initialize_impl.
+  if (_has_strict_static_fields DEBUG_ONLY(|| true)) {
+    bool found_one = false;
+    for (int i = 0, limit = _temp_field_info->length(); i < limit; i++) {
+      FieldInfo& fi = *_temp_field_info->adr_at(i);
+      if (fi.access_flags().is_strict() && fi.access_flags().is_static()) {
+        found_one = true;
+        _fields_status->adr_at(fi.index())->update_strict_static_unset(true);
+      }
+    }
+    assert(found_one == _has_strict_static_fields,
+           "correct prediction = %d", (int)_has_strict_static_fields);
+  }
 }
 
 void ClassFileParser::set_klass(InstanceKlass* klass) {

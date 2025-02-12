@@ -49,6 +49,10 @@ inline ConstantPool* fieldDescriptor::constants() const {
 inline int fieldDescriptor::offset()                    const    { return field().offset(); }
 inline bool fieldDescriptor::has_initial_value()        const    { return field().field_flags().is_initialized(); }
 inline int fieldDescriptor::initial_value_index()       const    { return field().initializer_index(); }
+inline bool fieldDescriptor::is_strict_static_unset() const {
+  return (is_strict() && is_static() &&
+          field_holder()->field_status(index()).is_strict_static_unset());
+}
 
 inline void fieldDescriptor::set_is_field_access_watched(const bool value) {
   field_holder()->fields_status()->adr_at(index())->update_access_watched(value);

@@ -767,6 +767,13 @@ public:
   inline u2 next_method_idnum();
   void set_initial_method_idnum(u2 value)             { _idnum_allocated_count = value; }
 
+  // runtime support for strict statics
+  bool has_strict_static_fields() const    { return _misc_flags.has_strict_static_fields(); }
+  void set_has_strict_static_fields(bool b){ _misc_flags.set_has_strict_static_fields(b); }
+  void notify_strict_static_access(int field_index, bool is_writing, TRAPS);
+  const char* format_strict_static_message(Symbol* field_name, const char* doing_what = nullptr);
+  void throw_strict_static_exception(Symbol* field_name, const char* when, TRAPS);
+
   // generics support
   Symbol* generic_signature() const;
   u2 generic_signature_index() const;

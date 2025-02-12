@@ -285,6 +285,7 @@ class FieldStatus {
   enum FieldStatusBitPosition {
     _fs_access_watched,       // field access is watched by JVMTI
     _fs_modification_watched, // field modification is watched by JVMTI
+    _fs_strict_static_unset,  // JVM_ACC_STRICT static field has not yet been set
     _initialized_final_update // (static) final field updated outside (class) initializer
   };
 
@@ -305,11 +306,13 @@ class FieldStatus {
 
   bool is_access_watched()        { return test_flag(_fs_access_watched); }
   bool is_modification_watched()  { return test_flag(_fs_modification_watched); }
+  bool is_strict_static_unset()   { return test_flag(_fs_strict_static_unset); }
   bool is_initialized_final_update() { return test_flag(_initialized_final_update); }
 
   void update_access_watched(bool z);
   void update_modification_watched(bool z);
   void update_initialized_final_update(bool z);
+  void update_strict_static_unset(bool z);
 };
 
 #endif // SHARE_OOPS_FIELDINFO_HPP
