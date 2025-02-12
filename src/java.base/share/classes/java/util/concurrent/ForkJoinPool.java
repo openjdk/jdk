@@ -52,7 +52,7 @@ import jdk.internal.access.JavaUtilConcurrentFJPAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.SharedThreadContainer;
-import static java.util.concurrent.DelayScheduler.DelayedTask;
+import static java.util.concurrent.DelayScheduler.ScheduledForkJoinTask;
 
 /**
  * An {@link ExecutorService} for running {@link ForkJoinTask}s.
@@ -140,7 +140,9 @@ import static java.util.concurrent.DelayScheduler.DelayedTask;
  * ScheduledExecutorService} methods to delay or periodically execute
  * tasks, as well as method {#link #submitWithTimeout} to cancel tasks
  * that take too long. The scheduled functions or actions may create
- * and invoke other {@linkplain ForkJoinTask ForkJoinTasks}. Resource
+ * and invoke other {@linkplain ForkJoinTask ForkJoinTasks}. The
+ * schedule methods return {@linkplain ForkJoinTask ForkJoinTasks}
+ * that implement the {@link ScheduledFuture} interface. Resource
  * exhaustion encountered after initial submission results in task
  * cancellation. When time-based methods are used, shutdown policies
  * are based on the default policies of class {@link
@@ -914,15 +916,16 @@ public class ForkJoinPool extends AbstractExecutorService
      * methods (via startDelayScheduler, with callback
      * onDelaySchedulerStart). The scheduler operates independently in
      * its own thread, relaying tasks to the pool to execute as they
-     * become ready (see method executeReadyDelayedTask). The only
-     * other interactions with the delayScheduler are to control
-     * shutdown and maintain shutdown-related policies in methods
-     * quiescent() and tryTerminate(). In particular, to conform to
-     * policies, shutdown-related processing must deal with cases in
-     * which tasks are submitted before shutdown, but not ready until
-     * afterwards, in which case they must bypass some screening to be
-     * allowed to run. Conversely, the DelayScheduler interacts with
-     * the pool only to check runState status and complete termination.
+     * become ready (see method
+     * executeReadyScheculedTask). The only other interactions
+     * with the delayScheduler are to control shutdown and maintain
+     * shutdown-related policies in methods quiescent() and
+     * tryTerminate(). In particular, to conform to policies,
+     * shutdown-related processing must deal with cases in which tasks
+     * are submitted before shutdown, but not ready until afterwards,
+     * in which case they must bypass some screening to be allowed to
+     * run. Conversely, the DelayScheduler interacts with the pool
+     * only to check runState status and complete termination.
      *
      * Memory placement
      * ================
@@ -3424,7 +3427,7 @@ public class ForkJoinPool extends AbstractExecutorService
 
     // Support for delayed tasks
 
-    // methods used by Delayscheduler
+    // methods used by DelayScheduler
 
     static ForkJoinPool asyncCommonPool() { // override parallelism == 0
         ForkJoinPool cp;
@@ -3433,25 +3436,13 @@ public class ForkJoinPool extends AbstractExecutorService
         return cp;
     }
 
-    /**
-     * Returns status code for DelayScheduler:
-     * * 0 not shutdown
-     * * -1 stopping
-     * * 1 shutdown without cancelling delayed tasks
-     * * 2 shutdown cancelling delayed tasks
-     */
-    final int delaySchedulerRunStatus() {
-        long rs;
-        return ((((rs = runState) & SHUTDOWN) == 0L) ? 0 :
-                (rs & STOP) != 0L ? -1 :
-                cancelDelayedTasksOnShutdown ? 2 : 1);
-    }
-
     private DelayScheduler startDelayScheduler() {
         DelayScheduler ds;
         if ((ds = delayScheduler) == null) {
             boolean start = false;
             String name = poolName + "-delayScheduler";
+            if (workerNamePrefix == null)
+                asyncCommonPool();  // override common parallelism zero
             lockRunState();
             try {
                 if ((ds = delayScheduler) == null) {
@@ -3463,8 +3454,6 @@ public class ForkJoinPool extends AbstractExecutorService
             }
             if (start) { // start outside of lock
                 SharedThreadContainer ctr;
-                if (this == common) // override parallelism 0
-                    asyncCommonPool();
                 if ((ctr = container) != null)
                     ctr.start(ds);
                 else
@@ -3484,23 +3473,23 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
-     * Arrange delayed execution of a DelayedTask via the
-     * DelayScheduler, creating and starting it if necessary.
+     * Returns status code for DelayScheduler:
+     * * 0 not shutdown
+     * * -1 stopping
+     * * 1 shutdown without cancelling delayed tasks
+     * * 2 shutdown cancelling delayed tasks
      */
-    final void scheduleDelayedTask(DelayedTask<?> task, long nanoDelay) {
-        DelayScheduler ds;
-        if (((ds = delayScheduler) == null &&
-             (ds = startDelayScheduler()) == null) ||
-            task == null || (runState & SHUTDOWN) != 0L)
-            throw new RejectedExecutionException();
-        task.when = DelayScheduler.now() + Math.max(0L, nanoDelay);
-        ds.pend(task);
+    final int delaySchedulerRunStatus() {
+        long rs;
+        return ((((rs = runState) & SHUTDOWN) == 0L) ? 0 :
+                (rs & STOP) != 0L ? -1 :
+                cancelDelayedTasksOnShutdown ? 2 : 1);
     }
 
     /**
      * Arranges execution of a ready task from DelayScheduler
      */
-    final void executeReadyDelayedTask(DelayedTask<?> task) {
+    final void executeReadyScheduledTask(ScheduledForkJoinTask<?> task) {
         if (task != null) {
             WorkQueue q;
             boolean cancel = false;
@@ -3518,7 +3507,65 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
-     * Body of a DelayedTask serving to cancel another task on timeout
+     * Arrange delayed execution of a ScheduledForkJoinTask via the
+     * DelayScheduler, creating and starting it if necessary.
+     * @return the task
+     */
+    final <T> ScheduledForkJoinTask<T> scheduleDelayedTask(ScheduledForkJoinTask<T> task) {
+        DelayScheduler ds;
+        if (((ds = delayScheduler) == null &&
+             (ds = startDelayScheduler()) == null) ||
+            task == null || (runState & SHUTDOWN) != 0L)
+            throw new RejectedExecutionException();
+        ds.pend(task);
+        return task;
+    }
+
+    public ScheduledFuture<?> schedule(Runnable command,
+                                       long delay, TimeUnit unit) {
+        Objects.requireNonNull(command);
+        return scheduleDelayedTask(
+            new ScheduledForkJoinTask<Void>(
+                Math.max(unit.toNanos(delay), 0L) + DelayScheduler.now(),
+                0L, false, command, null, this));
+    }
+
+    public <V> ScheduledFuture<V> schedule(Callable<V> callable,
+                                           long delay, TimeUnit unit) {
+        Objects.requireNonNull(callable);
+        return scheduleDelayedTask(
+            new ScheduledForkJoinTask<V>(
+                Math.max(unit.toNanos(delay), 0L) + DelayScheduler.now(),
+                0L, false, null, callable, this));
+    }
+
+    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command,
+                                                  long initialDelay,
+                                                  long period, TimeUnit unit) {
+        Objects.requireNonNull(command);
+        if (period <= 0L)
+            throw new IllegalArgumentException();
+        return scheduleDelayedTask(
+            new ScheduledForkJoinTask<Void>(
+                Math.max(unit.toNanos(initialDelay), 0L) + DelayScheduler.now(),
+                -unit.toNanos(period), // negative for fixed delay
+                false, command, null, this));
+    }
+
+    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
+                                                     long initialDelay,
+                                                     long delay, TimeUnit unit) {
+        Objects.requireNonNull(command);
+        if (delay <= 0L)
+            throw new IllegalArgumentException();
+        return scheduleDelayedTask(
+            new ScheduledForkJoinTask<Void>(
+                Math.max(unit.toNanos(initialDelay), 0L) + DelayScheduler.now(),
+                unit.toNanos(delay), false, command, null, this));
+    }
+
+    /**
+     * Body of a ScheduledForkJoinTask serving to cancel another task on timeout
      */
     static final class CancelAction implements Runnable {
         Future<?> task; // set after construction
@@ -3527,54 +3574,6 @@ public class ForkJoinPool extends AbstractExecutorService
             if ((t = task) != null)
                 t.cancel(true);
         }
-    }
-
-    public ScheduledFuture<?> schedule(Runnable command,
-                                       long delay,
-                                       TimeUnit unit) {
-        Objects.requireNonNull(command);
-        DelayedTask<Void> t = new DelayedTask<Void>(
-            command, null, this, false, 0L, unit.toNanos(delay));
-        t.schedule();
-        return t;
-    }
-
-    public <V> ScheduledFuture<V> schedule(Callable<V> callable,
-                                           long delay,
-                                           TimeUnit unit) {
-        Objects.requireNonNull(callable);
-        DelayedTask<V> t = new DelayedTask<V>(
-            null, callable, this, false, 0L, unit.toNanos(delay));
-        t.schedule();
-        return t;
-    }
-
-    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command,
-                                                  long initialDelay,
-                                                  long period,
-                                                  TimeUnit unit) {
-        Objects.requireNonNull(command);
-        if (period <= 0L)
-            throw new IllegalArgumentException();
-        long p = -unit.toNanos(period); // negative for fixed rate
-        DelayedTask<Void> t = new DelayedTask<Void>(
-            command, null, this, false, p, unit.toNanos(initialDelay));
-        t.schedule();
-        return t;
-    }
-
-    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
-                                                     long initialDelay,
-                                                     long delay,
-                                                     TimeUnit unit) {
-        Objects.requireNonNull(command);
-        if (delay <= 0L)
-            throw new IllegalArgumentException();
-        long p = unit.toNanos(delay);
-        DelayedTask<Void> t = new DelayedTask<Void>(
-            command, null, this, false, p, unit.toNanos(initialDelay));
-        t.schedule();
-        return t;
     }
 
     /**
@@ -3602,17 +3601,16 @@ public class ForkJoinPool extends AbstractExecutorService
      * @throws NullPointerException if callable or unit is null
      */
     public <V> ForkJoinTask<V> submitWithTimeout(Callable<V> callable,
-                                                 long timeout,
-                                                 TimeUnit unit) {
-        ForkJoinTask.CallableWithCanceller<V> task;
+                                                 long timeout, TimeUnit unit) {
+        ForkJoinTask.CallableWithCanceller<V> task; CancelAction onTimeout;
         Objects.requireNonNull(callable);
-        long d = unit.toNanos(timeout);
-        CancelAction onTimeout = new CancelAction();
-        DelayedTask<Void> canceller =
-            new DelayedTask<Void>(onTimeout, null, this, true, 0L, d);
+        ScheduledForkJoinTask<Void> canceller =
+            new ScheduledForkJoinTask<Void>(
+                Math.max(unit.toNanos(timeout), 0L) + DelayScheduler.now(), 0L,
+                true, onTimeout = new CancelAction(), null, this);
         onTimeout.task = task =
             new ForkJoinTask.CallableWithCanceller<V>(callable, canceller);
-        canceller.schedule();
+        scheduleDelayedTask(canceller);
         poolSubmit(true, task);
         return task;
     }
@@ -3622,9 +3620,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * not already been enabled for execution are not executed and
      * will be cancelled upon {@link #shutdown}. This method may be
      * invoked either before {@link #shutdown} to take effect upon the
-     * next call, or afterwards, to cancel such tasks, that may allow
-     * termination. Note that the next executions of periodic tasks
-     * are always disabled upon shutdown, so this method applies
+     * next call, or afterwards to cancel such tasks, which may then
+     * allow termination. Note that the next executions of periodic
+     * tasks are always disabled upon shutdown, so this method applies
      * meaningfully only to non-periodic tasks.
      */
     public void cancelDelayedTasksOnShutdown() {
