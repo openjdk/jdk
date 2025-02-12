@@ -59,8 +59,7 @@ public class ThrowingSubscribersAsLimiting extends AbstractThrowingSubscribers {
         Supplier<HttpResponse.BodyHandler<Stream<String>>> handlerSupplier =
                 () -> HttpResponse.BodyHandlers.limiting(
                         HttpResponse.BodyHandlers.ofLines(),
-                        // A big enough capacity to allow a minimal response with basic headers and such
-                        1024);
+                        Long.MAX_VALUE);
         testThrowing(
                 name,
                 uri,
