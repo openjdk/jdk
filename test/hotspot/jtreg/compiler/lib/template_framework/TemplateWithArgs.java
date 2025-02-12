@@ -23,12 +23,26 @@
 
 package compiler.lib.template_framework;
 
-public sealed interface TemplateWithArgs extends Token
-                                         permits TemplateWithArgs.ZeroArgsUse,
-                                                 TemplateWithArgs.OneArgsUse,
-                                                 TemplateWithArgs.TwoArgsUse
+/**
+ * Represents a {@link Template} with applied arguments, ready for instantiation, either
+ * as a {@link Token} inside another {@link Template} or with {@link render}.
+ */
+public sealed abstract class TemplateWithArgs implements Token
+                                              permits TemplateWithArgs.ZeroArgsUse,
+                                                      TemplateWithArgs.OneArgsUse,
+                                                      TemplateWithArgs.TwoArgsUse
 {
-    record ZeroArgsUse(Template.ZeroArgs zeroArgs) implements TemplateWithArgs, Token {
+    /**
+     * Represents a zero-argument {@link Template} with applied arguments, ready for instantiation
+     * either as a {@link Token} inside another {@link Template} or with {@link render}.
+     */
+    public static final class ZeroArgsUse extends TemplateWithArgs implements Token {
+        private final Template.ZeroArgs zeroArgs;
+
+        ZeroArgsUse(Template.ZeroArgs zeroArgs) {
+            this.zeroArgs = zeroArgs;
+        }
+
         @Override
         public TemplateBody instantiate() {
             return zeroArgs.instantiate();
@@ -38,19 +52,45 @@ public sealed interface TemplateWithArgs extends Token
         public void visitArguments(ArgumentVisitor visitor) {}
     }
 
-    record OneArgsUse<A>(Template.OneArgs<A> oneArg, A a) implements TemplateWithArgs, Token {
+    /**
+     * Represents a one-argument {@link Template} with applied arguments, ready for instantiation
+     * either as a {@link Token} inside another {@link Template} or with {@link render}.
+     */
+    public static final class OneArgsUse<A> extends TemplateWithArgs implements Token {
+        private final Template.OneArgs<A> oneArgs;
+        private final A a;
+
+        OneArgsUse(Template.OneArgs<A> oneArgs, A a) {
+            this.oneArgs = oneArgs;
+            this.a = a;
+        }
+
         @Override
         public TemplateBody instantiate() {
-            return oneArg.instantiate(a);
+            return oneArgs.instantiate(a);
         }
 
         @Override
         public void visitArguments(ArgumentVisitor visitor) {
-            visitor.visit(oneArg.arg0Name(), a);
+            visitor.visit(oneArgs.arg0Name(), a);
         }
     }
 
-    record TwoArgsUse<A, B>(Template.TwoArgs<A, B> twoArgs, A a, B b) implements TemplateWithArgs, Token {
+    /**
+     * Represents a two-argument {@link Template} with applied arguments, ready for instantiation
+     * either as a {@link Token} inside another {@link Template} or with {@link render}.
+     */
+    public static final class TwoArgsUse<A, B> extends TemplateWithArgs implements Token {
+        private final Template.TwoArgs<A, B> twoArgs;
+        private final A a;
+        private final B b;
+
+        TwoArgsUse(Template.TwoArgs<A, B> twoArgs, A a, B b) {
+            this.twoArgs = twoArgs;
+            this.a = a;
+            this.b = b;
+        }
+
         @Override
         public TemplateBody instantiate() {
             return twoArgs.instantiate(a, b);
@@ -63,20 +103,31 @@ public sealed interface TemplateWithArgs extends Token
         }
     }
 
-    TemplateBody instantiate();
+    abstract TemplateBody instantiate();
 
     @FunctionalInterface
     interface ArgumentVisitor {
         void visit(String name, Object value);
     }
 
-    void visitArguments(ArgumentVisitor visitor);
+    abstract void visitArguments(ArgumentVisitor visitor);
 
-    default String render() {
+    /**
+     * Renders the {@link Template} with applied arguments to a {@link String}.
+     *
+     * @return The {@link Template} rendered to a {@link String}.
+     */
+    public final String render() {
         return Renderer.render(this);
     }
 
-    default String render(float fuel) {
+    /**
+     * Renders the {@link Template} with applied arguments to a {@link String}.
+     *
+     * @param fuel The amount of fuel provided for recursive {@link Template} instantiations.
+     * @return The {@link Template} rendered to a {@link String}.
+     */
+    public final String render(float fuel) {
         return Renderer.render(this, fuel);
     }
 }
