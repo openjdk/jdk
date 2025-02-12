@@ -46,6 +46,7 @@ import static compiler.lib.template_framework.Template.MUTABLE;
  *
  * TODO more operators
  * TODO more templates
+ * TODO configure choice and other randomization?
  */
 public abstract class Library {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -128,7 +129,7 @@ public abstract class Library {
                 case ExpressionType.LONG -> GEN_LONG.next();
                 case ExpressionType.FLOAT -> GEN_FLOAT.next();
                 case ExpressionType.DOUBLE -> GEN_DOUBLE.next();
-                case ExpressionType.BOOLEAN -> GEN_INT.next() % 2 == 0; // TODO better distribution?
+                case ExpressionType.BOOLEAN -> GEN_INT.next() % 2 == 0;
             }
         ));
 
@@ -183,7 +184,6 @@ public abstract class Library {
 
     public static final Template.TwoArgs<ExpressionType, String> GENERATE_EARLIER_VALUE =
         Template.make("type", "name", (ExpressionType type, String name) -> body(
-            // TODO alternatives
             choice(List.of(
               intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(type, name)),
               intoHook(METHOD_HOOK, GENERATE_EARLILER_VALUE_FROM_DELAYED_BOOLEAN.withArgs(type, name))
