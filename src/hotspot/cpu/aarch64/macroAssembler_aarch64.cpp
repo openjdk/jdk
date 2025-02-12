@@ -5677,31 +5677,44 @@ address MacroAssembler::read_polling_page(Register r, relocInfo::relocType rtype
   return mark;
 }
 
-void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset, bool force_movk) {
-  relocInfo::relocType rtype = dest.rspec().reloc()->type();
+void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) {
+  assert(is_valid_AArch64_address(dest.target()), "bad address");
+  assert(dest.getMode() == Address::literal, "ADRP must be applied to a literal address");
+
+  // 8143067: Ensure that the adrp can reach the dest from anywhere within
+  // the code cache so that if it is relocated we know it will still reach
   uint64_t low_page = (uint64_t)CodeCache::low_bound() >> 12;
   uint64_t high_page = (uint64_t)(CodeCache::high_bound()-1) >> 12;
   uint64_t dest_page = (uint64_t)dest.target() >> 12;
   int64_t offset_low = dest_page - low_page;
   int64_t offset_high = dest_page - high_page;
+  bool is_adrp_reachable = offset_high >= -(1<<20) && offset_low < (1<<20);
+  if (!is_adrp_reachable) {
+    adrp_movk(reg1, dest, byte_offset);
+    return;
+  }
 
+  InstructionMark im(this);
+  relocInfo::relocType rtype = dest.rspec().reloc()->type();
+  code_section()->relocate(inst_mark(), dest.rspec());
+  _adrp(reg1, dest.target());
+
+  byte_offset = (uint64_t)dest.target() & 0xfff;
+}
+
+// Variant using an additional MOVK instruction to support targets located more than 4GB away.
+void MacroAssembler::adrp_movk(Register reg1, const Address &dest, uint64_t &byte_offset) {
   assert(is_valid_AArch64_address(dest.target()), "bad address");
   assert(dest.getMode() == Address::literal, "ADRP must be applied to a literal address");
 
   InstructionMark im(this);
+  relocInfo::relocType rtype = dest.rspec().reloc()->type();
   code_section()->relocate(inst_mark(), dest.rspec());
-  // 8143067: Ensure that the adrp can reach the dest from anywhere within
-  // the code cache so that if it is relocated we know it will still reach
-  if (!force_movk && offset_high >= -(1<<20) && offset_low < (1<<20)) {
-    _adrp(reg1, dest.target());
-  } else {
-    uint64_t target = (uint64_t)dest.target();
-    uint64_t adrp_target
-      = (target & 0xffffffffULL) | ((uint64_t)pc() & 0xffff00000000ULL);
+  uint64_t target = (uint64_t)dest.target();
+  uint64_t adrp_target = (target & 0xffffffffULL) | ((uint64_t)pc() & 0xffff00000000ULL);
+  _adrp(reg1, (address)adrp_target);
+  movk(reg1, target >> 32, 32);
 
-    _adrp(reg1, (address)adrp_target);
-    movk(reg1, target >> 32, 32);
-  }
   byte_offset = (uint64_t)dest.target() & 0xfff;
 }
 
