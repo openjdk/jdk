@@ -3498,6 +3498,17 @@ void Assembler::vmovdqu(Address dst, XMMRegister src) {
   emit_operand(src, dst, 0);
 }
 
+// Move Aligned 256bit Vector
+void Assembler::vmovdqa(XMMRegister dst, Address src) {
+  assert(UseAVX > 0, "");
+  InstructionMark im(this);
+  InstructionAttr attributes(AVX_256bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
+  vex_prefix(src, 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8(0x6F);
+  emit_operand(dst, src, 0);
+}
+
 void Assembler::vpmaskmovd(XMMRegister dst, XMMRegister mask, Address src, int vector_len) {
   assert((VM_Version::supports_avx2() && vector_len == AVX_256bit), "");
   InstructionMark im(this);
@@ -3756,6 +3767,27 @@ void Assembler::evmovdquq(XMMRegister dst, KRegister mask, Address src, bool mer
     attributes.reset_is_clear_context();
   }
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F, &attributes);
+  emit_int8(0x6F);
+  emit_operand(dst, src, 0);
+}
+
+// Move Aligned 512bit Vector
+void Assembler::evmovdqaq(XMMRegister dst, Address src, int vector_len) {
+  // Unmasked instruction
+  evmovdqaq(dst, k0, src, /*merge*/ false, vector_len);
+}
+
+void Assembler::evmovdqaq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len) {
+  assert(VM_Version::supports_evex(), "");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
+  attributes.set_embedded_opmask_register_specifier(mask);
+  attributes.set_is_evex_instruction();
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  vex_prefix(src, 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int8(0x6F);
   emit_operand(dst, src, 0);
 }

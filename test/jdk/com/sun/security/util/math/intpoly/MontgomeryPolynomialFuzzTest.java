@@ -23,9 +23,8 @@
  */
 
 import java.util.Random;
-import sun.security.util.math.IntegerMontgomeryFieldModuloP;
-import sun.security.util.math.ImmutableIntegerModuloP;
 import java.math.BigInteger;
+import sun.security.util.math.*;
 import sun.security.util.math.intpoly.*;
 
 /*
@@ -60,10 +59,25 @@ public class MontgomeryPolynomialFuzzTest {
         System.out.println("Fuzz Success");
     }
 
+    private static void checkOverflow(ImmutableIntegerModuloP testValue, long seed) {
+        long limbs[] = testValue.getLimbs();
+        BigInteger mod = MontgomeryIntegerPolynomialP256.ONE.MODULUS;
+        BigInteger ref = BigInteger.ZERO;
+        for (int i = 0; i<limbs.length; i++) {
+            ref.add(BigInteger.valueOf(limbs[i]).shiftLeft(i*52));
+        }
+        if (ref.compareTo(mod)!=-1) {
+            throw new RuntimeException("SEED[" + seed + "]: " + 
+            ref.toString(16) + " != " + mod.toString(16));
+        }
+    }
+
     private static void check(BigInteger reference,
             ImmutableIntegerModuloP testValue, long seed) {
-        if (!reference.equals(testValue.asBigInteger())) {
-            throw new RuntimeException("SEED: " + seed);
+        BigInteger test = testValue.asBigInteger();
+        if (!reference.equals(test)) {
+            throw new RuntimeException("SEED[" + seed + "]: " + 
+                reference.toString(16) + " != " + test.toString(16));
         }
     }
 
@@ -77,22 +91,66 @@ public class MontgomeryPolynomialFuzzTest {
         BigInteger r = BigInteger.ONE.shiftLeft(260).mod(P);
         BigInteger rInv = r.modInverse(P);
         BigInteger aRef = (new BigInteger(P.bitLength(), rnd)).mod(P);
+        BigInteger bRef = (new BigInteger(P.bitLength(), rnd)).mod(P);
+        SmallValue two = montField.getSmallValue(2);
+        SmallValue three = montField.getSmallValue(3);
+        SmallValue four = montField.getSmallValue(4);
 
         // Test conversion to montgomery domain
         ImmutableIntegerModuloP a = montField.getElement(aRef);
         aRef = aRef.multiply(r).mod(P);
         check(aRef, a, seed);
+        checkOverflow(a, seed);
+
+        ImmutableIntegerModuloP b = montField.getElement(bRef);
+        bRef = bRef.multiply(r).mod(P);
+        check(bRef, b, seed);
+        checkOverflow(b, seed);
 
         if (rnd.nextBoolean()) {
             aRef = aRef.multiply(aRef).multiply(rInv).mod(P);
             a = a.multiply(a);
             check(aRef, a, seed);
+            checkOverflow(a, seed);
         }
 
         if (rnd.nextBoolean()) {
             aRef = aRef.add(aRef).mod(P);
             a = a.add(a);
             check(aRef, a, seed);
+        }
+
+        if (rnd.nextBoolean()) {
+            aRef = aRef.subtract(bRef).mod(P);
+            a = a.mutable().setDifference(b).fixed();
+            check(aRef, a, seed);
+        }
+
+        if (rnd.nextBoolean()) {
+            aRef = aRef.multiply(bRef).multiply(rInv).mod(P);
+            a = a.multiply(b);
+            check(aRef, a, seed);
+            checkOverflow(a, seed);
+        }
+
+        if (rnd.nextBoolean()) {
+            aRef = aRef.multiply(BigInteger.valueOf(2)).mod(P);
+            a = a.mutable().setProduct(two).fixed();
+            check(aRef, a, seed);
+        }
+
+        if (rnd.nextBoolean()) {
+            aRef = aRef.multiply(BigInteger.valueOf(3)).mod(P);
+            a = a.mutable().setProduct(three).fixed();
+            check(aRef, a, seed);
+            checkOverflow(a, seed);
+        }
+
+        if (rnd.nextBoolean()) {
+            aRef = aRef.multiply(BigInteger.valueOf(4)).mod(P);
+            a = a.mutable().setProduct(four).fixed();
+            check(aRef, a, seed);
+            checkOverflow(a, seed);
         }
     }
 }
