@@ -40,7 +40,7 @@ typedef LinkedListIterator<ReservedMemoryRegion>         VirtualMemoryAllocation
 /*
  * Baseline a memory snapshot
  */
-class MemBaseline {
+class MemBaseline : public CHeapObj<mtNMT> {
  public:
 
   enum BaselineType {

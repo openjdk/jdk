@@ -49,7 +49,7 @@
 
 NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
-MemBaseline MemTracker::_baseline;
+MemBaseline* MemTracker::_baseline = nullptr;
 
 bool MemTracker::NmtVirtualMemoryLocker::_safe_to_use;
 
@@ -75,6 +75,7 @@ void MemTracker::initialize() {
       log_warning(nmt)("NMT initialization failed. NMT disabled.");
       return;
     }
+    _baseline = new MemBaseline();
   } else {
     if (MallocLimit != nullptr) {
       warning("MallocLimit will be ignored since NMT is disabled.");
