@@ -36,6 +36,7 @@ import jdk.internal.vm.annotation.Stable;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.ref.Reference;
 import java.util.Objects;
 
 public final class CarrierLocalArenaPools {
@@ -76,8 +77,7 @@ public final class CarrierLocalArenaPools {
             // Note: the fork join pool can expand/contract dynamically
             @Override
             protected void threadTerminated(LocalArenaPoolImpl pool) {
-                // As we are using Arena.ofAuto, we do not need to explicitly
-                // close the pool.
+                pool.close();
             }
         };
     }
@@ -93,15 +93,17 @@ public final class CarrierLocalArenaPools {
         static final int AVAILABLE = 0;
         static final int TAKEN = 1;
 
+        private final Arena arena;
         @Stable
         private final MemorySegment segment;
+
         // Used both directly and reflectively
         int segmentAvailability;
 
         private LocalArenaPoolImpl(long byteSize,
                                    long byteAlignment) {
-            this.segment = Arena.ofAuto()
-                    .allocate(byteSize, byteAlignment);
+            this.arena = Arena.ofAuto();
+            this.segment = arena.allocate(byteSize, byteAlignment);
         }
 
         @ForceInline
@@ -110,6 +112,17 @@ public final class CarrierLocalArenaPools {
             return tryAcquireSegment()
                     ? new SlicingArena((ArenaImpl) arena, segment)
                     : arena;
+        }
+
+        void close() {
+            // As we are using an automatic arena, we cannot close it here.
+            // In order to prevent use-after-free issues, we make sure the arena
+            // is reachable until the dying moments of a carrier thread. The reason for
+            // this is reinterpreted segments carved out from the `arena` can be used
+            // independently of the `arena` but are freed when the `arena` is collected.
+            // Note: carved-out segments can only be used by threads on the
+            // carrier thread.
+            Reference.reachabilityFence(arena);
         }
 
         /**
@@ -185,9 +198,6 @@ public final class CarrierLocalArenaPools {
          * segment cannot be used for allocation, a fall-back arena is used instead. This
          * means allocation never fails due to the size and alignment of the backing
          * segment.
-         * <p>
-         * Todo: Should we expose a variant of this class as a complement
-         *       to SlicingAllocator?
          */
         private final class SlicingArena implements Arena, NoInitSegmentAllocator {
 
@@ -223,7 +233,6 @@ public final class CarrierLocalArenaPools {
             @SuppressWarnings("restricted")
             @ForceInline
             public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
-                assertOwnerThread();
                 final long min = segment.address();
                 final long start = Utils.alignUp(min + sp, byteAlignment) - min;
                 if (start + byteSize <= segment.byteSize()) {
@@ -258,7 +267,7 @@ public final class CarrierLocalArenaPools {
         }
     }
 
-    // Equivalent to:
+    // Equivalent to but faster than:
     //     return (NativeMemorySegmentImpl) slice
     //             .reinterpret(byteSize, delegate, null); */
     @ForceInline
