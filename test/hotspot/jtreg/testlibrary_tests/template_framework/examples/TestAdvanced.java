@@ -41,6 +41,8 @@ import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.intoHook;
+import static compiler.lib.template_framework.Library.CLASS_HOOK;
+import static compiler.lib.template_framework.Library.METHOD_HOOK;
 
 public class TestAdvanced {
 
@@ -53,6 +55,7 @@ public class TestAdvanced {
         comp.addJavaSourceCode("p.xyz.InnerTest2", generate2());
         comp.addJavaSourceCode("p.xyz.InnerTest3", generate3());
         comp.addJavaSourceCode("p.xyz.InnerTest4", generate4());
+        comp.addJavaSourceCode("p.xyz.InnerTest5", generate5());
 
         // Compile the source files.
         comp.compile();
@@ -62,6 +65,7 @@ public class TestAdvanced {
         comp.invoke("p.xyz.InnerTest2", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest3", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest4", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest5", "main", new Object[] {});
     }
 
     // This example shows the use of various Tokens.
@@ -263,4 +267,85 @@ public class TestAdvanced {
         return templateClass.withArgs().render();
     }
 
+    // We saw the use of custom hooks above, but now we look at the use of CLASS_HOOK and METHOD_HOOK
+    // from the Temlate Library.
+    public static String generate5() {
+        var templateStaticField = Template.make("name", "value", (String name, Integer value) -> body(
+            """
+            static { System.out.println("Defining static field #name"); }
+            public static int #name = #value;
+            """
+        ));
+
+        var templateLocalVariable = Template.make("name", "value", (String name, Integer value) -> body(
+            """
+            System.out.println("Defining local variable #name");
+            int #name = #value;
+            """
+        ));
+
+        var templateMethodBody = Template.make(() -> body(
+            """
+            // Let's define a local variable $var and a static field $field.
+            """,
+            intoHook(CLASS_HOOK, templateStaticField.withArgs($("field"), 5)),
+            intoHook(METHOD_HOOK, templateLocalVariable.withArgs($("var"), 11)),
+            """
+            System.out.println("$field: " + $field);
+            System.out.println("$var: " + $var);
+            if ($field * $var != 55) { throw new RuntimeException("Wrong value!"); }
+            """
+        ));
+
+        var templateClass = Template.make(() -> body(
+            """
+            package p.xyz;
+
+            public class InnerTest5 {
+            """,
+            // Class Hook for fields.
+            CLASS_HOOK.set(
+                """
+                public static void main() {
+                """,
+                // Method Hook for local variables, and earlier computations.
+                METHOD_HOOK.set(
+                    """
+                    // This is the beginning of the "main" method body.
+                    System.out.println("Welcome to main!");
+                    """,
+                    templateMethodBody.withArgs(),
+                    """
+                    System.out.println("Going to call other...");
+                    other();
+                    """
+                ),
+                """
+                }
+
+                private static void other() {
+                """,
+                // Have a separate method hook for other, so that it can generate
+                // its own local variables.
+                METHOD_HOOK.set(
+                    """
+                    System.out.println("Welcome to other!");
+                    """,
+                    templateMethodBody.withArgs(),
+                    """
+                    System.out.println("Done with other.");
+                    """
+                ),
+                """
+                }
+                """
+            ),
+            """
+            }
+            """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.withArgs().render();
+    }
 }
