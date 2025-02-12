@@ -407,7 +407,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     LDFLAGS_aix := -Wl$(COMMA)-berok, \
     JDK_LIBS := libawt java.base:libjava $(LIBFONTMANAGER_JDK_LIBS), \
     JDK_LIBS_macosx := libawt_lwawt, \
-    JDK_LIBS_unix := java.base:libjvm, \
     LIBS := $(LIBFONTMANAGER_LIBS), \
     LIBS_unix := $(LIBM), \
     LIBS_macosx := \
