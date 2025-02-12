@@ -351,7 +351,7 @@ public class AnnotationsTest extends JUnitAdapter {
 
         if (actualTestCount != expectedTestDescs.size()) {
             throw new AssertionError(String.format(
-                    "Expeceted %d executed tests. Actual %d executed tests", expectedTestDescs.size(), actualTestCount));
+                    "Expected %d executed tests. Actual %d executed tests", expectedTestDescs.size(), actualTestCount));
         }
     }
 
