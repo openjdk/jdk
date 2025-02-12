@@ -75,7 +75,7 @@ void G1SurvRateGroup::stop_adding_regions() {
     double new_pred = _stats_arrays_length > 1
                     ? _accum_surv_rate_pred[_stats_arrays_length - 1] - _accum_surv_rate_pred[_stats_arrays_length - 2]
                     : InitialSurvivorRate;
-    
+
     for (size_t i = _stats_arrays_length; i < _num_added_regions; ++i) {
       // Initialize predictors and accumulated survivor rate predictions.
       _surv_rate_predictors[i] = new TruncatedSeq(10);
