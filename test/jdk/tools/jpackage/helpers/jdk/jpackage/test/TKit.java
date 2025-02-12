@@ -22,6 +22,10 @@
  */
 package jdk.jpackage.test;
 
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import static java.util.stream.Collectors.toSet;
+
 import java.io.Closeable;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -30,10 +34,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.StandardCopyOption;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
@@ -58,13 +60,13 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ThrowingUnaryOperator;
 
 public final class TKit {
 
@@ -288,13 +290,17 @@ public final class TKit {
         }
     }
 
-    private static final String TEMP_FILE_PREFIX = null;
-
     private static Path createUniquePath(String defaultName) {
         return createUniquePath(defaultName, workDir());
     }
 
     private static Path createUniquePath(String defaultName, Path basedir) {
+        Objects.requireNonNull(defaultName);
+        Objects.requireNonNull(basedir);
+        if (defaultName.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+
         final String[] nameComponents;
 
         int separatorIdx = defaultName.lastIndexOf('.');
@@ -324,31 +330,42 @@ public final class TKit {
     }
 
     public static Path createTempDirectory(String role) throws IOException {
-        if (role == null) {
-            return Files.createTempDirectory(workDir(), TEMP_FILE_PREFIX);
-        }
-        return Files.createDirectory(createUniquePath(role));
+        return createTempDirectory(Path.of(role));
+    }
+
+    public static Path createTempDirectory(Path role) throws IOException {
+        return createTempPath(role, Files::createDirectory);
     }
 
     public static Path createTempFile(String role) throws IOException {
         return createTempFile(Path.of(role));
     }
 
-    public static Path createTempFile(Path templateFile) throws IOException {
-        if (templateFile.isAbsolute()) {
+    public static Path createTempFile(Path role) throws IOException {
+        return createTempPath(role, Files::createFile);
+    }
+
+    private static Path createTempPath(Path templatePath, ThrowingUnaryOperator<Path> createPath) throws IOException {
+        if (templatePath.isAbsolute()) {
             throw new IllegalArgumentException();
         }
         final Path basedir;
-        if (templateFile.getNameCount() > 1) {
-            basedir = workDir().resolve(templateFile.getParent());
+        if (templatePath.getNameCount() > 1) {
+            basedir = workDir().resolve(templatePath.getParent());
         } else {
             basedir = workDir();
         }
 
-        final var path = createUniquePath(templateFile.getFileName().toString(), basedir);
+        final var path = createUniquePath(templatePath.getFileName().toString(), basedir);
 
         Files.createDirectories(path.getParent());
-        return Files.createFile(path);
+        try {
+            return createPath.apply(path);
+        } catch (IOException ex) {
+            throw ex;
+        } catch (Throwable t) {
+            throw ExceptionBox.rethrowUnchecked(t);
+        }
     }
 
     public static Path withTempDirectory(String role,
