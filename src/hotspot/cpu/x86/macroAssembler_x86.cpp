@@ -780,7 +780,7 @@ void MacroAssembler::warn(const char* msg) {
   push_CPU_state();   // keeps alignment at 16 bytes
 
 #ifdef _WIN64
-  // Windows always allocates space for it's register args
+  // Windows always allocates space for its register args
   subq(rsp,  frame::arg_reg_save_area_bytes);
 #endif
   lea(c_rarg0, ExternalAddress((address) msg));
