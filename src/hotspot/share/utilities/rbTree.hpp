@@ -279,7 +279,7 @@ public:
 
   // Inserts a node with the given key into the tree,
   // does nothing if the key already exist.
-  void upsert(const K& key) {
+  void insert(const K& key) {
     Cursor node_cursor = cursor(key);
     if (node_cursor.found()) {
       return;

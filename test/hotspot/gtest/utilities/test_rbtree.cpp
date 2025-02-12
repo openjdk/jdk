@@ -912,7 +912,7 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
     RBTreeCHeap<int, void, Cmp, mtOther> rbtree;
     constexpr int one_hundred_thousand = 100000;
     for (int i = 0; i < one_hundred_thousand; i++) {
-      rbtree.upsert(i);
+      rbtree.insert(i);
     }
     EXPECT_EQ((size_t)one_hundred_thousand, rbtree.size());
     rbtree.verify_self();
