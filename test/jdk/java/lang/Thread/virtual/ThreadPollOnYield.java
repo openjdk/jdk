@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test that Thread.yield loop polls for safepoints
  * @requires vm.continuations
  * @library /test/lib
- * @run junit/othervm ThreadPollOnYield
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED ThreadPollOnYield
  */
 
 /*
@@ -36,7 +36,8 @@
  * @summary Test that Thread.yield loop polls for safepoints
  * @requires vm.continuations & vm.compMode != "Xcomp"
  * @library /test/lib
- * @run junit/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=inline,*::yield* -XX:CompileCommand=inline,*::*Yield ThreadPollOnYield
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED -Xcomp -XX:-TieredCompilation
+ *                           -XX:CompileCommand=inline,*::yield* -XX:CompileCommand=inline,*::*Yield ThreadPollOnYield
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;
