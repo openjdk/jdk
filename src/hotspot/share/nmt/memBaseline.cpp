@@ -80,23 +80,18 @@ int compare_virtual_memory_site(const VirtualMemoryAllocationSite& s1,
  */
 class MallocAllocationSiteWalker : public MallocSiteWalker {
  private:
-  SortedLinkedList<MallocSite, compare_malloc_size> _malloc_sites;
+  GrowableArray<MallocSite>& _malloc_sites;
 
   // Entries in MallocSiteTable with size = 0 and count = 0,
   // when the malloc site is not longer there.
  public:
-
-  LinkedList<MallocSite>* malloc_sites() {
-    return &_malloc_sites;
-  }
+  MallocAllocationSiteWalker(GrowableArray<MallocSite>& malloc_sites)
+  : _malloc_sites(malloc_sites) {}
 
   bool do_malloc_site(const MallocSite* site) {
     if (site->size() > 0) {
-      if (_malloc_sites.add(*site) != nullptr) {
-        return true;
-      } else {
-        return false;  // OOM
-      }
+      _malloc_sites.push(*site);
+      return true;
     } else {
       // Ignore empty sites.
       return true;
@@ -106,7 +101,8 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
 
 // Walk all virtual memory regions for baselining
 class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
- private:
+private:
+  GrowableArray<ReservedMemoryRegion> _virtual_memory_regions_a;
   typedef LinkedListImpl<ReservedMemoryRegion, AnyObj::C_HEAP, mtNMT,
                          AllocFailStrategy::RETURN_NULL> EntryList;
   EntryList _virtual_memory_regions;
@@ -149,13 +145,12 @@ void MemBaseline::baseline_summary() {
 
 bool MemBaseline::baseline_allocation_sites() {
   // Malloc allocation sites
-  MallocAllocationSiteWalker malloc_walker;
+  assert(_malloc_sites.length() == 0, "must be empty");
+  MallocAllocationSiteWalker malloc_walker{_malloc_sites};
   if (!MallocSiteTable::walk_malloc_site(&malloc_walker)) {
     return false;
   }
-
-  _malloc_sites.move(malloc_walker.malloc_sites());
-  // The malloc sites are collected in size order
+  _malloc_sites.sort([](MallocSite* a, MallocSite* b) -> int { return compare_malloc_size(*a, *b); });
   _malloc_sites_order = by_size;
 
   // Virtual memory allocation sites
@@ -222,7 +217,7 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
   return true;
 }
 
-MallocSiteIterator MemBaseline::malloc_sites(SortingOrder order) {
+GrowableArray<MallocSite>& MemBaseline::malloc_sites(SortingOrder order) {
   assert(!_malloc_sites.is_empty(), "Not detail baseline");
   switch(order) {
     case by_size:
@@ -238,7 +233,7 @@ MallocSiteIterator MemBaseline::malloc_sites(SortingOrder order) {
     default:
       ShouldNotReachHere();
   }
-  return MallocSiteIterator(_malloc_sites.head());
+  return _malloc_sites;
 }
 
 VirtualMemorySiteIterator MemBaseline::virtual_memory_sites(SortingOrder order) {
@@ -261,34 +256,21 @@ VirtualMemorySiteIterator MemBaseline::virtual_memory_sites(SortingOrder order) 
 // Sorting allocations sites in different orders
 void MemBaseline::malloc_sites_to_size_order() {
   if (_malloc_sites_order != by_size) {
-    SortedLinkedList<MallocSite, compare_malloc_size> tmp;
-
-    // Add malloc sites to sorted linked list to sort into size order
-    tmp.move(&_malloc_sites);
-    _malloc_sites.set_head(tmp.head());
-    tmp.set_head(nullptr);
+    _malloc_sites.sort([](auto a, auto b) -> int { return compare_malloc_size(*a, *b); });
     _malloc_sites_order = by_size;
   }
 }
 
 void MemBaseline::malloc_sites_to_allocation_site_order() {
   if (_malloc_sites_order != by_site && _malloc_sites_order != by_site_and_type) {
-    SortedLinkedList<MallocSite, compare_malloc_site> tmp;
-    // Add malloc sites to sorted linked list to sort into site (address) order
-    tmp.move(&_malloc_sites);
-    _malloc_sites.set_head(tmp.head());
-    tmp.set_head(nullptr);
+    _malloc_sites.sort([](auto a, auto b) -> int { return compare_malloc_site(*a, *b); });
     _malloc_sites_order = by_site;
   }
 }
 
 void MemBaseline::malloc_sites_to_allocation_site_and_type_order() {
   if (_malloc_sites_order != by_site_and_type) {
-    SortedLinkedList<MallocSite, compare_malloc_site_and_type> tmp;
-    // Add malloc sites to sorted linked list to sort into site (address) order
-    tmp.move(&_malloc_sites);
-    _malloc_sites.set_head(tmp.head());
-    tmp.set_head(nullptr);
+    _malloc_sites.sort([](auto a, auto b) -> int { return compare_malloc_site_and_type(*a, *b); });
     _malloc_sites_order = by_site_and_type;
   }
 }

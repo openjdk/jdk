@@ -31,9 +31,9 @@
 #include "nmt/nmtCommon.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutex.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
 
-typedef LinkedListIterator<MallocSite>                   MallocSiteIterator;
 typedef LinkedListIterator<VirtualMemoryAllocationSite>  VirtualMemorySiteIterator;
 typedef LinkedListIterator<ReservedMemoryRegion>         VirtualMemoryAllocationIterator;
 
@@ -68,7 +68,7 @@ class MemBaseline {
 
   // Allocation sites information
   // Malloc allocation sites
-  LinkedListImpl<MallocSite>                  _malloc_sites;
+  GrowableArray<MallocSite>                  _malloc_sites;
 
   // All virtual memory allocations
   LinkedListImpl<ReservedMemoryRegion>        _virtual_memory_allocations;
@@ -105,7 +105,7 @@ class MemBaseline {
     return _metaspace_stats;
   }
 
-  MallocSiteIterator malloc_sites(SortingOrder order);
+  GrowableArray<MallocSite>& malloc_sites(SortingOrder order);
   VirtualMemorySiteIterator virtual_memory_sites(SortingOrder order);
 
   // Virtual memory allocation iterator always returns in virtual memory
@@ -183,7 +183,7 @@ class MemBaseline {
     _array_class_count = 0;
     _thread_count = 0;
 
-    _malloc_sites.clear();
+    _malloc_sites.shrink_to_fit();
     _virtual_memory_sites.clear();
     _virtual_memory_allocations.clear();
   }

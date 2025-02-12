@@ -323,17 +323,18 @@ void MemDetailReporter::report_detail() {
 }
 
 int MemDetailReporter::report_malloc_sites() {
-  MallocSiteIterator         malloc_itr = _baseline.malloc_sites(MemBaseline::by_size);
-  if (malloc_itr.is_empty()) return 0;
+  GrowableArray<MallocSite>& malloc_sites = _baseline.malloc_sites(MemBaseline::by_size);
+  if (malloc_sites.is_empty()) return 0;
 
   outputStream* out = output();
 
-  const MallocSite* malloc_site;
+  const MallocSite* malloc_site = nullptr;
   int num_omitted = 0;
-  while ((malloc_site = malloc_itr.next()) != nullptr) {
+  for (int i = 0; i < malloc_sites.length(); i++) {
+    malloc_site = malloc_sites.adr_at(i);
     // Omit printing if the current value and the historic peak value both fall below the reporting scale threshold
     if (amount_in_current_scale(MAX2(malloc_site->size(), malloc_site->peak_size())) == 0) {
-      num_omitted ++;
+      num_omitted++;
       continue;
     }
     const NativeCallStack* stack = malloc_site->call_stack();
@@ -795,31 +796,32 @@ void MemDetailDiffReporter::report_diff() {
 }
 
 void MemDetailDiffReporter::diff_malloc_sites() const {
-  MallocSiteIterator early_itr = _early_baseline.malloc_sites(MemBaseline::by_site_and_type);
-  MallocSiteIterator current_itr = _current_baseline.malloc_sites(MemBaseline::by_site_and_type);
+  GrowableArray<MallocSite>& early = _early_baseline.malloc_sites(MemBaseline::by_site_and_type);
+  GrowableArray<MallocSite>& current = _current_baseline.malloc_sites(MemBaseline::by_site_and_type);
 
-  const MallocSite* early_site   = early_itr.next();
-  const MallocSite* current_site = current_itr.next();
-
-  while (early_site != nullptr || current_site != nullptr) {
+  int early_i = 0;
+  int current_i = 0;
+  while (early_i < early.length() || current_i < current.length()) {
+    MallocSite* early_site = early_i < early.length() ? early.adr_at(early_i) : nullptr;
+    MallocSite* current_site = current_i < current.length() ? current.adr_at(current_i) : nullptr;
     if (early_site == nullptr) {
       new_malloc_site(current_site);
-      current_site = current_itr.next();
+      current_i++;
     } else if (current_site == nullptr) {
       old_malloc_site(early_site);
-      early_site = early_itr.next();
+      early_i++;
     } else {
-      int compVal = current_site->call_stack()->compare(*early_site->call_stack());
-      if (compVal < 0) {
+      int comp_val = current_site->call_stack()->compare(*early_site->call_stack());
+      if (comp_val < 0) {
         new_malloc_site(current_site);
-        current_site = current_itr.next();
-      } else if (compVal > 0) {
+        current_i++;
+      } else if (comp_val > 0) {
         old_malloc_site(early_site);
-        early_site = early_itr.next();
+        early_i++;
       } else {
         diff_malloc_site(early_site, current_site);
-        early_site   = early_itr.next();
-        current_site = current_itr.next();
+        current_i++;
+        early_i++;
       }
     }
   }
