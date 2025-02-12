@@ -137,14 +137,44 @@ public abstract class Library {
             "public static #type #name = ", CONSTANT_EXPRESSION.withArgs(type), ";\n"
         ));
 
-    public static final Template.TwoArgs<ExpressionType, String> GENERATE_DELAYED_CONSTANT_VIA_BOXING_INLINE =
-        Template.make("type", "name", (ExpressionType type, String name) -> body(
+    public static final Template.OneArgs<String> GENERATE_DELAYED_BOOLEAN_USING_BOXING_INLINE =
+        Template.make("name", (String name) -> body(
             intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(ExpressionType.BOOLEAN, $("flag"))),
             """
-            // #name is constant, but only known after Incremental Boxing Inline (after parsing)
+            // #name is constant, but only known after Incremental Boxing Inline (after parsing).
             Integer $box;
             if ($flag) { $box = 1; } else { $box = 2; }
-            #type #name = ($box == 3) ? """,
+            boolean #name = ($box == 3);
+            """
+        ));
+
+    public static final Template.OneArgs<String> GENERATE_DELAYED_BOOLEAN_USING_EMPTY_LOOP =
+        Template.make("name", (String name) -> body(
+            """
+            // #name is constant, but only known after first loop opts, when loop detected as empty.
+            int $a = 77;
+            int $b = 0;
+            do {
+                $a--;
+                $b++;
+            } while ($a > 0);
+            boolean #name = ($b == 77);
+            """
+        ));
+
+    public static final Template.OneArgs<String> GENERATE_DELAYED_BOOLEAN =
+        Template.make("name", (String name) -> body(
+            choice(List.of(
+                GENERATE_DELAYED_BOOLEAN_USING_BOXING_INLINE.withArgs(name),
+                GENERATE_DELAYED_BOOLEAN_USING_EMPTY_LOOP.withArgs(name),
+                intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(ExpressionType.BOOLEAN, name))
+            ))
+        ));
+
+    public static final Template.TwoArgs<ExpressionType, String> GENERATE_EARLILER_VALUE_FROM_DELAYED_BOOLEAN =
+        Template.make("type", "name", (ExpressionType type, String name) -> body(
+            GENERATE_DELAYED_BOOLEAN.withArgs($("delayed")),
+            "#type #name = ($delayed) ? ",
             CONSTANT_EXPRESSION.withArgs(type),
             " : ",
             CONSTANT_EXPRESSION.withArgs(type),
@@ -156,7 +186,7 @@ public abstract class Library {
             // TODO alternatives
             choice(List.of(
               intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(type, name)),
-              intoHook(METHOD_HOOK, GENERATE_DELAYED_CONSTANT_VIA_BOXING_INLINE.withArgs(type, name))
+              intoHook(METHOD_HOOK, GENERATE_EARLILER_VALUE_FROM_DELAYED_BOOLEAN.withArgs(type, name))
             ))
         ));
 
