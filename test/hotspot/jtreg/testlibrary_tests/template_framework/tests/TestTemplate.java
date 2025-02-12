@@ -37,8 +37,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.HashSet;
 
-import compiler.lib.template_framework.*;
-
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.Hook;
+import compiler.lib.template_framework.TemplateBinding;
+import compiler.lib.template_framework.RendererException;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.intoHook;
 import static compiler.lib.template_framework.Template.$;
@@ -943,7 +945,7 @@ public class TestTemplate {
             define immutable int name_4
             [int: 0 and 1]
             define mutable int name_9
-            [int: 1 and 1]
+            [int: 1 and 2]
             begin body_1
             [int: 0 and 0]
             start with immutable
@@ -963,7 +965,7 @@ public class TestTemplate {
             { sample_12
             name_9 = 7
             } sample_12
-            [int: 1 and 1]
+            [int: 1 and 2]
             [int: 0 and 0]
             }
             """;
@@ -1000,14 +1002,14 @@ public class TestTemplate {
         String expected =
             """
             class Y_1 {
-            [int: 1 and 1]
+            [int: 1 and 2]
             begin body_1
-            [int: 1 and 1]
+            [int: 1 and 2]
             define mutable
-            [int: 1 and 1]
+            [int: 1 and 2]
             define immutable
-            [int: 1 and 1]
-            [int: 1 and 1]
+            [int: 1 and 2]
+            [int: 1 and 2]
             }
             """;
         checkEQ(code, expected);
