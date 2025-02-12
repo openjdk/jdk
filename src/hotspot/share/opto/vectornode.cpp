@@ -1080,6 +1080,7 @@ bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
     case Op_XorVMask:
 
     case Op_SaturatingAddV:
+      assert(req() == 3, "Must be a binary operation");
       // For non-predicated commutative operations, sort the inputs in
       // increasing order of node indices.
       if (in(1)->_idx > in(2)->_idx) {
