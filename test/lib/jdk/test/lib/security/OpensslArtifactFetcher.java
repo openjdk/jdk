@@ -37,7 +37,7 @@ public class OpensslArtifactFetcher {
     private static final String OPENSSL_ORG = "jpg.tests.jdk.openssl";
 
     /**
-     * Gets the openssl binary path of the defined version
+     * Gets the openssl binary path of the preferred version
      *
      * Openssl selection flow:
         1. Check whether property test.openssl.path is set and it's the
@@ -45,33 +45,37 @@ public class OpensslArtifactFetcher {
         2. Else look for already installed openssl in system
            path /usr/bin/openssl or /usr/local/bin/openssl, then return that
            path.
-        3. Else try to download the defined version of openssl from the artifactory
+        3. Else try to download the preferred version of openssl from the artifactory
            and return that path, if download fails then return null.
      *
-     * @return openssl binary path of the defined version
+     * @return openssl binary path of the preferred version
      */
     public static String getOpensslPath() {
         String path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
         if (path != null) {
             return path;
-        } else {
-            path = getDefaultSystemOpensslPath(OPENSSL_BUNDLE_VERSION);
-            if (path != null) {
-                return path;
-            } else if (Platform.is64bit()) {
-                if (Platform.isLinux()) {
-                    path = fetchOpenssl(LINUX_X64.class);
-                } else if (Platform.isOSX()) {
-                    path = fetchOpenssl(MACOSX_X64.class);
-                } else if (Platform.isWindows()) {
-                    path = fetchOpenssl(WINDOWS_X64.class);
-                }
-                if (verifyOpensslVersion(path, OPENSSL_BUNDLE_VERSION)) {
-                    return path;
-                }
+        }
+        path = getDefaultSystemOpensslPath(OPENSSL_BUNDLE_VERSION);
+        if (path != null) {
+            return path;
+        }
+        if (Platform.is64bit()) {
+            if (Platform.isLinux()) {
+                path = fetchOpenssl(LINUX_X64.class);
+            } else if (Platform.isOSX()) {
+                path = fetchOpenssl(MACOSX_X64.class);
+            } else if (Platform.isWindows()) {
+                path = fetchOpenssl(WINDOWS_X64.class);
+            }
+        } else if (Platform.isAArch64()) {
+            if (Platform.isLinux()) {
+                path = fetchOpenssl(LINUX_AARCH64.class);
+            }
+            if (Platform.isOSX()) {
+                path = fetchOpenssl(MACOSX_AARCH64.class);
             }
         }
-        return null;
+        return verifyOpensslVersion(path, OPENSSL_BUNDLE_VERSION) ? path : null;
     }
 
     private static String getOpensslFromSystemProp(String version) {

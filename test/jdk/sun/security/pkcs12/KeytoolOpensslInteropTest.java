@@ -77,7 +77,7 @@ public class KeytoolOpensslInteropTest {
         } else {
             // since preferred version of openssl is not available skip all
             // openssl command dependent tests with a warning
-            System.out.println("\n\u001B[31mWarning: Can't find defined version "
+            System.out.println("\n\u001B[31mWarning: Can't find preferred version "
                     + "of openssl binary on this machine, please install"
                     + " and set openssl path with property "
                     + "'test.openssl.path'. Now running only half portion of "
@@ -103,8 +103,8 @@ public class KeytoolOpensslInteropTest {
 
     private static void generateInitialKeystores(String opensslPath)
             throws Throwable {
-        String osslModulesPath = Path.of(opensslPath).getParent().getParent()
-            .resolve("lib").resolve("ossl-modules").toString();
+        String providerPath = Path.of(opensslPath).getParent().getParent()
+            .resolve("lib", "ossl-modules").toString();
         keytool("-keystore ks -keyalg ec -genkeypair -storepass"
                 + " changeit -alias a -dname CN=A").shouldHaveExitValue(0);
 
@@ -126,7 +126,7 @@ public class KeytoolOpensslInteropTest {
                 "kandc", "-out", "os4", "-name", "a", "-passout",
                 "pass:changeit", "-certpbe", "PBE-SHA1-RC4-128", "-keypbe",
                 "PBE-SHA1-RC4-128", "-macalg", "SHA224",
-                "-legacy", "-provider-path", osslModulesPath)
+                "-legacy", "-provider-path", providerPath)
                 .shouldHaveExitValue(0);
 
         ProcessTools.executeCommand(opensslPath, "pkcs12", "-export", "-in",
