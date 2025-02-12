@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
@@ -211,63 +212,97 @@ public class TKitTest extends JUnitAdapter {
 
     @Test
     @ParameterSupplier("testCreateTempPath")
-    public void testCreateTempFile(String role, Path expectedPath, List<Path> existingFiles,
-            Class<Exception> expectedExceptionClass) throws Throwable {
-        testCreateTempPath(role, expectedPath, existingFiles, expectedExceptionClass,
-                TKit::createTempFile, TKit::assertFileExists);
+    public void testCreateTempFile(CreateTempTestSpec testSpec) throws Throwable {
+        testSpec.test(TKit::createTempFile, TKit::assertFileExists);
     }
 
     @Test
     @ParameterSupplier("testCreateTempPath")
-    public void testCreateTempDirectory(String role, Path expectedPath, List<Path> existingFiles,
-            Class<Exception> expectedExceptionClass) throws Throwable {
-        testCreateTempPath(role, expectedPath, existingFiles, expectedExceptionClass,
-                TKit::createTempDirectory, TKit::assertDirectoryEmpty);
+    public void testCreateTempDirectory(CreateTempTestSpec testSpec) throws Throwable {
+        testSpec.test(TKit::createTempDirectory, TKit::assertDirectoryEmpty);
     }
 
-    private static void testCreateTempPath(String role, Path expectedPath, List<Path> existingFiles,
-            Class<Exception> expectedExceptionClass, ThrowingFunction<String, Path> createTempPath,
-            Consumer<Path> assertTempPathExists) throws Throwable {
-        for (var existingFile : existingFiles) {
-            existingFile = TKit.workDir().resolve(existingFile);
+    record CreateTempTestSpec(String role, Path expectedPath, List<Path> existingFiles,
+            Class<? extends Exception> expectedExceptionClass) {
 
-            Files.createDirectories(existingFile.getParent());
-            Files.createFile(existingFile);
+        void test(ThrowingFunction<String, Path> createTempPath, Consumer<Path> assertTempPathExists) throws Throwable {
+            for (var existingFile : existingFiles) {
+                existingFile = TKit.workDir().resolve(existingFile);
+
+                Files.createDirectories(existingFile.getParent());
+                Files.createFile(existingFile);
+            }
+
+            if (expectedExceptionClass != null) {
+                try {
+                    createTempPath.apply(role);
+                    TKit.assertUnexpected("Exception expected");
+                } catch (Exception ex) {
+                    TKit.assertTrue(expectedExceptionClass.isInstance(ex),
+                            String.format("Check exception [%s] is instance of %s class", ex, expectedExceptionClass));
+                }
+            } else {
+                final var tempPath = createTempPath.apply(role);
+
+                assertTempPathExists.accept(tempPath);
+                TKit.assertTrue(tempPath.startsWith(TKit.workDir()), "Check temp path created in the work directory");
+
+                final var relativeTempPath = TKit.workDir().relativize(tempPath);
+                TKit.assertTrue(expectedPath.equals(relativeTempPath),
+                        String.format("Check [%s]=[%s]", expectedPath, relativeTempPath));
+            }
         }
 
-        if (expectedExceptionClass != null) {
-            try {
-                createTempPath.apply(role);
-                TKit.assertUnexpected("Exception expected");
-            } catch (Exception ex) {
-                TKit.assertTrue(expectedExceptionClass.isInstance(ex),
-                        String.format("Check exception [%s] is instance of %s class", ex, expectedExceptionClass));
+        static Builder role(String role) {
+            return new Builder(role);
+        }
+
+        final static class Builder {
+
+            private Builder(String role) {
+                this.role = role;
             }
-        } else {
-            final var tempPath = createTempPath.apply(role);
 
-            assertTempPathExists.accept(tempPath);
-            TKit.assertTrue(tempPath.startsWith(TKit.workDir()), "Check temp path created in the work directory");
+            CreateTempTestSpec create() {
+                return new CreateTempTestSpec(role, expectedPath, existingFiles, expectedExceptionClass);
+            }
 
-            final var relativeTempPath = TKit.workDir().relativize(tempPath);
-            TKit.assertTrue(expectedPath.equals(relativeTempPath),
-                    String.format("Check [%s]=[%s]", expectedPath, relativeTempPath));
+            Builder expectedPath(String v) {
+                expectedPath = Optional.of(v).map(Path::of).orElse(null);
+                return this;
+            }
+
+            Builder existingFiles(String ...v) {
+                existingFiles.addAll(Stream.of(v).map(Path::of).toList());
+                return this;
+            }
+
+            Builder expectedExceptionClass(Class<? extends Exception> v) {
+                expectedExceptionClass = v;
+                return this;
+            }
+
+            private final String role;
+            private Path expectedPath;
+            private final List<Path> existingFiles = new ArrayList<>();
+            private Class<? extends Exception> expectedExceptionClass;
         }
     }
 
     public static Collection<Object[]> testCreateTempPath() {
-        return List.<Object[]>of(
-                new Object[] { "foo", Path.of("foo"), List.of(), null },
-                new Object[] { "foo", Path.of("foo-0"), List.of(Path.of("foo")), null },
-                new Object[] { "foo", Path.of("foo-1"), List.of(Path.of("foo"), Path.of("foo-0")), null },
-                new Object[] { "foo-0", Path.of("foo-0-0"), List.of(Path.of("foo-0")), null },
-                new Object[] { "foo/bar/buz", Path.of("foo/bar/buz"), List.of(), null },
-                new Object[] { "foo/bar/buz", Path.of("foo/bar/buz-0"), List.of(Path.of("foo/bar/buz")), null },
-                new Object[] { "foo/bar", Path.of("foo/bar-0"), List.of(Path.of("foo/bar/buz")), null },
-                new Object[] { Path.of("").toAbsolutePath().toString(), null, List.of(), IllegalArgumentException.class },
-                new Object[] { null, null, List.of(), NullPointerException.class },
-                new Object[] { "", null, List.of(), IllegalArgumentException.class }
-        );
+        return Stream.of(
+                CreateTempTestSpec.role("foo").expectedPath("foo"),
+                CreateTempTestSpec.role("foo").expectedPath("foo-0").existingFiles("foo"),
+                CreateTempTestSpec.role("foo").expectedPath("foo-1").existingFiles("foo", "foo-0"),
+                CreateTempTestSpec.role("foo/bar/buz").expectedPath("foo/bar/buz"),
+                CreateTempTestSpec.role("foo/bar/buz").expectedPath("foo/bar/buz-0").existingFiles("foo/bar/buz"),
+                CreateTempTestSpec.role("foo/bar").expectedPath("foo/bar-0").existingFiles("foo/bar/buz"),
+                CreateTempTestSpec.role(Path.of("").toAbsolutePath().toString()).expectedExceptionClass(IllegalArgumentException.class),
+                CreateTempTestSpec.role(null).expectedExceptionClass(NullPointerException.class),
+                CreateTempTestSpec.role("").expectedExceptionClass(IllegalArgumentException.class)
+        ).map(CreateTempTestSpec.Builder::create).map(testSpec -> {
+            return new Object[] { testSpec };
+        }).toList();
     }
 
     private static void runAssertWithExpectedLogOutput(ThrowingRunnable action,
