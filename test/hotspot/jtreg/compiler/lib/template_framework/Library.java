@@ -32,8 +32,14 @@ import compiler.lib.generators.*;
 
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
+import static compiler.lib.template_framework.Template.$;
+import static compiler.lib.template_framework.Template.intoHook;
 import static compiler.lib.template_framework.Template.fuel;
 import static compiler.lib.template_framework.Template.setFuelCost;
+import static compiler.lib.template_framework.Template.countNames;
+import static compiler.lib.template_framework.Template.sampleName;
+import static compiler.lib.template_framework.Template.ALL;
+import static compiler.lib.template_framework.Template.MUTABLE;
 
 /**
  * The Library provides a collection of helpful Templates and Hooks.
@@ -44,6 +50,12 @@ public abstract class Library {
     private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
     private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
     private static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
+
+    private static <T> T choice(List<T> list) {
+        if (list.isEmpty()) { return null; }
+        int i = RANDOM.nextInt(list.size());
+        return list.get(i);
+    }
 
     public static final Hook CLASS_HOOK = new Hook("Class");
     public static final Hook METHOD_HOOK = new Hook("Method");
@@ -115,10 +127,37 @@ public abstract class Library {
             }
         ));
 
+    public static final Template.TwoArgs<ExpressionType, String> DEFINE_STATIC_FIELD =
+        Template.make("type", "name", (ExpressionType type, String name) -> body(
+            "public static #type #name = ", CONSTANT_EXPRESSION.withArgs(type), ";\n"
+        ));
+
+    public static final Template.TwoArgs<ExpressionType, String> GENERATE_EARLIER_VALUE =
+        Template.make("type", "name", (ExpressionType type, String name) -> body(
+            // TODO alternatives
+            intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(type, name))
+        ));
+
+    public static final Template.OneArgs<ExpressionType> LOAD_EXPRESSION =
+        Template.make("type", (ExpressionType type) -> {
+            if (countNames(type, ALL) == 0 || RANDOM.nextInt(5) == 0) {
+                return body(
+                    GENERATE_EARLIER_VALUE.withArgs(type, $("early")),
+                    $("early")
+                );
+            } else {
+                return body(
+                    sampleName(type, ALL)
+                );
+            }
+        });
+
     public static final Template.OneArgs<ExpressionType> TERMINAL_EXPRESSION =
         Template.make("type", (ExpressionType type) -> body(
-            // TODO load
-            CONSTANT_EXPRESSION.withArgs(type)
+            choice(List.of(
+                CONSTANT_EXPRESSION.withArgs(type),
+                LOAD_EXPRESSION.withArgs(type)
+            ))
         ));
 
     // Use Binding to break recursive cycles.
@@ -185,12 +224,6 @@ public abstract class Library {
             case ExpressionType.FLOAT -> FLOAT_BINARY_OPERATORS;
             case ExpressionType.DOUBLE -> DOUBLE_BINARY_OPERATORS;
         };
-    }
-
-    private static <T> T choice(List<T> list) {
-        if (list.isEmpty()) { return null; }
-        int i = RANDOM.nextInt(list.size());
-        return list.get(i);
     }
 
     public static final Template.OneArgs<ExpressionType> BINARY_OPERATOR_EXPRESSION =

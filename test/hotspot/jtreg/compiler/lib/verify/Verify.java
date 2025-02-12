@@ -155,10 +155,14 @@ public final class Verify {
     }
 
     /**
-     * Verify that two floats have identical bits.
+     * Ideally, we would want to assert that the Float.floatToRawIntBits are identical.
+     * But the Java spec allows us to return different bits for a NaN, which allows swapping the inputs
+     * of an add or mul (NaN1 * NaN2 does not have same bits as NaN2 * NaN1, because the multiplication
+     * of two NaN values should always return the first of the two). So we verify that we have the same bit
+     * pattern in all cases, except for NaN we project to the canonical NaN, using Float.floatToIntBits.
      */
     private static void checkEQimpl(float a, float b, String context) {
-        if (Float.floatToRawIntBits(a) != Float.floatToRawIntBits(b)) {
+        if (Float.floatToIntBits(a) != Float.floatToIntBits(b)) {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch for " + context);
             System.err.println("       Values: " + a + " vs " + b);
             System.err.println("       Values: " + Float.floatToRawIntBits(a) + " vs " + Float.floatToRawIntBits(b));
@@ -167,10 +171,10 @@ public final class Verify {
     }
 
     /**
-     * Verify that two doubles have identical bits.
+     * Same as Float case, see above.
      */
     private static void checkEQimpl(double a, double b, String context) {
-        if (Double.doubleToRawLongBits(a) != Double.doubleToRawLongBits(b)) {
+        if (Double.doubleToLongBits(a) != Double.doubleToLongBits(b)) {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch for " + context);
             System.err.println("       Values: " + a + " vs " + b);
             System.err.println("       Values: " + Double.doubleToRawLongBits(a) + " vs " + Double.doubleToRawLongBits(b));
