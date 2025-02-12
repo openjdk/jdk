@@ -107,7 +107,7 @@ double G1CSetCandidateGroup::predict_group_total_time_ms() const {
                          predicted_copy_time_ms +
                          non_young_other_time_ms;
 
-  log_trace(gc, ergo, cset) ("Group %u: %u regions prediction total_time %.2fms card_rs_length %zu merge_scan_time %.2fms code_root_scan_time_ms %.2fms evac_time_ms %.2fms other_time %.2fms bytes_to_copy %zu",
+  log_trace(gc, ergo, cset) ("Prediction for group %u (%u regions): total_time %.2fms card_rs_length %zu merge_scan_time %.2fms code_root_scan_time_ms %.2fms evac_time_ms %.2fms other_time %.2fms bytes_to_copy %zu",
                              group_id(),
                              length(),
                              total_time_ms,
