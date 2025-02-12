@@ -4001,28 +4001,14 @@ public class Resolve {
     public boolean isEarlyReference(Env<AttrContext> env, JCTree base, VarSymbol v) {
         if (env.info.ctorPrologue &&
                 (v.flags() & STATIC) == 0 &&
-                v.owner.kind == TYP &&
-                types.isSubtype(env.enclClass.type, v.owner.type)) {
+                v.isMemberOf(env.enclClass.sym, types)) {
 
-            // Handle the qualified case "Foo.x"
+            // Allow "Foo.this.x" when "Foo" is (also) an outer class, as this refers to the outer instance
             if (base != null) {
                 return TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base);
             }
 
-            // Handle the unqualified case "x". First we allow an unqualified reference to an instance field
-            // declared in a superclass S if (a) the field is private, and (b) S is also an outer class.
-            // It's OK because the expression "x" then refers to the outer instance, not the current instance.
-            if (env.enclClass.type != v.owner.type && (v.flags() & PRIVATE) != 0) {
-                    Type.ClassType rawOwnerType = (Type.ClassType)types.erasure(v.owner.type);
-                    Type.ClassType rawCurrentType = (Type.ClassType)types.erasure(env.enclClass.type);
-                    Symbol.ClassSymbol rawOwnerSym = (Symbol.ClassSymbol)rawOwnerType.tsym;
-                    Symbol.ClassSymbol rawCurrentSym = (Symbol.ClassSymbol)rawCurrentType.tsym;
-                if (rawCurrentSym.isEnclosedBy(rawOwnerSym)) {
-                    return false;
-                }
-            }
-
-            // It's an early reference to an instance field of the current instance
+            // It's an early reference to an instance field member of the current instance
             return true;
         }
         return false;
