@@ -80,12 +80,12 @@ int compare_virtual_memory_site(const VirtualMemoryAllocationSite& s1,
  */
 class MallocAllocationSiteWalker : public MallocSiteWalker {
  private:
-  GrowableArray<MallocSite>& _malloc_sites;
+  GrowableArrayCHeap<MallocSite, mtNMT>& _malloc_sites;
 
   // Entries in MallocSiteTable with size = 0 and count = 0,
   // when the malloc site is not longer there.
  public:
-  MallocAllocationSiteWalker(GrowableArray<MallocSite>& malloc_sites)
+  MallocAllocationSiteWalker(GrowableArrayCHeap<MallocSite, mtNMT>& malloc_sites)
   : _malloc_sites(malloc_sites) {}
 
   bool do_malloc_site(const MallocSite* site) {
@@ -216,7 +216,7 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
   return true;
 }
 
-GrowableArray<MallocSite>& MemBaseline::malloc_sites(SortingOrder order) {
+GrowableArrayCHeap<MallocSite, mtNMT>& MemBaseline::malloc_sites(SortingOrder order) {
   assert(!_malloc_sites.is_empty(), "Not detail baseline");
   switch(order) {
     case by_size:

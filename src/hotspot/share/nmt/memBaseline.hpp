@@ -105,7 +105,7 @@ class MemBaseline : public CHeapObj<mtNMT> {
     return _metaspace_stats;
   }
 
-  GrowableArray<MallocSite>& malloc_sites(SortingOrder order);
+  GrowableArrayCHeap<MallocSite, mtNMT>& malloc_sites(SortingOrder order);
   VirtualMemorySiteIterator virtual_memory_sites(SortingOrder order);
 
   // Virtual memory allocation iterator always returns in virtual memory
