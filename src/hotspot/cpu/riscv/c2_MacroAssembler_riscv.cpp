@@ -2963,6 +2963,9 @@ void C2_MacroAssembler::reduce_mul_integer_v(Register dst, Register src1, Vector
 
   len /= 2;
   if (vm != Assembler::unmasked) {
+    // This behaviour is consistent with spec requirements of vector API, for `reduceLanes`:
+    //  If no elements are selected, an operation-specific identity value is returned.
+    //    If the operation is MUL, then the identity value is one.
     vmv_v_i(vtmp1, 1);
     vmerge_vvm(vtmp2, vtmp1, src2); // vm == v0
     vslidedown_vi(vtmp1, vtmp2, len);
@@ -3000,6 +3003,9 @@ void C2_MacroAssembler::reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, V
 
   len /= 2;
   if (vm != Assembler::unmasked) {
+    // This behaviour is consistent with spec requirements of vector API, for `reduceLanes`:
+    //  If no elements are selected, an operation-specific identity value is returned.
+    //    If the operation is MUL, then the identity value is one.
     if (bt == T_FLOAT) {
       lui(t0, 0x3f800000); // 1.0f
     } else {
