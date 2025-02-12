@@ -207,6 +207,8 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
   ResourceMark rm;
   GrowableArray<InstanceKlass*> list;
 
+  ArchiveBuilder* builder = ArchiveBuilder::current();
+
   for (int i = 0; i < _sorted_candidates->length(); i++) {
     InstanceKlass* ik = _sorted_candidates->at(i);
     if (ik->class_loader() != class_loader) {
@@ -223,8 +225,8 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
       } else {
         list.append(ik);
       }
-    } else {
-      list.append(ArchiveBuilder::current()->get_buffered_addr(ik));
+    } else if (builder->has_been_buffered(ik)) {
+      list.append(builder->get_buffered_addr(ik));
     }
   }
 
@@ -269,6 +271,7 @@ int AOTClassLinker::count_public_classes(oop loader) {
 
 // Used in logging: "boot1", "boot2", "plat", "app" and "unreg", or "array"
 const char* AOTClassLinker::class_category_name(Klass* k) {
+  assert(k != nullptr, "sanity");
   if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space(k)) {
     k = ArchiveBuilder::current()->get_source_addr(k);
   }
