@@ -82,9 +82,11 @@ public final class ZipPlugin extends AbstractPlugin {
     }
 
     static byte[] compress(byte[] bytesIn, int compressionLevel) {
-        try (Deflater deflater = new Deflater(compressionLevel)) {
+        try (Deflater deflater = new Deflater(compressionLevel);
+             ByteArrayOutputStream stream = new ByteArrayOutputStream(bytesIn.length)) {
+
             deflater.setInput(bytesIn);
-            ByteArrayOutputStream stream = new ByteArrayOutputStream(bytesIn.length);
+
             byte[] buffer = new byte[1024];
 
             deflater.finish();
@@ -92,14 +94,9 @@ public final class ZipPlugin extends AbstractPlugin {
                 int count = deflater.deflate(buffer);
                 stream.write(buffer, 0, count);
             }
-
-            try {
-                stream.close();
-            } catch (IOException ex) {
-                return bytesIn; // return the original uncompressed input
-            }
-
             return stream.toByteArray(); // the compressed output
+        } catch (IOException e) {
+            return bytesIn; // return the original uncompressed input
         }
     }
 
