@@ -491,11 +491,7 @@ void os::init_system_properties_values() {
     if (pslash != nullptr) {
       pslash = strrchr(buf, '/');
       if (pslash != nullptr) {
-        *pslash = '\0';          // Get rid of /<arch>.
-        pslash = strrchr(buf, '/');
-        if (pslash != nullptr) {
-          *pslash = '\0';        // Get rid of /lib.
-        }
+        *pslash = '\0';          // Get rid of /lib.
       }
     }
     Arguments::set_java_home(buf);
