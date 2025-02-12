@@ -26,6 +26,7 @@ import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -69,7 +70,27 @@ public class WindowsHelper {
 
     private static int runMsiexecWithRetries(Executor misexec) {
         Executor.Result result = null;
+        final boolean isRawMisexec = misexec.getExecutable().orElseThrow().equals(Path.of("msiexec"));
+        final List<String> origArgs = isRawMisexec ? misexec.getAllArguments() : null;
         for (int attempt = 0; attempt < 8; ++attempt) {
+            if (isRawMisexec) {
+                try {
+                    if (lastMsiLogFile != null) {
+                        TKit.deleteIfExists(lastMsiLogFile);
+                    }
+                } catch (IOException ex) {
+                    TKit.trace(String.format("Failed to delete [%s] msi log file: %s", lastMsiLogFile, ex.getMessage()));
+                }
+
+                try {
+                    lastMsiLogFile = TKit.createTempFile("logs\\msi.log");
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+
+                misexec.clearArguments().addArguments(origArgs).addArgument("/L*v").addArgument(lastMsiLogFile);
+            }
+
             result = misexec.executeWithoutExitCodeCheck();
 
             if (result.exitCode() == 1605) {
@@ -81,7 +102,7 @@ public class WindowsHelper {
             // The given Executor may either be of an msiexec command or an
             // unpack.bat script containing the msiexec command. In the later
             // case, when misexec returns 1618, the unpack.bat may return 1603
-            if ((result.exitCode() == 1618) || (result.exitCode() == 1603)) {
+            if ((result.exitCode() == 1618) || (result.exitCode() == 1603 && !isRawMisexec)) {
                 // Another installation is already in progress.
                 // Wait a little and try again.
                 Long timeout = 1000L * (attempt + 3); // from 3 to 10 seconds
@@ -167,6 +188,10 @@ public class WindowsHelper {
 
     static PackageHandlers createExePackageHandlers() {
         return new PackageHandlers(WindowsHelper::installExe, WindowsHelper::uninstallExe, Optional.empty());
+    }
+
+    public static Path lastMsiLogFile() {
+        return Optional.ofNullable(lastMsiLogFile).orElseThrow(() -> new IllegalStateException());
     }
 
     private static int runExeInstaller(JPackageCommand cmd, boolean install) {
@@ -452,7 +477,12 @@ public class WindowsHelper {
             Path shortcutPath = shortcutsRoot.resolve(startMenuShortcutPath);
             verifyShortcut(shortcutPath, exists);
             if (!exists) {
-                TKit.assertDirectoryNotEmpty(shortcutPath.getParent());
+                final var parentDir = shortcutPath.getParent();
+                if (Files.isDirectory(parentDir)) {
+                    TKit.assertDirectoryNotEmpty(parentDir);
+                } else {
+                    TKit.assertPathExists(parentDir, false);
+                }
             }
         }
 
@@ -627,4 +657,6 @@ public class WindowsHelper {
     private static final Map<String, String> REGISTRY_VALUES = new HashMap<>();
 
     private static final int WIN_MAX_PATH = 260;
+
+    private static Path lastMsiLogFile;
 }
