@@ -40,9 +40,10 @@ package compiler.vectorization;
 import compiler.lib.ir_framework.*;
 import java.util.Random;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class TestNumberOfContinuousZeros {
-    private static final int[] SPECIAL = { 0x01FFFFFF, 0x03FFFFFE, 0x07FFFFFC, 0x0FFFFFF8, 0x1FFFFFF0, 0x3FFFFFE0 };
+    private static final int[] SPECIAL = { 0x01FFFFFF, 0x03FFFFFE, 0x07FFFFFC, 0x0FFFFFF8, 0x1FFFFFF0, 0x3FFFFFE0, 0xFFFFFFFF };
     private long[] inputLong;
     private int[] outputLong;
     private int[] inputInt;
@@ -59,7 +60,7 @@ public class TestNumberOfContinuousZeros {
         outputLong = new int[LEN];
         inputInt = new int[LEN];
         outputInt = new int[LEN];
-        rng = new Random();
+        rng = Utils.getRandomInstance();
         for (int i = 0; i < LEN; ++i) {
             inputLong[i] = rng.nextLong();
             inputInt[i] = rng.nextInt();
