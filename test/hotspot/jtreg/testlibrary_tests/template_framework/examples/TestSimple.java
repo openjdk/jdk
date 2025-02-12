@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @summary Test templates with arguments.
+ * @summary Test simple use of Templates with the Compile Framework.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver template_framework.examples.TestArguments
+ * @run driver template_framework.examples.TestSimple
  */
 
 package template_framework.examples;
@@ -35,7 +35,7 @@ import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
 import static compiler.lib.template_framework.Template.body;
 
-public class TestArguments {
+public class TestSimple {
 
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
@@ -60,7 +60,7 @@ public class TestArguments {
     // Generate a source Java file as String
     public static String generate() {
         // Create a Template with two arguments.
-        var template = Template.make("arg1", "arg2", (String arg1, String arg2) -> body(
+        var template = Template.make("arg1", "arg2", (Integer arg1, String arg2) -> body(
             """
             package p.xyz;
             public class InnerTest {
@@ -72,6 +72,6 @@ public class TestArguments {
         ));
 
         // Use the template with two arguments, and render it to a String.
-        return template.withArgs("42", "7").render();
+        return template.withArgs(42, "7").render();
     }
 }
