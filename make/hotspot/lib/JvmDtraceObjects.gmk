@@ -1,0 +1,117 @@
+#
+# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+ifeq ($(call check-jvm-feature, dtrace), true)
+  ifeq ($(OPENJDK_TARGET_OS), bsd)
+
+    ############################################################################
+    # Integrate with libjvm. Here we generate an object file which is
+    # linked with libjvm.so. This step is complicated from a dependency
+    # perspective. We add this file to the linking of libjvm using
+    # EXTRA_OBJECT_FILES, but it needs to be created outside the call to
+    # SetupNativeCompilation. Also, this files is dependent on compiled
+    # object files from the libjvm compilation, so this generation must happen
+    # as a part of the libjvm compilation.
+
+    DTRACE_OBJ := $(JVM_OUTPUTDIR)/objs/dtrace.o
+
+    DTRACE_EXTRA_OBJECT_FILES := $(DTRACE_OBJ)
+
+    ############################################################################
+    # Generate DTRACE_OBJ which is linked with libjvm.so. It depends on a set of
+    # object files from the compilation.
+
+    # Concatenate all *.d files into a single file
+    DTRACE_SOURCE_FILES := $(addprefix $(TOPDIR)/src/hotspot/os/posix/dtrace/, \
+        hotspot_jni.d \
+        hotspot.d \
+        hs_private.d \
+    )
+
+    # *.d in the objs dir is used for generated make dependency files, so use
+    # *.dt for dtrace files to avoid clashes.
+    $(JVM_OUTPUTDIR)/objs/dtrace.dt: $(DTRACE_SOURCE_FILES)
+	$(call LogInfo, Generating $(@F))
+	$(call MakeDir, $(@D))
+	$(CAT) $^ > $@
+
+    DTRACE_INSTRUMENTED_OBJS := $(addprefix $(JVM_OUTPUTDIR)/objs/, \
+        ciEnv.o \
+        classLoadingService.o \
+        compileBroker.o \
+        gcVMOperations.o \
+        instanceKlass.o \
+        java.o \
+        javaThread.o \
+        jni.o \
+        jniCheck.o \
+        jvm.o \
+        memAllocator.o \
+        memoryManager.o \
+        nmethod.o \
+        objectMonitor.o \
+        psVMOperations.o \
+        runtimeService.o \
+        sharedRuntime.o \
+        synchronizer.o \
+        threads.o \
+        unsafe.o \
+        vmThread.o \
+    )
+
+    ifeq ($(call check-jvm-feature, parallelgc), true)
+      DTRACE_INSTRUMENTED_OBJS += $(addprefix $(JVM_OUTPUTDIR)/objs/, \
+          psVMOperations.o \
+      )
+    endif
+
+    ifeq ($(call check-jvm-feature, zero), false)
+      DTRACE_INSTRUMENTED_OBJS += $(addprefix $(JVM_OUTPUTDIR)/objs/, \
+          macro.o \
+          parse1.o \
+          parseHelper.o \
+          runtime.o \
+      )
+    endif
+
+    ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+      DTRACE_FLAGS := -32 -G
+      DTRACE_CPP_FLAGS := -x c
+    else
+      DTRACE_FLAGS := -64 -G
+      DTRACE_CPP_FLAGS := -D_LP64 -x c
+    endif
+
+    # Make sure we run our selected compiler for preprocessing instead of letting
+    # the dtrace tool pick it on it's own.
+    $(DTRACE_OBJ): $(JVM_OUTPUTDIR)/objs/dtrace.dt $(DTRACE_INSTRUMENTED_OBJS)
+	$(call LogInfo, Generating $(@F) from $(<F) and object files)
+	$(call MakeDir, $(DTRACE_SUPPORT_DIR))
+	$(call ExecuteWithLog, $(DTRACE_SUPPORT_DIR)/$(@F).dt, \
+	    ($(CPP) $(DTRACE_CPP_FLAGS) $< > $(DTRACE_SUPPORT_DIR)/$(@F).dt))
+	$(call ExecuteWithLog, $@, $(DTRACE) $(DTRACE_FLAGS) -xlazyload -o $@ \
+	    -s $(DTRACE_SUPPORT_DIR)/$(@F).dt $(sort $(DTRACE_INSTRUMENTED_OBJS)))
+  endif
+endif

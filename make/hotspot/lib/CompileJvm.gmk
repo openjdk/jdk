@@ -36,6 +36,9 @@ include lib/JvmFeatures.gmk
 include lib/JvmOverrideFiles.gmk
 include lib/JvmFlags.gmk
 
+# Include support files that will setup DTRACE_EXTRA_OBJECT_FILES.
+include lib/JvmDtraceObjects.gmk
+
 ################################################################################
 # Setup compilation of the main Hotspot native library (libjvm).
 
@@ -176,6 +179,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     EXCLUDES := $(JVM_EXCLUDES), \
     EXCLUDE_FILES := $(JVM_EXCLUDE_FILES), \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
+    EXTRA_OBJECT_FILES := $(DTRACE_EXTRA_OBJECT_FILES), \
     DEFAULT_CFLAGS := false, \
     CFLAGS := $(JVM_CFLAGS), \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
