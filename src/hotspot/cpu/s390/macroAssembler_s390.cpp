@@ -3705,7 +3705,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   // report fatal error and terminate VM
 
   // Argument shuffle. Using stack to avoid clashes.
-  resize_frame(-(3*8), /* fp */ Z_R0, /*load_fp*/ true);
+  resize_frame(-(4*8), /* fp */ Z_R0, /*load_fp*/ true); // provide space for 3 registers
   z_stg(r_super_klass, 8, Z_SP);
   z_stg(r_sub_klass, 16, Z_SP);
   z_stg(r_linear_result, 24, Z_SP);
@@ -3715,7 +3715,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   z_lg(Z_ARG1, 8, Z_SP); // r_super_klass
   z_lg(Z_ARG2, 16, Z_SP); // r_sub_klass
   z_lg(Z_ARG3, 24, Z_SP); // r_linear_result
-  resize_frame(+(3*8), /*fp*/ Z_R0, /*load_fp*/ true);
+  resize_frame(+(4*8), /*fp*/ Z_R0, /*load_fp*/ true);
 
   const char* msg = "mismatch";
   load_const_optimized(Z_ARG5, (address)msg);
