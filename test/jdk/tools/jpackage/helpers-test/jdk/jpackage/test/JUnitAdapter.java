@@ -22,7 +22,19 @@
  */
 package jdk.jpackage.test;
 
+import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -37,9 +49,31 @@ public class JUnitAdapter {
 
     @Test
     void runJPackageTests(@TempDir Path tempDir) throws Throwable {
-        Main.main(TestBuilder.build().workDirRoot(tempDir), new String [] {
-                "--jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault",
-                "--jpt-run=" + getClass().getName()
-                });
+        if (!getClass().equals(JUnitAdapter.class)) {
+            Main.main(TestBuilder.build().workDirRoot(tempDir), new String [] {
+                    "--jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault",
+                    "--jpt-run=" + getClass().getName()
+                    });
+        }
     }
+
+    static List<String> captureJPackageTestLog(ThrowingRunnable runnable) {
+        final var buf = new ByteArrayOutputStream();
+        try (PrintStream ps = new PrintStream(buf, true, StandardCharsets.UTF_8)) {
+            TKit.withExtraLogStream(runnable, ps);
+        }
+
+        try (final var in = new ByteArrayInputStream(buf.toByteArray());
+                final var reader = new InputStreamReader(in, StandardCharsets.UTF_8);
+                final var bufReader = new BufferedReader(reader)) {
+            return bufReader.lines().map(line -> {
+                // Skip timestamp
+                return line.substring(LOG_MSG_TIMESTAMP_LENGTH);
+            }).toList();
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private static final int LOG_MSG_TIMESTAMP_LENGTH = "[HH:mm:ss.SSS] ".length();
 }

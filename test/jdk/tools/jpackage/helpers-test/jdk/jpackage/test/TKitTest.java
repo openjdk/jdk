@@ -220,23 +220,11 @@ public class TKitTest extends JUnitAdapter {
 
     private static void runWithExpectedLogOutput(ThrowingRunnable action,
             String... expectLogStrings) {
-        final var buf = new ByteArrayOutputStream();
-        try (PrintStream ps = new PrintStream(buf, true, StandardCharsets.UTF_8)) {
-            TKit.withExtraLogStream(action, ps);
-        } finally {
-            toRunnable(() -> {
-                var output = new BufferedReader(new InputStreamReader(
-                        new ByteArrayInputStream(buf.toByteArray()),
-                        StandardCharsets.UTF_8)).lines().map(line -> {
-                            // Skip timestamp
-                            return line.substring(LOG_MSG_TIMESTAMP_LENGTH);
-                        }).toList();
-                if (output.size() == 1 && expectLogStrings.length == 1) {
-                    TKit.assertEquals(expectLogStrings[0], output.get(0), null);
-                } else {
-                    TKit.assertStringListEquals(List.of(expectLogStrings), output, null);
-                }
-            }).run();
+        final var output = JUnitAdapter.captureJPackageTestLog(action);
+        if (output.size() == 1 && expectLogStrings.length == 1) {
+            TKit.assertEquals(expectLogStrings[0], output.get(0), null);
+        } else {
+            TKit.assertStringListEquals(List.of(expectLogStrings), output, null);
         }
     }
 
@@ -246,6 +234,4 @@ public class TKitTest extends JUnitAdapter {
         }
         return msg;
     }
-
-    private static final int LOG_MSG_TIMESTAMP_LENGTH = "[HH:mm:ss.SSS] ".length();
 }

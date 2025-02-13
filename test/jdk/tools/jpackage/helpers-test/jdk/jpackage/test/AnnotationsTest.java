@@ -23,6 +23,9 @@
 package jdk.jpackage.test;
 
 import static java.lang.StackWalker.Option.RETAIN_CLASS_REFERENCE;
+import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -32,28 +35,33 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class AnnotationsTest extends JUnitAdapter {
 
-    @org.junit.jupiter.api.Test
-    public void test() {
-        runTests(List.of(BasicTest.class, ParameterizedInstanceTest.class));
-        for (var os : OperatingSystem.values()) {
-            try {
-                TestBuilderConfig.setOperatingSystem(os);
-                TKit.log("Current operating system: " + os);
-                runTests(List.of(IfOSTest.class));
-            } finally {
-                TestBuilderConfig.setDefaults();
-            }
+    @ParameterizedTest
+    @ValueSource(classes = {BasicTest.class, ParameterizedInstanceTest.class})
+    public void test(Class<? extends TestExecutionRecorder> clazz) {
+        runTests(List.of(clazz));
+    }
+
+    @ParameterizedTest
+    @EnumSource(OperatingSystem.class)
+    public void testIfOSTest(OperatingSystem os) {
+        try {
+            TestBuilderConfig.setOperatingSystem(os);
+            TKit.log("Current operating system: " + os);
+            runTests(List.of(IfOSTest.class));
+        } finally {
+            TestBuilderConfig.setDefaults();
         }
     }
 
@@ -308,12 +316,14 @@ public class AnnotationsTest extends JUnitAdapter {
             return String.format("--jpt-run=%s", test.getName());
         }).toArray(String[]::new);
 
+        final List<String> log;
         try {
-            Main.main(args);
+            log = captureJPackageTestLog(() -> Main.main(args));
             assertRecordedTestDescs(expectedTestDescs);
         } catch (Throwable t) {
             t.printStackTrace(System.err);
             System.exit(1);
+            return;
         }
     }
 
