@@ -109,8 +109,8 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
     reserve_delta = diff.tag[i].reserve;
     commit_delta = diff.tag[i].commit;
     tag = NMTUtil::index_to_tag(i);
-    reserved = VirtualMemorySummary::as_snapshot()->by_tag(tag)->reserved();
-    committed = VirtualMemorySummary::as_snapshot()->by_tag(tag)->committed();
+    reserved = VirtualMemorySummary::as_snapshot()->by_type(tag)->reserved();
+    committed = VirtualMemorySummary::as_snapshot()->by_type(tag)->committed();
     if (reserve_delta != 0) {
       if (reserve_delta > 0)
         VirtualMemorySummary::record_reserved_memory(reserve_delta, tag);
