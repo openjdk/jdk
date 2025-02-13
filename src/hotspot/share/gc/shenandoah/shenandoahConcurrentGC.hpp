@@ -56,6 +56,7 @@ private:
 
 public:
   ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap);
+
   bool collect(GCCause::Cause cause) override;
   ShenandoahDegenPoint degen_point() const;
 

@@ -1228,9 +1228,11 @@ public:
   }
 };
 
-class ShenandoahGCStatePropagator : public ThreadClosure {
+class ShenandoahGCStatePropagator : public HandshakeClosure {
 public:
-  explicit ShenandoahGCStatePropagator(char gc_state) : _gc_state(gc_state) {}
+  explicit ShenandoahGCStatePropagator(char gc_state) :
+    HandshakeClosure("Shenandoah GC State Change"),
+    _gc_state(gc_state) {}
 
   void do_thread(Thread* thread) override {
     ShenandoahThreadLocalData::set_gc_state(thread, _gc_state);
@@ -1285,6 +1287,18 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   Handshake::execute(&prepare_for_update_refs);
 
   _update_refs_iterator.reset();
+}
+
+void ShenandoahHeap::concurrent_final_roots() {
+  {
+    assert(!is_evacuation_in_progress(), "Should not evacuate for abbreviated or old cycles");
+    MutexLocker lock(Threads_lock);
+    set_gc_state_concurrent(ShenandoahHeap::WEAK_ROOTS, false);
+  }
+
+  ShenandoahGCStatePropagator propagator(_gc_state.raw_value());
+  Threads::non_java_threads_do(&propagator);
+  Handshake::execute(&propagator);
 }
 
 oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {

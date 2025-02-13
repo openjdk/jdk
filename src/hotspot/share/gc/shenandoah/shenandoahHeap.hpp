@@ -483,6 +483,9 @@ private:
   // Retires LABs used for evacuation
   void concurrent_prepare_for_update_refs();
 
+  // Turn off weak roots flag, purge old satb buffers in generational mode
+  void concurrent_final_roots();
+
   virtual void update_heap_references(bool concurrent);
   // Final update region states
   void update_heap_region_states(bool concurrent);

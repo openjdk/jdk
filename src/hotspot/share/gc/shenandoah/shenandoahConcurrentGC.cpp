@@ -232,7 +232,10 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
     // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
     // the control thread will detect it on its next iteration and run a degenerated young cycle.
-    vmop_entry_final_roots();
+    heap->concurrent_final_roots();
+    if (VerifyAfterGC || heap->mode()->is_generational()) {
+      vmop_entry_final_roots();
+    }
     _abbreviated = true;
   }
 
@@ -1162,10 +1165,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
 
 void ShenandoahConcurrentGC::op_final_roots() {
 
-  ShenandoahHeap *heap = ShenandoahHeap::heap();
-  heap->set_concurrent_weak_root_in_progress(false);
-  heap->set_evacuation_in_progress(false);
-
+  ShenandoahHeap const* heap  = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
     // If the cycle was shortened for having enough immediate garbage, this could be
     // the last GC safepoint before concurrent marking of old resumes. We must be sure
