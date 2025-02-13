@@ -287,11 +287,8 @@ public class CertificateBuilder {
      *
      * @param bitSettings Boolean array for all nine bit settings in the order
      * documented in RFC 5280 section 4.2.1.3.
-     *
-     * @throws IOException if an encoding error occurs.
      */
-    public CertificateBuilder addKeyUsageExt(boolean[] bitSettings)
-            throws IOException {
+    public CertificateBuilder addKeyUsageExt(boolean[] bitSettings) {
         return addExtension(new KeyUsageExtension(bitSettings));
     }
 
@@ -304,11 +301,9 @@ public class CertificateBuilder {
      * @param maxPathLen The maximum path length issued by this CA.  Values
      * less than zero will omit this field from the resulting extension and
      * no path length constraint will be asserted.
-     *
-     * @throws IOException if an encoding error occurs.
      */
     public CertificateBuilder addBasicConstraintsExt(boolean crit, boolean isCA,
-            int maxPathLen) throws IOException {
+            int maxPathLen) {
         return addExtension(new BasicConstraintsExtension(crit, isCA,
                 maxPathLen));
     }
@@ -400,12 +395,9 @@ public class CertificateBuilder {
      * @throws IOException if an encoding error occurs.
      * @throws CertificateException If the certificate cannot be generated
      * by the underlying {@link CertificateFactory}
-     * @throws NoSuchAlgorithmException If an invalid signature algorithm
-     * is provided.
      */
     public X509Certificate build(X509Certificate issuerCert,
-            PrivateKey issuerKey) throws IOException, CertificateException,
-            NoSuchAlgorithmException {
+            PrivateKey issuerKey) throws IOException, CertificateException {
         return build(issuerCert, issuerKey,
                 SignatureUtil.getDefaultSigAlgForKey(issuerKey));
     }
@@ -423,12 +415,10 @@ public class CertificateBuilder {
      * @throws IOException if an encoding error occurs.
      * @throws CertificateException If the certificate cannot be generated
      * by the underlying {@link CertificateFactory}
-     * @throws NoSuchAlgorithmException If an invalid signature algorithm
-     * is provided.
      */
     public X509Certificate build(X509Certificate issuerCert,
             PrivateKey issuerKey, String algName)
-            throws IOException, CertificateException, NoSuchAlgorithmException {
+            throws IOException, CertificateException {
         byte[] encodedCert = encodeTopLevel(issuerCert, issuerKey, algName);
         ByteArrayInputStream bais = new ByteArrayInputStream(encodedCert);
         return (X509Certificate)factory.generateCertificate(bais);
@@ -457,7 +447,7 @@ public class CertificateBuilder {
      */
     private byte[] encodeTopLevel(X509Certificate issuerCert,
             PrivateKey issuerKey, String algName)
-            throws CertificateException, IOException, NoSuchAlgorithmException {
+            throws CertificateException, IOException {
 
         AlgorithmId signAlg;
         DerOutputStream outerSeq = new DerOutputStream();
@@ -585,7 +575,6 @@ public class CertificateBuilder {
      */
     private void encodeExtensions(DerOutputStream tbsStream)
             throws IOException {
-
         if (extensions.isEmpty()) {
             return;
         }
