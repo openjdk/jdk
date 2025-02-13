@@ -51,7 +51,7 @@ public final class TimeSource implements TimeLine {
         // The use of Integer.MAX_VALUE is arbitrary.
         // Any value not too close to Long.MAX_VALUE
         // would do.
-        static final long TIME_WINDOW = 1L << 48;
+        static final long TIME_WINDOW = Integer.MAX_VALUE;
 
         final Instant first;
         final long firstNanos;
