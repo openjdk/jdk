@@ -50,9 +50,10 @@ public:
   }
 
   void wait() {
+    Thread* saved_holder = _holder;
     _holder = nullptr;
     _instance->_lock.wait(0/* no timeout */);
-    _holder = Thread::current_or_null();
+    _holder = saved_holder;
   }
 };
 
