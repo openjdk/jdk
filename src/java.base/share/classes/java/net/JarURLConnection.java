@@ -314,7 +314,7 @@ public abstract class JarURLConnection extends URLConnection {
      * The verification process does not include validating or establishing
      * trust in the code signers. A caller should perform additional checks,
      * such as using a {@link java.security.cert.CertPathValidator} to
-     * validate each signer's certificate chain, and determining whether 
+     * validate each signer's certificate chain, and determining whether
      * to trust the entry signed by the signers.
      *
      * @return the Certificate objects for this connection if the URL
