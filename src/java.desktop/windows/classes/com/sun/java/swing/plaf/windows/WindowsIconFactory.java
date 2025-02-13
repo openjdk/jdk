@@ -849,8 +849,8 @@ public class WindowsIconFactory implements Serializable
                 assert menuItem == null || c == menuItem;
                 Icon icon = getIcon();
                 int skinWidth = -1;
-                boolean isWindows11 = System.getProperty("os.name").
-                                                         equals("Windows 11");
+                boolean isWindows11OrLater = Integer.parseInt(System.getProperty("os.name").
+                                                  replaceAll("[^0-9]", "")) >= 11;
                 if (type == JCheckBoxMenuItem.class
                       || type == JRadioButtonMenuItem.class) {
                     AbstractButton b = (AbstractButton) c;
@@ -876,7 +876,7 @@ public class WindowsIconFactory implements Serializable
                         if (xp != null) {
                             Skin skin;
                             skin =  xp.getSkin(c, backgroundPart);
-                            if (!isWindows11) {
+                            if (!isWindows11OrLater) {
                                 skin.paintSkin(g, x, y,
                                         getIconWidth(), getIconHeight(), backgroundState);
                                 if (icon == null) {
@@ -894,7 +894,7 @@ public class WindowsIconFactory implements Serializable
                     }
                 }
                 if (icon != null) {
-                    if (!isWindows11) {
+                    if (!isWindows11OrLater) {
                         icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
                     } else {
                         icon.paintIcon(c, g, x - OFFSET +
