@@ -142,7 +142,8 @@ bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& 
   }
 
   AsyncLogLocker locker;
-  NOT_PRODUCT(log_debug(deathtest)("Induce a recursive log for testing");)
+  DEBUG_ONLY(log_debug(deathtest)("Induce a recursive log for testing (for crashing)");)
+  DEBUG_ONLY(log_debug(deathtest2)("Induce a recursive log for testing");)
   AsyncLogWriter::instance()->enqueue_locked(&output, decorations, msg);
   return true;
 }
@@ -156,7 +157,8 @@ bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iter
 
   // If we get here we know the AsyncLogWriter is initialized.
   AsyncLogLocker locker;
-  NOT_PRODUCT(log_debug(deathtest)("Induce a recursive log for testing");)
+  DEBUG_ONLY(log_debug(deathtest)("Induce a recursive log for testing (for crashing)");)
+  DEBUG_ONLY(log_debug(deathtest2)("Induce a recursive log for testing");)
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
     AsyncLogWriter::instance()->enqueue_locked(&output, msg_iterator.decorations(), msg_iterator.message());
   }

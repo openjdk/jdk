@@ -40,7 +40,7 @@ public class AsyncDeathTest {
     public static void main(String[] args) throws Exception {
         // For deathtest we expect the VM to reach ShouldNotReachHere() and die
         ProcessBuilder pb =
-            ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:os,deathtest=debug" "-XX:-CreateCoredumpOnCrash");
+            ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:os,deathtest=debug", "-XX:-CreateCoredumpOnCrash");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
         // For deathtest2 we expect the VM to ignore that recursive logging has been detected and handle the case anyway.
