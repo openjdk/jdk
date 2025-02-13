@@ -583,6 +583,9 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_assert:
     case lir_inc_profile_ctr:
     {
+      if (op->code() == lir_inc_profile_ctr) {
+        asm("nop");
+      }
       assert(op->as_Op2() != nullptr, "must be");
       LIR_Op2* op2 = (LIR_Op2*)op;
       assert(op2->_tmp2->is_illegal() && op2->_tmp3->is_illegal() &&

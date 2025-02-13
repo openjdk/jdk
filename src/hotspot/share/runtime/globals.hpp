@@ -1994,9 +1994,9 @@ const int ObjectAlignmentInBytes = 8;
           "Use an extra lock during Thread start and exit to alleviate"     \
           "contention on Threads_lock.")                                    \
                                                                             \
-  product(double, ProfileCaptureRatio, 1.0,                                 \
+  product(int, ProfileCaptureRatio, 1,                                 \
           "Reduce profile captures")                                        \
-          range(0.0, 1.0)
+          range(1, 4096)
 
 // end of RUNTIME_FLAGS
 

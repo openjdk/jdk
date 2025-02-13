@@ -150,7 +150,7 @@
 
     // Reduce the number of available regs (to free r12) in case of compressed oops
     // Reduce the number of available regs (to free r14) for RNG
-    if (ProfileCaptureRatio < 1.0) return range - 2;
+    if (ProfileCaptureRatio > 1) return range - 2;
     if (UseCompressedOops) return range - 1;
     return range;
   }

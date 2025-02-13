@@ -3495,9 +3495,23 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
+long ibar, ifoo;
+
+void foo() {
+  asm("nop");
+}
+
+void bar() {
+  asm("nop");
+}
+
 void LIR_Assembler::inc_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op) {
   Register temp = temp_op->as_register();
   Address dest_adr = as_Address(addr->as_address_ptr());
+
+  assert(ProfileCaptureRatio > 1, "ProfileCaptureRatio must be > 1");
+  int ratio_shift = exact_log2(ProfileCaptureRatio);
+  int threshold = (1ull << 32) / ProfileCaptureRatio;
 
   /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
   __ movl(temp, r14);
@@ -3510,19 +3524,76 @@ void LIR_Assembler::inc_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LI
   __ sall(temp, 5);
   __ xorl(r14, temp);
 
+  Label dont;
+
+  // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &bar), 0);
+  if (getenv("APH_TRACE")) {
+    __ lea(temp, ExternalAddress((address)&ifoo));
+    __ incl(Address(temp));
+  }
+
   if (incr->is_register()) {
     Register inc = incr->as_register();
+    __ movl(dest->as_register(), inc);
+    __ cmpl(r14, threshold);
+    __ jccb(Assembler::above, dont);
+
+    // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
+    if (getenv("APH_TRACE")) {
+      __ lea(temp, ExternalAddress((address)&ibar));
+      __ incl(Address(temp));
+    }
+
     __ movl(temp, dest_adr);
+    __ sall(inc, ratio_shift);
     __ addl(temp, inc);
     __ movl(dest_adr, temp);
     __ movl(dest->as_register(), temp);
   } else {
-    jint inc = incr->as_constant_ptr()->as_jint_bits();
-    __ movl(temp, dest_adr);
-    __ addl(temp, inc);
-    __ movl(dest_adr, temp);
-    __ movl(dest->as_register(), temp);
+    switch (dest->type()) {
+        case T_INT: {
+          jint inc = incr->as_constant_ptr()->as_jint_bits() * ProfileCaptureRatio;
+          __ movl(dest->as_register(), inc);
+          __ cmpl(r14, threshold);
+          __ jccb(Assembler::above, dont);
+
+          // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
+          if (getenv("APH_TRACE")) {
+            __ lea(temp, ExternalAddress((address)&ibar));
+            __ incl(Address(temp));
+          }
+
+          __ movl(temp, dest_adr);
+          __ addl(temp, inc);
+          __ movl(dest_adr, temp);
+          __ movl(dest->as_register(), temp);
+
+          break;
+        }
+        case T_LONG: {
+          jint inc = incr->as_constant_ptr()->as_jint_bits() * ProfileCaptureRatio;
+          __ movq(dest->as_register_lo(), (jlong)inc);
+          __ cmpl(r14, threshold);
+          __ jccb(Assembler::above, dont);
+
+          // __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &foo), 0);
+          if (getenv("APH_TRACE")) {
+            __ lea(temp, ExternalAddress((address)&ibar));
+            __ incl(Address(temp));
+          }
+
+          __ movq(temp, dest_adr);
+          __ addq(temp, inc);
+          __ movq(dest_adr, temp);
+          __ movq(dest->as_register_lo(), temp);
+
+          break;
+        }
+      default:
+        ShouldNotReachHere();
+    }
   }
+  __ bind(dont);
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
