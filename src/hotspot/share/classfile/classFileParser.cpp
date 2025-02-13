@@ -5799,7 +5799,9 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
       FieldInfo& fi = *_temp_field_info->adr_at(i);
       if (fi.access_flags().is_strict() && fi.access_flags().is_static()) {
         found_one = true;
-        if (EnforceStrictStatics != 0) {
+        if (fi.initializer_index() != 0) {
+          // skip strict static fields with ConstantValue attributes
+        } else if (EnforceStrictStatics != 0) {
           _fields_status->adr_at(fi.index())->update_strict_static_unset(true);
           if (EnforceStrictStatics == 2) {
             _fields_status->adr_at(fi.index())->update_strict_static_unread(true);

@@ -35,8 +35,8 @@ import java.lang.invoke.*;
 public interface HelloStrict {
     @interface Strict { }  // placeholder, ignored
     class Aregular_OK {
-        @Strict static String F1__STRICT = "hello";
-        @Strict static int    F2__STRICT = 42;
+        @Strict static final String F1__STRICT = "hello";
+        @Strict static final int    F2__STRICT = 42;
         public String toString() { return displayString(this, F1__STRICT, F2__STRICT); }
     }
     class Anulls_OK {
