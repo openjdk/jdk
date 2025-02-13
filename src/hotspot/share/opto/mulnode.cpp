@@ -1379,8 +1379,8 @@ const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
     return TypeInteger::bottom(bt);
   }
 
-  const TypeInteger* r1 = t1->isa_integer(bt); // Handy access
-  const TypeInt* r2 = t2->isa_int(); // Handy access
+  const TypeInteger* r1 = t1->isa_integer(bt);
+  const TypeInt* r2 = t2->isa_int();
 
   // If the shift is a constant, just shift the bounds of the type.
   // For example, if the shift is 31/63, we just propagate sign bits.
