@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,7 +378,6 @@ public class ML_DSA {
             matrixVectorPointwiseMultiply(w, aHat, y);
             mlDsaVectorInverseNtt(w); //w is now in normal domain
             decompose(w, w0, w1);
-            //mlDsaVectorInverseNtt(y);
 
             //Get commitment hash
             hash.update(mu);
