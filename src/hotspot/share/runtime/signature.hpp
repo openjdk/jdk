@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -316,7 +316,6 @@ class Fingerprinter: public SignatureIterator {
  private:
   fingerprint_t _accumulator;
   int _param_size;
-  int _param_count;
   int _stack_arg_slots;
   int _shift_count;
   const Method* _method;
@@ -328,7 +327,6 @@ class Fingerprinter: public SignatureIterator {
     _accumulator = 0;
     _shift_count = fp_result_feature_size + fp_static_feature_size;
     _param_size = 0;
-    _param_count = 0;
     _stack_arg_slots = 0;
   }
 
@@ -342,11 +340,10 @@ class Fingerprinter: public SignatureIterator {
 
   void do_type(BasicType type) {
     assert(fp_is_valid_type(type), "bad parameter type");
-    if (_param_count <= fp_max_size_of_parameters) {
+    if (_param_size <= fp_max_size_of_parameters) {
       _accumulator |= ((fingerprint_t)type << _shift_count);
+      _shift_count += fp_parameter_feature_size;
     }
-    _param_count++;
-    _shift_count += fp_parameter_feature_size;
     _param_size += (is_double_word_type(type) ? 2 : 1);
     do_type_calling_convention(type);
   }
