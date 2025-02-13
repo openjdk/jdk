@@ -981,9 +981,10 @@ const Type* XorINode::Value(PhaseGVN* phase) const {
   return AddNode::Value(phase);
 }
 
-
+// Given 2 non-negative values in the ranges [0, hi_0] and [0, hi_1], respectively. The bitwise
+// xor of these values should also be non-negative. This method calculates an upper bound.
 template<class S, class U>
-static S calc_xor_max(const S hi_0, const S hi_1) {
+static S calc_xor_upper_bound_of_non_neg(const S hi_0, const S hi_1) {
   assert(hi_0 >= 0, "must be non-negative");
   assert(hi_1 >= 0, "must be non-negative");
 
@@ -992,7 +993,7 @@ static S calc_xor_max(const S hi_0, const S hi_1) {
   // y cannot have any bit set that is higher than the highest bit set in r1->_hi
 
   // We want to find a value that has all 1 bits everywhere up to and including
-  // the highest bits set in r0->_hi as well as r1->_hi. For this,we can take the next
+  // the highest bits set in r0->_hi as well as r1->_hi. For this, we can take the next
   // power of 2 strictly greater than both hi values and subtract 1 from it.
 
   // Example 1:
@@ -1030,11 +1031,8 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
 
   // At least one of the arguments is not constant
 
-  // Result of xor can only have bits sets where any of the
-  // inputs have bits set. lo can always become 0.
-
   if (r0->_lo >= 0 && r1->_lo >= 0) {
-      jint max = calc_xor_max<jint, juint>(r0->_hi, r1->_hi);
+      jint max = calc_xor_upper_bound_of_non_neg<jint, juint>(r0->_hi, r1->_hi);
       return TypeInt::make(0, max, MAX2(r0->_widen, r1->_widen));
   }
 
@@ -1042,7 +1040,7 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
 }
 
 jint XorINode::calc_max(const jint hi_0, const jint hi_1)  {
-  return calc_xor_max<jint, juint>(hi_0, hi_1);
+  return calc_xor_upper_bound_of_non_neg<jint, juint>(hi_0, hi_1);
 }
 
 //=============================================================================
@@ -1058,11 +1056,8 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
 
   // At least one of the arguments is not constant
 
-  // Result of xor can only have bits sets where any of the
-  // inputs have bits set. lo can always become 0.
-
   if (r0->_lo >= 0 && r1->_lo >= 0) {
-      julong max = calc_xor_max<jlong, julong>(r0->_hi, r1->_hi);
+      julong max = calc_xor_upper_bound_of_non_neg<jlong, julong>(r0->_hi, r1->_hi);
       return TypeLong::make(0, max, MAX2(r0->_widen, r1->_widen));
   }
 
@@ -1070,7 +1065,7 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
 }
 
 jlong XorLNode::calc_max(const jlong hi_0, const jlong hi_1)  {
-  return calc_xor_max<jlong, julong>(hi_0, hi_1);
+  return calc_xor_upper_bound_of_non_neg<jlong, julong>(hi_0, hi_1);
 }
 
 Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {

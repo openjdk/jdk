@@ -247,17 +247,21 @@ public class XorINodeIdealizationTests {
     private static final boolean CONST_BOOL_2 = RunInfo.getRandom().nextBoolean();
 
     @Run(test={
-            "testConstXorBool", "testXorSelfBool"
+            "testConstXorBool", "testXorSelfBool", "testXorIntAsBool"
     })
     public void runBooleanTests() {
-        assertBooleanResult(true);
-        assertBooleanResult(false);
+        int c = G.next();
+        int d = G.next();
+
+        assertBooleanResult(true, c, d);
+        assertBooleanResult(false, c, d);
     }
 
     @DontCompile
-    public void assertBooleanResult(boolean b){
+    public void assertBooleanResult(boolean b, int x, int y) {
         Asserts.assertEQ(CONST_BOOL_1 ^ CONST_BOOL_2, testConstXorBool());
         Asserts.assertEQ(false, testXorSelfBool(b));
+        Asserts.assertEQ(true, testXorIntAsBool(x, y));
     }
 
     @Test
@@ -274,6 +278,14 @@ public class XorINodeIdealizationTests {
     // Checks (x ^ x)  => c (constant folded)
     public boolean testXorSelfBool(boolean x) {
         return x ^ x;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"})
+    // Checks (x ^ y)  => z <=1  when x and y are known to be in [0,1] (constant folded)
+    public boolean testXorIntAsBool(int xi, int yi) {
+        return ((xi & 0b1) ^ (yi & 0b1)) <= 1;
     }
 
     @Run(test = {
