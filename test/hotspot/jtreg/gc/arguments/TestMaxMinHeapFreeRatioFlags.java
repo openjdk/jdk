@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ public class TestMaxMinHeapFreeRatioFlags {
         // Size of byte array that will be allocated
         public static final int CHUNK_SIZE = 1024;
         // Length of byte array, that will be added to "garbage" list.
-        public static final int ARRAY_LENGTH = CHUNK_SIZE - Unsafe.ARRAY_BYTE_BASE_OFFSET;
+        public static final int ARRAY_LENGTH = CHUNK_SIZE - (int) Unsafe.ARRAY_BYTE_BASE_OFFSET;
         // Amount of tries to force heap shrinking/expansion using GC
         public static final int GC_TRIES = 10;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,6 +156,7 @@ public:
   virtual jdouble constantD() const;
   virtual jfloat  constantF() const;
   virtual jlong   constantL() const;
+  virtual jshort  constantH() const;
   virtual TypeOopPtr *oop() const;
   virtual int  ccode() const;
   // A zero, default, indicates this value is not needed.

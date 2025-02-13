@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,6 @@ class ThreadsList extends VMObject {
 }
 
 public class Threads {
-    private static JavaThreadFactory threadFactory;
     private static AddressField      threadListField;
     private static VirtualConstructor virtualConstructor;
     private static JavaThreadPDAccess access;
@@ -90,7 +89,6 @@ public class Threads {
         Type type = db.lookupType("ThreadsSMRSupport");
         threadListField = type.getAddressField("_java_thread_list");
 
-        // Instantiate appropriate platform-specific JavaThreadFactory
         String os  = VM.getVM().getOS();
         String cpu = VM.getVM().getCPU();
 
@@ -155,19 +153,23 @@ public class Threads {
         virtualConstructor.addMapping("NotificationThread", NotificationThread.class);
         virtualConstructor.addMapping("StringDedupThread", StringDedupThread.class);
         virtualConstructor.addMapping("AttachListenerThread", AttachListenerThread.class);
+
+        /* Only add DeoptimizeObjectsALotThread if it is actually present in the type database. */
+        if (db.lookupType("DeoptimizeObjectsALotThread", false) != null) {
+            virtualConstructor.addMapping("DeoptimizeObjectsALotThread", DeoptimizeObjectsALotThread.class);
+        }
     }
 
     public Threads() {
         _list = VMObjectFactory.newObject(ThreadsList.class, threadListField.getValue());
     }
 
-    /** NOTE: this returns objects of type JavaThread, CompilerThread,
-      JvmtiAgentThread, NotificationThread, MonitorDeflationThread,
-      StringDedupThread, AttachListenerThread and ServiceThread.
-      The latter seven subclasses of the former. Most operations
-      (fetching the top frame, etc.) are only allowed to be performed on
-      a "pure" JavaThread. For this reason, {@link
-      sun.jvm.hotspot.runtime.JavaThread#isJavaThread} has been
+    /** NOTE: this returns objects of type JavaThread or one if its subclasses:
+      CompilerThread, JvmtiAgentThread, NotificationThread, MonitorDeflationThread,
+      StringDedupThread, AttachListenerThread, DeoptimizeObjectsALotThread and
+      ServiceThread. Most operations (fetching the top frame, etc.) are only
+      allowed to be performed on a "pure" JavaThread. For this reason,
+      {@link sun.jvm.hotspot.runtime.JavaThread#isJavaThread} has been
       changed from the definition in the VM (which returns true for
       all of these thread types) to return true for JavaThreads and
       false for the seven subclasses. FIXME: should reconsider the
@@ -195,7 +197,7 @@ public class Threads {
         } catch (Exception e) {
             throw new RuntimeException("Unable to deduce type of thread from address " + threadAddr +
             " (expected type JavaThread, CompilerThread, MonitorDeflationThread, AttachListenerThread," +
-            " StringDedupThread, NotificationThread, ServiceThread or JvmtiAgentThread)", e);
+            " DeoptimizeObjectsALotThread, StringDedupThread, NotificationThread, ServiceThread or JvmtiAgentThread)", e);
         }
     }
 

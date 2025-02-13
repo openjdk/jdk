@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.util.Set;
 import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
-import static jdk.internal.util.OperatingSystem.LINUX;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Parameters;
@@ -52,12 +51,12 @@ import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 public class AnnotationsTest {
 
     public static void main(String... args) {
-        runTests(BasicTest.class, ParameterizedInstanceTest.class);
+        runTests(List.of(BasicTest.class, ParameterizedInstanceTest.class));
         for (var os : OperatingSystem.values()) {
             try {
                 TestBuilderConfig.setOperatingSystem(os);
                 TKit.log("Current operating system: " + os);
-                runTests(IfOSTest.class);
+                runTests(List.of(IfOSTest.class));
             } finally {
                 TestBuilderConfig.setDefaults();
             }
@@ -301,17 +300,17 @@ public class AnnotationsTest {
         });
     }
 
-    private static void runTests(Class<? extends TestExecutionRecorder>... tests) {
+    private static void runTests(List<Class<? extends TestExecutionRecorder>> tests) {
         ACTUAL_TEST_DESCS.get().clear();
 
-        var expectedTestDescs = Stream.of(tests)
+        var expectedTestDescs = tests.stream()
                 .map(AnnotationsTest::getExpectedTestDescs)
                 .flatMap(x -> x)
                 // Collect in the map to check for collisions for free
                 .collect(toMap(x -> x, x -> ""))
                 .keySet();
 
-        var args = Stream.of(tests).map(test -> {
+        var args = tests.stream().map(test -> {
             return String.format("--jpt-run=%s", test.getName());
         }).toArray(String[]::new);
 
@@ -324,6 +323,7 @@ public class AnnotationsTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static Stream<String> getExpectedTestDescs(Class<?> type) {
         return toSupplier(() -> {
             var method = type.getMethod("getExpectedTestDescs");
