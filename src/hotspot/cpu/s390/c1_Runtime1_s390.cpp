@@ -636,7 +636,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       __ save_return_pc();
       __ push_frame(frame_size);
 
-      // Z_R10 and Z_R11 are call saved, so we must push them before any use
+      // Z_R10 and Z_R11 are caller saved, so we must push them before any use
       __ z_stg(temp2 /*Z_R10*/, 0*BytesPerWord + frame::z_abi_160_size, Z_SP);
       __ z_stg(temp3 /*Z_R11*/, 1*BytesPerWord + frame::z_abi_160_size, Z_SP);
       assert(2*BytesPerWord + frame::z_abi_160_size == frame_size, "check");

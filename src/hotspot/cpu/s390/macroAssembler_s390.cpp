@@ -3679,9 +3679,6 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
     r_array_index  = r_temp3,
     r_bitmap       = noreg; // unused
 
-  const Register r_one = Z_R0_scratch;
-  z_lghi(r_one, 1); // for locgr down there, to a load result for failure
-
   BLOCK_COMMENT("verify_secondary_supers_table {");
 
   Label L_passed, L_failure;
@@ -3697,7 +3694,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
 
   const Register r_linear_result = r_array_index; // reuse
   z_chi(r_array_length, 0);
-  z_locgr(r_linear_result, r_one, bcondNotHigh); // load failure if array_length <= 0
+  z_lochi(r_linear_result, 1, bcondNotHigh); // load failure if array_length <= 0
   z_brc(bcondNotHigh, L_failure);
   repne_scan(r_array_base, r_super_klass, r_array_length, r_linear_result);
   bind(L_failure);
@@ -3708,15 +3705,17 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   // report fatal error and terminate VM
 
   // Argument shuffle. Using stack to avoid clashes.
-  z_stg(r_super_klass, -8, Z_SP);
-  z_stg(r_sub_klass, -16, Z_SP);
-  z_stg(r_linear_result, -24, Z_SP);
+  resize_frame(-(3*8), /* fp */ Z_R0, /*load_fp*/ true);
+  z_stg(r_super_klass, 8, Z_SP);
+  z_stg(r_sub_klass, 16, Z_SP);
+  z_stg(r_linear_result, 24, Z_SP);
 
   z_lgr(Z_ARG4, r_result);
 
-  z_lg(Z_ARG1, -8, Z_SP); // r_super_klass
-  z_lg(Z_ARG2, -16, Z_SP); // r_sub_klass
-  z_lg(Z_ARG3, -24, Z_SP); // r_linear_result
+  z_lg(Z_ARG1, 8, Z_SP); // r_super_klass
+  z_lg(Z_ARG2, 16, Z_SP); // r_sub_klass
+  z_lg(Z_ARG3, 24, Z_SP); // r_linear_result
+  resize_frame(+(3*8), /*fp*/ Z_R0, /*load_fp*/ true);
 
   const char* msg = "mismatch";
   load_const_optimized(Z_ARG5, (address)msg);
