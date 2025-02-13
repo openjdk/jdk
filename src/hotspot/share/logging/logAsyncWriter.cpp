@@ -31,6 +31,8 @@
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
 
+DEBUG_ONLY(bool AsyncLogWriter::ignore_recursive_logging = false;)
+
 class AsyncLogWriter::AsyncLogLocker : public StackObj {
   static Thread* _holder;
 public:
@@ -112,7 +114,11 @@ bool AsyncLogWriter::resort_to_synchronous_logging() {
     // A thread, while enqueuing a message, has attempted to log something.
     // Do not log while holding the Async log lock.
     // Try to catch possible occurrences in debug builds.
-    DEBUG_ONLY(ShouldNotReachHere();)
+#ifdef ASSERT
+    if (!AsyncLogWriter::ignore_recursive_logging) {
+      ShouldNotReachHere();
+    }
+#endif // ASSERT
     return true;
   }
 

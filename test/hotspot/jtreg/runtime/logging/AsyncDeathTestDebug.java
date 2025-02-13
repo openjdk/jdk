@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8349755
- * @summary Perform recursive logging in async UL and observe a crash
+ * @summary Perform recursive logging in async UL on purpose
  * @requires vm.flagless
  * @requires vm.debug
  * @library /test/lib
@@ -38,9 +38,15 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class AsyncDeathTestDebug {
     public static void main(String[] args) throws Exception {
+        // For deathtest we expect the VM to reach ShouldNotReachHere() and die
         ProcessBuilder pb =
-            ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:all=debug");
+            ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:os,deathtest=debug" "-XX:-CreateCoredumpOnCrash");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
+        // For deathtest2 we expect the VM to ignore that recursive logging has been detected and handle the case anyway.
+        ProcessBuilder pb =
+            ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:os,deathtest2=debug");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
     }
 }
