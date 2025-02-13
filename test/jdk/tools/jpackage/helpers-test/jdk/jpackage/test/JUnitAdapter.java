@@ -48,9 +48,9 @@ public class JUnitAdapter {
     }
 
     @Test
-    void runJPackageTests(@TempDir Path tempDir) throws Throwable {
+    void runJPackageTests(@TempDir Path workDir) throws Throwable {
         if (!getClass().equals(JUnitAdapter.class)) {
-            Main.main(TestBuilder.build().workDirRoot(tempDir), new String [] {
+            Main.main(TestBuilder.build().workDirRoot(workDir), new String [] {
                     "--jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault",
                     "--jpt-run=" + getClass().getName()
                     });
