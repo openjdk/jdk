@@ -1602,7 +1602,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
 
     /**
      * Returns a string representing the data in this sequence.
-     * A {@code String} object is returned that contains the character
+     * The {@code String} object that is returned contains the character
      * sequence currently represented by this object. Subsequent
      * changes to this sequence do not affect the contents of the
      * returned {@code String}.
