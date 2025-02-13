@@ -1,10 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,29 +24,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+-->
 
-import java.security.Provider;
-import java.security.Security;
-
-public class ProvidersSnapshot {
-
-    private Provider[] oldProviders;
-
-    private ProvidersSnapshot() {
-        oldProviders = Security.getProviders();
-    }
-
-    public static ProvidersSnapshot create() {
-        return new ProvidersSnapshot();
-    }
-
-    public void restore() {
-        Provider[] newProviders = Security.getProviders();
-        for (Provider p: newProviders) {
-            Security.removeProvider(p.getName());
-        }
-        for (Provider p: oldProviders) {
-            Security.addProvider(p);
-        }
-    }
-}
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <Condition Message="!(loc.OsConditionMessage)">
+      <![CDATA[Installed OR (VersionNT >= $(var.JpExecutableOSVersion))]]>
+    </Condition>
+    <!--
+      Fragment contents must be referenced. Otherwise, the fragment will be ignored.
+      Use empty component group as an anchor for the reference.
+    -->
+    <ComponentGroup Id="FragmentOsCondition"/>
+  </Fragment>
+</Wix>
