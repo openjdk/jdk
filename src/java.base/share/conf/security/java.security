@@ -749,7 +749,7 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #     single algorithm, they also can't be linked with other constraints by an
 #     ampersand '&'.
 #     See https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.3 for more
-#     info on signatures used for the TLS handshake and for the certificates.
+#     information on signatures used in TLS handshake and in certificates.
 #
 # Note: The algorithm restrictions do not apply to trust anchors or
 # self-signed certificates.
@@ -762,7 +762,7 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #       secp224r1, TLS_RSA_*, rsa_pkcs1_sha1 usage handshake
 jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
     MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
-    ECDH, TLS_RSA_*, rsa_pkcs1_sha1 usage handshake
+    ECDH, TLS_RSA_*
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
