@@ -258,6 +258,10 @@ final class WixPipeline {
                 "-out", wixObj.toString()
         ));
 
+        if (toolset.needFipsParameter()) {
+            cmdline.add("-fips");
+        }
+
         addWixVariblesToCommandLine(wixSource.variables, cmdline);
 
         execute(cmdline);
