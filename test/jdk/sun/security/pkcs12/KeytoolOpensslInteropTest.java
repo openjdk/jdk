@@ -77,7 +77,7 @@ public class KeytoolOpensslInteropTest {
         } else {
             // since preferred version of openssl is not available skip all
             // openssl command dependent tests with a warning
-            System.out.println("\n\u001B[31mWarning: Can't find preferred version "
+            System.out.println("\n\u001B[31mWarning: Can't find the preferred version "
                     + "of openssl binary on this machine, please install"
                     + " and set openssl path with property "
                     + "'test.openssl.path'. Now running only half portion of "
