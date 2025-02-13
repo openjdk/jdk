@@ -40,14 +40,14 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage application version testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile JLinkOptionsTest.java
+ * @compile -Xlint:all -Werror JLinkOptionsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=JLinkOptionsTest
  */
 
 public final class JLinkOptionsTest {
 
-    public static Collection input() {
+    public static Collection<?> input() {
         return List.of(new Object[][]{
             // default but with strip-native-commands removed
             {"Hello", new String[]{
