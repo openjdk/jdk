@@ -76,7 +76,7 @@ public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
      * @see #noformat()
      */
     final public T format(boolean v) {
-        noFormat = !v;
+        format = v;
         return thiz();
     }
 
@@ -124,12 +124,12 @@ public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
      * @return this
      */
     final public T causeAndMessage(Throwable t) {
-        boolean oldNoFormat = noFormat;
-        return noformat().message(t.getMessage()).cause(t).format(oldNoFormat);
+        boolean oldformat = format;
+        return noformat().message(t.getMessage()).cause(t).format(oldformat);
     }
 
     final protected String formatString(String keyId, Object... args) {
-        if (!noFormat) {
+        if (format) {
             return i18n.format(keyId, args);
         } else if (args.length == 0) {
             return keyId;
@@ -143,7 +143,7 @@ public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
         return (T)this;
     }
 
-    private boolean noFormat;
+    private boolean format = true;
     private String msg;
     private Throwable cause;
 
