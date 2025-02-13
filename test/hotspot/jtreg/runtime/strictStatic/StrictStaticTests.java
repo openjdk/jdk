@@ -26,11 +26,11 @@
  * @summary test tracking of strict static fields
  * @run main/othervm strictStatic.StrictStaticTests
  *
- * [@]test id=C1only
- * [@]run main/othervm -XX:TieredStopAtLevel=2 -Xcomp -Xbatch strictStatic.StrictStaticTests
+ * @test id=C1only
+ * @run main/othervm -XX:TieredStopAtLevel=2 -Xcomp -Xbatch strictStatic.StrictStaticTests
  *
- * [@]test id=C2only
- * [@]run main/othervm -XX:-TieredCompilation -Xcomp -Xbatch strictStatic.StrictStaticTests
+ * @test id=C2only
+ * @run main/othervm -XX:-TieredCompilation -Xcomp -Xbatch strictStatic.StrictStaticTests
  *
  * @test id=EnforceStrictStatics-2
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:EnforceStrictStatics=2 -DXX_EnforceStrictStatics=2 strictStatic.StrictStaticTests
@@ -177,13 +177,17 @@ public class StrictStaticTests {
         for (var staticType : STATIC_TYPES) {
             for (int writeCount = 1; writeCount <= 3; writeCount++) {
                 for (byte readFlag = 0; readFlag <= 1; readFlag++) {
+                    if (writeCount > readFlag && XX_EnforceStrictStatics >= 2)
+                        continue;
                     for (int extraCount = 0; extraCount <= 3; extraCount++) {
-                        var cn = String.format("Positive%s%sW%d%sE%d",
+                        if (extraCount > 0 && staticType != String.class)  continue;
+                        var cn = String.format("Positive_T%s%s_W%d%s%s",
                                                staticType.getSimpleName(),
-                                               (finals ? "SSF" : ""),
+                                               (finals ? "_SSFinal" : ""),
                                                writeCount,
-                                               readFlag > 0 ? "Rafter" : readFlag < 0 ? "Rbefore" : "",
-                                               extraCount);
+                                               (readFlag > 0 ? "_Rafter" :
+                                                readFlag < 0 ? "_Rbefore" : ""),
+                                               (extraCount > 0 ? "_E"+extraCount : ""));
                         var cls = buildClass(cn, staticType, writeCount, readFlag, extraCount, finals);
                         try {
                             LOOKUP.ensureInitialized(cls);
@@ -203,15 +207,23 @@ public class StrictStaticTests {
     }
     static void testFailedWrites(boolean finals) {
         for (var staticType : STATIC_TYPES) {
-            for (int writeCount = 0; writeCount <= 0; writeCount++) {
-                for (byte readFlag = 0; readFlag <= 0; readFlag++) {
+            for (int writeCount = 0; writeCount <= 2; writeCount++) {
+                for (byte readFlag = 0; readFlag <= 1; readFlag++) {
+                    if (readFlag > 0 || writeCount > 0) {
+                        if (XX_EnforceStrictStatics <= 1 || !finals || writeCount < 2)
+                            continue;
+                        if (XX_EnforceStrictStatics == 2 && readFlag <= 0)
+                            continue;  // Mode 2 fails only with R between 2W: W-R-W
+                    }
                     for (int extraCount = 0; extraCount <= 3; extraCount++) {
-                        var cn = String.format("BadWrite%s%sW%d%sE%d",
+                        if (extraCount > 0 && staticType != String.class)  continue;
+                        var cn = String.format("BadWrite_T%s%s_W%d%s%s",
                                                staticType.getSimpleName(),
-                                               (finals ? "SSF" : ""),
+                                               (finals ? "_SSFinal" : ""),
                                                writeCount,
-                                               readFlag > 0 ? "Rafter" : readFlag < 0 ? "Rbefore" : "",
-                                               extraCount);
+                                               (readFlag > 0 ? "_Rafter" :
+                                                readFlag < 0 ? "_Rbefore" : ""),
+                                               (extraCount > 0 ? "_E"+extraCount : ""));
                         var cls = buildClass(cn, staticType, writeCount, readFlag, extraCount, finals);
                         try {
                             LOOKUP.ensureInitialized(cls);
@@ -233,12 +245,14 @@ public class StrictStaticTests {
             for (int writeCount = 0; writeCount <= 1; writeCount++) {
                 for (byte readFlag = -1; readFlag <= -1; readFlag++) {
                     for (int extraCount = 0; extraCount <= 3; extraCount++) {
-                        var cn = String.format("BadRead%s%sW%d%sE%d",
+                        if (extraCount > 0 && staticType != String.class)  continue;
+                        var cn = String.format("BadRead_T%s%s_W%d_%s%s",
                                                staticType.getSimpleName(),
-                                               (finals ? "SSF" : ""),
+                                               (finals ? "_SSFinal" : ""),
                                                writeCount,
-                                               readFlag > 0 ? "Rafter" : readFlag < 0 ? "Rbefore" : "",
-                                               extraCount);
+                                               (readFlag > 0 ? "_Rafter" :
+                                                readFlag < 0 ? "_Rbefore" : ""),
+                                               (extraCount > 0 ? "_E"+extraCount : ""));
                         var cls = buildClass(cn, staticType, writeCount, readFlag, extraCount, finals);
                         try {
                             LOOKUP.ensureInitialized(cls);
@@ -266,11 +280,8 @@ public class StrictStaticTests {
         }
     }
 
-    static final int XX_EnforceStrictStatics;
-    static {
-        var p = System.getProperty("XX_EnforceStrictStatics");
-        XX_EnforceStrictStatics = (p == null) ? 1 : Integer.parseInt(p);
-    }
+    static final int XX_EnforceStrictStatics
+        = Integer.getInteger("XX_EnforceStrictStatics", 1);
 
     public static void main(String... av) {
         System.out.printf("-XX:EnforceStrictStatics=%d\n", XX_EnforceStrictStatics);

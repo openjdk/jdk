@@ -733,7 +733,7 @@ void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_ind
       // the "unset" flag, perhaps by making a second downcall.
     }
     #endif //end sample code
-    
+
     if (do_notify) {
       klass->notify_strict_static_access(info.index(), is_put, CHECK);
     }
