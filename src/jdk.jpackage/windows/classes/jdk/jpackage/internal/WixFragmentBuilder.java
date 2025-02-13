@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.util.XmlConsumer;
-import jdk.jpackage.internal.OverridableResource.Source;
 import jdk.internal.util.Architecture;
 import jdk.jpackage.internal.WixSourceConverter.ResourceGroup;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
@@ -62,11 +61,15 @@ abstract class WixFragmentBuilder {
         outputFileName = v;
     }
 
+    final void setDefaultResourceName(String v) {
+        defaultResourceName = v;
+    }
+
     void initFromParams(BuildEnv env, WinMsiPackage pkg) {
         wixVariables = null;
         additionalResources = null;
         configRoot = env.configDir();
-        fragmentResource = env.createResource(outputFileName).setSourceOrder(Source.ResourceDir);
+        fragmentResource = env.createResource(defaultResourceName).setPublicName(outputFileName);
     }
 
     List<String> getLoggableWixFeatures() {
@@ -81,7 +84,10 @@ abstract class WixFragmentBuilder {
 
     void addFilesToConfigRoot() throws IOException {
         Path fragmentPath = configRoot.resolve(outputFileName);
-        if (fragmentResource.saveToFile(fragmentPath) == null) {
+        final var src = fragmentResource.saveToStream(null);
+        if (src == null) {
+            // There is no predefined resource for the fragment.
+            // The fragment should be built in the format matching the version of the WiX Toolkit.
             createWixSource(fragmentPath, xml -> {
                 for (var fragmentWriter : getFragmentWriters()) {
                     xml.writeStartElement("Fragment");
@@ -89,6 +95,11 @@ abstract class WixFragmentBuilder {
                     xml.writeEndElement();  // <Fragment>
                 }
             });
+        } else {
+            // Fragment is picked from the resource. May require conversion.
+            final var resourceGroup = new ResourceGroup(getWixType());
+            resourceGroup.addResource(fragmentResource, fragmentPath);
+            resourceGroup.saveResources();
         }
 
         if (additionalResources != null) {
@@ -236,6 +247,7 @@ abstract class WixFragmentBuilder {
     private WixVariables wixVariables;
     private ResourceGroup additionalResources;
     private OverridableResource fragmentResource;
+    private String defaultResourceName;
     private String outputFileName;
     private Path configRoot;
 }
