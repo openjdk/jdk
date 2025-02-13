@@ -1342,9 +1342,6 @@ void JvmtiExport::at_single_stepping_point(JavaThread *thread, Method* method, a
     if (state->is_pending_step_for_earlyret()) {
       state->process_pending_step_for_earlyret();
     }
-    if (thread->is_suspended()) {
-      ThreadBlockInVM tbivm(thread, true /* allow suspend */);
-    }
     JvmtiExport::post_single_step(thread, mh(), location);
   }
 }
