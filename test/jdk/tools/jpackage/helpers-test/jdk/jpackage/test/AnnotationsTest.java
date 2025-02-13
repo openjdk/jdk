@@ -335,9 +335,8 @@ public class AnnotationsTest extends JUnitAdapter {
 
         var args = new String[] { String.format("--jpt-run=%s", test.getName()) };
 
-        final List<String> log;
         try {
-            log = captureJPackageTestLog(() -> Main.main(TestBuilder.build().workDirRoot(workDir), args));
+            Main.main(TestBuilder.build().workDirRoot(workDir), args);
             assertRecordedTestDescs(expectedTestDescs);
         } catch (Throwable t) {
             t.printStackTrace(System.err);
