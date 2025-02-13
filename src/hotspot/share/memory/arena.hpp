@@ -100,6 +100,7 @@ public:
   FN(reglive,     C2 Register Allocation Live Arena) \
   FN(regsplit,    C2 Register Allocation Split Arena) \
   FN(cienv,       CI Env Arena) \
+  FN(ha,          Handle area) \
   FN(other,       Other arenas) \
 
 // Fast allocation of memory

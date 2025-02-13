@@ -30,10 +30,11 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "memory/allocation.hpp"
 #include "memory/arena.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 #ifdef COMPILER2
 #include "opto/phase.hpp"
 #endif
-#include "utilities/globalDefinitions.hpp"
 
 class CompileTask;
 class Method;

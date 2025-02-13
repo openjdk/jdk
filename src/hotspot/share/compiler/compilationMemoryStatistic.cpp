@@ -23,28 +23,20 @@
  *
  */
 
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
-#ifdef COMPILER1
-#include "c1/c1_Compilation.hpp"
-#endif
 #include "code/nmethod.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilationMemStatInternals.inline.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
-#include "compiler/compileTask.hpp"
-#include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/arena.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "oops/symbol.hpp"
 #include "oops/method.inline.hpp"
-#ifdef COMPILER2
-#include "opto/node.hpp" // compile.hpp is not self-contained
-#include "opto/compile.hpp"
-#endif
+#include "oops/symbol.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
@@ -52,6 +44,15 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+
+#ifdef COMPILER1
+#include "c1/c1_Compilation.hpp"
+#endif
+
+#ifdef COMPILER2
+#include "opto/compile.hpp"
+#include "opto/node.hpp" // compile.hpp is not self-contained
+#endif
 
 static const char* phase_trc_id_to_string(int phase_trc_id) {
   return COMPILER2_PRESENT(Phase::get_phase_trace_id_text((Phase::PhaseTraceId)phase_trc_id))
