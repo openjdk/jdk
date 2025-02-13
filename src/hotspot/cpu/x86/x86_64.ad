@@ -7026,13 +7026,30 @@ instruct castLL(rRegL dst)
   ins_pipe(empty);
 %}
 
+instruct castLL_checked_L32(rRegL dst, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts > 0 &&
+            Assembler::is_simm32(static_cast<const CastLLNode*>(n)->type()->is_long()->_lo) &&
+            Assembler::is_simm32(static_cast<const CastLLNode*>(n)->type()->is_long()->_hi));
+  match(Set dst (CastLL dst));
+
+  effect(KILL cr);
+  format %{ "# checked_cast_LL $dst" %}
+  ins_encode %{
+    DEBUG_ONLY(__ checked_cast_long(bottom_type()->is_long(), $dst$$Register, noreg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct castLL_checked(rRegL dst, rRegL tmp, rFlagsReg cr)
 %{
-  predicate(VerifyConstraintCasts > 0);
+  predicate(VerifyConstraintCasts > 0 &&
+            !(Assembler::is_simm32(static_cast<const CastLLNode*>(n)->type()->is_long()->_lo) &&
+              Assembler::is_simm32(static_cast<const CastLLNode*>(n)->type()->is_long()->_hi)));
   match(Set dst (CastLL dst));
 
   effect(KILL cr, TEMP tmp);
-  format %{ "# checked_cast_LL $dst" %}
+  format %{ "# checked_cast_LL $dst\tusing $tmp as TEMP" %}
   ins_encode %{
     DEBUG_ONLY(__ checked_cast_long(bottom_type()->is_long(), $dst$$Register, $tmp$$Register));
   %}
