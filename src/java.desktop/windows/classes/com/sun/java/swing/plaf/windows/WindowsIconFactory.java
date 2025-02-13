@@ -849,6 +849,12 @@ public class WindowsIconFactory implements Serializable
                 assert menuItem == null || c == menuItem;
                 Icon icon = getIcon();
                 int skinWidth = -1;
+
+                // Windows 10 and Windows 11 have different layout for
+                // radiobutton/checkbox menuitem if image icon is present.
+                // Windows 10 doesn't show bullet/checkmark and just highlight
+                // the image icon whereas Windows 11 show bullet/checkmark
+                // beside imageicon so this check is necessary to differentiate
                 boolean isWindows11OrLater = Integer.parseInt(System.getProperty("os.name").
                                                   replaceAll("[^0-9]", "")) >= 11;
                 if (type == JCheckBoxMenuItem.class
