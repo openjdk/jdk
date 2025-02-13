@@ -40,10 +40,8 @@ ifeq ($(wildcard $(SPEC)), )
   $(error $(THIS_MAKEFILE_PATH): spec.gmk file $(SPEC) is missing)
 endif
 
-ifneq ($(filter $(MAKELEVEL), 1 2),)
-  ifneq ($(words $(MAKEFILE_LIST)), 2)
-    $(error $(THIS_MAKEFILE_PATH): This file is not supposed to be included)
-  endif
+ifneq ($(words $(MAKEFILE_LIST)), 2)
+  $(error $(THIS_MAKEFILE_PATH): This file is not supposed to be included)
 endif
 
 # We need spec.gmk to get $(TOPDIR)

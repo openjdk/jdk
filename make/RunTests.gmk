@@ -108,8 +108,8 @@ ifneq ($(wildcard $(JTREG_FAILURE_HANDLER)), )
       #
 endif
 
-GTEST_LAUNCHER_DIRS := $(patsubst %/gtestLauncher, %, \
-    $(wildcard $(TEST_IMAGE_DIR)/hotspot/gtest/*/gtestLauncher))
+GTEST_LAUNCHER_DIRS := $(patsubst %/gtestLauncher$(EXECUTABLE_SUFFIX), %, \
+    $(wildcard $(TEST_IMAGE_DIR)/hotspot/gtest/*/gtestLauncher$(EXECUTABLE_SUFFIX)))
 GTEST_VARIANTS := $(strip $(patsubst $(TEST_IMAGE_DIR)/hotspot/gtest/%, %, \
     $(GTEST_LAUNCHER_DIRS)))
 
