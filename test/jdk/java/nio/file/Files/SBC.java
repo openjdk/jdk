@@ -429,7 +429,10 @@ public class SBC {
         try {
             Files.newByteChannel(Path.of(""), WRITE, CREATE_NEW);
             throw new RuntimeException("FileAlreadyExistsException expected");
-        } catch (FileAlreadyExistsException x) { }
+        } catch (FileAlreadyExistsException x) {
+        } catch (AccessDeniedException x) {
+            /* Thrown on Windows only */
+        }
 
         try {
             Files.newByteChannel(Path.of(""), WRITE, CREATE, DELETE_ON_CLOSE);
@@ -442,7 +445,7 @@ public class SBC {
         } catch (FileSystemException x) { }
 
         try (var channel = Files.newByteChannel(Path.of(""), READ, LinkOption.NOFOLLOW_LINKS)) {
-        }
+        } catch(AccessDeniedException x) { /* Thrown on Windows only */ }
     }
 
     static void write(WritableByteChannel wbc, String msg) throws IOException {
