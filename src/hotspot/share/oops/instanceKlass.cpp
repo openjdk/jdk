@@ -1344,7 +1344,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
         }
       }
       if (bad_strict_static != nullptr) {
-        throw_strict_static_exception(bad_strict_static, "after initialization of", THREAD);
+        throw_strict_static_exception(bad_strict_static, "is unset after initialization of", THREAD);
       }
     }
   }
@@ -1401,12 +1401,31 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 
 void InstanceKlass::notify_strict_static_access(int field_index, bool is_writing, TRAPS) {
   guarantee(field_index >= 0 && field_index < fields_status()->length(), "valid field index");
-  DEBUG_ONLY(FieldInfo fi = field(field_index));
-  assert(fi.access_flags().is_strict(), "");
-  assert(fi.access_flags().is_static(), "");
+  DEBUG_ONLY(FieldInfo debugfi = field(field_index));
+  assert(debugfi.access_flags().is_strict(), "");
+  assert(debugfi.access_flags().is_static(), "");
   FieldStatus& fs = *fields_status()->adr_at(field_index);
+  LogTarget(Trace, class, init) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm(THREAD);
+    LogStream ls(lt);
+    FieldInfo fi = field(field_index);
+    ls.print("notify %s %s %s%s ",
+             external_name(), is_writing? "Write" : "Read",
+             fs.is_strict_static_unset() ? "Unset" : "(set)",
+             fs.is_strict_static_unread() ? "+Unread" : "");
+    fi.print(&ls, constants());
+  }
   if (fs.is_strict_static_unset()) {
-    //fi.print(tty, constants());
+    assert(EnforceStrictStatics != 0, "");
+    assert(EnforceStrictStatics != 2 || fs.is_strict_static_unread(), "ClassFileParser resp.");
+    // If it is not set, there are only two reasonable things we can do here:
+    // - mark it set if this is putstatic
+    // - throw an error (Read-Before-Write) if this is getstatic
+    //
+    // A third less-reasonable thing is note an internal error if the
+    // JDK reflection logic has allowed another thread to sneak into
+    // the <clinit> critical section.
     if (!is_reentrant_initialization(THREAD)) {
       // The unset state is (or should be) transient, and observable only in one
       // thread during the execution of <clinit>.  Something is wrong here, and
@@ -1425,8 +1444,29 @@ void InstanceKlass::notify_strict_static_access(int field_index, bool is_writing
       // throw an IllegalStateException, since we are reading before writing
       // see also InstanceKlass::initialize_impl, Step 8 (at end)
       Symbol* bad_strict_static = field(field_index).name(constants());
-      constexpr const char* error_format = "Strict static \"%s\" not initialized by %s";
-      throw_strict_static_exception(bad_strict_static, "before first read in", CHECK);
+      throw_strict_static_exception(bad_strict_static, "is unset before first read in", CHECK);
+    }
+  } else if (EnforceStrictStatics > 1) {
+    // Experimentally, enforce additional proposed conditions after the first write.
+    FieldInfo fi = field(field_index);
+    bool is_final = fi.access_flags().is_final();
+    if (EnforceStrictStatics == 2 && is_final) {
+      // no final write after read, so observing a constant freezes it, as if <clinit> ended early
+      // (maybe we could trust the constant a little earlier, before <clinit> ends)
+      if (is_writing && !fs.is_strict_static_unread()) {
+        Symbol* bad_strict_static = fi.name(constants());
+        throw_strict_static_exception(bad_strict_static, "is set after read (as final) in", CHECK);
+      } else if (!is_writing && fs.is_strict_static_unread()) {
+        // log the read (this requires an extra status bit, with extra tests on it)
+        fs.update_strict_static_unread(false);
+      }
+    }
+    if (EnforceStrictStatics == 3 && is_final && is_writing) {
+      // no final write after write, that is, no repeated writes, even in <clinit>
+      // (this would make certain Leyden "class egg" patterns hard to implement)
+      assert(!fs.is_strict_static_unset(), "already written once");
+      Symbol* bad_strict_static = fi.name(constants());
+      throw_strict_static_exception(bad_strict_static, "is set twice (as final) in", CHECK);
     }
   }
 }
@@ -1442,9 +1482,9 @@ void InstanceKlass::throw_strict_static_exception(Symbol* field_name, const char
 const char* InstanceKlass::format_strict_static_message(Symbol* field_name, const char* when) {
   stringStream ss;
   // we can use similar format strings for both -Xlog:class+init and for the ISE throw
-  ss.print("Strict static \"%s\" is unset %s %s",
+  ss.print("Strict static \"%s\" %s %s",
            field_name->as_C_string(),
-           when == nullptr ? "in" : when,
+           when == nullptr ? "is unset in" : when,
            external_name());
   return ss.as_string();
 }

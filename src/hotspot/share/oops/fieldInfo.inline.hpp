@@ -168,6 +168,7 @@ inline void FieldStatus::update_flag(FieldStatusBitPosition pos, bool z) {
 inline void FieldStatus::update_access_watched(bool z) { update_flag(_fs_access_watched, z); }
 inline void FieldStatus::update_modification_watched(bool z) { update_flag(_fs_modification_watched, z); }
 inline void FieldStatus::update_strict_static_unset(bool z) { update_flag(_fs_strict_static_unset, z); }
+inline void FieldStatus::update_strict_static_unread(bool z) { update_flag(_fs_strict_static_unread, z); }
 inline void FieldStatus::update_initialized_final_update(bool z) { update_flag(_initialized_final_update, z); }
 
 #endif // SHARE_OOPS_FIELDINFO_INLINE_HPP

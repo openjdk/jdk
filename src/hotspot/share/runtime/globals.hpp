@@ -1774,6 +1774,14 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, FoldStableValues, true, DIAGNOSTIC,                         \
           "Optimize loads from stable fields (marked w/ @Stable)")          \
                                                                             \
+  product(int, EnforceStrictStatics, 1, DIAGNOSTIC,                         \
+          "Enforce rules for strict initialization of some static fields. " \
+          "0: none (ignore ACC_STRICT), 1: no additional constraints "      \
+          "specific to finals, 2: finals not rewritable after first read, " \
+          "3: finals never rewritable. All these rules apply only for when "\
+          "ACC_STRICT and ACC_STATIC are both set.")                        \
+          range(0, 3)                                                       \
+                                                                            \
   product(int, UseBootstrapCallInfo, 1, DIAGNOSTIC,                         \
           "0: when resolving InDy or ConDy, force all BSM arguments to be " \
           "resolved before the bootstrap method is called; 1: when a BSM "  \

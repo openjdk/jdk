@@ -703,7 +703,10 @@ void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_ind
       put_code = ((is_static) ? Bytecodes::_putstatic : Bytecodes::_putfield);
     }
     assert(!info.is_strict_static_unset(), "after initialization, no unset flags");
-  } else if (is_static && info.is_strict_static_unset()) {
+  } else if (is_static &&
+             (info.is_strict_static_unset() ||
+              (EnforceStrictStatics > 1 &&
+               info.is_strict() && info.is_static() && info.is_final()))) {
     // During <clinit>, closely track the state of strict statics.
     // 1. if we are reading an uninitialized strict static, throw
     // 2. if we are writing one, clear the "unset" flag

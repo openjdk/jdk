@@ -1402,12 +1402,6 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
       name_index, CHECK);
     const Symbol* const name = cp->symbol_at(name_index);
     verify_legal_field_name(name, CHECK);
-    if (name->ends_with("__STRICT")) {
-      // FIXME: remove this test code after tools support strict fields
-      u2 bits = access_flags.as_field_flags();
-      bits |= JVM_ACC_STRICT;
-      access_flags.set_flags(bits);
-    }
 
     const u2 signature_index = cfs->get_u2_fast();
     guarantee_property(valid_symbol_at(signature_index),
@@ -5805,7 +5799,12 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
       FieldInfo& fi = *_temp_field_info->adr_at(i);
       if (fi.access_flags().is_strict() && fi.access_flags().is_static()) {
         found_one = true;
-        _fields_status->adr_at(fi.index())->update_strict_static_unset(true);
+        if (EnforceStrictStatics != 0) {
+          _fields_status->adr_at(fi.index())->update_strict_static_unset(true);
+          if (EnforceStrictStatics == 2) {
+            _fields_status->adr_at(fi.index())->update_strict_static_unread(true);
+          }
+        }
       }
     }
     assert(found_one == _has_strict_static_fields,

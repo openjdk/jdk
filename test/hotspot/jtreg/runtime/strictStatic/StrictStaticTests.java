@@ -21,10 +21,22 @@
  * questions.
  */
 
-/* @test
+/* @test id=default
  * @bug 8888888
  * @summary test tracking of strict static fields
- * @run main strictStatic.StrictStaticTests
+ * @run main/othervm strictStatic.StrictStaticTests
+ *
+ * [@]test id=C1only
+ * [@]run main/othervm -XX:TieredStopAtLevel=2 -Xcomp -Xbatch strictStatic.StrictStaticTests
+ *
+ * [@]test id=C2only
+ * [@]run main/othervm -XX:-TieredCompilation -Xcomp -Xbatch strictStatic.StrictStaticTests
+ *
+ * @test id=EnforceStrictStatics-2
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:EnforceStrictStatics=2 -DXX_EnforceStrictStatics=2 strictStatic.StrictStaticTests
+ *
+ * @test id=EnforceStrictStatics-3
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:EnforceStrictStatics=3 -DXX_EnforceStrictStatics=3 strictStatic.StrictStaticTests
  */
 
 package strictStatic;
@@ -46,7 +58,8 @@ public class StrictStaticTests {
                                Class<?> staticType,
                                int writeCount,   // how many putstatics? (0=>error)
                                byte readFlag,    // read before (-1) or after (1)?
-                               int extraCount    // how many extra strict statics?
+                               int extraCount,   // how many extra strict statics?
+                               boolean finals    // make them all finals?
                                ) {
         ClassDesc cn = ClassDesc.of(THIS_PACKAGE+"."+className);
         ClassDesc CD_Integer = Integer.class.describeConstable().orElseThrow();
@@ -72,11 +85,13 @@ public class StrictStaticTests {
             SS_INIT = 3.14;
             SS_INIT_2 = 0.0;
         }
+        int mods = (ClassFile.ACC_STATIC | ClassFile.ACC_STRICT |
+                    (finals ? ClassFile.ACC_FINAL : 0));
         byte[] classBytes = ClassFile.of().build(cn, clb -> {
-                clb.withField(SS_NAME, SS_TYPE, ClassFile.ACC_STATIC|ClassFile.ACC_STRICT);
+                clb.withField(SS_NAME, SS_TYPE, mods);
                 for (int i = 0; i < extraCount; i++) {
-                    clb.withField(XS_NAME+i, XS_TYPE, ClassFile.ACC_STATIC|ClassFile.ACC_STRICT);
-                    clb.withField(PS_NAME+i, PS_TYPE, ClassFile.ACC_STATIC);
+                    clb.withField(XS_NAME+i, XS_TYPE, mods);
+                    clb.withField(PS_NAME+i, PS_TYPE, mods & ~ClassFile.ACC_STRICT);
                 }
                 clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ClassFile.ACC_STATIC, cob -> {
                         // always store into the extra strict static(s)
@@ -92,13 +107,20 @@ public class StrictStaticTests {
                         // perform any writes on the test field
                         ConstantDesc initializer = SS_INIT;
                         for (int i = 0; i < writeCount; i++) {
+                            if (i == 1 && readFlag > 0) {
+                                // do an extra read after the first write
+                                if (readFlag > 0) {
+                                    cob.getstatic(cn, SS_NAME, SS_TYPE);
+                                    if (pop2) cob.pop2(); else cob.pop();
+                                }
+                            }
                             if (i > 0) initializer = SS_INIT_2;
                             cob.loadConstant(initializer);
                             cob.putstatic(cn, SS_NAME, SS_TYPE);
                             // if we write zero times we must fail
                         }
-                        if (readFlag < 0) {
-                            // perform a late read, which must work
+                        if (readFlag > 0) {
+                            // do more extra reads
                             cob.getstatic(cn, SS_NAME, SS_TYPE);
                             if (prim) {
                                 if (pop2) cob.pop2(); else cob.pop();
@@ -148,18 +170,25 @@ public class StrictStaticTests {
             ex.getCause() instanceof IllegalStateException;
     }
     static void testPositives() {
+        testPositives(false);
+        testPositives(true);
+    }
+    static void testPositives(boolean finals) {
         for (var staticType : STATIC_TYPES) {
             for (int writeCount = 1; writeCount <= 3; writeCount++) {
                 for (byte readFlag = 0; readFlag <= 1; readFlag++) {
                     for (int extraCount = 0; extraCount <= 3; extraCount++) {
-                        var cn = String.format("Positive%sW%d%sE%d",
+                        var cn = String.format("Positive%s%sW%d%sE%d",
                                                staticType.getSimpleName(),
+                                               (finals ? "SSF" : ""),
                                                writeCount,
                                                readFlag > 0 ? "Rafter" : readFlag < 0 ? "Rbefore" : "",
                                                extraCount);
-                        var cls = buildClass(cn, staticType, writeCount, readFlag, extraCount);
+                        var cls = buildClass(cn, staticType, writeCount, readFlag, extraCount, finals);
                         try {
                             LOOKUP.ensureInitialized(cls);
+                            if (VERBOSE)
+                                System.out.printf("ok: %s: no throw\n", cn);
                         } catch (Throwable ex) {
                             reportThrow(false, ex, cn);
                         }
@@ -169,16 +198,21 @@ public class StrictStaticTests {
         }
     }
     static void testFailedWrites() {
+        testFailedWrites(false);
+        testFailedWrites(true);
+    }
+    static void testFailedWrites(boolean finals) {
         for (var staticType : STATIC_TYPES) {
             for (int writeCount = 0; writeCount <= 0; writeCount++) {
                 for (byte readFlag = 0; readFlag <= 0; readFlag++) {
                     for (int extraCount = 0; extraCount <= 3; extraCount++) {
-                        var cn = String.format("NoWrite%sW%d%sE%d",
+                        var cn = String.format("BadWrite%s%sW%d%sE%d",
                                                staticType.getSimpleName(),
+                                               (finals ? "SSF" : ""),
                                                writeCount,
                                                readFlag > 0 ? "Rafter" : readFlag < 0 ? "Rbefore" : "",
                                                extraCount);
-                        var cls = buildClass(cn, staticType, writeCount, readFlag, extraCount);
+                        var cls = buildClass(cn, staticType, writeCount, readFlag, extraCount, finals);
                         try {
                             LOOKUP.ensureInitialized(cls);
                             throw new AssertionError(cn);
@@ -191,16 +225,21 @@ public class StrictStaticTests {
         }
     }
     static void testFailedReads() {
+        testFailedReads(false);
+        testFailedReads(true);
+    }
+    static void testFailedReads(boolean finals) {
         for (var staticType : STATIC_TYPES) {
             for (int writeCount = 0; writeCount <= 1; writeCount++) {
                 for (byte readFlag = -1; readFlag <= -1; readFlag++) {
                     for (int extraCount = 0; extraCount <= 3; extraCount++) {
-                        var cn = String.format("BadRead%sW%d%sE%d",
+                        var cn = String.format("BadRead%s%sW%d%sE%d",
                                                staticType.getSimpleName(),
+                                               (finals ? "SSF" : ""),
                                                writeCount,
                                                readFlag > 0 ? "Rafter" : readFlag < 0 ? "Rbefore" : "",
                                                extraCount);
-                        var cls = buildClass(cn, staticType, writeCount, readFlag, extraCount);
+                        var cls = buildClass(cn, staticType, writeCount, readFlag, extraCount, finals);
                         try {
                             LOOKUP.ensureInitialized(cls);
                             throw new AssertionError(cn);
@@ -213,18 +252,28 @@ public class StrictStaticTests {
         }
     }
 
-    static boolean VERBOSE = false;
+    static boolean VERBOSE = true;
 
     private static void reportThrow(boolean ok, Throwable ex, String cn) {
         if (!ok)  throw new AssertionError(ex);
         if (VERBOSE) {
             if (ex instanceof ExceptionInInitializerError && ex.getCause() != null)
                 ex = ex.getCause();
-            System.out.printf("%s: %s: %s\n", ok ? "ok" : "FAIL", cn, ex);
+            String exs = ex.toString();
+            exs = exs.replaceFirst("^[^ ]*IllegalStateException: ", "ISE: ");
+            exs = exs.replaceFirst(" strictStatic[.][^ ]+/0x[^ ]+", "...");
+            System.out.printf("%s: %s: %s\n", ok ? "ok" : "FAIL", cn, exs);
         }
     }
 
+    static final int XX_EnforceStrictStatics;
+    static {
+        var p = System.getProperty("XX_EnforceStrictStatics");
+        XX_EnforceStrictStatics = (p == null) ? 1 : Integer.parseInt(p);
+    }
+
     public static void main(String... av) {
+        System.out.printf("-XX:EnforceStrictStatics=%d\n", XX_EnforceStrictStatics);
         testPositives();
         testFailedWrites();
         testFailedReads();
