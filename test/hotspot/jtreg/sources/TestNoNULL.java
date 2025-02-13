@@ -36,7 +36,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TestNoNULL {
@@ -90,11 +89,11 @@ public class TestNoNULL {
                 excludedTestFiles.add(rootDir.resolve(relativePath).normalize().toString()));
     }
 
-    private static void processFiles(Path directory, Set<String> excludedFiles, Set<String> excludeExtensions) throws IOException {
+    private static void processFiles(Path directory, Set<String> excludedFiles, Set<String> excludedExtensions) throws IOException {
         Files.walkFileTree(directory, new SimpleFileVisitor<>() {
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                if (isIncluded(file, excludedFiles, excludeExtensions)) {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                if (isIncluded(file, excludedFiles, excludedExtensions)) {
                     checkForNull(file);
                 }
                 return FileVisitResult.CONTINUE;
@@ -107,14 +106,14 @@ public class TestNoNULL {
         });
     }
 
-    private static boolean isIncluded(Path file, Set<String> excludedFiles, Set<String> excludeExtensions) {
+    private static boolean isIncluded(Path file, Set<String> excludedFiles, Set<String> excludedExtensions) {
         String filePath = file.normalize().toString();
 
         if (excludedFiles.contains(filePath)) {
             return false;
         }
 
-        for (String ext : excludeExtensions) {
+        for (String ext : excludedExtensions) {
             if (filePath.endsWith(ext)) {
                 return false;
             }
