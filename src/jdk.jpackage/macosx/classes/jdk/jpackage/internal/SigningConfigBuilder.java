@@ -114,10 +114,12 @@ final class SigningConfigBuilder {
             final var signingIdentifiers = signingIdentifierMap.get(certificateNameFilter);
             switch (signingIdentifiers.size()) {
                 case 0 -> {
-                    break;
+                    throw I18N.buildConfigException("error.explicit-sign-no-cert")
+                            .advice("error.explicit-sign-no-cert.advice").create();
                 }
                 case 1 -> {
-                    return Optional.of(new SigningIdentifierImpl(signingIdentifiers.get(0), Optional.ofNullable(signingIdentifierPrefix)));
+                    return Optional.of(new SigningIdentifierImpl(signingIdentifiers.get(0), 
+                            Optional.ofNullable(signingIdentifierPrefix)));
                 }
                 default -> {
                     // Multiple certificates matching the same criteria found

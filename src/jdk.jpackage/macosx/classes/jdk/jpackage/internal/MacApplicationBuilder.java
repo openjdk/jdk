@@ -92,6 +92,8 @@ final class MacApplicationBuilder {
             return createCopyForExternalInfoPlistFile().create();
         }
 
+        validateAppVersion(app);
+
         final var mixin = new MacApplicationMixin.Stub(validatedIcon(), validatedBundleName(),
                 validatedBundleIdentifier(), validatedCategory(), appStore, createSigningConfig());
 
@@ -110,6 +112,14 @@ final class MacApplicationBuilder {
             return false;
         }
         return true;
+    }
+
+    private static void validateAppVersion(Application app) throws ConfigException {
+        try {
+            CFBundleVersion.of(app.version());
+        } catch (IllegalArgumentException ex) {
+            throw I18N.buildConfigException(ex).advice("error.invalid-cfbundle-version.advice").create();
+        }
     }
 
     private MacApplicationBuilder createCopyForExternalInfoPlistFile() throws ConfigException {
