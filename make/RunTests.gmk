@@ -718,17 +718,30 @@ endef
 #
 SetupAot = $(NamedParamsMacroTemplate)
 define SetupAotBody
+  $1_AOT_JDK_DIR   := $$($1_TEST_SUPPORT_DIR)/aot
   $1_AOT_JDK_CONF  := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotconf
   $1_AOT_JDK_CACHE := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotcache
+
+  # We first execute the training run with make/test/SetupAot.java to touch
+  # a fair number of classes inside the JDK. Note that we don't specify a classpath,
+  # but the Java launcher will use an implicit class path of ".", so it can pick up the
+  # SetupAot class from the current directory.
+  #
+  # The SetupAot class (or any other classes that are loaded from "."
+  # will be excluded from the the AOT cache as "." is an unsupported
+  # location. As a result, the AOT cache will contain only classes from the JDK.
 
   $$($1_AOT_JDK_CACHE): $$(JDK_IMAGE_DIR)/release
 	$$(call MakeDir, $$($1_TEST_SUPPORT_DIR)/aot)
 
 	$(info AOT: Create cache configuration) \
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot, ( \
+	    $(CD) $$($1_AOT_JDK_DIR); \
+	    $(JDK_UNDER_TEST)/bin/javac -d . $(TOPDIR)/make/test/SetupAot.java; \
 	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
+	                -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CONF).log \
 	                -XX:AOTMode=record -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) \
-	                'jdk.internal.misc.CDS$$$$TestTrainingApp' \
+	                SetupAot \
 	))
 
 	$$(info AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
