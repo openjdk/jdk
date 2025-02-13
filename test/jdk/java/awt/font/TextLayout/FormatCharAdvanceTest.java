@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8208377
+ * @bug 8208377 6562489
  * @summary Confirm that format-category glyphs are not rendered or measured.
  */
 
@@ -174,6 +174,9 @@ public class FormatCharAdvanceTest {
         testChar('\u202D', image, g2d, font); // left-to-right override (LRO)
         testChar('\u202E', image, g2d, font); // right-to-left override (RLO)
         testChar('\u2060', image, g2d, font); // word joiner (WJ)
+        testChar('\u2061', image, g2d, font); // function application
+        testChar('\u2062', image, g2d, font); // invisible times
+        testChar('\u2063', image, g2d, font); // invisible separator
         testChar('\u2066', image, g2d, font); // left-to-right isolate (LRI)
         testChar('\u2067', image, g2d, font); // right-to-left isolate (RLI)
         testChar('\u2068', image, g2d, font); // first strong isolate (FSI)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package jdk.jpackage.test;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ import static jdk.jpackage.test.TestMethodSupplier.MethodQuery.fromQualifiedMeth
 final class TestBuilder implements AutoCloseable {
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         flushTestGroup();
     }
 
@@ -168,8 +169,8 @@ final class TestBuilder implements AutoCloseable {
     }
 
     private void createTestInstance(MethodCall testBody) {
-        final List<ThrowingConsumer> curBeforeActions;
-        final List<ThrowingConsumer> curAfterActions;
+        final List<ThrowingConsumer<Object>> curBeforeActions;
+        final List<ThrowingConsumer<Object>> curAfterActions;
 
         Method testMethod = testBody.getMethod();
         if (Stream.of(BeforeEach.class, AfterEach.class).anyMatch(
@@ -203,7 +204,7 @@ final class TestBuilder implements AutoCloseable {
         testGroup = null;
     }
 
-    private static Class probeClass(String name) {
+    private static Class<?> probeClass(String name) {
         try {
             return Class.forName(name);
         } catch (ClassNotFoundException ex) {
@@ -211,7 +212,7 @@ final class TestBuilder implements AutoCloseable {
         }
     }
 
-    private static Stream<Method> selectFrameMethods(Class type, Class annotationType) {
+    private static Stream<Method> selectFrameMethods(Class<?> type, Class<? extends Annotation> annotationType) {
         return Stream.of(type.getMethods())
                 .filter(m -> m.getParameterCount() == 0)
                 .filter(m -> !m.isAnnotationPresent(Test.class))
@@ -223,7 +224,7 @@ final class TestBuilder implements AutoCloseable {
         List<String> result = new ArrayList<>();
         String defaultClassName = null;
         for (String token : v.split(",")) {
-            Class testSet = probeClass(token);
+            Class<?> testSet = probeClass(token);
             if (testSet != null) {
                 if (testMethodSupplier.isTestClass(testSet)) {
                     toConsumer(testMethodSupplier::verifyTestClass).accept(testSet);
@@ -295,10 +296,10 @@ final class TestBuilder implements AutoCloseable {
         });
     }
 
-    // Wraps Method.invike() into ThrowingRunnable.run()
-    private ThrowingConsumer wrap(Method method) {
+    // Wraps Method.invoke() into ThrowingRunnable.run()
+    private ThrowingConsumer<Object> wrap(Method method) {
         return (test) -> {
-            Class methodClass = method.getDeclaringClass();
+            Class<?> methodClass = method.getDeclaringClass();
             String methodName = String.join(".", methodClass.getName(),
                     method.getName());
             TKit.log(String.format("[ CALL     ] %s()", methodName));
@@ -335,6 +336,7 @@ final class TestBuilder implements AutoCloseable {
             return msg;
         }
         private String badCmdLineArg;
+        private static final long serialVersionUID = 1L;
     }
 
     static void trace(String msg) {
@@ -347,8 +349,8 @@ final class TestBuilder implements AutoCloseable {
     private final Map<String, ThrowingConsumer<String>> argProcessors;
     private final Consumer<TestInstance> testConsumer;
     private List<MethodCall> testGroup;
-    private List<ThrowingConsumer> beforeActions;
-    private List<ThrowingConsumer> afterActions;
+    private List<ThrowingConsumer<Object>> beforeActions;
+    private List<ThrowingConsumer<Object>> afterActions;
     private Set<String> excludedTests;
     private Set<String> includedTests;
     private String spaceSubstitute;
