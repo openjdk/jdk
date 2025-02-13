@@ -467,7 +467,7 @@ public final class PackageTest extends RunnablePackageTest {
 
     private record PackageTypePipeline(PackageType type, int expectedJPackageExitCode,
             int expectedInstallExitCode, PackageHandlers packageHandlers, Handler handler,
-            JPackageCommand cmd, State state) implements ThrowingConsumer<Action> {
+            JPackageCommand cmd, State state) implements Consumer<Action> {
 
         PackageTypePipeline {
             Objects.requireNonNull(type);
@@ -477,72 +477,45 @@ public final class PackageTest extends RunnablePackageTest {
             Objects.requireNonNull(state);
         }
 
-        PackageTypePipeline(PackageType type, int expectedJPackageExitCode, int expectedInstallExitCode,
-                PackageHandlers packageHandlers, Handler handler, JPackageCommand cmd) {
-            this(type, expectedJPackageExitCode, expectedInstallExitCode, packageHandlers, handler, cmd, new State());
+        PackageTypePipeline(PackageType type, int expectedJPackageExitCode,
+                int expectedInstallExitCode, PackageHandlers packageHandlers,
+                Handler handler, JPackageCommand cmd) {
+            this(type, expectedJPackageExitCode, expectedInstallExitCode,
+                    packageHandlers, handler, cmd, new State());
         }
 
         @Override
-        public void accept(Action action) throws Throwable {
-            if (state.terminated) {
-                throw new IllegalStateException();
-            }
-
-            if (action == Action.FINALIZE) {
-                state.deleteUnpackDirs.forEach(TKit::deleteDirectoryRecursive);
-                state.deleteUnpackDirs.clear();
-                state.terminated = true;
-            }
-
-            boolean skip = false;
-
-            if (state.unhandledAction != null) {
-                switch (state.unhandledAction) {
-                    case CREATE:
-                        skip = true;
-                        break;
-                    case UNPACK:
-                    case INSTALL:
-                        skip = (action == Action.VERIFY_INSTALL);
-                        break;
-                    case UNINSTALL:
-                        skip = (action == Action.VERIFY_UNINSTALL);
-                        break;
-                    default: // NOP
+        public void accept(Action action) {
+            switch(analizeAction(action)) {
+                case SKIP_NO_PACKAGE_HANDLER -> {
+                    TKit.trace(String.format("No handler of [%s] action for %s command",
+                            action, cmd.getPrintableCommandLine()));
+                    return;
                 }
-            }
-
-            if (skip) {
-                TKit.trace(String.format("Skip [%s] action of %s command",
-                        action, cmd.getPrintableCommandLine()));
-                return;
+                case SKIP -> {
+                    TKit.trace(String.format("Skip [%s] action of %s command",
+                            action, cmd.getPrintableCommandLine()));
+                    return;
+                }
+                case PROCESS -> {
+                }
             }
 
             switch (action) {
                 case UNPACK: {
                     cmd.setUnpackedPackageLocation(null);
-                    if (packageHandlers.unpackHandler.isEmpty()) {
-                        state.unhandledAction = action;
-                    } else {
-                        state.unhandledAction = null;
-                        final var unpackRootDir = TKit.createTempDirectory(
-                                String.format("unpacked-%s", type.getName()));
-                        final Path unpackDir = packageHandlers.unpack(cmd, unpackRootDir);
-                        if (!unpackDir.startsWith(TKit.workDir())) {
-                            state.deleteUnpackDirs.add(unpackDir);
-                        }
-                        cmd.setUnpackedPackageLocation(unpackDir);
+                    final var unpackRootDir = TKit.createTempDirectory(
+                            String.format("unpacked-%s", type.getName()));
+                    final Path unpackDir = packageHandlers.unpack(cmd, unpackRootDir);
+                    if (!unpackDir.startsWith(TKit.workDir())) {
+                        state.deleteUnpackDirs.add(unpackDir);
                     }
+                    cmd.setUnpackedPackageLocation(unpackDir);
                     break;
                 }
 
                 case INSTALL: {
                     cmd.setUnpackedPackageLocation(null);
-                    if (expectedInstallExitCode == 0) {
-                        state.unhandledAction = null;
-                    } else {
-                        state.unhandledAction = action;
-                    }
                     final int installExitCode = packageHandlers.install(cmd);
                     TKit.assertEquals(expectedInstallExitCode, installExitCode,
                             String.format("Check installer exited with %d code", expectedInstallExitCode));
@@ -551,45 +524,106 @@ public final class PackageTest extends RunnablePackageTest {
 
                 case UNINSTALL: {
                     cmd.setUnpackedPackageLocation(null);
-                    if (state.unhandledAction == Action.INSTALL) {
-                        state.unhandledAction = action;
-                    } else {
-                        state.unhandledAction = null;
-                        packageHandlers.uninstall(cmd);
-                    }
+                    packageHandlers.uninstall(cmd);
                     break;
                 }
 
                 case CREATE:
                     cmd.setUnpackedPackageLocation(null);
-                    if (expectedJPackageExitCode == 0) {
-                        state.unhandledAction = null;
-                    } else {
-                        state.unhandledAction = action;
-                    }
                     handler.processAction(action, cmd, expectedJPackageExitCode);
-                    return;
+                    break;
 
                 case INITIALIZE:
                     handler.processAction(action, cmd, expectedJPackageExitCode);
+                    break;
+
+                case FINALIZE:
+                    state.deleteUnpackDirs.forEach(TKit::deleteDirectoryRecursive);
+                    state.deleteUnpackDirs.clear();
                     break;
 
                 default:
                     handler.processAction(action, cmd.createImmutableCopy(), expectedJPackageExitCode);
                     break;
             }
+        }
 
-            Optional.ofNullable(state.unhandledAction).ifPresent(v -> {
-                TKit.trace(String.format(
-                        "No handler of [%s] action for %s command", v,
-                        cmd.getPrintableCommandLine()));
-            });
+        private enum ActionAction {
+            PROCESS,
+            SKIP,
+            SKIP_NO_PACKAGE_HANDLER
+        }
+
+        private ActionAction analizeAction(Action action) {
+            Objects.requireNonNull(action);
+
+            if (jpackageFailed()) {
+                return ActionAction.SKIP;
+            }
+
+            switch (action) {
+                case CREATE -> {
+                    state.packageActions.add(action);
+                }
+                case INSTALL -> {
+                    state.packageActions.add(action);
+                    state.packageActions.remove(Action.UNPACK);
+                }
+                case UNINSTALL -> {
+                    state.packageActions.add(action);
+                    if (installFailed()) {
+                        return ActionAction.SKIP;
+                    }
+                }
+                case UNPACK -> {
+                    state.packageActions.add(action);
+                    state.packageActions.remove(Action.INSTALL);
+                    if (unpackNotSupported()) {
+                        return ActionAction.SKIP_NO_PACKAGE_HANDLER;
+                    }
+                }
+                case VERIFY_INSTALL -> {
+                    if (unpackNotSupported()) {
+                        return ActionAction.SKIP;
+                    }
+
+                    if (installFailed()) {
+                        return ActionAction.SKIP;
+                    }
+                }
+                case VERIFY_UNINSTALL -> {
+                    if (installFailed() && processed(Action.UNINSTALL)) {
+                        return ActionAction.SKIP;
+                    }
+                }
+                default -> {
+                    // NOP
+                }
+            }
+
+            return ActionAction.PROCESS;
+        }
+
+        private boolean processed(Action action) {
+            Objects.requireNonNull(action);
+            return state.packageActions.contains(action);
+        }
+
+        private boolean installFailed() {
+            return processed(Action.INSTALL) && expectedInstallExitCode != 0;
+        }
+
+        private boolean jpackageFailed() {
+            return processed(Action.CREATE) && expectedJPackageExitCode != 0;
+        }
+
+        private boolean unpackNotSupported() {
+            return processed(Action.UNPACK) && packageHandlers.unpackHandler().isEmpty();
         }
 
         private final static class State {
+            private final Set<Action> packageActions = new HashSet<>();
             private final List<Path> deleteUnpackDirs = new ArrayList<>();
-            private Action unhandledAction;
-            private boolean terminated;
         }
     }
 
@@ -600,8 +634,8 @@ public final class PackageTest extends RunnablePackageTest {
             cmd.setArgumentValue("--dest", BUNDLE_OUTPUT_DIR.toString());
         }
         type.applyTo(cmd);
-        return toConsumer(new PackageTypePipeline(type, expectedJPackageExitCode,
-                expectedInstallExitCode, getPackageHandlers(type), handler.copy(), cmd));
+        return new PackageTypePipeline(type, expectedJPackageExitCode,
+                expectedInstallExitCode, getPackageHandlers(type), handler.copy(), cmd);
     }
 
     private record Handler(List<Consumer<JPackageCommand>> initializers,
