@@ -113,7 +113,7 @@ source %{
     }
     switch (opcode) {
       case Op_SelectFromTwoVector:
-        // Currently, there is no selectFrom(av, bv, mask) in vector API.
+        // There is no masked version of selectFrom two vector, i.e. selectFrom(av, bv, mask) in vector API.
         return false;
       default:
         break;
