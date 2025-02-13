@@ -620,7 +620,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       __ z_cg(klass, Address(temp1, temp0));
 
       // result is already holding 0, denoting NotEqual case
-      __ z_lochi(result, 1, Assembler::bcondEqual);
+      __ load_on_condition_imm_32(result, 1, Assembler::bcondEqual);
       __ z_br(Z_R14);
 
       __ bind(is_secondary);
@@ -629,7 +629,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
 
       // This is necessary because I am never in my own secondary_super list.
       __ z_cgr(obj, klass);
-      __ z_lochi(result, 1, Assembler::bcondEqual);
+      __ load_on_condition_imm_32(result, 1, Assembler::bcondEqual);
       __ z_bcr(Assembler::bcondEqual, Z_R14);
 
       const int frame_size = 2*BytesPerWord + frame::z_abi_160_size;

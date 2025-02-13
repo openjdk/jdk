@@ -1109,6 +1109,8 @@ class MacroAssembler: public Assembler {
   void pop_count_int_with_ext3(Register dst, Register src);
   void pop_count_long_with_ext3(Register dst, Register src);
 
+  void load_on_condition_imm_32(Register dst, int64_t i2, branch_condition cc);
+  void load_on_condition_imm_64(Register dst, int64_t i2, branch_condition cc);
 };
 
 #ifdef ASSERT

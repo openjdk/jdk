@@ -3694,7 +3694,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
 
   const Register r_linear_result = r_array_index; // reuse
   z_chi(r_array_length, 0);
-  z_lochi(r_linear_result, 1, bcondNotHigh); // load failure if array_length <= 0
+  load_on_condition_imm_32(r_linear_result, 1, bcondNotHigh); // load failure if array_length <= 0
   z_brc(bcondNotHigh, L_failure);
   repne_scan(r_array_base, r_super_klass, r_array_length, r_linear_result);
   bind(L_failure);
@@ -6957,4 +6957,30 @@ void MacroAssembler::pop_count_int_with_ext3(Register r_dst, Register r_src) {
   z_popcnt(r_dst, r_dst, 8);
 
   BLOCK_COMMENT("} pop_count_int_with_ext3");
+}
+
+// LOAD HALFWORD IMMEDIATE ON CONDITION (32 <- 16)
+void MacroAssembler::load_on_condition_imm_32(Register dst, int64_t i2, branch_condition cc) {
+  if (VM_Version::has_LoadStoreConditional2()) { // z_lochi works on z13 or above
+    assert(Assembler::is_simm16(i2), "sanity");
+    z_lochi(dst, i2, cc);
+  } else {
+    NearLabel done;
+    z_brc(Assembler::inverse_condition(cc), done);
+    z_lhi(dst, i2);
+    bind(done);
+  }
+}
+
+// LOAD HALFWORD IMMEDIATE ON CONDITION (64 <- 16)
+void MacroAssembler::load_on_condition_imm_64(Register dst, int64_t i2, branch_condition cc) {
+  if (VM_Version::has_LoadStoreConditional2()) { // z_locghi works on z13 or above
+    assert(Assembler::is_simm16(i2), "sanity");
+    z_locghi(dst, i2, cc);
+  } else {
+    NearLabel done;
+    z_brc(Assembler::inverse_condition(cc), done);
+    z_lghi(dst, i2);
+    bind(done);
+  }
 }
