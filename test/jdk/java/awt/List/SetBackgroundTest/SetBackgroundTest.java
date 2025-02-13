@@ -25,7 +25,7 @@
   @test
   @bug 6246467
   @key headful
-  @requires os.family == "linux"
+  @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
   @summary List does not honor user specified background, foreground colors on XToolkit
   @author Dmitry Cherepanov  area=awt.list
   @library /lib/client

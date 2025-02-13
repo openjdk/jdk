@@ -32,7 +32,7 @@ ifeq ($(INCLUDE), true)
 
 ifeq ($(call check-jvm-feature, dtrace), true)
 
-  ifeq ($(call isTargetOs, macosx), true)
+  ifeq ($(call isTargetOs, macosx bsd), true)
     DTRACE_CPP_FLAGS := -D_LP64 -x c
   else ifeq ($(call isTargetOs, linux), true)
     DTRACE_CPP_FLAGS := -x c

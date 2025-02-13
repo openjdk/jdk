@@ -32,7 +32,7 @@ import javax.swing.JTextField;
  * @test
  * @bug 4490692
  * @summary [Linux] Test for KEY_PRESS event for accented characters.
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4490692

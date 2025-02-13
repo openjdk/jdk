@@ -63,6 +63,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     LIBS_macosx := \
         -framework CoreFoundation \
         -framework CoreServices, \
+    LIBS_bsd := -pthread, \
 ))
 
 TARGETS += $(BUILD_LIBNET)
@@ -74,6 +75,7 @@ TARGETS += $(BUILD_LIBNET)
 $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     NAME := nio, \
     OPTIMIZATION := HIGH, \
+    CFLAGS_bsd := -D_WITH_GETLINE, \
     EXTRA_HEADER_DIRS := \
         libnio/ch \
         libnio/fs \
@@ -87,6 +89,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
         -framework CoreFoundation \
         -framework CoreServices, \
     LIBS_windows := advapi32.lib mswsock.lib ws2_32.lib, \
+    LIBS_bsd := -pthread, \
 ))
 
 TARGETS += $(BUILD_LIBNIO)
@@ -159,9 +162,11 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSYSLOOKUP, \
     NAME := syslookup, \
     LD_SET_ORIGIN := false, \
     LDFLAGS_linux := -Wl$(COMMA)--no-as-needed, \
+    LDFLAGS_bsd := -Wl$(COMMA)--no-as-needed, \
     LDFLAGS_aix := -brtl -bexpfull, \
     LIBS_linux := $(LIBDL) $(LIBM), \
     LIBS_aix := -ldecNumber $(LIBM), \
+    LIBS_bsd := $(LIBDL) $(LIBM), \
 ))
 
 TARGETS += $(BUILD_LIBSYSLOOKUP)

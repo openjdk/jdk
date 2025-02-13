@@ -23,7 +23,7 @@
 /*
   @test
   @bug 4426750
-  @requires (os.family == "linux")
+  @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
   @key headful
   @summary tests that middle mouse button click pastes primary selection
 */

@@ -23,7 +23,7 @@
  * questions.
  */
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(_BSDONLY_SOURCE)
 #include <string.h>
 #endif /* __linux__ */
 #include <stdio.h>

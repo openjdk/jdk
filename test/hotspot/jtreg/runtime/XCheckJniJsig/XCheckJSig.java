@@ -28,7 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires os.family == "linux" | os.family == "mac"
+ * @requires os.family == "linux" | os.family == "mac" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd"
  * @run driver XCheckJSig
  */
 

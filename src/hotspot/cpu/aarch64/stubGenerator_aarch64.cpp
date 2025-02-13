@@ -7310,7 +7310,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
+#if (defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)) || defined(_BSDONLY_SOURCE)
 
   // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
   //
@@ -7506,7 +7506,7 @@ class StubGenerator: public StubCodeGenerator {
 
     ICache::invalidate_range(first_entry, __ pc() - first_entry);
   }
-#endif // LINUX
+#endif // LINUX || _BSDONLY_SOURCE
 
   address generate_cont_thaw(Continuation::thaw_kind kind) {
     bool return_barrier = Continuation::is_thaw_return_barrier(kind);
@@ -9053,4 +9053,4 @@ DEFAULT_ATOMIC_OP(cmpxchg, 8, _seq_cst)
 
 #undef DEFAULT_ATOMIC_OP
 
-#endif // LINUX
+#endif // LINUX || _BSDONLY_SOURCE

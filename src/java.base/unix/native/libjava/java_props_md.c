@@ -106,7 +106,7 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
     lc = setlocale(cat, NULL);
 #endif
 
-#ifndef __linux__
+#if !defined(__linux__) && !defined(_BSDONLY_SOURCE)
     if (lc == NULL) {
         return 0;
     }

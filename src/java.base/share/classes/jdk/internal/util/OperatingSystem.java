@@ -81,6 +81,10 @@ public enum OperatingSystem {
      * The AIX Operating system.
      */
     AIX,
+    /**
+     * The BSD Operating system.
+     */
+    BSD,
     ;
 
     // The current OperatingSystem
@@ -116,6 +120,14 @@ public enum OperatingSystem {
     @ForceInline
     public static boolean isAix() {
         return PlatformProps.TARGET_OS_IS_AIX;
+    }
+
+    /**
+     * {@return {@code true} if built for a BSD based operating system}
+     */
+    @ForceInline
+    public static boolean isBsd() {
+        return PlatformProps.TARGET_OS_IS_BSD;
     }
 
     /**

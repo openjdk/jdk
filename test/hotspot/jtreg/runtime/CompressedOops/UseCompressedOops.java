@@ -87,11 +87,11 @@ public class UseCompressedOops {
                 .shouldContain("Compressed Oops mode")
                 .shouldHaveExitValue(0);
 
-            // Skip the following seven test cases if we're on OSX or Windows.
+            // Skip the following seven test cases if we're on OSX, BSD or Windows.
             //
-            // OSX doesn't seem to care about HeapBaseMinAddress.  Windows memory
-            // locations are affected by ASLR.
-            if (!Platform.isOSX() && !Platform.isWindows()) {
+			// OSX and BSD doesn't seem to care about HeapBaseMinAddress.
+			// Windows memory locations are affected by ASLR.
+            if (!Platform.isOSX() && !Platform.isBSD() && !Platform.isWindows()) {
 
                 // Larger than 4gb heap should result in zero based with shift 3
                 testCompressedOops(args, "-XX:+UseCompressedOops", "-Xmx5g")

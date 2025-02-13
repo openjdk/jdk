@@ -103,6 +103,14 @@ case "$OS" in
       TMP="/tmp"
       ;;
 
+   *BSD )
+      VAR="A different value for $OS"
+      DEFAULT_JDK=/
+      FILESEP="/"
+      PATHSEP=":"
+      TMP="/tmp"
+      ;;
+
    # catch all other OSs
    * )
       echo "Unrecognized system!  $OS"

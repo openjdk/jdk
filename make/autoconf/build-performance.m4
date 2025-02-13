@@ -36,6 +36,9 @@ AC_DEFUN([BPERF_CHECK_CORES],
   elif test -x /usr/sbin/sysctl; then
     # Looks like a MacOSX system
     NUM_CORES=`/usr/sbin/sysctl -n hw.ncpu`
+  elif test -x /sbin/sysctl; then
+    # Looks like a BSD system
+    NUM_CORES=`/sbin/sysctl -n hw.ncpu`
   elif test "x$OPENJDK_BUILD_OS" = xaix ; then
     NUM_CORES=`lparstat -m 2> /dev/null | $GREP -o "lcpu=[[0-9]]*" | $CUT -d "=" -f 2`
   elif test -n "$NUMBER_OF_PROCESSORS"; then
@@ -68,6 +71,18 @@ AC_DEFUN([BPERF_CHECK_MEMORY_SIZE],
     # Looks like an AIX system
     MEMORY_SIZE=`/usr/sbin/prtconf 2> /dev/null | grep "^Memory [[Ss]]ize" | awk '{ print [$]3 }'`
     FOUND_MEM=yes
+  elif test -x /sbin/sysctl; then
+    # Looks like a BSD system
+    MEMORY_SIZE=`/sbin/sysctl -n hw.physmem`
+    MEMORY_SIZE=`expr $MEMORY_SIZE / 1024 / 1024`
+    FOUND_MEM=yes
+    if test "x$OPENJDK_TARGET_OS_ENV" = xbsd.openbsd; then
+      RLIMIT_DATA=`ulimit -d`
+      RLIMIT_DATA=`expr $RLIMIT_DATA / 1024`
+      if test "$MEMORY_SIZE" -gt "$RLIMIT_DATA"; then
+        MEMORY_SIZE=$RLIMIT_DATA
+      fi
+    fi
   elif test -x /usr/sbin/sysctl; then
     # Looks like a MacOSX system
     MEMORY_SIZE=`/usr/sbin/sysctl -n hw.memsize`

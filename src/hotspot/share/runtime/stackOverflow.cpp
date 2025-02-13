@@ -69,7 +69,11 @@ void StackOverflow::initialize_stack_zone_sizes() {
 bool StackOverflow::stack_guards_enabled() const {
 #ifdef ASSERT
   if (os::uses_stack_guard_pages() &&
+#ifdef __OpenBSD__
+      !os::is_primordial_thread()) {
+#else
       !(DisablePrimordialThreadGuardPages && os::is_primordial_thread())) {
+#endif
     assert(_stack_guard_state != stack_guard_unused, "guard pages must be in use");
   }
 #endif
@@ -79,7 +83,11 @@ bool StackOverflow::stack_guards_enabled() const {
 void StackOverflow::create_stack_guard_pages() {
   if (!os::uses_stack_guard_pages() ||
       _stack_guard_state != stack_guard_unused ||
+#ifdef __OpenBSD__
+      os::is_primordial_thread()) {
+#else
       (DisablePrimordialThreadGuardPages && os::is_primordial_thread())) {
+#endif
       log_info(os, thread)("Stack guard page creation for thread %zu disabled", os::current_thread_id());
     return;
   }

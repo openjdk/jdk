@@ -60,7 +60,7 @@ pass()
 # The beginning of the script proper
 OS=`uname -s`
 case "$OS" in
-   AIX | CYGWIN* | Darwin | Linux )
+   AIX | CYGWIN* | Darwin | Linux | *BSD )
       FILESEP="/"
       ;;
 

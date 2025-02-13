@@ -209,6 +209,14 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_OS],
     *bsd*)
       VAR_OS=bsd
       VAR_OS_TYPE=unix
+      case "$1" in
+        *freebsd*)
+          VAR_OS_ENV=bsd.freebsd ;;
+        *openbsd*)
+          VAR_OS_ENV=bsd.openbsd ;;
+        *netbsd*)
+          VAR_OS_ENV=bsd.netbsd ;;
+      esac
       ;;
     *cygwin*)
       VAR_OS=windows
@@ -378,6 +386,11 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   AC_MSG_CHECKING([openjdk-target os-cpu])
   AC_MSG_RESULT([$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU])
 
+  if test "x$OPENJDK_TARGET_OS_ENV" != "x$OPENJDK_TARGET_OS"; then
+    AC_MSG_CHECKING([openjdk-target os-env])
+    AC_MSG_RESULT([$OPENJDK_TARGET_OS_ENV])
+  fi
+
   if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
     AC_MSG_CHECKING([openjdk-target C library])
     AC_MSG_RESULT([$OPENJDK_TARGET_LIBC])
@@ -474,8 +487,8 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
 
   # Setup OPENJDK_$1_CPU_OSARCH, which is used to set the os.arch Java system property
   OPENJDK_$1_CPU_OSARCH="$OPENJDK_$1_CPU"
-  if test "x$OPENJDK_$1_OS" = xlinux && test "x$OPENJDK_$1_CPU" = xx86; then
-    # On linux only, we replace x86 with i386.
+  if test "x$OPENJDK_$1_OS" = xbsd -o "x$OPENJDK_$1_OS" = xlinux && test "x$OPENJDK_$1_CPU" = xx86; then
+    # On linux and BSD only, we replace x86 with i386.
     OPENJDK_$1_CPU_OSARCH="i386"
   elif test "x$OPENJDK_$1_OS" != xmacosx && test "x$OPENJDK_$1_CPU" = xx86_64; then
     # On all platforms except macosx, we replace x86_64 with amd64.
@@ -597,6 +610,8 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
     OPENJDK_$1_OS_INCLUDE_SUBDIR="win32"
   elif test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
     OPENJDK_$1_OS_INCLUDE_SUBDIR="darwin"
+  elif test "x$OPENJDK_TARGET_OS" = "xbsd"; then
+    OPENJDK_$1_OS_INCLUDE_SUBDIR=`echo ${OPENJDK_$1_OS_ENV} | cut -d'.' -f2`
   fi
   AC_SUBST(OPENJDK_$1_OS_INCLUDE_SUBDIR)
 ])

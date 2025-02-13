@@ -742,7 +742,7 @@ public class AsyncCloseAndInterrupt {
 
         test(connectedSocketChannelFactory);
 
-        if (TestUtil.onWindows()) {
+        if (TestUtil.onWindows() || TestUtil.onBSD()) {
             log.println("WARNING Cannot reliably test connect/finishConnect"
                 + " operations on this platform");
         } else {

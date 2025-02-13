@@ -44,6 +44,8 @@ public final class FontUtilities {
     public static boolean isMacOSX;
     public static boolean isMacOSX14;
 
+    public static boolean isBSD;
+
     public static boolean useJDKScaler;
 
     public static boolean isWindows;
@@ -61,7 +63,7 @@ public final class FontUtilities {
     private static void initStatic() {
 
         isLinux = OSInfo.getOSType() == OSInfo.OSType.LINUX;
-
+        isBSD = OSInfo.getOSType() == OSInfo.OSType.BSD;
         isMacOSX = OSInfo.getOSType() == OSInfo.OSType.MACOSX;
         if (isMacOSX) {
             // os.version has values like 10.13.6, 10.14.6

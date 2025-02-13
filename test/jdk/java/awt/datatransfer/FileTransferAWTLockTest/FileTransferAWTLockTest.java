@@ -24,7 +24,7 @@
  /*
   @test
   @bug 4916420
-  @requires os.family == "linux"
+  @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
   @summary verifies that AWT_LOCK is properly taken during file transfer
   @key headful
 */
@@ -43,7 +43,8 @@ import java.util.ArrayList;
 public class FileTransferAWTLockTest {
 
     public static void main(String[] args) {
-        if (!(System.getProperty("os.name").startsWith("Linux"))) {
+        if (!(System.getProperty("os.name").startsWith("Linux"))
+            && !(System.getProperty("os.name").endsWith("BSD"))) {
             return;
         }
         FileTransferAWTLockTest parent = new FileTransferAWTLockTest();

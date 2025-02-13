@@ -31,7 +31,7 @@ import javax.swing.JComponent;
  * @test
  * @bug 7146572 8024122
  * @summary Check if 'enableInputMethods' works properly for TextArea and TextField on Linux platform
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual InputMethodsTest

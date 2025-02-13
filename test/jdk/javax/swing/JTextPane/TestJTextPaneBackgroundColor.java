@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @key headful
  * @bug 8218479
  * @summary Tests JTextPane background color

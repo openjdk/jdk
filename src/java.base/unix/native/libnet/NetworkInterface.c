@@ -37,11 +37,24 @@
 #include <strings.h>
 #endif
 
-#if defined(_ALLBSD_SOURCE)
+#if defined(__APPLE__)
 #include <net/ethernet.h>
 #include <net/if_dl.h>
 #include <ifaddrs.h>
 #endif
+
+#if defined(_BSDONLY_SOURCE)
+#if defined(__FreeBSD__)
+#include <net/ethernet.h>
+#include <net/if_var.h>
+#elif defined(__OpenBSD__)
+#include <netinet/if_ether.h>
+#elif defined(__NetBSD__)
+#include <net/if_ether.h>
+#endif /* __FreeBSD __ */
+#include <net/if_dl.h>
+#include <ifaddrs.h>
+#endif /* _BSDONLY_SOURCE */
 
 #include "net_util.h"
 

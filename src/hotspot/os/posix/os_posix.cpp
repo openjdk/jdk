@@ -81,7 +81,9 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
+#ifndef __OpenBSD__
 #include <utmpx.h>
+#endif
 
 #ifdef __APPLE__
   #include <crt_externs.h>
@@ -286,7 +288,11 @@ extern "C" void breakpoint() {
 
 // Return true if user is running as root.
 bool os::have_special_privileges() {
+#ifdef _BSDONLY_SOURCE
+  static bool privileges = issetugid();
+#else
   static bool privileges = (getuid() != geteuid()) || (getgid() != getegid());
+#endif
   return privileges;
 }
 
@@ -374,7 +380,7 @@ bool os::dir_is_empty(const char* path) {
 
 static char* reserve_mmapped_memory(size_t bytes, char* requested_addr, MemTag mem_tag) {
   char * addr;
-  int flags = MAP_PRIVATE NOT_AIX( | MAP_NORESERVE ) | MAP_ANONYMOUS;
+  int flags = MAP_PRIVATE NOT_BSD( NOT_AIX( | MAP_NORESERVE ) ) | MAP_ANONYMOUS;
   if (requested_addr != nullptr) {
     assert((uintptr_t)requested_addr % os::vm_page_size() == 0, "Requested address should be aligned to OS page size");
     flags |= MAP_FIXED;
@@ -408,6 +414,15 @@ static int util_posix_fallocate(int fd, off_t offset, off_t len) {
     return ftruncate(fd, len);
   }
   return -1;
+#elif defined(__OpenBSD__)
+  struct stat s;
+  if (fstat(fd, &s) == -1)
+    return -1;
+
+  if (s.st_size < offset+len) {
+    return ftruncate(fd, offset+len);
+  }
+  return 0;
 #else
   return posix_fallocate(fd, offset, len);
 #endif
@@ -522,7 +537,11 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
 }
 
 int os::get_fileno(FILE* fp) {
+#ifdef __OpenBSD__
+  return fileno(fp);
+#else
   return NOT_AIX(::)fileno(fp);
+#endif
 }
 
 struct tm* os::gmtime_pd(const time_t* clock, struct tm*  res) {
@@ -541,6 +560,7 @@ void os::Posix::print_load_average(outputStream* st) {
   st->cr();
 }
 
+#ifndef __OpenBSD__
 // boot/uptime information;
 // unfortunately it does not work on macOS and Linux because the utx chain has no entry
 // for reboot at least on my test machines
@@ -560,6 +580,7 @@ void os::Posix::print_uptime_info(outputStream* st) {
     os::print_dhm(st, "OS uptime:", currsec-bootsec);
   }
 }
+#endif
 
 static void print_rlimit(outputStream* st, const char* msg,
                          int resource, bool output_k = false) {
@@ -601,21 +622,23 @@ void os::Posix::print_rlimit_info(outputStream* st) {
 #endif
 
   print_rlimit(st, ", NOFILE", RLIMIT_NOFILE);
+#ifdef RLIMIT_AS
   print_rlimit(st, ", AS", RLIMIT_AS, true);
+#endif
   print_rlimit(st, ", CPU", RLIMIT_CPU);
   print_rlimit(st, ", DATA", RLIMIT_DATA, true);
 
   // maximum size of files that the process may create
   print_rlimit(st, ", FSIZE", RLIMIT_FSIZE, true);
 
-#if defined(LINUX) || defined(__APPLE__)
+#if defined(LINUX) || defined(__APPLE__) || defined(_ALLBSD_SOURCE)
   // maximum number of bytes of memory that may be locked into RAM
   // (rounded down to the nearest  multiple of system pagesize)
   print_rlimit(st, ", MEMLOCK", RLIMIT_MEMLOCK, true);
 #endif
 
   // MacOS; The maximum size (in bytes) to which a process's resident set size may grow.
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(_ALLBSD_SOURCE)
   print_rlimit(st, ", RSS", RLIMIT_RSS, true);
 #endif
 
@@ -717,7 +740,7 @@ static bool is_allocatable(size_t s) {
   // Use raw anonymous mmap here; no need to go through any
   // of our reservation layers. We will unmap right away.
   void* p = ::mmap(nullptr, s, PROT_NONE,
-                   MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS, -1, 0);
+                   MAP_PRIVATE NOT_BSD( | MAP_NORESERVE ) | MAP_ANONYMOUS, -1, 0);
   if (p == MAP_FAILED) {
     return false;
   } else {
@@ -730,7 +753,11 @@ static bool is_allocatable(size_t s) {
 
 bool os::has_allocatable_memory_limit(size_t* limit) {
   struct rlimit rlim;
+#ifndef RLIMIT_AS
+  int getrlimit_res = getrlimit(RLIMIT_DATA, &rlim);
+#else
   int getrlimit_res = getrlimit(RLIMIT_AS, &rlim);
+#endif
   // if there was an error when calling getrlimit, assume that there is no limitation
   // on virtual memory.
   bool result;
@@ -1287,6 +1314,7 @@ void os::Posix::init(void) {
 
   // Check for pthread_condattr_setclock support.
 
+#if !defined(__NetBSD__)
   // libpthread is already loaded.
   int (*condattr_setclock_func)(pthread_condattr_t*, clockid_t) =
     (int (*)(pthread_condattr_t*, clockid_t))dlsym(RTLD_DEFAULT,
@@ -1294,6 +1322,7 @@ void os::Posix::init(void) {
   if (condattr_setclock_func != nullptr) {
     _pthread_condattr_setclock = condattr_setclock_func;
   }
+#endif
 
   // Now do general initialization.
 

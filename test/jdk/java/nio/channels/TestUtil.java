@@ -80,4 +80,8 @@ public class TestUtil {
     static boolean onWindows() {
         return osName.startsWith("Windows");
     }
+
+    static boolean onBSD() {
+        return osName.endsWith("BSD");
+    }
 }

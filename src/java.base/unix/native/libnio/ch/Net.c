@@ -62,12 +62,36 @@
 #endif
 
 /**
- * IPV6_ADD_MEMBERSHIP/IPV6_DROP_MEMBERSHIP may not be defined on OSX and AIX
+ * IPV6_ADD_MEMBERSHIP/IPV6_DROP_MEMBERSHIP may not be defined on OSX, BSD and AIX
  */
-#if defined(__APPLE__) || defined(_AIX)
+#if defined(_ALLBSD_SOURCE) || defined(_AIX)
   #ifndef IPV6_ADD_MEMBERSHIP
     #define IPV6_ADD_MEMBERSHIP     IPV6_JOIN_GROUP
     #define IPV6_DROP_MEMBERSHIP    IPV6_LEAVE_GROUP
+  #endif
+#endif
+
+#if defined(__OpenBSD__) || defined(__NetBSD__)
+  #ifndef IP_ADD_SOURCE_MEMBERSHIP
+    #define IP_ADD_SOURCE_MEMBERSHIP        70   /* join a source-specific group */
+    #define IP_DROP_SOURCE_MEMBERSHIP       71   /* drop a single source */
+
+    struct ip_mreq_source {
+        struct in_addr  imr_multiaddr;  /* IP multicast address of group */
+        struct in_addr  imr_interface;  /* local IP address of interface */
+        struct in_addr  imr_sourceaddr; /* IP address of source */
+    };
+  #endif
+
+  #ifndef MCAST_JOIN_SOURCE_GROUP
+    #define MCAST_JOIN_SOURCE_GROUP         82   /* join a source-specific group */
+    #define MCAST_LEAVE_SOURCE_GROUP        83   /* leave a single source */
+
+    struct group_source_req {
+        uint32_t                gsr_interface;  /* interface index */
+        struct sockaddr_storage gsr_group;      /* group address */
+        struct sockaddr_storage gsr_source;     /* source address */
+    };
   #endif
 #endif
 
@@ -261,6 +285,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
         return handleSocketError(env, errno);
     }
 
+#ifndef _BSDONLY_SOURCE
     /*
      * If IPv4 is available, disable IPV6_V6ONLY to ensure dual-socket support.
      */
@@ -275,6 +300,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
             return -1;
         }
     }
+#endif
 
     if (reuse) {
         int arg = 1;
@@ -684,7 +710,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_blockOrUnblock4(JNIEnv *env, jobject this, jboolean block, jobject fdo,
                                     jint group, jint interf, jint source)
 {
-#ifdef __APPLE__
+#if defined(_ALLBSD_SOURCE)
     /* no IPv4 exclude-mode filtering for now */
     return IOS_UNAVAILABLE;
 #else
@@ -761,7 +787,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, jobject fdo,
                                     jbyteArray group, jint index, jbyteArray source)
 {
-#ifdef __APPLE__
+#if defined(_ALLBSD_SOURCE)
     /* no IPv6 exclude-mode filtering for now */
     return IOS_UNAVAILABLE;
 #else

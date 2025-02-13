@@ -41,6 +41,7 @@ public class OSInfo {
         LINUX,
         MACOSX,
         AIX,
+        BSD,
         UNKNOWN
     }
 
@@ -97,6 +98,7 @@ public class OSInfo {
             case LINUX -> LINUX;
             case MACOS -> MACOSX;
             case AIX -> AIX;
+            case BSD -> BSD;
             default -> UNKNOWN;
         };
     }

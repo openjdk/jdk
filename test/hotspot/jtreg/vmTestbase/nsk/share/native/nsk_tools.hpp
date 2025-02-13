@@ -31,11 +31,11 @@
 
 /*************************************************************/
 
-#if defined(_LP64) && defined(__APPLE__)
+#if defined(_LP64) && (defined(__APPLE__) || defined(__OpenBSD__))
 #define JLONG_FORMAT "%ld"
-#else  // _LP64 && __APPLE__
+#else  // _LP64 && (__APPLE__ || __OpenBSD__)
 #define JLONG_FORMAT "%" PRId64
-#endif // _LP64 && __APPLE__
+#endif // _LP64 && (__APPLE__ || __OpenBSD__)
 
 
 /*************************************************************/

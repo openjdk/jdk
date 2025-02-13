@@ -43,6 +43,14 @@ LAUNCHER_CFLAGS += -I$(TOPDIR)/src/java.base/share/native/launcher \
 MACOSX_PLIST_DIR := $(TOPDIR)/src/java.base/macosx/native/launcher
 JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 
+ifeq ($(call isTargetOs, bsd), true)
+  ifeq ($(OPENJDK_TARGET_OS_ENV), bsd.openbsd)
+    BSD_JLI_LIB := -ljli_static
+  else
+    BSD_JLI_LIB := -ljli
+  endif
+endif
+
 ################################################################################
 # Build standard launcher.
 
@@ -157,6 +165,7 @@ define SetupBuildLauncherBody
       DISABLED_WARNINGS_clang := unused-function, \
       LDFLAGS := $$($1_LDFLAGS), \
       LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
+      LDFLAGS_bsd := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
       LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
       LDFLAGS_FILTER_OUT := $$($1_LDFLAGS_FILTER_OUT), \
       JDK_LIBS := $$($1_JDK_LIBS), \

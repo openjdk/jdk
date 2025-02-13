@@ -25,7 +25,7 @@
   @test
   @bug 4859006
   @summary tests that MIME formats are mapped to flavors properly on X11
-  @requires (os.family == "linux")
+  @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
   @key headful
   @run main MimeFormatsTest
 */
@@ -212,7 +212,8 @@ public class MimeFormatsTest implements ClipboardOwner {
     }
 
     public static void main(String[] args) {
-        if (!System.getProperty("os.name").startsWith("Linux")) {
+        if (!System.getProperty("os.name").startsWith("Linux")
+            && !System.getProperty("os.name").endsWith("BSD")) {
             return;
         }
 

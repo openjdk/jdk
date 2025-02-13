@@ -32,7 +32,7 @@ import jtreg.SkippedException;
  * @test
  * @bug 4974135
  * @summary FileDialog should open current directory by default.
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @library /java/awt/regtesthelpers
  * @library /test/lib
  * @build PassFailJFrame

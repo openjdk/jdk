@@ -48,6 +48,10 @@ public final class PortConfig {
                 defaultLower = 32768;
                 defaultUpper = 61000;
                 break;
+            case BSD:
+                defaultLower = 49152;
+                defaultUpper = 65535;
+                break;
             case MACOS:
                 defaultLower = 49152;
                 defaultUpper = 65535;

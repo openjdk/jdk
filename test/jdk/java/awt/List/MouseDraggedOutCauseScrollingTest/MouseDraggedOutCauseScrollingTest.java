@@ -25,7 +25,7 @@
   @test
   @bug 6243382 8006070
   @summary Dragging of mouse outside of a List and Choice area don't work properly on XAWT
-  @requires (os.family == "linux")
+  @requires (os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
   @library /java/awt/regtesthelpers
   @run main/manual MouseDraggedOutCauseScrollingTest
 */

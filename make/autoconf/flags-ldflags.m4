@@ -46,11 +46,15 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 [
   # Setup basic LDFLAGS
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    # Add -z,defs, to forbid undefined symbols in object files.
-    # add -z,relro (mark relocations read only) for all libs
+    # Add -z defs, to forbid undefined symbols in object files.
+    if test "x$OPENJDK_TARGET_OS" != xbsd; then
+        BASIC_LDFLAGS="-Wl,-z,defs"
+    fi
+
+    # add relro (mark relocations read only) for all libs
     # add -z,now ("full relro" - more of the Global Offset Table GOT is marked read only)
     # add --no-as-needed to disable default --as-needed link flag on some GCC toolchains
-    BASIC_LDFLAGS="-Wl,-z,defs -Wl,-z,relro -Wl,-z,now -Wl,--no-as-needed -Wl,--exclude-libs,ALL"
+    BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,-z,relro -Wl,-z,now -Wl,--no-as-needed -Wl,--exclude-libs,ALL"
     # Linux : remove unused code+data in link step
     if test "x$ENABLE_LINKTIME_GC" = xtrue; then
       if test "x$OPENJDK_TARGET_CPU" = xs390x; then
@@ -101,6 +105,10 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # FIXME: We should really generalize SET_SHARED_LIBRARY_ORIGIN instead.
     OS_LDFLAGS_JVM_ONLY="-Wl,-rpath,@loader_path/. -Wl,-rpath,@loader_path/.."
     OS_LDFLAGS="-mmacosx-version-min=$MACOSX_VERSION_MIN"
+  fi
+
+  if test "x$OPENJDK_TARGET_OS_ENV" = xbsd.openbsd; then
+    OS_LDFLAGS="-Wl,-z,wxneeded -Wl,-z,nobtcfi"
   fi
 
   # Setup debug level-dependent LDFLAGS

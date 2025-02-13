@@ -50,7 +50,7 @@ import javax.swing.SwingUtilities;
  * @bug 8012026 8027154
  * @summary Component.getMousePosition() does not work in an applet on MacOS
  *
- * @requires (os.family == "mac" | os.family == "linux")
+ * @requires (os.family == "mac" | os.family == "linux" | os.family == "freebsd" | os.family == "netbsd" | os.family == "openbsd")
  * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=1 GetMousePositionWithPopup
  * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=2 GetMousePositionWithPopup
  * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=3 GetMousePositionWithPopup

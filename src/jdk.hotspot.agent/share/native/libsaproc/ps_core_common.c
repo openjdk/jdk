@@ -22,7 +22,7 @@
  *
  */
 
-#if defined(LINUX) || defined(__APPLE__)
+#if defined(LINUX) || defined(__APPLE__) || defined(_ALLBSD_SOURCE)
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
@@ -39,6 +39,10 @@
 
 #ifdef __APPLE__
 #include "sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext.h"
+#endif
+
+#ifdef _ALLBSD_SOURCE
+#include <jni.h>
 #endif
 
 // Define a segment permission flag allowing read if there is a read flag. Otherwise use 0.
@@ -269,14 +273,17 @@ bool read_string(struct ps_prochandle* ph, uintptr_t addr, char* buf, size_t siz
 #define USE_SHARED_SPACES_SYM "UseSharedSpaces"
 #define SHARED_BASE_ADDRESS_SYM "SharedBaseAddress"
 #define LIBJVM_NAME "/libjvm.so"
-#endif
-
-#ifdef __APPLE__
+#elif defined(__APPLE__)
 // mangled name of CDSConfig::_static_archive_path
 #define SHARED_ARCHIVE_PATH_SYM "__ZN9CDSConfig20_static_archive_pathE"
 #define USE_SHARED_SPACES_SYM "_UseSharedSpaces"
 #define SHARED_BASE_ADDRESS_SYM "_SharedBaseAddress"
 #define LIBJVM_NAME "/libjvm.dylib"
+#elif defined(_ALLBSD_SOURCE)
+#define SHARED_ARCHIVE_PATH_SYM "__ZN9Arguments17SharedArchivePathE"
+#define USE_SHARED_SPACES_SYM "UseSharedSpaces"
+#define SHARED_BASE_ADDRESS_SYM "SharedBaseAddress"
+#define LIBJVM_NAME "/libjvm.so"
 #endif
 
 bool init_classsharing_workaround(struct ps_prochandle* ph) {
