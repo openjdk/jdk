@@ -51,9 +51,14 @@ public final class MacCertificateUtils {
         keychain.map(PathUtils::normalizedAbsolutePathString).ifPresent(args::add);
 
         return toSupplier(() -> {
-            final byte[] pemCertificatesBuffer = Executor.of(args.toArray(String[]::new))
+            final var output = Executor.of(args.toArray(String[]::new))
                     .setQuiet(true).saveOutput(true).executeExpectSuccess()
-                    .getOutput().stream().reduce(new StringBuilder(), StringBuilder::append, StringBuilder::append).toString().getBytes(StandardCharsets.US_ASCII);
+                    .getOutput();
+
+            final byte[] pemCertificatesBuffer = output.stream()
+                    .reduce(new StringBuilder(),
+                            StringBuilder::append,
+                            StringBuilder::append).toString().getBytes(StandardCharsets.US_ASCII);
 
             try (var in = new ByteArrayInputStream(pemCertificatesBuffer)) {
                 final var cf = CertificateFactory.getInstance("X.509");
@@ -63,6 +68,9 @@ public final class MacCertificateUtils {
     }
 
     public static Collection<X509Certificate> filterX509Certificates(Collection<? extends Certificate> certs) {
-        return certs.stream().filter(X509Certificate.class::isInstance).map(X509Certificate.class::cast).toList();
+        return certs.stream()
+                .filter(X509Certificate.class::isInstance)
+                .map(X509Certificate.class::cast)
+                .toList();
     }
 }
