@@ -1077,8 +1077,8 @@ static void assert_no_oops_or_metadata(nmethod* nm) {
 }
 #endif
 
-static int required_mutable_data_space(CodeBuffer* code_buffer,
-                                       int jvmci_data_size = 0) {
+static int required_mutable_data_size(CodeBuffer* code_buffer,
+                                      int jvmci_data_size = 0) {
   return align_up(code_buffer->total_relocation_size(), oopSize) +
          align_up(code_buffer->total_oop_size(), oopSize) +
          align_up(jvmci_data_size, oopSize) +
@@ -1109,7 +1109,7 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
       offsets.set_value(CodeOffsets::Exceptions, exception_handler);
     }
 
-    int mutable_data_size = required_mutable_data_space(code_buffer);
+    int mutable_data_size = required_mutable_data_size(code_buffer);
 
     // MH intrinsics are dispatch stubs which are compatible with NonNMethod space.
     // IsUnloadingBehaviour::is_unloading needs to handle them separately.
@@ -1180,7 +1180,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     }
   }
 
-  int mutable_data_size = required_mutable_data_space(code_buffer
+  int mutable_data_size = required_mutable_data_size(code_buffer
     JVMCI_ONLY(COMMA (compiler->is_jvmci() ? jvmci_data->size() : 0)));
 
   {
@@ -2143,10 +2143,6 @@ void nmethod::purge(bool unregister_nmethod) {
     os::free(_immutable_data);
     _immutable_data = blob_end(); // Valid not null address
   }
-  if (_mutable_data != blob_end()) {
-    os::free(_mutable_data);
-    _mutable_data = blob_end(); // Valid not null address
-  }
   if (unregister_nmethod) {
     Universe::heap()->unregister_nmethod(this);
   }
@@ -3092,7 +3088,7 @@ void nmethod::print_on_impl(outputStream* st) const {
   if (mutable_data_size() > 0) st->print_cr(" mutable data [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(mutable_data_begin()),
                                              p2i(mutable_data_end()),
-                                             immutable_data_size());
+                                             mutable_data_size());
   if (relocation_size() > 0)   st->print_cr(" relocation     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(relocation_begin()),
                                              p2i(relocation_end()),
@@ -3135,10 +3131,6 @@ void nmethod::print_on_impl(outputStream* st) const {
                                              p2i(scopes_data_begin()),
                                              p2i(scopes_data_end()),
                                              scopes_data_size());
-  if (mutable_data_size() > 0)  st->print_cr(" mutable data   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(mutable_data_begin()),
-                                             p2i(mutable_data_end()),
-                                             mutable_data_size());
 #if INCLUDE_JVMCI
   if (speculations_size () > 0) st->print_cr(" speculations   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(speculations_begin()),

@@ -67,12 +67,14 @@ enum class CodeBlobType {
 //   UpcallStub  : Used for upcalls from native code
 //
 //
-// Layout : continuous in the CodeCache
+// Layout in the CodeCache:
 //   - header
-//   - relocation
 //   - content space
 //     - instruction space
-//   - data space
+// Outside of the CodeCache:
+//   - mutable_data
+//     - relocation info
+//     - additional data for subclasses
 
 enum class CodeBlobKind : u1 {
   None,
@@ -104,12 +106,14 @@ protected:
   // order fields from large to small to minimize padding between fields
   ImmutableOopMapSet* _oop_maps;   // OopMap for this CodeBlob
   const char*         _name;
+  address             _mutable_data;
 
   int      _size;                  // total size of CodeBlob in bytes
   int      _relocation_size;       // size of relocation (could be bigger than 64Kb)
   int      _content_offset;        // offset to where content region begins (this includes consts, insts, stubs)
   int      _code_offset;           // offset to where instructions region begins (this includes insts, stubs)
   int      _frame_size;            // size of stack frame in words (NOT slots. On x64 these are 64bit words)
+  int      _mutable_data_size;
 
   S390_ONLY(int _ctable_offset;)
 
@@ -122,9 +126,6 @@ protected:
   CodeBlobKind _kind;              // Kind of this code blob
 
   bool _caller_must_gc_arguments;
-
-  address _mutable_data;
-  int     _mutable_data_size;
 
 #ifndef PRODUCT
   AsmRemarks _asm_remarks;
@@ -189,20 +190,21 @@ public:
   UpcallStub* as_upcall_stub() const          { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
   RuntimeStub* as_runtime_stub() const        { assert(is_runtime_stub(), "must be runtime blob"); return (RuntimeStub*) this; }
 
-  address mutable_data_begin() const          { return _mutable_data; }
-  address mutable_data_end() const            { return _mutable_data + _mutable_data_size; }
-  int mutable_data_size() const               { return _mutable_data_size; }
-
   // Boundaries
   address    header_begin() const             { return (address)    this; }
   address    header_end() const               { return ((address)   this) + _header_size; }
-  relocInfo* relocation_begin() const         { return (relocInfo*)_mutable_data; }
-  relocInfo* relocation_end() const           { return (relocInfo*)((address)relocation_begin() + _relocation_size); }
   address    content_begin() const            { return (address)    header_begin() + _content_offset; }
   address    content_end() const              { return (address)    header_begin() + _size; }
   address    code_begin() const               { return (address)    header_begin() + _code_offset; }
   address    code_end() const                 { return (address)    header_begin() + _size; }
   address    blob_end() const                 { return (address)    header_begin() + _size; }
+  // code_end == content_end is true for all types of blobs for now, it is also checked in the constructor
+
+  address mutable_data_begin() const          { return _mutable_data; }
+  address mutable_data_end() const            { return _mutable_data + _mutable_data_size; }
+  int mutable_data_size() const               { return _mutable_data_size; }
+  relocInfo* relocation_begin() const         { return (relocInfo*)_mutable_data; }
+  relocInfo* relocation_end() const           { return (relocInfo*)((address)relocation_begin() + _relocation_size); }
 
   // Offsets
   int content_offset() const                  { return _content_offset; }
