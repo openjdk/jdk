@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ final class TestInstance implements ThrowingRunnable {
             return desc;
         }
 
-        private Class clazz;
+        private Class<?> clazz;
         private String functionName;
         private String functionArgs;
         private String instanceArgs;
@@ -161,8 +161,8 @@ final class TestInstance implements ThrowingRunnable {
         this.workDir = createWorkDirName(testDesc);
     }
 
-    TestInstance(MethodCall testBody, List<ThrowingConsumer> beforeActions,
-            List<ThrowingConsumer> afterActions, boolean dryRun) {
+    TestInstance(MethodCall testBody, List<ThrowingConsumer<Object>> beforeActions,
+            List<ThrowingConsumer<Object>> afterActions, boolean dryRun) {
         assertCount = 0;
         this.testConstructor = v -> ((MethodCall)v).newInstance();
         this.testBody = testBody;
@@ -255,7 +255,7 @@ final class TestInstance implements ThrowingRunnable {
         }
     }
 
-    private static Class enclosingMainMethodClass() {
+    private static Class<?> enclosingMainMethodClass() {
         StackTraceElement st[] = Thread.currentThread().getStackTrace();
         for (StackTraceElement ste : st) {
             if ("main".equals(ste.getMethodName())) {
@@ -323,10 +323,10 @@ final class TestInstance implements ThrowingRunnable {
     private Status status;
     private RuntimeException skippedTestException;
     private final TestDesc testDesc;
-    private final ThrowingFunction testConstructor;
-    private final ThrowingConsumer testBody;
-    private final List<ThrowingConsumer> beforeActions;
-    private final List<ThrowingConsumer> afterActions;
+    private final ThrowingFunction<ThrowingConsumer<Object>, Object> testConstructor;
+    private final ThrowingConsumer<Object> testBody;
+    private final List<ThrowingConsumer<Object>> beforeActions;
+    private final List<ThrowingConsumer<Object>> afterActions;
     private final boolean dryRun;
     private final Path workDir;
 

@@ -209,6 +209,11 @@ public class IRNode {
         beforeMatchingNameRegex(ADD, "Add(I|L|F|D|P)");
     }
 
+    public static final String ADD_F = PREFIX + "ADD_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ADD_F, "AddF");
+    }
+
     public static final String ADD_I = PREFIX + "ADD_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(ADD_I, "AddI");
@@ -217,6 +222,11 @@ public class IRNode {
     public static final String ADD_L = PREFIX + "ADD_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(ADD_L, "AddL");
+    }
+
+    public static final String ADD_HF = PREFIX + "ADD_HF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ADD_HF, "AddHF");
     }
 
     public static final String ADD_P = PREFIX + "ADD_P" + POSTFIX;
@@ -528,6 +538,11 @@ public class IRNode {
         beforeMatchingNameRegex(CONV, "Conv");
     }
 
+    public static final String CONV_F2HF = PREFIX + "CONV_F2HF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_F2HF, "ConvF2HF");
+    }
+
     public static final String CONV_I2L = PREFIX + "CONV_I2L" + POSTFIX;
     static {
         beforeMatchingNameRegex(CONV_I2L, "ConvI2L");
@@ -536,6 +551,11 @@ public class IRNode {
     public static final String CONV_L2I = PREFIX + "CONV_L2I" + POSTFIX;
     static {
         beforeMatchingNameRegex(CONV_L2I, "ConvL2I");
+    }
+
+    public static final String CONV_HF2F = PREFIX + "CONV_HF2F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_HF2F, "ConvHF2F");
     }
 
     public static final String CON_I = PREFIX + "CON_I" + POSTFIX;
@@ -650,6 +670,11 @@ public class IRNode {
     public static final String FMA_VD = VECTOR_PREFIX + "FMA_VD" + POSTFIX;
     static {
         vectorNode(FMA_VD, "FmaVD", TYPE_DOUBLE);
+    }
+
+    public static final String FMA_HF = PREFIX + "FMA_HF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(FMA_HF, "FmaHF");
     }
 
     public static final String G1_COMPARE_AND_EXCHANGE_N_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "G1_COMPARE_AND_EXCHANGE_N_WITH_BARRIER_FLAG" + POSTFIX;
@@ -1154,6 +1179,16 @@ public class IRNode {
         beforeMatchingNameRegex(MIN_L, "MinL");
     }
 
+    public static final String MIN_HF = PREFIX + "MIN_HF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MIN_HF, "MinHF");
+    }
+
+    public static final String MAX_HF = PREFIX + "MAX_HF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MAX_HF, "MaxHF");
+    }
+
     public static final String MIN_VI = VECTOR_PREFIX + "MIN_VI" + POSTFIX;
     static {
         vectorNode(MIN_VI, "MinV", TYPE_INT);
@@ -1233,6 +1268,11 @@ public class IRNode {
     public static final String MUL_F = PREFIX + "MUL_F" + POSTFIX;
     static {
         beforeMatchingNameRegex(MUL_F, "MulF");
+    }
+
+    public static final String MUL_HF = PREFIX + "MUL_HF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MUL_HF, "MulHF");
     }
 
     public static final String MUL_I = PREFIX + "MUL_I" + POSTFIX;
@@ -1435,6 +1475,16 @@ public class IRNode {
         trapNodes(RANGE_CHECK_TRAP, "range_check");
     }
 
+    public static final String REINTERPRET_S2HF = PREFIX + "REINTERPRET_S2HF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(REINTERPRET_S2HF, "ReinterpretS2HF");
+    }
+
+    public static final String REINTERPRET_HF2S = PREFIX + "REINTERPRET_HF2S" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(REINTERPRET_HF2S, "ReinterpretHF2S");
+    }
+
     public static final String REPLICATE_B = VECTOR_PREFIX + "REPLICATE_B" + POSTFIX;
     static {
         vectorNode(REPLICATE_B, "Replicate", TYPE_BYTE);
@@ -1601,6 +1651,16 @@ public class IRNode {
         vectorNode(SIGNUM_VF, "SignumVF", TYPE_FLOAT);
     }
 
+    public static final String SQRT_HF = PREFIX + "SQRT_HF" + POSTFIX;
+    static {
+       beforeMatchingNameRegex(SQRT_HF, "SqrtHF");
+    }
+
+    public static final String SQRT_F = PREFIX + "SQRT_F" + POSTFIX;
+    static {
+       beforeMatchingNameRegex(SQRT_F, "SqrtF");
+    }
+
     public static final String SQRT_VF = VECTOR_PREFIX + "SQRT_VF" + POSTFIX;
     static {
         vectorNode(SQRT_VF, "SqrtVF", TYPE_FLOAT);
@@ -1742,6 +1802,11 @@ public class IRNode {
         beforeMatchingNameRegex(SUB_F, "SubF");
     }
 
+    public static final String SUB_HF = PREFIX + "SUB_HF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(SUB_HF, "SubHF");
+    }
+
     public static final String SUB_I = PREFIX + "SUB_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(SUB_I, "SubI");
@@ -1790,6 +1855,11 @@ public class IRNode {
     public static final String TRAP = PREFIX + "TRAP" + POSTFIX;
     static {
         trapNodes(TRAP, "reason");
+    }
+
+    public static final String DIV_HF = PREFIX + "DIV_HF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(DIV_HF, "DivHF");
     }
 
     public static final String UDIV_I = PREFIX + "UDIV_I" + POSTFIX;

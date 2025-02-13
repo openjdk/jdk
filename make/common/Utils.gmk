@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,11 @@
 # questions.
 #
 
-ifeq ($(_MAKEBASE_GMK), )
-  $(error You must include MakeBase.gmk prior to including Utils.gmk)
-endif
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
 
 ################################################################################
-#
 # Basic utility functions available to MakeBase.gmk itself
-#
 ################################################################################
 
 # String equals
@@ -398,3 +395,8 @@ FilterExcludedTranslations = \
     ), \
     $1 \
   ))
+
+################################################################################
+
+include MakeIncludeEnd.gmk
+endif # include guard

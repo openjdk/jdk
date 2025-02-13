@@ -259,7 +259,8 @@ public final class Executor extends CommandArguments<Executor> {
             return value;
         }
 
-        private final Result value;
+        private final transient Result value;
+        private static final long serialVersionUID = 1L;
     }
 
     /*
