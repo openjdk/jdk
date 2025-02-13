@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  * @run     main SetDataTest
  */
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.awt.color.ICC_Profile;
@@ -47,7 +46,8 @@ public class SetDataTest {
         static byte[] invalidTRCData;
 
         static {
-            profile = ICC_Profile.getInstance(CS_GRAY);
+            ICC_Profile builtInProfile = ICC_Profile.getInstance(CS_GRAY);
+            profile = ICC_Profile.getInstance(builtInProfile.getData());
             validTRCdata = profile.getData(icSigGrayTRCTag);
             invalidTRCData = new byte[]{0x42, 0x42, 0x42, 0x42, 1, 3, 4, 6,};
         }
