@@ -30,6 +30,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include <type_traits>
 
+class outputStream;
+
 // COMPARATOR must have a static function `cmp(a,b)` which returns:
 //     - an int < 0 when a < b
 //     - an int == 0 when a == b
@@ -43,7 +45,7 @@
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class RBTree {
   friend class RBTreeTest;
-
+  typedef RBTree<K, V, COMPARATOR, ALLOCATOR> TreeType;
 private:
   ALLOCATOR _allocator;
   size_t _num_nodes;
@@ -61,12 +63,13 @@ public:
     const K _key;
     V _value;
 
-    DEBUG_ONLY(bool _visited);
+    DEBUG_ONLY(mutable bool _visited);
 
   public:
     const K& key() const { return _key; }
     V& val() { return _value; }
     const V& val() const { return _value; }
+    void set_val(const V& v) { _value = v; }
 
   private:
     bool is_black() const { return (_parent & 0x1) != 0; }
@@ -100,20 +103,22 @@ public:
     // Returns left child (now parent)
     RBNode* rotate_right();
 
-    RBNode* prev();
+    const RBNode* prev() const;
 
-    RBNode* next();
+    const RBNode* next() const;
 
   #ifdef ASSERT
     void verify(size_t& num_nodes, size_t& black_nodes_until_leaf,
                 size_t& shortest_leaf_path, size_t& longest_leaf_path,
-                size_t& tree_depth, bool expect_visited);
-#endif // ASSERT
-  };
+                size_t& tree_depth, bool expect_visited) const;
+  #endif // ASSERT
+  }; // End: RBNode
+
+  typedef TreeType::RBNode NodeType;
 
 private:
   RBNode* _root;
-  DEBUG_ONLY(bool _expected_visited);
+  DEBUG_ONLY(mutable bool _expected_visited);
 
   RBNode* allocate_node(const K& key, const V& val) {
     void* node_place = _allocator.allocate(sizeof(RBNode));
@@ -148,6 +153,8 @@ private:
   // Assumption: node has at most one child. Two children is handled in `remove()`
   void remove_from_tree(RBNode* node);
 
+  void print_node_on(outputStream* st, int depth, const NodeType* n) const;
+
 public:
   NONCOPYABLE(RBTree);
 
@@ -156,7 +163,7 @@ public:
   }
   ~RBTree() { this->remove_all(); }
 
-  size_t size() { return _num_nodes; }
+  size_t size() const { return _num_nodes; }
 
   // Inserts a node with the given k/v into the tree,
   // if the key already exist, the value is updated instead.
@@ -257,18 +264,43 @@ public:
 
   RBNode* closest_leq(const K& key) {
     return const_cast<RBNode*>(
-        static_cast<const RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->closest_leq(key));
+        static_cast<const TreeType*>(this)->closest_leq(key));
   }
 
   RBNode* closest_gt(const K& key) {
     return const_cast<RBNode*>(
-        static_cast<const RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->closest_gt(key));
+        static_cast<const TreeType*>(this)->closest_gt(key));
   }
 
   RBNode* closest_geq(const K& key) {
     return const_cast<RBNode*>(
-        static_cast<const RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->closest_geq(key));
+        static_cast<const TreeType*>(this)->closest_geq(key));
   }
+
+  // Returns leftmost node, nullptr if tree is empty.
+  // If COMPARATOR::cmp(a, b) behaves canonically (positive value for a > b), this will the smallest key value.
+  const RBNode* leftmost() const {
+    RBNode* n = _root, *n2 = nullptr;
+    while (n != nullptr) {
+      n2 = n;
+      n = n->_left;
+    }
+    return n2;
+  }
+
+  // Returns rightmost node, nullptr if tree is empty.
+  // If COMPARATOR::cmp(a, b) behaves canonically (positive value for a > b), this will the largest key value.
+  const RBNode* rightmost() const {
+    RBNode* n = _root, *n2 = nullptr;
+    while (n != nullptr) {
+      n2 = n;
+      n = n->_right;
+    }
+    return n2;
+  }
+
+  RBNode* leftmost()  { return const_cast<NodeType*>(static_cast<const TreeType*>(this)->leftmost()); }
+  RBNode* rightmost() { return const_cast<NodeType*>(static_cast<const TreeType*>(this)->rightmost()); }
 
   struct Range {
     RBNode* start;
@@ -280,7 +312,7 @@ public:
   // Return the range [start, end)
   // where start->key() <= addr < end->key().
   // Failure to find the range leads to start and/or end being null.
-  Range find_enclosing_range(K key) {
+  Range find_enclosing_range(K key) const {
     RBNode* start = closest_leq(key);
     RBNode* end = closest_gt(key);
     return Range(start, end);
@@ -291,7 +323,7 @@ public:
 
   RBNode* find_node(const K& key) {
     return const_cast<RBNode*>(
-        static_cast<const RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->find_node(key));
+        static_cast<const TreeType*>(this)->find_node(key));
   }
 
   // Finds the value associated with the key
@@ -311,12 +343,12 @@ public:
 
   // Visit all RBNodes in ascending order whose keys are in range [from, to), calling f on each node.
   template <typename F>
-  void visit_range_in_order(const K& from, const K& to, F f);
+  void visit_range_in_order(const K& from, const K& to, F f) const;
 
-#ifdef ASSERT
   // Verifies that the tree is correct and holds rb-properties
-  void verify_self();
-#endif // ASSERT
+  void verify_self() const NOT_DEBUG({});
+
+  void print_on(outputStream* st) const;
 
 };
 

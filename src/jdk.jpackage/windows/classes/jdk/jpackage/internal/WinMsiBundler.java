@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,8 @@ public class WinMsiBundler  extends AbstractBundler {
     public WinMsiBundler() {
         wixFragments = Stream.of(
                 Map.entry("bundle.wxf", new WixAppImageFragmentBuilder()),
-                Map.entry("ui.wxf", new WixUiFragmentBuilder())
+                Map.entry("ui.wxf", new WixUiFragmentBuilder()),
+                Map.entry("os-condition.wxf", OSVersionCondition.createWixFragmentBuilder())
         ).<WixFragmentBuilder>map(e -> {
             e.getValue().setOutputFileName(e.getKey());
             return e.getValue();

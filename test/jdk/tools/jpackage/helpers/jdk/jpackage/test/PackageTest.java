@@ -436,6 +436,7 @@ public final class PackageTest extends RunnablePackageTest {
                         case UNINSTALL:
                             skip = (action == Action.VERIFY_UNINSTALL);
                             break;
+                        default: // NOP
                     }
                 }
 
@@ -606,6 +607,8 @@ public final class PackageTest extends RunnablePackageTest {
                         }
                     }
                     break;
+
+                default: // NOP
             }
         }
 
@@ -691,6 +694,10 @@ public final class PackageTest extends RunnablePackageTest {
                                 // License file is in /usr/share/doc subtree
                                 roots.add(Path.of("/usr"));
                             }
+                        }
+
+                        default -> {
+                            throw new UnsupportedOperationException();
                         }
                     }
                 }
