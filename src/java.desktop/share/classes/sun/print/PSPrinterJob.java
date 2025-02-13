@@ -1613,11 +1613,6 @@ public class PSPrinterJob extends RasterPrinterJob {
                         isAttributeCategorySupported(JobSheets.class)) {
                 execCmd[n++] = "-o job-sheets=standard";
             }
-            if (optionArgs != null) {
-                for (String option : optionArgs) {
-                    execCmd[n++] = "-o " + option;
-                }
-            }
         } else {
             ncomps+=1; //add 1 arg for lp
             execCmd = new String[ncomps];
@@ -1638,10 +1633,10 @@ public class PSPrinterJob extends RasterPrinterJob {
                         isAttributeCategorySupported(JobSheets.class)) {
                 execCmd[n++] = "-o job-sheets=standard";
             }
-            if (optionArgs != null) {
-                for (String option : optionArgs) {
-                    execCmd[n++] = "-o " + option;
-                }
+        }
+        if (optionArgs != null) {
+            for (String option : optionArgs) {
+                execCmd[n++] = "-o " + option;
             }
         }
         execCmd[n++] = spoolFile;
