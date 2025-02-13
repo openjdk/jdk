@@ -32,6 +32,8 @@ interface BuildEnv {
 
     Path buildRoot();
 
+    boolean verbose();
+
     Optional<Path> resourceDir();
 
     /**
@@ -59,11 +61,16 @@ interface BuildEnv {
         };
     }
 
-    static BuildEnv create(Path buildRoot, Optional<Path> resourceDir, Class<?> resourceLocator) {
+    static BuildEnv create(Path buildRoot, Optional<Path> resourceDir, boolean verbose, Class<?> resourceLocator) {
         return new BuildEnv() {
             @Override
             public Path buildRoot() {
                 return buildRoot;
+            }
+
+            @Override
+            public boolean verbose() {
+                return verbose;
             }
 
             @Override
@@ -93,6 +100,11 @@ interface BuildEnv {
         @Override
         final public Path buildRoot() {
             return target.buildRoot();
+        }
+
+        @Override
+        final public boolean verbose() {
+            return target.verbose();
         }
 
         @Override

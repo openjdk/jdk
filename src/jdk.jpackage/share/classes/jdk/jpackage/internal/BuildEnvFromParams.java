@@ -27,17 +27,19 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
+import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 
 import java.util.Map;
-
 import jdk.jpackage.internal.model.ConfigException;
 
 final class BuildEnvFromParams {
 
     static BuildEnv create(Map<String, ? super Object> params) throws ConfigException {
 
-        final var builder = new BuildEnvBuilder(TEMP_ROOT.fetchFrom(params))
-                .resourceDir(RESOURCE_DIR.fetchFrom(params));
+        final var builder = new BuildEnvBuilder(TEMP_ROOT.fetchFrom(params));
+
+        RESOURCE_DIR.copyInto(params, builder::resourceDir);
+        VERBOSE.copyInto(params, builder::verbose);
 
         final var app = FromParams.APPLICATION.findIn(params).orElseThrow();
 
