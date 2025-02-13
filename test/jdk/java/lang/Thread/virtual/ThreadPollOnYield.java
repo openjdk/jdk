@@ -41,13 +41,16 @@
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
 
 import jdk.test.lib.thread.VThreadPinner;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ThreadPollOnYield {
+    private static final CountDownLatch started = new CountDownLatch(1);
     static void foo(AtomicBoolean done) {
+        started.countDown();
         while (!done.get()) {
             Thread.yield();
         }
@@ -59,7 +62,7 @@ class ThreadPollOnYield {
         var vthread = Thread.ofVirtual().start(() -> {
             VThreadPinner.runPinned(() -> foo(done));
         });
-        Thread.sleep(5000);
+        started.await();
         done.set(true);
         vthread.join();
 
