@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,6 +400,7 @@ public class JavacTaskPool {
                 sourceMap.clear();
                 nerrors = 0;
                 nwarnings = 0;
+                lintWarnings.clear();
                 //Set a fake listener that will lazily lookup the context for the 'real' listener. Since
                 //this field is never updated when a new task is created, we cannot simply reset the field
                 //or keep old value. This is a hack to workaround the limitations in the current infrastructure.
