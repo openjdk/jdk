@@ -120,22 +120,23 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
                    int mutable_data_size) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
+  _mutable_data(nullptr),
   _size(size),
   _relocation_size(align_up(cb->total_relocation_size(), oopSize)),
   _content_offset(CodeBlob::align_code_offset(header_size)),
   _code_offset(_content_offset + cb->total_offset_of(cb->insts())),
   _frame_size(frame_size),
+  _mutable_data_size(mutable_data_size),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
   _frame_complete_offset(frame_complete_offset),
   _kind(kind),
-  _caller_must_gc_arguments(caller_must_gc_arguments),
-  _mutable_data(nullptr),
-  _mutable_data_size(mutable_data_size)
+  _caller_must_gc_arguments(caller_must_gc_arguments)
 {
   assert(is_aligned(_size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,      oopSize), "unaligned size");
   assert(is_aligned(_relocation_size, oopSize), "unaligned size");
+  assert(is_nmethod() || (cb->total_oop_size() + cb->total_metadata_size() == 0), "must be nmethod");
   int code_end_offset = _content_offset + align_up(cb->total_content_size(), oopSize);
   assert(code_end_offset == _size, "wrong codeBlob size: %d != %d", _size, code_end_offset);
   assert(code_end() == content_end(), "must be the same - see code_end()");
@@ -158,6 +159,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size) :
   _oop_maps(nullptr),
   _name(name),
+  _mutable_data(nullptr),
   _size(size),
   _relocation_size(0),
   _content_offset(CodeBlob::align_code_offset(header_size)),
@@ -174,6 +176,10 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
 }
 
 void CodeBlob::purge() {
+  if (_mutable_data != nullptr) {
+    os::free(_mutable_data);
+    _mutable_data = nullptr;
+  }
   if (_oop_maps != nullptr) {
     delete _oop_maps;
     _oop_maps = nullptr;

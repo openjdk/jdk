@@ -134,25 +134,27 @@ public:
 // nmethods (native methods) are the compiled code versions of Java methods.
 //
 // An nmethod contains:
-//  - header                 (the nmethod structure)
-//  - constant part          (doubles, longs and floats used in nmethod)
-//  - oop table
-//  [Code]
-//  - code body
-//  - exception handler
-//  - stub code
-//  [Debugging information]
-//  - oop array
-//  - data array
-//  - pcs
-//  [Exception handler table]
-//  - handler entry point array
-//  [Implicit Null Pointer exception table]
-//  - implicit null table array
-//  [Speculations]
-//  - encoded speculations array
-//  [JVMCINMethodData]
-//  - meta data for JVMCI compiled nmethod
+//  - Header                 (the nmethod structure)
+//  - Constant part          (doubles, longs and floats used in nmethod)
+//  - Code part:
+//    - Code body
+//    - Exception handler
+//    - Stub code
+//
+// As a CodeBlob, an nmethod references [mutable data] allocated on the C heap:
+//  - CodeBlob relocation data
+//  - OOP table
+//  - Metainfo
+//  - JVMCI data
+//
+// An nmethod references [immutable data] allocated on C heap:
+//  - Dependency assertions data
+//  - Implicit null table array
+//  - Handler entry point array
+//  - Debugging information:
+//    - Scopes data array
+//    - Scopes pcs array
+//  - JVMCI speculations array
 
 #if INCLUDE_JVMCI
 class FailedSpeculation;
