@@ -26,7 +26,7 @@
 /**
  * A new pre-introduction paragraph goes here. It will pre-introduce
  * nothing in particular, and take up space before the real content.
- * A few more words ought to do the trick.
+ * A few more words ought to do the trick. And now our intro is done.
  *
  * Provides reference-object classes, which support a limited degree
  * of interaction with the garbage collector.  A program may use a
