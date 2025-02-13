@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,13 +64,6 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
     static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
 
     static final String DEFAULT_LICENSE_PLIST="lic_template.plist";
-
-    public static final BundlerParamInfo<String> INSTALLER_SUFFIX =
-            new StandardBundlerParam<> (
-            "mac.dmg.installerName.suffix",
-            String.class,
-            params -> "",
-            (s, p) -> s);
 
     public Path bundle(Map<String, ? super Object> params,
             Path outdir) throws PackagerException {
@@ -276,9 +269,10 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             Files.createDirectories(imagesRoot);
         }
 
-        Path protoDMG = imagesRoot.resolve(APP_NAME.fetchFrom(params) +"-tmp.dmg");
+        Path protoDMG = imagesRoot.resolve(APP_NAME.fetchFrom(params)
+                + "-tmp.dmg");
         Path finalDMG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
-                + INSTALLER_SUFFIX.fetchFrom(params) + ".dmg");
+                + ".dmg");
 
         Path srcFolder = appLocation.getParent();
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
