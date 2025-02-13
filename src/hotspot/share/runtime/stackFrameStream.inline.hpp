@@ -33,6 +33,10 @@ inline bool StackFrameStream::is_done() {
   return (_is_done) ? true : (_is_done = _fr.is_first_frame(), false);
 }
 
+inline intptr_t StackFrameStream::frame_id() const {
+  return _fr.frame_identity(&_reg_map);
+}
+
 #endif // SHARE_RUNTIME_STACKFRAMESTREAM_INLINE_HPP
 
 
