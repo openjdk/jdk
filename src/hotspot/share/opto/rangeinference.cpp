@@ -583,6 +583,9 @@ const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2, make_typ
   case Type::NarrowKlass:
   case Type::Int:
   case Type::Long:
+  case Type::HalfFloatTop:
+  case Type::HalfFloatCon:
+  case Type::HalfFloatBot:
   case Type::FloatTop:
   case Type::FloatCon:
   case Type::FloatBot:
