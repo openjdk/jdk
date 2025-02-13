@@ -651,6 +651,7 @@ public final class TKit {
                 actual), msg));
     }
 
+
     public static void assertEquals(String expected, String actual, String msg) {
         currentTest.notifyAssert();
         if ((actual != null && !actual.equals(expected))
