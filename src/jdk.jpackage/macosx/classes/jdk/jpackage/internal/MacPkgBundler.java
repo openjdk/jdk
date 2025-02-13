@@ -680,9 +680,9 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    // Implement Bundler
-    //////////////////////////////////////////////////////////////////////////
+    /*
+     * Implement Bundler
+     */
 
     @Override
     public String getName() {

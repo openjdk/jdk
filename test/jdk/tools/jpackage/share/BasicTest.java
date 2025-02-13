@@ -78,7 +78,7 @@ public final class BasicTest {
     private static boolean isAllModulePathCapable() {
         Path jmods = Path.of(System.getProperty("java.home"), "jmods");
         boolean noJmods = Files.notExists(jmods);
-        if (LinkableRuntimeImage.isLinkableRuntime() && noJmods) {
+        if (noJmods) {
            TKit.trace("ALL-MODULE-PATH test skipped for linkable run-time image");
            return false;
         }
