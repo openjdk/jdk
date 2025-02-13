@@ -201,8 +201,8 @@ public class DescriptorSupport
      * @exception XMLParseException XML parsing problem while parsing
      * the input String
      * @exception MBeanException Wraps a distributed communication Exception.
-     * @deprecated This constructor exists for historical reasons.  It enables
-     * reading from XML, which is unnecessary.
+     * @deprecated This constructor exists for historical reasons.  If
+     * reading from XML is required, it should be implemented externally.
      */
     /* At some stage we should rewrite this code to be cleverer.  Using
        a StringTokenizer as we do means, first, that we accept a lot of
@@ -234,6 +234,7 @@ public class DescriptorSupport
         if (!lowerInStr.startsWith("<descriptor>")
             || !lowerInStr.endsWith("</descriptor>")) {
             throw new XMLParseException("No <descriptor>, </descriptor> pair");
+            // XMLParseException is deprecated for removal.
         }
 
         // parse xmlstring into structures
@@ -288,11 +289,13 @@ public class DescriptorSupport
                         final String msg =
                             "Expected `name' or `value', got `" + tok + "'";
                         throw new XMLParseException(msg);
+                        // XMLParseException is deprecated for removal.
                     }
                 } else { // xml parse exception
                     final String msg =
                         "Expected `keyword=value', got `" + tok + "'";
                     throw new XMLParseException(msg);
+                    // XMLParseException is deprecated for removal.
                 }
             }
         }  // while tokens
@@ -971,8 +974,8 @@ public class DescriptorSupport
      * field Names or field Values.  If the XML formatted string
      * construction fails for any reason, this exception will be
      * thrown.
-     * @deprecated This method exists for historical reaons. It
-     * enables writing as XML, which is unnecessary.
+     * @deprecated This constructor exists for historical reasons.  If
+     * reading from XML is required, it should be implemented externally.
      */
     @Deprecated(since="25", forRemoval=true)
     public synchronized String toXMLString() {
@@ -1066,8 +1069,10 @@ public class DescriptorSupport
 
     @SuppressWarnings("removal")
     private static String unquote(String s) throws XMLParseException {
-        if (!s.startsWith("\"") || !s.endsWith("\""))
+        if (!s.startsWith("\"") || !s.endsWith("\"")) {
             throw new XMLParseException("Value must be quoted: <" + s + ">");
+            // XMLParseException is deprecated for removal.
+        }
         final StringBuilder buf = new StringBuilder();
         final int len = s.length() - 1;
         for (int i = 1; i < len; i++) {
@@ -1151,8 +1156,8 @@ public class DescriptorSupport
                 Class.forName(className, false, contextClassLoader);
             constr = c.getConstructor(new Class<?>[] {String.class});
         } catch (Exception e) {
-            throw new XMLParseException(e,
-                                        "Cannot parse value: <" + s + ">");
+            throw new XMLParseException(e, "Cannot parse value: <" + s + ">");
+            // XMLParseException is deprecated for removal.
         }
         final String arg = s.substring(slash + 1, s.length() - 1);
         try {
@@ -1162,6 +1167,7 @@ public class DescriptorSupport
                 "Cannot construct instance of " + className +
                 " with arg: <" + s + ">";
             throw new XMLParseException(e, msg);
+            // XMLParseException is deprecated for removal.
         }
     }
 
