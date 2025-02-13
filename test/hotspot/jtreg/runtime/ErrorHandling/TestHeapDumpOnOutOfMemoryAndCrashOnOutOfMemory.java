@@ -40,7 +40,7 @@ public class TestHeapDumpOnOutOfMemoryAndCrashOnOutOfMemory {
         if (args.length == 1) {
             try {
                 Object[] oa = new Object[Integer.MAX_VALUE];
-                for(int i = 0; i < oa.length; i++) {
+                for (int i = 0; i < oa.length; i++) {
                     oa[i] = new Object[Integer.MAX_VALUE];
                 }
                 throw new Error("OOME not triggered");
@@ -49,12 +49,13 @@ public class TestHeapDumpOnOutOfMemoryAndCrashOnOutOfMemory {
             }
         }
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+HeapDumpOnOutOfMemoryError",
+                  "-Xmx128m",
                   "-XX:+CrashOnOutOfMemoryError",
-                  "-Xlog:gc",
+                  "-Xlog:safepoint=trace:file=safepoint.log",
                   TestHeapDumpOnOutOfMemoryError.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         int exitValue = output.getExitValue();
-        if(0 != exitValue) {
+        if (exitValue != 0) {
           //expecting a non zero value, as it could be due to HeapDumpOnOutOfMemory or CrashOnOutOfMemory
           output.stdoutShouldNotBeEmpty();
           output.shouldNotContain("[info][gc] GC");

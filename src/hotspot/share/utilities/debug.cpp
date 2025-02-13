@@ -267,7 +267,7 @@ void report_java_out_of_memory(const char* message) {
   // commands multiple times we just do it once when the first threads reports
   // the error.
   if (Atomic::cmpxchg(&out_of_memory_reported, 0, 1) == 0) {
-    VMError::report_java_out_of_memory(message, HeapDumpOnOutOfMemoryError);
+    VMError::report_java_out_of_memory(message, HeapDumpOnOutOfMemoryError, CrashOnOutOfMemoryError);
 
     if (CrashOnOutOfMemoryError) {
       tty->print_cr("Aborting due to java.lang.OutOfMemoryError: %s", message);

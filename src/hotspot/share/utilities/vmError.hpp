@@ -190,7 +190,7 @@ public:
                              va_list detail_args);
 
   // reporting OutOfMemoryError
-  static void report_java_out_of_memory(const char* message, bool dumpHeap);
+  static void report_java_out_of_memory(const char* message, bool dumpHeap, bool abort);
 
   // Called by the WatcherThread to check if error reporting has timed-out.
   //  Returns true if error reporting has not completed within the ErrorLogTimeout limit.
