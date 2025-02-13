@@ -54,7 +54,8 @@ inline void check_phase_trace_id(int v) { assert(v >= 0 && v < phase_trc_id_max,
 constexpr int arena_tag_max = (int)Arena::Tag::tag_count;
 inline void check_arena_tag(int v) { assert(v >= 0 && v < arena_tag_max, "OOB (%d)", v); }
 
-// A two-dimensional table, containing byte counters per arena type and per compilation phase
+// A two-dimensional table, containing byte counters per arena type and
+// per compilation phase.
 class ArenaCounterTable {
   size_t _v[phase_trc_id_max][arena_tag_max];
 public:
@@ -72,8 +73,8 @@ struct PhaseInfo {
   const char* text;
 };
 
-// A stack keeping track of the current compilation phase. For simplicity,
-// fixed-width, since the nesting depth of TracePhase is limited
+// A stack keeping track of the current compilation phase. Fixed-width for simplicity
+// (we should never go beyond 5 or so in depth).
 class PhaseInfoStack {
   static constexpr int max_depth = 16;
   int _depth;
@@ -87,6 +88,7 @@ public:
   inline int depth() const  { return _depth; }
 };
 
+// A very simple fixed-width FIFO buffer, used for the phase timeline
 template <typename T, int max>
 class SimpleFifo {
   STATIC_ASSERT((max * 2) < INT_MAX);
@@ -95,16 +97,16 @@ class SimpleFifo {
   int _oldest;
   uint64_t _lost;
 
-  int current_pos() const         { return _pos; }
-  static int pos_to_index(int pos) { return pos % max; }
-  T& at(int pos)                  { return *(_v + pos_to_index(pos)); }
+  int current_pos() const           { return _pos; }
+  static int pos_to_index(int pos)  { return pos % max; }
+  T& at(int pos)                    { return *(_v + pos_to_index(pos)); }
 
 public:
   SimpleFifo() : _pos(0), _oldest(0), _lost(0UL) {}
-  T& current()                    { return at(current_pos()); }
-  T& last()                       { assert(!empty(), "sanity"); return at(current_pos() - 1); }
-  bool empty() const              { return _pos == _oldest; }
-  uint64_t lost() const           { return _lost; }
+  T& current()                      { return at(current_pos()); }
+  T& last()                         { assert(!empty(), "sanity"); return at(current_pos() - 1); }
+  bool empty() const                { return _pos == _oldest; }
+  uint64_t lost() const             { return _lost; }
 
   void advance() {
     _pos ++;

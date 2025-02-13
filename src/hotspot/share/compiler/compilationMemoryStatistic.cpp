@@ -59,8 +59,8 @@ static const char* phase_trc_id_to_string(int phase_trc_id) {
          NOT_COMPILER2("");
 }
 
-// If crash option on memlimit is enabled and an oom occurred, the stats for the first compilation
-// that caused the oom.
+// If crash option on memlimit is enabled and an oom occurred, the stats for the
+// first offending compilation.
 static ArenaStatCounter* volatile _arenastat_oom_crash = nullptr;
 
 // Arena-chunk stamping
