@@ -41,7 +41,7 @@
 #define __ masm->
 
 //------------------------------generate_uncommon_trap_blob--------------------
-void OptoRuntime::generate_uncommon_trap_blob() {
+UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // allocate space for the code
   ResourceMark rm;
   // setup code generation tools
@@ -211,7 +211,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   // make sure all code is generated
   masm->flush();
 
-   _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, oop_maps, framesize);
+   return UncommonTrapBlob::create(&buffer, oop_maps, framesize);
 }
 
 //------------------------------generate_exception_blob---------------------------
@@ -239,7 +239,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
 //       Only register rax, rdx, rcx are not callee saved.
 //
 
-void OptoRuntime::generate_exception_blob() {
+ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   // Capture info about frame layout
   enum layout {
@@ -326,5 +326,5 @@ void OptoRuntime::generate_exception_blob() {
   // make sure all code is generated
   masm->flush();
 
-  _exception_blob = ExceptionBlob::create(&buffer, oop_maps, framesize);
+  return ExceptionBlob::create(&buffer, oop_maps, framesize);
 }

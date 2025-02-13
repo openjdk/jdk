@@ -95,7 +95,7 @@ bool C2Compiler::init_c2_runtime() {
   CompilerThread* thread = CompilerThread::current();
 
   HandleMark handle_mark(thread);
-  return OptoRuntime::generate(thread->env()) && OptoRuntime::uncommon_trap_blob() != nullptr && OptoRuntime::exception_blob() != nullptr;
+  return OptoRuntime::generate(thread->env());
 }
 
 void C2Compiler::initialize() {
