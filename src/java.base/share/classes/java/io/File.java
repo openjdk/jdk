@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -588,8 +588,8 @@ public class File
      * {@link #getAbsolutePath} method, and then maps it to its unique form in a
      * system-dependent way.  This typically involves removing redundant names
      * such as {@code "."} and {@code ".."} from the pathname, resolving
-     * symbolic links (on UNIX platforms), and converting drive letters to a
-     * standard case (on Microsoft Windows platforms).
+     * symbolic links, and converting drive letters to a standard case (on
+     * Microsoft Windows platforms).
      *
      * <p> Every pathname that denotes an existing file or directory has a
      * unique canonical form.  Every pathname that denotes a nonexistent file
@@ -1518,7 +1518,7 @@ public class File
      * virtual machine with special privileges that allow it to execute files
      * that are not marked executable.
      *
-     * <p>An invocation of this method of the form {@code file.setExcutable(arg)}
+     * <p>An invocation of this method of the form {@code file.setExecutable(arg)}
      * behaves in exactly the same way as the invocation
      *
      * {@snippet lang=java :
