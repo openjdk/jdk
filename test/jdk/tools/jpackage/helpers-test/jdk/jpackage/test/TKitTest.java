@@ -26,6 +26,8 @@ import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -59,6 +61,12 @@ public class TKitTest extends JUnitAdapter {
         assertFunc = MethodCallConfig.build("assertEquals", long.class, long.class, String.class);
         data.addAll(List.of(assertFunc.args(7, 7).pass().expectLog("assertEquals(7)").createForMessage("Owl")));
         data.addAll(List.of(assertFunc.args(7, 10).fail().expectLog("Expected [7]. Actual [10]").createForMessage("Owl")));
+
+        assertFunc = MethodCallConfig.build("assertEquals", boolean.class, boolean.class, String.class);
+        data.addAll(List.of(assertFunc.args(true, true).pass().expectLog("assertEquals(true)").createForMessage("Emu")));
+        data.addAll(List.of(assertFunc.args(false, false).pass().expectLog("assertEquals(false)").createForMessage("Emu")));
+        data.addAll(List.of(assertFunc.args(true, false).fail().expectLog("Expected [true]. Actual [false]").createForMessage("Emu")));
+        data.addAll(List.of(assertFunc.args(false, true).fail().expectLog("Expected [false]. Actual [true]").createForMessage("Emu")));
 
         assertFunc = MethodCallConfig.build("assertNotEquals", String.class, String.class, String.class);
         data.addAll(List.of(assertFunc.args("a", "b").pass().expectLog("assertNotEquals(a, b)").createForMessage("Tit")));
