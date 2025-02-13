@@ -23,8 +23,9 @@
 
 /**
  * @test
- * @bug 8179502
- * @summary Enhance OCSP, CRL and Certificate Fetch Timeouts
+ * @bug 8349759
+ * @summary Fix CertificateBuilder and SimpleOCSPServer test utilities to
+ *          support PQC algorithms
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.provider.certpath
  *          java.base/sun.security.util
