@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,7 @@ public abstract class HttpRequest {
      *
      * @since TBD
      */
-    public sealed interface HttpRequestOption<T> permits HttpRequestOptionImpl {
+    public sealed interface HttpRequestOption<T> {
         /**
          * {@return The option name}
          * @implSpec  Different options must have different names.
@@ -215,14 +215,12 @@ public abstract class HttpRequest {
          * @see Builder#setOption(HttpRequestOption, Object)
          */
         HttpRequestOption<H3DiscoveryMode> H3_DISCOVERY =
-                new HttpRequestOptionImpl.H3Discovery(H3DiscoveryMode.class, "H3_DISCOVERY");
+                new HttpRequestOptionImpl<>(H3DiscoveryMode.class, "H3_DISCOVERY");
     }
 
-    private sealed interface HttpRequestOptionImpl<T> extends HttpRequestOption<T> {
-        record H3Discovery(Class<H3DiscoveryMode> type, String name)
-                implements HttpRequestOptionImpl<H3DiscoveryMode> {
-            @Override public String toString() {return name();}
-        }
+    private record HttpRequestOptionImpl<T>(Class<T> type, String name)
+            implements HttpRequestOption<T> {
+        @Override public String toString() {return name();}
     }
 
     /**
