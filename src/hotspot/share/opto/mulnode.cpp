@@ -1308,7 +1308,7 @@ const Type* LShiftLNode::Value(PhaseGVN* phase) const {
   return TypeLong::make( (jlong)r1->get_con() << (jint)shift );
 }
 
-Node *RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
+Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   // Inputs may be TOP if they are dead.
   const TypeInteger* t1 = phase->type(in(1))->isa_integer(bt);
   if (t1 == nullptr) {
