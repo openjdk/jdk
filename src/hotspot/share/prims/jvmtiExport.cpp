@@ -1342,6 +1342,9 @@ void JvmtiExport::at_single_stepping_point(JavaThread *thread, Method* method, a
     if (state->is_pending_step_for_earlyret()) {
       state->process_pending_step_for_earlyret();
     }
+    if (thread->is_suspended()) {
+      ThreadBlockInVM tbivm(thread, true /* allow suspend */);
+    }
     JvmtiExport::post_single_step(thread, mh(), location);
   }
 }
@@ -1990,6 +1993,10 @@ void JvmtiExport::post_single_step(JavaThread *thread, Method* method, address l
   }
   if (mh->jvmti_mount_transition() || thread->should_hide_jvmti_events()) {
     return;
+  }
+  if (thread->is_suspended()) {
+    // suspend here if there is a suspend request
+    ThreadBlockInVM tbivm(thread, true /* allow suspend */);
   }
 
   JvmtiEnvThreadStateIterator it(state);

@@ -704,9 +704,6 @@ void HandshakeState::do_self_suspend() {
   assert(!_handshakee->has_last_Java_frame() || _handshakee->frame_anchor()->walkable(), "should have walkable stack");
   assert(_handshakee->thread_state() == _thread_blocked, "Caller should have transitioned to _thread_blocked");
 
-  if (_handshakee->is_virtual()) {
-    _lock.notify();
-  }
   while (is_suspended()) {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended", p2i(_handshakee));
     _lock.wait_without_safepoint_check();
@@ -739,9 +736,6 @@ bool HandshakeState::suspend_with_handshake() {
     return false;
   }
   if (has_async_suspend_handshake()) {
-    if (_handshakee->is_virtual()) {
-      _lock.notify();
-    }
     if (is_suspended()) {
       // Target is already suspended.
       log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " already suspended", p2i(_handshakee));
@@ -792,17 +786,6 @@ bool HandshakeState::suspend() {
   } else {
     SuspendThreadHandshake st;
     Handshake::execute(&st, _handshakee);
-
-    if (st.did_suspend() && _handshakee->is_virtual()) {
-      // Thread suspension works under JvmtiVTMSTransitionDisabler protection, so we need to wait
-      // for virtual thread to reach a safe state before the JVMTI SuspendThread is returned.
-      while (_handshakee->thread_state() != _thread_blocked &&
-             _handshakee->thread_state() != _thread_in_native) {
-        ThreadBlockInVM tbivm(self);
-        MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-        _lock.wait_without_safepoint_check(1);
-      }
-    }
     return st.did_suspend();
   }
 }
