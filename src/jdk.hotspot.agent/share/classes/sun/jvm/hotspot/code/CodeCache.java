@@ -92,12 +92,14 @@ public class CodeCache {
     return createCodeBlobWrapper(cbAddr, start);
   }
 
-  public CodeBlob createCodeBlobWrapper(Address cbAddr, Address start) {
+  // cbAddr - address of a code blob
+  // cbPC   - address inside of a code blob
+  public CodeBlob createCodeBlobWrapper(Address cbAddr, Address cbPC) {
     Class<?> cbClass = CodeBlob.getClassFor(cbAddr);
     if (cbClass == null) {
       String message = "Couldn't deduce type of CodeBlob ";
       message = message + "@" + cbAddr + " ";
-      message = message + "for PC=" + start;
+      message = message + "for PC=" + cbPC;
 
       throw new RuntimeException(message);
     }
@@ -107,8 +109,8 @@ public class CodeCache {
       // but it shouldn't be an error to find a blob based on the pointer to the HeapBlock.
       // The heap block header is padded out to an 8-byte boundary. See heap.hpp. The
       // simplest way to compute the header size is just 2 * addressSize.
-      Assert.that(result.blobContains(start) ||
-                  result.blobContains(start.addOffsetTo(2 * VM.getVM().getAddressSize())),
+      Assert.that(result.blobContains(cbPC) ||
+                  result.blobContains(cbPC.addOffsetTo(2 * VM.getVM().getAddressSize())),
                   "found wrong CodeBlob");
     }
     return result;
