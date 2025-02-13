@@ -101,14 +101,14 @@ void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecora
 }
 
 // This function checks for cases where continuing with asynchronous logging may lead to stability issues, such as a deadlock.
-// If this returns true then we give up on logging asynchronously and do so synchronously instead.
-bool AsyncLogWriter::resort_to_synchronous_logging() {
+// If this returns false then we give up on logging asynchronously and do so synchronously instead.
+bool AsyncLogWriter::is_enqueue_allowed() {
   AsyncLogWriter* alw = AsyncLogWriter::instance();
   Thread* holding_thread = AsyncLogWriter::AsyncLogLocker::current_holder();
   Thread* this_thread = Thread::current_or_null();
   if (this_thread == nullptr) {
     // The current thread is unattached.
-    return true;
+    return false;
   }
 
   if (holding_thread == this_thread) {
@@ -120,24 +120,24 @@ bool AsyncLogWriter::resort_to_synchronous_logging() {
       ShouldNotReachHere();
     }
 #endif // ASSERT
-    return true;
+    return false;
   }
 
   if (alw == nullptr) {
     // There is no AsyncLogWriter instance yet.
-    return true;
+    return false;
   }
 
   if (this_thread == alw) {
     // The async log producer is attempting to log, leading to recursive logging.
-    return true;
+    return false;
   }
 
-  return false;
+  return true;
 }
 
 bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
-  if (resort_to_synchronous_logging()) {
+  if (!is_enqueue_allowed()) {
     return false;
   }
 
@@ -151,7 +151,7 @@ bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& 
 // LogMessageBuffer consists of a multiple-part/multiple-line message.
 // The lock here guarantees its integrity.
 bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
-  if (resort_to_synchronous_logging()) {
+  if (!is_enqueue_allowed()) {
     return false;
   }
 

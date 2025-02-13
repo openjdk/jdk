@@ -195,7 +195,7 @@ class AsyncLogWriter : public NonJavaThread {
     ~BufferUpdater();
   };
 
-  static bool resort_to_synchronous_logging();
+  static bool is_enqueue_allowed();
 
 public:
   DEBUG_ONLY(static bool ignore_recursive_logging;)
