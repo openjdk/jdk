@@ -1185,7 +1185,7 @@ void ShenandoahFullGC::phase5_epilog() {
     ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set();
     ShenandoahGenerationalFullGC::rebuild_remembered_set(heap);
   }
-#define KELVIN_IDLE_SPAN
+#undef KELVIN_IDLE_SPAN
 #ifdef KELVIN_IDLE_SPAN
   log_info(gc)("start_idle_span() at end of full gc");
 #endif

@@ -483,7 +483,7 @@ jint ShenandoahHeap::initialize() {
 #ifdef KELVIN_VERBOSE
     log_info(gc)("starting idle span after rebuilding free set");
 #endif
-#define KELVIN_IDLE_SPAN
+#undef KELVIN_IDLE_SPAN
 #ifdef KELVIN_IDLE_SPAN
     log_info(gc)("start_idle_span() at post_initialize of heap");
 #endif
@@ -2474,7 +2474,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
     old_gen->heuristics()->evaluate_triggers(first_old_region, last_old_region, old_region_count, num_regions());
   }
-#define KELVIN_IDLE_SPAN
+#undef KELVIN_IDLE_SPAN
 #ifdef KELVIN_IDLE_SPAN
   log_info(gc)("deprecated start_idle_span() at heap->rebuild_free_set()");
 #endif

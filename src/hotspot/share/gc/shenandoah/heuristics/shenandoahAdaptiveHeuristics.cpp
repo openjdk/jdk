@@ -181,7 +181,7 @@ double ShenandoahAdaptiveHeuristics::get_planned_sleep_interval() const {
 
 #undef KELVIN_VERBOSE
 
-#define KELVIN_IDLE_SPAN
+#undef KELVIN_IDLE_SPAN
 
 void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_available) {
   // The trigger threshold represents mutator available - "head room".
@@ -391,7 +391,6 @@ void ShenandoahAdaptiveHeuristics::add_gc_time(double timestamp, double gc_time)
     // Two points define a line
     double delta_y = gc_time - _gc_time_samples[_gc_time_first_sample_index];
     double delta_x = timestamp - _gc_time_timestamps[_gc_time_first_sample_index];
-
     _gc_time_m = delta_y / delta_x;
 
     // y = mx + b
@@ -578,7 +577,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   log_debug(gc)("should_start_gc? available: " SIZE_FORMAT ", soft_max_capacity: " SIZE_FORMAT
                 ", allocated: " SIZE_FORMAT, available, capacity, allocated);
 
-#ifdef KELVIN_NEEDS_TO_SEE
+#undef KELVIN_SATB
+#ifdef KELVIN_SATB
   log_info(gc)("should_start_gc? available: " SIZE_FORMAT ", soft_max_capacity: " SIZE_FORMAT
                 ", allocated: " SIZE_FORMAT, available, capacity, allocated);
 #endif
@@ -597,7 +597,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return true;
   }
 
-#ifdef KELVIN_VERBOSE
+#ifdef KELVIN_DEBUG
   _global_available_bytes = available;
   _global_min_threshold = min_threshold;
 #endif
@@ -652,13 +652,13 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     double instantaneous_rate_words_per_second = allocated_since_last_sample / (now - _previous_allocation_timestamp);
     _previous_allocation_timestamp = now;
 
-#ifdef KELVIN_NEEDS_TO_SEE
+#ifdef KELVIN_SATB
     log_info(gc)("should_start_gc()?, predicted_future_accelerated_gc_time: %0.3f, avg_gc_cycle_time: %0.3f"
                  ", allocated_since_last_sample: " SIZE_FORMAT ", instantaneous_rate: %0.3f",
                  predicted_future_accelerated_gc_time, avg_cycle_time, allocated_since_last_sample,
                  instantaneous_rate_words_per_second * HeapWordSize);
 #endif
-#ifdef KELVIN_VERBOSE
+#ifdef KELVIN_DEBUG
     _global_allocatable_words = allocatable_words;
 #endif
     add_rate_to_acceleration_history(now, instantaneous_rate_words_per_second);
@@ -667,7 +667,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                                                              MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL
                                                              + future_accelerated_planned_gc_time);
 
-#ifdef KELVIN_NEEDS_TO_SEE
+#ifdef KELVIN_SATB
     log_info(gc)("should_start_gc() checking instantaneous allocation: allocations since_last: " SIZE_FORMAT
                  ", predicted_future_gc_time: %0.3f, instantaneous_rate: %0.3f B/s, acceleration: %0.3f B/s/s"
                  ", accelerated consumption:" SIZE_FORMAT,
@@ -783,8 +783,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
 
       }
-#undef KELVIN_VERBOSITY
-#ifdef KELVIN_VERBOSITY
+#ifdef KELVIN_SATB
       log_info(gc)(" avg_alloc_rate is: %0.3f MB/s", avg_alloc_rate / (1024 * 1024));
       for (uint i = 0; i < _spike_acceleration_num_samples; i++) {
         uint index = (_spike_acceleration_first_sample_index + i) % ShenandoahRateAccelerationSampleSize;
@@ -818,7 +817,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     future_planned_gc_time_is_average = true;
   }
 
-#ifdef KELVIN_NEEDS_TO_SEE
+#ifdef KELVIN_SATB
   log_info(gc)("should_start_gc? future: %0.3f, predicted_future_gc_time: %0.3f",
                now + get_planned_sleep_interval(), predicted_future_gc_time);
 #endif
