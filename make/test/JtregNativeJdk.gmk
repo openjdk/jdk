@@ -55,7 +55,6 @@ BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeJliLaunchTest := java.base:libjli
 BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeCallerAccessTest := java.base:libjvm
 BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeNullCallerTest := java.base:libjvm
 
-BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libstringPlatformChars := java.base:libjava
 BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libGetXSpace := java.base:libjava
 
 # Platform specific setup
@@ -107,6 +106,7 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_JDK_JTREG_LIBRARIES_STRIP_SYMBOLS_libFib := false
   # nio tests' libCreationTimeHelper native needs -ldl linker flag
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libCreationTimeHelper := -ldl
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libstringPlatformChars := -ldl
 endif
 
 ifeq ($(ASAN_ENABLED), true)
