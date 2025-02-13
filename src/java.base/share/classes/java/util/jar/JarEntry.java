@@ -111,7 +111,8 @@ public class JarEntry extends ZipEntry {
      * The verification process does not include validating or establishing
      * trust in the code signers. A caller should perform additional checks,
      * such as using a {@link java.security.cert.CertPathValidator} to
-     * validate each signer's certificate chain. 
+     * validate each signer's certificate chain, and determining whether
+     * to trust the entry signed by the signers.
      *
      * @return the {@code Certificate} objects for this entry, or
      * {@code null} if none.
@@ -135,7 +136,8 @@ public class JarEntry extends ZipEntry {
      * The verification process does not include validating or establishing
      * trust in the code signers. A caller should perform additional checks,
      * such as using a {@link java.security.cert.CertPathValidator} to
-     * validate each signer's certificate chain. 
+     * validate each signer's certificate chain, and determining whether
+     * to trust the entry signed by the signers.
      *
      * @return the {@code CodeSigner} objects for this entry, or
      * {@code null} if none.
