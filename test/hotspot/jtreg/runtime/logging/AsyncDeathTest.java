@@ -30,13 +30,13 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver AsyncDeathTestDebug
+ * @run driver AsyncDeathTest
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-public class AsyncDeathTestDebug {
+public class AsyncDeathTest {
     public static void main(String[] args) throws Exception {
         // For deathtest we expect the VM to reach ShouldNotReachHere() and die
         ProcessBuilder pb =
