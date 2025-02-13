@@ -129,18 +129,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
         return returnValue;
     }
 
-    // Returns display name of installation directory. Display name is used to
-    // show user installation location and for well known (default only) we will
-    // use "Applications" or "JavaVirtualMachines".
-    static String getInstallDirDisplayName(
-            Map<String, ? super Object>  params) {
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            return "JavaVirtualMachines";
-        } else {
-            return "Applications";
-        }
-    }
-
     public MacBaseInstallerBundler() {
         appImageBundler = new MacAppBundler()
                 .setDependentTask(true);

@@ -25,9 +25,6 @@
 
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.PackagerException;
-import jdk.jpackage.internal.util.PathGroup;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -40,23 +37,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.ResourceBundle;
-import static jdk.jpackage.internal.MacAppImageBuilder.ICON_ICNS;
-import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
-import static jdk.jpackage.internal.StandardBundlerParam.createResource;
-
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
-import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
-import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
-import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
-import static jdk.jpackage.internal.StandardBundlerParam.DMG_CONTENT;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.MacApplication;
+import jdk.jpackage.internal.model.MacDmgPackage;
+import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.PathGroup;
 
 public class MacDmgBundler extends MacBaseInstallerBundler {
-
-    private static final ResourceBundle I18N = ResourceBundle.getBundle(
-            "jdk.jpackage.internal.resources.MacResources");
 
     // Background image name in resources
     static final String DEFAULT_BACKGROUND_IMAGE = "background_dmg.tiff";
@@ -70,25 +58,25 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
     public Path bundle(Map<String, ? super Object> params,
             Path outdir) throws PackagerException {
+
+        final var pkg = MacFromParams.DMG_PACKAGE.fetchFrom(params);
+        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+
         Log.verbose(MessageFormat.format(I18N.getString("message.building-dmg"),
-                APP_NAME.fetchFrom(params)));
+                pkg.app().name()));
 
         IOUtils.writableOutputDir(outdir);
 
-        MacFromParams.DMG_PACKAGE.fetchFrom(params);
-
         try {
-            Path appLocation = prepareAppBundle(params);
+            env = BuildEnv.withAppImageDir(env, prepareAppBundle(params));
 
-            if (appLocation != null && prepareConfigFiles(appLocation,params)) {
-                Path configScript = getConfig_Script(params);
-                if (IOUtils.exists(configScript)) {
-                    IOUtils.run("bash", configScript);
-                }
-
-                return buildDMG(params, appLocation, outdir);
+            prepareConfigFiles(pkg, env);
+            Path configScript = getConfig_Script(pkg, env);
+            if (IOUtils.exists(configScript)) {
+                IOUtils.run("bash", configScript);
             }
-            return null;
+
+            return buildDMG(pkg, env, outdir);
         } catch (IOException | PackagerException ex) {
             Log.verbose(ex);
             throw new PackagerException(ex);
@@ -97,9 +85,12 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
     private static final String hdiutil = "/usr/bin/hdiutil";
 
-    private void prepareDMGSetupScript(Path appLocation,
-            Map<String, ? super Object> params) throws IOException {
-        Path dmgSetup = getConfig_VolumeScript(params);
+    private static Path imagesRoot(MacDmgPackage pkg, BuildEnv env) {
+        return env.buildRoot().resolve("dmg-images");
+    }
+
+    private void prepareDMGSetupScript(MacDmgPackage pkg, BuildEnv env) throws IOException {
+        Path dmgSetup = getConfig_VolumeScript(pkg, env);
         Log.verbose(MessageFormat.format(
                 I18N.getString("message.preparing-dmg-setup"),
                 dmgSetup.toAbsolutePath().toString()));
@@ -107,17 +98,13 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         // We need to use URL for DMG to find it. We cannot use volume name, since
         // user might have open DMG with same volume name already. Url should end with
         // '/' and it should be real path (no symbolic links).
-        Path imageDir = IMAGES_ROOT.fetchFrom(params);
-        if (!Files.exists(imageDir)) {
-             // Create it, since it does not exist
-             Files.createDirectories(imageDir);
-        }
-        Path rootPath = Path.of(imageDir.toString()).toRealPath();
-        Path volumePath = rootPath.resolve(APP_NAME.fetchFrom(params));
+        Path imageDir = imagesRoot(pkg, env);
+        Path rootPath = imageDir.toRealPath();
+        Path volumePath = rootPath.resolve(pkg.app().name());
         String volumeUrl = volumePath.toUri().toString() + File.separator;
 
         // Provide full path to background image, so we can find it.
-        Path bgFile = Path.of(rootPath.toString(), APP_NAME.fetchFrom(params),
+        Path bgFile = Path.of(rootPath.toString(), pkg.app().name(),
                               BACKGROUND_IMAGE_FOLDER, BACKGROUND_IMAGE);
 
         // Prepare DMG setup script
@@ -125,94 +112,99 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         data.put("DEPLOY_VOLUME_URL", volumeUrl);
         data.put("DEPLOY_BG_FILE", bgFile.toString());
         data.put("DEPLOY_VOLUME_PATH", volumePath.toString());
-        data.put("DEPLOY_APPLICATION_NAME", APP_NAME.fetchFrom(params));
-        String targetItem = (StandardBundlerParam.isRuntimeInstaller(params)) ?
-              APP_NAME.fetchFrom(params) : appLocation.getFileName().toString();
+        data.put("DEPLOY_APPLICATION_NAME", pkg.app().name());
+        String targetItem = pkg.isRuntimeInstaller() ?
+                pkg.app().name() : env.appImageDir().getFileName().toString();
         data.put("DEPLOY_TARGET", targetItem);
-        data.put("DEPLOY_INSTALL_LOCATION", getInstallDir(params, true));
+        data.put("DEPLOY_INSTALL_LOCATION", installRoot(pkg).toString());
         data.put("DEPLOY_INSTALL_LOCATION_DISPLAY_NAME",
-                getInstallDirDisplayName(params));
+                getInstallDirDisplayName(pkg));
 
-        createResource(DEFAULT_DMG_SETUP_SCRIPT, params)
+        env.createResource(DEFAULT_DMG_SETUP_SCRIPT)
                 .setCategory(I18N.getString("resource.dmg-setup-script"))
                 .setSubstitutionData(data)
                 .saveToFile(dmgSetup);
     }
 
-    private Path getConfig_VolumeScript(Map<String, ? super Object> params) {
-        return CONFIG_ROOT.fetchFrom(params).resolve(
-                APP_NAME.fetchFrom(params) + "-dmg-setup.scpt");
+    private static Path installRoot(MacDmgPackage pkg) {
+        if (pkg.isRuntimeInstaller()) {
+            return Path.of("/Library/Java/JavaVirtualMachines");
+        } else {
+            return Path.of("/Applications");
+        }
     }
 
-    private Path getConfig_VolumeBackground(
-            Map<String, ? super Object> params) {
-        return CONFIG_ROOT.fetchFrom(params).resolve(
-                APP_NAME.fetchFrom(params) + "-background.tiff");
+    // Returns display name of installation directory. Display name is used to
+    // show user installation location and for well known (default only) we will
+    // use "Applications" or "JavaVirtualMachines".
+    private static String getInstallDirDisplayName(MacDmgPackage pkg) {
+        return installRoot(pkg).getFileName().toString();
     }
 
-    private Path getConfig_VolumeIcon(Map<String, ? super Object> params) {
-        return CONFIG_ROOT.fetchFrom(params).resolve(
-                APP_NAME.fetchFrom(params) + "-volume.icns");
+    private Path getConfig_VolumeScript(MacDmgPackage pkg, BuildEnv env) {
+        return env.configDir().resolve(pkg.app().name() + "-dmg-setup.scpt");
     }
 
-    private Path getConfig_LicenseFile(Map<String, ? super Object> params) {
-        return CONFIG_ROOT.fetchFrom(params).resolve(
-                APP_NAME.fetchFrom(params) + "-license.plist");
+    private Path getConfig_VolumeBackground(MacDmgPackage pkg, BuildEnv env) {
+        return env.configDir().resolve(pkg.app().name() + "-background.tiff");
     }
 
-    private void prepareLicense(Map<String, ? super Object> params) {
+    private Path getConfig_VolumeIcon(MacDmgPackage pkg, BuildEnv env) {
+        return env.configDir().resolve(pkg.app().name() + "-volume.icns");
+    }
+
+    private Path getConfig_LicenseFile(MacDmgPackage pkg, BuildEnv env) {
+        return env.configDir().resolve(pkg.app().name() + "-license.plist");
+    }
+
+    private void prepareLicense(MacDmgPackage pkg, BuildEnv env) {
         try {
-            String licFileStr = LICENSE_FILE.fetchFrom(params);
-            if (licFileStr == null) {
+            final var licFile = pkg.licenseFile();
+            if (licFile.isEmpty()) {
                 return;
             }
 
-            Path licFile = Path.of(licFileStr);
             byte[] licenseContentOriginal =
-                    Files.readAllBytes(licFile);
+                    Files.readAllBytes(licFile.orElseThrow());
             String licenseInBase64 =
                     Base64.getEncoder().encodeToString(licenseContentOriginal);
 
             Map<String, String> data = new HashMap<>();
             data.put("APPLICATION_LICENSE_TEXT", licenseInBase64);
 
-            createResource(DEFAULT_LICENSE_PLIST, params)
+            env.createResource(DEFAULT_LICENSE_PLIST)
                     .setCategory(I18N.getString("resource.license-setup"))
                     .setSubstitutionData(data)
-                    .saveToFile(getConfig_LicenseFile(params));
+                    .saveToFile(getConfig_LicenseFile(pkg, env));
 
         } catch (IOException ex) {
             Log.verbose(ex);
         }
     }
 
-    private boolean prepareConfigFiles(Path appLocation,
-            Map<String, ? super Object> params) throws IOException {
+    private void prepareConfigFiles(MacDmgPackage pkg, BuildEnv env) throws IOException {
 
-        createResource(DEFAULT_BACKGROUND_IMAGE, params)
+        env.createResource(DEFAULT_BACKGROUND_IMAGE)
                     .setCategory(I18N.getString("resource.dmg-background"))
-                    .saveToFile(getConfig_VolumeBackground(params));
+                    .saveToFile(getConfig_VolumeBackground(pkg, env));
 
-        createResource(TEMPLATE_BUNDLE_ICON, params)
+        env.createResource(TEMPLATE_BUNDLE_ICON)
                 .setCategory(I18N.getString("resource.volume-icon"))
-                .setExternal(ICON_ICNS.fetchFrom(params))
-                .saveToFile(getConfig_VolumeIcon(params));
+                .setExternal(pkg.icon().orElse(null))
+                .saveToFile(getConfig_VolumeIcon(pkg, env));
 
-        createResource(null, params)
+        env.createResource(null)
                 .setCategory(I18N.getString("resource.post-install-script"))
-                .saveToFile(getConfig_Script(params));
+                .saveToFile(getConfig_Script(pkg, env));
 
-        prepareLicense(params);
+        prepareLicense(pkg, env);
 
-        prepareDMGSetupScript(appLocation, params);
-
-        return true;
+        prepareDMGSetupScript(pkg, env);
     }
 
     // name of post-image script
-    private Path getConfig_Script(Map<String, ? super Object> params) {
-        return CONFIG_ROOT.fetchFrom(params).resolve(
-                APP_NAME.fetchFrom(params) + "-post-image.sh");
+    private Path getConfig_Script(MacDmgPackage pkg, BuildEnv env) {
+        return env.configDir().resolve(pkg.app().name() + "-post-image.sh");
     }
 
     // Location of SetFile utility may be different depending on MacOS version
@@ -266,32 +258,29 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         return null;
     }
 
-    private Path buildDMG( Map<String, ? super Object> params,
-            Path appLocation, Path outdir) throws IOException {
+    private Path buildDMG(MacDmgPackage pkg, BuildEnv env, Path outdir) throws IOException {
         boolean copyAppImage = false;
-        Path imagesRoot = IMAGES_ROOT.fetchFrom(params);
+        Path imagesRoot = imagesRoot(pkg, env);
         if (!Files.exists(imagesRoot)) {
             Files.createDirectories(imagesRoot);
         }
 
-        Path protoDMG = imagesRoot.resolve(APP_NAME.fetchFrom(params)
+        Path protoDMG = imagesRoot.resolve(pkg.app().name()
                 + "-tmp.dmg");
-        Path finalDMG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
-                + ".dmg");
+        Path finalDMG = outdir.resolve(pkg.packageFileNameWithSuffix());
 
-        Path srcFolder = appLocation.getParent();
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            Path newRoot = Files.createTempDirectory(TEMP_ROOT.fetchFrom(params),
+        Path srcFolder = env.appImageDir().getParent();
+        if (pkg.isRuntimeInstaller()) {
+            Path newRoot = Files.createTempDirectory(env.buildRoot(),
                     "root-");
 
             // first, is this already a runtime with
             // <runtime>/Contents/Home - if so we need the Home dir
-            Path home = appLocation.resolve("Contents/Home");
-            Path source = (Files.exists(home)) ? home : appLocation;
+            Path home = env.appImageDir().resolve("Contents/Home");
+            Path source = (Files.exists(home)) ? home : env.appImageDir();
 
             // Then we need to put back the <NAME>/Content/Home
-            Path root = newRoot.resolve(
-                    MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params));
+            Path root = newRoot.resolve(((MacApplication)pkg.app()).bundleIdentifier());
             Path dest = root.resolve("Contents/Home");
 
             FileUtils.copyRecursive(source, dest);
@@ -314,11 +303,9 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         Files.createDirectories(protoDMG.getParent());
         Files.createDirectories(finalDMG.getParent());
 
-        final var pkg = MacFromParams.DMG_PACKAGE.fetchFrom(params);
-
-        String hdiUtilVerbosityFlag = VERBOSE.fetchFrom(params) ?
+        String hdiUtilVerbosityFlag = env.verbose() ?
                 "-verbose" : "-quiet";
-        List <Path> dmgContent = DMG_CONTENT.fetchFrom(params);
+        List <Path> dmgContent = pkg.content();
         for (Path path : dmgContent) {
             FileUtils.copyRecursive(path, srcFolder.resolve(path.getFileName()));
         }
@@ -328,7 +315,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 "create",
                 hdiUtilVerbosityFlag,
                 "-srcfolder", srcFolder.toAbsolutePath().toString(),
-                "-volname", APP_NAME.fetchFrom(params),
+                "-volname", pkg.app().name(),
                 "-ov", protoDMG.toAbsolutePath().toString(),
                 "-fs", "HFS+",
                 "-format", "UDRW");
@@ -351,7 +338,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 "create",
                 hdiUtilVerbosityFlag,
                 "-size", String.valueOf(size),
-                "-volname", APP_NAME.fetchFrom(params),
+                "-volname", pkg.app().name(),
                 "-ov", protoDMG.toAbsolutePath().toString(),
                 "-fs", "HFS+");
             new RetryExecutor()
@@ -370,7 +357,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
                 "-mountroot", imagesRoot.toAbsolutePath().toString());
         IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
 
-        Path mountedRoot = imagesRoot.resolve(APP_NAME.fetchFrom(params));
+        Path mountedRoot = imagesRoot.resolve(pkg.app().name());
 
         // Copy app image, since we did not create DMG with it, but instead we created
         // empty one.
@@ -392,7 +379,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             // background image
             Path bgdir = mountedRoot.resolve(BACKGROUND_IMAGE_FOLDER);
             Files.createDirectories(bgdir);
-            IOUtils.copyFile(getConfig_VolumeBackground(params),
+            IOUtils.copyFile(getConfig_VolumeBackground(pkg, env),
                     bgdir.resolve(BACKGROUND_IMAGE));
 
             // We will not consider setting background image and creating link
@@ -400,7 +387,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             // headless environment.
             try {
                 pb = new ProcessBuilder("/usr/bin/osascript",
-                        getConfig_VolumeScript(params).toAbsolutePath().toString());
+                        getConfig_VolumeScript(pkg, env).toAbsolutePath().toString());
                 IOUtils.exec(pb, 180); // Wait 3 minutes. See JDK-8248248.
             } catch (IOException ex) {
                 Log.verbose(ex);
@@ -408,7 +395,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
             // volume icon
             Path volumeIconFile = mountedRoot.resolve(".VolumeIcon.icns");
-            IOUtils.copyFile(getConfig_VolumeIcon(params),
+            IOUtils.copyFile(getConfig_VolumeIcon(pkg, env),
                     volumeIconFile);
 
             // Indicate that we want a custom icon
@@ -497,7 +484,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         } catch (Exception ex) {
             // Convert might failed if something holds file. Try to convert copy.
             Path protoDMG2 = imagesRoot
-                    .resolve(APP_NAME.fetchFrom(params) + "-tmp2.dmg");
+                    .resolve(pkg.app().name() + "-tmp2.dmg");
             Files.copy(protoDMG, protoDMG2);
             try {
                 pb = new ProcessBuilder(
@@ -514,13 +501,13 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         }
 
         //add license if needed
-        if (Files.exists(getConfig_LicenseFile(params))) {
+        if (Files.exists(getConfig_LicenseFile(pkg, env))) {
             pb = new ProcessBuilder(
                     hdiutil,
                     "udifrez",
                     finalDMG.toAbsolutePath().toString(),
                     "-xml",
-                    getConfig_LicenseFile(params).toAbsolutePath().toString()
+                    getConfig_LicenseFile(pkg, env).toAbsolutePath().toString()
             );
             new RetryExecutor()
                 .setMaxAttemptsCount(10)
@@ -533,7 +520,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.output-to-location"),
-                APP_NAME.fetchFrom(params), finalDMG.toAbsolutePath().toString()));
+                pkg.app().name(), finalDMG.toAbsolutePath().toString()));
 
         return finalDMG;
     }
