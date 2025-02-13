@@ -950,7 +950,8 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         __ add(x17, x15, x13);
         __ ld(x17, Address(x17));
         __ beq(klass, x17, success);
-        __ j(fail);
+        __ mv(result, 0);
+        __ ret();
 
         __ bind(is_secondary);
         __ load_klass(obj, obj);
