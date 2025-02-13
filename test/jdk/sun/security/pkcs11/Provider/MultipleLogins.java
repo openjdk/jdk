@@ -29,7 +29,7 @@
  * @modules jdk.crypto.cryptoki/sun.security.pkcs11
  * @run main/othervm
  *        -DCUSTOM_P11_CONFIG=${test.src}/MultipleLogins-nss.txt
- *        -DCUSTOM_DB_DIR=${test.src}
+ *        -DCUSTOM_DB_DIR=./nss/db
  *        MultipleLogins
  */
 
@@ -45,6 +45,8 @@ import jdk.test.lib.Utils;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.*;
@@ -60,18 +62,25 @@ public class MultipleLogins {
 
     private static void copyDbFiles() throws IOException {
         final var testFolder = System.getProperty("test.src", ".");
-        final var destination = Paths.get(testFolder);
+        final var srcDbFolder = Paths.get(testFolder).getParent().resolve("nss", "db");
+
+        // Getting path & creating the temporary scratch directory ./nss/db
+        final var nssFolder = Path.of(".").resolve("nss");
+        Files.createDirectory(nssFolder);
+        final var destination = nssFolder.resolve("db");
+
         final var sourceFiles = List.of(
-                Paths.get(testFolder + "/../nss/db/cert9.db"),
-                Paths.get(testFolder + "/../nss/db/key4.db"),
-                Paths.get(testFolder + "/../nss/db/cert8.db"),
-                Paths.get(testFolder + "/../nss/db/key3.db")
+                srcDbFolder.resolve("cert9.db"),
+                srcDbFolder.resolve("key4.db"),
+                srcDbFolder.resolve("cert8.db"),
+                srcDbFolder.resolve("key3.db")
         );
 
-        final var list = Utils.copyFiles(sourceFiles, destination, StandardCopyOption.REPLACE_EXISTING);
+        final var copiedFiles = Utils.copyFiles(sourceFiles, destination, StandardCopyOption.REPLACE_EXISTING);
+        copiedFiles.forEach(path -> path.toFile().setWritable(true));
 
         System.out.println("NSS db files copied to: ");
-        list.forEach(System.out::println);
+        copiedFiles.forEach(System.out::println);
     }
 
     public static void main(String[] args) throws Exception {
