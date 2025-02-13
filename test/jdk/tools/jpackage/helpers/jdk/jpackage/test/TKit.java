@@ -30,6 +30,7 @@ import java.io.Closeable;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -329,23 +330,23 @@ public final class TKit {
                 baseName, i));
     }
 
-    public static Path createTempDirectory(String role) throws IOException {
+    public static Path createTempDirectory(String role) {
         return createTempDirectory(Path.of(role));
     }
 
-    public static Path createTempDirectory(Path role) throws IOException {
+    public static Path createTempDirectory(Path role) {
         return createTempPath(role, Files::createDirectory);
     }
 
-    public static Path createTempFile(String role) throws IOException {
+    public static Path createTempFile(String role) {
         return createTempFile(Path.of(role));
     }
 
-    public static Path createTempFile(Path role) throws IOException {
+    public static Path createTempFile(Path role) {
         return createTempPath(role, Files::createFile);
     }
 
-    private static Path createTempPath(Path templatePath, ThrowingUnaryOperator<Path> createPath) throws IOException {
+    private static Path createTempPath(Path templatePath, ThrowingUnaryOperator<Path> createPath) {
         if (templatePath.isAbsolute()) {
             throw new IllegalArgumentException();
         }
@@ -358,11 +359,11 @@ public final class TKit {
 
         final var path = createUniquePath(templatePath.getFileName().toString(), basedir);
 
-        Files.createDirectories(path.getParent());
         try {
+            Files.createDirectories(path.getParent());
             return createPath.apply(path);
         } catch (IOException ex) {
-            throw ex;
+            throw new UncheckedIOException(ex);
         } catch (Throwable t) {
             throw ExceptionBox.rethrowUnchecked(t);
         }
