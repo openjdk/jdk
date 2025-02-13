@@ -2439,8 +2439,8 @@ instruct reduce_mulI(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    __ reduce_mul_integer_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
-                            as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg), bt, length_in_bytes);
+    __ reduce_mul_integral_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
+                             as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg), bt, length_in_bytes);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2454,9 +2454,9 @@ instruct reduce_mulI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    __ reduce_mul_integer_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
-                            as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                            bt, length_in_bytes, Assembler::v0_t);
+    __ reduce_mul_integral_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
+                             as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
+                             bt, length_in_bytes, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2470,8 +2470,8 @@ instruct reduce_mulL(iRegLNoSp dst, iRegLNoSp isrc, vReg vsrc,
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    __ reduce_mul_integer_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
-                            as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg), bt, length_in_bytes);
+    __ reduce_mul_integral_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
+                             as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg), bt, length_in_bytes);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2485,9 +2485,9 @@ instruct reduce_mulL_masked(iRegLNoSp dst, iRegLNoSp isrc, vReg vsrc,
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    __ reduce_mul_integer_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
-                            as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                            bt, length_in_bytes, Assembler::v0_t);
+    __ reduce_mul_integral_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
+                             as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
+                             bt, length_in_bytes, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}

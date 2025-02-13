@@ -2954,11 +2954,11 @@ void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
   vmv_x_s(dst, tmp);
 }
 
-void C2_MacroAssembler::reduce_mul_integer_v(Register dst, Register src1, VectorRegister src2,
-                                             VectorRegister vtmp1, VectorRegister vtmp2,
-                                             BasicType bt, uint vector_length, VectorMask vm) {
+void C2_MacroAssembler::reduce_mul_integral_v(Register dst, Register src1, VectorRegister src2,
+                                              VectorRegister vtmp1, VectorRegister vtmp2,
+                                              BasicType bt, uint vector_length, VectorMask vm) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
-  uint len = vector_length/type2aelembytes(bt);
+  uint len = vector_length / type2aelembytes(bt);
   vsetvli_helper(bt, len);
 
   len /= 2;
@@ -2998,7 +2998,7 @@ void C2_MacroAssembler::reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, V
                                         VectorRegister vtmp1, VectorRegister vtmp2,
                                         BasicType bt, uint vector_length, VectorMask vm) {
   assert(bt == T_FLOAT || bt == T_DOUBLE, "unsupported element type");
-  uint len = vector_length/type2aelembytes(bt);
+  uint len = vector_length / type2aelembytes(bt);
   vsetvli_helper(bt, len);
 
   len /= 2;
@@ -3007,9 +3007,9 @@ void C2_MacroAssembler::reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, V
     //  If no elements are selected, an operation-specific identity value is returned.
     //    If the operation is MUL, then the identity value is one.
     if (bt == T_FLOAT) {
-      lui(t0, 0x3f800000); // 1.0f
+      mv(t0, 0x3f800000); // 1.0f
     } else {
-      lui(t0, 0x3ff00000); // 1.0d
+      mv(t0, 0x3ff00000); // 1.0d
       slli(t0, t0, 32);
     }
     vmv_v_x(vtmp1, t0);
