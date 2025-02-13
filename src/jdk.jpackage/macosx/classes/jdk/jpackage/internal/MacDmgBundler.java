@@ -99,6 +99,9 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         // user might have open DMG with same volume name already. Url should end with
         // '/' and it should be real path (no symbolic links).
         Path imageDir = imagesRoot(pkg, env);
+
+        Files.createDirectories(imageDir);
+
         Path rootPath = imageDir.toRealPath();
         Path volumePath = rootPath.resolve(pkg.app().name());
         String volumeUrl = volumePath.toUri().toString() + File.separator;
