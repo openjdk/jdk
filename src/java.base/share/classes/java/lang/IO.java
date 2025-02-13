@@ -34,16 +34,13 @@ import java.nio.charset.StandardCharsets;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * A collection of static methods that provide convenience access to
- * {@linkplain System#in} and {@linkplain System#out} for line-based
- * input and output.
+ * A collection of static methods that provide convenient access to {@link System#in}
+ * and {@link System#out} for line-oriented input and output.
  * <p>
- * The {@code readln} methods in this class use an internal {@linkplain java.io.Reader Reader}
- * instance that does character decoding from bytes read from {@code System.in}. The charset
- * used for decoding is XXXTODOXXX. This internal Reader is created upon the first call
- * to the {link #readln} or {link #readln(String)} methods and is stored and reused for
- * subsequent use by these methods.
- * <p>
+ * The {@link #readln()} and {@link #readln(String)} methods in this class use internal
+ * objects that decode bytes read from {@code System.in} into characters. The charset used
+ * for decoding is XXXTODOXXX. These internal objects are created upon the first call to
+ * either of the {@code readln} methods and are stored for subsequent reuse by these methods.
  * The result of interleaving calls to the {@code readln} methods with operations on
  * {@code System.in} is unspecified.
  *
@@ -130,8 +127,17 @@ public final class IO {
 
     /**
      * Reads a single line of text from the standard input.
-     *
-     * <p>Returns the value obtained as if by {@code reader().readLine()}.
+     * <p>
+     * If necessary, this method first creates an internal
+     * {@link java.nio.charset.CharsetDecoder CharsetDecoder}
+     * to decode the bytes read from the standard input into characters.
+     * It is then wrapped within a {@link java.io.Reader Reader} to
+     * provide character input. These objects are retained for
+     * subsequent use by this method.
+     * <p>
+     * One line is read as if by
+     * {@link java.io.BufferedReader#readLine() BufferedReader.readLine()}
+     * and then the result is returned.
      *
      * @return a string containing the line read from the standard input, not
      * including any line-termination characters. Returns {@code null} if an
