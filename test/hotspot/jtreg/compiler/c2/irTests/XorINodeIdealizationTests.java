@@ -283,9 +283,11 @@ public class XorINodeIdealizationTests {
     @Test
     @IR(failOn = {IRNode.XOR})
     @IR(counts = {IRNode.CON_I, "1"})
-    // Checks (x ^ y)  => z <=1  when x and y are known to be in [0,1] (constant folded)
+    // This test explicitly checks for constant folding over ints representing booleans.
+    // Checks (x ^ y) => z in [0, 1] when x and y are known to be in [0, 1] (constant folded)
     public boolean testXorIntAsBool(int xi, int yi) {
-        return ((xi & 0b1) ^ (yi & 0b1)) <= 1;
+        int xor = (xi & 1) ^ (yi & 1);
+        return 0 <= xor && xor <= 1;
     }
 
     @Run(test = {
