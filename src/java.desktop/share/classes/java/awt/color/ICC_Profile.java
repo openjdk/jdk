@@ -1163,7 +1163,7 @@ public sealed class ICC_Profile implements Serializable
      *         the {@code tagSignature}
      * @throws IllegalArgumentException if this is a profile for one of the
      *         built-in pre-defined ColorSpaces, i.e. those which can be obtained
-     *         by calling ICC_Profile.getInstance(int cspace)
+     *         by calling {@code ICC_Profile.getInstance(int cspace)}
      * @see #getData
      * @see {@link ColorSpace}
      */
