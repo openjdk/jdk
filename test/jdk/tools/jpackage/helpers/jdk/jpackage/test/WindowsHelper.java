@@ -75,7 +75,7 @@ public class WindowsHelper {
             if (result.exitCode() == 1605) {
                 // ERROR_UNKNOWN_PRODUCT, attempt to uninstall not installed
                 // package
-                return result.exitCode;
+                return result.exitCode();
             }
 
             // The given Executor may either be of an msiexec command or an
@@ -91,7 +91,7 @@ public class WindowsHelper {
             break;
         }
 
-        return result.exitCode;
+        return result.exitCode();
     }
 
     static PackageHandlers createMsiPackageHandlers() {
