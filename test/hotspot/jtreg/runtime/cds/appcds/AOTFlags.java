@@ -283,6 +283,21 @@ public class AOTFlags {
         out = CDSTestUtils.executeAndLog(pb, "neg");
         out.shouldContain("Not a valid archive (hello.aotconfig)");
         out.shouldNotHaveExitValue(0);
+
+        //----------------------------------------------------------------------
+        printTestCase("Classpath mismatch when creating archive");
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTMode=create",
+            "-XX:AOTConfiguration=" + aotConfigFile,
+            "-XX:AOTCache=" + aotCacheFile,
+            "-cp", "noSuchJar.jar");
+
+        out = CDSTestUtils.executeAndLog(pb, "neg");
+        out.shouldContain("class path and/or module path are not compatible with the ones " +
+                          "specified when the AOTConfiguration file was recorded");
+        out.shouldContain("Unable to use create AOT cache");
+        out.shouldHaveExitValue(1);
     }
 
     static int testNum = 0;
