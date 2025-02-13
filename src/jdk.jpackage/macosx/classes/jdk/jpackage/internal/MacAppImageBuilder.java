@@ -28,10 +28,7 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
-import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
-import static jdk.jpackage.internal.StandardBundlerParam.createResource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -45,7 +42,6 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -55,14 +51,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import jdk.internal.util.OSVersion;
 
 public class MacAppImageBuilder {
-
-    private static final ResourceBundle I18N = ResourceBundle.getBundle(
-            "jdk.jpackage.internal.resources.MacResources");
-
-    private static List<String> keyChains;
 
     static final BundlerParamInfo<Boolean> APP_STORE =
             new BundlerParamInfo<>(
@@ -75,20 +65,6 @@ public class MacAppImageBuilder {
             (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
                     null : Boolean.valueOf(s)
         );
-
-    public static final BundlerParamInfo<String> MAC_CF_BUNDLE_NAME =
-            new BundlerParamInfo<>(
-                    Arguments.CLIOptions.MAC_BUNDLE_NAME.getId(),
-                    String.class,
-                    params -> null,
-                    (s, p) -> s);
-
-    public static final BundlerParamInfo<String> APP_CATEGORY =
-            new BundlerParamInfo<>(
-                    Arguments.CLIOptions.MAC_CATEGORY.getId(),
-                    String.class,
-                    params -> "utilities",
-                    (s, p) -> s);
 
     public static final BundlerParamInfo<String> MAC_CF_BUNDLE_IDENTIFIER =
             new BundlerParamInfo<>(
@@ -107,118 +83,6 @@ public class MacAppImageBuilder {
                         return identifier;
                     },
                     (s, p) -> s);
-
-    public static final BundlerParamInfo<Path> ICON_ICNS =
-            new BundlerParamInfo<>(
-            "icon.icns",
-            Path.class,
-            params -> {
-                Path f = ICON.fetchFrom(params);
-                if (f != null && f.getFileName() != null && !f.getFileName()
-                        .toString().toLowerCase().endsWith(".icns")) {
-                    Log.error(MessageFormat.format(
-                            I18N.getString("message.icon-not-icns"), f));
-                    return null;
-                }
-                return f;
-            },
-            (s, p) -> Path.of(s));
-
-    public static final BundlerParamInfo<Path> ENTITLEMENTS =
-            new BundlerParamInfo<>(
-            Arguments.CLIOptions.MAC_ENTITLEMENTS.getId(),
-            Path.class,
-            params -> {
-                try {
-                    Path path = CONFIG_ROOT.fetchFrom(params).resolve(
-                        APP_NAME.fetchFrom(params) + ".entitlements");
-                    String defPath = (APP_STORE.fetchFrom(params) ?
-                        "sandbox.plist" : "entitlements.plist");
-                    createResource(defPath, params)
-                        .setCategory(I18N.getString("resource.entitlements"))
-                        .saveToFile(path);
-                    return path;
-                } catch (IOException ioe) {
-                   Log.verbose(ioe);
-                }
-                return null;
-            },
-            (s, p) -> Path.of(s)
-        );
-
-    public static void addNewKeychain(Map<String, ? super Object> params)
-                                    throws IOException, InterruptedException {
-        if (OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
-            // we need this for OS X 10.12+
-            return;
-        }
-
-        String keyChain = SIGNING_KEYCHAIN.fetchFrom(params);
-        if (keyChain == null || keyChain.isEmpty()) {
-            return;
-        }
-
-        // get current keychain list
-        String keyChainPath = Path.of(keyChain).toAbsolutePath().toString();
-        List<String> keychainList = new ArrayList<>();
-        int ret = IOUtils.getProcessOutput(
-                keychainList, "security", "list-keychains");
-        if (ret != 0) {
-            Log.error(I18N.getString("message.keychain.error"));
-            return;
-        }
-        boolean contains = keychainList.stream().anyMatch(
-                    str -> str.trim().equals("\""+keyChainPath.trim()+"\""));
-        if (contains) {
-            // keychain is already added in the search list
-            return;
-        }
-
-        keyChains = new ArrayList<>();
-        // remove "
-        keychainList.forEach((String s) -> {
-            String path = s.trim();
-            if (path.startsWith("\"") && path.endsWith("\"")) {
-                path = path.substring(1, path.length()-1);
-            }
-            if (!keyChains.contains(path)) {
-                keyChains.add(path);
-            }
-        });
-
-        List<String> args = new ArrayList<>();
-        args.add("/usr/bin/security");
-        args.add("list-keychains");
-        args.add("-s");
-
-        args.addAll(keyChains);
-        args.add(keyChain);
-
-        ProcessBuilder  pb = new ProcessBuilder(args);
-        IOUtils.exec(pb);
-    }
-
-    public static void restoreKeychainList(Map<String, ? super Object> params)
-            throws IOException{
-        if (OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
-            // we need this for OS X 10.12+
-            return;
-        }
-
-        if (keyChains == null || keyChains.isEmpty()) {
-            return;
-        }
-
-        List<String> args = new ArrayList<>();
-        args.add("/usr/bin/security");
-        args.add("list-keychains");
-        args.add("-s");
-
-        args.addAll(keyChains);
-
-        ProcessBuilder  pb = new ProcessBuilder(args);
-        IOUtils.exec(pb);
-    }
 
     private static List<String> getCodesignArgs(
             boolean force, Path path, String signingIdentity,

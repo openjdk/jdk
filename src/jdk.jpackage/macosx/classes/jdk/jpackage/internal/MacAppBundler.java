@@ -104,13 +104,6 @@ public class MacAppBundler extends AppImageBundler {
             params -> "",
             null);
 
-    public static final BundlerParamInfo<String> BUNDLE_ID_SIGNING_PREFIX =
-            new BundlerParamInfo<>(
-            Arguments.CLIOptions.MAC_BUNDLE_SIGNING_PREFIX.getId(),
-            String.class,
-            params -> getIdentifier(params) + ".",
-            (s, p) -> s);
-
     static String getIdentifier(Map<String, ? super Object> params) {
         String s = MAIN_CLASS.fetchFrom(params);
         if (s == null) {
