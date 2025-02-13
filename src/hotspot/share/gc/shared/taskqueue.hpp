@@ -34,20 +34,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/stack.hpp"
 
-// Simple TaskQueue stats that are collected by default in debug builds.
-
-#if !defined(TASKQUEUE_STATS) && defined(ASSERT)
-#define TASKQUEUE_STATS 1
-#elif !defined(TASKQUEUE_STATS)
-#define TASKQUEUE_STATS 0
-#endif
-
-#if TASKQUEUE_STATS
-#define TASKQUEUE_STATS_ONLY(code) code
-#else
-#define TASKQUEUE_STATS_ONLY(code)
-#endif // TASKQUEUE_STATS
-
 #if TASKQUEUE_STATS
 class TaskQueueStats {
 public:
@@ -575,8 +561,10 @@ private:
 
 class PartialArrayState;
 
-// Discriminated union over oop*, narrowOop*, and PartialArrayState.
+// Discriminated union over oop/oop*, narrowOop*, and PartialArrayState.
 // Uses a low tag in the associated pointer to identify the category.
+// Oop/oop* are overloaded using the same tag because they can not appear at the
+// same time.
 // Used as a task queue element type.
 class ScannerTask {
   void* _p;
@@ -609,6 +597,8 @@ class ScannerTask {
 public:
   ScannerTask() : _p(nullptr) {}
 
+  explicit ScannerTask(oop p) : _p(encode(p, OopTag)) {}
+
   explicit ScannerTask(oop* p) : _p(encode(p, OopTag)) {}
 
   explicit ScannerTask(narrowOop* p) : _p(encode(p, NarrowOopTag)) {}
@@ -634,6 +624,10 @@ public:
 
   oop* to_oop_ptr() const {
     return static_cast<oop*>(decode(OopTag));
+  }
+
+  oop to_oop() const {
+    return cast_to_oop(decode(OopTag));
   }
 
   narrowOop* to_narrow_oop_ptr() const {
