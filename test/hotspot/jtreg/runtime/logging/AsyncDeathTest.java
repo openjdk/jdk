@@ -44,7 +44,7 @@ public class AsyncDeathTest {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
         // For deathtest2 we expect the VM to ignore that recursive logging has been detected and handle the case anyway.
-        ProcessBuilder pb =
+        ProcessBuilder pb2 =
             ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:os,deathtest2=debug");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
