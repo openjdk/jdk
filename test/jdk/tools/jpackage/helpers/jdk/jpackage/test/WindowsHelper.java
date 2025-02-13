@@ -71,7 +71,7 @@ public class WindowsHelper {
 
     private static int runMsiexecWithRetries(Executor misexec, Optional<Path> msiLog) {
         Executor.Result result = null;
-        final boolean isRawMisexec = misexec.getExecutable().orElseThrow().equals(Path.of("msiexec"));
+        final boolean isUnpack = misexec.getExecutable().orElseThrow().equals(Path.of("cmd"));
         final List<String> origArgs = msiLog.isPresent() ? misexec.getAllArguments() : null;
         for (int attempt = 0; attempt < 8; ++attempt) {
             msiLog.ifPresent(v -> misexec.clearArguments().addArguments(origArgs).addArgument("/L*v").addArgument(v));
@@ -86,7 +86,7 @@ public class WindowsHelper {
             // The given Executor may either be of an msiexec command or an
             // unpack.bat script containing the msiexec command. In the later
             // case, when misexec returns 1618, the unpack.bat may return 1603
-            if ((result.exitCode() == 1618) || (result.exitCode() == 1603 && !isRawMisexec)) {
+            if ((result.exitCode() == 1618) || (result.exitCode() == 1603 && isUnpack)) {
                 // Another installation is already in progress.
                 // Wait a little and try again.
                 Long timeout = 1000L * (attempt + 3); // from 3 to 10 seconds
@@ -107,12 +107,8 @@ public class WindowsHelper {
     private static Optional<Path> configureMsiLogFile(JPackageCommand cmd, boolean createMsiLog) {
         final Optional<Path> msiLogFile;
         if (createMsiLog) {
-            try {
-                msiLogFile = Optional.of(TKit.createTempFile(String.format(
-                        "logs\\%s-msi.log", cmd.packageType().getName())));
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
+            msiLogFile = Optional.of(TKit.createTempFile(String.format("logs\\%s-msi.log",
+                    cmd.packageType().getName())));
         } else {
             msiLogFile = Optional.empty();
         }
