@@ -189,7 +189,7 @@ public final class CarrierLocalArenaPools {
          * means allocation never fails due to the size and alignment of the backing
          * segment.
          */
-        private final class SlicingArena implements Arena, NoInitSegmentAllocator {
+        private final class SlicingArena implements Arena, NoInitSegmentAllocator, Runnable {
 
             // In order to prevent use-after-free issues, we make sure the original arena
             // is reachable until the dying moments of a carrier thread AND remains
@@ -244,7 +244,7 @@ public final class CarrierLocalArenaPools {
                     Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
                     final MemorySegment slice = segment.asSlice(start, byteSize, byteAlignment);
                     sp = start + byteSize;
-                    return fastReinterpret(delegate, (NativeMemorySegmentImpl) slice, byteSize);
+                    return fastReinterpret(delegate, (NativeMemorySegmentImpl) slice, byteSize, this);
                 } else {
                     return delegate.allocateNoInit(byteSize, byteAlignment);
                 }
@@ -264,6 +264,15 @@ public final class CarrierLocalArenaPools {
                 LocalArenaPoolImpl.this.releaseSegment();
             }
 
+            // This is the cleanup action
+            // It prevents the automatic original arena from being collected before
+            // the SlicingArena is closed. This case might otherwise happen if a reference
+            // is held to a reusable segment and its arena is not closed.
+            @Override
+            public void run() {
+                Reference.reachabilityFence(originalArena);
+            }
+
             @ForceInline
             void assertOwnerThread() {
                 if (owner != Thread.currentThread()) {
@@ -280,14 +289,15 @@ public final class CarrierLocalArenaPools {
     @ForceInline
     static NativeMemorySegmentImpl fastReinterpret(ArenaImpl arena,
                                                    NativeMemorySegmentImpl segment,
-                                                   long byteSize) {
+                                                   long byteSize,
+                                                   Runnable cleanupAction) {
         // We already know the segment:
         //  * is native
         //  * we have native access
         //  * there is no cleanup action
         //  * the segment is read/write
         return SegmentFactories.makeNativeSegmentUnchecked(segment.address(), byteSize,
-                MemorySessionImpl.toMemorySession(arena), false, null);
+                MemorySessionImpl.toMemorySession(arena), false, cleanupAction);
     }
 
     public static CarrierLocalArenaPools create(long byteSize) {

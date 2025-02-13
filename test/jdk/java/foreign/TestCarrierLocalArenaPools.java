@@ -30,6 +30,7 @@
  * @run junit TestCarrierLocalArenaPools
  */
 
+import java.io.FileDescriptor;
 import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
@@ -40,8 +41,11 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
@@ -295,23 +299,18 @@ final class TestCarrierLocalArenaPools {
     @Test
     void stress() throws InterruptedException {
 
-        // Force the ForkJoin pool to expand/contract so that VT:s will be allocated
+        // Encourage the VT ForkJoin pool to expand/contract so that VT:s will be allocated
         // on FJP threads that are later terminated.
-        long sum = LongStream.range(0, ForkJoinPool.getCommonPoolParallelism() * 2L)
+        LongStream.range(0, Runtime.getRuntime().availableProcessors() * 10L)
                 .parallel()
-                .boxed()
                 // Using a CompletableFuture expands the FJP
-                .map(i -> CompletableFuture.supplyAsync(() -> {
+                .forEach(_ -> Thread.ofVirtual().start(() -> {
                     try {
                         TimeUnit.SECONDS.sleep(1);
                     } catch (InterruptedException ie) {
                         throw new RuntimeException(ie);
                     }
-                    return i;
-                }))
-                .map(CompletableFuture::join)
-                .mapToLong(Long::longValue)
-                .sum();
+                }));
 
         // Just use one pool variant as testing here is fairly expensive.
         final CarrierLocalArenaPools pool = CarrierLocalArenaPools.create(POOL_SIZE);
@@ -339,6 +338,73 @@ final class TestCarrierLocalArenaPools {
                         thread.interrupt();
                     });
         }
+    }
+
+    /**
+     * The objective with this test is to test the case when a virtual thread VT0 is
+     * mounted on a carrier thread CT0; VT0 is then suspended; The pool of carrier threads
+     * are then contracted; VT0 is then remounted on another carrier thread C1. VT0 runs
+     * for a while when there is a lot of GC activity.
+     * In other words, we are trying to establish that there is no use-after-free and that
+     * the original arena, from which reusable segments are initially allocated from, is
+     * not closed underneath.
+     */
+    @Test
+    void movingVirtualThreadWithGc() throws InterruptedException {
+        var pool = CarrierLocalArenaPools.create(POOL_SIZE);
+
+        System.setProperty("jdk.virtualThreadScheduler.parallelism", "1");
+
+        var done = new AtomicBoolean();
+        var quiescent = new Object();
+
+        var executor = Executors.newVirtualThreadPerTaskExecutor();
+
+        executor.submit(() -> {
+            while (!done.get()) {
+                FileDescriptor.out.sync();
+            }
+            return null;
+        });
+
+        executor.submit(() -> {
+            System.out.println("ALLOCATING = " + Thread.currentThread());
+            try (Arena arena = pool.take()) {
+                MemorySegment segment = arena.allocate(SMALL_ALLOC_SIZE);
+                done.set(true);
+                synchronized (quiescent) {
+                    try {
+                        quiescent.wait();
+                    } catch (Throwable ex) {
+                        throw new AssertionError(ex);
+                    }
+                }
+                System.out.println("ACCESSING SEGMENT");
+
+                for (int i = 0; i < SMALL_ALLOC_SIZE; i++) {
+                    if (i % 100 == 0) {
+                        System.gc();
+                    }
+                    segment.get(ValueLayout.JAVA_BYTE, i);
+                }
+            }
+        });
+
+        long count;
+        do {
+            Thread.sleep(1000);
+            count = Thread.getAllStackTraces().keySet().stream()
+                    .filter(t -> t instanceof ForkJoinWorkerThread)
+                    .count();
+        } while (count > 0);
+
+        System.out.println("FJP HAS CONTRACTED");
+
+        synchronized (quiescent) {
+            quiescent.notify();
+        }
+
+        executor.close();
     }
 
     // Factories and helper methods
