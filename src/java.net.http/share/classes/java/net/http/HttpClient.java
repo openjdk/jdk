@@ -186,9 +186,12 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * <p>
  * If a concrete instance of {@link HttpClient} doesn't support sending a
  * request through HTTP/3, an {@link UnsupportedProtocolVersionException} may be
- * thrown, either when {@linkplain Builder#build() building} the client or when
- * attempting to send a request with {@linkplain HttpRequest.Builder#version(Version)
- * HTTP/3 enabled}.
+ * thrown, either when {@linkplain Builder#build() building} the client with
+ * a {@linkplain Builder#version(Version) preferred version} set to HTTP/3,
+ * or when attempting to send a request with {@linkplain HttpRequest.Builder#version(Version)
+ * HTTP/3 enabled}. This may typically happen if the {@link #sslContext() SSLContext}
+ * or {@link #sslParameters() SSLParameters} configured on the client instance cannot
+ * be used with HTTP/3.
  *
  * @see UnsupportedProtocolVersionException
  * @see Builder#version(Version)
@@ -469,9 +472,12 @@ public abstract class HttpClient implements AutoCloseable {
          * @return a new {@code HttpClient}
          *
          * @throws UncheckedIOException may be thrown if underlying IO resources required
-         * by the implementation cannot be allocated. For instance,
+         * by the implementation cannot be allocated, or if the resulting configuration
+         * does not satisfy the implementation requirements. For instance,
          * if the implementation requires a {@link Selector}, and opening
-         * one fails due to {@linkplain Selector#open() lack of necessary resources}.
+         * one fails due to {@linkplain Selector#open() lack of necessary resources},
+         * or if the {@linkplain #version(Version) preferred protocol version} selected
+         * is not supported by the implementation or cannot be used in this configuration.
          */
         public HttpClient build();
     }
