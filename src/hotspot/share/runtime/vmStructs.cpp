@@ -2390,6 +2390,7 @@
   COMPILER2_PRESENT(declare_constant(CodeBlobKind::Exception))            \
   COMPILER2_PRESENT(declare_constant(CodeBlobKind::UncommonTrap))         \
   declare_constant(CodeBlobKind::Upcall)                                  \
+  declare_constant(CodeBlobKind::Number_Of_Kinds)                         \
                                                                           \
   /***************/                                                       \
   /* OopMapValue */                                                       \

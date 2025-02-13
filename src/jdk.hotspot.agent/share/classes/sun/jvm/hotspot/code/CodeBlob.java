@@ -65,6 +65,9 @@ public class CodeBlob extends VMObject {
   private static int SafepointKind;
   private static int UncommonTrapKind;
   private static int UpcallKind;
+  private static int NumberOfKinds;
+
+  private static Class[] wrapperClasses;
 
   public CodeBlob(Address addr) {
     super(addr);
@@ -101,9 +104,29 @@ public class CodeBlob extends VMObject {
     DeoptimizationKind = db.lookupIntConstant("CodeBlobKind::Deoptimization").intValue();
     SafepointKind      = db.lookupIntConstant("CodeBlobKind::Safepoint").intValue();
     UpcallKind         = db.lookupIntConstant("CodeBlobKind::Upcall").intValue();
+    NumberOfKinds      = db.lookupIntConstant("CodeBlobKind::Number_Of_Kinds").intValue();
     if (VM.getVM().isServerCompiler()) {
-      ExceptionKind    = db.lookupIntConstant("CodeBlobKind::Exception").intValue();
-      UncommonTrapKind = db.lookupIntConstant("CodeBlobKind::UncommonTrap").intValue();
+        ExceptionKind    = db.lookupIntConstant("CodeBlobKind::Exception").intValue();
+        UncommonTrapKind = db.lookupIntConstant("CodeBlobKind::UncommonTrap").intValue();
+    } else {
+        // Set invalid value to not match default.
+        ExceptionKind    = NumberOfKinds + 1;
+        UncommonTrapKind = NumberOfKinds + 1;
+    }
+
+    wrapperClasses                     = new Class[NumberOfKinds];
+    wrapperClasses[NMethodKind]        = NMethod.class;
+    wrapperClasses[BufferKind]         = BufferBlob.class;
+    wrapperClasses[AdapterKind]        = AdapterBlob.class;
+    wrapperClasses[VtableKind]         = VtableBlob.class;
+    wrapperClasses[MHAdapterKind]      = MethodHandlesAdapterBlob.class;
+    wrapperClasses[RuntimeStubKind]    = RuntimeStub.class;
+    wrapperClasses[DeoptimizationKind] = DeoptimizationBlob.class;
+    wrapperClasses[SafepointKind]      = SafepointBlob.class;
+    wrapperClasses[UpcallKind]         = UpcallStub.class;
+    if (VM.getVM().isServerCompiler()) {
+      wrapperClasses[ExceptionKind]    = ExceptionBlob.class;
+      wrapperClasses[UncommonTrapKind] = UncommonTrapBlob.class;
     }
   }
 
@@ -117,33 +140,7 @@ public class CodeBlob extends VMObject {
 
   public static Class<?> getClassFor(Address addr) {
       CodeBlob cb = new CodeBlob(addr);
-      if (cb.isNMethod()) {
-          return NMethod.class;
-      } else if (cb.isBufferBlob()) {
-          return BufferBlob.class;
-      } else if (cb.isAdapterBlob()) {
-          return AdapterBlob.class;
-      } else if (cb.isVtableBlob()) {
-          return VtableBlob.class;
-      } else if (cb.isMHAdapterBlob()) {
-          return MethodHandlesAdapterBlob.class;
-      } else if (cb.isRuntimeStub()) {
-          return RuntimeStub.class;
-      } else if (cb.isDeoptimizationBlob()) {
-          return DeoptimizationBlob.class;
-      } else if (cb.isSafepointBlob()) {
-          return SafepointBlob.class;
-      } else if (cb.isUpcallStub()) {
-          return UpcallStub.class;
-      }
-      if (VM.getVM().isServerCompiler()) {
-        if (cb.isExceptionBlob()) {
-            return ExceptionBlob.class;
-        } else if (cb.isUncommonTrapBlob()) {
-            return UncommonTrapBlob.class;
-        }
-      }
-      return null;
+      return wrapperClasses[cb.getKind()];
   }
 
   public Address headerBegin()    { return getAddress(); }
@@ -209,15 +206,9 @@ public class CodeBlob extends VMObject {
 
   public boolean isDeoptimizationBlob() { return getKind() == DeoptimizationKind; }
 
-  public boolean isUncommonTrapBlob()   {
-    if (!VM.getVM().isServerCompiler()) return false;
-    return getKind() == UncommonTrapKind;
-  }
+  public boolean isUncommonTrapBlob()   { return getKind() == UncommonTrapKind; }
 
-  public boolean isExceptionBlob()      {
-    if (!VM.getVM().isServerCompiler()) return false;
-    return getKind() == ExceptionKind;
-  }
+  public boolean isExceptionBlob()      { return getKind() == ExceptionKind; }
 
   public boolean isSafepointBlob()      { return getKind() == SafepointKind; }
 
