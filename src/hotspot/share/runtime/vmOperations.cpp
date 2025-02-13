@@ -519,7 +519,7 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
   jlong start_time = os::javaTimeNanos();
 
   // Deadline for user threads in native code.
-  // User-settable flag counts "attempts" in 10ms units.
+  // User-settable flag counts "attempts" in 10ms units, to a maximum of 10s.
   jlong user_threads_deadline = start_time + (UserThreadWaitAttemptsAtExit * millis_to_nanos(10));
 
   // Deadline for compiler threads: at least 10 seconds.
