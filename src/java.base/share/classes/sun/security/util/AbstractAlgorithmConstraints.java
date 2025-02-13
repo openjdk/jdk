@@ -76,14 +76,17 @@ public abstract class AbstractAlgorithmConstraints
         new String[]{"EdDSA", "Ed25519", "Ed448"};
     private static final String[] aliasEd25519 =
         new String[]{"EdDSA", "Ed25519"};
-    private static final String[] aliasEd448 =
-        new String[]{"EdDSA", "Ed448"};
+    private static final String[] aliasXDH =
+        new String[]{"XDH", "X25519", "X448"};
+    private static final String[] aliasX25519 =
+        new String[]{"XDH", "X25519"};
 
     public static List<String> getAliases(String algorithm) {
         return switch (algorithm) {
             case "EdDSA" -> Arrays.asList(aliasEdDSA);
             case "Ed25519" -> Arrays.asList(aliasEd25519);
-            case "Ed448" -> Arrays.asList(aliasEd448);
+            case "XDH" -> Arrays.asList(aliasXDH);
+            case "X25519" -> Arrays.asList(aliasX25519);
             default -> Collections.emptyList();
         };
     }

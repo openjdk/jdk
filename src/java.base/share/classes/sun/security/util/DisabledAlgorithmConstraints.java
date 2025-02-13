@@ -34,12 +34,9 @@ import java.security.Key;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.interfaces.ECKey;
-import java.security.interfaces.EdECKey;
-import java.security.interfaces.XECKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
-import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -277,10 +274,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 }
                 yield Arrays.asList(nc.getNameAndAliases());
             }
-            case XECKey xecKey -> List.of(
-                ((NamedParameterSpec) xecKey.getParams()).getName());
-            case EdECKey edecKey -> List.of((edecKey.getParams()).getName());
-            default -> List.of();
+            default -> List.of(KeyUtil.getAlgorithm(key));
         };
     }
 
@@ -305,7 +299,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         // check the key algorithm
-        if (!permits(primitives, key.getAlgorithm(), null)) {
+        if (!permits(primitives, KeyUtil.getAlgorithm(key), null)) {
             return false;
         }
 
