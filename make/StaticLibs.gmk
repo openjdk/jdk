@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include CopyFiles.gmk
 include DebugInfoUtils.gmk
@@ -185,6 +184,8 @@ static-jdk-image: $(copy-from-jdk-image) $(copy-static-launcher) $(copy-static-l
 
 TARGETS += static-jdk-image
 
-all: $(TARGETS)
+.PHONY: static-launcher static-jdk-image
 
-.PHONY: all static-launcher static-jdk-image
+################################################################################
+
+include MakeFileEnd.gmk

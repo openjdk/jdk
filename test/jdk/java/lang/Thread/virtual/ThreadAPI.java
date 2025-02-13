@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm --enable-native-access=ALL-UNNAMED ThreadAPI
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED ThreadAPI
  */
 
 /*
@@ -37,7 +37,7 @@
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
+ * @run junit/othervm/native -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *     --enable-native-access=ALL-UNNAMED ThreadAPI
  */
 

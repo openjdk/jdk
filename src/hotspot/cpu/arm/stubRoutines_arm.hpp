@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,38 +29,53 @@
 // definition. See stubRoutines.hpp for a description on how to
 // extend it.
 
+// emit enum used to size per-blob code buffers
+
+#define DEFINE_BLOB_SIZE(blob_name, size) \
+  _ ## blob_name ## _code_size = size,
+
 enum platform_dependent_constants {
-  // simply increase sizes if too small (assembler will crash if too small)
-  _initial_stubs_code_size      =  9000,
-  _continuation_stubs_code_size =  2000,
-  _compiler_stubs_code_size     = 22000,
-  _final_stubs_code_size        = 22000
+  STUBGEN_ARCH_BLOBS_DO(DEFINE_BLOB_SIZE)
 };
+
+#undef DEFINE_BLOB_SIZE
+
+public:
+  static bool returns_to_call_stub(address return_pc) {
+    return return_pc == _call_stub_return_address;
+  }
 
 class Arm {
  friend class StubGenerator;
  friend class VMStructs;
 
- private:
+#define DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
+  static address STUB_FIELD_NAME(field_name) ;
 
-  static address _idiv_irem_entry;
-  static address _partial_subtype_check;
+#define DECLARE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DECLARE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name)
 
- public:
+private:
+  STUBGEN_ARCH_ENTRIES_DO(DECLARE_ARCH_ENTRY, DECLARE_ARCH_ENTRY_INIT)
 
-  static address idiv_irem_entry() { return _idiv_irem_entry; }
-  static address partial_subtype_check() { return _partial_subtype_check; }
+#undef DECLARE_ARCH_ENTRY_INIT
+#undef DECLARE_ARCH_ENTRY
+
+public:
+
+  // declare getters for arch-specific entries
+
+#define DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name) \
+  static address getter_name() { return STUB_FIELD_NAME(field_name) ; }
+
+#define DEFINE_ARCH_ENTRY_GETTER_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  DEFINE_ARCH_ENTRY_GETTER(arch, blob_name, stub_name, field_name, getter_name)
+
+  STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY_GETTER, DEFINE_ARCH_ENTRY_GETTER_INIT)
+
+#undef DEFINE_ARCH_ENTRY_GETTER_INIT
+#undef DEFINE_ARCH_ENTRY_GETTER
+
 };
-
-  static bool returns_to_call_stub(address return_pc) {
-    return return_pc == _call_stub_return_address;
-  }
-
-  static address _atomic_load_long_entry;
-  static address _atomic_store_long_entry;
-
-  static address atomic_load_long_entry()                  { return _atomic_load_long_entry; }
-  static address atomic_store_long_entry()                 { return _atomic_store_long_entry; }
-
 
 #endif // CPU_ARM_STUBROUTINES_ARM_HPP
