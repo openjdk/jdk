@@ -1337,21 +1337,22 @@ Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   if (t1 == nullptr) {
     return NodeSentinel;        // Left input is an integer
   }
-  const TypeInteger* t3;  // type of in(1).in(2)
   int shift = maskShiftAmount(phase, this, bits_per_java_integer(bt));
   if (shift == 0) {
     return NodeSentinel;
   }
 
   // Check for (x & 0xFF000000) >> 24, whose mask can be made smaller.
+  // and convert to (x >> 24) & (0xFF000000 >> 24) = x >> 24
   // Such expressions arise normally from shift chains like (byte)(x >> 24).
-  const Node* mask = in(1);
-  if (mask->Opcode() == Op_And(bt) &&
-      (t3 = phase->type(mask->in(2))->isa_integer(bt)) &&
-      t3->is_con()) {
-    jlong maskbits = t3->get_con_as_long(bt);
+  const TypeInteger* mask_t;
+  const Node* and_node = in(1);
+  if (and_node->Opcode() == Op_And(bt) &&
+      (mask_t = phase->type(and_node->in(2))->isa_integer(bt)) &&
+      mask_t->is_con()) {
+    jlong maskbits = mask_t->get_con_as_long(bt);
     // Convert to "(x >> shift) & (mask >> shift)"
-    Node* shr_nomask = phase->transform(RShiftNode::make(mask->in(1), in(2), bt));
+    Node* shr_nomask = phase->transform(RShiftNode::make(and_node->in(1), in(2), bt));
     return MulNode::make_and(shr_nomask, phase->integercon(maskbits >> shift, bt), bt);
   }
   return nullptr;
@@ -1482,19 +1483,21 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (progress != nullptr) {
     return progress;
   }
-  const TypeInt* t3;  // type of in(1).in(2)
   int shift = maskShiftAmount(phase, this, BitsPerJavaInteger);
   assert(shift != 0, "handled by IdealIL");
 
   // Check for "(short[i] <<16)>>16" which simply sign-extends
   const Node *shl = in(1);
-  if( shl->Opcode() != Op_LShiftI ) return nullptr;
+  if (shl->Opcode() != Op_LShiftI) {
+    return nullptr;
+  }
 
-  if( shift == 16 &&
-      (t3 = phase->type(shl->in(2))->isa_int()) &&
-      t3->is_con(16) ) {
+  const TypeInt* left_shift_t;
+  if (shift == 16 &&
+      (left_shift_t = phase->type(shl->in(2))->isa_int()) &&
+      left_shift_t->is_con(16)) {
     Node *ld = shl->in(1);
-    if( ld->Opcode() == Op_LoadS ) {
+    if (ld->Opcode() == Op_LoadS) {
       // Sign extension is just useless here.  Return a RShiftI of zero instead
       // returning 'ld' directly.  We cannot return an old Node directly as
       // that is the job of 'Identity' calls and Identity calls only work on
@@ -1512,9 +1515,9 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Check for "(byte[i] <<24)>>24" which simply sign-extends
-  if( shift == 24 &&
-      (t3 = phase->type(shl->in(2))->isa_int()) &&
-      t3->is_con(24) ) {
+  if (shift == 24 &&
+      (left_shift_t = phase->type(shl->in(2))->isa_int()) &&
+      left_shift_t->is_con(24)) {
     Node *ld = shl->in(1);
     if (ld->Opcode() == Op_LoadB) {
       // Sign extension is just useless here
