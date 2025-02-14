@@ -61,14 +61,14 @@ public final class CarrierLocalArenaPools {
                     // from the carrier thread at almost any time. Therefore, we must use
                     // stronger-than-plain semantics when dealing with mutual exclusion
                     // of thread local resources.
-                    return new LocalArenaPoolImpl.OfCarrier(byteSize, byteAlignment);
+                    return new LocalArenaPoolImpl.OfCarrier(Arena.ofAuto(), byteSize, byteAlignment);
                 } else {
                     // A carrier thread that is not an instance of `CarrierThread` can
                     // never carry a virtual thread. Because of this, only one thread will
                     // be mounted on such a carrier thread. Therefore, we can use plain
                     // memory semantics when dealing with mutual exclusion of thread local
                     // resources.
-                    return new LocalArenaPoolImpl.OfPlatform(byteSize, byteAlignment);
+                    return new LocalArenaPoolImpl.OfPlatform(Arena.ofConfined(), byteSize, byteAlignment);
                 }
             }
 
@@ -77,7 +77,9 @@ public final class CarrierLocalArenaPools {
             // Note: the fork join pool can expand/contract dynamically
             // We do not use the method here as we are using an automatic arena.
             @Override
-            protected void threadTerminated(LocalArenaPoolImpl pool) {}
+            protected void threadTerminated(LocalArenaPoolImpl pool) {
+                pool.close();
+            }
         };
     }
 
@@ -101,9 +103,10 @@ public final class CarrierLocalArenaPools {
         // Used both directly and reflectively
         int segmentAvailability;
 
-        private LocalArenaPoolImpl(long byteSize,
+        private LocalArenaPoolImpl(Arena originalArena,
+                                   long byteSize,
                                    long byteAlignment) {
-            this.originalArena = Arena.ofAuto();
+            this.originalArena = originalArena;
             this.recyclableSegment = originalArena.allocate(byteSize, byteAlignment);
         }
 
@@ -113,6 +116,13 @@ public final class CarrierLocalArenaPools {
             return tryAcquireSegment()
                     ? new SlicingArena(originalArena, (ArenaImpl) arena, recyclableSegment)
                     : arena;
+        }
+
+        void close() {
+            // Do not close an automatic arena
+            if (((MemorySessionImpl) originalArena).isCloseable()) {
+                originalArena.close();
+            }
         }
 
         /**
@@ -139,9 +149,10 @@ public final class CarrierLocalArenaPools {
             static final long SEG_AVAIL_OFFSET =
                     UNSAFE.objectFieldOffset(LocalArenaPoolImpl.class, "segmentAvailability");
 
-            public OfCarrier(long byteSize,
+            public OfCarrier(Arena originalArena,
+                             long byteSize,
                              long byteAlignment) {
-                super(byteSize, byteAlignment);
+                super(originalArena, byteSize, byteAlignment);
             }
 
             @ForceInline
@@ -162,9 +173,10 @@ public final class CarrierLocalArenaPools {
         public static final class OfPlatform
                 extends LocalArenaPoolImpl {
 
-            public OfPlatform(long byteSize,
+            public OfPlatform(Arena originalArena,
+                              long byteSize,
                               long byteAlignment) {
-                super(byteSize, byteAlignment);
+                super(originalArena, byteSize, byteAlignment);
             }
 
             @ForceInline
@@ -189,7 +201,7 @@ public final class CarrierLocalArenaPools {
          * means allocation never fails due to the size and alignment of the backing
          * segment.
          */
-        private final class SlicingArena implements Arena, NoInitSegmentAllocator, Runnable {
+        private final class SlicingArena implements Arena, NoInitSegmentAllocator {
 
             // In order to prevent use-after-free issues, we make sure the original arena
             // is reachable until the dying moments of a carrier thread AND remains
@@ -243,8 +255,17 @@ public final class CarrierLocalArenaPools {
                 if (start + byteSize <= segment.byteSize()) {
                     Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
                     final MemorySegment slice = segment.asSlice(start, byteSize, byteAlignment);
+
+                    // We only need to do this once for VTs
+                    if (sp == 0 && owner.isVirtual()) {
+                        // It prevents the automatic original arena from being collected before
+                        // the SlicingArena is closed. This case might otherwise happen if a reference
+                        // is held to a reusable segment and its arena is not closed.
+                        ((MemorySessionImpl) delegate.scope())
+                                .addCloseAction(new ReferenceHolder(originalArena));
+                    }
                     sp = start + byteSize;
-                    return fastReinterpret(delegate, (NativeMemorySegmentImpl) slice, byteSize, this);
+                    return fastReinterpret(delegate, (NativeMemorySegmentImpl) slice, byteSize);
                 } else {
                     return delegate.allocateNoInit(byteSize, byteAlignment);
                 }
@@ -264,15 +285,6 @@ public final class CarrierLocalArenaPools {
                 LocalArenaPoolImpl.this.releaseSegment();
             }
 
-            // This is the cleanup action
-            // It prevents the automatic original arena from being collected before
-            // the SlicingArena is closed. This case might otherwise happen if a reference
-            // is held to a reusable segment and its arena is not closed.
-            @Override
-            public void run() {
-                Reference.reachabilityFence(originalArena);
-            }
-
             @ForceInline
             void assertOwnerThread() {
                 if (owner != Thread.currentThread()) {
@@ -283,21 +295,24 @@ public final class CarrierLocalArenaPools {
         }
     }
 
+    private record ReferenceHolder(Object ref) implements Runnable {
+        @Override public void run() { Reference.reachabilityFence(ref);}
+    }
+
     // Equivalent to but faster than:
     //     return (NativeMemorySegmentImpl) slice
     //             .reinterpret(byteSize, delegate, null); */
     @ForceInline
     static NativeMemorySegmentImpl fastReinterpret(ArenaImpl arena,
                                                    NativeMemorySegmentImpl segment,
-                                                   long byteSize,
-                                                   Runnable cleanupAction) {
+                                                   long byteSize) {
         // We already know the segment:
         //  * is native
         //  * we have native access
         //  * there is no cleanup action
         //  * the segment is read/write
         return SegmentFactories.makeNativeSegmentUnchecked(segment.address(), byteSize,
-                MemorySessionImpl.toMemorySession(arena), false, cleanupAction);
+                MemorySessionImpl.toMemorySession(arena), false, null);
     }
 
     public static CarrierLocalArenaPools create(long byteSize) {
