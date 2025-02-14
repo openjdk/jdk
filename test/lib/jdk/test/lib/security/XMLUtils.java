@@ -554,11 +554,12 @@ public class XMLUtils {
         }
     }
 
-    // MISC
+    //////////// MISC ////////////
 
     /**
      * Adds a new rule to "jdk.xml.dsig.secureValidationPolicy"
      */
+    @SuppressWarnings("dangling-doc-comments")
     public static void addPolicy(String rule) {
         String value = Security.getProperty("jdk.xml.dsig.secureValidationPolicy");
         value = rule + "," + value;
