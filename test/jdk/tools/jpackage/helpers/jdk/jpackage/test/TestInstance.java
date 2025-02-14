@@ -150,7 +150,7 @@ final class TestInstance implements ThrowingRunnable {
         private String instanceArgs;
     }
 
-    TestInstance(ThrowingRunnable testBody) {
+    TestInstance(ThrowingRunnable testBody, Path workDirRoot) {
         assertCount = 0;
         this.testConstructor = (unused) -> null;
         this.testBody = (unused) -> testBody.run();
@@ -158,11 +158,11 @@ final class TestInstance implements ThrowingRunnable {
         this.afterActions = Collections.emptyList();
         this.testDesc = TestDesc.createBuilder().get();
         this.dryRun = false;
-        this.workDir = createWorkDirName(testDesc);
+        this.workDir = workDirRoot.resolve(createWorkDirPath(testDesc));
     }
 
     TestInstance(MethodCall testBody, List<ThrowingConsumer<Object>> beforeActions,
-            List<ThrowingConsumer<Object>> afterActions, boolean dryRun) {
+            List<ThrowingConsumer<Object>> afterActions, boolean dryRun, Path workDirRoot) {
         assertCount = 0;
         this.testConstructor = v -> ((MethodCall)v).newInstance();
         this.testBody = testBody;
@@ -170,7 +170,7 @@ final class TestInstance implements ThrowingRunnable {
         this.afterActions = afterActions;
         this.testDesc = testBody.createDescription();
         this.dryRun = dryRun;
-        this.workDir = createWorkDirName(testDesc);
+        this.workDir = workDirRoot.resolve(createWorkDirPath(testDesc));
     }
 
     void notifyAssert() {
@@ -276,8 +276,8 @@ final class TestInstance implements ThrowingRunnable {
         return false;
     }
 
-    private static Path createWorkDirName(TestDesc testDesc) {
-        Path result = Path.of(".");
+    private static Path createWorkDirPath(TestDesc testDesc) {
+        Path result = Path.of("");
         if (!isCalledByJavatest()) {
             result = result.resolve(testDesc.clazz.getSimpleName());
         }
