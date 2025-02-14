@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
 /*
  * @test
  * @bug 8346129
@@ -47,6 +48,7 @@ import java.util.Set;
  * @run main/othervm DisabledAlgorithmPermits X448
  * @run main/othervm DisabledAlgorithmPermits XDH
  */
+
 public class DisabledAlgorithmPermits {
     public static void main(String[] args) throws Exception {
         String algorithm = args[0];
