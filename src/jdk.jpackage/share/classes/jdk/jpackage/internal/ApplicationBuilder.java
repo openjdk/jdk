@@ -61,11 +61,10 @@ final class ApplicationBuilder {
         } else if (!launchersAsList.isEmpty()) {
             effectiveName = launchers.mainLauncher().name();
         } else {
-            throw buildConfigException().message("error.no.name").advice("error.no.name.advice").create();
+            throw buildConfigException("error.no.name").advice("error.no.name.advice").create();
         }
 
         Objects.requireNonNull(launchersAsList);
-        Objects.requireNonNull(appImageLayout);
 
         return new Application.Stub(
                 effectiveName,
