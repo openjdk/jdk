@@ -1211,22 +1211,6 @@ JVM_ENTRY(jboolean, JVM_IsHiddenClass(JNIEnv *env, jclass cls))
 JVM_END
 
 
-JVM_ENTRY(jobject, JVM_GetProtectionDomain(JNIEnv *env, jclass cls))
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  if (mirror == nullptr) {
-    THROW_(vmSymbols::java_lang_NullPointerException(), nullptr);
-  }
-
-  if (java_lang_Class::is_primitive(mirror)) {
-    // Primitive types does not have a protection domain.
-    return nullptr;
-  }
-
-  oop pd = java_lang_Class::protection_domain(mirror);
-  return (jobject) JNIHandles::make_local(THREAD, pd);
-JVM_END
-
-
 class ScopedValueBindingsResolver {
 public:
   InstanceKlass* Carrier_klass;

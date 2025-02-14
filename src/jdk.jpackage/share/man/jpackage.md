@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -660,6 +660,12 @@ jpackage will lookup files by specific names in the resource directory.
 `ui.wxf`
 
 :   WiX project file for installer UI
+
+`os-condition.wxf`
+
+:   WiX project file with the condition to block installation on older versions of Windows
+
+    Default resource is *os-condition.wxf*
 
 `wix-conv.xsl`
 
