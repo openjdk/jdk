@@ -29,6 +29,7 @@ import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 
 import javax.print.Doc;
 import javax.print.DocFlavor;
@@ -68,10 +69,14 @@ public class PostScriptLeanTest {
         job.print(doc, null);
         monitor.waitForJobToFinish();
 
+        byte[] separator = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
+        byte prefix = separator[separator.length - 1];
+        byte postfix = separator[0];
+
         int paths = 0;
         byte[] ps = output.toByteArray();
         for (int i = 1; i + 1 < ps.length; i++) {
-            if (ps[i - 1] == '\n' && ps[i] == 'N' && ps[i + 1] == '\n') {
+            if (ps[i - 1] == prefix && ps[i] == 'N' && ps[i + 1] == postfix) {
                 paths++; // found a "newpath" command (aliased to "N")
             }
         }
