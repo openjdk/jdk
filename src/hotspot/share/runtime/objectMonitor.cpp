@@ -168,7 +168,7 @@ ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 //   Since the successor is chosen in FIFO order, the exiting thread
 //   needs to find the tail of the entry_list. This is done by walking
 //   from the entry_list head. While walking the list we also assign
-//   the prev pointers of each thread, essentially forming a doubly 
+//   the prev pointers of each thread, essentially forming a doubly
 //   linked list, see 2) below.
 //
 //   Once we have formed a doubly linked list it's easy to find the
@@ -1283,7 +1283,7 @@ static void set_bad_pointers(ObjectWaiter* currentNode) {
   // Diagnostic hygiene ...
   currentNode->_prev  = (ObjectWaiter*) 0xBAD;
   currentNode->_next  = (ObjectWaiter*) 0xBAD;
-  currentNode->TState = ObjectWaiter::TS_RUN;
+  currentNode->TState = ObjectWaiter::TS_UNDEF;
 #endif
 }
 
@@ -1314,26 +1314,19 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
       // The CAS above can fail from interference IFF a contending
       // thread "pushed" itself onto entry_list.
     }
-    if (currentNode->_prev == nullptr) {
-      // Build the doubly linked list to get hold of
-      // currentNode->_prev.
-      _entry_list_tail = nullptr;
-      entry_list_tail(current);
-      assert(currentNode->_prev != nullptr, "must be");
 
+    if (currentNode->_prev != nullptr) {
+      // The currentNode is the last element in _entry_list and we know
+      // which element is the previous one. Also common.
+      assert(_entry_list != currentNode, "invariant");
+      _entry_list_tail = currentNode->_prev;
+      _entry_list_tail->_next = nullptr;
+      set_bad_pointers(currentNode);
+      return;
     }
-    // The currentNode is the last element in _entry_list and we know
-    // which element is the previous one.
-    assert(_entry_list != currentNode, "invariant");
-    _entry_list_tail = currentNode->_prev;
-    _entry_list_tail->_next = nullptr;
-    set_bad_pointers(currentNode);
-    return;
   }
 
-  assert(currentNode->_next != nullptr, "invariant");
-  assert(currentNode != _entry_list_tail, "invariant");
-
+  // Build the doubly linked list to get hold of currentNode->_prev.
   if (currentNode->_prev == nullptr) {
     ObjectWaiter* v = Atomic::load_acquire(&_entry_list);
 
@@ -1341,7 +1334,7 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
     if (v == currentNode) {
       // currentNode is at the head of _entry_list.
       if (Atomic::cmpxchg(&_entry_list, v, currentNode->_next) == v) {
-        // The CAS above sucsessfully unlinked currentNode from the head of the _entry_list.
+        // The CAS above successfully unlinked currentNode from the head of the _entry_list.
         assert(_entry_list != v, "invariant");
         _entry_list->_prev = nullptr;
         set_bad_pointers(currentNode);
@@ -1359,19 +1352,21 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
     assert(currentNode->_prev != nullptr, "must be");
   }
 
-  // We now assume we are unlinking currentNode from the interior of a
-  // doubly linked list.
-  assert(currentNode->_next != nullptr, "");
+  // We now assume we are unlinking currentNode from the interior or the end
+  // of the doubly linked list.
   assert(currentNode->_prev != nullptr, "");
   assert(currentNode != _entry_list, "");
-  assert(currentNode != _entry_list_tail, "");
 
   ObjectWaiter* nxt = currentNode->_next;
   ObjectWaiter* prv = currentNode->_prev;
-  assert(nxt->TState == ObjectWaiter::TS_ENTER, "invariant");
   assert(prv->TState == ObjectWaiter::TS_ENTER, "invariant");
 
-  nxt->_prev = prv;
+  if (currentNode == _entry_list_tail) {
+    _entry_list_tail = prv;
+  } else {
+    nxt->_prev = prv;
+  }
+
   prv->_next = nxt;
   set_bad_pointers(currentNode);
 }
