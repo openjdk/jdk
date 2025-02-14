@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
 package sun.security.util;
 
 import jdk.internal.access.SharedSecrets;
+import sun.security.ec.ECOperations;
+import sun.security.ec.ECPublicKeyImpl;
+import sun.security.ec.point.AffinePoint;
+import sun.security.ec.point.MutablePoint;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -373,6 +377,18 @@ public final class ECUtil {
         if (!left.equals(right)) {
             throw new InvalidKeyException("Public point is not on the curve");
         }
+    }
+
+    // Calculate an ECPublicKey from the private sArray component
+    public static ECPublicKey sArrayToPublicKey(byte[] sArray, ECParameterSpec params)
+            throws InvalidKeyException {
+        ECOperations ops = ECOperations.forParameters(params)
+                .orElseThrow(ProviderException::new);
+        MutablePoint pub = ops.multiply(params.getGenerator(), sArray);
+        AffinePoint affPub = pub.asAffine();
+        ECPoint w = new ECPoint(affPub.getX().asBigInteger(),
+                affPub.getY().asBigInteger());
+        return new ECPublicKeyImpl(w, params);
     }
 
     private ECUtil() {}

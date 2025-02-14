@@ -49,6 +49,7 @@ import static sun.security.pkcs11.TemplateManager.O_GENERATE;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 import sun.security.util.DerValue;
+import sun.security.util.InternalPrivateKey;
 import sun.security.util.Length;
 import sun.security.util.ECUtil;
 import sun.security.jca.JCAUtil;
@@ -399,6 +400,13 @@ abstract class P11Key implements Key, Length {
 
     static PrivateKey privateKey(Session session, long keyID, String algorithm,
             int keyLength, CK_ATTRIBUTE[] attrs) {
+        return privateKey(session, keyID, algorithm, keyLength, attrs, null);
+    }
+
+    // Create a PrivateKey with an optional PublicKey. The PublicKey is only
+    // added to EC keys at the moment.
+    static PrivateKey privateKey(Session session, long keyID, String algorithm,
+            int keyLength, CK_ATTRIBUTE[] attrs, PublicKey pk) {
         attrs = getAttributes(session, keyID, attrs, new CK_ATTRIBUTE[] {
                     new CK_ATTRIBUTE(CKA_TOKEN),
                     new CK_ATTRIBUTE(CKA_SENSITIVE),
@@ -417,7 +425,7 @@ abstract class P11Key implements Key, Length {
             case "DH" -> P11DHPrivateKeyInternal.of(session, keyID, algorithm,
                     keyLength, attrs, keySensitive);
             case "EC" -> P11ECPrivateKeyInternal.of(session, keyID, algorithm,
-                    keyLength, attrs, keySensitive);
+                    keyLength, attrs, keySensitive, pk);
             default -> throw new ProviderException
                     ("Unknown private key algorithm " + algorithm);
         };
@@ -1201,28 +1209,31 @@ abstract class P11Key implements Key, Length {
         }
     }
 
-    static class P11ECPrivateKeyInternal extends P11PrivateKey {
+    static class P11ECPrivateKeyInternal extends P11PrivateKey
+            implements InternalPrivateKey {
 
         @Serial
         private static final long serialVersionUID = 1L;
 
+        private final PublicKey pk;
         protected transient ECParameterSpec params;
 
         static P11ECPrivateKeyInternal of(Session session, long keyID,
                 String algorithm, int keyLength, CK_ATTRIBUTE[] attrs,
-                boolean keySensitive) {
+                boolean keySensitive, PublicKey pk) {
             if (keySensitive) {
                 return new P11ECPrivateKeyInternal(session, keyID, algorithm,
-                        keyLength, attrs);
+                        keyLength, attrs, pk);
             } else {
                 return new P11ECPrivateKey(session, keyID, algorithm,
-                        keyLength, attrs);
+                        keyLength, attrs, pk);
             }
         }
 
         private P11ECPrivateKeyInternal(Session session, long keyID,
-                String algorithm, int keyLength, CK_ATTRIBUTE[] attrs) {
+                String algorithm, int keyLength, CK_ATTRIBUTE[] attrs, PublicKey pk) {
             super(session, keyID, algorithm, keyLength, attrs);
+            this.pk = pk;
         }
 
         private synchronized void fetchValues() {
@@ -1245,6 +1256,11 @@ abstract class P11Key implements Key, Length {
             fetchValues();
             return params;
         }
+
+        @Override
+        public PublicKey calculatePublicKey() {
+            return pk;
+        }
     }
 
     private static final class P11ECPrivateKey extends P11ECPrivateKeyInternal
@@ -1255,8 +1271,8 @@ abstract class P11Key implements Key, Length {
         private transient BigInteger s; // params in P11ECPrivateKeyInternal
 
         P11ECPrivateKey(Session session, long keyID, String algorithm,
-                int keyLength, CK_ATTRIBUTE[] attrs) {
-            super(session, keyID, algorithm, keyLength, attrs);
+                int keyLength, CK_ATTRIBUTE[] attrs, PublicKey pk) {
+            super(session, keyID, algorithm, keyLength, attrs, pk);
         }
 
         private synchronized void fetchValues() {
