@@ -60,7 +60,7 @@ import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
 
 public final class BasicTest {
 
-    public static Collection addModulesParams() {
+    public static Collection<?> addModulesParams() {
         List<Object[][]> params = new ArrayList<>();
         params.add(new Object[][] { new String[] { "--add-modules", "ALL-DEFAULT"  } });
         params.add(new Object[][] { new String[] { "--add-modules", "java.desktop" } });
