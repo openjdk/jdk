@@ -71,7 +71,6 @@ public abstract class AbstractAlgorithmConstraints
         return algorithmsInPropertySet;
     }
 
-
     private static final String[] aliasEdDSA =
         new String[]{"EdDSA", "Ed25519", "Ed448"};
     private static final String[] aliasEd25519 =
@@ -81,6 +80,11 @@ public abstract class AbstractAlgorithmConstraints
     private static final String[] aliasX25519 =
         new String[]{"XDH", "X25519"};
 
+    /**
+     * getAlias() adds extra algorithm names to the String if matched.  Used by
+     * checkAlgorithm(), it returns additional names that may be on the
+     * DisabledAlgorithmConstraints list.
+     */
     public static List<String> getAliases(String algorithm) {
         return switch (algorithm) {
             case "EdDSA" -> Arrays.asList(aliasEdDSA);
@@ -91,6 +95,15 @@ public abstract class AbstractAlgorithmConstraints
         };
     }
 
+    /**
+     * This checks a given `algorithm' against the list of 'algorithms' from
+     * the DisabledAlgorithmConstraints or LegacyAlgorithmConstraints.
+     *
+     * @param algorithms List of algorithms from the constraints list
+     * @param algorithm algorithm being checked against list
+     * @param decomposer class the decomposing names into sub-elements
+     * @return
+     */
     static boolean checkAlgorithm(Set<String> algorithms, String algorithm,
             AlgorithmDecomposer decomposer) {
         if (algorithm == null || algorithm.isEmpty()) {
