@@ -190,7 +190,7 @@ inline void Method::set_rate(float rate) {
   }
 }
 
-int Method::invocation_count() const {
+inline int Method::invocation_count() const {
   MethodCounters* mcs = method_counters();
   MethodData* mdo = method_data();
   if (((mcs != nullptr) ? mcs->invocation_counter()->carry() : false) ||
@@ -202,7 +202,7 @@ int Method::invocation_count() const {
   }
 }
 
-int Method::backedge_count() const {
+inline int Method::backedge_count() const {
   MethodCounters* mcs = method_counters();
   MethodData* mdo = method_data();
   if (((mcs != nullptr) ? mcs->backedge_counter()->carry() : false) ||
@@ -214,7 +214,7 @@ int Method::backedge_count() const {
   }
 }
 
-int Method::highest_comp_level() const {
+inline int Method::highest_comp_level() const {
   const MethodCounters* mcs = method_counters();
   if (mcs != nullptr) {
     return mcs->highest_comp_level();
@@ -223,7 +223,7 @@ int Method::highest_comp_level() const {
   }
 }
 
-int Method::interpreter_invocation_count() const {
+inline int Method::interpreter_invocation_count() const {
   return invocation_count();
 }
 
