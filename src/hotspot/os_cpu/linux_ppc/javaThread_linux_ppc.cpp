@@ -65,6 +65,13 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
       return false;
     }
 
+    if (!CodeCache::contains(pc)) {
+      // The thread `isInJava` but its pc is not in the CodeCache. This is uncommon. It
+      // can occur, for instance, if we're trying to sample the stack while actually
+      // handling a SIGTRAP (e.g. because of a range check). It is not safe to do that.
+      return false;
+    }
+
     // pc could refer to a native address outside the code cache even though the thread isInJava.
     frame ret_frame((intptr_t*)uc->uc_mcontext.regs->gpr[1/*REG_SP*/], pc, frame::kind::unknown);
 
