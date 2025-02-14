@@ -276,7 +276,7 @@ public class FormatCharAdvanceTest {
         ab2 = findTextBoundingBox(image).width;
         assertEqual(ab1, ab2, "drawString (using AttributedCharacterIterator)", c, font);
 
-        int max = metrics.stringWidth("AB");
+        int max = metrics.stringWidth("AB") + 2; // add a little wiggle room to the max width
         LineBreakMeasurer measurer1 = new LineBreakMeasurer(as1.getIterator(), frc);
         LineBreakMeasurer measurer2 = new LineBreakMeasurer(as2.getIterator(), frc);
         assertEqual(2, measurer1.nextOffset(max), "nextOffset 1", c, font);
