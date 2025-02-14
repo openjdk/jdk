@@ -71,6 +71,7 @@ public abstract class AbstractCheckSignatureSchemes extends SSLEngineTemplate {
     protected static final int SIG_ALGS_CERT_EXT = 50;
 
     protected AbstractCheckSignatureSchemes() throws Exception {
+        super();
     }
 
     protected String getProtocol() {
