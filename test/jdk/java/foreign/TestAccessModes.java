@@ -121,15 +121,12 @@ public class TestAccessModes {
             supportedModes.add(PLAIN);
             if (layout.byteAlignment() >= layout.byteSize()) {
                 supportedModes.add(READ_WRITE);
-                if (layout instanceof ValueLayout.OfInt || layout instanceof ValueLayout.OfLong ||
-                        layout instanceof ValueLayout.OfFloat || layout instanceof ValueLayout.OfDouble ||
-                        layout instanceof AddressLayout) {
-                    supportedModes.add(ATOMIC_UPDATE);
-                }
-                if (layout instanceof ValueLayout.OfInt || layout instanceof ValueLayout.OfLong ||
-                        layout instanceof AddressLayout) {
-                    supportedModes.add(ATOMIC_NUMERIC_UPDATE);
+                supportedModes.add(ATOMIC_UPDATE);
+                if (!(layout instanceof ValueLayout.OfFloat || layout instanceof ValueLayout.OfDouble)) {
                     supportedModes.add(ATOMIC_BITWISE_UPDATE);
+                    if (!(layout instanceof ValueLayout.OfBoolean)) {
+                        supportedModes.add(ATOMIC_NUMERIC_UPDATE);
+                    }
                 }
             }
             return supportedModes;

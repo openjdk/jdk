@@ -75,4 +75,21 @@ public final class MhUtil {
         }
     }
 
+    public static MethodHandle findStatic(MethodHandles.Lookup lookup,
+                                          Class<?> refc,
+                                          String name,
+                                          MethodType type) {
+        try {
+            return lookup.findStatic(refc, name, type);
+        } catch (ReflectiveOperationException e) {
+            throw new InternalError(e);
+        }
+    }
+
+    public static MethodHandle findStatic(MethodHandles.Lookup lookup,
+                                          String name,
+                                          MethodType type) {
+        return findStatic(lookup, lookup.lookupClass(), name, type);
+    }
+
 }

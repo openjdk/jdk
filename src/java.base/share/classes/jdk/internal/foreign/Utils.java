@@ -28,8 +28,10 @@ package jdk.internal.foreign;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.abi.SharedUtils;
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import java.lang.foreign.AddressLayout;
@@ -46,6 +48,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -56,28 +59,39 @@ public final class Utils {
     // Suppresses default constructor, ensuring non-instantiability.
     private Utils() {}
 
-    private static final MethodHandle BYTE_TO_BOOL;
-    private static final MethodHandle BOOL_TO_BYTE;
-    private static final MethodHandle ADDRESS_TO_LONG;
-    private static final MethodHandle LONG_TO_ADDRESS_TARGET;
-    private static final MethodHandle LONG_TO_ADDRESS_NO_TARGET;
+    private static final int
+            FILTER_ADDRESS_TO_LONG = 0,
+            FILTER_LONG_TO_POINTER = 1,
+            FILTER_LONG_TO_SEGMENT_WITH_LAYOUT = 2,
+            FILTER_LIMIT = 3;
+    private static final @Stable MethodHandle[] VH_FILTERS = new MethodHandle[FILTER_LIMIT];
 
-    static {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            BYTE_TO_BOOL = lookup.findStatic(Utils.class, "byteToBoolean",
-                    MethodType.methodType(boolean.class, byte.class));
-            BOOL_TO_BYTE = lookup.findStatic(Utils.class, "booleanToByte",
-                    MethodType.methodType(byte.class, boolean.class));
-            ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
-                    MethodType.methodType(long.class, MemorySegment.class));
-            LONG_TO_ADDRESS_TARGET = lookup.findStatic(Utils.class, "longToAddress",
-                    MethodType.methodType(MemorySegment.class, long.class, AddressLayout.class));
-            LONG_TO_ADDRESS_NO_TARGET = lookup.findStatic(Utils.class, "longToAddress",
-                    MethodType.methodType(MemorySegment.class, long.class));
-        } catch (Throwable ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
+    private static MethodHandle filterHandle(int index) {
+        var ret = VH_FILTERS[index];
+        if (ret != null)
+            return ret;
+        return computeFilterHandle(index);
+    }
+
+    private static MethodHandle computeFilterHandle(int index) {
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        return VH_FILTERS[index] = Unsafe.getUnsafe().addressSize() != 4 ? switch (index) {
+            case FILTER_ADDRESS_TO_LONG -> MhUtil.findStatic(lookup, SharedUtils.class, "unboxSegment",
+                            MethodType.methodType(long.class, MemorySegment.class));
+            case FILTER_LONG_TO_SEGMENT_WITH_LAYOUT -> MhUtil.findStatic(lookup, "longToAddress",
+                            MethodType.methodType(MemorySegment.class, long.class, AddressLayout.class));
+            case FILTER_LONG_TO_POINTER -> MhUtil.findStatic(lookup, "longToAddress",
+                            MethodType.methodType(MemorySegment.class, long.class));
+            default -> throw new IllegalArgumentException(String.valueOf(index));
+        } : switch (index) {
+            case FILTER_ADDRESS_TO_LONG -> MhUtil.findStatic(lookup, SharedUtils.class, "unboxSegment32",
+                            MethodType.methodType(int.class, MemorySegment.class));
+            case FILTER_LONG_TO_SEGMENT_WITH_LAYOUT -> MhUtil.findStatic(lookup, "longToAddress",
+                            MethodType.methodType(MemorySegment.class, int.class, AddressLayout.class));
+            case FILTER_LONG_TO_POINTER -> MhUtil.findStatic(lookup, "longToAddress",
+                            MethodType.methodType(MemorySegment.class, int.class));
+            default -> throw new IllegalArgumentException(String.valueOf(index));
+        };
     }
 
     public static long alignUp(long n, long alignment) {
@@ -102,19 +116,24 @@ public final class Utils {
      * @param layout the value layout for which a raw memory segment var handle is to be created.
      * @return a raw memory segment var handle.
      */
-    public static VarHandle makeRawSegmentViewVarHandle(MemoryLayout enclosing, ValueLayout layout) {
+    public static VarHandle makeRawSegmentViewVarHandle(MemoryLayout enclosing, ValueLayout layout, boolean fixedOffset, long offset) {
         if (enclosing instanceof ValueLayout direct) {
-            assert direct.equals(layout);
-            final class VarHandleCache {
+            assert direct.equals(layout) && fixedOffset && offset == 0;
+            record VarHandleCache() implements Function<ValueLayout, VarHandle> {
                 private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+                private static final VarHandleCache INSTANCE = new VarHandleCache();
+
+                @Override
+                public VarHandle apply(ValueLayout valueLayout) {
+                    return Utils.makeRawSegmentViewVarHandleInternal(valueLayout, valueLayout, true, 0);
+                }
             }
-            return VarHandleCache.HANDLE_MAP
-                    .computeIfAbsent(direct.withoutName(), vl -> Utils.makeRawSegmentViewVarHandleInternal(vl, vl));
+            return VarHandleCache.HANDLE_MAP.computeIfAbsent(direct.withoutName(), VarHandleCache.INSTANCE);
         }
-        return makeRawSegmentViewVarHandleInternal(enclosing, layout);
+        return makeRawSegmentViewVarHandleInternal(enclosing, layout, fixedOffset, offset);
     }
 
-    private static VarHandle makeRawSegmentViewVarHandleInternal(MemoryLayout enclosing, ValueLayout layout) {
+    private static VarHandle makeRawSegmentViewVarHandleInternal(MemoryLayout enclosing, ValueLayout layout, boolean fixedOffset, long offset) {
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
@@ -122,20 +141,16 @@ public final class Utils {
                 case Integer.BYTES -> int.class;
                 default -> throw new UnsupportedOperationException("Unsupported address layout");
             };
-        } else if (layout.carrier() == boolean.class) {
-            baseCarrier = byte.class;
         }
 
         VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
-                enclosing, layout.byteAlignment() - 1, layout.order());
+                enclosing, layout.byteAlignment() - 1, layout.order(), fixedOffset, offset);
 
-        if (layout.carrier() == boolean.class) {
-            handle = MethodHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
-        } else if (layout instanceof AddressLayout addressLayout) {
+        if (layout instanceof AddressLayout addressLayout) {
             MethodHandle longToAddressAdapter = addressLayout.targetLayout().isPresent() ?
-                    MethodHandles.insertArguments(LONG_TO_ADDRESS_TARGET, 1, addressLayout) :
-                    LONG_TO_ADDRESS_NO_TARGET;
-            handle = MethodHandles.filterValue(handle, ADDRESS_TO_LONG, longToAddressAdapter);
+                    MethodHandles.insertArguments(filterHandle(FILTER_LONG_TO_SEGMENT_WITH_LAYOUT), 1, addressLayout) :
+                    filterHandle(FILTER_LONG_TO_POINTER);
+            handle = MethodHandles.filterValue(handle, filterHandle(FILTER_ADDRESS_TO_LONG), longToAddressAdapter);
         }
         return handle;
     }
@@ -153,8 +168,20 @@ public final class Utils {
         return longToAddress(addr, 0, 1);
     }
 
+    // 32 bit
+    @ForceInline
+    public static MemorySegment longToAddress(int addr) {
+        return longToAddress(addr, 0, 1);
+    }
+
     @ForceInline
     public static MemorySegment longToAddress(long addr, AddressLayout layout) {
+        return longToAddress(addr, pointeeByteSize(layout), pointeeByteAlign(layout));
+    }
+
+    // 32 bit
+    @ForceInline
+    public static MemorySegment longToAddress(int addr, AddressLayout layout) {
         return longToAddress(addr, pointeeByteSize(layout), pointeeByteAlign(layout));
     }
 

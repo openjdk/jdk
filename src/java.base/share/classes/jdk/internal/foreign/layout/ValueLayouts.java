@@ -25,6 +25,7 @@
  */
 package jdk.internal.foreign.layout;
 
+import jdk.internal.foreign.LayoutPath;
 import jdk.internal.foreign.Utils;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
@@ -42,6 +43,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * A value layout. A value layout is used to model the memory layout associated with values of basic data types, such as <em>integral</em> types
@@ -159,19 +161,20 @@ public final class ValueLayouts {
 
         @ForceInline
         public final VarHandle varHandle() {
-            final class VarHandleCache {
-                private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+            record VarHandleCache() implements Function<AbstractValueLayout<?>, VarHandle> {
+                private static final Map<AbstractValueLayout<?>, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+                private static final VarHandleCache INSTANCE = new VarHandleCache();
+
+                @Override
+                public VarHandle apply(AbstractValueLayout<?> abstractValueLayout) {
+                    return abstractValueLayout.varHandleInternal(LayoutPath.EMPTY_PATH_ELEMENTS);
+                }
             }
             if (handle == null) {
                 // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity
-                handle = VarHandleCache.HANDLE_MAP.computeIfAbsent(self().withoutName(), _ -> varHandleInternal());
+                handle = VarHandleCache.HANDLE_MAP.computeIfAbsent(withoutName(), VarHandleCache.INSTANCE);
             }
             return handle;
-        }
-
-        @SuppressWarnings("unchecked")
-        final V self() {
-            return (V) this;
         }
     }
 

@@ -321,9 +321,15 @@ public final class SharedUtils {
         }
     }
 
+    @ForceInline
     public static long unboxSegment(MemorySegment segment) {
         checkNative(segment);
         return segment.address();
+    }
+
+    @ForceInline
+    public static int unboxSegment32(MemorySegment segment) {
+        return (int) unboxSegment(segment);
     }
 
     public static void checkExceptions(MethodHandle target) {

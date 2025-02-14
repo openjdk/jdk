@@ -306,30 +306,36 @@ final class VarHandles {
      * @return the created VarHandle.
      */
     static VarHandle memorySegmentViewHandle(Class<?> carrier, MemoryLayout enclosing, long alignmentMask,
-                                             ByteOrder byteOrder) {
-        if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
+                                             boolean fixedOffset, long offset, ByteOrder byteOrder) {
+        if (!carrier.isPrimitive() || carrier == void.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
         boolean be = byteOrder == ByteOrder.BIG_ENDIAN;
         boolean exact = VAR_HANDLE_SEGMENT_FORCE_EXACT;
 
+        // All carrier types must persist across MethodType erasure
+        VarForm form;
         if (carrier == byte.class) {
-            return maybeAdapt(VarHandleSegmentAsBytes.of(be, enclosing, alignmentMask, exact));
+            form = VarHandleSegmentAsBytes.selectForm(alignmentMask, fixedOffset);
         } else if (carrier == char.class) {
-            return maybeAdapt(VarHandleSegmentAsChars.of(be, enclosing, alignmentMask, exact));
+            form = VarHandleSegmentAsChars.selectForm(alignmentMask, fixedOffset);
         } else if (carrier == short.class) {
-            return maybeAdapt(VarHandleSegmentAsShorts.of(be, enclosing, alignmentMask, exact));
+            form = VarHandleSegmentAsShorts.selectForm(alignmentMask, fixedOffset);
         } else if (carrier == int.class) {
-            return maybeAdapt(VarHandleSegmentAsInts.of(be, enclosing, alignmentMask, exact));
+            form = VarHandleSegmentAsInts.selectForm(alignmentMask, fixedOffset);
         } else if (carrier == float.class) {
-            return maybeAdapt(VarHandleSegmentAsFloats.of(be, enclosing, alignmentMask, exact));
+            form = VarHandleSegmentAsFloats.selectForm(alignmentMask, fixedOffset);
         } else if (carrier == long.class) {
-            return maybeAdapt(VarHandleSegmentAsLongs.of(be, enclosing, alignmentMask, exact));
+            form = VarHandleSegmentAsLongs.selectForm(alignmentMask, fixedOffset);
         } else if (carrier == double.class) {
-            return maybeAdapt(VarHandleSegmentAsDoubles.of(be, enclosing, alignmentMask, exact));
+            form = VarHandleSegmentAsDoubles.selectForm(alignmentMask, fixedOffset);
+        } else if (carrier == boolean.class) {
+            form = VarHandleSegmentAsBooleans.selectForm(alignmentMask, fixedOffset);
         } else {
             throw new IllegalStateException("Cannot get here");
         }
+
+        return maybeAdapt(new VarHandleSegmentViewBase(form, be, enclosing, offset, exact));
     }
 
     private static VarHandle maybeAdapt(VarHandle target) {
@@ -725,7 +731,7 @@ final class VarHandles {
 //            Object getAndUpdate(Object value);
 //        }
 //
-//        record HandleType(Class<?> receiver, Class<?> value, Class<?>... intermediates) {
+//        record HandleType(Class<?> receiver, Class<?>... intermediates) {
 //        }
 //
 //        /**
@@ -745,48 +751,31 @@ final class VarHandles {
 //            System.out.println();
 //
 //            // Declare the stream of shapes
-//            Stream<HandleType> hts = Stream.of(
-//                    // Object->Object
-//                    new HandleType(Object.class, Object.class),
-//                    // Object->int
+//            List<HandleType> hts = List.of(
+//                    // Object->T
+//                    new HandleType(Object.class),
+//
+//                    // <static>->T
+//                    new HandleType(null),
+//
+//                    // Array[index]->T
 //                    new HandleType(Object.class, int.class),
-//                    // Object->long
+//
+//                    // MS[base]->T
 //                    new HandleType(Object.class, long.class),
-//                    // Object->float
-//                    new HandleType(Object.class, float.class),
-//                    // Object->double
-//                    new HandleType(Object.class, double.class),
 //
-//                    // <static>->Object
-//                    new HandleType(null, Object.class),
-//                    // <static>->int
-//                    new HandleType(null, int.class),
-//                    // <static>->long
-//                    new HandleType(null, long.class),
-//                    // <static>->float
-//                    new HandleType(null, float.class),
-//                    // <static>->double
-//                    new HandleType(null, double.class),
-//
-//                    // Array[int]->Object
-//                    new HandleType(Object.class, Object.class, int.class),
-//                    // Array[int]->int
-//                    new HandleType(Object.class, int.class, int.class),
-//                    // Array[int]->long
-//                    new HandleType(Object.class, long.class, int.class),
-//                    // Array[int]->float
-//                    new HandleType(Object.class, float.class, int.class),
-//                    // Array[int]->double
-//                    new HandleType(Object.class, double.class, int.class),
-//
-//                    // Array[long]->int
-//                    new HandleType(Object.class, int.class, long.class),
-//                    // Array[long]->long
+//                    // MS[base][offset]->T
 //                    new HandleType(Object.class, long.class, long.class)
 //            );
 //
-//            hts.flatMap(ht -> Stream.of(VarHandleTemplate.class.getMethods()).
-//                    map(m -> generateMethodType(m, ht.receiver, ht.value, ht.intermediates))).
+//            Stream.of(VarHandleTemplate.class.getMethods()).<MethodType>
+//                    mapMulti((m, sink) -> {
+//                        for (var ht : hts) {
+//                            for (var bt : LambdaForm.BasicType.ARG_TYPES) {
+//                                sink.accept(generateMethodType(m, ht.receiver, bt.btClass, ht.intermediates));
+//                            }
+//                        }
+//                    }).
 //                    distinct().
 //                    map(GuardMethodGenerator::generateMethod).
 //                    forEach(System.out::println);

@@ -26,27 +26,46 @@
 package java.lang.invoke;
 
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 
 /**
  * Base class for memory segment var handle view implementations.
  */
-abstract sealed class VarHandleSegmentViewBase extends VarHandle permits
-        VarHandleSegmentAsBytes,
-        VarHandleSegmentAsChars,
-        VarHandleSegmentAsDoubles,
-        VarHandleSegmentAsFloats,
-        VarHandleSegmentAsInts,
-        VarHandleSegmentAsLongs,
-        VarHandleSegmentAsShorts {
+final class VarHandleSegmentViewBase extends VarHandle {
 
     /** endianness **/
     final boolean be;
     /** The layout the accessed segment must be compatible with. */
     final MemoryLayout enclosing;
+    /** The fixed offset value, if exists */
+    final long offset;
 
-    VarHandleSegmentViewBase(VarForm form, boolean be, MemoryLayout enclosing, boolean exact) {
+    VarHandleSegmentViewBase(VarForm form, boolean be, MemoryLayout enclosing, long offset, boolean exact) {
         super(form, exact);
         this.be = be;
         this.enclosing = enclosing;
+        this.offset = offset;
+    }
+
+    @Override
+    final MethodType accessModeTypeUncached(VarHandle.AccessType accessType) {
+        var getType = vform.methodType_table[0]; // erased, but we our value type is erase-compatible
+        return getType.parameterCount() == 2
+                ? accessType.accessModeType(MemorySegment.class, getType.returnType(), long.class)
+                : accessType.accessModeType(MemorySegment.class, getType.returnType(), long.class, long.class);
+    }
+
+    @Override
+    public VarHandleSegmentViewBase withInvokeExactBehavior() {
+        return hasInvokeExactBehavior() ?
+                this :
+                new VarHandleSegmentViewBase(vform, be, enclosing, offset, true);
+    }
+
+    @Override
+    public VarHandleSegmentViewBase withInvokeBehavior() {
+        return !hasInvokeExactBehavior() ?
+                this :
+                new VarHandleSegmentViewBase(vform, be, enclosing, offset, false);
     }
 }
