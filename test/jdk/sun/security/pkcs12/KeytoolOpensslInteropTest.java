@@ -103,8 +103,8 @@ public class KeytoolOpensslInteropTest {
 
     private static void generateInitialKeystores(String opensslPath)
             throws Throwable {
-        String providerPath = Path.of(opensslPath).getParent().getParent()
-            .resolve("lib", "ossl-modules").toString();
+        Path providerPath = OpensslArtifactFetcher.getProviderPath(opensslPath);
+
         keytool("-keystore ks -keyalg ec -genkeypair -storepass"
                 + " changeit -alias a -dname CN=A").shouldHaveExitValue(0);
 
@@ -126,7 +126,7 @@ public class KeytoolOpensslInteropTest {
                 "kandc", "-out", "os4", "-name", "a", "-passout",
                 "pass:changeit", "-certpbe", "PBE-SHA1-RC4-128", "-keypbe",
                 "PBE-SHA1-RC4-128", "-macalg", "SHA224",
-                "-legacy", "-provider-path", providerPath)
+                "-legacy", "-provider-path", providerPath.toString())
                 .shouldHaveExitValue(0);
 
         ProcessTools.executeCommand(opensslPath, "pkcs12", "-export", "-in",

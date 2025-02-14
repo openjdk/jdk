@@ -25,6 +25,7 @@ package jdk.test.lib.security;
 
 import java.io.File;
 
+import java.nio.file.Path;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.artifacts.Artifact;
@@ -128,6 +129,16 @@ public class OpensslArtifactFetcher {
             }
         }
         return path;
+    }
+
+    // retrieve the provider directory path from <OPENSSL_HOME>/bin/openssl
+    public static Path getProviderPath(String opensslPath) {
+        Path openSslRootPath = Path.of(opensslPath).getParent().getParent();
+        String libDir = "lib";
+        if (Platform.isX64() && (Platform.isLinux() || Platform.isWindows())) {
+            libDir = "lib64";
+        }
+        return openSslRootPath.resolve(libDir, "ossl-modules");
     }
 
     @Artifact(
