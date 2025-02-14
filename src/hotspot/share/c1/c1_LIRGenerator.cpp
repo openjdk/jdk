@@ -1231,13 +1231,6 @@ void LIRGenerator::do_Reference_get(Intrinsic* x) {
 void LIRGenerator::do_isInstance(Intrinsic* x) {
   assert(x->number_of_arguments() == 2, "wrong type");
 
-  // TODO could try to substitute this node with an equivalent InstanceOf
-  // if clazz is known to be a constant Class. This will pick up newly found
-  // constants after HIR construction. I'll leave this to a future change.
-
-  // as a first cut, make a simple leaf call to runtime to stay platform independent.
-  // could follow the aastore example in a future change.
-
   LIRItem clazz(x->argument_at(0), this);
   LIRItem object(x->argument_at(1), this);
   clazz.load_item();
@@ -1250,8 +1243,9 @@ void LIRGenerator::do_isInstance(Intrinsic* x) {
     __ null_check(clazz.result(), info);
   }
 
+  address pd_instanceof_fn = isInstance_entry();
   LIR_Opr call_result = call_runtime(clazz.value(), object.value(),
-                                     CAST_FROM_FN_PTR(address, Runtime1::is_instance_of),
+                                     pd_instanceof_fn,
                                      x->type(),
                                      nullptr); // null CodeEmitInfo results in a leaf call
   __ move(call_result, result);
@@ -1301,42 +1295,6 @@ void LIRGenerator::do_isPrimitive(Intrinsic* x) {
   __ move(new LIR_Address(rcvr.result(), java_lang_Class::klass_offset(), T_ADDRESS), temp, info);
   __ cmp(lir_cond_notEqual, temp, LIR_OprFact::metadataConst(nullptr));
   __ cmove(lir_cond_notEqual, LIR_OprFact::intConst(0), LIR_OprFact::intConst(1), result, T_BOOLEAN);
-}
-
-// Example: Foo.class.getModifiers()
-void LIRGenerator::do_getModifiers(Intrinsic* x) {
-  assert(x->number_of_arguments() == 1, "wrong type");
-
-  LIRItem receiver(x->argument_at(0), this);
-  receiver.load_item();
-  LIR_Opr result = rlock_result(x);
-
-  CodeEmitInfo* info = nullptr;
-  if (x->needs_null_check()) {
-    info = state_for(x);
-  }
-
-  // While reading off the universal constant mirror is less efficient than doing
-  // another branch and returning the constant answer, this branchless code runs into
-  // much less risk of confusion for C1 register allocator. The choice of the universe
-  // object here is correct as long as it returns the same modifiers we would expect
-  // from the primitive class itself. See spec for Class.getModifiers that provides
-  // the typed array klasses with similar modifiers as their component types.
-
-  Klass* univ_klass = Universe::byteArrayKlass();
-  assert(univ_klass->modifier_flags() == (JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), "Sanity");
-  LIR_Opr prim_klass = LIR_OprFact::metadataConst(univ_klass);
-
-  LIR_Opr recv_klass = new_register(T_METADATA);
-  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), recv_klass, info);
-
-  // Check if this is a Java mirror of primitive type, and select the appropriate klass.
-  LIR_Opr klass = new_register(T_METADATA);
-  __ cmp(lir_cond_equal, recv_klass, LIR_OprFact::metadataConst(nullptr));
-  __ cmove(lir_cond_equal, prim_klass, recv_klass, klass, T_ADDRESS);
-
-  // Get the answer.
-  __ move(new LIR_Address(klass, in_bytes(Klass::modifier_flags_offset()), T_CHAR), result);
 }
 
 void LIRGenerator::do_getObjectSize(Intrinsic* x) {
@@ -2957,7 +2915,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_Object_init:    do_RegisterFinalizer(x); break;
   case vmIntrinsics::_isInstance:     do_isInstance(x);    break;
   case vmIntrinsics::_isPrimitive:    do_isPrimitive(x);   break;
-  case vmIntrinsics::_getModifiers:   do_getModifiers(x);  break;
   case vmIntrinsics::_getClass:       do_getClass(x);      break;
   case vmIntrinsics::_getObjectSize:  do_getObjectSize(x); break;
   case vmIntrinsics::_currentCarrierThread: do_currentCarrierThread(x); break;
