@@ -179,7 +179,7 @@ public final class KeyUtil {
      will return that sub-algorithm.  For example, key.getAlgorithm() returns
      "EdDSA", but the underlying key maybe "Ed448".  For
      DisabledAlgorithmConstraints (DAC), this distinction is important.
-     "EdDSA" means all Ed algorithms for DAC, but when using it with
+     "EdDSA" means all curves for DAC, but when using it with
      KeyPairGenerator, EdDSA means Ed25519.
      */
     public static String getAlgorithm(Key key) {
