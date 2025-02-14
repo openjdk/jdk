@@ -43,7 +43,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -272,7 +271,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 if (nc == null) {
                     yield List.of();
                 }
-                yield Arrays.asList(nc.getNameAndAliases());
+                yield List.of(nc.getNameAndAliases());
             }
             default -> List.of(KeyUtil.getAlgorithm(key));
         };

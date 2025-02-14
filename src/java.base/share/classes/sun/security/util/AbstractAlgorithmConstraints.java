@@ -71,14 +71,11 @@ public abstract class AbstractAlgorithmConstraints
         return algorithmsInPropertySet;
     }
 
-    private static final String[] aliasEdDSA =
-        new String[]{"EdDSA", "Ed25519", "Ed448"};
-    private static final String[] aliasEd25519 =
-        new String[]{"EdDSA", "Ed25519"};
-    private static final String[] aliasXDH =
-        new String[]{"XDH", "X25519", "X448"};
-    private static final String[] aliasX25519 =
-        new String[]{"XDH", "X25519"};
+    // Allocate the immutable lists as needed. Overwriting is not a concern.
+    private static List<String> aliasEdDSA = null;
+    private static List<String> aliasEd25519 = null;
+    private static List<String> aliasXDH = null;
+    private static List<String> aliasX25519 = null;
 
     /**
      * getAlias() adds extra algorithm names to the String if matched.  Used by
@@ -87,11 +84,31 @@ public abstract class AbstractAlgorithmConstraints
      */
     public static List<String> getAliases(String algorithm) {
         return switch (algorithm) {
-            case "EdDSA" -> Arrays.asList(aliasEdDSA);
-            case "Ed25519" -> Arrays.asList(aliasEd25519);
-            case "XDH" -> Arrays.asList(aliasXDH);
-            case "X25519" -> Arrays.asList(aliasX25519);
-            default -> Collections.emptyList();
+            case "EdDSA" -> {
+                if (aliasEdDSA == null) {
+                    aliasEdDSA = List.of("EdDSA", "Ed25519", "Ed448");
+                }
+                yield aliasEdDSA;
+            }
+            case "Ed25519" -> {
+                if (aliasEd25519 == null) {
+                    aliasEd25519 = List.of("EdDSA", "Ed25519");
+                }
+                yield aliasEd25519;
+            }
+            case "XDH" ->  {
+                if (aliasXDH == null) {
+                    aliasXDH = List.of("XDH", "X25519", "X448");
+                }
+                yield aliasXDH;
+            }
+            case "X25519" ->  {
+                if (aliasX25519 == null) {
+                    aliasX25519 = List.of("XDH", "X25519");
+                }
+                yield aliasX25519;
+            }
+            default -> List.of();
         };
     }
 
