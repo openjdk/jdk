@@ -61,7 +61,7 @@
     </P>
 <a id="security.debug"></a>
 <H2>Debug</H2>
-<p><B>{@systemProperty java.security.debug}</B> (default: false)<BR></p>
+<p><B>{@systemProperty java.security.debug}</B><BR></p>
         <p>To monitor security access, you can set the java.security.debug system property,
         which determines what trace messages are printed during execution.
         To view security properties, security providers, and TLS-related settings,
@@ -171,12 +171,24 @@
         <td><code>SunPKCS11 provider debugging</code></td>
     </tr>
     <tr>
+        <th scope="row"><code>+thread</code></th>
+        <td><code>Print thread and caller information</code></td>
+    </tr>
+    <tr>
+        <th scope="row"><code>+timestamp</code></th>
+        <td><code>Print timestamp information</code></td>
+    </tr>
+    <tr>
         <th scope="row"><code>ts</code></th>
         <td><code>Timestamping debugging</code></td>
     </tr>
     <tr>
         <th scope="row"><code>x509</code></th>
-        <td><code>X.509 certificate debugging</code></td>
+        <td><code>X.509 certificate debugging. You can use the following option with X.509</code>
+            <ul>
+                <li><code><b>ava:</b> Embed non-printable/non-escaped characters in AVA components as hex strings</code></li>
+            </ul>
+        </td>
     </tr>
     </tbody>
 </table>
