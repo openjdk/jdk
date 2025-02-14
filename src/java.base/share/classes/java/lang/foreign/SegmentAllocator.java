@@ -171,6 +171,7 @@ public interface SegmentAllocator {
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfByte layout, byte value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
@@ -196,6 +197,7 @@ public interface SegmentAllocator {
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfChar layout, char value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
@@ -221,6 +223,7 @@ public interface SegmentAllocator {
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfShort layout, short value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
@@ -246,6 +249,7 @@ public interface SegmentAllocator {
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfInt layout, int value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
@@ -271,6 +275,7 @@ public interface SegmentAllocator {
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfFloat layout, float value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
@@ -296,6 +301,7 @@ public interface SegmentAllocator {
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfLong layout, long value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
@@ -321,6 +327,7 @@ public interface SegmentAllocator {
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfDouble layout, double value) {
         Objects.requireNonNull(layout);
         MemorySegment seg = allocateNoInit(layout);
@@ -353,6 +360,7 @@ public interface SegmentAllocator {
      * @throws IllegalArgumentException if {@code value} is not
      *         a {@linkplain MemorySegment#isNative() native} segment
      */
+    @ForceInline
     default MemorySegment allocateFrom(AddressLayout layout, MemorySegment value) {
         Objects.requireNonNull(value);
         Objects.requireNonNull(layout);
@@ -606,6 +614,7 @@ public interface SegmentAllocator {
      *
      * @param layout the layout of the block of memory to be allocated
      */
+    @ForceInline
     default MemorySegment allocate(MemoryLayout layout) {
         Objects.requireNonNull(layout);
         return allocate(layout.byteSize(), layout.byteAlignment());
@@ -623,6 +632,7 @@ public interface SegmentAllocator {
      *         overflows
      * @throws IllegalArgumentException if {@code count < 0}
      */
+    @ForceInline
     default MemorySegment allocate(MemoryLayout elementLayout, long count) {
         Objects.requireNonNull(elementLayout);
         if (count < 0) {
@@ -640,6 +650,7 @@ public interface SegmentAllocator {
      * @param byteSize the size (in bytes) of the block of memory to be allocated
      * @throws IllegalArgumentException if {@code byteSize < 0}
      */
+    @ForceInline
     default MemorySegment allocate(long byteSize) {
         return allocate(byteSize, 1);
     }
