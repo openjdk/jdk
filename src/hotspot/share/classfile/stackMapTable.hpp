@@ -47,9 +47,7 @@ class StackMapTable : public StackObj {
   StackMapFrame**       _frame_array;
 
  public:
-  StackMapTable(StackMapReader* reader, StackMapFrame* init_frame,
-                u2 max_locals, u2 max_stack,
-                char* code_data, int code_len, TRAPS);
+  StackMapTable(StackMapReader* reader, TRAPS);
 
   inline int32_t get_frame_count() const { return _frame_count; }
   inline int get_offset(int index) const {
@@ -116,8 +114,22 @@ class StackMapReader : StackObj {
   char* _code_data;
   int32_t _code_length;
 
-  // information get from the attribute
-  int32_t  _frame_count;       // frame count
+  // information from the attribute
+  int32_t  _frame_count;
+
+  // Number of frames parsed
+  int32_t  _parsed_frame_count;
+
+  // Previous and current frame buffers
+  StackMapFrame* _pre_frame;
+  StackMapFrame* _frame_buf;
+
+  // information from method
+  u2 _max_locals;
+  u2 _max_stack;
+
+  // Check if reading first entry
+  bool _first;
 
   int32_t chop(VerificationType* locals, int32_t length, int32_t chops);
   VerificationType parse_verification_type(u1* flags, TRAPS);
@@ -141,15 +153,40 @@ class StackMapReader : StackObj {
 
  public:
   // Constructor
-  StackMapReader(ClassVerifier* v, StackMapStream* stream, char* code_data,
-                 int32_t code_len, TRAPS);
+  StackMapReader(ClassVerifier* v, StackMapStream* stream,
+                 char* code_data, int32_t code_len,
+                 StackMapFrame* init_frame,
+                 u2 max_locals, u2 max_stack, TRAPS);
 
-  inline int32_t get_frame_count() const                { return _frame_count; }
-  StackMapFrame* next(StackMapFrame* pre_frame, bool first,
-                      u2 max_locals, u2 max_stack, TRAPS);
+  inline int32_t get_frame_count()  const { return _frame_count; }
+  inline StackMapFrame* frame()     const { return _frame_buf; }
+  inline StackMapFrame* pre_frame() const { return _pre_frame; }
+  inline char* code_data()          const { return _code_data; }
+  inline int32_t code_length()      const { return _code_length; }
+  inline bool at_end() { return _stream->at_end(); }
+
+  inline void set_pre_frame(StackMapFrame* frame) { _pre_frame = frame; }
+  StackMapFrame* next_helper(TRAPS);
+  StackMapFrame* next(TRAPS);
+
+  void check_offset(StackMapFrame* frame, TRAPS) {
+    int offset = frame->offset();
+    if (offset >= _code_length || _code_data[offset] == 0) {
+      _verifier->verify_error(
+          ErrorContext::bad_stackmap(0, frame),
+          "StackMapTable error: bad offset");
+    }
+  }
+
+  void check_size(TRAPS) {
+    if (_frame_count < _parsed_frame_count) {
+      StackMapStream::stackmap_format_error("wrong attribute size", CHECK);
+    }
+  }
 
   void check_end(TRAPS) {
-    if (!_stream->at_end()) {
+    assert(_stream->at_end(), "must be");
+    if (_frame_count != _parsed_frame_count) {
       StackMapStream::stackmap_format_error("wrong attribute size", CHECK);
     }
   }
