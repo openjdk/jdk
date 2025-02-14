@@ -435,6 +435,9 @@ public:
   // Acquire heap lock and log status, assuming heap lock is not acquired by the caller.
   void log_status_under_lock();
 
+  // Note that capacity is the number of regions that had available memory at most recent rebuild.  It is not the
+  // entire size of the young or global generation.  (Regions within the generation that were fully utilized at time of
+  // rebuild are not counted as part of capacity.)
   inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator); }
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);     }
 
