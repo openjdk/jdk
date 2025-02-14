@@ -1389,16 +1389,13 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 void C2_MacroAssembler::string_compare_long_LL_UU(Register str1, Register str2,
                                                   Register cnt1, Register cnt2,
                                                   Register tmp1, Register tmp2, Register tmp3,
-                                                  const bool isLL, const bool str1_isL,
-                                                  const int base_offset1, const int base_offset2, const int minCharsInWord,
-                                                  Label *DONE, Label *DIFFERENCE, Label *STUB,
-                                                  const int STUB_THRESHOLD) {
+                                                  const bool isLL, const int base_offset, const int minCharsInWord,
+                                                  const int STUB_THRESHOLD, Label *DONE, Label *DIFFERENCE, Label *STUB) {
   Label TAIL_CHECK, TAIL, NEXT_WORD;
 
   // load first parts of strings and finish initialization while loading
   beq(str1, str2, *DONE);
   // Alignment
-  int base_offset = isLL ? base_offset1 : base_offset2;
   if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
     lwu(tmp1, Address(str1));
     lwu(tmp2, Address(str2));
@@ -1425,7 +1422,7 @@ void C2_MacroAssembler::string_compare_long_LL_UU(Register str1, Register str2,
   subi(cnt2, cnt2, minCharsInWord);
   beqz(cnt2, TAIL_CHECK);
   // convert cnt2 from characters to bytes
-  if (!str1_isL) {
+  if (!isLL) {
     slli(cnt2, cnt2, 1);
   }
   add(str2, str2, cnt2);
@@ -1458,10 +1455,10 @@ void C2_MacroAssembler::string_compare_long_LL_UU(Register str1, Register str2,
 
 // Compare longwords
 void C2_MacroAssembler::string_compare_long_LU(Register strL, Register strU,
-                                                  Register cnt1, Register cnt2,
-                                                  Register tmpL, Register tmpU, Register tmp3,
-                                                  const int base_offset2, const int STUB_THRESHOLD,
-                                                  Label *DONE, Label *DIFFERENCE, Label *STUB) {
+                                                Register cnt1, Register cnt2,
+                                                Register tmpL, Register tmpU, Register tmp3,
+                                                const int base_offset2, const int STUB_THRESHOLD,
+                                                Label *DONE, Label *DIFFERENCE, Label *STUB) {
   Label TAIL, NEXT_WORD;
 
   // load first parts of strings and finish initialization while loading
@@ -1569,10 +1566,10 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   // Compare longwords
   {
     if (str1_isL == str2_isL) { // LL or UU
-      string_compare_long_LL_UU(str1, str2, cnt1, cnt2, tmp1, tmp2, tmp3,
-                                isLL, str1_isL,
-                                base_offset1, base_offset2, minCharsInWord,
-                                &DONE, &DIFFERENCE, &STUB, STUB_THRESHOLD);
+      string_compare_long_LL_UU(str1, str2,
+                                cnt1, cnt2, tmp1, tmp2, tmp3,
+                                isLL, isLL ? base_offset1 : base_offset2, minCharsInWord,
+                                STUB_THRESHOLD, &DONE, &DIFFERENCE, &STUB);
     } else { // LU or UL
       string_compare_long_LU(isLU ? str1 : str2,
                              isLU ? str2 : str1,
