@@ -484,6 +484,8 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         try {
             Path appPKG = getPackages_AppPackage(pkg, env);
 
+            Files.createDirectories(packagesRoot(env));
+
             Path root = getRoot(pkg, env);
 
             if (withServicesPkg(pkg, env)) {
