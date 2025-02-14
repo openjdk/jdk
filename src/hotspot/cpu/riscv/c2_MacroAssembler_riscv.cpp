@@ -1437,20 +1437,6 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   // Load 4 bytes once to compare for alignment before main loop. Note that this
   // is only possible for LL/UU case. We need to resort to load_long_misaligned
   // for both LU and UL cases.
-  if (str1_isL == str2_isL) { // LL or UU
-    beq(str1, str2, DONE);
-    int base_offset = isLL ? base_offset1 : base_offset2;
-    if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
-      mv(t0, minCharsInWord / 2);
-      ble(cnt2, t0, SHORT_STRING);
-      lwu(tmp1, Address(str1));
-      lwu(tmp2, Address(str2));
-      bne(tmp1, tmp2, DIFFERENCE);
-      addi(str1, str1, 4);
-      addi(str2, str2, 4);
-      subi(cnt2, cnt2, minCharsInWord / 2);
-    }
-  }
 
   // A very short string
   mv(t0, minCharsInWord);
@@ -1460,6 +1446,16 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   // load first parts of strings and finish initialization while loading
   {
     if (str1_isL == str2_isL) { // LL or UU
+      beq(str1, str2, DONE);
+      int base_offset = isLL ? base_offset1 : base_offset2;
+      if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
+        lwu(tmp1, Address(str1));
+        lwu(tmp2, Address(str2));
+        bne(tmp1, tmp2, DIFFERENCE);
+        addi(str1, str1, 4);
+        addi(str2, str2, 4);
+        subi(cnt2, cnt2, minCharsInWord / 2);
+      }
 #ifdef ASSERT
       if (AvoidUnalignedAccesses) {
         Label align_ok;
