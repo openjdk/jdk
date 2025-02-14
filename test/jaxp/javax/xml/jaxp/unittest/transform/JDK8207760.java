@@ -122,7 +122,6 @@ public class JDK8207760 {
 
         Transformer t = createTransformerFromInputstream(
                 new ByteArrayInputStream(xsl.getBytes(StandardCharsets.UTF_8)));
-        //t.setOutputProperty(OutputKeys.ENCODING, StandardCharsets.UTF_8.name());
         StringWriter sw = new StringWriter();
         t.transform(new StreamSource(new StringReader(xml)), new StreamResult(sw));
         Assert.assertEquals(sw.toString(), expected);
