@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,13 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
       return false;
     }
 
-    // pc could refer to a native address outside the code cache even though the thread isInJava.
+    if (!CodeCache::contains(pc)) {
+      // The thread `isInJava` but its pc is not in the CodeCache. This is uncommon. It
+      // can occur, for instance, if we're trying to sample the stack while actually
+      // handling a SIGTRAP (e.g. because of a range check). It is not safe to do that.
+      return false;
+    }
+
     frame ret_frame((intptr_t*)uc->uc_mcontext.regs->gpr[1/*REG_SP*/], pc, frame::kind::unknown);
 
     if (ret_frame.fp() == nullptr) {
