@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,12 @@
  */
 package jdk.jpackage.internal.model;
 
-import jdk.jpackage.internal.util.CompositeProxy;
+import java.util.Optional;
 
-public interface MacPkgPackage extends Package, MacPkgPackageMixin {
+public interface MacPkgPackageMixin {
 
-    default boolean sign() {
-        return signingConfig().flatMap(SigningConfig::identifier).isPresent();
-    }
+    Optional<SigningConfig> signingConfig();
 
-    public static MacPkgPackage create(Package pkg, MacPkgPackageMixin mixin) {
-        return CompositeProxy.create(MacPkgPackage.class, pkg, mixin);
+    record Stub(Optional<SigningConfig> signingConfig) implements MacPkgPackageMixin {
     }
 }

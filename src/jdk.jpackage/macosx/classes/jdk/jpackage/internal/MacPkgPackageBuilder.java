@@ -25,8 +25,11 @@
 package jdk.jpackage.internal;
 
 import java.util.Objects;
+import java.util.Optional;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.MacPkgPackage;
+import jdk.jpackage.internal.model.MacPkgPackageMixin;
+import jdk.jpackage.internal.model.SigningConfig;
 
 final class MacPkgPackageBuilder {
 
@@ -34,9 +37,24 @@ final class MacPkgPackageBuilder {
         this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
     }
 
+    MacPkgPackageBuilder signingBuilder(SigningConfigBuilder v) {
+        signingBuilder = v;
+        return this;
+    }
+
     MacPkgPackage create() throws ConfigException {
-        return MacPkgPackage.create(pkgBuilder.create());
+        return MacPkgPackage.create(pkgBuilder.create(),
+                new MacPkgPackageMixin.Stub(createSigningConfig()));
+    }
+
+    private Optional<SigningConfig> createSigningConfig() throws ConfigException {
+        if (signingBuilder != null) {
+            return Optional.of(signingBuilder.create());
+        } else {
+            return Optional.empty();
+        }
     }
 
     private final PackageBuilder pkgBuilder;
+    private SigningConfigBuilder signingBuilder;
 }
