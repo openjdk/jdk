@@ -34,6 +34,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * The {@code AccessibleObject} class is the base class for {@code Field},

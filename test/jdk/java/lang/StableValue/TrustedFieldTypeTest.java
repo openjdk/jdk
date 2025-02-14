@@ -27,15 +27,18 @@
  * @modules java.base/jdk.internal.lang.stable
  * @modules java.base/jdk.internal.misc
  * @compile --enable-preview -source ${jdk.version} TrustedFieldTypeTest.java
- * @run junit/othervm --enable-preview TrustedFieldTypeTest
+ * @run junit/othervm --enable-preview --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED -Dopens=true TrustedFieldTypeTest
+ * @run junit/othervm --enable-preview -Dopens=false TrustedFieldTypeTest
  */
 
+import jdk.internal.lang.stable.StableValueImpl;
 import jdk.internal.misc.Unsafe;
 import org.junit.jupiter.api.Test;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -155,7 +158,7 @@ final class TrustedFieldTypeTest {
     }
 
     @Test
-    void updateStableValueUnderlyingData() {
+    void updateStableValueContentVia_j_i_m_Unsafe() {
         StableValue<Integer> stableValue = StableValue.of();
         stableValue.trySet(42);
         jdk.internal.misc.Unsafe unsafe = Unsafe.getUnsafe();
@@ -168,5 +171,32 @@ final class TrustedFieldTypeTest {
         assertEquals(42, oldData);
         assertEquals(13, stableValue.orElseThrow());
     }
+
+    @Test
+    void updateStableValueContentViaSetAccessible() throws NoSuchFieldException, IllegalAccessException {
+
+        if (Boolean.getBoolean("opens")) {
+            // Unfortunately, add-opens allows direct access to the `value` field
+            Field field = StableValueImpl.class.getDeclaredField("value");
+            field.setAccessible(true);
+
+            StableValue<Integer> stableValue = StableValue.of();
+            stableValue.trySet(42);
+
+//            assertThrows(IllegalAccessException.class, () -> {
+            Object oldData = field.get(stableValue);
+            assertEquals(42, oldData);
+//            });
+
+//            assertThrows(IllegalAccessException.class, () -> {
+            field.set(stableValue, 13);
+//            });
+            assertEquals(13, stableValue.orElseThrow());
+        } else {
+            Field field = StableValueImpl.class.getDeclaredField("value");
+            assertThrows(InaccessibleObjectException.class, ()-> field.setAccessible(true));
+        }
+    }
+
 
 }
