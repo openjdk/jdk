@@ -120,6 +120,11 @@ $(JMH_UNPACKED_JARS_DONE): $(JMH_RUNTIME_JARS)
             $$($(UNZIP) -oq $(jar) -d $(JMH_UNPACKED_DIR)))
 	$(RM) -r $(JMH_UNPACKED_DIR)/META-INF
 	$(RM) $(JMH_UNPACKED_DIR)/*.xml
+	$(MKDIR) -p $(MICROBENCHMARK_CLASSES)/org/openjdk/bench/javax/xml
+	$(CP) $(TOPDIR)/test/jaxp/javax/xml/jaxp/unittest/validation/tck/reZ003vExc23082309.xml \
+            $(TOPDIR)/test/jaxp/javax/xml/jaxp/unittest/stream/XMLStreamWriterTest/message_12.xml \
+            $(TOPDIR)/test/jaxp/javax/xml/jaxp/unittest/transform/msgAttach.xml \
+            $(MICROBENCHMARK_CLASSES)/org/openjdk/bench/javax/xml
 	$(TOUCH) $@
 
 # Create benchmarks JAR file with benchmarks for both the old and new JDK
