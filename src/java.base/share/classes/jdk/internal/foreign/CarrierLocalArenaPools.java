@@ -112,10 +112,10 @@ public final class CarrierLocalArenaPools {
 
         @ForceInline
         public final Arena take() {
-            final Arena arena = Arena.ofConfined();
+            final Arena delegate = Arena.ofConfined();
             return tryAcquireSegment()
-                    ? new SlicingArena(originalArena, (ArenaImpl) arena, recyclableSegment)
-                    : arena;
+                    ? new SlicingArena(originalArena, (ArenaImpl) delegate, recyclableSegment)
+                    : delegate;
         }
 
         void close() {
@@ -220,8 +220,6 @@ public final class CarrierLocalArenaPools {
             private final ArenaImpl delegate;
             @Stable
             private final MemorySegment segment;
-            @Stable
-            private final Thread owner;
 
             private long sp = 0L;
 
@@ -232,7 +230,6 @@ public final class CarrierLocalArenaPools {
                 this.originalArena = originalArena;
                 this.delegate = delegate;
                 this.segment = segment;
-                this.owner = Thread.currentThread();
             }
 
             @ForceInline
@@ -257,11 +254,11 @@ public final class CarrierLocalArenaPools {
                     final MemorySegment slice = segment.asSlice(start, byteSize, byteAlignment);
 
                     // We only need to do this once for VTs
-                    if (sp == 0 && owner.isVirtual()) {
-                        // It prevents the automatic original arena from being collected before
+                    if (sp == 0 && !(scope() instanceof ConfinedSession)) {
+                        // This prevents the automatic original arena from being collected before
                         // the SlicingArena is closed. This case might otherwise happen if a reference
                         // is held to a reusable segment and its arena is not closed.
-                        ((MemorySessionImpl) delegate.scope())
+                        ((MemorySessionImpl) scope())
                                 .addCloseAction(new ReferenceHolder(originalArena));
                     }
                     sp = start + byteSize;
@@ -274,20 +271,12 @@ public final class CarrierLocalArenaPools {
             @ForceInline
             @Override
             public void close() {
-                assertOwnerThread();
                 delegate.close();
                 // Intentionally do not releaseSegment() in a finally clause as
                 // the segment still is in play if close() initially fails (e.g. is closed
                 // from a non-owner thread). Later on the close() method might be
                 // successfully re-invoked (e.g. from its owner thread).
                 LocalArenaPoolImpl.this.releaseSegment();
-            }
-
-            @ForceInline
-            void assertOwnerThread() {
-                if (owner != Thread.currentThread()) {
-                    throw new WrongThreadException();
-                }
             }
 
         }
