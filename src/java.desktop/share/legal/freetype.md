@@ -38,6 +38,8 @@ Copyright (C) 2019-2024 by Nikhil Ramakrishnan, David Turner, Robert Wilhelm, an
 Copyright (C) 2009-2024 by Oran Agra and Mickey Gabel.
 Copyright (C) 2018-2024 by David Turner, Robert Wilhelm, Dominik Röttsches, and Werner Lemberg.
 Copyright (C) 2004-2024 by David Turner, Robert Wilhelm, Werner Lemberg, and George Williams.
+
+
                     The FreeType Project LICENSE
                     ----------------------------
 
