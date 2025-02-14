@@ -342,6 +342,9 @@ public class AnnotationsTest extends JUnitAdapter {
         } catch (Throwable t) {
             t.printStackTrace(System.err);
             System.exit(1);
+
+            // Redundant, but needed to suppress "The local variable log may not have been initialized" error.
+            throw new RuntimeException(t);
         }
 
         final var actualTestCount = Integer.parseInt(log.stream().dropWhile(line -> {
