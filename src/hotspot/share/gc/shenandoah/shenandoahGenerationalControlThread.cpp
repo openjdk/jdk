@@ -542,11 +542,6 @@ bool ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
 void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGeneration* generation,
                                                                    GCCause::Cause cause,
                                                                    bool do_old_gc_bootstrap) {
-
-  if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) {
-    return;
-  }
-
   // At this point:
   //  if (generation == YOUNG), this is a normal young cycle or a bootstrap cycle
   //  if (generation == GLOBAL), this is a GLOBAL cycle
