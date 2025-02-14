@@ -2139,8 +2139,10 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
 // Checks whether expr is neutral additive element (zero) under mask,
 // i.e. whether an expression of the form:
 //   (AndX (AddX (expr addend) mask)
+//   (expr + addend) & mask
 // is equivalent to
 //   (AndX addend mask)
+//   addend & mask
 // for any addend.
 // (The X in AndX must be I or L, depending on bt).
 //
@@ -2148,16 +2150,30 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
 // the highest set bit in mask, i.e.:
 // expr: eeeeee0000000000000
 // mask: 000000mmmmmmmmmmmmm
+//             <--w bits--->
 // We do not test for other cases.
 //
 // Correctness:
-// Given "expr" with at least "w" trailing zeros,
-// let "mod = 2^w", "suffix_mask = mod - 1", and "mask" be any non-negative value <= suffix_mask.
+//   Given "expr" with at least "w" trailing zeros,
+//   let "mod = 2^w", "suffix_mask = mod - 1"
 //
-//    expr % mod == 0                             (multiple of power of two)
-// => (a + expr) % mod         == a % mod         (zero element in modular arithmetic)
-// => (a + expr) & suffix_mask == a & suffix_mask (remainder is the same as masking with suffix mask)
-// => (a + expr) & mask        == a & mask        (terms equivalent under suffix mask are also equivalent under partial mask)
+//   Since "mask" only has bits set where "suffix_mask" does, we have:
+//     mask = suffix_mask & mask     (SUFFIX_MASK)
+//
+//   And since expr only has bits set above w, and suffix_mask only below:
+//     expr & suffix_mask == 0     (NO_BIT_OVERLAP)
+//
+//   From unsigned modular arithmetic (with unsigned modulo %), and since mod is
+//   a power of 2, and we are computing in a ring of powers of 2, we know that
+//     (x + y) % mod         = (x % mod         + y) % mod
+//     (x + y) & suffix_mask = (x & suffix_mask + y) & suffix_mask       (MOD_ARITH)
+//
+//   We can now prove the equality:
+//     (expr               + addend)               & mask
+//   = (expr               + addend) & suffix_mask & mask    (SUFFIX_MASK)
+//   = (expr & suffix_mask + addend) & suffix_mask & mask    (MOD_ARITH)
+//   = (0                  + addend) & suffix_mask & mask    (NO_BIT_OVERLAP)
+//   =                       addend                & mask    (SUFFIX_MASK)
 //
 // Hence, an expr with at least w trailing zeros is a neutral additive element under any mask with bit width w.
 static bool AndIL_is_zero_element_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt) {
