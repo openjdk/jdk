@@ -656,7 +656,7 @@ void CodeBlob::print_value_on(outputStream* st) const {
 }
 
 void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const {
-  if (is_buffer_blob()) {
+  if (is_buffer_blob() || is_adapter_blob() || is_vtable_blob() || is_method_handles_adapter_blob()) {
     // the interpreter is generated into a buffer blob
     InterpreterCodelet* i = Interpreter::codelet_containing(addr);
     if (i != nullptr) {
