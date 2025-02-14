@@ -44,47 +44,63 @@ import javax.swing.JToggleButton;
 public class TestJCheckBoxToggleAccessibility {
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
+                <html><body>
+                <p><b>Testing with VoiceOver</b></p>
 
-                Testing with VoiceOver
+                <ol>
+                  <li>Start the VoiceOver application
+                      (Press <kbd>Command</kbd> + <kbd>F5</kbd>)
+                  <li>Click on the <i>Frame with CheckBox and ToggleButton</i>
+                      window to move focus
+                  <li>Press <kbd>Spacebar</kbd>
+                  <li>VO should announce the checked state
+                  <li>Press <kbd>Spacebar</kbd> again
+                  <li>VO should announce the unchecked state
+                  <li>Press <kbd>Tab</kbd> to move focus to <i>ToggleButton</i>
+                  <li>Repeat steps 3 to 6 and listen the announcement
+                  <li>If announcements are incorrect, press <b>Fail</b>
+                  <li>Stop the VoiceOver application
+                      (Press <kbd>Command</kbd> + <kbd>F5</kbd> again)
+                </ol>
 
-                1. Start the VoiceOver application (Press Command + F5)
-                2. Click on Frame with CheckBox and ToggleButton window to move focus
-                3. Press Spacebar
-                4. VO should announce the checked state
-                5. Press Spacebar again
-                6. VO should announce the unchecked state
-                7. Press Tab to move focus to ToggleButton
-                8. Repeat steps 3 to 6 and listen the announcement
-                9. If announcements are incorrect, press Fail
+                <p><b>Testing with Screen Magnifier</b></p>
+                <ol style="margin-bottom: 0">
+                  <li>Enable Screen magnifier on the Mac:
+                   <b>System Settings</b> -> <b>Accessibility</b> ->
+                   <b>Hover Text</b> -> <b>Enable Hover Text</b><br>
+                   Default Hover Text Activation Modifier is <kbd>Command</kbd> key.
+                  <li>Move focus back to test application
 
-                Stop the VoiceOver application (Press Command + F5)
+                  <ul style="margin-bottom: 0">
+                    <li>Test <i>CheckBox</i> states with Screen Magnifier
+                      <ol style="list-style-type: lower-alpha; margin-top: 0; margin-bottom: 0">
+                        <li>Click on <i>CheckBox</i> to select it
+                        <li>Press the <kbd>Command</kbd> key and
+                            hover mouse over <i>CheckBox</i>
+                        <li>CheckBox ticked state along with its label should be magnified
+                        <li>Keep the <kbd>Command</kbd> key pressed and
+                            click <i>CheckBox</i> to deselect it
+                        <li>CheckBox unticked state along with its label should be magnified
+                        <li>Release the <kbd>Command</kbd> key
+                        <li>If Screen Magnifier behaviour is incorrect, press <b>Fail</b>
+                      </ol>
+                    <li>Test <i>ToggleButton</i> states with Screen Magnifier
+                      <ol style="list-style-type: lower-alpha; margin-top: 0; margin-bottom: 0">
+                        <li>Click on <i>ToggleButton</i> to select it
+                        <li>Press the <kbd>Command</kbd> key and
+                            hover mouse over <i>ToggleButton</i>
+                        <li>Ticked state along with label should be magnified
+                        <li>Keep the <kbd>Command</kbd> button pressed and
+                            click <i>ToggleButton</i> to deselect it
+                        <li>Unticked state along with its label should be magnified
+                        <li>Release the <kbd>Command</kbd> key
+                        <li>If Screen Magnifier behaviour is incorrect, press <b>Fail</b>
+                      </ol>
+                  </ul>
+                </ol>
 
-                Testing with Screen Magnifier
-                1. Enable Screen magnifier on the Mac
-                   System Preference -> Accessibility -> Hover Text -> Enable Hover Text
-                   Default Hover Text Activation Modifier is "Command" key.
-                2. Move focus back to test application
-
-                    Test CheckBox states with Screen Magnifier
-                        a. Click on CheckBox to select
-                        b. Press Command key and hover mouse over CheckBox
-                        c. CheckBox ticked state along with label should be magnified
-                        d. Keep Command button pressed and click CheckBox to deselect
-                        e. CheckBox unticked state along with label should be magnified
-                        f. Release Command key
-                        g. If Screen Magnifier behaviour is incorrect, press Fail
-
-                    Test ToggleButton states with Screen Magnifier
-                        a. Click on ToggleButton to select
-                        b. Press Command key and hover mouse over ToggleButton
-                        c. Ticked state along with label should be magnified
-                        d. Keep Command button pressed and click ToggleButton to deselect
-                        e. Unticked state along with label should be magnified
-                        f. Release Command key
-                        g. If Screen Magnifier behaviour is incorrect, press Fail
-
-                Press Pass if you are able to hear correct VoiceOver announcements and
-                able to see the correct screen magnifier behaviour. """;
+                <p>Press <b>Pass</b> if you are able to hear correct VoiceOver announcements and
+                able to see the correct screen magnifier behaviour.</p></body></html>""";
 
         PassFailJFrame.builder()
                 .title("TestJCheckBoxToggleAccessibility Instruction")
