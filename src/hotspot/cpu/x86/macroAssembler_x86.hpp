@@ -2244,6 +2244,8 @@ public:
   void restore_legacy_gprs();
   void setcc(Assembler::Condition comparison, Register dst);
 #endif
+
+  void step_random(Register state, Register temp);
 };
 
 #endif // CPU_X86_MACROASSEMBLER_X86_HPP

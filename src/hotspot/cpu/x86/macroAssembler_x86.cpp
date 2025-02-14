@@ -10855,4 +10855,25 @@ void MacroAssembler::setcc(Assembler::Condition comparison, Register dst) {
     movzbl(dst, dst);
   }
 }
+
+void MacroAssembler::step_random(Register state, Register temp) {
+  if (0) {
+    /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
+    movl(temp, state);
+    sall(temp, 13);
+    xorl(state, temp);
+    movl(temp, state);
+    shrl(temp, 7);
+    xorl(state, temp);
+    movl(temp, state);
+    sall(temp, 5);
+    xorl(state, temp);
+  } else {
+    /* LCG from glibc. */
+    movl(temp, 1103515245);
+    imull(state, temp);
+    addl(state, 12345);
+  }
+}
+
 #endif
