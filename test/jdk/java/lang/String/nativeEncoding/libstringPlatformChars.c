@@ -46,7 +46,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void* reserved) {
     // If we are running on dynamic (non-static) JDK, libjava.dll
     // is loaded during vm bootstrapping. Just use GetModuleHandle
     // to find the already loaded libjava.dll.
-    handle = GetModuleHandle("libjava.dll");
+    handle = GetModuleHandle("java.dll");
     if (handle == NULL) {
       // No loaded libjava.dll. Get the handle to the executable.
       handle = GetModuleHandle(NULL);
