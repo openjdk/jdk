@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "memory/metaspace.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/os.inline.hpp"
 
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
@@ -47,9 +48,17 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
   if (has_last_Java_frame() && frame_anchor()->walkable()) {
     intptr_t* sp = last_Java_sp();
     address pc = _anchor.last_Java_pc();
-    // pc can be seen as null because not all writers use store pc + release store sp.
-    // Simply discard the sample in this very rare case.
-    if (pc == nullptr) return false;
+    if (pc == nullptr) {
+      // This is not uncommon. Many c1/c2 runtime stubs do not set the pc in the anchor.
+      intptr_t* top_sp = os::Aix::ucontext_get_sp((const ucontext_t*)ucontext);
+      if ((uint64_t)sp <= ((frame::common_abi*)top_sp)->callers_sp) {
+        // The interrupt occurred either in the last java frame or in its direct callee.
+        // We cannot be sure that the link register LR was already saved to the
+        // java frame. Therefore we discard this sample.
+        return false;
+      }
+      // The last java pc will be found in the abi part of the last java frame.
+    }
     *fr_addr = frame(sp, pc, frame::kind::code_blob);
     return true;
   }
