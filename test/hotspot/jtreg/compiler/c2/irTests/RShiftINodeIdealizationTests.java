@@ -68,8 +68,8 @@ public class RShiftINodeIdealizationTests {
         Asserts.assertEQ(((x & 127) >> y) >= 0 ? 0 : 1, test2(x, y));
         Asserts.assertEQ(((-(x & 127) - 1) >> y) >= 0 ? 0 : 1, test3(x, y));
         Asserts.assertEQ((x >> 30) > 4 ? 0 : 1, test4(x, y));
-        Asserts.assertEQ((x & 0xFF000000) >> 24, test5(x));
-        Asserts.assertEQ(x >> 64, test6(x));
+        Asserts.assertEQ((x & test5Mask) >> test5Shift, test5(x));
+        Asserts.assertEQ(x, test6(x));
         int x7 = Integer.max(Integer.min(x, test7Max), test7Min);
         Asserts.assertEQ(((x7 << test7Shift) >> test7Shift), test7(x));
         int x8 = Integer.max(Integer.min(x, test7Max+1), test7Min);
@@ -102,17 +102,22 @@ public class RShiftINodeIdealizationTests {
         return (x >> 30) > 4 ? 0 : 1;
     }
 
+    final static int test5Shift = RunInfo.getRandom().nextInt(32);
+    final static int test5Mask = -1 << test5Shift;
+
     @Test
     @IR(counts = { IRNode.RSHIFT_I, "1" })
     @IR(failOn = { IRNode.AND_I })
     public int test5(int x) {
-        return (x & 0xFF000000) >> 24;
+        return (x & test5Mask) >> test5Shift;
     }
+
+    final static int test6Shift = RunInfo.getRandom().nextInt(Integer.MAX_VALUE / 32) * 32 ;
 
     @Test
     @IR(failOn = { IRNode.RSHIFT_I })
     public int test6(int x) {
-        return (x >> 64);
+        return (x >> test6Shift);
     }
 
     final static int test7Shift = RunInfo.getRandom().nextInt(32);
