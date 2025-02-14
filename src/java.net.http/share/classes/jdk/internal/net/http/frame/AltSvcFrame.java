@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,30 +30,28 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
 
-public class AltSvcFrame extends Http2Frame {
+public final class AltSvcFrame extends Http2Frame {
 
     public static final int TYPE = 0xa;
 
 
-    private int originLength;
-    private Optional<String> origin;
-    private String altSvcValue;
+    private final int length;
+    private final int originLength;
+    private final String origin;
+    private final String altSvcValue;
 
     private static final Charset encoding = StandardCharsets.US_ASCII;
 
-
-    // TODO: if the encoding is really US_ASCII then a string that contains
-    // characters outside of the ASCII range (outside of [0-127]) is illegal;
-    // should this be checked?
+    // Strings should be US-ASCII. This is checked by the FrameDecoder.
     public AltSvcFrame(int streamid, int flags, int oriLength, Optional<String> originVal, String altValue) {
-        this(streamid, flags);
-        this.originLength = oriLength;
-        this.origin = originVal;
-        this.altSvcValue = Objects.requireNonNull(altValue);
-    }
-
-    public AltSvcFrame(int streamid, int flags) {
         super(streamid, flags);
+        this.originLength = oriLength;
+        this.origin = originVal.orElse(null);
+        this.altSvcValue = Objects.requireNonNull(altValue);
+        this.length = 2 + originLength + altValue.length();
+        assert (origin == null) == (originLength == 0);
+        assert oriLength == 0 || oriLength == origin.getBytes(encoding).length;
+        assert altSvcValue.length() == altSvcValue.getBytes(encoding).length;
     }
 
     @Override
@@ -63,8 +61,7 @@ public class AltSvcFrame extends Http2Frame {
 
     @Override
     int length() {
-        int originLen = origin.map(s-> s.getBytes(encoding).length).orElse(0);
-        return 2 + originLen + altSvcValue.getBytes(encoding).length;
+        return length;
     }
 
     public int getOriginLength() {
@@ -72,7 +69,7 @@ public class AltSvcFrame extends Http2Frame {
     }
 
     public Optional<String> getOrigin() {
-        return origin;
+        return Optional.ofNullable(origin);
     }
 
     public String getAltSvcValue() {

@@ -53,7 +53,7 @@ import static jdk.internal.net.http.common.Alpns.isSecureALPNName;
 
 
 /**
- * Responsible for parsing the Alt-Svc values from an Alt-Svc header and/or AltSvc HTTP3 frame.
+ * Responsible for parsing the Alt-Svc values from an Alt-Svc header and/or AltSvc HTTP/2 frame.
  */
 final class AltSvcProcessor {
 
@@ -78,7 +78,10 @@ final class AltSvcProcessor {
 
     /**
      * Parses the alt-svc header received from origin and update
-     * registry with the processed values
+     * registry with the processed values.
+     *
+     * This method is intended to be used as a stage in a {@code CompletableFuture::thenCompose}
+     * chain when the completable future that receives the HTTP {@code Response} is completed.
      *
      * @param response response passed on by the server
      * @param client   client that holds alt-svc registry
@@ -116,24 +119,10 @@ final class AltSvcProcessor {
             }
             return fnResponse;
         }
-        final Origin origin = Origin.fromRequest(request);
-        final List<AltService> altServices = processHeaderValue(origin, altSvcHeaderVal.get(),
-                sniServerNames);
-        // intentional identity check
-        if (altServices == CLEAR_ALL_ALT_SVCS) {
-            // clear all existing alt services for this origin
-            client.registry().clear(origin);
-            return fnResponse;
-        }
-        if (altServices.isEmpty()) {
-            return fnResponse;
-        }
-        // AltService RFC-7838, section 3.1 states:
-        //
-        // When an Alt-Svc response header field is received from an origin, its
-        // value invalidates and replaces all cached alternative services for
-        // that origin.
-        client.registry().replace(origin, altServices);
+
+        Origin origin = Origin.fromRequest(request);
+        String altSvcValue = altSvcHeaderVal.get();
+        processValueAndUpdateRegistry(client, origin, altSvcValue, sniServerNames);
         return fnResponse;
     }
 
@@ -196,7 +185,14 @@ final class AltSvcProcessor {
             final String scheme = "https";
             origin = Origin.of(scheme, conn.address);
         }
-        final List<AltService> altServices = processHeaderValue(origin, value, sniServerNames);
+        processValueAndUpdateRegistry(client, origin, value, sniServerNames);
+    }
+
+    private static void processValueAndUpdateRegistry(HttpClientImpl client,
+                                                      Origin origin,
+                                                      String altSvcValue,
+                                                      List<SNIServerName> sniServerNames) {
+        final List<AltService> altServices = processHeaderValue(origin, altSvcValue, sniServerNames);
         // intentional identity check
         if (altServices == CLEAR_ALL_ALT_SVCS) {
             // clear all existing alt services for this origin
@@ -411,6 +407,7 @@ final class AltSvcProcessor {
         // double-quotes. The value will this be of the form [uri-host]:port where uri-host is optional.
         String host; int port;
         try {
+            // Use URI to do the parsing, with a special case for optional host
             URI uri = new URI("http://" + altAuthority + "/");
             host = uri.getHost();
             port = uri.getPort();
@@ -428,8 +425,18 @@ final class AltSvcProcessor {
                 debug.log("Can't parse authority: " + altAuthority);
                 return null;
             }
+            String hostport;
             if (host == null || host.isEmpty()) {
+                hostport = ":" + port;
                 host = origin.host();
+            } else {
+                hostport = host + ":" + port;
+            }
+            // reject anything unexpected. altAuthority should match hostport
+            if (!hostport.equals(altAuthority)) {
+                debug.log("Authority \"%s\" doesn't match host:port \"%s\"",
+                        altAuthority, hostport);
+                return null;
             }
         } catch (URISyntaxException x) {
             debug.log("Failed to parse authority: %s - %s",

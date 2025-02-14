@@ -140,6 +140,18 @@ public final class AltServicesRegistry {
                 if (uri.getHost() == null) {
                     throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
                 }
+                if (uri.getRawUserInfo() != null) {
+                    throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
+                }
+                if (!"".equals(uri.getRawPath()) && !"/".equals(uri.getRawPath())) {
+                    throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
+                }
+                if (uri.getRawQuery() != null) {
+                    throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
+                }
+                if (uri.getRawFragment() != null) {
+                    throw new IllegalArgumentException("Invalid ASCII serialized form of origin");
+                }
                 try {
                     return Origin.from(uri);
                 } catch (IllegalArgumentException iae) {
