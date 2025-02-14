@@ -24,15 +24,14 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.model.Launcher;
-import jdk.jpackage.internal.model.MacApplication;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.MacApplication;
+import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.util.PathUtils;
 
 /**
@@ -40,23 +39,19 @@ import jdk.jpackage.internal.util.PathUtils;
  */
 public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
 
-    private MacLaunchersAsServices(BuildEnv env, Package pkg) throws IOException {
-        super(env, pkg.app(), List.of(), launcher -> {
+    private MacLaunchersAsServices(BuildEnv env, Package pkg) {
+        super(env.appImageDir(), pkg.app(), List.of(), launcher -> {
             return new MacLauncherAsService(env, pkg, launcher);
         });
     }
 
-    static ShellCustomAction create(Map<String, Object> params,
-            Path outputDir) throws IOException {
-
-        final var pkg = FromParams.getCurrentPackage(params).orElseThrow();
-        final var env = BuildEnv.withAppImageDir(BuildEnvFromParams.BUILD_ENV.findIn(params).orElseThrow(), outputDir);
-
+    static Optional<? extends ShellCustomAction> create(BuildEnv env, Package pkg) {
         if (pkg.isRuntimeInstaller()) {
-            return null;
+            return Optional.empty();
+        } else {
+            return Optional.of(new MacLaunchersAsServices(env, pkg))
+                    .filter(Predicate.not(MacLaunchersAsServices::isEmpty));
         }
-        return Optional.of(new MacLaunchersAsServices(env, pkg)).filter(Predicate.not(
-                MacLaunchersAsServices::isEmpty)).orElse(null);
     }
 
     public static Path getServicePListFileName(String bundleIdentifier,
