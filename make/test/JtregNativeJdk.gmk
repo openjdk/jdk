@@ -56,7 +56,6 @@ BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeCallerAccessTest := java.base:libjvm
 BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeNullCallerTest := java.base:libjvm
 
 BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libstringPlatformChars := java.base:libjava
-BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libNewDirectByteBuffer := java.base:libjava
 BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libGetXSpace := java.base:libjava
 
 # Platform specific setup
@@ -69,7 +68,6 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exerevokeall := advapi32.lib
   BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeNullCallerTest := /EHsc
 else
-  BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libDirectIO := java.base:libjava
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libNativeThread := -pthread
 
   # java.lang.foreign tests
@@ -83,7 +81,6 @@ else
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libImplicitAttach := -pthread
   BUILD_JDK_JTREG_EXCLUDE += exerevokeall.c
   ifeq ($(call isTargetOs, linux), true)
-    BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libInheritedChannel := java.base:libjava
     BUILD_JDK_JTREG_EXECUTABLES_LIBS_exelauncher := -ldl
   endif
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX)
