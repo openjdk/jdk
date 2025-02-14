@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,43 +22,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.vm.vector;
 
-/*
- *******************************************************************************
- * Copyright (C) 2010, International Business Machines Corporation and         *
- * others. All Rights Reserved.                                                *
- *******************************************************************************
- */
-package sun.util.locale;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
+import java.util.function.UnaryOperator;
 
-public class ParseStatus {
-    int parseLength;
-    int errorIndex;
-    String errorMsg;
+public class Float16Math {
 
-    public ParseStatus() {
-        reset();
+    @FunctionalInterface
+    public interface TernaryOperator<T> {
+        T apply(T a, T b, T c);
     }
 
-    public void reset() {
-        parseLength = 0;
-        errorIndex = -1;
-        errorMsg = null;
+    @IntrinsicCandidate
+    public static <T> T sqrt(Class<T> box_class, T oa, UnaryOperator<T> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(oa);
     }
 
-    public boolean isError() {
-        return (errorIndex >= 0);
+    @IntrinsicCandidate
+    public static <T> T fma(Class<T> box_class, T oa, T ob, T oc, TernaryOperator<T> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(oa, ob, oc);
     }
 
-    public int getErrorIndex() {
-        return errorIndex;
-    }
-
-    public int getParseLength() {
-        return parseLength;
-    }
-
-    public String getErrorMessage() {
-        return errorMsg;
+    public static boolean isNonCapturingLambda(Object o) {
+        return o.getClass().getDeclaredFields().length == 0;
     }
 }

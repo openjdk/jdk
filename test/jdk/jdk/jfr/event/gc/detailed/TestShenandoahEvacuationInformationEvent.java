@@ -72,8 +72,8 @@ public class TestShenandoahEvacuationInformationEvent {
             Events.assertField(event, "collectedYoung").atLeast(0L).getValue();
 
             Asserts.assertGreaterThanOrEqual(shenandoahMaxHeapRegionCount, freeRegions + cSetRegions, "numRegions >= freeRegions + cSetRegions");
-            Asserts.assertGreaterThanOrEqual(shenandoahHeapRegionSize * setRegions, setUsedAfter, "ShenandoahHeapRegionSize * setRegions >= setUsedAfter");
-            Asserts.assertGreaterThanOrEqual(shenandoahHeapRegionSize * setRegions, setUsedBefore, "ShenandoahHeapRegionSize * setRegions >= setUsedBefore");
+            Asserts.assertGreaterThanOrEqual(shenandoahHeapRegionSize * cSetRegions, setUsedAfter, "ShenandoahHeapRegionSize * cSetRegions >= setUsedAfter");
+            Asserts.assertGreaterThanOrEqual(shenandoahHeapRegionSize * cSetRegions, setUsedBefore, "ShenandoahHeapRegionSize * cSetRegions >= setUsedBefore");
 
             int gcId = Events.assertField(event, "gcId").getValue();
         }
