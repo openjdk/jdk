@@ -115,9 +115,9 @@ public class RShiftINodeIdealizationTests {
         return (x >> 64);
     }
 
-    final int test7Shift = 10;
-    final int test7Min = -1 << (32 - test7Shift -1);
-    final int test7Max = ~test7Min;
+    final static int test7Shift = RunInfo.getRandom().nextInt(32);
+    final static int test7Min = -1 << (32 - test7Shift -1);
+    final static int test7Max = ~test7Min;
 
     @Test
     @IR(failOn = { IRNode.RSHIFT_I, IRNode.LSHIFT_I })
