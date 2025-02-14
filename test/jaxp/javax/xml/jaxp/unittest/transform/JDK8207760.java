@@ -41,10 +41,10 @@ import org.testng.annotations.DataProvider;
 
 /*
  * @test
+ * @bug 8207760 8349699
+ * @summary Verifies that a surrogate pair at the edge of a buffer is properly handled
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm transform.JDK8207760
- * @summary Verifies that a surrogate pair at the edge of a buffer is properly handled
- * @bug 8207760
  */
 public class JDK8207760 {
     final String xsl8207760 =
@@ -99,6 +99,33 @@ public class JDK8207760 {
             {xsl8207760_2},
             {xsl8207760_3},
         };
+    }
+
+    /*
+     * @bug 8349699
+     * Verifies that a surrogate pair at the edge of a buffer is properly handled
+     * when serializing into a Character section.
+     */
+    @Test
+    public final void testBug8349699() throws Exception {
+        String xs = "x".repeat(1017);
+        String expected = xs + "\uD835\uDF03\uD835\uDF00\uD835\uDF00\uD835\uDF00\uD835\uDF00";
+        String xml = "<?xml version=\"1.0\" ?><a>{1017x}\uD835\uDF03\uD835\uDF00\uD835\uDF00<b>\uD835\uDF00</b>\uD835\uDF00</a> "
+                .replace("{1017x}", xs);
+        String xsl = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:output encoding="UTF-8" method="text" />
+                  <xsl:template match="/"><xsl:apply-templates select="node()" /></xsl:template>
+                </xsl:stylesheet>
+                """;
+
+        Transformer t = createTransformerFromInputstream(
+                new ByteArrayInputStream(xsl.getBytes(StandardCharsets.UTF_8)));
+        //t.setOutputProperty(OutputKeys.ENCODING, StandardCharsets.UTF_8.name());
+        StringWriter sw = new StringWriter();
+        t.transform(new StreamSource(new StringReader(xml)), new StreamResult(sw));
+        Assert.assertEquals(sw.toString(), expected);
     }
 
     /*
