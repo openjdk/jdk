@@ -66,27 +66,30 @@ import java.util.function.Supplier;
  * the content is <em>set</em>:
  *
  * {@snippet lang = java:
- * class Component {
+ * public class Component {
  *
  *    // Creates a new unset stable value with no content
  *    // @link substring="of" target="#of" :
  *    private final StableValue<Logger> logger = StableValue.of();
  *
- *    Logger getLogger() {
+ *    private Logger getLogger() {
  *        if (!logger.isSet()) {
  *            logger.trySet(Logger.create(Component.class));
  *        }
  *         return logger.orThrow();
  *    }
  *
- *    void process() {
- *        logger.get().info("Process started");
+ *    public void process() {
+ *        getLogger().info("Process started");
  *        // ...
  *    }
  * }
  *}
  * <p>
  * Note that the holder value can only be set at most once.
+ * In the example above, the {@code logger} field is declared {@code final} which is
+ * a prerequisite for being treated as a constant by the JVM.
+ *
  * <p>
  * To guarantee that, even under races, only one instance of {@code Logger} is ever
  * created, the {@linkplain #orElseSet(Supplier) orElseSet()} method can be used
@@ -95,18 +98,18 @@ import java.util.function.Supplier;
  * form of a lambda expression:
  *
  * {@snippet lang = java:
- * class Component {
+ * public class Component {
  *
  *    // Creates a new unset stable value with no content
  *    // @link substring="of" target="#of" :
  *    private final StableValue<Logger> logger = StableValue.of();
  *
- *    Logger getLogger() {
+ *    private Logger getLogger() {
  *        return logger.orElseSet( () -> Logger.create(Component.class) );
  *    }
  *
- *    void process() {
- *        logger.get().info("Process started");
+ *    public void process() {
+ *        getLogger().info("Process started");
  *        // ...
  *    }
  * }
@@ -133,13 +136,13 @@ import java.util.function.Supplier;
  * is first accessed:
  *
  * {@snippet lang = java:
- * class Component {
+ * public class Component {
  *
  *     private final Supplier<Logger> logger =
  *             // @link substring="supplier" target="#supplier(Supplier)" :
  *             StableValue.supplier( () -> Logger.getLogger(Component.class) );
  *
- *     void process() {
+ *     public void process() {
  *        logger.get().info("Process started");
  *        // ...
  *     }
@@ -158,17 +161,19 @@ import java.util.function.Supplier;
  * effect, the stable int function will act like a cache for the original {@linkplain IntFunction}:
  *
  * {@snippet lang = java:
- * class SqrtUtil {
+ * public final class SqrtUtil {
  *
- *     private static final IntFunction<Double> SQRT =
- *             // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
- *             StableValue.intFunction(10, StrictMath::sqrt);
+ *      private SqrtUtil(){}
  *
- *     double sqrt9() {
- *         return SQRT.apply(9); // May eventually constant fold to 3.0 at runtime
- *     }
+ *      private static final IntFunction<Double> SQRT =
+ *              // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
+ *              StableValue.intFunction(10, StrictMath::sqrt);
  *
- * }
+ *      public static double sqrt9() {
+ *          return SQRT.apply(9); // May eventually constant fold to 3.0 at runtime
+ *      }
+ *
+ *  }
  *}
  * <p>
  * A <em>stable function</em> is a function that takes a parameter (of type {@code T}) and
@@ -180,13 +185,15 @@ import java.util.function.Supplier;
  * stable function will act like a cache for the original {@linkplain Function}:
  *
  * {@snippet lang = java:
- * class SqrtUtil {
+ * public final class SqrtUtil {
+ *
+ *     private SqrtUtil(){}
  *
  *     private static final Function<Integer, Double> SQRT =
  *             // @link substring="function" target="#function(Set,Function)" :
  *             StableValue.function(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
  *
- *     double sqrt16() {
+ *     public static double sqrt16() {
  *         return SQRT.apply(16); // May eventually constant fold to 4.0 at runtime
  *     }
  *
@@ -200,13 +207,15 @@ import java.util.function.Supplier;
  * are computed when they are first accessed, using a provided {@linkplain IntFunction}:
  *
  * {@snippet lang = java:
- * class SqrtUtil {
+ * public final class SqrtUtil {
+ *
+ *     private SqrtUtil(){}
  *
  *     private static final List<Double> SQRT =
  *             // @link substring="list" target="#list(int,IntFunction)" :
  *             StableValue.list(10, StrictMath::sqrt);
  *
- *     double sqrt9() {
+ *     public static double sqrt9() {
  *         return SQRT.get(9); // May eventually constant fold to 3.0 at runtime
  *     }
  *
@@ -218,13 +227,15 @@ import java.util.function.Supplier;
  * using a provided {@linkplain Function}:
  *
  * {@snippet lang = java:
- * class SqrtUtil {
+ * public final class SqrtUtil {
+ *
+ *     private SqrtUtil(){}
  *
  *     private static final Map<Integer, Double> SQRT =
  *             // @link substring="map" target="#map(Set,Function)" :
  *             StableValue.map(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
  *
- *     double sqrt16() {
+ *     public static double sqrt16() {
  *         return SQRT.get(16); // May eventually constant fold to 4.0 at runtime
  *     }
  *
@@ -238,7 +249,9 @@ import java.util.function.Supplier;
  * instance (that is dependent on the {@code Foo} instance) are lazily created, both of
  * which are held by stable values:
  * {@snippet lang = java:
- * class Dependency {
+ * public final class DependencyUtil {
+ *
+ *     private DependencyUtil(){}
  *
  *     public static class Foo {
  *          // ...
@@ -270,7 +283,9 @@ import java.util.function.Supplier;
  * Here is another example where a more complex dependency graph is created in which
  * integers in the Fibonacci delta series are lazily computed:
  * {@snippet lang = java:
- * class Fibonacci {
+ * public final class Fibonacci {
+ *
+ *     private Fibonacci() {}
  *
  *     private static final int MAX_SIZE_INT = 46;
  *
@@ -326,6 +341,13 @@ import java.util.function.Supplier;
  * {@linkplain java.lang.ref##reachability strongly reachable}. Clients are advised that
  * {@linkplain java.lang.ref##reachability reachable} stable values will hold their set
  * content perpetually.
+ * <p>
+ * A {@linkplain StableValue} that has a type parameter {@code T} that is an array
+ * type (of arbitrary rank) will only allow the JVM to treat the <em>array reference</em>
+ * as a stable value but <em>not its components</em>. Clients can instead use
+ * {@linkplain #list(int, IntFunction) a stable list} of arbitrary depth, which provides
+ * stable components. More generally, a stable value can hold other stable values of
+ * arbitrary depth and still provide transitive constantness.
  *
  * @implSpec Implementing classes of {@linkplain StableValue} are free to synchronize on
  *           {@code this} and consequently, care should be taken whenever
@@ -448,6 +470,8 @@ public sealed interface StableValue<T>
      * {@return a new unset stable value}
      * <p>
      * An unset stable value has no content.
+     * <p>
+     * The returned stable value is not {@link Serializable}.
      *
      * @param <T> type of the content
      */
@@ -457,6 +481,8 @@ public sealed interface StableValue<T>
 
     /**
      * {@return a new pre-set stable value with the provided {@code content}}
+     * <p>
+     * The returned stable value is not {@link Serializable}.
      *
      * @param content to set
      * @param <T>     type of the content
@@ -480,6 +506,8 @@ public sealed interface StableValue<T>
      * <p>
      * If the provided {@code original} supplier throws an exception, it is relayed
      * to the initial caller and no content is recorded.
+     * <p>
+     * The returned supplier is not {@link Serializable}.
      *
      * @param original supplier used to compute a cached value
      * @param <T>      the type of results supplied by the returned supplier
@@ -506,6 +534,8 @@ public sealed interface StableValue<T>
      * <p>
      * If the provided {@code original} int function throws an exception, it is relayed
      * to the initial caller and no content is recorded.
+     * <p>
+     * The returned int function is not {@link Serializable}.
      *
      * @param size     the size of the allowed inputs in {@code [0, size)}
      * @param original IntFunction used to compute cached values
@@ -536,6 +566,8 @@ public sealed interface StableValue<T>
      * <p>
      * If the provided {@code original} function throws an exception, it is relayed to
      * the initial caller and no content is recorded.
+     * <p>
+     * The returned function is not {@link Serializable}.
      *
      * @param inputs   the set of allowed input values
      * @param original Function used to compute cached values
@@ -567,6 +599,10 @@ public sealed interface StableValue<T>
      * <p>
      * The returned list and its {@link List#subList(int, int) subList} views implement
      * the {@link RandomAccess} interface.
+     * <p>
+     * The returned list is not {@link Serializable} and, as it is unmodifiable, does
+     * not implement the {@linkplain Collection##optional-operation optional operations}
+     * in the {@linkplain List} interface.
      *
      * @param size   the size of the returned list
      * @param mapper to invoke whenever an element is first accessed
@@ -597,6 +633,10 @@ public sealed interface StableValue<T>
      * <p>
      * If the provided {@code mapper} throws an exception, it is relayed to the initial
      * caller and no value associated with the provided key is recorded.
+     * <p>
+     * The returned map is not {@link Serializable} and, as it is unmodifiable, does
+     * not implement the {@linkplain Collection##optional-operations optional operations}
+     * in the {@linkplain Map} interface.
      *
      * @param keys   the keys in the returned map
      * @param mapper to invoke whenever an associated value is first accessed
