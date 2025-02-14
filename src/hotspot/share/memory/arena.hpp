@@ -150,8 +150,6 @@ protected:
   }
 
  public:
-  // Start the chunk_pool cleaner task
-  static void start_chunk_pool_cleaner_task();
   Arena(MemTag mem_tag, Tag tag = Tag::tag_other, size_t init_size = Chunk::init_size);
   ~Arena();
   void  destruct_contents();
