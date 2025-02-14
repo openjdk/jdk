@@ -1382,9 +1382,6 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
   bind(DONE);
 }
 
-
-
-
 // Compare longwords
 void C2_MacroAssembler::string_compare_long_LL_UU(Register str1, Register str2,
                                                   Register cnt1, Register cnt2,
