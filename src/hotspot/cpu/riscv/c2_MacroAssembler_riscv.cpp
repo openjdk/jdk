@@ -1385,7 +1385,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 
 
 
-
+// Compare longwords
 void C2_MacroAssembler::string_compare_long_LL_UU(Register str1, Register str2,
                                                   Register cnt1, Register cnt2,
                                                   Register tmp1, Register tmp2, Register tmp3,
@@ -1394,69 +1394,69 @@ void C2_MacroAssembler::string_compare_long_LL_UU(Register str1, Register str2,
                                                   Label *DONE, Label *DIFFERENCE, Label *STUB,
                                                   const int STUB_THRESHOLD) {
   Label TAIL_CHECK, TAIL, NEXT_WORD;
-  // Compare longwords
+
   // load first parts of strings and finish initialization while loading
-      beq(str1, str2, *DONE);
-      // Alignment
-      int base_offset = isLL ? base_offset1 : base_offset2;
-      if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
-        lwu(tmp1, Address(str1));
-        lwu(tmp2, Address(str2));
-        bne(tmp1, tmp2, *DIFFERENCE);
-        addi(str1, str1, 4);
-        addi(str2, str2, 4);
-        subi(cnt2, cnt2, minCharsInWord / 2);
-      }
+  beq(str1, str2, *DONE);
+  // Alignment
+  int base_offset = isLL ? base_offset1 : base_offset2;
+  if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
+    lwu(tmp1, Address(str1));
+    lwu(tmp2, Address(str2));
+    bne(tmp1, tmp2, *DIFFERENCE);
+    addi(str1, str1, 4);
+    addi(str2, str2, 4);
+    subi(cnt2, cnt2, minCharsInWord / 2);
+  }
 #ifdef ASSERT
-      if (AvoidUnalignedAccesses) {
-        Label align_ok;
-        orr(t0, str1, str2);
-        andi(t0, t0, 0x7);
-        beqz(t0, align_ok);
-        stop("bad alignment");
-        bind(align_ok);
-      }
+  if (AvoidUnalignedAccesses) {
+    Label align_ok;
+    orr(t0, str1, str2);
+    andi(t0, t0, 0x7);
+    beqz(t0, align_ok);
+    stop("bad alignment");
+    bind(align_ok);
+  }
 #endif
-      // load 8 bytes once to compare
-      ld(tmp1, Address(str1));
-      ld(tmp2, Address(str2));
-      mv(t0, STUB_THRESHOLD);
-      bge(cnt2, t0, *STUB);
-      subi(cnt2, cnt2, minCharsInWord);
-      beqz(cnt2, TAIL_CHECK);
-      // convert cnt2 from characters to bytes
-      if (!str1_isL) {
-        slli(cnt2, cnt2, 1);
-      }
-      add(str2, str2, cnt2);
-      add(str1, str1, cnt2);
-      sub(cnt2, zr, cnt2);
+  // load 8 bytes once to compare
+  ld(tmp1, Address(str1));
+  ld(tmp2, Address(str2));
+  mv(t0, STUB_THRESHOLD);
+  bge(cnt2, t0, *STUB);
+  subi(cnt2, cnt2, minCharsInWord);
+  beqz(cnt2, TAIL_CHECK);
+  // convert cnt2 from characters to bytes
+  if (!str1_isL) {
+    slli(cnt2, cnt2, 1);
+  }
+  add(str2, str2, cnt2);
+  add(str1, str1, cnt2);
+  sub(cnt2, zr, cnt2);
 
-    // addi(cnt2, cnt2, isUL ? 4 : 8);
+  addi(cnt2, cnt2, 8);
+  bne(tmp1, tmp2, *DIFFERENCE);
+  bgez(cnt2, TAIL);
+
+  // main loop
+  bind(NEXT_WORD);
+    // 8-byte aligned loads when AvoidUnalignedAccesses is enabled
+    add(t0, str1, cnt2);
+    ld(tmp1, Address(t0));
+    add(t0, str2, cnt2);
+    ld(tmp2, Address(t0));
     addi(cnt2, cnt2, 8);
-    bne(tmp1, tmp2, *DIFFERENCE);
-    bgez(cnt2, TAIL);
 
-    // main loop
-    bind(NEXT_WORD);
-      // 8-byte aligned loads when AvoidUnalignedAccesses is enabled
-      add(t0, str1, cnt2);
-      ld(tmp1, Address(t0));
-      add(t0, str2, cnt2);
-      ld(tmp2, Address(t0));
-      addi(cnt2, cnt2, 8);
+  bne(tmp1, tmp2, *DIFFERENCE);
+  bltz(cnt2, NEXT_WORD);
 
-    bne(tmp1, tmp2, *DIFFERENCE);
-    bltz(cnt2, NEXT_WORD);
-    bind(TAIL);
+  bind(TAIL);
+  load_long_misaligned(tmp1, Address(str1), tmp3, isLL ? 1 : 2);
+  load_long_misaligned(tmp2, Address(str2), tmp3, isLL ? 1 : 2);
 
-      load_long_misaligned(tmp1, Address(str1), tmp3, isLL ? 1 : 2);
-      load_long_misaligned(tmp2, Address(str2), tmp3, isLL ? 1 : 2);
-
-    bind(TAIL_CHECK);
-    beq(tmp1, tmp2, *DONE);
+  bind(TAIL_CHECK);
+  beq(tmp1, tmp2, *DONE);
 }
 
+// Compare longwords
 void C2_MacroAssembler::string_compare_long_LU(Register strL, Register strU,
                                                   Register cnt1, Register cnt2,
                                                   Register tmpL, Register tmpU, Register tmp3,
@@ -1464,47 +1464,46 @@ void C2_MacroAssembler::string_compare_long_LU(Register strL, Register strU,
                                                   Label *DONE, Label *DIFFERENCE, Label *STUB) {
   Label TAIL, NEXT_WORD;
 
-  // Compare longwords
   // load first parts of strings and finish initialization while loading
-      mv(t0, STUB_THRESHOLD);
-      bge(cnt2, t0, *STUB);
-      lwu(tmpL, Address(strL));
-      load_long_misaligned(tmpU, Address(strU), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
-      subi(cnt2, cnt2, 4);
-      add(strL, strL, cnt2);
-      sub(cnt1, zr, cnt2);
-      slli(cnt2, cnt2, 1);
-      add(strU, strU, cnt2);
-      inflate_lo32(tmp3, tmpL);
-      mv(tmpL, tmp3);
-      sub(cnt2, zr, cnt2);
-      addi(cnt1, cnt1, 4);
+  mv(t0, STUB_THRESHOLD);
+  bge(cnt2, t0, *STUB);
+  lwu(tmpL, Address(strL));
+  load_long_misaligned(tmpU, Address(strU), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
+  subi(cnt2, cnt2, 4);
+  add(strL, strL, cnt2);
+  sub(cnt1, zr, cnt2);
+  slli(cnt2, cnt2, 1);
+  add(strU, strU, cnt2);
+  inflate_lo32(tmp3, tmpL);
+  mv(tmpL, tmp3);
+  sub(cnt2, zr, cnt2);
+  addi(cnt1, cnt1, 4);
 
+  addi(cnt2, cnt2, 8);
+  bne(tmpL, tmpU, *DIFFERENCE);
+  bgez(cnt2, TAIL);
+
+  // main loop
+  bind(NEXT_WORD);
+    add(t0, strL, cnt1);
+    lwu(tmpL, Address(t0));
+    add(t0, strU, cnt2);
+    load_long_misaligned(tmpU, Address(t0), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
+    addi(cnt1, cnt1, 4);
+    inflate_lo32(tmp3, tmpL);
+    mv(tmpL, tmp3);
     addi(cnt2, cnt2, 8);
-    bne(tmpL, tmpU, *DIFFERENCE);
-    bgez(cnt2, TAIL);
 
-    // main loop
-    bind(NEXT_WORD);
-      add(t0, strL, cnt1);
-      lwu(tmpL, Address(t0));
-      add(t0, strU, cnt2);
-      load_long_misaligned(tmpU, Address(t0), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
-      addi(cnt1, cnt1, 4);
-      inflate_lo32(tmp3, tmpL);
-      mv(tmpL, tmp3);
-      addi(cnt2, cnt2, 8);
+  bne(tmpL, tmpU, *DIFFERENCE);
+  bltz(cnt2, NEXT_WORD);
 
-    bne(tmpL, tmpU, *DIFFERENCE);
-    bltz(cnt2, NEXT_WORD);
-    bind(TAIL);
+  bind(TAIL);
+  load_int_misaligned(tmpL, Address(strL), tmp3, false);
+  load_long_misaligned(tmpU, Address(strU), tmp3, 2);
+  inflate_lo32(tmp3, tmpL);
+  mv(tmpL, tmp3);
 
-      load_int_misaligned(tmpL, Address(strL), tmp3, false);
-      load_long_misaligned(tmpU, Address(strU), tmp3, 2);
-      inflate_lo32(tmp3, tmpL);
-      mv(tmpL, tmp3);
-
-    beq(tmpL, tmpU, *DONE);
+  beq(tmpL, tmpU, *DONE);
 }
 
 // Compare strings.
@@ -1513,9 +1512,9 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
                                        Register tmp1, Register tmp2, Register tmp3,
                                        int ae)
 {
-  Label DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, TAIL, STUB,
-        DIFFERENCE, NEXT_WORD, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
-        SHORT_LOOP_START, TAIL_CHECK, L;
+  Label DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, STUB,
+        DIFFERENCE, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
+        SHORT_LOOP_START, L;
 
   const int STUB_THRESHOLD = 64 + 8;
   bool isLL = ae == StrIntrinsicNode::LL;
