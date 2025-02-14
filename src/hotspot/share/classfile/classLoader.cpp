@@ -1297,7 +1297,7 @@ void ClassLoader::record_hidden_class(InstanceKlass* ik) {
   } else {
     // Generated invoker classes.
     if (classloader_type == ClassLoader::APP_LOADER) {
-      ik->set_shared_classpath_index(AOTCodeSourceConfig::dumptime()->app_start());
+      ik->set_shared_classpath_index(AOTCodeSourceConfig::dumptime()->app_cp_start_index());
     } else {
       ik->set_shared_classpath_index(0);
     }

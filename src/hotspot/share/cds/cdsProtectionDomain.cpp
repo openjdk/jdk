@@ -87,7 +87,7 @@ Handle CDSProtectionDomain::init_security_info(Handle class_loader, InstanceKlas
     //   the corresponding CDSProtectionDomain::get_shared_xxx() function.
     Handle manifest = get_shared_jar_manifest(index, CHECK_NH);
     Handle url = get_shared_jar_url(index, CHECK_NH);
-    int index_offset = index - AOTCodeSourceConfig::runtime()->app_start();
+    int index_offset = index - AOTCodeSourceConfig::runtime()->app_cp_start_index();
     if (index_offset < PackageEntry::max_index_for_defined_in_class_path()) {
       if (pkg_entry == nullptr || !pkg_entry->is_defined_by_cds_in_class_path(index_offset)) {
         // define_shared_package only needs to be called once for each package in a jar specified

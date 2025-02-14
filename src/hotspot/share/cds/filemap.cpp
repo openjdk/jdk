@@ -315,7 +315,7 @@ bool FileMapInfo::validate_code_source() {
 
   if (header()->has_full_module_graph() && has_extra_module_paths) {
     CDSConfig::stop_using_optimized_module_handling();
-    log_info(cds)("optimized module handling: disabled because of extra module path(s) are specified");
+    log_info(cds)("optimized module handling: disabled because extra module path(s) are specified");
   }
 
   if (CDSConfig::is_dumping_dynamic_archive()) {

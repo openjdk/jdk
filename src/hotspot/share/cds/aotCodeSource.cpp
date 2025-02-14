@@ -130,7 +130,12 @@ public:
 };
 
 // AllCodeSourceStreams is used to iterate over all the code sources that
-// are available to the application from -Xbootclasspath, -classpath and --module-path
+// are available to the application from -Xbootclasspath, -classpath and --module-path.
+// When creating an AOT cache, we store the contents from AllCodeSourceStreams
+// into an array of AOTCodeSources. See AOTCodeSourceConfig::dumptime_init_helper().
+// When loading the AOT cache in a production run, we compare the contents of the
+// stored AOTCodeSources against the current AllCodeSourceStreams to determine whether
+// the AOT cache is compatible with the current JVM. See AOTCodeSourceConfig::validate().
 class AllCodeSourceStreams {
   BootCpCodeSourceStream _boot_cp;          // Specified by -Xbootclasspath/a
   AppCpCodeSourceStream _app_cp;            // Specified by -classpath
@@ -607,7 +612,7 @@ void AOTCodeSourceConfig::add_code_source(JavaThread* current, GrowableCodeSourc
         // Avoid infinite recursion when two JAR files refer to each
         // other via cpattr.
         bool found_duplicate = false;
-        for (int i = boot_start(); i < tmp_array.length(); i++) {
+        for (int i = boot_cp_start_index(); i < tmp_array.length(); i++) {
           if (strcmp(tmp_array.at(i)->path(), libname) == 0) {
             found_duplicate = true;
             break;
@@ -645,7 +650,7 @@ int AOTCodeSourceConfig::get_module_shared_path_index(Symbol* location) const {
   // skip_uri_protocol was also called during dump time -- see ClassLoaderExt::process_module_table()
   ResourceMark rm;
   const char* file = ClassLoader::uri_to_path(location->as_C_string());
-  for (int i = module_start(); i < module_end(); i++) {
+  for (int i = module_path_start_index(); i < module_path_end_index(); i++) {
     const AOTCodeSource* cs = code_source_at(i);
     assert(!cs->has_unnamed_module(), "must be");
     bool same = os::same_files(file, cs->path());
@@ -694,16 +699,6 @@ AOTCodeSourceConfig* AOTCodeSourceConfig::write_to_archive() const {
   ArchivePtrMarker::mark_pointer(&dumped->_code_sources);
 
   return dumped;
-}
-
-size_t AOTCodeSourceConfig::estimate_size_for_archive_helper() const {
-  size_t size = ObjArrayKlass::header_size() * BytesPerWord;
-  for (int i = 0; i < _code_sources->length(); i++) {
-    size += _code_sources->at(i)->total_size();
-  }
-
-  size = (size + 100) * 2;   // sanity
-  return size;
 }
 
 bool AOTCodeSourceConfig::check_classpaths(bool is_boot_classpath, bool has_aot_linked_classes,
@@ -759,7 +754,10 @@ bool AOTCodeSourceConfig::check_classpaths(bool is_boot_classpath, bool has_aot_
     }
   }
 
+  // Check if the runtime boot classpath has more entries than the one stored in the archive and if the app classpath
+  // or the module path requires validation.
   if (is_boot_classpath && runtime_css.has_next() && (need_to_check_app_classpath() || num_module_paths() > 0)) {
+    // the check passes if all the extra runtime boot classpath entries are non-existent
     if (check_paths_existence(runtime_css)) {
       log_warning(cds)("boot classpath is longer than expected");
       return false;
@@ -772,7 +770,6 @@ bool AOTCodeSourceConfig::check_classpaths(bool is_boot_classpath, bool has_aot_
 bool AOTCodeSourceConfig::check_paths_existence(CodeSourceStream& runtime_css) const {
   struct stat st;
   bool exist = false;
-  runtime_css.start();
   while (runtime_css.has_next()) {
     const char* path = runtime_css.get_next();
     if (os::stat(path, &st) == 0 && st.st_size > 0) {
@@ -891,21 +888,21 @@ const char* AOTCodeSourceConfig::substitute(const char* path,         // start w
 // CodeSource can be matched exactly: this means all other CodeSources must be
 // matched exactly.
 bool AOTCodeSourceConfig::need_lcp_match(AllCodeSourceStreams& all_css) const {
-  if (!need_lcp_match_helper(boot_start(), boot_end(), all_css.boot_cp()) ||
-      !need_lcp_match_helper(app_start(), app_end(), all_css.app_cp())) {
-    return false;
-  } else {
-    return true;
-  }
-}
-
-bool AOTCodeSourceConfig::need_lcp_match_helper(int start, int end, CodeSourceStream& css) const {
-  if (app_end() == boot_start()) {
+  if (app_cp_end_index() == boot_cp_start_index()) {
     // No need to use lcp-match when there are no boot/app paths.
     // TODO: LCP-match not yet supported for modules.
     return false;
   }
 
+  if (need_lcp_match_helper(boot_cp_start_index(), boot_cp_end_index(), all_css.boot_cp()) &&
+      need_lcp_match_helper(app_cp_start_index(), app_cp_end_index(), all_css.app_cp())) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool AOTCodeSourceConfig::need_lcp_match_helper(int start, int end, CodeSourceStream& css) const {
   int i = start;
   for (css.start(); i < end && css.has_next(); ) {
     const AOTCodeSource* cs = code_source_at(i++);
@@ -929,7 +926,7 @@ bool AOTCodeSourceConfig::validate(bool has_aot_linked_classes, bool* has_extra_
     return false;
   }
   if (code_sources()->length() == 1) {
-    if ((module_start() >= module_end()) && Arguments::get_property("jdk.module.path") != nullptr) {
+    if ((module_path_start_index() >= module_path_end_index()) && Arguments::get_property("jdk.module.path") != nullptr) {
       *has_extra_module_paths = true;
     } else {
       *has_extra_module_paths = false;
@@ -949,18 +946,19 @@ bool AOTCodeSourceConfig::validate(bool has_aot_linked_classes, bool* has_extra_
       runtime_lcp_len = 0;
     }
 
-    success = check_classpaths(true, has_aot_linked_classes, boot_start(), boot_end(), all_css.boot_cp(),
+    success = check_classpaths(true, has_aot_linked_classes, boot_cp_start_index(), boot_cp_end_index(), all_css.boot_cp(),
                                use_lcp_match, runtime_lcp, runtime_lcp_len);
     log_info(class, path)("Archived boot classpath validation: %s", success ? "passed" : "failed");
 
     if (success && need_to_check_app_classpath()) {
-      success = check_classpaths(false, has_aot_linked_classes, app_start(), app_end(), all_css.app_cp(),
+      success = check_classpaths(false, has_aot_linked_classes, app_cp_start_index(), app_cp_end_index(), all_css.app_cp(),
                                  use_lcp_match, runtime_lcp, runtime_lcp_len);
       log_info(class, path)("Archived app classpath validation: %s", success ? "passed" : "failed");
     }
 
     if (success) {
-      success = check_module_paths(has_aot_linked_classes, module_start(), module_end(), all_css.module_path(), has_extra_module_paths);
+      success = check_module_paths(has_aot_linked_classes, module_path_start_index(), module_path_end_index(),
+                                   all_css.module_path(), has_extra_module_paths);
       log_info(class, path)("Archived module path validation: %s%s", success ? "passed" : "failed",
                             (*has_extra_module_paths) ? " (extra module paths found)" : "");
     }

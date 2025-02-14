@@ -117,11 +117,11 @@ public:
 //
 // Keep track of the set of AOTCodeSources used when an AOTCache is created.
 // To load the AOTCache in a production run, the JVM must be using a compatible set of
-// AOTCodeSources (subject to checks in AOTCodeSourceConfig::validate(bool&).
+// AOTCodeSources (subjected to AOTCodeSourceConfig::validate()).
 //
-// In general, validation is performed on AOTCodeSources to ensure the code sources used
-// during AOTCache creation is the same as when the AOTCache is used during runtime.
-// Non-existent entries are recored during AOTCache creation. Those non-existent entries
+// In general, validation is performed on the AOTCodeSources to ensure the code sources used
+// during AOTCache creation are the same as when the AOTCache is used during runtime.
+// Non-existent entries are recorded during AOTCache creation. Those non-existent entries
 // must not exist during runtime.
 //
 // Some details on validation:
@@ -191,9 +191,8 @@ class AOTCodeSourceConfig : public CHeapObj<mtClassShared> {
 
   void check_nonempty_dirs() const;
   bool need_to_check_app_classpath() const {
-    return (num_app_classpaths() > 0) && (_max_used_index >= app_start()) && has_platform_or_app_classes();
+    return (num_app_classpaths() > 0) && (_max_used_index >= app_cp_start_index()) && has_platform_or_app_classes();
   }
-  size_t estimate_size_for_archive_helper() const;
 
   void print_dumptime_classpath(LogStream& ls, int index_start, int index_limit,
                                 bool do_substitute, size_t remove_prefix_len,
@@ -210,17 +209,17 @@ public:
   }
 
   // Common accessors
-  int boot_start()                       const { return 1; }
-  int boot_end()                         const { return _boot_classpath_end; }
-  int app_start()                        const { return boot_end(); }
-  int app_end()                          const { return _app_classpath_end; }
-  int module_start()                     const { return app_end(); }
-  int module_end()                       const { return _module_end; }
-  bool has_platform_or_app_classes()     const { return _has_app_classes || _has_platform_classes; }
-  bool has_non_jar_modules()             const { return _has_non_jar_modules; }
-  int num_boot_classpaths()              const { return boot_end()   - boot_start();   }
-  int num_app_classpaths()               const { return app_end()    - app_start();    }
-  int num_module_paths()                 const { return module_end() - module_start(); }
+  int boot_cp_start_index()          const { return 1; }
+  int boot_cp_end_index()            const { return _boot_classpath_end; }
+  int app_cp_start_index()           const { return boot_cp_end_index(); }
+  int app_cp_end_index()             const { return _app_classpath_end; }
+  int module_path_start_index()      const { return app_cp_end_index(); }
+  int module_path_end_index()        const { return _module_end; }
+  bool has_platform_or_app_classes() const { return _has_app_classes || _has_platform_classes; }
+  bool has_non_jar_modules()         const { return _has_non_jar_modules; }
+  int num_boot_classpaths()          const { return boot_cp_end_index() - boot_cp_start_index(); }
+  int num_app_classpaths()           const { return app_cp_end_index() - app_cp_start_index(); }
+  int num_module_paths()             const { return module_path_end_index() - module_path_start_index(); }
 
   int length() const {
     return _code_sources->length();
@@ -231,9 +230,7 @@ public:
 
   // Functions used only during dumptime
   static void dumptime_init(TRAPS);
-  static size_t estimate_size_for_archive() {
-    return _dumptime_instance->estimate_size_for_archive_helper();
-  }
+
   static void dumptime_set_has_app_classes() {
     _dumptime_instance->_has_app_classes = true;
   }
