@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,11 @@ import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
 
 @BenchmarkMode(Mode.AverageTime)
+@State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
@@ -51,6 +54,41 @@ public class Clazz {
     public Constructor getConstructor() throws NoSuchMethodException {
         return Clazz.class.getConstructor();
     }
+
+    /**
+     * Get modifiers for this class through reflection
+     *
+     * @return
+     * @throws NoSuchMethodException
+     */
+    @Benchmark
+    public int getModifiers() {
+        return Clazz.class.getModifiers();
+    }
+
+    Clazz[] clazzArray = new Clazz[1];
+    @Benchmark
+    public int getAppArrayModifiers() {
+        return clazzArray.getClass().getModifiers();
+    }
+
+    static final Clazz[] clazzArrayFinal = new Clazz[1];
+    @Benchmark
+    public int getAppArrayModifiersFinal() {
+        return clazzArrayFinal.getClass().getModifiers();
+    }
+
+    /**
+     * Get modifiers for an primitive array class through reflection
+     *
+     * @return
+     * @throws NoSuchMethodException
+     */
+    @Benchmark
+    public int getArrayModifiers() {
+        return int[].class.getModifiers();
+    }
+
 
     /**
      * Get constructor for the String class through reflection, forcing full

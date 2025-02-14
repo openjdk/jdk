@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
@@ -346,4 +345,3 @@ void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass*
     }
   }
 }
-
