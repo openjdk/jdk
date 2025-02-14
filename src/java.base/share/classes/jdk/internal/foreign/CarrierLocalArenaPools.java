@@ -276,8 +276,6 @@ public final class CarrierLocalArenaPools {
             public void close() {
                 assertOwnerThread();
                 delegate.close();
-                // This is probably not strictly needed but shows intent
-                Reference.reachabilityFence(originalArena);
                 // Intentionally do not releaseSegment() in a finally clause as
                 // the segment still is in play if close() initially fails (e.g. is closed
                 // from a non-owner thread). Later on the close() method might be
