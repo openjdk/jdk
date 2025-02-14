@@ -2074,7 +2074,21 @@ void CompileBroker::maybe_block() {
     if (PrintCompilation && (Verbose || WizardMode))
       tty->print_cr("compiler thread " INTPTR_FORMAT " poll detects block request", p2i(Thread::current()));
 #endif
+    // If we are executing a task during the request to block, report the task
+    // before disappearing.
+    CompilerThread* thread = CompilerThread::current();
+    if (thread != nullptr) {
+      CompileTask* task = thread->task();
+      if (task != nullptr) {
+        if (PrintCompilation) {
+          task->print(tty, "blocked");
+        }
+        task->print_ul("blocked");
+      }
+    }
+    // Go to VM state and block for final VM shutdown safepoint.
     ThreadInVMfromNative tivfn(JavaThread::current());
+    assert(false, "Should never unblock from TIVNM entry");
   }
 }
 
