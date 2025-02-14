@@ -26,11 +26,8 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
-import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -77,8 +74,7 @@ public class JComboBoxScrollFocusTest {
         comboboxFrame.setVisible(true);
     }
 
-    static Rectangle getOnScreenBoundsOnEDT(Component component)
-            throws InterruptedException, TimeoutException, ExecutionException {
+    static Rectangle getOnScreenBoundsOnEDT(Component component) throws Exception {
         robot.waitForIdle();
         FutureTask<Rectangle> task = new FutureTask<>(()
                 -> new Rectangle(component.getLocationOnScreen(),
@@ -87,10 +83,7 @@ public class JComboBoxScrollFocusTest {
         return task.get(500, TimeUnit.MILLISECONDS);
     }
 
-    private static int getScrollbarValue()
-            throws InterruptedException, InvocationTargetException,
-            ExecutionException, TimeoutException {
-
+    private static int getScrollbarValue() throws Exception {
         FutureTask<Integer> task = new FutureTask<>(() -> {
             BasicComboPopup popup = (BasicComboPopup) combobox.getAccessibleContext().getAccessibleChild(0);
             JScrollPane scrollPane = (JScrollPane) popup.getAccessibleContext().getAccessibleChild(0);
@@ -116,7 +109,6 @@ public class JComboBoxScrollFocusTest {
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
         robot.delay(500);
-
 
         BasicComboPopup popup = (BasicComboPopup) combobox.getAccessibleContext().getAccessibleChild(0);
         JScrollBar scrollBar = ((JScrollPane) popup.getAccessibleContext().getAccessibleChild(0)).getVerticalScrollBar();
