@@ -233,7 +233,21 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
     // the control thread will detect it on its next iteration and run a degenerated young cycle.
     heap->concurrent_final_roots();
-    if (VerifyAfterGC || heap->mode()->is_generational()) {
+
+    if (heap->mode()->is_generational()) {
+      // If the cycle was shortened for having enough immediate garbage, this could be
+      // the last phase before concurrent marking of old resumes. We must be sure
+      // that old mark threads don't see any pointers to garbage in the SATB buffers.
+      if (heap->is_concurrent_old_mark_in_progress()) {
+        heap->old_generation()->concurrent_transfer_pointers_from_satb();
+      }
+
+      if (!_generation->is_old()) {
+        ShenandoahGenerationalHeap::heap()->update_region_ages(_generation->complete_marking_context());
+      }
+    }
+
+    if (VerifyAfterGC) {
       vmop_entry_final_roots();
     }
     _abbreviated = true;
@@ -1164,21 +1178,6 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
 }
 
 void ShenandoahConcurrentGC::op_final_roots() {
-
-  ShenandoahHeap const* heap  = ShenandoahHeap::heap();
-  if (heap->mode()->is_generational()) {
-    // If the cycle was shortened for having enough immediate garbage, this could be
-    // the last GC safepoint before concurrent marking of old resumes. We must be sure
-    // that old mark threads don't see any pointers to garbage in the SATB buffers.
-    if (heap->is_concurrent_old_mark_in_progress()) {
-      heap->old_generation()->transfer_pointers_from_satb();
-    }
-
-    if (!_generation->is_old()) {
-      ShenandoahGenerationalHeap::heap()->update_region_ages(_generation->complete_marking_context());
-    }
-  }
-
   if (VerifyAfterGC) {
     Universe::verify();
   }
