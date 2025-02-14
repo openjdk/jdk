@@ -24,14 +24,14 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.model.Launcher;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.Package;
 
 /**
  * Helper to install launchers as services using "systemd".
@@ -39,7 +39,7 @@ import java.util.Map;
 public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
 
     private LinuxLaunchersAsServices(BuildEnv env, Package pkg) throws IOException {
-        super(env, pkg.app(), REQUIRED_PACKAGES, launcher -> {
+        super(env.appImageDir(), pkg.app(), REQUIRED_PACKAGES, launcher -> {
             return new LauncherImpl(env, pkg, launcher);
         });
     }
@@ -70,20 +70,18 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
         return Path.of(packageName + "-" + baseName + ".service");
     }
 
-    private static class LauncherImpl extends UnixLauncherAsService {
+    private static final class LauncherImpl extends UnixLauncherAsService {
 
         LauncherImpl(BuildEnv env, Package pkg, Launcher launcher) {
-            super(launcher,
-                    env.createResource("unit-template.service").setCategory(
-                            I18N.getString("resource.systemd-unit-file")));
+            super(launcher, env.createResource("unit-template.service").setCategory(
+                    I18N.getString("resource.systemd-unit-file")));
 
             unitFilename = getServiceUnitFileName(pkg.packageName(), launcher.executableName());
 
             getResource().setPublicName(unitFilename).addSubstitutionDataEntry(
                     "APPLICATION_LAUNCHER",
                     Enquoter.forPropertyValues().applyTo(
-                            pkg.asInstalledPackageApplicationLayout().orElseThrow().resolveAt(
-                                    env.appImageDir()).launchersDirectory().resolve(getName()).toString()));
+                            pkg.asInstalledPackageApplicationLayout().orElseThrow().launchersDirectory().resolve(getName()).toString()));
         }
 
         @Override

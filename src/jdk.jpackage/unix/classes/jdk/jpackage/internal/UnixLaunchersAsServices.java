@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -41,11 +42,12 @@ import java.util.stream.Stream;
  */
 class UnixLaunchersAsServices extends ShellCustomAction {
 
-    UnixLaunchersAsServices(BuildEnv env, Application app, List<String> requiredPackages,
-            Function<Launcher, UnixLauncherAsService> factory) throws IOException {
+    UnixLaunchersAsServices(Path outputRoot, Application app, List<String> requiredPackages,
+            Function<Launcher, UnixLauncherAsService> factory) {
 
-        this.appImageDir = env.appImageDir();
-        this.requiredPackages = requiredPackages;
+        Objects.requireNonNull(factory);
+        this.outputRoot = Objects.requireNonNull(outputRoot);
+        this.requiredPackages = Objects.requireNonNull(requiredPackages);
 
         // Read launchers information
         launchers = app.launchers().stream().filter(Launcher::isService).map(factory::apply).toList();
@@ -89,7 +91,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
         data.put(COMMANDS_UNINSTALL, strigifier.apply("unregister_services"));
 
         for (var launcher : launchers) {
-            launcher.getResource().saveToFile(launcher.descriptorFilePath(appImageDir));
+            launcher.getResource().saveToFile(launcher.descriptorFilePath(outputRoot));
         }
 
         return data;
@@ -108,7 +110,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
         abstract Path descriptorFilePath(Path root);
     }
 
-    private final Path appImageDir;
+    private final Path outputRoot;
     private final List<String> requiredPackages;
     private final List<UnixLauncherAsService> launchers;
     private final Enquoter enqouter = Enquoter.forShellLiterals();
