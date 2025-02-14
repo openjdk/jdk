@@ -632,14 +632,9 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       __ load_on_condition_imm_32(result, 1, Assembler::bcondEqual);
       __ z_bcr(Assembler::bcondEqual, Z_R14);
 
-      const int frame_size = 2*BytesPerWord + frame::z_abi_160_size;
-      __ save_return_pc();
-      __ push_frame(frame_size);
-
-      // Z_R10 and Z_R11 are caller saved, so we must push them before any use
-      __ z_stg(temp2 /*Z_R10*/, 0*BytesPerWord + frame::z_abi_160_size, Z_SP);
-      __ z_stg(temp3 /*Z_R11*/, 1*BytesPerWord + frame::z_abi_160_size, Z_SP);
-      assert(2*BytesPerWord + frame::z_abi_160_size == frame_size, "check");
+      // Z_R10 and Z_R11 are caller saved, so we must need to preserve them before any use
+      __ z_ldgr(Z_F1, Z_R10);
+      __ z_ldgr(Z_F3, Z_R11);
 
       __ lookup_secondary_supers_table_var(obj, klass,
                                           /*temps*/ temp0, temp1, temp2, temp3,
@@ -650,11 +645,8 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       // so we have to invert the result from lookup_secondary_supers_table_var.
       __ z_xilf(result, 1);  // invert the result
 
-      __ z_lg(temp2 /*Z_R10*/, 0*BytesPerWord + frame::z_abi_160_size, Z_SP);
-      __ z_lg(temp3 /*Z_R11*/, 1*BytesPerWord + frame::z_abi_160_size, Z_SP);
-      assert(2*BytesPerWord + frame::z_abi_160_size == frame_size, "check");
-      __ pop_frame();
-      __ restore_return_pc();
+      __ z_lgdr(Z_R10, Z_F1);
+      __ z_lgdr(Z_R11, Z_F3);
 
       __ z_br(Z_R14);
 
