@@ -49,15 +49,8 @@
   void string_compare_long_LU(Register str1, Register str2,
                                   Register cnt1, Register cnt2,
                                   Register tmp1, Register tmp2, Register tmp3,
-                                  const bool isUL, const int base_offset2,
-                                  Label *DONE, Label *DIFFERENCE, Label *STUB,
-                                  const int STUB_THRESHOLD);
-  void string_compare_long_UL(Register str1, Register str2,
-                                  Register cnt1, Register cnt2,
-                                  Register tmp1, Register tmp2, Register tmp3,
-                                  const bool isUL, const int base_offset2,
-                                  Label *DONE, Label *DIFFERENCE, Label *STUB,
-                                  const int STUB_THRESHOLD);
+                                  const int base_offset2, const int STUB_THRESHOLD,
+                                  Label *DONE, Label *DIFFERENCE, Label *STUB);
 
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
