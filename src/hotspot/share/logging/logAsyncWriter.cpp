@@ -44,7 +44,7 @@ public:
   }
 
   ~AsyncLogLocker() {
-    assert(_holder == nullptr || _holder == Thread::current_or_null(), "must be");
+    assert(_holder == Thread::current_or_null(), "must be");
     _holder = nullptr;
     _instance->_lock.unlock();
   }
