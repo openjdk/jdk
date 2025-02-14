@@ -28,7 +28,7 @@
  * @modules java.base/sun.util.logging
  *          java.logging
  * @compile -XDignore.symbol.file LoggingDeadlock5.java
- * @run main/othervm/timeout=10 LoggingDeadlock5
+ * @run main/othervm LoggingDeadlock5
  */
 
 import java.io.ByteArrayOutputStream;
