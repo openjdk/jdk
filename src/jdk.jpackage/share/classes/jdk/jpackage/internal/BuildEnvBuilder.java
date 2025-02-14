@@ -58,10 +58,10 @@ final class BuildEnvBuilder {
             }
         }
 
-        return BuildEnv.withAppImageDir(BuildEnv.create(root, Optional.ofNullable(resourceDir), 
+        return BuildEnv.withAppImageDir(BuildEnv.create(root, Optional.ofNullable(resourceDir),
                 verbose, ResourceLocator.class), appImageDir);
     }
-    
+
     BuildEnvBuilder verbose(boolean v) {
         verbose = v;
         return this;
