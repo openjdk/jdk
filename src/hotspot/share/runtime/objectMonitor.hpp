@@ -120,7 +120,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 //   monitorenter will invalidate the line underlying _owner. We want
 //   to avoid an L1 data cache miss on that same line for monitorexit.
 //   Putting these <remaining_fields>:
-//   _recursions, _EntryList, _cxq, and _succ, all of which may be
+//   _recursions, _entry_list and _succ, all of which may be
 //   fetched in the inflated unlock path, on a different cache line
 //   would make them immune to CAS-based invalidation from the _owner
 //   field.
@@ -173,11 +173,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
                         sizeof(volatile uint64_t));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
-  ObjectWaiter* volatile _EntryList;  // Threads blocked on entry or reentry.
-                                      // The list is actually composed of WaitNodes,
-                                      // acting as proxies for Threads.
-
-  ObjectWaiter* volatile _EntryListTail;      // LL of recently-arrived threads blocked on entry.
+  ObjectWaiter* volatile _entry_list;  // Threads blocked on entry or reentry.
+                                       // The list is actually composed of WaitNodes,
+                                       // acting as proxies for Threads.
+  ObjectWaiter* volatile _entry_list_tail; // _entry_list is the head, this is the tail.
   int64_t volatile _succ;           // Heir presumptive thread - used for futile wakeup throttling
 
   volatile int _SpinDuration;
@@ -246,7 +245,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static ByteSize owner_offset()       { return byte_offset_of(ObjectMonitor, _owner); }
   static ByteSize recursions_offset()  { return byte_offset_of(ObjectMonitor, _recursions); }
   static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
-  static ByteSize EntryList_offset()   { return byte_offset_of(ObjectMonitor, _EntryList); }
+  static ByteSize entry_list_offset()  { return byte_offset_of(ObjectMonitor, _entry_list); }
 
   // ObjectMonitor references can be ORed with markWord::monitor_value
   // as part of the ObjectMonitor tagging mechanism. When we combine an
@@ -274,7 +273,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   bool is_busy() const {
     // TODO-FIXME: assert _owner == NO_OWNER implies _recursions = 0
-    intptr_t ret_code = intptr_t(_waiters) | intptr_t(_EntryList);
+    intptr_t ret_code = intptr_t(_waiters) | intptr_t(_entry_list);
     int cnts = contentions(); // read once
     if (cnts > 0) {
       ret_code |= intptr_t(cnts);
@@ -316,7 +315,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   int64_t   try_set_owner_from(int64_t old_value, JavaThread* current);
 
   // Methods to check and set _succ. The successor is the thread selected
-  // from _cxq/_EntryList by the current owner when releasing the monitor,
+  // from _entry_list by the current owner when releasing the monitor,
   // to run again and re-try acquiring the monitor. It is used to avoid
   // unnecessary wake-ups if there is already a successor set.
   bool      has_successor() const;
@@ -418,7 +417,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   intx      complete_exit(JavaThread* current);
 
  private:
-  void      AddToEntryList(JavaThread* current, ObjectWaiter* node);
+  void      add_to_entry_list(JavaThread* current, ObjectWaiter* node);
   void      AddWaiter(ObjectWaiter* waiter);
   void      INotify(JavaThread* current);
   ObjectWaiter* DequeueWaiter();
@@ -426,7 +425,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      EnterI(JavaThread* current);
   void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
   void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
-  ObjectWaiter* EntryListTail(JavaThread* current);
+  ObjectWaiter* entry_list_tail(JavaThread* current);
 
   bool      VThreadMonitorEnter(JavaThread* current, ObjectWaiter* node = nullptr);
   void      VThreadWait(JavaThread* current, jlong millis);
@@ -436,7 +435,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
 
   bool           TryLockWithContentionMark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
-  bool           TryLockOrAddToEntryList(JavaThread* current, ObjectWaiter* node);
+  bool           try_lock_or_add_to_entry_list(JavaThread* current, ObjectWaiter* node);
   TryLockResult  TryLock(JavaThread* current);
 
   bool      TrySpin(JavaThread* current);

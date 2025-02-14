@@ -2957,8 +2957,8 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the EntryList is empty.
-  ld(temp, in_bytes(ObjectMonitor::EntryList_offset()), current_header);
+  // Check if the entry_list is empty.
+  ld(temp, in_bytes(ObjectMonitor::entry_list_offset()), current_header);
   cmpdi(flag, temp, 0);
   beq(flag, success);  // If so we are done.
 
@@ -3305,8 +3305,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the EntryList is empty.
-    ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
+    // Check if the entry_list is empty.
+    ld(t, in_bytes(ObjectMonitor::entry_list_offset()), monitor);
     cmpdi(CR0, t, 0);
     beq(CR0, unlocked); // If so we are done.
 

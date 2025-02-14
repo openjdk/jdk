@@ -312,8 +312,8 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the EntryList is empty.
-  ldr(rscratch1, Address(tmp, ObjectMonitor::EntryList_offset()));
+  // Check if the entry_list is empty.
+  ldr(rscratch1, Address(tmp, ObjectMonitor::entry_list_offset()));
   cmp(rscratch1, zr);
   br(Assembler::EQ, cont);     // If so we are done.
 
@@ -633,8 +633,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the EntryList is empty.
-    ldr(rscratch1, Address(t1_monitor, ObjectMonitor::EntryList_offset()));
+    // Check if the entry_list is empty.
+    ldr(rscratch1, Address(t1_monitor, ObjectMonitor::entry_list_offset()));
     cmp(rscratch1, zr);
     br(Assembler::EQ, unlocked);  // If so we are done.
 
