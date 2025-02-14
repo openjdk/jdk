@@ -130,40 +130,46 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
   if both x1 and x2 satisfy bits, x2 would be closer to our true result.
 
   2. Formality:
+
+  Call r the smallest value not smaller than lo that satisfies bits. Since lo
+  does not satisfy bits, lo < r (2.1)
+
   Call i the largest bit index such that:
 
-  - lo[x] satisfies bits for 0 <= x < i (2.1)
-  - zeros[i] = 0                        (2.2)
-  - lo[i] = 0                           (2.3)
+  - lo[x] satisfies bits for 0 <= x < i (2.2)
+  - zeros[i] = 0                        (2.3)
+  - lo[i]    = 0                        (2.4)
 
   Consider v:
 
-  - v[x] = lo[x], for 0 <= x < i        (2.4)
-  - v[i] = 1                            (2.5)
-  - v[x] = ones[x], for x > i           (2.6)
+  - v[x] = lo[x], for 0 <= x < i        (2.5)
+  - v[i] = 1                            (2.6)
+  - v[x] = ones[x], for x > i           (2.7)
 
-  We will prove that v is the smallest value not smaller than lo that
-  satisfies bits.
-
-  Call r the smallest value not smaller than lo that satisfies bits. Since lo
-  does not satisfy bits, lo < r (2.7)
+  We will prove that v == r.
 
   a. Firstly, we prove that r <= v:
 
-    Trivially, lo < v since:
-      lo[x] = v[x], for 0 <= x < i (according to 2.4)
-      lo[i] < v[i] (according to 2.3 and 2.5, lo[i] == 0 < v[i] == 1)
+    a.1. We have lo < v since:
+      lo[x] == v[x], for 0 <= x < i (according to 2.5)
+      lo[i] <  v[i] (according to 2.4 and 2.6, lo[i] == 0 < v[i] == 1)
       bits at x > i have lower significance, and are thus irrelevant
 
-    As established above, the first (i + 1) bits of v satisfy bits.
-    The remaining bits satisfy zeros, since any bit x > i such that zeros[x] == 1,
-      v[x] == ones[x] == 0 (according to 2.6, we assume bits is not contradictory here)
-    They also satisfy ones, since any bit j > i such that ones[x] == 1, v[x] == ones[x] == 1 (according to 2.6)
+    a.2. We have v satisfies bits, this is because:
+      v[x] satisfies bits for 0 <= x < i (according to 2.2 and 2.5)
+      v[i] satisfies bits:
+        According to 2.3 and 2.6, v[i] == 1 and zeros[i] == 0, v[i] does not violate
+        bits, which means v[i] satisfies bits
+      v[x] satisfies bits for x > i:
+        Assume bits is not contradictory, we cannot have:
+          ones[x]  == 1, v[x] == 0 (according to 2.7, v[x] == ones[x])
+          zeros[x] == 1, v[x] == 1 (according to 2.7, ones[x] == v[x] == 1, which means
+                                    bits is contradictory)
 
-    As a result, v > lo and v satisfies bits since all of its bits satisfy bits. Which
-    means r <= v since r is the smallest such value.
+    From a.1 and a.2, v > lo and v satisfies bits. Which means r <= v since r is the
+    smallest such value.
 
-  b. Secondly, we prove that r == v. Suppose r < v:
+  b. Secondly, from r <= v, we prove that r == v. Suppose the contradiction r < v:
 
     Since r < v, there must be a bit position j that:
 
@@ -171,56 +177,50 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     v[j] == 1               (2.b.2)
     r[x] == v[x], for x < j (2.b.3)
 
-    - If j < i
-      r[j] == 0 (according to 2.b.1)
-      v[j] == lo[j] (according to 2.4 because j < i)
-      v[j] == 1 (according to 2.b.2)
-      r[x] == v[x], for x < j (according to 2.b.3)
-      v[x] == lo[x], for x < j (according to 2,4 because j < i)
-
+    b.1. If j < i
       This means that:
-      r[j] == 0
-      lo[j] == 1
-      r[x] == lo[x], for x < j
+      r[j]  == 0                (according to 2.b.1)
+      lo[j] == 1                (according to 2.b.2 and 2.5, lo[j] == v[j] == 1 because j < i)
+      r[x]  == lo[x], for x < j (according to 2.b.3 and 2.5, lo[x] == v[x] == r[x] with x < j < i)
+      bits at x > j have lower significance, and are thus irrelevant
 
       Which leads to r < lo, which contradicts that r >= lo
 
-    - If j == i
-      Since lo[i] == 0 (according to 2.3) and r[i] == 0 (according to 2.b.1),
-      we have lo[i] == r[i]. Since r > lo (according to 2.7), there must exist
-      a bit index k such that:
+    b.2. If j == i
+      Since r > lo (according to 2.1), there must exist a bit index k such that:
 
-      r[k] == 1
-      lo[k] == 0
-      r[x] == lo[x], for x < k
+      r[k]  == 1                (2.b.2.1)
+      lo[k] == 0                (2.b.2.2)
+      r[x]  == lo[x], for x < k (2.b.2.3)
 
       Then, since we have:
-      r[x] == v[x], for x < i (according to 2.b.3 because j == i)
-      v[x] == lo[x], for x < i (according to 2.4)
-      r[j] == 0 (according to 2.b.1)
-      lo[j] == 0 (according to 2.3)
+      r[x]  == v[x],  for x < i (according to 2.b.3)
+      v[x]  == lo[x], for x < i (according to 2.5)
+      r[i]  == 0                (according to 2.b.1 because i == j)
+      lo[i] == 0                (according to 2.4)
 
       this leads to: r[x] == lo[x], for x <= i
       while r[k] == 1 != lo[k] == 0, we can conclude that k > i
 
       However, since:
-      lo[x] satisfies bits for 0 <= x < k (because r satisfies bits and lo[x] == r[x] for 0 <= x < k)
-      zeros[k] == 0 (because r[k] == 1, which means zeros[k] != 1 because r satisfies bits)
-      lo[k] == 0 (the definition of k above)
+      lo[x] satisfies bits for 0 <= x < k:
+        According to 2.b.2.3, lo[x] == r[x] and r satisfies bits
+      zeros[k] == 0 (according to 2.b.2.1, r[k] == 1 and r satisfies bits)
+      lo[k]    == 0 (according to 2.b.2.2)
 
       This contradicts the assumption that i is the largest bit index satisfying such conditions.
 
-    - If j > i
-      ones[j] == v[j] (according to 2.6 since j > i)
-      v[j] == 1 (according to 2.b.2)
-      r[j] == 0 (according to 2.b.1)
+    b.3. If j > i
+      ones[j] == v[j] (according to 2.7 since j > i)
+      v[j]    == 1    (according to 2.b.2)
+      r[j]    == 0    (according to 2.b.1)
 
       This means that r[j] == 0 and ones[j] == 1, this contradicts the assumption that r
       satisfies bits.
 
-    All cases lead to contradictions, which mean r < v is incorrect, which means
-    that r == v, which means the value v having the above form is the
-    lowest value not smaller than lo that satisfies bits.
+    All cases lead to contradictions, which mean r < v is incorrect, which means that
+    r == v, which means the value v having the above form is the lowest value not smaller
+    than lo that satisfies bits.
 
   3. Conclusion
     Our objective now is to find the largest value i that satisfies:
