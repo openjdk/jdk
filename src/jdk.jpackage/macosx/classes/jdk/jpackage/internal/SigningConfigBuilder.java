@@ -118,7 +118,7 @@ final class SigningConfigBuilder {
                             .advice("error.explicit-sign-no-cert.advice").create();
                 }
                 case 1 -> {
-                    return Optional.of(new SigningIdentifierImpl(signingIdentifiers.get(0), 
+                    return Optional.of(new SigningIdentifierImpl(signingIdentifiers.get(0),
                             Optional.ofNullable(signingIdentifierPrefix)));
                 }
                 default -> {
