@@ -313,7 +313,7 @@ void ShenandoahDegenGC::op_degenerated() {
   // Shenandoah so as to avoid introducing "surprising new behavior."  It also makes less sense with non-generational
   // Shenandoah to replace a full GC with a degenerated GC, because both have similar pause times in non-generational
   // mode.
-  if (!metrics.is_good_progress(_generational)) {
+  if (!metrics.is_good_progress(_generation)) {
     _consecutive_degen_with_bad_progress++;
   } else {
     _consecutive_degen_with_bad_progress = 0;
