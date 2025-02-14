@@ -39,6 +39,26 @@
                        VectorRegister vrs,
                        bool is_latin, Label& DONE, Assembler::LMUL lmul);
 
+  void string_compare_long_LL_UU(Register str1, Register str2,
+                                  Register cnt1, Register cnt2,
+                                  Register tmp1, Register tmp2, Register tmp3,
+                                  const bool isLL, const bool str1_isL,
+                                  const int base_offset1, const int base_offset2, const int minCharsInWord,
+                                  Label *DONE, Label *DIFFERENCE, Label *STUB,
+                                  const int STUB_THRESHOLD);
+  void string_compare_long_LU(Register str1, Register str2,
+                                  Register cnt1, Register cnt2,
+                                  Register tmp1, Register tmp2, Register tmp3,
+                                  const bool isUL, const int base_offset2,
+                                  Label *DONE, Label *DIFFERENCE, Label *STUB,
+                                  const int STUB_THRESHOLD);
+  void string_compare_long_UL(Register str1, Register str2,
+                                  Register cnt1, Register cnt2,
+                                  Register tmp1, Register tmp2, Register tmp3,
+                                  const bool isUL, const int base_offset2,
+                                  Label *DONE, Label *DIFFERENCE, Label *STUB,
+                                  const int STUB_THRESHOLD);
+
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   void fast_lock(Register object, Register box,
