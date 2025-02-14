@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"

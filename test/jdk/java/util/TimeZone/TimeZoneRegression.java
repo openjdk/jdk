@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4052967 4073209 4073215 4084933 4096952 4109314 4126678 4151406 4151429
  * 4154525 4154537 4154542 4154650 4159922 4162593 4173604 4176686 4184229 4208960
- * 4966229 6433179 6851214 8007520 8008577 8174269
+ * 4966229 6433179 6851214 8007520 8008577 8174269 8347841
  * @library /java/text/testlib
  * @run junit TimeZoneRegression
  */
@@ -42,8 +42,8 @@ public class TimeZoneRegression {
 
     @Test
     public void Test4073209() {
-        TimeZone z1 = TimeZone.getTimeZone("PST");
-        TimeZone z2 = TimeZone.getTimeZone("PST");
+        TimeZone z1 = TimeZone.getTimeZone("America/Los_Angeles");
+        TimeZone z2 = TimeZone.getTimeZone("America/Los_Angeles");
         if (z1 == z2) {
             fail("Fail: TimeZone should return clones");
         }
@@ -81,7 +81,7 @@ public class TimeZoneRegression {
         // test both SimpleTimeZone and ZoneInfo objects.
         // @since 1.4
         sub4084933(getPST());
-        sub4084933(TimeZone.getTimeZone("PST"));
+        sub4084933(TimeZone.getTimeZone("America/Los_Angeles"));
     }
 
     private void sub4084933(TimeZone tz) {
@@ -122,7 +122,7 @@ public class TimeZoneRegression {
 
     @Test
     public void Test4096952() {
-        String[] ZONES = { "GMT", "MET", "IST" };
+        String[] ZONES = { "GMT", "MET", "Asia/Kolkata" };
         boolean pass = true;
         try {
             for (int i=0; i<ZONES.length; ++i) {
@@ -172,7 +172,7 @@ public class TimeZoneRegression {
         // test both SimpleTimeZone and ZoneInfo objects.
         // @since 1.4
         sub4109314(getPST());
-        sub4109314(TimeZone.getTimeZone("PST"));
+        sub4109314(TimeZone.getTimeZone("America/Los_Angeles"));
     }
 
 
@@ -303,7 +303,7 @@ public class TimeZoneRegression {
         // test both SimpleTimeZone and ZoneInfo objects.
         // @since 1.4
         sub4126678(getPST());
-        sub4126678(TimeZone.getTimeZone("PST"));
+        sub4126678(TimeZone.getTimeZone("America/Los_Angeles"));
 
         // restore the initial time zone so that this test case
         // doesn't affect the others.
@@ -755,7 +755,7 @@ public class TimeZoneRegression {
         // test both SimpleTimeZone and ZoneInfo objects.
         // @since 1.4
         sub4173604(getPST());
-        sub4173604(TimeZone.getTimeZone("PST"));
+        sub4173604(TimeZone.getTimeZone("America/Los_Angeles"));
     }
 
     private void sub4173604(TimeZone pst) {
@@ -915,7 +915,7 @@ public class TimeZoneRegression {
         // test both SimpleTimeZone and ZoneInfo objects.
         // @since 1.4
         sub4208960(getPST());
-        sub4208960(TimeZone.getTimeZone("PST"));
+        sub4208960(TimeZone.getTimeZone("America/Los_Angeles"));
     }
 
     private void sub4208960(TimeZone tz) {

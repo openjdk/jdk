@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
@@ -149,7 +149,7 @@ void ShenandoahAdaptiveHeuristics::post_initialize() {
     size_t young_available = ShenandoahGenerationalHeap::heap()->young_generation()->max_capacity() -
       (ShenandoahGenerationalHeap::heap()->young_generation()->used_including_humongous_waste() + _freeset->reserved());
 #ifdef KELVIN_VISIBLE
-    log_info(gc)("post_initialize() to recalculate young trigger with: " SIZE_FORMAT, young_available);
+    log_info(gc)("post_initialize() to recalculate young trigger with: %zu", young_available);
 #endif
     recalculate_trigger_threshold(young_available);
   } else {
@@ -157,7 +157,7 @@ void ShenandoahAdaptiveHeuristics::post_initialize() {
     size_t global_available = ShenandoahHeap::heap()->global_generation()->max_capacity() -
       (ShenandoahHeap::heap()->global_generation()->used_including_humongous_waste() + _freeset->reserved());
 #ifdef KELVIN_VISIBLE
-    log_info(gc)("post_initialize() to recalculate global trigger with: " SIZE_FORMAT, global_available);
+    log_info(gc)("post_initialize() to recalculate global trigger with: %zu", global_available);
 #endif
     recalculate_trigger_threshold(global_available);
   }
@@ -190,7 +190,7 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   // safety buffer to allow a small amount of additional allocation to take place in case we were overly optimistic in delaying
   // our trigger.
 #ifdef KELVIN_IDLE_SPAN
-  log_info(gc)("@recalculate_trigger_threshold(mutator_available: " SIZE_FORMAT ") for _space_info: %s",
+  log_info(gc)("@recalculate_trigger_threshold(mutator_available: %zu" ") for _space_info: %s",
                mutator_available, _space_info->name());
 #endif
   size_t capacity       = _space_info->soft_max_capacity();
@@ -204,8 +204,8 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   // make headroom adjustments
   size_t headroom_adjustments = spike_headroom + penalties;
 #ifdef KELVIN_IDLE_SPAN
-  log_info(gc)("@recalculate_trigger_threshold(mutator_available: " SIZE_FORMAT "), spike_headroom: " SIZE_FORMAT
-               ", penalties: " SIZE_FORMAT, mutator_available, spike_headroom, penalties);
+  log_info(gc)("@recalculate_trigger_threshold(mutator_available: %zu" "), spike_headroom: %zu"
+               ", penalties: %zu", mutator_available, spike_headroom, penalties);
 #endif
   if (mutator_available >= headroom_adjustments) {
     mutator_available -= headroom_adjustments;;
@@ -216,9 +216,9 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   assert(!_is_generational || !strcmp(_space_info->name(), "Young") || !strcmp(_space_info->name(), "Global"),
          "Assumed young or global space, but got: %s", _space_info->name());
   assert(_is_generational || !strcmp(_space_info->name(), ""), "Assumed global (unnamed) space, but got: %s", _space_info->name());
-  log_info(gc)("At start or resumption of idle gc span for %s, mutator available set to: " SIZE_FORMAT "%s"
-               " after adjusting for spike_headroom: " SIZE_FORMAT "%s"
-               " and penalties: " SIZE_FORMAT "%s", _is_generational? _space_info->name(): "Global",
+  log_info(gc)("At start or resumption of idle gc span for %s, mutator available set to: %zu" "%s"
+               " after adjusting for spike_headroom: %zu" "%s"
+               " and penalties: %zu" "%s", _is_generational? _space_info->name(): "Global",
                byte_size_in_proper_unit(mutator_available),   proper_unit_for_byte_size(mutator_available),
                byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
                byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties));
@@ -228,14 +228,14 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   _trigger_threshold = mutator_available / HeapWordSize;
 
 #ifdef KELVIN_IDLE_SPAN
-  log_info(gc)("%s: recalculate trigger, capacity: " SIZE_FORMAT ", original_mutator_available: " SIZE_FORMAT
-               ", spike_headroom: " SIZE_FORMAT ", penalties: " SIZE_FORMAT
-               ", used: " SIZE_FORMAT ", reserved: " SIZE_FORMAT ", final answer: " SIZE_FORMAT,
+  log_info(gc)("%s: recalculate trigger, capacity: %zu" ", original_mutator_available: %zu"
+               ", spike_headroom: %zu" ", penalties: %zu"
+               ", used: %zu" ", reserved: %zu" ", final answer: %zu",
                _space_info->name(), capacity, original_mutator_available, spike_headroom, penalties, _space_info->used(),
                _freeset->reserved(), _trigger_threshold);
 #endif
 #ifdef KELVIN_IDLE_SPAN
-  log_info(gc)(" recalculated _trigger_threshold: " SIZE_FORMAT, _trigger_threshold);
+  log_info(gc)(" recalculated _trigger_threshold: %zu", _trigger_threshold);
 #endif
 }
 
@@ -243,12 +243,12 @@ void ShenandoahAdaptiveHeuristics::start_idle_span() {
   size_t mutator_available = _freeset->capacity() - _freeset->used();
 
 #ifdef KELVIN_IDLE_SPAN
-  log_info(gc)("Made it to ShenanoahAdaptiveHeuristics:%s::start_idle_span() with available " SIZE_FORMAT,
+  log_info(gc)("Made it to ShenanoahAdaptiveHeuristics:%s::start_idle_span() with available %zu",
                _space_info->name(), mutator_available);
 #endif
 
 #ifdef KELVIN_VISIBLE
-  log_info(gc)("start_idle_span() is recalculating %s trigger threshold with available: " SIZE_FORMAT,
+  log_info(gc)("start_idle_span() is recalculating %s trigger threshold with available: %zu",
                _space_info->name(), mutator_available);
 #endif
   recalculate_trigger_threshold(mutator_available);
@@ -257,7 +257,7 @@ void ShenandoahAdaptiveHeuristics::start_idle_span() {
 void ShenandoahAdaptiveHeuristics::resume_idle_span() {
   size_t mutator_available = _freeset->capacity() - _freeset->used();
 #ifdef KELVIN_VISIBLE
-  log_info(gc)("resume_idle_span() is recalculating trigger threshold with available: " SIZE_FORMAT, mutator_available);
+  log_info(gc)("resume_idle_span() is recalculating trigger threshold with available: %zu", mutator_available);
 #endif
   recalculate_trigger_threshold(mutator_available);
 }
@@ -267,7 +267,7 @@ void ShenandoahAdaptiveHeuristics::resume_idle_span() {
 void ShenandoahAdaptiveHeuristics::start_evac_span() {
   size_t mutator_available = _freeset->capacity() - _freeset->used();
 #ifdef KELVIN_VISIBLE
-  log_info(gc)("start_evac_span() is setting (pacing) trigger threshold with available: " SIZE_FORMAT, mutator_available);
+  log_info(gc)("start_evac_span() is setting (pacing) trigger threshold with available: %zu", mutator_available);
 #endif
   _trigger_threshold = mutator_available;
 }
@@ -303,8 +303,8 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   size_t free_target = (capacity / 100 * ShenandoahMinFreeThreshold) + max_cset;
   size_t min_garbage = (free_target > actual_free ? (free_target - actual_free) : 0);
 
-  log_info(gc, ergo)("Adaptive CSet Selection. Target Free: " SIZE_FORMAT "%s, Actual Free: "
-                     SIZE_FORMAT "%s, Max Evacuation: " SIZE_FORMAT "%s, Min Garbage: " SIZE_FORMAT "%s",
+  log_info(gc, ergo)("Adaptive CSet Selection. Target Free: %zu%s, Actual Free: "
+                     "%zu%s, Max Evacuation: %zu%s, Min Garbage: %zu%s",
                      byte_size_in_proper_unit(free_target), proper_unit_for_byte_size(free_target),
                      byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free),
                      byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset),
@@ -467,7 +467,7 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   if (available_sd > 0) {
     double available_avg = _available.avg();
     z_score = (double(available) - available_avg) / available_sd;
-    log_debug(gc, ergo)("Available: " SIZE_FORMAT " %sB, z-score=%.3f. Average available: %.1f %sB +/- %.1f %sB.",
+    log_debug(gc, ergo)("Available: %zu %sB, z-score=%.3f. Average available: %.1f %sB +/- %.1f %sB.",
                         byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                         z_score,
                         byte_size_in_proper_unit(available_avg), proper_unit_for_byte_size(available_avg),
@@ -574,13 +574,13 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   size_t available = _space_info->soft_available();
   size_t allocated = _space_info->bytes_allocated_since_gc_start();
 
-  log_debug(gc)("should_start_gc? available: " SIZE_FORMAT ", soft_max_capacity: " SIZE_FORMAT
-                ", allocated: " SIZE_FORMAT, available, capacity, allocated);
+  log_debug(gc)("should_start_gc? available: %zu, soft_max_capacity: %zu"
+                ", allocated: %zu", available, capacity, allocated);
 
 #undef KELVIN_SATB
 #ifdef KELVIN_SATB
-  log_info(gc)("should_start_gc? available: " SIZE_FORMAT ", soft_max_capacity: " SIZE_FORMAT
-                ", allocated: " SIZE_FORMAT, available, capacity, allocated);
+  log_info(gc)("should_start_gc? available: %zu" ", soft_max_capacity: %zu"
+                ", allocated: %zu", available, capacity, allocated);
 #endif
 
   // Track allocation rate even if we decide to start a cycle for other reasons.
@@ -589,7 +589,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   size_t min_threshold = min_free_threshold();
   if (available < min_threshold) {
-    log_trigger("Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
+    log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
                  byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                  byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
     _previous_trigger_declinations = _declined_trigger_count;
@@ -611,7 +611,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   if (_gc_times_learned < max_learn) {
     size_t init_threshold = capacity / 100 * ShenandoahInitFreeThreshold;
     if (available < init_threshold) {
-      log_trigger("Learning " SIZE_FORMAT " of " SIZE_FORMAT ". Free (" SIZE_FORMAT "%s) is below initial threshold (" SIZE_FORMAT "%s)",
+      log_trigger("Learning %zu of %zu. Free (%zu%s) is below initial threshold (%zu%s)",
                    _gc_times_learned + 1, max_learn,
                    byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                    byte_size_in_proper_unit(init_threshold), proper_unit_for_byte_size(init_threshold));
@@ -620,13 +620,13 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
       return true;
     }
 #ifdef KELVIN_NEEDS_TO_SEE
-    log_info(gc)("should_start_gc? did not meet init threshold, available: " SIZE_FORMAT ", init_threshold: " SIZE_FORMAT,
+    log_info(gc)("should_start_gc? did not meet init threshold, available: %zu" ", init_threshold: %zu",
                  available, init_threshold);
 #endif
   }
 
 #ifdef KELVIN_NEEDS_TO_SEE
-  log_info(gc)("should_start_gc? did not trigger for learning, _gc_times_learned: " SIZE_FORMAT ", max_learn: " SIZE_FORMAT,
+  log_info(gc)("should_start_gc? did not trigger for learning, _gc_times_learned: %zu" ", max_learn: %zu",
                _gc_times_learned, max_learn);
 #endif
 
@@ -648,13 +648,12 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
       future_accelerated_planned_gc_time_is_average = true;
     }
     size_t allocated_since_last_sample = _freeset->get_mutator_allocations_since_previous_sample();
-
     double instantaneous_rate_words_per_second = allocated_since_last_sample / (now - _previous_allocation_timestamp);
     _previous_allocation_timestamp = now;
 
 #ifdef KELVIN_SATB
     log_info(gc)("should_start_gc()?, predicted_future_accelerated_gc_time: %0.3f, avg_gc_cycle_time: %0.3f"
-                 ", allocated_since_last_sample: " SIZE_FORMAT ", instantaneous_rate: %0.3f",
+                 ", allocated_since_last_sample: %zu, instantaneous_rate: %0.3f",
                  predicted_future_accelerated_gc_time, avg_cycle_time, allocated_since_last_sample,
                  instantaneous_rate_words_per_second * HeapWordSize);
 #endif
@@ -668,9 +667,9 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                                                              + future_accelerated_planned_gc_time);
 
 #ifdef KELVIN_SATB
-    log_info(gc)("should_start_gc() checking instantaneous allocation: allocations since_last: " SIZE_FORMAT
+    log_info(gc)("should_start_gc() checking instantaneous allocation: allocations since_last: %zu"
                  ", predicted_future_gc_time: %0.3f, instantaneous_rate: %0.3f B/s, acceleration: %0.3f B/s/s"
-                 ", accelerated consumption:" SIZE_FORMAT,
+                 ", accelerated consumption:%zu",
                  allocated_since_last_sample, predicted_future_accelerated_gc_time,
                  instantaneous_rate_words_per_second * HeapWordSize,
                  acceleration * HeapWordSize, consumption_accelerated * HeapWordSize);
@@ -763,9 +762,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
       size_t size_t_alloc_rate = (size_t) instantaneous_rate_words_per_second * HeapWordSize;
       if (acceleration > 0) {
         size_t size_t_acceleration = (size_t) acceleration * HeapWordSize;
-        log_trigger("Accelerated consumption (" SIZE_FORMAT "%s) exceeds free headroom (" SIZE_FORMAT "%s) at "
-                    "current rate (" SIZE_FORMAT "%s/s) with acceleration (" SIZE_FORMAT
-                    "%s/s/s) for planned %s GC time (%.2f ms)",
+        log_trigger("Accelerated consumption (%zu%s) exceeds free headroom (%zu%s) at "
+                    "current rate (%zu%s/s) with acceleration (%zu%s/s/s) for planned %s GC time (%.2f ms)",
                     byte_size_in_proper_unit(consumption_accelerated * HeapWordSize), proper_unit_for_byte_size(consumption_accelerated * HeapWordSize),
                     byte_size_in_proper_unit(allocatable_words * HeapWordSize), proper_unit_for_byte_size(allocatable_words * HeapWordSize),
                     byte_size_in_proper_unit(size_t_alloc_rate), proper_unit_for_byte_size(size_t_alloc_rate),
@@ -773,8 +771,8 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                     future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
                     future_accelerated_planned_gc_time * 1000);
       } else {
-        log_trigger("Momentary spike consumption (" SIZE_FORMAT "%s) exceeds free headroom (" SIZE_FORMAT "%s) at "
-                    "current rate (" SIZE_FORMAT "%s/s) for planned %s GC time (%.2f ms) (spike threshold = %.2f)",
+        log_trigger("Momentary spike consumption (%zu%s) exceeds free headroom (%zu%s) at "
+                    "current rate (%zu%s/s) for planned %s GC time (%.2f ms) (spike threshold = %.2f)",
                     byte_size_in_proper_unit(consumption_accelerated * HeapWordSize), proper_unit_for_byte_size(consumption_accelerated * HeapWordSize),
                     byte_size_in_proper_unit(allocatable_words * HeapWordSize), proper_unit_for_byte_size(allocatable_words * HeapWordSize),
                     byte_size_in_proper_unit(size_t_alloc_rate), proper_unit_for_byte_size(size_t_alloc_rate),
@@ -804,7 +802,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     }
   }
 
-
   // Suppose we don't trigger now, but decide to trigger in the next regulator cycle.  What will be the GC time then?
   double predicted_future_gc_time = predict_gc_time(now + get_planned_sleep_interval());
   double future_planned_gc_time;
@@ -828,7 +825,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   size_t allocatable_bytes = allocatable_words * HeapWordSize;
   if (future_planned_gc_time > allocatable_bytes / avg_alloc_rate) {
     log_trigger("%s GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
-                " to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
+                " to deplete free headroom (%zu%s) (margin of error = %.2f)",
                 future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
                 byte_size_in_proper_unit(avg_alloc_rate),    proper_unit_for_byte_size(avg_alloc_rate),
                 byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
@@ -839,7 +836,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     size_t allocation_headroom = available;
     allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
     allocation_headroom -= MIN2(allocation_headroom, penalties);
-    log_info(gc, ergo)("Free headroom: " SIZE_FORMAT "%s (free) - " SIZE_FORMAT "%s (spike) - " SIZE_FORMAT "%s (penalties) = " SIZE_FORMAT "%s",
+    log_info(gc, ergo)("Free headroom: %zu%s (free) - %zu%s (spike) - %zu%s (penalties) = %zu%s",
                        byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
                        byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
                        byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties),
@@ -854,7 +851,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   bool is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
   if (is_spiking && future_planned_gc_time > allocatable_bytes / rate) {
     log_trigger("%s GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s)"
-                " to deplete free headroom (" SIZE_FORMAT "%s) (spike threshold = %.2f)",
+                " to deplete free headroom (%zu%s) (spike threshold = %.2f)",
                 future_planned_gc_time_is_average? "Average": "Linear prediction of", future_planned_gc_time * 1000,
                 byte_size_in_proper_unit(rate),              proper_unit_for_byte_size(rate),
                 byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
@@ -1047,15 +1044,15 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
   size_t words_to_be_consumed = (size_t) (current_rate * time_delta + 0.5 * acceleration * time_delta * time_delta);
 #ifdef KELVIN_VERBOSE
   size_t bytes_to_be_consumed = words_to_be_consumed * HeapWordSize;
-  log_info(gc)("Consuming " SIZE_FORMAT "%s @ rate: %0.3f MB/s, accel: %0.3f MB/s/s @ %0.3f s",
+  log_info(gc)("Consuming %zu%s @ rate: %0.3f MB/s, accel: %0.3f MB/s/s @ %0.3f s",
                byte_size_in_proper_unit(bytes_to_be_consumed), proper_unit_for_byte_size(bytes_to_be_consumed),
                (current_rate * HeapWordSize) / (1024 * 1024),
                (acceleration * HeapWordSize) / (1024 * 1024), time_delta);
-  log_info(gc)("Allocatable bytes: " SIZE_FORMAT ", available: " SIZE_FORMAT ", min_threshold: " SIZE_FORMAT,
+  log_info(gc)("Allocatable bytes: %zu, available: %zu, min_threshold: %zu",
                _global_allocatable_words * HeapWordSize, _global_available_bytes, _global_min_threshold);
 #endif
 #ifdef KELVIN_NEEDS_TO_SEE
-  log_info(gc)("For time %0.6f = %0.6f + %0.6f, bytes to be consumed is: " SIZE_FORMAT,
+  log_info(gc)("For time %0.6f = %0.6f + %0.6f, bytes to be consumed is: %zu",
                time_delta, get_planned_sleep_interval(), predicted_cycle_time, words_to_be_consumed * HeapWordSize);
 #endif
   return words_to_be_consumed;

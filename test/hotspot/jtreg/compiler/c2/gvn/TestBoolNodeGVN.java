@@ -56,27 +56,47 @@ public class TestBoolNodeGVN {
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     @IR(failOn = IRNode.CMP_U,
-            phase = CompilePhase.AFTER_PARSING,
-            applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+        phase = CompilePhase.AFTER_PARSING,
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean testShouldReplaceCpmUCase2(int x, int m) {
         return !(Integer.compareUnsigned((m & x), m) > 0);
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
+    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
     @IR(failOn = IRNode.CMP_U,
-            phase = CompilePhase.AFTER_PARSING,
-            applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+        phase = CompilePhase.AFTER_PARSING,
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean testShouldReplaceCpmUCase3(int x, int m) {
+        m = Math.max(0, m);
+        return Integer.compareUnsigned((x & m), m + 1) < 0;
+    }
+
+    @Test
+    @Arguments(values = {Argument.DEFAULT, Argument.RANDOM_EACH})
+    @IR(failOn = IRNode.CMP_U,
+        phase = CompilePhase.AFTER_PARSING,
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+    public static boolean testShouldReplaceCpmUCase4(int x, int m) {
+        m = Math.max(0, m);
+        return Integer.compareUnsigned((m & x), m + 1) < 0;
+    }
+
+    @Test
+    @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
+    @IR(counts = {IRNode.CMP_U, "1"}, // m could be -1 and thus optimization cannot be applied
+        phase = CompilePhase.AFTER_PARSING,
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+    public static boolean testShouldNotReplaceCpmUCase1(int x, int m) {
         return Integer.compareUnsigned((x & m), m + 1) < 0;
     }
 
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
-    @IR(failOn = IRNode.CMP_U,
-            phase = CompilePhase.AFTER_PARSING,
-            applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
-    public static boolean testShouldReplaceCpmUCase4(int x, int m) {
+    @IR(counts = {IRNode.CMP_U, "1"}, // m could be -1 and thus optimization cannot be applied
+        phase = CompilePhase.AFTER_PARSING,
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+    public static boolean testShouldNotReplaceCpmUCase2(int x, int m) {
         return Integer.compareUnsigned((m & x), m + 1) < 0;
     }
 
@@ -92,8 +112,8 @@ public class TestBoolNodeGVN {
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     @IR(counts = {IRNode.CMP_U, "1"},
-            phase = CompilePhase.AFTER_PARSING,
-            applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+        phase = CompilePhase.AFTER_PARSING,
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean testShouldHaveCpmUCase2(int x, int m) {
         return !(Integer.compareUnsigned((m & x), m - 1) > 0);
     }
@@ -101,8 +121,8 @@ public class TestBoolNodeGVN {
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     @IR(counts = {IRNode.CMP_U, "1"},
-            phase = CompilePhase.AFTER_PARSING,
-            applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+        phase = CompilePhase.AFTER_PARSING,
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean testShouldHaveCpmUCase3(int x, int m) {
         return Integer.compareUnsigned((x & m), m + 2) < 0;
     }
@@ -110,22 +130,23 @@ public class TestBoolNodeGVN {
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
     @IR(counts = {IRNode.CMP_U, "1"},
-            phase = CompilePhase.AFTER_PARSING,
-            applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
+        phase = CompilePhase.AFTER_PARSING,
+        applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean testShouldHaveCpmUCase4(int x, int m) {
         return Integer.compareUnsigned((m & x), m + 2) < 0;
     }
 
     private static void testCorrectness() {
         int[] values = {
-                0, 1, 5, 8, 16, 42, 100, new Random().nextInt(0, Integer.MAX_VALUE), Integer.MAX_VALUE
+                -100, -42, -16, -8, -5, -1, 0, 1, 5, 8, 16, 42, 100,
+                new Random().nextInt(), Integer.MAX_VALUE, Integer.MIN_VALUE
         };
 
         for (int x : values) {
             for (int m : values) {
-                if (!testShouldReplaceCpmUCase1(x, m) |
-                    !testShouldReplaceCpmUCase2(x, m) |
-                    !testShouldReplaceCpmUCase3(x, m) |
+                if (!testShouldReplaceCpmUCase1(x, m) ||
+                    !testShouldReplaceCpmUCase2(x, m) ||
+                    !testShouldReplaceCpmUCase3(x, m) ||
                     !testShouldReplaceCpmUCase4(x, m)) {
                     throw new RuntimeException("Bad result for x = " + x + " and m = " + m + ", expected always true");
                 }

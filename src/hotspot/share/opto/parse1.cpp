@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"
@@ -642,7 +641,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   // for exiting control flow still refers to the inlined method.
   C->set_default_node_notes(caller_nn);
 
-  if (log)  log->done("parse nodes='%d' live='%d' memory='" SIZE_FORMAT "'",
+  if (log)  log->done("parse nodes='%d' live='%d' memory='%zu'",
                       C->unique(), C->live_nodes(), C->node_arena()->used());
 }
 
@@ -2121,7 +2120,7 @@ void Parse::call_register_finalizer() {
   // finalization.  In general this will fold up since the concrete
   // class is often visible so the access flags are constant.
   Node* klass_addr = basic_plus_adr( receiver, receiver, oopDesc::klass_offset_in_bytes() );
-  Node* klass = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), klass_addr, TypeInstPtr::KLASS));
+  Node* klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), klass_addr, TypeInstPtr::KLASS));
 
   Node* access_flags_addr = basic_plus_adr(klass, klass, in_bytes(Klass::misc_flags_offset()));
   Node* access_flags = make_load(nullptr, access_flags_addr, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);

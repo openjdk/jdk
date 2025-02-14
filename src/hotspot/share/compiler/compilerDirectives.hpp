@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,8 +218,8 @@ void set_##name(void* value) {                                      \
     return _trace_merge_stores_tags;
   };
 
-  void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" INTX_FORMAT " ", n, v); } }
-  void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" UINTX_FORMAT " ", n, v); } }
+  void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:%zd ", n, v); } }
+  void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:%zu ", n, v); } }
   void print_bool(outputStream* st, ccstr n, bool v, bool mod) { if (mod) { st->print("%s:%s ", n, v ? "true" : "false"); } }
   void print_double(outputStream* st, ccstr n, double v, bool mod) { if (mod) { st->print("%s:%f ", n, v); } }
   void print_ccstr(outputStream* st, ccstr n, ccstr v, bool mod) { if (mod) { st->print("%s:%s ", n, v); } }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm --enable-native-access=ALL-UNNAMED SynchronizedNative
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED SynchronizedNative
  */
 
 /*
@@ -36,7 +36,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm -Xint --enable-native-access=ALL-UNNAMED SynchronizedNative
+ * @run junit/othervm/native -Xint --enable-native-access=ALL-UNNAMED SynchronizedNative
  */
 
 /*
@@ -44,7 +44,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm -Xcomp -XX:TieredStopAtLevel=1 --enable-native-access=ALL-UNNAMED SynchronizedNative
+ * @run junit/othervm/native -Xcomp -XX:TieredStopAtLevel=1 --enable-native-access=ALL-UNNAMED SynchronizedNative
  */
 
 /*
@@ -52,7 +52,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @run junit/othervm -Xcomp -XX:-TieredCompilation --enable-native-access=ALL-UNNAMED SynchronizedNative
+ * @run junit/othervm/native -Xcomp -XX:-TieredCompilation --enable-native-access=ALL-UNNAMED SynchronizedNative
  */
 
 import java.util.concurrent.CountDownLatch;
