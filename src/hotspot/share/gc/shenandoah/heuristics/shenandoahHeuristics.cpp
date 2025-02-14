@@ -46,10 +46,13 @@ int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
 }
 
 ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
+  _declined_trigger_count(0),
+  _previous_trigger_declinations(0),
   _space_info(space_info),
   _region_data(nullptr),
   _guaranteed_gc_interval(0),
-  _cycle_start(os::elapsedTime()),
+  _precursor_cycle_start(os::elapsedTime()),
+  _cycle_start(_precursor_cycle_start),
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
@@ -175,6 +178,40 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
                      collection_set->count());
 }
 
+void ShenandoahHeuristics::start_idle_span() {
+  // do nothing
+#undef KELVIN_VERBOSE
+#ifdef KELVIN_VERBOSE
+  log_info(gc)("Made it to do-nothing implementation of start_idle_span()");
+#endif
+}
+
+void ShenandoahHeuristics::start_evac_span() {
+  // do nothing
+}
+
+void ShenandoahHeuristics::resume_idle_span() {
+  // do nothing
+}
+
+void ShenandoahHeuristics::record_degenerated_cycle_start(bool out_of_cycle) {
+  if (out_of_cycle) {
+    _precursor_cycle_start = _cycle_start = os::elapsedTime();
+#undef KELVIN_VERBOSITY
+#ifdef KELVIN_VERBOSITY
+    log_info(gc)("record_degen_cycle_start(true), _precursor_cycle_start (aka cycle_start): %0.3f",
+                 _precursor_cycle_start);
+#endif
+  } else {
+    _precursor_cycle_start = _cycle_start;
+    _cycle_start = os::elapsedTime();
+#ifdef KELVIN_VERBOSITY
+    log_info(gc)("record_degen_cycle_start(false), _precursor_cycle_start: %0.3f, cycle_start: %0.3f",
+                 _precursor_cycle_start, _cycle_start);
+#endif
+  }
+}
+
 void ShenandoahHeuristics::record_cycle_start() {
   _cycle_start = os::elapsedTime();
 }
@@ -188,6 +225,8 @@ bool ShenandoahHeuristics::should_start_gc() {
   if (has_metaspace_oom()) {
     // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
     log_trigger("%s", GCCause::to_string(GCCause::_metadata_GC_threshold));
+    _previous_trigger_declinations = _declined_trigger_count;
+    _declined_trigger_count = 0;
     return true;
   }
 
@@ -196,10 +235,12 @@ bool ShenandoahHeuristics::should_start_gc() {
     if (last_time_ms > _guaranteed_gc_interval) {
       log_trigger("Time since last GC (%.0f ms) is larger than guaranteed interval (%zu ms)",
                    last_time_ms, _guaranteed_gc_interval);
+      _previous_trigger_declinations = _declined_trigger_count;
+      _declined_trigger_count = 0;
       return true;
     }
   }
-
+  _declined_trigger_count++;
   return false;
 }
 
@@ -210,6 +251,12 @@ bool ShenandoahHeuristics::should_degenerate_cycle() {
 void ShenandoahHeuristics::adjust_penalty(intx step) {
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
          "In range before adjustment: %zd", _gc_time_penalties);
+
+  if (_previous_trigger_declinations < 5) {
+    // Don't penalize if heuristics are not responsible for a negative outcome.  Allow heuristics 5 checks following
+    // previous GC to calibrate itself without penalty.
+    step = 0;
+  }
 
   intx new_val = _gc_time_penalties + step;
   if (new_val < 0) {
@@ -281,6 +328,20 @@ void ShenandoahHeuristics::initialize() {
   // Nothing to do by default.
 }
 
+void ShenandoahHeuristics::post_initialize() {
+  // Nothing to do by default.
+}
+
 double ShenandoahHeuristics::elapsed_cycle_time() const {
   return os::elapsedTime() - _cycle_start;
+}
+
+
+// Includes the time spent in abandoned concurrent GC cycle that may have triggered this degenerated cycle.
+double ShenandoahHeuristics::elapsed_degenerated_cycle_time() const {
+  double now = os::elapsedTime();
+#ifdef KELVIN_VERBOSITY
+  log_info(gc)("degen elapsed cycle time: %0.3f", now - _precursor_cycle_start);
+#endif
+  return now - _precursor_cycle_start;
 }

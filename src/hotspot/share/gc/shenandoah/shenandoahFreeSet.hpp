@@ -287,6 +287,16 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
 
+  // How many words have been allocated by the mutator since the ShenandoahFreeSet was most recently rebuilt.
+  // This value is modified and fetched only under HeapLock.
+  size_t _mutator_words_allocated;
+
+  size_t _mutator_words_allocated_at_rebuild;
+  size_t _mutator_words_at_last_sample;
+
+  // Temporarily holds mutator_Free allocatable bytes between prepare_to_rebuild() and finish_rebuild()
+  size_t _prepare_to_rebuild_mutator_free;
+
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
   // Return the address of memory allocated, setting in_new_region to true iff the allocation is taken
@@ -300,6 +310,12 @@ private:
   ssize_t _alloc_bias_weight;
 
   const ssize_t INITIAL_ALLOC_BIAS_WEIGHT = 256;
+
+  // Record that delta words of memory have been allocated by the mutator.
+  inline void increase_mutator_allocations(size_t delta_words) {
+    shenandoah_assert_heaplocked();
+    _mutator_words_allocated += delta_words;
+  }
 
   // Increases used memory for the partition if the allocation is successful. `in_new_region` will be set
   // if this is the first allocation in the region.
@@ -387,6 +403,39 @@ public:
 
   void clear();
 
+  // How many words allocated since rebuild
+  inline size_t get_mutator_allocations_since_rebuild() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahHeapLocker locker(_heap->lock());
+    return _mutator_words_allocated;
+  }
+
+  // How many total words have been allocated?
+  inline size_t get_mutator_allocations() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahHeapLocker locker(_heap->lock());
+    return _mutator_words_allocated + _mutator_words_allocated_at_rebuild;
+  }
+
+  inline size_t get_mutator_allocations_since_previous_sample() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahHeapLocker locker(_heap->lock());
+    size_t total_words = _mutator_words_allocated + _mutator_words_allocated_at_rebuild;
+    size_t result = total_words - _mutator_words_at_last_sample;
+
+    // Note: there's always the possibility that the tally of total allocations exceeds the 64-bit capacity of our size_t
+    // counter.  We assume that the difference between relevant samples does not exceed this count.  Example:
+    //   Suppose _mutator_words_at_last_sample is 0xffff_ffff_ffff_fff0 (18,446,744,073,709,551,600 Decimal)
+    //                        and _total_words is 0x0000_0000_0000_0800 (                    32,768 Decimal)
+    // Then, total_words - _mutator_words_at_last_sample can be done adding 1's complement of subtrahend:
+    //   1's complement of _mutator_words_at_last_sample is: 0x0000_0000_0000_0010 (    16 Decimal))
+    //                                     plus total_words: 0x0000_0000_0000_0800 (32,768 Decimal)
+    //                                                  sum: 0x0000_0000_0000_0810 (32,784 Decimal)
+
+    _mutator_words_at_last_sample = total_words;
+    return result;
+  }
+
   // Examine the existing free set representation, capturing the current state into var arguments:
   //
   // young_cset_regions is the number of regions currently in the young cset if we are starting to evacuate, or zero
@@ -417,8 +466,10 @@ public:
   // have_evacuation_reserves is true iff the desired values of young-gen and old-gen evacuation reserves and old-gen
   //                    promotion reserve have been precomputed (and can be obtained by invoking
   //                    <generation>->get_evacuation_reserve() or old_gen->get_promoted_reserve()
-  void finish_rebuild(size_t young_cset_regions, size_t old_cset_regions, size_t num_old_regions,
-                      bool have_evacuation_reserves = false);
+  //
+  // Returns allocatable memory within Mutator partition, in words.
+  size_t finish_rebuild(size_t young_cset_regions, size_t old_cset_regions, size_t num_old_regions,
+                        bool have_evacuation_reserves = false);
 
   // When a region is promoted in place, we add the region's available memory if it is greater than plab_min_size()
   // into the old collector partition by invoking this method.
@@ -435,8 +486,10 @@ public:
   // Acquire heap lock and log status, assuming heap lock is not acquired by the caller.
   void log_status_under_lock();
 
-  inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator); }
-  inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);     }
+  inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);   }
+  inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);       }
+  inline size_t reserved()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Collector); }
+
   inline size_t available() const {
     assert(used() <= capacity(), "must use less than capacity");
     return capacity() - used();
@@ -493,13 +546,17 @@ public:
   //   first_old_region is the index of the first region that is part of the OldCollector set
   //    last_old_region is the index of the last region that is part of the OldCollector set
   //   old_region_count is the number of regions in the OldCollector set that have memory available to be allocated
-  void find_regions_with_alloc_capacity(size_t &young_cset_regions, size_t &old_cset_regions,
-                                        size_t &first_old_region, size_t &last_old_region, size_t &old_region_count);
+  //
+  // Returns allocatable memory within Mutator partition, in words.
+  size_t find_regions_with_alloc_capacity(size_t &young_cset_regions, size_t &old_cset_regions,
+                                          size_t &first_old_region, size_t &last_old_region, size_t &old_region_count);
 
   // Ensure that Collector has at least to_reserve bytes of available memory, and OldCollector has at least old_reserve
   // bytes of available memory.  On input, old_region_count holds the number of regions already present in the
   // OldCollector partition.  Upon return, old_region_count holds the updated number of regions in the OldCollector partition.
-  void reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count);
+  //
+  // Returns allocatable memory within Mutator partition, in words.
+  size_t reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count);
 
   // Reserve space for evacuations, with regions reserved for old evacuations placed to the right
   // of regions reserved of young evacuations.

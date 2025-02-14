@@ -69,7 +69,6 @@ void ShenandoahController::handle_alloc_failure(ShenandoahAllocRequest& req, boo
     heap->cancel_gc(GCCause::_allocation_failure);
   }
 
-
   if (block) {
     MonitorLocker ml(&_alloc_failure_waiters_lock);
     while (is_alloc_failure_gc()) {

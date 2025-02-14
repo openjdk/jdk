@@ -40,6 +40,7 @@ public:
   explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy);
   void post_initialize() override;
   void initialize_heuristics() override;
+  void post_initialize_heuristics() override;
 
   static ShenandoahGenerationalHeap* heap() {
     shenandoah_assert_generational();
@@ -84,6 +85,8 @@ public:
   ShenandoahEvacuationTracker* evac_tracker() const {
     return _evac_tracker;
   }
+
+  void start_idle_span() override;
 
   // Ages regions that haven't been used for allocations in the current cycle.
   // Resets ages for regions that have been used for allocations.
