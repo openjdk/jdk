@@ -32,6 +32,7 @@
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "runtime/deoptimization.hpp"
+#include "utilities/debug.hpp"
 
 class CompilationFailureInfo;
 class CompilationResourceObj;
@@ -130,6 +131,7 @@ class Compilation: public StackObj {
 
 
   static Compilation* current() {
+    DEBUG_ONLY(ciEnv::current()->check_compiler_data_c1_or_null();)
     return (Compilation*) ciEnv::current()->compiler_data();
   }
 

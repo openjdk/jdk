@@ -119,6 +119,7 @@ ciEnv::ciEnv(CompileTask* task)
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable;
   _break_at_compile = false;
+  _compiler_data_type = CompilerType::compiler_none;
   _compiler_data = nullptr;
 #ifndef PRODUCT
   assert(!firstEnv, "not initialized properly");
@@ -253,6 +254,7 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   _inc_decompile_count_on_failure = true;
   _compilable = MethodCompilable_never;
   _break_at_compile = false;
+  _compiler_data_type = CompilerType::compiler_none;
   _compiler_data = nullptr;
 #ifndef PRODUCT
   assert(firstEnv, "must be first");
@@ -1154,6 +1156,20 @@ int ciEnv::compile_id() {
   if (task() == nullptr)  return 0;
   return task()->compile_id();
 }
+
+void ciEnv::set_compiler_data(void* x, CompilerType type) {
+  _compiler_data = x;
+  _compiler_data_type = type;
+}
+
+#ifdef ASSERT
+void ciEnv::check_compiler_data_c1_or_null() const {
+  assert(_compiler_data == nullptr || _compiler_data_type == CompilerType::compiler_c1, "Not C1 data");
+}
+void ciEnv::check_compiler_data_c2_or_null() const {
+  assert(_compiler_data == nullptr || _compiler_data_type == CompilerType::compiler_c2, "Not C2 data");
+}
+#endif
 
 // ------------------------------------------------------------------
 // ciEnv::notice_inlined_method()

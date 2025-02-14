@@ -32,6 +32,7 @@
 #include "code/dependencies.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerThread.hpp"
 #include "compiler/cHeapStringHolder.hpp"
 #include "oops/methodData.hpp"
@@ -65,6 +66,7 @@ private:
   int              _num_inlined_bytecodes;
   CompileTask*     _task;           // faster access to CompilerThread::task
   CompileLog*      _log;            // faster access to CompilerThread::log
+  CompilerType     _compiler_data_type;
   void*            _compiler_data;  // compiler-specific stuff, if any
 
   char* _name_buffer;
@@ -447,7 +449,9 @@ public:
 
   // Per-compiler data.  (Used by C2 to publish the Compile* pointer.)
   void* compiler_data() const { return _compiler_data; }
-  void set_compiler_data(void* x) { _compiler_data = x; }
+  void set_compiler_data(void* x, CompilerType type);
+  DEBUG_ONLY(void check_compiler_data_c1_or_null() const;)
+  DEBUG_ONLY(void check_compiler_data_c2_or_null() const;)
 
   // Notice that a method has been inlined in the current compile;
   // used only for statistics.

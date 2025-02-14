@@ -482,7 +482,7 @@ CompileWrapper::CompileWrapper(Compile* compile) : _compile(compile) {
   ciEnv* env = compile->env();
   assert(env == ciEnv::current(), "must already be a ciEnv active");
   assert(env->compiler_data() == nullptr, "compile already active?");
-  env->set_compiler_data(compile);
+  env->set_compiler_data(compile, CompilerType::compiler_c2);
   assert(compile == Compile::current(), "sanity");
 
   compile->set_type_dict(nullptr);
@@ -502,7 +502,7 @@ CompileWrapper::~CompileWrapper() {
   assert(CICrashAt < 0 || _compile->compile_id() != CICrashAt, "just as planned");
 
   _compile->end_method();
-  _compile->env()->set_compiler_data(nullptr);
+  _compile->env()->set_compiler_data(nullptr, CompilerType::compiler_none);
 }
 
 

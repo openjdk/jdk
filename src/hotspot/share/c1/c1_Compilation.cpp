@@ -592,7 +592,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 #endif // PRODUCT
 {
   _arena = Thread::current()->resource_area();
-  _env->set_compiler_data(this);
+  _env->set_compiler_data(this, CompilerType::compiler_c1);
   _exception_info_list = new ExceptionInfoList();
   _implicit_exception_table.set_size(0);
   PhaseTraceTime timeit(_t_compile);
@@ -624,7 +624,7 @@ Compilation::~Compilation() {
   // simulate crash during compilation
   assert(CICrashAt < 0 || (uintx)_env->compile_id() != (uintx)CICrashAt, "just as planned");
   delete _first_failure_details;
-  _env->set_compiler_data(nullptr);
+  _env->set_compiler_data(nullptr, CompilerType::compiler_none);
 }
 
 void Compilation::add_exception_handlers_for_pco(int pco, XHandlers* exception_handlers) {
