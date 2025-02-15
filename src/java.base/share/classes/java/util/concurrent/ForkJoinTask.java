@@ -1634,7 +1634,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         implements RunnableFuture<T> {
         transient volatile Thread runner;
         abstract T compute() throws Exception;
-        abstract boolean postExec();
         public final boolean exec() {
             Thread.interrupted();
             Thread t = runner = Thread.currentThread();
@@ -1654,6 +1653,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 runner = null;
             }
             return postExec();
+        }
+        boolean postExec() { // returns completion status to doExec
+            return true;
         }
         public boolean cancel(boolean mayInterruptIfRunning) {
             int s; boolean isCancelled; Thread t;
@@ -1696,7 +1698,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { result = v; }
         final T compute() throws Exception { return callable.call(); }
-        final boolean postExec() { return true; }
         final Object adaptee() { return callable; }
         private static final long serialVersionUID = 2838392045355241008L;
     }
@@ -1717,7 +1718,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { }
         final T compute() { runnable.run(); return result; }
-        final boolean postExec() { return true; }
         final Object adaptee() { return runnable; }
         private static final long serialVersionUID = 2838392045355241008L;
     }
@@ -1735,7 +1735,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final Void getRawResult() { return null; }
         public final void setRawResult(Void v) { }
         final Void compute() { runnable.run(); return null; }
-        final boolean postExec() { return true; }
         final Object adaptee() { return runnable; }
         void onAuxExceptionSet(Throwable ex) { // if a handler, invoke it
             Thread t; java.lang.Thread.UncaughtExceptionHandler h;
@@ -1783,7 +1782,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             }
         }
         public final T compute()            { return null; } // never forked
-        final boolean postExec()            { return true; }
         public final T getRawResult()       { return result; }
         public final void setRawResult(T v) { }
 
@@ -1859,7 +1857,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         }
         public final Void getRawResult() { return null; }
         public final void setRawResult(Void v) { }
-        final boolean postExec() { return true; }
         final Object adaptee() { return callable; }
     }
 
@@ -1887,7 +1884,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                     t.cancel(false);
             }
         }
-        final boolean postExec() { return true; }
         final Object adaptee() { return callable; }
     }
 

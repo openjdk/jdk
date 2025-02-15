@@ -1652,7 +1652,6 @@ public class ForkJoinPool extends AbstractExecutorService
     final long config;                   // static configuration bits
     volatile long stealCount;            // collects worker nsteals
     volatile long threadIds;             // for worker thread names
-    volatile boolean cancelDelayedTasksOnShutdown;
 
     @jdk.internal.vm.annotation.Contended("fjpctl") // segregate
     volatile long ctl;                   // main pool control
@@ -3119,6 +3118,16 @@ public class ForkJoinPool extends AbstractExecutorService
         return common;
     }
 
+    /**
+     * Package-private access to commonPool overriding zero parallelism
+     */
+    static ForkJoinPool asyncCommonPool() {
+        ForkJoinPool cp;
+        if ((cp = common).parallelism == 0)
+            U.compareAndSetInt(cp, PARALLELISM, 0, 1);
+        return cp;
+    }
+
     // Execution methods
 
     /**
@@ -3427,15 +3436,9 @@ public class ForkJoinPool extends AbstractExecutorService
 
     // Support for delayed tasks
 
-    // methods used by DelayScheduler
-
-    static ForkJoinPool asyncCommonPool() { // override parallelism == 0
-        ForkJoinPool cp;
-        if ((cp = common).parallelism == 0)
-            U.compareAndSetInt(cp, PARALLELISM, 0, 1);
-        return cp;
-    }
-
+    /**
+     *  Creates and starts Delayscheduler
+     */
     private DelayScheduler startDelayScheduler() {
         DelayScheduler ds;
         if ((ds = delayScheduler) == null) {
@@ -3453,6 +3456,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 unlockRunState();
             }
             if (start) { // start outside of lock
+                // exceptions on start passed to (external) callers
                 SharedThreadContainer ctr;
                 if ((ctr = container) != null)
                     ctr.start(ds);
@@ -3473,21 +3477,16 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
-     * Returns status code for DelayScheduler:
-     * * 0 not shutdown
-     * * -1 stopping
-     * * 1 shutdown without cancelling delayed tasks
-     * * 2 shutdown cancelling delayed tasks
+     * Returns STOP and SHUTDOWN status for DelayScheduler (zero if
+     * neither).
      */
     final int delaySchedulerRunStatus() {
-        long rs;
-        return ((((rs = runState) & SHUTDOWN) == 0L) ? 0 :
-                (rs & STOP) != 0L ? -1 :
-                cancelDelayedTasksOnShutdown ? 2 : 1);
+        return (int)(runState & (SHUTDOWN | STOP));
     }
 
     /**
-     * Arranges execution of a ready task from DelayScheduler
+     * Arranges execution of a ready task from DelayScheduler, or
+     * cancels it on error
      */
     final void executeReadyScheduledTask(ScheduledForkJoinTask<?> task) {
         if (task != null) {
@@ -3499,7 +3498,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 else
                     q.push(task, this, false);
             } catch(Error | RuntimeException ex) {
-                cancel = true;
+                cancel = true;     // OOME or VM error
             }
             if (cancel)
                 task.trySetCancelled();
@@ -3507,7 +3506,7 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
-     * Arrange delayed execution of a ScheduledForkJoinTask via the
+     * Arranges delayed execution of a ScheduledForkJoinTask via the
      * DelayScheduler, creating and starting it if necessary.
      * @return the task
      */
@@ -3521,24 +3520,96 @@ public class ForkJoinPool extends AbstractExecutorService
         return task;
     }
 
+    /**
+     * Submits a one-shot task that becomes enabled after the given
+     * delay, At which point it will execute unless explicitly
+     * cancelled, or fail to execute (eventually reporting
+     * cancellation) when encountering resource exhaustion, or the
+     * pool is {@link #shutdownNow}, or is {@link #shutdown} when
+     * otherwise quiescent and {@link #cancelDelayedTasksOnShutdown}
+     * is in effect.
+     *
+     * @param command the task to execute
+     * @param delay the time from now to delay execution
+     * @param unit the time unit of the delay parameter
+     * @return a ForkJoinTask implementing the ScheduledFuture
+     *         interface, whose {@code get()} method will return
+     *         {@code null} upon normal completion.
+     * @throws RejectedExecutionException if the pool is shutdown or
+     *         submission encounters resource exhaustion.
+     * @throws NullPointerException if command or unit is null
+     * @since 25
+     */
     public ScheduledFuture<?> schedule(Runnable command,
                                        long delay, TimeUnit unit) {
         Objects.requireNonNull(command);
         return scheduleDelayedTask(
             new ScheduledForkJoinTask<Void>(
-                Math.max(unit.toNanos(delay), 0L) + DelayScheduler.now(),
-                0L, false, command, null, this));
+                unit.toNanos(delay), 0L, false, command, null, this));
     }
 
+    /**
+     * Submits a value-returning one-shot task that becomes enabled
+     * after the given delay. At which point it will execute unless
+     * explicitly cancelled, or fail to execute (eventually reporting
+     * cancellation) when encountering resource exhaustion, or the
+     * pool is {@link #shutdownNow}, or is {@link #shutdown} when
+     * otherwise quiescent and {@link #cancelDelayedTasksOnShutdown}
+     * is in effect.
+     *
+     * @param callable the function to execute
+     * @param delay the time from now to delay execution
+     * @param unit the time unit of the delay parameter
+     * @param <V> the type of the callable's result
+     * @return a ForkJoinTask implementing the ScheduledFuture
+     *         interface, whose {@code get()} method will return the
+     *         value from the callable upon normal completion.
+     * @throws RejectedExecutionException if the pool is shutdown or
+     *         submission encounters resource exhaustion.
+     * @throws NullPointerException if command or unit is null
+     * @since 25
+     */
     public <V> ScheduledFuture<V> schedule(Callable<V> callable,
                                            long delay, TimeUnit unit) {
         Objects.requireNonNull(callable);
         return scheduleDelayedTask(
             new ScheduledForkJoinTask<V>(
-                Math.max(unit.toNanos(delay), 0L) + DelayScheduler.now(),
-                0L, false, null, callable, this));
+                unit.toNanos(delay), 0L, false, null, callable, this));
     }
 
+    /**
+     * Submits a periodic action that becomes enabled first after the
+     * given initial delay, and subsequently with the given period;
+     * that is, executions will commence after
+     * {@code initialDelay}, then {@code initialDelay + period}, then
+     * {@code initialDelay + 2 * period}, and so on.
+     *
+     * <p>The sequence of task executions continues indefinitely until
+     * one of the following exceptional completions occur:
+     * <ul>
+     * <li>The task is {@linkplain Future#cancel explicitly cancelled}
+     * <li>Method {@link #shutdownNow} is called
+     * <li>Method {@link #shutdown} is called and the pool is
+     * otherwise quiescent, in which case existing executions continue
+     * but subsequent executions do not.
+     * <li>An execution or the task encounters resource exhaustion.
+     * <li>An execution of the task throws an exception.  In this case
+     * calling {@link Future#get() get} on the returned future will throw
+     * {@link ExecutionException}, holding the exception as its cause.
+     * </ul>
+     * Subsequent executions are suppressed.  Subsequent calls to
+     * {@link Future#isDone isDone()} on the returned future will
+     * return {@code true}.
+     *
+     * <p>If any execution of this task takes longer than its period, then
+     * subsequent executions may start late, but will not concurrently
+     * execute.
+     * @throws RejectedExecutionException if the pool is shutdown or
+     *         submission encounters resource exhaustion.
+     * @throws NullPointerException if command or unit is null
+     * @throws IllegalArgumentException if period less than or equal to zero
+     * @since 25
+     */
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command,
                                                   long initialDelay,
                                                   long period, TimeUnit unit) {
@@ -3547,11 +3618,38 @@ public class ForkJoinPool extends AbstractExecutorService
             throw new IllegalArgumentException();
         return scheduleDelayedTask(
             new ScheduledForkJoinTask<Void>(
-                Math.max(unit.toNanos(initialDelay), 0L) + DelayScheduler.now(),
-                -unit.toNanos(period), // negative for fixed delay
+                unit.toNanos(initialDelay),
+                unit.toNanos(period),
                 false, command, null, this));
     }
 
+    /**
+     * Submits a periodic action that becomes enabled first after the
+     * given initial delay, and subsequently with the given delay
+     * between the termination of one execution and the commencement of
+     * the next.
+     * <p>The sequence of task executions continues indefinitely until
+     * one of the following exceptional completions occur:
+     * <ul>
+     * <li>The task is {@linkplain Future#cancel explicitly cancelled}
+     * <li>Method {@link #shutdownNow} is called
+     * <li>Method {@link #shutdown} is called and the pool is
+     * otherwise quiescent, in which case existing executions continue
+     * but subsequent executions do not.
+     * <li>An execution or the task encounters resource exhaustion.
+     * <li>An execution of the task throws an exception.  In this case
+     * calling {@link Future#get() get} on the returned future will throw
+     * {@link ExecutionException}, holding the exception as its cause.
+     * </ul>
+     * Subsequent executions are suppressed.  Subsequent calls to
+     * {@link Future#isDone isDone()} on the returned future will
+     * return {@code true}.
+     * @throws RejectedExecutionException if the pool is shutdown or
+     *         submission encounters resource exhaustion.
+     * @throws NullPointerException if command or unit is null
+     * @throws IllegalArgumentException if delay less than or equal to zero
+     * @since 25
+     */
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
                                                      long initialDelay,
                                                      long delay, TimeUnit unit) {
@@ -3560,8 +3658,9 @@ public class ForkJoinPool extends AbstractExecutorService
             throw new IllegalArgumentException();
         return scheduleDelayedTask(
             new ScheduledForkJoinTask<Void>(
-                Math.max(unit.toNanos(initialDelay), 0L) + DelayScheduler.now(),
-                unit.toNanos(delay), false, command, null, this));
+                unit.toNanos(initialDelay),
+                -unit.toNanos(delay),  // negative for fixed delay
+                false, command, null, this));
     }
 
     /**
@@ -3599,6 +3698,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * @throws RejectedExecutionException if the task cannot be
      *         scheduled for execution
      * @throws NullPointerException if callable or unit is null
+     * @since 25
      */
     public <V> ForkJoinTask<V> submitWithTimeout(Callable<V> callable,
                                                  long timeout, TimeUnit unit) {
@@ -3606,8 +3706,8 @@ public class ForkJoinPool extends AbstractExecutorService
         Objects.requireNonNull(callable);
         ScheduledForkJoinTask<Void> canceller =
             new ScheduledForkJoinTask<Void>(
-                Math.max(unit.toNanos(timeout), 0L) + DelayScheduler.now(), 0L,
-                true, onTimeout = new CancelAction(), null, this);
+                unit.toNanos(timeout), 0L, true,
+                onTimeout = new CancelAction(), null, this);
         onTimeout.task = task =
             new ForkJoinTask.CallableWithCanceller<V>(callable, canceller);
         scheduleDelayedTask(canceller);
@@ -3617,19 +3717,20 @@ public class ForkJoinPool extends AbstractExecutorService
 
     /**
      * Arranges that scheduled tasks that are not executing and have
-     * not already been enabled for execution are not executed and
+     * not already been enabled for execution will not be executed and
      * will be cancelled upon {@link #shutdown}. This method may be
      * invoked either before {@link #shutdown} to take effect upon the
      * next call, or afterwards to cancel such tasks, which may then
-     * allow termination. Note that the next executions of periodic
+     * allow termination. Note that subsequent executions of periodic
      * tasks are always disabled upon shutdown, so this method applies
      * meaningfully only to non-periodic tasks.
+     * @since 25
      */
     public void cancelDelayedTasksOnShutdown() {
         DelayScheduler ds;
-        cancelDelayedTasksOnShutdown = true;
-        if ((ds = delayScheduler) != null)
-                ds.ensureActive();
+        if ((ds = delayScheduler) != null ||
+            (ds = startDelayScheduler()) != null)
+            ds.cancelDelayedTasksOnShutdown();
     }
 
     /**
@@ -3812,6 +3913,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * delayed tasks are being processed.
      *
      * @return an estimate of the number of delayed tasks
+     * @since 25
      */
     public int getDelayedTaskCount() {
         DelayScheduler ds;
