@@ -63,8 +63,8 @@ public class CodeCache {
 
   /** When VM.getVM().isDebugging() returns true, this behaves like
       findBlobUnsafe */
-  public CodeBlob findBlob(Address start) {
-    CodeBlob result = findBlobUnsafe(start);
+  public CodeBlob findBlob(Address addr) {
+    CodeBlob result = findBlobUnsafe(addr);
     if (result == null) return null;
     if (VM.getVM().isDebugging()) {
       return result;
@@ -74,10 +74,10 @@ public class CodeCache {
     return result;
   }
 
-  public CodeBlob findBlobUnsafe(Address start) {
+  public CodeBlob findBlobUnsafe(Address addr) {
     CodeHeap containing_heap = null;
     for (int i = 0; i < heapArray.length(); ++i) {
-      if (heapArray.at(i).contains(start)) {
+      if (heapArray.at(i).contains(addr)) {
         containing_heap = heapArray.at(i);
         break;
       }
@@ -86,46 +86,46 @@ public class CodeCache {
       return null;
     }
 
-    Address cbAddr = containing_heap.findStart(start);
-    if (cbAddr == null) return null;
+    Address cbStart = containing_heap.findStart(addr);
+    if (cbStart == null) return null;
 
-    return createCodeBlobWrapper(cbAddr, start);
+    return createCodeBlobWrapper(cbStart, addr);
   }
 
-  // cbAddr - address of a code blob
-  // cbPC   - address inside of a code blob
-  public CodeBlob createCodeBlobWrapper(Address cbAddr, Address cbPC) {
-    Class<?> cbClass = CodeBlob.getClassFor(cbAddr);
+  // cbStart - address of a code blob
+  // addr    - address inside of a code blob
+  public CodeBlob createCodeBlobWrapper(Address cbStart, Address addr) {
+    Class<?> cbClass = CodeBlob.getClassFor(cbStart);
     if (cbClass == null) {
       String message = "Couldn't deduce type of CodeBlob ";
-      message = message + "@" + cbAddr + " ";
-      message = message + "for PC=" + cbPC;
+      message = message + "@" + cbStart + " ";
+      message = message + "for PC=" + addr;
 
       throw new RuntimeException(message);
     }
-    CodeBlob result = (CodeBlob) VMObjectFactory.newObject(cbClass, cbAddr);
+    CodeBlob result = (CodeBlob) VMObjectFactory.newObject(cbClass, cbStart);
     if (Assert.ASSERTS_ENABLED) {
       // The pointer to the HeapBlock that contains this blob is outside of the blob,
       // but it shouldn't be an error to find a blob based on the pointer to the HeapBlock.
       // The heap block header is padded out to an 8-byte boundary. See heap.hpp. The
       // simplest way to compute the header size is just 2 * addressSize.
-      Assert.that(result.blobContains(cbPC) ||
-                  result.blobContains(cbPC.addOffsetTo(2 * VM.getVM().getAddressSize())),
+      Assert.that(result.blobContains(addr) ||
+                  result.blobContains(addr.addOffsetTo(2 * VM.getVM().getAddressSize())),
                   "found wrong CodeBlob");
     }
     return result;
   }
 
-  public NMethod findNMethod(Address start) {
-    CodeBlob cb = findBlob(start);
+  public NMethod findNMethod(Address addr) {
+    CodeBlob cb = findBlob(addr);
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(cb == null || cb.isNMethod(), "did not find an nmethod");
     }
     return (NMethod) cb;
   }
 
-  public NMethod findNMethodUnsafe(Address start) {
-    CodeBlob cb = findBlobUnsafe(start);
+  public NMethod findNMethodUnsafe(Address addr) {
+    CodeBlob cb = findBlobUnsafe(addr);
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(cb == null || cb.isNMethod(), "did not find an nmethod");
     }

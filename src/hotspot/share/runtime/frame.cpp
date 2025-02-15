@@ -319,7 +319,7 @@ bool frame::should_be_deoptimized() const {
   if (lt.is_enabled()) {
     LogStream ls(&lt);
     ls.print("checking (%s) ", nm->is_marked_for_deoptimization() ? "true" : "false");
-    nm->print_value_on_v(&ls);
+    nm->print_value_on(&ls);
     ls.cr();
   }
 
@@ -537,7 +537,7 @@ void frame::print_value_on(outputStream* st) const {
 #ifndef PRODUCT
   if (_cb != nullptr) {
     st->print("     ");
-    _cb->print_value_on_v(st);
+    _cb->print_value_on(st);
     if (end == nullptr) {
       begin = _cb->code_begin();
       end   = _cb->code_end();

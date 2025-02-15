@@ -912,8 +912,9 @@ public:
   void decode(outputStream* st) const { decode2(st); } // just delegate here.
 
   // printing support
-  void print_on(outputStream* st) const;
+  void print_on_impl(outputStream* st) const;
   void print_code();
+  void print_value_on_impl(outputStream* st) const;
 
 #if defined(SUPPORT_DATA_STRUCTS)
   // print output in opt build for disassembler library
@@ -921,7 +922,6 @@ public:
   void print_pcs_on(outputStream* st);
   void print_scopes() { print_scopes_on(tty); }
   void print_scopes_on(outputStream* st)          PRODUCT_RETURN;
-  void print_value_on(outputStream* st) const;
   void print_handler_table();
   void print_nul_chk_table();
   void print_recorded_oop(int log_n, int index);
@@ -940,7 +940,7 @@ public:
   void maybe_print_nmethod(const DirectiveSet* directive);
   void print_nmethod(bool print_code);
 
-  void print_on(outputStream* st, const char* msg) const;
+  void print_on_with_msg(outputStream* st, const char* msg) const;
 
   // Logging
   void log_identity(xmlStream* log) const;
@@ -986,16 +986,14 @@ public:
   void make_deoptimized();
   void finalize_relocations();
 
-  struct Vptr : public CodeBlob::Vptr {
+  class Vptr : public CodeBlob::Vptr {
     void print_on(const CodeBlob* instance, outputStream* st) const override {
       ttyLocker ttyl;
-      instance->as_nmethod()->print_on(st);
+      instance->as_nmethod()->print_on_impl(st);
     }
-#if defined(SUPPORT_DATA_STRUCTS)
     void print_value_on(const CodeBlob* instance, outputStream* st) const override {
-      ((const nmethod*)instance)->print_value_on(st);
+      instance->as_nmethod()->print_value_on_impl(st);
     }
-#endif
   };
 
   static const Vptr _vptr;

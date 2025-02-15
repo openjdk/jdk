@@ -952,7 +952,7 @@ address nmethod::continuation_for_implicit_exception(address pc, bool for_div0_c
     // Keep tty output consistent. To avoid ttyLocker, we buffer in stream, and print all at once.
     stringStream ss;
     ss.print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
-    print_on_v(&ss);
+    print_on(&ss);
     method()->print_codes_on(&ss);
     print_code_on(&ss);
     print_pcs_on(&ss);
@@ -1619,7 +1619,7 @@ void nmethod::log_new_nmethod() const {
 
 
 // Print out more verbose output usually for a newly created nmethod.
-void nmethod::print_on(outputStream* st, const char* msg) const {
+void nmethod::print_on_with_msg(outputStream* st, const char* msg) const {
   if (st != nullptr) {
     ttyLocker ttyl;
     if (WizardMode) {
@@ -1971,7 +1971,7 @@ void nmethod::log_state_change() const {
 
   CompileTask::print_ul(this, "made not entrant");
   if (PrintCompilation) {
-    print_on(tty, "made not entrant");
+    print_on_with_msg(tty, "made not entrant");
   }
 }
 
@@ -3029,7 +3029,7 @@ void nmethod::verify_scopes() {
 // -----------------------------------------------------------------------------
 // Printing operations
 
-void nmethod::print_on(outputStream* st) const {
+void nmethod::print_on_impl(outputStream* st) const {
   ResourceMark rm;
 
   st->print("Compiled method ");
@@ -3044,7 +3044,7 @@ void nmethod::print_on(outputStream* st) const {
     st->print("(n/a) ");
   }
 
-  print_on(st, nullptr);
+  print_on_with_msg(st, nullptr);
 
   if (WizardMode) {
     st->print("((nmethod*) " INTPTR_FORMAT ") ", p2i(this));
@@ -3395,7 +3395,7 @@ void nmethod::decode2(outputStream* ost) const {
 #endif
 
   st->cr();
-  this->print_on_v(st);
+  this->print_on(st);
   st->cr();
 
 #if defined(SUPPORT_ASSEMBLY)
@@ -3944,12 +3944,12 @@ address nmethod::call_instruction_address(address pc) const {
   return nullptr;
 }
 
+void nmethod::print_value_on_impl(outputStream* st) const {
+  st->print_cr("nmethod");
 #if defined(SUPPORT_DATA_STRUCTS)
-void nmethod::print_value_on(outputStream* st) const {
-  st->print("nmethod");
-  print_on(st, nullptr);
-}
+  print_on_with_msg(st, nullptr);
 #endif
+}
 
 #ifndef PRODUCT
 

@@ -690,22 +690,22 @@ void CodeBlob::verify() {
   }
 }
 
-void CodeBlob::print_on_v(outputStream* st) const {
+void CodeBlob::print_on(outputStream* st) const {
   vptr()->print_on(this, st);
 }
 
-void CodeBlob::print() const { print_on_v(tty); }
+void CodeBlob::print() const { print_on(tty); }
 
-void CodeBlob::print_value_on_v(outputStream* st) const {
-  vptr()->print_value_on(this, st);;
+void CodeBlob::print_value_on(outputStream* st) const {
+  vptr()->print_value_on(this, st);
 }
 
-void CodeBlob::print_on_nv(outputStream* st) const {
+void CodeBlob::print_on_impl(outputStream* st) const {
   st->print_cr("[CodeBlob (" INTPTR_FORMAT ")]", p2i(this));
   st->print_cr("Framesize: %d", _frame_size);
 }
 
-void CodeBlob::print_value_on_nv(outputStream* st) const {
+void CodeBlob::print_value_on_impl(outputStream* st) const {
   st->print_cr("[CodeBlob]");
 }
 
@@ -776,53 +776,53 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
       // verbose is only ever true when called from findpc in debug.cpp
       nm->print_nmethod(true);
     } else {
-      nm->print_on_v(st);
+      nm->print_on(st);
     }
     return;
   }
   st->print_cr(INTPTR_FORMAT " is at code_begin+%d in ", p2i(addr), (int)(addr - code_begin()));
-  print_on_v(st);
+  print_on(st);
 }
 
-void BufferBlob::print_on(outputStream* st) const {
-  RuntimeBlob::print_on_nv(st);
-  print_value_on(st);
+void BufferBlob::print_on_impl(outputStream* st) const {
+  RuntimeBlob::print_on_impl(st);
+  print_value_on_impl(st);
 }
 
-void BufferBlob::print_value_on(outputStream* st) const {
+void BufferBlob::print_value_on_impl(outputStream* st) const {
   st->print_cr("BufferBlob (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
 }
 
-void RuntimeStub::print_on(outputStream* st) const {
+void RuntimeStub::print_on_impl(outputStream* st) const {
   ttyLocker ttyl;
-  RuntimeBlob::print_on_nv(st);
+  RuntimeBlob::print_on_impl(st);
   st->print("Runtime Stub (" INTPTR_FORMAT "): ", p2i(this));
   st->print_cr("%s", name());
   Disassembler::decode((RuntimeBlob*)this, st);
 }
 
-void RuntimeStub::print_value_on(outputStream* st) const {
+void RuntimeStub::print_value_on_impl(outputStream* st) const {
   st->print("RuntimeStub (" INTPTR_FORMAT "): ", p2i(this)); st->print("%s", name());
 }
 
-void SingletonBlob::print_on(outputStream* st) const {
+void SingletonBlob::print_on_impl(outputStream* st) const {
   ttyLocker ttyl;
-  RuntimeBlob::print_on_nv(st);
+  RuntimeBlob::print_on_impl(st);
   st->print_cr("%s", name());
   Disassembler::decode((RuntimeBlob*)this, st);
 }
 
-void SingletonBlob::print_value_on(outputStream* st) const {
+void SingletonBlob::print_value_on_impl(outputStream* st) const {
   st->print_cr("%s", name());
 }
 
-void DeoptimizationBlob::print_value_on(outputStream* st) const {
+void DeoptimizationBlob::print_value_on_impl(outputStream* st) const {
   st->print_cr("Deoptimization (frame not available)");
 }
 
-void UpcallStub::print_on(outputStream* st) const {
-  RuntimeBlob::print_on_nv(st);
-  print_value_on(st);
+void UpcallStub::print_on_impl(outputStream* st) const {
+  RuntimeBlob::print_on_impl(st);
+  print_value_on_impl(st);
   st->print_cr("Frame data offset: %d", (int) _frame_data_offset);
   oop recv = JNIHandles::resolve(_receiver);
   st->print("Receiver MH=");
@@ -830,6 +830,6 @@ void UpcallStub::print_on(outputStream* st) const {
   Disassembler::decode((RuntimeBlob*)this, st);
 }
 
-void UpcallStub::print_value_on(outputStream* st) const {
+void UpcallStub::print_value_on_impl(outputStream* st) const {
   st->print_cr("UpcallStub (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
 }

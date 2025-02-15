@@ -130,13 +130,13 @@ protected:
   DbgStrings _dbg_strings;
 #endif
 
- struct Vptr {
-    virtual void print_on(const CodeBlob* instance, outputStream* st) const {
-      instance->print_on_nv(st);
-    }
-    virtual void print_value_on(const CodeBlob* instance, outputStream* st) const {
-      instance->print_value_on_nv(st);
-    }
+  void print_on_impl(outputStream* st) const;
+  void print_value_on_impl(outputStream* st) const;
+
+  class Vptr {
+   public:
+    virtual void print_on(const CodeBlob* instance, outputStream* st) const = 0;
+    virtual void print_value_on(const CodeBlob* instance, outputStream* st) const = 0;
   };
 
   const Vptr* vptr() const;
@@ -183,7 +183,7 @@ public:
   // Casting
   nmethod* as_nmethod_or_null() const         { return is_nmethod() ? (nmethod*) this : nullptr; }
   nmethod* as_nmethod() const                 { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
-  CodeBlob* as_codeblob_or_null() const       { return (CodeBlob*) this; }
+  CodeBlob* as_codeblob() const               { return (CodeBlob*) this; }
   UpcallStub* as_upcall_stub() const          { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
   RuntimeStub* as_runtime_stub() const        { assert(is_runtime_stub(), "must be runtime blob"); return (RuntimeStub*) this; }
 
@@ -253,10 +253,10 @@ public:
   // Debugging
   void verify();
   void print() const;
-  void print_on_v(outputStream* st) const;
-  void print_value_on_v(outputStream* st) const;
-  void print_on_nv(outputStream* st) const;
-  void print_value_on_nv(outputStream* st) const;
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
+//  void print_on_impl(outputStream* st) const;
+//  void print_value_on_impl(outputStream* st) const;
 
   void dump_for_addr(address addr, outputStream* st, bool verbose) const;
   void print_code_on(outputStream* st);
@@ -305,6 +305,9 @@ class RuntimeBlob : public CodeBlob {
 
   // Deal with Disassembler, VTune, Forte, JvmtiExport, MemoryService.
   static void trace_new_stub(RuntimeBlob* blob, const char* name1, const char* name2 = "");
+
+  class Vptr : public CodeBlob::Vptr {
+  };
 };
 
 class WhiteBox;
@@ -333,15 +336,15 @@ class BufferBlob: public RuntimeBlob {
 
   static void free(BufferBlob* buf);
 
-  void print_on(outputStream* st) const;
-  void print_value_on(outputStream* st) const;
+  void print_on_impl(outputStream* st) const;
+  void print_value_on_impl(outputStream* st) const;
 
-  class Vptr : public CodeBlob::Vptr {
+  class Vptr : public RuntimeBlob::Vptr {
     void print_on(const CodeBlob* instance, outputStream* st) const override {
-      ((const BufferBlob*)instance)->print_on(st);
+      ((const BufferBlob*)instance)->print_on_impl(st);
     }
     void print_value_on(const CodeBlob* instance, outputStream* st) const override {
-      ((const BufferBlob*)instance)->print_value_on(st);
+      ((const BufferBlob*)instance)->print_value_on_impl(st);
     }
   };
 
@@ -419,17 +422,17 @@ class RuntimeStub: public RuntimeBlob {
 
   static void free(RuntimeStub* stub) { RuntimeBlob::free(stub); }
 
-  address entry_point() const                    { return code_begin(); }
+  address entry_point() const         { return code_begin(); }
 
-  void print_on(outputStream* st) const;
-  void print_value_on(outputStream* st) const;
+  void print_on_impl(outputStream* st) const;
+  void print_value_on_impl(outputStream* st) const;
 
-  class Vptr : public CodeBlob::Vptr {
+  class Vptr : public RuntimeBlob::Vptr {
     void print_on(const CodeBlob* instance, outputStream* st) const override {
-      instance->as_runtime_stub()->print_on(st);
+      instance->as_runtime_stub()->print_on_impl(st);
     }
     void print_value_on(const CodeBlob* instance, outputStream* st) const override {
-      instance->as_runtime_stub()->print_value_on(st);
+      instance->as_runtime_stub()->print_value_on_impl(st);
     }
   };
 
@@ -461,15 +464,15 @@ class SingletonBlob: public RuntimeBlob {
 
   address entry_point()                          { return code_begin(); }
 
-  void print_on(outputStream* st) const;
-  void print_value_on(outputStream* st) const;
+  void print_on_impl(outputStream* st) const;
+  void print_value_on_impl(outputStream* st) const;
 
-  class Vptr : public CodeBlob::Vptr {
+  class Vptr : public RuntimeBlob::Vptr {
     void print_on(const CodeBlob* instance, outputStream* st) const override {
-      ((const SingletonBlob*)instance)->print_on(st);
+      ((const SingletonBlob*)instance)->print_on_impl(st);
     }
     void print_value_on(const CodeBlob* instance, outputStream* st) const override {
-      ((const SingletonBlob*)instance)->print_value_on(st);
+      ((const SingletonBlob*)instance)->print_value_on_impl(st);
     }
   };
 
@@ -548,11 +551,11 @@ class DeoptimizationBlob: public SingletonBlob {
   address implicit_exception_uncommon_trap() const { return code_begin() + _implicit_exception_uncommon_trap_offset; }
 #endif // INCLUDE_JVMCI
 
-  void print_value_on(outputStream* st) const;
+  void print_value_on_impl(outputStream* st) const;
 
-  class Vptr : public CodeBlob::Vptr {
+  class Vptr : public SingletonBlob::Vptr {
     void print_value_on(const CodeBlob* instance, outputStream* st) const override {
-      ((const DeoptimizationBlob*)instance)->print_value_on(st);
+      ((const DeoptimizationBlob*)instance)->print_value_on_impl(st);
     }
   };
 
@@ -665,23 +668,22 @@ class UpcallStub: public RuntimeBlob {
 
   static void free(UpcallStub* blob);
 
-  jobject  receiver()          { return _receiver; }
-  ByteSize frame_data_offset() { return _frame_data_offset; }
+  jobject receiver() { return _receiver; }
 
   JavaFrameAnchor* jfa_for_frame(const frame& frame) const;
 
   // GC support
   void oops_do(OopClosure* f, const frame& frame);
 
-  void print_on(outputStream* st) const;
-  void print_value_on(outputStream* st) const;
+  void print_on_impl(outputStream* st) const;
+  void print_value_on_impl(outputStream* st) const;
 
-  class Vptr : public CodeBlob::Vptr {
+  class Vptr : public RuntimeBlob::Vptr {
     void print_on(const CodeBlob* instance, outputStream* st) const override {
-      instance->as_upcall_stub()->print_on(st);
+      instance->as_upcall_stub()->print_on_impl(st);
     }
     void print_value_on(const CodeBlob* instance, outputStream* st) const override {
-      instance->as_upcall_stub()->print_value_on(st);
+      instance->as_upcall_stub()->print_value_on_impl(st);
     }
   };
 
