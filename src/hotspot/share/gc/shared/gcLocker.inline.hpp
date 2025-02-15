@@ -34,7 +34,10 @@ void GCLocker::enter(JavaThread* thread) {
 
   if (!thread->in_critical()) {
     thread->enter_critical();
-    OrderAccess::storeload();
+
+    // Matching the fence in GCLocker::block.
+    OrderAccess::fence();
+
     if (Atomic::load(&_is_gc_request_pending)) {
       thread->exit_critical();
       // slow-path

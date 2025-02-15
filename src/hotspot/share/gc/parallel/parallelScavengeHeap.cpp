@@ -382,8 +382,8 @@ HeapWord* ParallelScavengeHeap::allocate_old_gen_and_record(size_t size) {
 }
 
 HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
-  if (!should_alloc_in_eden(size) || GCLocker::is_active()) {
-    // Size is too big for eden, or gc is locked out.
+  if (!should_alloc_in_eden(size)) {
+    // Size is too big for eden.
     return allocate_old_gen_and_record(size);
   }
 
