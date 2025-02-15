@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,9 @@ public class MinMaxRed_Int {
     @IR(applyIf = {"SuperWordReductions", "true"},
         applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
         counts = {IRNode.MIN_REDUCTION_V, " > 0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        counts = {IRNode.MIN_REDUCTION_V, " > 0"})
     public static int minReductionImplement(int[] a, int[] b, int res) {
         for (int i = 0; i < a.length; i++) {
             res = Math.min(res, a[i] * b[i]);
@@ -103,6 +106,9 @@ public class MinMaxRed_Int {
     @Test
     @IR(applyIf = {"SuperWordReductions", "true"},
         applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+        counts = {IRNode.MAX_REDUCTION_V, " > 0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
         counts = {IRNode.MAX_REDUCTION_V, " > 0"})
     public static int maxReductionImplement(int[] a, int[] b, int res) {
         for (int i = 0; i < a.length; i++) {

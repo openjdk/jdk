@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
 package jdk.jpackage.test;
 
 import static java.lang.StackWalker.Option.RETAIN_CLASS_REFERENCE;
+import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -32,35 +35,34 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
-import static jdk.internal.util.OperatingSystem.LINUX;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
-/*
- * @test
- * @summary Test jpackage test library's annotation processor
- * @library /test/jdk/tools/jpackage/helpers
- * @build jdk.jpackage.test.*
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.AnnotationsTest
- */
-public class AnnotationsTest {
+public class AnnotationsTest extends JUnitAdapter {
 
-    public static void main(String... args) {
-        runTests(BasicTest.class, ParameterizedInstanceTest.class);
-        for (var os : OperatingSystem.values()) {
-            try {
-                TestBuilderConfig.setOperatingSystem(os);
-                TKit.log("Current operating system: " + os);
-                runTests(IfOSTest.class);
-            } finally {
-                TestBuilderConfig.setDefaults();
-            }
+    @ParameterizedTest
+    @ValueSource(classes = {BasicTest.class, ParameterizedInstanceTest.class})
+    public void test(Class<? extends TestExecutionRecorder> clazz, @TempDir Path workDir) {
+        runTest(clazz, workDir);
+    }
+
+    @ParameterizedTest
+    @EnumSource(OperatingSystem.class)
+    public void testIfOSTest(OperatingSystem os, @TempDir Path workDir) {
+        try {
+            TestBuilderConfig.setOperatingSystem(os);
+            TKit.log("Current operating system: " + os);
+            runTest(IfOSTest.class, workDir);
+        } finally {
+            TestBuilderConfig.setDefaults();
         }
     }
 
@@ -301,22 +303,18 @@ public class AnnotationsTest {
         });
     }
 
-    private static void runTests(Class<? extends TestExecutionRecorder>... tests) {
+    private static void runTest(Class<? extends TestExecutionRecorder> test, Path workDir) {
         ACTUAL_TEST_DESCS.get().clear();
 
-        var expectedTestDescs = Stream.of(tests)
-                .map(AnnotationsTest::getExpectedTestDescs)
-                .flatMap(x -> x)
+        var expectedTestDescs = getExpectedTestDescs(test)
                 // Collect in the map to check for collisions for free
                 .collect(toMap(x -> x, x -> ""))
                 .keySet();
 
-        var args = Stream.of(tests).map(test -> {
-            return String.format("--jpt-run=%s", test.getName());
-        }).toArray(String[]::new);
+        var args = new String[] { String.format("--jpt-run=%s", test.getName()) };
 
         try {
-            Main.main(args);
+            Main.main(TestBuilder.build().workDirRoot(workDir), args);
             assertRecordedTestDescs(expectedTestDescs);
         } catch (Throwable t) {
             t.printStackTrace(System.err);
@@ -324,6 +322,7 @@ public class AnnotationsTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static Stream<String> getExpectedTestDescs(Class<?> type) {
         return toSupplier(() -> {
             var method = type.getMethod("getExpectedTestDescs");
