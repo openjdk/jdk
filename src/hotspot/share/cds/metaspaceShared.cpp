@@ -639,7 +639,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
   _pending_method_handle_intrinsics = new (mtClassShared) GrowableArray<Method*>(256, mtClassShared);
-  if (CDSConfig::is_dumping_aot_linked_classes()) {
+  if (CDSConfig::is_dumping_method_handles()) {
     // When dumping AOT-linked classes, some classes may have direct references to a method handle
     // intrinsic. The easiest thing is to save all of them into the AOT cache.
     SystemDictionary::get_all_method_handle_intrinsics(_pending_method_handle_intrinsics);
@@ -949,7 +949,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
       HeapShared::reset_archived_object_states(CHECK);
     }
 
-    if (CDSConfig::is_dumping_invokedynamic()) {
+    if (CDSConfig::is_dumping_method_handles()) {
       // This assert means that the MethodType and MethodTypeForm tables won't be
       // updated concurrently when we are saving their contents into a side table.
       assert(CDSConfig::allow_only_single_java_thread(), "Required");

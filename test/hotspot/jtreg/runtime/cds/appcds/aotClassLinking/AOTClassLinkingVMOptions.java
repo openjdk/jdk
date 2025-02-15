@@ -55,7 +55,6 @@ public class AOTClassLinkingVMOptions {
     }
 
     public static void main(String[] args) throws Exception {
-
         TestCommon.testDump(appJar, TestCommon.list("Hello"),
                             "-XX:+AOTClassLinking");
 

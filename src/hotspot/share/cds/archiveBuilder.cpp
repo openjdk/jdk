@@ -835,7 +835,7 @@ void ArchiveBuilder::make_klasses_shareable() {
           type = "bad";
           assert(0, "shouldn't happen");
         }
-        if (CDSConfig::is_dumping_invokedynamic()) {
+        if (CDSConfig::is_dumping_method_handles()) {
           assert(HeapShared::is_archivable_hidden_klass(ik), "sanity");
         } else {
           // Legacy CDS support for lambda proxies
