@@ -113,7 +113,7 @@ import jdk.internal.reflect.Reflection;
  *
  * @since 1.2
  */
-public class Package extends NamedPackage implements java.lang.reflect.AnnotatedElement {
+public final class Package extends NamedPackage implements java.lang.reflect.AnnotatedElement {
     /**
      * Return the name of this package.
      *

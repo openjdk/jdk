@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@
  * Note that when using posix_spawn(3), we exec twice: first a tiny binary called
  * the jspawnhelper, then in the jspawnhelper we do the pre-exec work and exec a
  * second time, this time the target binary (similar to the "exec-twice-technique"
- * described in http://mail.openjdk.org/pipermail/core-libs-dev/2018-September/055333.html).
+ * described in https://mail.openjdk.org/pipermail/core-libs-dev/2018-September/055333.html).
  *
  * This is a JDK-specific implementation detail which just happens to be
  * implemented for jdk.lang.Process.launchMechanism=POSIX_SPAWN.
@@ -200,8 +200,7 @@ setSIGCHLDHandler(JNIEnv *env)
      * non-standard-compliant, and we shouldn't rely on it.
      *
      * References:
-     * http://www.opengroup.org/onlinepubs/7908799/xsh/exec.html
-     * http://www.pasc.org/interps/unofficial/db/p1003.1/pasc-1003.1-132.html
+     * https://pubs.opengroup.org/onlinepubs/7908799/xsh/exec.html
      */
     struct sigaction sa;
     sa.sa_handler = SIG_DFL;
