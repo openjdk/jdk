@@ -73,11 +73,11 @@ import java.util.Objects;
  *     publishKey(kp.getPublic());
  *
  *     // Sender side
- *     KEM senderKEM = KEM.getInstance("ABC-KEM");
+ *     KEM senderKEM = KEM.getInstance("ABC");
  *     PublicKey receiverPublicKey = retrieveKey();
- *     ABCKEMParameterSpec spec = new ABCKEMParameterSpec(...);
+ *     ABCKEMParameterSpec senderSpec = new ABCKEMParameterSpec(...);
  *     KEM.Encapsulator e = senderKEM.newEncapsulator(
- *             receiverPublicKey, spec, null);
+ *             receiverPublicKey, senderSpec, null);
  *     KEM.Encapsulated enc = e.encapsulate();
  *     SecretKey senderSecret = enc.key();
  *
@@ -88,9 +88,9 @@ import java.util.Objects;
  *     byte[] ciphertext = receiveBytes();
  *     byte[] params = receiveBytes();
  *
- *     KEM receiverKEM = KEM.getInstance("ABC-KEM");
+ *     KEM receiverKEM = KEM.getInstance("ABC");
  *     AlgorithmParameters algParams =
- *             AlgorithmParameters.getInstance("ABC-KEM");
+ *             AlgorithmParameters.getInstance("ABC");
  *     algParams.init(params);
  *     ABCKEMParameterSpec receiverSpec =
  *             algParams.getParameterSpec(ABCKEMParameterSpec.class);
