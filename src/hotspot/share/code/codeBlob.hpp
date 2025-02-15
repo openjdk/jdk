@@ -255,8 +255,6 @@ public:
   void print() const;
   void print_on(outputStream* st) const;
   void print_value_on(outputStream* st) const;
-//  void print_on_impl(outputStream* st) const;
-//  void print_value_on_impl(outputStream* st) const;
 
   void dump_for_addr(address addr, outputStream* st, bool verbose) const;
   void print_code_on(outputStream* st);
