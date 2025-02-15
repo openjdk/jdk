@@ -215,40 +215,13 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     // Update references freed up collection set, kick the cleanup to reclaim the space.
     entry_cleanup_complete();
   } else {
-    // We chose not to evacuate because we found sufficient immediate garbage.
-    // However, there may still be regions to promote in place, so do that now.
-    if (has_in_place_promotions(heap)) {
-      entry_promote_in_place();
-
-      // If the promote-in-place operation was cancelled, we can have the degenerated
-      // cycle complete the operation. It will see that no evacuations are in progress,
-      // and that there are regions wanting promotion. The risk with not handling the
-      // cancellation would be failing to restore top for these regions and leaving
-      // them unable to serve allocations for the old generation.
-      if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
-        return false;
-      }
-    }
-
-    // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
-    // the control thread will detect it on its next iteration and run a degenerated young cycle.
-    heap->concurrent_final_roots();
-
-    if (heap->mode()->is_generational()) {
-      // If the cycle was shortened for having enough immediate garbage, this could be
-      // the last phase before concurrent marking of old resumes. We must be sure
-      // that old mark threads don't see any pointers to garbage in the SATB buffers.
-      if (heap->is_concurrent_old_mark_in_progress()) {
-        heap->old_generation()->concurrent_transfer_pointers_from_satb();
-      }
-
-      if (!_generation->is_old()) {
-        ShenandoahGenerationalHeap::heap()->update_region_ages(_generation->complete_marking_context());
-      }
+    if (!op_final_roots()) {
+      assert(_degen_point != _degenerated_unset, "Need to know where to start degenerated cycle");
+      return false;
     }
 
     if (VerifyAfterGC) {
-      vmop_entry_final_roots();
+      vmop_entry_verify_final_roots();
     }
     _abbreviated = true;
   }
@@ -260,6 +233,50 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   }
   return true;
 }
+
+bool ShenandoahConcurrentGC::complete_abbreviated_cycle() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  // We chose not to evacuate because we found sufficient immediate garbage.
+  // However, there may still be regions to promote in place, so do that now.
+  if (heap->old_generation()->has_in_place_promotions()) {
+    entry_promote_in_place();
+
+    // If the promote-in-place operation was cancelled, we can have the degenerated
+    // cycle complete the operation. It will see that no evacuations are in progress,
+    // and that there are regions wanting promotion. The risk with not handling the
+    // cancellation would be failing to restore top for these regions and leaving
+    // them unable to serve allocations for the old generation.This will leave the weak
+    // roots flag set (the degenerated cycle will unset it).
+    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
+      return false;
+    }
+  }
+
+  // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
+  // the control thread will detect it on its next iteration and run a degenerated young cycle.
+  if (!_generation->is_old()) {
+    ShenandoahGenerationalHeap::heap()->update_region_ages(_generation->complete_marking_context());
+  }
+
+  if (!heap->is_concurrent_old_mark_in_progress()) {
+    heap->concurrent_final_roots();
+  } else {
+    // Since the cycle was shortened for having enough immediate garbage, this will be
+    // the last phase before concurrent marking of old resumes. We must be sure
+    // that old mark threads don't see any pointers to garbage in the SATB queues. Even
+    // though nothing was evacuated, overwriting unreachable weak roots with null may still
+    // put pointers to regions that become trash in the SATB queues. The following will
+    // piggyback flushing the thread local SATB queues on the same handshake that propagates
+    // the gc state change.
+    ShenandoahSATBMarkQueueSet& satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
+    ShenandoahFlushSATBHandshakeClosure complete_thread_local_satb_buffers(satb_queues);
+    heap->concurrent_final_roots(&complete_thread_local_satb_buffers);
+    heap->old_generation()->concurrent_transfer_pointers_from_satb();
+  }
+  return true;
+}
+
 
 void ShenandoahConcurrentGC::vmop_entry_init_mark() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
@@ -301,7 +318,7 @@ void ShenandoahConcurrentGC::vmop_entry_final_update_refs() {
   VMThread::execute(&op);
 }
 
-void ShenandoahConcurrentGC::vmop_entry_final_roots() {
+void ShenandoahConcurrentGC::vmop_entry_verify_final_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->stw_collection_counters());
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_roots_gross);
@@ -357,12 +374,12 @@ void ShenandoahConcurrentGC::entry_final_update_refs() {
   op_final_update_refs();
 }
 
-void ShenandoahConcurrentGC::entry_final_roots() {
+void ShenandoahConcurrentGC::entry_verify_final_roots() {
   const char* msg = final_roots_event_message();
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_roots);
   EventMark em("%s", msg);
 
-  op_final_roots();
+  op_verify_final_roots();
 }
 
 void ShenandoahConcurrentGC::entry_reset() {
@@ -543,7 +560,7 @@ void ShenandoahConcurrentGC::entry_evacuate() {
   op_evacuate();
 }
 
-void ShenandoahConcurrentGC::entry_promote_in_place() {
+void ShenandoahConcurrentGC::entry_promote_in_place() const {
   shenandoah_assert_generational();
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
@@ -1177,7 +1194,23 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   heap->rebuild_free_set(true /*concurrent*/);
 }
 
-void ShenandoahConcurrentGC::op_final_roots() {
+bool ShenandoahConcurrentGC::op_final_roots() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  const char* msg = conc_final_roots_event_message();
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::final_roots);
+  EventMark em("%s", msg);
+
+  if (!heap->mode()->is_generational()) {
+    heap->concurrent_final_roots();
+  } else {
+    if (!complete_abbreviated_cycle()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void ShenandoahConcurrentGC::op_verify_final_roots() {
   if (VerifyAfterGC) {
     Universe::verify();
   }
@@ -1244,6 +1277,14 @@ const char* ShenandoahConcurrentGC::final_roots_event_message() const {
     SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Final Roots", " (unload classes)");
   } else {
     SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Final Roots", "");
+  }
+}
+
+const char* ShenandoahConcurrentGC::conc_final_roots_event_message() const {
+  if (ShenandoahHeap::heap()->unload_classes()) {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Final Roots", " (unload classes)");
+  } else {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Final Roots", "");
   }
 }
 

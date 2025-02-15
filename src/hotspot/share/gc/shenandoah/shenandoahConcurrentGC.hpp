@@ -70,7 +70,7 @@ protected:
   void vmop_entry_final_mark();
   void vmop_entry_init_update_refs();
   void vmop_entry_final_update_refs();
-  void vmop_entry_final_roots();
+  void vmop_entry_verify_final_roots();
 
   // Entry methods to normally STW GC operations. These set up logging, monitoring
   // and workers for net VM operation
@@ -78,7 +78,7 @@ protected:
   void entry_final_mark();
   void entry_init_update_refs();
   void entry_final_update_refs();
-  void entry_final_roots();
+  void entry_verify_final_roots();
 
   // Entry methods to normally concurrent GC operations. These set up logging, monitoring
   // for concurrent operation.
@@ -98,7 +98,7 @@ protected:
   void entry_cleanup_complete();
 
   // Called when the collection set is empty, but the generational mode has regions to promote in place
-  void entry_promote_in_place();
+  void entry_promote_in_place() const;
 
   // Actual work for the phases
   void op_reset();
@@ -117,7 +117,9 @@ protected:
   void op_update_refs();
   void op_update_thread_roots();
   void op_final_update_refs();
-  void op_final_roots();
+
+  bool op_final_roots();
+  void op_verify_final_roots();
   void op_cleanup_complete();
 
   // Check GC cancellation and abort concurrent GC
@@ -126,13 +128,16 @@ protected:
 private:
   void start_mark();
 
-  static bool has_in_place_promotions(ShenandoahHeap* heap) ;
+  bool complete_abbreviated_cycle();
+
+  static bool has_in_place_promotions(ShenandoahHeap* heap);
 
   // Messages for GC trace events, they have to be immortal for
   // passing around the logging/tracing systems
   const char* init_mark_event_message() const;
   const char* final_mark_event_message() const;
   const char* final_roots_event_message() const;
+  const char* conc_final_roots_event_message() const;
   const char* conc_mark_event_message() const;
   const char* conc_reset_event_message() const;
   const char* conc_weak_refs_event_message() const;

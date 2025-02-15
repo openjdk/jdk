@@ -1289,16 +1289,35 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   _update_refs_iterator.reset();
 }
 
-void ShenandoahHeap::concurrent_final_roots() {
+class ShenandoahCompositeHandshakeClosure : public HandshakeClosure {
+  HandshakeClosure* _handshake_1;
+  HandshakeClosure* _handshake_2;
+  public:
+    ShenandoahCompositeHandshakeClosure(HandshakeClosure* handshake_1, HandshakeClosure* handshake_2) :
+      HandshakeClosure(handshake_2->name()),
+      _handshake_1(handshake_1), _handshake_2(handshake_2) {}
+
+  void do_thread(Thread* thread) override {
+      _handshake_1->do_thread(thread);
+      _handshake_2->do_thread(thread);
+    }
+};
+
+void ShenandoahHeap::concurrent_final_roots(HandshakeClosure* handshake_closure) {
   {
     assert(!is_evacuation_in_progress(), "Should not evacuate for abbreviated or old cycles");
     MutexLocker lock(Threads_lock);
-    set_gc_state_concurrent(ShenandoahHeap::WEAK_ROOTS, false);
+    set_gc_state_concurrent(WEAK_ROOTS, false);
   }
 
   ShenandoahGCStatePropagator propagator(_gc_state.raw_value());
   Threads::non_java_threads_do(&propagator);
-  Handshake::execute(&propagator);
+  if (handshake_closure == nullptr) {
+    Handshake::execute(&propagator);
+  } else {
+    ShenandoahCompositeHandshakeClosure composite(&propagator, handshake_closure);
+    Handshake::execute(&composite);
+  }
 }
 
 oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
