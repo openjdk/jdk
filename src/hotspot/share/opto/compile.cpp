@@ -28,6 +28,7 @@
 #include "classfile/javaClasses.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
+#include "compiler/abstractCompiler.hpp"
 #include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
@@ -83,6 +84,7 @@
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
@@ -5209,3 +5211,9 @@ Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGV
 void Compile::record_method_not_compilable_oom() {
   record_method_not_compilable(CompilationMemoryStatistic::failure_reason_memlimit());
 }
+
+#ifdef ASSERT
+void Compile::check_current_compiler_c2() {
+  assert(CompilerThread::current()->compiler()->is_c2(), "Not on C2");
+}
+#endif // ASSERT

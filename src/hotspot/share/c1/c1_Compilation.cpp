@@ -32,6 +32,7 @@
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "code/debugInfoRec.hpp"
+#include "compiler/abstractCompiler.hpp"
 #include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDirectives.hpp"
@@ -42,6 +43,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/timerTrace.hpp"
+#include "utilities/debug.hpp"
 
 typedef enum {
   _t_compile,
@@ -734,3 +736,9 @@ Interval* find_interval(int reg_num) {
 }
 
 #endif // NOT PRODUCT
+
+#ifdef ASSERT
+void Compilation::check_current_compiler_c1() {
+  assert(CompilerThread::current()->compiler()->is_c1(), "Not on C1");
+}
+#endif // ASSERT
