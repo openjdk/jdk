@@ -75,7 +75,7 @@ import java.util.Objects;
  *     // Sender side
  *     KEM senderKEM = KEM.getInstance("ABC");
  *     PublicKey receiverPublicKey = retrieveKey();
- *     ABCKEMParameterSpec senderSpec = new ABCKEMParameterSpec(...);
+ *     ABCKEMParameterSpec senderSpec = new ABCKEMParameterSpec(args);
  *     KEM.Encapsulator e = senderKEM.newEncapsulator(
  *             receiverPublicKey, senderSpec, null);
  *     KEM.Encapsulated enc = e.encapsulate();
