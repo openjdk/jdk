@@ -39,15 +39,14 @@
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/phasetype.hpp"
 #include "opto/phase.hpp"
-#include "opto/printinlining.hpp"
 #include "opto/regmask.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
 #include "utilities/vmEnums.hpp"
+#include "opto/printinlining.hpp"
 
 class AbstractLockNode;
 class AddPNode;
@@ -531,7 +530,6 @@ public:
 
   // The Compile instance currently active in this (compiler) thread.
   static Compile* current() {
-    DEBUG_ONLY(ciEnv::current()->check_compiler_data_c2_or_null();)
     return (Compile*) ciEnv::current()->compiler_data();
   }
 
