@@ -102,6 +102,12 @@ public class AnnotationsTest extends JUnitAdapter {
             recordTestCase(v);
         }
 
+        @Test
+        @ParameterSupplier
+        public void testDates2(LocalDate v) {
+            recordTestCase(v);
+        }
+
         public static Set<String> getExpectedTestDescs() {
             return Set.of(
                     "().testNoArg()",
@@ -115,7 +121,9 @@ public class AnnotationsTest extends JUnitAdapter {
                     "().testDates(2018-05-05)",
                     "().testDates(2018-07-11)",
                     "().testDates(2034-05-05)",
-                    "().testDates(2056-07-11)"
+                    "().testDates(2056-07-11)",
+                    "().testDates2(2028-05-05)",
+                    "().testDates2(2028-07-11)"
             );
         }
 
@@ -124,6 +132,20 @@ public class AnnotationsTest extends JUnitAdapter {
                 { LocalDate.parse("2018-05-05") },
                 { LocalDate.parse("2018-07-11") },
             });
+        }
+
+        public static Collection<Object[]> testDates2() {
+            return List.of(new Object[][] {
+                { LocalDate.parse("2028-05-05") },
+                { LocalDate.parse("2028-07-11") },
+            });
+        }
+
+        public static void testDates2(Object unused) {
+        }
+
+        public int testNoArg(int v) {
+            return 0;
         }
     }
 
@@ -313,12 +335,25 @@ public class AnnotationsTest extends JUnitAdapter {
 
         var args = new String[] { String.format("--jpt-run=%s", test.getName()) };
 
+        final List<String> log;
         try {
-            Main.main(TestBuilder.build().workDirRoot(workDir), args);
+            log = captureJPackageTestLog(() -> Main.main(TestBuilder.build().workDirRoot(workDir), args));
             assertRecordedTestDescs(expectedTestDescs);
         } catch (Throwable t) {
             t.printStackTrace(System.err);
             System.exit(1);
+
+            // Redundant, but needed to suppress "The local variable log may not have been initialized" error.
+            throw new RuntimeException(t);
+        }
+
+        final var actualTestCount = Integer.parseInt(log.stream().dropWhile(line -> {
+            return !(line.startsWith("[==========]") && line.endsWith("tests ran"));
+        }).findFirst().orElseThrow().split(" ")[1]);
+
+        if (actualTestCount != expectedTestDescs.size()) {
+            throw new AssertionError(String.format(
+                    "Expected %d executed tests. Actual %d executed tests", expectedTestDescs.size(), actualTestCount));
         }
     }
 
