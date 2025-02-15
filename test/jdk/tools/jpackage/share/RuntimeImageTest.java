@@ -44,24 +44,28 @@ public class RuntimeImageTest {
 
     @Test
     public static void test() throws Exception {
-        final Path workDir = TKit.createTempDirectory("runtime").resolve("data");
-        final Path jlinkOutputDir = workDir.resolve("temp.runtime");
-        Files.createDirectories(jlinkOutputDir.getParent());
 
-        new Executor()
-        .setToolProvider(JavaTool.JLINK)
-        .dumpOutput()
-        .addArguments(
-                "--output", jlinkOutputDir.toString(),
-                "--add-modules", "java.desktop",
-                "--strip-debug",
-                "--no-header-files",
-                "--no-man-pages",
-                "--strip-native-commands")
-        .execute();
+        JPackageCommand cmd = JPackageCommand.helloAppImage();
 
-        JPackageCommand cmd = JPackageCommand.helloAppImage()
-            .setArgumentValue("--runtime-image", jlinkOutputDir.toString());
+        if (JPackageCommand.DEFAULT_RUNTIME_IMAGE == null) {
+            final Path workDir = TKit.createTempDirectory("runtime").resolve("data");
+            final Path jlinkOutputDir = workDir.resolve("temp.runtime");
+            Files.createDirectories(jlinkOutputDir.getParent());
+
+            new Executor()
+            .setToolProvider(JavaTool.JLINK)
+            .dumpOutput()
+            .addArguments(
+                    "--output", jlinkOutputDir.toString(),
+                    "--add-modules", "java.desktop",
+                    "--strip-debug",
+                    "--no-header-files",
+                    "--no-man-pages",
+                    "--strip-native-commands")
+            .execute();
+
+            cmd.setArgumentValue("--runtime-image", jlinkOutputDir.toString());
+        }
 
         cmd.executeAndAssertHelloAppImageCreated();
     }

@@ -45,7 +45,7 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
-import jdk.tools.jlink.internal.LinkableRuntimeImage;
+//import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
 
 /*
@@ -60,7 +60,7 @@ import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
 
 public final class BasicTest {
 
-    public static Collection<?> addModulesParams() {
+    public static Collection addModulesParams() {
         List<Object[][]> params = new ArrayList<>();
         params.add(new Object[][] { new String[] { "--add-modules", "ALL-DEFAULT"  } });
         params.add(new Object[][] { new String[] { "--add-modules", "java.desktop" } });
@@ -78,7 +78,7 @@ public final class BasicTest {
     private static boolean isAllModulePathCapable() {
         Path jmods = Path.of(System.getProperty("java.home"), "jmods");
         boolean noJmods = Files.notExists(jmods);
-        if (LinkableRuntimeImage.isLinkableRuntime() && noJmods) {
+        if (noJmods) {
            TKit.trace("ALL-MODULE-PATH test skipped for linkable run-time image");
            return false;
         }

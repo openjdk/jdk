@@ -25,6 +25,8 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.OSVersion;
 
@@ -54,14 +56,12 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.INSTALLER_SIGN_IDENTITY;
 import static jdk.jpackage.internal.MacAppBundler.APP_IMAGE_SIGN_IDENTITY;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
+import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
-import static jdk.jpackage.internal.OverridableResource.createResource;
+import static jdk.jpackage.internal.StandardBundlerParam.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
+import static jdk.jpackage.internal.MacApplicationBuilder.isValidBundleIdentifier;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.XmlUtils;
 
@@ -74,7 +74,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     private static final String DEFAULT_PDF = "product-def.plist";
 
     private static final BundlerParamInfo<Path> PACKAGES_ROOT =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             "mac.pkg.packagesRoot",
             Path.class,
             params -> {
@@ -91,7 +91,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
 
     protected final BundlerParamInfo<Path> SCRIPTS_DIR =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             "mac.pkg.scriptsDir",
             Path.class,
             params -> {
@@ -108,7 +108,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
     public static final
             BundlerParamInfo<String> DEVELOPER_ID_INSTALLER_SIGNING_KEY =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             "mac.signing-key-developer-id-installer",
             String.class,
             params -> {
@@ -146,6 +146,8 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 APP_NAME.fetchFrom(params)));
 
         IOUtils.writableOutputDir(outdir);
+
+        MacFromParams.PKG_PACKAGE.fetchFrom(params);
 
         try {
             Path appImageDir = prepareAppBundle(params);
@@ -670,9 +672,9 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    // Implement Bundler
-    //////////////////////////////////////////////////////////////////////////
+    /*
+     * Implement Bundler
+     */
 
     @Override
     public String getName() {
@@ -684,25 +686,13 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         return "pkg";
     }
 
-    private static boolean isValidBundleIdentifier(String id) {
-        for (int i = 0; i < id.length(); i++) {
-            char a = id.charAt(i);
-            // We check for ASCII codes first which we accept. If check fails,
-            // check if it is acceptable extended ASCII or unicode character.
-            if ((a >= 'A' && a <= 'Z') || (a >= 'a' && a <= 'z')
-                    || (a >= '0' && a <= '9') || (a == '-' || a == '.')) {
-                continue;
-            }
-            return false;
-        }
-        return true;
-    }
-
     @Override
     public boolean validate(Map<String, ? super Object> params)
             throws ConfigException {
         try {
             Objects.requireNonNull(params);
+
+            MacFromParams.PKG_PACKAGE.fetchFrom(params);
 
             // run basic validation to ensure requirements are met
             // we are not interested in return code, only possible exception

@@ -319,6 +319,7 @@ public class AnnotationsTest extends JUnitAdapter {
         } catch (Throwable t) {
             t.printStackTrace(System.err);
             System.exit(1);
+            return;
         }
     }
 

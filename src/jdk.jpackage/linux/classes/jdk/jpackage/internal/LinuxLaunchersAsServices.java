@@ -24,23 +24,23 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.Launcher;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import static jdk.jpackage.internal.OverridableResource.createResource;
 
 /**
  * Helper to install launchers as services using "systemd".
  */
 public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
 
-    private LinuxLaunchersAsServices(PlatformPackage thePackage,
-            Map<String, Object> params) throws IOException {
-        super(thePackage, REQUIRED_PACKAGES, params, li -> {
-            return new Launcher(thePackage, li.getName(), params);
+    private LinuxLaunchersAsServices(BuildEnv env, Package pkg) throws IOException {
+        super(env, pkg.app(), REQUIRED_PACKAGES, launcher -> {
+            return new LauncherImpl(env, pkg, launcher);
         });
     }
 
@@ -58,36 +58,32 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
         return data;
     }
 
-    static ShellCustomAction create(PlatformPackage thePackage,
-            Map<String, Object> params) throws IOException {
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+    static ShellCustomAction create(BuildEnv env, Package pkg) throws IOException {
+        if (pkg.isRuntimeInstaller()) {
             return ShellCustomAction.nop(LINUX_REPLACEMENT_STRING_IDS);
         }
-        return new LinuxLaunchersAsServices(thePackage, params);
+        return new LinuxLaunchersAsServices(env, pkg);
     }
 
-    public static Path getServiceUnitFileName(String packageName,
-            String launcherName) {
+    public static Path getServiceUnitFileName(String packageName, String launcherName) {
         String baseName = launcherName.replaceAll("[\\s]", "_");
         return Path.of(packageName + "-" + baseName + ".service");
     }
 
-    private static class Launcher extends UnixLauncherAsService {
+    private static class LauncherImpl extends UnixLauncherAsService {
 
-        Launcher(PlatformPackage thePackage, String name,
-                Map<String, Object> mainParams) {
-            super(name, mainParams, createResource("unit-template.service",
-                    mainParams).setCategory(I18N.getString(
-                            "resource.systemd-unit-file")));
+        LauncherImpl(BuildEnv env, Package pkg, Launcher launcher) {
+            super(launcher,
+                    env.createResource("unit-template.service").setCategory(
+                            I18N.getString("resource.systemd-unit-file")));
 
-            unitFilename = getServiceUnitFileName(thePackage.name(), getName());
+            unitFilename = getServiceUnitFileName(pkg.packageName(), launcher.executableName());
 
-            getResource()
-                    .setPublicName(unitFilename)
-                    .addSubstitutionDataEntry("APPLICATION_LAUNCHER",
-                            Enquoter.forPropertyValues().applyTo(
-                                    thePackage.installedApplicationLayout().launchersDirectory().resolve(
-                                            getName()).toString()));
+            getResource().setPublicName(unitFilename).addSubstitutionDataEntry(
+                    "APPLICATION_LAUNCHER",
+                    Enquoter.forPropertyValues().applyTo(
+                            pkg.asInstalledPackageApplicationLayout().orElseThrow().resolveAt(
+                                    env.appImageDir()).launchersDirectory().resolve(getName()).toString()));
         }
 
         @Override
