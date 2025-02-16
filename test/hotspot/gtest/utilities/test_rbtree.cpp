@@ -72,13 +72,6 @@ struct ArrayAllocator {
   void free(void* ptr) { }
 };
 
-#ifdef ASSERT
-  template<typename K, typename V, typename CMP, typename ALLOC>
-  void verify_it(RBTree<K, V, CMP, ALLOC>& t) {
-    t.verify_self();
-  }
-#endif // ASSERT
-
 using RBTreeInt = RBTreeCHeap<int, int, Cmp, mtOther>;
 
 public:
@@ -86,6 +79,7 @@ public:
     constexpr int up_to = 10;
     GrowableArrayCHeap<int, mtTest> nums_seen(up_to, up_to, 0);
     RBTreeInt rbtree;
+    const RBTreeInt& rbtree_const = rbtree;
 
     for (int i = 0; i < up_to; i++) {
       rbtree.upsert(i, i);
@@ -95,7 +89,7 @@ public:
       rbtree.upsert(i, i);
     }
 
-    rbtree.visit_in_order([&](RBTreeInt::RBNode* node) {
+    rbtree_const.visit_in_order([&](const RBTreeInt::RBNode* node) {
       nums_seen.at(node->key())++;
     });
     for (int i = 0; i < up_to; i++) {
@@ -173,22 +167,23 @@ public:
   void test_visitors() {
     { // Tests with 'default' ordering (ascending)
       RBTreeInt rbtree;
+      const RBTreeInt& rbtree_const = rbtree;
       using Node = RBTreeInt::RBNode;
 
-      rbtree.visit_range_in_order(0, 100, [&](Node* x) {
+      rbtree_const.visit_range_in_order(0, 100, [&](const Node* x) {
         EXPECT_TRUE(false) << "Empty rbtree has no nodes to visit";
       });
 
       // Single-element set
       rbtree.upsert(1, 0);
       int count = 0;
-      rbtree.visit_range_in_order(0, 100, [&](Node* x) {
+      rbtree_const.visit_range_in_order(0, 100, [&](const Node* x) {
         count++;
       });
       EXPECT_EQ(1, count);
 
       count = 0;
-      rbtree.visit_in_order([&](Node* x) {
+      rbtree_const.visit_in_order([&](const Node* x) {
         count++;
       });
       EXPECT_EQ(1, count);
@@ -198,20 +193,20 @@ public:
       rbtree.upsert(101, 0);
       rbtree.upsert(-1, 0);
       count = 0;
-      rbtree.visit_range_in_order(0, 100, [&](Node* x) {
+      rbtree_const.visit_range_in_order(0, 100, [&](const Node* x) {
         count++;
       });
       EXPECT_EQ(1, count);
 
       count = 0;
-      rbtree.visit_in_order([&](Node* x) {
+      rbtree_const.visit_in_order([&](const Node* x) {
         count++;
       });
       EXPECT_EQ(3, count);
 
       // Visiting empty range [0, 0) == {}
       rbtree.upsert(0, 0); // This node should not be visited.
-      rbtree.visit_range_in_order(0, 0, [&](Node* x) {
+      rbtree_const.visit_range_in_order(0, 0, [&](const Node* x) {
         EXPECT_TRUE(false) << "Empty visiting range should not visit any node";
       });
 
@@ -222,7 +217,7 @@ public:
 
       ResourceMark rm;
       GrowableArray<int> seen;
-      rbtree.visit_range_in_order(0, 10, [&](Node* x) {
+      rbtree_const.visit_range_in_order(0, 10, [&](const Node* x) {
         seen.push(x->key());
       });
       EXPECT_EQ(10, seen.length());
@@ -231,7 +226,7 @@ public:
       }
 
       seen.clear();
-      rbtree.visit_in_order([&](Node* x) {
+      rbtree_const.visit_in_order([&](const Node* x) {
         seen.push(x->key());
       });
       EXPECT_EQ(11, seen.length());
@@ -240,7 +235,7 @@ public:
       }
 
       seen.clear();
-      rbtree.visit_range_in_order(10, 12, [&](Node* x) {
+      rbtree_const.visit_range_in_order(10, 12, [&](const Node* x) {
         seen.push(x->key());
       });
       EXPECT_EQ(1, seen.length());
@@ -248,6 +243,7 @@ public:
     }
     { // Test with descending ordering
       RBTreeCHeap<int, int, CmpInverse, mtOther> rbtree;
+      const RBTreeCHeap<int, int, CmpInverse, mtOther>& rbtree_const = rbtree;
       using Node = RBTreeCHeap<int, int, CmpInverse, mtOther>::RBNode;
 
       for (int i = 0; i < 10; i++) {
@@ -255,7 +251,7 @@ public:
       }
       ResourceMark rm;
       GrowableArray<int> seen;
-      rbtree.visit_range_in_order(9, -1, [&](Node* x) {
+      rbtree_const.visit_range_in_order(9, -1, [&](const Node* x) {
         seen.push(x->key());
       });
       EXPECT_EQ(10, seen.length());
@@ -264,7 +260,7 @@ public:
       }
       seen.clear();
 
-      rbtree.visit_in_order([&](Node* x) {
+      rbtree_const.visit_in_order([&](const Node* x) {
         seen.push(x->key());
       });
       EXPECT_EQ(10, seen.length());
@@ -278,36 +274,38 @@ public:
     using Node = RBTreeInt::RBNode;
     {
       RBTreeInt rbtree;
-      Node* n = rbtree.closest_leq(0);
+      const RBTreeInt& rbtree_const = rbtree;
+      const Node* n = rbtree_const.closest_leq(0);
       EXPECT_EQ(nullptr, n);
 
       rbtree.upsert(0, 0);
-      n = rbtree.closest_leq(0);
+      n = rbtree_const.closest_leq(0);
       EXPECT_EQ(0, n->key());
 
       rbtree.upsert(-1, -1);
-      n = rbtree.closest_leq(0);
+      n = rbtree_const.closest_leq(0);
       EXPECT_EQ(0, n->key());
 
       rbtree.upsert(6, 0);
-      n = rbtree.closest_leq(6);
+      n = rbtree_const.closest_leq(6);
       EXPECT_EQ(6, n->key());
 
-      n = rbtree.closest_leq(-2);
+      n = rbtree_const.closest_leq(-2);
       EXPECT_EQ(nullptr, n);
     }
   }
 
   void test_node_prev() {
-    RBTreeInt _tree;
+    RBTreeInt rbtree;
+    const RBTreeInt& rbtree_const = rbtree;
     using Node = RBTreeInt::RBNode;
     constexpr int num_nodes = 100;
 
     for (int i = num_nodes; i > 0; i--) {
-      _tree.upsert(i, i);
+      rbtree.upsert(i, i);
     }
 
-    Node* node = _tree.find_node(num_nodes);
+    const Node* node = rbtree_const.find_node(num_nodes);
     int count = num_nodes;
     while (node != nullptr) {
       EXPECT_EQ(count, node->val());
@@ -318,16 +316,17 @@ public:
     EXPECT_EQ(count, 0);
   }
 
-    void test_node_next() {
-    RBTreeInt _tree;
+  void test_node_next() {
+    RBTreeInt rbtree;
+    const RBTreeInt& rbtree_const = rbtree;
     using Node = RBTreeInt::RBNode;
     constexpr int num_nodes = 100;
 
     for (int i = 0; i < num_nodes; i++) {
-      _tree.upsert(i, i);
+      rbtree.upsert(i, i);
     }
 
-    Node* node = _tree.find_node(0);
+    const Node* node = rbtree_const.find_node(0);
     int count = 0;
     while (node != nullptr) {
       EXPECT_EQ(count, node->val());
@@ -339,8 +338,9 @@ public:
   }
 
   void test_stable_nodes() {
-    using Node = RBTreeInt::RBNode;
     RBTreeInt rbtree;
+    const RBTreeInt& rbtree_const = rbtree;
+    using Node = RBTreeInt::RBNode;
     ResourceMark rm;
     GrowableArray<Node*> a(10000);
     for (int i = 0; i < 10000; i++) {
@@ -359,7 +359,7 @@ public:
 
     // After deleting, nodes should have been moved around but kept their values
     for (int i = 0; i < 10000; i++) {
-      const Node* n = rbtree.find_node(i);
+      const Node* n = rbtree_const.find_node(i);
       if (n != nullptr) {
         EXPECT_EQ(a.at(i), n);
       }
@@ -386,15 +386,48 @@ public:
     }
 
     // After deleting, values should have remained consistant
-    rbtree.visit_in_order([&](Node* node) {
+    rbtree.visit_in_order([&](const Node* node) {
       EXPECT_EQ(node, node->val());
     });
+  }
+
+  void test_leftmost_rightmost() {
+    using Node = RBTreeInt::RBNode;
+    for (int i = 0; i < 10; i++) {
+      RBTreeInt rbtree;
+      const RBTreeInt& rbtree_const = rbtree;
+      int max = 0, min = INT_MAX;
+      for (int j = 0; j < 10; j++) {
+        if (j == 0) {
+          ASSERT_EQ(rbtree_const.leftmost(), (const Node*)nullptr);
+          ASSERT_EQ(rbtree_const.rightmost(), (const Node*)nullptr);
+        } else {
+          ASSERT_EQ(rbtree_const.rightmost()->key(), max);
+          ASSERT_EQ(rbtree_const.rightmost()->val(), max);
+          ASSERT_EQ(rbtree_const.leftmost()->key(), min);
+          ASSERT_EQ(rbtree_const.leftmost()->val(), min);
+          ASSERT_EQ(rbtree_const.rightmost(), rbtree.rightmost());
+          ASSERT_EQ(rbtree_const.leftmost(), rbtree.leftmost());
+        }
+        const int r = os::random();
+        rbtree.upsert(r, r);
+        min = MIN2(min, r);
+        max = MAX2(max, r);
+      }
+      // Explicitly test non-const variants
+      Node* n = rbtree.rightmost();
+      ASSERT_EQ(n->key(), max);
+      n->set_val(1);
+      n = rbtree.leftmost();
+      ASSERT_EQ(n->key(), min);
+      n->set_val(1);
+    }
   }
 
 #ifdef ASSERT
   void test_fill_verify() {
     RBTreeInt rbtree;
-
+    const RBTreeInt& rbtree_const = rbtree;
     ResourceMark rm;
     GrowableArray<int> allocations;
 
@@ -412,7 +445,7 @@ public:
         rbtree.upsert(allocations.at(i), allocations.at(i));
       }
       if (i % 100 == 0) {
-        verify_it(rbtree);
+        rbtree_const.verify_self();
       }
     }
 
@@ -425,7 +458,7 @@ public:
         rbtree.remove(allocations.at(i));
       }
       if (i % 100 == 0) {
-        verify_it(rbtree);
+        rbtree_const.verify_self();
       }
     }
 
@@ -434,8 +467,8 @@ public:
       rbtree.remove(allocations.at(i));
     }
 
-    verify_it(rbtree);
-    EXPECT_EQ(rbtree.size(), 0UL);
+    rbtree.verify_self();
+    EXPECT_EQ(rbtree_const.size(), 0UL);
   }
 
   void test_nodes_visited_once() {
@@ -458,7 +491,7 @@ public:
       node += 1;
     }
 
-    verify_it(tree);
+    tree.verify_self();
 
     node = start;
     for (int i = 0; i < num_nodes; i++) {
@@ -507,6 +540,71 @@ TEST_VM_F(RBTreeTest, NodeStableAddressTest) {
   this->test_stable_nodes_addresses();
 }
 
+TEST_VM_F(RBTreeTest, LeftMostRightMost) {
+  this->test_leftmost_rightmost();
+}
+
+struct PtrCmp {
+  static int cmp(const void* a, const void* b) {
+    const uintptr_t ai = p2u(a);
+    const uintptr_t bi = p2u(b);
+    return ai == bi ? 0 : (ai > bi ? 1 : -1);
+  }
+};
+
+TEST_VM(RBTreeTestNonFixture, TestPrintPointerTree) {
+  typedef RBTreeCHeap<const void*, unsigned, PtrCmp, mtTest> TreeType;
+  TreeType tree;
+#ifdef _LP64
+  const void* const p1 = (const void*) 0x800000000ULL;
+  const char* const s1 = "[0x0000000800000000] = 1";
+  const void* const p2 = (const void*) 0xDEADBEEF0ULL;
+  const char* const s2 = "[0x0000000deadbeef0] = 2";
+  const void* const p3 = (const void*) 0x7f223fba0ULL;
+  const char* const s3 = "[0x00000007f223fba0] = 3";
+#else
+  const void* const p1 = (const void*) 0x80000000ULL;
+  const char* const s1 = "[0x80000000] = 1";
+  const void* const p2 = (const void*) 0xDEADBEEFLL;
+  const char* const s2 = "[0xdeadbeef] = 2";
+  const void* const p3 = (const void*) 0x7f223fbaULL;
+  const char* const s3 = "[0x7f223fba] = 3";
+#endif
+  tree.upsert(p1, 1);
+  tree.upsert(p2, 2);
+  tree.upsert(p3, 3);
+  stringStream ss;
+  tree.print_on(&ss);
+  const char* const N = nullptr;
+  ASSERT_NE(strstr(ss.base(), s1), N);
+  ASSERT_NE(strstr(ss.base(), s2), N);
+  ASSERT_NE(strstr(ss.base(), s3), N);
+}
+
+struct IntCmp {
+  static int cmp(int a, int b) { return a == b ? 0 : (a > b ? 1 : -1); }
+};
+
+TEST_VM(RBTreeTestNonFixture, TestPrintIntegerTree) {
+  typedef RBTree<int, unsigned, IntCmp, RBTreeCHeapAllocator<mtTest> > TreeType;
+    TreeType tree;
+    const int i1 = 82924;
+    const char* const s1 = "[82924] = 1";
+    const int i2 = -13591;
+    const char* const s2 = "[-13591] = 2";
+    const int i3 = 0;
+    const char* const s3 = "[0] = 3";
+    tree.upsert(i1, 1);
+    tree.upsert(i2, 2);
+    tree.upsert(i3, 3);
+    stringStream ss;
+    tree.print_on(&ss);
+    const char* const N = nullptr;
+    ASSERT_NE(strstr(ss.base(), s1), N);
+    ASSERT_NE(strstr(ss.base(), s2), N);
+    ASSERT_NE(strstr(ss.base(), s3), N);
+}
+
 #ifdef ASSERT
 TEST_VM_F(RBTreeTest, FillAndVerify) {
   this->test_fill_verify();
@@ -527,7 +625,7 @@ TEST_VM_F(RBTreeTest, InsertRemoveVerify) {
       for (int i = 0; i < n_t2; i++) {
         tree.remove(i);
       }
-      verify_it(tree);
+      tree.verify_self();
     }
   }
 }
@@ -544,7 +642,7 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
         rbtree.remove(i);
       }
       if (i % 100 == 0) {
-        verify_it(rbtree);
+        rbtree.verify_self();
       }
     }
     for (int i = 0; i < ten_thousand; i++) {
@@ -555,7 +653,7 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
         rbtree.remove(i);
       }
       if (i % 100 == 0) {
-        verify_it(rbtree);
+        rbtree.verify_self();
       }
     }
   }
@@ -566,7 +664,7 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
     for (int i = 0; i < one_hundred_thousand; i++) {
       rbtree.upsert(i, Nothing());
     }
-    verify_it(rbtree);
+    rbtree.verify_self();
   }
 }
 
