@@ -30,6 +30,7 @@
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  */
+
 import jdk.test.lib.Asserts;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.*;
@@ -120,6 +121,7 @@ public class CertificateExtensions {
             signature.update(x509CertInfo.getEncodedInfo());
             byte[] signedData = signature.sign();
             byte[] signedCert = {};
+
             x509Certimpl = new X509CertImpl(x509CertInfo,
                     AlgorithmId.get("SHA256withRSA"), signedData, signedCert);
         } catch (Exception e) {
