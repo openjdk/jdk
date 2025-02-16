@@ -53,29 +53,31 @@ interface BuildEnv {
     OverridableResource createResource(String defaultName);
 
     static BuildEnv withAppImageDir(BuildEnv env, Path appImageDir) {
-        return new Proxy(env) {
-            @Override
-            public Path appImageDir() {
-                return appImageDir;
-            }
-        };
+        return ((Internal.DefaultBuildEnv)env).copyWithAppImageDir(appImageDir);
     }
 
     static BuildEnv create(Path buildRoot, Optional<Path> resourceDir, boolean verbose, Class<?> resourceLocator) {
-        return new BuildEnv() {
-            @Override
-            public Path buildRoot() {
-                return buildRoot;
+        return new Internal.DefaultBuildEnv(buildRoot, resourceDir, verbose, resourceLocator, Optional.empty());
+    }
+
+    static final class Internal {
+        private static record DefaultBuildEnv(Path buildRoot, Optional<Path> resourceDir,
+                boolean verbose, Class<?> resourceLocator, Optional<Path> optAppImageDir) implements BuildEnv {
+
+            DefaultBuildEnv {
+                Objects.requireNonNull(buildRoot);
+                Objects.requireNonNull(resourceDir);
+                Objects.requireNonNull(resourceLocator);
+                Objects.requireNonNull(optAppImageDir);
+            }
+
+            DefaultBuildEnv copyWithAppImageDir(Path appImageDir) {
+                return new DefaultBuildEnv(buildRoot, resourceDir, verbose, resourceLocator, Optional.of(appImageDir));
             }
 
             @Override
-            public boolean verbose() {
-                return verbose;
-            }
-
-            @Override
-            public Optional<Path> resourceDir() {
-                return resourceDir;
+            public Path appImageDir() {
+                return optAppImageDir.orElseGet(BuildEnv.super::appImageDir);
             }
 
             @Override
@@ -86,37 +88,8 @@ interface BuildEnv {
                 } else {
                     resource = new OverridableResource();
                 }
-                return resource.setResourceDir(resourceDir.orElse(null));
+                return resourceDir.map(resource::setResourceDir).orElse(resource);
             }
-        };
-    }
-
-    static class Proxy implements BuildEnv {
-
-        Proxy(BuildEnv target) {
-            this.target = Objects.requireNonNull(target);
         }
-
-        @Override
-        final public Path buildRoot() {
-            return target.buildRoot();
-        }
-
-        @Override
-        final public boolean verbose() {
-            return target.verbose();
-        }
-
-        @Override
-        final public Optional<Path> resourceDir() {
-            return target.resourceDir();
-        }
-
-        @Override
-        final public OverridableResource createResource(String defaultName) {
-            return target.createResource(defaultName);
-        }
-
-        private final BuildEnv target;
     }
 }
