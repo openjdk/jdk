@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,12 @@ public class InflaterInputStream extends FilterInputStream {
     /**
      * Creates a new input stream with the specified decompressor and
      * buffer size.
+     *
+     * @implSpec {@linkplain #close() Closing} the {@code InflaterInputStream}
+     * will not close the given {@code inf}. After the {@code InflaterInputStream}
+     * is closed, the caller is responsible for
+     * {@linkplain Inflater#close() closing the Inflater} if it is no longer needed.
+     *
      * @param in the input stream
      * @param inf the decompressor ("inflater")
      * @param size the input buffer size
@@ -94,6 +100,12 @@ public class InflaterInputStream extends FilterInputStream {
     /**
      * Creates a new input stream with the specified decompressor and a
      * default buffer size.
+     *
+     * @implSpec {@linkplain #close() Closing} the {@code InflaterInputStream}
+     * will not close the given {@code inf}. After the {@code InflaterInputStream}
+     * is closed, the caller is responsible for
+     * {@linkplain Inflater#close() closing the Inflater} if it is no longer needed.
+     *
      * @param in the input stream
      * @param inf the decompressor ("inflater")
      */
@@ -120,6 +132,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @return the byte read, or -1 if end of compressed input is reached
      * @throws    IOException if an I/O error has occurred
      */
+    @Override
     public int read() throws IOException {
         ensureOpen();
         return read(singleByteBuf, 0, 1) == -1 ? -1 : Byte.toUnsignedInt(singleByteBuf[0]);
@@ -151,6 +164,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @throws    ZipException if a ZIP format error has occurred
      * @throws    IOException if an I/O error has occurred
      */
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         ensureOpen();
         if (b == null) {
@@ -193,6 +207,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @throws     IOException  if an I/O error occurs.
      *
      */
+    @Override
     public int available() throws IOException {
         ensureOpen();
         if (reachEOF) {
@@ -220,6 +235,7 @@ public class InflaterInputStream extends FilterInputStream {
      *                     already closed
      * @throws    IllegalArgumentException if {@code n < 0}
      */
+    @Override
     public long skip(long n) throws IOException {
         if (n < 0) {
             throw new IllegalArgumentException("negative skip length");
@@ -248,6 +264,7 @@ public class InflaterInputStream extends FilterInputStream {
      * with the stream.
      * @throws    IOException if an I/O error has occurred
      */
+    @Override
     public void close() throws IOException {
         if (!closed) {
             if (usesDefaultInflater)
@@ -287,6 +304,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.InputStream#reset()
      */
+    @Override
     public boolean markSupported() {
         return false;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,11 @@ public class DeflaterInputStream extends FilterInputStream {
      * Creates a new input stream with the specified compressor and a
      * default buffer size.
      *
+     * @implSpec {@linkplain #close() Closing} the {@code DeflaterInputStream}
+     * will not close the given {@code defl}. After the {@code DeflaterInputStream}
+     * is closed, the caller is responsible for
+     * {@linkplain Deflater#close() closing the Deflater} if it is no longer needed.
+     *
      * @param in input stream to read the uncompressed data to
      * @param defl compressor ("deflater") for this stream
      * @throws NullPointerException if {@code in} or {@code defl} is null
@@ -94,6 +99,11 @@ public class DeflaterInputStream extends FilterInputStream {
     /**
      * Creates a new input stream with the specified compressor and buffer
      * size.
+     *
+     * @implSpec {@linkplain #close() Closing} the {@code DeflaterInputStream}
+     * will not close the given {@code defl}. After the {@code DeflaterInputStream}
+     * is closed, the caller is responsible for
+     * {@linkplain Deflater#close() closing the Deflater} if it is no longer needed.
      *
      * @param in input stream to read the uncompressed data to
      * @param defl compressor ("deflater") for this stream
@@ -123,6 +133,7 @@ public class DeflaterInputStream extends FilterInputStream {
      *
      * @throws IOException if an I/O error occurs
      */
+    @Override
     public void close() throws IOException {
         if (in != null) {
             try {
@@ -147,6 +158,7 @@ public class DeflaterInputStream extends FilterInputStream {
      * @throws IOException if an I/O error occurs or if this stream is
      * already closed
      */
+    @Override
     public int read() throws IOException {
         // Read a single byte of compressed data
         int len = read(rbuf, 0, 1);
@@ -169,6 +181,7 @@ public class DeflaterInputStream extends FilterInputStream {
      * @throws IOException if an I/O error occurs or if this input stream is
      * already closed
      */
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         // Sanity checks
         ensureOpen();
@@ -224,6 +237,7 @@ public class DeflaterInputStream extends FilterInputStream {
      *                     already closed
      * @throws IllegalArgumentException if {@code n < 0}
      */
+    @Override
     public long skip(long n) throws IOException {
         if (n < 0) {
             throw new IllegalArgumentException("negative skip length");
@@ -259,6 +273,7 @@ public class DeflaterInputStream extends FilterInputStream {
      * @throws IOException if an I/O error occurs or if this stream is
      * already closed
      */
+    @Override
     public int available() throws IOException {
         ensureOpen();
         if (reachEOF) {
@@ -273,6 +288,7 @@ public class DeflaterInputStream extends FilterInputStream {
      *
      * @return false, always
      */
+    @Override
     public boolean markSupported() {
         return false;
     }
@@ -282,6 +298,7 @@ public class DeflaterInputStream extends FilterInputStream {
      *
      * @param limit maximum bytes that can be read before invalidating the position marker
      */
+    @Override
     public void mark(int limit) {
         // Operation not supported
     }
@@ -291,6 +308,7 @@ public class DeflaterInputStream extends FilterInputStream {
      *
      * @throws IOException always thrown
      */
+    @Override
     public void reset() throws IOException {
         throw new IOException("mark/reset not supported");
     }
