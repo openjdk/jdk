@@ -827,7 +827,7 @@ bool CodeCache::try_to_gc(GCCause::Cause cause) {
   // will reset our flag correctly which may prevent future GC requests.
   // In order to avoid that, automatically reset it after a fixed delay of 250ms.
   if (elapsed_since_last_gc_request > 0.25 && _unloading_gc_requested) {
-    log_debug(codecache)("Previous GC request has not been reset after %fs, ", elapsed_since_last_gc_request);
+    log_debug(codecache)("Previous GC request has not been reset after %fs, force auto-reset", elapsed_since_last_gc_request);
     Atomic::cmpxchg(&_unloading_gc_requested, true, false);
   }
 
