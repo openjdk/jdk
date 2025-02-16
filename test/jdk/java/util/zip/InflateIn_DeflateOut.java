@@ -1,5 +1,6 @@
 /*
  * Copyright 2009 Google, Inc.  All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +31,7 @@
  */
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.*;
 
@@ -293,6 +295,106 @@ public class InflateIn_DeflateOut {
         checkLOP(gis, gos);
     }
 
+    private static byte[] deflate(final byte[] original) {
+        final ByteArrayOutputStream compressedBaos = new ByteArrayOutputStream();
+        try (Deflater compressor = new Deflater()) {
+            compressor.setInput(original);
+            compressor.finish();
+            while (!compressor.finished()) {
+                byte[] tmpBuffer = new byte[1024];
+                int numCompressed = compressor.deflate(tmpBuffer);
+                compressedBaos.write(tmpBuffer, 0, numCompressed);
+            }
+        }
+        return compressedBaos.toByteArray();
+    }
+
+    /**
+     * Verifies that when a InflaterInputStream is constructed
+     * by passing a Inflater instance, then closing the InflaterInputStream
+     * will not close the passed Inflater instance.
+     */
+    private static void inflaterInputStreamInflaterNotClosed() throws Throwable {
+        // some arbitrary content
+        final byte[] original = "foo".repeat(1024).getBytes(StandardCharsets.US_ASCII);
+        // deflate it
+        final byte[] deflated = deflate(original);
+        // run the InflaterInputStream tests
+        try (final Inflater infl = new Inflater()) {
+            try (ByteArrayInputStream bis = new ByteArrayInputStream(deflated);
+                 InflaterInputStream iis = new InflaterInputStream(bis, infl)) {
+                final byte[] inflated = iis.readAllBytes();
+                check(Arrays.equals(original, inflated));
+            }
+            // verify the inflater wasn't closed - reset() will throw IllegalStateException if
+            // the inflater is closed
+            infl.reset();
+
+            // repeat the test with the other constructor
+            try (ByteArrayInputStream bis = new ByteArrayInputStream(deflated);
+                 InflaterInputStream iis = new InflaterInputStream(bis, infl, 1024)) {
+                final byte[] inflated = iis.readAllBytes();
+                check(Arrays.equals(original, inflated));
+            }
+            // verify the inflater wasn't closed - reset() will throw IllegalStateException if
+            // the inflater is closed
+            infl.reset();
+        }
+    }
+
+    /**
+     * Verifies that when a DeflaterOutputStream is constructed
+     * by passing a Deflater instance, then closing the DeflaterOutputStream
+     * will not close the passed Deflater instance.
+     */
+    private static void deflaterOutputStreamDeflaterNotClosed() throws Throwable {
+        // some arbitrary content
+        final byte[] data = "bar".repeat(1024).getBytes(StandardCharsets.US_ASCII);
+        // run the InflaterInputStream tests
+        try (final Deflater def = new Deflater()) {
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                 DeflaterOutputStream dos = new DeflaterOutputStream(bos, def)) {
+                dos.write(data);
+            }
+            // verify the deflater wasn't closed - reset() will throw IllegalStateException if
+            // the deflater is closed
+            def.reset();
+
+            // repeat the test with the other constructor
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                 DeflaterOutputStream dos = new DeflaterOutputStream(bos, def, 1024)) {
+                dos.write(data);
+            }
+            // verify the deflater wasn't closed - reset() will throw IllegalStateException if
+            // the deflater is closed
+            def.reset();
+
+            // repeat the test with the other constructor
+            for (boolean syncFlush : new boolean[] {false, true}) {
+                System.out.println("testing with syncFlush = " + syncFlush);
+                try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                     DeflaterOutputStream dos = new DeflaterOutputStream(bos, def, syncFlush)) {
+                    dos.write(data);
+                }
+                // verify the deflater wasn't closed - reset() will throw IllegalStateException if
+                // the deflater is closed
+                def.reset();
+            }
+
+            // repeat the test with the other constructor
+            for (boolean syncFlush : new boolean[] {false, true}) {
+                System.out.println("testing with syncFlush = " + syncFlush);
+                try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                     DeflaterOutputStream dos = new DeflaterOutputStream(bos, def, 1024, syncFlush)) {
+                    dos.write(data);
+                }
+                // verify the deflater wasn't closed - reset() will throw IllegalStateException if
+                // the deflater is closed
+                def.reset();
+            }
+        }
+    }
+
     public static void realMain(String[] args) throws Throwable {
         WriteCloseRead();
         WriteFlushRead();
@@ -300,6 +402,8 @@ public class InflateIn_DeflateOut {
         GZWriteFlushRead();
         GZLineOrientedProtocol();
         TestFlushableGZIPOutputStream();
+        inflaterInputStreamInflaterNotClosed();
+        deflaterOutputStreamDeflaterNotClosed();
     }
 
     //--------------------- Infrastructure ---------------------------
