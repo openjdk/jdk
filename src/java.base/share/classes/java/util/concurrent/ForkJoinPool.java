@@ -3437,7 +3437,7 @@ public class ForkJoinPool extends AbstractExecutorService
     // Support for delayed tasks
 
     /**
-     *  Creates and starts Delayscheduler
+     *  Creates and starts DelayScheduler
      */
     private DelayScheduler startDelayScheduler() {
         DelayScheduler ds;
@@ -3604,6 +3604,15 @@ public class ForkJoinPool extends AbstractExecutorService
      * <p>If any execution of this task takes longer than its period, then
      * subsequent executions may start late, but will not concurrently
      * execute.
+     * @param command the task to execute
+     * @param initialDelay the time to delay first execution
+     * @param period the period between successive executions
+     * @param unit the time unit of the initialDelay and period parameters
+     * @return a ForkJoinTask implementing the ScheduledFuture
+     *         interface.  The future's {@link Future#get() get()}
+     *         method will never return normally, and will throw an
+     *         exception upon task cancellation or abnormal
+     *         termination of a task execution.
      * @throws RejectedExecutionException if the pool is shutdown or
      *         submission encounters resource exhaustion.
      * @throws NullPointerException if command or unit is null
@@ -3644,6 +3653,16 @@ public class ForkJoinPool extends AbstractExecutorService
      * Subsequent executions are suppressed.  Subsequent calls to
      * {@link Future#isDone isDone()} on the returned future will
      * return {@code true}.
+     * @param command the task to execute
+     * @param initialDelay the time to delay first execution
+     * @param delay the delay between the termination of one
+     * execution and the commencement of the next
+     * @param unit the time unit of the initialDelay and delay parameters
+     * @return a ForkJoinTask implementing the ScheduledFuture
+     *         interface.  The future's {@link Future#get() get()}
+     *         method will never return normally, and will throw an
+     *         exception upon task cancellation or abnormal
+     *         termination of a task execution.
      * @throws RejectedExecutionException if the pool is shutdown or
      *         submission encounters resource exhaustion.
      * @throws NullPointerException if command or unit is null
@@ -3667,11 +3686,13 @@ public class ForkJoinPool extends AbstractExecutorService
      * Body of a ScheduledForkJoinTask serving to cancel another task on timeout
      */
     static final class CancelAction implements Runnable {
-        Future<?> task; // set after construction
+        Future<?> task; // set after construction; nulled after use
         public void run() {
             Future<?> t;
-            if ((t = task) != null)
+            if ((t = task) != null) {
+                task = null;
                 t.cancel(true);
+            }
         }
     }
 

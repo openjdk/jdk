@@ -43,7 +43,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * An add-on for ForkJoinPools that provides scheduling for
  * delayed and periodic tasks
  */
-@jdk.internal.vm.annotation.Contended()
 final class DelayScheduler extends Thread {
 
     /*
@@ -86,12 +85,12 @@ final class DelayScheduler extends Thread {
      * terminating.
      *
      * The implementation is designed to accommodate usages in which
-     * many or even most tasks are cancelled before executing (mainly
-     * IO-based timeouts). The use of a 4-ary heap (in which each
-     * element has up to 4 children) improves locality and reduces
-     * movement and memory writes compared to a standard binary heap,
-     * at the expense of more expensive replace() operations.
-     * (Overall, about half the writes but twice the reads).
+     * many or even most tasks are cancelled before executing (which
+     * is typical with IO-based timeouts). The use of a 4-ary heap (in
+     * which each element has up to 4 children) improves locality and
+     * reduces movement and memory writes compared to a standard
+     * binary heap, at the expense of more expensive replace()
+     * operations (with about half the writes but twice the reads).
      * Especially in the presence of cancellations, this is often
      * faster because the replace method removes any cancelled tasks
      * seen while performing sift-down operations, in which case these
@@ -114,11 +113,13 @@ final class DelayScheduler extends Thread {
      * be a lag setting their status).
      */
 
-    private ForkJoinPool pool;       // read once and detached upon starting
-    volatile ScheduledForkJoinTask<?> pending; // for submitted adds and removes
+    ForkJoinPool pool;               // read once and detached upon starting
+    volatile ScheduledForkJoinTask<?> pending; // submitted adds and removes
     volatile int active;             // 0: inactive, -1: stopped, +1: running
     int restingSize;                 // written only before parking
-    private volatile int cancelDelayedTasksOnShutdown; // policy control
+    volatile int cancelDelayedTasksOnShutdown; // policy control
+    // reduce trailing false sharing
+    int pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7, pad8, pad9, padA;
 
     private static final int INITIAL_HEAP_CAPACITY = 1 << 6;
     private static final int POOL_STOPPING = 1; // must match ForkJoinPool
@@ -242,7 +243,7 @@ final class DelayScheduler extends Thread {
                         t.nextPending = null;
                     if (i >= 0) {
                         t.heapIndex = -1;
-                        if (i < n && i < cap && h[i] == t)
+                        if (i < cap && h[i] == t)
                             n = replace(h, i, n);
                     }
                     else if (stat >= 0) {
@@ -311,7 +312,7 @@ final class DelayScheduler extends Thread {
     /**
      * Tries to reallocate the heap array, returning null on failure
      */
-    private ScheduledForkJoinTask<?>[] growHeap(ScheduledForkJoinTask<?>[] h) {
+    private static ScheduledForkJoinTask<?>[] growHeap(ScheduledForkJoinTask<?>[] h) {
         int cap, newCap;
         ScheduledForkJoinTask<?>[] nh = null;
         if (h != null && (cap = h.length) < (newCap = cap << 1)) {
@@ -423,7 +424,7 @@ final class DelayScheduler extends Thread {
         return -1;
     }
 
-    private void cancelAll(ScheduledForkJoinTask<?>[] h, int n) {
+    private static void cancelAll(ScheduledForkJoinTask<?>[] h, int n) {
         if (h != null && h.length >= n) {
             ScheduledForkJoinTask<?> t;
             for (int i = 0; i < n; ++i) {
@@ -443,9 +444,9 @@ final class DelayScheduler extends Thread {
     static final class ScheduledForkJoinTask<T>
         extends ForkJoinTask.InterruptibleTask<T>
         implements ScheduledFuture<T> {
-        final ForkJoinPool pool;   // must be nonnull unless uncancellable
-        final Runnable runnable;   // only one of runnable or callable nonnull
-        final Callable<? extends T> callable;
+        ForkJoinPool pool;         // nulled out after use
+        Runnable runnable;         // at most one of runnable or callable nonnull
+        Callable<? extends T> callable;
         T result;
         ScheduledForkJoinTask<?> nextPending; // for DelayScheduler pending queue
         long when;                  // nanoTime-based trigger time
@@ -458,7 +459,7 @@ final class DelayScheduler extends Thread {
          * @param delay initial delay, in nanoseconds
          * @param nextDelay 0 for one-shot, negative for fixed delay,
          *        positive for fixed rate, in nanoseconds
-         * @param isImmediate if (Runnabke) action is to be performed
+         * @param isImmediate if action is to be performed
          *        by scheduler versus submitting to a WorkQueue
          * @param runnable action (null if implementing callable version)
          * @param callable function (null if implementing runnable versions)
@@ -478,14 +479,16 @@ final class DelayScheduler extends Thread {
         }
 
         public void schedule() { // relay to pool, to allow independent use
-            pool.scheduleDelayedTask(this);
+            ForkJoinPool p;
+            if ((p = pool) != null) // else already run
+                p.scheduleDelayedTask(this);
         }
 
-        // ForkJoinTask methods
+        // InterruptibleTask methods
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { result = v; }
+        final Object adaptee() { return (runnable != null) ? runnable : callable; }
 
-        // InterruptibleTask methods
         final T compute() throws Exception {
             Callable<? extends T> c; Runnable r;
             T res = null;
@@ -512,16 +515,18 @@ final class DelayScheduler extends Thread {
                 }
                 trySetCancelled();       // pool is shutdown
             }
+            pool = null;                 // reduce memory retention
+            runnable = null;
+            callable = null;
             return true;
         }
 
         public final boolean cancel(boolean mayInterruptIfRunning) {
-            int s; boolean isCancelled;
+            int s; Thread t; ForkJoinPool p; DelayScheduler ds;
             if ((s = trySetCancelled()) < 0)
-                isCancelled = ((s & (ABNORMAL | THROWN)) == ABNORMAL);
-            else {
-                Thread t; ForkJoinPool p; DelayScheduler ds;
-                isCancelled = true;
+                return ((s & (ABNORMAL | THROWN)) == ABNORMAL);
+            if ((p = pool) != null) {      // not already disabled
+                pool = null;
                 if ((t = runner) != null) {
                     if (mayInterruptIfRunning) {
                         try {
@@ -530,14 +535,17 @@ final class DelayScheduler extends Thread {
                         }
                     }
                 }
-                else if (heapIndex >= 0 && nextPending == null &&
-                         (p = pool) != null && (ds = p.delayScheduler) != null)
-                    ds.pend(this);         // for heap cleanup
+                else {
+                    runnable = null;
+                    callable = null;
+                    if (heapIndex >= 0 && nextPending == null &&
+                        (ds = p.delayScheduler) != null)
+                        ds.pend(this);      // for heap cleanup
+                }
             }
-            return isCancelled;
+            return true;
         }
 
-        final Object adaptee() { return (runnable != null) ? runnable : callable; }
 
         // ScheduledFuture methods
         public final long getDelay(TimeUnit unit) {

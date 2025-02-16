@@ -590,4 +590,23 @@ public class ForkJoinPool20Test extends JSR166TestCase {
         assertFalse(task.isCancelled());
     }
 
+    /**
+     * A delayed task completes (possibly abnormally) if shutdown after
+     * calling cancelDelayedTasksOnShutdown()
+     */
+    public void testCancelDelayedTasksOnShutdown() throws Exception {
+        final ForkJoinPool p = new ForkJoinPool(2);
+        p.cancelDelayedTasksOnShutdown();
+        try (PoolCleaner cleaner = cleaner(p)) {
+            Callable<Boolean> task = new CheckedCallable<>() {
+                public Boolean realCall() {
+                    return Boolean.TRUE;
+                }};
+            Future<Boolean> f = p.schedule(task, LONGER_DELAY_MS, MILLISECONDS);
+            p.shutdown();
+            assertTrue(p.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
+            assertTrue(f.isDone());
+        }
+    }
+
 }

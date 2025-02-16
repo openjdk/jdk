@@ -1654,7 +1654,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             }
             return postExec();
         }
-        boolean postExec() { // returns completion status to doExec
+        boolean postExec() { // cleanup and return completion status to doExec
             return true;
         }
         public boolean cancel(boolean mayInterruptIfRunning) {
@@ -1865,8 +1865,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     @SuppressWarnings("serial") // Conditionally serializable
     static final class CallableWithCanceller<T> extends InterruptibleTask<T> {
-        final Callable<? extends T> callable;
-        final ForkJoinTask<?> canceller;
+        Callable<? extends T> callable; // nulled out after use
+        ForkJoinTask<?> canceller;
         T result;
         CallableWithCanceller(Callable<? extends T> callable,
                               ForkJoinTask<?> canceller) {
@@ -1875,16 +1875,23 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         }
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { result = v; }
-        final T compute() throws Exception {
-            try {
-                return callable.call();
-            } finally {
-                ForkJoinTask<?> t; // cancel the canceller
-                if ((t = canceller) != null)
-                    t.cancel(false);
-            }
-        }
         final Object adaptee() { return callable; }
+        final T compute() throws Exception {
+            Callable<? extends T> c;
+            return ((c = callable) != null) ? c.call() : null;
+        }
+        final boolean postExec() {       // cancel canceller
+            ForkJoinTask<?> t;
+            callable = null;
+            if ((t = canceller) != null) {
+                canceller = null;
+                try {
+                    t.cancel(false);
+                } catch (Error | RuntimeException ex) {
+                }
+            }
+            return true;
+        }
     }
 
 }
