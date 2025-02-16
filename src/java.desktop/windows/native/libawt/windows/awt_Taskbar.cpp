@@ -131,7 +131,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WTaskbarPeer_setOverlayIcon
         m_Taskbar->SetOverlayIcon((HWND)window, icon, NULL);
         ::DestroyIcon(icon);
     }
-    catch (...) {
+    catch (const std::bad_alloc&) {
         return;
     }
 }
