@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,11 @@ public class InflaterOutputStream extends FilterOutputStream {
      * Creates a new output stream with the specified decompressor and a
      * default buffer size.
      *
+     * @implSpec {@linkplain #close() Closing} the {@code InflaterOutputStream}
+     * will not close the given {@code infl}. After the {@code InflaterOutputStream}
+     * is closed, the caller is responsible for
+     * {@linkplain Inflater#close() closing the Inflater} if it is no longer needed.
+     *
      * @param out output stream to write the uncompressed data to
      * @param infl decompressor ("inflater") for this stream
      * @throws NullPointerException if {@code out} or {@code infl} is null
@@ -94,6 +99,11 @@ public class InflaterOutputStream extends FilterOutputStream {
     /**
      * Creates a new output stream with the specified decompressor and
      * buffer size.
+     *
+     * @implSpec {@linkplain #close() Closing} the {@code InflaterOutputStream}
+     * will not close the given {@code infl}. After the {@code InflaterOutputStream}
+     * is closed, the caller is responsible for
+     * {@linkplain Inflater#close() closing the Inflater} if it is no longer needed.
      *
      * @param out output stream to write the uncompressed data to
      * @param infl decompressor ("inflater") for this stream
@@ -123,6 +133,7 @@ public class InflaterOutputStream extends FilterOutputStream {
      *
      * @throws IOException if an I/O error occurs
      */
+    @Override
     public void close() throws IOException {
         if (!closed) {
             // Complete the uncompressed output
@@ -142,6 +153,7 @@ public class InflaterOutputStream extends FilterOutputStream {
      * @throws IOException if an I/O error occurs or this stream is already
      * closed
      */
+    @Override
     public void flush() throws IOException {
         ensureOpen();
 
@@ -199,6 +211,7 @@ public class InflaterOutputStream extends FilterOutputStream {
      * closed
      * @throws ZipException if a compression (ZIP) format error occurs
      */
+    @Override
     public void write(int b) throws IOException {
         // Write a single byte of data
         wbuf[0] = (byte) b;
@@ -219,6 +232,7 @@ public class InflaterOutputStream extends FilterOutputStream {
      * @throws NullPointerException if {@code b} is null
      * @throws ZipException if a compression (ZIP) format error occurs
      */
+    @Override
     public void write(byte[] b, int off, int len) throws IOException {
         // Sanity checks
         ensureOpen();
