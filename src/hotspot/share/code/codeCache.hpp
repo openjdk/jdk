@@ -28,6 +28,7 @@
 #include "code/codeBlob.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/gcBehaviours.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "memory/allocation.hpp"
 #include "memory/heap.hpp"
 #include "oops/instanceKlass.hpp"
@@ -108,7 +109,8 @@ class CodeCache : AllStatic {
   static double            _last_unloading_time;
   static TruncatedSeq      _unloading_gc_intervals;
   static TruncatedSeq      _unloading_allocation_rates;
-  static volatile bool     _unloading_threshold_gc_requested;
+  static volatile bool     _unloading_gc_requested;
+  static double            _unloading_gc_requested_time;
 
   static ExceptionCache* volatile _exception_cache_purge_list;
 
@@ -128,6 +130,8 @@ class CodeCache : AllStatic {
   static CodeBlob* first_blob(CodeHeap* heap);                // Returns the first CodeBlob on the given CodeHeap
   static CodeBlob* first_blob(CodeBlobType code_blob_type);            // Returns the first CodeBlob of the given type
   static CodeBlob* next_blob(CodeHeap* heap, CodeBlob* cb);   // Returns the next CodeBlob on the given CodeHeap
+
+  static bool try_to_gc(GCCause::Cause cause);
 
  private:
   static size_t bytes_allocated_in_freelists();

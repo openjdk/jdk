@@ -711,7 +711,7 @@ void CodeCache::update_cold_gc_count() {
   size_t used = max - free;
   double gc_interval = time - last_time;
 
-  _unloading_threshold_gc_requested = false;
+  _unloading_gc_requested = false;
   _last_unloading_time = time;
   _last_unloading_used = used;
 
@@ -784,11 +784,9 @@ void CodeCache::gc_on_allocation() {
   size_t max = max_capacity();
   size_t used = max - free;
   double free_ratio = double(free) / double(max);
-  if (free_ratio <= StartAggressiveSweepingAt / 100.0)  {
-    // In case the GC is concurrent, we make sure only one thread requests the GC.
-    if (Atomic::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
+  if (free_ratio <= StartAggressiveSweepingAt / 100.0) {
+    if (try_to_gc(GCCause::_codecache_GC_aggressive)) {
       log_info(codecache)("Triggering aggressive GC due to having only %.3f%% free memory", free_ratio * 100.0);
-      Universe::heap()->collect(GCCause::_codecache_GC_aggressive);
     }
     return;
   }
@@ -811,13 +809,36 @@ void CodeCache::gc_on_allocation() {
   // If code cache has been allocated without any GC at all, let's make sure
   // it is eventually invoked to avoid trouble.
   if (allocated_since_last_ratio > threshold) {
-    // In case the GC is concurrent, we make sure only one thread requests the GC.
-    if (Atomic::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
-      log_info(codecache)("Triggering threshold (%.3f%%) GC due to allocating %.3f%% since last unloading (%.3f%% used -> %.3f%% used)",
-                          threshold * 100.0, allocated_since_last_ratio * 100.0, last_used_ratio * 100.0, used_ratio * 100.0);
-      Universe::heap()->collect(GCCause::_codecache_GC_threshold);
+    if (try_to_gc(GCCause::_codecache_GC_threshold)) {
+       log_info(codecache)("Triggering threshold (%.3f%%) GC due to allocating %.3f%% since last unloading (%.3f%% used -> %.3f%% used)",
+                           threshold * 100.0, allocated_since_last_ratio * 100.0, last_used_ratio * 100.0, used_ratio * 100.0);
     }
   }
+}
+
+// Try to run the GC, returns whether the attempt has been made.
+// Note: it can return true without having actually run or schedule the GC
+//       for reasons that depend on GC implementation
+bool CodeCache::try_to_gc(GCCause::Cause cause) {
+  double time = os::elapsedTime();
+  double elapsed_since_last_gc_request = time - _unloading_gc_requested_time;
+
+  // For different reasons, we don't have any guarantee that the GC implementation
+  // will reset our flag correctly which may prevent future GC requests.
+  // In order to avoid that, automatically reset it after a fixed delay of 250ms.
+  if (elapsed_since_last_gc_request > 0.25 && _unloading_gc_requested) {
+    log_debug(codecache)("Previous GC request has not been reset after %fs, ", elapsed_since_last_gc_request);
+    Atomic::cmpxchg(&_unloading_gc_requested, true, false);
+  }
+
+  // In case the GC is concurrent, we make sure only one thread requests the GC.
+  if (Atomic::cmpxchg(&_unloading_gc_requested, false, true) == false) {
+    Universe::heap()->collect(cause);
+    _unloading_gc_requested_time = time;
+    return true;
+  }
+
+  return false;
 }
 
 // We initialize the _gc_epoch to 2, because previous_completed_gc_marking_cycle
@@ -832,7 +853,8 @@ uint64_t CodeCache::_cold_gc_count = INT_MAX;
 
 double CodeCache::_last_unloading_time = 0.0;
 size_t CodeCache::_last_unloading_used = 0;
-volatile bool CodeCache::_unloading_threshold_gc_requested = false;
+volatile bool CodeCache::_unloading_gc_requested = false;
+double CodeCache::_unloading_gc_requested_time = 0;
 TruncatedSeq CodeCache::_unloading_gc_intervals(10 /* samples */);
 TruncatedSeq CodeCache::_unloading_allocation_rates(10 /* samples */);
 
