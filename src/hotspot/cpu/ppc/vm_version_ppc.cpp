@@ -64,14 +64,6 @@ void VM_Version::initialize() {
       FLAG_SET_ERGO(PowerArchitecturePPC64, 10);
     } else if (VM_Version::has_darn()) {
       FLAG_SET_ERGO(PowerArchitecturePPC64, 9);
-    } else if (VM_Version::has_lqarx()) {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 8);
-    } else if (VM_Version::has_popcntw()) {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 7);
-    } else if (VM_Version::has_cmpb()) {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 6);
-    } else if (VM_Version::has_popcntb()) {
-      FLAG_SET_ERGO(PowerArchitecturePPC64, 5);
     } else {
       FLAG_SET_ERGO(PowerArchitecturePPC64, 0);
     }
@@ -81,10 +73,6 @@ void VM_Version::initialize() {
   switch (PowerArchitecturePPC64) {
     case 10: if (!VM_Version::has_brw()    ) break;
     case  9: if (!VM_Version::has_darn()   ) break;
-    case  8: if (!VM_Version::has_lqarx()  ) break;
-    case  7: if (!VM_Version::has_popcntw()) break;
-    case  6: if (!VM_Version::has_cmpb()   ) break;
-    case  5: if (!VM_Version::has_popcntb()) break;
     case  0: PowerArchitecturePPC64_ok = true; break;
     default: break;
   }
@@ -92,9 +80,7 @@ void VM_Version::initialize() {
             "%zu on this machine", PowerArchitecturePPC64);
 
   // Power 8: Configure Data Stream Control Register.
-  if (PowerArchitecturePPC64 >= 8 && has_mfdscr()) {
-    config_dscr();
-  }
+  config_dscr();
 
   if (!UseSIGTRAP) {
     MSG(TrapBasedICMissChecks);
@@ -109,26 +95,16 @@ void VM_Version::initialize() {
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
   }
 
-  // Power7 and later.
-  if (PowerArchitecturePPC64 > 6) {
-    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+  if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       FLAG_SET_ERGO(UsePopCountInstruction, true);
-    }
   }
 
   if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
     FLAG_SET_ERGO(ConditionalMoveLimit, 0);
   }
 
-  if (PowerArchitecturePPC64 >= 8) {
-    if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
+  if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
       FLAG_SET_ERGO(SuperwordUseVSX, true);
-    }
-  } else {
-    if (SuperwordUseVSX) {
-      warning("SuperwordUseVSX specified, but needs at least Power8.");
-      FLAG_SET_DEFAULT(SuperwordUseVSX, false);
-    }
   }
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
   if (FLAG_IS_DEFAULT(AlignVector)) {
@@ -202,12 +178,12 @@ void VM_Version::initialize() {
                (has_fsqrt()   ? " fsqrt"   : ""),
                (has_isel()    ? " isel"    : ""),
                (has_lxarxeh() ? " lxarxeh" : ""),
-               (has_cmpb()    ? " cmpb"    : ""),
-               (has_popcntb() ? " popcntb" : ""),
-               (has_popcntw() ? " popcntw" : ""),
+               "cmpb",
+               "popcntb",
+               "popcntw",
                (has_fcfids()  ? " fcfids"  : ""),
                (has_vand()    ? " vand"    : ""),
-               (has_lqarx()   ? " lqarx"   : ""),
+               "lqarx",
                (has_vcipher() ? " aes"     : ""),
                (has_vpmsumb() ? " vpmsumb" : ""),
                (has_mfdscr()  ? " mfdscr"  : ""),
@@ -364,12 +340,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (UseSecondarySupersTable && PowerArchitecturePPC64 < 7) {
-    if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
-      warning("UseSecondarySupersTable requires Power7 or later.");
-    }
-    FLAG_SET_DEFAULT(UseSecondarySupersTable, false);
-  }
 
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
