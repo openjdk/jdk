@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -235,9 +235,10 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
       # Additional warnings that are not activated by -Wall and -Wextra
-      WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wreturn-type -Wsign-compare \
-          -Wtrampolines -Wundef -Wunused-const-variable=1 -Wunused-function \
-          -Wunused-result -Wunused-value -Wtype-limits -Wuninitialized"
+      WARNINGS_ENABLE_ADDITIONAL="-Winvalid-pch -Wpointer-arith -Wreturn-type \
+          -Wsign-compare -Wtrampolines -Wtype-limits -Wundef -Wuninitialized \
+          -Wunused-const-variable=1 -Wunused-function -Wunused-result \
+          -Wunused-value"
       WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder"
       WARNINGS_ENABLE_ALL_CFLAGS="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
@@ -277,7 +278,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
 [
   # bounds, memory and behavior checking options
-  if test "x$TOOLCHAIN_TYPE" = xgcc; then
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     case $DEBUG_LEVEL in
     release )
       # no adjustment
@@ -346,7 +347,7 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG="-Od"
     C_O_FLAG_DEBUG_JVM=""
     C_O_FLAG_NONE="-Od"
-    C_O_FLAG_SIZE="-Os"
+    C_O_FLAG_SIZE="-O1"
   fi
 
   # Now copy to C++ flags
@@ -516,12 +517,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
         -fvisibility=hidden -fno-strict-aliasing -fno-omit-frame-pointer"
   fi
 
-  if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
-    # clang compiler on aix needs -ffunction-sections
-    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -ftls-model -fno-math-errno -fstack-protector"
-    TOOLCHAIN_CFLAGS_JDK="-ffunction-sections -fsigned-char -fstack-protector"
-  fi
-
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -fstack-protector"
     TOOLCHAIN_CFLAGS_JDK="-fvisibility=hidden -pipe -fstack-protector"
@@ -541,7 +536,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # Restrict the debug information created by Clang to avoid
     # too big object files and speed the build up a little bit
     # (see http://llvm.org/bugs/show_bug.cgi?id=7554)
-    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -flimit-debug-info"
+    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -flimit-debug-info -fstack-protector"
 
     # In principle the stack alignment below is cpu- and ABI-dependent and
     # should agree with values of StackAlignmentInBytes in various
@@ -559,13 +554,19 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
       TOOLCHAIN_CFLAGS_JDK="-pipe"
       TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing" # technically NOT for CXX
     fi
-    TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -fvisibility=hidden"
+
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+      TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -ftls-model -fno-math-errno"
+      TOOLCHAIN_CFLAGS_JDK="-ffunction-sections -fsigned-char"
+    fi
+
+    TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -fvisibility=hidden -fstack-protector"
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # The -utf-8 option sets source and execution character sets to UTF-8 to enable correct
     # compilation of all source files regardless of the active code page on Windows.
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:inline -permissive- -utf-8 -MP"
-    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:inline -permissive- -utf-8 -Zc:wchar_t-"
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -utf-8 -MP"
+    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -utf-8 -Zc:wchar_t-"
   fi
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)
@@ -736,6 +737,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         # for all archs except arm and ppc, prevent gcc to omit frame pointer
         $1_CFLAGS_CPU_JDK="${$1_CFLAGS_CPU_JDK} -fno-omit-frame-pointer"
       fi
+      if test "x$FLAGS_CPU" = xppc64le; then
+        # Little endian machine uses ELFv2 ABI.
+        # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
+        $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -DABI_ELFv2 -mcpu=power8 -mtune=power8"
+      fi
     fi
     if test "x$OPENJDK_TARGET_OS" = xaix; then
       $1_CFLAGS_CPU="-mcpu=pwr8"
@@ -829,6 +835,22 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   AC_SUBST(FILE_MACRO_CFLAGS)
 
   FLAGS_SETUP_BRANCH_PROTECTION
+
+  if test "x$FLAGS_CPU" = xriscv64; then
+    AC_MSG_CHECKING([if RVV/vector sigcontext supported])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <linux/ptrace.h>],
+        [
+          return (int)sizeof(struct __riscv_v_ext_state);
+        ])],
+        [
+          AC_MSG_RESULT([yes])
+        ],
+        [
+          $1_DEFINES_CPU_JVM="${$1_DEFINES_CPU_JVM} -DNO_RVV_SIGCONTEXT"
+          AC_MSG_RESULT([no])
+        ]
+    )
+  fi
 
   # EXPORT to API
   CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM \

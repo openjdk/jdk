@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,9 +102,6 @@ inline int g_isnan(jdouble f)                    { return _isnan(f); }
 
 inline int g_isfinite(jfloat  f)                 { return _finite(f); }
 inline int g_isfinite(jdouble f)                 { return _finite(f); }
-
-// Formatting.
-#define FORMAT64_MODIFIER "ll"
 
 #define offset_of(klass,field) offsetof(klass,field)
 

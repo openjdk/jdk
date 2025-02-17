@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciTypeFlow.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "libadt/dict.hpp"
 #include "memory/oopFactory.hpp"
@@ -35,13 +35,17 @@
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"
+#include "opto/callnode.hpp"
+#include "opto/arraycopynode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/runtime.hpp"
 #include "opto/type.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
+#include "runtime/stubRoutines.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -102,6 +106,9 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Abio,            T_ILLEGAL,    "abIO",          false, 0,                    relocInfo::none          },  // Abio
   { Return_Address,  T_ADDRESS,    "return_address",false, Op_RegP,              relocInfo::none          },  // Return_Address
   { Memory,          T_ILLEGAL,    "memory",        false, 0,                    relocInfo::none          },  // Memory
+  { HalfFloatBot,    T_SHORT,      "halffloat_top", false, Op_RegF,              relocInfo::none          },  // HalfFloatTop
+  { HalfFloatCon,    T_SHORT,      "hfcon:",        false, Op_RegF,              relocInfo::none          },  // HalfFloatCon
+  { HalfFloatTop,    T_SHORT,      "short",         false, Op_RegF,              relocInfo::none          },  // HalfFloatBot
   { FloatBot,        T_FLOAT,      "float_top",     false, Op_RegF,              relocInfo::none          },  // FloatTop
   { FloatCon,        T_FLOAT,      "ftcon:",        false, Op_RegF,              relocInfo::none          },  // FloatCon
   { FloatTop,        T_FLOAT,      "float",         false, Op_RegF,              relocInfo::none          },  // FloatBot
@@ -131,6 +138,7 @@ const Type *Type::ABIO;         // State-of-machine only
 const Type *Type::BOTTOM;       // All values
 const Type *Type::CONTROL;      // Control only
 const Type *Type::DOUBLE;       // All doubles
+const Type *Type::HALF_FLOAT;   // All half floats
 const Type *Type::FLOAT;        // All floats
 const Type *Type::HALF;         // Placeholder half of doublewide type
 const Type *Type::MEMORY;       // Abstract store only
@@ -451,6 +459,7 @@ void Type::Initialize_shared(Compile* current) {
   ABIO    = make(Abio);         // State-of-machine only
   RETURN_ADDRESS=make(Return_Address);
   FLOAT   = make(FloatBot);     // All floats
+  HALF_FLOAT = make(HalfFloatBot); // All half floats
   DOUBLE  = make(DoubleBot);    // All doubles
   BOTTOM  = make(Bottom);       // Everything
   HALF    = make(Half);         // Placeholder half of doublewide type
@@ -461,6 +470,13 @@ void Type::Initialize_shared(Compile* current) {
   TypeF::ONE  = TypeF::make(1.0); // Float 1
   TypeF::POS_INF = TypeF::make(jfloat_cast(POSITIVE_INFINITE_F));
   TypeF::NEG_INF = TypeF::make(-jfloat_cast(POSITIVE_INFINITE_F));
+
+  TypeH::MAX = TypeH::make(max_jfloat16); // HalfFloat MAX
+  TypeH::MIN = TypeH::make(min_jfloat16); // HalfFloat MIN
+  TypeH::ZERO = TypeH::make((jshort)0); // HalfFloat 0 (positive zero)
+  TypeH::ONE  = TypeH::make(one_jfloat16); // HalfFloat 1
+  TypeH::POS_INF = TypeH::make(pos_inf_jfloat16);
+  TypeH::NEG_INF = TypeH::make(neg_inf_jfloat16);
 
   TypeD::MAX = TypeD::make(max_jdouble); // Double MAX
   TypeD::MIN = TypeD::make(min_jdouble); // Double MIN
@@ -582,6 +598,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeAryPtr::_array_interfaces = TypeInterfaces::make(&array_interfaces);
   TypeAryKlassPtr::_array_interfaces = TypeAryPtr::_array_interfaces;
 
+  TypeAryPtr::BOTTOM = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(Type::BOTTOM, TypeInt::POS), nullptr, false, Type::OffsetBot);
   TypeAryPtr::RANGE   = TypeAryPtr::make( TypePtr::BotPTR, TypeAry::make(Type::BOTTOM,TypeInt::POS), nullptr /* current->env()->Object_klass() */, false, arrayOopDesc::length_offset_in_bytes());
 
   TypeAryPtr::NARROWOOPS = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(TypeNarrowOop::BOTTOM, TypeInt::POS), nullptr /*ciArrayKlass::make(o)*/,  false,  Type::OffsetBot);
@@ -709,6 +726,10 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_VecX] = TypeVect::VECTX;
   mreg2type[Op_VecY] = TypeVect::VECTY;
   mreg2type[Op_VecZ] = TypeVect::VECTZ;
+
+  LockNode::initialize_lock_Type();
+  ArrayCopyNode::initialize_arraycopy_Type();
+  OptoRuntime::initialize_types();
 
   // Restore working type arena.
   current->set_type_arena(save);
@@ -1032,6 +1053,7 @@ const Type *Type::xmeet( const Type *t ) const {
 
   // Cut in half the number of cases I must handle.  Only need cases for when
   // the given enum "t->type" is less than or equal to the local enum "type".
+  case HalfFloatCon:
   case FloatCon:
   case DoubleCon:
   case Int:
@@ -1067,19 +1089,30 @@ const Type *Type::xmeet( const Type *t ) const {
   case Bottom:                  // Ye Olde Default
     return t;
 
+  case HalfFloatTop:
+    if (_base == HalfFloatTop) { return this; }
+  case HalfFloatBot:            // Half Float
+    if (_base == HalfFloatBot || _base == HalfFloatTop) { return HALF_FLOAT; }
+    if (_base == FloatBot || _base == FloatTop) { return Type::BOTTOM; }
+    if (_base == DoubleTop || _base == DoubleBot) { return Type::BOTTOM; }
+    typerr(t);
+    return Type::BOTTOM;
+
   case FloatTop:
-    if( _base == FloatTop ) return this;
+    if (_base == FloatTop ) { return this; }
   case FloatBot:                // Float
-    if( _base == FloatBot || _base == FloatTop ) return FLOAT;
-    if( _base == DoubleTop || _base == DoubleBot ) return Type::BOTTOM;
+    if (_base == FloatBot || _base == FloatTop) { return FLOAT; }
+    if (_base == HalfFloatTop || _base == HalfFloatBot) { return Type::BOTTOM; }
+    if (_base == DoubleTop || _base == DoubleBot) { return Type::BOTTOM; }
     typerr(t);
     return Type::BOTTOM;
 
   case DoubleTop:
-    if( _base == DoubleTop ) return this;
+    if (_base == DoubleTop) { return this; }
   case DoubleBot:               // Double
-    if( _base == DoubleBot || _base == DoubleTop ) return DOUBLE;
-    if( _base == FloatTop || _base == FloatBot ) return Type::BOTTOM;
+    if (_base == DoubleBot || _base == DoubleTop) { return DOUBLE; }
+    if (_base == HalfFloatTop || _base == HalfFloatBot) { return Type::BOTTOM; }
+    if (_base == FloatTop || _base == FloatBot) { return Type::BOTTOM; }
     typerr(t);
     return Type::BOTTOM;
 
@@ -1087,7 +1120,7 @@ const Type *Type::xmeet( const Type *t ) const {
   case Control:                 // Control of code
   case Abio:                    // State of world outside of program
   case Memory:
-    if( _base == t->_base )  return this;
+    if (_base == t->_base)  { return this; }
     typerr(t);
     return Type::BOTTOM;
 
@@ -1167,6 +1200,7 @@ bool Type::empty(void) const {
   switch (_base) {
   case DoubleTop:
   case FloatTop:
+  case HalfFloatTop:
   case Top:
     return true;
 
@@ -1175,6 +1209,7 @@ bool Type::empty(void) const {
   case Return_Address:
   case Memory:
   case Bottom:
+  case HalfFloatBot:
   case FloatBot:
   case DoubleBot:
     return false;  // never a singleton, therefore never empty
@@ -1222,6 +1257,9 @@ Type::Category Type::category() const {
     case Type::AryKlassPtr:
     case Type::Function:
     case Type::Return_Address:
+    case Type::HalfFloatTop:
+    case Type::HalfFloatCon:
+    case Type::HalfFloatBot:
     case Type::FloatTop:
     case Type::FloatCon:
     case Type::FloatBot:
@@ -1327,6 +1365,9 @@ const Type *TypeF::xmeet( const Type *t ) const {
   case NarrowKlass:
   case Int:
   case Long:
+  case HalfFloatTop:
+  case HalfFloatCon:
+  case HalfFloatBot:
   case DoubleTop:
   case DoubleCon:
   case DoubleBot:
@@ -1407,6 +1448,138 @@ bool TypeF::empty(void) const {
 
 //=============================================================================
 // Convenience common pre-built types.
+const TypeH* TypeH::MAX;        // Half float max
+const TypeH* TypeH::MIN;        // Half float min
+const TypeH* TypeH::ZERO;       // Half float zero
+const TypeH* TypeH::ONE;        // Half float one
+const TypeH* TypeH::POS_INF;    // Half float positive infinity
+const TypeH* TypeH::NEG_INF;    // Half float negative infinity
+
+//------------------------------make-------------------------------------------
+// Create a halffloat constant
+const TypeH* TypeH::make(short f) {
+  return (TypeH*)(new TypeH(f))->hashcons();
+}
+
+const TypeH* TypeH::make(float f) {
+  assert(StubRoutines::f2hf_adr() != nullptr, "");
+  short hf = StubRoutines::f2hf(f);
+  return (TypeH*)(new TypeH(hf))->hashcons();
+}
+
+//------------------------------xmeet-------------------------------------------
+// Compute the MEET of two types.  It returns a new Type object.
+const Type* TypeH::xmeet(const Type* t) const {
+  // Perform a fast test for common case; meeting the same types together.
+  if (this == t) return this;  // Meeting same type-rep?
+
+  // Current "this->_base" is FloatCon
+  switch (t->base()) {          // Switch on original type
+  case AnyPtr:                  // Mixing with oops happens when javac
+  case RawPtr:                  // reuses local variables
+  case OopPtr:
+  case InstPtr:
+  case AryPtr:
+  case MetadataPtr:
+  case KlassPtr:
+  case InstKlassPtr:
+  case AryKlassPtr:
+  case NarrowOop:
+  case NarrowKlass:
+  case Int:
+  case Long:
+  case FloatTop:
+  case FloatCon:
+  case FloatBot:
+  case DoubleTop:
+  case DoubleCon:
+  case DoubleBot:
+  case Bottom:                  // Ye Olde Default
+    return Type::BOTTOM;
+
+  case HalfFloatBot:
+    return t;
+
+  default:                      // All else is a mistake
+    typerr(t);
+
+  case HalfFloatCon:            // Half float-constant vs Half float-constant?
+    if (_f != t->geth()) {      // unequal constants?
+                                // must compare bitwise as positive zero, negative zero and NaN have
+                                // all the same representation in C++
+      return HALF_FLOAT;        // Return generic float
+    }                           // Equal constants
+  case Top:
+  case HalfFloatTop:
+    break;                      // Return the Half float constant
+  }
+  return this;                  // Return the Half float constant
+}
+
+//------------------------------xdual------------------------------------------
+// Dual: symmetric
+const Type* TypeH::xdual() const {
+  return this;
+}
+
+//------------------------------eq---------------------------------------------
+// Structural equality check for Type representations
+bool TypeH::eq(const Type* t) const {
+  // Bitwise comparison to distinguish between +/-0. These values must be treated
+  // as different to be consistent with C1 and the interpreter.
+  return (_f == t->geth());
+}
+
+//------------------------------hash-------------------------------------------
+// Type-specific hashing function.
+uint TypeH::hash(void) const {
+  return *(jshort*)(&_f);
+}
+
+//------------------------------is_finite--------------------------------------
+// Has a finite value
+bool TypeH::is_finite() const {
+  assert(StubRoutines::hf2f_adr() != nullptr, "");
+  float f = StubRoutines::hf2f(geth());
+  return g_isfinite(f) != 0;
+}
+
+float TypeH::getf() const {
+  assert(StubRoutines::hf2f_adr() != nullptr, "");
+  return StubRoutines::hf2f(geth());
+}
+
+//------------------------------is_nan-----------------------------------------
+// Is not a number (NaN)
+bool TypeH::is_nan() const {
+  assert(StubRoutines::hf2f_adr() != nullptr, "");
+  float f = StubRoutines::hf2f(geth());
+  return g_isnan(f) != 0;
+}
+
+//------------------------------dump2------------------------------------------
+// Dump float constant Type
+#ifndef PRODUCT
+void TypeH::dump2(Dict &d, uint depth, outputStream* st) const {
+  Type::dump2(d,depth, st);
+  st->print("%f", getf());
+}
+#endif
+
+//------------------------------singleton--------------------------------------
+// TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
+// constants (Ldi nodes).  Singletons are integer, half float, float or double constants
+// or a single symbol.
+bool TypeH::singleton(void) const {
+  return true;                  // Always a singleton
+}
+
+bool TypeH::empty(void) const {
+  return false;                 // always exactly a singleton
+}
+
+//=============================================================================
+// Convenience common pre-built types.
 const TypeD *TypeD::MAX;        // Floating point max
 const TypeD *TypeD::MIN;        // Floating point min
 const TypeD *TypeD::ZERO;       // Floating point zero
@@ -1440,6 +1613,9 @@ const Type *TypeD::xmeet( const Type *t ) const {
   case NarrowKlass:
   case Int:
   case Long:
+  case HalfFloatTop:
+  case HalfFloatCon:
+  case HalfFloatBot:
   case FloatTop:
   case FloatCon:
   case FloatBot:
@@ -1636,6 +1812,9 @@ const Type *TypeInt::xmeet( const Type *t ) const {
   case NarrowOop:
   case NarrowKlass:
   case Long:
+  case HalfFloatTop:
+  case HalfFloatCon:
+  case HalfFloatBot:
   case FloatTop:
   case FloatCon:
   case FloatBot:
@@ -1899,6 +2078,9 @@ const Type *TypeLong::xmeet( const Type *t ) const {
   case NarrowOop:
   case NarrowKlass:
   case Int:
+  case HalfFloatTop:
+  case HalfFloatCon:
+  case HalfFloatBot:
   case FloatTop:
   case FloatCon:
   case FloatBot:
@@ -2693,6 +2875,9 @@ const Type *TypePtr::xmeet_helper(const Type *t) const {
   switch (t->base()) {          // switch on original type
   case Int:                     // Mixing ints & oops happens when javac
   case Long:                    // reuses local variables
+  case HalfFloatTop:
+  case HalfFloatCon:
+  case HalfFloatBot:
   case FloatTop:
   case FloatCon:
   case FloatBot:
@@ -3632,6 +3817,9 @@ const Type *TypeOopPtr::xmeet_helper(const Type *t) const {
 
   case Int:                     // Mixing ints & oops happens when javac
   case Long:                    // reuses local variables
+  case HalfFloatTop:
+  case HalfFloatCon:
+  case HalfFloatBot:
   case FloatTop:
   case FloatCon:
   case FloatBot:
@@ -4200,6 +4388,9 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
 
   case Int:                     // Mixing ints & oops happens when javac
   case Long:                    // reuses local variables
+  case HalfFloatTop:
+  case HalfFloatCon:
+  case HalfFloatBot:
   case FloatTop:
   case FloatCon:
   case FloatBot:
@@ -4682,16 +4873,17 @@ bool TypeAryKlassPtr::is_meet_subtype_of_helper(const TypeKlassPtr *other, bool 
 
 //=============================================================================
 // Convenience common pre-built types.
-const TypeAryPtr *TypeAryPtr::RANGE;
-const TypeAryPtr *TypeAryPtr::OOPS;
-const TypeAryPtr *TypeAryPtr::NARROWOOPS;
-const TypeAryPtr *TypeAryPtr::BYTES;
-const TypeAryPtr *TypeAryPtr::SHORTS;
-const TypeAryPtr *TypeAryPtr::CHARS;
-const TypeAryPtr *TypeAryPtr::INTS;
-const TypeAryPtr *TypeAryPtr::LONGS;
-const TypeAryPtr *TypeAryPtr::FLOATS;
-const TypeAryPtr *TypeAryPtr::DOUBLES;
+const TypeAryPtr* TypeAryPtr::BOTTOM;
+const TypeAryPtr* TypeAryPtr::RANGE;
+const TypeAryPtr* TypeAryPtr::OOPS;
+const TypeAryPtr* TypeAryPtr::NARROWOOPS;
+const TypeAryPtr* TypeAryPtr::BYTES;
+const TypeAryPtr* TypeAryPtr::SHORTS;
+const TypeAryPtr* TypeAryPtr::CHARS;
+const TypeAryPtr* TypeAryPtr::INTS;
+const TypeAryPtr* TypeAryPtr::LONGS;
+const TypeAryPtr* TypeAryPtr::FLOATS;
+const TypeAryPtr* TypeAryPtr::DOUBLES;
 
 //------------------------------make-------------------------------------------
 const TypeAryPtr *TypeAryPtr::make(PTR ptr, const TypeAry *ary, ciKlass* k, bool xk, int offset,
@@ -4876,6 +5068,9 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
   // Mixing ints & oops happens when javac reuses local variables
   case Int:
   case Long:
+  case HalfFloatTop:
+  case HalfFloatCon:
+  case HalfFloatBot:
   case FloatTop:
   case FloatCon:
   case FloatBot:
@@ -5305,6 +5500,9 @@ const Type *TypeNarrowPtr::xmeet( const Type *t ) const {
 
   case Int:                     // Mixing ints & oops happens when javac
   case Long:                    // reuses local variables
+  case HalfFloatTop:
+  case HalfFloatCon:
+  case HalfFloatBot:
   case FloatTop:
   case FloatCon:
   case FloatBot:
@@ -5460,6 +5658,9 @@ const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
 
   case Int:                     // Mixing ints & oops happens when javac
   case Long:                    // reuses local variables
+  case HalfFloatTop:
+  case HalfFloatCon:
+  case HalfFloatBot:
   case FloatTop:
   case FloatCon:
   case FloatBot:
@@ -5834,6 +6035,9 @@ const Type    *TypeInstKlassPtr::xmeet( const Type *t ) const {
 
   case Int:                     // Mixing ints & oops happens when javac
   case Long:                    // reuses local variables
+  case HalfFloatTop:
+  case HalfFloatCon:
+  case HalfFloatBot:
   case FloatTop:
   case FloatCon:
   case FloatBot:
@@ -6258,6 +6462,9 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
 
   case Int:                     // Mixing ints & oops happens when javac
   case Long:                    // reuses local variables
+  case HalfFloatTop:
+  case HalfFloatCon:
+  case HalfFloatBot:
   case FloatTop:
   case FloatCon:
   case FloatBot:
