@@ -1657,20 +1657,24 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         boolean postExec() { // cleanup and return completion status to doExec
             return true;
         }
+        final boolean interruptIfRunning(boolean enabled) {
+             Thread t;
+             if ((t = runner) == null) // return false if not running
+                 return false;
+             if (enabled) {
+                 try {
+                     t.interrupt();
+                 } catch (Throwable ignore) {
+                 }
+             }
+             return true;
+        }
         public boolean cancel(boolean mayInterruptIfRunning) {
-            int s; boolean isCancelled; Thread t;
+            int s;
             if ((s = trySetCancelled()) < 0)
-                isCancelled = ((s & (ABNORMAL | THROWN)) == ABNORMAL);
-            else {
-                isCancelled = true;
-                if (mayInterruptIfRunning && (t = runner) != null) {
-                    try {
-                        t.interrupt();
-                    } catch (Throwable ignore) {
-                    }
-                }
-            }
-            return isCancelled;
+                return ((s & (ABNORMAL | THROWN)) == ABNORMAL);
+            interruptIfRunning(mayInterruptIfRunning);
+            return true;
         }
         public final void run() { quietlyInvoke(); }
         Object adaptee() { return null; } // for printing and diagnostics
@@ -1861,17 +1865,17 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Adapter for Callable-based interruptible tasks with timeouts.
+     * Adapter for Callable-based interruptible tasks with timeout actions.
      */
     @SuppressWarnings("serial") // Conditionally serializable
-    static final class CallableWithCanceller<T> extends InterruptibleTask<T> {
+    static final class CallableWithTimeout<T> extends InterruptibleTask<T> {
         Callable<? extends T> callable; // nulled out after use
-        ForkJoinTask<?> canceller;
+        ForkJoinTask<?> timeoutAction;
         T result;
-        CallableWithCanceller(Callable<? extends T> callable,
-                              ForkJoinTask<?> canceller) {
+        CallableWithTimeout(Callable<? extends T> callable,
+                            ForkJoinTask<?> timeoutAction) {
             this.callable = callable;
-            this.canceller = canceller;
+            this.timeoutAction = timeoutAction;
         }
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { result = v; }
@@ -1880,11 +1884,11 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             Callable<? extends T> c;
             return ((c = callable) != null) ? c.call() : null;
         }
-        final boolean postExec() {       // cancel canceller
+        final boolean postExec() {       // cancel timeout action
             ForkJoinTask<?> t;
             callable = null;
-            if ((t = canceller) != null) {
-                canceller = null;
+            if ((t = timeoutAction) != null) {
+                timeoutAction = null;
                 try {
                     t.cancel(false);
                 } catch (Error | RuntimeException ex) {

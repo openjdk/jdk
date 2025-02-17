@@ -573,7 +573,7 @@ public class ForkJoinPool20Test extends JSR166TestCase {
         Callable<Boolean> c = new Callable<Boolean>() {
             public Boolean call() throws Exception {
                 Thread.sleep(LONGER_DELAY_MS); return Boolean.TRUE; }};
-        ForkJoinTask<?> task = p.submitWithTimeout(c, 1, NANOSECONDS);
+        ForkJoinTask<?> task = p.submitWithTimeout(c, 1, NANOSECONDS, null);
         Thread.sleep(timeoutMillis());
         assertTrue(task.isCancelled());
     }
@@ -585,7 +585,7 @@ public class ForkJoinPool20Test extends JSR166TestCase {
         Callable<Boolean> c = new Callable<Boolean>() {
             public Boolean call() throws Exception {
                 return Boolean.TRUE; }};
-        ForkJoinTask<?> task = p.submitWithTimeout(c, LONGER_DELAY_MS, MILLISECONDS);
+        ForkJoinTask<?> task = p.submitWithTimeout(c, LONGER_DELAY_MS, MILLISECONDS, null);
         Thread.sleep(timeoutMillis());
         assertFalse(task.isCancelled());
     }

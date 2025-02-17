@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
@@ -3683,37 +3684,48 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
-     * Body of a ScheduledForkJoinTask serving to cancel another task on timeout
+     * Body of a task performed on timeout of another task
      */
-    static final class CancelAction implements Runnable {
-        Future<?> task; // set after construction; nulled after use
+    static final class TimeoutAction<V> implements Runnable {
+        // set after construction, nulled after use
+        ForkJoinTask.CallableWithTimeout<V> task;
+        Consumer<ForkJoinTask<V>> action;
+        TimeoutAction(Consumer<ForkJoinTask<V>> action) {
+            this.action = action;
+        }
         public void run() {
-            Future<?> t;
-            if ((t = task) != null) {
-                task = null;
-                t.cancel(true);
+            ForkJoinTask.CallableWithTimeout<V> t = task;
+            Consumer<ForkJoinTask<V>> a = action;
+            task = null;
+            action = null;
+            if (t != null && t.status >= 0) {
+                if (a == null)
+                    t.cancel(true);
+                else {
+                    a.accept(t);
+                    t.interruptIfRunning(true);
+                }
             }
         }
     }
 
     /**
-     * Submits a task executing the given function, cancelling it (via
-     * {@code cancel(true)}) if not completed within the given timeout
-     * period. If you would like to use some other value in the event
-     * of cancellation and/or other errors, you could use a construction
-     * such as the following for a submitted {@code task}.
-     *
-     * <pre> {@code
-     * T result;
-     * try {
-     *  result = task.get();
-     * ) catch (Error | RuntimeException ex) {
-     *    result = replacementValue;
-     * }}}</pre>
+     * Submits a task executing the given function, cancelling or
+     * performing a given timeoutAction if not completed within the
+     * given timeout period. If the optional {@code timeoutAction} is
+     * null, the task is cancelled (via {@code
+     * cancel(true)}. Otherwise, the action is applied and the task is
+     * interrupted if running. Actions may include {@link
+     * ForkJoinTask#complete} to set a replacement value or {@link
+     * ForkJoinTask#completeExceptionally} to throw a {@link
+     * TimeoutException} or related exception.
      *
      * @param callable the function to execute
      * @param <V> the type of the callable's result
      * @param timeout the time to wait before cancelling if not completed
+     * @param timeoutAction if nonnull, an action to perform on
+     * timeout, otherwise the default action is to cancel using {@code
+     * cancel(true)}.
      * @param unit the time unit of the timeout parameter
      * @return a Future that can be used to extract result or cancel
      * @throws RejectedExecutionException if the task cannot be
@@ -3722,16 +3734,17 @@ public class ForkJoinPool extends AbstractExecutorService
      * @since 25
      */
     public <V> ForkJoinTask<V> submitWithTimeout(Callable<V> callable,
-                                                 long timeout, TimeUnit unit) {
-        ForkJoinTask.CallableWithCanceller<V> task; CancelAction onTimeout;
+                                                 long timeout, TimeUnit unit,
+                                                 Consumer<ForkJoinTask<V>> timeoutAction) {
+        ForkJoinTask.CallableWithTimeout<V> task; TimeoutAction<V> onTimeout;
         Objects.requireNonNull(callable);
-        ScheduledForkJoinTask<Void> canceller =
+        ScheduledForkJoinTask<Void> timeoutTask =
             new ScheduledForkJoinTask<Void>(
                 unit.toNanos(timeout), 0L, true,
-                onTimeout = new CancelAction(), null, this);
+                onTimeout = new TimeoutAction<V>(timeoutAction), null, this);
         onTimeout.task = task =
-            new ForkJoinTask.CallableWithCanceller<V>(callable, canceller);
-        scheduleDelayedTask(canceller);
+            new ForkJoinTask.CallableWithTimeout<V>(callable, timeoutTask);
+        scheduleDelayedTask(timeoutTask);
         poolSubmit(true, task);
         return task;
     }

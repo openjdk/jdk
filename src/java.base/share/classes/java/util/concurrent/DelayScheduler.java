@@ -69,7 +69,7 @@ final class DelayScheduler extends Thread {
      * entire list per step to process them as a batch. The pending
      * queue may encounter contention and retries among requesters,
      * but much less so versus the scheduler. It is possible to use
-     * multiple pending queues to reduce this from of contention but
+     * multiple pending queues to reduce this form of contention but
      * it doesn't seem worthwhile even under heavy loads.
      *
      * The implementation relies on the scheduler being a non-virtual
@@ -226,7 +226,7 @@ final class DelayScheduler extends Thread {
      */
     private void loop(ForkJoinPool p) {
         p.onDelaySchedulerStart();
-        ScheduledForkJoinTask<?>[] h =         // initial heap array
+        ScheduledForkJoinTask<?>[] h =         // heap array
             new ScheduledForkJoinTask<?>[INITIAL_HEAP_CAPACITY];
         int cap = h.length, n = 0, prevRunStatus = 0; // n is heap size
         for (;;) {                             // loop until stopped
@@ -525,23 +525,14 @@ final class DelayScheduler extends Thread {
             int s; Thread t; ForkJoinPool p; DelayScheduler ds;
             if ((s = trySetCancelled()) < 0)
                 return ((s & (ABNORMAL | THROWN)) == ABNORMAL);
-            if ((p = pool) != null) {      // not already disabled
+            if ((p = pool) != null &&
+                !interruptIfRunning(mayInterruptIfRunning)) {
                 pool = null;
-                if ((t = runner) != null) {
-                    if (mayInterruptIfRunning) {
-                        try {
-                            t.interrupt();
-                        } catch (Throwable ignore) {
-                        }
-                    }
-                }
-                else {
-                    runnable = null;
-                    callable = null;
-                    if (heapIndex >= 0 && nextPending == null &&
-                        (ds = p.delayScheduler) != null)
-                        ds.pend(this);      // for heap cleanup
-                }
+                runnable = null;
+                callable = null;
+                if (heapIndex >= 0 && nextPending == null &&
+                    (ds = p.delayScheduler) != null)
+                    ds.pend(this);      // for heap cleanup
             }
             return true;
         }
