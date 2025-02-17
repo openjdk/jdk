@@ -1591,6 +1591,13 @@ jfloat Node::getf() const {
   return ((ConFNode*)this)->type()->is_float_constant()->getf();
 }
 
+// Get a half float constant from a ConstNode.
+// Returns the constant if it is a float ConstNode
+jshort Node::geth() const {
+  assert( Opcode() == Op_ConH, "" );
+  return ((ConHNode*)this)->type()->is_half_float_constant()->geth();
+}
+
 #ifndef PRODUCT
 
 // Call this from debugger:
