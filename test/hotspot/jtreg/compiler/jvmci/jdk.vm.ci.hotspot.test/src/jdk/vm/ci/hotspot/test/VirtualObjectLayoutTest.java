@@ -32,7 +32,7 @@
  * @library /compiler/jvmci/jdk.vm.ci.hotspot.test/src
  *          /compiler/jvmci/jdk.vm.ci.code.test/src
  * @run testng/othervm
- *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *      -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler
  *      jdk.vm.ci.hotspot.test.VirtualObjectLayoutTest
  */
 

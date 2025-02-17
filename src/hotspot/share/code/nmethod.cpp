@@ -1216,6 +1216,9 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     DEBUG_ONLY(nm->verify();)
     nm->log_new_nmethod();
   }
+#if INCLUDE_JVMCI
+  JVMCI::installed_code();
+#endif
   return nm;
 }
 

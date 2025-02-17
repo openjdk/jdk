@@ -31,7 +31,7 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
- * @run junit/othervm -da:jdk.vm.ci... -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run junit/othervm -da:jdk.vm.ci... -XX:+UnlockExperimentalVMOptions
  *              -XX:-UseJVMCICompiler compiler.jvmci.errors.TestInvalidDebugInfo
  */
 

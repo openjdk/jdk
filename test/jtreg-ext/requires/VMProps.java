@@ -258,16 +258,6 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if VM supports JVMCI and false otherwise
      */
     protected String vmJvmci() {
-        // builds with jvmci have this flag
-        if (WB.getBooleanVMFlag("EnableJVMCI") == null) {
-            return "false";
-        }
-
-        // Not all GCs have full JVMCI support
-        if (!WB.isJVMCISupportedByGC()) {
-          return "false";
-        }
-
         // Interpreted mode cannot enable JVMCI
         if (vmCompMode().equals("Xint")) {
           return "false";
@@ -278,7 +268,7 @@ public class VMProps implements Callable<Map<String, String>> {
 
 
     /**
-     * @return true if JVMCI is enabled
+     * @return true if the jdk.internal.vm.ci module is loaded
      */
     protected String vmJvmciEnabled() {
         // builds with jvmci have this flag
@@ -373,7 +363,6 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "ClassUnloading");
         vmOptFinalFlag(map, "ClassUnloadingWithConcurrentMark");
         vmOptFinalFlag(map, "CriticalJNINatives");
-        vmOptFinalFlag(map, "EnableJVMCI");
         vmOptFinalFlag(map, "EliminateAllocations");
         vmOptFinalFlag(map, "UnlockExperimentalVMOptions");
         vmOptFinalFlag(map, "UseCompressedOops");

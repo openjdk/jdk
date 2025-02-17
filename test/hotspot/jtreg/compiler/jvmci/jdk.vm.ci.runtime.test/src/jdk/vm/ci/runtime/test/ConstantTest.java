@@ -28,7 +28,7 @@
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          java.base/jdk.internal.misc
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.ConstantTest
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.ConstantTest
  */
 package jdk.vm.ci.runtime.test;
 

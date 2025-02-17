@@ -47,7 +47,7 @@ import jdk.vm.ci.runtime.JVMCI;
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
- * @run junit/othervm --add-opens=jdk.internal.vm.ci/jdk.vm.ci.hotspot=ALL-UNNAMED -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.hotspot.test.HotSpotResolvedJavaFieldTest
+ * @run junit/othervm --add-opens=jdk.internal.vm.ci/jdk.vm.ci.hotspot=ALL-UNNAMED -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler jdk.vm.ci.hotspot.test.HotSpotResolvedJavaFieldTest
  */
 public class HotSpotResolvedJavaFieldTest {
 

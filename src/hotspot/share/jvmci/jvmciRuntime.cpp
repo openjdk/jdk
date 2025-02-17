@@ -24,6 +24,8 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -719,9 +721,6 @@ JRT_END
 // When called from libjvmci, `libjvmciOrHotspotEnv` is a libjvmci env so use JVM_ENTRY_NO_ENV.
 JVM_ENTRY_NO_ENV(jobject, JVM_GetJVMCIRuntime(JNIEnv *libjvmciOrHotspotEnv, jclass c))
   JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
-  if (!EnableJVMCI) {
-    JVMCI_THROW_MSG_NULL(InternalError, "JVMCI is not enabled");
-  }
   JVMCIENV->runtime()->initialize_HotSpotJVMCIRuntime(JVMCI_CHECK_NULL);
   JVMCIObject runtime = JVMCIENV->runtime()->get_HotSpotJVMCIRuntime(JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(runtime);
@@ -731,9 +730,6 @@ JVM_END
 // When called from libjvmci, `env` is a libjvmci env so use JVM_ENTRY_NO_ENV.
 JVM_ENTRY_NO_ENV(jlong, JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets_handle))
   JVMCIENV_FROM_JNI(thread, env);
-  if (!EnableJVMCI) {
-    JVMCI_THROW_MSG_0(InternalError, "JVMCI is not enabled");
-  }
   JVMCIPrimitiveArray offsets = JVMCIENV->wrap(offsets_handle);
   JVMCIENV->put_int_at(offsets, 0, SystemProperty::next_offset_in_bytes());
   JVMCIENV->put_int_at(offsets, 1, SystemProperty::key_offset_in_bytes());
@@ -1429,6 +1425,9 @@ void JVMCIRuntime::initialize(JVMCI_TRAPS) {
       if (JVMCIENV->is_hotspot()) {
         JavaVMRefsInitialization initialization(&_hotspot_javavm_refs_init_state, _id);
         if (initialization.should_init()) {
+          if (!JVMCI::is_jvmci_module_defined()) {
+            fatal("JVMCI module is required (e.g. --add-modules=jdk.internal.vm.ci)");
+          }
           MutexUnlocker unlock_jvmci(JVMCI_lock);
           HotSpotJVMCI::compute_offsets(CHECK_EXIT);
         }
@@ -1513,10 +1512,6 @@ JVMCIObject JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_TRAPS) {
 // When called from libjvmci, `libjvmciOrHotspotEnv` is a libjvmci env so use JVM_ENTRY_NO_ENV.
 JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *libjvmciOrHotspotEnv, jclass c2vmClass))
   JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
-
-  if (!EnableJVMCI) {
-    JVMCI_THROW_MSG(InternalError, "JVMCI is not enabled");
-  }
 
   JVMCIENV->runtime()->initialize(JVMCIENV);
 

@@ -34,7 +34,7 @@
  *          /compiler/jvmci/jdk.vm.ci.code.test/src
  * @library /test/lib
  * @run testng/othervm
- *      -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *      -XX:+UnlockExperimentalVMOptions -XX:-UseJVMCICompiler
  *      jdk.vm.ci.hotspot.test.TestHotSpotJVMCIRuntime
  */
 
@@ -169,7 +169,6 @@ public class TestHotSpotJVMCIRuntime {
         for (String name : names) {
             ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockExperimentalVMOptions",
-                "-XX:+EnableJVMCI",
                 "-XX:-UseJVMCICompiler",
                 "-XX:+UseJVMCINativeLibrary",
                 "-Dtest.jvmci.forceEnomemOnLibjvmciInit=true",

@@ -48,7 +48,7 @@ public class TestJVMCISavedProperties {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+EagerJVMCI",
-            "-XX:+EnableJVMCI",
+            "--add-modules=jdk.internal.vm.ci",
             "-Ddebug.jvmci.PrintSavedProperties=true",
             "-Dapp1.propX=true",
             "-Dapp2.propY=SomeStringValue",

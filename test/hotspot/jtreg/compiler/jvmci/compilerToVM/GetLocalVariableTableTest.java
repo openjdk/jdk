@@ -39,7 +39,7 @@
  * @compile -g DummyAbstractClass.java
  * @compile -g DummyClass.java
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *                   -XX:-UseJVMCICompiler
  *                   compiler.jvmci.compilerToVM.GetLocalVariableTableTest
  * @clean compiler.jvmci.compilerToVM.*

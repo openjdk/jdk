@@ -30,12 +30,12 @@
  * @modules java.base/jdk.internal.misc
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+DebugNonSafepoints
  *                   -Dcompiler.jvmci.compilerToVM.ShouldDebugNonSafepointsTest.expected=true
  *                   compiler.jvmci.compilerToVM.ShouldDebugNonSafepointsTest
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-DebugNonSafepoints
  *                   -Dcompiler.jvmci.compilerToVM.ShouldDebugNonSafepointsTest.expected=false

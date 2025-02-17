@@ -29,6 +29,9 @@
 #include "compiler/compiler_globals.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 class JavaThread;
 
@@ -71,7 +74,7 @@ public:
   // Revert ea based optimizations for given deoptee thread
   EscapeBarrier(bool barrier_active, JavaThread* calling_thread, JavaThread* deoptee_thread)
     : _calling_thread(calling_thread), _deoptee_thread(deoptee_thread),
-      _barrier_active(barrier_active && (JVMCI_ONLY(EnableJVMCI) NOT_JVMCI(false)
+      _barrier_active(barrier_active && (JVMCI_ONLY(JVMCI::has_installed_code()) NOT_JVMCI(false)
                       COMPILER2_PRESENT(|| DoEscapeAnalysis)))
   {
     if (_barrier_active) sync_and_suspend_one();
@@ -80,7 +83,7 @@ public:
   // Revert ea based optimizations for all java threads
   EscapeBarrier(bool barrier_active, JavaThread* calling_thread)
     : _calling_thread(calling_thread), _deoptee_thread(nullptr),
-      _barrier_active(barrier_active && (JVMCI_ONLY(EnableJVMCI) NOT_JVMCI(false)
+      _barrier_active(barrier_active && (JVMCI_ONLY(JVMCI::has_installed_code()) NOT_JVMCI(false)
                       COMPILER2_PRESENT(|| DoEscapeAnalysis)))
   {
     if (_barrier_active) sync_and_suspend_all();

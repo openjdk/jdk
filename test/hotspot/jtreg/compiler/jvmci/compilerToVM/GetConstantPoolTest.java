@@ -37,7 +37,7 @@
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:-UseJVMCICompiler
  *                   compiler.jvmci.compilerToVM.GetConstantPoolTest
  */

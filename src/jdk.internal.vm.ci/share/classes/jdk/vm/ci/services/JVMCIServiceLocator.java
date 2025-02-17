@@ -61,7 +61,6 @@ public abstract class JVMCIServiceLocator {
      */
     protected JVMCIServiceLocator() {
         this(checkPermission());
-        Services.checkJVMCIEnabled();
         Services.openJVMCITo(getClass().getModule());
     }
 
@@ -99,7 +98,6 @@ public abstract class JVMCIServiceLocator {
      *             {@link JVMCIPermission}
      */
     public static <S> List<S> getProviders(Class<S> service) {
-        Services.checkJVMCIEnabled();
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
