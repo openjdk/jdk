@@ -33,7 +33,15 @@ import java.util.Random;
 
 import jdk.test.lib.Utils;
 
-public class Renderer {
+/**
+ * The {@link Renderer} class is used to keep track of the states during a nested
+ * {@link Template} rendering. There can only be a single {@link Renderer} active
+ * at any point, since there are static methods that reference {@link Renderer#getCurrent}.
+ *
+ * The {@link Renderer} instance keeps track of the current frames,
+ * see {@link TemplateFrame} and {@link CodeFrame}.
+ */
+class Renderer {
     private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile("\\$([a-zA-Z_][a-zA-Z0-9_]*)");
     private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile("#([a-zA-Z_][a-zA-Z0-9_]*)");
 
@@ -51,7 +59,7 @@ public class Renderer {
     private CodeFrame baseCodeFrame;
     private CodeFrame currentCodeFrame;
 
-    // We do not want any other instances.
+    // We do not want any other instances, so we keep it private.
     private Renderer(float fuel) {
         nextTemplateFrameId = 0;
         baseTemplateFrame = TemplateFrame.makeBase(nextTemplateFrameId++, fuel);

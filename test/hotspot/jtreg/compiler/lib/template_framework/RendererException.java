@@ -23,8 +23,12 @@
 
 package compiler.lib.template_framework;
 
+/**
+ * This exception is thrown when something goes wrong during {@link Template}
+ * rendering, or in the use of any of its static methods.
+ */
 public class RendererException extends RuntimeException {
-    public RendererException(String message) {
+    RendererException(String message) {
         super(message);
     }
 }
