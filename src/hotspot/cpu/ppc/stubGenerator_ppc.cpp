@@ -546,7 +546,15 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-static void computeGCMProduct(MacroAssembler* masm,
+  // Computes the Galois/Counter Mode (GCM) product and reduction.
+  //
+  // This function performs polynomial multiplication of the subkey H with
+  // the current GHASH state using vectorized polynomial multiplication (`vpmsumd`).
+  // The subkey H is divided into lower, middle, and higher halves.
+  // The multiplication results are reduced using `vConstC2` to stay within GF(2^128).
+  // The final computed value is stored back into `vState`.
+
+  static void computeGCMProduct(MacroAssembler* masm,
                               VectorRegister vLowerH, VectorRegister vH, VectorRegister vHigherH,
                               VectorRegister vConstC2, VectorRegister vZero, VectorRegister vState,
                               VectorRegister vTmp4, VectorRegister vTmp5, VectorRegister vTmp6,
@@ -554,165 +562,166 @@ static void computeGCMProduct(MacroAssembler* masm,
                               VectorRegister vTmp10, VectorRegister vTmp11, Register data) {
     assert(masm != nullptr, "MacroAssembler pointer is null");
     masm->vxor(vH, vH, vState);
-    masm->vpmsumd(vTmp4, vLowerH, vH);     // L : Lower Half of subkey H
-    masm->vpmsumd(vTmp5, vTmp11, vH);      // M : Combined halves of subkey H
-    masm->vpmsumd(vTmp6, vHigherH, vH);    // H : Higher Half of subkey H
-    masm->vpmsumd(vTmp7, vTmp4, vConstC2); // Reduction
-    masm->vsldoi(vTmp8, vTmp5, vZero, 8);  // mL : Extract the lower 64 bits of M
-    masm->vsldoi(vTmp9, vZero, vTmp5, 8);  // mH : Extract the higher 64 bits of M
-    masm->vxor(vTmp4, vTmp4, vTmp8);       // LL + LL : Partial result for lower half
-    masm->vxor(vTmp6, vTmp6, vTmp9);       // HH + HH : Partial result for upper half
-    masm->vsldoi(vTmp4, vTmp4, vTmp4, 8);  // Swap
-    masm->vxor(vTmp4, vTmp4, vTmp7);       // Reduction using constant
-    masm->vsldoi(vTmp10, vTmp4, vTmp4, 8); // Swap
-    masm->vpmsumd(vTmp4, vTmp4, vConstC2); // Reduction
-    masm->vxor(vTmp10, vTmp10, vTmp6);     // Combine reduced Low & High products
+    masm->vpmsumd(vTmp4, vLowerH, vH);            // L : Lower Half of subkey H
+    masm->vpmsumd(vTmp5, vTmp11, vH);             // M : Combined halves of subkey H
+    masm->vpmsumd(vTmp6, vHigherH, vH);           // H : Higher Half of subkey H
+    masm->vpmsumd(vTmp7, vTmp4, vConstC2);        // Reduction
+    masm->vsldoi(vTmp8, vTmp5, vZero, 8);         // mL : Extract the lower 64 bits of M
+    masm->vsldoi(vTmp9, vZero, vTmp5, 8);         // mH : Extract the higher 64 bits of M
+    masm->vxor(vTmp4, vTmp4, vTmp8);              // LL + LL : Partial result for lower half
+    masm->vxor(vTmp6, vTmp6, vTmp9);              // HH + HH : Partial result for upper half
+    masm->vsldoi(vTmp4, vTmp4, vTmp4, 8);         // Swap
+    masm->vxor(vTmp4, vTmp4, vTmp7);              // Reduction using constant
+    masm->vsldoi(vTmp10, vTmp4, vTmp4, 8);        // Swap
+    masm->vpmsumd(vTmp4, vTmp4, vConstC2);        // Reduction
+    masm->vxor(vTmp10, vTmp10, vTmp6);            // Combine reduced Low & High products
     masm->vxor(vState, vTmp4, vTmp10);
-    masm->addi(data, data, 16);
-}
+  }
 
-// Generate stub for ghash process blocks.
-//
-// Arguments for generated stub:
-//      state:    R3_ARG1 (long[] state)
-//      subkeyH:  R4_ARG2 (long[] subH)
-//      data:     R5_ARG3 (byte[] data)
-//      blocks:   R6_ARG4 (number of 16-byte blocks to process)
-//
-// The polynomials are processed in bit-reflected order for efficiency reasons.
-// This optimization leverages the structure of the Galois field arithmetic
-// to minimize the number of bit manipulations required during multiplication.
-// For an explanation of how this works, refer :
-// Vinodh Gopal, Erdinc Ozturk, Wajdi Feghali, Jim Guilford, Gil Wolrich,
-// Martin Dixon. "Optimized Galois-Counter-Mode Implementation on Intel®
-// Architecture Processor"
-// http://web.archive.org/web/20130609111954/http://www.intel.com/content/dam/www/public/us/en/documents/white-papers/communications-ia-galois-counter-mode-paper.pdf
-//
-//
-address generate_ghash_processBlocks() {
-  StubCodeMark mark(this, "StubRoutines", "ghash");
-  address start = __ function_entry();
+  // Generate stub for ghash process blocks.
+  //
+  // Arguments for generated stub:
+  //      state:    R3_ARG1 (long[] state)
+  //      subkeyH:  R4_ARG2 (long[] subH)
+  //      data:     R5_ARG3 (byte[] data)
+  //      blocks:   R6_ARG4 (number of 16-byte blocks to process)
+  //
+  // The polynomials are processed in bit-reflected order for efficiency reasons.
+  // This optimization leverages the structure of the Galois field arithmetic
+  // to minimize the number of bit manipulations required during multiplication.
+  // For an explanation of how this works, refer :
+  // Vinodh Gopal, Erdinc Ozturk, Wajdi Feghali, Jim Guilford, Gil Wolrich,
+  // Martin Dixon. "Optimized Galois-Counter-Mode Implementation on Intel®
+  // Architecture Processor"
+  // http://web.archive.org/web/20130609111954/http://www.intel.com/content/dam/www/public/us/en/documents/white-papers/communications-ia-galois-counter-mode-paper.pdf
+  //
+  //
+  address generate_ghash_processBlocks() {
+    StubCodeMark mark(this, "StubRoutines", "ghash");
+    address start = __ function_entry();
 
-  // Registers for parameters
-  Register state = R3_ARG1;                     // long[] state
-  Register subkeyH = R4_ARG2;                   // long[] subH
-  Register data = R5_ARG3;                      // byte[] data
-  Register blocks = R6_ARG4;
-  Register temp1 = R8;
-  Register temp2 = R9;
-  Register temp3 = R10;
-  Register temp4 = R11;
-  Register align = data;
-  Register load = R12;
-  // Vector Registers
-  VectorRegister vZero = VR0;
-  VectorRegister vH = VR1;
-  VectorRegister vLowerH = VR2;
-  VectorRegister vHigherH = VR3;
-  VectorRegister vTmp4 = VR4;
-  VectorRegister vTmp5 = VR5;
-  VectorRegister vTmp6 = VR6;
-  VectorRegister vTmp7 = VR7;
-  VectorRegister vTmp8 = VR8;
-  VectorRegister vTmp9 = VR9;
-  VectorRegister vTmp10 = VR10;
-  VectorRegister vTmp11 = VR11;
-  VectorRegister vTmp12 = VR12;
-  VectorRegister loadOrder = VR13;
-  VectorRegister vHigh = VR14;
-  VectorRegister vLow = VR15;
-  VectorRegister vState = VR16;
-  VectorRegister vPerm = VR17;
-  VectorRegister vConstC2 = VR19;
-  Label L_end, L_aligned, L_error, L_trigger_assert, L_skip_assert;
+    // Registers for parameters
+    Register state = R3_ARG1;                     // long[] state
+    Register subkeyH = R4_ARG2;                   // long[] subH
+    Register data = R5_ARG3;                      // byte[] data
+    Register blocks = R6_ARG4;
+    Register temp1 = R8;
+    Register temp2 = R9;
+    Register temp3 = R10;
+    Register temp4 = R11;
+    Register align = data;
+    Register load = R12;
+    // Vector Registers
+    VectorRegister vZero = VR0;
+    VectorRegister vH = VR1;
+    VectorRegister vLowerH = VR2;
+    VectorRegister vHigherH = VR3;
+    VectorRegister vTmp4 = VR4;
+    VectorRegister vTmp5 = VR5;
+    VectorRegister vTmp6 = VR6;
+    VectorRegister vTmp7 = VR7;
+    VectorRegister vTmp8 = VR8;
+    VectorRegister vTmp9 = VR9;
+    VectorRegister vTmp10 = VR10;
+    VectorRegister vTmp11 = VR11;
+    VectorRegister vTmp12 = VR12;
+    VectorRegister loadOrder = VR13;
+    VectorRegister vHigh = VR14;
+    VectorRegister vLow = VR15;
+    VectorRegister vState = VR16;
+    VectorRegister vPerm = VR17;
+    VectorRegister vConstC2 = VR19;
+    Label L_end, L_aligned, L_error, L_trigger_assert, L_skip_assert;
 
-  __ li(temp1, 0xc2);
-  __ sldi(temp1, temp1, 56);
-  __ vspltisb(vZero, 0);
-  __ mtvrd(vConstC2, temp1);
-  __ lxvd2x(vH->to_vsr(), subkeyH);
-  __ lxvd2x(vState->to_vsr(), state);
-  // Operations to obtain lower and higher bytes of subkey H.
-  __ vspltisb(vTmp7, 1);
-  __ vspltisb(vTmp10, 7);
-  __ vsldoi(vTmp8, vZero, vTmp7, 1);            // 0x1
-  __ vor(vTmp8, vConstC2, vTmp8);               // 0xC2...1
-  __ vsplt(vTmp9, 0, vH);                       // MSB of H
-  __ vsl(vH, vH, vTmp7);                        // Carry = H<<7
-  __ vsrab(vTmp9, vTmp9, vTmp10);
-  __ vand(vTmp9, vTmp9, vTmp8);                 // Carry
-  __ vxor(vTmp10, vH, vTmp9);
-  __ vsldoi(vConstC2, vZero, vConstC2, 8);
-  __ vsldoi(vTmp11, vTmp10, vTmp10, 8);         // swap Lower and Higher Halves of subkey H
-  __ vsldoi(vLowerH, vZero, vTmp11, 8);         // H.L
-  __ vsldoi(vHigherH, vTmp11, vZero, 8);        // H.H
-  #ifdef ASSERT
-      __ cmpwi(CR0, blocks, 0);                 // Compare 'blocks' (R6_ARG4) with zero
-      __ beq(CR0, L_trigger_assert);
-      __ b(L_skip_assert);                      // Skip assertion if 'blocks' is nonzero
-      __ bind(L_trigger_assert);
-      __ asm_assert_eq("blocks should NOT be zero");
-  #endif
-  __ bind(L_skip_assert);
-  __ clrldi(blocks, blocks, 32);
-  __ mtctr(blocks);
-  __ li(temp1, 0);
-  __ lvsl(loadOrder, temp1);
-  #ifdef VM_LITTLE_ENDIAN
+    __ li(temp1, 0xc2);
+    __ sldi(temp1, temp1, 56);
+    __ vspltisb(vZero, 0);
+    __ mtvrd(vConstC2, temp1);
+    __ lxvd2x(vH->to_vsr(), subkeyH);
+    __ lxvd2x(vState->to_vsr(), state);
+    // Operations to obtain lower and higher bytes of subkey H.
+    __ vspltisb(vTmp7, 1);
+    __ vspltisb(vTmp10, 7);
+    __ vsldoi(vTmp8, vZero, vTmp7, 1);            // 0x1
+    __ vor(vTmp8, vConstC2, vTmp8);               // 0xC2...1
+    __ vsplt(vTmp9, 0, vH);                       // MSB of H
+    __ vsl(vH, vH, vTmp7);                        // Carry = H<<7
+    __ vsrab(vTmp9, vTmp9, vTmp10);
+    __ vand(vTmp9, vTmp9, vTmp8);                 // Carry
+    __ vxor(vTmp10, vH, vTmp9);
+    __ vsldoi(vConstC2, vZero, vConstC2, 8);
+    __ vsldoi(vTmp11, vTmp10, vTmp10, 8);         // swap Lower and Higher Halves of subkey H
+    __ vsldoi(vLowerH, vZero, vTmp11, 8);         // H.L
+    __ vsldoi(vHigherH, vTmp11, vZero, 8);        // H.H
+#ifdef ASSERT
+    __ cmpwi(CR0, blocks, 0);                     // Compare 'blocks' (R6_ARG4) with zero
+    __ beq(CR0, L_trigger_assert);
+    __ b(L_skip_assert);                          // Skip assertion if 'blocks' is nonzero
+    __ bind(L_trigger_assert);
+    __ asm_assert_eq("blocks should NOT be zero");
+#endif
+    __ bind(L_skip_assert);
+    __ clrldi(blocks, blocks, 32);
+    __ mtctr(blocks);
+    __ li(temp1, 0);
+    __ lvsl(loadOrder, temp1);
+#ifdef VM_LITTLE_ENDIAN
     __ vspltisb(vTmp12, 0xf);
     __ vxor(loadOrder, loadOrder, vTmp12);
-  #endif
-  // This code performs Karatsuba multiplication in Galois fields to compute the GHASH operation.
-  //
-  // The Karatsuba method breaks the multiplication of two 128-bit numbers into smaller parts,
-  // performing three 128-bit multiplications and combining the results efficiently.
-  //
-  // (C1:C0) = A1*B1, (D1:D0) = A0*B0, (E1:E0) = (A0+A1)(B0+B1)
-  // (A1:A0)(B1:B0) = C1:(C0+C1+D1+E1):(D1+C0+D0+E0):D0
-  //
-  // Inputs:
-  // - vH:       The data vector (state), containing both B0 (lower half) and B1 (higher half).
-  // - vLowerH:  Lower half of the subkey H (A0).
-  // - vHigherH: Higher half of the subkey H (A1).
-  // - vConstC2: Constant used for reduction (for final processing).
-  //
-  // References:
-  // Shay Gueron, Michael E. Kounavis.
-  // "Intel® Carry-Less Multiplication Instruction and its Usage for Computing the GCM Mode"
-  // https://web.archive.org/web/20110609115824/https://software.intel.com/file/24918
-  //
-  Label L_aligned_loop, L_store, L_unaligned_loop;
-  __ andi(temp1, data, 15);
-  __ cmpwi(CR0, temp1, 0);
-  __ beq(CR0, L_aligned_loop);
-  __ li(temp1,0);
-  __ lvsl(vPerm, temp1, data);
-  __ b(L_unaligned_loop);
-  __ bind(L_aligned_loop);
+#endif
+    // This code performs Karatsuba multiplication in Galois fields to compute the GHASH operation.
+    //
+    // The Karatsuba method breaks the multiplication of two 128-bit numbers into smaller parts,
+    // performing three 128-bit multiplications and combining the results efficiently.
+    //
+    // (C1:C0) = A1*B1, (D1:D0) = A0*B0, (E1:E0) = (A0+A1)(B0+B1)
+    // (A1:A0)(B1:B0) = C1:(C0+C1+D1+E1):(D1+C0+D0+E0):D0
+    //
+    // Inputs:
+    // - vH:       The data vector (state), containing both B0 (lower half) and B1 (higher half).
+    // - vLowerH:  Lower half of the subkey H (A0).
+    // - vHigherH: Higher half of the subkey H (A1).
+    // - vConstC2: Constant used for reduction (for final processing).
+    //
+    // References:
+    // Shay Gueron, Michael E. Kounavis.
+    // "Intel® Carry-Less Multiplication Instruction and its Usage for Computing the GCM Mode"
+    // https://web.archive.org/web/20110609115824/https://software.intel.com/file/24918
+    //
+    Label L_aligned_loop, L_store, L_unaligned_loop;
     __ vspltisb(vZero, 0);
-    __ lvx(vH, temp1, data);
-    __ vec_perm(vH, vH, vH, loadOrder);
-    computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
-                  vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11, data);
-    __ bdnz(L_aligned_loop);
-  __ b(L_store);
-  __ bind(L_unaligned_loop);
-    __ vspltisb(vZero, 0);
+    __ andi(temp1, data, 15);
+    __ cmpwi(CR0, temp1, 0);
+    __ beq(CR0, L_aligned_loop);
+    __ li(temp1,0);
+    __ lvsl(vPerm, temp1, data);
     __ lvx(vHigh, temp1, data);
-    __ addi(data, data, 16);
-    __ lvx(vLow, temp1, data);
-    __ vec_perm(vHigh, vHigh, vHigh, loadOrder);
-    __ vec_perm(vLow, vLow, vLow, loadOrder);
-    __ vec_perm(vH, vLow, vHigh, vPerm);
-    __ subi(data, data, 16);
-    computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
-                  vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11, data);
-    __ bdnz(L_unaligned_loop);
-  __ bind(L_store);
-  __ stxvd2x(vState->to_vsr(), state);
-  __ blr();
-  return start;
-}
+    __ b(L_unaligned_loop);
+    __ bind(L_aligned_loop);
+      __ lvx(vH, temp1, data);
+      __ vec_perm(vH, vH, vH, loadOrder);
+      computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
+                    vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11, data);
+      __ addi(data, data, 16);
+      __ bdnz(L_aligned_loop);
+    __ b(L_store);
+    __ bind(L_unaligned_loop);
+      __ addi(data, data, 16);
+      __ lvx(vLow, temp1, data);
+      __ vec_perm(vTmp4, vHigh, vHigh, loadOrder);
+      __ vec_perm(vTmp5, vLow, vLow, loadOrder);
+      __ vec_perm(vH, vTmp5, vTmp4, vPerm);
+      __ subi(data, data, 16);
+      computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
+                    vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11, data);
+      __ vmr(vHigh, vLow);
+      __ addi(data, data, 16);
+      __ bdnz(L_unaligned_loop);
+    __ bind(L_store);
+    __ stxvd2x(vState->to_vsr(), state);
+    __ blr();
+    return start;
+  }
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
   //
   // The code is implemented(ported from sparc) as we believe it benefits JVM98, however
