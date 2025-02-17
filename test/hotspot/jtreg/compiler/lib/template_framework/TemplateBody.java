@@ -25,4 +25,8 @@ package compiler.lib.template_framework;
 
 import java.util.List;
 
+/**
+ * A {@link Template} generates a {@link TemplateBody}, which is a list of {@link Token}s,
+ * which are then later rendered to {@link String}s.
+ */
 public record TemplateBody(List<Token> tokens) {}

@@ -32,6 +32,8 @@ public sealed abstract class TemplateWithArgs implements Token
                                                       TemplateWithArgs.OneArgsUse,
                                                       TemplateWithArgs.TwoArgsUse
 {
+    private TemplateWithArgs() {}
+
     /**
      * Represents a zero-argument {@link Template} with applied arguments, ready for instantiation
      * either as a {@link Token} inside another {@link Template} or with {@link render}.
