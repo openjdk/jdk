@@ -94,10 +94,21 @@ class MacroAssembler: public Assembler {
     KlassDecodeMovk
   };
 
-  KlassDecodeMode klass_decode_mode();
+  // Calculate decoding mode based on given parameters, used for checking then ultimately setting.
+  static KlassDecodeMode klass_decode_mode(address base, int shift, const size_t range);
 
  private:
   static KlassDecodeMode _klass_decode_mode;
+
+  // Returns above setting with asserts
+  static KlassDecodeMode klass_decode_mode();
+
+ public:
+  // Checks the decode mode and returns false if not compatible with preferred decoding mode.
+  static bool check_klass_decode_mode(address base, int shift, const size_t range);
+
+  // Sets the decode mode and returns false if cannot be set.
+  static bool set_klass_decode_mode(address base, int shift, const size_t range);
 
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
@@ -1162,7 +1173,10 @@ public:
 
   // Arithmetics
 
+  // Clobber: rscratch1, rscratch2
   void addptr(const Address &dst, int32_t src);
+
+  // Clobber: rscratch1
   void cmpptr(Register src1, Address src2);
 
   void cmpoop(Register obj1, Register obj2);

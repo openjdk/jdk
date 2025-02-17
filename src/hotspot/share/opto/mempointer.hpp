@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,18 @@
 #include "opto/memnode.hpp"
 #include "opto/noOverflowInt.hpp"
 
-// The MemPointer is a shared facility to parse pointers and check the aliasing of pointers,
-// e.g. checking if two stores are adjacent.
+// The MemPointer is a shared facility to parse pointers and check the aliasing of pointers.
+//
+// A MemPointer points to a region in memory, starting at a "pointer", and extending for "size" bytes:
+//   [pointer, pointer + size)
+//
+// We can check if two loads / two stores:
+//  - are adjacent               -> pack multiple memops into a single memop
+//  - never overlap              -> independent, can swap order
+//
+// Other use-cases:
+//  - alignment                  -> find an alignment solution for all memops in a vectorized loop
+//  - detect partial overlap     -> indicates store-to-load-forwarding failures
 //
 // -----------------------------------------------------------------------------------------
 //
@@ -143,7 +153,7 @@
 //
 // -----------------------------------------------------------------------------------------
 //
-// MemPointerDecomposedForm:
+// MemPointer:
 //   When the pointer is parsed, it is decomposed into a SUM of summands plus a constant:
 //
 //     pointer = SUM(summands) + con
@@ -161,17 +171,6 @@
 //   On 64-bit systems, this decomposed form is computed with long-add/mul, on 32-bit systems
 //   it is computed with int-add/mul.
 //
-// MemPointerAliasing:
-//   The decomposed form allows us to determine the aliasing between two pointers easily. For
-//   example, if two pointers are identical, except for their constant:
-//
-//     pointer1 = SUM(summands) + con1
-//     pointer2 = SUM(summands) + con2
-//
-//   then we can easily compute the distance between the pointers (distance = con2 - con1),
-//   and determine if they are adjacent.
-//
-// MemPointerDecomposedFormParser:
 //   Any pointer can be parsed into this (default / trivial) decomposed form:
 //
 //     pointer = 1       * pointer    + 0
@@ -194,11 +193,55 @@
 //
 //     This allows us to easily see that these two pointers are adjacent (distance = 4).
 //
-//   Hence, in MemPointerDecomposedFormParser::parse_decomposed_form, we start with the pointer as
-//   a trivial summand. A summand can either be decomposed further or it is terminal (cannot
-//   be decomposed further). We decompose the summands recursively until all remaining summands
-//   are terminal, see MemPointerDecomposedFormParser::parse_sub_expression. This effectively parses
-//   the pointer expression recursively.
+//   Hence, in MemPointerParser::parse, we start with the pointer as a trivial summand. A summand can either
+//   be decomposed further or it is terminal (cannot be decomposed further). We decompose the summands
+//   recursively until all remaining summands are terminal, see MemPointerParser::parse_sub_expression.
+//   This effectively parses the pointer expression recursively.
+//
+// MemPointerAliasing:
+//   The decomposed form allows us to determine the aliasing between two pointers easily. For
+//   example, if two pointers are identical, except for their constant:
+//
+//     pointer1 = SUM(summands) + con1
+//     pointer2 = SUM(summands) + con2
+//
+//   then we can easily compute the distance between the pointers (distance = con2 - con1),
+//   and determine if they are adjacent.
+//
+// MemPointer::Base
+//   The MemPointer is decomposed like this:
+//     pointer = SUM(summands) + con
+//
+//   This is sufficient for simple adjacency checks and we do not need to know if the pointer references
+//   native (off-heap) or object (heap) memory. However, in some cases it is necessary or useful to know
+//   the object base, or the native pointer's base.
+//
+//   - Object (heap) base (MemPointer::base().is_object()):
+//     Is the base of the Java object, which resides on the Java heap.
+//     Guarantees:
+//       - Always has an alignment of ObjectAlignmentInBytes.
+//       - A MemPointer with a given object base always must point into the memory of that object. Thus,
+//         if we have two pointers with two different bases at runtime, we know the two pointers do not
+//         alias.
+//
+//   - Native (off-heap) base (MemPointer::base().is_native()):
+//     When we decompose a pointer to native memory, it is at first not clear that there is a base address.
+//     Even if we could know that there is some base address to which we add index offsets, we cannot know
+//     if this reference address points to the beginning of a native memory allocation or into the middle,
+//     or outside it. We also have no guarantee for alignment with such a base address.
+//     Still: we would like to find such a base if possible, and if two pointers are similar (i.e. have the
+//     same summands), we would like to find the same base. Further, it is reasonable to speculatively
+//     assume that such base addresses are aligned (TODO: need to add this speculative check in JDK-8323582).
+//     A base pointer must have scale = 1, and be accepted byMemPointer::is_native_memory_base_candidate.
+//     It can thus be one of these:
+//      (1) CastX2P
+//          This is simply some arbitrary long cast to a pointer. It may be computed as an addition of
+//          multiple long and even int values. In some cases this means that we could have further
+//          decomposed the CastX2P, but at that point it is even harder to tell what should be a good
+//          candidate for a native memory base.
+//      (2) LoadL from field jdk.internal.foreign.NativeMemorySegmentImpl.min
+//          This would be preferable over CastX2P, because it holds the address() of a native
+//          MemorySegment, i.e. we know it points to the beginning of that MemorySegment.
 //
 // -----------------------------------------------------------------------------------------
 //
@@ -259,12 +302,11 @@
 //    mp1 and mp2:
 //      p1 - p2 = mp1 - mp2
 //
-//    Note: MemPointerDecomposedForm::get_aliasing_with relies on this MemPointer Lemma to
-//          prove the correctness of its aliasing computation between two MemPointers.
+//    Note: MemPointer::get_aliasing_with relies on this MemPointer Lemma to prove the correctness of its
+//          aliasing computation between two MemPointers.
 //
 //
-//    Note: MemPointerDecomposedFormParser::is_safe_to_decompose_op checks that all
-//          decompositions we apply are safe.
+//    Note: MemPointerParser::is_safe_to_decompose_op checks that all decompositions we apply are safe.
 //
 //
 //  Proof of the "MemPointer Lemma":
@@ -341,41 +383,51 @@
 //        This shows that p1 and p2 have a distance greater than the array size, and hence at least one of the two
 //        pointers must be out of bounds. This contradicts our assumption (S1) and we are done.
 
-
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
 private:
-  const bool _is_trace_pointer;
+  const bool _is_trace_parsing;
   const bool _is_trace_aliasing;
   const bool _is_trace_adjacency;
+  const bool _is_trace_overlap;
 
 public:
-  TraceMemPointer(const bool is_trace_pointer,
+  TraceMemPointer(const bool is_trace_parsing,
                   const bool is_trace_aliasing,
-                  const bool is_trace_adjacency) :
-    _is_trace_pointer(  is_trace_pointer),
+                  const bool is_trace_adjacency,
+                  const bool is_trace_overlap) :
+    _is_trace_parsing(  is_trace_parsing),
     _is_trace_aliasing( is_trace_aliasing),
-    _is_trace_adjacency(is_trace_adjacency)
+    _is_trace_adjacency(is_trace_adjacency),
+    _is_trace_overlap(is_trace_overlap)
     {}
 
-  bool is_trace_pointer()   const { return _is_trace_pointer; }
+  bool is_trace_parsing()   const { return _is_trace_parsing; }
   bool is_trace_aliasing()  const { return _is_trace_aliasing; }
   bool is_trace_adjacency() const { return _is_trace_adjacency; }
+  bool is_trace_overlap()   const { return _is_trace_overlap; }
 };
 #endif
 
 // Class to represent aliasing between two MemPointer.
 class MemPointerAliasing {
-public:
-  enum Aliasing {
-    Unknown, // Distance unknown.
-             //   Example: two "int[]" with different variable index offsets.
-             //            e.g. "array[i]  vs  array[j]".
-             //            e.g. "array1[i] vs  array2[j]".
-    Always}; // Constant distance = p1 - p2.
-             //   Example: The same address expression, except for a constant offset
-             //            e.g. "array[i]  vs  array[i+1]".
 private:
+  enum Aliasing {
+    Unknown,          // Distance unknown.
+                      //   Example: two "int[]" (unknown if the same) with different variable index offsets:
+                      //            e.g. "array[i]  vs  array[j]".
+                      //            e.g. "array1[i] vs  array2[j]".
+    AlwaysAtDistance, // Constant distance = p2 - p1.
+                      //   Example: The same address expression, except for a constant offset:
+                      //            e.g. "array[i]  vs  array[i+1]".
+    NotOrAtDistance}; // At compile-time, we know that at run-time it is either of these:
+                      //   (1) Not: The pointers belong to different memory objects. Distance unknown.
+                      //   (2) AtConstDistance: distance = p2 - p1.
+                      //   Example: two "int[]" (unknown if the same) with indices that only differ by a
+                      //            constant offset:
+                      //            e.g. "array1[i] vs array2[i+4]":
+                      //                 if "array1 == array2": distance = 4.
+                      //                 if "array1 != array2": different memory objects.
   const Aliasing _aliasing;
   const jint _distance;
 
@@ -391,27 +443,39 @@ public:
     return MemPointerAliasing(Unknown, 0);
   }
 
-  static MemPointerAliasing make_always(const jint distance) {
-    return MemPointerAliasing(Always, distance);
+  static MemPointerAliasing make_always_at_distance(const jint distance) {
+    return MemPointerAliasing(AlwaysAtDistance, distance);
+  }
+
+  static MemPointerAliasing make_not_or_at_distance(const jint distance) {
+    return MemPointerAliasing(NotOrAtDistance, distance);
   }
 
   // Use case: exact aliasing and adjacency.
   bool is_always_at_distance(const jint distance) const {
-    return _aliasing == Always && _distance == distance;
+    return _aliasing == AlwaysAtDistance && _distance == distance;
+  }
+
+  // Use case: overlap.
+  // Note: the bounds are exclusive: lo < element < hi
+  bool is_never_in_distance_range(const jint distance_lo, const jint distance_hi) const {
+    return (_aliasing == AlwaysAtDistance || _aliasing == NotOrAtDistance) &&
+           (_distance <= distance_lo || distance_hi <= _distance);
   }
 
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
     switch(_aliasing) {
-      case Unknown: st->print("Unknown");               break;
-      case Always:  st->print("Always(%d)", _distance); break;
+      case Unknown:           st->print("Unknown");                         break;
+      case AlwaysAtDistance:  st->print("AlwaysAtDistance(%d)", _distance); break;
+      case NotOrAtDistance:   st->print("NotOrAtDistance(%d)",  _distance); break;
       default: ShouldNotReachHere();
     }
   }
 #endif
 };
 
-// Summand of a MemPointerDecomposedForm:
+// Summand of a MemPointer:
 //
 //   summand = scale * variable
 //
@@ -437,13 +501,24 @@ public:
   NoOverflowInt scale() const { return _scale; }
 
   static int cmp_by_variable_idx(MemPointerSummand* p1, MemPointerSummand* p2) {
-    if (p1->variable() == nullptr) {
-      return (p2->variable() == nullptr) ? 0 : 1;
-    } else if (p2->variable() == nullptr) {
+    return cmp_by_variable_idx(*p1, *p2);
+  }
+
+  static int cmp_by_variable_idx(const MemPointerSummand& p1, const MemPointerSummand& p2) {
+    if (p1.variable() == nullptr) {
+      return (p2.variable() == nullptr) ? 0 : 1;
+    }
+    if (p2.variable() == nullptr) {
       return -1;
     }
+    return p1.variable()->_idx - p2.variable()->_idx;
+  }
 
-    return p1->variable()->_idx - p2->variable()->_idx;
+  static int cmp(const MemPointerSummand& p1, const MemPointerSummand& p2) {
+    int cmp = cmp_by_variable_idx(p1, p2);
+    if (cmp != 0) { return cmp; }
+
+    return NoOverflowInt::cmp(p1.scale(), p2.scale());
   }
 
   friend bool operator==(const MemPointerSummand a, const MemPointerSummand b) {
@@ -461,97 +536,302 @@ public:
 
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
-    st->print("Summand[");
     _scale.print_on(st);
-    tty->print(" * [%d %s]]", _variable->_idx, _variable->Name());
+    tty->print(" * [%d %s]", _variable->_idx, _variable->Name());
   }
 #endif
 };
 
-// Decomposed form of the pointer sub-expression of "pointer".
+// Parsing calls the callback on every decomposed node. These are all the
+// nodes on the paths from the pointer to the summand variables, i.e. the
+// "inner" nodes of the pointer expression. This callback is for example
+// used in SuperWord::unrolling_analysis to collect all inner nodes of a
+// pointer expression.
+class MemPointerParserCallback : public StackObj {
+private:
+  static MemPointerParserCallback _empty;
+
+public:
+  virtual void callback(Node* n) { /* do nothing by default */ }
+
+  // Singleton for default arguments.
+  static MemPointerParserCallback& empty() { return _empty; }
+};
+
+// A MemPointer points to a region in memory, starting at a "pointer", and extending
+// for "size" bytes:
+//
+//   [pointer, pointer + size)
+//
+// Where the "pointer" is decomposed into the following form:
 //
 //   pointer = SUM(summands) + con
+//   pointer = SUM(scale_i * variable_i) + con
 //
-class MemPointerDecomposedForm : public StackObj {
-private:
+// Where SUM() adds all "scale_i * variable_i" for each i together.
+//
+// Note: if the base is known, then it is in the 0th summand. A base can be:
+//       - on-heap  / object: base().object()
+//       - off-heap / native: base().native()
+//
+//   pointer = scale_0 * variable_0 + scale_1 * scale_1 + ... + con
+//   pointer =       1 * base       + scale_1 * scale_1 + ... + con
+//
+class MemPointer : public StackObj {
+public:
   // We limit the number of summands to 10. This is just a best guess, and not at this
   // point supported by evidence. But I think it is reasonable: usually, a pointer
   // contains a base pointer (e.g. array pointer or null for native memory) and a few
   // variables. It should be rare that we have more than 9 variables.
   static const int SUMMANDS_SIZE = 10;
 
-  Node* _pointer; // pointer node associated with this (sub)pointer
+  // A base can be:
+  // - Known:
+  //   - On-heap: Object
+  //   - Off-heap: Native
+  // - Unknown
+  class Base : public StackObj {
+  private:
+    enum Kind { Unknown, Object, Native };
+    Kind _kind;
+    Node* _base;
 
-  MemPointerSummand _summands[SUMMANDS_SIZE];
-  NoOverflowInt _con;
+    Base(Kind kind, Node* base) : _kind(kind), _base(base) {
+      assert((kind == Unknown) == (base == nullptr), "known base");
+    }
 
-public:
-  // Empty
-  MemPointerDecomposedForm() : _pointer(nullptr), _con(NoOverflowInt::make_NaN()) {}
+  public:
+    Base() : Base(Unknown, nullptr) {}
+    static Base make(Node* pointer, const GrowableArray<MemPointerSummand>& summands);
+
+    bool is_known()          const { return _kind != Unknown; }
+    bool is_object()         const { return _kind == Object; }
+    bool is_native()         const { return _kind == Native; }
+    Node* object()           const { assert(is_object(), "unexpected kind"); return _base; }
+    Node* native()           const { assert(is_native(), "unexpected kind"); return _base; }
+    Node* object_or_native() const { assert(is_known(),  "unexpected kind"); return _base; }
+    Node* object_or_native_or_null() const { return _base; }
+
+#ifndef PRODUCT
+    void print_on(outputStream* st) const {
+      switch (_kind) {
+      case Object:
+          st->print("object  ");
+          st->print("%d %s", _base->_idx, _base->Name());
+          break;
+      case Native:
+          st->print("native  ");
+          st->print("%d %s", _base->_idx, _base->Name());
+          break;
+      default:
+          st->print("unknown ");
+      };
+    }
+#endif
+
+  private:
+    static Node* find_base(Node* object_base, const GrowableArray<MemPointerSummand>& summands);
+  };
 
 private:
+  MemPointerSummand _summands[SUMMANDS_SIZE];
+  const NoOverflowInt _con;
+  const Base _base;
+  const jint _size;
+  NOT_PRODUCT( const TraceMemPointer& _trace; )
+
   // Default / trivial: pointer = 0 + 1 * pointer
-  MemPointerDecomposedForm(Node* pointer) : _pointer(pointer), _con(NoOverflowInt(0)) {
+  MemPointer(Node* pointer,
+             const jint size
+             NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
+    _con(NoOverflowInt(0)),
+    _base(Base()),
+    _size(size)
+    NOT_PRODUCT(COMMA _trace(trace))
+  {
     assert(pointer != nullptr, "pointer must be non-null");
     _summands[0] = MemPointerSummand(pointer, NoOverflowInt(1));
+    assert(1 <= _size && _size <= 2048 && is_power_of_2(_size), "sanity: no vector is expected to be larger");
   }
 
-  MemPointerDecomposedForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt& con)
-    : _pointer(pointer), _con(con) {
+  // pointer = SUM(SUMMANDS) + con
+  MemPointer(Node* pointer,
+             const GrowableArray<MemPointerSummand>& summands,
+             const NoOverflowInt& con,
+             const jint size
+             NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
+    _con(con),
+    _base(Base::make(pointer, summands)),
+    _size(size)
+    NOT_PRODUCT(COMMA _trace(trace))
+  {
     assert(!_con.is_NaN(), "non-NaN constant");
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
+#ifdef ASSERT
     for (int i = 0; i < summands.length(); i++) {
-      MemPointerSummand s = summands.at(i);
+      const MemPointerSummand& s = summands.at(i);
       assert(s.variable() != nullptr, "variable cannot be null");
       assert(!s.scale().is_NaN(), "non-NaN scale");
-      _summands[i] = s;
+    }
+#endif
+
+    // Put the base in the 0th summand.
+    Node* base = _base.object_or_native_or_null();
+    int pos = 0;
+    if (base != nullptr) {
+      MemPointerSummand b(base, NoOverflowInt(1));
+      _summands[0] = b;
+      pos++;
+    }
+    // Put all other summands afterward.
+    for (int i = 0; i < summands.length(); i++) {
+      const MemPointerSummand& s = summands.at(i);
+      if (s.variable() == base && s.scale().is_one()) { continue; }
+      _summands[pos++] = summands.at(i);
+    }
+    assert(pos == summands.length(), "copied all summands");
+
+    assert(1 <= _size && _size <= 2048 && is_power_of_2(_size), "sanity: no vector is expected to be larger");
+  }
+
+  // Mutated copy.
+  //   The new MemPointer is identical, except it has a different size and con.
+  MemPointer(const MemPointer& old,
+             const NoOverflowInt new_con,
+             const jint new_size) :
+    _con(new_con),
+    _base(old.base()),
+    _size(new_size)
+    NOT_PRODUCT(COMMA _trace(old._trace))
+  {
+    assert(!_con.is_NaN(), "non-NaN constant");
+    for (int i = 0; i < SUMMANDS_SIZE; i++) {
+      _summands[i] = old.summands_at(i);
     }
   }
 
 public:
-  static MemPointerDecomposedForm make_trivial(Node* pointer) {
-    return MemPointerDecomposedForm(pointer);
+  // Parse pointer of MemNode. Delegates to MemPointerParser::parse.
+  // callback: receives a callback for every decomposed (inner) node
+  //           of the pointer expression.
+  MemPointer(const MemNode* mem,
+             MemPointerParserCallback& callback
+             NOT_PRODUCT(COMMA const TraceMemPointer& trace));
+
+  // Parse pointer of MemNode. Delegates to MemPointerParser::parse.
+  MemPointer(const MemNode* mem
+             NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
+    MemPointer(mem, MemPointerParserCallback::empty() NOT_PRODUCT(COMMA trace)) {}
+
+  static MemPointer make_trivial(Node* pointer,
+                                 const jint size
+                                 NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
+    return MemPointer(pointer, size NOT_PRODUCT(COMMA trace));
   }
 
-  static MemPointerDecomposedForm make(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt& con) {
+  static MemPointer make(Node* pointer,
+                         const GrowableArray<MemPointerSummand>& summands,
+                         const NoOverflowInt& con,
+                         const jint size
+                         NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
     if (summands.length() <= SUMMANDS_SIZE) {
-      return MemPointerDecomposedForm(pointer, summands, con);
+      return MemPointer(pointer, summands, con, size NOT_PRODUCT(COMMA trace));
     } else {
-      return MemPointerDecomposedForm::make_trivial(pointer);
+      return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
     }
   }
 
-  MemPointerAliasing get_aliasing_with(const MemPointerDecomposedForm& other
-                                       NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const;
+  MemPointer make_with_size(const jint new_size) const {
+    return MemPointer(*this, this->con(), new_size);
+  };
 
-  const MemPointerSummand summands_at(const uint i) const {
+  MemPointer make_with_con(const NoOverflowInt new_con) const {
+    return MemPointer(*this, new_con, this->size());
+  };
+
+private:
+  MemPointerAliasing get_aliasing_with(const MemPointer& other
+                                       NOT_PRODUCT(COMMA const TraceMemPointer& trace)) const;
+
+  bool has_same_summands_as(const MemPointer& other, uint start) const;
+  bool has_same_summands_as(const MemPointer& other) const { return has_same_summands_as(other, 0); }
+  bool has_different_object_base_but_otherwise_same_summands_as(const MemPointer& other) const;
+
+public:
+  bool has_same_non_base_summands_as(const MemPointer& other) const {
+    if (!base().is_known() || !other.base().is_known()) {
+      assert(false, "unknown base case is not answered optimally");
+      return false;
+    }
+    // Known base at 0th summand: all other summands are non-base summands.
+    return has_same_summands_as(other, 1);
+  }
+
+  const MemPointerSummand& summands_at(const uint i) const {
     assert(i < SUMMANDS_SIZE, "in bounds");
     return _summands[i];
   }
 
   const NoOverflowInt con() const { return _con; }
+  const Base& base() const { return _base; }
+  jint size() const { return _size; }
+
+  static int cmp_summands(const MemPointer& a, const MemPointer& b) {
+    for (int i = 0; i < SUMMANDS_SIZE; i++) {
+      const MemPointerSummand& s_a = a.summands_at(i);
+      const MemPointerSummand& s_b = b.summands_at(i);
+      int cmp = MemPointerSummand::cmp(s_a, s_b);
+      if (cmp != 0) { return cmp;}
+    }
+    return 0;
+  }
+
+  template<typename Callback>
+  void for_each_non_empty_summand(Callback callback) const {
+    for (int i = 0; i < SUMMANDS_SIZE; i++) {
+      const MemPointerSummand& s = summands_at(i);
+      if (s.variable() != nullptr) {
+        callback(s);
+      }
+    }
+  }
+
+  bool is_adjacent_to_and_before(const MemPointer& other) const;
+  bool never_overlaps_with(const MemPointer& other) const;
 
 #ifndef PRODUCT
-  void print_on(outputStream* st) const {
-    if (_pointer == nullptr) {
-      st->print_cr("MemPointerDecomposedForm empty.");
+  void print_form_on(outputStream* st) const {
+    if (_con.is_NaN()) {
+      st->print_cr("empty");
       return;
     }
-    st->print("MemPointerDecomposedForm[%d %s:  con = ", _pointer->_idx, _pointer->Name());
     _con.print_on(st);
     for (int i = 0; i < SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = _summands[i];
       if (summand.variable() != nullptr) {
-        st->print(", ");
+        st->print(" + ");
         summand.print_on(st);
       }
     }
-    st->print_cr("]");
+  }
+
+  void print_on(outputStream* st, bool end_with_cr = true) const {
+    st->print("MemPointer[size: %2d, base: ", size());
+    _base.print_on(st);
+    st->print(", form: ");
+    print_form_on(st);
+    st->print("]");
+    if (end_with_cr) { st->cr(); }
   }
 #endif
 };
 
-class MemPointerDecomposedFormParser : public StackObj {
+// Utility class.
+// MemPointerParser::parse takes a MemNode (load or store) and computes its MemPointer.
+// It temporarily allocates dynamic data structures (GrowableArray) in the resource
+// area. This way, the computed MemPointer does not have to have any dynamic data
+// structures and can be copied freely by value.
+class MemPointerParser : public StackObj {
 private:
   const MemNode* _mem;
 
@@ -561,58 +841,47 @@ private:
   GrowableArray<MemPointerSummand> _summands;
 
   // Resulting decomposed-form.
-  MemPointerDecomposedForm _decomposed_form;
+  MemPointer _mem_pointer;
 
-public:
-  MemPointerDecomposedFormParser(const MemNode* mem) : _mem(mem), _con(NoOverflowInt(0)) {
-    _decomposed_form = parse_decomposed_form();
-  }
-
-  const MemPointerDecomposedForm decomposed_form() const { return _decomposed_form; }
-
-private:
-  MemPointerDecomposedForm parse_decomposed_form();
-  void parse_sub_expression(const MemPointerSummand& summand);
-
-  bool is_safe_to_decompose_op(const int opc, const NoOverflowInt& scale) const;
-};
-
-// Facility to parse the pointer of a Load or Store, so that aliasing between two such
-// memory operations can be determined (e.g. adjacency).
-class MemPointer : public StackObj {
-private:
-  const MemNode* _mem;
-  const MemPointerDecomposedForm _decomposed_form;
-
-  NOT_PRODUCT( const TraceMemPointer& _trace; )
-
-public:
-  MemPointer(const MemNode* mem NOT_PRODUCT( COMMA const TraceMemPointer& trace)) :
+  MemPointerParser(const MemNode* mem,
+                   MemPointerParserCallback& callback
+                   NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
     _mem(mem),
-    _decomposed_form(init_decomposed_form(_mem))
-    NOT_PRODUCT( COMMA _trace(trace) )
-  {
+    _con(NoOverflowInt(0)),
+    _mem_pointer(parse(callback NOT_PRODUCT(COMMA trace))) {}
+
+public:
+  static MemPointer parse(const MemNode* mem,
+                          MemPointerParserCallback& callback
+                          NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
+    assert(mem->is_Store() || mem->is_Load(), "only stores and loads are allowed");
+    ResourceMark rm;
+    MemPointerParser parser(mem, callback NOT_PRODUCT(COMMA trace));
+
 #ifndef PRODUCT
-    if (_trace.is_trace_pointer()) {
-      tty->print_cr("MemPointer::MemPointer:");
-      tty->print("mem: "); mem->dump();
-      _mem->in(MemNode::Address)->dump_bfs(5, nullptr, "d");
-      _decomposed_form.print_on(tty);
+    if (trace.is_trace_parsing()) {
+      tty->print_cr("\nMemPointerParser::parse:");
+      tty->print("  mem: "); mem->dump();
+      parser.mem_pointer().print_on(tty);
+      mem->in(MemNode::Address)->dump_bfs(7, nullptr, "d");
     }
 #endif
+
+    return parser.mem_pointer();
   }
 
-  const MemNode* mem() const { return _mem; }
-  const MemPointerDecomposedForm decomposed_form() const { return _decomposed_form; }
-  bool is_adjacent_to_and_before(const MemPointer& other) const;
+  static bool is_native_memory_base_candidate(Node* n);
 
 private:
-  static const MemPointerDecomposedForm init_decomposed_form(const MemNode* mem) {
-    assert(mem->is_Store(), "only stores are supported");
-    ResourceMark rm;
-    MemPointerDecomposedFormParser parser(mem);
-    return parser.decomposed_form();
-  }
+  const MemPointer& mem_pointer() const { return _mem_pointer; }
+
+  MemPointer parse(MemPointerParserCallback& callback
+                   NOT_PRODUCT(COMMA const TraceMemPointer& trace));
+
+  void parse_sub_expression(const MemPointerSummand& summand, MemPointerParserCallback& callback);
+  static bool sub_expression_has_native_base_candidate(Node* n);
+
+  bool is_safe_to_decompose_op(const int opc, const NoOverflowInt& scale) const;
 };
 
 #endif // SHARE_OPTO_MEMPOINTER_HPP

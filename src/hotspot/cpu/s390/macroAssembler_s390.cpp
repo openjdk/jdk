@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * Copyright 2024 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
@@ -1013,6 +1012,18 @@ void MacroAssembler::load_and_test_int2long(Register dst, const Address &a) {
 
 void MacroAssembler::load_and_test_long(Register dst, const Address &a) {
   z_ltg(dst, a);
+}
+
+// Test a bit in memory for 2 byte datatype.
+void MacroAssembler::testbit_ushort(const Address &a, unsigned int bit) {
+  assert(a.index() == noreg, "no index reg allowed in testbit");
+  if (bit <= 7) {
+    z_tm(a.disp() + 1, a.base(), 1 << bit);
+  } else if (bit <= 15) {
+    z_tm(a.disp() + 0, a.base(), 1 << (bit - 8));
+  } else {
+    ShouldNotReachHere();
+  }
 }
 
 // Test a bit in memory.
@@ -3426,7 +3437,7 @@ void MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
   z_bru(L_done); // pass whatever result we got from a slow path
 
   bind(L_failure);
-  // TODO: use load immediate on condition and z_bru above will not be required
+
   z_lghi(r_result, 1);
 
   bind(L_done);
@@ -4108,7 +4119,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   Register current = (src != noreg) ? src : dst; // Klass is in dst if no src provided. (dst == src) also possible.
   address  base    = CompressedKlassPointers::base();
   int      shift   = CompressedKlassPointers::shift();
-  bool     need_zero_extend = base != 0;
+  bool     need_zero_extend = base != nullptr;
   assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass encoder {");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ public:
   bool is_NaN() const { return _is_NaN; }
   jint value() const { assert(!is_NaN(), "NaN not allowed"); return _value; }
   bool is_zero() const { return !is_NaN() && value() == 0; }
+  bool is_one() const { return !is_NaN() && value() == 1; }
 
   friend NoOverflowInt operator+(const NoOverflowInt& a, const NoOverflowInt& b) {
     if (a.is_NaN()) { return a; }
@@ -98,6 +99,23 @@ public:
     if (b.is_NaN()) { return false; }
     if (b.is_zero()) { return false; }
     return a.value() % b.value() == 0;
+  }
+
+  // This "cmp" is used for sort only.
+  // Note: the NaN semantics are different from floating arithmetic NaNs!
+  // - Smaller non-NaN are before larger non-NaN.
+  // - Any non-NaN are before NaN.
+  // - NaN is equal to NaN.
+  // Note: NaN indicate overflow, uninitialized, etc.
+  static int cmp(const NoOverflowInt& a, const NoOverflowInt& b) {
+    if (a.is_NaN()) {
+      return b.is_NaN() ? 0 : 1;
+    } else if (b.is_NaN()) {
+      return -1;
+    }
+    if (a.value() < b.value()) { return -1; }
+    if (a.value() > b.value()) { return  1; }
+    return 0;
   }
 
 #ifndef PRODUCT

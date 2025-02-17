@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
@@ -458,7 +457,7 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
 
   // No store check needed if we're storing a null.
   if (val != nullptr && val->is_Con()) {
-    // must be either an oop or NULL
+    // must be either an oop or null
     const Type* t = val->bottom_type();
     if (t == TypePtr::NULL_PTR || t == Type::TOP)
       return;

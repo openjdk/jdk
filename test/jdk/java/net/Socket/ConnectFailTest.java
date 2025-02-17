@@ -29,6 +29,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -36,6 +37,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 
+import static java.net.InetAddress.getLoopbackAddress;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -49,6 +51,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @run junit ConnectFailTest
  */
 class ConnectFailTest {
+
+    // Implementation Note: Explicitly binding on the loopback address to avoid potential unstabilities.
 
     private static final int DEAD_SERVER_PORT = 0xDEAD;
 
@@ -83,7 +87,7 @@ class ConnectFailTest {
     @MethodSource("sockets")
     void testBoundSocket(Socket socket) throws IOException {
         try (socket) {
-            socket.bind(new InetSocketAddress(0));
+            socket.bind(new InetSocketAddress(getLoopbackAddress(), 0));
             assertTrue(socket.isBound());
             assertFalse(socket.isConnected());
             assertThrows(IOException.class, () -> socket.connect(REFUSING_SOCKET_ADDRESS));
@@ -132,7 +136,7 @@ class ConnectFailTest {
     @MethodSource("sockets")
     void testBoundSocketWithUnresolvedAddress(Socket socket) throws IOException {
         try (socket) {
-            socket.bind(new InetSocketAddress(0));
+            socket.bind(new InetSocketAddress(getLoopbackAddress(), 0));
             assertTrue(socket.isBound());
             assertFalse(socket.isConnected());
             assertThrows(UnknownHostException.class, () -> socket.connect(UNRESOLVED_ADDRESS));
@@ -161,7 +165,8 @@ class ConnectFailTest {
         Socket socket = new Socket();
         @SuppressWarnings("resource")
         Socket channelSocket = SocketChannel.open().socket();
-        return List.of(socket, channelSocket);
+        Socket noProxySocket = new Socket(Proxy.NO_PROXY);
+        return List.of(socket, channelSocket, noProxySocket);
     }
 
     private static ServerSocket createEphemeralServerSocket() throws IOException {

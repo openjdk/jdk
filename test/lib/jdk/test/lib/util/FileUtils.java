@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,7 +266,7 @@ public final class FileUtils {
                     (new InputStreamReader(proc.getInputStream()));
                 // Skip the first line as it is the "df" output header.
                 if (reader.readLine() != null ) {
-                    Set mountPoints = new HashSet();
+                    Set<String> mountPoints = new HashSet<>();
                     String mountPoint = null;
                     while ((mountPoint = reader.readLine()) != null) {
                         if (!mountPoints.add(mountPoint)) {
@@ -299,8 +299,8 @@ public final class FileUtils {
             };
         });
 
-        final AtomicReference throwableReference =
-            new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> throwableReference =
+            new AtomicReference<>();
         thr.setUncaughtExceptionHandler(
             new Thread.UncaughtExceptionHandler() {
                 public void uncaughtException(Thread t, Throwable e) {
@@ -315,7 +315,7 @@ public final class FileUtils {
             throw new RuntimeException(ie);
         }
 
-        Throwable uncaughtException = (Throwable)throwableReference.get();
+        Throwable uncaughtException = throwableReference.get();
         if (uncaughtException != null) {
             throw new RuntimeException(uncaughtException);
         }
@@ -365,6 +365,7 @@ public final class FileUtils {
     }
 
     // Return the current process handle count
+    @SuppressWarnings("restricted")
     public static long getProcessHandleCount() {
         if (IS_WINDOWS) {
             if (!nativeLibLoaded) {

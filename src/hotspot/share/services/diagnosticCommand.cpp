@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cds_globals.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -140,10 +139,10 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
 #endif // LINUX
-#if defined(LINUX) || defined(_WIN64)
+#if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export, true,false));
-#endif // LINUX or WINDOWS
+#endif // LINUX or WINDOWS or MacOS
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export, true, false));
@@ -317,7 +316,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
       char *opt = (char *)os::malloc(opt_len, mtInternal);
       if (opt == nullptr) {
         output()->print_cr("JVMTI agent attach failed: "
-                           "Could not allocate " SIZE_FORMAT " bytes for argument.",
+                           "Could not allocate %zu bytes for argument.",
                            opt_len);
         return;
       }
@@ -1158,7 +1157,7 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
   CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
 }
 
-#if defined(LINUX) || defined(_WIN64)
+#if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
 SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
 

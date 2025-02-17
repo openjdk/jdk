@@ -206,7 +206,6 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
        this.cipherParam = ((PBEParameterSpec)paramSpec).getParameterSpec();
     }
 
-    @SuppressWarnings("deprecation")
     protected void engineInit(byte[] encoded)
         throws IOException
     {
@@ -239,7 +238,6 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         this.pbes2AlgorithmName = "PBEWith" + kdfAlgo + "And" + cipherAlgo;
     }
 
-    @SuppressWarnings("deprecation")
     private String parseKDF(DerValue keyDerivationFunc) throws IOException {
 
         if (!pkcs5PBKDF2_OID.equals(keyDerivationFunc.data.getOID())) {
@@ -299,7 +297,6 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         return kdfAlgo;
     }
 
-    @SuppressWarnings("deprecation")
     private String parseES(DerValue encryptionScheme) throws IOException {
         String cipherAlgo;
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -122,6 +121,11 @@ bool frame::safe_for_sender(JavaThread *thread) {
     address   sender_pc = (address) sender_abi->lr;
 
     if (Continuation::is_return_barrier_entry(sender_pc)) {
+      // sender_pc might be invalid so check that the frame
+      // actually belongs to a Continuation.
+      if (!Continuation::is_frame_in_continuation(thread, *this)) {
+        return false;
+      }
       // If our sender_pc is the return barrier, then our "real" sender is the continuation entry
       frame s = Continuation::continuation_bottom_sender(thread, *this, sender_sp);
       sender_sp = s.sp();
@@ -287,7 +291,7 @@ void frame::patch_pc(Thread* thread, address pc) {
                   p2i(&((address*) _sp)[-1]), p2i(((address*) _sp)[-1]), p2i(pc));
   }
   assert(!Continuation::is_return_barrier_entry(*pc_addr), "return barrier");
-  assert(_pc == *pc_addr || pc == *pc_addr || 0 == *pc_addr,
+  assert(_pc == *pc_addr || pc == *pc_addr || nullptr == *pc_addr,
          "must be (pc: " INTPTR_FORMAT " _pc: " INTPTR_FORMAT " pc_addr: " INTPTR_FORMAT
          " *pc_addr: " INTPTR_FORMAT  " sp: " INTPTR_FORMAT ")",
          p2i(pc), p2i(_pc), p2i(pc_addr), p2i(*pc_addr), p2i(sp()));
@@ -318,10 +322,10 @@ void frame::patch_pc(Thread* thread, address pc) {
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   // These are reasonable sanity checks
-  if (fp() == 0 || (intptr_t(fp()) & (wordSize-1)) != 0) {
+  if (fp() == nullptr || (intptr_t(fp()) & (wordSize-1)) != 0) {
     return false;
   }
-  if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
+  if (sp() == nullptr || (intptr_t(sp()) & (wordSize-1)) != 0) {
     return false;
   }
   int min_frame_slots = (parent_ijava_frame_abi_size + ijava_state_size) / sizeof(intptr_t);

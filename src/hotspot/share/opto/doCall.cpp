@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciCallSite.hpp"
 #include "ci/ciMethodHandle.hpp"
 #include "ci/ciSymbols.hpp"
@@ -50,33 +49,40 @@
 #include "jfr/jfr.hpp"
 #endif
 
-static void print_trace_type_profile(outputStream* out, int depth, ciKlass* prof_klass, int site_count, int receiver_count) {
-  CompileTask::print_inline_indent(depth, out);
+static void print_trace_type_profile(outputStream* out, int depth, ciKlass* prof_klass, int site_count, int receiver_count,
+                                     bool with_deco) {
+  if (with_deco) {
+    CompileTask::print_inline_indent(depth, out);
+  }
   out->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
   prof_klass->name()->print_symbol_on(out);
-  out->cr();
+  if (with_deco) {
+    out->cr();
+  }
 }
 
-static void trace_type_profile(Compile* C, ciMethod* method, int depth, int bci, ciMethod* prof_method,
-                               ciKlass* prof_klass, int site_count, int receiver_count) {
+static void trace_type_profile(Compile* C, ciMethod* method, JVMState* jvms,
+                               ciMethod* prof_method, ciKlass* prof_klass, int site_count, int receiver_count) {
+  int depth = jvms->depth() - 1;
+  int bci = jvms->bci();
   if (TraceTypeProfile || C->print_inlining()) {
-    outputStream* out = tty;
     if (!C->print_inlining()) {
       if (!PrintOpto && !PrintCompilation) {
         method->print_short_name();
         tty->cr();
       }
       CompileTask::print_inlining_tty(prof_method, depth, bci, InliningResult::SUCCESS);
+      print_trace_type_profile(tty, depth, prof_klass, site_count, receiver_count, true);
     } else {
-      out = C->print_inlining_stream();
+      auto stream = C->inline_printer()->record(method, jvms, InliningResult::SUCCESS);
+      print_trace_type_profile(stream, depth, prof_klass, site_count, receiver_count, false);
     }
-    print_trace_type_profile(out, depth, prof_klass, site_count, receiver_count);
   }
 
   LogTarget(Debug, jit, inlining) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    print_trace_type_profile(&ls, depth, prof_klass, site_count, receiver_count);
+    print_trace_type_profile(&ls, depth, prof_klass, site_count, receiver_count, true);
   }
 }
 
@@ -295,17 +301,19 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           if (miss_cg != nullptr) {
             if (next_hit_cg != nullptr) {
               assert(speculative_receiver_type == nullptr, "shouldn't end up here if we used speculation");
-              trace_type_profile(C, jvms->method(), jvms->depth() - 1, jvms->bci(), next_receiver_method, profile.receiver(1), site_count, profile.receiver_count(1));
+              trace_type_profile(C, jvms->method(), jvms, next_receiver_method, profile.receiver(1), site_count, profile.receiver_count(1));
               // We don't need to record dependency on a receiver here and below.
               // Whenever we inline, the dependency is added by Parse::Parse().
               miss_cg = CallGenerator::for_predicted_call(profile.receiver(1), miss_cg, next_hit_cg, PROB_MAX);
             }
             if (miss_cg != nullptr) {
               ciKlass* k = speculative_receiver_type != nullptr ? speculative_receiver_type : profile.receiver(0);
-              trace_type_profile(C, jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, k, site_count, receiver_count);
+              trace_type_profile(C, jvms->method(), jvms, receiver_method, k, site_count, receiver_count);
               float hit_prob = speculative_receiver_type != nullptr ? 1.0 : profile.receiver_prob(0);
               CallGenerator* cg = CallGenerator::for_predicted_call(k, miss_cg, hit_cg, hit_prob);
-              if (cg != nullptr)  return cg;
+              if (cg != nullptr) {
+                return cg;
+              }
             }
           }
         }
@@ -372,9 +380,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // Use a more generic tactic, like a simple call.
   if (call_does_dispatch) {
     const char* msg = "virtual call";
-    if (C->print_inlining()) {
-      print_inlining(callee, jvms->depth() - 1, jvms->bci(), InliningResult::FAILURE, msg);
-    }
+    C->inline_printer()->record(callee, jvms, InliningResult::FAILURE, msg);
     C->log_inline_failure(msg);
     if (IncrementalInlineVirtual && allow_inline) {
       return CallGenerator::for_late_inline_virtual(callee, vtable_index, prof_factor); // attempt to inline through virtual call later
@@ -512,8 +518,6 @@ void Parse::do_call() {
   // Also, if we inline a guy who eventually needs debug info for this JVMS,
   // our contribution to it is cleaned up right here.
   kill_dead_locals();
-
-  C->print_inlining_assert_ready();
 
   // Set frequently used booleans
   const bool is_virtual = bc() == Bytecodes::_invokevirtual;
@@ -943,7 +947,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   Node* ex_klass_node = nullptr;
   if (has_exception_handler() && !ex_type->klass_is_exact()) {
     Node* p = basic_plus_adr( ex_node, ex_node, oopDesc::klass_offset_in_bytes());
-    ex_klass_node = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
+    ex_klass_node = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
 
     // Compute the exception klass a little more cleverly.
     // Obvious solution is to simple do a LoadKlass from the 'ex_node'.
@@ -961,7 +965,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
           continue;
         }
         Node* p = basic_plus_adr(ex_in, ex_in, oopDesc::klass_offset_in_bytes());
-        Node* k = _gvn.transform( LoadKlassNode::make(_gvn, nullptr, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
+        Node* k = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
         ex_klass_node->init_req( i, k );
       }
       ex_klass_node = _gvn.transform(ex_klass_node);
