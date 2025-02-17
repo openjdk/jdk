@@ -68,7 +68,7 @@ public class Renderer {
     }
 
     static String render(TemplateWithArgs templateWithArgs) {
-        return render(templateWithArgs, TemplateFrame.DEFAULT_FUEL);
+        return render(templateWithArgs, Template.DEFAULT_FUEL);
     }
 
     static String render(TemplateWithArgs templateWithArgs, float fuel) {

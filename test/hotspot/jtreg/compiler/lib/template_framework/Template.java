@@ -36,6 +36,17 @@ public interface Template {
 
     /**
      * Creates a {@link Template} with no arguments.
+     * See {@link body} for more details about how to construct a {@link Template} with {@link Token}s.
+     *
+     * <p>
+     * Example:
+     * {@snippet lang=java :
+     * var template = Template.make(() -> body(
+     *     """
+     *     Multi-liine string or other tokens.
+     *     """
+     * ));
+     * }
      *
      * @param body The {@link TemplateBody} created by {@link Template#body}.
      * @return A {@link Template} with zero arguments.
@@ -46,6 +57,21 @@ public interface Template {
 
     /**
      * Creates a {@link Template} with one argument.
+     * See {@link body} for more details about how to construct a {@link Template} with {@link Token}s.
+     *
+     * <p>
+     * Here an example with template argument {@code 'a'}, captured once as string name
+     * for use in hashtag replacements, and captured once as lambda argument with the corresponding type
+     * of the generic argument.
+     * {@snippet lang=java :
+     * var template = Template.make("a", (Integer a) -> body(
+     *     """
+     *     Multi-liine string or other tokens.
+     *     We can use the hashtag replacement #a to directly insert the String value of a.
+     *     """,
+     *     "We can also use the captured parameter of a: " + a
+     * ));
+     * }
      *
      * @param body The {@link TemplateBody} created by {@link Template#body}.
      * @param <A> Type of the zeroth argument.
@@ -58,6 +84,21 @@ public interface Template {
 
     /**
      * Creates a {@link Template} with two arguments.
+     * See {@link body} for more details about how to construct a {@link Template} with {@link Token}s.
+     *
+     * <p>
+     * Here an example with template arguments {@code 'a'} and {@code 'b'}, captured once as string names
+     * for use in hashtag replacements, and captured once as lambda arguments with the corresponding types
+     * of the generic arguments.
+     * {@snippet lang=java :
+     * var template = Template.make("a", "b", (Integer a, String b) -> body(
+     *     """
+     *     Multi-liine string or other tokens.
+     *     We can use the hashtag replacement #a and #b to directly insert the String value of a and b.
+     *     """,
+     *     "We can also use the captured parameter of a and b: " + a + " and " + b
+     * ));
+     * }
      *
      * @param body The {@link TemplateBody} created by {@link Template#body}.
      * @param <A> Type of the zeroth argument.
@@ -122,6 +163,17 @@ public interface Template {
      * boxed primitive types (e.g. {@link Integer}), any {@link Token}, or {@link List}s
      * of any of these.
      *
+     * {@snippet lang=java :
+     * var template = Template.make(() -> body(
+     *     """
+     *     Multi-line string
+     *     """,
+     *     "normal string ", Integer.valueOf(3), Float.valueOf(1.5f),
+     *     List.of("abc", "def"),
+     *     nestedTemplate.withArgs(42)
+     * ));
+     * }
+     *
      * @param tokens A list of tokens, which can be {@link String}s,boxed primitive types
      *               (e.g. {@link Integer}), any {@link Token}, or {@link List}s
      *               of any of these.
@@ -135,6 +187,38 @@ public interface Template {
     /**
      * Let a {@link TemplateWithArgs} generate code at the innermost location where the
      * {@link Hook} was set with {@link Hook#set}.
+     *
+     * Example:
+     * {@snippet lang=java :
+     * var myHook = new Hook("MyHook");
+     *
+     * var template1 = Template.make("name", (String name) -> body(
+     *     """
+     *     public static int #name = 42;
+     *     """
+     * ));
+     *
+     * var template2 = Template.make(() -> body(
+     *     """
+     *     public class Test {
+     *     """,
+     *     // Set the hook here.
+     *     myHook.set(
+     *         """
+     *         public static void main(String[] args) {
+     *         System.out.println("$field: " + $field)
+     *         """,
+     *         // Reach up to where the hook was set, and insert the code of template1.
+     *         intoHook(template1.withArgs($("field"))),
+     *         """
+     *         }
+     *         """
+     *     ),
+     *     """
+     *     }
+     *     """
+     * ));
+     * }
      *
      * @param hook The {@link Hook} the code is to be generated at.
      * @param templateWithArgs The {@link Template} with applied arguments to be generated at the {@link Hook}.
@@ -217,10 +301,55 @@ public interface Template {
         return function.apply(value);
     }
 
+    /**
+     * Default amount of fuel for {@link TemplateWithArgs#render}. It guides the nesting depth of {@link Template}s.
+     */
+    public final static float DEFAULT_FUEL = 100.0f;
+
+    /**
+     * The default amount of fuel spent per {@link Template}. It is suptracted from the current {@link fuel} at every
+     * nesting level, and once the {@link fuel} reaches zero, the nesting is supposed to terminate.
+     */
+    public final static float DEFAULT_FUEL_COST = 10.0f;
+
+    /**
+     * The current remaining fuel for nested {@link Template}s. Every level of {@link Template} nestig
+     * subtracts a certain amount of fuel, and when it reaches zero, {@link Template}s are supposed to
+     * stop nesting, if possible. This is not a hard rule, but a guide, and a mechanism to ensure
+     * termination in recursive {@link Template} instantiations.
+     *
+     * <p>
+     * Example of a recursive {@link Template}, which checks the remaining {@link fuel} at every level,
+     * and terminates if it reaches zero. It also demonstrates the use of {@link TemplateBinding} for
+     * the recursive use of {@link Template}s. We {@link TemplateWithArgs#render} with {@code 30} total fuel, and spending {@code 5} fuel at each recursion level.
+     * {@snippet lang=java :
+     * var binding = new TemplateBinding<Template.OneArgs<Integer>>();
+     * var template = Template.make("depth", (Integer depth) -> body(
+     *     setFuelCost(5.0f),
+     *     let("fuel", fuel()),
+     *     """
+     *     System.out.println("Currently at depth #depth with fuel #fuel");
+     *     """
+     *     (fuel() > 0) ? binding.get().withArgs(depth + 1)
+     *                    "// terminate\n"
+     * ));
+     * binding.bind(template);
+     * String code = template.withArgs(0).render(30.0f);
+     * }
+     *
+     * @return The amount of fuel left for nested {@link Template} use.
+     */
     static float fuel() {
         return Renderer.getCurrent().fuel();
     }
 
+    /**
+     * Changes the amount of fuel used for the current {@link Template}, where the default is
+     * {@link Template#DEFAULT_FUEL_COST}.
+     *
+     * @param fuelCost The amount of fuel used for the current {@link Template}.
+     * @return A token for convenient use in {@link Template#body}.
+     */
     static NothingToken setFuelCost(float fuelCost) {
         Renderer.getCurrent().setFuelCost(fuelCost);
         return new NothingToken();
