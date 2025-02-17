@@ -4455,7 +4455,7 @@ instruct select_from_two_vectors(vReg dst, vReg src1, vReg src2, vReg index, vRe
       __ vadd_vx(as_VectorRegister($tmp$$reg), as_VectorRegister($index$$reg), t0, Assembler::v0_t);
     }
     __ vrgather_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src2$$reg),
-                  as_VectorRegister($tmp$$reg), Assembler::v0_t);
+                   as_VectorRegister($tmp$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
