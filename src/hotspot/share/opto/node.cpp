@@ -2425,7 +2425,7 @@ void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   bool is_new = C->node_arena()->contains(this);
   if (align) { // print prefix empty spaces$
     // +1 for leading digit, +1 for "o"
-    uint max_width = C->unique() == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(C->unique()))) + 2;
+    uint max_width = (C->unique() == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(C->unique())))) + 2;
     // +1 for leading digit, maybe +1 for "o"
     uint width = (_idx == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(_idx)))) + 1 + (is_new ? 0 : 1);
     while (max_width > width) {
