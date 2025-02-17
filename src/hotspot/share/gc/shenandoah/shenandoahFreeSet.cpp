@@ -1316,13 +1316,20 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
 
 class ShenandoahRecycleTrashedRegionClosure final : public ShenandoahHeapRegionClosure {
   ShenandoahRegionPartitions* _partitions;
+#ifdef ASSERT
   bool _old_trash_not_in_bounds;
-
+#endif
 public:
+#ifdef ASSERT
   ShenandoahRecycleTrashedRegionClosure(ShenandoahRegionPartitions* partitions, bool old_trash_not_in_bounds) :
     ShenandoahHeapRegionClosure(),
     _partitions(partitions),
     _old_trash_not_in_bounds(old_trash_not_in_bounds) {}
+#else
+  ShenandoahRecycleTrashedRegionClosure(ShenandoahRegionPartitions* partitions) :
+    ShenandoahHeapRegionClosure(),
+    _partitions(partitions) {}
+#endif
 
   void heap_region_do(ShenandoahHeapRegion* r) {
 #undef KELVIN_DEBUG
@@ -1353,7 +1360,11 @@ void ShenandoahFreeSet::recycle_trash() {
 #endif
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
+#ifdef ASSERT
   ShenandoahRecycleTrashedRegionClosure closure(&_partitions, _old_trash_not_in_bounds);
+#else
+  ShenandoahRecycleTrashedRegionClosure closure(&_partitions);
+#endif
 #ifdef KELVIN_DEBUG
   log_info(gc)("ShenandoahFreeSet::recycle_trash() made the closure");
 #endif
