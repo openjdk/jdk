@@ -195,7 +195,7 @@ public class MinMaxVector
     }
 
     @Benchmark
-    public int intReductionMin(LoopState state) {
+    public int intReductionMultiplyMin(LoopState state) {
         int result = 0;
         for (int i = 0; i < state.size; i++) {
             final int v = 11 * state.minIntA[i];
@@ -205,10 +205,30 @@ public class MinMaxVector
     }
 
     @Benchmark
-    public int intReductionMax(LoopState state) {
+    public int intReductionSimpleMin(LoopState state) {
+        int result = 0;
+        for (int i = 0; i < state.size; i++) {
+            final int v = state.minIntA[i];
+            result = Math.min(result, v);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public int intReductionMultiplyMax(LoopState state) {
         int result = 0;
         for (int i = 0; i < state.size; i++) {
             final int v = 11 * state.maxIntA[i];
+            result = Math.max(result, v);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public int intReductionSimpleMax(LoopState state) {
+        int result = 0;
+        for (int i = 0; i < state.size; i++) {
+            final int v = state.maxIntA[i];
             result = Math.max(result, v);
         }
         return result;
@@ -239,7 +259,7 @@ public class MinMaxVector
     }
 
     @Benchmark
-    public long longReductionMin(LoopState state) {
+    public long longReductionMultiplyMin(LoopState state) {
         long result = 0;
         for (int i = 0; i < state.size; i++) {
             final long v = 11 * state.minLongA[i];
@@ -249,10 +269,30 @@ public class MinMaxVector
     }
 
     @Benchmark
-    public long longReductionMax(LoopState state) {
+    public long longReductionSimpleMin(LoopState state) {
+        long result = 0;
+        for (int i = 0; i < state.size; i++) {
+            final long v = state.minLongA[i];
+            result = Math.min(result, v);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public long longReductionMultiplyMax(LoopState state) {
         long result = 0;
         for (int i = 0; i < state.size; i++) {
             final long v = 11 * state.maxLongA[i];
+            result = Math.max(result, v);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public long longReductionSimpleMax(LoopState state) {
+        long result = 0;
+        for (int i = 0; i < state.size; i++) {
+            final long v = state.maxLongA[i];
             result = Math.max(result, v);
         }
         return result;
