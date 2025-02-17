@@ -336,7 +336,7 @@ final class Http3ServerStreamImpl {
                 if (error == null) return -1;
                 throw error;
             }
-            return buffer.get();
+            return buffer.get() & 0xFF;
         }
 
         @Override
