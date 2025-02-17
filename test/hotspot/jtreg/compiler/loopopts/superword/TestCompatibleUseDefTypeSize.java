@@ -105,6 +105,12 @@ public class TestCompatibleUseDefTypeSize {
         tests.put("test9",       () -> { return test9(aL.clone(), bD.clone()); });
         tests.put("test10",      () -> { return test10(aL.clone(), bD.clone()); });
         tests.put("test11",      () -> { return test11(aC.clone()); });
+        tests.put("testIntToShort",  () -> { return testIntToShort(aI.clone(), bS.clone()); });
+        tests.put("testIntToByte",   () -> { return testIntToByte(aI.clone(), bB.clone()); });
+        tests.put("testShortToByte", () -> { return testShortToByte(aS.clone(), bB.clone()); });
+        tests.put("testShortToInt",  () -> { return testShortToInt(aS.clone(), bI.clone()); });
+        tests.put("testByteToInt",   () -> { return testByteToInt(aB.clone(), bI.clone()); });
+        tests.put("testByteToShort", () -> { return testByteToShort(aB.clone(), bS.clone()); });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -127,7 +133,13 @@ public class TestCompatibleUseDefTypeSize {
                  "test8",
                  "test9",
                  "test10",
-                 "test11"})
+                 "test11",
+                 "testIntToShort",
+                 "testIntToByte",
+                 "testShortToByte",
+                 "testShortToInt",
+                 "testByteToInt",
+                 "testByteToShort"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -472,5 +484,81 @@ public class TestCompatibleUseDefTypeSize {
             a[i] = 0;
         }
         return new Object[]{ a, new char[] { m } };
+    }
+
+    // Narrowing
+
+    @Test
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", ">0" })
+    public Object[] testIntToShort(int[] ints, short[] res) {
+        for (int i = 0; i < ints.length; i++) {
+            res[i] = (short) ints[i];
+        }
+
+        return new Object[] { ints, res };
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", ">0" })
+    public Object[] testIntToByte(int[] ints, byte[] res) {
+        for (int i = 0; i < ints.length; i++) {
+            res[i] = (byte) ints[i];
+        }
+
+        return new Object[] { ints, res };
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_S2B, IRNode.VECTOR_SIZE + "min(max_short, max_byte)", ">0" })
+    public Object[] testShortToByte(short[] shorts, byte[] res) {
+        for (int i = 0; i < shorts.length; i++) {
+            res[i] = (byte) shorts[i];
+        }
+
+        return new Object[] { shorts, res };
+    }
+
+    // Widening
+
+    @Test
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", ">0" })
+    public Object[] testShortToInt(short[] shorts, int[] res) {
+        for (int i = 0; i < shorts.length; i++) {
+            res[i] = shorts[i];
+        }
+
+        return new Object[] { shorts, res };
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_B2I, IRNode.VECTOR_SIZE + "min(max_byte, max_int)", ">0" })
+    public Object[] testByteToInt(byte[] bytes, int[] res) {
+        for (int i = 0; i < bytes.length; i++) {
+            res[i] = bytes[i];
+        }
+
+        return new Object[] { bytes, res };
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_B2S, IRNode.VECTOR_SIZE + "min(max_byte, max_short)", ">0" })
+    public Object[] testByteToShort(byte[] bytes, short[] res) {
+        for (int i = 0; i < bytes.length; i++) {
+            res[i] = bytes[i];
+        }
+
+        return new Object[] { bytes, res };
     }
 }

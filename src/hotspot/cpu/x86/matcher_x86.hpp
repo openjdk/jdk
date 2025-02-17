@@ -267,11 +267,9 @@
       return false;
     }
 
-    // Cannot cast to own type
-    if (to_bt == from_bt) {
-      return false;
-    }
+    assert(to_bt != from_bt, "Must call with different from_bt and to_bt");
 
+    // T_CHAR is not supported yet due to the backend not implementing vector casts to and from char.
     switch (from_bt) {
       case T_INT:
       case T_SHORT:

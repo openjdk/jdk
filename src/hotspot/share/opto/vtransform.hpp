@@ -534,7 +534,7 @@ public:
     _vlen(vlen), _from_bt(from_bt), _to_bt(to_bt) {}
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
-  NOT_PRODUCT(virtual const char* name() const override { return "Cast"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "CastVector"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
