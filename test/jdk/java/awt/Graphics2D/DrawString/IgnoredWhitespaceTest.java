@@ -23,26 +23,20 @@
 
 /**
  * @test
- * @bug 888888
+ * @bug 8350203
  * @summary Confirm that a few special whitespace characters are ignored.
  */
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.font.FontRenderContext;
-import java.awt.font.GlyphVector;
-import java.awt.font.LineBreakMeasurer;
 import java.awt.font.TextAttribute;
-import java.awt.font.TextLayout;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.text.AttributedString;
-import java.util.Base64;
 import java.util.Map;
 
 public class IgnoredWhitespaceTest {
