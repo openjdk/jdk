@@ -124,8 +124,10 @@ public interface Template {
          * a {@link Template} for nested code generation, and it can also be used with
          * {@link TemplateWithArgs#render} to render the template to a {@link String}
          * directly.
+         *
+         * @return The template all (zero) arguments applied.
          */
-        public TemplateWithArgs.ZeroArgsUse withArgs() {
+        public TemplateWithArgs withArgs() {
             return new TemplateWithArgs.ZeroArgsUse(this);
         }
     }
@@ -139,7 +141,16 @@ public interface Template {
             return function.apply(a);
         }
 
-        public TemplateWithArgs.OneArgsUse<A> withArgs(A a) {
+        /**
+         * Creates a {@link TemplateWithArgs} which can be used as a {@link Token} inside
+         * a {@link Template} for nested code generation, and it can also be used with
+         * {@link TemplateWithArgs#render} to render the template to a {@link String}
+         * directly.
+         *
+         * @param a The value for the zeroth argument.
+         * @return The template its argument applied.
+         */
+        public TemplateWithArgs withArgs(A a) {
             return new TemplateWithArgs.OneArgsUse<>(this, a);
         }
     }
@@ -153,7 +164,17 @@ public interface Template {
             return function.apply(a, b);
         }
 
-        public TemplateWithArgs.TwoArgsUse<A, B> withArgs(A a, B b) {
+        /**
+         * Creates a {@link TemplateWithArgs} which can be used as a {@link Token} inside
+         * a {@link Template} for nested code generation, and it can also be used with
+         * {@link TemplateWithArgs#render} to render the template to a {@link String}
+         * directly.
+         *
+         * @param a The value for the zeroth argument.
+         * @param b The value for the first argument.
+         * @return The template all (two) arguments applied.
+         */
+        public TemplateWithArgs withArgs(A a, B b) {
             return new TemplateWithArgs.TwoArgsUse<>(this, a, b);
         }
     }
@@ -291,6 +312,7 @@ public interface Template {
      *
      * @param key Name for the hashtag replacement.
      * @param value The value that the hashtag is replaced with.
+     * @param <T> The type of the value.
      * @param function The function that is applied with the provided {@code 'value'}.
      * @return A token that does nothing, so that the {@link let} cal can easily be put in a list of tokens
      *         inside a {@link Template#body}.
