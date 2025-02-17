@@ -106,8 +106,12 @@ public:
 
     G1MonotonicArenaMemoryStats _total;
     G1CollectionSetCandidates* candidates = g1h->collection_set()->candidates();
-    for (G1HeapRegion* r : *candidates) {
-      _total.add(r->rem_set()->card_set_memory_stats());
+    for (G1CSetCandidateGroup* gr : candidates->from_marking_groups()) {
+      _total.add(gr->card_set_memory_stats());
+    }
+
+    for (G1CSetCandidateGroup* gr : candidates->retained_groups()) {
+      _total.add(gr->card_set_memory_stats());
     }
     g1h->set_collection_set_candidates_stats(_total);
   }
@@ -617,7 +621,6 @@ class FreeCSetStats {
   size_t _bytes_allocated_in_old_since_last_gc; // Size of young regions turned into old
   size_t _failure_used_words;  // Live size in failed regions
   size_t _failure_waste_words; // Wasted size in failed regions
-  size_t _card_rs_length;      // (Card Set) Remembered set size
   uint _regions_freed;         // Number of regions freed
 
 public:
@@ -627,7 +630,6 @@ public:
       _bytes_allocated_in_old_since_last_gc(0),
       _failure_used_words(0),
       _failure_waste_words(0),
-      _card_rs_length(0),
       _regions_freed(0) { }
 
   void merge_stats(FreeCSetStats* other) {
@@ -637,7 +639,6 @@ public:
     _bytes_allocated_in_old_since_last_gc += other->_bytes_allocated_in_old_since_last_gc;
     _failure_used_words += other->_failure_used_words;
     _failure_waste_words += other->_failure_waste_words;
-    _card_rs_length += other->_card_rs_length;
     _regions_freed += other->_regions_freed;
   }
 
@@ -652,10 +653,6 @@ public:
     G1Policy *policy = g1h->policy();
     policy->old_gen_alloc_tracker()->add_allocated_bytes_since_last_gc(_bytes_allocated_in_old_since_last_gc);
 
-    // Add the cards from the group cardsets.
-    _card_rs_length += g1h->young_regions_cardset()->occupied();
-
-    policy->record_card_rs_length(_card_rs_length);
     policy->cset_regions_freed();
   }
 
@@ -680,10 +677,6 @@ public:
     assert(used > 0, "region %u %s zero used", r->hrm_index(), r->get_short_type_str());
     _before_used_bytes += used;
     _regions_freed += 1;
-  }
-
-  void account_card_rs_length(G1HeapRegion* r) {
-    _card_rs_length += r->rem_set()->occupied();
   }
 };
 
@@ -806,8 +799,6 @@ public:
 
 
     if (r->is_young()) {
-      // We only use card_rs_length statistics to estimate young regions length.
-      stats()->account_card_rs_length(r);
       assert_tracks_surviving_words(r);
       r->record_surv_words_in_group(_surviving_young_words[r->young_index_in_cset()]);
     }
@@ -894,8 +885,6 @@ public:
     p->record_serial_free_cset_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
 
     _g1h->clear_collection_set();
-
-    _g1h->young_regions_cardset()->clear();
   }
 
   double worker_cost() const override { return G1CollectedHeap::heap()->collection_set()->region_length(); }

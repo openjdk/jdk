@@ -150,7 +150,11 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
 
   assert(to_rem_set != nullptr, "Need per-region 'into' remsets.");
   if (to_rem_set->is_tracked()) {
-    to_rem_set->add_reference(p, _worker_id);
+    G1HeapRegion* from = _g1h->heap_region_containing(p);
+
+    if (from->rem_set()->cset_group() != to_rem_set->cset_group()) {
+      to_rem_set->add_reference(p, _worker_id);
+    }
   }
 }
 
@@ -268,7 +272,11 @@ template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
   G1HeapRegion* to = _g1h->heap_region_containing(obj);
   G1HeapRegionRemSet* rem_set = to->rem_set();
   if (rem_set->is_tracked()) {
-    rem_set->add_reference(p, _worker_id);
+    G1HeapRegion* from = _g1h->heap_region_containing(p);
+
+    if (from->rem_set()->cset_group() != rem_set->cset_group()) {
+      rem_set->add_reference(p, _worker_id);
+    }
   }
 }
 
