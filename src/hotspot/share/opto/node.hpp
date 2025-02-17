@@ -337,7 +337,7 @@ protected:
   void out_grow( uint len );
 
  public:
-  // Each Node is assigned a unique small/dense number.  This number is used
+  // Each Node is assigned a unique small/dense number. This number is used
   // to index into auxiliary arrays of data and bit vectors.
   // The value of _idx can be changed using the set_idx() method.
   //
