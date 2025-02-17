@@ -99,8 +99,6 @@ source %{
           return false;
         }
         break;
-      case Op_SelectFromTwoVector:
-        return true;
       default:
         break;
     }
