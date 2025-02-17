@@ -38,18 +38,18 @@ public class OpensslArtifactFetcher {
     private static final String OPENSSL_ORG = "jpg.tests.jdk.openssl";
 
     /**
-     * Gets the openssl binary path of the preferred version
+     * Gets the openssl binary path of the current version
      *
      * Openssl selection flow:
         1. Check whether property test.openssl.path is set and it's the
-           preferred version of openssl, then return that path.
+           current version of openssl, then return that path.
         2. Else look for already installed openssl in system
            path /usr/bin/openssl or /usr/local/bin/openssl, then return that
            path.
-        3. Else try to download the preferred version of openssl from the artifactory
+        3. Else try to download the current version of openssl from the artifactory
            and return that path, if download fails then return null.
      *
-     * @return openssl binary path of the preferred version
+     * @return openssl binary path of the current version
      */
     public static String getOpensslPath() {
         String path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
