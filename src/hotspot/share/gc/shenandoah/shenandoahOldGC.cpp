@@ -133,27 +133,9 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
 
   assert(!heap->is_concurrent_strong_root_in_progress(), "No evacuations during old gc.");
 
-  // We must execute this vm operation if we completed final mark. We cannot
-  // return from here with weak roots in progress. This is not a valid gc state
-  // for any young collections (or allocation failures) that interrupt the old
-  // collection.
+  // We must execute this vm operation if we completed final mark. We cannot return from here with weak roots in progress.
+  // This is not a valid gc state for any young collections (or allocation failures) that interrupt the old collection.
+  // This will reclaim immediate garbage.  vmop_entry_final_roots() will also rebuild the free set.
   vmop_entry_final_roots();
-
-  // We do not rebuild_free following increments of old marking because memory has not been reclaimed. However, we may
-  // need to transfer memory to OLD in order to efficiently support the mixed evacuations that might immediately follow.
-  size_t allocation_runway = heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(0);
-  heap->compute_old_generation_balance(allocation_runway, 0);
-
-  ShenandoahGenerationalHeap::TransferResult result;
-  {
-    ShenandoahHeapLocker locker(heap->lock());
-    result = heap->balance_generations();
-  }
-
-  LogTarget(Info, gc, ergo) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    result.print_on("Old Mark", &ls);
-  }
   return true;
 }

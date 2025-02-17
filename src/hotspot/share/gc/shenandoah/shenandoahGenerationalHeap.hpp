@@ -139,14 +139,8 @@ public:
 
   const ShenandoahGenerationSizer* generation_sizer()  const { return &_generation_sizer;  }
 
-  // Zeros out the evacuation and promotion reserves
-  void reset_generation_reserves();
-
   // Computes the optimal size for the old generation, represented as a surplus or deficit of old regions
-  void compute_old_generation_balance(size_t old_xfer_limit, size_t old_cset_regions);
-
-  // Transfers surplus old regions to young, or takes regions from young to satisfy old region deficit
-  TransferResult balance_generations();
+  void compute_old_generation_balance(size_t old_xfer_limit, size_t old_cset_regions, size_t young_cset_regions);
 
   // Balances generations, coalesces and fills old regions if necessary
   void complete_degenerated_cycle();

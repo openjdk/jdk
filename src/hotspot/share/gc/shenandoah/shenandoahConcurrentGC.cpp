@@ -232,8 +232,8 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
     // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
     // the control thread will detect it on its next iteration and run a degenerated young cycle.
-    vmop_entry_final_roots();
     _abbreviated = true;
+    vmop_entry_final_roots();
   }
 
   // We defer generation resizing actions until after cset regions have been recycled.  We do this even following an
@@ -344,8 +344,13 @@ void ShenandoahConcurrentGC::entry_final_roots() {
   const char* msg = final_roots_event_message();
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_roots);
   EventMark em("%s", msg);
-
   op_final_roots();
+  // After concurrent old marking finishes and after an abbreviated cycle, we reclaim immediate garbage.
+  // Further, we may also want to expand OLD in order to make room for anticipated promotions and/or for mixed
+  // evacuations.  Mixed evacuations are especially likely to follow the end of OLD marking.
+  assert(_abbreviated || (ShenandoahHeap::heap()->mode()->is_generational() && _generation->is_old()),
+         "Only rebuild free set for abbreviated and old-marking cycles");
+  ShenandoahHeap::heap()->rebuild_free_set(true /*concurrent*/);
 }
 
 void ShenandoahConcurrentGC::entry_reset() {

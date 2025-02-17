@@ -148,6 +148,10 @@ public:
   void move_from_partition_to_partition(ssize_t idx, ShenandoahFreeSetPartitionId orig_partition,
                                         ShenandoahFreeSetPartitionId new_partition, size_t available);
 
+  // In case recycled region r is in the OldCollector partition but not within the interval for empty OldCollector regions, expand
+  // the empty interval to include this region.  If recycled region r is not in the OldCollector partition, do nothing.
+  inline void adjust_interval_for_recycled_old_region(ShenandoahHeapRegion* r);
+
   const char* partition_membership_name(ssize_t idx) const;
 
   // Return the index of the next available region >= start_index, or maximum_regions if not found.
@@ -235,6 +239,7 @@ public:
 
   inline size_t count(ShenandoahFreeSetPartitionId which_partition) const { return _region_counts[int(which_partition)]; }
 
+#ifdef ASSERT
   // Assure leftmost, rightmost, leftmost_empty, and rightmost_empty bounds are valid for all free sets.
   // Valid bounds honor all of the following (where max is the number of heap regions):
   //   if the set is empty, leftmost equals max and rightmost equals 0
@@ -255,7 +260,8 @@ public:
   //       idx >= leftmost &&
   //       idx <= rightmost
   //     }
-  void assert_bounds() NOT_DEBUG_RETURN;
+  void assert_bounds(bool old_trash_not_in_bounds) NOT_DEBUG_RETURN;
+#endif
 };
 
 // Publicly, ShenandoahFreeSet represents memory that is available to mutator threads.  The public capacity(), used(),
@@ -293,6 +299,10 @@ private:
   // from a region that was previously empty.  Return nullptr if memory could not be allocated.
   inline HeapWord* allocate_from_partition_with_affiliation(ShenandoahAffiliation affiliation,
                                                             ShenandoahAllocRequest& req, bool& in_new_region);
+
+#ifdef ASSERT
+  bool _old_trash_not_in_bounds;
+#endif
 
   // We re-evaluate the left-to-right allocation bias whenever _alloc_bias_weight is less than zero.  Each time
   // we allocate an object, we decrement the count of this value.  Each time we re-evaluate whether to allocate
@@ -375,6 +385,9 @@ private:
   void establish_generation_sizes(size_t young_region_count, size_t old_region_count);
   size_t get_usable_free_words(size_t free_bytes) const;
 
+  void reduce_young_reserve(size_t adjusted_young_reserve, size_t requested_young_reserve);
+  void reduce_old_reserve(size_t adjusted_old_reserve, size_t requested_old_reserve);
+
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 
@@ -387,6 +400,12 @@ public:
 
   void clear();
 
+  // Rebuild the free set.  This combines the effects of prepare_to_rebuild() and finish_rebuild() with no intervening
+  // efforts to rebalance generation sizes.  When the free set is rebuild, we reserve sufficient memory within the
+  // collector partition (and, for generational mode, the old collector partition) based on the amount reserved
+  // by heuristics to support the next planned evacuation effort.
+  void rebuild();
+
   // Examine the existing free set representation, capturing the current state into var arguments:
   //
   // young_cset_regions is the number of regions currently in the young cset if we are starting to evacuate, or zero
@@ -398,27 +417,15 @@ public:
                           size_t &first_old_region, size_t &last_old_region, size_t &old_region_count);
 
   // At the end of final mark, but before we begin evacuating, heuristics calculate how much memory is required to
-  // hold the results of evacuating to young-gen and to old-gen, and have_evacuation_reserves should be true.
-  // These quantities, stored as reserves for their respective generations, are consulted prior to rebuilding
-  // the free set (ShenandoahFreeSet) in preparation for evacuation.  When the free set is rebuilt, we make sure
-  // to reserve sufficient memory in the collector and old_collector sets to hold evacuations.
-  //
-  // We also rebuild the free set at the end of GC, as we prepare to idle GC until the next trigger.  In this case,
-  // have_evacuation_reserves is false because we don't yet know how much memory will need to be evacuated in the
-  // next GC cycle.  When have_evacuation_reserves is false, the free set rebuild operation reserves for the collector
-  // and old_collector sets based on alternative mechanisms, such as ShenandoahEvacReserve, ShenandoahOldEvacReserve, and
-  // ShenandoahOldCompactionReserve.  In a future planned enhancement, the reserve for old_collector set when the
-  // evacuation reserves are unknown, is based in part on anticipated promotion as determined by analysis of live data
-  // found during the previous GC pass which is one less than the current tenure age.
+  // hold the results of evacuating to young-gen and to old-gen.  These quantities, stored in reserves for their,
+  // respective generations, are consulted prior to rebuilding the free set (ShenandoahFreeSet) in preparation for
+  // evacuation.  When the free set is rebuilt, we make sure to reserve sufficient memory in the collector and
+  // old_collector sets to hold evacuations.
   //
   // young_cset_regions is the number of regions currently in the young cset if we are starting to evacuate, or zero
   //   old_cset_regions is the number of regions currently in the old cset if we are starting a mixed evacuation, or zero
   //    num_old_regions is the number of old-gen regions that have available memory for further allocations (excluding old cset)
-  // have_evacuation_reserves is true iff the desired values of young-gen and old-gen evacuation reserves and old-gen
-  //                    promotion reserve have been precomputed (and can be obtained by invoking
-  //                    <generation>->get_evacuation_reserve() or old_gen->get_promoted_reserve()
-  void finish_rebuild(size_t young_cset_regions, size_t old_cset_regions, size_t num_old_regions,
-                      bool have_evacuation_reserves = false);
+  void finish_rebuild(size_t young_cset_regions, size_t old_cset_regions, size_t num_old_regions);
 
   // When a region is promoted in place, we add the region's available memory if it is greater than plab_min_size()
   // into the old collector partition by invoking this method.
@@ -429,6 +436,14 @@ public:
   // Typical usage: At the end of evacuation, when the collector no longer needs the regions that had been reserved
   // for evacuation, invoke this to make regions available for mutator allocations.
   void move_regions_from_collector_to_mutator(size_t cset_regions);
+
+#ifdef ASSERT
+  // Advise FreeSet that old trash regions have not yet been accounted for in OldCollector partition bounds
+  void advise_of_old_trash() {
+    shenandoah_assert_heaplocked();
+    _old_trash_not_in_bounds = true;
+  }
+#endif
 
   void recycle_trash();
 
@@ -507,7 +522,7 @@ public:
 
   // Reserve space for evacuations, with regions reserved for old evacuations placed to the right
   // of regions reserved of young evacuations.
-  void compute_young_and_old_reserves(size_t young_cset_regions, size_t old_cset_regions, bool have_evacuation_reserves,
+  void compute_young_and_old_reserves(size_t young_cset_regions, size_t old_cset_regions,
                                       size_t &young_reserve_result, size_t &old_reserve_result) const;
 };
 

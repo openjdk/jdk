@@ -581,40 +581,12 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab) {
   retire_plab(plab, thread);
 }
 
-ShenandoahGenerationalHeap::TransferResult ShenandoahGenerationalHeap::balance_generations() {
-  shenandoah_assert_heaplocked_or_safepoint();
-
-  ShenandoahOldGeneration* old_gen = old_generation();
-  const ssize_t old_region_balance = old_gen->get_region_balance();
-  old_gen->set_region_balance(0);
-
-  if (old_region_balance > 0) {
-    const auto old_region_surplus = checked_cast<size_t>(old_region_balance);
-    const bool success = generation_sizer()->transfer_to_young(old_region_surplus);
-    return TransferResult {
-      success, old_region_surplus, "young"
-    };
-  }
-
-  if (old_region_balance < 0) {
-    const auto old_region_deficit = checked_cast<size_t>(-old_region_balance);
-    const bool success = generation_sizer()->transfer_to_old(old_region_deficit);
-    if (!success) {
-      old_gen->handle_failed_transfer();
-    }
-    return TransferResult {
-      success, old_region_deficit, "old"
-    };
-  }
-
-  return TransferResult {true, 0, "none"};
-}
-
 // Make sure old-generation is large enough, but no larger than is necessary, to hold mixed evacuations
 // and promotions, if we anticipate either. Any deficit is provided by the young generation, subject to
-// xfer_limit, and any surplus is transferred to the young generation.
-// xfer_limit is the maximum we're able to transfer from young to old.
-void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_limit, size_t old_cset_regions) {
+// mutator_xfer_limit, and any surplus is transferred to the young generation.  mutator_xfer_limit is
+//  the maximum we're able to transfer from young to old.
+void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_xfer_limit,
+                                                                size_t old_cset_regions, size_t young_cset_regions) {
 
   // We can limit the old reserve to the size of anticipated promotions:
   // max_old_reserve is an upper bound on memory evacuated from old and promoted to old,
@@ -634,77 +606,253 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
 
   // We have to be careful in the event that SOEP is set to 100 by the user.
   assert(ShenandoahOldEvacRatioPercent <= 100, "Error");
-  const size_t old_available = old_generation()->available();
-  // The free set will reserve this amount of memory to hold young evacuations
-  const size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
-
-  // In the case that ShenandoahOldEvacRatioPercent equals 100, max_old_reserve is limited only by xfer_limit.
-
-  const double bound_on_old_reserve = old_available + old_xfer_limit + young_reserve;
-  const double max_old_reserve = (ShenandoahOldEvacRatioPercent == 100)?
-                                 bound_on_old_reserve: MIN2(double(young_reserve * ShenandoahOldEvacRatioPercent) / double(100 - ShenandoahOldEvacRatioPercent),
-                                                            bound_on_old_reserve);
-
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
+  const size_t old_available = old_generation()->available() + old_cset_regions * region_size_bytes;
+  const size_t young_available = young_generation()->available() + young_cset_regions * region_size_bytes;
+
+  // The free set will reserve this amount of memory to hold young evacuations (initialized to the ideal reserve)
+  size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
+
+  // If ShenandoahOldEvacRatioPercent equals 100, max_old_reserve is limited only by mutator_xfer_limit and young_reserve
+  const size_t bound_on_old_reserve = ((old_available + mutator_xfer_limit + young_reserve) * ShenandoahOldEvacRatioPercent) / 100;
+  size_t proposed_max_old = ((ShenandoahOldEvacRatioPercent == 100)?
+                             bound_on_old_reserve:
+                             MIN2((young_reserve * ShenandoahOldEvacRatioPercent) / (100 - ShenandoahOldEvacRatioPercent),
+                                  bound_on_old_reserve));
+
+#undef KELVIN_OLD_BALANCE
+#ifdef KELVIN_OLD_BALANCE
+  log_info(gc)("compute_old_gen_balance(%zu, %zu, %zu), old_available: %zu, young_available: %zu, young_reserve: %zu",
+	       mutator_xfer_limit, old_cset_regions, young_cset_regions, old_available, young_available, young_reserve);
+  log_info(gc)("  bound_on_old_reserve: %zu, proposed_max_old: %zu", bound_on_old_reserve, proposed_max_old);
+#endif
+
+  if (young_reserve > young_available) {
+    young_reserve = young_available;
+  }
 
   // Decide how much old space we should reserve for a mixed collection
-  double reserve_for_mixed = 0;
-  if (old_generation()->has_unprocessed_collection_candidates()) {
+  size_t reserve_for_mixed = 0;
+  const size_t old_fragmented_available =
+    old_available - (old_generation()->free_unaffiliated_regions() + old_cset_regions) * region_size_bytes;
+
+#ifdef KELVIN_OLD_BALANCE
+  log_info(gc)("  old_fragmented_available: %zu", old_fragmented_available);
+#endif
+
+  if (old_fragmented_available > proposed_max_old) {
+    // After we've promoted regions in place, there may be an abundance of old-fragmented available memory,
+    // even more than the desired percentage for old reserve.  We cannot transfer these fragmented regions back
+    // to young.  Instead we make the best of the situation by using this fragmented memory for both promotions
+    // and evacuations.
+    proposed_max_old = old_fragmented_available;
+
+#ifdef KELVIN_OLD_BALANCE
+    log_info(gc)("  expand proposed_max_old: %zu", proposed_max_old);
+#endif
+
+  }
+  size_t reserve_for_promo = old_fragmented_available;
+  const size_t max_old_reserve = proposed_max_old;
+  const size_t mixed_candidate_live_memory = old_generation()->unprocessed_collection_candidates_live_memory();
+  const bool doing_mixed = (mixed_candidate_live_memory > 0);
+
+#ifdef KELVIN_OLD_BALANCE
+  log_info(gc)("  reserve_for_promo: %zu, max_old_reserve: %zu, mixed_candidate_live_memory: %zu, doing_mixed: %s",
+	       reserve_for_promo, max_old_reserve, mixed_candidate_live_memory, doing_mixed? "yes": "no");
+#endif
+
+  if (doing_mixed) {
     // We want this much memory to be unfragmented in order to reliably evacuate old.  This is conservative because we
     // may not evacuate the entirety of unprocessed candidates in a single mixed evacuation.
-    const double max_evac_need = (double(old_generation()->unprocessed_collection_candidates_live_memory()) * ShenandoahOldEvacWaste);
+    const size_t max_evac_need = (size_t) (mixed_candidate_live_memory * ShenandoahOldEvacWaste);
+
+#ifdef KELVIN_OLD_BALANCE
+    log_info(gc)("  max_evac_need: %zu", max_evac_need);
+#endif
+
     assert(old_available >= old_generation()->free_unaffiliated_regions() * region_size_bytes,
            "Unaffiliated available must be less than total available");
-    const double old_fragmented_available = double(old_available - old_generation()->free_unaffiliated_regions() * region_size_bytes);
-    reserve_for_mixed = max_evac_need + old_fragmented_available;
-    if (reserve_for_mixed > max_old_reserve) {
-      reserve_for_mixed = max_old_reserve;
+
+
+    // We prefer to evacuate all of mixed into unfragmented memory, and will expand old in order to do so, unless
+    // we already have too much fragmented available memory in old.
+    reserve_for_mixed = max_evac_need;
+    if (reserve_for_mixed + reserve_for_promo > max_old_reserve) {
+      // In this case, we'll allow old-evac to target some of the fragmented old memory.
+      size_t excess_reserves = (reserve_for_mixed + reserve_for_promo) - max_old_reserve;
+      if (reserve_for_promo > excess_reserves) {
+        reserve_for_promo -= excess_reserves;
+      } else {
+        excess_reserves -= reserve_for_promo;
+        reserve_for_promo = 0;
+        reserve_for_mixed -= excess_reserves;
+      }
+#ifdef KELVIN_OLD_BALANCE
+    log_info(gc)("  reserve_for_mixed + reserve_for_promo was > max_old_reserve\n"
+		 "     adjusted reserve_for_promo: %zu, reserve_for_mixed: %zu, excess_reserves: %zu",
+		 reserve_for_promo, reserve_for_mixed, excess_reserves);
+#endif
     }
   }
 
-  // Decide how much space we should reserve for promotions from young
-  size_t reserve_for_promo = 0;
+  // Decide how much additional space we should reserve for promotions from young.  We give priority to mixed evacations
+  // over promotions.
   const size_t promo_load = old_generation()->get_promotion_potential();
   const bool doing_promotions = promo_load > 0;
+
+#ifdef KELVIN_OLD_BALANCE
+  log_info(gc)("  promo_load: %zu, doing_promotions: %s", promo_load, doing_promotions? "yes": "no");
+#endif
+
   if (doing_promotions) {
-    // We're promoting and have a bound on the maximum amount that can be promoted
-    assert(max_old_reserve >= reserve_for_mixed, "Sanity");
-    const size_t available_for_promotions = max_old_reserve - reserve_for_mixed;
-    reserve_for_promo = MIN2((size_t)(promo_load * ShenandoahPromoEvacWaste), available_for_promotions);
+    // We've already set aside all of the fragmented available memory within old-gen to represent old objects
+    // to be promoted from young generation.  promo_load represents the memory that we anticipate to be promoted
+    // from regions that have reached tenure age.  In the ideal, we will always use fragmented old-gen memory
+    // to hold individually promoted objects and will use unfragmented old-gen memory to represent the old-gen
+    // evacuation workloa.
+
+    // We're promoting and have an esimate of memory to be promoted from aged regions
+    assert(max_old_reserve >= (reserve_for_mixed + reserve_for_promo), "Sanity");
+    const size_t available_for_additional_promotions = max_old_reserve - (reserve_for_mixed + reserve_for_promo);
+    size_t promo_need = (size_t)(promo_load * ShenandoahPromoEvacWaste);
+#ifdef KELVIN_OLD_BALANCE
+    log_info(gc)("  available_for_additional_promotions: %zu, promo_need: %zu", available_for_additional_promotions, promo_need);
+#endif
+    if (promo_need > reserve_for_promo) {
+      reserve_for_promo += MIN2(promo_need - reserve_for_promo, available_for_additional_promotions);
+#ifdef KELVIN_OLD_BALANCE
+      log_info(gc)("  adjusted reserve_for_promo: %zu", reserve_for_promo);
+#endif
+    }
+    // We've already reserved all the memory required for the promo_load, and possibly more.  The excess
+    // can be consumed by objects promoted from regions that have not yet reached tenure age.
   }
 
-  // This is the total old we want to ideally reserve
-  const size_t old_reserve = reserve_for_mixed + reserve_for_promo;
-  assert(old_reserve <= max_old_reserve, "cannot reserve more than max for old evacuations");
+  // This is the total old we want to reserve (initialized to the ideal reserve)
+  size_t old_reserve = reserve_for_mixed + reserve_for_promo;
 
   // We now check if the old generation is running a surplus or a deficit.
-  const size_t max_old_available = old_generation()->available() + old_cset_regions * region_size_bytes;
-  if (max_old_available >= old_reserve) {
+  size_t old_region_deficit = 0;
+  size_t old_region_surplus = 0;
+
+  size_t mutator_region_xfer_limit = mutator_xfer_limit / region_size_bytes;
+  // align the mutator_xfer_limit on region size
+  mutator_xfer_limit = mutator_region_xfer_limit * region_size_bytes;
+
+#ifdef KELVIN_OLD_BALANCE
+  log_info(gc)("  mutator_region_xfer_limit: %zu, mutator_xfer_limit: %zu", mutator_region_xfer_limit, mutator_xfer_limit);
+#endif
+
+  if (old_available >= old_reserve) {
     // We are running a surplus, so the old region surplus can go to young
-    const size_t old_surplus = (max_old_available - old_reserve) / region_size_bytes;
+    const size_t old_surplus = old_available - old_reserve;
+    old_region_surplus = old_surplus / region_size_bytes;
     const size_t unaffiliated_old_regions = old_generation()->free_unaffiliated_regions() + old_cset_regions;
-    const size_t old_region_surplus = MIN2(old_surplus, unaffiliated_old_regions);
+    old_region_surplus = MIN2(old_region_surplus, unaffiliated_old_regions);
     old_generation()->set_region_balance(checked_cast<ssize_t>(old_region_surplus));
-  } else {
-    // We are running a deficit which we'd like to fill from young.
-    // Ignore that this will directly impact young_generation()->max_capacity(),
-    // indirectly impacting young_reserve and old_reserve.  These computations are conservative.
-    // Note that deficit is rounded up by one region.
-    const size_t old_need = (old_reserve - max_old_available + region_size_bytes - 1) / region_size_bytes;
-    const size_t max_old_region_xfer = old_xfer_limit / region_size_bytes;
+#ifdef KELVIN_OLD_BALANCE
+    log_info(gc)("  old_surplus: %zu, unaffiliated_old_regions: %zu, old_region_surplus: %zu",
+		 old_surplus, unaffiliated_old_regions, old_region_surplus);
+#endif
 
-    // Round down the regions we can transfer from young to old. If we're running short
-    // on young-gen memory, we restrict the xfer. Old-gen collection activities will be
-    // curtailed if the budget is restricted.
-    const size_t old_region_deficit = MIN2(old_need, max_old_region_xfer);
+  } else if (old_available + mutator_xfer_limit >= old_reserve) {
+    // Mutator's xfer limit is sufficient to satisfy our need: transfer all memory from there
+    size_t old_deficit = old_reserve - old_available;
+    old_region_deficit = (old_deficit + region_size_bytes - 1) / region_size_bytes;
     old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
-  }
-}
+#ifdef KELVIN_OLD_BALANCE
+    log_info(gc)("  sufficient mutator xfer limit, old_deficit: %zu, old_region_deficit: %zu", old_deficit, old_region_deficit);
+#endif
+  } else {
+   // We'll try to xfer from both mutator excess and from young collector reserve
+    size_t available_reserves = old_available + young_reserve + mutator_xfer_limit;
+    size_t old_entitlement = (available_reserves  * ShenandoahOldEvacRatioPercent) / 100;
 
-void ShenandoahGenerationalHeap::reset_generation_reserves() {
-  young_generation()->set_evacuation_reserve(0);
-  old_generation()->set_evacuation_reserve(0);
-  old_generation()->set_promoted_reserve(0);
+    // Round old_entitlement down to nearest multiple of regions to be transferred to old
+    size_t entitled_xfer = old_entitlement - old_available;
+    entitled_xfer = region_size_bytes * (entitled_xfer / region_size_bytes);
+    size_t unaffiliated_young_regions = young_generation()->free_unaffiliated_regions();
+    size_t unaffiliated_young_memory = unaffiliated_young_regions * region_size_bytes;
+#ifdef KELVIN_OLD_BALANCE
+    log_info(gc)("  trying to xfer from mutator excess and from young collector reserve");
+    log_info(gc)("  available_reserves: %zu, old_entitlement: %zu, entitled_xfer: %zu, unaffiliated_young_regions: %zu",
+		 available_reserves, old_entitlement, entitled_xfer, unaffiliated_young_regions);
+#endif
+
+    if (entitled_xfer > unaffiliated_young_memory) {
+      entitled_xfer = unaffiliated_young_memory;
+#ifdef KELVIN_OLD_BALANCE
+      log_info(gc)("  downsize entitled_xfer: %zu", entitled_xfer);
+#endif
+    }
+    old_entitlement = old_available + entitled_xfer;
+#ifdef KELVIN_OLD_BALANCE
+    log_info(gc)("  old_entitlement: %zu vs old_reserve: %zu", old_entitlement, old_reserve);
+#endif
+    if (old_entitlement < old_reserve) {
+      // There's not enough memory to satisfy our desire.  Scale back our old-gen intentions.
+      size_t budget_overrun = old_reserve - old_entitlement;;
+#ifdef KELVIN_OLD_BALANCE
+      log_info(gc)("  budget_overrun: %zu", budget_overrun);
+#endif
+      if (reserve_for_promo > budget_overrun) {
+        reserve_for_promo -= budget_overrun;
+        old_reserve -= budget_overrun;
+#ifdef KELVIN_OLD_BALANCE
+	log_info(gc)("  shrink old_reserve: %zu and reserve_for_promo: %zu", old_reserve, reserve_for_promo);
+#endif
+      } else {
+#ifdef KELVIN_OLD_BALANCE
+	log_info(gc)("  budget_overrun: %zu to be reduced by reserve_for_promo: %zu, ", budget_overrun, reserve_for_promo);
+#endif
+        budget_overrun -= reserve_for_promo;
+        reserve_for_promo = 0;
+        reserve_for_mixed = (reserve_for_mixed > budget_overrun)? reserve_for_mixed - budget_overrun: 0;
+        old_reserve = reserve_for_promo + reserve_for_mixed;
+#ifdef KELVIN_OLD_BALANCE
+	log_info(gc)("  reserve_for_mixed recomputed: %zu, old_reserve recomputed: %zu", reserve_for_mixed, old_reserve);
+#endif
+      }
+    }
+
+    // Because of adjustments above, old_reserve may be smaller now than it was when we tested the branch
+    //   condition above: "(old_available + mutator_xfer_limit >= old_reserve)
+    // Therefore, we do NOT know that: mutator_xfer_limit < old_reserve - old_available
+
+    size_t old_deficit = old_reserve - old_available;
+    old_region_deficit = (old_deficit + region_size_bytes - 1) / region_size_bytes;
+
+    // Shrink young_reserve to account for loan to old reserve
+    const size_t reserve_xfer_regions = old_region_deficit - mutator_region_xfer_limit;
+    young_reserve -= reserve_xfer_regions * region_size_bytes;
+
+#ifdef KELVIN_OLD_BALANCE
+    log_info(gc)("  old_deficit: %zu, old_region_deficit: %zu, reserve_xfer_regions: %zu, young_reserve: %zu",
+		 old_deficit, old_region_deficit, reserve_xfer_regions, young_reserve);
+#endif
+
+    old_generation()->set_region_balance(0 - checked_cast<ssize_t>(old_region_deficit));
+
+
+  }
+
+#ifdef KELVIN_OLD_BALANCE
+  log_info(gc)("  at end, old_region_deficit: %zu, old_region_surplus: %zu", old_region_deficit, old_region_surplus);
+  log_info(gc)("    young_reserve: %zu, reserve_for_mixed: %zu, reserve_for_promo: %zu, old_available: %zu, young_available: %zu",
+	       young_reserve, reserve_for_mixed, reserve_for_promo, old_available, young_available);
+#endif
+
+
+  assert(old_region_deficit == 0 || old_region_surplus == 0, "Only surplus or deficit, never both");
+  assert(young_reserve + reserve_for_mixed + reserve_for_promo <= old_available + young_available,
+         "Cannot reserve more memory than is available: %zu = %zu + %zu <= %zu + %zu",
+	 young_reserve, reserve_for_mixed, reserve_for_promo, old_available, young_available);
+
+  // deficit/surplus adjustments to generation sizes will precede rebuild
+  young_generation()->set_evacuation_reserve(young_reserve);
+  old_generation()->set_evacuation_reserve(reserve_for_mixed);
+  old_generation()->set_promoted_reserve(reserve_for_promo);
 }
 
 void ShenandoahGenerationalHeap::TransferResult::print_on(const char* when, outputStream* ss) const {
@@ -1075,18 +1223,6 @@ void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
     old_generation()->transfer_pointers_from_satb();
   }
 
-  // We defer generation resizing actions until after cset regions have been recycled.
-  TransferResult result = balance_generations();
-  LogTarget(Info, gc, ergo) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    result.print_on("Degenerated GC", &ls);
-  }
-
-  // In case degeneration interrupted concurrent evacuation or update references, we need to clean up
-  // transient state. Otherwise, these actions have no effect.
-  reset_generation_reserves();
-
   if (!old_generation()->is_parsable()) {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_coalesce_and_fill);
     coalesce_and_fill_old_regions(false);
@@ -1103,20 +1239,6 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
     // we could start a young collection. This could delay the start of the young cycle and
     // throw off the heuristics.
     entry_global_coalesce_and_fill();
-  }
-
-  TransferResult result;
-  {
-    ShenandoahHeapLocker locker(lock());
-
-    result = balance_generations();
-    reset_generation_reserves();
-  }
-
-  LogTarget(Info, gc, ergo) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    result.print_on("Concurrent GC", &ls);
   }
 }
 

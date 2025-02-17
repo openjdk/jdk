@@ -295,8 +295,9 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
 
   // First priority is to reclaim the easy garbage out of young-gen.
 
-  // maximum_young_evacuation_reserve is upper bound on memory to be evacuated out of young
-  const size_t maximum_young_evacuation_reserve = (young_generation->max_capacity() * ShenandoahEvacReserve) / 100;
+  // maximum_young_evacuation_reserve is upper bound on memory to be evacuated into young Collector Reserve.  This is
+  // bounded at the end of previous GC cycle, based on available memory and balancing of evacuation to old and young.
+  const size_t maximum_young_evacuation_reserve = young_generation->get_evacuation_reserve();
   const size_t young_evacuation_reserve = MIN2(maximum_young_evacuation_reserve, young_generation->available_with_reserve());
 
   // maximum_old_evacuation_reserve is an upper bound on memory evacuated from old and evacuated to old (promoted),
@@ -390,7 +391,6 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
 
 // Having chosen the collection set, adjust the budgets for generational mode based on its composition.  Note
 // that young_generation->available() now knows about recently discovered immediate garbage.
-//
 void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap, ShenandoahCollectionSet* const collection_set) {
   shenandoah_assert_generational();
   // We may find that old_evacuation_reserve and/or loaned_for_young_evacuation are not fully consumed, in which case we may
@@ -492,13 +492,11 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   }
 
   if (regions_to_xfer > 0) {
-    bool result = ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->transfer_to_young(regions_to_xfer);
-    assert(excess_old >= regions_to_xfer * region_size_bytes,
-           "Cannot transfer (%zu, %zu) more than excess old (%zu)",
-           regions_to_xfer, region_size_bytes, excess_old);
+    assert(excess_old >= regions_to_xfer * region_size_bytes, "Cannot xfer more than excess old");
     excess_old -= regions_to_xfer * region_size_bytes;
-    log_debug(gc, ergo)("%s transferred %zu excess regions to young before start of evacuation",
-                       result? "Successfully": "Unsuccessfully", regions_to_xfer);
+    ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->force_transfer_to_young(regions_to_xfer);
+    log_debug(gc, ergo)("Transferred %zu excess regions to young before start of evacuation",
+                        regions_to_xfer);
   }
 
   // Add in the excess_old memory to hold unanticipated promotions, if any.  If there are more unanticipated
@@ -740,16 +738,13 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
       ShenandoahCollectionSetPreselector preselector(collection_set, heap->num_regions());
 
       // Find the amount that will be promoted, regions that will be promoted in
-      // place, and preselect older regions that will be promoted by evacuation.
+      // place and preselected older regions that will be promoted by evacuation.
       compute_evacuation_budgets(heap);
 
-      // Choose the collection set, including the regions preselected above for
-      // promotion into the old generation.
+      // Choose the collection set, including the regions preselected above for promotion into the old generation.
       _heuristics->choose_collection_set(collection_set);
-      if (!collection_set->is_empty()) {
-        // only make use of evacuation budgets when we are evacuating
-        adjust_evacuation_budgets(heap, collection_set);
-      }
+      // Even if collection_set->is_empty(), we want to adjust budgets, making reserves available to mutator.
+      adjust_evacuation_budgets(heap, collection_set);
 
       if (is_global()) {
         // We have just chosen a collection set for a global cycle. The mark bitmap covering old regions is complete, so
@@ -773,13 +768,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
                             ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
-    size_t young_cset_regions, old_cset_regions;
-
-    // We are preparing for evacuation.  At this time, we ignore cset region tallies.
-    size_t first_old, last_old, num_old;
-    heap->free_set()->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
-    // Free set construction uses reserve quantities, because they are known to be valid here
-    heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old, true);
+    heap->free_set()->rebuild();
   }
 }
 

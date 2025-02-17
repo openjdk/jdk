@@ -193,6 +193,19 @@ void ShenandoahGenerationSizer::force_transfer_to_old(size_t regions) const {
                      regions, young_gen->name(), old_gen->name(), PROPERFMTARGS(new_size));
 }
 
+// This is used to transfer excess old-gen regions to young at the start of evacuation after collection set is determined.
+void ShenandoahGenerationSizer::force_transfer_to_young(size_t regions) const {
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
+  ShenandoahGeneration* old_gen = heap->old_generation();
+  ShenandoahGeneration* young_gen = heap->young_generation();
+  const size_t bytes_to_transfer = regions * ShenandoahHeapRegion::region_size_bytes();
+
+  young_gen->increase_capacity(bytes_to_transfer);
+  old_gen->decrease_capacity(bytes_to_transfer);
+  const size_t new_size = young_gen->max_capacity();
+  log_info(gc)("Forcing transfer of %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
+          regions, old_gen->name(), young_gen->name(), PROPERFMTARGS(new_size));
+}
 
 bool ShenandoahGenerationSizer::transfer_to_young(size_t regions) const {
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();

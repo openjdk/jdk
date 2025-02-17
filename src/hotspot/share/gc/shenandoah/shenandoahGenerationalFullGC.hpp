@@ -55,14 +55,6 @@ public:
   // free set.
   static void compute_balances();
 
-  // Rebuilding the free set may have resulted in regions being pulled in to the old generation
-  // evacuation reserve. For this reason, we must update the usage and capacity of the generations
-  // again. In the distant past, the free set did not know anything about generations, so we had
-  // a layer built above it to represent how much young/old memory was available. This layer is
-  // redundant and adds complexity. We would like to one day remove it. Until then, we must keep it
-  // synchronized with the free set's view of things.
-  static void balance_generations_after_rebuilding_free_set();
-
   // Logs the number of live bytes marked in the old generation. This is _not_ the same
   // value used as the baseline for the old generation _after_ the full gc is complete.
   // The value reported in the logs does not include objects and regions that may be

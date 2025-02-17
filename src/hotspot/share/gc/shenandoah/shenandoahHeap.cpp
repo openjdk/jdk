@@ -426,12 +426,14 @@ jint ShenandoahHeap::initialize() {
 
     // Initialize to complete
     _marking_context->mark_complete();
-    size_t young_cset_regions, old_cset_regions;
+   _free_set->rebuild();
 
-    // We are initializing free set.  We ignore cset region tallies.
-    size_t first_old, last_old, num_old;
-    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
-    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+    if (mode()->is_generational()) {
+      size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
+      young_generation()->set_evacuation_reserve(young_reserve);
+      old_generation()->set_evacuation_reserve((size_t) 0);
+      old_generation()->set_promoted_reserve((size_t) 0);
+    }
   }
 
   if (AlwaysPreTouch) {
@@ -2518,15 +2520,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     // available for transfer to old. Note that transfer of humongous regions does not impact available.
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     size_t allocation_runway = gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
-    gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions);
-
-    // Total old_available may have been expanded to hold anticipated promotions.  We trigger if the fragmented available
-    // memory represents more than 16 regions worth of data.  Note that fragmentation may increase when we promote regular
-    // regions in place when many of these regular regions have an abundant amount of available memory within them.  Fragmentation
-    // will decrease as promote-by-copy consumes the available memory within these partially consumed regions.
-    //
-    // We consider old-gen to have excessive fragmentation if more than 12.5% of old-gen is free memory that resides
-    // within partially consumed regions of memory.
+    gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions, young_cset_regions);
   }
   // Rebuild free set based on adjusted generation sizes.
   _free_set->finish_rebuild(young_cset_regions, old_cset_regions, old_region_count);

@@ -86,8 +86,13 @@ public:
   bool transfer_to_young(size_t regions) const;
   bool transfer_to_old(size_t regions) const;
 
-  // force transfer is used when we promote humongous objects.  May violate min/max limits on generation sizes
+  // Force transfer is used when we promote humongous objects or promote regular regions in place.
+  // May violate min/max limits on generation sizes.
   void force_transfer_to_old(size_t regions) const;
+
+  // Force transfer is used when we have excess old and we have confirmed that old unaffiliated >= regions.
+  // May violate min/max limits on generation sizes.
+  void force_transfer_to_young(size_t regions) const;
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONSIZER_HPP
