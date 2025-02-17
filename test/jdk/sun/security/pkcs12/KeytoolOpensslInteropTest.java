@@ -31,7 +31,7 @@
  *          Note: This test executes some openssl command, so need to set
  *          openssl path using system property "test.openssl.path" or it should
  *          be available in /usr/bin or /usr/local/bin
- *          Required OpenSSL version : Defined in OpensslArtifactFetcher
+ *          Required OpenSSL version : Current version as defined by OpensslArtifactFetcher
  *
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
