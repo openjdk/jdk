@@ -1710,7 +1710,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
             for (LiveRangeSegment segment : getModel().getDiagram().getLiveRangeSegments()) {
                 LiveRangeWidget liveRangeWidget = getWidget(segment);
-                if (liveRangeWidget.isVisible()) {
+                if (liveRangeWidget != null && liveRangeWidget.isVisible()) {
                     visibleBlocks.add(segment.getCluster());
                 }
             }
