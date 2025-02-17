@@ -4632,7 +4632,7 @@ class StubGenerator: public StubCodeGenerator {
     __ shsubv(v22, __ T8H, v26, v22);
     __ shsubv(v23, __ T8H, v27, v23);
   }
- 
+
   void kyber_subv_addv64() {
     __ subv(v24, __ T8H, v0, v16);
     __ subv(v25, __ T8H, v1, v17);
@@ -4642,7 +4642,6 @@ class StubGenerator: public StubCodeGenerator {
     __ subv(v29, __ T8H, v5, v21);
     __ subv(v30, __ T8H, v6, v22);
     __ subv(v31, __ T8H, v7, v23);
-    
     __ addv(v0, __ T8H, v0, v16);
     __ addv(v1, __ T8H, v1, v17);
     __ addv(v2, __ T8H, v2, v18);
@@ -4659,7 +4658,7 @@ class StubGenerator: public StubCodeGenerator {
     __ stpq(as_FloatRegister(i0 + 4), as_FloatRegister(i0 + 5), __ post(tmpAddr, 32));
     __ stpq(as_FloatRegister(i0 + 6), as_FloatRegister(i0 + 7), __ post(tmpAddr, 32));
   }
-  
+
   void kyber_montmul_subv_addv32() {
     __ sqdmulh(v24, __ T8H, v1, v16);
     __ mulv(v16, __ T8H, v1, v16);
@@ -4685,12 +4684,11 @@ class StubGenerator: public StubCodeGenerator {
     __ subv(v3, __ T8H, v2, v17);
     __ subv(v5, __ T8H, v4, v18);
     __ subv(v7, __ T8H, v6, v19);
-    
     __ addv(v0, __ T8H, v0, v16);
     __ addv(v2, __ T8H, v2, v17);
     __ addv(v4, __ T8H, v4, v18);
     __ addv(v6, __ T8H, v6, v19);
-  }  
+  }
 
   void kyber_subv_addv_montmul32() {
     __ subv(v20, __ T8H, v0, v1);
