@@ -34,6 +34,7 @@ sealed interface Token permits StringToken,
                                TemplateWithArgs.TwoArgsUse,
                                HookSetToken,
                                HookIntoToken,
+                               DefineNameToken,
                                NothingToken
 {
     static List<Token> parse(Object[] objects) {

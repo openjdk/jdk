@@ -85,7 +85,6 @@ public class TestTemplate {
         expectRendererException(() -> let("x","y"),                       "A Template method such as");
         expectRendererException(() -> fuel(),                             "A Template method such as");
         expectRendererException(() -> setFuelCost(1.0f),                  "A Template method such as");
-        expectRendererException(() -> defineName("name", "int", MUTABLE), "A Template method such as");
         expectRendererException(() -> countNames("int", MUTABLE),         "A Template method such as");
         expectRendererException(() -> sampleName("int", MUTABLE),         "A Template method such as");
         expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
@@ -1002,14 +1001,14 @@ public class TestTemplate {
         String expected =
             """
             class Y_1 {
-            [int: 1 and 2]
+            [int: 0 and 0]
             begin body_1
-            [int: 1 and 2]
+            [int: 0 and 0]
             define mutable
-            [int: 1 and 2]
+            [int: 1 and 1]
             define immutable
             [int: 1 and 2]
-            [int: 1 and 2]
+            [int: 0 and 0]
             }
             """;
         checkEQ(code, expected);

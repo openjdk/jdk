@@ -222,10 +222,10 @@ public interface Template {
      *
      * @param hook The {@link Hook} the code is to be generated at.
      * @param templateWithArgs The {@link Template} with applied arguments to be generated at the {@link Hook}.
-     * @return The {@link HookIntoToken} which when used inside a {@link Template#body} performs the code generation into the {@link Hook}.
+     * @return The {@link Token} which when used inside a {@link Template#body} performs the code generation into the {@link Hook}.
      * @throws RendererException if there is no active {@link Hook#set}.
      */
-    static HookIntoToken intoHook(Hook hook, TemplateWithArgs templateWithArgs) {
+    static Token intoHook(Hook hook, TemplateWithArgs templateWithArgs) {
         return new HookIntoToken(hook, templateWithArgs);
     }
 
@@ -271,7 +271,7 @@ public interface Template {
      *         inside a {@link Template#body}.
      * @throws RendererException if there is a duplicate hashtag {@code key}.
      */
-    static NothingToken let(String key, Object value) {
+    static Token let(String key, Object value) {
         Renderer.getCurrent().addHashtagReplacement(key, value);
         return new NothingToken();
     }
@@ -350,20 +350,44 @@ public interface Template {
      * @param fuelCost The amount of fuel used for the current {@link Template}.
      * @return A token for convenient use in {@link Template#body}.
      */
-    static NothingToken setFuelCost(float fuelCost) {
+    static Token setFuelCost(float fuelCost) {
         Renderer.getCurrent().setFuelCost(fuelCost);
         return new NothingToken();
     }
 
-    static NothingToken defineName(String name, Object type, NameSelection nameSelection) {
-        Renderer.getCurrent().defineName(name, type, nameSelection);
-        return new NothingToken();
+    /**
+     * Define a name in the current code frame.
+     * Note that there can be duplicate definitions, and they simply increase
+     * the {@link countNames} count, and increase the probability of sampling
+     * the name with {@link sampleName}.
+     *
+     * @param name The {@code 'name'} of the name.
+     * @param type The type of the name.
+     * @param nameSelection Determines if the name is mutable or immutable.
+     * @return The token that performs the defining action.
+     */
+    static Token defineName(String name, Object type, NameSelection nameSelection) {
+        return new DefineNameToken(name, type, nameSelection);
     }
 
+    /**
+     * Count the number of names defined for the specified type.
+     *
+     * @param type The type of the names to be counted.
+     * @param nameSelection Determines if we count the mutable names or all.
+     * @return The number of names for the specified parameters.
+     */
     static int countNames(Object type, NameSelection nameSelection) {
         return Renderer.getCurrent().countNames(type, nameSelection);
     }
 
+    /**
+     * Sample a random name for the specified type.
+     *
+     * @param type The type of the names to sample from.
+     * @param nameSelection Determines if we sample from the mutable names or all.
+     * @return The sampled name.
+     */
     static String sampleName(Object type, NameSelection nameSelection) {
         return Renderer.getCurrent().sampleName(type, nameSelection);
     }

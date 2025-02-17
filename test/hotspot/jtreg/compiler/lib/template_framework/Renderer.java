@@ -124,10 +124,6 @@ public class Renderer {
         currentTemplateFrame.setFuelCost(fuelCost);
     }
 
-    void defineName(String name, Object type, NameSelection nameSelection) {
-        currentCodeFrame.defineName(name, type, nameSelection);
-    }
-
     int countNames(Object type, NameSelection nameSelection) {
         return currentCodeFrame.countNames(type, nameSelection);
     }
@@ -252,6 +248,9 @@ public class Renderer {
 
                 callerCodeFrame.addCode(currentCodeFrame.getCode());
                 currentCodeFrame = callerCodeFrame;
+            }
+            case DefineNameToken(String name, Object type, NameSelection nameSelection) -> {
+                currentCodeFrame.defineName(name, type, nameSelection);
             }
         }
     }

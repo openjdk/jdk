@@ -23,6 +23,4 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
-
-record HookSetToken(Hook hook, List<Token> tokens) implements Token {}
+record DefineNameToken(String name, Object type, NameSelection nameSelection) implements Token {}

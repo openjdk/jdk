@@ -26,7 +26,7 @@ package compiler.lib.template_framework;
 import java.util.List;
 
 public record Hook(String name) {
-    public HookSetToken set(Object... tokens) {
+    public Token set(Object... tokens) {
         return new HookSetToken(this, Token.parse(tokens));
     }
 }
