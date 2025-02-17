@@ -50,8 +50,6 @@ import static compiler.lib.template_framework.Template.setFuelCost;
 import static compiler.lib.template_framework.Template.defineName;
 import static compiler.lib.template_framework.Template.countNames;
 import static compiler.lib.template_framework.Template.sampleName;
-import static compiler.lib.template_framework.NameSelection.MUTABLE;
-import static compiler.lib.template_framework.NameSelection.ALL;
 
 public class TestTemplate {
     interface FailingTest {
@@ -85,8 +83,8 @@ public class TestTemplate {
         expectRendererException(() -> let("x","y"),                       "A Template method such as");
         expectRendererException(() -> fuel(),                             "A Template method such as");
         expectRendererException(() -> setFuelCost(1.0f),                  "A Template method such as");
-        expectRendererException(() -> countNames("int", MUTABLE),         "A Template method such as");
-        expectRendererException(() -> sampleName("int", MUTABLE),         "A Template method such as");
+        expectRendererException(() -> countNames("int", true),            "A Template method such as");
+        expectRendererException(() -> sampleName("int", true),            "A Template method such as");
         expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
         expectRendererException(() -> testFailingSample(), "No variable of type 'int'.");
         expectRendererException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
@@ -808,11 +806,11 @@ public class TestTemplate {
         var hook1 = new Hook("Hook1");
 
         var template1 = Template.make(() -> body(
-            "[", countNames("int", MUTABLE), "]\n"
+            "[", countNames("int", true), "]\n"
         ));
 
         var template2 = Template.make("name", "type", (String name, Object type) -> body(
-            defineName(name, type, MUTABLE),
+            defineName(name, type, true),
             "define #type #name\n",
             template1.withArgs()
         ));
@@ -871,18 +869,18 @@ public class TestTemplate {
         var hook1 = new Hook("Hook1");
 
         var template1 = Template.make("type", (Object type) -> body(
-            "[#type: ", countNames(type, MUTABLE), " and ", countNames(type, ALL), "]\n"
+            "[#type: ", countNames(type, true), " and ", countNames(type, false), "]\n"
         ));
 
 
         var template2 = Template.make("name", "type", (String name, Object type) -> body(
-            defineName(name, type, MUTABLE),
+            defineName(name, type, true),
             "define mutable #type #name\n",
             template1.withArgs(type)
         ));
 
         var template3 = Template.make("name", "type", (String name, Object type) -> body(
-            defineName(name, type, ALL),
+            defineName(name, type, false),
             "define immutable #type #name\n",
             template1.withArgs(type)
         ));
@@ -902,14 +900,14 @@ public class TestTemplate {
         ));
 
         var template6 = Template.make("type", (Object type) -> body(
-            let("v", sampleName(type, MUTABLE)),
+            let("v", sampleName(type, true)),
             "{ $sample\n",
             "#v = 7\n",
             "} $sample\n"
         ));
 
         var template7 = Template.make("type", (Object type) -> body(
-            let("v", sampleName(type, ALL)),
+            let("v", sampleName(type, false)),
             "{ $sample\n",
             "blackhole(#v)\n",
             "} $sample\n"
@@ -975,7 +973,7 @@ public class TestTemplate {
         var hook1 = new Hook("Hook1");
 
         var template1 = Template.make("type", (Object type) -> body(
-            "[#type: ", countNames(type, MUTABLE), " and ", countNames(type, ALL), "]\n"
+            "[#type: ", countNames(type, true), " and ", countNames(type, false), "]\n"
         ));
 
         // Example that shows that defineName runs before any code gets generated.
@@ -987,10 +985,10 @@ public class TestTemplate {
                 "begin $body\n",
                 template1.withArgs("int"),
                 "define mutable\n",
-                defineName($("v1"), "int", MUTABLE),
+                defineName($("v1"), "int", true),
                 template1.withArgs("int"),
                 "define immutable\n",
-                defineName($("v1"), "int", ALL),
+                defineName($("v1"), "int", false),
                 template1.withArgs("int")
             ),
             template1.withArgs("int"),
@@ -1090,7 +1088,7 @@ public class TestTemplate {
 
     public static void testFailingSample() {
         var template1 = Template.make(() -> body(
-            let("v", sampleName("int", MUTABLE)),
+            let("v", sampleName("int", true)),
             "v is #v\n"
         ));
 

@@ -385,32 +385,32 @@ public interface Template {
      *
      * @param name The {@code 'name'} of the name.
      * @param type The type of the name.
-     * @param nameSelection Determines if the name is mutable or immutable.
+     * @param mutable Determines if the name is mutable or immutable.
      * @return The token that performs the defining action.
      */
-    static Token defineName(String name, Object type, NameSelection nameSelection) {
-        return new DefineNameToken(name, type, nameSelection);
+    static Token defineName(String name, Object type, boolean mutable) {
+        return new DefineNameToken(name, type, mutable);
     }
 
     /**
      * Count the number of names defined for the specified type.
      *
      * @param type The type of the names to be counted.
-     * @param nameSelection Determines if we count the mutable names or all.
+     * @param onlyMutable Determines if we count the mutable names or all.
      * @return The number of names for the specified parameters.
      */
-    static int countNames(Object type, NameSelection nameSelection) {
-        return Renderer.getCurrent().countNames(type, nameSelection);
+    static int countNames(Object type, boolean onlyMutable) {
+        return Renderer.getCurrent().countNames(type, onlyMutable);
     }
 
     /**
      * Sample a random name for the specified type.
      *
      * @param type The type of the names to sample from.
-     * @param nameSelection Determines if we sample from the mutable names or all.
+     * @param onlyMutable Determines if we sample from the mutable names or all.
      * @return The sampled name.
      */
-    static String sampleName(Object type, NameSelection nameSelection) {
-        return Renderer.getCurrent().sampleName(type, nameSelection);
+    static String sampleName(Object type, boolean onlyMutable) {
+        return Renderer.getCurrent().sampleName(type, onlyMutable);
     }
 }

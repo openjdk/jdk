@@ -85,16 +85,16 @@ class CodeFrame {
         return hookCodeLists.containsKey(hook);
     }
 
-    private NameSet nameSet(NameSelection nameSelection) {
-        if (nameSelection == NameSelection.MUTABLE) {
+    private NameSet nameSet(boolean onlyMutable) {
+        if (onlyMutable) {
             return mutableNames;
         } else {
             return allNames;
         }
     }
 
-    void defineName(String name, Object type, NameSelection nameSelection) {
-        if (nameSelection == NameSelection.MUTABLE) {
+    void defineName(String name, Object type, boolean mutable) {
+        if (mutable) {
             mutableNames.add(name, type);
             allNames.add(name, type);
         } else {
@@ -102,12 +102,12 @@ class CodeFrame {
         }
     }
 
-    int countNames(Object type, NameSelection nameSelection) {
-        return nameSet(nameSelection).count(type);
+    int countNames(Object type, boolean onlyMutable) {
+        return nameSet(onlyMutable).count(type);
     }
 
-    String sampleName(Object type, NameSelection nameSelection) {
-        return nameSet(nameSelection).sample(type);
+    String sampleName(Object type, boolean onlyMutable) {
+        return nameSet(onlyMutable).sample(type);
     }
 
     Code getCode() {

@@ -49,8 +49,6 @@ import static compiler.lib.template_framework.Template.sampleName;
 import static compiler.lib.template_framework.Template.countNames;
 import static compiler.lib.template_framework.Library.CLASS_HOOK;
 import static compiler.lib.template_framework.Library.METHOD_HOOK;
-import static compiler.lib.template_framework.NameSelection.MUTABLE;
-import static compiler.lib.template_framework.NameSelection.ALL;
 
 public class TestTutorial {
 
@@ -408,29 +406,29 @@ public class TestTutorial {
     // These can be used to define and sample variables from outer scopes.
     public static String generateWithNames() {
         var templateSample = Template.make("type", (Object type) -> body(
-            let("name", sampleName(type, ALL)),
+            let("name", sampleName(type, false)),
             """
             System.out.println("Sampling type #type: #name = " + #name);
             """
         ));
 
         var templateStaticField = Template.make("type", (Object type) -> body(
-            defineName($("field"), type, MUTABLE),
+            defineName($("field"), type, true),
             """
             public static #type $field = 0;
             """
         ));
 
         var templateLocalVariable = Template.make("type", (Object type) -> body(
-            defineName($("var"), type, MUTABLE),
+            defineName($("var"), type, true),
             """
             #type $var = 0;
             """
         ));
 
         var templateStatus = Template.make(() -> body(
-            let("ints", countNames("int", ALL)),
-            let("longs", countNames("long", ALL)),
+            let("ints", countNames("int", false)),
+            let("longs", countNames("long", false)),
             """
             System.out.println("Status: #ints ints, #longs longs.");
             """
