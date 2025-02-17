@@ -73,7 +73,7 @@ $(window).on("load", function() {
         }
         if (!activeTab || r[activeTab].length === 0 || !fixedTab) {
             Object.keys(r).reduce(function(prev, curr) {
-                if (r[curr].length > 0 && r[curr][0].score > prev) {
+                if (r[curr].length > 0 && r[curr][0].score - prev > 0.1) {
                     activeTab = curr;
                     return r[curr][0].score;
                 }
@@ -141,29 +141,22 @@ $(window).on("load", function() {
     }
     function renderTable(category, items) {
         var table = $("<div class='summary-table'>")
-            .addClass(category === "modules"
-                ? "one-column-search-results"
-                : "two-column-search-results");
+            .addClass("two-column-search-results");
         var col1, col2;
         if (category === "modules") {
-            col1 = "Module";
+            col1 = mdlDesc;
         } else if (category === "packages") {
-            col1 = "Module";
-            col2 = "Package";
+            col1 = pkgDesc;
         } else if (category === "types") {
-            col1 = "Package";
-            col2 = "Class"
+            col1 = clsDesc;
         } else if (category === "members") {
-            col1 = "Class";
-            col2 = "Member";
+            col1 = mbrDesc;
         } else if (category === "searchTags") {
-            col1 = "Location";
-            col2 = "Name";
+            col1 = tagDesc;
         }
-        $("<div class='table-header col-plain'>" + col1 + "</div>").appendTo(table);
-        if (category !== "modules") {
-            $("<div class='table-header col-plain'>" + col2 + "</div>").appendTo(table);
-        }
+        col2 = descDesc;
+        $("<div class='table-header col-first'>" + col1 + "</div>").appendTo(table);
+        $("<div class='table-header col-last'>" + col2 + "</div>").appendTo(table);
         $.each(items, function(index, item) {
             var rowColor = index % 2 ? "odd-row-color" : "even-row-color";
             renderItem(item, table, rowColor);
@@ -171,20 +164,15 @@ $(window).on("load", function() {
         return table;
     }
     function renderItem(item, table, rowColor) {
-        var label = getHighlightedText(item.input, item.boundaries, item.prefix.length, item.input.length);
+        var label = getResultLabel(item);
         var link = $("<a/>")
             .attr("href",  getURL(item.indexItem, item.category))
             .attr("tabindex", "0")
             .addClass("search-result-link")
             .html(label);
-        var container = getHighlightedText(item.input, item.boundaries, 0, item.prefix.length - 1);
-        if (item.category === "searchTags") {
-            container = item.indexItem.h || "";
-        }
-        if (item.category !== "modules") {
-            $("<div/>").html(container).addClass("col-plain").addClass(rowColor).appendTo(table);
-        }
-        $("<div/>").html(link).addClass("col-last").addClass(rowColor).appendTo(table);
+        var desc = getResultDescription(item, true);
+        $("<div/>").html(link).addClass("col-plain").addClass(rowColor).appendTo(table);
+        $("<div/>").html(desc).addClass("col-last").addClass(rowColor).appendTo(table);
     }
     var timeout;
     function schedulePageSearch() {

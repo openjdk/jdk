@@ -173,7 +173,7 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
         Content titleWithAnchor = tagletWriter.createAnchorAndSearchIndex(holder,
                 searchText,
                 title,
-                resources.getText("doclet.External_Specification"),
+                "",
                 docTree);
 
         if (specURI == null) {

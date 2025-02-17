@@ -392,20 +392,20 @@ public class TestSearch extends JavadocTester {
     void checkSearchIndex() {
         checkOutput("member-search-index.js", true,
                 """
-                    {"p":"pkg","c":"AnotherClass","l":"AnotherClass()","u":"%3Cinit%3E()"}""",
+                    {"p":"pkg","c":"AnotherClass","l":"AnotherClass()","u":"%3Cinit%3E()","k":"3"}""",
                 """
-                    {"p":"pkg1","c":"RegClass","l":"RegClass()","u":"%3Cinit%3E()"}""",
+                    {"p":"pkg1","c":"RegClass","l":"RegClass()","u":"%3Cinit%3E()","k":"3"}""",
                 """
-                    {"p":"pkg2","c":"TestError","l":"TestError()","u":"%3Cinit%3E()"}""",
+                    {"p":"pkg2","c":"TestError","l":"TestError()","u":"%3Cinit%3E()","k":"3"}""",
                 """
                     {"p":"pkg","c":"AnotherClass","l":"method(byte[], int, String)","u":"method(byte[],int,java.lang.String)"}""");
         checkOutput("member-search-index.js", false,
                 """
                     {"p":"pkg","c":"AnotherClass","l":"method(RegClass)","u":"method-pkg1.RegClass-"}""",
+               """
+                    {"p":"pkg2","c":"TestClass","l":"TestClass()","u":"TestClass--","k":"3"}""",
                 """
-                    {"p":"pkg2","c":"TestClass","l":"TestClass()","u":"TestClass--"}""",
-                """
-                    {"p":"pkg","c":"TestError","l":"TestError()","u":"TestError--"}""",
+                    {"p":"pkg","c":"TestError","l":"TestError()","u":"TestError--","k":"3"}""",
                 """
                     {"p":"pkg","c":"AnotherClass","l":"method(byte[], int, String)","u":"method-byte:A-int-java.lang.String-"}""");
     }
@@ -797,10 +797,10 @@ public class TestSearch extends JavadocTester {
                     """);
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""");
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html","k":"18"}""");
         checkOutput("package-search-index.js", true,
                 """
-                    {"l":"All Packages","u":"allpackages-index.html"}""");
+                    {"l":"All Packages","u":"allpackages-index.html","k":"18"}""");
         checkOutput("index-all.html", true,
                 """
                     <br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interface\
@@ -835,7 +835,7 @@ public class TestSearch extends JavadocTester {
                 """
                     {"l":"SearchWordWithDescription","h":"pkg1.RegClass.CONSTANT_FIELD_1","d":"search word with desc","u":"pkg1/RegClass.html#SearchWordWithDescription"}""",
                 """
-                    {"l":"Serialized Form","h":"","u":"serialized-form.html"},{"l":"SingleWord","h":"package pkg","u":"pkg/package-summary.html#SingleWord"}""",
+                    {"l":"Serialized Form","h":"","k":"18","u":"serialized-form.html"},{"l":"SingleWord","h":"package pkg","u":"pkg/package-summary.html#SingleWord"}""",
                 """
                     {"l":"trailing","h":"pkg.AnotherClass.method(byte[], int, String)","d":"backslash\\\\","u":"pkg/AnotherClass.html#trailing"}]""");
     }

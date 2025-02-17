@@ -409,7 +409,7 @@ public class TagletWriter {
             public String visitExecutable(ExecutableElement e, Void p) {
                 return utils.getFullyQualifiedName(utils.getEnclosingTypeElement(e))
                         + "." + utils.getSimpleName(e)
-                        + utils.flatSignature(e, htmlWriter.getCurrentTypeElement());
+                        + utils.makeSignature(e, htmlWriter.getCurrentTypeElement(), false, true);
             }
 
             @Override

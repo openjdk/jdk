@@ -184,9 +184,9 @@ public class TestModulePackages extends JavadocTester {
                      {"p":"p","m":"m","l":"C"},{"p":"p","m":"o","l":"C"}""");
         checkOutput("member-search-index.js", true,
                 """
-                     {"m":"m","p":"p","c":"C","l":"C()","u":"%3Cinit%3E()"}""",
+                     {"m":"m","p":"p","c":"C","l":"C()","u":"%3Cinit%3E()","k":"3"}""",
                 """
-                     {"m":"o","p":"p","c":"C","l":"C()","u":"%3Cinit%3E()"}""");
+                     {"m":"o","p":"p","c":"C","l":"C()","u":"%3Cinit%3E()","k":"3"}""");
     }
 
     @Test

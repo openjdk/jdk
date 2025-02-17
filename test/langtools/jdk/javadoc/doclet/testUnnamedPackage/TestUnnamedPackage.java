@@ -103,11 +103,11 @@ public class TestUnnamedPackage extends JavadocTester {
 
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""");
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html","k":"18"}""");
 
         checkOutput("package-search-index.js", true,
                 """
-                    {"l":"All Packages","u":"allpackages-index.html"}""");
+                    {"l":"All Packages","u":"allpackages-index.html","k":"18"}""");
 
         checkOutput("index-all.html", true,
                 """
@@ -117,17 +117,17 @@ public class TestUnnamedPackage extends JavadocTester {
 
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""",
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html","k":"18"}""",
                 """
                     {"p":"<Unnamed>","l":"C"}""");
 
         checkOutput("member-search-index.js", true,
                 """
-                    {"p":"<Unnamed>","c":"C","l":"C()","u":"%3Cinit%3E()"}""");
+                    {"p":"<Unnamed>","c":"C","l":"C()","u":"%3Cinit%3E()","k":"3"}""");
 
         checkOutput("package-search-index.js", true,
                 """
-                    {"l":"All Packages","u":"allpackages-index.html"}""");
+                    {"l":"All Packages","u":"allpackages-index.html","k":"18"}""");
 
         checkOutput("package-search-index.js", false, "Unnamed");
 

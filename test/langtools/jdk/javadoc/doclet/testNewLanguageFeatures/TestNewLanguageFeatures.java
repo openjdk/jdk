@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -464,7 +464,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
         //=================================
         checkOutput("index-all.html", true,
                 """
-                    <a href="pkg2/Foo.html#method(java.util.Vector)" class="member-name-link">method(Vector&lt;Object&gt;)</a>"""
+                    <a href="pkg2/Foo.html#method(java.util.Vector)" class="member-name-link">method(Vector)</a>"""
         );
 
         // TODO: duplicate of previous case; left in delibarately for now to simplify comparison testing
@@ -473,7 +473,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
         //=================================
         checkOutput("index-all.html", true,
                 """
-                    <a href="pkg2/Foo.html#method(java.util.Vector)" class="member-name-link">method(Vector&lt;Object&gt;)</a>"""
+                    <a href="pkg2/Foo.html#method(java.util.Vector)" class="member-name-link">method(Vector)</a>"""
         );
 
     }
