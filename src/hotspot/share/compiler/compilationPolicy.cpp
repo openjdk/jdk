@@ -633,6 +633,11 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue) {
       task = next_task;
       continue;
     }
+    if (task->compile_reason() == CompileTask::Reason_Whitebox) {
+      // Whitebox (CTW) tasks do not participate in rate selection and/or any level
+      // adjustments. Just return them in order.
+      return task;
+    }
     Method* method = task->method();
     methodHandle mh(Thread::current(), method);
     if (task->can_become_stale() && is_stale(t, TieredCompileTaskTimeout, mh) && !is_old(mh)) {
