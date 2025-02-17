@@ -31,17 +31,33 @@
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
 
+DEBUG_ONLY(bool AsyncLogWriter::ignore_recursive_logging = false;)
+
 class AsyncLogWriter::AsyncLogLocker : public StackObj {
- public:
+  static Thread* _holder;
+public:
+  static Thread* current_holder() { return _holder; }
   AsyncLogLocker() {
     assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
     _instance->_lock.lock();
+    _holder = Thread::current_or_null();
   }
 
   ~AsyncLogLocker() {
+    assert(_holder == Thread::current_or_null(), "must be");
+    _holder = nullptr;
     _instance->_lock.unlock();
   }
+
+  void wait() {
+    Thread* saved_holder = _holder;
+    _holder = nullptr;
+    _instance->_lock.wait(0/* no timeout */);
+    _holder = saved_holder;
+  }
 };
+
+Thread* AsyncLogWriter::AsyncLogLocker::_holder = nullptr;
 
 // LogDecorator::None applies to 'constant initialization' because of its constexpr constructor.
 const LogDecorations& AsyncLogWriter::None = LogDecorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
@@ -84,19 +100,67 @@ void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecora
   _lock.notify();
 }
 
-void AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
+// This function checks for cases where continuing with asynchronous logging may lead to stability issues, such as a deadlock.
+// If this returns false then we give up on logging asynchronously and do so synchronously instead.
+bool AsyncLogWriter::is_enqueue_allowed() {
+  AsyncLogWriter* alw = AsyncLogWriter::instance();
+  Thread* holding_thread = AsyncLogWriter::AsyncLogLocker::current_holder();
+  Thread* this_thread = Thread::current_or_null();
+  if (this_thread == nullptr) {
+    // The current thread is unattached.
+    return false;
+  }
+
+  if (holding_thread == this_thread) {
+    // A thread, while enqueuing a message, has attempted to log something.
+    // Do not log while holding the Async log lock.
+    // Try to catch possible occurrences in debug builds.
+#ifdef ASSERT
+    if (!AsyncLogWriter::ignore_recursive_logging) {
+      ShouldNotReachHere();
+    }
+#endif // ASSERT
+    return false;
+  }
+
+  if (alw == nullptr) {
+    // There is no AsyncLogWriter instance yet.
+    return false;
+  }
+
+  if (this_thread == alw) {
+    // The async log producer is attempting to log, leading to recursive logging.
+    return false;
+  }
+
+  return true;
+}
+
+bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
+  if (!is_enqueue_allowed()) {
+    return false;
+  }
+
   AsyncLogLocker locker;
-  enqueue_locked(&output, decorations, msg);
+  DEBUG_ONLY(log_debug(deathtest)("Induce a recursive log for testing (for crashing)");)
+  DEBUG_ONLY(log_debug(deathtest2)("Induce a recursive log for testing");)
+  AsyncLogWriter::instance()->enqueue_locked(&output, decorations, msg);
+  return true;
 }
 
 // LogMessageBuffer consists of a multiple-part/multiple-line message.
 // The lock here guarantees its integrity.
-void AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
-  AsyncLogLocker locker;
-
-  for (; !msg_iterator.is_at_end(); msg_iterator++) {
-    enqueue_locked(&output, msg_iterator.decorations(), msg_iterator.message());
+bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
+  if (!is_enqueue_allowed()) {
+    return false;
   }
+
+  // If we get here we know the AsyncLogWriter is initialized.
+  AsyncLogLocker locker;
+  for (; !msg_iterator.is_at_end(); msg_iterator++) {
+    AsyncLogWriter::instance()->enqueue_locked(&output, msg_iterator.decorations(), msg_iterator.message());
+  }
+  return true;
 }
 
 AsyncLogWriter::AsyncLogWriter()
@@ -155,7 +219,7 @@ void AsyncLogWriter::run() {
       AsyncLogLocker locker;
 
       while (!_data_available) {
-        _lock.wait(0/* no timeout */);
+        locker.wait();
       }
       // Only doing a swap and statistics under the lock to
       // guarantee that I/O jobs don't block logsites.

@@ -2607,7 +2607,7 @@ const Type* VLoopTypes::container_type(Node* n) const {
     // Float to half float conversion may be succeeded by a conversion from
     // half float to float, in such a case back propagation of narrow type (SHORT)
     // may not be possible.
-    if (n->Opcode() == Op_ConvF2HF) {
+    if (n->Opcode() == Op_ConvF2HF || n->Opcode() == Op_ReinterpretHF2S) {
       return TypeInt::SHORT;
     }
     // A narrow type of arithmetic operations will be determined by
