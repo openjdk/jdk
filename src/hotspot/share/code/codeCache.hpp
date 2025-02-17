@@ -131,7 +131,8 @@ class CodeCache : AllStatic {
   static CodeBlob* first_blob(CodeBlobType code_blob_type);            // Returns the first CodeBlob of the given type
   static CodeBlob* next_blob(CodeHeap* heap, CodeBlob* cb);   // Returns the next CodeBlob on the given CodeHeap
 
-  static bool try_to_gc(GCCause::Cause cause);
+  template <typename Function>
+  static void try_to_gc(GCCause::Cause cause, Function log_on_gc);
 
  private:
   static size_t bytes_allocated_in_freelists();

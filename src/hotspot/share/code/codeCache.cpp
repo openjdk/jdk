@@ -785,9 +785,9 @@ void CodeCache::gc_on_allocation() {
   size_t used = max - free;
   double free_ratio = double(free) / double(max);
   if (free_ratio <= StartAggressiveSweepingAt / 100.0) {
-    if (try_to_gc(GCCause::_codecache_GC_aggressive)) {
-      log_info(codecache)("Triggering aggressive GC due to having only %.3f%% free memory", free_ratio * 100.0);
-    }
+    try_to_gc(GCCause::_codecache_GC_aggressive, [&] {
+        log_info(codecache)("Triggering aggressive GC due to having only %.3f%% free memory", free_ratio * 100.0);
+    });
     return;
   }
 
@@ -809,17 +809,15 @@ void CodeCache::gc_on_allocation() {
   // If code cache has been allocated without any GC at all, let's make sure
   // it is eventually invoked to avoid trouble.
   if (allocated_since_last_ratio > threshold) {
-    if (try_to_gc(GCCause::_codecache_GC_threshold)) {
-       log_info(codecache)("Triggering threshold (%.3f%%) GC due to allocating %.3f%% since last unloading (%.3f%% used -> %.3f%% used)",
-                           threshold * 100.0, allocated_since_last_ratio * 100.0, last_used_ratio * 100.0, used_ratio * 100.0);
-    }
+    try_to_gc(GCCause::_codecache_GC_threshold, [&] {
+        log_info(codecache)("Triggering threshold (%.3f%%) GC due to allocating %.3f%% since last unloading (%.3f%% used -> %.3f%% used)",
+                            threshold * 100.0, allocated_since_last_ratio * 100.0, last_used_ratio * 100.0, used_ratio * 100.0);
+    });
   }
 }
 
-// Try to run the GC, returns whether the attempt has been made.
-// Note: it can return true without having actually run or schedule the GC
-//       for reasons that depend on GC implementation
-bool CodeCache::try_to_gc(GCCause::Cause cause) {
+template <typename Function>
+void CodeCache::try_to_gc(GCCause::Cause cause, Function log_on_gc) {
   double time = os::elapsedTime();
   double elapsed_since_last_gc_request = time - _unloading_gc_requested_time;
 
@@ -827,18 +825,17 @@ bool CodeCache::try_to_gc(GCCause::Cause cause) {
   // will reset our flag correctly which may prevent future GC requests.
   // In order to avoid that, automatically reset it after a fixed delay of 250ms.
   if (elapsed_since_last_gc_request > 0.25 && _unloading_gc_requested) {
-    log_debug(codecache)("Previous GC request has not been reset after %fs, force auto-reset", elapsed_since_last_gc_request);
-    Atomic::cmpxchg(&_unloading_gc_requested, true, false);
+    if (Atomic::cmpxchg(&_unloading_gc_requested, true, false) == true) {
+      log_debug(codecache)("Previous GC request has not been reset after %fs, forced auto-reset", elapsed_since_last_gc_request);
+    }
   }
 
   // In case the GC is concurrent, we make sure only one thread requests the GC.
   if (Atomic::cmpxchg(&_unloading_gc_requested, false, true) == false) {
-    Universe::heap()->collect(cause);
+    log_on_gc();
     _unloading_gc_requested_time = time;
-    return true;
+    Universe::heap()->collect(cause);
   }
-
-  return false;
 }
 
 // We initialize the _gc_epoch to 2, because previous_completed_gc_marking_cycle
