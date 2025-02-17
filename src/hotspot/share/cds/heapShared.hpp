@@ -143,26 +143,6 @@ class HeapShared: AllStatic {
   friend class VerifySharedOopClosure;
 
 public:
-  // Can this VM write a heap region into the CDS archive?
-  static bool can_write() {
-    CDS_JAVA_HEAP_ONLY(
-      if (_disable_writing) {
-        return false;
-      }
-      // Need compressed class pointers for heap region dump.
-      if (!UseCompressedClassPointers) {
-        return false;
-      }
-      // Almost all GCs support heap region dump, except ZGC (so far).
-      return !UseZGC;
-    )
-    NOT_CDS_JAVA_HEAP(return false;)
-  }
-
-  static void disable_writing() {
-    CDS_JAVA_HEAP_ONLY(_disable_writing = true;)
-  }
-
   static bool is_subgraph_root_class(InstanceKlass* ik);
 
   // Scratch objects for archiving Klass::java_mirror()
@@ -173,7 +153,6 @@ public:
 
 private:
 #if INCLUDE_CDS_JAVA_HEAP
-  static bool _disable_writing;
   static DumpedInternedStrings *_dumped_interned_strings;
 
   // statistics
@@ -377,7 +356,6 @@ private:
   }
 
   static int archive_exception_instance(oop exception);
-  static void write_heap(ArchiveHeapInfo* heap_info);
 
   static bool archive_reachable_objects_from(int level,
                                              KlassSubGraphInfo* subgraph_info,
@@ -424,6 +402,7 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static void write_heap(ArchiveHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN;
   static objArrayOop scratch_resolved_references(ConstantPool* src);
   static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;

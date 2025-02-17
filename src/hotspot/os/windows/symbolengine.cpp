@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "symbolengine.hpp"
 #include "utilities/debug.hpp"

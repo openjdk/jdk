@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -1127,6 +1126,11 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   __ instanceof(out_reg, obj.result(), x->klass(), tmp1, tmp2, tmp3,
                 x->direct_compare(), patching_info,
                 x->profiled_method(), x->profiled_bci());
+}
+
+// Intrinsic for Class::isInstance
+address LIRGenerator::isInstance_entry() {
+  return CAST_FROM_FN_PTR(address, Runtime1::is_instance_of);
 }
 
 

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/vmIntrinsics.hpp"
@@ -1028,6 +1027,7 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512_BITALG;
     _features &= ~CPU_AVX512_IFMA;
     _features &= ~CPU_APX_F;
+    _features &= ~CPU_AVX512_FP16;
   }
 
   // Currently APX support is only enabled for targets supporting AVX512VL feature.
@@ -1078,6 +1078,7 @@ void VM_Version::get_processor_features() {
       _features &= ~CPU_AVX512_BITALG;
       _features &= ~CPU_AVX512_IFMA;
       _features &= ~CPU_AVX_IFMA;
+      _features &= ~CPU_AVX512_FP16;
     }
   }
 
@@ -3110,6 +3111,9 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
     }
     if (sef_cpuid7_edx.bits.serialize != 0)
       result |= CPU_SERIALIZE;
+
+    if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0)
+      result |= CPU_AVX512_FP16;
   }
 
   // ZX features.

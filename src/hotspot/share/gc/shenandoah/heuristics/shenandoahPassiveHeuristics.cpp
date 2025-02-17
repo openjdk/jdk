@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
@@ -37,6 +36,7 @@ ShenandoahPassiveHeuristics::ShenandoahPassiveHeuristics(ShenandoahSpaceInfo* sp
 
 bool ShenandoahPassiveHeuristics::should_start_gc() {
   // Never do concurrent GCs.
+  decline_trigger();
   return false;
 }
 

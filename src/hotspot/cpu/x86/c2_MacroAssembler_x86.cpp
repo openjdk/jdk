@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -6673,6 +6672,18 @@ void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst
   } else {
     assert(bt == T_FLOAT, "");
     vpermps(dst, shuffle, src, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::efp16sh(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2) {
+  switch(opcode) {
+    case Op_AddHF: vaddsh(dst, src1, src2); break;
+    case Op_SubHF: vsubsh(dst, src1, src2); break;
+    case Op_MulHF: vmulsh(dst, src1, src2); break;
+    case Op_DivHF: vdivsh(dst, src1, src2); break;
+    case Op_MaxHF: vmaxsh(dst, src1, src2); break;
+    case Op_MinHF: vminsh(dst, src1, src2); break;
+    default: assert(false, "%s", NodeClassNames[opcode]); break;
   }
 }
 
