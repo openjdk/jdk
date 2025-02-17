@@ -37,10 +37,12 @@
     return false;
   }
 
-  // PPC implementation uses VSX load/store instructions (if
-  // SuperwordUseVSX) which support 4 byte but not arbitrary alignment
+  // The PPC implementation uses VSX lxvd2x/stxvd2x instructions (if
+  // SuperwordUseVSX). They do not have alignment requirements.
+  // Some VSX storage access instructions cannot encode arbitrary displacements
+  // (e.g. lxv). None of them is currently used.
   static constexpr bool misaligned_vectors_ok() {
-    return false;
+    return true;
   }
 
   // Whether code generation need accurate ConvI2L types.

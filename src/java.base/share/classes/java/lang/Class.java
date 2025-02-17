@@ -236,11 +236,13 @@ public final class Class<T> implements java.io.Serializable,
      * This constructor is not used and prevents the default constructor being
      * generated.
      */
-    private Class(ClassLoader loader, Class<?> arrayComponentType) {
+    private Class(ClassLoader loader, Class<?> arrayComponentType, int mods, ProtectionDomain pd) {
         // Initialize final field for classLoader.  The initialization value of non-null
         // prevents future JIT optimizations from assuming this final field is null.
         classLoader = loader;
         componentType = arrayComponentType;
+        modifiers = mods;
+        protectionDomain = pd;
     }
 
     /**
@@ -1000,6 +1002,7 @@ public final class Class<T> implements java.io.Serializable,
 
     private transient Object classData; // Set by VM
     private transient Object[] signers; // Read by VM, mutable
+    private final transient int modifiers;  // Set by the VM
 
     // package-private
     Object getClassData() {
@@ -1344,8 +1347,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 9.1.1 Interface Modifiers
      * @jvms 4.1 The {@code ClassFile} Structure
      */
-    @IntrinsicCandidate
-    public native int getModifiers();
+    public int getModifiers() { return modifiers; }
 
     /**
      * {@return an unmodifiable set of the {@linkplain AccessFlag access
@@ -2696,17 +2698,7 @@ public final class Class<T> implements java.io.Serializable,
         return true;
     }
 
-    /**
-     * Returns the {@code ProtectionDomain} of this class.
-     *
-     * @return the ProtectionDomain of this class
-     *
-     * @see java.security.ProtectionDomain
-     * @since 1.2
-     */
-    public ProtectionDomain getProtectionDomain() {
-        return protectionDomain();
-    }
+    private transient final ProtectionDomain protectionDomain;
 
     /** Holder for the protection domain returned when the internal domain is null */
     private static class Holder {
@@ -2718,20 +2710,21 @@ public final class Class<T> implements java.io.Serializable,
         }
     }
 
-    // package-private
-    ProtectionDomain protectionDomain() {
-        ProtectionDomain pd = getProtectionDomain0();
-        if (pd == null) {
+    /**
+     * Returns the {@code ProtectionDomain} of this class.
+     *
+     * @return the ProtectionDomain of this class
+     *
+     * @see java.security.ProtectionDomain
+     * @since 1.2
+     */
+    public ProtectionDomain getProtectionDomain() {
+        if (protectionDomain == null) {
             return Holder.allPermDomain;
         } else {
-            return pd;
+            return protectionDomain;
         }
     }
-
-    /**
-     * Returns the ProtectionDomain of this class.
-     */
-    private native ProtectionDomain getProtectionDomain0();
 
     /*
      * Returns the Class object for the named primitive type. Type parameter T

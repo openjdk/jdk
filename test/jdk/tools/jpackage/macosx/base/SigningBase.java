@@ -98,6 +98,7 @@ public class SigningBase {
                 (line, what) -> line.trim().contains(what)).apply(result.stream());
     }
 
+    @SuppressWarnings("fallthrough")
     private static List<String> codesignResult(Path target, CodesignCheckType type) {
         int exitCode = 0;
         Executor executor = new Executor().setExecutable("/usr/bin/codesign");
