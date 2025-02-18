@@ -1145,11 +1145,11 @@ The printed version of ISO-4217:2001
             <currency iso4217="DEM" from="1999-09-01" to="2002-03-09"/>
             <currency iso4217="YUM" from="1994-01-24" to="1999-09-30"/><!-- Yugoslavian history. YU was renamed to CS. -->
         </region>
-        <region iso3166="YE">
-            <currency iso4217="YER" from="1990-05-22"/><!-- You might be able to say 1964-05-08 is the starting date -->
-        </region>
         <region iso3166="YD">
             <currency iso4217="YDD" from="1965-04-01" to="1996-01-01"/>
+        </region>
+        <region iso3166="YE">
+            <currency iso4217="YER" from="1990-05-22"/><!-- You might be able to say 1964-05-08 is the starting date -->
         </region>
         <region iso3166="YT">
             <currency iso4217="EUR" from="1999-01-01"/>

@@ -71,6 +71,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@DEPRECATED-->
 
 <!ELEMENT currency ( alternate* ) >
+    <!--@ORDERED-->
 <!ATTLIST currency before NMTOKEN #IMPLIED >
     <!-- use from and to instead. -->
     <!--@VALUE-->

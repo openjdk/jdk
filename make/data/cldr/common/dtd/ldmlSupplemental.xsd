@@ -204,6 +204,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   
   
   
+  
   <xs:element name="currency">
     <xs:complexType>
       <xs:sequence>

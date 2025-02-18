@@ -7025,9 +7025,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
-				<displayName># Hg</displayName>
-				<unitPattern count="one">{0} # Hg</unitPattern>
-				<unitPattern count="other">{0} # Hg</unitPattern>
+				<displayName>″ Hg</displayName>
+				<unitPattern count="one">{0} ″ Hg</unitPattern>
+				<unitPattern count="other">{0} ″ Hg</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/t</displayName>
