@@ -581,7 +581,11 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_xadd:
     case lir_xchg:
     case lir_assert:
+    case lir_inc_profile_ctr:
     {
+      if (op->code() == lir_inc_profile_ctr) {
+        asm("nop");
+      }
       assert(op->as_Op2() != nullptr, "must be");
       LIR_Op2* op2 = (LIR_Op2*)op;
       assert(op2->_tmp2->is_illegal() && op2->_tmp3->is_illegal() &&
@@ -592,7 +596,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       if (op2->_opr2->is_valid())         do_input(op2->_opr2);
       if (op2->_tmp1->is_valid())         do_temp(op2->_tmp1);
       if (op2->_result->is_valid())       do_output(op2->_result);
-      if (op->code() == lir_xchg || op->code() == lir_xadd) {
+      if (op->code() == lir_xchg || op->code() == lir_xadd || op->code() == lir_inc_profile_ctr) {
         // on ARM and PPC, return value is loaded first so could
         // destroy inputs. On other platforms that implement those
         // (x86, sparc), the extra constrainsts are harmless.
@@ -1298,6 +1302,16 @@ void LIR_List::volatile_store_unsafe_reg(LIR_Opr src, LIR_Opr base, LIR_Opr offs
 }
 
 
+void LIR_List::inc_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp, CodeEmitInfo* info) {
+  append(new LIR_Op2(
+            lir_inc_profile_ctr,
+            src,
+            LIR_OprFact::address(addr),
+            res,
+            tmp));
+}
+
+
 void LIR_List::idiv(LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp, CodeEmitInfo* info) {
   append(new LIR_Op3(
                     lir_idiv,
@@ -1795,6 +1809,7 @@ const char * LIR_Op::name() const {
      case lir_profile_call:          s = "profile_call";  break;
      // LIR_OpProfileType
      case lir_profile_type:          s = "profile_type";  break;
+     case lir_inc_profile_ctr:       s = "inc_profile_ctr"; break;
      // LIR_OpAssert
 #ifdef ASSERT
      case lir_assert:                s = "assert";        break;

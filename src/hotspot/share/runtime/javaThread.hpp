@@ -168,6 +168,9 @@ class JavaThread: public Thread {
   // attached thread cases where this field can have a temporary value.
   int64_t _monitor_owner_id;
 
+  // Random value for randomized profile counters.
+  uint32_t _profile_rng;
+
  public:
   void set_monitor_owner_id(int64_t id) {
     assert(id >= ThreadIdentifier::initial() && id < ThreadIdentifier::current(), "");
@@ -898,6 +901,7 @@ private:
   static ByteSize preemption_cancelled_offset()  { return byte_offset_of(JavaThread, _preemption_cancelled); }
   static ByteSize preempt_alternate_return_offset() { return byte_offset_of(JavaThread, _preempt_alternate_return); }
   static ByteSize unlocked_inflated_monitor_offset() { return byte_offset_of(JavaThread, _unlocked_inflated_monitor); }
+  static ByteSize profile_rng_offset()        { return byte_offset_of(JavaThread, _profile_rng); }
 
 #if INCLUDE_JVMTI
   static ByteSize is_in_VTMS_transition_offset()     { return byte_offset_of(JavaThread, _is_in_VTMS_transition); }
