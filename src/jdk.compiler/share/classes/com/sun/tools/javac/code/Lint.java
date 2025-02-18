@@ -173,6 +173,7 @@ public class Lint {
             if (!options.isSet(Option.PREVIEW)) {
                 values.add(LintCategory.PREVIEW);
             }
+            values.add(LintCategory.PROPRIETARY);
             values.add(LintCategory.SYNCHRONIZATION);
             values.add(LintCategory.INCUBATING);
         }
@@ -314,6 +315,11 @@ public class Lint {
          * Warn about issues regarding annotation processing.
          */
         PROCESSING("processing"),
+
+        /**
+         * Warn about use of internal proprietary API's.
+         */
+        PROPRIETARY("proprietary"),
 
         /**
          * Warn about unchecked operations on raw types.

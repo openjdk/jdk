@@ -165,6 +165,7 @@ public class Check {
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseRemoval = lint.isEnabled(LintCategory.REMOVAL);
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
+        boolean verboseProprietary = lint.isEnabled(LintCategory.PROPRIETARY);
         boolean enforceMandatoryWarnings = true;
 
         deprecationHandler = new MandatoryWarningHandler(log, null, verboseDeprecated,
@@ -173,6 +174,8 @@ public class Check {
                 enforceMandatoryWarnings, LintCategory.REMOVAL);
         uncheckedHandler = new MandatoryWarningHandler(log, null, verboseUnchecked,
                 enforceMandatoryWarnings, LintCategory.UNCHECKED);
+        proprietaryHandler = new MandatoryWarningHandler(log, null, verboseProprietary,
+                enforceMandatoryWarnings, LintCategory.PROPRIETARY);
 
         deferredLintHandler = DeferredLintHandler.instance(context);
 
@@ -201,6 +204,10 @@ public class Check {
     /** A handler for messages about unchecked or unsafe usage.
      */
     private MandatoryWarningHandler uncheckedHandler;
+
+    /** A handler for messages about use of internal proprietary API's.
+     */
+    private MandatoryWarningHandler proprietaryHandler;
 
     /** A handler for deferred lint warnings.
      */
@@ -256,6 +263,15 @@ public class Check {
         }
     }
 
+    /** Warn about use of an internal proprietary API.
+     *  @param pos        Position to be used for error reporting.
+     *  @param sym        The proprietary API symbol.
+     */
+    void warnProprietary(DiagnosticPosition pos, Symbol sym) {
+        if (!lint.isSuppressed(LintCategory.PROPRIETARY))
+            proprietaryHandler.report(pos, LintWarnings.SunProprietary(sym));
+    }
+
     /** Log a preview warning.
      *  @param pos        Position to be used for error reporting.
      *  @param msg        A Warning describing the problem.
@@ -298,6 +314,7 @@ public class Check {
         deprecationHandler.reportDeferredDiagnostic();
         removalHandler.reportDeferredDiagnostic();
         uncheckedHandler.reportDeferredDiagnostic();
+        proprietaryHandler.reportDeferredDiagnostic();
     }
 
 
@@ -473,6 +490,7 @@ public class Check {
         deprecationHandler.clear();
         removalHandler.clear();
         uncheckedHandler.clear();
+        proprietaryHandler.clear();
     }
 
     public void putCompiled(ClassSymbol csym) {
@@ -3783,9 +3801,7 @@ public class Check {
 
     void checkSunAPI(final DiagnosticPosition pos, final Symbol s) {
         if ((s.flags() & PROPRIETARY) != 0) {
-            deferredLintHandler.report(_l -> {
-                log.mandatoryWarning(pos, Warnings.SunProprietary(s));
-            });
+            deferredLintHandler.report(_l -> warnProprietary(pos, s));
         }
     }
 
