@@ -2143,14 +2143,18 @@ oop nmethod::oop_at(int index) const {
   if (index == 0) {
     return nullptr;
   }
-  return NMethodAccess<AS_NO_KEEPALIVE>::oop_load(oop_addr_at(index));
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  return bs_nm->oop_load_no_keepalive(this, index);
 }
 
 oop nmethod::oop_at_phantom(int index) const {
   if (index == 0) {
     return nullptr;
   }
-  return NMethodAccess<ON_PHANTOM_OOP_REF>::oop_load(oop_addr_at(index));
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  return bs_nm->oop_load_phantom(this, index);
 }
 
 //
