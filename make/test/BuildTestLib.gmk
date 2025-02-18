@@ -70,6 +70,7 @@ $(eval $(call SetupJavaCompilation, BUILD_TEST_LIB_JAR, \
         --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.platform=ALL-UNNAMED \
         --add-exports java.base/sun.security.pkcs=ALL-UNNAMED \
+        --add-exports java.base/sun.security.provider.certpath=ALL-UNNAMED \
         --add-exports java.base/sun.security.tools.keytool=ALL-UNNAMED \
         --add-exports java.base/sun.security.x509=ALL-UNNAMED \
         --enable-preview, \
