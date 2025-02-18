@@ -43,6 +43,8 @@
 
 # :hotspot_compiler
 
+compiler/tiered/Level2RecompilationTest.java 8350159 generic-all
+
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
 

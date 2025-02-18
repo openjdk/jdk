@@ -1787,8 +1787,20 @@ public final class PassFailJFrame {
 
         public PassFailJFrame build() throws InterruptedException,
                 InvocationTargetException {
-            validate();
-            return new PassFailJFrame(this);
+            try {
+                validate();
+                return new PassFailJFrame(this);
+            } catch (final Throwable t) {
+                // Dispose of all the windows, including those that may not
+                // be registered with PassFailJFrame to allow AWT to shut down
+                try {
+                    invokeOnEDT(() -> Arrays.stream(Window.getWindows())
+                                            .forEach(Window::dispose));
+                } catch (Throwable edt) {
+                    t.addSuppressed(edt);
+                }
+                throw t;
+            }
         }
 
         /**
