@@ -38,7 +38,13 @@ public class LShiftINodeIdealizationTests {
     }
 
     @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8",
-                  "testDoubleShift1", "testDoubleShift2", "testDoubleShift3", "testDoubleShift4", "testDoubleShift5"
+                  "testDoubleShift1",
+                  "testDoubleShift2",
+                  "testDoubleShift3",
+                  "testDoubleShift4",
+                  "testDoubleShift5",
+                  "testDoubleShift6",
+                  "testDoubleShift7",
     })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
@@ -143,6 +149,8 @@ public class LShiftINodeIdealizationTests {
         Asserts.assertEQ((a << 31) << 1, testDoubleShift3(a));
         Asserts.assertEQ((a << 1) << 31, testDoubleShift4(a));
         Asserts.assertEQ(((a << 30) << 1) << 1, testDoubleShift5(a));
+        Asserts.assertEQ((a * 4) << 3, testDoubleShift6(a));
+        Asserts.assertEQ((a << 3) * 4, testDoubleShift7(a));
     }
 
     @Test
@@ -168,9 +176,9 @@ public class LShiftINodeIdealizationTests {
 
     @Test
     @IR(failOn = { IRNode.LSHIFT })
-    // Checks (x << 31) << 1 => 0
+    // Checks (x << 1) << 31 => 0
     public int testDoubleShift4(int x) {
-        return (x << 31) << 1;
+        return (x << 1) << 31;
     }
 
     @Test
@@ -178,5 +186,21 @@ public class LShiftINodeIdealizationTests {
     // Checks ((x << 30) << 1) << 1 => 0
     public int testDoubleShift5(int x) {
         return ((x << 30) << 1) << 1;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.MUL })
+    @IR(counts = { IRNode.LSHIFT, "1"})
+    // Checks (x * 4) << 3 => x << 5
+    public int testDoubleShift6(int x) {
+        return (x * 4) << 3;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.MUL })
+    @IR(counts = { IRNode.LSHIFT, "1"})
+    // Checks (x << 3) * 4 => x << 5
+    public int testDoubleShift7(int x) {
+        return (x << 3) * 4;
     }
 }
