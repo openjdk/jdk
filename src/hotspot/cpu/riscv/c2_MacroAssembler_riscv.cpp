@@ -1383,12 +1383,12 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 }
 
 // Compare longwords
-void C2_MacroAssembler::string_compare_long_LL_UU(Register str1, Register str2,
+void C2_MacroAssembler::string_compare_long_LL_UU(Register result, Register str1, Register str2,
                                                   Register cnt1, Register cnt2,
                                                   Register tmp1, Register tmp2, Register tmp3,
                                                   const bool isLL, const int base_offset, const int minCharsInWord,
-                                                  const int STUB_THRESHOLD, Label *DONE, Label *DIFFERENCE, Label *STUB) {
-  Label TAIL_CHECK, TAIL, NEXT_WORD;
+                                                  const int STUB_THRESHOLD, Label *DONE, Label *STUB) {
+  Label TAIL_CHECK, TAIL, NEXT_WORD, DIFFERENCE;
 
   // load first parts of strings and finish initialization while loading
   beq(str1, str2, *DONE);
@@ -1396,7 +1396,7 @@ void C2_MacroAssembler::string_compare_long_LL_UU(Register str1, Register str2,
   if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
     lwu(tmp1, Address(str1));
     lwu(tmp2, Address(str2));
-    bne(tmp1, tmp2, *DIFFERENCE);
+    bne(tmp1, tmp2, DIFFERENCE);
     addi(str1, str1, 4);
     addi(str2, str2, 4);
     subi(cnt2, cnt2, minCharsInWord / 2);
@@ -1427,7 +1427,7 @@ void C2_MacroAssembler::string_compare_long_LL_UU(Register str1, Register str2,
   sub(cnt2, zr, cnt2);
 
   addi(cnt2, cnt2, 8);
-  bne(tmp1, tmp2, *DIFFERENCE);
+  bne(tmp1, tmp2, DIFFERENCE);
   bgez(cnt2, TAIL);
 
   // main loop
@@ -1439,7 +1439,7 @@ void C2_MacroAssembler::string_compare_long_LL_UU(Register str1, Register str2,
     ld(tmp2, Address(t0));
     addi(cnt2, cnt2, 8);
 
-  bne(tmp1, tmp2, *DIFFERENCE);
+  bne(tmp1, tmp2, DIFFERENCE);
   bltz(cnt2, NEXT_WORD);
 
   bind(TAIL);
@@ -1448,15 +1448,35 @@ void C2_MacroAssembler::string_compare_long_LL_UU(Register str1, Register str2,
 
   bind(TAIL_CHECK);
   beq(tmp1, tmp2, *DONE);
+
+
+  // Find the first different characters in the longwords and
+  // compute their difference.
+  bind(DIFFERENCE);
+  xorr(tmp3, tmp1, tmp2);
+  // count bits of trailing zero chars
+  ctzc_bits(result, tmp3, isLL);
+  srl(tmp1, tmp1, result);
+  srl(tmp2, tmp2, result);
+  if (isLL) {
+    zext(tmp1, tmp1, 8);
+    zext(tmp2, tmp2, 8);
+  } else {
+    zext(tmp1, tmp1, 16);
+    zext(tmp2, tmp2, 16);
+  }
+  sub(result, tmp1, tmp2);
+
+  j(*DONE);
 }
 
 // Compare longwords
-void C2_MacroAssembler::string_compare_long_LU(Register strL, Register strU,
-                                                Register cnt1, Register cnt2,
-                                                Register tmpL, Register tmpU, Register tmp3,
-                                                const int base_offset2, const int STUB_THRESHOLD,
-                                                Label *DONE, Label *DIFFERENCE, Label *STUB) {
-  Label TAIL, NEXT_WORD;
+void C2_MacroAssembler::string_compare_long_LU(Register result, Register strL, Register strU,
+                                               Register cnt1, Register cnt2,
+                                               Register tmpL, Register tmpU, Register tmp3,
+                                               const int base_offset2, const int STUB_THRESHOLD,
+                                               Label *DONE, Label *STUB) {
+  Label TAIL, NEXT_WORD, DIFFERENCE;
 
   // load first parts of strings and finish initialization while loading
   mv(t0, STUB_THRESHOLD);
@@ -1474,7 +1494,7 @@ void C2_MacroAssembler::string_compare_long_LU(Register strL, Register strU,
   addi(cnt1, cnt1, 4);
 
   addi(cnt2, cnt2, 8);
-  bne(tmpL, tmpU, *DIFFERENCE);
+  bne(tmpL, tmpU, DIFFERENCE);
   bgez(cnt2, TAIL);
 
   // main loop
@@ -1488,7 +1508,7 @@ void C2_MacroAssembler::string_compare_long_LU(Register strL, Register strU,
     mv(tmpL, tmp3);
     addi(cnt2, cnt2, 8);
 
-  bne(tmpL, tmpU, *DIFFERENCE);
+  bne(tmpL, tmpU, DIFFERENCE);
   bltz(cnt2, NEXT_WORD);
 
   bind(TAIL);
@@ -1498,6 +1518,21 @@ void C2_MacroAssembler::string_compare_long_LU(Register strL, Register strU,
   mv(tmpL, tmp3);
 
   beq(tmpL, tmpU, *DONE);
+
+
+  // Find the first different characters in the longwords and
+  // compute their difference.
+  bind(DIFFERENCE);
+  xorr(tmp3, tmpL, tmpU);
+  // count bits of trailing zero chars
+  ctzc_bits(result, tmp3);
+  srl(tmpL, tmpL, result);
+  srl(tmpU, tmpU, result);
+  zext(tmpL, tmpL, 16);
+  zext(tmpU, tmpU, 16);
+  sub(result, tmpL, tmpU);
+
+  j(*DONE);
 }
 
 // Compare strings.
@@ -1507,7 +1542,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
                                        int ae)
 {
   Label DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, STUB,
-        DIFFERENCE, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
+        SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
         SHORT_LOOP_START, L;
 
   const int STUB_THRESHOLD = 64 + 8;
@@ -1563,35 +1598,18 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   // Compare longwords
   {
     if (str1_isL == str2_isL) { // LL or UU
-      string_compare_long_LL_UU(str1, str2,
+      string_compare_long_LL_UU(result, str1, str2,
                                 cnt1, cnt2, tmp1, tmp2, tmp3,
                                 isLL, isLL ? base_offset1 : base_offset2, minCharsInWord,
-                                STUB_THRESHOLD, &DONE, &DIFFERENCE, &STUB);
+                                STUB_THRESHOLD, &DONE, &STUB);
     } else { // LU or UL
-      string_compare_long_LU(isLU ? str1 : str2,
+      string_compare_long_LU(result,
+                             isLU ? str1 : str2,
                              isLU ? str2 : str1,
                              cnt1, cnt2, tmp1, tmp2, tmp3,
                              base_offset2, STUB_THRESHOLD,
-                             &DONE, &DIFFERENCE, &STUB);
+                             &DONE, &STUB);
     }
-
-    // Find the first different characters in the longwords and
-    // compute their difference.
-    bind(DIFFERENCE);
-    xorr(tmp3, tmp1, tmp2);
-    // count bits of trailing zero chars
-    ctzc_bits(result, tmp3, isLL);
-    srl(tmp1, tmp1, result);
-    srl(tmp2, tmp2, result);
-    if (isLL) {
-      zext(tmp1, tmp1, 8);
-      zext(tmp2, tmp2, 8);
-    } else {
-      zext(tmp1, tmp1, 16);
-      zext(tmp2, tmp2, 16);
-    }
-    sub(result, tmp1, tmp2);
-    j(DONE);
   }
 
   bind(STUB);
