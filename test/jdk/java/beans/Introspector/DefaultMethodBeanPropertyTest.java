@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,62 @@
  */
 
 /*
- * @test
+ * @test id=testScenario1
  * @bug 8071693 8347826
  * @summary Verify that the Introspector finds default methods inherited
  *          from interfaces
+ * @run main DefaultMethodBeanPropertyTest testScenario1
  */
 
-import java.beans.IntrospectionException;
+/*
+ * @test id=testScenario2
+ * @bug 8071693 8347826
+ * @summary Verify that the Introspector finds default methods inherited
+ *          from interfaces
+ * @run main DefaultMethodBeanPropertyTest testScenario2
+ */
+
+/*
+ * @test id=testScenario3
+ * @bug 8071693 8347826
+ * @summary Verify that the Introspector finds default methods inherited
+ *          from interfaces
+ * @run main DefaultMethodBeanPropertyTest testScenario3
+ */
+
+/*
+ * @test id=testScenario4
+ * @bug 8071693 8347826
+ * @summary Verify that the Introspector finds default methods inherited
+ *          from interfaces
+ * @run main DefaultMethodBeanPropertyTest testScenario4
+ */
+
+/*
+ * @test id=testScenario5
+ * @bug 8071693 8347826
+ * @summary Verify that the Introspector finds default methods inherited
+ *          from interfaces
+ * @run main DefaultMethodBeanPropertyTest testScenario5
+ */
+
+/*
+ * @test id=testScenario6
+ * @bug 8071693 8347826
+ * @summary Verify that the Introspector finds default methods inherited
+ *          from interfaces
+ * @run main DefaultMethodBeanPropertyTest testScenario6
+ */
+
+/*
+ * @test id=testScenario7
+ * @bug 8071693 8347826
+ * @summary Verify that the Introspector finds default methods inherited
+ *          from interfaces
+ * @run main DefaultMethodBeanPropertyTest testScenario7
+ */
+
+ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.MethodDescriptor;
 import java.beans.PropertyDescriptor;
@@ -80,12 +129,17 @@ public class DefaultMethodBeanPropertyTest {
     }
 
     public static void testScenario1() {
-        verify(D1.class,
+        verifyMethods(D1.class,
             "public default int DefaultMethodBeanPropertyTest$A1.getValue()",
             "public java.lang.Integer DefaultMethodBeanPropertyTest$D1.getFoo()",
             "public java.lang.Float DefaultMethodBeanPropertyTest$D1.getObj()"
         );
-
+        verifyProperties(D1.class,
+            "public final native java.lang.Class java.lang.Object.getClass()",
+            "public default int DefaultMethodBeanPropertyTest$A1.getValue()",
+            "public java.lang.Integer DefaultMethodBeanPropertyTest$D1.getFoo()",
+            "public java.lang.Float DefaultMethodBeanPropertyTest$D1.getObj()"
+        );
     }
 
 //////////////////////////////////////
@@ -110,9 +164,13 @@ public class DefaultMethodBeanPropertyTest {
     }
 
     public static void testScenario2() {
-        verify(D2.class,
+        verifyMethods(D2.class,
             "public default java.lang.Object DefaultMethodBeanPropertyTest$A2.getFoo()"
-    );
+        );
+        verifyProperties(D2.class,
+            "public final native java.lang.Class java.lang.Object.getClass()",
+            "public default java.lang.Object DefaultMethodBeanPropertyTest$A2.getFoo()"
+        );
     }
 
 //////////////////////////////////////
@@ -145,7 +203,11 @@ public class DefaultMethodBeanPropertyTest {
     }
 
     public static void testScenario3() {
-        verify(D3.class,
+        verifyMethods(D3.class,
+            "public java.util.NavigableSet DefaultMethodBeanPropertyTest$D3.getFoo()"
+        );
+        verifyProperties(D3.class,
+            "public final native java.lang.Class java.lang.Object.getClass()",
             "public java.util.NavigableSet DefaultMethodBeanPropertyTest$D3.getFoo()"
         );
     }
@@ -191,12 +253,127 @@ public class DefaultMethodBeanPropertyTest {
     }
 
     public static void testScenario4() {
-        verify(B4.class,
+        verifyMethods(B4.class,
             "public default java.lang.Object DefaultMethodBeanPropertyTest$A4.getDefault0()",
             "public java.lang.Object DefaultMethodBeanPropertyTest$B4.getDefault1()",
             "public java.lang.String DefaultMethodBeanPropertyTest$B4.getDefault2()",
             "public java.lang.Float DefaultMethodBeanPropertyTest$B4.getDefault3()",
             "public java.lang.Long DefaultMethodBeanPropertyTest$B4.getNonDefault()"
+        );
+        verifyProperties(B4.class,
+            "public final native java.lang.Class java.lang.Object.getClass()",
+            "public default java.lang.Object DefaultMethodBeanPropertyTest$A4.getDefault0()",
+            "public java.lang.Object DefaultMethodBeanPropertyTest$B4.getDefault1()",
+            "public java.lang.String DefaultMethodBeanPropertyTest$B4.getDefault2()",
+            "public java.lang.Float DefaultMethodBeanPropertyTest$B4.getDefault3()",
+            "public java.lang.Long DefaultMethodBeanPropertyTest$B4.getNonDefault()"
+        );
+    }
+
+//////////////////////////////////////
+//                                  //
+//          SCENARIO 5              //
+//                                  //
+//////////////////////////////////////
+
+    public interface A5 {
+        default public void setParentFoo(Integer num) {
+        }
+        default public void setFoo(Integer num) {
+        }
+    }
+
+    public class B5 implements A5 {
+        public void setFoo(Number num) {
+        }
+        public void setLocalFoo(Long num) {
+        }
+        // PropertyInfo behavior is undefined if the same setter
+        // with different arg type exists in the same class.
+        // public void setLocalFoo(Float num) {
+        // }
+    }
+
+    public static void testScenario5() {
+        verifyMethods(B5.class,
+            "public default void DefaultMethodBeanPropertyTest$A5.setFoo(java.lang.Integer)",
+            "public default void DefaultMethodBeanPropertyTest$A5.setParentFoo(java.lang.Integer)",
+            "public void DefaultMethodBeanPropertyTest$B5.setFoo(java.lang.Number)",
+            "public void DefaultMethodBeanPropertyTest$B5.setLocalFoo(java.lang.Long)"
+        );
+        verifyProperties(B5.class,
+            "public final native java.lang.Class java.lang.Object.getClass()",
+            "public default void DefaultMethodBeanPropertyTest$A5.setParentFoo(java.lang.Integer)",
+            "public void DefaultMethodBeanPropertyTest$B5.setFoo(java.lang.Number)",
+            "public void DefaultMethodBeanPropertyTest$B5.setLocalFoo(java.lang.Long)"
+        );
+    }
+
+//////////////////////////////////////
+//                                  //
+//          SCENARIO 6              //
+//                                  //
+//////////////////////////////////////
+
+    public class A6 {
+        public void setParentFoo(Integer num) {
+        }
+        public void setFoo(Integer num) {
+        }
+    }
+
+    public class B6 extends A6 {
+        public void setFoo(Number num) {
+        }
+        public void setLocalFoo(Long num) {
+        }
+    }
+
+    public static void testScenario6() {
+        verifyMethods(B6.class,
+            "public void DefaultMethodBeanPropertyTest$A6.setFoo(java.lang.Integer)",
+            "public void DefaultMethodBeanPropertyTest$A6.setParentFoo(java.lang.Integer)",
+            "public void DefaultMethodBeanPropertyTest$B6.setFoo(java.lang.Number)",
+            "public void DefaultMethodBeanPropertyTest$B6.setLocalFoo(java.lang.Long)"
+        );
+        verifyProperties(B6.class,
+            "public final native java.lang.Class java.lang.Object.getClass()",
+            "public void DefaultMethodBeanPropertyTest$A6.setParentFoo(java.lang.Integer)",
+            "public void DefaultMethodBeanPropertyTest$B6.setFoo(java.lang.Number)",
+            "public void DefaultMethodBeanPropertyTest$B6.setLocalFoo(java.lang.Long)"
+        );
+    }
+
+//////////////////////////////////////
+//                                  //
+//          SCENARIO 7              //
+//                                  //
+//////////////////////////////////////
+
+    interface A7<T> {
+        T getValue();
+    }
+
+    interface B7 {
+        Runnable getValue();
+    }
+
+    interface AB7 extends B7, A7<Object> {
+        Runnable getValue();
+    }
+
+    abstract class D7 implements AB7 {
+        public void setValue(Runnable value) {
+        }
+    }
+
+    public static void testScenario7() {
+        verifyMethods(D7.class,
+            "public void DefaultMethodBeanPropertyTest$D7.setValue(java.lang.Runnable)"
+        );
+        verifyProperties(D7.class,
+            "public final native java.lang.Class java.lang.Object.getClass()",
+            "public void DefaultMethodBeanPropertyTest$D7.setValue(java.lang.Runnable)"
         );
     }
 
@@ -216,30 +393,30 @@ public class DefaultMethodBeanPropertyTest {
         }
     }
 
-    public static void verify(Class<?> type, String... getterNames) {
-        // Verify properties
+    public static void verifyProperties(Class<?> type,  String... methodNames) {
         try {
-            final Set<String> expected = new HashSet<>(Arrays.asList(getterNames));
-            expected.add("public final native java.lang.Class java.lang.Object.getClass()");
+            final Set<String> expected = new HashSet<>(Arrays.asList(methodNames));
             final Set<String> actual = Arrays
                     .stream(Introspector.getBeanInfo(type).getPropertyDescriptors())
-                    .map(PropertyDescriptor::getReadMethod)
+                    .flatMap(pd -> Arrays.stream(new Method[]{pd.getReadMethod(), pd.getWriteMethod()}))
+                    .filter(method -> method != null)
                     .map(Method::toString)
                     .collect(Collectors.toSet());
             verifyEquality("properties", expected, actual);
         } catch (IntrospectionException exception) {
             throw new Error("unexpected exception", exception);
         }
+    }
 
-        // Verify methods
+    public static void verifyMethods(Class<?> type, String... methodNames) {
         try {
-            final Set<String> expected = new HashSet<>(Arrays.asList(getterNames));
-            final Set<String> actualMethods = Arrays
+            final Set<String> expected = new HashSet<>(Arrays.asList(methodNames));
+            final Set<String> actual = Arrays
                     .stream(Introspector.getBeanInfo(type, Object.class).getMethodDescriptors())
                     .map(MethodDescriptor::getMethod)
                     .map(Method::toString)
                     .collect(Collectors.toSet());
-            verifyEquality("methods", expected, actualMethods);
+            verifyEquality("methods", expected, actual);
         } catch (IntrospectionException exception) {
             throw new Error("unexpected exception", exception);
         }
@@ -248,9 +425,6 @@ public class DefaultMethodBeanPropertyTest {
 // Main method
 
     public static void main(String[] args) throws Exception {
-        testScenario1();
-        testScenario2();
-        testScenario3();
-        testScenario4();
+        DefaultMethodBeanPropertyTest.class.getMethod(args[0]).invoke(null);
     }
 }
