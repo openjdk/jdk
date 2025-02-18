@@ -73,7 +73,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
     if (prev == nullptr) {
       // Must be first node.
       prev = current;
-      return;
+      return true;
     }
 #ifdef ASSERT
     if (broken_start != nullptr && prev->val().out.mem_tag() != current->val().in.mem_tag()) {
@@ -96,6 +96,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
       stream->cr();
     }
     prev = current;
+    return true;
   });
 #ifdef ASSERT
   if (broken_start != nullptr) {
@@ -179,8 +180,7 @@ void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const 
     VirtualMemory* snap = snapshot->by_type(tag);
     // Only account the committed memory.
     snap->commit_memory(current->committed());
-  });
-}
+  });}
 
 void MemoryFileTracker::Instance::summary_snapshot(VirtualMemorySnapshot* snapshot) {
   _tracker->summary_snapshot(snapshot);

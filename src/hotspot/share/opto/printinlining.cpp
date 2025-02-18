@@ -105,5 +105,6 @@ void InlinePrinter::IPInlineSite::dump(outputStream* tty, int level) const {
 
   _children.visit_in_order([=](auto* node) {
     node->val().dump(tty, level + 1);
+    return true;
   });
 }
