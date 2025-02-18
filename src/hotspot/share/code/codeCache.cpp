@@ -780,6 +780,11 @@ void CodeCache::gc_on_allocation() {
     return;
   }
 
+  // We don't need more than one thread performing code cache memory pressure verification
+  if (Atomic::cmpxchg(&_on_gc_allocation_ongoing, false, true) == true) {
+    return;
+  }
+
   size_t free = unallocated_capacity();
   size_t max = max_capacity();
   size_t used = max - free;
@@ -788,12 +793,14 @@ void CodeCache::gc_on_allocation() {
     try_to_gc(GCCause::_codecache_GC_aggressive, [&] {
         log_info(codecache)("Triggering aggressive GC due to having only %.3f%% free memory", free_ratio * 100.0);
     });
+    _on_gc_allocation_ongoing = false;
     return;
   }
 
   size_t last_used = _last_unloading_used;
   if (last_used >= used) {
     // No increase since last GC; no need to sweep yet
+    _on_gc_allocation_ongoing = false;
     return;
   }
   size_t allocated_since_last = used - last_used;
@@ -814,6 +821,8 @@ void CodeCache::gc_on_allocation() {
                             threshold * 100.0, allocated_since_last_ratio * 100.0, last_used_ratio * 100.0, used_ratio * 100.0);
     });
   }
+
+  _on_gc_allocation_ongoing = false;
 }
 
 template <typename Function>
@@ -830,9 +839,9 @@ void CodeCache::try_to_gc(GCCause::Cause cause, Function log_on_gc) {
     }
   }
 
-  // In case the GC is concurrent, we make sure only one thread requests the GC.
-  if (Atomic::cmpxchg(&_unloading_gc_requested, false, true) == false) {
+  if (!_unloading_gc_requested) {
     log_on_gc();
+    _unloading_gc_requested = true;
     _unloading_gc_requested_time = time;
     Universe::heap()->collect(cause);
   }
@@ -850,7 +859,8 @@ uint64_t CodeCache::_cold_gc_count = INT_MAX;
 
 double CodeCache::_last_unloading_time = 0.0;
 size_t CodeCache::_last_unloading_used = 0;
-volatile bool CodeCache::_unloading_gc_requested = false;
+volatile bool CodeCache::_on_gc_allocation_ongoing = false;
+bool CodeCache::_unloading_gc_requested = false;
 double CodeCache::_unloading_gc_requested_time = 0;
 TruncatedSeq CodeCache::_unloading_gc_intervals(10 /* samples */);
 TruncatedSeq CodeCache::_unloading_allocation_rates(10 /* samples */);
