@@ -74,7 +74,7 @@ void GCLocker::initialize() {
 
 bool GCLocker::is_active() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur = jtiwh.next(); /* empty */) {
-    if (cur->in_critical()) {
+    if (cur->in_critical_atomic()) {
       return true;
     }
   }
@@ -90,7 +90,7 @@ void GCLocker::block() {
   Atomic::store(&_is_gc_request_pending, true);
 
   // The _is_gc_request_pending and _jni_active_critical (inside
-  // in_critical()) variables form a Dekker duality. On the GC side, the
+  // in_critical_atomic()) variables form a Dekker duality. On the GC side, the
   // _is_gc_request_pending is set and _jni_active_critical is subsequently
   // loaded. For Java threads, the opposite is true, just like a Dekker lock.
   // That's why there is a fence to order the accesses involved in the Dekker
@@ -103,7 +103,7 @@ void GCLocker::block() {
   // Wait for threads leaving critical section
   SpinYield spin_yield;
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur = jtiwh.next(); /* empty */) {
-    while (cur->in_critical()) {
+    while (cur->in_critical_atomic()) {
       spin_yield.wait();
     }
   }
@@ -122,7 +122,9 @@ void GCLocker::unblock() {
   Atomic::store(&_is_gc_request_pending, false);
 }
 
-void GCLocker::enter_slow(JavaThread* thread) {
+void GCLocker::enter_slow(JavaThread* current_thread) {
+  assert(current_thread == JavaThread::current(), "Must be this thread");
+
   GCLockerTimingDebugLogger logger("Thread blocked to enter critical region.");
   while (true) {
     {
@@ -131,7 +133,7 @@ void GCLocker::enter_slow(JavaThread* thread) {
       MutexLocker locker(_lock);
     }
 
-    thread->enter_critical();
+    current_thread->enter_critical();
 
     // Same as fast path.
     OrderAccess::fence();
@@ -140,6 +142,6 @@ void GCLocker::enter_slow(JavaThread* thread) {
       return;
     }
 
-    thread->exit_critical();
+    current_thread->exit_critical();
   }
 }

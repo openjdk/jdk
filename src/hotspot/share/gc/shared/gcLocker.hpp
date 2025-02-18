@@ -49,7 +49,7 @@ class GCLocker: public AllStatic {
   // Debug-only: to track the number of java threads in critical-region.
   static uint64_t _verify_in_cr_count;
 #endif
-  static void enter_slow(JavaThread* thread);
+  static void enter_slow(JavaThread* current_thread);
 
 public:
   static void initialize();
@@ -62,8 +62,8 @@ public:
   static void unblock();
 
   // For use by Java threads entering/leaving critical-region.
-  inline static void enter(JavaThread* thread);
-  inline static void exit(JavaThread* thread);
+  inline static void enter(JavaThread* current_thread);
+  inline static void exit(JavaThread* current_thread);
 };
 
 #endif // SHARE_GC_SHARED_GCLOCKER_HPP

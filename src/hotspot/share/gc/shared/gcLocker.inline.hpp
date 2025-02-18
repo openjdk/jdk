@@ -29,39 +29,39 @@
 
 #include "runtime/javaThread.inline.hpp"
 
-void GCLocker::enter(JavaThread* thread) {
-  assert(thread == JavaThread::current(), "Must be this thread");
+void GCLocker::enter(JavaThread* current_thread) {
+  assert(current_thread == JavaThread::current(), "Must be this thread");
 
-  if (!thread->in_critical()) {
-    thread->enter_critical();
+  if (!current_thread->in_critical()) {
+    current_thread->enter_critical();
 
     // Matching the fence in GCLocker::block.
     OrderAccess::fence();
 
     if (Atomic::load(&_is_gc_request_pending)) {
-      thread->exit_critical();
+      current_thread->exit_critical();
       // slow-path
-      enter_slow(thread);
+      enter_slow(current_thread);
     }
 
     DEBUG_ONLY(Atomic::add(&_verify_in_cr_count, (uint64_t)1);)
   } else {
-    thread->enter_critical();
+    current_thread->enter_critical();
   }
 }
 
-void GCLocker::exit(JavaThread* thread) {
-  assert(thread == JavaThread::current(), "Must be this thread");
+void GCLocker::exit(JavaThread* current_thread) {
+  assert(current_thread == JavaThread::current(), "Must be this thread");
 
 #ifdef ASSERT
-  if (thread->in_last_critical()) {
+  if (current_thread->in_last_critical()) {
     Atomic::add(&_verify_in_cr_count, (uint64_t)-1);
     // Matching the loadload in GCLocker::block.
     OrderAccess::storestore();
   }
 #endif
 
-  thread->exit_critical();
+  current_thread->exit_critical();
 }
 
 #endif // SHARE_GC_SHARED_GCLOCKER_INLINE_HPP
