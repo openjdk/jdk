@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,13 +223,14 @@ public class LinkChecker implements HtmlChecker {
         return duplicateIds == 0
                 && missingIds == 0
                 && missingFiles == 0
-                && badSchemes == 0;
+                && badSchemes == 0
+                && log.noErrors();
     }
 
     @Override
     public void close() {
-        report();
         if (!isOK()) {
+            report();
             throw new RuntimeException(
                     "LinkChecker encountered errors. Duplicate IDs: "
                             + duplicateIds + ", Missing IDs: " + missingIds
@@ -274,6 +275,11 @@ public class LinkChecker implements HtmlChecker {
                     p = currFile;
                 } else {
                     p = currFile.getParent().resolve(resolvedUriPath).normalize();
+                }
+
+                if (!Files.exists(p)) {
+                    log.log(currFile, line, "missing file reference: " + p);
+                    return;
                 }
 
                 if (fragment != null && !fragment.isEmpty()) {
