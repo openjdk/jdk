@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,9 @@ public abstract class Handler {
      * <p>
      * The {@code Handler}  is responsible for formatting the message, when and
      * if necessary.  The formatting should include localization.
+     * <p>
+     * Implementations of this method should avoid holding any locks around the
+     * formatting of {@code LogRecord}.
      *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
