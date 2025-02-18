@@ -78,6 +78,10 @@ public abstract class AbstractCheckSignatureSchemes extends SSLEngineTemplate {
         return "TLSv1.2";
     }
 
+    protected boolean isDtls() {
+        return getProtocol().startsWith("DTLS");
+    }
+
     @Override
     protected SSLEngine configureClientEngine(SSLEngine clientEngine) {
         clientEngine.setUseClientMode(true);
@@ -89,7 +93,18 @@ public abstract class AbstractCheckSignatureSchemes extends SSLEngineTemplate {
     protected SSLEngine configureServerEngine(SSLEngine serverEngine) {
         serverEngine.setUseClientMode(false);
         serverEngine.setWantClientAuth(true);
+        serverEngine.setEnabledProtocols(new String[]{getProtocol()});
         return serverEngine;
+    }
+
+    @Override
+    protected ContextParameters getServerContextParameters() {
+        return new ContextParameters(getProtocol(), "PKIX", "NewSunX509");
+    }
+
+    @Override
+    protected ContextParameters getClientContextParameters() {
+        return new ContextParameters(getProtocol(), "PKIX", "NewSunX509");
     }
 
     /**
@@ -109,7 +124,7 @@ public abstract class AbstractCheckSignatureSchemes extends SSLEngineTemplate {
      * @throws SSLException if the incoming ByteBuffer does not contain
      *                      a well-formed TLS message.
      */
-    protected static ByteBuffer extractHandshakeMsg(ByteBuffer tlsRecord,
+    protected ByteBuffer extractHandshakeMsg(ByteBuffer tlsRecord,
             int hsMsgId) throws SSLException {
         Objects.requireNonNull(tlsRecord);
         tlsRecord.mark();
@@ -118,6 +133,10 @@ public abstract class AbstractCheckSignatureSchemes extends SSLEngineTemplate {
         int type = Byte.toUnsignedInt(tlsRecord.get());
         int ver_major = Byte.toUnsignedInt(tlsRecord.get());
         int ver_minor = Byte.toUnsignedInt(tlsRecord.get());
+        // Skip DTLS-specific bytes
+        if (isDtls()) {
+            tlsRecord.position(tlsRecord.position() + 8);
+        }
         int recLen = Short.toUnsignedInt(tlsRecord.getShort());
 
         if (recLen > tlsRecord.remaining()) {
@@ -131,6 +150,10 @@ public abstract class AbstractCheckSignatureSchemes extends SSLEngineTemplate {
             int msgHdr = tlsRecord.getInt();
             int msgType = (msgHdr >> 24) & 0x000000FF;
             int msgLen = msgHdr & 0x00FFFFFF;
+            // Skip DTLS-specific bytes
+            if (isDtls()) {
+                tlsRecord.position(tlsRecord.position() + 8);
+            }
 
             if (msgType == hsMsgId) {
                 // Slice the buffer such that it contains the entire
@@ -164,7 +187,7 @@ public abstract class AbstractCheckSignatureSchemes extends SSLEngineTemplate {
      *                signature schemes.
      * @return        A List of the signature schemes in string form.
      */
-    protected static List<String> getSigSchemesCliHello(
+    protected List<String> getSigSchemesCliHello(
             ByteBuffer data, int extCode) {
         Objects.requireNonNull(data);
         data.mark();
@@ -176,6 +199,14 @@ public abstract class AbstractCheckSignatureSchemes extends SSLEngineTemplate {
         int sessLen = Byte.toUnsignedInt(data.get());
         if (sessLen != 0) {
             data.position(data.position() + sessLen);
+        }
+
+        // Skip DTLS-specific opaque cookie if any
+        if (isDtls()) {
+            int cookieLen = Byte.toUnsignedInt(data.get());
+            if (cookieLen != 0) {
+                data.position(data.position() + cookieLen);
+            }
         }
 
         // Jump past the cipher suites
@@ -216,7 +247,7 @@ public abstract class AbstractCheckSignatureSchemes extends SSLEngineTemplate {
      * signature_algorithms extension is present in the CertificateRequest
      * then an empty list will be returned.
      */
-    protected static List<String> getSigSchemesCertReq(ByteBuffer data) {
+    protected List<String> getSigSchemesCertReq(ByteBuffer data) {
         Objects.requireNonNull(data);
         data.mark();
 
@@ -245,7 +276,7 @@ public abstract class AbstractCheckSignatureSchemes extends SSLEngineTemplate {
      * Gets signatures schemes from the given TLS extension.
      * The buffer should be positioned at the start of the extension.
      */
-    protected static List<String> getSigSchemesFromExt(
+    protected List<String> getSigSchemesFromExt(
             ByteBuffer data, int extCode) {
 
         List<String> extSigAlgs = new ArrayList<>();

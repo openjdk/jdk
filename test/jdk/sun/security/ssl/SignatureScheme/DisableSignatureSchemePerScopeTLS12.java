@@ -47,7 +47,7 @@ public class DisableSignatureSchemePerScopeTLS12 extends
     protected static final String CERTIFICATE_DISABLED_SIG = "rsa_pkcs1_sha384";
 
     // jdk.tls.disabledAlgorithms value
-    protected static final String DISABLED_ALGORITHMS =
+    protected static final String DISABLED_CONSTRAINTS =
             HANDSHAKE_DISABLED_SIG + " usage handshake, "
             + CERTIFICATE_DISABLED_SIG + " usage certificate";
 
@@ -57,7 +57,7 @@ public class DisableSignatureSchemePerScopeTLS12 extends
 
     public static void main(String[] args) throws Exception {
         Security.setProperty(
-                "jdk.tls.disabledAlgorithms", DISABLED_ALGORITHMS);
+                "jdk.tls.disabledAlgorithms", DISABLED_CONSTRAINTS);
         new DisableSignatureSchemePerScopeTLS12().run();
     }
 

@@ -25,37 +25,33 @@
  * @test
  * @bug 8349583
  * @summary Add mechanism to disable signature schemes based on their TLS scope.
- *          This test only covers TLS 1.3.
+ *          This test only covers DTLS 1.2.
  * @library /javax/net/ssl/templates
  *          /test/lib
- * @run main/othervm DisableSignatureSchemePerScopeTLS13
+ * @run main/othervm DisableSignatureSchemePerScopeDTLS12
  */
-
 
 import java.security.Security;
 
-public class DisableSignatureSchemePerScopeTLS13
+public class DisableSignatureSchemePerScopeDTLS12
         extends DisableSignatureSchemePerScopeTLS12 {
 
-    protected DisableSignatureSchemePerScopeTLS13() throws Exception {
+    protected DisableSignatureSchemePerScopeDTLS12() throws Exception {
         super();
     }
 
     public static void main(String[] args) throws Exception {
         Security.setProperty(
                 "jdk.tls.disabledAlgorithms", DISABLED_CONSTRAINTS);
-        new DisableSignatureSchemePerScopeTLS13().run();
+        new DisableSignatureSchemePerScopeDTLS12().run();
     }
 
     @Override
     protected String getProtocol() {
-        return "TLSv1.3";
+        return "DTLSv1.2";
     }
 
-    // TLSv1.3 sends CertificateRequest signature schemes in
-    // signature_algorithms and signature_algorithms_cert extensions. Same as
-    // ClientHello, but they are encrypted. So we skip CertificateRequest
-    // signature schemes verification for TLSv1.3.
+    // No CertificateRequest in DTLS server flight.
     @Override
     protected void checkCertificateRequest() {
     }

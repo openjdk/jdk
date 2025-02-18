@@ -757,8 +757,8 @@ final class CertificateRequest {
                 chc.peerSupportedAuthorities = crm.getAuthorities();
             } catch (IllegalArgumentException iae) {
                 chc.conContext.fatal(Alert.DECODE_ERROR, "The "
-                        + "distinguished names of the peer's certificate "
-                        + "authorities could not be parsed", iae);
+                    + "distinguished names of the peer's certificate "
+                    + "authorities could not be parsed", iae);
             }
             // For TLS 1.2, we no longer use the certificate_types field
             // from the CertificateRequest message to directly determine
