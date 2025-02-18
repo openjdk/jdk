@@ -152,24 +152,12 @@ tier1_compiler = \
   :tier1_compiler_2 \
   :tier1_compiler_3
 
-hotspot_not_fast_compiler = \
-  :hotspot_compiler \
-  -:tier1_compiler \
-  -:hotspot_slow_compiler
-
-hotspot_slow_compiler = \
-  compiler/codegen/aes \
-  compiler/codecache/stress \
-  compiler/gcbarriers/PreserveFPRegistersTest.java \
-  compiler/memoryinitialization/ZeroTLABTest.java \
-  compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
-  :hotspot_compiler_arraycopy
-
 tier1_compiler_1 = \
   compiler/arraycopy/ \
   compiler/blackhole/ \
   compiler/c1/ \
   compiler/c2/ \
+  -compiler/arraycopy/stress \
   -compiler/c2/Test6850611.java \
   -compiler/c2/cr6890943/Test6890943.java \
   -compiler/c2/Test6905845.java \
@@ -179,8 +167,7 @@ tier1_compiler_1 = \
   -compiler/c2/stemmer \
   -compiler/c2/Test6792161.java \
   -compiler/c2/Test6603011.java \
-  -compiler/c2/Test6912517.java \
-  -:hotspot_slow_compiler
+  -compiler/c2/Test6912517.java
 
 tier1_compiler_2 = \
   compiler/classUnloading/ \
@@ -197,7 +184,10 @@ tier1_compiler_2 = \
   compiler/integerArithmetic/ \
   compiler/interpreter/ \
   compiler/jvmci/ \
-  -:hotspot_slow_compiler
+  -compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
+  -compiler/codecache/stress \
+  -compiler/codegen/aes \
+  -compiler/gcbarriers/PreserveFPRegistersTest.java
 
 tier1_compiler_3 = \
   compiler/intrinsics/ \
@@ -221,6 +211,7 @@ tier1_compiler_3 = \
   -compiler/intrinsics/bigInteger/TestMultiplyToLen.java \
   -compiler/intrinsics/zip/TestAdler32.java \
   -compiler/loopopts/Test7052494.java \
+  -compiler/memoryinitialization/ZeroTLABTest.java \
   -compiler/runtime/Test6826736.java
 
 tier2_compiler = \
@@ -230,7 +221,6 @@ tier2_compiler = \
   compiler/cha/ \
   compiler/controldependency/ \
   compiler/conversions/ \
-  compiler/codegen/ \
   compiler/linkage/ \
   compiler/loopstripmining/ \
   compiler/loopopts/Test7052494.java \
@@ -248,8 +238,7 @@ tier2_compiler = \
   compiler/runtime/Test6826736.java \
   compiler/stable/ \
   compiler/stringopts/ \
-  -:tier1_compiler \
-  -:hotspot_slow_compiler
+  -:tier1_compiler
 
 tier3_compiler = \
   :hotspot_compiler \
