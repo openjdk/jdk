@@ -667,6 +667,27 @@ public class JavacParser implements Parser {
 
     protected void storeEnd(JCTree tree, int endpos) {
         endPosTable.storeEnd(tree, endpos);
+
+        // Module, package, class, method, and variable declarations remember their end positions
+        switch (tree.getTag()) {
+        case MODULEDEF:
+            ((JCModuleDecl)tree).endPos = endpos;
+            break;
+        case PACKAGEDEF:
+            ((JCPackageDecl)tree).endPos = endpos;
+            break;
+        case CLASSDEF:
+            ((JCClassDecl)tree).endPos = endpos;
+            break;
+        case METHODDEF:
+            ((JCMethodDecl)tree).endPos = endpos;
+            break;
+        case VARDEF:
+            ((JCVariableDecl)tree).endPos = endpos;
+            break;
+        default:
+            break;
+        }
     }
 
     protected <T extends JCTree> T to(T t) {
@@ -2728,7 +2749,7 @@ public class JavacParser implements Parser {
             List<JCTree> defs = classInterfaceOrRecordBody(names.empty, false, false);
             JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
             body = toP(F.at(pos).AnonymousClassDef(mods, defs));
-            body.endPos = S.prevToken().endPos;
+            storeEnd(body, S.prevToken().endPos);
         }
         return toP(F.at(newpos).NewClass(encl, typeArgs, t, args, body));
     }
@@ -3893,7 +3914,7 @@ public class JavacParser implements Parser {
                     }
                 }
                 JCVariableDecl result = toP(F.at(pos).ReceiverVarDef(mods, pn, type));
-                result.endPos = S.prevToken().endPos;
+                storeEnd(result, S.prevToken().endPos);
                 return result;
             }
         } else {
@@ -3921,7 +3942,7 @@ public class JavacParser implements Parser {
 
         JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, type, null,
                 type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var));
-        result.endPos = S.prevToken().endPos;
+        storeEnd(result, S.prevToken().endPos);
         return result;
     }
 
@@ -3992,7 +4013,7 @@ public class JavacParser implements Parser {
             JCExpression pid = qualident(false);
             accept(SEMI);
             JCPackageDecl pd = toP(F.at(packagePos).PackageDecl(annotations, pid));
-            pd.endPos = S.prevToken().endPos;
+            storeEnd(pd, S.prevToken().endPos);
             attach(pd, firstToken.docComment());
             consumedToplevelDoc = true;
             defs.append(pd);
@@ -4148,7 +4169,7 @@ public class JavacParser implements Parser {
         JCClassDecl implicit = F.at(primaryPos).ClassDef(
                 implicitMods, name, List.nil(), null, List.nil(), List.nil(),
                 defs.toList());
-        implicit.endPos = endPos;
+        storeEnd(implicit, endPos);
         topDefs.append(implicit);
         return topDefs.toList();
     }
@@ -4168,7 +4189,7 @@ public class JavacParser implements Parser {
         accept(EOF);
 
         JCModuleDecl result = toP(F.at(pos).ModuleDef(mods, kind, name, directives));
-        result.endPos = endPos;
+        storeEnd(result, endPos);
         attach(result, dc);
         return result;
     }
@@ -4371,7 +4392,7 @@ public class JavacParser implements Parser {
         List<JCTree> defs = classInterfaceOrRecordBody(name, false, false);
         JCClassDecl result = toP(F.at(pos).ClassDef(
             mods, name, typarams, extending, implementing, permitting, defs));
-        result.endPos = S.prevToken().endPos;
+        storeEnd(result, S.prevToken().endPos);
         attach(result, dc);
         return result;
     }
@@ -4421,7 +4442,7 @@ public class JavacParser implements Parser {
             defs = defs.prepend(field);
         }
         JCClassDecl result = toP(F.at(pos).ClassDef(mods, name, typarams, null, implementing, defs));
-        result.endPos = endPos;
+        storeEnd(result, endPos);
         attach(result, dc);
         return result;
     }
@@ -4462,7 +4483,7 @@ public class JavacParser implements Parser {
         defs = classInterfaceOrRecordBody(name, true, false);
         JCClassDecl result = toP(F.at(pos).ClassDef(
             mods, name, typarams, null, extending, permitting, defs));
-        result.endPos = S.prevToken().endPos;
+        storeEnd(result, S.prevToken().endPos);
         attach(result, dc);
         return result;
     }
@@ -4511,7 +4532,7 @@ public class JavacParser implements Parser {
         JCClassDecl result = toP(F.at(pos).
             ClassDef(mods, name, List.nil(),
                      null, implementing, defs));
-        result.endPos = S.prevToken().endPos;
+        storeEnd(result, S.prevToken().endPos);
         attach(result, dc);
         return result;
     }
@@ -4654,8 +4675,8 @@ public class JavacParser implements Parser {
         if (createPos != identPos)
             storeEnd(create, endPos);
         ident = F.at(identPos).Ident(enumName);
-        JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, ident, create));
-        result.endPos = endPos;
+        JCTree result = toP(F.at(pos).VarDef(mods, name, ident, create));
+        storeEnd(result, endPos);
         attach(result, dc);
         return result;
     }
@@ -5085,7 +5106,7 @@ public class JavacParser implements Parser {
                     toP(F.at(pos).MethodDef(mods, name, type, typarams,
                                             receiverParam, params, thrown,
                                             body, defaultValue));
-            result.endPos = S.prevToken().endPos;
+            storeEnd(result, S.prevToken().endPos);
             attach(result, dc);
             return result;
         } finally {
