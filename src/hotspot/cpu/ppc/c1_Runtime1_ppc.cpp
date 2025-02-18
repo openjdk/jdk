@@ -609,6 +609,73 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
+    case C1StubId::is_instance_of_id:
+      {
+        // Called like a C function, but without FunctionDescriptor (see LIR_Assembler::rt_call).
+
+        // Arguments and return value.
+        Register mirror = R3_ARG1;
+        Register obj    = R4_ARG2;
+        Register result = R3_RET;
+
+        // Other argument registers can be used as temp registers.
+        Register klass  = R5;
+        Register offset = R6;
+        Register sub_klass = R7;
+
+        Label is_secondary, success;
+
+        // Get the Klass*.
+        __ ld(klass, java_lang_Class::klass_offset(), mirror);
+
+        // Return false if obj or klass is null.
+        mirror = noreg; // killed by next instruction
+        __ li(result, 0); // assume result is false
+        __ cmpdi(CR0, obj, 0);
+        __ cmpdi(CR1, klass, 0);
+        __ cror(CR0, Assembler::equal, CR1, Assembler::equal);
+        __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CR0, Assembler::equal), Assembler::bhintbhBCLRisReturn);
+
+        __ lwz(offset, in_bytes(Klass::super_check_offset_offset()), klass);
+        __ load_klass(sub_klass, obj);
+        __ cmpwi(CR0, offset, in_bytes(Klass::secondary_super_cache_offset()));
+        __ beq(CR0, is_secondary); // Klass is a secondary superclass
+
+        // Klass is a concrete class
+        __ ldx(R0, sub_klass, offset);
+        __ cmpd(CR0, klass, R0);
+        if (VM_Version::has_brw()) {
+          // Power10 can set the result by one instruction. No need for a branch.
+          __ setbc(result, CR0, Assembler::equal);
+        } else {
+          __ beq(CR0, success);
+        }
+        __ blr();
+
+        __ bind(is_secondary);
+
+        // This is necessary because I am never in my own secondary_super list.
+        __ cmpd(CR0, sub_klass, klass);
+        __ beq(CR0, success);
+
+        __ lookup_secondary_supers_table_var(sub_klass, klass,
+                                             /*temps*/R9, R10, R11, R12,
+                                             /*result*/R8);
+        __ cmpdi(CR0, R8, 0); // 0 means is subclass
+        if (VM_Version::has_brw()) {
+          // Power10 can set the result by one instruction. No need for a branch.
+          __ setbc(result, CR0, Assembler::equal);
+        } else {
+          __ beq(CR0, success);
+        }
+        __ blr();
+
+        __ bind(success);
+        __ li(result, 1);
+        __ blr();
+      }
+      break;
+
     case C1StubId::monitorenter_nofpu_id:
     case C1StubId::monitorenter_id:
       {
