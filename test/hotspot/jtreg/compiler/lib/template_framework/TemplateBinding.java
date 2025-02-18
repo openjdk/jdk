@@ -31,6 +31,8 @@ package compiler.lib.template_framework;
  * it can be used with {@link get} inside a {@link Template}. Later, we can {@link bind}
  * a {@link Template} to the binding, such that {@link get} returns that bound
  * {@link Template}.
+ *
+ * @param <T> Type of the template.
  */
 public class TemplateBinding<T extends Template> {
     private T template = null;

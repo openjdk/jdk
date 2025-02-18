@@ -42,7 +42,6 @@ import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
 import compiler.lib.template_framework.RendererException;
 import static compiler.lib.template_framework.Template.body;
-import static compiler.lib.template_framework.Template.intoHook;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.fuel;
@@ -243,7 +242,7 @@ public class TestTemplate {
             "{\n",
             hook1.set(
                 "World\n",
-                intoHook(hook1, template1.withArgs())
+                hook1.insert(template1.withArgs())
 	    ),
             "}"
         ));
@@ -271,22 +270,22 @@ public class TestTemplate {
             hook1.set(
                 template1.withArgs("one"),
                 template1.withArgs("two"),
-                intoHook(hook1, template1.withArgs("intoHook1a")),
-                intoHook(hook1, template1.withArgs("intoHook1b")),
+                hook1.insert(template1.withArgs("intoHook1a")),
+                hook1.insert(template1.withArgs("intoHook1b")),
                 template1.withArgs("three"),
                 hook1.set(
                     template1.withArgs("four"),
-                    intoHook(hook1, template1.withArgs("intoHook1c")),
+                    hook1.insert(template1.withArgs("intoHook1c")),
                     template1.withArgs("five")
 	        ),
                 template1.withArgs("six"),
                 hook1.set(), // empty
                 template1.withArgs("seven"),
-                intoHook(hook1, template1.withArgs("intoHook1d")),
+                hook1.insert(template1.withArgs("intoHook1d")),
                 template1.withArgs("eight"),
                 hook1.set(
                     template1.withArgs("nine"),
-                    intoHook(hook1, template1.withArgs("intoHook1e")),
+                    hook1.insert(template1.withArgs("intoHook1e")),
                     template1.withArgs("ten")
 	        ),
                 template1.withArgs("eleven")
@@ -328,28 +327,28 @@ public class TestTemplate {
         var template2 = Template.make("b", (String b) -> body(
             "{\n",
             template1.withArgs(b + "A"),
-            intoHook(hook1, template1.withArgs(b + "B")),
-            intoHook(hook2, template1.withArgs(b + "C")),
+            hook1.insert(template1.withArgs(b + "B")),
+            hook2.insert(template1.withArgs(b + "C")),
             template1.withArgs(b + "D"),
             hook1.set(
                 template1.withArgs(b + "E"),
-                intoHook(hook1, template1.withArgs(b + "F")),
-                intoHook(hook2, template1.withArgs(b + "G")),
+                hook1.insert(template1.withArgs(b + "F")),
+                hook2.insert(template1.withArgs(b + "G")),
                 template1.withArgs(b + "H"),
                 hook2.set(
                     template1.withArgs(b + "I"),
-                    intoHook(hook1, template1.withArgs(b + "J")),
-                    intoHook(hook2, template1.withArgs(b + "K")),
+                    hook1.insert(template1.withArgs(b + "J")),
+                    hook2.insert(template1.withArgs(b + "K")),
                     template1.withArgs(b + "L")
                 ),
                 template1.withArgs(b + "M"),
-                intoHook(hook1, template1.withArgs(b + "N")),
-                intoHook(hook2, template1.withArgs(b + "O")),
+                hook1.insert(template1.withArgs(b + "N")),
+                hook2.insert(template1.withArgs(b + "O")),
                 template1.withArgs(b + "O")
             ),
             template1.withArgs(b + "P"),
-            intoHook(hook1, template1.withArgs(b + "Q")),
-            intoHook(hook2, template1.withArgs(b + "R")),
+            hook1.insert(template1.withArgs(b + "Q")),
+            hook2.insert(template1.withArgs(b + "R")),
             template1.withArgs(b + "S"),
             "}\n"
         ));
@@ -416,13 +415,13 @@ public class TestTemplate {
         var template2 = Template.make("b", (String b) -> body(
             "<\n",
             template1.withArgs(b + "A"),
-            intoHook(hook1, template1.withArgs(b + "B")), // sub-B is rendered before template2.
+            hook1.insert(template1.withArgs(b + "B")), // sub-B is rendered before template2.
             template1.withArgs(b + "C"),
             "inner-hook-start\n",
             hook1.set(
                 "inner-hook-end\n",
                 template1.withArgs(b + "E"),
-                intoHook(hook1, template1.withArgs(b + "E")),
+                hook1.insert(template1.withArgs(b + "E")),
                 template1.withArgs(b + "F")
             ),
             ">\n"
@@ -434,7 +433,7 @@ public class TestTemplate {
             "hook-start\n",
             hook1.set(
                 "hook-end\n",
-                intoHook(hook1, template2.withArgs("sub-")),
+                hook1.insert(template2.withArgs("sub-")),
                 "base-C\n"
 	    ),
             "base-D\n",
@@ -491,11 +490,11 @@ public class TestTemplate {
             "break\n",
             hook1.set(
                 "one\n",
-                intoHook(hook1, template1.withArgs($("name"))),
+                hook1.insert(template1.withArgs($("name"))),
                 "two\n",
                 template1.withArgs($("name")),
                 "three\n",
-                intoHook(hook1, template2.withArgs($("name"))),
+                hook1.insert(template2.withArgs($("name"))),
                 "four\n"
             ),
             "}\n"
@@ -817,7 +816,7 @@ public class TestTemplate {
 
         var template3 = Template.make(() -> body(
             "<\n",
-            intoHook(hook1, template2.withArgs($("name"), "int")),
+            hook1.insert(template2.withArgs($("name"), "int")),
             "$name = 5\n",
             ">\n"
         ));
@@ -887,14 +886,14 @@ public class TestTemplate {
 
         var template4 = Template.make("type", (Object type) -> body(
             "{ $store\n",
-            intoHook(hook1, template2.withArgs($("name"), type)),
+            hook1.insert(template2.withArgs($("name"), type)),
             "$name = 5\n",
             "} $store\n"
         ));
 
         var template5 = Template.make("type", (Object type) -> body(
             "{ $load\n",
-            intoHook(hook1, template3.withArgs($("name"), type)),
+            hook1.insert(template3.withArgs($("name"), type)),
             "blackhole($name)\n",
             "} $load\n"
         ));
@@ -1079,7 +1078,7 @@ public class TestTemplate {
         var template2 = Template.make(() -> body(
             "beta\n",
             // Use hook without hook1.set
-            intoHook(hook1, template1.withArgs()),
+            hook1.insert(template1.withArgs()),
             "gamma\n"
         ));
 

@@ -227,7 +227,7 @@ class Renderer {
                 currentCodeFrame.addCode(hookCodeFrame.getCode());
                 currentCodeFrame.addCode(innerCodeFrame.getCode());
             }
-            case HookIntoToken(Hook hook, TemplateWithArgs t) -> {
+            case HookInsertToken(Hook hook, TemplateWithArgs t) -> {
                 // Switch to hook CodeFrame.
                 CodeFrame callerCodeFrame = currentCodeFrame;
                 CodeFrame hookCodeFrame = codeFrameForHook(hook);

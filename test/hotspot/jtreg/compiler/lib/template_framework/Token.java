@@ -33,7 +33,7 @@ sealed interface Token permits StringToken,
                                TemplateWithArgs.OneArgsUse,
                                TemplateWithArgs.TwoArgsUse,
                                HookSetToken,
-                               HookIntoToken,
+                               HookInsertToken,
                                DefineNameToken,
                                NothingToken
 {

@@ -74,8 +74,8 @@ public interface Template {
      * }
      *
      * @param body The {@link TemplateBody} created by {@link Template#body}.
-     * @param <A> Type of the zeroth argument.
-     * @param arg0Name The name of the zeroth argument for hashtag replacement.
+     * @param <A> Type of the (first) argument.
+     * @param arg0Name The name of the (first) argument for hashtag replacement.
      * @return A {@link Template} with one argument.
      */
     static <A> OneArgs<A> make(String arg0Name, Function<A, TemplateBody> body) {
@@ -101,10 +101,10 @@ public interface Template {
      * }
      *
      * @param body The {@link TemplateBody} created by {@link Template#body}.
-     * @param <A> Type of the zeroth argument.
-     * @param arg0Name The name of the zeroth argument for hashtag replacement.
-     * @param <B> Type of the first argument.
-     * @param arg1Name The name of the first argument for hashtag replacement.
+     * @param <A> Type of the first argument.
+     * @param arg0Name The name of the first argument for hashtag replacement.
+     * @param <B> Type of the second argument.
+     * @param arg1Name The name of the second argument for hashtag replacement.
      * @return A {@link Template} with two arguments.
      */
     static <A, B> TwoArgs<A, B> make(String arg0Name, String arg1Name, BiFunction<A, B, TemplateBody> body) {
@@ -113,6 +113,8 @@ public interface Template {
 
     /**
      * A {@link Template} with no arguments.
+     *
+     * @param function The {@link Supplier} that creates the {@link TemplateBody}.
      */
     record ZeroArgs(Supplier<TemplateBody> function) implements Template {
         TemplateBody instantiate() {
@@ -135,6 +137,10 @@ public interface Template {
 
     /**
      * A {@link Template} with one argument.
+     *
+     * @param arg0Name The name of the (first) argument, used for hashtag replacements in the {@link Template}.
+     * @param <A> The type of the (first) argument.
+     * @param function The {@link Function} that creates the {@link TemplateBody} given the template argument.
      */
     record OneArgs<A>(String arg0Name, Function<A, TemplateBody> function) implements Template {
         TemplateBody instantiate(A a) {
@@ -147,7 +153,7 @@ public interface Template {
          * {@link TemplateWithArgs#render} to render the template to a {@link String}
          * directly.
          *
-         * @param a The value for the zeroth argument.
+         * @param a The value for the (first) argument.
          * @return The template its argument applied.
          */
         public TemplateWithArgs withArgs(A a) {
@@ -157,6 +163,12 @@ public interface Template {
 
     /**
      * A {@link Template} with two arguments.
+     *
+     * @param arg0Name The name of the first argument, used for hashtag replacements in the {@link Template}.
+     * @param arg1Name The name of the second argument, used for hashtag replacements in the {@link Template}.
+     * @param <A> The type of the first argument.
+     * @param <B> The type of the second argument.
+     * @param function The {@link BiFunction} that creates the {@link TemplateBody} given the template arguments.
      */
     record TwoArgs<A, B>(String arg0Name, String arg1Name,
                          BiFunction<A, B, TemplateBody> function) implements Template {
@@ -170,8 +182,8 @@ public interface Template {
          * {@link TemplateWithArgs#render} to render the template to a {@link String}
          * directly.
          *
-         * @param a The value for the zeroth argument.
-         * @param b The value for the first argument.
+         * @param a The value for the first argument.
+         * @param b The value for the second argument.
          * @return The template all (two) arguments applied.
          */
         public TemplateWithArgs withArgs(A a, B b) {
@@ -203,51 +215,6 @@ public interface Template {
      */
     static TemplateBody body(Object... tokens) {
         return new TemplateBody(Token.parse(tokens));
-    }
-
-    /**
-     * Let a {@link TemplateWithArgs} generate code at the innermost location where the
-     * {@link Hook} was set with {@link Hook#set}.
-     *
-     * Example:
-     * {@snippet lang=java :
-     * var myHook = new Hook("MyHook");
-     *
-     * var template1 = Template.make("name", (String name) -> body(
-     *     """
-     *     public static int #name = 42;
-     *     """
-     * ));
-     *
-     * var template2 = Template.make(() -> body(
-     *     """
-     *     public class Test {
-     *     """,
-     *     // Set the hook here.
-     *     myHook.set(
-     *         """
-     *         public static void main(String[] args) {
-     *         System.out.println("$field: " + $field)
-     *         """,
-     *         // Reach up to where the hook was set, and insert the code of template1.
-     *         intoHook(template1.withArgs($("field"))),
-     *         """
-     *         }
-     *         """
-     *     ),
-     *     """
-     *     }
-     *     """
-     * ));
-     * }
-     *
-     * @param hook The {@link Hook} the code is to be generated at.
-     * @param templateWithArgs The {@link Template} with applied arguments to be generated at the {@link Hook}.
-     * @return The {@link Token} which when used inside a {@link Template#body} performs the code generation into the {@link Hook}.
-     * @throws RendererException if there is no active {@link Hook#set}.
-     */
-    static Token intoHook(Hook hook, TemplateWithArgs templateWithArgs) {
-        return new HookIntoToken(hook, templateWithArgs);
     }
 
     /**

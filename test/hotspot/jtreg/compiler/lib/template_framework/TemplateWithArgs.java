@@ -57,6 +57,8 @@ public sealed abstract class TemplateWithArgs implements Token
     /**
      * Represents a one-argument {@link Template} with applied arguments, ready for instantiation
      * either as a {@link Token} inside another {@link Template} or with {@link render}.
+     *
+     * @param <A> The type of the (first) argument.
      */
     public static final class OneArgsUse<A> extends TemplateWithArgs implements Token {
         private final Template.OneArgs<A> oneArgs;
@@ -81,6 +83,9 @@ public sealed abstract class TemplateWithArgs implements Token
     /**
      * Represents a two-argument {@link Template} with applied arguments, ready for instantiation
      * either as a {@link Token} inside another {@link Template} or with {@link render}.
+     *
+     * @param <A> The type of the first argument.
+     * @param <B> The type of the second argument.
      */
     public static final class TwoArgsUse<A, B> extends TemplateWithArgs implements Token {
         private final Template.TwoArgs<A, B> twoArgs;

@@ -33,7 +33,6 @@ import compiler.lib.generators.*;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
-import static compiler.lib.template_framework.Template.intoHook;
 import static compiler.lib.template_framework.Template.fuel;
 import static compiler.lib.template_framework.Template.setFuelCost;
 import static compiler.lib.template_framework.Template.countNames;
@@ -138,7 +137,7 @@ public abstract class Library {
 
     public static final Template.OneArgs<String> GENERATE_BOOLEAN_USING_BOXING_INLINE =
         Template.make("name", (String name) -> body(
-            intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(ExpressionType.BOOLEAN, $("flag"))),
+            CLASS_HOOK.insert(DEFINE_STATIC_FIELD.withArgs(ExpressionType.BOOLEAN, $("flag"))),
             """
             // #name is constant, but only known after Incremental Boxing Inline (after parsing).
             Integer $box;
@@ -168,7 +167,7 @@ public abstract class Library {
                 GENERATE_BOOLEAN_USING_BOXING_INLINE.withArgs(name),
                 GENERATE_BOOLEAN_USING_EMPTY_LOOP.withArgs(name),
                 // This will never constant fold, as it just loads a boolean:
-                intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(ExpressionType.BOOLEAN, name))
+                CLASS_HOOK.insert(DEFINE_STATIC_FIELD.withArgs(ExpressionType.BOOLEAN, name))
             ))
         ));
 
@@ -185,8 +184,8 @@ public abstract class Library {
     public static final Template.TwoArgs<ExpressionType, String> GENERATE_EARLIER_VALUE =
         Template.make("type", "name", (ExpressionType type, String name) -> body(
             choice(List.of(
-              intoHook(CLASS_HOOK, DEFINE_STATIC_FIELD.withArgs(type, name)),
-              intoHook(METHOD_HOOK, GENERATE_EARLILER_VALUE_FROM_BOOLEAN.withArgs(type, name))
+              CLASS_HOOK.insert(DEFINE_STATIC_FIELD.withArgs(type, name)),
+              METHOD_HOOK.insert(GENERATE_EARLILER_VALUE_FROM_BOOLEAN.withArgs(type, name))
             ))
         ));
 
