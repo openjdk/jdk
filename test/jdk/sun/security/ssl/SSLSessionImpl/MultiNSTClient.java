@@ -99,10 +99,12 @@ public class MultiNSTClient {
                 for (int i = 0; i < 2; i++) {
                     String svr = serverPSK.getFirst();
                     String cli = clientPSK.getFirst();
-                    if (svr.regionMatches(svr.length() - 16, cli, cli.length() - 16, 16)) {
+                    if (svr.regionMatches(svr.length() - 16, cli,
+                        cli.length() - 16, 16)) {
                         System.out.println("entry " + (i + 1) + " match.");
                     } else {
-                        System.out.println("entry " + (i + 1) + " server and client PSK didn't match:");
+                        System.out.println("entry " + (i + 1) +
+                            " server and client PSK didn't match:");
                         System.out.println("  server: " + svr);
                         System.out.println("  client: " + cli);
                         pass = false;
@@ -127,8 +129,8 @@ public class MultiNSTClient {
         }
 
         TLSBase.Server server = new TLSBase.Server();
-
-        System.out.println("------  Start connection");
+        server.serverLatch.await();
+        System.out.println("------  Server ready, starting original client.");
         TLSBase.Client initial = new TLSBase.Client();
         SSLSession initialSession = initial.connect().getSession();
         System.out.println("id = " + hex.formatHex(initialSession.getId()));
