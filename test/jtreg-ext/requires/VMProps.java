@@ -140,6 +140,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
         map.put("jlink.packagedModules", this::packagedModules);
+        map.put("jdk.static", this::isStatic);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -818,6 +819,10 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     private String jdkForeignLinker() {
         return String.valueOf(CABI.current());
+    }
+
+    private String isStatic() {
+        return Boolean.toString(WB.isStatic());
     }
 
     /**
