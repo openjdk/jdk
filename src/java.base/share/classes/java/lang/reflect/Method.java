@@ -36,11 +36,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.ExceptionProxy;
 import sun.reflect.annotation.TypeNotPresentExceptionProxy;
-import sun.reflect.generics.repository.GenericDeclRepository;
-import sun.reflect.generics.repository.MethodRepository;
-import sun.reflect.generics.factory.CoreReflectionFactory;
-import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.scope.MethodScope;
+import sun.reflect.generics.info.ExecutableGenericInfo;
+import sun.reflect.generics.info.GenericInfo;
 import sun.reflect.annotation.AnnotationType;
 import sun.reflect.annotation.AnnotationParser;
 import java.lang.annotation.Annotation;
@@ -91,30 +88,23 @@ public final class Method extends Executable {
      * Some lazily initialized immutable states can be stored on root and shared to the copies.
      */
     private Method root;
-    private transient volatile MethodRepository genericInfo;
+    private transient volatile ExecutableGenericInfo<Method> genericInfo;
     private @Stable MethodAccessor methodAccessor;
     // End shared states
     private int hash; // not shared right now, eligible if expensive
 
     // Generics infrastructure
-    private String getGenericSignature() {return signature;}
-
-    // Accessor for factory
-    private GenericsFactory getFactory() {
-        // create scope and factory
-        return CoreReflectionFactory.make(this, MethodScope.make(this));
-    }
-
     // Accessor for generic info repository
     @Override
-    MethodRepository getGenericInfo() {
+    ExecutableGenericInfo<Method> getGenericInfo() {
+        assert hasGenericInformation();
         var genericInfo = this.genericInfo;
         if (genericInfo == null) {
             var root = this.root;
             if (root != null) {
                 genericInfo = root.getGenericInfo();
             } else {
-                genericInfo = MethodRepository.make(getGenericSignature(), getFactory());
+                genericInfo = new ExecutableGenericInfo<>(this, signature);
             }
             this.genericInfo = genericInfo;
         }
@@ -189,7 +179,7 @@ public final class Method extends Executable {
 
     @Override
     boolean hasGenericInformation() {
-        return (getGenericSignature() != null);
+        return signature != null;
     }
 
     @Override
@@ -231,12 +221,11 @@ public final class Method extends Executable {
      * @jls 8.4.4 Generic Methods
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public TypeVariable<Method>[] getTypeParameters() {
-        if (getGenericSignature() != null)
-            return (TypeVariable<Method>[])getGenericInfo().getTypeParameters();
+        if (hasGenericInformation())
+            return getGenericInfo().getTypeVariables();
         else
-            return (TypeVariable<Method>[])GenericDeclRepository.EMPTY_TYPE_VARS;
+            return GenericInfo.emptyTypeVars();
     }
 
     /**
@@ -274,9 +263,10 @@ public final class Method extends Executable {
      * @since 1.5
      */
     public Type getGenericReturnType() {
-      if (getGenericSignature() != null) {
-        return getGenericInfo().getReturnType();
-      } else { return getReturnType();}
+        if (hasGenericInformation()) {
+            return getGenericInfo().getResult();
+        }
+        return getReturnType();
     }
 
     @Override

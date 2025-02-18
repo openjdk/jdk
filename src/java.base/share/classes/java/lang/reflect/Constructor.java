@@ -34,11 +34,9 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.TypeAnnotation;
 import sun.reflect.annotation.TypeAnnotationParser;
-import sun.reflect.generics.repository.ConstructorRepository;
-import sun.reflect.generics.repository.GenericDeclRepository;
-import sun.reflect.generics.factory.CoreReflectionFactory;
-import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.scope.ConstructorScope;
+import sun.reflect.generics.info.ExecutableGenericInfo;
+import sun.reflect.generics.info.GenericInfo;
+
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationFormatError;
 import java.util.StringJoiner;
@@ -76,22 +74,17 @@ public final class Constructor<T> extends Executable {
     private final byte[]              parameterAnnotations;
 
     // Generics infrastructure
-    // Accessor for factory
-    private GenericsFactory getFactory() {
-        // create scope and factory
-        return CoreReflectionFactory.make(this, ConstructorScope.make(this));
-    }
-
     // Accessor for generic info repository
     @Override
-    ConstructorRepository getGenericInfo() {
+    ExecutableGenericInfo<Constructor<T>> getGenericInfo() {
+        assert hasGenericInformation();
         var genericInfo = this.genericInfo;
         if (genericInfo == null) {
             var root = this.root;
             if (root != null) {
                 genericInfo = root.getGenericInfo();
             } else {
-                genericInfo = ConstructorRepository.make(getSignature(), getFactory());
+                genericInfo = new ExecutableGenericInfo<>(this, signature);
             }
             this.genericInfo = genericInfo;
         }
@@ -104,7 +97,7 @@ public final class Constructor<T> extends Executable {
      * Some lazily initialized immutable states can be stored on root and shared to the copies.
      */
     private Constructor<T> root;
-    private transient volatile ConstructorRepository genericInfo;
+    private transient volatile ExecutableGenericInfo<Constructor<T>> genericInfo;
     private @Stable ConstructorAccessor constructorAccessor;
     // End shared states
 
@@ -199,7 +192,7 @@ public final class Constructor<T> extends Executable {
 
     @Override
     boolean hasGenericInformation() {
-        return (getSignature() != null);
+        return signature != null;
     }
 
     @Override
@@ -240,12 +233,11 @@ public final class Constructor<T> extends Executable {
      * @since 1.5
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public TypeVariable<Constructor<T>>[] getTypeParameters() {
-      if (getSignature() != null) {
-        return (TypeVariable<Constructor<T>>[])getGenericInfo().getTypeParameters();
-      } else
-          return (TypeVariable<Constructor<T>>[])GenericDeclRepository.EMPTY_TYPE_VARS;
+        if (hasGenericInformation()) {
+            return getGenericInfo().getTypeVariables();
+        } else
+            return GenericInfo.emptyTypeVars();
     }
 
 
@@ -568,23 +560,6 @@ public final class Constructor<T> extends Executable {
             root.setConstructorAccessor(accessor);
         }
     }
-
-    int getSlot() {
-        return slot;
-    }
-
-    String getSignature() {
-        return signature;
-    }
-
-    byte[] getRawAnnotations() {
-        return annotations;
-    }
-
-    byte[] getRawParameterAnnotations() {
-        return parameterAnnotations;
-    }
-
 
     /**
      * {@inheritDoc}
