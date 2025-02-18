@@ -1619,7 +1619,7 @@ void nmethod::log_new_nmethod() const {
 
 
 // Print out more verbose output usually for a newly created nmethod.
-void nmethod::print_on(outputStream* st, const char* msg) const {
+void nmethod::print_on_with_msg(outputStream* st, const char* msg) const {
   if (st != nullptr) {
     ttyLocker ttyl;
     if (WizardMode) {
@@ -1971,7 +1971,7 @@ void nmethod::log_state_change() const {
 
   CompileTask::print_ul(this, "made not entrant");
   if (PrintCompilation) {
-    print_on(tty, "made not entrant");
+    print_on_with_msg(tty, "made not entrant");
   }
 }
 
@@ -3033,12 +3033,7 @@ void nmethod::verify_scopes() {
 // -----------------------------------------------------------------------------
 // Printing operations
 
-void nmethod::print() const {
-  ttyLocker ttyl;   // keep the following output all in one block
-  print(tty);
-}
-
-void nmethod::print(outputStream* st) const {
+void nmethod::print_on_impl(outputStream* st) const {
   ResourceMark rm;
 
   st->print("Compiled method ");
@@ -3053,7 +3048,7 @@ void nmethod::print(outputStream* st) const {
     st->print("(n/a) ");
   }
 
-  print_on(st, nullptr);
+  print_on_with_msg(st, nullptr);
 
   if (WizardMode) {
     st->print("((nmethod*) " INTPTR_FORMAT ") ", p2i(this));
@@ -3404,7 +3399,7 @@ void nmethod::decode2(outputStream* ost) const {
 #endif
 
   st->cr();
-  this->print(st);
+  this->print_on(st);
   st->cr();
 
 #if defined(SUPPORT_ASSEMBLY)
@@ -3953,12 +3948,12 @@ address nmethod::call_instruction_address(address pc) const {
   return nullptr;
 }
 
+void nmethod::print_value_on_impl(outputStream* st) const {
+  st->print_cr("nmethod");
 #if defined(SUPPORT_DATA_STRUCTS)
-void nmethod::print_value_on(outputStream* st) const {
-  st->print("nmethod");
-  print_on(st, nullptr);
-}
+  print_on_with_msg(st, nullptr);
 #endif
+}
 
 #ifndef PRODUCT
 
