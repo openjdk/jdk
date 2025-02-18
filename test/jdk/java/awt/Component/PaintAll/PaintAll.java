@@ -34,6 +34,7 @@ import java.awt.GridLayout;
 import java.awt.Label;
 import java.awt.List;
 import java.awt.Panel;
+import java.awt.Robot;
 import java.awt.ScrollPane;
 import java.awt.Scrollbar;
 import java.awt.TextArea;
@@ -48,7 +49,6 @@ import java.awt.image.BufferedImage;
   @summary Test Component.paintAll() method
   @author sergey.bylokhov@oracle.com: area=awt.component
   @library /lib/client/
-  @build ExtendedRobot
   @run main PaintAll
 */
 public class PaintAll {
@@ -67,7 +67,7 @@ public class PaintAll {
     private static volatile boolean scrollPanePainted;
     private static volatile boolean textAreaPainted;
     private static volatile boolean textFieldPainted;
-    private static ExtendedRobot robot = null;
+    private static Robot robot = null;
 
     private static final Button buttonStub = new Button() {
         @Override
@@ -287,7 +287,7 @@ public class PaintAll {
     private static void sleep() {
         if(robot == null) {
             try {
-                robot = new ExtendedRobot();
+                robot = new Robot();
             }catch(Exception ex) {
                 ex.printStackTrace();
                 throw new RuntimeException("Unexpected failure");
