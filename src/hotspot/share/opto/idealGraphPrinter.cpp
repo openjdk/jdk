@@ -547,12 +547,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       Compile::AliasType* at = C->alias_type(adr_type);
       if (at != nullptr) {
         print_prop("alias_index", at->index());
-        ciField* field = at->field();
-        if (field != nullptr) {
-          stringStream field_stream;
-          field->print_name_on(&field_stream);
-          print_prop("alias_field", field_stream.freeze());
-        }
+        // The value of at->field(), if present, is already dumped in the
+        // "source"/"destination" properties.
         const Type* element = at->element();
         if (element != nullptr) {
           stringStream element_stream;
