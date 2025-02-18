@@ -155,7 +155,6 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_longBitsToDouble:
   case vmIntrinsics::_getClass:
   case vmIntrinsics::_isInstance:
-  case vmIntrinsics::_isPrimitive:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_scopedValueCache:
