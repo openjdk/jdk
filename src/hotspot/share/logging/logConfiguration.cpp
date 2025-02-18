@@ -720,7 +720,7 @@ void LogConfiguration::notify_update_listeners() {
 bool LogConfiguration::_async_mode = false;
 
 
-#ifdef assert
+#ifdef ASSERT
 void LogConfiguration::remove_wildcard_deathtests(LogLevelType* level, const LogSelectionList& selections, LogTagSet* ts) {
   // Some UL tags (deathtest, deathtest2) are used for testing which results in the VM crashing.
   // We want to avoid any wildcard selections from crashing the VM.
@@ -752,4 +752,4 @@ void LogConfiguration::remove_wildcard_deathtests(LogLevelType* level, const Log
     }
   }
 }
-#endif
+#endif // ASSERT
