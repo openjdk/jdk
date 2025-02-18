@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -500,26 +500,47 @@ public class TreeInfo {
             return tree.pos;
     }
 
-    /** The end position of given tree, if it is a block with
-     *  defined endpos.
+    /** The end position of the given tree, if defined.
      */
     public static int endPos(JCTree tree) {
-        if (tree.hasTag(BLOCK) && ((JCBlock) tree).endpos != Position.NOPOS)
-            return ((JCBlock) tree).endpos;
-        else if (tree.hasTag(SYNCHRONIZED))
+        int endPos;
+        switch (tree.getTag()) {
+        case BLOCK:
+            endPos = ((JCBlock) tree).endpos;
+            break;
+        case SYNCHRONIZED:
             return endPos(((JCSynchronized) tree).body);
-        else if (tree.hasTag(TRY)) {
+        case TRY:
             JCTry t = (JCTry) tree;
             return endPos((t.finalizer != null) ? t.finalizer
                           : (t.catchers.nonEmpty() ? t.catchers.last().body : t.body));
-        } else if (tree.hasTag(SWITCH) &&
-                   ((JCSwitch) tree).endpos != Position.NOPOS) {
-            return ((JCSwitch) tree).endpos;
-        } else if (tree.hasTag(SWITCH_EXPRESSION) &&
-                   ((JCSwitchExpression) tree).endpos != Position.NOPOS) {
-            return ((JCSwitchExpression) tree).endpos;
-        } else
+        case SWITCH:
+            endPos = ((JCSwitch) tree).endpos;
+            break;
+        case SWITCH_EXPRESSION:
+            endPos = ((JCSwitchExpression) tree).endpos;
+            break;
+        case MODULEDEF:
+            endPos = ((JCModuleDecl) tree).endPos;
+            break;
+        case PACKAGEDEF:
+            endPos = ((JCPackageDecl) tree).endPos;
+            break;
+        case CLASSDEF:
+            endPos = ((JCClassDecl) tree).endPos;
+            break;
+        case METHODDEF:
+            endPos = ((JCMethodDecl) tree).endPos;
+            break;
+        case VARDEF:
+            endPos = ((JCVariableDecl) tree).endPos;
+            break;
+        default:
             return tree.pos;
+        }
+        if (endPos != Position.NOPOS)
+            return endPos;
+        return tree.pos;
     }
 
 
