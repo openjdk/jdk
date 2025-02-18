@@ -210,7 +210,7 @@ public interface Template {
      * @param tokens A list of tokens, which can be {@link String}s,boxed primitive types
      *               (e.g. {@link Integer}), any {@link Token}, or {@link List}s
      *               of any of these.
-     * @return The {@link TemplateBody} which captures the list of validated tokens.
+     * @return The {@link TemplateBody} which captures the list of validated {@link Token}s.
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
     static TemplateBody body(Object... tokens) {

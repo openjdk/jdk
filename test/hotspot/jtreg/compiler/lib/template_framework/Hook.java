@@ -26,8 +26,11 @@ package compiler.lib.template_framework;
 import java.util.List;
 
 /**
- * Let a {@link TemplateWithArgs} generate code at the innermost location where the
- * {@link Hook} was set with {@link Hook#set}.
+ * {@link Hook}s can be {@link set} for a certain scope in a {@link Template}, and all nested
+ * {@link Template}s in this scope, and then from within this scope, any {@link Template} can
+ * {@link insert} code to where the {@link Hook} was {@link set}. This can be useful to reach
+ * "back" or to some outer scope, e.g. while generating code for a method, one can reach out
+ * to the class scope to insert fields.
  *
  * Example:
  * {@snippet lang=java :
@@ -49,7 +52,7 @@ import java.util.List;
  *         public static void main(String[] args) {
  *         System.out.println("$field: " + $field)
  *         """,
- *         // Reach up to where the hook was set, and insert the code of template1.
+ *         // Reach out to where the hook was set, and insert the code of template1.
  *         myHook.insert(template1.withArgs($("field"))),
  *         """
  *         }
@@ -61,16 +64,28 @@ import java.util.List;
  * ));
  * }
  *
- * @param hook The {@link Hook} the code is to be generated at.
- * @param templateWithArgs The {@link Template} with applied arguments to be generated at the {@link Hook}.
- * @return The {@link Token} which when used inside a {@link Template#body} performs the code generation into the {@link Hook}.
- * @throws RendererException if there is no active {@link Hook#set}.
+ * @param name The name of the Hook, for debugging purposes only.
  */
 public record Hook(String name) {
+    /**
+     * Set this {@link Hook} for the scope of the provided {@code 'tokens'}.
+     * From anywhere inside this scope, even in nested {@link Template}s, code can be
+     * {@link insert}ed back to the location where this {@link Hook} was {@link set}.
+     *
+     * @param tokens A list of tokens, which have the same restrictions as {@link Template#body}.
+     * @return A {@link Token} that captures the setting of the scope and the list of validated {@link Token}s.
+     */
     public Token set(Object... tokens) {
         return new HookSetToken(this, Token.parse(tokens));
     }
 
+    /**
+     * Inserts a {@link TemplateWithArgs} to the innermost location where this {@link Hook} was {@link set}.
+     * This could be in the same {@link Template}, or one nested further out.
+     *
+     * @param templateWithArgs The {@link Template} with applied arguments to be inserted at the {@link Hook}.
+     * @return The {@link Token} which when used inside a {@link Template#body} performs the code insertion into the {@link Hook}.
+     */
     public Token insert(TemplateWithArgs templateWithArgs) {
         return new HookInsertToken(this, templateWithArgs);
     }
