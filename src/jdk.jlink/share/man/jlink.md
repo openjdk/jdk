@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -345,3 +345,43 @@ jdk.security.jgss@11
 jdk.zipfs@11
 org.astro@1.0
 ```
+
+## jlink Supported use-cases
+
+### Version-specific requirement
+
+The `jlink` tool that ships with the JDK is designed to work when using
+JDK [JMOD files](https://openjdk.org/jeps/261#Packaging:-JMOD-files) created from the
+same codebase.  This means, for example, that the `jlink` binary found on Oracle's JDK 17.0.5 will
+only be able to use JDK JMOD files from Oracle's JDK 17.0.5.  It is not designed to accept JMOD files
+from other JDK versions, even if they are from the same Feature release.  e.g. It is not guaranteed to
+work with the JMOD files from JDK 17.0.4 or even from the JMOD files
+from [JDK 17.0.5.0.1](https://www.oracle.com/java/technologies/javase/17-0-5-relnotes.html#R17_0_5_1-BPR) (a
+Bundle Patch Release -based on Oracle JDK 17.0.5).
+
+### No cross-vendor compatibility
+
+Different JDK distributions are not guaranteed to be produced from the same code base.  It is expected that
+vendors modify their code base -for example to personalize the build properties with their own information- so
+the JMOD files from one distribution might not be accepted by the `jlink` binary from a different one, even if
+the `jlink` and JMOD files versions match.
+
+### Cross-Platform linking
+
+The Oracle JDK `jlink` binary from a particular platform (e.g. Linux aarch64) accepts
+Oracle JDK JMOD files from other Oracle JDK platforms (e.g. Windows x64) as long as `jlink` and the JMOD files
+come from the same JDK version.   This allows for a single build pipeline to produce custom runtimes
+for all platforms supported by the Oracle JDK.
+
+If users need to support platforms with JMOD files from more than one Java provider
+(e.g. use the Oracle JDK for Linux x86-64 and Linux aarch64 while using some other vendor's builds for an
+operating system or architecture that Oracle doesn't support) they should use a separate build pipeline
+for Oracle JDK JMOD files and follow the other vendor's recommendations to set up a build pipeline or pipelines
+for the other vendor's supported platforms.  The cross-platform linking option supported by Oracle's JDK is not a
+requirement for jlink so it's possible that other vendors do not offer it.
+
+### User-created JMOD files
+
+User-created JMOD files are not subject to the constraints listed above.  User-created JMOD files are
+similar to modular jars: `jlink` accepts user created JMOD files built with the same or earlier JDK version
+regardless of which distribution was used to create the JMOD files.
