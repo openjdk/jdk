@@ -46,6 +46,7 @@ bool CDSConfig::_is_using_full_module_graph = true;
 bool CDSConfig::_has_aot_linked_classes = false;
 bool CDSConfig::_has_archived_invokedynamic = false;
 bool CDSConfig::_old_cds_flags_used = false;
+bool CDSConfig::_disable_heap_dumping = false;
 
 char* CDSConfig::_default_archive_path = nullptr;
 char* CDSConfig::_static_archive_path = nullptr;
@@ -532,10 +533,53 @@ bool CDSConfig::current_thread_is_vm_or_dumper() {
   return t != nullptr && (t->is_VM_thread() || t == _dumper_thread);
 }
 
+// If an incompatible VM options is found, return a text message that explains why
+static const char* check_options_incompatible_with_dumping_heap() {
 #if INCLUDE_CDS_JAVA_HEAP
+  if (!UseCompressedClassPointers) {
+    return "UseCompressedClassPointers must be true";
+  }
+
+  // Almost all GCs support heap region dump, except ZGC (so far).
+  if (UseZGC) {
+    return "ZGC is not supported";
+  }
+
+  return nullptr;
+#else
+  return "JVM not configured for writing Java heap objects";
+#endif
+}
+
+void CDSConfig::log_reasons_for_not_dumping_heap() {
+  const char* reason;
+
+  assert(!is_dumping_heap(), "sanity");
+
+  if (_disable_heap_dumping) {
+    reason = "Programmatically disabled";
+  } else {
+    reason = check_options_incompatible_with_dumping_heap();
+  }
+
+  assert(reason != nullptr, "sanity");
+  log_info(cds)("Archived java heap is not supported: %s", reason);
+}
+
+#if INCLUDE_CDS_JAVA_HEAP
+bool CDSConfig::are_vm_options_incompatible_with_dumping_heap() {
+  return check_options_incompatible_with_dumping_heap() != nullptr;
+}
+
+
 bool CDSConfig::is_dumping_heap() {
-  // heap dump is not supported in dynamic dump
-  return is_dumping_static_archive() && HeapShared::can_write();
+  if (!is_dumping_static_archive() // heap dump is not supported in dynamic dump
+      || are_vm_options_incompatible_with_dumping_heap()
+      || _disable_heap_dumping) {
+    return false;
+  }
+
+  return true;
 }
 
 bool CDSConfig::is_loading_heap() {

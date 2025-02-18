@@ -100,11 +100,6 @@ public class RegistryContext implements Context, Referenceable {
         reference = ctx.reference;
     }
 
-    @SuppressWarnings("removal")
-    protected void finalize() {
-        close();
-    }
-
     public Object lookup(Name name) throws NamingException {
         if (name.isEmpty()) {
             return (new RegistryContext(this));
@@ -557,11 +552,6 @@ class BindingEnumeration implements NamingEnumeration<Binding> {
         nextName = 0;
     }
 
-    @SuppressWarnings("removal")
-    protected void finalize() {
-        ctx.close();
-    }
-
     public boolean hasMore() {
         if (nextName >= names.length) {
             ctx.close();
@@ -598,8 +588,7 @@ class BindingEnumeration implements NamingEnumeration<Binding> {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void close () {
-        finalize();
+        ctx.close();
     }
 }
