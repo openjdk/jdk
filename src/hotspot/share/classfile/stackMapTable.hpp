@@ -131,7 +131,7 @@ class StackMapReader : StackObj {
   bool _first;
 
   StackMapFrame* next_helper(TRAPS);
-  void check_offset(StackMapFrame* frame, TRAPS);
+  void check_offset(StackMapFrame* frame);
   void check_size(TRAPS);
   int32_t chop(VerificationType* locals, int32_t length, int32_t chops);
   VerificationType parse_verification_type(u1* flags, TRAPS);
@@ -160,11 +160,11 @@ class StackMapReader : StackObj {
                  StackMapFrame* init_frame,
                  u2 max_locals, u2 max_stack, TRAPS);
 
-  inline int32_t get_frame_count()  const { return _frame_count; }
+  inline int32_t get_frame_count()   const { return _frame_count; }
   inline StackMapFrame* prev_frame() const { return _prev_frame; }
-  inline char* code_data()          const { return _code_data; }
-  inline int32_t code_length()      const { return _code_length; }
-  inline bool at_end() { return _stream->at_end(); }
+  inline char* code_data()           const { return _code_data; }
+  inline int32_t code_length()       const { return _code_length; }
+  inline bool at_end()               const { return _stream->at_end(); }
 
   StackMapFrame* next(TRAPS);
   void check_end(TRAPS);

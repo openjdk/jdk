@@ -33,7 +33,7 @@ StackMapTable::StackMapTable(StackMapReader* reader, TRAPS) {
   _code_length = reader->code_length();
   _frame_count = reader->get_frame_count();
   if (_frame_count > 0) {
-    _frame_array = new GrowableArray<StackMapFrame*>();
+    _frame_array = new GrowableArray<StackMapFrame*>(_frame_count);
     while (!reader->at_end()) {
       StackMapFrame* frame = reader->next(CHECK_VERIFY(reader->prev_frame()->verifier()));
       if (frame != nullptr) {
@@ -46,25 +46,24 @@ StackMapTable::StackMapTable(StackMapReader* reader, TRAPS) {
   }
 }
 
-void StackMapReader::check_offset(StackMapFrame* frame, TRAPS) {
+void StackMapReader::check_offset(StackMapFrame* frame) {
   int offset = frame->offset();
   if (offset >= _code_length || _code_data[offset] == 0) {
-    _verifier->verify_error(
-        ErrorContext::bad_stackmap(0, frame),
-        "StackMapTable error: bad offset");
+    _verifier->verify_error(ErrorContext::bad_stackmap(0, frame),
+                            "StackMapTable error: bad offset");
   }
 }
 
 void StackMapReader::check_size(TRAPS) {
   if (_frame_count < _parsed_frame_count) {
-    StackMapStream::stackmap_format_error("wrong attribute size", CHECK);
+    StackMapStream::stackmap_format_error("wrong attribute size", THREAD);
   }
 }
 
 void StackMapReader::check_end(TRAPS) {
   assert(_stream->at_end(), "must be");
   if (_frame_count != _parsed_frame_count) {
-    StackMapStream::stackmap_format_error("wrong attribute size", CHECK);
+    StackMapStream::stackmap_format_error("wrong attribute size", THREAD);
   }
 }
 
@@ -107,7 +106,7 @@ bool StackMapTable::match_stackmap(
     return false;
   }
 
-  StackMapFrame *stackmap_frame = _frame_array->at(frame_index);
+  StackMapFrame* stackmap_frame = _frame_array->at(frame_index);
   bool result = true;
   if (match) {
     // Has direct control flow from last instruction, need to match the two
@@ -231,7 +230,7 @@ StackMapFrame* StackMapReader::next(TRAPS) {
   check_size(CHECK_NULL);
   StackMapFrame* frame = next_helper(CHECK_VERIFY_(_verifier, nullptr));
   if (frame != nullptr) {
-    check_offset(frame, CHECK_VERIFY_(_verifier, nullptr));
+    check_offset(frame);
     _prev_frame = frame;
   }
   return frame;
