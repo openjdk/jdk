@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Test templates which creates many tests and runs them with the IR TestFramework.
+ * @summary Test IRTestClass.TEMPLATE which allows generating many tests and running them with the IR TestFramework.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
