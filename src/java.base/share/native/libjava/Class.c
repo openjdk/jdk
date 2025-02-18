@@ -49,7 +49,6 @@ extern jboolean VerifyFixClassname(char *utf_name);
 #define FLD "Ljava/lang/reflect/Field;"
 #define MHD "Ljava/lang/reflect/Method;"
 #define CTR "Ljava/lang/reflect/Constructor;"
-#define PD  "Ljava/security/ProtectionDomain;"
 #define BA  "[B"
 #define RC  "Ljava/lang/reflect/RecordComponent;"
 
@@ -64,7 +63,6 @@ static JNINativeMethod methods[] = {
     {"getDeclaredFields0","(Z)[" FLD,       (void *)&JVM_GetClassDeclaredFields},
     {"getDeclaredMethods0","(Z)[" MHD,      (void *)&JVM_GetClassDeclaredMethods},
     {"getDeclaredConstructors0","(Z)[" CTR, (void *)&JVM_GetClassDeclaredConstructors},
-    {"getProtectionDomain0", "()" PD,       (void *)&JVM_GetProtectionDomain},
     {"getDeclaredClasses0",  "()[" CLS,     (void *)&JVM_GetDeclaredClasses},
     {"getDeclaringClass0",   "()" CLS,      (void *)&JVM_GetDeclaringClass},
     {"getSimpleBinaryName0", "()" STR,      (void *)&JVM_GetSimpleBinaryName},
