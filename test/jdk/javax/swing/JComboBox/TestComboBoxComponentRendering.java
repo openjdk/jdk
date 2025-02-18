@@ -33,6 +33,7 @@
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.image.BufferedImage;
+import java.awt.Font;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
@@ -137,6 +138,7 @@ class ComboBoxCustomRenderer extends JLabel
         implements ListCellRenderer {
 
     public ComboBoxCustomRenderer() {
+        setFont(new Font("SansSerif", Font.BOLD, 32));
         setOpaque(true);
         setHorizontalAlignment(CENTER);
         setVerticalAlignment(CENTER);
