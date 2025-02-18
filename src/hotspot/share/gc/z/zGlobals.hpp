@@ -67,17 +67,6 @@ const int         ZObjectAlignmentLarge         = 1 << ZObjectAlignmentLargeShif
 const size_t      ZCacheLineSize                = ZPlatformCacheLineSize;
 #define           ZCACHE_ALIGNED                ATTRIBUTE_ALIGNED(ZCacheLineSize)
 
-// Mark stack space
-const size_t      ZMarkStackSpaceExpandSize     = (size_t)1 << 25; // 32M
-
-// Mark stack and magazine sizes
-const size_t      ZMarkStackSizeShift           = 11; // 2K
-const size_t      ZMarkStackSize                = (size_t)1 << ZMarkStackSizeShift;
-const size_t      ZMarkStackHeaderSize          = (size_t)1 << 4; // 16B
-const size_t      ZMarkStackSlots               = (ZMarkStackSize - ZMarkStackHeaderSize) / sizeof(uintptr_t);
-const size_t      ZMarkStackMagazineSize        = (size_t)1 << 15; // 32K
-const size_t      ZMarkStackMagazineSlots       = (ZMarkStackMagazineSize / ZMarkStackSize) - 1;
-
 // Mark stripe size
 const size_t      ZMarkStripeShift              = ZGranuleSizeShift;
 
