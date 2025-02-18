@@ -1991,6 +1991,10 @@ void JvmtiExport::post_single_step(JavaThread *thread, Method* method, address l
   if (mh->jvmti_mount_transition() || thread->should_hide_jvmti_events()) {
     return;
   }
+  if (thread->is_suspended()) {
+    // suspend here if there is a suspend request
+    ThreadBlockInVM tbivm(thread, true /* allow suspend */);
+  }
 
   JvmtiEnvThreadStateIterator it(state);
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
