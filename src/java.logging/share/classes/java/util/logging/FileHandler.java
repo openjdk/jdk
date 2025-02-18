@@ -166,20 +166,10 @@ public class FileHandler extends StreamHandler {
      * A metered stream is a subclass of OutputStream that
      * (a) forwards all its output to a target stream
      * (b) keeps track of how many bytes have been written
-     *
-     * The only calls to this class come from StreamHandler, which locks its
-     * handler instance around any calls it makes.
      */
-    private final class MeteredStream extends OutputStream {
+    private static final class MeteredStream extends OutputStream {
         final OutputStream out;
         long written;
-        // We need to know when the current file is about to be rotated to avoid
-        // recursive calls to write() when the tail() is written.
-        //
-        // Each metered stream is monotonic and gets replaced rather than reset,
-        // so this flag only goes from false->true on each instance and indicates
-        // when we're flushing, closing and no longer using this instance.
-        boolean isRotating = false;
 
         MeteredStream(OutputStream out, long written) {
             this.out = out;
@@ -190,26 +180,18 @@ public class FileHandler extends StreamHandler {
         public void write(int b) throws IOException {
             out.write(b);
             written++;
-            flushOrRotateIfFull();
         }
 
         @Override
         public void write(byte buff[]) throws IOException {
             out.write(buff);
             written += buff.length;
-            flushOrRotateIfFull();
         }
 
-        // This is the only write() method we actually expect to be called from
-        // StreamHandler's OutputStreamWriter (since it only calls write(String)
-        // on its stream). Apart from writing the head/tail entries to log files,
-        // there should be a 1-to-1 match between emitted log entries and calls
-        // to this method, so flushing for each write is not unreasonable.
         @Override
         public void write(byte buff[], int off, int len) throws IOException {
             out.write(buff,off,len);
             written += len;
-            flushOrRotateIfFull();
         }
 
         @Override
@@ -220,20 +202,6 @@ public class FileHandler extends StreamHandler {
         @Override
         public void close() throws IOException {
             out.close();
-        }
-
-        /**
-         * Always called with the owning handler instance locked.
-         */
-        private void flushOrRotateIfFull() throws IOException {
-            boolean shouldRotate = meter.written >= limit || meter.written < 0;
-            if (!isRotating && shouldRotate) {
-                isRotating = true;
-                // Calling rotate() will always flush() before closing the stream.
-                rotate();
-            } else {
-                flush();
-            }
         }
     }
 
@@ -772,8 +740,22 @@ public class FileHandler extends StreamHandler {
      */
     @Override
     public void publish(LogRecord record) {
-        // Stub method kept to preserve historical API shape.
+        if (!isLoggable(record)) {
+            return;
+        }
+        // JDK-8349206: Do NOT synchronize around the parent's publish() method.
+        // StreamHandler will lock the instance, as needed, to protect writes to
+        // the metered stream.
         super.publish(record);
+        // We must lock around the check of meter.xxx fields and the call to
+        // rotate(), and since flush() is also synchronized on the same instance
+        // we might as well lock around everything.
+        synchronized(this) {
+            flush();
+            if (limit > 0 && (meter.written >= limit || meter.written < 0)) {
+                rotate();
+            }
+        }
     }
 
     /**
