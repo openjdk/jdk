@@ -40,6 +40,10 @@ inline narrowKlass CompressedKlassPointers::encode_not_null_without_asserts(Klas
   return (narrowKlass)(pointer_delta(k, narrow_base, 1) >> shift);
 }
 
+inline Klass* CompressedKlassPointers::decode_not_null_without_asserts(narrowKlass v) {
+  return decode_not_null_without_asserts(v, base(), shift());
+}
+
 inline Klass* CompressedKlassPointers::decode_without_asserts(narrowKlass v) {
   return is_null(v) ? nullptr : decode_not_null_without_asserts(v, base(), shift());
 }

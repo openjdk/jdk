@@ -42,6 +42,7 @@ address CompressedKlassPointers::_klass_range_start = nullptr;
 address CompressedKlassPointers::_klass_range_end = nullptr;
 narrowKlass CompressedKlassPointers::_lowest_valid_narrow_klass_id = (narrowKlass)-1;
 narrowKlass CompressedKlassPointers::_highest_valid_narrow_klass_id = (narrowKlass)-1;
+size_t CompressedKlassPointers::_protection_zone_size = 0;
 
 #ifdef _LP64
 
@@ -304,9 +305,32 @@ void CompressedKlassPointers::print_mode(outputStream* st) {
     st->print_cr("Klass Range:    " RANGE2FMT, RANGE2FMTARGS(_klass_range_start, _klass_range_end));
     st->print_cr("Klass ID Range:  [%u - %u) (%u)", _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id + 1,
                  _highest_valid_narrow_klass_id + 1 - _lowest_valid_narrow_klass_id);
+    if (_protection_zone_size > 0) {
+      st->print_cr("Protection zone: " RANGEFMT, RANGEFMTARGS(_base, _protection_zone_size));
+    } else {
+      st->print_cr("No protection zone.");
+    }
   } else {
     st->print_cr("UseCompressedClassPointers off");
   }
+}
+
+// Protect a zone a the start of the encoding range
+void CompressedKlassPointers::establish_protection_zone(address addr, size_t size) {
+  assert(_protection_zone_size == 0, "just once");
+  assert(addr == base(), "Protection zone not at start of encoding range?");
+  assert(size > 0 && is_aligned(size, os::vm_page_size()), "Protection zone not page sized");
+  const bool rc = os::protect_memory((char*)addr, size, os::MEM_PROT_NONE, false);
+  assert(rc, "Failed to protect the Class space protection zone");
+  log_info(metaspace)("%s Narrow Klass Protection zone " RANGEFMT,
+      (rc ? "Established" : "FAILED to establish "),
+      RANGEFMTARGS(addr, size));
+  _protection_zone_size = size;
+}
+
+bool CompressedKlassPointers::is_in_protection_zone(address addr) {
+  return _protection_zone_size > 0 ?
+      (addr >= base() && addr < base() + _protection_zone_size) : false;
 }
 
 #endif // _LP64

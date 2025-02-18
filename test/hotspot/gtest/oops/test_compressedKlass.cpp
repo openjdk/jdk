@@ -23,6 +23,7 @@
  */
 
 #include "oops/compressedKlass.inline.hpp"
+#include "oops/klass.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #include "unittest.hpp"
