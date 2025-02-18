@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,9 +126,14 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WTaskbarPeer_flashWindow
 JNIEXPORT void JNICALL Java_sun_awt_windows_WTaskbarPeer_setOverlayIcon
   (JNIEnv *env, jobject, jlong window, jintArray buf, jint w, jint h)
 {
-    HICON icon = CreateIconFromRaster(env, buf, w, h);
-    m_Taskbar->SetOverlayIcon((HWND)window, icon, NULL);
-    ::DestroyIcon(icon);
+    try {
+        HICON icon = CreateIconFromRaster(env, buf, w, h);
+        m_Taskbar->SetOverlayIcon((HWND)window, icon, NULL);
+        ::DestroyIcon(icon);
+    }
+    catch (const std::bad_alloc&) {
+        return;
+    }
 }
 #ifdef __cplusplus
 }
