@@ -410,6 +410,8 @@ int Compilation::compile_java_method() {
     env()->dump_replay_data(env()->compile_id());
   }
 
+  DEBUG_ONLY(CompilationMemoryStatistic::do_test_allocations();)
+
   {
     PhaseTraceTime timeit(_t_codeemit);
     return emit_code_body();
