@@ -180,21 +180,37 @@ jint reuseport_supported(int ipv6_available)
 
 void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                                const char* hostname,
-                                               int gai_error)
+                                               int gai_error,
+                                               int sys_errno)
 {
     int size;
     char *buf;
-    const char *format = "%s: %s";
+    const char *format;
+    const char *sys_errno_string;
     const char *error_string = gai_strerror(gai_error);
-    if (error_string == NULL)
+    if (error_string == NULL) {
         error_string = "unknown error";
-
-    size = strlen(format) + strlen(hostname) + strlen(error_string) + 2;
+    }
+    if (gai_error == EAI_SYSTEM) {
+        // EAI_SYSTEM implies that the actual error is stored in the system errno.
+        // we thus additionally get the string representation for that system errno.
+        sys_errno_string = strerror(sys_errno);
+        format = "%s: %s: %s";
+        // 5 for the ":", " " (two pairs) followed by the null terminator
+        size = strlen(format) + strlen(hostname) + strlen(error_string) + strlen(sys_errno_string) + 5;
+    } else {
+        format = "%s: %s";
+        // 3 for the ":", " " and the null terminator
+        size = strlen(format) + strlen(hostname) + strlen(error_string) + 3;
+    }
     buf = (char *) malloc(size);
     if (buf) {
-        jstring s;
-        snprintf(buf, size, format, hostname, error_string);
-        s = JNU_NewStringPlatform(env, buf);
+        if (gai_error == EAI_SYSTEM) {
+            snprintf(buf, size, format, hostname, error_string, sys_errno_string);
+        } else {
+            snprintf(buf, size, format, hostname, error_string);
+        }
+        jstring s = JNU_NewStringPlatform(env, buf);
         if (s != NULL) {
             jobject x = JNU_NewObjectByName(env,
                                             "java/net/UnknownHostException",
