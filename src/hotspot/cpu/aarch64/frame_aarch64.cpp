@@ -507,11 +507,11 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   intptr_t* unextended_sp = interpreter_frame_sender_sp();
   intptr_t* sender_fp = link();
 
-#if COMPILER2_OR_JVMCI
+#if COMPILER1_OR_COMPILER2
   if (map->update_map()) {
     update_map_with_saved_link(map, (intptr_t**) addr_at(link_offset));
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER1_OR_COMPILER2
 
   // For ROP protection, Interpreter will have signed the sender_pc,
   // but there is no requirement to authenticate it here.
