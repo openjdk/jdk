@@ -22,28 +22,22 @@
  */
 package jdk.jpackage.test;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Annotations.Parameters;
-import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
-import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
+import jdk.jpackage.test.Annotations.Test;
 
-public class TKitTest {
+public class TKitTest extends JUnitAdapter {
 
-    @Parameters
     public static Collection<Object[]> assertTestsData() {
         List<MethodCallConfig> data = new ArrayList<>();
 
@@ -191,12 +185,9 @@ public class TKitTest {
         }
     }
 
-    public TKitTest(MethodCallConfig methodCall) {
-        this.methodCall = methodCall;
-    }
-
     @Test
-    public void test() {
+    @ParameterSupplier("assertTestsData")
+    public void test(MethodCallConfig methodCall) {
         runAssertWithExpectedLogOutput(() -> {
             methodCall.method.invoke(null, methodCall.args);
         }, methodCall.expectFail, methodCall.expectLog);
@@ -211,23 +202,11 @@ public class TKitTest {
 
     private static void runWithExpectedLogOutput(ThrowingRunnable action,
             String... expectLogStrings) {
-        final var buf = new ByteArrayOutputStream();
-        try (PrintStream ps = new PrintStream(buf, true, StandardCharsets.UTF_8)) {
-            TKit.withExtraLogStream(action, ps);
-        } finally {
-            toRunnable(() -> {
-                var output = new BufferedReader(new InputStreamReader(
-                        new ByteArrayInputStream(buf.toByteArray()),
-                        StandardCharsets.UTF_8)).lines().map(line -> {
-                            // Skip timestamp
-                            return line.substring(LOG_MSG_TIMESTAMP_LENGTH);
-                        }).toList();
-                if (output.size() == 1 && expectLogStrings.length == 1) {
-                    TKit.assertEquals(expectLogStrings[0], output.get(0), null);
-                } else {
-                    TKit.assertStringListEquals(List.of(expectLogStrings), output, null);
-                }
-            }).run();
+        final var output = JUnitAdapter.captureJPackageTestLog(action);
+        if (output.size() == 1 && expectLogStrings.length == 1) {
+            TKit.assertEquals(expectLogStrings[0], output.get(0), null);
+        } else {
+            TKit.assertStringListEquals(List.of(expectLogStrings), output, null);
         }
     }
 
@@ -237,8 +216,4 @@ public class TKitTest {
         }
         return msg;
     }
-
-    private final MethodCallConfig methodCall;
-
-    private static final int LOG_MSG_TIMESTAMP_LENGTH = "[HH:mm:ss.SSS] ".length();
 }

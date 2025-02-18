@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
@@ -33,6 +32,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
+#include "runtime/stubRoutines.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -395,159 +395,9 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
-  // Convert a + a + ... + a into a*n
-  Node* serial_additions = convert_serial_additions(phase, bt);
-  if (serial_additions != nullptr) {
-    return serial_additions;
-  }
-
   return AddNode::Ideal(phase, can_reshape);
 }
 
-// Try to convert a serial of additions into a single multiplication. Also convert `(a * CON) + a` to `(CON + 1) * a` as
-// a side effect. On success, a new MulNode is returned.
-Node* AddNode::convert_serial_additions(PhaseGVN* phase, BasicType bt) {
-  // We need to make sure that the current AddNode is not part of a MulNode that has already been optimized to a
-  // power-of-2 addition (e.g., 3 * a => (a << 2) + a). Without this check, GVN would keep trying to optimize the same
-  // node and can't progress. For example, 3 * a => (a << 2) + a => 3 * a => (a << 2) + a => ...
-  if (find_power_of_two_addition_pattern(this, bt, nullptr) != nullptr) {
-    return nullptr;
-  }
-
-  Node* in1 = in(1);
-  Node* in2 = in(2);
-  jlong multiplier;
-
-  // While multiplications can be potentially optimized to power-of-2 subtractions (e.g., a * 7 => (a << 3) - a),
-  // (x - y) + y => x is already handled by the Identity() methods. So, we don't need to check for that pattern here.
-  if (find_simple_addition_pattern(in1, bt, &multiplier) == in2
-      || find_simple_lshift_pattern(in1, bt, &multiplier) == in2
-      || find_simple_multiplication_pattern(in1, bt, &multiplier) == in2
-      || find_power_of_two_addition_pattern(in1, bt, &multiplier) == in2) {
-    multiplier++; // +1 for the in2 term
-
-    Node* con = (bt == T_INT)
-                ? (Node*) phase->intcon((jint) multiplier) // intentional type narrowing to allow overflow at max_jint
-                : (Node*) phase->longcon(multiplier);
-    return MulNode::make(con, in2, bt);
-  }
-
-  return nullptr;
-}
-
-// Try to match `a + a`. On success, return `a` and set `2` as `multiplier`.
-// The method matches `n` for pattern: AddNode(a, a).
-Node* AddNode::find_simple_addition_pattern(Node* n, BasicType bt, jlong* multiplier) {
-  if (n->Opcode() == Op_Add(bt) && n->in(1) == n->in(2)) {
-    *multiplier = 2;
-    return n->in(1);
-  }
-
-  return nullptr;
-}
-
-// Try to match `a << CON`. On success, return `a` and set `1 << CON` as `multiplier`.
-// Match `n` for pattern: LShiftNode(a, CON).
-// Note that the power-of-2 multiplication optimization could potentially convert a MulNode to this pattern.
-Node* AddNode::find_simple_lshift_pattern(Node* n, BasicType bt, jlong* multiplier) {
-  // Note that power-of-2 multiplication optimization could potentially convert a MulNode to this pattern
-  if (n->Opcode() == Op_LShift(bt) && n->in(2)->is_Con()) {
-    Node* con = n->in(2);
-    if (con->is_top()) {
-      return nullptr;
-    }
-
-    *multiplier = ((jlong) 1 << con->get_int());
-    return n->in(1);
-  }
-
-  return nullptr;
-}
-
-// Try to match `CON * a`. On success, return `a` and set `CON` as `multiplier`.
-// Match `n` for patterns:
-//     - MulNode(CON, a)
-//     - MulNode(a, CON)
-Node* AddNode::find_simple_multiplication_pattern(Node* n, BasicType bt, jlong* multiplier) {
-  // This optimization technically only produces MulNode(CON, a), but we might as match MulNode(a, CON), too.
-  if (n->Opcode() == Op_Mul(bt) && (n->in(1)->is_Con() || n->in(2)->is_Con())) {
-    Node* con = n->in(1);
-    Node* base = n->in(2);
-
-    // swap ConNode to lhs for easier matching
-    if (!con->is_Con()) {
-      swap(con, base);
-    }
-
-    if (con->is_top()) {
-      return nullptr;
-    }
-
-    *multiplier = con->get_integer_as_long(bt);
-    return base;
-  }
-
-  return nullptr;
-}
-
-// Try to match `(a << CON1) + (a << CON2)`. On success, return `a` and set `(1 << CON1) + (1 << CON2)` as `multiplier`.
-// Match `n` for patterns:
-//     - AddNode(LShiftNode(a, CON), LShiftNode(a, CON)/a)
-//     - AddNode(LShiftNode(a, CON)/a, LShiftNode(a, CON))
-// given that lhs is different from rhs.
-// Note that one of the term of the addition could simply be `a` (i.e., a << 0). Calling this function with `multiplier`
-// being null is safe.
-Node* AddNode::find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* multiplier) {
-  if (n->Opcode() == Op_Add(bt) && n->in(1) != n->in(2)) {
-    Node* lhs = n->in(1);
-    Node* rhs = n->in(2);
-
-    // swap LShiftNode to lhs for easier matching
-    if (lhs->Opcode() != Op_LShift(bt)) {
-      swap(lhs, rhs);
-    }
-
-    // AddNode(LShiftNode(a, CON), *)?
-    if (lhs->Opcode() != Op_LShift(bt) || !lhs->in(2)->is_Con()) {
-      return nullptr;
-    }
-
-    jlong lhs_multiplier = 0;
-    if (multiplier != nullptr) {
-      Node* con = lhs->in(2);
-      if (con->is_top()) {
-        return nullptr;
-      }
-
-      lhs_multiplier = (jlong) 1 << con->get_int();
-    }
-
-    // AddNode(LShiftNode(a, CON), a)?
-    if (lhs->in(1) == rhs) {
-      if (multiplier != nullptr) {
-        *multiplier = lhs_multiplier + 1;
-      }
-
-      return rhs;
-    }
-
-    // AddNode(LShiftNode(a, CON), LShiftNode(a, CON2))?
-    if (rhs->Opcode() == Op_LShift(bt) && lhs->in(1) == rhs->in(1) && rhs->in(2)->is_Con()) {
-      if (multiplier != nullptr) {
-        Node* con = rhs->in(2);
-        if (con->is_top()) {
-          return nullptr;
-        }
-
-        *multiplier = lhs_multiplier + ((jlong) 1 << con->get_int());
-      }
-
-      return lhs->in(1);
-    }
-    return nullptr;
-  }
-  return nullptr;
-}
 
 Node* AddINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
@@ -706,6 +556,22 @@ Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return commute(phase, this) ? this : nullptr;
 }
 
+//=============================================================================
+//------------------------------add_of_identity--------------------------------
+// Check for addition of the identity
+const Type* AddHFNode::add_of_identity(const Type* t1, const Type* t2) const {
+  return nullptr;
+}
+
+// Supplied function returns the sum of the inputs.
+// This also type-checks the inputs for sanity.  Guaranteed never to
+// be passed a TOP or BOTTOM type, these are filtered out by pre-check.
+const Type* AddHFNode::add_ring(const Type* t0, const Type* t1) const {
+  if (!t0->isa_half_float_constant() || !t1->isa_half_float_constant()) {
+    return bottom_type();
+  }
+  return TypeH::make(t0->getf() + t1->getf());
+}
 
 //=============================================================================
 //------------------------------add_of_identity--------------------------------
@@ -1270,7 +1136,7 @@ Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, co
       cmp = gvn.transform(CmpNode::make(b, a, bt, is_unsigned));
     }
     Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-    res = gvn.transform(CMoveNode::make(nullptr, bol, a, b, t));
+    res = gvn.transform(CMoveNode::make(bol, a, b, t));
   }
   if (hook != nullptr) {
     hook->destruct(&gvn);
@@ -1299,7 +1165,7 @@ Node* MaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const
   }
   Node* sub = gvn.transform(SubNode::make(a, b, bt));
   Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-  Node* res = gvn.transform(CMoveNode::make(nullptr, bol, sub, zero, t));
+  Node* res = gvn.transform(CMoveNode::make(bol, sub, zero, t));
   if (hook != nullptr) {
     hook->destruct(&gvn);
   }
@@ -1656,6 +1522,33 @@ Node* MaxNode::Identity(PhaseGVN* phase) {
 }
 
 //------------------------------add_ring---------------------------------------
+const Type* MinHFNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeH* r0 = t0->isa_half_float_constant();
+  const TypeH* r1 = t1->isa_half_float_constant();
+  if (r0 == nullptr || r1 == nullptr) {
+    return bottom_type();
+  }
+
+  if (r0->is_nan()) {
+    return r0;
+  }
+  if (r1->is_nan()) {
+    return r1;
+  }
+
+  float f0 = r0->getf();
+  float f1 = r1->getf();
+  if (f0 != 0.0f || f1 != 0.0f) {
+    return f0 < f1 ? r0 : r1;
+  }
+
+  // As per IEEE 754 specification, floating point comparison consider +ve and -ve
+  // zeros as equals. Thus, performing signed integral comparison for min value
+  // detection.
+  return (jint_cast(f0) < jint_cast(f1)) ? r0 : r1;
+}
+
+//------------------------------add_ring---------------------------------------
 const Type* MinFNode::add_ring(const Type* t0, const Type* t1 ) const {
   const TypeF* r0 = t0->isa_float_constant();
   const TypeF* r1 = t1->isa_float_constant();
@@ -1704,6 +1597,34 @@ const Type* MinDNode::add_ring(const Type* t0, const Type* t1) const {
   // handle min of 0.0, -0.0 case.
   return (jlong_cast(d0) < jlong_cast(d1)) ? r0 : r1;
 }
+
+//------------------------------add_ring---------------------------------------
+const Type* MaxHFNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeH* r0 = t0->isa_half_float_constant();
+  const TypeH* r1 = t1->isa_half_float_constant();
+  if (r0 == nullptr || r1 == nullptr) {
+    return bottom_type();
+  }
+
+  if (r0->is_nan()) {
+    return r0;
+  }
+  if (r1->is_nan()) {
+    return r1;
+  }
+
+  float f0 = r0->getf();
+  float f1 = r1->getf();
+  if (f0 != 0.0f || f1 != 0.0f) {
+    return f0 > f1 ? r0 : r1;
+  }
+
+  // As per IEEE 754 specification, floating point comparison consider +ve and -ve
+  // zeros as equals. Thus, performing signed integral comparison for max value
+  // detection.
+  return (jint_cast(f0) > jint_cast(f1)) ? r0 : r1;
+}
+
 
 //------------------------------add_ring---------------------------------------
 const Type* MaxFNode::add_ring(const Type* t0, const Type* t1) const {

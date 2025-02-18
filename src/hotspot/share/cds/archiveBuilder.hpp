@@ -96,9 +96,7 @@ class ArchiveBuilder : public StackObj {
 protected:
   DumpRegion* _current_dump_region;
   address _buffer_bottom;                      // for writing the contents of rw/ro regions
-  address _last_verified_top;
   int _num_dump_regions_used;
-  size_t _other_region_used_bytes;
 
   // These are the addresses where we will request the static and dynamic archives to be
   // mapped at run time. If the request fails (due to ASLR), we will map the archives at
@@ -273,16 +271,9 @@ private:
 protected:
   virtual void iterate_roots(MetaspaceClosure* it) = 0;
 
-  // Conservative estimate for number of bytes needed for:
-  size_t _estimated_metaspaceobj_bytes;   // all archived MetaspaceObj's.
-  size_t _estimated_hashtable_bytes;     // symbol table and dictionaries
-
   static const int _total_dump_regions = 2;
 
-  size_t estimate_archive_size();
-
   void start_dump_region(DumpRegion* next);
-  void verify_estimate_size(size_t estimate, const char* which);
 
 public:
   address reserve_buffer();

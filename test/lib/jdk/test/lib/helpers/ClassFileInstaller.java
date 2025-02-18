@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -86,44 +87,17 @@ public class ClassFileInstaller {
                                            "  -jar <path>             Write to the JAR file <path>");
             }
             String jarFile = args[1];
-            String[] classes = addInnerClasses(args, 2);
+            String[] classes = Arrays.copyOfRange(args, 2, args.length);
             writeJar_impl(jarFile, null, classes);
         } else {
             if (DEBUG) {
                 System.out.println("ClassFileInstaller: Writing to " + System.getProperty("user.dir"));
             }
-            String[] classes = addInnerClasses(args, 0);
+            String[] classes = Arrays.copyOfRange(args, 0, args.length);
             for (String cls : classes) {
                 writeClassToDisk(cls);
             }
         }
-    }
-
-    // Add commonly used inner classes that are often omitted by mistake. Currently
-    // we support only jdk.test.whitebox.WhiteBox$WhiteBoxPermission.
-    // See JDK-8199290
-    private static String[] addInnerClasses(String[] classes, int startIdx) {
-        boolean seenNewWb = false;
-        boolean seenNewWbInner = false;
-        final String newWb = "jdk.test.whitebox.WhiteBox";
-        final String newWbInner = newWb + "$WhiteBoxPermission";
-
-        ArrayList<String> list = new ArrayList<>();
-
-        for (int i = startIdx; i < classes.length; i++) {
-            String cls = classes[i];
-            list.add(cls);
-            switch (cls) {
-            case newWb:      seenNewWb      = true; break;
-            case newWbInner: seenNewWbInner = true; break;
-            }
-        }
-        if (seenNewWb && !seenNewWbInner) {
-            list.add(newWbInner);
-        }
-        String[] array = new String[list.size()];
-        list.toArray(array);
-        return array;
     }
 
     public static class Manifest {
@@ -188,13 +162,11 @@ public class ClassFileInstaller {
      * @build jdk.test.lib.helpers.ClassFileInstaller
      */
     public static String writeJar(String jarFile, String... classes) throws Exception {
-        classes = addInnerClasses(classes, 0);
         writeJar_impl(jarFile, null, classes);
         return getJarPath(jarFile);
     }
 
     public static String writeJar(String jarFile, Manifest manifest, String... classes) throws Exception {
-        classes = addInnerClasses(classes, 0);
         writeJar_impl(jarFile, manifest, classes);
         return getJarPath(jarFile);
     }

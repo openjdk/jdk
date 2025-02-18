@@ -279,6 +279,7 @@ public class CtwRunner {
                 "-Xbatch",
                 "-XX:-ShowMessageBoxOnError",
                 "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
                 // redirect VM output to cerr so it won't collide w/ ctw output
                 "-XX:+DisplayVMOutputToStderr",
                 // define phase start
@@ -299,6 +300,11 @@ public class CtwRunner {
                 String.format("-XX:ReplayDataFile=replay_%s_%%p.log", phase),
                 // MethodHandle MUST NOT be compiled
                 "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
+                // CTW does not have good execution profile info, which would uncommon-trap
+                // a lot of branches/calls that are presumed to be never executed.
+                // Expand the optimization scope by disallowing most traps.
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:PerMethodSpecTrapLimit=0",
                 "-XX:+IgnoreUnrecognizedVMOptions",
                 // Do not pay extra zapping cost for explicit GC invocations
                 "-XX:-ZapUnusedHeapArea",
