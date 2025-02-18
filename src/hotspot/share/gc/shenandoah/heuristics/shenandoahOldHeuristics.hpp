@@ -185,6 +185,7 @@ public:
   void record_cycle_end() override;
 
   bool should_start_gc() override;
+  bool resume_old_cycle();
 
   void record_success_concurrent() override;
 
