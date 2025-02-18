@@ -745,6 +745,11 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
     cl->set_trip_count(cl->trip_count() - 1);
     if (cl->is_main_loop()) {
       cl->set_normal_loop();
+      if (cl->is_multiversion()) {
+        // Peeling also destroys the connection of the main loop
+        // to the multiversion_if.
+        cl->set_no_multiversion();
+      }
 #ifndef PRODUCT
       if (PrintOpto && VerifyLoopOptimizations) {
         tty->print("Peeling a 'main' loop; resetting to 'normal' ");
@@ -1174,8 +1179,9 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
       if (!bol->is_Bool()) {
         assert(bol->is_OpaqueNotNull() ||
                bol->is_OpaqueTemplateAssertionPredicate() ||
-               bol->is_OpaqueInitializedAssertionPredicate(),
-               "Opaque node of a non-null-check or an Assertion Predicate");
+               bol->is_OpaqueInitializedAssertionPredicate() ||
+               bol->is_OpaqueMultiversioning(),
+               "Opaque node of a non-null-check or an Assertion Predicate or Multiversioning");
         continue;
       }
       if (bol->as_Bool()->_test._test == BoolTest::ne) {
@@ -3354,6 +3360,16 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   // Do nothing special to pre- and post- loops
   if (cl->is_pre_loop() || cl->is_post_loop()) return true;
 
+  // If we are stalled, check if we can get unstalled.
+  if (cl->is_multiversion_stalled_slow_loop() &&
+      !phase->try_unstall_multiversion_stalled_slow_loop(this)) {
+    // We are still stalled, waiting for the fast_loop to add runtime-checks
+    // to the multiversion_if. We do not want to optimize, because we do not
+    // know if such a runtime-check will ever be added. If not, this loop is
+    // eventually folded away after loop-opts.
+    return true;
+  }
+
   // Compute loop trip count from profile data
   compute_profile_trip_cnt(phase);
 
@@ -3413,6 +3429,12 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       if (!phase->may_require_nodes(estimate)) {
         return false;
       }
+
+      // We are going to add pre-loop and post-loop.
+      // But should we also multi-version for auto-vectorization speculative
+      // checks, i.e. fast and slow-paths?
+      phase->maybe_multiversion_for_auto_vectorization_runtime_checks(this, old_new);
+
       phase->insert_pre_post_loops(this, old_new, peel_only);
     }
     // Adjust the pre- and main-loop limits to let the pre and  post loops run

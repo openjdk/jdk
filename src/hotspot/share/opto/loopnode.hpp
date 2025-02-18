@@ -43,6 +43,7 @@ class OuterStripMinedLoopEndNode;
 class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
+class LoopSelector;
 class UnswitchedLoopSelector;
 class VectorSet;
 class VSharedData;
@@ -79,7 +80,12 @@ protected:
          SubwordLoop           = 1<<13,
          ProfileTripFailed     = 1<<14,
          LoopNestInnerLoop     = 1<<15,
-         LoopNestLongOuterLoop = 1<<16 };
+         LoopNestLongOuterLoop = 1<<16,
+         MultiversionFastLoop         = 1<<17,
+         MultiversionSlowLoop         = 2<<17,
+         MultiversionStalledSlowLoop  = 3<<17,
+         MultiversionFlagsMask        = 3<<17,
+       };
   char _unswitch_count;
   enum { _unswitch_max=3 };
 
@@ -314,6 +320,28 @@ public:
   int  node_count_before_unroll()            { return _node_count_before_unroll; }
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
+
+  // Multiversioning allows us to duplicate a CountedLoop, and have two versions:
+  // (1) fast_loop: we make speculative assumptions and add the corresponding
+  //                runtime-checks above the multiversion_if which is guarded
+  //                by a OpaqueMultiversioning.
+  // (2) slow_loop: we make no assumptions. This loop is taken if any of the
+  //                runtime-checks fails. We keep this loop stalled as long
+  //                as there are no runtime-checks added. As long as it is stalled,
+  //                we do not perform any loop-opts on the slow_loop. If no
+  //                runtime-checks are everadded, this slow_loop is folded away
+  //                after loop-opts. The stalling means we do not waste and cycles
+  //                on a loop that may eventually be folded away. Once a runtime-check
+  //                is added, the slow_loop is unstalled, and more loop-opts can
+  //                be performed on it (but still without any speculative assumptions).
+  bool is_multiversion()                   const { return (_loop_flags & MultiversionFlagsMask) != Normal; }
+  bool is_multiversion_fast_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionFastLoop; }
+  bool is_multiversion_slow_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionSlowLoop; }
+  bool is_multiversion_stalled_slow_loop() const { return (_loop_flags & MultiversionFlagsMask) == MultiversionStalledSlowLoop; }
+  void set_multiversion_fast_loop()         { assert(!is_multiversion(), ""); _loop_flags |= MultiversionFastLoop; }
+  void set_multiversion_slow_loop()         { assert(!is_multiversion(), ""); _loop_flags |= MultiversionSlowLoop; }
+  void set_multiversion_stalled_slow_loop() { assert(!is_multiversion(), ""); _loop_flags |= MultiversionStalledSlowLoop; }
+  void set_no_multiversion()                { assert( is_multiversion(), ""); _loop_flags &= ~MultiversionFlagsMask; }
 
   virtual LoopNode* skip_strip_mined(int expect_skeleton = 1);
   OuterStripMinedLoopNode* outer_loop() const;
@@ -1457,6 +1485,8 @@ public:
   static void trace_loop_unswitching_impossible(const LoopNode* original_head);
   static void trace_loop_unswitching_result(const UnswitchedLoopSelector& unswitched_loop_selector,
                                             const LoopNode* original_head, const LoopNode* new_head);
+  static void trace_loop_multiversioning_result(const LoopSelector& loop_selector,
+                                                const LoopNode* original_head, const LoopNode* new_head);
 #endif
 
  public:
@@ -1482,6 +1512,11 @@ public:
     TriedAndFailed,  // We tried to vectorize, but failed.
   };
   AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
+
+  void maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt, Node_List& old_new);
+  void do_multiversioning(IdealLoopTree* lpt, Node_List& old_new);
+  IfTrueNode* create_new_if_for_multiversion(IfTrueNode* multiversioning_fast_proj);
+  bool try_unstall_multiversion_stalled_slow_loop(IdealLoopTree* lpt);
 
   // Move an unordered Reduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);

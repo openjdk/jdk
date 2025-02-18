@@ -91,6 +91,26 @@ public:
   IfNode* if_node() const;
 };
 
+// This node is used to mark the auto vectorization Predicate, and
+// allow the multiversion fast_loop to notify the slow_loop when
+// the slow_loop is to be "unstalled".
+// See PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks
+class OpaqueMultiversioningNode : public Opaque1Node {
+private:
+  bool _is_stall_slow_loop;
+
+public:
+  OpaqueMultiversioningNode(Compile* C, Node* n) :
+      Opaque1Node(C, n), _is_stall_slow_loop(true)
+  {
+    init_class_id(Class_OpaqueMultiversioning);
+  }
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+  bool is_stall_slow_loop() const { return _is_stall_slow_loop; }
+  void unstall_slow_loop() { _is_stall_slow_loop = false; }
+};
+
 // This node is used in the context of intrinsics. We sometimes implicitly know that an object is non-null even though
 // the compiler cannot prove it. We therefore add a corresponding cast to propagate this implicit knowledge. However,
 // this cast could become top during optimizations (input to cast becomes null) and the data path is folded. To ensure
