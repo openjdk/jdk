@@ -789,37 +789,37 @@ void CodeCache::gc_on_allocation() {
   size_t max = max_capacity();
   size_t used = max - free;
   double free_ratio = double(free) / double(max);
+
   if (free_ratio <= StartAggressiveSweepingAt / 100.0) {
     try_to_gc(GCCause::_codecache_GC_aggressive, [&] {
         log_info(codecache)("Triggering aggressive GC due to having only %.3f%% free memory", free_ratio * 100.0);
     });
-    _on_gc_allocation_ongoing = false;
-    return;
-  }
+  } else {
+    size_t last_used = _last_unloading_used;
 
-  size_t last_used = _last_unloading_used;
-  if (last_used >= used) {
-    // No increase since last GC; no need to sweep yet
-    _on_gc_allocation_ongoing = false;
-    return;
-  }
-  size_t allocated_since_last = used - last_used;
-  double allocated_since_last_ratio = double(allocated_since_last) / double(max);
-  double threshold = SweeperThreshold / 100.0;
-  double used_ratio = double(used) / double(max);
-  double last_used_ratio = double(last_used) / double(max);
-  if (used_ratio > threshold) {
-    // After threshold is reached, scale it by free_ratio so that more aggressive
-    // GC is triggered as we approach code cache exhaustion
-    threshold *= free_ratio;
-  }
-  // If code cache has been allocated without any GC at all, let's make sure
-  // it is eventually invoked to avoid trouble.
-  if (allocated_since_last_ratio > threshold) {
-    try_to_gc(GCCause::_codecache_GC_threshold, [&] {
-        log_info(codecache)("Triggering threshold (%.3f%%) GC due to allocating %.3f%% since last unloading (%.3f%% used -> %.3f%% used)",
-                            threshold * 100.0, allocated_since_last_ratio * 100.0, last_used_ratio * 100.0, used_ratio * 100.0);
-    });
+    // Only consider sweeping if increase since last GC
+    if (used > last_used) {
+      size_t allocated_since_last = used - last_used;
+      double allocated_since_last_ratio = double(allocated_since_last) / double(max);
+      double threshold = SweeperThreshold / 100.0;
+      double used_ratio = double(used) / double(max);
+      double last_used_ratio = double(last_used) / double(max);
+
+      if (used_ratio > threshold) {
+        // After threshold is reached, scale it by free_ratio so that more aggressive
+        // GC is triggered as we approach code cache exhaustion
+        threshold *= free_ratio;
+      }
+
+      // If code cache has been allocated without any GC at all, let's make sure
+      // it is eventually invoked to avoid trouble.
+      if (allocated_since_last_ratio > threshold) {
+        try_to_gc(GCCause::_codecache_GC_threshold, [&] {
+            log_info(codecache)("Triggering threshold (%.3f%%) GC due to allocating %.3f%% since last unloading (%.3f%% used -> %.3f%% used)",
+                                threshold * 100.0, allocated_since_last_ratio * 100.0, last_used_ratio * 100.0, used_ratio * 100.0);
+        });
+      }
+    }
   }
 
   _on_gc_allocation_ongoing = false;
