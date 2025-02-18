@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.OutputStream;
 import java.io.PushbackInputStream;
 import java.nio.charset.Charset;
 import java.util.Objects;
+import jdk.internal.access.SharedSecrets;
 
 import sun.nio.cs.UTF_8;
 
@@ -494,6 +495,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * Reads local file (LOC) header for next entry.
      */
     private ZipEntry readLOC() throws IOException {
+        long currentPos = SharedSecrets.getJavaPBInputStreamAccess()
+            .getRealPos((PushbackInputStream) in);
         try {
             readFully(tmpbuf, 0, LOCHDR);
         } catch (EOFException e) {
@@ -525,6 +528,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                     "invalid LOC header (bad entry name)").initCause(ex);
         }
         ZipEntry e = createZipEntry(entryName);
+        e.locPOS = currentPos;
         // now get the remaining fields for the entry
         if ((flag & 1) == 1) {
             throw new ZipException("encrypted ZIP entry not supported");

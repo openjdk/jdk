@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package java.io;
 
 import java.util.Arrays;
 import java.util.Objects;
+import jdk.internal.access.JavaPBInputStreamAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * A {@code PushbackInputStream} adds
@@ -68,6 +70,16 @@ public class PushbackInputStream extends FilterInputStream {
      * @since   1.1
      */
     protected int pos;
+
+    // the current position in the source input stream
+    private long realPos;
+
+    /**
+     * {@return real pos}
+     */
+    long getRealPos() {
+        return realPos;
+    }
 
     /**
      * Check to make sure that this stream has not been closed
@@ -133,9 +145,14 @@ public class PushbackInputStream extends FilterInputStream {
     public int read() throws IOException {
         ensureOpen();
         if (pos < buf.length) {
+            realPos++;
             return buf[pos++] & 0xff;
         }
-        return super.read();
+        int readByte = super.read();
+        if (readByte != -1) {
+            realPos++;
+        }
+        return readByte;
     }
 
     /**
@@ -180,14 +197,22 @@ public class PushbackInputStream extends FilterInputStream {
             pos += avail;
             off += avail;
             len -= avail;
+
+            // Update realPos for bytes consumed from the buffer
+            realPos += avail;
         }
+
         if (len > 0) {
-            len = super.read(b, off, len);
-            if (len == -1) {
+            int bytesRead = super.read(b, off, len);
+            if (bytesRead == -1) {
                 return avail == 0 ? -1 : avail;
             }
-            return avail + len;
+
+            // Update realPos for bytes read from the stream
+            realPos += bytesRead;
+            return avail + bytesRead;
         }
+
         return avail;
     }
 
@@ -208,6 +233,7 @@ public class PushbackInputStream extends FilterInputStream {
             throw new IOException("Push back buffer is full");
         }
         buf[--pos] = (byte)b;
+        realPos--;
     }
 
     /**
@@ -233,6 +259,7 @@ public class PushbackInputStream extends FilterInputStream {
         }
         pos -= len;
         System.arraycopy(b, off, buf, pos, len);
+        realPos -= len;
     }
 
     /**
@@ -320,6 +347,7 @@ public class PushbackInputStream extends FilterInputStream {
         if (n > 0) {
             pskip += super.skip(n);
         }
+        realPos += pskip;
         return pskip;
     }
 
@@ -393,6 +421,7 @@ public class PushbackInputStream extends FilterInputStream {
                 byte[] buffer = Arrays.copyOfRange(buf, pos, buf.length);
                 out.write(buffer);
                 pos = buffer.length;
+                realPos += pos;
             }
             try {
                 return Math.addExact(avail, in.transferTo(out));
@@ -402,6 +431,17 @@ public class PushbackInputStream extends FilterInputStream {
         } else {
             return super.transferTo(out);
         }
+    }
+
+    static {
+        SharedSecrets.setJavaPBInputStreamAccess(
+                new JavaPBInputStreamAccess() {
+                    @Override
+                    public long getRealPos(PushbackInputStream pbis) {
+                        return pbis.getRealPos();
+                    }
+                }
+        );
     }
 
 }
