@@ -29,9 +29,6 @@ import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import java.util.Random;
-
-import jdk.test.lib.Utils;
 
 /**
  * The {@link Renderer} class is used to keep track of the states during a nested
@@ -44,8 +41,6 @@ import jdk.test.lib.Utils;
 class Renderer {
     private static final Pattern DOLLAR_NAME_PATTERN = Pattern.compile("\\$([a-zA-Z_][a-zA-Z0-9_]*)");
     private static final Pattern HASHTAG_REPLACEMENT_PATTERN = Pattern.compile("#([a-zA-Z_][a-zA-Z0-9_]*)");
-
-    static final Random RANDOM = Utils.getRandomInstance();
 
     /**
      * There can be at most one Renderer instance at any time. This is to avoid that users accidentally
@@ -140,11 +135,19 @@ class Renderer {
         return currentCodeFrame.sampleName(type, onlyMutable);
     }
 
+    /**
+     * Formats values to {@link String} with the goal of using them in Java code.
+     * By default we use the overrides of {@link Object#toString}.
+     * But for some boxed primitives we need to create a special formatting.
+     */
     static String format(Object value) {
         return switch (value) {
             case String s -> s;
             case Integer i -> i.toString();
+            // We need to append the "L" so that the values are not interpreted as ints,
+            // and then javac might complain that the values are too large for an int.
             case Long l -> l.toString() + "L";
+            // Some Float and Double values like Infinity and NaN need a special representation.
             case Float f -> formatFloat(f);
             case Double d -> formatDouble(d);
             default -> value.toString();
@@ -188,8 +191,8 @@ class Renderer {
         currentTemplateFrame = templateFrame;
 
         templateWithArgs.visitArguments((name, value) -> addHashtagReplacement(name, format(value)));
-        TemplateBody it = templateWithArgs.instantiate();
-        renderTokenList(it.tokens());
+        TemplateBody body = templateWithArgs.instantiate();
+        renderTokenList(body.tokens());
 
         if (currentTemplateFrame != templateFrame) {
             throw new RuntimeException("Internal error: TemplateFrame mismatch!");

@@ -27,8 +27,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
+import jdk.test.lib.Utils;
+
+/**
+ * The {@link NameSet} defines a set of names (e.g. fields or variable names). They extend the
+ * set of the {@code 'parent'} set.
+ */
 class NameSet {
+    static final Random RANDOM = Utils.getRandomInstance();
+
     private final NameSet parent;
     private final Map<Object,List<String>> names = new HashMap<>();
 
@@ -59,14 +68,14 @@ class NameSet {
         // Maybe sample from parent.
         if (parent != null) {
             int pc = parent.count(type);
-            int r = Renderer.RANDOM.nextInt(c);
+            int r = RANDOM.nextInt(c);
             if (r < pc) {
                 return parent.sample(type);
             }
         }
 
         List<String> locals = names.get(type);
-        int r = Renderer.RANDOM.nextInt(locals.size());
+        int r = RANDOM.nextInt(locals.size());
         return locals.get(r);
     }
 

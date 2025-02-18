@@ -35,6 +35,9 @@ import java.util.Map;
  * The {@link fuel} is reduced over this chain, to give a heuristic on how much time
  * is spend on the code from the template corrsponding to the frame, and to give a
  * termination criterion to avoid nesting templates too deeply.
+ *
+ * <p>
+ * See also {@link CodeFrame} for more explanations about the frames.
  */
 class TemplateFrame {
     final TemplateFrame parent;

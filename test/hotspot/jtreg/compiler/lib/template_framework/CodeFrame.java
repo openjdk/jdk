@@ -28,11 +28,35 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The {@link CodeFrame} represents a frame (i.e. scope) of code, appending {@link Code} to the {@code 'codeList'}
+ * as {@link Token}s are rendered, and adding names to the {@link NameSet}s as they get defined by {@link Template#define}.
+ * {@link Hook}s can be added to a frame, which allows code to be inserted at that location later.
+ * When a {@link Hook} is {@link Hook#set}, this separates the {@link Template} into an outer and inner
+ * {@link CodeFrame}, ensuring that names that are {@link Template#defineName}'d inside the inner frame
+ * are only available inside that frame.
+ *
+ * <p>
+ * On the other hand, each {@link TemplateFrame} represents the frame (or scope) of exactly one use of a
+ * {@link Template}.
+ *
+ * <p>
+ * For simple {@link Template} nesting, the {@link CodeFrame}s and {@link TemplateFrame}s overlap exactly.
+ * However, when using {@link Hook#insert}, we simply nest {@link TemplateFrame}s, going further "in",
+ * but we jump to an outer {@link CodeFrame}, ensuring that we insert {@link Code} at the outer frame,
+ * and operating on the names of the outer frame. Once the {@link Hook#insert}ion is complete, we jump
+ * back to the caller {@link TemplateFrame} and {@link CodeFrame}.
+ */
 class CodeFrame {
     public final CodeFrame parent;
     private final List<Code> codeList = new ArrayList<Code>();
     private final Map<Hook, Code.CodeList> hookCodeLists = new HashMap<>();
 
+    /**
+     * The {@link NameSet}s are used for variable and fields etc. There is one set that
+     * contains only the mutable names, and another that contains all. This sampling only
+     * mutable names, or sampling from all names including immutable names.
+     */
     final NameSet mutableNames;
     final NameSet allNames;
 
@@ -53,14 +77,30 @@ class CodeFrame {
         }
     }
 
+    /**
+     * Creates a base frame, which has no {@link parent}.
+     */
     public static CodeFrame makeBase() {
         return new CodeFrame(null, false);
     }
 
+    /**
+     * Creates a normal frame, which has a {@link parent} and which defines an inner
+     * {@link NameSet}, for the names that are generated inside this frame. Once this
+     * frame is exited, the name from inside this frame are not available any more.
+     */
     public static CodeFrame make(CodeFrame parent) {
         return new CodeFrame(parent, false);
     }
 
+    /**
+     * Creates a special frame, which has a {@link parent} and but uses the {@link NameSet}
+     * from the parent frame, allowing {@link Template#defineName} to persist in the outer
+     * frame when the current frame is exited. This is necessary for {@link Hook#insert},
+     * where we would possibly want to make field or variable definitions during the insertion
+     * that are not just local to the insertion but affect the {@link CodeFrame} that we
+     * {@link Hook#set} earlier and are now {@link Hook#insert}ing into.
+     */
     public static CodeFrame makeTransparentForNames(CodeFrame parent) {
         return new CodeFrame(parent, true);
     }
