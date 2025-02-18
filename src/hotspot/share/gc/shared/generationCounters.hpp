@@ -28,22 +28,13 @@
 #include "memory/allocation.hpp"
 #include "runtime/perfDataTypes.hpp"
 
-class VirtualSpace;
-
 // A GenerationCounter is a holder class for performance counters
 // that track a generation
 
 class GenerationCounters: public CHeapObj<mtGC> {
   friend class VMStructs;
 
-private:
-  void initialize(const char* name, int ordinal, int spaces,
-                  size_t min_capacity, size_t max_capacity,
-                  size_t curr_capacity);
-
- protected:
   PerfVariable*      _current_size;
-  VirtualSpace*      _virtual_space;
 
   // Constant PerfData types don't need to retain a reference.
   // However, it's a good idea to document them here.
@@ -54,27 +45,15 @@ private:
 
   char*              _name_space;
 
-  // This constructor is only meant for use with the PSGenerationCounters
-  // constructor. The need for such an constructor should be eliminated
-  // when VirtualSpace and PSVirtualSpace are unified.
-  GenerationCounters()
-             : _current_size(nullptr), _virtual_space(nullptr), _name_space(nullptr) {}
-
-  // This constructor is used for subclasses that do not have a space
-  // associated with them (e.g, in G1).
+ public:
   GenerationCounters(const char* name, int ordinal, int spaces,
                      size_t min_capacity, size_t max_capacity,
                      size_t curr_capacity);
 
- public:
-  GenerationCounters(const char* name, int ordinal, int spaces,
-                     size_t min_capacity, size_t max_capacity, VirtualSpace* v);
-
   ~GenerationCounters();
 
-  virtual void update_all();
+  void update_all(size_t curr_capacity);
 
   const char* name_space() const        { return _name_space; }
-
 };
 #endif // SHARE_GC_SHARED_GENERATIONCOUNTERS_HPP
