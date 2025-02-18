@@ -375,6 +375,7 @@ public:
   FileMapHeader *header() const       { return _header; }
   static bool get_base_archive_name_from_header(const char* archive_name,
                                                 char** base_archive_name);
+  static bool is_preimage_static_archive(const char* file);
   static SharedPathTable shared_path_table() {
     return _shared_path_table;
   }
@@ -388,6 +389,7 @@ public:
 
   FileMapInfo(const char* full_apth, bool is_static);
   ~FileMapInfo();
+  static void free_current_info();
 
   // Accessors
   int    compute_header_crc()  const { return header()->compute_crc(); }

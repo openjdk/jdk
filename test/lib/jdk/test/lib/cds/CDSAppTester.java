@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,12 @@ abstract public class CDSAppTester {
     private final String name;
     private final String classListFile;
     private final String classListFileLog;
+    private final String aotConfigurationFile;
+    private final String aotConfigurationFileLog;
     private final String staticArchiveFile;
     private final String staticArchiveFileLog;
+    private final String aotCacheFile;
+    private final String aotCacheFileLog;
     private final String dynamicArchiveFile;
     private final String dynamicArchiveFileLog;
     private final String tempBaseArchiveFile;
@@ -56,8 +60,12 @@ abstract public class CDSAppTester {
         this.name = name;
         classListFile = name() + ".classlist";
         classListFileLog = classListFile + ".log";
+        aotConfigurationFile = name() + ".aotconfig";
+        aotConfigurationFileLog = aotConfigurationFile + ".log";
         staticArchiveFile = name() + ".static.jsa";
         staticArchiveFileLog = staticArchiveFile + ".log";
+        aotCacheFile = name() + ".aot";
+        aotCacheFileLog = aotCacheFile + ".log";
         dynamicArchiveFile = name() + ".dynamic.jsa";
         dynamicArchiveFileLog = dynamicArchiveFile + ".log";
         tempBaseArchiveFile = name() + ".temp-base.jsa";
@@ -74,13 +82,15 @@ abstract public class CDSAppTester {
     private enum Workflow {
         STATIC,        // classic -Xshare:dump workflow
         DYNAMIC,       // classic -XX:ArchiveClassesAtExit
+        AOT,           // JEP 483 Ahead-of-Time Class Loading & Linking
     }
 
     public enum RunMode {
-        CLASSLIST,
-        DUMP_STATIC,
-        DUMP_DYNAMIC,
-        PRODUCTION;
+        TRAINING,       // -XX:DumpLoadedClassList OR {-XX:AOTMode=create -XX:AOTConfiguration}
+        DUMP_STATIC,    // -Xshare:dump
+        DUMP_DYNAMIC,   // -XX:ArchiveClassesArExit
+        ASSEMBLY,       // JEP 483
+        PRODUCTION;     // Running with the CDS archive produced from the above steps
 
         public boolean isStaticDump() {
             return this == DUMP_STATIC;
@@ -126,6 +136,10 @@ abstract public class CDSAppTester {
         return workflow == Workflow.DYNAMIC;
     }
 
+    public final boolean isAOTWorkflow() {
+        return workflow == Workflow.AOT;
+    }
+
     private String logToFile(String logFile, String... logTags) {
         StringBuilder sb = new StringBuilder("-Xlog:");
         String prefix = "";
@@ -163,8 +177,20 @@ abstract public class CDSAppTester {
         return output;
     }
 
+    private OutputAnalyzer recordAOTConfiguration() throws Exception {
+        RunMode runMode = RunMode.TRAINING;
+        String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
+                                                   "-XX:AOTMode=record",
+                                                   "-XX:AOTConfiguration=" + aotConfigurationFile,
+                                                   "-cp", classpath(runMode),
+                                                   logToFile(aotConfigurationFileLog,
+                                                             "class+load=debug"));
+        cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
+        return executeAndCheck(cmdLine, runMode, aotConfigurationFile, aotConfigurationFileLog);
+    }
+
     private OutputAnalyzer createClassList() throws Exception {
-        RunMode runMode = RunMode.CLASSLIST;
+        RunMode runMode = RunMode.TRAINING;
         String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
                                                    "-Xshare:off",
                                                    "-XX:DumpLoadedClassList=" + classListFile,
@@ -190,6 +216,23 @@ abstract public class CDSAppTester {
                                                              "cds+heap=warning",
                                                              "cds+resolve=debug"));
         return executeAndCheck(cmdLine, runMode, staticArchiveFile, staticArchiveFileLog);
+    }
+
+    private OutputAnalyzer createAOTCache() throws Exception {
+        RunMode runMode = RunMode.ASSEMBLY;
+        String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
+                                                   "-Xlog:cds",
+                                                   "-Xlog:cds+heap=error",
+                                                   "-XX:AOTMode=create",
+                                                   "-XX:AOTConfiguration=" + aotConfigurationFile,
+                                                   "-XX:AOTCache=" + aotCacheFile,
+                                                   "-cp", classpath(runMode),
+                                                   logToFile(aotCacheFileLog,
+                                                             "cds=debug",
+                                                             "cds+class=debug",
+                                                             "cds+heap=warning",
+                                                             "cds+resolve=debug"));
+        return executeAndCheck(cmdLine, runMode, aotCacheFile, aotCacheFileLog);
     }
 
     // Creating a dynamic CDS archive (with -XX:ArchiveClassesAtExit=<foo>.jsa) requires that the current
@@ -264,6 +307,8 @@ abstract public class CDSAppTester {
             cmdLine = StringArrayUtils.concat(cmdLine, "-Xshare:on", "-XX:SharedArchiveFile=" + staticArchiveFile);
         } else if (isDynamicWorkflow()) {
             cmdLine = StringArrayUtils.concat(cmdLine, "-Xshare:on", "-XX:SharedArchiveFile=" + dynamicArchiveFile);
+       } else if (isAOTWorkflow()) {
+            cmdLine = StringArrayUtils.concat(cmdLine, "-XX:AOTMode=on", "-XX:AOTCache=" + aotCacheFile);
         }
 
         if (extraVmArgs != null) {
@@ -296,6 +341,8 @@ abstract public class CDSAppTester {
                 runStaticWorkflow();
             } else if (args[0].equals("DYNAMIC")) {
                 runDynamicWorkflow();
+            } else if (args[0].equals("AOT")) {
+                runAOTWorkflow();
             } else {
                 throw new RuntimeException(err);
             }
@@ -312,6 +359,14 @@ abstract public class CDSAppTester {
     private void runDynamicWorkflow() throws Exception {
         this.workflow = Workflow.DYNAMIC;
         dumpDynamicArchive();
+        productionRun();
+    }
+
+    // See JEP 485
+    private void runAOTWorkflow() throws Exception {
+        this.workflow = Workflow.AOT;
+        recordAOTConfiguration();
+        createAOTCache();
         productionRun();
     }
 }

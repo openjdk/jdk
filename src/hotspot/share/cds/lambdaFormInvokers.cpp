@@ -263,4 +263,8 @@ void LambdaFormInvokers::read_static_archive_invokers() {
 
 void LambdaFormInvokers::serialize(SerializeClosure* soc) {
   soc->do_ptr(&_static_archive_invokers);
+  if (soc->reading() && CDSConfig::is_dumping_final_static_archive()) {
+    LambdaFormInvokers::read_static_archive_invokers();
+    _static_archive_invokers = nullptr;
+  }
 }
