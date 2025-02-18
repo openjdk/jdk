@@ -72,7 +72,28 @@ struct ArrayAllocator {
   void free(void* ptr) { }
 };
 
-using RBTreeInt = RBTreeCHeap<int, int, Cmp, mtOther>;
+#ifdef ASSERT
+  template<typename K, typename V, typename CMP, typename ALLOC>
+  void verify_it(RBTree<K, V, CMP, ALLOC>& t) {
+    t.verify_self();
+  }
+#endif // ASSERT
+
+  using RBTreeInt = RBTreeCHeap<int, int, Cmp, mtTest>;
+  using IntrusiveTreeInt = IntrusiveRBTree<int, Cmp>;
+  using IntrusiveNode = IntrusiveTreeInt::RBNode;
+  using IntrusiveCursor = IntrusiveTreeInt::Cursor;
+
+  struct IntrusiveHolder {
+    IntrusiveNode node;
+    int data;
+
+    IntrusiveNode* get_node() { return &node; }
+
+    IntrusiveHolder() {}
+    IntrusiveHolder(int data) : data(data) {}
+    static IntrusiveHolder* cast_to_self(IntrusiveNode* node) { return (IntrusiveHolder*)node; }
+  };
 
 public:
   void inserting_duplicates_results_in_one_value() {
@@ -295,6 +316,77 @@ public:
     }
   }
 
+  void test_closest_gt() {
+    using Node = RBTreeInt::RBNode;
+    {
+      RBTreeInt rbtree;
+      Node* n = rbtree.closest_gt(0);
+      EXPECT_EQ(nullptr, n);
+
+      rbtree.upsert(0, 0);
+      n = rbtree.closest_gt(-1);
+      EXPECT_EQ(0, n->key());
+
+      rbtree.upsert(-5, -5);
+      n = rbtree.closest_gt(-1);
+      EXPECT_EQ(0, n->key());
+
+      n = rbtree.closest_gt(-5);
+      EXPECT_EQ(0, n->key());
+
+      n = rbtree.closest_gt(-10);
+      EXPECT_EQ(-5, n->key());
+
+      rbtree.upsert(10, 10);
+      n = rbtree.closest_gt(5);
+      EXPECT_EQ(10, n->key());
+
+      n = rbtree.closest_gt(10);
+      EXPECT_EQ(nullptr, n);
+    }
+  }
+
+  void test_leftmost() {
+    using Node = RBTreeInt::RBNode;
+
+    RBTreeInt rbtree;
+    Node* n = rbtree.leftmost();
+    EXPECT_EQ(nullptr, n);
+
+    rbtree.upsert(0, 0);
+    n = rbtree.leftmost();
+    EXPECT_EQ(0, n->key());
+
+    rbtree.upsert(2, 2);
+    n = rbtree.leftmost();
+    EXPECT_EQ(0, n->key());
+
+    rbtree.upsert(1, 1);
+    n = rbtree.leftmost();
+    EXPECT_EQ(0, n->key());
+
+    rbtree.upsert(-1, -1);
+    n = rbtree.leftmost();
+    EXPECT_EQ(-1, n->key());
+
+    rbtree.remove(-1);
+    n = rbtree.leftmost();
+    EXPECT_EQ(0, n->key());
+
+    rbtree.remove(1);
+    n = rbtree.leftmost();
+    EXPECT_EQ(0, n->key());
+
+    rbtree.remove(0);
+    n = rbtree.leftmost();
+    EXPECT_EQ(2, n->key());
+
+    rbtree.remove(2);
+    n = rbtree.leftmost();
+    EXPECT_EQ(nullptr, n);
+
+  }
+
   void test_node_prev() {
     RBTreeInt rbtree;
     const RBTreeInt& rbtree_const = rbtree;
@@ -391,6 +483,88 @@ public:
     });
   }
 
+  void test_cursor() {
+    constexpr const int num_nodes = 10;
+    RBTreeInt tree;
+
+    for (int n = 0; n <= num_nodes; n++) {
+      RBTreeInt::Cursor find_cursor = tree.cursor(n);
+      EXPECT_FALSE(find_cursor.found());
+    }
+
+    for (int n = 0; n <= num_nodes; n++) {
+      tree.upsert(n, n);
+    }
+
+    for (int n = 0; n <= num_nodes; n++) {
+      RBTreeInt::Cursor find_cursor = tree.cursor(n);
+      EXPECT_TRUE(find_cursor.found());
+    }
+
+    EXPECT_FALSE(tree.cursor(-1).found());
+    EXPECT_FALSE(tree.cursor(101).found());
+  }
+
+  void test_get_cursor() {
+    constexpr const int num_nodes = 10;
+    IntrusiveTreeInt tree;
+    GrowableArrayCHeap<IntrusiveHolder*, mtTest> nodes(num_nodes);
+
+    for (int n = 0; n <= num_nodes; n++) {
+      IntrusiveHolder* place = (IntrusiveHolder*)os::malloc(sizeof(IntrusiveHolder), mtTest);
+      new (place) IntrusiveHolder(n);
+
+      tree.insert_at_cursor(place->get_node(), tree.cursor(n));
+      nodes.push(place);
+    }
+
+    for (int n = 0; n <= num_nodes; n++) {
+      IntrusiveNode* node = nodes.at(n)->get_node();
+      IntrusiveCursor cursor = tree.cursor(node);
+      IntrusiveCursor find_cursor = tree.cursor(n);
+      EXPECT_TRUE(cursor.found());
+      EXPECT_TRUE(cursor.valid());
+      EXPECT_TRUE(find_cursor.found());
+      EXPECT_TRUE(find_cursor.valid());
+      EXPECT_EQ(cursor.node(), find_cursor.node());
+    }
+  }
+
+  void test_cursor_empty_tree() {
+    RBTreeInt tree;
+    RBTreeInt::Cursor cursor = tree.cursor(tree.leftmost());
+    EXPECT_FALSE(cursor.valid());
+
+    cursor = tree.cursor(0);
+    EXPECT_TRUE(cursor.valid());
+    EXPECT_FALSE(cursor.found());
+    EXPECT_FALSE(tree.next(cursor).valid());
+  }
+
+  void test_cursor_iterate() {
+    constexpr const int num_nodes = 100;
+    RBTreeInt tree;
+    for (int n = 0; n <= num_nodes; n++) {
+      tree.upsert(n, n);
+    }
+
+    RBTreeInt::Cursor cursor = tree.cursor(0);
+    for (int n = 0; n <= num_nodes; n++) {
+      EXPECT_TRUE(cursor.valid());
+      EXPECT_EQ(cursor.node()->val(), n);
+      cursor = tree.next(cursor);
+    }
+    EXPECT_FALSE(cursor.valid());
+
+    cursor = tree.cursor(num_nodes);
+    for (int n = num_nodes; n >= 0; n--) {
+      EXPECT_TRUE(cursor.valid());
+      EXPECT_EQ(cursor.node()->val(), n);
+      cursor = tree.prev(cursor);
+    }
+    EXPECT_FALSE(cursor.valid());
+  }
+
   void test_leftmost_rightmost() {
     using Node = RBTreeInt::RBNode;
     for (int i = 0; i < 10; i++) {
@@ -471,6 +645,54 @@ public:
     EXPECT_EQ(rbtree_const.size(), 0UL);
   }
 
+  void test_intrusive() {
+    IntrusiveTreeInt intrusive_tree;
+    int num_iterations = 100;
+
+    // Insert values
+    for (int n = 0; n < num_iterations; n++) {
+      IntrusiveCursor cursor = intrusive_tree.cursor(n);
+      EXPECT_NULL(cursor.node());
+
+      // Custom allocation here is just malloc
+      IntrusiveHolder* place = (IntrusiveHolder*)os::malloc(sizeof(IntrusiveHolder), mtTest);
+      new (place) IntrusiveHolder(n);
+
+      intrusive_tree.insert_at_cursor(place->get_node(), cursor);
+      IntrusiveCursor cursor2 = intrusive_tree.cursor(n);
+
+      EXPECT_NOT_NULL(cursor2.node());
+
+      verify_it(intrusive_tree);
+    }
+
+    // Check inserted values
+    for (int n = 0; n < num_iterations; n++) {
+      IntrusiveCursor cursor = intrusive_tree.cursor(n);
+      EXPECT_NOT_NULL(cursor.node());
+      EXPECT_EQ(n, IntrusiveHolder::cast_to_self(cursor.node())->data);
+    }
+
+    // Remove all values
+    for (int n = 0; n < num_iterations; n++) {
+      IntrusiveCursor cursor = intrusive_tree.cursor(n);
+      EXPECT_NOT_NULL(cursor.node());
+
+      intrusive_tree.remove_at_cursor(cursor);
+      IntrusiveCursor cursor2 = intrusive_tree.cursor(n);
+
+      EXPECT_NULL(cursor2.node());
+
+      verify_it(intrusive_tree);
+    }
+
+    // Check removed values
+    for (int n = 0; n < num_iterations; n++) {
+      IntrusiveCursor cursor = intrusive_tree.cursor(n);
+      EXPECT_NULL(cursor.node());
+    }
+  }
+
   void test_nodes_visited_once() {
     constexpr size_t memory_size = 65536;
     using Tree = RBTree<int, int, Cmp, ArrayAllocator<memory_size>>;
@@ -524,6 +746,14 @@ TEST_VM_F(RBTreeTest, TestClosestLeq) {
   this->test_closest_leq();
 }
 
+TEST_VM_F(RBTreeTest, TestClosestGt) {
+  this->test_closest_gt();
+}
+
+TEST_VM_F(RBTreeTest, TestFirst) {
+  this->test_leftmost();
+}
+
 TEST_VM_F(RBTreeTest, NodePrev) {
   this->test_node_prev();
 }
@@ -538,6 +768,23 @@ TEST_VM_F(RBTreeTest, NodeStableTest) {
 
 TEST_VM_F(RBTreeTest, NodeStableAddressTest) {
   this->test_stable_nodes_addresses();
+}
+
+
+TEST_VM_F(RBTreeTest, CursorFind) {
+  this->test_cursor();
+}
+
+TEST_VM_F(RBTreeTest, CursorGet) {
+  this->test_cursor();
+}
+
+TEST_VM_F(RBTreeTest, CursorEmptyTreeTest) {
+  this->test_cursor_empty_tree();
+}
+
+TEST_VM_F(RBTreeTest, CursorIterateTest) {
+  this->test_cursor_iterate();
 }
 
 TEST_VM_F(RBTreeTest, LeftMostRightMost) {
@@ -606,6 +853,10 @@ TEST_VM(RBTreeTestNonFixture, TestPrintIntegerTree) {
 }
 
 #ifdef ASSERT
+TEST_VM_F(RBTreeTest, IntrusiveTest) {
+  this->test_intrusive();
+}
+
 TEST_VM_F(RBTreeTest, FillAndVerify) {
   this->test_fill_verify();
 }
@@ -658,12 +909,12 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
     }
   }
   { // Make a very large tree and verify at the end
-    struct Nothing {};
-    RBTreeCHeap<int, Nothing, Cmp, mtOther> rbtree;
+    RBTreeCHeap<int, void, Cmp, mtOther> rbtree;
     constexpr int one_hundred_thousand = 100000;
     for (int i = 0; i < one_hundred_thousand; i++) {
-      rbtree.upsert(i, Nothing());
+      rbtree.insert(i);
     }
+    EXPECT_EQ((size_t)one_hundred_thousand, rbtree.size());
     rbtree.verify_self();
   }
 }
