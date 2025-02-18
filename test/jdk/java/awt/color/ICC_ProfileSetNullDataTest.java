@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,23 @@ import java.awt.color.ICC_Profile;
  * @summary Test checks behavior of the ICC_Profile.setData(int, byte[])
  */
 public final class ICC_ProfileSetNullDataTest {
+    private static final int[] colorSpace = new int [] {
+            ColorSpace.CS_sRGB, ColorSpace.CS_LINEAR_RGB,
+            ColorSpace.CS_PYCC, ColorSpace.CS_GRAY,
+            ColorSpace.CS_CIEXYZ
+    };
 
     public static void main(String[] args) {
-        test(ICC_Profile.getInstance(ColorSpace.CS_sRGB));
-        test(ICC_Profile.getInstance(ColorSpace.CS_LINEAR_RGB));
-        test(ICC_Profile.getInstance(ColorSpace.CS_CIEXYZ));
-        test(ICC_Profile.getInstance(ColorSpace.CS_PYCC));
-        test(ICC_Profile.getInstance(ColorSpace.CS_GRAY));
-    }
-
-    private static void test(ICC_Profile profile) {
         byte[] tagData = null;
-        try {
-            profile.setData(ICC_Profile.icSigCmykData, tagData);
-        } catch (IllegalArgumentException e) {
-            return;
+        for (int cs : colorSpace) {
+            ICC_Profile builtInProfile = ICC_Profile.getInstance(cs);
+            ICC_Profile profile = ICC_Profile.getInstance(builtInProfile.getData());
+            try {
+                profile.setData(ICC_Profile.icSigCmykData, tagData);
+            } catch (IllegalArgumentException e) {
+                return;
+            }
+            throw new RuntimeException("IllegalArgumentException expected");
         }
-        throw new RuntimeException("IllegalArgumentException expected");
     }
 }
