@@ -23,9 +23,15 @@
  * questions.
  */
 
+/*
+ * Scopes defining different parts of TLS protocol.
+ */
+
 package sun.security.ssl;
 
 enum SSLCryptoScope {
+    // Handshake scope as in signature_algorithms extension.
     HANDSHAKE,
+    // Certificate scope as in signature_algorithms_cert extension.
     CERTIFICATE;
 }

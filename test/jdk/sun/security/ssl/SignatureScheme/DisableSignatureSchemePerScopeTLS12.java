@@ -128,16 +128,16 @@ public class DisableSignatureSchemePerScopeTLS12 extends
         List<String> sigAlgsCertSS = getSigSchemesCertReq(
                 extractHandshakeMsg(sTOc, TLS_HS_CERT_REQ));
 
-        // CertificateRequest message MUST contain disabled handshake
-        // signature scheme (same as signature_algorithms_cert extension).
-        assertTrue(sigAlgsCertSS.contains(HANDSHAKE_DISABLED_SIG),
+        // TLSv1.2 CertificateRequest message MUST NOT contain both:
+        // disabled handshake signature scheme and disabled
+        // certificate signature scheme
+
+        assertFalse(sigAlgsCertSS.contains(HANDSHAKE_DISABLED_SIG),
                 "Signature Scheme " + HANDSHAKE_DISABLED_SIG
                 + " isn't present in CertificateRequest");
 
-        // CertificateRequest message MUST NOT contain disabled certificate
-        // signature scheme (same as signature_algorithms_cert extension).
         assertFalse(sigAlgsCertSS.contains(CERTIFICATE_DISABLED_SIG),
                 "Signature Scheme " + CERTIFICATE_DISABLED_SIG
-                + " present in CertificateRequest");
+                + " isn't present in CertificateRequest");
     }
 }

@@ -635,22 +635,36 @@ final class CertificateRequest {
                 HandshakeMessage message) throws IOException {
             // The producing happens in server side only.
             ServerHandshakeContext shc = (ServerHandshakeContext) context;
+
+            if (shc.localSupportedSignAlgs == null) {
+                shc.localSupportedSignAlgs =
+                        SignatureScheme.getSupportedAlgorithms(
+                                shc, HANDSHAKE_SCOPE);
+            }
+
             if (shc.localSupportedCertSignAlgs == null) {
                 shc.localSupportedCertSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
                                 shc, CERTIFICATE_SCOPE);
             }
 
-            if (shc.localSupportedCertSignAlgs.isEmpty()) {
+            // According to TLSv1.2 RFC, CertificateRequest message must
+            // contain signature schemes supported for both:
+            // handshake signatures and certificate signatures.
+            List<SignatureScheme> certReqSignAlgs =
+                    new ArrayList<>(shc.localSupportedSignAlgs);
+            certReqSignAlgs.retainAll(shc.localSupportedCertSignAlgs);
+
+            if (certReqSignAlgs.isEmpty()) {
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                        "No supported signature algorithm");
+                    "No supported signature algorithm");
             }
 
             X509Certificate[] caCerts =
                     shc.sslContext.getX509TrustManager().getAcceptedIssuers();
             T12CertificateRequestMessage crm = new T12CertificateRequestMessage(
                     shc, caCerts, shc.negotiatedCipherSuite.keyExchange,
-                    shc.localSupportedCertSignAlgs);
+                    certReqSignAlgs);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                     "Produced CertificateRequest handshake message", crm);
