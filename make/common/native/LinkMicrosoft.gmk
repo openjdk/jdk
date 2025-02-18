@@ -117,6 +117,11 @@ define CreateDynamicLibraryOrExecutableMicrosoft
 	      -identity:"$$($1_NAME).exe, version=$$($1_MANIFEST_VERSION)" \
 	      -outputresource:$$@;#1
         endif
+        ifeq ($(WINDOWS_SIGNING_ENABLED), true)
+	  $$(call LogInfo, Signing $$($1_BASENAME))
+	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_run_signtool, \
+	      $(FIXPATH) $(WINDOWS_SIGNING_SCRIPT) $$($1_TARGET))
+        endif
 endef
 
 ################################################################################
