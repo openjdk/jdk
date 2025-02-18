@@ -27,6 +27,8 @@
  * @summary validating getExtensionValue and getKeyUsage with specified and
  *          unspecified extensions on the X509Certificate.
  * @library /test/lib
+ * @modules java.base/sun.security.x509
+ *          java.base/sun.security.util
  */
 
 import jdk.test.lib.Asserts;
