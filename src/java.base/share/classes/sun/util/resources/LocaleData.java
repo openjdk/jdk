@@ -231,8 +231,8 @@ public class LocaleData {
     private static class LocaleDataStrategy implements Bundles.Strategy {
         private static final LocaleDataStrategy INSTANCE = new LocaleDataStrategy();
         // TODO: avoid hard-coded Locales
-        private static final Set<Locale> JAVA_BASE_LOCALES
-            = Set.of(Locale.ROOT, Locale.ENGLISH, Locale.US, Locale.of("en", "US", "POSIX"));
+       private static final Set<Locale> JAVA_BASE_LOCALES
+                = Set.of(Locale.ROOT, Locale.ENGLISH, Locale.US, Locale.of("en", "US", "POSIX"), Locale.of("en", "IN"));
 
         private LocaleDataStrategy() {
         }
