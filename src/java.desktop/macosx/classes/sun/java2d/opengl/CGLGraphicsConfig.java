@@ -34,7 +34,9 @@ import java.awt.Image;
 import java.awt.ImageCapabilities;
 import java.awt.Rectangle;
 import java.awt.Transparency;
+import java.awt.Window;
 import java.awt.color.ColorSpace;
+import java.awt.image.BaseMultiResolutionImage;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
@@ -252,10 +254,28 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
     public Image createAcceleratedImage(Component target,
                                         int width, int height)
     {
-        ColorModel model = getColorModel(Transparency.OPAQUE);
-        WritableRaster wr = model.createCompatibleWritableRaster(width, height);
-        return new OffScreenImage(target, model, wr,
+        int transparency = Transparency.OPAQUE;
+        if (target instanceof Window window && !window.isOpaque())
+            transparency = Transparency.TRANSLUCENT;
+        ColorModel model = getColorModel(transparency);
+
+        float scaleFactor = getDevice().getScaleFactor();
+        int fullResWidth = Math.round( scaleFactor * width);
+        int fullResHeight = Math.round( scaleFactor * height);
+        WritableRaster wr = model.createCompatibleWritableRaster(fullResWidth, fullResHeight);
+        OffScreenImage fullResImage = new OffScreenImage(target, model, wr,
                                   model.isAlphaPremultiplied());
+
+        if (scaleFactor == 1)
+            return fullResImage;
+        return new BaseMultiResolutionImage(fullResImage.getScaledInstance(width, height, Image.SCALE_DEFAULT), fullResImage) {
+            @Override
+            public Graphics getGraphics() {
+                Graphics2D returnValue = fullResImage.createGraphics();
+                returnValue.scale(scaleFactor, scaleFactor);
+                return returnValue;
+            }
+        };
     }
 
     @Override
