@@ -1029,7 +1029,7 @@ static S calc_xor_upper_bound_of_non_neg(const S hi_0, const S hi_1) {
   // Note: cast to unsigned happens before +1 to avoid signed overflow, and
   // round_up is safe because high bit is unset (0 <= lo <= hi)
 
-  return round_up_power_of_2(U(hi_0 | hi_1) + 1) - 1 ;
+  return round_up_power_of_2(U(hi_0 | hi_1) + 1) - 1;
 }
 
 //------------------------------add_ring---------------------------------------
