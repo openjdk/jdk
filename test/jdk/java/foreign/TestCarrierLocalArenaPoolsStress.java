@@ -83,12 +83,16 @@ final class TestCarrierLocalArenaPoolsStress {
         final CarrierLocalArenaPools pool = CarrierLocalArenaPools.create(POOL_SIZE);
         // Make sure it works for both virtual and platform threads (as they are handled differently)
         for (var threadBuilder : List.of(Thread.ofVirtual(), Thread.ofPlatform())) {
-            System.out.println(duration(begin) + "CREATING THREADS USING " + threadBuilder);
-            final Thread[] threads = IntStream.range(0, 1024).mapToObj(_ ->
+            final int noThreads = threadBuilder instanceof Thread.Builder.OfVirtual ? 1024 : 32;
+            System.out.println(duration(begin) + "CREATING " + noThreads + " THREADS USING " + threadBuilder);
+            final Thread[] threads = IntStream.range(0, noThreads).mapToObj(_ ->
                     threadBuilder.start(() -> {
+                        /*final var seg = Arena.ofConfined().allocate(100);
+                        final Arena arena = new ReusingArena(seg);*/
                         final long threadId = Thread.currentThread().threadId();
                         while (!Thread.interrupted()) {
                             for (int i = 0; i < 1_000_000; i++) {
+                                //try (Arena arena = Arena.ofConfined()) {
                                 try (Arena arena = pool.take()) {
                                     // Try to assert no two threads get allocated the same memory region.
                                     final MemorySegment segment = arena.allocate(JAVA_LONG);
@@ -108,8 +112,17 @@ final class TestCarrierLocalArenaPoolsStress {
                         thread.interrupt();
                     });
             System.out.println(duration(begin) + "DONE INTERRUPTING");
+
+            // VTs are daemon threads ...
+            Arrays.stream(threads).forEach(t -> {
+                try {
+                    t.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            System.out.println(duration(begin) + "ALL THREADS COMPLETED");
         }
-        // VTs are daemon threads ...
         System.out.println(duration(begin) + "DONE");
     }
 
@@ -120,4 +133,29 @@ final class TestCarrierLocalArenaPoolsStress {
         return (Thread.currentThread().isVirtual() ? "VT: " : "PT: ") +
                 String.format("%3d:%09d ", seconds, nanos);
     }
+
+    static final class ReusingArena implements Arena {
+
+        private final MemorySegment segment;
+
+        public ReusingArena(MemorySegment segment) {
+            this.segment = segment;
+        }
+
+        @Override
+        public MemorySegment allocate(long byteSize, long byteAlignment) {
+            return segment.asSlice(0, byteSize, byteAlignment);
+        }
+
+        @Override
+        public MemorySegment.Scope scope() {
+            return Arena.global().scope();
+        }
+
+        @Override
+        public void close() {
+
+        }
+    }
+
 }
