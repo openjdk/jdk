@@ -134,17 +134,17 @@ class Bits {                            // package-private
         // If this code is modified, make sure a stress test like DirectBufferAllocTest
         // performs well.
 
+        // Semi-optimistic attempt after acquiring the slow-path lock.
+        if (tryReserveMemory(size, cap)) {
+           return;
+        }
+
         boolean interrupted = false;
         try {
             BufferCleaner.Canary canary = null;
 
             long sleepTime = 1;
             for (int sleeps = 0; sleeps < MAX_SLEEPS; sleeps++) {
-                // See if we can satisfy the allocation now.
-                if (tryReserveMemory(size, cap)) {
-                    return;
-                }
-
                 if (canary == null || canary.isDead()) {
                     // If canary is not yet initialized, we have not triggered a cleanup.
                     // If canary is dead, there was progress, and it was not enough.
@@ -159,6 +159,11 @@ class Bits {                            // package-private
                     sleepTime *= 2;
                 } catch (InterruptedException e) {
                     interrupted = true;
+                }
+
+                // See if we can satisfy the allocation now.
+                if (tryReserveMemory(size, cap)) {
+                    return;
                 }
             }
 
