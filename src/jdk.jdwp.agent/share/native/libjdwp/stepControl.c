@@ -888,15 +888,12 @@ clearStep(jthread thread, StepRequest *step)
             (void)eventHandler_free(step->methodEnterHandlerNode);
             step->methodEnterHandlerNode = NULL;
         }
-
         /*
          * Warning: Do not clear step->method, step->lineEntryCount,
          *          or step->lineEntries here, they will likely
          *          be needed on the next step.
          */
-    }
 
-    if (step->pending) {
         jvmtiError error;
         jboolean needsSuspending; // true if we needed to suspend this thread
 
