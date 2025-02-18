@@ -807,23 +807,6 @@ public final class AppContext {
         });
     }
 
-    public static <T> T getSoftReferenceValue(Object key,
-            Supplier<T> supplier) {
-
-        final AppContext appContext = AppContext.getAppContext();
-        @SuppressWarnings("unchecked")
-        SoftReference<T> ref = (SoftReference<T>) appContext.get(key);
-        if (ref != null) {
-            final T object = ref.get();
-            if (object != null) {
-                return object;
-            }
-        }
-        final T object = supplier.get();
-        ref = new SoftReference<>(object);
-        appContext.put(key, ref);
-        return object;
-    }
 }
 
 final class MostRecentKeyValue {

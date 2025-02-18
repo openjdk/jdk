@@ -35,8 +35,6 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 
-import sun.awt.AppContext;
-
 import sun.lwawt.macosx.CPlatformWindow;
 import sun.swing.SwingUtilities2;
 
@@ -151,12 +149,14 @@ final class AquaUtils {
     }
 
     abstract static class RecyclableSingleton<T> {
-        final T get() {
-            return AppContext.getSoftReferenceValue(this, () -> getInstance());
-        }
 
-        void reset() {
-            AppContext.getAppContext().remove(this);
+        T instance;
+
+        final T get() {
+            if (instance == null) {
+                instance = getInstance();
+            }
+            return instance;
         }
 
         abstract T getInstance();
@@ -200,8 +200,8 @@ final class AquaUtils {
     private static final RecyclableSingleton<Boolean> enableAnimations = new RecyclableSingleton<Boolean>() {
         @Override
         protected Boolean getInstance() {
-            final String sizeProperty = System.getProperty(ANIMATIONS_PROPERTY);
-            return !"false".equals(sizeProperty); // should be true by default
+            final String animationsProperty = System.getProperty(ANIMATIONS_PROPERTY);
+            return !"false".equals(animationsProperty); // should be true by default
         }
     };
     private static boolean animationsEnabled() {
