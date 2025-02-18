@@ -48,6 +48,8 @@
 extern "C" {
 #endif
 
+// Matches sun.font.CharToGlyphMapper.INVISIBLE_GLYPH_ID
+#define INVISIBLE_GLYPH_ID 0xffff
 
 hb_font_t* jdk_font_create_hbp(
                hb_face_t* face,
