@@ -2441,7 +2441,7 @@ instruct reduce_mulI(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
   ins_encode %{
     __ reduce_mul_integral_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
                              as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                             Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this));
+                             Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2455,7 +2455,7 @@ instruct reduce_mulI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
   ins_encode %{
     __ reduce_mul_integral_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
                              as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                             Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this),
+                             Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc),
                              Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
@@ -2470,7 +2470,7 @@ instruct reduce_mulL(iRegLNoSp dst, iRegL isrc, vReg vsrc,
   ins_encode %{
     __ reduce_mul_integral_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
                              as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                             Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this));
+                             Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2484,7 +2484,7 @@ instruct reduce_mulL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc,
   ins_encode %{
     __ reduce_mul_integral_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
                              as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                             Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this),
+                             Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc),
                              Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
@@ -2499,7 +2499,7 @@ instruct reduce_mulF(fRegF dst, fRegF fsrc, vReg vsrc,
   ins_encode %{
     __ reduce_mul_fp_v($dst$$FloatRegister, $fsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
                        as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                       Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this));
+                       Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2513,7 +2513,7 @@ instruct reduce_mulF_masked(fRegF dst, fRegF fsrc, vReg vsrc,
   ins_encode %{
     __ reduce_mul_fp_v($dst$$FloatRegister, $fsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
                        as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                       Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this),
+                       Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc),
                        Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
@@ -2528,7 +2528,7 @@ instruct reduce_mulD(fRegD dst, fRegD fsrc, vReg vsrc,
   ins_encode %{
     __ reduce_mul_fp_v($dst$$FloatRegister, $fsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
                        as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                       Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this));
+                       Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2542,7 +2542,7 @@ instruct reduce_mulD_masked(fRegD dst, fRegD fsrc, vReg vsrc,
   ins_encode %{
     __ reduce_mul_fp_v($dst$$FloatRegister, $fsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
                        as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                       Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this),
+                       Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc),
                        Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
