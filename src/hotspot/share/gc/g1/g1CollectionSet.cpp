@@ -383,6 +383,8 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
   uint num_initial_groups = 0;
   uint num_optional_regions = 0;
 
+  assert(_optional_groups.num_regions() == 0, "Optional regions should not already be selected");
+
   double predicted_initial_time_ms = 0.0;
   double predicted_optional_time_ms = 0.0;
 
