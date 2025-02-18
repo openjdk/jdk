@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -65,7 +64,7 @@ import static java.lang.System.err;
 import static java.lang.String.format;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
-/**
+/*
  * @test
  * @summary this test verifies that a client may provides authorization
  *          headers directly when connecting with a server.
@@ -624,8 +623,6 @@ public class DigestEchoClient {
         byte[] cnonce = new byte[16];
         String cnonceStr = null;
         DigestEchoServer.DigestResponse challenge = null;
-        ReferenceQueue<HttpClient> queue = new ReferenceQueue<>();
-        WeakReference<HttpClient> ref = new WeakReference<>(client, queue);
         URI reqURI = null;
         Throwable failed = null;
         try {

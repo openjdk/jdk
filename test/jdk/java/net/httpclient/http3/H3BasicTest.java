@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
  * @bug 8087112
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @compile ../ReferenceTracker.java
- * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
- *        jdk.httpclient.test.lib.http2.Http2TestServer
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors
  *                     -Djdk.internal.httpclient.debug=true
  *                     H3BasicTest
@@ -51,7 +53,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2EchoHandler;
@@ -60,8 +61,14 @@ import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
+import static jdk.test.lib.Utils.createTempFile;
+import static jdk.test.lib.Utils.createTempFileOfSize;
 
 public class H3BasicTest implements HttpServerAdapters {
+
+    private static final String CLASS_NAME = H3BasicTest.class.getSimpleName();
+
     static int http3Port, https2Port;
     static Http3TestServer http3OnlyServer;
     static Http2TestServer https2AltSvcServer;
@@ -226,22 +233,6 @@ public class H3BasicTest implements HttpServerAdapters {
         };
     }
 
-    static Void compareFiles(Path path1, Path path2) {
-        System.out.printf("comparing %s with %s: ", path1, path2);
-        try {
-            var r = TestUtil.compareFiles(path1, path2);
-            System.out.println("matching");
-            return r;
-        } catch (RuntimeException | Error x) {
-            System.out.println(x);
-            throw x;
-        }
-    }
-
-    static Path tempFile() {
-        return TestUtil.tempFile();
-    }
-
     static final String SIMPLE_STRING = "Hello world Goodbye world";
 
     static final int LOOPS = 13;
@@ -253,7 +244,7 @@ public class H3BasicTest implements HttpServerAdapters {
         System.out.printf("streamTest %b to %s\n" , altSvc, uri);
 
         HttpClient client = getClient();
-        Path src = TestUtil.getAFile(FILESIZE * 4);
+        Path src = createTempFileOfSize(CLASS_NAME, ".dat", FILESIZE * 4);
         var http3Only = altSvc == false;
         var config = config(http3Only);
         HttpRequest req = HttpRequest.newBuilder(uri)
@@ -273,7 +264,7 @@ public class H3BasicTest implements HttpServerAdapters {
                     return resp.body();
                 });
         response.join();
-        compareFiles(src, dest);
+        assertFileContentsEqual(src, dest);
         System.err.println("streamTest: DONE");
     }
 
@@ -345,8 +336,7 @@ public class H3BasicTest implements HttpServerAdapters {
         // Do loops asynchronously
 
         CompletableFuture<HttpResponse<Path>>[] responses = new CompletableFuture[LOOPS];
-        int size = FILESIZE;
-        final Path source = TestUtil.getAFile(size);
+        final Path source = createTempFileOfSize(H3BasicTest.class.getSimpleName(), ".dat", FILESIZE);
         var http3Only = altSvc == false;
         for (int i = 0; i < LOOPS; i++) {
             var config = config(http3Only);
@@ -360,15 +350,16 @@ public class H3BasicTest implements HttpServerAdapters {
                     desc, altSvc, ping, config, uri);
             System.err.printf("%s simpleTest(altSvc:%s, ping:%s) config(%s) Request to %s%n",
                     desc, altSvc, ping, config, uri);
-            responses[i] = client.sendAsync(request, BodyHandlers.ofFile(tempFile()))
-                //.thenApply(resp -> compareFiles(resp.body(), source));
+            Path requestBodyFile = createTempFile(CLASS_NAME, ".dat");
+            responses[i] = client.sendAsync(request, BodyHandlers.ofFile(requestBodyFile))
+                //.thenApply(resp -> assertFileContentsEqual(resp.body(), source));
                 .exceptionally((t) -> logExceptionally(desc, t))
                 .thenApply(resp -> {
                     System.out.printf("Resp %s status %d body size %d\n",
                                       resp.version(), resp.statusCode(),
                                       resp.body().toFile().length()
                     );
-                    compareFiles(resp.body(), source);
+                    assertFileContentsEqual(resp.body(), source);
                     if (resp.version() != HTTP_3) {
                         throw new RuntimeException("wrong response version: " + resp.version());
                     }

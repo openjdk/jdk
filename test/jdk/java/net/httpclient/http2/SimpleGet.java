@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8087112
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
+ * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm -XX:+CrashOnOutOfMemoryError -Djdk.tracePinnedThreads=full
  *                     SimpleGet

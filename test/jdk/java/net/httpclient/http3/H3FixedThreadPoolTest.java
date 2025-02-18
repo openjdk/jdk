@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
  * @test
  * @bug 8087112 8177935
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
- *        jdk.httpclient.test.lib.common.HttpServerAdapters
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.net.SimpleSSLContext
  * @compile ../ReferenceTracker.java
  * @run testng/othervm  -Djdk.internal.httpclient.debug=err
  *                      -Djdk.httpclient.HttpClient.log=ssl,headers,requests,responses,errors
@@ -50,16 +52,21 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.common.TestUtil;
+import jdk.test.lib.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
 import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
+import static jdk.test.lib.Utils.createTempFileOfSize;
 
 import org.testng.annotations.Test;
 
 public class H3FixedThreadPoolTest implements HttpServerAdapters {
+
+    private static final String CLASS_NAME = H3FixedThreadPoolTest.class.getSimpleName();
+
     static int http3Port, https2Port;
     static HttpTestServer http3Server, https2Server;
     static volatile HttpClient client = null;
@@ -171,14 +178,6 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
         }
     }
 
-    static Void compareFiles(Path path1, Path path2) {
-        return TestUtil.compareFiles(path1, path2);
-    }
-
-    static Path tempFile() {
-        return TestUtil.tempFile();
-    }
-
     static final String SIMPLE_STRING = "Hello world Goodbye world";
 
     static final int LOOPS = 32;
@@ -191,7 +190,7 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
         var config = http3only ? HTTP_3_ONLY : HTTP_3_ALT_SVC;
 
         HttpClient client = getClient();
-        Path src = TestUtil.getAFile(FILESIZE * 4);
+        Path src = createTempFileOfSize(CLASS_NAME, ".dat", FILESIZE * 4);
         HttpRequest req = HttpRequest.newBuilder(uri)
                                      .setOption(H3_DISCOVERY, config)
                                      .POST(BodyPublishers.ofFile(src))
@@ -206,7 +205,7 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
                     return resp.body();
                 });
         response.join();
-        compareFiles(src, dest);
+        assertFileContentsEqual(src, dest);
         System.err.println("DONE");
     }
 
@@ -279,18 +278,20 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
         // Do loops asynchronously
 
         CompletableFuture<?>[] responses = new CompletableFuture[LOOPS];
-        final Path source = TestUtil.getAFile(FILESIZE);
+        final Path source = createTempFileOfSize(CLASS_NAME, ".dat", FILESIZE);
         HttpRequest request = HttpRequest.newBuilder(uri)
                                          .setOption(H3_DISCOVERY, config)
                                          .POST(BodyPublishers.ofFile(source))
                                          .build();
         for (int i = 0; i < LOOPS; i++) {
-            responses[i] = client.sendAsync(request, BodyHandlers.ofFile(tempFile()))
+            Path requestPayloadFile = Utils.createTempFile(CLASS_NAME, ".dat");
+            responses[i] = client.sendAsync(request, BodyHandlers.ofFile(requestPayloadFile))
                 //.thenApply(resp -> compareFiles(resp.body(), source));
                 .thenApply(resp -> {
                     System.out.printf("Resp status %d body size %d\n",
                                       resp.statusCode(), resp.body().toFile().length());
-                    return compareFiles(resp.body(), source);
+                    assertFileContentsEqual(resp.body(), source);
+                    return null;
                 });
         }
         CompletableFuture.allOf(responses).join();

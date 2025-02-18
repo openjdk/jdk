@@ -84,6 +84,7 @@ import javax.net.ssl.SSLSession;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
 
 /**
  * Defines an adaptation layers so that a test server handlers and filters
@@ -704,7 +705,7 @@ public interface HttpServerAdapters {
                 if (check != null) {
                     System.err.println("EchoHandler checking file match: " + check);
                     try {
-                        TestUtil.compareFiles(check, outfile.toPath());
+                        assertFileContentsEqual(check, outfile.toPath());
                     } catch (Throwable x) {
                         System.err.println("Files do not match: " + x);
                         t.sendResponseHeaders(500, -1);

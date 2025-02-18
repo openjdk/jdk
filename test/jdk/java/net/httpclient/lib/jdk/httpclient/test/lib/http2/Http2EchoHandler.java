@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,24 +28,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
+
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
 
 public class Http2EchoHandler implements Http2Handler {
     static final Path CWD = Paths.get(".");
 
     public Http2EchoHandler() {}
-
-    private long transferTo(InputStream is, OutputStream os) throws IOException {
-        long count = 0;
-        byte[] b = new byte[1024];
-        while (true) {
-            int len = is.read(b);
-            if (len < 0) return count;
-            os.write(b, 0, len);
-            count += len;
-        }
-    }
 
     @Override
     public void handle(Http2TestExchange t)
@@ -73,7 +63,7 @@ public class Http2EchoHandler implements Http2Handler {
             if (check != null) {
                 System.err.println("EchoHandler checking file match: " + check);
                 try {
-                    TestUtil.compareFiles(check, outfile.toPath());
+                    assertFileContentsEqual(check, outfile.toPath());
                 } catch (Throwable x) {
                     System.err.println("Files do not match: " + x);
                     t.sendResponseHeaders(500, -1);
