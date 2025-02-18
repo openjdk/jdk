@@ -27,8 +27,6 @@
  * @summary validating getExtensionValue and getKeyUsage with specified and
  *          unspecified extensions on the X509Certificate.
  * @library /test/lib
- * @modules java.base/sun.security.x509
- *          java.base/sun.security.util
  */
 
 import jdk.test.lib.Asserts;
@@ -43,7 +41,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 
-public class CertificateExtensions {
+public class CertExtensions {
 
     public static void main(String[] args) throws Exception {
         X509CertImpl x509Certimpl = createCertificate();
