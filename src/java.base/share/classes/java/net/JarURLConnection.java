@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,9 +301,23 @@ public abstract class JarURLConnection extends URLConnection {
      * can only be called once
      * the connection has been completely verified by reading
      * from the input stream until the end of the stream has been
-     * reached. Otherwise, this method will return {@code null}
+     * reached. Otherwise, this method will return {@code null}.
      *
-     * @return the Certificate object for this connection if the URL
+     * <p>The returned certificate array comprises all the signer certificates
+     * that were used to verify this entry. Each signer certificate is
+     * followed by its supporting certificate chain (which may be empty).
+     * Each signer certificate and its supporting certificate chain are ordered
+     * bottom-to-top (i.e., with the signer certificate first and the (root)
+     * certificate authority last).
+     *
+     * @apiNote
+     * The verification process does not include validating or establishing
+     * trust in the code signers. A caller should perform additional checks,
+     * such as using a {@link java.security.cert.CertPathValidator} to
+     * validate each signer's certificate chain, and determining whether
+     * to trust the entry signed by the signers.
+     *
+     * @return the Certificate objects for this connection if the URL
      * for it points to a JAR file entry, null otherwise.
      *
      * @throws    IOException if getting the JAR entry causes an
