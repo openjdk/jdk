@@ -3944,7 +3944,9 @@ public class JavacParser implements Parser {
                         log.error(token.pos, Errors.WrongReceiver);
                     }
                 }
-                return toP(F.at(pos).ReceiverVarDef(mods, pn, type));
+                JCVariableDecl result = toP(F.at(pos).ReceiverVarDef(mods, pn, type));
+                storeEnd(result, S.prevToken().endPos);
+                return result;
             }
         } else {
             /** if it is a lambda parameter and the token kind is not an identifier,
@@ -3969,8 +3971,10 @@ public class JavacParser implements Parser {
             name = names.empty;
         }
 
-        return toP(F.at(pos).VarDef(mods, name, type, null,
+        JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, type, null,
                 type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var));
+        storeEnd(result, S.prevToken().endPos);
+        return result;
     }
 
     /** Resources = Resource { ";" Resources }

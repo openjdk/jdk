@@ -87,37 +87,33 @@ public class DeclarationEndPositions {
 
         // JCModuleDecl
         checkEndPosition(JCModuleDecl.class,
-        //  0         1         2         3         4         5
-        //  012345678901234567890123456789012345678901234567890123456789
            "/* comment */ module fred { /* comment */ } /* comment */",
            "                                          ^              ");
 
         // JCPackageDecl
         checkEndPosition(JCPackageDecl.class,
-        //  0         1         2         3         4         5
-        //  012345678901234567890123456789012345678901234567890123456789
            "/* comment */ package fred; /* comment */",
            "                          ^              ");
 
         // JCClassDecl
         checkEndPosition(JCClassDecl.class,
-        //  0         1         2         3         4         5
-        //  012345678901234567890123456789012345678901234567890123456789
            "/* comment */ class Fred { /* comment */ } /* comment */",
            "                                         ^              ");
 
         // JCMethodDecl
         checkEndPosition(JCMethodDecl.class,
-        //  0         1         2         3         4         5
-        //  012345678901234567890123456789012345678901234567890123456789
            "/* comment */ class Fred { void m() { /* comment */ } } /* comment */",
            "                                                    ^                ");
 
         // JCVariableDecl
         checkEndPosition(JCVariableDecl.class,
-        //  0         1         2         3         4         5
-        //  012345678901234567890123456789012345678901234567890123456789
+           "/* comment */ class Fred { int x; } /* comment */",
+           "                                ^                ");
+        checkEndPosition(JCVariableDecl.class,
            "/* comment */ class Fred { int x = 123; } /* comment */",
            "                                      ^                ");
+        checkEndPosition(JCVariableDecl.class,
+           "/* comment */ class A { try {} catch (Error err) {} } /* comment */",
+           "                                              ^                    ");
     }
 }
