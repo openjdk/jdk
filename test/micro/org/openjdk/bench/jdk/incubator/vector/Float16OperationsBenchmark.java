@@ -31,7 +31,7 @@ import static java.lang.Float.*;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector", "-Xbatch",  "-XX:-TieredCompilation"})
+@Fork(jvmArgs = {"--add-modules=jdk.incubator.vector", "-Xbatch", "-XX:-TieredCompilation"})
 public class Float16OperationsBenchmark {
     @Param({"256", "512", "1024", "2048"})
     int vectorDim;
