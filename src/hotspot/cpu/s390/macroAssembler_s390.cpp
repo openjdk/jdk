@@ -3671,16 +3671,13 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
                                                    Register r_temp1,
                                                    Register r_temp2,
                                                    Register r_temp3) {
-  assert_different_registers(r_sub_klass, r_super_klass, r_result, r_temp1, r_temp2, r_temp3);
+  assert_different_registers(r_sub_klass, r_super_klass, r_result, r_temp1, r_temp2, r_temp3, Z_R0_scratch);
 
   const Register
     r_array_base   = r_temp1,
     r_array_length = r_temp2,
     r_array_index  = r_temp3,
     r_bitmap       = noreg; // unused
-
-  const Register r_one = Z_R0_scratch;
-  z_lghi(r_one, 1); // for locgr down there, to a load result for failure
 
   BLOCK_COMMENT("verify_secondary_supers_table {");
 
@@ -3697,7 +3694,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
 
   const Register r_linear_result = r_array_index; // reuse
   z_chi(r_array_length, 0);
-  z_locgr(r_linear_result, r_one, bcondNotHigh); // load failure if array_length <= 0
+  load_on_condition_imm_32(r_linear_result, 1, bcondNotHigh); // load failure if array_length <= 0
   z_brc(bcondNotHigh, L_failure);
   repne_scan(r_array_base, r_super_klass, r_array_length, r_linear_result);
   bind(L_failure);
@@ -3705,13 +3702,21 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   z_cr(r_result, r_linear_result);
   z_bre(L_passed);
 
-  assert_different_registers(Z_ARG1, r_sub_klass, r_linear_result, r_result);
-  lgr_if_needed(Z_ARG1, r_super_klass);
-  assert_different_registers(Z_ARG2, r_linear_result, r_result);
-  lgr_if_needed(Z_ARG2, r_sub_klass);
-  assert_different_registers(Z_ARG3, r_result);
-  z_lgr(Z_ARG3, r_linear_result);
+  // report fatal error and terminate VM
+
+  // Argument shuffle. Using stack to avoid clashes.
+  resize_frame(-(4*8), /* fp */ Z_R0, /*load_fp*/ true); // provide space for 3 registers
+  z_stg(r_super_klass, 8, Z_SP);
+  z_stg(r_sub_klass, 16, Z_SP);
+  z_stg(r_linear_result, 24, Z_SP);
+
   z_lgr(Z_ARG4, r_result);
+
+  z_lg(Z_ARG1, 8, Z_SP); // r_super_klass
+  z_lg(Z_ARG2, 16, Z_SP); // r_sub_klass
+  z_lg(Z_ARG3, 24, Z_SP); // r_linear_result
+  resize_frame(+(4*8), /*fp*/ Z_R0, /*load_fp*/ true);
+
   const char* msg = "mismatch";
   load_const_optimized(Z_ARG5, (address)msg);
 
@@ -6952,4 +6957,30 @@ void MacroAssembler::pop_count_int_with_ext3(Register r_dst, Register r_src) {
   z_popcnt(r_dst, r_dst, 8);
 
   BLOCK_COMMENT("} pop_count_int_with_ext3");
+}
+
+// LOAD HALFWORD IMMEDIATE ON CONDITION (32 <- 16)
+void MacroAssembler::load_on_condition_imm_32(Register dst, int64_t i2, branch_condition cc) {
+  if (VM_Version::has_LoadStoreConditional2()) { // z_lochi works on z13 or above
+    assert(Assembler::is_simm16(i2), "sanity");
+    z_lochi(dst, i2, cc);
+  } else {
+    NearLabel done;
+    z_brc(Assembler::inverse_condition(cc), done);
+    z_lhi(dst, i2);
+    bind(done);
+  }
+}
+
+// LOAD HALFWORD IMMEDIATE ON CONDITION (64 <- 16)
+void MacroAssembler::load_on_condition_imm_64(Register dst, int64_t i2, branch_condition cc) {
+  if (VM_Version::has_LoadStoreConditional2()) { // z_locghi works on z13 or above
+    assert(Assembler::is_simm16(i2), "sanity");
+    z_locghi(dst, i2, cc);
+  } else {
+    NearLabel done;
+    z_brc(Assembler::inverse_condition(cc), done);
+    z_lghi(dst, i2);
+    bind(done);
+  }
 }
