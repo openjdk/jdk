@@ -2015,6 +2015,22 @@ public:
   virtual int Opcode() const;
 };
 
+class CopySignVFNode : public VectorNode {
+public:
+  CopySignVFNode(Node* in1, Node* in2, const TypeVect* vt)
+  : VectorNode(in1, in2, vt) {}
+
+  virtual int Opcode() const;
+};
+
+class CopySignVDNode : public VectorNode {
+public:
+  CopySignVDNode(Node* in1, Node* in2, const TypeVect* vt)
+  : VectorNode(in1, in2, vt) {}
+
+  virtual int Opcode() const;
+};
+
 class SignumVFNode : public VectorNode {
 public:
   SignumVFNode(Node* in1, Node* zero, Node* one, const TypeVect* vt)
