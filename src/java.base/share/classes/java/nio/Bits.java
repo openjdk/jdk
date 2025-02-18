@@ -139,6 +139,39 @@ class Bits {                            // package-private
            return;
         }
 
+        // No free memory. We need to trigger cleanups and wait for them to make progress.
+        // This requires triggering the GC and waiting for eventual buffer cleanups
+        // or the absence of any profitable cleanups.
+        //
+        // To do this efficiently, we need to wait for several activities to run:
+        //   1. GC needs to discover dead references and hand them over to Reference
+        //      processing thread. This activity can be asynchronous and can complete after
+        //      we unblock from System.gc().
+        //   2. Reference processing thread needs to process dead references and enqueue them
+        //      to Cleaner thread. This activity is normally concurrent with the rest of
+        //      Java code, and is subject to reference processing thread having time to process.
+        //   3. Cleaner thread needs to process the enqueued references and call cleanables
+        //      on dead buffers. Like (2), this activity is also concurrent, and relies on
+        //      Cleaner getting time to act.
+        //
+        // It is somewhat simple to wait for Reference processing and Cleaner threads to be idle.
+        // However, that is not a good indicator they have processed buffers since our last
+        // System.gc() request: they may not have started yet after System.gc() unblocked,
+        // or have not yet seen that previous step ran. It is Really Hard (tm) to coordinate
+        // all these activities.
+        //
+        // Instead, we are checking directly if Cleaner have acted on since our last System.gc():
+        // install the canary, call System.gc(), wait for canary to get processed (dead). This
+        // signals that since our last call to System.gc(), steps (1) and (2) have finished, and
+        // step (3) is currently in progress.
+        //
+        // The last bit is a corner case: since canary is not ordered with other buffer cleanups,
+        // it is possible that canary gets dead before the rest of the buffers get cleaned. This
+        // corner case would be handled with a normal retry attempt, after trying to allocate.
+        // If allocation succeeds even after partial cleanup, we are done. If it does not, we get
+        // to try again, this time reliably getting the results of the first cleanup run. Not
+        // handling this case specially simplifies implementation.
+
         boolean interrupted = false;
         try {
             BufferCleaner.Canary canary = null;
@@ -148,7 +181,7 @@ class Bits {                            // package-private
                 if (canary == null || canary.isDead()) {
                     // If canary is not yet initialized, we have not triggered a cleanup.
                     // If canary is dead, there was progress, and it was not enough.
-                    // Trigger GC to perform reference processing and then cleaning.
+                    // Trigger GC -> Reference processing -> Cleaner again.
                     canary = BufferCleaner.newCanary();
                     System.gc();
                 }
