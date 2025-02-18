@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.security.AlgorithmConstraints;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -70,14 +71,68 @@ public abstract class AbstractAlgorithmConstraints
         return algorithmsInPropertySet;
     }
 
+    // Allocate the immutable lists as needed. Overwriting is not a concern.
+    private static List<String> aliasEdDSA = null;
+    private static List<String> aliasEd25519 = null;
+    private static List<String> aliasXDH = null;
+    private static List<String> aliasX25519 = null;
+
+    /**
+     * getAlias() adds extra algorithm names to the String if matched.  Used by
+     * checkAlgorithm(), it returns additional names that may be on the
+     * DisabledAlgorithmConstraints list.
+     */
+    public static List<String> getAliases(String algorithm) {
+        return switch (algorithm) {
+            case "EdDSA" -> {
+                if (aliasEdDSA == null) {
+                    aliasEdDSA = List.of("EdDSA", "Ed25519", "Ed448");
+                }
+                yield aliasEdDSA;
+            }
+            case "Ed25519" -> {
+                if (aliasEd25519 == null) {
+                    aliasEd25519 = List.of("EdDSA", "Ed25519");
+                }
+                yield aliasEd25519;
+            }
+            case "XDH" ->  {
+                if (aliasXDH == null) {
+                    aliasXDH = List.of("XDH", "X25519", "X448");
+                }
+                yield aliasXDH;
+            }
+            case "X25519" ->  {
+                if (aliasX25519 == null) {
+                    aliasX25519 = List.of("XDH", "X25519");
+                }
+                yield aliasX25519;
+            }
+            default -> List.of();
+        };
+    }
+
+    /**
+     * This checks a given `algorithm' against the list of 'algorithms' from
+     * the DisabledAlgorithmConstraints or LegacyAlgorithmConstraints.
+     *
+     * @param algorithms List of algorithms from the constraints list
+     * @param algorithm algorithm being checked against list
+     * @param decomposer class the decomposing names into sub-elements
+     * @return
+     */
     static boolean checkAlgorithm(Set<String> algorithms, String algorithm,
             AlgorithmDecomposer decomposer) {
         if (algorithm == null || algorithm.isEmpty()) {
             throw new IllegalArgumentException("No algorithm name specified");
         }
 
-        if (algorithms.contains(algorithm)) {
-            return false;
+        // Check `algorithm` against disabled algorithms and their aliases
+        for (String a : algorithms) {
+            if (algorithm.equalsIgnoreCase(a) ||
+                getAliases(a).contains(algorithm)) {
+                return false;
+            }
         }
 
         // decompose the algorithm into sub-elements
