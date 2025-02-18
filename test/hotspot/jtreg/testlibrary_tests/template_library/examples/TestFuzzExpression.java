@@ -30,27 +30,24 @@
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
  * @compile ../../../compiler/lib/generators/Generators.java
  * @compile ../../../compiler/lib/verify/Verify.java
- * @run driver template_framework.examples.TestFuzzExpression
+ * @run driver template_library.examples.TestFuzzExpression
  */
 
-package template_framework.examples;
+package template_library.examples;
 
 import java.util.List;
 import java.util.ArrayList;
 
-import compiler.lib.compile_framework.*;
-import compiler.lib.generators.*;
+import compiler.lib.compile_framework.CompileFramework;
+
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateWithArgs;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
-import static compiler.lib.template_framework.Library.CLASS_HOOK;
-import static compiler.lib.template_framework.Library.METHOD_HOOK;
-import compiler.lib.template_framework.Library.IRTestClassInfo;
-import static compiler.lib.template_framework.Library.IR_TEST_CLASS;
-import compiler.lib.template_framework.Library.ExpressionType;
-import static compiler.lib.template_framework.Library.ALL_EXPRESSION_TYPES;
-import static compiler.lib.template_framework.Library.EXPRESSION;
+
+import compiler.lib.template_library.Library;
+import compiler.lib.template_library.IRTestClass;
+import compiler.lib.template_library.Types;
 
 /**
  * This is a basic expression fuzzer: it generates random expressions using {@link Library.Expression},
@@ -83,19 +80,19 @@ public class TestFuzzExpression {
         // Create the info required for the test class.
         // It is imporant that we pass the classpath to the Test-VM, so that it has access
         // to all compiled classes.
-        IRTestClassInfo info = new IRTestClassInfo(comp.getEscapedClassPathOfCompiledClasses(),
-                                                   "p.xyz", "InnerTest",
-                                                   List.of("compiler.lib.generators.*",
-                                                           "compiler.lib.verify.*"));
+        IRTestClass.Info info = new IRTestClass.Info(comp.getEscapedClassPathOfCompiledClasses(),
+                                                     "p.xyz", "InnerTest",
+                                                     List.of("compiler.lib.generators.*",
+                                                             "compiler.lib.verify.*"));
 
-        var template1 = Template.make("type", (ExpressionType type)-> body(
+        var template1 = Template.make("type", (Types.ExpressionType type)-> body(
             """
             // --- $test start ---
             // type: #type
             """,
             // We set a dedicated class hook here, so that fields are
             // NOT available across the tests.
-            CLASS_HOOK.set(
+            Library.CLASS_HOOK.set(
             """
 
             private static Object $GOLD = $test();
@@ -103,12 +100,12 @@ public class TestFuzzExpression {
             @Test
             public static Object $test() {
             """,
-            METHOD_HOOK.set(
+            Library.METHOD_HOOK.set(
                 // We need to catch Exceptions like ArithmeticException, so that we do
                 // not get ExceptionInInitializerError when loading the class and running
                 // the static code blocks.
                 "try {\n",
-                "    return ", EXPRESSION.withArgs(type), ";\n",
+                "    return ", Types.EXPRESSION.withArgs(type), ";\n",
                 """
                 } catch (Exception e) {
                     return e;
@@ -133,10 +130,10 @@ public class TestFuzzExpression {
         // Use template1 100 times with every type.
         List<TemplateWithArgs> templates = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            for (ExpressionType type : ALL_EXPRESSION_TYPES) {
+            for (Types.ExpressionType type : Types.ALL_EXPRESSION_TYPES) {
                 templates.add(template1.withArgs(type));
             }
         }
-        return IR_TEST_CLASS.withArgs(info, templates).render();
+        return IRTestClass.TEMPLATE.withArgs(info, templates).render();
     }
 }

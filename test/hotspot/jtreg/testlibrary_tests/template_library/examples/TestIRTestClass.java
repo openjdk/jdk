@@ -29,23 +29,23 @@
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
  * @compile ../../../compiler/lib/generators/Generators.java
  * @compile ../../../compiler/lib/verify/Verify.java
- * @run driver template_framework.examples.TestIRTestClass
+ * @run driver template_library.examples.TestIRTestClass
  */
 
-package template_framework.examples;
+package template_library.examples;
 
 import java.util.List;
 
-import compiler.lib.compile_framework.*;
-import compiler.lib.generators.*;
+import compiler.lib.compile_framework.CompileFramework;
+
+import compiler.lib.generators.Generators;
+
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateWithArgs;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
-import static compiler.lib.template_framework.Library.CLASS_HOOK;
-import static compiler.lib.template_framework.Library.METHOD_HOOK;
-import static compiler.lib.template_framework.Library.IR_TEST_CLASS;
-import compiler.lib.template_framework.Library.IRTestClassInfo;
+
+import compiler.lib.template_library.IRTestClass;
 
 /**
  * This is a basic IR verification test, in combination with Generators for random input generation
@@ -78,10 +78,10 @@ public class TestIRTestClass {
         // Create the info required for the test class.
         // It is imporant that we pass the classpath to the Test-VM, so that it has access
         // to all compiled classes.
-        IRTestClassInfo info = new IRTestClassInfo(comp.getEscapedClassPathOfCompiledClasses(),
-                                                   "p.xyz", "InnerTest",
-                                                   List.of("compiler.lib.generators.*",
-                                                           "compiler.lib.verify.*"));
+        IRTestClass.Info info = new IRTestClass.Info(comp.getEscapedClassPathOfCompiledClasses(),
+                                                     "p.xyz", "InnerTest",
+                                                     List.of("compiler.lib.generators.*",
+                                                             "compiler.lib.verify.*"));
 
         // We define a Test-Template:
         // - static fields for inputs: INPUT_A and INPUT_B
@@ -144,6 +144,6 @@ public class TestIRTestClass {
         List<TemplateWithArgs> templates = ops.stream().map(op -> (TemplateWithArgs)template1.withArgs(op)).toList();
 
         // Create the test class, which runs all templates.
-        return IR_TEST_CLASS.withArgs(info, templates).render();
+        return IRTestClass.TEMPLATE.withArgs(info, templates).render();
     }
 }

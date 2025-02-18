@@ -21,31 +21,32 @@
  * questions.
  */
 
-package compiler.lib.template_framework;
+package compiler.lib.template_library;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import jdk.test.lib.Utils;
 
-import compiler.lib.generators.*;
+import compiler.lib.generators.Generators;
+import compiler.lib.generators.Generator;
+import compiler.lib.generators.RestrictableGenerator;
 
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.TemplateBinding;
+import compiler.lib.template_framework.TemplateBody;
 import static compiler.lib.template_framework.Template.body;
-import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.fuel;
 import static compiler.lib.template_framework.Template.setFuelCost;
+import static compiler.lib.template_framework.Template.defineName;
 import static compiler.lib.template_framework.Template.countNames;
 import static compiler.lib.template_framework.Template.sampleName;
 
 /**
- * The Library provides a collection of helpful Templates and Hooks.
  *
- * TODO more operators
- * TODO more templates
- * TODO configure choice and other randomization?
  */
-public abstract class Library {
+public abstract class Types {
     private static final Random RANDOM = Utils.getRandomInstance();
     private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
     private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
@@ -57,50 +58,6 @@ public abstract class Library {
         int i = RANDOM.nextInt(list.size());
         return list.get(i);
     }
-
-    public static final Hook CLASS_HOOK = new Hook("Class");
-    public static final Hook METHOD_HOOK = new Hook("Method");
-
-    public record IRTestClassInfo(String classpath, String packageName, String className, List<String> imports) {};
-
-    public static final Template.TwoArgs<IRTestClassInfo, List<TemplateWithArgs>> IR_TEST_CLASS =
-        Template.make("info", "templates", (IRTestClassInfo info, List<TemplateWithArgs> templates) -> body(
-            let("classpath", info.classpath),
-            let("packageName", info.packageName),
-            let("className", info.className),
-            """
-            package #packageName;
-
-            // --- IMPORTS start ---
-            import compiler.lib.ir_framework.*;
-            """,
-            info.imports.stream().map(i -> "import " + i + ";\n").toList(),
-            """
-            // --- IMPORTS end   ---
-
-            public class #className {
-
-            // --- CLASS_HOOK insertions start ---
-            """,
-            CLASS_HOOK.set(
-            """
-            // --- CLASS_HOOK insertions end   ---
-
-                public static void main() {
-                    TestFramework framework = new TestFramework(#className.class);
-                    framework.addFlags("-classpath", "#classpath");
-                    framework.start();
-                }
-
-            // --- LIST OF TEMPLATES start ---
-            """,
-            templates
-            ),
-            """
-            // --- LIST OF TEMPLATES end   ---
-            }
-            """
-        ));
 
     public enum ExpressionType {
         INT("int"),
@@ -137,7 +94,7 @@ public abstract class Library {
 
     public static final Template.OneArgs<String> GENERATE_BOOLEAN_USING_BOXING_INLINE =
         Template.make("name", (String name) -> body(
-            CLASS_HOOK.insert(DEFINE_STATIC_FIELD.withArgs(ExpressionType.BOOLEAN, $("flag"))),
+            Library.CLASS_HOOK.insert(DEFINE_STATIC_FIELD.withArgs(ExpressionType.BOOLEAN, $("flag"))),
             """
             // #name is constant, but only known after Incremental Boxing Inline (after parsing).
             Integer $box;
@@ -167,7 +124,7 @@ public abstract class Library {
                 GENERATE_BOOLEAN_USING_BOXING_INLINE.withArgs(name),
                 GENERATE_BOOLEAN_USING_EMPTY_LOOP.withArgs(name),
                 // This will never constant fold, as it just loads a boolean:
-                CLASS_HOOK.insert(DEFINE_STATIC_FIELD.withArgs(ExpressionType.BOOLEAN, name))
+                Library.CLASS_HOOK.insert(DEFINE_STATIC_FIELD.withArgs(ExpressionType.BOOLEAN, name))
             ))
         ));
 
@@ -184,8 +141,8 @@ public abstract class Library {
     public static final Template.TwoArgs<ExpressionType, String> GENERATE_EARLIER_VALUE =
         Template.make("type", "name", (ExpressionType type, String name) -> body(
             choice(List.of(
-              CLASS_HOOK.insert(DEFINE_STATIC_FIELD.withArgs(type, name)),
-              METHOD_HOOK.insert(GENERATE_EARLILER_VALUE_FROM_BOOLEAN.withArgs(type, name))
+              Library.CLASS_HOOK.insert(DEFINE_STATIC_FIELD.withArgs(type, name)),
+              Library.METHOD_HOOK.insert(GENERATE_EARLILER_VALUE_FROM_BOOLEAN.withArgs(type, name))
             ))
         ));
 
@@ -351,4 +308,5 @@ public abstract class Library {
         Template.make("type", (ExpressionType type) -> choice(operators(type)).instanciate());
 
     static { OPERATOR_EXPRESSION_BINDING.bind(OPERATOR_EXPRESSION); }
+
 }
