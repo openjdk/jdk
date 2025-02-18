@@ -614,8 +614,14 @@ class UMinVNode : public VectorNode {
   UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2 ,vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
   }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
+  virtual uint hash() const {
+    return (uintptr_t)in(1) + (uintptr_t)in(2) + Opcode();
+  }
 };
+
 
 //------------------------------MaxVNode--------------------------------------
 // Vector Max
@@ -630,7 +636,12 @@ class UMaxVNode : public VectorNode {
   UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
   }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
+  virtual uint hash() const {
+    return (uintptr_t)in(1) + (uintptr_t)in(2) + Opcode();
+  }
 };
 
 //------------------------------AbsVINode--------------------------------------
