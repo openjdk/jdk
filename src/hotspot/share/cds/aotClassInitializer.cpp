@@ -266,7 +266,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     }
   }
 
-  if (CDSConfig::is_dumping_invokedynamic()) {
+  if (CDSConfig::is_dumping_method_handles()) {
     // This table was created with the help of CDSHeapVerifier.
     // Also, some $Holder classes are needed. E.g., Invokers.<clinit> explicitly
     // initializes Invokers$Holder. Since Invokers.<clinit> won't be executed
