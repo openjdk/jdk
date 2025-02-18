@@ -258,7 +258,6 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
   case MetaspaceObj::ConstantPoolCacheType:
   case MetaspaceObj::AnnotationsType:
   case MetaspaceObj::MethodCountersType:
-  case MetaspaceObj::SharedClassPathEntryType:
   case MetaspaceObj::RecordComponentType:
     // These have no vtables.
     break;
