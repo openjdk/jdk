@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1609,6 +1609,13 @@ public class BasicScrollBarUI
 
         /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
+            // If scrollbar isn't visible, stop the timer
+            if (!scrollbar.isShowing()) {
+                ((Timer)e.getSource()).stop();
+                buttonListener.handledEvent = false;
+                scrollbar.setValueIsAdjusting(false);
+                return;
+            }
             // If frame is disabled and timer is started in mousePressed
             // and mouseReleased is not called, then timer will not be stopped
             // Stop the timer if frame is disabled
