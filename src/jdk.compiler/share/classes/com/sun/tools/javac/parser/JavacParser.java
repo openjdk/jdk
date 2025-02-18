@@ -1016,7 +1016,6 @@ public class JavacParser implements Parser {
                         log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UseOfUnderscoreNotAllowed);
                     }
                 }
-                var.endPos = S.prevToken().endPos;
                 pattern = toP(F.at(pos).BindingPattern(var));
             }
         }
@@ -3798,7 +3797,6 @@ public class JavacParser implements Parser {
         }
 
         int startPos = Position.NOPOS;
-        int endPos = S.prevToken().endPos;
         JCTree elemType = TreeInfo.innermostType(type, true);
         if (elemType.hasTag(IDENT)) {
             Name typeName = ((JCIdent) elemType).name;
@@ -3824,7 +3822,6 @@ public class JavacParser implements Parser {
         JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, type, init, declaredUsingVar));
         attach(result, dc);
         result.startPos = startPos;
-        result.endPos = endPos;
         return result;
     }
 
