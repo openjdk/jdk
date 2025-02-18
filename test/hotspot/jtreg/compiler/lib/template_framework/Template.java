@@ -29,8 +29,40 @@ import java.util.function.Supplier;
 import java.util.List;
 
 /**
- * TODO
- * TODO talk about hashtag replacement and arguments.
+ * {@link Template}s are used to generate code, based on {@link Token} which are rendered to {@link String}.
+ *
+ * <p>
+ * A {@link Template} can have zero or more arguments, and for each number of arguments there is an implementation
+ * (e.g. {@link ZeroArgs} for zero arguments and {@link TwoArgs} for two arguments). This allows the use of Generics
+ * for the template argument types, i.e. the template arguments can be type checked. Ideally, we would have used
+ * String Templates to inject these arguments into the strings. But since String Templates are not (yet) available,
+ * the {@link Template}s provide <strong>hashtag replacements</strong> in the Strings: the {@link Template} argument
+ * names are captured, and the argument values automatically replace any {@code "#name"} in the Strings. See the
+ * different overloads of {@link make} for examples. Additional hashtag replacements can be defined with {@link let}.
+ *
+ * <p>
+ * When using nested {@link Template}s, there can be collisions with identifiers (e.g. variable names and method names).
+ * For this, {@link Template}s provide <strong>dollar replacements</strong>, which automaticall rename any
+ * {@code "$name"} in the String with a {@code "name_ID"}, where the {@code "ID"} is unique for every use of
+ * a {@link Template}. The dollar replacement can also be captured with {@link $}, and passed to nested
+ * {@link Template}s, which allows sharing of these identifier names between {@link Template}s.
+ *
+ * <p>
+ * To render a {@link Template} to a {@link String}, one first has to apply the arguments (e.g. with
+ * {@link TwoArgs#withArgs}) and then the resulting {@link TemplateWithArgs} can either be used as a
+ * {@link Token} inside another {@link Template}, or rendered to a {@link String} with {@link TemplateWithArgs#render}.
+ *
+ * <p>
+ * A {@link TemplateBinding} allows the recurisve use of {@link Template}s. With the indirection of such a binding,
+ * a {@link Template} can reference itself. To ensure the termination of recursion, the templates are rendered
+ * with a certain amount of {@link fuel}, which is decreased at each {@link Template} nesting by a certain amount
+ * (can be changed with {@link setFuelCost}). Recursive templates are supposed to terminate once the {@link fuel}
+ * is depleated (i.e. reaches zero).
+ *
+ * <p>
+ * Code generation often involves defining fields and variables, which are then available inside a defined
+ * scope, and can be sampled in any nested scope. To allow the use of names for multiple applications (e.g.
+ * fields, variables, methods, etc) ... TODO
  */
 public interface Template {
 
@@ -43,7 +75,7 @@ public interface Template {
      * {@snippet lang=java :
      * var template = Template.make(() -> body(
      *     """
-     *     Multi-liine string or other tokens.
+     *     Multi-line string or other tokens.
      *     """
      * ));
      * }
@@ -66,7 +98,7 @@ public interface Template {
      * {@snippet lang=java :
      * var template = Template.make("a", (Integer a) -> body(
      *     """
-     *     Multi-liine string or other tokens.
+     *     Multi-line string or other tokens.
      *     We can use the hashtag replacement #a to directly insert the String value of a.
      *     """,
      *     "We can also use the captured parameter of a: " + a
@@ -93,7 +125,7 @@ public interface Template {
      * {@snippet lang=java :
      * var template = Template.make("a", "b", (Integer a, String b) -> body(
      *     """
-     *     Multi-liine string or other tokens.
+     *     Multi-line string or other tokens.
      *     We can use the hashtag replacement #a and #b to directly insert the String value of a and b.
      *     """,
      *     "We can also use the captured parameter of a and b: " + a + " and " + b
@@ -218,12 +250,12 @@ public interface Template {
     }
 
     /**
-     * Retrieves the renaming (dollar-replacement) of the {@code 'name'} for the
+     * Retrieves the dollar replacement of the {@code 'name'} for the
      * current {@link Template} that is being instanciated. It returns the same
-     * dollar-replacement as the string use {@code "$name"}.
+     * dollar replacement as the string use {@code "$name"}.
      *
      * Here an example where a {@link Template} creates a local variable {@code 'var'},
-     * with an implicit dollar-replacement, and then captures that dollar-replacement
+     * with an implicit dollar replacement, and then captures that dollar replacement
      * using {@link $} for the use inside a nested template.
      * {@snippet lang=java :
      * var template = Template.make(() -> body(
@@ -235,7 +267,7 @@ public interface Template {
      * }
      *
      * @param name The {@link String} name of the name.
-     * @return The dollar-replacement for the {@code 'name'}.
+     * @return The dollar replacement for the {@code 'name'}.
      */
     static String $(String name) {
         return Renderer.getCurrent().$(name);
