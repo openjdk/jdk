@@ -39,6 +39,7 @@
 
 // #define J2PCSC_DEBUG
 
+#undef dprintf // GNU, POSIX.1-2008
 #ifdef J2PCSC_DEBUG
 #define debug_printf(format, ...) printf(format, ##__VA_ARGS__)
 #else

@@ -692,7 +692,7 @@ void awt_output_flush() {
 static void wakeUp() {
     static char wakeUp_char = 'p';
     if (!isMainThread() && awt_pipe_inited) {
-        write ( AWT_WRITEPIPE, &wakeUp_char, 1 );
+        (void) write ( AWT_WRITEPIPE, &wakeUp_char, 1 );
     }
 }
 
