@@ -251,16 +251,18 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
       int status = _method_handle_invokers.at(cp_index);
       assert(status >= -1 && status <= 1, "oob tri-state");
       if (status == 0) {
-        if (_pool->uncached_klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_MethodHandle() &&
+        FMReference ref(_pool, cp_index);
+        Symbol* ref_klass = ref.klass_name(_pool);
+        if (ref_klass == vmSymbols::java_lang_invoke_MethodHandle() &&
             MethodHandles::is_signature_polymorphic_name(vmClasses::MethodHandle_klass(),
-                                                         _pool->uncached_name_ref_at(cp_index))) {
+                                                         ref.name(_pool))) {
           // we may need a resolved_refs entry for the appendix
           int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, cache_index);
           _initialized_method_entries.at(cache_index).set_resolved_references_index((u2)resolved_index);
           status = +1;
-        } else if (_pool->uncached_klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_VarHandle() &&
+        } else if (ref_klass == vmSymbols::java_lang_invoke_VarHandle() &&
                    MethodHandles::is_signature_polymorphic_name(vmClasses::VarHandle_klass(),
-                                                                _pool->uncached_name_ref_at(cp_index))) {
+                                                                ref.name(_pool))) {
           // we may need a resolved_refs entry for the appendix
           int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, cache_index);
           _initialized_method_entries.at(cache_index).set_resolved_references_index((u2)resolved_index);
@@ -289,7 +291,9 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
 }
 
 
-void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
+void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse,
+                                     // current method:
+                                     Method* method) {
   address p = bcp + offset;
   assert(p[-1] == Bytecodes::_invokedynamic, "not invokedynamic bytecode");
   if (!reverse) {
@@ -304,11 +308,12 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // must have a five-byte instruction format.  (Of course, other JVM
     // implementations can use the bytes for other purposes.)
     // Note: We use native_u4 format exclusively for 4-byte indexes.
-    Bytes::put_native_u4(p, (u2)_invokedynamic_index);
+    Bytes::put_native_u4(p, _invokedynamic_index);
     _invokedynamic_index++;
 
     // Collect invokedynamic information before creating ResolvedInvokeDynamicInfo array
-    _initialized_indy_entries.push(ResolvedIndyEntry((u2)resolved_index, (u2)cp_index));
+    _initialized_indy_entries.push(ResolvedIndyEntry(resolved_index,
+                                                     cp_index));
   } else {
     // Should do nothing since we are not patching this bytecode
     int cache_index = Bytes::get_native_u4(p);
@@ -319,6 +324,23 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     Bytes::put_Java_u2(p, (u2)cp_index);
   }
 }
+
+// add a new entry to the resolved_references map (for invokedynamic and invokehandle only)
+int Rewriter::add_invokedynamic_resolved_references_entry(int cp_index, int cache_index) {
+  assert(_resolved_reference_limit >= 0, "must add indy refs after first iteration");
+  int ref_index = _resolved_references_map.append(cp_index);  // many-to-one
+  assert(ref_index >= _resolved_reference_limit, "");
+  if (cache_index < 0 && cp_index != 0) {
+    assert(_pool->tag_at(cp_index).value() == JVM_CONSTANT_InvokeDynamic, "");
+  }
+  if (cache_index >= 0) {
+    // FIXME: why is this called "invokedynamic_references" if it is only for invokehandle?
+    assert(_pool->tag_at(cp_index).value() != JVM_CONSTANT_InvokeDynamic, "");
+    _invokedynamic_references_map.at_put_grow(ref_index, cache_index, -1);
+  }
+  return ref_index;
+}
+
 
 // Rewrite some ldc bytecodes to _fast_aldc
 void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
@@ -334,7 +356,9 @@ void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
         tag.is_string() ||
         (tag.is_dynamic_constant() &&
          // keep regular ldc interpreter logic for condy primitives
-         is_reference_type(Signature::basic_type(_pool->uncached_signature_ref_at(cp_index))))
+         is_reference_type(Signature::basic_type(
+           BootstrapReference(_pool, cp_index).signature(_pool)
+         )))
         ) {
       int ref_index = cp_entry_to_resolved_references(cp_index);
       if (is_wide) {
@@ -444,11 +468,12 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
           InstanceKlass* klass = method->method_holder();
           u2 bc_index = Bytes::get_Java_u2(bcp + prefix_length + 1);
           constantPoolHandle cp(thread, method->constants());
-          Symbol* ref_class_name = cp->klass_name_at(cp->uncached_klass_ref_index_at(bc_index));
+          FMReference ref(cp, bc_index);
+          Symbol* ref_class_name = ref.klass_name(cp);
 
           if (klass->name() == ref_class_name) {
-            Symbol* field_name = cp->uncached_name_ref_at(bc_index);
-            Symbol* field_sig = cp->uncached_signature_ref_at(bc_index);
+            Symbol* field_name = ref.name(cp);
+            Symbol* field_sig  = ref.signature(cp);
 
             fieldDescriptor fd;
             if (klass->find_field(field_name, field_sig, &fd) != nullptr) {
@@ -479,7 +504,7 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
         rewrite_method_reference(bcp, prefix_length+1, reverse);
         break;
       case Bytecodes::_invokedynamic:
-        rewrite_invokedynamic(bcp, prefix_length+1, reverse);
+        rewrite_invokedynamic(bcp, prefix_length+1, reverse, method);
         break;
       case Bytecodes::_ldc:
       case Bytecodes::_fast_aldc:  // if reverse=true
