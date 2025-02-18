@@ -2956,9 +2956,8 @@ void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
 
 void C2_MacroAssembler::reduce_mul_integral_v(Register dst, Register src1, VectorRegister src2,
                                               VectorRegister vtmp1, VectorRegister vtmp2,
-                                              BasicType bt, uint vector_length, VectorMask vm) {
+                                              BasicType bt, uint len, VectorMask vm) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
-  uint len = vector_length / type2aelembytes(bt);
   vsetvli_helper(bt, len);
 
   len /= 2;
@@ -2996,9 +2995,8 @@ void C2_MacroAssembler::reduce_mul_integral_v(Register dst, Register src1, Vecto
 
 void C2_MacroAssembler::reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, VectorRegister src2,
                                         VectorRegister vtmp1, VectorRegister vtmp2,
-                                        BasicType bt, uint vector_length, VectorMask vm) {
+                                        BasicType bt, uint len, VectorMask vm) {
   assert(bt == T_FLOAT || bt == T_DOUBLE, "unsupported element type");
-  uint len = vector_length / type2aelembytes(bt);
   vsetvli_helper(bt, len);
 
   len /= 2;
