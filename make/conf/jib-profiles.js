@@ -251,7 +251,7 @@ var getJibProfilesCommon = function (input, data) {
         dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf", "jmh", "jcov"],
         default_make_targets: ["product-bundles", "test-bundles", "static-libs-bundles"],
         configure_args: concat(
-            "--with-exclude-translations=es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
+            //        "--with-exclude-translations=es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-jvm-feature-shenandoahgc",
             "--disable-cds-archive-coh",
             versionArgs(input, common))
