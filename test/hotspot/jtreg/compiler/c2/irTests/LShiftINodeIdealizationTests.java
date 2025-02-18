@@ -37,7 +37,9 @@ public class LShiftINodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8" })
+    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8",
+                  "testDoubleShift1", "testDoubleShift2", "testDoubleShift3", "testDoubleShift4", "testDoubleShift5"
+    })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -66,6 +68,8 @@ public class LShiftINodeIdealizationTests {
         Asserts.assertEQ((a >>> 8) << 4, test6(a));
         Asserts.assertEQ(((a >> 4) & 0xFF) << 8, test7(a));
         Asserts.assertEQ(((a >>> 4) & 0xFF) << 8, test8(a));
+
+        assertDoubleShiftResult(a);
     }
 
     @Test
@@ -130,5 +134,49 @@ public class LShiftINodeIdealizationTests {
     // Checks ((x >>> 4) & 0xFF) << 8 => (x << 4) & 0xFF00
     public int test8(int x) {
         return ((x >>> 4) & 0xFF) << 8;
+    }
+
+    @DontCompile
+    public void assertDoubleShiftResult(int a) {
+        Asserts.assertEQ((a << 2) << 3, testDoubleShift1(a));
+        Asserts.assertEQ(((a << 2) << 3) << 1, testDoubleShift2(a));
+        Asserts.assertEQ((a << 31) << 1, testDoubleShift3(a));
+        Asserts.assertEQ((a << 1) << 31, testDoubleShift4(a));
+        Asserts.assertEQ(((a << 30) << 1) << 1, testDoubleShift5(a));
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT, "1"})
+    // Checks (x << 2) << 3 => x << 5
+    public int testDoubleShift1(int x) {
+        return (x << 2) << 3;
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT, "1"})
+    // Checks ((x << 2) << 3) << 1 => x << 6
+    public int testDoubleShift2(int x) {
+        return ((x << 2) << 3) << 1;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.LSHIFT })
+    // Checks (x << 31) << 1 => 0
+    public int testDoubleShift3(int x) {
+        return (x << 31) << 1;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.LSHIFT })
+    // Checks (x << 31) << 1 => 0
+    public int testDoubleShift4(int x) {
+        return (x << 31) << 1;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.LSHIFT })
+    // Checks ((x << 30) << 1) << 1 => 0
+    public int testDoubleShift5(int x) {
+        return ((x << 30) << 1) << 1;
     }
 }
