@@ -134,10 +134,10 @@ public class DisableSignatureSchemePerScopeTLS12 extends
 
         assertFalse(sigAlgsCertSS.contains(HANDSHAKE_DISABLED_SIG),
                 "Signature Scheme " + HANDSHAKE_DISABLED_SIG
-                + " isn't present in CertificateRequest");
+                + " present in CertificateRequest");
 
         assertFalse(sigAlgsCertSS.contains(CERTIFICATE_DISABLED_SIG),
                 "Signature Scheme " + CERTIFICATE_DISABLED_SIG
-                + " isn't present in CertificateRequest");
+                + " present in CertificateRequest");
     }
 }
