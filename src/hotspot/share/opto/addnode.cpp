@@ -995,22 +995,42 @@ const Type* XorINode::Value(PhaseGVN* phase) const {
   if (in1->eqv_uncast(in2)) {
     return add_id();
   }
-  // result of xor can only have bits sets where any of the
-  // inputs have bits set. lo can always become 0.
-  const TypeInt* t1i = t1->is_int();
-  const TypeInt* t2i = t2->is_int();
-  if ((t1i->_lo >= 0) &&
-      (t1i->_hi > 0)  &&
-      (t2i->_lo >= 0) &&
-      (t2i->_hi > 0)) {
-    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-    const TypeInt* t1x = TypeInt::make(0, round_down_power_of_2(t1i->_hi) + (round_down_power_of_2(t1i->_hi) - 1), t1i->_widen);
-    const TypeInt* t2x = TypeInt::make(0, round_down_power_of_2(t2i->_hi) + (round_down_power_of_2(t2i->_hi) - 1), t2i->_widen);
-    return t1x->meet(t2x);
-  }
   return AddNode::Value(phase);
 }
 
+// Given 2 non-negative values in the ranges [0, hi_0] and [0, hi_1], respectively. The bitwise
+// xor of these values should also be non-negative. This method calculates an upper bound.
+template<class S, class U>
+static S calc_xor_upper_bound_of_non_neg(const S hi_0, const S hi_1) {
+  assert(hi_0 >= 0, "must be non-negative");
+  assert(hi_1 >= 0, "must be non-negative");
+
+  // x ^ y cannot have any bit set that is higher than both the highest bits set in x and y
+  // x cannot have any bit set that is higher than the highest bit set in hi_0
+  // y cannot have any bit set that is higher than the highest bit set in hi_1
+
+  // We want to find a value that has all 1 bits everywhere up to and including
+  // the highest bits set in hi_0 as well as hi_1. For this, we can take the next
+  // power of 2 strictly greater than both hi values and subtract 1 from it.
+
+  // Example 1:
+  // hi_0 = 5 (0b0101)       hi_1=1 (0b0001)
+  //    (5|1)+1       = 0b0110
+  //    round_up_pow2 = 0b1000
+  //    -1            = 0b0111 = max
+
+  // Example 2 - this demonstrates need for the +1:
+  // hi_0 =  4 (0b0100)        hi_1=4 (0b0100)
+  //    (4|4)+1       = 0b0101
+  //    round_up_pow2 = 0b1000
+  //    -1            = 0b0111 = max
+  // Without the +1, round_up_pow2 would be 0b0100, resulting in 0b0011 as max
+
+  // Note: cast to unsigned happens before +1 to avoid signed overflow, and
+  // round_up is safe because high bit is unset (0 <= lo <= hi)
+
+  return round_up_power_of_2(U(hi_0 | hi_1) + 1) - 1;
+}
 
 //------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs IN THE CURRENT RING.  For
@@ -1021,16 +1041,23 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeInt *r0 = t0->is_int(); // Handy access
   const TypeInt *r1 = t1->is_int();
 
-  // Complementing a boolean?
-  if( r0 == TypeInt::BOOL && ( r1 == TypeInt::ONE
-                               || r1 == TypeInt::BOOL))
-    return TypeInt::BOOL;
+  if (r0->is_con() && r1->is_con()) {
+    // Constant fold: (c1 ^ c2) -> c3
+    return TypeInt::make(r0->get_con() ^ r1->get_con());
+  }
 
-  if( !r0->is_con() || !r1->is_con() ) // Not constants
-    return TypeInt::INT;        // Any integer, but still no symbols.
+  // At least one of the arguments is not constant
 
-  // Otherwise just XOR them bits.
-  return TypeInt::make( r0->get_con() ^ r1->get_con() );
+  if (r0->_lo >= 0 && r1->_lo >= 0) {
+      jint max = calc_xor_upper_bound_of_non_neg<jint, juint>(r0->_hi, r1->_hi);
+      return TypeInt::make(0, max, MAX2(r0->_widen, r1->_widen));
+  }
+
+  return TypeInt::INT;
+}
+
+jint XorINode::calc_max(const jint hi_0, const jint hi_1)  {
+  return calc_xor_upper_bound_of_non_neg<jint, juint>(hi_0, hi_1);
 }
 
 //=============================================================================
@@ -1039,12 +1066,23 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r0 = t0->is_long(); // Handy access
   const TypeLong *r1 = t1->is_long();
 
-  // If either input is not a constant, just return all integers.
-  if( !r0->is_con() || !r1->is_con() )
-    return TypeLong::LONG;      // Any integer, but still no symbols.
+  if (r0->is_con() && r1->is_con()) {
+    // Constant fold: (c1 ^ c2) -> c3
+    return TypeLong::make(r0->get_con() ^ r1->get_con());
+  }
 
-  // Otherwise just OR them bits.
-  return TypeLong::make( r0->get_con() ^ r1->get_con() );
+  // At least one of the arguments is not constant
+
+  if (r0->_lo >= 0 && r1->_lo >= 0) {
+      julong max = calc_xor_upper_bound_of_non_neg<jlong, julong>(r0->_hi, r1->_hi);
+      return TypeLong::make(0, max, MAX2(r0->_widen, r1->_widen));
+  }
+
+  return TypeLong::LONG;
+}
+
+jlong XorLNode::calc_max(const jlong hi_0, const jlong hi_1)  {
+  return calc_xor_upper_bound_of_non_neg<jlong, julong>(hi_0, hi_1);
 }
 
 Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1080,19 +1118,7 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   if (in1->eqv_uncast(in2)) {
     return add_id();
   }
-  // result of xor can only have bits sets where any of the
-  // inputs have bits set. lo can always become 0.
-  const TypeLong* t1l = t1->is_long();
-  const TypeLong* t2l = t2->is_long();
-  if ((t1l->_lo >= 0) &&
-      (t1l->_hi > 0)  &&
-      (t2l->_lo >= 0) &&
-      (t2l->_hi > 0)) {
-    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-    const TypeLong* t1x = TypeLong::make(0, round_down_power_of_2(t1l->_hi) + (round_down_power_of_2(t1l->_hi) - 1), t1l->_widen);
-    const TypeLong* t2x = TypeLong::make(0, round_down_power_of_2(t2l->_hi) + (round_down_power_of_2(t2l->_hi) - 1), t2l->_widen);
-    return t1x->meet(t2x);
-  }
+
   return AddNode::Value(phase);
 }
 
