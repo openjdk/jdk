@@ -37,16 +37,24 @@ public class LShiftLNodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = { "test3", "test4", "test5", "test6", "test7", "test8",
-                  "testDoubleShift1",
-                  "testDoubleShift2",
-                  "testDoubleShift3",
-                  "testDoubleShift4",
-                  "testDoubleShift5",
-                  "testDoubleShift6",
-                  "testDoubleShift7",
-    })
-    public void runMethod() {
+    @Run(test =
+             {
+                 "test3",
+                 "test4",
+                 "test5",
+                 "test6",
+                 "test7",
+                 "test8",
+                 "testDoubleShift1",
+                 "testDoubleShift2",
+                 "testDoubleShift3",
+                 "testDoubleShift4",
+                 "testDoubleShift5",
+                 "testDoubleShift6",
+                 "testDoubleShift7",
+             })
+    public void
+    runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
         long c = RunInfo.getRandom().nextLong();
@@ -136,51 +144,51 @@ public class LShiftLNodeIdealizationTests {
     }
 
     @Test
-    @IR(counts = { IRNode.LSHIFT, "1"})
+    @IR(counts = {IRNode.LSHIFT, "1"})
     // Checks (x << 2) << 3 => x << 5
     public long testDoubleShift1(long x) {
         return (x << 2L) << 3L;
     }
 
     @Test
-    @IR(counts = { IRNode.LSHIFT, "1"})
+    @IR(counts = {IRNode.LSHIFT, "1"})
     // Checks ((x << 2) << 3) << 1 => x << 6
     public long testDoubleShift2(long x) {
         return ((x << 2L) << 3L) << 1L;
     }
 
     @Test
-    @IR(failOn = { IRNode.LSHIFT })
+    @IR(failOn = {IRNode.LSHIFT})
     // Checks (x << 63) << 1 => 0
     public long testDoubleShift3(long x) {
         return (x << 63L) << 1L;
     }
 
     @Test
-    @IR(failOn = { IRNode.LSHIFT })
+    @IR(failOn = {IRNode.LSHIFT})
     // Checks (x << 1) << 63 => 0
     public long testDoubleShift4(long x) {
         return (x << 1L) << 63L;
     }
 
     @Test
-    @IR(failOn = { IRNode.LSHIFT })
+    @IR(failOn = {IRNode.LSHIFT})
     // Checks ((x << 62) << 1) << 1 => 0
     public long testDoubleShift5(long x) {
         return ((x << 62L) << 1L) << 1L;
     }
 
     @Test
-    @IR(failOn = { IRNode.MUL })
-    @IR(counts = { IRNode.LSHIFT, "1"})
+    @IR(failOn = {IRNode.MUL})
+    @IR(counts = {IRNode.LSHIFT, "1"})
     // Checks (x * 4) << 3 => x << 5
     public long testDoubleShift6(long x) {
         return (x * 4L) << 3L;
     }
 
     @Test
-    @IR(failOn = { IRNode.MUL })
-    @IR(counts = { IRNode.LSHIFT, "1"})
+    @IR(failOn = {IRNode.MUL})
+    @IR(counts = {IRNode.LSHIFT, "1"})
     // Checks (x << 3) * 4 => x << 5
     public long testDoubleShift7(long x) {
         return (x << 3L) * 4L;

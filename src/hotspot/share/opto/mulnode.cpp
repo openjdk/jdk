@@ -974,7 +974,7 @@ static int maskShiftAmount(PhaseGVN* phase, Node* shiftNode, int nBits) {
 // if con0 + con1 >= nbits => 0
 // if con0 + con1 < nbits => X << (con1 + con0)
 static Node* collapseDoubleShiftLeft(PhaseGVN* phase, Node* outer_shift, int con0, int nbits, BasicType bt) {
-  Node *inner_shift = outer_shift->in(1);
+  Node* inner_shift = outer_shift->in(1);
   int inner_shift_op = inner_shift->Opcode();
   if (inner_shift_op != Op_LShift(bt)) {
     return nullptr;
