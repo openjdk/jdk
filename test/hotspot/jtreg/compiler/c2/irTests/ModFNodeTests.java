@@ -41,7 +41,7 @@ public class ModFNodeTests {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "notConstant", "veryNotConstant"})
+    @Run(test = {"constant", "notConstant", "veryNotConstant", "unusedResult"})
     public void runMethod() {
         Asserts.assertEQ(constant(), q % 72.0f % 30.0f);
         Asserts.assertEQ(alsoConstant(), q % 31.432f);
@@ -49,6 +49,8 @@ public class ModFNodeTests {
         Asserts.assertTrue(Float.isNaN(nanRightConstant()));
         Asserts.assertEQ(notConstant(37.5f), 37.5f % 32.0f);
         Asserts.assertEQ(veryNotConstant(531.25f, 14.5f), 531.25f % 32.0f % 14.5f);
+        unusedResult(1.1f, 2.2f);
+        repeatedlyUnused(1.1d, 2.2d);
     }
 
     @Test
@@ -113,5 +115,20 @@ public class ModFNodeTests {
     @IR(counts = {IRNode.CON_F, "1"})
     public float veryNotConstant(float x, float y) {
         return x % 32.0f % y;
+    }
+
+    @Test
+    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    public void unusedResult(float x, float y) {
+        float unused = x % y;
+    }
+
+    @Test
+    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
+    public void repeatedlyUnused(double x, double y) {
+        double unused = 1.;
+        for (int i = 0; i < 100_000; i++) {
+            unused = x % y;
+        }
     }
 }

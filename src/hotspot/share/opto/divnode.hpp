@@ -159,6 +159,7 @@ public:
 class ModFloatingNode : public CallLeafNode {
 protected:
   Node* replace_with_con(PhaseGVN* phase, const Type* con);
+  Node* remove(PhaseGVN* phase);
 
 public:
   ModFloatingNode(Compile* C, const TypeFunc* tf, const char *name);

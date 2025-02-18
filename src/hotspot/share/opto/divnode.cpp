@@ -1516,6 +1516,11 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return nullptr;
   }
 
+  Node* dummy_node = remove(phase);
+  if (dummy_node != nullptr) {
+    return dummy_node;
+  }
+
   // Either input is TOP ==> the result is TOP
   const Type* t1 = phase->type(dividend());
   const Type* t2 = phase->type(divisor());
@@ -1559,6 +1564,11 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;
+  }
+
+  Node* dummy_node = remove(phase);
+  if (dummy_node != nullptr) {
+    return dummy_node;
   }
 
   // Either input is TOP ==> the result is TOP
@@ -1627,6 +1637,28 @@ Node* ModFloatingNode::replace_with_con(PhaseGVN* phase, const Type* con) {
   C->gvn_replace_by(this, C->top());
   C->remove_macro_node(this);
   disconnect_inputs(C);
+  return nullptr;
+}
+
+// Will remove the node if the result is not used, rewiring input to output directly.
+Node* ModFloatingNode::remove(PhaseGVN* phase) {
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  bool result_is_ignored = proj_out_or_null(TypeFunc::Parms) == nullptr;
+  if (igvn != nullptr && result_is_ignored) {
+    int projections[] = {
+        TypeFunc::Control,
+        TypeFunc::I_O,
+        TypeFunc::Memory,
+        TypeFunc::FramePtr,
+        TypeFunc::ReturnAdr,
+    };
+    for(int projection: projections) {
+      if (proj_out_or_null(projection) != nullptr) {
+        igvn->replace_node(proj_out(projection), in(projection));
+      }
+    }
+    return new ConINode(TypeInt::ZERO);
+  }
   return nullptr;
 }
 
