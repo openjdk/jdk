@@ -779,6 +779,7 @@ public class Modules extends JCTree.Visitor {
 
     class ModuleVisitor extends JCTree.Visitor {
         private ModuleSymbol sym;
+        private Lint lint;
         private final Set<ModuleSymbol> allRequires = new HashSet<>();
         private final Map<PackageSymbol,List<ExportsDirective>> allExports = new HashMap<>();
         private final Map<PackageSymbol,List<OpensDirective>> allOpens = new HashMap<>();
@@ -786,6 +787,7 @@ public class Modules extends JCTree.Visitor {
         @Override
         public void visitModuleDef(JCModuleDecl tree) {
             sym = Assert.checkNonNull(tree.sym);
+            lint = Modules.this.lint.augment(sym);
 
             if (tree.getModuleType() == ModuleKind.OPEN) {
                 sym.flags.add(ModuleFlags.OPEN);
@@ -817,8 +819,7 @@ public class Modules extends JCTree.Visitor {
                     if (msym == syms.java_base &&
                         !preview.participatesInPreview(syms, sym)) {
                         if (source.compareTo(Source.JDK10) >= 0) {
-                            preview.checkSourceLevel(tree.pos(),
-                                                     Feature.JAVA_BASE_TRANSITIVE);
+                            preview.checkSourceLevel(lint, tree.pos(), Feature.JAVA_BASE_TRANSITIVE);
                         }
                     }
                     flags.add(RequiresFlag.TRANSITIVE);
