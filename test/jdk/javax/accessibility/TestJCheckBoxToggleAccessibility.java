@@ -67,9 +67,9 @@ public class TestJCheckBoxToggleAccessibility {
                 <ol style="margin-bottom: 0">
                   <li>Enable Screen magnifier on the Mac:
                    <b>System Settings</b> -> <b>Accessibility</b> ->
-                   <b>Hover Text</b> -> <b>Enable Hover Text</b><br>
-                   Default Hover Text Activation Modifier is <kbd>Command</kbd> key.
-                  <li>Move focus back to test application
+                   <b>Hover Text</b> -> Enable <b>Hover Text</b><br>
+                   Default Hover Text Activation Modifier is <kbd>Command</kbd> key
+                  <li>Move focus back to the test application and perform the following tests
 
                   <ul style="margin-bottom: 0">
                     <li>Test <i>CheckBox</i> states with Screen Magnifier
@@ -97,6 +97,7 @@ public class TestJCheckBoxToggleAccessibility {
                         <li>If Screen Magnifier behaviour is incorrect, press <b>Fail</b>
                       </ol>
                   </ul>
+                  <li>Disable <b>Hover Text</b> (optionally) in the Settings
                 </ol>
 
                 <p>Press <b>Pass</b> if you are able to hear correct VoiceOver announcements and
