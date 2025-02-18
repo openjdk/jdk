@@ -31,7 +31,7 @@ import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import org.openide.util.ImageUtilities;
 
-public class ShowLiveRangesAction extends AbstractAction implements PropertyChangeListener  {
+public class ShowLiveRangesAction extends AbstractAction implements PropertyChangeListener {
 
     private boolean selected;
     private AbstractAction parentAction;
