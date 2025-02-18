@@ -56,6 +56,9 @@ class LogSelectionList : public StackObj {
   bool parse(const char* str, outputStream* errstream = nullptr);
   LogLevelType level_for(const LogTagSet& ts) const;
 
+  const LogSelection* selections() const { return _selections; }
+  size_t number_of_selections()  const { return _nselections; }
+
   // Verify that each selection actually selects something.
   // Returns false if some invalid selection was found. If given an outputstream,
   // this function will list all the invalid selections on the stream.

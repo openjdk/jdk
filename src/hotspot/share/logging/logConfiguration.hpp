@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,8 @@ class LogConfiguration : public AllStatic {
   static void set_async_mode(bool value) {
     _async_mode = value;
   }
+
+  DEBUG_ONLY(static void remove_wildcard_deathtests(LogLevelType* level, const LogSelectionList& selections, LogTagSet* ts));
 };
 
 #endif // SHARE_LOGGING_LOGCONFIGURATION_HPP
