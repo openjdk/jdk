@@ -611,12 +611,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
 
     case C1StubId::is_instance_of_id:
       {
-        // Called like a C function.
-#if !defined(ABI_ELFv2)
-        // ABIv1 requires a FunctionDescriptor with updated entry after relocating.
-        __ relocate(relocInfo::internal_word_type, /* plain address */ 2); // entry at offset 0
-        __ emit_fd();
-#endif
+        // Called like a C function, but without FunctionDescriptor (see LIR_Assembler::rt_call).
 
         // Arguments and return value.
         Register mirror = R3_ARG1;
