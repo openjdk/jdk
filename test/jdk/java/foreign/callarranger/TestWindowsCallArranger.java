@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,6 @@
  * @run testng TestWindowsCallArranger
  */
 
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.LinkerOptions;
@@ -45,17 +42,19 @@ import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.x64.windows.CallArranger;
 import org.testng.annotations.Test;
 
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodType;
 
 import static java.lang.foreign.Linker.Option.firstVariadicArg;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static jdk.internal.foreign.abi.Binding.*;
-import static jdk.internal.foreign.abi.Binding.copy;
-import static jdk.internal.foreign.abi.x64.X86_64Architecture.*;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.Regs.*;
-import static platform.PlatformLayouts.Win64.*;
-
+import static jdk.internal.foreign.abi.x64.X86_64Architecture.StorageType;
+import static jdk.internal.foreign.abi.x64.X86_64Architecture.stackStorage;
 import static org.testng.Assert.*;
+import static platform.PlatformLayouts.Win64.*;
 
 public class TestWindowsCallArranger extends CallArrangerTestBase {
 

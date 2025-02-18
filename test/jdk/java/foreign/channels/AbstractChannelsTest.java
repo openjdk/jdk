@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  */
 
+import jdk.test.lib.RandomFactory;
+import org.testng.annotations.DataProvider;
+
 import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -31,11 +34,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import jdk.test.lib.RandomFactory;
-import org.testng.annotations.*;
-
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Not a test, but infra for channel tests.

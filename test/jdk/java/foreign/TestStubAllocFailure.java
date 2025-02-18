@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,18 @@
  *   TestStubAllocFailure
  */
 
-import java.lang.foreign.*;
+import org.testng.annotations.Test;
+
+import java.io.IOException;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
-import org.testng.annotations.Test;
 
 import static org.testng.Assert.fail;
 

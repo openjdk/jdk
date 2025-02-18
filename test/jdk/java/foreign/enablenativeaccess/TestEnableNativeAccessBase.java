@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,13 @@
  * questions.
  */
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.stream.Stream;
-
 import jdk.test.lib.process.OutputAnalyzer;
 
-import static org.testng.Assert.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static org.testng.Assert.assertTrue;
 
 public class TestEnableNativeAccessBase {
     static final String MODULE_PATH = System.getProperty("jdk.module.path");

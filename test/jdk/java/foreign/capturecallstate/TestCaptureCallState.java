@@ -44,9 +44,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
-import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 

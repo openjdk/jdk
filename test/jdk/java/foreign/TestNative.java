@@ -27,12 +27,15 @@
  * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestNative
  */
 
-import java.lang.foreign.*;
-import java.lang.foreign.MemoryLayout.PathElement;
-
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;

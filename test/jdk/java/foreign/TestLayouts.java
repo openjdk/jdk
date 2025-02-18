@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,15 @@
  * @run testng TestLayouts
  */
 
-import java.lang.foreign.*;
+import org.testng.annotations.*;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.PaddingLayout;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.StructLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -35,8 +42,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.LongFunction;
 import java.util.stream.Stream;
-
-import org.testng.annotations.*;
 
 import static java.lang.foreign.ValueLayout.*;
 import static org.testng.Assert.*;

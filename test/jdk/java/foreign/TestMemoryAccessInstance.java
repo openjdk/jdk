@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,15 @@
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_SEGMENT_FORCE_EXACT=true --enable-native-access=ALL-UNNAMED TestMemoryAccessInstance
  */
 
-import java.lang.foreign.MemorySegment;
+import org.testng.SkipException;
+import org.testng.annotations.*;
+
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.testng.annotations.*;
-import org.testng.SkipException;
 import static org.testng.Assert.*;
 
 public class TestMemoryAccessInstance {

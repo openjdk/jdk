@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Institute of Software, Chinese Academy of Sciences.
  * All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -36,31 +36,28 @@
  * @run testng TestRISCV64CallArranger
  */
 
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.LinkerOptions;
-import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64CallArranger;
 import jdk.internal.foreign.abi.StubLocations;
 import jdk.internal.foreign.abi.VMStorage;
+import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64CallArranger;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodType;
 
 import static java.lang.foreign.Linker.Option.firstVariadicArg;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static jdk.internal.foreign.abi.Binding.*;
-import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.*;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.Regs.*;
+import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.StorageType;
+import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.stackStorage;
+import static org.testng.Assert.*;
 import static platform.PlatformLayouts.RISCV64.*;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
 
 public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
