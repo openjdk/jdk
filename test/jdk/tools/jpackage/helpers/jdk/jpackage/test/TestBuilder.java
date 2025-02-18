@@ -249,10 +249,11 @@ final class TestBuilder implements AutoCloseable {
                 .sorted(Comparator.comparing(Method::getName));
     }
 
-    private Stream<String> cmdLineArgValueToMethodNames(String v) {
-        List<String> result = new ArrayList<>();
+    private Stream<Method> getJavaMethodsFromArg(String argValue) {
+        final List<Method> methods = new ArrayList<>();
+
         String defaultClassName = null;
-        for (String token : v.split(",")) {
+        for (String token : argValue.split(",")) {
             Class<?> testSet = probeClass(token);
             if (testSet != null) {
                 if (testMethodSupplier.isTestClass(testSet)) {
@@ -263,11 +264,9 @@ final class TestBuilder implements AutoCloseable {
                 // from the class with @Test annotation removing name duplicates.
                 // Overloads will be handled at the next phase of processing.
                 defaultClassName = token;
-                result.addAll(Stream.of(testSet.getMethods())
+                methods.addAll(Stream.of(testSet.getMethods())
                         .filter(m -> m.isAnnotationPresent(Test.class))
                         .filter(testMethodSupplier::isEnabled)
-                        .map(Method::getName).distinct()
-                        .map(name -> String.join(".", token, name))
                         .toList());
 
                 continue;
@@ -283,9 +282,11 @@ final class TestBuilder implements AutoCloseable {
             } else {
                 qualifiedMethodName = String.join(".", defaultClassName, token);
             }
-            result.add(qualifiedMethodName);
+            methods.addAll(getJavaMethodFromString(qualifiedMethodName));
         }
-        return result.stream();
+
+        trace(String.format("%s -> %s", argValue, methods));
+        return methods.stream();
     }
 
     private List<Method> getJavaMethodFromString(String qualifiedMethodName) {
@@ -300,14 +301,6 @@ final class TestBuilder implements AutoCloseable {
         } catch (NoSuchMethodException ex) {
             throw new ParseException(ex.getMessage() + ";", ex);
         }
-    }
-
-    private Stream<Method> getJavaMethodsFromArg(String argValue) {
-        var methods = cmdLineArgValueToMethodNames(argValue)
-                .map(this::getJavaMethodFromString)
-                .flatMap(List::stream).toList();
-        trace(String.format("%s -> %s", argValue, methods));
-        return methods.stream();
     }
 
     private Stream<MethodCall> toMethodCalls(Method method) throws

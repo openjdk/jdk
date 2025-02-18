@@ -256,12 +256,17 @@ final class TestMethodSupplier {
         }
 
         final Class<?> execClass = exec.getDeclaringClass();
-        final var supplierFuncName = a.value();
+        final String supplierFuncName;
+        if (a.value().isEmpty()) {
+            supplierFuncName = exec.getName();
+        } else {
+            supplierFuncName = a.value();
+        }
 
         final MethodQuery methodQuery;
-        if (!a.value().contains(".")) {
+        if (!supplierFuncName.contains(".")) {
             // No class name specified
-            methodQuery = new MethodQuery(execClass.getName(), a.value());
+            methodQuery = new MethodQuery(execClass.getName(), supplierFuncName);
         } else {
             methodQuery = MethodQuery.fromQualifiedMethodName(supplierFuncName);
         }
