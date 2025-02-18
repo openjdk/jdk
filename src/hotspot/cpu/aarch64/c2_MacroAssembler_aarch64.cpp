@@ -1991,14 +1991,14 @@ void C2_MacroAssembler::neon_reduce_add_integral(Register dst, BasicType bt,
 // Vector reduction multiply for integral type with ASIMD instructions.
 // Note: temporary registers vtmp1 and vtmp2 are not used in some cases.
 // Clobbers: rscratch1
-void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
-                                                 Register isrc, FloatRegister vsrc,
-                                                 unsigned vector_length_in_bytes,
-                                                 FloatRegister vtmp1, FloatRegister vtmp2) {
+void C2_MacroAssembler::reduce_mul_integral_le128b(Register dst, BasicType bt, Register isrc,
+                                                   FloatRegister vsrc,
+                                                   unsigned vector_length_in_bytes,
+                                                   FloatRegister vtmp1, FloatRegister vtmp2) {
   assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
   bool isQ = vector_length_in_bytes == 16;
 
-  BLOCK_COMMENT("neon_reduce_mul_integral {");
+  BLOCK_COMMENT("reduce_mul_integral_le128b {");
     switch(bt) {
       case T_BYTE:
         if (isQ) {
@@ -2066,41 +2066,93 @@ void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
         assert(false, "unsupported");
         ShouldNotReachHere();
     }
-  BLOCK_COMMENT("} neon_reduce_mul_integral");
+  BLOCK_COMMENT("} reduce_mul_integral_le128b");
+}
+
+// Vector reduction multiply for integral type with SVE instructions. Multiplies halves of the
+// source vector to get to a 128b vector that fits into a SIMD&FP register. After that point ASIMD
+// instructions are used. Note: temporary registers vtmp1 and vtmp2 are not used in some cases.
+// Clobbers: rscratch1
+void C2_MacroAssembler::reduce_mul_integral_gt128b(Register dst, BasicType bt, Register isrc,
+                                                   FloatRegister vsrc,
+                                                   unsigned vector_length_in_bytes,
+                                                   FloatRegister vtmp1, FloatRegister vtmp2,
+                                                   PRegister pgtmp) {
+  assert(vector_length_in_bytes > FloatRegister::neon_vl, "ASIMD impl should be used instead");
+  assert(vector_length_in_bytes <= FloatRegister::sve_vl_max, "unsupported vector length");
+  assert(is_power_of_2(vector_length_in_bytes), "unsupported vector length");
+
+  BLOCK_COMMENT("reduce_mul_integral_gt128b {");
+  while (vector_length_in_bytes > FloatRegister::neon_vl) {
+    unsigned vector_length = vector_length_in_bytes / type2aelembytes(bt);
+    sve_gen_mask_imm(pgtmp, bt, vector_length / 2);
+    // Shuffle the upper half elements of the register to the right.
+    sve_movprfx(vtmp1, vsrc);
+    sve_ext(vtmp1, vsrc, vector_length_in_bytes / 2);
+    sve_mul(vsrc, elemType_to_regVariant(bt), pgtmp, vtmp1);
+    vector_length_in_bytes = vector_length_in_bytes / 2;
+  }
+
+  reduce_mul_integral_le128b(dst, bt, isrc, vsrc, FloatRegister::neon_vl, vtmp1, vtmp2);
+  BLOCK_COMMENT("} reduce_mul_integral_gt128b");
 }
 
 // Vector reduction multiply for floating-point type with ASIMD instructions.
-void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
-                                           FloatRegister fsrc, FloatRegister vsrc,
-                                           unsigned vector_length_in_bytes,
-                                           FloatRegister vtmp) {
+void C2_MacroAssembler::reduce_mul_fp_le128b(FloatRegister dst, BasicType bt, FloatRegister fsrc,
+                                             FloatRegister vsrc, unsigned vector_length_in_bytes,
+                                             FloatRegister vtmp) {
   assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
   bool isQ = vector_length_in_bytes == 16;
 
-  BLOCK_COMMENT("neon_reduce_mul_fp {");
-    switch(bt) {
-      case T_FLOAT:
-        fmuls(dst, fsrc, vsrc);
-        ins(vtmp, S, vsrc, 0, 1);
-        fmuls(dst, dst, vtmp);
-        if (isQ) {
-          ins(vtmp, S, vsrc, 0, 2);
-          fmuls(dst, dst, vtmp);
-          ins(vtmp, S, vsrc, 0, 3);
-          fmuls(dst, dst, vtmp);
-         }
-        break;
-      case T_DOUBLE:
-        assert(isQ, "unsupported");
-        fmuld(dst, fsrc, vsrc);
-        ins(vtmp, D, vsrc, 0, 1);
-        fmuld(dst, dst, vtmp);
-        break;
-      default:
-        assert(false, "unsupported");
-        ShouldNotReachHere();
+  BLOCK_COMMENT("reduce_mul_fp_le128b {");
+  switch (bt) {
+  case T_FLOAT:
+    fmuls(dst, fsrc, vsrc);
+    ins(vtmp, S, vsrc, 0, 1);
+    fmuls(dst, dst, vtmp);
+    if (isQ) {
+      ins(vtmp, S, vsrc, 0, 2);
+      fmuls(dst, dst, vtmp);
+      ins(vtmp, S, vsrc, 0, 3);
+      fmuls(dst, dst, vtmp);
     }
-  BLOCK_COMMENT("} neon_reduce_mul_fp");
+    break;
+  case T_DOUBLE:
+    assert(isQ, "unsupported");
+    fmuld(dst, fsrc, vsrc);
+    ins(vtmp, D, vsrc, 0, 1);
+    fmuld(dst, dst, vtmp);
+    break;
+  default:
+    assert(false, "unsupported");
+    ShouldNotReachHere();
+  }
+  BLOCK_COMMENT("} reduce_mul_fp_le128b");
+}
+
+// Vector reduction multiply for floating-point type with SVE instructions. Multiplies halves of the
+// source vector to get to a 128b vector that fits into a SIMD&FP register. After that point ASIMD
+// instructions are used.
+void C2_MacroAssembler::reduce_mul_fp_gt128b(FloatRegister dst, BasicType bt, FloatRegister fsrc,
+                                             FloatRegister vsrc, unsigned vector_length_in_bytes,
+                                             FloatRegister vtmp, PRegister pgtmp) {
+  assert(vector_length_in_bytes > FloatRegister::neon_vl, "ASIMD impl should be used instead");
+  assert(vector_length_in_bytes <= FloatRegister::sve_vl_max, "unsupported vector length");
+  assert(is_power_of_2(vector_length_in_bytes), "unsupported vector length");
+
+  BLOCK_COMMENT("reduce_mul_fp_gt128b {");
+  while (vector_length_in_bytes > FloatRegister::neon_vl) {
+    unsigned vector_length = vector_length_in_bytes / type2aelembytes(bt);
+    // Shuffle the upper half elements of the register to the right.
+    sve_gen_mask_imm(pgtmp, bt, vector_length / 2);
+    sve_movprfx(vtmp, vsrc);
+    sve_ext(vtmp, vsrc, vector_length_in_bytes / 2);
+    sve_fmul(vsrc, elemType_to_regVariant(bt), pgtmp, vtmp);
+    vector_length_in_bytes = vector_length_in_bytes / 2;
+  }
+
+  reduce_mul_fp_le128b(dst, bt, fsrc, vsrc, FloatRegister::neon_vl, vtmp);
+  BLOCK_COMMENT("} reduce_mul_fp_gt128b");
 }
 
 // Helper to select logical instruction
