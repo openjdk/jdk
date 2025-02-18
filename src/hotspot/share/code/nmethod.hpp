@@ -333,6 +333,8 @@ class nmethod : public CodeBlob {
 #endif
           );
 
+  nmethod(nmethod& nm);
+
   // helper methods
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
 
@@ -490,6 +492,8 @@ public:
                               JVMCINMethodData* jvmci_data = nullptr
 #endif
   );
+
+  static nmethod* replace_nmethod(nmethod* nm, int comp_level_override=-1);
 
   static nmethod* new_native_nmethod(const methodHandle& method,
                                      int compile_id,

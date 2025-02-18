@@ -864,6 +864,12 @@ ImmutableOopMapSet* ImmutableOopMapSet::build_from(const OopMapSet* oopmap_set) 
   return builder.build();
 }
 
+ImmutableOopMapSet* ImmutableOopMapSet::clone() const {
+  address buffer = NEW_C_HEAP_ARRAY(unsigned char, _size, mtCode);
+  memcpy(buffer, (address)this, _size);
+  return (ImmutableOopMapSet*)buffer;
+}
+
 void ImmutableOopMapSet::operator delete(void* p) {
   FREE_C_HEAP_ARRAY(unsigned char, p);
 }
