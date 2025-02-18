@@ -30,6 +30,7 @@ import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
 import java.security.Key;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.net.ssl.*;
 import sun.security.util.DisabledAlgorithmConstraints;
 import static sun.security.util.DisabledAlgorithmConstraints.*;
@@ -42,11 +43,11 @@ import static sun.security.util.DisabledAlgorithmConstraints.*;
  */
 final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
-    private static final AlgorithmConstraints tlsDisabledAlgConstraints =
+    private static final DisabledAlgorithmConstraints tlsDisabledAlgConstraints =
             new DisabledAlgorithmConstraints(PROPERTY_TLS_DISABLED_ALGS,
                     new SSLAlgorithmDecomposer());
 
-    private static final AlgorithmConstraints x509DisabledAlgConstraints =
+    private static final DisabledAlgorithmConstraints x509DisabledAlgConstraints =
             new DisabledAlgorithmConstraints(PROPERTY_CERTPATH_DISABLED_ALGS,
                     new SSLAlgorithmDecomposer(true));
 
@@ -56,11 +57,11 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     private final boolean enabledX509DisabledAlgConstraints;
 
     // the default algorithm constraints
-    static final AlgorithmConstraints DEFAULT =
+    static final SSLAlgorithmConstraints DEFAULT =
                         new SSLAlgorithmConstraints(null, true);
 
     // the default SSL only algorithm constraints
-    static final AlgorithmConstraints DEFAULT_SSL_ONLY =
+    static final SSLAlgorithmConstraints DEFAULT_SSL_ONLY =
                         new SSLAlgorithmConstraints(null, false);
 
     private SSLAlgorithmConstraints(AlgorithmConstraints userSpecifiedConstraints,
@@ -84,11 +85,11 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
      * @param userSpecifiedConstraints additional constraints to check
      * @return a SSLAlgorithmConstraints instance
      */
-    static AlgorithmConstraints wrap(AlgorithmConstraints userSpecifiedConstraints) {
+    static SSLAlgorithmConstraints wrap(AlgorithmConstraints userSpecifiedConstraints) {
         return wrap(userSpecifiedConstraints, true);
     }
 
-    private static AlgorithmConstraints wrap(
+    private static SSLAlgorithmConstraints wrap(
             AlgorithmConstraints userSpecifiedConstraints,
             boolean withDefaultCertPathConstraints) {
         if (nullIfDefault(userSpecifiedConstraints) == null) {
@@ -199,22 +200,22 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
         if (peerSpecifiedConstraints != null) {
             permitted = peerSpecifiedConstraints.permits(
-                                    primitives, algorithm, parameters);
+                    primitives, algorithm, parameters);
         }
 
         if (permitted && userSpecifiedConstraints != null) {
             permitted = userSpecifiedConstraints.permits(
-                                    primitives, algorithm, parameters);
+                    primitives, algorithm, parameters);
         }
 
         if (permitted) {
             permitted = tlsDisabledAlgConstraints.permits(
-                                    primitives, algorithm, parameters);
+                    primitives, algorithm, parameters);
         }
 
         if (permitted && enabledX509DisabledAlgConstraints) {
             permitted = x509DisabledAlgConstraints.permits(
-                                    primitives, algorithm, parameters);
+                    primitives, algorithm, parameters);
         }
 
         return permitted;
@@ -252,27 +253,34 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
         if (peerSpecifiedConstraints != null) {
             permitted = peerSpecifiedConstraints.permits(
-                                    primitives, algorithm, key, parameters);
+                    primitives, algorithm, key, parameters);
         }
 
         if (permitted && userSpecifiedConstraints != null) {
             permitted = userSpecifiedConstraints.permits(
-                                    primitives, algorithm, key, parameters);
+                    primitives, algorithm, key, parameters);
         }
 
         if (permitted) {
             permitted = tlsDisabledAlgConstraints.permits(
-                                    primitives, algorithm, key, parameters);
+                    primitives, algorithm, key, parameters);
         }
 
         if (permitted && enabledX509DisabledAlgConstraints) {
             permitted = x509DisabledAlgConstraints.permits(
-                                    primitives, algorithm, key, parameters);
+                    primitives, algorithm, key, parameters);
         }
 
         return permitted;
     }
 
+    // Checks if algorithm is disabled for the given TLS scopes.
+    boolean permits(String algorithm, Set<SSLCryptoScope> scopes) {
+        return tlsDisabledAlgConstraints.permits(algorithm,
+                scopes.stream()
+                .map(SSLCryptoScope::name)
+                .collect(Collectors.toSet()));
+    }
 
     private static class SupportedSignatureAlgorithmConstraints
                                     implements AlgorithmConstraints {

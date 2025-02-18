@@ -729,11 +729,27 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # This is in addition to the jdk.certpath.disabledAlgorithms property above.
 #
 # See the specification of "jdk.certpath.disabledAlgorithms" for the
-# syntax of the disabled algorithm string. Additionally, TLS cipher suites
-# can be disabled with this property using one or more "*" wildcard characters.
-# For example, "TLS_RSA_*" disables all cipher suites that start with
-# "TLS_RSA_". Only cipher suites starting with "TLS_" are allowed to have
-# wildcard characters.
+# syntax of the disabled algorithm string.
+#
+# Additional TLS-specific syntax supported:
+#
+#   - TLS cipher suites can be disabled with this property using one or more
+#     "*" wildcard characters. For example, "TLS_RSA_*" disables all cipher
+#     suites that start with "TLS_RSA_". Only cipher suites starting with
+#     "TLS_" are allowed to have wildcard characters.
+#
+#   - TLS protocol specific usage constraints are supported by this property:
+#
+#     UsageConstraint:
+#       usage [HANDSHAKE] [CERTIFICATE]
+#
+#     HANDSHAKE restricts algorithm to be used for signing TSL handshake.
+#     CERTIFICATE restricts algorithm to be used for signatures in certificates.
+#     These constraints can't be mixed with any other usage constraints for a
+#     single algorithm, they also can't be linked with other constraints by an
+#     ampersand '&'.
+#     See https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.3 for more
+#     information on signatures used in TLS handshake and in certificates.
 #
 # Note: The algorithm restrictions do not apply to trust anchors or
 # self-signed certificates.
@@ -743,7 +759,7 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
-#       rsa_pkcs1_sha1, secp224r1, TLS_RSA_*
+#       secp224r1, TLS_RSA_*, rsa_pkcs1_sha1 usage handshake
 jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
     MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
     ECDH, TLS_RSA_*
