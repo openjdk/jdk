@@ -132,7 +132,9 @@ class LogConfiguration : public AllStatic {
   static bool is_async_mode() { return _async_mode; }
   static void set_async_mode(bool value) {
     _async_mode = value;
-  }
+  };;
+
+  DEBUG_ONLY(static void remove_wildcard_deathtests(LogLevelType* level, const LogSelectionList& selections, LogTagSet* ts));
 };
 
 #endif // SHARE_LOGGING_LOGCONFIGURATION_HPP

@@ -250,6 +250,8 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     LogLevelType level = selections.level_for(*ts);
 
+    DEBUG_ONLY(remove_wildcard_deathtests(&level, selections, ts));
+
     // Ignore tagsets that do not, and will not log on the output
     if (!ts->has_output(output) && (level == LogLevel::NotMentioned || level == LogLevel::Off)) {
       on_level[LogLevel::Off]++;
@@ -716,3 +718,38 @@ void LogConfiguration::notify_update_listeners() {
 }
 
 bool LogConfiguration::_async_mode = false;
+
+
+#ifdef assert
+void LogConfiguration::remove_wildcard_deathtests(LogLevelType* level, const LogSelectionList& selections, LogTagSet* ts) {
+  // Some UL tags (deathtest, deathtest2) are used for testing which results in the VM crashing.
+  // We want to avoid any wildcard selections from crashing the VM.
+  // We avoid this by explicitly ruling out wildcards for these 2 tags.
+  bool contains_deathtest = ts->contains(LogTagType::_deathtest);
+  bool contains_deathtest2 = ts->contains(LogTagType::_deathtest2);
+  if (*level > LogLevelType::Off && *level != LogLevel::NotMentioned &&
+      (contains_deathtest || contains_deathtest2)) {
+    bool ok = false;
+
+    LogTagType taglist[5] = {LogTag::_deathtest, LogTag::__NO_TAG, LogTag::__NO_TAG,
+                             LogTag::__NO_TAG, LogTag::__NO_TAG};
+    assert(!(contains_deathtest && contains_deathtest2), "Only one or the other, never both");
+    if (contains_deathtest2) {
+      taglist[0] = LogTag::_deathtest2;
+    }
+
+    const LogSelection* selarr = selections.selections();
+    size_t n = selections.number_of_selections();
+    for (size_t i = 0; i < n; i++) {
+      if (selarr[i].consists_of(taglist)) {
+        ok = true;
+        break;
+      }
+    }
+    if (!ok) {
+      // Wildcard detected, lie to the rest of UL.
+      *level = LogLevel::Off;
+    }
+  }
+}
+#endif

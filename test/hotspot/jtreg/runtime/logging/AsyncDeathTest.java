@@ -50,5 +50,12 @@ public class AsyncDeathTest {
         OutputAnalyzer output2 = new OutputAnalyzer(pb2.start());
         output2.shouldHaveExitValue(0);
         output2.shouldContain("Induce a recursive log for testing");
+
+        // For -Xlog:all=debug we expect neither deathtest nor deathtest2 to be logged as they should only be able to be selected explicitly.
+        ProcessBuilder pb3 =
+            ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:async", "-Xlog:all=debug", "--version");
+        OutputAnalyzer output3 = new OutputAnalyzer(pb3.start());
+        output3.shouldHaveExitValue(0);
+        output3.shouldNotContain("Induce a recursive log for testing");
     }
 }
