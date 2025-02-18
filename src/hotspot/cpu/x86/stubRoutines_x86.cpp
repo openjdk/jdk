@@ -32,61 +32,24 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::x86::_verify_mxcsr_entry = nullptr;
-address StubRoutines::x86::_upper_word_mask_addr = nullptr;
-address StubRoutines::x86::_shuffle_byte_flip_mask_addr = nullptr;
+// define fields for arch-specific entries
+
+#define DEFINE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = nullptr;
+
+#define DEFINE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = CAST_FROM_FN_PTR(address, init_function);
+
+STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
+
+#undef DEFINE_ARCH_ENTRY_INIT
+#undef DEFINE_ARCH_ENTRY
+
 address StubRoutines::x86::_k256_adr = nullptr;
-address StubRoutines::x86::_vector_short_to_byte_mask = nullptr;
-address StubRoutines::x86::_vector_int_to_byte_mask = nullptr;
-address StubRoutines::x86::_vector_int_to_short_mask = nullptr;
-address StubRoutines::x86::_vector_all_bits_set = nullptr;
-address StubRoutines::x86::_vector_byte_shuffle_mask = nullptr;
-address StubRoutines::x86::_vector_int_mask_cmp_bits = nullptr;
-address StubRoutines::x86::_vector_short_shuffle_mask = nullptr;
-address StubRoutines::x86::_vector_int_shuffle_mask = nullptr;
-address StubRoutines::x86::_vector_long_shuffle_mask = nullptr;
-address StubRoutines::x86::_vector_float_sign_mask = nullptr;
-address StubRoutines::x86::_vector_float_sign_flip = nullptr;
-address StubRoutines::x86::_vector_double_sign_mask = nullptr;
-address StubRoutines::x86::_vector_double_sign_flip = nullptr;
-address StubRoutines::x86::_vector_byte_perm_mask = nullptr;
-address StubRoutines::x86::_vector_long_sign_mask = nullptr;
-address StubRoutines::x86::_vector_iota_indices = nullptr;
-address StubRoutines::x86::_vector_reverse_bit_lut = nullptr;
-address StubRoutines::x86::_vector_reverse_byte_perm_mask_long = nullptr;
-address StubRoutines::x86::_vector_reverse_byte_perm_mask_int = nullptr;
-address StubRoutines::x86::_vector_reverse_byte_perm_mask_short = nullptr;
-address StubRoutines::x86::_vector_popcount_lut = nullptr;
-address StubRoutines::x86::_vector_count_leading_zeros_lut = nullptr;
-address StubRoutines::x86::_vector_32_bit_mask = nullptr;
-address StubRoutines::x86::_vector_64_bit_mask = nullptr;
 #ifdef _LP64
 address StubRoutines::x86::_k256_W_adr = nullptr;
 address StubRoutines::x86::_k512_W_addr = nullptr;
-address StubRoutines::x86::_pshuffle_byte_flip_mask_addr_sha512 = nullptr;
-// Base64 masks
-address StubRoutines::x86::_encoding_table_base64 = nullptr;
-address StubRoutines::x86::_shuffle_base64 = nullptr;
-address StubRoutines::x86::_avx2_shuffle_base64 = nullptr;
-address StubRoutines::x86::_avx2_input_mask_base64 = nullptr;
-address StubRoutines::x86::_avx2_lut_base64 = nullptr;
-address StubRoutines::x86::_avx2_decode_tables_base64 = nullptr;
-address StubRoutines::x86::_avx2_decode_lut_tables_base64 = nullptr;
-address StubRoutines::x86::_lookup_lo_base64 = nullptr;
-address StubRoutines::x86::_lookup_hi_base64 = nullptr;
-address StubRoutines::x86::_lookup_lo_base64url = nullptr;
-address StubRoutines::x86::_lookup_hi_base64url = nullptr;
-address StubRoutines::x86::_pack_vec_base64 = nullptr;
-address StubRoutines::x86::_join_0_1_base64 = nullptr;
-address StubRoutines::x86::_join_1_2_base64 = nullptr;
-address StubRoutines::x86::_join_2_3_base64 = nullptr;
-address StubRoutines::x86::_decoding_table_base64 = nullptr;
-address StubRoutines::x86::_compress_perm_table32 = nullptr;
-address StubRoutines::x86::_compress_perm_table64 = nullptr;
-address StubRoutines::x86::_expand_perm_table32 = nullptr;
-address StubRoutines::x86::_expand_perm_table64 = nullptr;
 #endif
-address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = nullptr;
 
 const uint64_t StubRoutines::x86::_crc_by128_masks[] =
 {

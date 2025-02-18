@@ -43,6 +43,8 @@
 
 # :hotspot_compiler
 
+compiler/tiered/Level2RecompilationTest.java 8350159 generic-all
+
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
 
@@ -56,7 +58,7 @@ compiler/c2/irTests/TestDuplicateBackedge.java 8318904 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
-compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897 aix-ppc64,linux-ppc64le
+compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897,8348519 aix-ppc64,linux-ppc64le,linux-s390x
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
 compiler/vectorapi/VectorRebracket128Test.java 8330538 generic-all
 
@@ -138,13 +140,13 @@ serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generi
 serviceability/jvmti/vthread/CarrierThreadEventNotification/CarrierThreadEventNotification.java 8333681 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
 
-serviceability/sa/ClhsdbCDSCore.java              8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/ClhsdbFindPC.java#xcomp-core    8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/ClhsdbPmap.java#core            8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/ClhsdbPstack.java#core          8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/TestJmapCore.java               8267433,8318754 macosx-x64,macosx-aarch64
-serviceability/sa/TestJmapCoreMetaspace.java      8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/ClhsdbCDSCore.java              8318754 macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#xcomp-core    8318754 macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8318754 macosx-aarch64
+serviceability/sa/ClhsdbPmap.java#core            8318754 macosx-aarch64
+serviceability/sa/ClhsdbPstack.java#core          8318754 macosx-aarch64
+serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
+serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 
