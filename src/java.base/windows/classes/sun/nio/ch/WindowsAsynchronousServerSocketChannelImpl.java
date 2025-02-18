@@ -335,7 +335,7 @@ class WindowsAsynchronousServerSocketChannelImpl
     private static native void closesocket0(long socket) throws IOException;
 
     static {
-        IOUtil.load();
+        NIOUtil.load();
         initIDs();
     }
 }
