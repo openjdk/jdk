@@ -97,6 +97,8 @@ class Bits {                            // package-private
     private static final AtomicLong COUNT = new AtomicLong();
     private static volatile boolean MEMORY_LIMIT_SET;
 
+    private static final Object RESERVE_SLOW_LOCK = new Object();
+
     // max. number of sleeps during try-reserving with exponentially
     // increasing delay before throwing OutOfMemoryError:
     // 1, 2, 4, 8, 16, 32, 64, 128, 256 (total 511 ms ~ 0.5 s)
@@ -119,7 +121,7 @@ class Bits {                            // package-private
 
         // Short on memory, with potentially many threads competing for it.
         // To alleviate progress races, acquire the lock and go slow.
-        synchronized (Bits.class) {
+        synchronized (RESERVE_SLOW_LOCK) {
             reserveMemorySlow(size, cap);
         }
     }
