@@ -142,8 +142,8 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
 
   if (ik->is_hidden()) {
     assert(ik->shared_class_loader_type() != ClassLoader::OTHER, "must have been set");
-    if (!CDSConfig::is_dumping_invokedynamic()) {
-      return true;
+    if (!CDSConfig::is_dumping_method_handles()) {
+      return false;
     }
     if (HeapShared::is_lambda_proxy_klass(ik)) {
       InstanceKlass* nest_host = ik->nest_host_not_null();
