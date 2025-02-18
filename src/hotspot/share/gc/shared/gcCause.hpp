@@ -47,7 +47,6 @@ class GCCause : public AllStatic {
     _scavenge_alot,
     _allocation_profiler,
     _jvmti_force_gc,
-    _gc_locker,
     _heap_inspection,
     _heap_dump,
     _wb_young_gc,

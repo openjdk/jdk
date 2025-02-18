@@ -408,9 +408,6 @@ void SafepointSynchronize::begin() {
   }
 #endif // ASSERT
 
-  // Update the count of active JNI critical regions
-  GCLocker::set_jni_lock_count(_current_jni_active_count);
-
   post_safepoint_synchronize_event(sync_event,
                                    _safepoint_id,
                                    initial_running,

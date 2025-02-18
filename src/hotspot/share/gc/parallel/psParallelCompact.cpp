@@ -993,10 +993,6 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
   assert(ref_processor() != nullptr, "Sanity");
 
-  if (GCLocker::check_active_before_gc()) {
-    return false;
-  }
-
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCIdMark gc_id_mark;
