@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,7 +427,7 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
             PublicKey publicKey = P11Key.publicKey
                 (session, keyIDs[0], algorithm, keySize, publicKeyTemplate);
             PrivateKey privateKey = P11Key.privateKey
-                (session, keyIDs[1], algorithm, keySize, privateKeyTemplate);
+                (session, keyIDs[1], algorithm, keySize, privateKeyTemplate, publicKey);
             return new KeyPair(publicKey, privateKey);
         } catch (PKCS11Exception e) {
             throw new ProviderException(e);
