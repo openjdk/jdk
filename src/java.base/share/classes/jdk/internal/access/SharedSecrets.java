@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.io.Console;
 import java.io.FileDescriptor;
 import java.io.FilePermission;
 import java.io.ObjectInputStream;
-import java.io.PushbackInputStream;
 import java.io.RandomAccessFile;
 import java.security.Signature;
 import javax.security.auth.x500.X500Principal;
@@ -93,7 +92,6 @@ public class SharedSecrets {
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
     private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
     private static JavaxSecurityAccess javaxSecurityAccess;
-    private static JavaPBInputStreamAccess javaPBInputStreamAccess;
 
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
         javaUtilCollectionAccess = juca;
@@ -508,19 +506,6 @@ public class SharedSecrets {
             access = javaxSecurityAccess;
         }
         return access;
-    }
-
-    public static JavaPBInputStreamAccess getJavaPBInputStreamAccess() {
-        var access = javaPBInputStreamAccess;
-        if (access == null) {
-            ensureClassInitialized(PushbackInputStream.class);
-            access = javaPBInputStreamAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaPBInputStreamAccess(JavaPBInputStreamAccess access) {
-        javaPBInputStreamAccess = access;
     }
 
     private static void ensureClassInitialized(Class<?> c) {
