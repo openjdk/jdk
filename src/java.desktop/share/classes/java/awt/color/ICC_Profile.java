@@ -1150,8 +1150,8 @@ public sealed class ICC_Profile implements Serializable
      * The array should contain data in a format, corresponded to the
      * {@code tagSignature} as defined in the ICC specification, section 10.
      * This method is useful for advanced applications which need to access
-     * profile data directly. Only non-BuiltIn profiles can be updated using
-     * this method.
+     * profile data directly. Only non-built-in, application provided profiles
+     * should be updated using this method.
      *
      * @param  tagSignature the ICC tag signature for the data element you want
      *         to set
