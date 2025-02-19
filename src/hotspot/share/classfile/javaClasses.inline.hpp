@@ -299,7 +299,7 @@ inline bool java_lang_Class::is_primitive(oop java_class) {
 #ifdef ASSERT
   // The heapwalker walks through Classes that have had their Klass pointers removed, so can't assert this.
   // assert(is_primitive == java_class->bool_field(_is_primitive_offset), "must match what we told Java");
-  if (is_primitive) {
+  if (java_class->bool_field(_is_primitive_offset)) {
     Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
     assert(k == nullptr || is_java_primitive(ArrayKlass::cast(k)->element_type()),
         "Should be either the T_VOID primitive or a java primitive");

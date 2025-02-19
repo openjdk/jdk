@@ -1273,8 +1273,11 @@ void java_lang_Class::set_protection_domain(oop java_class, oop pd) {
 
 void java_lang_Class::set_component_mirror(oop java_class, oop comp_mirror) {
   assert(_component_mirror_offset != 0, "must be set");
-    java_class->obj_field_put(_component_mirror_offset, comp_mirror);
-  }
+  assert(java_lang_Class::as_Klass(java_class) != nullptr &&
+         java_lang_Class::as_Klass(java_class)->is_array_klass(), "must be");
+  java_class->obj_field_put(_component_mirror_offset, comp_mirror);
+}
+
 oop java_lang_Class::component_mirror(oop java_class) {
   assert(_component_mirror_offset != 0, "must be set");
   return java_class->obj_field(_component_mirror_offset);
@@ -1355,8 +1358,7 @@ void java_lang_Class::set_is_primitive(oop java_class) {
 
 
 oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS) {
-  // This should be improved by adding a field at the Java level or by
-  // introducing a new VM klass (see comment in ClassFileParser)
+  // Mirrors for basic types have a null klass field, which makes them special.
   oop java_class = InstanceMirrorKlass::cast(vmClasses::Class_klass())->allocate_instance(nullptr, CHECK_NULL);
   if (type != T_VOID) {
     Klass* aklass = Universe::typeArrayKlass(type);
