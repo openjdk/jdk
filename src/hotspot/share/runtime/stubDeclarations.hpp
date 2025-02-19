@@ -552,8 +552,8 @@
            catch_exception_entry)                                       \
   do_stub(initial, fence)                                               \
   do_entry(initial, fence, fence_entry, fence_entry)                    \
-  do_stub(initial, atomic_add)                                         \
-  do_entry(initial, atomic_add, atomic_add_entry, atomic_add_entry)  \
+  do_stub(initial, atomic_add)                                          \
+  do_entry(initial, atomic_add, atomic_add_entry, atomic_add_entry)     \
   do_stub(initial, atomic_xchg)                                         \
   do_entry(initial, atomic_xchg, atomic_xchg_entry, atomic_xchg_entry)  \
   do_stub(initial, atomic_cmpxchg)                                      \
