@@ -25,10 +25,10 @@
 
 import java.util.spi.ToolProvider;
 
-// This program is executed by make/RunTests.gmk to support running HotSpot jtreg tests
+// This program is executed by make/RunTests.gmk to support running HotSpot tests
 // in the "AOT mode", for example:
 //
-//     make test JTREG_AOT_JDK=true open/test/hotspot/jtreg/runtime/stringtable
+//     make test JTREG=AOT_JDK=true TEST=open/test/hotspot/jtreg/runtime/invokedynamic
 //
 // All JDK classes touched by this program will be stored into a customized AOT cache.
 // This is a larger set of classes than those stored in the JDK's default CDS archive.
@@ -43,7 +43,7 @@ import java.util.spi.ToolProvider;
 // this class will be excluded from the customized AOT cache. As a result,
 // the customized AOT cache contains *only* classes from the JDK itself.
 
-public class ExerciseJDKClasses {
+public class TestSetupAOT {
     public static void main(String[] args) throws Throwable {
         String[] tools = {
             "javac", "javap", "jlink", "jar",
@@ -51,7 +51,7 @@ public class ExerciseJDKClasses {
         // TODO: we should do more substantial work than just running with "--help".
         // E.g., use javac to compile a program.
         for (String tool : tools) {
-            ToolProvider t  = ToolProvider.findFirst(tool)
+            ToolProvider t = ToolProvider.findFirst(tool)
                 .orElseThrow(() -> new RuntimeException(tool + " not found"));
             t.run(System.out, System.out, "--help");
         }
