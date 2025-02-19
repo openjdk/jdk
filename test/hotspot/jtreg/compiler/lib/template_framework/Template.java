@@ -53,6 +53,12 @@ import java.util.List;
  * {@link Token} inside another {@link Template}, or rendered to a {@link String} with {@link TemplateWithArgs#render}.
  *
  * <p>
+ * A {@link TemplateWithArgs} can be used directly as a {@link Token} inside the {@link Template#body} to
+ * nest the {@link Template}s. Alternatively, code can be {@link Hook#insert}ed to where a {@link Hook}
+ * was {@link Hook#set} earlier (in some outer scope of the code). For example, while generating code in
+ * a method, one can reach out to the scope of the class, and insert a new field, or define a utility method.
+ *
+ * <p>
  * A {@link TemplateBinding} allows the recurisve use of {@link Template}s. With the indirection of such a binding,
  * a {@link Template} can reference itself. To ensure the termination of recursion, the templates are rendered
  * with a certain amount of {@link fuel}, which is decreased at each {@link Template} nesting by a certain amount
