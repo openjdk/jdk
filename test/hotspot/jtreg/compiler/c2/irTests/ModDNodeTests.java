@@ -41,10 +41,9 @@ public class ModDNodeTests {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "notConstant", "veryNotConstant", "unusedResult",
-                 "repeatedlyUnused"})
-    public void
-    runMethod() {
+    @Run(test = {"constant", "notConstant", "veryNotConstant",
+            "unusedResult", "repeatedlyUnused"})
+    public void runMethod() {
         Asserts.assertEQ(constant(), q % 72.0d % 30.0d);
         Asserts.assertEQ(alsoConstant(), q % 31.432d);
         Asserts.assertTrue(Double.isNaN(nanLeftConstant()));

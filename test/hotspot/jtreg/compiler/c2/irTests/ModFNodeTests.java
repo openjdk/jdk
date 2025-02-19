@@ -43,8 +43,7 @@ public class ModFNodeTests {
 
     @Run(test = {"constant", "notConstant", "veryNotConstant", "unusedResult",
                  "repeatedlyUnused"})
-    public void
-    runMethod() {
+    public void runMethod() {
         Asserts.assertEQ(constant(), q % 72.0f % 30.0f);
         Asserts.assertEQ(alsoConstant(), q % 31.432f);
         Asserts.assertTrue(Float.isNaN(nanLeftConstant()));
