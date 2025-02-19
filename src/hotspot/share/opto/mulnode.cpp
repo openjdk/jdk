@@ -993,11 +993,7 @@ static Node* collapseDoubleShiftLeft(PhaseGVN* phase, Node* outer_shift, int con
   }
 
   if (con0 + con1 >= nbits) {
-    if (bt == T_INT) {
-      return phase->intcon(0);
-    } else {
-      return phase->longcon(0);
-    }
+    return ConNode::make(TypeInteger::zero(bt));
   }
 
   // con0 + con1 < nbits ==> actual shift happens now
