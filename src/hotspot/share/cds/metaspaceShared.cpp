@@ -214,27 +214,6 @@ void MetaspaceShared::dump_loaded_classes(const char* file_name, TRAPS) {
   }
 }
 
-// If p is not aligned, move it up to the next address that's aligned with alignment.
-// If this is not possible (because p is too high), return nullptr. Example:
-//     p = 0xffffffffffff0000, alignment= 0x10000    => return nullptr.
-static char* align_up_or_null(char* p, size_t alignment) {
-  assert(p != nullptr, "sanity");
-  if (is_aligned(p, alignment)) {
-    return p;
-  }
-
-  char* down = align_down(p, alignment);
-  if (max_uintx - uintx(down) < uintx(alignment)) {
-    // Run out of address space to align up.
-    return nullptr;
-  }
-
-  char* aligned = align_up(p, alignment);
-  assert(aligned >= p, "sanity");
-  assert(aligned != nullptr, "sanity");
-  return aligned;
-}
-
 static bool shared_base_too_high(char* specified_base, char* aligned_base, size_t cds_max) {
   // Caller should have checked if align_up_or_null( returns nullptr (comparing specified_base
   // with nullptr is UB).
@@ -262,6 +241,7 @@ static char* compute_shared_base(size_t cds_max) {
   }
 
   char* aligned_base = align_up_or_null(specified_base, alignment);
+  assert(is_aligned(aligned_base, alignment), "sanity");
 
   if (aligned_base != specified_base) {
     log_info(cds)("SharedBaseAddress (" INTPTR_FORMAT ") aligned up to " INTPTR_FORMAT,

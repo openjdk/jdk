@@ -190,7 +190,7 @@ bool PSOldGen::expand(size_t bytes) {
   assert(bytes > 0, "precondition");
 #endif
   const size_t alignment = virtual_space()->alignment();
-  size_t aligned_bytes  = align_up(bytes, alignment);
+  size_t aligned_bytes  = align_up_or_min(bytes, alignment);
   size_t aligned_expand_bytes = align_up(MinHeapDeltaBytes, alignment);
 
   if (UseNUMA) {
