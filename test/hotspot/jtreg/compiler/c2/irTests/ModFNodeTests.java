@@ -42,7 +42,7 @@ public class ModFNodeTests {
     }
 
     @Run(test = {"constant", "notConstant", "veryNotConstant", "unusedResult",
-                 "repeatedlyUnused"})
+            "repeatedlyUnused"})
     public void runMethod() {
         Asserts.assertEQ(constant(), q % 72.0f % 30.0f);
         Asserts.assertEQ(alsoConstant(), q % 31.432f);
