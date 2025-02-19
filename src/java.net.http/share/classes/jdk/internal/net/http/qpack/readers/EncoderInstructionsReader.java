@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,9 +76,8 @@ public class EncoderInstructionsReader {
            |  Value String (Length bytes)  |
            +-------------------------------+
          */
-        INSERT_NAME_LIT,
-        INSERT_NAME_LIT_FIRST_BYTE_READ,
-        INSERT_NAME_LIT_NAME_READ,
+        INSERT_NAME_LIT_NAME,
+        INSERT_NAME_LIT_VALUE,
 
         /*
              0   1   2   3   4   5   6   7
@@ -129,23 +128,14 @@ public class EncoderInstructionsReader {
                         reset();
                     }
                     break;
-                case INSERT_NAME_LIT:
+                case INSERT_NAME_LIT_NAME:
                     if (stringReader.read(5, buffer, nameString, maxStringLength)) {
                         huffmanName = stringReader.isHuffmanEncoded();
                         stringReader.reset();
-                        state = State.INSERT_NAME_LIT_NAME_READ;
-                    } else {
-                        state = State.INSERT_NAME_LIT_FIRST_BYTE_READ;
+                        state = State.INSERT_NAME_LIT_VALUE;
                     }
                     break;
-                case INSERT_NAME_LIT_FIRST_BYTE_READ:
-                    if (stringReader.read(buffer, nameString, maxStringLength)) {
-                        huffmanName = stringReader.isHuffmanEncoded();
-                        stringReader.reset();
-                        state = State.INSERT_NAME_LIT_NAME_READ;
-                    }
-                    break;
-                case INSERT_NAME_LIT_NAME_READ:
+                case INSERT_NAME_LIT_VALUE:
                     int stringReaderLimit = maxStringLength > 0 ?
                             Math.max(maxStringLength - nameString.length(), 0) : -1;
                     if (stringReader.read(buffer, valueString, stringReaderLimit)) {
@@ -198,7 +188,7 @@ public class EncoderInstructionsReader {
                 bitT = (b & 0b0100_0000) == 0 ? 0 : 1;
                 yield State.INSERT_NAME_REF_NAME;
             }
-            case 1 -> State.INSERT_NAME_LIT;
+            case 1 -> State.INSERT_NAME_LIT_NAME;
             case 2 -> {
                 integerReader.configure(5);
                 yield State.DT_CAPACITY;
@@ -210,7 +200,7 @@ public class EncoderInstructionsReader {
                     yield State.DUPLICATE;
                 } else {
                     throw QPackException.encoderStreamError(
-                            new InternalError("Unexpected EncoderInstructionReader instruction: " + b));
+                            new InternalError("Unexpected encoder instruction: " + b));
                 }
             }
         };
