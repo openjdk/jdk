@@ -42,18 +42,14 @@ import java.util.Arrays;
  */
 public class HexDumpEncoderTests {
 
-    private final static String CERT_PATH = Path.of(System.getProperty("test.src", "."))
-            .resolve("HostnameChecker")
-            .resolve("cert5.crt")
-            .toString();
 
     private static String[] getTestCommand(final String encoding) {
         return new String[]{
                 "--add-modules", "java.base",
                 "--add-exports", "java.base/sun.security.util=ALL-UNNAMED",
                 "-Dfile.encoding=" + encoding,
-                HexDumpEncoderTests.HexDumpEncoderTest.class.getName(),
-                CERT_PATH};
+                HexDumpEncoderTests.HexDumpEncoderTest.class.getName()
+        };
     }
 
     public static void main(String[] args) throws Exception {
@@ -98,27 +94,10 @@ public class HexDumpEncoderTests {
          */
         public static void main(String[] args) throws Exception {
 
-            try (final FileInputStream fis = new FileInputStream(args[0])) {
-                var cert = CertUtils.getCertFromStream(fis);
-
-                final var certEncodedWithEncodeBuffer = hexDumpEncoderEncodeBuffer(cert);
-                final var certEncodedWithEncode = hexDumpEncoderEncode(cert);
-                System.out.printf("\nCert Encoded With Encode Buffer: %s\n", certEncodedWithEncodeBuffer);
-                System.out.printf("\nCert Encoded With Encode: %s\n", certEncodedWithEncode);
-            }
-        }
-
-        private static String hexDumpEncoderEncodeBuffer(final X509Certificate cert) {
-
             final var encoder = new HexDumpEncoder();
-            return encoder.encodeBuffer(cert.getSignature());
+
+            System.out.printf("\nCert Encoded With Encode Buffer: %s\n", encoder.encodeBuffer(new byte[100]));
+            System.out.printf("\nCert Encoded With Encode: %s\n", encoder.encode(new byte[100]));
         }
-
-        private static String hexDumpEncoderEncode(final X509Certificate cert) {
-
-            final var encoder = new HexDumpEncoder();
-            return encoder.encode(cert.getSignature());
-        }
-
     }
 }
