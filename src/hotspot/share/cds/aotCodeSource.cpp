@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public:
     // Arguments::get_boot_class_path() contains $JAVA_HOME/lib/modules, but we treat that separately
     for (const char* bootcp = Arguments::get_boot_class_path(); *bootcp != '\0'; ++bootcp) {
       if (*bootcp == *os::path_separator()) {
-        ++ bootcp;
+        ++bootcp;
         add_paths_in_classpath(bootcp);
         break;
       }
@@ -730,18 +730,21 @@ bool AOTCodeSourceConfig::check_classpaths(bool is_boot_classpath, bool has_aot_
     ResourceMark rm;
     const AOTCodeSource* cs = code_source_at(i);
     const char* effective_dumptime_path = cs->path();
-    if (use_lcp_match) {
+    if (use_lcp_match && _dumptime_lcp_len > 0) {
       effective_dumptime_path = substitute(effective_dumptime_path, _dumptime_lcp_len, runtime_lcp, runtime_lcp_len);
     }
 
     log_info(class, path)("Checking '%s' %s%s", effective_dumptime_path, cs->file_type_string(),
                           cs->from_cpattr() ? " (from JAR manifest ClassPath attribute)" : "");
-    if (!cs->from_cpattr()) {
+    if (!cs->from_cpattr() && file_exists(effective_dumptime_path)) {
       if (!runtime_css.has_next()) {
         log_warning(cds)("%s classpath has fewer elements than expected", which);
         return false;
       }
       const char* runtime_path = runtime_css.get_next();
+      while (!file_exists(runtime_path) && runtime_css.has_next()) {
+        runtime_path = runtime_css.get_next();
+      }
       if (!os::same_files(effective_dumptime_path, runtime_path)) {
         log_warning(cds)("The name of %s classpath [%d] does not match: expected '%s', got '%s'",
                          which, runtime_css.current(), effective_dumptime_path, runtime_path);
@@ -767,12 +770,16 @@ bool AOTCodeSourceConfig::check_classpaths(bool is_boot_classpath, bool has_aot_
   return true;
 }
 
-bool AOTCodeSourceConfig::check_paths_existence(CodeSourceStream& runtime_css) const {
+bool AOTCodeSourceConfig::file_exists(const char* filename) const{
   struct stat st;
+  return (os::stat(filename, &st) == 0 && st.st_size > 0);
+}
+
+bool AOTCodeSourceConfig::check_paths_existence(CodeSourceStream& runtime_css) const {
   bool exist = false;
   while (runtime_css.has_next()) {
     const char* path = runtime_css.get_next();
-    if (os::stat(path, &st) == 0 && st.st_size > 0) {
+    if (file_exists(path)) {
       exist = true;
       break;
     }

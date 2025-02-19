@@ -236,7 +236,7 @@ public class BootClassPathMismatch {
             .assertAbnormalExit(mismatchMessage);
     }
 
-    /* Arcchive contains Hello class with only hello.jar in bootclasspath at dump time.
+    /* Archive contains Hello class with only hello.jar in bootclasspath at dump time.
      *
      * No error - bootclasspath can be appended during runtime if no -cp is specified.
      */

@@ -67,6 +67,30 @@ public class NonExistClasspath {
                                  "Hello"))
             .assertNormalExit();
 
+        // Replace nonExistPath with another non-existent file in the CP, it should still work
+        TestCommon.run(make_args(bootcp,
+                                 nonExistPath + ".duh"  + File.pathSeparator + appJar,
+                                 "-Xlog:class+path=trace",
+                                 "Hello"))
+            .assertNormalExit();
+
+        // Add a few more non-existent files in the CP, it should still work
+        TestCommon.run(make_args(bootcp,
+                                 nonExistPath + ".duh"  + File.pathSeparator +
+                                 nonExistPath + ".daa"  + File.pathSeparator +
+                                 nonExistPath + ".boo"  + File.pathSeparator +
+                                 appJar,
+                                 "-Xlog:class+path=trace",
+                                 "Hello"))
+            .assertNormalExit();
+
+        // Or, remove all non-existent paths from the CP, it should still work
+        TestCommon.run(make_args(bootcp,
+                                 appJar,
+                                 "-Xlog:class+path=trace",
+                                 "Hello"))
+            .assertNormalExit();
+
         // Now make nonExistPath exist. CDS will fail to load.
         Files.copy(Paths.get(outDir, "hello.jar"),
                    Paths.get(outDir, newFile),
@@ -137,7 +161,15 @@ public class NonExistClasspath {
                                  "Hello"))
             .assertNormalExit();
 
-        // Run with a different boot class path, test should fail.
+        // Run with non-existent boot class path, test should pass.
+        TestCommon.run(make_args(true,
+                                 nonExistPath,
+                                 "-cp", appJar,
+                                 "-Xlog:class+path=trace",
+                                 "Hello"))
+            .assertNormalExit();
+
+        // Run with existent boot class path, test should fail.
         TestCommon.run(make_args(true,
                                  appJar,
                                  "-cp", appJar,

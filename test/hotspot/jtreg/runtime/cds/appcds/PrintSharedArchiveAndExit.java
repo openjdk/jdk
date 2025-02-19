@@ -108,7 +108,7 @@ public class PrintSharedArchiveAndExit {
     TestCommon.run(
         "-cp", invalidCP,
         "-XX:+PrintSharedArchiveAndExit")
-      .ifNoMappingFailure(output -> check(output, 1, true, firstCheckShortMsg));
+      .ifNoMappingFailure(output -> check(output, 0, true, firstCheckShortMsg));
 
     log("Changed modification time of hello.jar -- all the JAR paths should be checked");
     (new File(appJar)).setLastModified(System.currentTimeMillis() + 2000);

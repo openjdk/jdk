@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,14 +121,14 @@ public:
 //
 // In general, validation is performed on the AOTCodeSources to ensure the code sources used
 // during AOTCache creation are the same as when the AOTCache is used during runtime.
-// Non-existent entries are recorded during AOTCache creation. Those non-existent entries
-// must not exist during runtime.
+// Non-existent entries are recorded during AOTCache creation. Those non-existent entries,
+// if they are specified at runtime, must not exist.
 //
 // Some details on validation:
-// - the boot classpath could be appended during runtime if there's no app classpath and
+// - the boot classpath can be appended to at runtime if there's no app classpath and no
 //   module path specified when an AOTCache is created;
-// - the app classpath could be appended during runtime;
-// - the module path during runtime could be a superset of the one specified during AOTCache creation.
+// - the app classpath can be appended to at runtime;
+// - the module path at runtime can be a superset of the one specified during AOTCache creation.
 
 class AOTCodeSourceConfig : public CHeapObj<mtClassShared> {
   using Group = AOTCodeSource::Group;
@@ -162,6 +162,7 @@ class AOTCodeSourceConfig : public CHeapObj<mtClassShared> {
                         bool use_lcp_match, const char* runtime_lcp, size_t runtime_lcp_len) const;
   bool check_module_paths(bool has_aot_linked_classes, int index_start, int index_end, CodeSourceStream& runtime_css,
                           bool* has_extra_module_paths) const;
+  bool file_exists(const char* filename) const;
   bool check_paths_existence(CodeSourceStream& runtime_css) const;
 
   static const char* substitute(const char* path, size_t remove_prefix_len,
