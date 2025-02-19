@@ -52,6 +52,7 @@ public class CodeBlob extends VMObject {
   private static CIntegerField dataOffsetField;
   private static CIntegerField frameSizeField;
   private static AddressField  oopMapsField;
+  private static CIntegerField callerMustGCArgumentsField;
 
   // Kinds of CodeBlobs that we need to know about.
   private static int NMethodKind;
@@ -80,6 +81,7 @@ public class CodeBlob extends VMObject {
     dataOffsetField          = type.getCIntegerField("_data_offset");
     frameSizeField           = type.getCIntegerField("_frame_size");
     oopMapsField             = type.getAddressField("_oop_maps");
+    callerMustGCArgumentsField = type.getCIntegerField("_caller_must_gc_arguments");
 
     if (VM.getVM().isServerCompiler()) {
       matcherInterpreterFramePointerReg =
@@ -104,8 +106,6 @@ public class CodeBlob extends VMObject {
       int kind = cb.getKind();
       if (kind == NMethodKind) {
           return NMethod.class;
-      } else if (kind == RuntimeStubKind) {
-          return RuntimeStub.class;
       } else if (kind == UpcallKind) {
           return UpcallStub.class;
       } else {
@@ -219,7 +219,9 @@ public class CodeBlob extends VMObject {
   }
 
   // Returns true, if the next frame is responsible for GC'ing oops passed as arguments
-  public boolean callerMustGCArguments() { return false; }
+  public boolean callerMustGCArguments() {
+    return callerMustGCArgumentsField.getValue(addr) != 0;
+  }
 
   public void print() {
     printOn(System.out);
