@@ -1641,6 +1641,7 @@ Node* ModFloatingNode::replace_with_con(PhaseGVN* phase, const Type* con) {
 }
 
 // Will remove the node if the result is not used, rewiring input to output directly.
+// Returns a dummy constant node if removal happens, and nullptr if nothing is changed.
 Node* ModFloatingNode::remove(PhaseGVN* phase) {
   PhaseIterGVN* igvn = phase->is_IterGVN();
   bool result_is_ignored = proj_out_or_null(TypeFunc::Parms) == nullptr;
