@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,14 +60,14 @@ public class StartupOutput {
             throw new Exception("VM crashed with exit code " + exitCode);
         }
 
-        Process[] pr = new Process[200];
-        for (int i = 0; i < 200; i++) {
+        Process[] pr = new Process[2000];
+        for (int i = 0; i < 2000; i++) {
             int initialCodeCacheSizeInKb = 800 + rand.nextInt(400);
             int reservedCodeCacheSizeInKb = initialCodeCacheSizeInKb + rand.nextInt(200);
             pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:InitialCodeCacheSize=" + initialCodeCacheSizeInKb + "K", "-XX:ReservedCodeCacheSize=" + reservedCodeCacheSizeInKb + "k", "-version");
             pr[i] = pb.start();
         }
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 2000; i++) {
             out = new OutputAnalyzer(pr[i]);
             // The VM should not crash but will probably fail with a "CodeCache is full. Compiler has been disabled." message
             out.stdoutShouldNotContain("# A fatal error");
