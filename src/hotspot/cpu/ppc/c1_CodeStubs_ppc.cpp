@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -368,9 +367,9 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     __ mr(R0, _obj); // spill
     __ ld(_obj, java_lang_Class::klass_offset(), _obj);
     __ ld(_obj, in_bytes(InstanceKlass::init_thread_offset()), _obj);
-    __ cmpd(CCR0, _obj, R16_thread);
+    __ cmpd(CR0, _obj, R16_thread);
     __ mr(_obj, R0); // restore
-    __ bne(CCR0, call_patch);
+    __ bne(CR0, call_patch);
 
     // Load_klass patches may execute the patched code before it's
     // copied back into place so we need to jump back into the main

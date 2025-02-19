@@ -72,13 +72,27 @@ public class Compiler {
     public static void compileClass(Class<?> aClass, long id, Executor executor) {
         Objects.requireNonNull(aClass);
         Objects.requireNonNull(executor);
-        ConstantPool constantPool = SharedSecrets.getJavaLangAccess().
-                getConstantPool(aClass);
+
+        // Initialize all constant pool entries, if requested.
         if (Utils.COMPILE_THE_WORLD_PRELOAD_CLASSES) {
+            ConstantPool constantPool = SharedSecrets.getJavaLangAccess().getConstantPool(aClass);
             preloadClasses(aClass.getName(), id, constantPool);
         }
+
+        // Make sure the class is initialized.
         UNSAFE.ensureClassInitialized(aClass);
         compileClinit(aClass, id);
+
+        // Populate profile for all methods to expand the scope of
+        // compiler optimizations. Do this before compilations start.
+        for (Executable e : aClass.getDeclaredConstructors()) {
+            WHITE_BOX.markMethodProfiled(e);
+        }
+        for (Executable e : aClass.getDeclaredMethods()) {
+            WHITE_BOX.markMethodProfiled(e);
+        }
+
+        // Now schedule the compilations.
         long methodCount = 0;
         for (Executable e : aClass.getDeclaredConstructors()) {
             ++methodCount;
@@ -108,17 +122,16 @@ public class Compiler {
 
     private static void preloadClasses(String className, long id,
             ConstantPool constantPool) {
-        try {
-            for (int i = 0, n = constantPool.getSize(); i < n; ++i) {
-                try {
+        for (int i = 0, n = constantPool.getSize(); i < n; ++i) {
+            try {
+                if (constantPool.getTagAt(i) == ConstantPool.Tag.CLASS) {
                     constantPool.getClassAt(i);
-                } catch (IllegalArgumentException ignore) {
                 }
+            } catch (Throwable t) {
+                CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING preloading failed : %s",
+                         id, className, t));
+                t.printStackTrace(CompileTheWorld.ERR);
             }
-        } catch (Throwable t) {
-            CompileTheWorld.OUT.println(String.format("[%d]\t%s\tWARNING preloading failed : %s",
-                    id, className, t));
-            t.printStackTrace(CompileTheWorld.ERR);
         }
     }
 

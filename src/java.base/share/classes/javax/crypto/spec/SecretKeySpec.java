@@ -91,11 +91,12 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      *
      * @param key the key material of the secret key. The contents of
      * the array are copied to protect against subsequent modification.
-     * @param algorithm the name of the secret-key algorithm to be associated
+     * @param algorithm the name of the secret key algorithm to be associated
      * with the given key material.
-     * See the <a href="{@docRoot}/../specs/security/standard-names.html">
-     * Java Security Standard Algorithm Names</a> document
-     * for information about standard algorithm names.
+     * See the SecretKey Algorithms section in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
+     * for information about standard secret key algorithm names.
      * @exception IllegalArgumentException if <code>algorithm</code>
      * is null or <code>key</code> is null or empty.
      *
@@ -135,11 +136,12 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * @param offset the offset in {@code key} where the key material
      * starts.
      * @param len the length of the key material.
-     * @param algorithm the name of the secret-key algorithm to be associated
+     * @param algorithm the name of the secret key algorithm to be associated
      * with the given key material.
-     * See the <a href="{@docRoot}/../specs/security/standard-names.html">
-     * Java Security Standard Algorithm Names</a> document
-     * for information about standard algorithm names.
+     * See the SecretKey Algorithms section in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
+     * for information about standard secret key algorithm names.
      * @exception IllegalArgumentException if {@code algorithm}
      * is {@code null} or {@code key} is {@code null}, empty, or too short,
      * i.e. {@code key.length-offset<len}.

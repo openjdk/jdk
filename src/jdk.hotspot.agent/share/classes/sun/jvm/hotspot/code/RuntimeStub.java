@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,6 @@ public class RuntimeStub extends RuntimeBlob {
 
   public RuntimeStub(Address addr) {
     super(addr);
-  }
-
-  public boolean isRuntimeStub() {
-    return true;
   }
 
   public boolean callerMustGCArguments() {

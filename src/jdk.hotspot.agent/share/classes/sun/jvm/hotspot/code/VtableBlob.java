@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,10 +31,6 @@ public class VtableBlob extends BufferBlob {
 
     public VtableBlob(Address addr) {
         super(addr);
-    }
-
-    public boolean isVtableBlob() {
-        return true;
     }
 
     public String getName() {
