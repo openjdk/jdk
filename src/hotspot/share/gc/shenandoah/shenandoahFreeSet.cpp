@@ -1612,6 +1612,12 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
   size_t collector_xfer = 0;
   size_t old_collector_xfer = 0;
 
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  log_info(gc)(" At start of move_regions_from_collector_to_mutator(%zu), young capacity: %zu, old capacity: %zu",
+	       max_xfer_regions, _heap->young_generation()->max_capacity(), _heap->old_generation()->max_capacity());
+#endif
+
   // Process empty regions within the Collector free partition
   if ((max_xfer_regions > 0) &&
       (_partitions.leftmost_empty(ShenandoahFreeSetPartitionId::Collector)
@@ -1621,6 +1627,9 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
       transfer_empty_regions_from_collector_set_to_mutator_set(ShenandoahFreeSetPartitionId::Collector, max_xfer_regions,
                                                                collector_xfer);
   }
+#ifdef KELVIN_DEBUG
+  log_info(gc)(" locked transferred some empty collector regions to mutator, remaining max_xfer_regions: %zu", max_xfer_regions);
+#endif
 
   // Process empty regions within the OldCollector free partition
   if ((max_xfer_regions > 0) &&
@@ -1632,10 +1641,14 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
                                                                old_collector_xfer);
     max_xfer_regions -= old_collector_regions;
     if (old_collector_regions > 0) {
-      // kelvin asks: should this be force_transfor_to_young()
-      ShenandoahGenerationalHeap::cast(_heap)->generation_sizer()->transfer_to_young(old_collector_regions);
+      // A conditional transfer of heap regions may fail if soft_max_capacity is smaller than max_capacity, such as
+      // when NewRatio has been specified on the command line.  Force the transfer here.
+      ShenandoahGenerationalHeap::cast(_heap)->generation_sizer()->force_transfer_to_young(old_collector_regions);
     }
   }
+#ifdef KELVIN_DEBUG
+  log_info(gc)(" lock-transferred some empty old collector regions to mutator, remaining max_xfer_regions: %zu", max_xfer_regions);
+#endif
 
   // If there are any non-empty regions within Collector partition, we can also move them to the Mutator free partition
   if ((max_xfer_regions > 0) && (_partitions.leftmost(ShenandoahFreeSetPartitionId::Collector)
@@ -1645,6 +1658,10 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
       transfer_non_empty_regions_from_collector_set_to_mutator_set(ShenandoahFreeSetPartitionId::Collector, max_xfer_regions,
                                                                    collector_xfer);
   }
+#ifdef KELVIN_DEBUG
+  log_info(gc)(" lock-transferred some non-empty collector regions to mutator, remaining max_xfer_regions: %zu", max_xfer_regions);
+  log_info(gc)(" collector_xfer: %zu, old_collector_xfer: %zu", collector_xfer, old_collector_xfer);
+#endif
 
   size_t total_xfer = collector_xfer + old_collector_xfer;
   log_info(gc, ergo)("At start of update refs, moving %zu%s to Mutator free set from Collector Reserve ("
@@ -1652,6 +1669,11 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
                      byte_size_in_proper_unit(total_xfer), proper_unit_for_byte_size(total_xfer),
                      byte_size_in_proper_unit(collector_xfer), proper_unit_for_byte_size(collector_xfer),
                      byte_size_in_proper_unit(old_collector_xfer), proper_unit_for_byte_size(old_collector_xfer));
+
+#ifdef KELVIN_DEBUG
+  log_info(gc)(" At end of move_regions_from_collector_to_mutator(), young capacity: %zu, old capacity: %zu",
+	       _heap->young_generation()->max_capacity(), _heap->old_generation()->max_capacity());
+#endif
 }
 
 void ShenandoahFreeSet::rebuild() {
