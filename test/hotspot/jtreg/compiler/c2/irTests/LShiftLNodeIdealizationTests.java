@@ -37,24 +37,9 @@ public class LShiftLNodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test =
-             {
-                 "test3",
-                 "test4",
-                 "test5",
-                 "test6",
-                 "test7",
-                 "test8",
-                 "testDoubleShift1",
-                 "testDoubleShift2",
-                 "testDoubleShift3",
-                 "testDoubleShift4",
-                 "testDoubleShift5",
-                 "testDoubleShift6",
-                 "testDoubleShift7",
-             })
-    public void
-    runMethod() {
+    @Run(test = {"test3", "test4", "test5", "test6", "test7", "test8",
+            "testDoubleShift1", "testDoubleShift2", "testDoubleShift3", "testDoubleShift4", "testDoubleShift5", "testDoubleShift6", "testDoubleShift7",})
+    public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
         long c = RunInfo.getRandom().nextLong();

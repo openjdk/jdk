@@ -1019,7 +1019,7 @@ Node* LShiftINode::Identity(PhaseGVN* phase) {
 // If the right input is a constant, and the left input is an add of a
 // constant, flatten the tree: (X+con1)<<con0 ==> X<<con0 + con1<<con0
 //
-// (X << con1) << con2 ==> X << (con1 + con2) (see collapseDoubleShiftLeft for corner cases)
+// (X << con1) << con2 ==> X << (con1 + con2) (see collapseDoubleShiftLeft for details)
 Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaInteger);
   if (con == 0) {
@@ -1202,7 +1202,7 @@ Node* LShiftLNode::Identity(PhaseGVN* phase) {
 // If the right input is a constant, and the left input is an add of a
 // constant, flatten the tree: (X+con1)<<con0 ==> X<<con0 + con1<<con0
 //
-// (X << con1) << con2 ==> X << (con1 + con2) (see collapseDoubleShiftLeft for corner cases)
+// (X << con1) << con2 ==> X << (con1 + con2) (see collapseDoubleShiftLeft for details)
 Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaLong);
   if (con == 0) {
