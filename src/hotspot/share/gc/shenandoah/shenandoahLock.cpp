@@ -68,7 +68,7 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
         // VM thread to arm the poll sooner.
         while (SafepointSynchronize::is_synchronizing() &&
                !SafepointMechanism::local_poll_armed(java_thread)) {
-          short_sleep();
+          yield_or_sleep(yields);
         }
       } else {
         yield_or_sleep(yields);

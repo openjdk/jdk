@@ -48,18 +48,11 @@ private:
       os::naked_yield();
       yields++;
     } else {
-      short_sleep();
+      os::naked_short_nanosleep(100000);
       yields = 0;
     }
   }
 
-  void short_sleep() {
-#ifdef _WINDOWS
-    os::naked_short_sleep(1);
-#else
-    os::naked_short_nanosleep(100000);
-#endif
-  }
 public:
   ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
 
