@@ -1611,9 +1611,7 @@ public class BasicScrollBarUI
         public void actionPerformed(ActionEvent e) {
             // If scrollbar isn't visible, stop the timer
             if (!scrollbar.isShowing()) {
-                ((Timer)e.getSource()).stop();
-                buttonListener.handledEvent = false;
-                scrollbar.setValueIsAdjusting(false);
+                stopScrollTimer(e);
                 return;
             }
             // If frame is disabled and timer is started in mousePressed
@@ -1623,9 +1621,7 @@ public class BasicScrollBarUI
             do {
                 if (parent instanceof JFrame par) {
                     if (!par.isEnabled()) {
-                        ((Timer)e.getSource()).stop();
-                        buttonListener.handledEvent = false;
-                        scrollbar.setValueIsAdjusting(false);
+                        stopScrollTimer(e);
                         return;
                     }
                     break;
@@ -1665,6 +1661,12 @@ public class BasicScrollBarUI
                 && scrollbar.getValue() <= scrollbar.getMinimum())
                 ((Timer)e.getSource()).stop();
         }
+    }
+
+    private void stopScrollTimer(ActionEvent e) {
+        ((Timer)e.getSource()).stop();
+        buttonListener.handledEvent = false;
+        scrollbar.setValueIsAdjusting(false);
     }
 
     private boolean isMouseLeftOfThumb() {
