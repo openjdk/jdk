@@ -23,6 +23,7 @@
  *  questions.
  *
  */
+
 package jdk.internal.foreign;
 
 import jdk.internal.vm.annotation.ForceInline;
@@ -54,7 +55,7 @@ import static java.util.stream.Collectors.joining;
  * by the path (see {@link #offset}), or obtain var handle to access the selected layout element
  * given an address pointing to a segment associated with the root layout (see {@link #dereferenceHandle()}).
  */
-public class LayoutPath {
+public final class LayoutPath {
 
     private static final long[] EMPTY_STRIDES = new long[0];
     private static final long[] EMPTY_BOUNDS = new long[0];

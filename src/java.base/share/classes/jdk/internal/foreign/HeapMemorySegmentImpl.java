@@ -73,7 +73,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
     }
 
     @Override
-    public long unsafeGetOffset() {
+    public final long unsafeGetOffset() {
         return offset;
     }
 
@@ -88,7 +88,7 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
     abstract HeapMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySessionImpl scope);
 
     @Override
-    ByteBuffer makeByteBuffer() {
+    final ByteBuffer makeByteBuffer() {
         if (!(base instanceof byte[] baseByte)) {
             throw new UnsupportedOperationException("Not an address to an heap-allocated byte array");
         }

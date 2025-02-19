@@ -43,23 +43,23 @@ non-sealed class GlobalSession extends MemorySessionImpl {
 
     @Override
     @ForceInline
-    public void release0() {
+    public final void release0() {
         // do nothing
     }
 
     @Override
     @ForceInline
-    public void acquire0() {
+    public final void acquire0() {
         // do nothing
     }
 
     @Override
-    void addInternal(ResourceList.ResourceCleanup resource) {
+    final void addInternal(ResourceList.ResourceCleanup resource) {
         // do nothing
     }
 
     @Override
-    public void justClose() {
+    public final void justClose() {
         throw nonCloseable();
     }
 
@@ -70,7 +70,7 @@ non-sealed class GlobalSession extends MemorySessionImpl {
      * {@link Object#equals(Object)}, as that would be problematic when comparing buffers, whose equality and
      * hash codes are content-dependent.
      */
-    static class HeapSession extends GlobalSession {
+    static final class HeapSession extends GlobalSession {
 
         final Object ref;
 

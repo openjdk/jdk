@@ -51,12 +51,12 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
     }
 
     @Override
-    public long address() {
+    public final long address() {
         return min;
     }
 
     @Override
-    public Optional<Object> heapBase() {
+    public final Optional<Object> heapBase() {
         return Optional.empty();
     }
 
@@ -78,22 +78,22 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
     }
 
     @Override
-    public boolean isNative() {
+    public final boolean isNative() {
         return true;
     }
 
     @Override
-    public long unsafeGetOffset() {
+    public final long unsafeGetOffset() {
         return min;
     }
 
     @Override
-    public Object unsafeGetBase() {
+    public final Object unsafeGetBase() {
         return null;
     }
 
     @Override
-    public long maxAlignMask() {
+    public final long maxAlignMask() {
         return 0;
     }
 }
