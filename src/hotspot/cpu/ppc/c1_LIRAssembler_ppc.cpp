@@ -2843,6 +2843,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
   if (dest == Runtime1::entry_for(C1StubId::register_finalizer_id) ||
       dest == Runtime1::entry_for(C1StubId::new_multi_array_id   ) ||
       dest == Runtime1::entry_for(C1StubId::is_instance_of_id    )) {
+    assert(CodeCache::contains(dest), "simplified call is only for special C1 stubs");
     //__ load_const_optimized(R0, dest);
     __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(dest));
     __ mtctr(R0);
