@@ -640,11 +640,14 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int count = this.count;
         byte[] val = this.value;
         if (isLatin1()) {
-            StringLatin1.putCharsAt(val, count, 'n', 'u', 'l', 'l');
+            val[count++] = 'n';
+            val[count++] = 'u';
+            val[count++] = 'l';
+            val[count++] = 'l';
         } else {
-            StringUTF16.putCharsAt(val, count, 'n', 'u', 'l', 'l');
+            count = StringUTF16.putCharsAt(val, count, 'n', 'u', 'l', 'l');
         }
-        this.count = count + 4;
+        this.count = count;
         return this;
     }
 
@@ -769,18 +772,25 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         byte[] val = this.value;
         if (isLatin1()) {
             if (b) {
-                StringLatin1.putCharsAt(val, count, 't', 'r', 'u', 'e');
+                val[count++] = 't';
+                val[count++] = 'r';
+                val[count++] = 'u';
+                val[count++] = 'e';
             } else {
-                StringLatin1.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
+                val[count++] = 'f';
+                val[count++] = 'a';
+                val[count++] = 'l';
+                val[count++] = 's';
+                val[count++] = 'e';
             }
         } else {
             if (b) {
-                StringUTF16.putCharsAt(val, count, 't', 'r', 'u', 'e');
+                count = StringUTF16.putCharsAt(val, count, 't', 'r', 'u', 'e');
             } else {
-                StringUTF16.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
+                count = StringUTF16.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
             }
         }
-        this.count = count + (b ? 4 : 5);
+        this.count = count;
         return this;
     }
 
@@ -830,9 +840,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int spaceNeeded = count + DecimalDigits.stringSize(i);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
-            StringLatin1.getChars(i, spaceNeeded, value);
+            DecimalDigits.getCharsLatin1(i, spaceNeeded, value);
         } else {
-            StringUTF16.getChars(i, count, spaceNeeded, value);
+            DecimalDigits.getCharsUTF16(i, spaceNeeded, value);
         }
         this.count = spaceNeeded;
         return this;
@@ -855,9 +865,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int spaceNeeded = count + DecimalDigits.stringSize(l);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
-            StringLatin1.getChars(l, spaceNeeded, value);
+            DecimalDigits.getCharsLatin1(l, spaceNeeded, value);
         } else {
-            StringUTF16.getChars(l, count, spaceNeeded, value);
+            DecimalDigits.getCharsUTF16(l, spaceNeeded, value);
         }
         this.count = spaceNeeded;
         return this;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,7 @@
 # questions.
 #
 
-################################################################################
-
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
-
-include CopyFiles.gmk
-include Execute.gmk
+include MakeFileStart.gmk
 
 ################################################################################
 # This file is responsible for updating the generated sleef source code files
@@ -39,6 +31,9 @@ include Execute.gmk
 # This target needs to be re-run every time the source code of libsleef is
 # updated from upstream.
 ################################################################################
+
+include CopyFiles.gmk
+include Execute.gmk
 
 ifneq ($(COMPILE_TYPE), cross)
   $(error Only cross-compilation of libsleef is currently supported)
@@ -148,6 +143,4 @@ TARGETS := $(copy_generated_sleef_source)
 
 ################################################################################
 
-all: $(TARGETS)
-
-.PHONY: all default
+include MakeFileEnd.gmk

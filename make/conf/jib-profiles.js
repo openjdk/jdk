@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1092,9 +1092,9 @@ var getJibProfilesDependencies = function (input, common) {
         windows_x64: "VS2022-17.6.5+1.0",
         linux_aarch64: "gcc13.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
-        linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
-        linux_s390x: "gcc8.2.0-Fedora27+1.0",
-        linux_riscv64: "gcc11.3.0-Fedora_rawhide_68692+1.1"
+        linux_ppc64le: "gcc13.2.0-Fedora_41+1.0",
+        linux_s390x: "gcc13.2.0-Fedora_41+1.0",
+        linux_riscv64: "gcc13.2.0-Fedora_41+1.0"
     };
 
     var devkit_platform = (input.target_cpu == "x86"
@@ -1186,9 +1186,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7.4",
+            version: "7.5.1",
             build_number: "1",
-            file: "bundles/jtreg-7.4+1.zip",
+            file: "bundles/jtreg-7.5.1+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
