@@ -49,10 +49,10 @@ Compiler::Compiler() : AbstractCompiler(compiler_c1) {
 
 bool Compiler::init_c1_runtime() {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
+  FrameMap::initialize();
   if (!Runtime1::initialize(buffer_blob)) {
     return false;
   }
-  FrameMap::initialize();
   // initialize data structures
   ValueType::initialize();
   GraphBuilder::initialize();
