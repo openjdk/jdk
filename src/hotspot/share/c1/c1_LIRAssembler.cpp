@@ -753,7 +753,8 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
       break;
 
     case lir_inc_profile_ctr:
-      inc_profile_ctr(op->in_opr1(), op->in_opr2(), op->result_opr(), op->tmp1_opr());
+      inc_profile_ctr(op->in_opr1(), op->in_opr2(), op->result_opr(), op->tmp1_opr(),
+                      op->profile_limit());
       break;
 
     default:

@@ -10876,4 +10876,16 @@ void MacroAssembler::step_random(Register state, Register temp) {
   }
 }
 
+void MacroAssembler::maybe_skip(Register state, Register temp, Label &skip) {
+  if (ProfileCaptureRatio != 1) {
+    step_random(state, temp);
+
+    int ratio_shift = exact_log2(ProfileCaptureRatio);
+    int threshold = (1ull << 32) >> ratio_shift;
+
+    cmpl(state, threshold);
+    jcc(Assembler::aboveEqual, skip);
+  }
+}
+
 #endif

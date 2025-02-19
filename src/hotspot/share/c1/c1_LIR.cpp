@@ -1302,13 +1302,18 @@ void LIR_List::volatile_store_unsafe_reg(LIR_Opr src, LIR_Opr base, LIR_Opr offs
 }
 
 
-void LIR_List::inc_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp, CodeEmitInfo* info) {
+void LIR_List::inc_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp, int profile_limit) {
   append(new LIR_Op2(
             lir_inc_profile_ctr,
             src,
             LIR_OprFact::address(addr),
             res,
-            tmp));
+            tmp,
+            LIR_OprFact::illegalOpr,
+            LIR_OprFact::illegalOpr,
+            LIR_OprFact::illegalOpr,
+            LIR_OprFact::illegalOpr,
+            profile_limit));
 }
 
 

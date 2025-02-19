@@ -2246,6 +2246,7 @@ public:
 #endif
 
   void step_random(Register state, Register temp);
+  void maybe_skip(Register state, Register temp, Label &skip);
 };
 
 #endif // CPU_X86_MACROASSEMBLER_X86_HPP
