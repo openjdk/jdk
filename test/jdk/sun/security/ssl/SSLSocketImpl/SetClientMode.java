@@ -49,7 +49,6 @@
  * occasionally on the very first iteration.
  */
 
-import java.io.*;
 import java.lang.*;
 import java.net.*;
 import java.util.concurrent.CountDownLatch;
@@ -58,21 +57,16 @@ import javax.net.ssl.*;
 import jdk.test.lib.security.SecurityUtils;
 
 public class SetClientMode {
-    volatile int serverPort = 0;
-    private static final CountDownLatch handshakeComplete = new CountDownLatch(1);
+    private volatile int serverPort = 0;
+    private static final CountDownLatch HANDSHAKE_COMPLETE = new CountDownLatch(1);
 
     /*
      * Where do we find the keystores?
      */
-    static String pathToStores = "../../../../javax/net/ssl/etc";
-    static String keyStoreFile = "keystore";
-    static String trustStoreFile = "truststore";
-    static String passwd = "passphrase";
-
-
-    public SetClientMode() {
-        // trivial constructor
-    }
+    private final static String pathToStores = "../../../../javax/net/ssl/etc";
+    private final static String keyStoreFile = "keystore";
+    private final static String trustStoreFile = "truststore";
+    private final static String passwd = "passphrase";
 
     public static void main(String[] args) throws Exception {
         String protocol = args[0];
@@ -96,88 +90,71 @@ public class SetClientMode {
     }
 
     public void run(String protocol) throws Exception {
-        Exception modeException = null ;
-
         // Create a server socket
         SSLServerSocketFactory ssf =
-            (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
-        SSLServerSocket serverSocket =
-            (SSLServerSocket)ssf.createServerSocket(serverPort);
-        serverSocket.setEnabledProtocols(new String[] { protocol });
-        serverPort = serverSocket.getLocalPort();
+            (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
-        // Create a client socket
-        SSLSocketFactory sf = (SSLSocketFactory)SSLSocketFactory.getDefault();
-        SSLSocket clientSocket = (SSLSocket)sf.createSocket(
-                                InetAddress.getLocalHost(),
-                                serverPort );
+        try (SSLServerSocket serverSocket =
+            (SSLServerSocket) ssf.createServerSocket(serverPort)) {
+            serverSocket.setEnabledProtocols(new String[]{ protocol });
+            serverPort = serverSocket.getLocalPort();
 
-        // Create a client which will use the SSLSocket to talk to the server
-        SocketClient client = new SocketClient(clientSocket);
+            // Create a client socket
+            SSLSocketFactory sf = (SSLSocketFactory) SSLSocketFactory.getDefault();
 
-        // Start the client and then accept any connection
-        client.start();
+            try (SSLSocket clientSocket = (SSLSocket) sf.createSocket(
+                    InetAddress.getLocalHost(),
+                    serverPort)) {
 
-        SSLSocket connectedSocket = (SSLSocket)serverSocket.accept();
+                // Create a client which will use the SSLSocket to talk to the server
+                Client client = new Client(clientSocket);
 
-        // force handshaking to complete
-        connectedSocket.getSession();
+                // Start the client and then accept any connection
+                client.start();
 
-        if (!handshakeComplete.await(5, TimeUnit.SECONDS)) {
-          throw new RuntimeException("Handshake didn't complete within 5 seconds.");
-        }
+                SSLSocket connectedSocket = (SSLSocket) serverSocket.accept();
 
-        try {
-            // Now try invoking setClientMode() on one
-            // or the other of our two sockets. We expect
-            // to see an IllegalArgumentException because
-            // handshaking has begun.
-            clientSocket.setUseClientMode(false);
+                // force handshaking to complete
+                connectedSocket.getSession();
 
-            modeException = new Exception("no IllegalArgumentException");
-        } catch (IllegalArgumentException iae) {
-            System.out.println("succeeded, we can't set the client mode");
-        } catch (Exception e) {
-            modeException = e;
-        } finally {
-            // Shut down.
-            connectedSocket.close();
-            serverSocket.close();
+                if (!HANDSHAKE_COMPLETE.await(5, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("Handshake didn't complete within 5 seconds.");
+                }
 
-            if (modeException != null) {
-                throw modeException;
+                try {
+                    // Now try invoking setClientMode() on the client socket.
+                    // We expect to see an IllegalArgumentException because
+                    // handshaking has begun.
+                    clientSocket.setUseClientMode(false);
+
+                    throw new RuntimeException("no IllegalArgumentException");
+                } catch (IllegalArgumentException iae) {
+                    System.out.println("succeeded, we can't set the client mode");
+                }
             }
         }
-
-        return;
     }
 
     // A thread-based client which does nothing except
     // start handshaking on the socket it's given.
-    class SocketClient extends Thread {
-        SSLSocket clientsideSocket;
+    static class Client extends Thread {
+        private final SSLSocket socket;
 
-        public SocketClient( SSLSocket s ) {
-            clientsideSocket = s;
+        public Client(SSLSocket s ) {
+            socket = s;
         }
 
         public void run() {
             try {
-              clientsideSocket.startHandshake();
-              handshakeComplete.countDown();
+                socket.startHandshake();
+                HANDSHAKE_COMPLETE.countDown();
 
                 // If we were to invoke setUseClientMode()
                 // here, the expected exception will happen.
                 //clientsideSocket.getSession();
                 //clientsideSocket.setUseClientMode( false );
-            } catch ( Exception e ) {
+            } catch (Exception e ) {
                 e.printStackTrace();
-            } finally {
-                try {
-                    clientsideSocket.close();
-                } catch ( IOException e ) {
-                    // eat it
-                }
             }
         }
     }
