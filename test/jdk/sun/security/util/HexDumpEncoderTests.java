@@ -23,14 +23,10 @@
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.security.CertUtils;
 import sun.security.util.HexDumpEncoder;
 
-import java.io.FileInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
 /*
@@ -38,7 +34,6 @@ import java.util.Arrays;
  * @bug 8349664
  * @summary HEX dump should always use ASCII or ISO_8859_1
  * @modules java.base/sun.security.util
- * @library /test/lib
  */
 public class HexDumpEncoderTests {
 
