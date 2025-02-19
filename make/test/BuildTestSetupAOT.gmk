@@ -60,7 +60,6 @@ $(eval $(call SetupCopyFiles, COPY_SETUP_AOT, \
 
 IMAGES_TARGETS += $(COPY_SETUP_AOT)
 
-build: $(TARGETS)
 images: $(IMAGES_TARGETS)
 
 .PHONY: images
