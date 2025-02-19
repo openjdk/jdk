@@ -106,7 +106,7 @@ public class CodeBlob extends VMObject {
           return NMethod.class;
       } else if (kind == RuntimeStubKind) {
           return RuntimeStub.class;
-      } else if (kind == UpcallKind) { 
+      } else if (kind == UpcallKind) {
           return UpcallStub.class;
       } else {
           // All other CodeBlob kinds have no special functionality in SA and can be
