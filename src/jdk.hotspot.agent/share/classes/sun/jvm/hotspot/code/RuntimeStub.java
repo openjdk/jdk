@@ -43,10 +43,7 @@ public class RuntimeStub extends RuntimeBlob {
   }
 
   private static void initialize(TypeDataBase db) {
-    Type type = db.lookupType("RuntimeStub");
-    callerMustGCArgumentsField                = type.getCIntegerField("_caller_must_gc_arguments");
-
-    // FIXME: add any needed fields
+    callerMustGCArgumentsField = type.getCIntegerField("_caller_must_gc_arguments");
   }
 
   public RuntimeStub(Address addr) {
@@ -56,7 +53,6 @@ public class RuntimeStub extends RuntimeBlob {
   public boolean callerMustGCArguments() {
     return callerMustGCArgumentsField.getValue(addr) != 0;
   }
-
 
   public String getName() {
     return "RuntimeStub: " + super.getName();

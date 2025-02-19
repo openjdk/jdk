@@ -35,25 +35,6 @@ import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
 public class RuntimeBlob extends CodeBlob {
-
-  // Only used by server compiler on x86; computed over in SA rather
-  // than relying on computation in target VM
-  private static final int     NOT_YET_COMPUTED = -2;
-  private static final int     UNDEFINED        = -1;
-  private              int     linkOffset       = NOT_YET_COMPUTED;
-
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
-        }
-      });
-  }
-
-  private static void initialize(TypeDataBase db) {
-    Type type = db.lookupType("RuntimeBlob");
-  }
-
   public RuntimeBlob(Address addr) {
     super(addr);
   }
