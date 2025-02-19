@@ -49,6 +49,7 @@ private:
       yields++;
     } else {
       short_sleep();
+      yields = 0;
     }
   }
 
