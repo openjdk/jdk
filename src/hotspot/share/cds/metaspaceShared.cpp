@@ -500,7 +500,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   HeapShared::serialize_tables(soc);
   SystemDictionaryShared::serialize_dictionary_headers(soc);
   AOTLinkedClassBulkLoader::serialize(soc, true);
-  FinalImageRecipes::serialize(soc, true);
+  FinalImageRecipes::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
@@ -816,8 +816,6 @@ void MetaspaceShared::prepare_for_dumping() {
 void MetaspaceShared::preload_and_dump(TRAPS) {
   CDSConfig::DumperThreadMark dumper_thread_mark(THREAD);
   ResourceMark rm(THREAD);
-  HandleMark hm(THREAD);
-
   StaticArchiveBuilder builder;
   preload_and_dump_impl(builder, THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -955,7 +953,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   }
 
   if (CDSConfig::is_dumping_preimage_static_archive()) {
-    log_info(cds)("Reading lambda form invokers of in JDK default classlist ...");
+    log_info(cds)("Reading lambda form invokers from JDK default classlist ...");
     char default_classlist[JVM_MAXPATHLEN];
     get_default_classlist(default_classlist, sizeof(default_classlist));
     struct stat statbuf;

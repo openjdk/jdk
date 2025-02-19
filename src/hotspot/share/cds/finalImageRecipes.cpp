@@ -162,8 +162,6 @@ void FinalImageRecipes::apply_recipes_impl(TRAPS) {
   apply_recipes_for_invokedynamic(CHECK);
 }
 
-void FinalImageRecipes::serialize(SerializeClosure* soc, bool is_static_archive) {
-  if (is_static_archive) {
-    soc->do_ptr((void**)&_final_image_recipes);
-  }
+void FinalImageRecipes::serialize(SerializeClosure* soc) {
+  soc->do_ptr((void**)&_final_image_recipes);
 }

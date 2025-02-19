@@ -98,7 +98,7 @@ class AppClass extends BootClass {
         // This method overrides BootClass, which is loaded by the boot loader.
         // AppClass is loaded by the app loader. To make sure that you cannot use
         // type masquerade attacks, we need to add a loader constraint that says:
-        //  app and loo loaders must resolve the symbol "java/lang/String" to the same type.
+        //  app and boot loaders must resolve the symbol "java/lang/String" to the same type.
         super.func(s + " From AppClass");
     }
 }

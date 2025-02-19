@@ -735,4 +735,5 @@ bool CDSConfig::is_dumping_invokedynamic() {
 bool CDSConfig::is_loading_invokedynamic() {
   return UseSharedSpaces && is_using_full_module_graph() && _has_archived_invokedynamic;
 }
+
 #endif // INCLUDE_CDS_JAVA_HEAP

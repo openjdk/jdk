@@ -64,7 +64,7 @@ class FinalImageRecipes {
   void apply_recipes_for_invokedynamic(TRAPS);
 
 public:
-  static void serialize(SerializeClosure* soc, bool is_static_archive);
+  static void serialize(SerializeClosure* soc);
 
   // Called when dumping preimage
   static void record_recipes();

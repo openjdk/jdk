@@ -992,7 +992,7 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
   RunTimeClassInfo* record = RunTimeClassInfo::get_for(klass);
 
   int length = record->num_verifier_constraints();
-  if (length > 0 || klass->name()->equals("HelloWorld")) {
+  if (length > 0) {
     for (int i = 0; i < length; i++) {
       RunTimeClassInfo::RTVerifierConstraint* vc = record->verifier_constraint_at(i);
       Symbol* name      = vc->name();
@@ -1028,7 +1028,7 @@ void SystemDictionaryShared::copy_verification_constraints_from_preimage(Instanc
   RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from preimage
 
   int length = rt_info->num_verifier_constraints();
-  if (length > 0 || klass->name()->equals("HelloWorld")) {
+  if (length > 0) {
     for (int i = 0; i < length; i++) {
       RunTimeClassInfo::RTVerifierConstraint* vc = rt_info->verifier_constraint_at(i);
       Symbol* name      = vc->name();
@@ -1161,7 +1161,6 @@ void SystemDictionaryShared::copy_linking_constraints_from_preimage(InstanceKlas
   assert(CDSConfig::is_using_archive(), "called at run time with CDS enabled only");
   JavaThread* current = JavaThread::current();
   if (klass->is_shared_platform_class() || klass->is_shared_app_class()) {
-    DumpTimeClassInfo* dt_info = get_info(klass);
     RunTimeClassInfo* rt_info = RunTimeClassInfo::get_for(klass); // from preimage
 
     if (rt_info->num_loader_constraints() > 0) {

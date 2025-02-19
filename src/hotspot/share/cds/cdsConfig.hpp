@@ -103,13 +103,13 @@ public:
   // "classic"   - This is the traditional CDS workflow of
   //               "java -Xshare:dump -XX:SharedClassListFile=file.txt".
   //
-  // "preimage"  - This happens when we execute the JEP 485 training run, e.g:
+  // "preimage"  - This happens when we execute the JEP 483 training run, e.g:
   //               "java -XX:AOTMode=record -XX:AOTConfiguration=app.aotconfig -cp app.jar App"
   //               The above command writes app.aotconfig as a "CDS preimage". This
   //               is a binary file that contains all the classes loaded during the
   //               training run, plus profiling data (e.g., the resolved constant pool entries).
   //
-  // "final"     - This happens when we execute the JEP 485 assembly phase, e.g:
+  // "final"     - This happens when we execute the JEP 483 assembly phase, e.g:
   //               "java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconfig -XX:AOTCache=app.aot -cp app.jar"
   //               The above command loads all classes from app.aotconfig, perform additional linking,
   //               and writes app.aot as a "CDS final image" file.
