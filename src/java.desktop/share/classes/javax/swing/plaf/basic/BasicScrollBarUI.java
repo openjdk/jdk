@@ -1664,7 +1664,7 @@ public class BasicScrollBarUI
     }
 
     private void stopScrollTimer(ActionEvent e) {
-        ((Timer)e.getSource()).stop();
+        ((Timer) e.getSource()).stop();
         buttonListener.handledEvent = false;
         scrollbar.setValueIsAdjusting(false);
     }

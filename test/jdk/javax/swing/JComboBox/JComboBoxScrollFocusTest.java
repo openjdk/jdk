@@ -40,8 +40,6 @@ import javax.swing.plaf.basic.BasicComboPopup;
  * @test
  * @key headful
  * @bug 6672644
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
  * @requires os.family != "mac"
  * @summary Tests JComboBox scrollbar behavior when alt-tabbing
  * @run main JComboBoxScrollFocusTest
@@ -83,11 +81,17 @@ public class JComboBoxScrollFocusTest {
         return task.get(500, TimeUnit.MILLISECONDS);
     }
 
+    private static JScrollBar getScrollBar() {
+        BasicComboPopup popup = (BasicComboPopup) combobox
+                .getAccessibleContext().getAccessibleChild(0);
+        JScrollPane scrollPane = (JScrollPane) popup
+                .getAccessibleContext().getAccessibleChild(0);
+        return scrollPane.getVerticalScrollBar();
+    }
+
     private static int getScrollbarValue() throws Exception {
         FutureTask<Integer> task = new FutureTask<>(() -> {
-            BasicComboPopup popup = (BasicComboPopup) combobox.getAccessibleContext().getAccessibleChild(0);
-            JScrollPane scrollPane = (JScrollPane) popup.getAccessibleContext().getAccessibleChild(0);
-            JScrollBar scrollBar = scrollPane.getVerticalScrollBar();
+            JScrollBar scrollBar = getScrollBar();
             return scrollBar.getValue();
         });
         SwingUtilities.invokeAndWait(task);
@@ -110,8 +114,7 @@ public class JComboBoxScrollFocusTest {
         robot.waitForIdle();
         robot.delay(500);
 
-        BasicComboPopup popup = (BasicComboPopup) combobox.getAccessibleContext().getAccessibleChild(0);
-        JScrollBar scrollBar = ((JScrollPane) popup.getAccessibleContext().getAccessibleChild(0)).getVerticalScrollBar();
+        JScrollBar scrollBar = getScrollBar();
 
         // Start scrolling
         Rectangle scrollbarBounds = getOnScreenBoundsOnEDT(scrollBar);
