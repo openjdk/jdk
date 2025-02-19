@@ -39,13 +39,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.jar.JarOutputStream;
-import java.util.zip.CRC32;
-import java.util.zip.CRC32C;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
