@@ -42,16 +42,7 @@ private:
 
   template<bool ALLOW_BLOCK>
   void contended_lock_internal(JavaThread* java_thread);
-
-  void yield_or_sleep(int &yields) {
-    if (yields < 5) {
-      os::naked_yield();
-      yields++;
-    } else {
-      os::naked_short_nanosleep(100000);
-      yields = 0;
-    }
-  }
+  static void yield_or_sleep(int &yields);
 
 public:
   ShenandoahLock() : _state(unlocked), _owner(nullptr) {};

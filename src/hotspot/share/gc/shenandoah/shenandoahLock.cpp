@@ -79,6 +79,16 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
   }
 }
 
+void ShenandoahLock::yield_or_sleep(int &yields){
+  if (yields < 5) {
+    os::naked_yield();
+    yields++;
+  } else {
+    os::naked_short_nanosleep(100000);
+    yields = 0;
+  }
+}
+
 ShenandoahSimpleLock::ShenandoahSimpleLock() {
   assert(os::mutex_init_done(), "Too early!");
 }
