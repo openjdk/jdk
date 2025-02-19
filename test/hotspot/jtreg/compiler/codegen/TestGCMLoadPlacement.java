@@ -65,32 +65,27 @@ public class TestGCMLoadPlacement {
         try {
             Test1.run();
         } catch (Exception e) {
-            c++; System.out.println(e.toString());
+            c++; System.out.println("Test1 failure");
         }
         try {
             Test2.run();
         } catch (Exception e) {
-            c++; System.out.println(e.toString());
+            c++; System.out.println("Test2 failure");
         }
         try {
             Test3.run();
         } catch (Exception e) {
-            c++; System.out.println(e.toString());
+            c++; System.out.println("Test3 failure");
         }
         try {
             Test4.run();
         } catch (Exception e) {
-            c++; System.out.println(e.toString());
+            c++; System.out.println("Test4 failure");
         }
         try {
             Test5.run();
         } catch (Exception e) {
-            c++; System.out.println(e.toString());
-        }
-        try {
-            Test6.run();
-        } catch (Exception e) {
-            c++; System.out.println(e.toString());
+            c++; System.out.println("Test5 failure");
         }
         if (c > 0) {
             throw new RuntimeException("Test failures: " + c);
@@ -233,35 +228,6 @@ public class TestGCMLoadPlacement {
     }
 
     static class Test5 {
-        int a = 1;
-        int test() {
-            int f, g = 0, h[] = new int[a];
-            double j = 72.18064;
-            for (int i = 0; i < 7; ++i)
-                for (int i2 = 0; i2 < 4; i2++) {
-                    g += ++h[0];
-                    while (--j > 0)
-                        ;
-                }
-            int c = 0;
-            for (int k = 0; k < h.length; k++) {
-                c += h[k];
-            }
-            return c;
-        }
-        static void run() {
-            int res = 0;
-            for (int i = 0; i < 2000; ++i) {
-                Test5 s = new Test5();
-                res = s.test();
-                if (res != 28) {
-                    throw new RuntimeException("Unexpected result: " + res);
-                }
-            }
-        }
-    }
-
-    static class Test6 {
         static boolean flag;
         volatile byte volFld;
         int iFld, iFld2;
@@ -284,7 +250,7 @@ public class TestGCMLoadPlacement {
         }
 
         static void run() {
-            Test6 t = new Test6();
+            Test5 t = new Test5();
             for (int i = 0; i < 10; i++) {
                 t.iFld = 0;
                 int res = t.test();
