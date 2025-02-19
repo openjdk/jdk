@@ -63,6 +63,14 @@ final class VarForm {
         }
     }
 
+    VarForm(Class<?> implClass, VarForm methodTypeSource) {
+        this.implClass = implClass;
+        // methodTypeSource already called initMethodTypes
+        this.methodType_table = methodTypeSource.methodType_table;
+        this.methodType_V_table = methodTypeSource.methodType_V_table;
+        this.memberName_table = new MemberName[VarHandle.AccessMode.COUNT];
+    }
+
     // Used by IndirectVarHandle
     VarForm(Class<?> value, Class<?>[] coordinates) {
         this.methodType_table = new MethodType[VarHandle.AccessType.COUNT];
