@@ -70,7 +70,7 @@ public class IvParameterSpec implements AlgorithmParameterSpec {
      * @throws IllegalArgumentException if {@code iv} is {@code null}
      * or {@code (iv.length - offset < len)}
      * @throws ArrayIndexOutOfBoundsException if {@code offset}
-     * or {@code len} index bytes outside the {@code iv}.
+     * or {@code len} are negative.
      */
     public IvParameterSpec(byte[] iv, int offset, int len) {
         if (iv == null) {
