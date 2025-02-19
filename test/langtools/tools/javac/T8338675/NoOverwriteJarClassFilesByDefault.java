@@ -39,44 +39,68 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.jar.JarOutputStream;
+import java.util.zip.CRC32;
+import java.util.zip.CRC32C;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+/**
+ * This test makes two specific assertions about javac behaviour when source
+ * files are found in the classpath.
+ *
+ * <ol>
+ *     <li>Source files found in classpath JAR files are not overwritten.
+ *     <li>Class files generated during compilation which are associated with any
+ *    sources found in JAR files are written (flat) to the current directory.
+ * </ol>
+ *
+ * <p>Note that this behaviour is not obviously well-defined, and should not
+ * be relied upon, but it matches previous JDK behaviour and so is tested here.
+ *
+ * <p>Specifically, the behaviour in (2) means library classes with the same base
+ * class name may be overwritten, and the resulting set of class files in the
+ * current directory may not be usable.
+ */
 public class NoOverwriteJarClassFilesByDefault {
 
     private static final String OLD_LIB_SOURCE = """
-            class LibClass {
-                static final String OLD_FIELD = "This will not compile with Target";
+            package lib;
+            public class LibClass {
+                public static final String OLD_FIELD = "This will not compile with Target";
             }
             """;
 
     private static final String NEW_LIB_SOURCE = """
-            class LibClass {
-                static final String NEW_FIELD = "Only this will compile with Target";
+            package lib;
+            public class LibClass {
+                public static final String NEW_FIELD = "Only this will compile with Target";
             }
             """;
 
     // Target source references the field only available in the new source.
     private static final String TARGET_SOURCE = """
             class TargetClass {
-                static final String VALUE = LibClass.NEW_FIELD;
+                static final String VALUE = lib.LibClass.NEW_FIELD;
             }
             """;
 
-    private static final String LIB_SOURCE_NAME = "LibClass.java";
-    private static final String LIB_CLASS_NAME = "LibClass.class";
+    private static final String LIB_SOURCE_NAME = "lib/LibClass.java";
+    private static final String LIB_CLASS_NAME = "lib/LibClass.class";
 
     public static void main(String[] args) throws IOException {
         ToolBox tb = new ToolBox();
+        tb.createDirectories("lib");
+        tb.writeFile(LIB_SOURCE_NAME, OLD_LIB_SOURCE);
 
         // Compile the old (broken) source and then store the class file in the JAR.
-        new JavacTask(tb)
-                .sources(OLD_LIB_SOURCE)
-                .run();
+        // The class file generated he is in the lib/ directory, which we delete
+        // after making the JAR (just to be sure).
+        new JavacTask(tb).files(LIB_SOURCE_NAME).run();
 
         // The new (fixed) source is never written to disk, so if compilation works
         // it proves it's getting it from the source file in the JAR.
@@ -89,24 +113,34 @@ public class NoOverwriteJarClassFilesByDefault {
             // whether it's a source file or a class file). So in this test, we
             // put the one we want to use *first* with a newer timestamp, to show
             // that it's definitely the timestamp being used to select the source.
-            // TODO: Should this be UTF-8, or platform default for byte encoding?
             writeEntry(jar, LIB_SOURCE_NAME, NEW_LIB_SOURCE.getBytes(), newerTime);
             // Source is newer than the (broken) compiled class, so should compile
             // from the source file in the JAR. If timestamps were not set, or set
-            // equal, the test would use this class file, and fail.
+            // equal, the test would use this (broken) class file, and fail.
             writeEntry(jar, LIB_CLASS_NAME, Files.readAllBytes(Path.of(LIB_CLASS_NAME)), olderTime);
             jar.close();
         }
+        // Check there's no output file present and delete the original library files.
+        Path outputClassFile = Path.of("LibClass.class");
+        if (Files.exists(outputClassFile)) {
+            throw new IllegalStateException("Output class file should not exist (yet).");
+        }
+        Path libDir = Path.of("lib");
+        tb.cleanDirectory(libDir);
+        tb.deleteFiles(libDir);
+
+        // Before running the test itself, get the CRC of the class file in the JAR.
         long originalLibCrc = getLibCrc();
 
+        // Code under test:
+        // Compile the target class with new library source only available in the JAR.
+        //
         // This compilation only succeeds if 'NEW_FIELD' exists, which is only in
         // the source file written to the JAR, and nowhere on disk.
-        // Before the fix, adding '.options("-implicit:none")' makes the test pass.
-        new JavacTask(tb)
-                .sources(TARGET_SOURCE)
-                .classpath("lib.jar")
-                .run();
+        new JavacTask(tb).sources(TARGET_SOURCE).classpath("lib.jar").run();
 
+        // Assertion 1: The class file in the JAR is unchanged.
+        //
         // Since compilation succeeded, we know it used NEW_LIB_SOURCE, and if it
         // wrote the class file back to the JAR (bad) then that should now have
         // different contents. Note that the modification time of the class file
@@ -114,6 +148,11 @@ public class NoOverwriteJarClassFilesByDefault {
         long actualLibCrc = getLibCrc();
         if (actualLibCrc != originalLibCrc) {
             throw new AssertionError("Class library contents were modified in the JAR file.");
+        }
+
+        // Assertion 2: An output class file was written to the current directory.
+        if (!Files.exists(outputClassFile)) {
+            throw new AssertionError("Output class file was not written to the current directory.");
         }
     }
 
@@ -136,10 +175,7 @@ public class NoOverwriteJarClassFilesByDefault {
 
     // ---- Debug helper methods ----
     private static String format(ZipEntry e) {
-        return String.format("name: %s, size: %s, modified: %s\n",
-                e.getName(),
-                e.getSize(),
-                toLocalTime(e.getLastModifiedTime()));
+        return String.format("name: %s, size: %s, modified: %s\n", e.getName(), e.getSize(), toLocalTime(e.getLastModifiedTime()));
     }
 
     private static String toLocalTime(FileTime t) {
