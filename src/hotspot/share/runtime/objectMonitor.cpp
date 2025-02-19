@@ -1261,7 +1261,7 @@ ObjectWaiter* ObjectMonitor::entry_list_tail(JavaThread* current) {
   if (w != nullptr) {
     return w;
   }
-  w = _entry_list;
+  w = Atomic::load_acquire(&_entry_list);
   assert(w != nullptr, "invariant");
   if (w->_next == nullptr) {
     _entry_list_tail = w;
@@ -1312,7 +1312,9 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
         return;
       }
       // The CAS above can fail from interference IFF a contending
-      // thread "pushed" itself onto entry_list.
+      // thread "pushed" itself onto entry_list. So fall-through to
+      // building the doubly-linked list.
+      assert(currentNode->_prev == nullptr, "invariant");
     }
     if (currentNode->_prev == nullptr) {
       // Build the doubly linked list to get hold of
@@ -1331,25 +1333,35 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
     return;
   }
 
+  // If we get here it means the current thread enqueued itself on the
+  // _entry_list but was then able to "steal" the lock before the
+  // chosen successor was able to. Consequently currentNode must be an
+  // interior node in the _entry_list, or the head.
   assert(currentNode->_next != nullptr, "invariant");
   assert(currentNode != _entry_list_tail, "invariant");
 
+  // Check if we are in the singly-linked portion of the
+  // _entry_list. If we are the head then we try to remove ourselves,
+  // else we convert to the doubly-linked list.
   if (currentNode->_prev == nullptr) {
     ObjectWaiter* v = Atomic::load_acquire(&_entry_list);
 
     assert(v != nullptr, "invariant");
     if (v == currentNode) {
+      ObjectWaiter* next = currentNode->_next;
       // currentNode is at the head of _entry_list.
-      if (Atomic::cmpxchg(&_entry_list, v, currentNode->_next) == v) {
-        // The CAS above sucsessfully unlinked currentNode from the head of the _entry_list.
+      if (Atomic::cmpxchg(&_entry_list, v, next) == v) {
+        // The CAS above sucsessfully unlinked currentNode from the
+        // head of the _entry_list.
         assert(_entry_list != v, "invariant");
-        _entry_list->_prev = nullptr;
+        next->_prev = nullptr;
         set_bad_pointers(currentNode);
         return;
       } else {
         // The CAS above can fail from interference IFF a contending
-        // thread "pushed" itself onto entry_list, in which case
-        // currentNode must now be in the interior of the list.
+        // thread "pushed" itself onto _entry_list, in which case
+        // currentNode must now be in the interior of the
+        // list. Fall-through to building the doubly-linked list.
         assert(_entry_list != currentNode, "invariant");
       }
     }
@@ -1359,7 +1371,7 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
     assert(currentNode->_prev != nullptr, "must be");
   }
 
-  // We now assume we are unlinking currentNode from the interior of a
+  // We now know we are unlinking currentNode from the interior of a
   // doubly linked list.
   assert(currentNode->_next != nullptr, "");
   assert(currentNode->_prev != nullptr, "");
