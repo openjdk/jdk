@@ -38,7 +38,7 @@ public class OpensslArtifactFetcher {
     private static final String OPENSSL_ORG = "jpg.tests.jdk.openssl";
 
     /**
-     * Gets the openssl binary path of the current version
+     * Gets the openssl binary path of OPENSSL_BUNDLE_VERSION
      *
      * Openssl selection flow:
         1. Check whether property test.openssl.path is set and it's the
@@ -139,6 +139,10 @@ public class OpensslArtifactFetcher {
             libDir = "lib64";
         }
         return openSslRootPath.resolve(libDir, "ossl-modules");
+    }
+
+    public static String getTestOpensslBundleVersion() {
+        return OPENSSL_BUNDLE_VERSION;
     }
 
     @Artifact(

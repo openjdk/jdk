@@ -31,7 +31,7 @@
  *          Note: This test executes some openssl command, so need to set
  *          openssl path using system property "test.openssl.path" or it should
  *          be available in /usr/bin or /usr/local/bin
- *          Required OpenSSL version : Current version as defined by OpensslArtifactFetcher
+ *          Required OpenSSL version : OpensslArtifactFetcher.OPENSSL_BUNDLE_VERSION
  *
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
@@ -77,8 +77,9 @@ public class KeytoolOpensslInteropTest {
         } else {
             // since the current version of openssl is not available, skip all
             // openssl command dependent tests with a warning
-            System.out.println("\n\u001B[31mWarning: Can't find the current version "
-                    + "of openssl binary on this machine, please install"
+            System.out.println("\n\u001B[31mWarning: Can't find the version: "
+                    + OpensslArtifactFetcher.getTestOpensslBundleVersion()
+                    + " of openssl binary on this machine, please install"
                     + " and set openssl path with property "
                     + "'test.openssl.path'. Now running only half portion of "
                     + "the test, skipping all tests which depends on openssl "
