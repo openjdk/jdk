@@ -461,6 +461,16 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             throw new UncheckedIOException(new UnsupportedProtocolVersionException(
                     "HTTP3 is not supported"));
         }
+        sslParams = requireNonNullElseGet(builder.sslParams, sslContext::getDefaultSSLParameters);
+        boolean sslParamsSupportedForH3 = QuicTLSContext.isSslParametersSupported(
+                sslParams,
+                // These are user-provided `SSLParameters`. If they are empty, it means that the user isn't explicitly
+                // opting for any protocol. Hence, allowing empty `SSLParameters`:
+                true);
+        if (version == Version.HTTP_3 && !sslParamsSupportedForH3) {
+            throw new UncheckedIOException(new UnsupportedProtocolVersionException(
+                    "HTTP3 is not supported - TLSv1.3 isn't configured on SSLParameters"));
+        }
         Executor ex = builder.executor;
         if (ex == null) {
             ex = Executors.newCachedThreadPool(new DefaultThreadFactory(id));
@@ -484,18 +494,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             debug.log("proxySelector is %s (user-supplied=%s)",
                       this.proxySelector, userProxySelector != null);
         authenticator = builder.authenticator;
-        sslParams = requireNonNullElseGet(builder.sslParams, sslContext::getDefaultSSLParameters);
-        boolean sslParamsSupportedForH3 = QuicTLSContext.isSslParametersSupported(
-                sslParams,
-                // These are user-provided `SSLParameters`. If they are empty, we interpret this as user isn't blocking
-                // us from using the default TLSv1.3 protocol, which we know exists in the `SSLContext` due to the
-                // `isSslContextSupported()` check above. Hence, allowing empty `SSLParameters`:
-                true);
-        if (version == Version.HTTP_3 && !sslParamsSupportedForH3) {
-            throw new UncheckedIOException(new UnsupportedProtocolVersionException(
-                    "HTTP3 is not supported - TLSv1.3 isn't configured on SSLParameters"));
-        }
-        final boolean h3Supported = sslCtxSupportedForH3 && sslParamsSupportedForH3;
+        boolean h3Supported = sslCtxSupportedForH3 && sslParamsSupportedForH3;
         registry = new AltServicesRegistry(id);
         connections = new ConnectionPool(id);
         client2 = new Http2ClientImpl(this);
