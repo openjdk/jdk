@@ -99,6 +99,9 @@ import jdk.internal.net.http.common.Utils.SafeExecutorService;
 import jdk.internal.net.http.websocket.BuilderImpl;
 import jdk.internal.net.quic.QuicTLSContext;
 
+import static java.util.Objects.requireNonNullElse;
+import static java.util.Objects.requireNonNullElseGet;
+
 /**
  * Client implementation. Contains all configuration information and also
  * the selector manager thread which allows async events to be registered
@@ -445,22 +448,16 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         id = CLIENT_IDS.incrementAndGet();
         dbgTag = "HttpClientImpl(" + id +")";
         localAddr = builder.localAddr;
-        if (builder.version == null) {
-            version = HttpClient.Version.HTTP_2;
-        } else {
-            version = builder.version;
-        }
-        if (builder.sslContext == null) {
+        version = requireNonNullElse(builder.version, Version.HTTP_2);
+        sslContext = requireNonNullElseGet(builder.sslContext, () -> {
             try {
-                sslContext = SSLContext.getDefault();
+                return SSLContext.getDefault();
             } catch (NoSuchAlgorithmException ex) {
                 throw new UncheckedIOException(new IOException(ex));
             }
-        } else {
-            sslContext = builder.sslContext;
-        }
-        final boolean sslCtxSupportedForH3 = QuicTLSContext.isSupported(this.sslContext);
-        if (this.version == Version.HTTP_3 && !sslCtxSupportedForH3) {
+        });
+        final boolean sslCtxSupportedForH3 = QuicTLSContext.isSslContextSupported(sslContext);
+        if (version == Version.HTTP_3 && !sslCtxSupportedForH3) {
             throw new UncheckedIOException(new UnsupportedProtocolVersionException(
                     "HTTP3 is not supported"));
         }
@@ -487,26 +484,14 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             debug.log("proxySelector is %s (user-supplied=%s)",
                       this.proxySelector, userProxySelector != null);
         authenticator = builder.authenticator;
-        if (builder.sslParams == null) {
-            sslParams = getDefaultParams(sslContext);
-        } else {
-            sslParams = builder.sslParams;
-        }
-        final String[] sslParamsProtos = sslParams.getProtocols();
-        final boolean sslParamsSupportedForH3;
-        if (sslParamsProtos == null || sslParamsProtos.length == 0) {
-            sslParamsSupportedForH3 = true;
-        } else {
-            boolean isTLSv13Present = false;
-            for (String proto : sslParamsProtos) {
-                if ("TLSv1.3".equals(proto)) {
-                    isTLSv13Present = true;
-                    break;
-                }
-            }
-            sslParamsSupportedForH3 = isTLSv13Present;
-        }
-        if (this.version == Version.HTTP_3 && !sslParamsSupportedForH3) {
+        sslParams = requireNonNullElseGet(builder.sslParams, sslContext::getDefaultSSLParameters);
+        boolean sslParamsSupportedForH3 = QuicTLSContext.isSslParametersSupported(
+                sslParams,
+                // These are user-provided `SSLParameters`. If they are empty, we interpret this as user isn't blocking
+                // us from using the default TLSv1.3 protocol, which we know exists in the `SSLContext` due to the
+                // `isSslContextSupported()` check above. Hence, allowing empty `SSLParameters`:
+                true);
+        if (version == Version.HTTP_3 && !sslParamsSupportedForH3) {
             throw new UncheckedIOException(new UnsupportedProtocolVersionException(
                     "HTTP3 is not supported - TLSv1.3 isn't configured on SSLParameters"));
         }
@@ -655,11 +640,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     @Override
     public boolean isTerminated() {
         return isStarted.get() && !isAlive.get();
-    }
-
-    private static SSLParameters getDefaultParams(SSLContext ctx) {
-        SSLParameters params = ctx.getDefaultSSLParameters();
-        return params;
     }
 
     // Returns the facade that was returned to the application code.

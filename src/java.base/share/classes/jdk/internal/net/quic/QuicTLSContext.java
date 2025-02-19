@@ -31,6 +31,7 @@ import java.util.Objects;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLContextSpi;
+import javax.net.ssl.SSLParameters;
 
 import sun.security.ssl.QuicTLSEngineImpl;
 import sun.security.ssl.SSLContextImpl;
@@ -52,9 +53,9 @@ public final class QuicTLSContext {
      * the QuicTLSContext, false otherwise}
      * @param sslContext The SSLContext
      */
-    public static boolean isSupported(final SSLContext sslContext) {
-        if (!Arrays.asList(sslContext.getSupportedSSLParameters().getProtocols())
-                .contains("TLSv1.3")) {
+    public static boolean isSslContextSupported(final SSLContext sslContext) {
+        boolean parametersSupported = isSslParametersSupported(sslContext.getSupportedSSLParameters(), false);
+        if (!parametersSupported) {
             return false;
         }
         // horrible hack - what we do here is try and get hold of a SSLContext
@@ -71,6 +72,16 @@ public final class QuicTLSContext {
         return ssci.isUsableWithQuic();
     }
 
+    /**
+     * {@return {@code true} if {@code parameters} are supported by {@link QuicTLSContext}}
+     */
+    public static boolean isSslParametersSupported(SSLParameters parameters, boolean emptyAllowed) {
+        String[] protocols = parameters.getProtocols();
+        return protocols == null || protocols.length == 0
+                ? emptyAllowed
+                : Arrays.asList(protocols).contains("TLSv1.3");
+    }
+
     private static SSLContextImpl getSSLContextImpl(
             final SSLContext sslContext) {
         final Object underlyingImpl = CONTEXT_SPI.get(sslContext);
@@ -84,11 +95,11 @@ public final class QuicTLSContext {
      * @param sslContext The SSLContext
      * @throws IllegalArgumentException If the passed {@code sslContext} isn't
      *                                  supported by the QuicTLSContext
-     * @see #isSupported(SSLContext)
+     * @see #isSslContextSupported(SSLContext)
      */
     public QuicTLSContext(final SSLContext sslContext) {
         Objects.requireNonNull(sslContext);
-        if (!isSupported(sslContext)) {
+        if (!isSslContextSupported(sslContext)) {
             throw new IllegalArgumentException(
                     "Cannot construct a QUIC TLS context with the given SSLContext");
         }
