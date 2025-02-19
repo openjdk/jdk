@@ -236,14 +236,14 @@ public final class Class<T> implements java.io.Serializable,
      * This constructor is not used and prevents the default constructor being
      * generated.
      */
-    private Class(ClassLoader loader, Class<?> arrayComponentType, char mods, ProtectionDomain pd, boolean primitive) {
+    private Class(ClassLoader loader, Class<?> arrayComponentType, char mods, ProtectionDomain pd, boolean isPrim) {
         // Initialize final field for classLoader.  The initialization value of non-null
         // prevents future JIT optimizations from assuming this final field is null.
         classLoader = loader;
         componentType = arrayComponentType;
         modifiers = mods;
         protectionDomain = pd;
-        isPrimitiveType = primitive;
+        primitive = isPrim;
     }
 
     /**
@@ -847,7 +847,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 15.8.2 Class Literals
      */
     public boolean isPrimitive() {
-        return isPrimitiveType;
+        return primitive;
     }
 
     /**
@@ -1007,7 +1007,7 @@ public final class Class<T> implements java.io.Serializable,
     private transient Object classData; // Set by VM
     private transient Object[] signers; // Read by VM, mutable
     private final transient char modifiers;  // Set by the VM
-    private final transient boolean isPrimitiveType;  // Set by the VM
+    private final transient boolean primitive;  // Set by the VM if the Class is a primitive type.
 
     // package-private
     Object getClassData() {
@@ -1292,7 +1292,9 @@ public final class Class<T> implements java.io.Serializable,
         return componentType;
     }
 
-    private final Class<?> componentType;
+    // The componentType field's null value is the sole indication that the class is an array,
+    // see isArray().
+    private transient final Class<?> componentType;
 
     /*
      * Returns the {@code Class} representing the element type of an array class.
