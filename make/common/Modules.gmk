@@ -89,6 +89,7 @@ SPEC_SUBDIRS += share/specs
 
 MAN_SUBDIRS += share/man $(TARGET_OS)/man
 
+# The docs should include the sum of all man pages for all platforms
 MAN_DOCS_SUBDIRS += share/man windows/man
 
 # Find all module-info.java files for the current build target platform and
