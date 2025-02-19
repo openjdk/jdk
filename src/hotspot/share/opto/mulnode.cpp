@@ -973,7 +973,14 @@ static int maskShiftAmount(PhaseGVN* phase, Node* shiftNode, int nBits) {
 // (X << con1) << con0 with con0 < nbits && con1 < nbits ==>
 // if con0 + con1 >= nbits => 0
 // if con0 + con1 < nbits => X << (con1 + con0)
-static Node* collapseDoubleShiftLeft(PhaseGVN* phase, Node* outer_shift, int con0, int nbits, BasicType bt) {
+//
+// outer_shift is, with the notation above, the (...) << con0
+// con0 is the rhs of outer_shift (since it's already computed in the callers)
+// con0 is assumed to be masked already (as computed by maskShiftAmount) and non-zero
+// bt must be T_LONG or T_INT.
+static Node* collapseDoubleShiftLeft(PhaseGVN* phase, Node* outer_shift, int con0, BasicType bt) {
+  assert(bt == T_LONG || bt == T_INT, "Unexpected type");
+  int nbits = bt == T_LONG ? BitsPerJavaLong : BitsPerJavaInteger;
   Node* inner_shift = outer_shift->in(1);
   int inner_shift_op = inner_shift->Opcode();
   if (inner_shift_op != Op_LShift(bt)) {
@@ -985,13 +992,12 @@ static Node* collapseDoubleShiftLeft(PhaseGVN* phase, Node* outer_shift, int con
     return nullptr;
   }
 
-  if (!phase->is_IterGVN()) {
-    phase->record_for_igvn(outer_shift);
-    return nullptr;
-  }
-
   if (con0 + con1 >= nbits) {
-    return phase->intcon(0);
+    if (bt == T_INT) {
+      return phase->intcon(0);
+    } else {
+      return phase->longcon(0);
+    }
   }
 
   // con0 + con1 < nbits ==> actual shift happens now
@@ -1126,7 +1132,7 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(add1->in(2)) == TypeInt::make( bits_mask ) )
     return new LShiftINode( add1->in(1), in(2) );
 
-  Node* doubleShift = collapseDoubleShiftLeft(phase, this, con, BitsPerJavaInteger, T_INT);
+  Node* doubleShift = collapseDoubleShiftLeft(phase, this, con, T_INT);
   if (doubleShift != nullptr) {
     return doubleShift;
   }
@@ -1309,7 +1315,7 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(add1->in(2)) == TypeLong::make( bits_mask ) )
     return new LShiftLNode( add1->in(1), in(2) );
 
-  Node* doubleShift = collapseDoubleShiftLeft(phase, this, con, BitsPerJavaLong, T_LONG);
+  Node* doubleShift = collapseDoubleShiftLeft(phase, this, con, T_LONG);
   if (doubleShift != nullptr) {
     return doubleShift;
   }
