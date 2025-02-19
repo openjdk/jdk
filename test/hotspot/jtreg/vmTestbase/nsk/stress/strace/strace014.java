@@ -140,6 +140,11 @@ public class strace014 extends StraceBase {
         StackTraceElement[] all;
         for (int i = 1; i < THRD_COUNT; i++) {
             all = traces.get(threads[i]);
+            if (all == null) {
+                complain("No stacktrace for thread " + threads[i].getName() +
+                         " was found in the set of all traces");
+                return false;
+            }
             int k = all.length;
             if (count - k > 4) {
                 complain("wrong lengths of stack traces:\n\t"

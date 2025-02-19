@@ -886,7 +886,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCExpression> getImplementsClause() {
             return implementing;
         }
-        @SuppressWarnings("removal")
         @DefinedBy(Api.COMPILER_TREE)
         public List<JCExpression> getPermitsClause() {
             return permitting;

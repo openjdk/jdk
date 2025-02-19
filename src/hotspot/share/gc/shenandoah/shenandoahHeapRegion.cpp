@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -88,11 +87,12 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   if (ZapUnusedHeapArea && committed) {
     SpaceMangler::mangle_region(MemRegion(_bottom, _end));
   }
+  _recycling.unset();
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
   stringStream ss;
-  ss.print("Illegal region state transition from \"%s\", at %s\n  ", region_state_to_string(_state), method);
+  ss.print("Illegal region state transition from \"%s\", at %s\n  ", region_state_to_string(state()), method);
   print_on(&ss);
   fatal("%s", ss.freeze());
 }
@@ -100,7 +100,7 @@ void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
 void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affiliation) {
   shenandoah_assert_heaplocked();
   reset_age();
-  switch (_state) {
+  switch (state()) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
@@ -120,7 +120,7 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
 void ShenandoahHeapRegion::make_affiliated_maybe() {
   shenandoah_assert_heaplocked();
   assert(!ShenandoahHeap::heap()->mode()->is_generational(), "Only call if non-generational");
-  switch (_state) {
+  switch (state()) {
    case _empty_uncommitted:
    case _empty_committed:
    case _cset:
@@ -146,14 +146,15 @@ void ShenandoahHeapRegion::make_regular_bypass() {
           ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
           "Only for STW GC or when Universe is initializing (CDS)");
   reset_age();
-  switch (_state) {
+  auto cur_state = state();
+  switch (cur_state) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
     case _cset:
     case _humongous_start:
     case _humongous_cont:
-      if (_state == _humongous_start || _state == _humongous_cont) {
+      if (cur_state == _humongous_start || cur_state == _humongous_cont) {
         // CDS allocates chunks of the heap to fill with regular objects. The allocator
         // will dutifully track any waste in the unused portion of the last region. Once
         // CDS has finished initializing the objects, it will convert these regions to
@@ -177,7 +178,7 @@ void ShenandoahHeapRegion::make_regular_bypass() {
 void ShenandoahHeapRegion::make_humongous_start() {
   shenandoah_assert_heaplocked();
   reset_age();
-  switch (_state) {
+  switch (state()) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
@@ -194,7 +195,7 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
   // Don't bother to account for affiliated regions during Full GC.  We recompute totals at end.
   set_affiliation(affiliation);
   reset_age();
-  switch (_state) {
+  switch (state()) {
     case _empty_committed:
     case _regular:
     case _humongous_start:
@@ -209,7 +210,7 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
 void ShenandoahHeapRegion::make_humongous_cont() {
   shenandoah_assert_heaplocked();
   reset_age();
-  switch (_state) {
+  switch (state()) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
@@ -226,7 +227,7 @@ void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affi
   set_affiliation(affiliation);
   // Don't bother to account for affiliated regions during Full GC.  We recompute totals at end.
   reset_age();
-  switch (_state) {
+  switch (state()) {
     case _empty_committed:
     case _regular:
     case _humongous_start:
@@ -240,9 +241,9 @@ void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affi
 
 void ShenandoahHeapRegion::make_pinned() {
   shenandoah_assert_heaplocked();
-  assert(pin_count() > 0, "Should have pins: " SIZE_FORMAT, pin_count());
+  assert(pin_count() > 0, "Should have pins: %zu", pin_count());
 
-  switch (_state) {
+  switch (state()) {
     case _regular:
       set_state(_pinned);
     case _pinned_cset:
@@ -253,7 +254,7 @@ void ShenandoahHeapRegion::make_pinned() {
     case _pinned_humongous_start:
       return;
     case _cset:
-      _state = _pinned_cset;
+      set_state(_pinned_cset);
       return;
     default:
       report_illegal_transition("pinning");
@@ -262,9 +263,9 @@ void ShenandoahHeapRegion::make_pinned() {
 
 void ShenandoahHeapRegion::make_unpinned() {
   shenandoah_assert_heaplocked();
-  assert(pin_count() == 0, "Should not have pins: " SIZE_FORMAT, pin_count());
+  assert(pin_count() == 0, "Should not have pins: %zu", pin_count());
 
-  switch (_state) {
+  switch (state()) {
     case _pinned:
       assert(is_affiliated(), "Pinned region should be affiliated");
       set_state(_regular);
@@ -286,7 +287,7 @@ void ShenandoahHeapRegion::make_unpinned() {
 void ShenandoahHeapRegion::make_cset() {
   shenandoah_assert_heaplocked();
   // Leave age untouched.  We need to consult the age when we are deciding whether to promote evacuated objects.
-  switch (_state) {
+  switch (state()) {
     case _regular:
       set_state(_cset);
     case _cset:
@@ -299,7 +300,7 @@ void ShenandoahHeapRegion::make_cset() {
 void ShenandoahHeapRegion::make_trash() {
   shenandoah_assert_heaplocked();
   reset_age();
-  switch (_state) {
+  switch (state()) {
     case _humongous_start:
     case _humongous_cont:
     {
@@ -329,10 +330,9 @@ void ShenandoahHeapRegion::make_trash_immediate() {
 }
 
 void ShenandoahHeapRegion::make_empty() {
-  shenandoah_assert_heaplocked();
   reset_age();
   CENSUS_NOISE(clear_youth();)
-  switch (_state) {
+  switch (state()) {
     case _trash:
       set_state(_empty_committed);
       _empty_time = os::elapsedTime();
@@ -344,7 +344,7 @@ void ShenandoahHeapRegion::make_empty() {
 
 void ShenandoahHeapRegion::make_uncommitted() {
   shenandoah_assert_heaplocked();
-  switch (_state) {
+  switch (state()) {
     case _empty_committed:
       do_uncommit();
       set_state(_empty_uncommitted);
@@ -358,7 +358,7 @@ void ShenandoahHeapRegion::make_committed_bypass() {
   shenandoah_assert_heaplocked();
   assert (ShenandoahHeap::heap()->is_full_gc_in_progress(), "only for full GC");
 
-  switch (_state) {
+  switch (state()) {
     case _empty_uncommitted:
       do_commit();
       set_state(_empty_committed);
@@ -397,9 +397,9 @@ void ShenandoahHeapRegion::set_live_data(size_t s) {
 
 void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|");
-  st->print(SIZE_FORMAT_W(5), this->_index);
+  st->print("%5zu", this->_index);
 
-  switch (_state) {
+  switch (state()) {
     case _empty_uncommitted:
       st->print("|EU ");
       break;
@@ -444,15 +444,15 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
             p2i(ShenandoahHeap::heap()->marking_context()->top_at_mark_start(const_cast<ShenandoahHeapRegion*>(this))));
   st->print("|UWM " SHR_PTR_FORMAT,
             p2i(_update_watermark));
-  st->print("|U " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(used()),                proper_unit_for_byte_size(used()));
-  st->print("|T " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_tlab_allocs()),     proper_unit_for_byte_size(get_tlab_allocs()));
-  st->print("|G " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_gclab_allocs()),    proper_unit_for_byte_size(get_gclab_allocs()));
+  st->print("|U %5zu%1s", byte_size_in_proper_unit(used()),                proper_unit_for_byte_size(used()));
+  st->print("|T %5zu%1s", byte_size_in_proper_unit(get_tlab_allocs()),     proper_unit_for_byte_size(get_tlab_allocs()));
+  st->print("|G %5zu%1s", byte_size_in_proper_unit(get_gclab_allocs()),    proper_unit_for_byte_size(get_gclab_allocs()));
   if (ShenandoahHeap::heap()->mode()->is_generational()) {
-    st->print("|P " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_plab_allocs()),   proper_unit_for_byte_size(get_plab_allocs()));
+    st->print("|P %5zu%1s", byte_size_in_proper_unit(get_plab_allocs()),   proper_unit_for_byte_size(get_plab_allocs()));
   }
-  st->print("|S " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_shared_allocs()),   proper_unit_for_byte_size(get_shared_allocs()));
-  st->print("|L " SIZE_FORMAT_W(5) "%1s", byte_size_in_proper_unit(get_live_data_bytes()), proper_unit_for_byte_size(get_live_data_bytes()));
-  st->print("|CP " SIZE_FORMAT_W(3), pin_count());
+  st->print("|S %5zu%1s", byte_size_in_proper_unit(get_shared_allocs()),   proper_unit_for_byte_size(get_shared_allocs()));
+  st->print("|L %5zu%1s", byte_size_in_proper_unit(get_live_data_bytes()), proper_unit_for_byte_size(get_live_data_bytes()));
+  st->print("|CP %3zu", pin_count());
   st->cr();
 
 #undef SHR_PTR_FORMAT
@@ -569,27 +569,62 @@ ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
   return r;
 }
 
-void ShenandoahHeapRegion::recycle() {
-  shenandoah_assert_heaplocked();
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahGeneration* generation = heap->generation_for(affiliation());
 
-  heap->decrease_used(generation, used());
-  generation->decrement_affiliated_region_count();
+void ShenandoahHeapRegion::recycle_internal() {
+  assert(_recycling.is_set() && is_trash(), "Wrong state");
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   set_top(bottom());
   clear_live_data();
   reset_alloc_metadata();
-
   heap->marking_context()->reset_top_at_mark_start(this);
-
   set_update_watermark(bottom());
-
-  make_empty();
-
-  set_affiliation(FREE);
   if (ZapUnusedHeapArea) {
     SpaceMangler::mangle_region(MemRegion(bottom(), end()));
+  }
+
+  make_empty();
+  set_affiliation(FREE);
+}
+
+void ShenandoahHeapRegion::try_recycle_under_lock() {
+  shenandoah_assert_heaplocked();
+  if (is_trash() && _recycling.try_set()) {
+    if (is_trash()) {
+      ShenandoahHeap* heap = ShenandoahHeap::heap();
+      ShenandoahGeneration* generation = heap->generation_for(affiliation());
+
+      heap->decrease_used(generation, used());
+      generation->decrement_affiliated_region_count();
+
+      recycle_internal();
+    }
+    _recycling.unset();
+  } else {
+    // Ensure recycling is unset before returning to mutator to continue memory allocation.
+    while (_recycling.is_set()) {
+      if (os::is_MP()) {
+        SpinPause();
+      } else {
+        os::naked_yield();
+      }
+    }
+  }
+}
+
+void ShenandoahHeapRegion::try_recycle() {
+  shenandoah_assert_not_heaplocked();
+  if (is_trash() && _recycling.try_set()) {
+    // Double check region state after win the race to set recycling flag
+    if (is_trash()) {
+      ShenandoahHeap* heap = ShenandoahHeap::heap();
+      ShenandoahGeneration* generation = heap->generation_for(affiliation());
+      heap->decrease_used(generation, used());
+      generation->decrement_affiliated_region_count_without_lock();
+
+      recycle_internal();
+    }
+    _recycling.unset();
   }
 }
 
@@ -639,33 +674,33 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   size_t region_size;
   if (FLAG_IS_DEFAULT(ShenandoahRegionSize)) {
     if (ShenandoahMinRegionSize > max_heap_size / MIN_NUM_REGIONS) {
-      err_msg message("Max heap size (" SIZE_FORMAT "%s) is too low to afford the minimum number "
-                      "of regions (" SIZE_FORMAT ") of minimum region size (" SIZE_FORMAT "%s).",
+      err_msg message("Max heap size (%zu%s) is too low to afford the minimum number "
+                      "of regions (%zu) of minimum region size (%zu%s).",
                       byte_size_in_proper_unit(max_heap_size), proper_unit_for_byte_size(max_heap_size),
                       MIN_NUM_REGIONS,
                       byte_size_in_proper_unit(ShenandoahMinRegionSize), proper_unit_for_byte_size(ShenandoahMinRegionSize));
       vm_exit_during_initialization("Invalid -XX:ShenandoahMinRegionSize option", message);
     }
     if (ShenandoahMinRegionSize < MIN_REGION_SIZE) {
-      err_msg message("" SIZE_FORMAT "%s should not be lower than minimum region size (" SIZE_FORMAT "%s).",
+      err_msg message("%zu%s should not be lower than minimum region size (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahMinRegionSize), proper_unit_for_byte_size(ShenandoahMinRegionSize),
                       byte_size_in_proper_unit(MIN_REGION_SIZE),         proper_unit_for_byte_size(MIN_REGION_SIZE));
       vm_exit_during_initialization("Invalid -XX:ShenandoahMinRegionSize option", message);
     }
     if (ShenandoahMinRegionSize < MinTLABSize) {
-      err_msg message("" SIZE_FORMAT "%s should not be lower than TLAB size size (" SIZE_FORMAT "%s).",
+      err_msg message("%zu%s should not be lower than TLAB size size (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahMinRegionSize), proper_unit_for_byte_size(ShenandoahMinRegionSize),
                       byte_size_in_proper_unit(MinTLABSize),             proper_unit_for_byte_size(MinTLABSize));
       vm_exit_during_initialization("Invalid -XX:ShenandoahMinRegionSize option", message);
     }
     if (ShenandoahMaxRegionSize < MIN_REGION_SIZE) {
-      err_msg message("" SIZE_FORMAT "%s should not be lower than min region size (" SIZE_FORMAT "%s).",
+      err_msg message("%zu%s should not be lower than min region size (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahMaxRegionSize), proper_unit_for_byte_size(ShenandoahMaxRegionSize),
                       byte_size_in_proper_unit(MIN_REGION_SIZE),         proper_unit_for_byte_size(MIN_REGION_SIZE));
       vm_exit_during_initialization("Invalid -XX:ShenandoahMaxRegionSize option", message);
     }
     if (ShenandoahMinRegionSize > ShenandoahMaxRegionSize) {
-      err_msg message("Minimum (" SIZE_FORMAT "%s) should be larger than maximum (" SIZE_FORMAT "%s).",
+      err_msg message("Minimum (%zu%s) should be larger than maximum (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahMinRegionSize), proper_unit_for_byte_size(ShenandoahMinRegionSize),
                       byte_size_in_proper_unit(ShenandoahMaxRegionSize), proper_unit_for_byte_size(ShenandoahMaxRegionSize));
       vm_exit_during_initialization("Invalid -XX:ShenandoahMinRegionSize or -XX:ShenandoahMaxRegionSize", message);
@@ -681,21 +716,21 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
 
   } else {
     if (ShenandoahRegionSize > max_heap_size / MIN_NUM_REGIONS) {
-      err_msg message("Max heap size (" SIZE_FORMAT "%s) is too low to afford the minimum number "
-                              "of regions (" SIZE_FORMAT ") of requested size (" SIZE_FORMAT "%s).",
+      err_msg message("Max heap size (%zu%s) is too low to afford the minimum number "
+                              "of regions (%zu) of requested size (%zu%s).",
                       byte_size_in_proper_unit(max_heap_size), proper_unit_for_byte_size(max_heap_size),
                       MIN_NUM_REGIONS,
                       byte_size_in_proper_unit(ShenandoahRegionSize), proper_unit_for_byte_size(ShenandoahRegionSize));
       vm_exit_during_initialization("Invalid -XX:ShenandoahRegionSize option", message);
     }
     if (ShenandoahRegionSize < ShenandoahMinRegionSize) {
-      err_msg message("Heap region size (" SIZE_FORMAT "%s) should be larger than min region size (" SIZE_FORMAT "%s).",
+      err_msg message("Heap region size (%zu%s) should be larger than min region size (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahRegionSize), proper_unit_for_byte_size(ShenandoahRegionSize),
                       byte_size_in_proper_unit(ShenandoahMinRegionSize),  proper_unit_for_byte_size(ShenandoahMinRegionSize));
       vm_exit_during_initialization("Invalid -XX:ShenandoahRegionSize option", message);
     }
     if (ShenandoahRegionSize > ShenandoahMaxRegionSize) {
-      err_msg message("Heap region size (" SIZE_FORMAT "%s) should be lower than max region size (" SIZE_FORMAT "%s).",
+      err_msg message("Heap region size (%zu%s) should be lower than max region size (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahRegionSize), proper_unit_for_byte_size(ShenandoahRegionSize),
                       byte_size_in_proper_unit(ShenandoahMaxRegionSize),  proper_unit_for_byte_size(ShenandoahMaxRegionSize));
       vm_exit_during_initialization("Invalid -XX:ShenandoahRegionSize option", message);
@@ -795,11 +830,11 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
     evt.set_index((unsigned) index());
     evt.set_start((uintptr_t)bottom());
     evt.set_used(used());
-    evt.set_from(_state);
+    evt.set_from(state());
     evt.set_to(to);
     evt.commit();
   }
-  _state = to;
+  Atomic::store(&_state, to);
 }
 
 void ShenandoahHeapRegion::record_pin() {
@@ -807,7 +842,7 @@ void ShenandoahHeapRegion::record_pin() {
 }
 
 void ShenandoahHeapRegion::record_unpin() {
-  assert(pin_count() > 0, "Region " SIZE_FORMAT " should have non-zero pins", index());
+  assert(pin_count() > 0, "Region %zu should have non-zero pins", index());
   Atomic::sub(&_critical_pins, (size_t)1);
 }
 
@@ -821,7 +856,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
   ShenandoahAffiliation region_affiliation = heap->region_affiliation(this);
   {
     ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
-    log_debug(gc)("Setting affiliation of Region " SIZE_FORMAT " from %s to %s, top: " PTR_FORMAT ", TAMS: " PTR_FORMAT
+    log_debug(gc)("Setting affiliation of Region %zu from %s to %s, top: " PTR_FORMAT ", TAMS: " PTR_FORMAT
                   ", watermark: " PTR_FORMAT ", top_bitmap: " PTR_FORMAT,
                   index(), shenandoah_affiliation_name(region_affiliation), shenandoah_affiliation_name(new_affiliation),
                   p2i(top()), p2i(ctx->top_at_mark_start(this)), p2i(_update_watermark), p2i(ctx->top_bitmap(this)));
@@ -835,7 +870,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
     HeapWord* top_bitmap = ctx->top_bitmap(this);
 
     assert(ctx->is_bitmap_range_within_region_clear(top_bitmap, _end),
-           "Region " SIZE_FORMAT ", bitmap should be clear between top_bitmap: " PTR_FORMAT " and end: " PTR_FORMAT, idx,
+           "Region %zu, bitmap should be clear between top_bitmap: " PTR_FORMAT " and end: " PTR_FORMAT, idx,
            p2i(top_bitmap), p2i(_end));
   }
 #endif
