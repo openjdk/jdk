@@ -146,8 +146,7 @@ bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& 
 
 #ifdef ASSERT
   if (TestingAsyncLoggingDeathTest || TestingAsyncLoggingDeathTestNoCrash) {
-    log_debug(deathtest)("Induce a recursive log for testing (for crashing)");
-    log_debug(deathtest2)("Induce a recursive log for testing");
+    log_debug(deathtest)("Induce a recursive log for testing");
   }
 #endif // ASSERT
 
