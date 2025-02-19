@@ -1914,6 +1914,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
 
 void TemplateInterpreterGenerator::stop_interpreter_at() {
   Label L;
+  // uint64
   __ cmp32(ExternalAddress((address) &BytecodeCounter::_counter_value),
            StopInterpreterAt,
            rscratch1);
