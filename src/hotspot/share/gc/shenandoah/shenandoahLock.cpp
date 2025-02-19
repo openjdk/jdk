@@ -79,8 +79,10 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
   }
 }
 
-void ShenandoahLock::yield_or_sleep(int &yields){
-  if (yields < 5) {
+void ShenandoahLock::yield_or_sleep(int &yields) {
+  // Simple yield-sleep policy: do one 100us sleep after every N yields.
+  // Tested with different values of N, and chose 3 for best performance.
+  if (yields < 3) {
     os::naked_yield();
     yields++;
   } else {
