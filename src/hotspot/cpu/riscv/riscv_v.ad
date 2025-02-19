@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
 // Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -108,6 +108,13 @@ source %{
   bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
     if (!UseRVV) {
       return false;
+    }
+    switch (opcode) {
+      case Op_SelectFromTwoVector:
+        // There is no masked version of selectFrom two vector, i.e. selectFrom(av, bv, mask) in vector API.
+        return false;
+      default:
+        break;
     }
     return match_rule_supported_vector(opcode, vlen, bt);
   }
@@ -4421,6 +4428,34 @@ instruct vmask_reinterpret_diff_esize(vRegMask dst, vRegMask_V0 src, vReg tmp) %
     BasicType to_bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(to_bt, Matcher::vector_length(this));
     __ vmseq_vi(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg), -1);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ------------------------------ Vector selectFrom -----------------------------
+
+instruct select_from_two_vectors(vReg dst, vReg src1, vReg src2, vReg index, vRegMask_V0 v0, vReg tmp) %{
+  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
+  effect(TEMP_DEF dst, TEMP v0, TEMP tmp);
+  format %{ "select_from_two_vectors $dst, $src1, $src2, $index" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ vsetvli_helper(bt, Matcher::vector_length(this));
+    __ vrgather_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src1$$reg),
+                   as_VectorRegister($index$$reg));
+    bool use_imm = __ is_simm5(Matcher::vector_length(this) - 1);
+    if (use_imm) {
+      __ vmsgtu_vi(v0, as_VectorRegister($index$$reg), Matcher::vector_length(this) - 1);
+      __ vadd_vi(as_VectorRegister($tmp$$reg), as_VectorRegister($index$$reg),
+                 -Matcher::vector_length(this), Assembler::v0_t);
+    } else {
+      __ mv(t0, Matcher::vector_length(this) - 1);
+      __ vmsgtu_vx(v0, as_VectorRegister($index$$reg), t0);
+      __ mv(t0, -Matcher::vector_length(this));
+      __ vadd_vx(as_VectorRegister($tmp$$reg), as_VectorRegister($index$$reg), t0, Assembler::v0_t);
+    }
+    __ vrgather_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src2$$reg),
+                   as_VectorRegister($tmp$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}

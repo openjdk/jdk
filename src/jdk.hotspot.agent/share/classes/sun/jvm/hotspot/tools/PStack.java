@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,16 +162,24 @@ public class PStack extends Tool {
                                }
                             } else if (cb.isBufferBlob()) {
                                out.println("<StubRoutines>");
+                            } else if (cb.isAdapterBlob()) {
+                               out.println("<AdapterBlob>");
+                            } else if (cb.isVtableBlob()) {
+                               out.println("<VtableBlob>");
+                            } else if (cb.isMHAdapterBlob()) {
+                               out.println("<MethodHandlesAdapterBlob>");
                             } else if (cb.isRuntimeStub()) {
                                out.println("<RuntimeStub>");
-                            } else if (cb.isDeoptimizationStub()) {
-                               out.println("<DeoptimizationStub>");
-                            } else if (cb.isUncommonTrapStub()) {
-                               out.println("<UncommonTrap>");
-                            } else if (cb.isExceptionStub()) {
-                               out.println("<ExceptionStub>");
-                            } else if (cb.isSafepointStub()) {
-                               out.println("<SafepointStub>");
+                            } else if (cb.isUpcallStub()) {
+                               out.println("<UpcallStub>");
+                            } else if (cb.isDeoptimizationBlob()) {
+                               out.println("<DeoptimizationBlob>");
+                            } else if (cb.isUncommonTrapBlob()) {
+                               out.println("<UncommonTrapBlob>");
+                            } else if (cb.isExceptionBlob()) {
+                               out.println("<ExceptionBlob>");
+                            } else if (cb.isSafepointBlob()) {
+                               out.println("<SafepointBlob>");
                             } else {
                                out.println("<Unknown code blob>");
                             }
