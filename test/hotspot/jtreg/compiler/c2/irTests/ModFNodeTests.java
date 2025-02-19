@@ -125,9 +125,9 @@ public class ModFNodeTests {
     }
 
     @Test
-    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
-    public void repeatedlyUnused(double x, double y) {
-        double unused = 1.;
+    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    public void repeatedlyUnused(float x, float y) {
+        float unused = 1.f;
         for (int i = 0; i < 100_000; i++) {
             unused = x % y;
         }

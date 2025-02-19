@@ -127,7 +127,7 @@ public class ModDNodeTests {
     @Test
     @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
     public void repeatedlyUnused(double x, double y) {
-        double unused = 1.;
+        double unused = 1.d;
         for (int i = 0; i < 100_000; i++) {
             unused = x % y;
         }
