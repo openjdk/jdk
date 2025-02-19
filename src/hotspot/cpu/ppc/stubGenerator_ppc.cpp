@@ -553,13 +553,12 @@ class StubGenerator: public StubCodeGenerator {
   // The subkey H is divided into lower, middle, and higher halves.
   // The multiplication results are reduced using `vConstC2` to stay within GF(2^128).
   // The final computed value is stored back into `vState`.
-
   static void computeGCMProduct(MacroAssembler* masm,
                               VectorRegister vLowerH, VectorRegister vH, VectorRegister vHigherH,
                               VectorRegister vConstC2, VectorRegister vZero, VectorRegister vState,
                               VectorRegister vTmp4, VectorRegister vTmp5, VectorRegister vTmp6,
                               VectorRegister vTmp7, VectorRegister vTmp8, VectorRegister vTmp9,
-                              VectorRegister vTmp10, VectorRegister vTmp11, Register data) {
+                              VectorRegister vTmp10, VectorRegister vTmp11) {
     assert(masm != nullptr, "MacroAssembler pointer is null");
     masm->vxor(vH, vH, vState);
     masm->vpmsumd(vTmp4, vLowerH, vH);            // L : Lower Half of subkey H
@@ -663,7 +662,6 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_skip_assert);
     __ clrldi(blocks, blocks, 32);
     __ mtctr(blocks);
-    __ li(temp1, 0);
     __ lvsl(loadOrder, temp1);
 #ifdef VM_LITTLE_ENDIAN
     __ vspltisb(vTmp12, 0xf);
@@ -701,7 +699,7 @@ class StubGenerator: public StubCodeGenerator {
       __ lvx(vH, temp1, data);
       __ vec_perm(vH, vH, vH, loadOrder);
       computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
-                    vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11, data);
+                    vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11);
       __ addi(data, data, 16);
       __ bdnz(L_aligned_loop);
     __ b(L_store);
@@ -711,11 +709,9 @@ class StubGenerator: public StubCodeGenerator {
       __ vec_perm(vTmp4, vHigh, vHigh, loadOrder);
       __ vec_perm(vTmp5, vLow, vLow, loadOrder);
       __ vec_perm(vH, vTmp5, vTmp4, vPerm);
-      __ subi(data, data, 16);
       computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
-                    vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11, data);
+                    vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11);
       __ vmr(vHigh, vLow);
-      __ addi(data, data, 16);
       __ bdnz(L_unaligned_loop);
     __ bind(L_store);
     __ stxvd2x(vState->to_vsr(), state);
