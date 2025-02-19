@@ -39,6 +39,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Immutable directed acyclic graph (DAG).
@@ -237,6 +238,17 @@ public record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
      */
     public List<T> getNoOutgoingEdges() {
         return getNoOutgoingEdges(edgeMatrix).mapToObj(nodes::get).toList();
+    }
+
+    public void dumpToStdout() {
+        dump(System.out::println);
+    }
+
+    public void dump(Consumer<String> sink) {
+        sink.accept("graph LR;"); // mermaid "left-to-right" graph format
+        StreamSupport.stream(nodes.spliterator(), true).map(tail -> {
+            return getHeadsOf(tail).stream().map(head -> tail + "-->" + head);
+        }).flatMap(x -> x).toList().forEach(sink);
     }
 
     private List<T> getAllNodesOf(T node, boolean heads) {
