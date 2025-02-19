@@ -24,20 +24,23 @@
  */
 package jdk.jpackage.internal.util;
 
+import static java.util.stream.Collectors.toMap;
+
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.util.FileUtils;
 
 /**
  * Group of paths. Each path in the group is assigned a unique id.
@@ -130,18 +133,39 @@ public final class PathGroup {
      * @return unique root paths in this path group
      */
     public List<Path> roots() {
-        // Sort by the number of path components in ascending order.
-        List<Map.Entry<Path, Path>> sorted = normalizedPaths().stream()
-                .sorted((a, b) -> a.getKey().getNameCount() - b.getKey().getNameCount()).toList();
+        if (entries.isEmpty()) {
+            return List.of();
+        }
 
-        // Returns `true` if `a` is a parent of `b`
-        BiFunction<Map.Entry<Path, Path>, Map.Entry<Path, Path>, Boolean> isParentOrSelf = (a, b) -> {
-            return a == b || b.getKey().startsWith(a.getKey());
-        };
+        // Sort by the number of path components in descending order.
+        final var sorted = entries.entrySet().stream().map(e -> {
+            return Map.entry(e.getValue().normalize(), e.getValue());
+        }).sorted(Comparator.comparingInt(e -> e.getValue().getNameCount() * -1)).distinct().toList();
 
-        return sorted.stream().filter(
-                v -> v == sorted.stream().sequential().filter(v2 -> isParentOrSelf.apply(v2, v)).findFirst().get())
-                .map(v -> v.getValue()).toList();
+        final var shortestNormalizedPath = sorted.getLast().getKey();
+        if (shortestNormalizedPath.getNameCount() == 1 && shortestNormalizedPath.getFileName().toString().isEmpty()) {
+            return List.of(sorted.getLast().getValue());
+        }
+
+        final List<Path> roots = new ArrayList<>();
+
+        for (int i = 0; i < sorted.size(); ++i) {
+            final var path = sorted.get(i).getKey();
+            boolean pathIsRoot = true;
+            for (int j = i + 1; j < sorted.size(); ++j) {
+                final var maybeParent = sorted.get(j).getKey();
+                if (path.getNameCount() > maybeParent.getNameCount() && path.startsWith(maybeParent)) {
+                    pathIsRoot = false;
+                    break;
+                }
+            }
+
+            if (pathIsRoot) {
+                roots.add(sorted.get(i).getValue());
+            }
+        }
+
+        return roots;
     }
 
     /**
@@ -155,9 +179,9 @@ public final class PathGroup {
      */
     public long sizeInBytes() throws IOException {
         long reply = 0;
-        for (Path dir : roots().stream().filter(f -> Files.isDirectory(f)).collect(Collectors.toList())) {
+        for (Path dir : roots().stream().filter(Files::isDirectory).toList()) {
             try (Stream<Path> stream = Files.walk(dir)) {
-                reply += stream.filter(p -> Files.isRegularFile(p)).mapToLong(f -> f.toFile().length()).sum();
+                reply += stream.filter(Files::isRegularFile).mapToLong(f -> f.toFile().length()).sum();
             }
         }
         return reply;
@@ -175,7 +199,7 @@ public final class PathGroup {
     public PathGroup resolveAt(Path root) {
         Objects.requireNonNull(root);
         return new PathGroup(entries.entrySet().stream()
-                .collect(Collectors.toMap(e -> e.getKey(), e -> root.resolve(e.getValue()))));
+                .collect(toMap(Map.Entry::getKey, e -> root.resolve(e.getValue()))));
     }
 
     /**
@@ -188,8 +212,8 @@ public final class PathGroup {
      * @param dst the destination path group
      * @throws IOException If an I/O error occurs
      */
-    public void copy(PathGroup dst) throws IOException {
-        copy(this, dst, null, false);
+    public void copy(PathGroup dst, CopyOption ...options) throws IOException {
+        copy(this, dst, new Copy(false, options));
     }
 
     /**
@@ -199,8 +223,9 @@ public final class PathGroup {
      * @param dst the destination path group
      * @throws IOException If an I/O error occurs
      */
-    public void move(PathGroup dst) throws IOException {
-        copy(this, dst, null, true);
+    public void move(PathGroup dst, CopyOption ...options) throws IOException {
+        copy(this, dst, new Copy(true, options));
+        deleteEntries();
     }
 
     /**
@@ -212,8 +237,7 @@ public final class PathGroup {
      * @throws IOException If an I/O error occurs
      */
     public void transform(PathGroup dst, TransformHandler handler) throws IOException {
-        Objects.requireNonNull(handler);
-        copy(this, dst, handler, false);
+        copy(this, dst, handler);
     }
 
     /**
@@ -250,102 +274,118 @@ public final class PathGroup {
         }
     }
 
-    private static void copy(PathGroup src, PathGroup dst, TransformHandler handler, boolean move) throws IOException {
-        List<Map.Entry<Path, Path>> copyItems = new ArrayList<>();
-        List<Path> excludeItems = new ArrayList<>();
-
-        for (var id : src.entries.keySet()) {
-            Path srcPath = src.entries.get(id);
-            if (dst.entries.containsKey(id)) {
-                copyItems.add(Map.entry(srcPath, dst.entries.get(id)));
+    private void deleteEntries() throws IOException {
+        for (final var file : entries.values()) {
+            if (Files.isDirectory(file)) {
+                FileUtils.deleteRecursive(file);
             } else {
-                excludeItems.add(srcPath);
+                Files.deleteIfExists(file);
+            }
+        }
+    }
+
+    private record CopySpec(Path from, Path to, Path fromNormalized, Path toNormalized) {
+        CopySpec {
+            Objects.requireNonNull(from);
+            Objects.requireNonNull(fromNormalized);
+            Objects.requireNonNull(to);
+            Objects.requireNonNull(toNormalized);
+        }
+
+        CopySpec(Path from, Path to) {
+            this(from, to, from.normalize(), to.normalize());
+        }
+    }
+
+    private static void copy(PathGroup src, PathGroup dst, TransformHandler handler) throws IOException {
+        List<CopySpec> copySpecs = new ArrayList<>();
+        List<Path> excludePaths = new ArrayList<>();
+
+        for (final var e : src.entries.entrySet()) {
+            final var srcPath = e.getValue();
+            final var dstPath = dst.entries.get(e.getKey());
+            if (dstPath != null) {
+                copySpecs.add(new CopySpec(srcPath, dstPath));
+            } else {
+                excludePaths.add(srcPath.normalize());
             }
         }
 
-        copy(move, copyItems, excludeItems, handler);
+        copy(copySpecs, excludePaths, handler);
     }
 
-    private static void copy(boolean move, List<Map.Entry<Path, Path>> entries, List<Path> excludePaths,
+    private record Copy(boolean move, CopyOption ... options) implements TransformHandler {
+        @Override
+        public void copyFile(Path src, Path dst) throws IOException {
+            Files.createDirectories(dst.getParent());
+            if (move) {
+                Files.move(src, dst, options);
+            } else {
+                Files.copy(src, dst, options);
+            }
+        }
+
+        @Override
+        public void createDirectory(Path dir) throws IOException {
+            Files.createDirectories(dir);
+        }
+    }
+
+    private static boolean match(Path what, List<Path> paths) {
+        return paths.stream().anyMatch(what::startsWith);
+    }
+
+    private static void copy(List<CopySpec> copySpecs, List<Path> excludePaths,
             TransformHandler handler) throws IOException {
+        Objects.requireNonNull(excludePaths);
+        Objects.requireNonNull(handler);
 
-        if (handler == null) {
-            handler = new TransformHandler() {
-                @Override
-                public void copyFile(Path src, Path dst) throws IOException {
-                    Files.createDirectories(dst.getParent());
-                    if (move) {
-                        Files.move(src, dst);
+        final var copySpecMap = copySpecs.stream().<CopySpec>mapMulti((copySpec, consumer) -> {
+            final var src = copySpec.from;
+
+            if (!Files.exists(src) || match(src, excludePaths)) {
+                return;
+            }
+
+            if (Files.isDirectory(copySpec.from)) {
+                final var dst = copySpec.to;
+                try (final var files = Files.walk(src)) {
+                    files.filter(file -> {
+                        return !match(file, excludePaths);
+                    }).map(file -> {
+                        return new CopySpec(file, dst.resolve(src.relativize(file)));
+                    }).toList().forEach(consumer::accept);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+            } else {
+                consumer.accept(copySpec);
+            }
+        }).collect(toMap(CopySpec::toNormalized, x -> x, (x, y) -> {
+            if (x.fromNormalized.equals(y.fromNormalized)) {
+                // Duplicated copy specs, accept.
+                return x;
+            } else {
+                throw new IllegalStateException(String.format(
+                        "Duplicate source files [%s] and [%s] for [%s] destination file", x.from, y.from, x.to));
+            }
+        }));
+
+        try {
+            copySpecMap.values().stream().forEach(copySpec -> {
+                try {
+                    if (Files.isDirectory(copySpec.from)) {
+                        handler.createDirectory(copySpec.to);
                     } else {
-                        Files.copy(src, dst);
+                        handler.copyFile(copySpec.from, copySpec.to);
                     }
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
                 }
-
-                @Override
-                public void createDirectory(Path dir) throws IOException {
-                    Files.createDirectories(dir);
-                }
-            };
+            });
+        } catch (UncheckedIOException ex) {
+            throw ex.getCause();
         }
-
-        // destination -> source file mapping
-        Map<Path, Path> actions = new HashMap<>();
-        for (var action : entries) {
-            Path src = action.getKey();
-            Path dst = action.getValue();
-            if (Files.isDirectory(src)) {
-                try (Stream<Path> stream = Files.walk(src)) {
-                    stream.sequential()
-                            .forEach(path -> actions.put(dst.resolve(src.relativize(path)).normalize(), path));
-                }
-            } else {
-                actions.put(dst.normalize(), src);
-            }
-        }
-
-        for (var action : actions.entrySet()) {
-            Path dst = action.getKey();
-            Path src = action.getValue();
-
-            if (excludePaths.stream().anyMatch(src::startsWith)) {
-                continue;
-            }
-
-            if (src.equals(dst) || !src.toFile().exists()) {
-                continue;
-            }
-
-            if (Files.isDirectory(src)) {
-                handler.createDirectory(dst);
-            } else {
-                handler.copyFile(src, dst);
-            }
-        }
-
-        if (move) {
-            // Delete source dirs.
-            for (var entry : entries) {
-                Path srcFile = entry.getKey();
-                if (Files.isDirectory(srcFile)) {
-                    FileUtils.deleteRecursive(srcFile);
-                }
-            }
-        }
-    }
-
-    private static Map.Entry<Path, Path> normalizedPath(Path v) {
-        final Path normalized;
-        if (!v.isAbsolute()) {
-            normalized = Path.of("./").resolve(v.normalize());
-        } else {
-            normalized = v.normalize();
-        }
-
-        return Map.entry(normalized, v);
-    }
-
-    private List<Map.Entry<Path, Path>> normalizedPaths() {
-        return entries.values().stream().map(PathGroup::normalizedPath).collect(Collectors.toList());
     }
 
     private final Map<Object, Path> entries;
