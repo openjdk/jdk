@@ -168,13 +168,11 @@ public class Check {
         boolean enforceMandatoryWarnings = true;
 
         deprecationHandler = new MandatoryWarningHandler(log, null, verboseDeprecated,
-                enforceMandatoryWarnings, "deprecated", LintCategory.DEPRECATION);
+                enforceMandatoryWarnings, LintCategory.DEPRECATION, "deprecated");
         removalHandler = new MandatoryWarningHandler(log, null, verboseRemoval,
-                enforceMandatoryWarnings, "removal", LintCategory.REMOVAL);
+                enforceMandatoryWarnings, LintCategory.REMOVAL);
         uncheckedHandler = new MandatoryWarningHandler(log, null, verboseUnchecked,
-                enforceMandatoryWarnings, "unchecked", LintCategory.UNCHECKED);
-        sunApiHandler = new MandatoryWarningHandler(log, null, false,
-                enforceMandatoryWarnings, "sunapi", null);
+                enforceMandatoryWarnings, LintCategory.UNCHECKED);
 
         deferredLintHandler = DeferredLintHandler.instance(context);
 
@@ -203,10 +201,6 @@ public class Check {
     /** A handler for messages about unchecked or unsafe usage.
      */
     private MandatoryWarningHandler uncheckedHandler;
-
-    /** A handler for messages about using proprietary API.
-     */
-    private MandatoryWarningHandler sunApiHandler;
 
     /** A handler for deferred lint warnings.
      */
@@ -304,7 +298,6 @@ public class Check {
         deprecationHandler.reportDeferredDiagnostic();
         removalHandler.reportDeferredDiagnostic();
         uncheckedHandler.reportDeferredDiagnostic();
-        sunApiHandler.reportDeferredDiagnostic();
     }
 
 
@@ -480,7 +473,6 @@ public class Check {
         deprecationHandler.clear();
         removalHandler.clear();
         uncheckedHandler.clear();
-        sunApiHandler.clear();
     }
 
     public void putCompiled(ClassSymbol csym) {
@@ -1164,11 +1156,12 @@ public class Check {
      *  Warning: we can't use flags() here since this method
      *  is called during class enter, when flags() would cause a premature
      *  completion.
-     *  @param pos           Position to be used for error reporting.
      *  @param flags         The set of modifiers given in a definition.
      *  @param sym           The defined symbol.
+     *  @param tree          The declaration
      */
-    long checkFlags(DiagnosticPosition pos, long flags, Symbol sym, JCTree tree) {
+    long checkFlags(long flags, Symbol sym, JCTree tree) {
+        final DiagnosticPosition pos = tree.pos();
         long mask;
         long implicit = 0;
 
@@ -1212,7 +1205,7 @@ public class Check {
                 mask = MethodFlags;
             }
             if ((flags & STRICTFP) != 0) {
-                warnOnExplicitStrictfp(pos);
+                warnOnExplicitStrictfp(tree);
             }
             // Imply STRICTFP if owner has STRICTFP set.
             if (((flags|implicit) & Flags.ABSTRACT) == 0 ||
@@ -1256,7 +1249,7 @@ public class Check {
                 implicit |= FINAL;
             }
             if ((flags & STRICTFP) != 0) {
-                warnOnExplicitStrictfp(pos);
+                warnOnExplicitStrictfp(tree);
             }
             // Imply STRICTFP if owner has STRICTFP set.
             implicit |= sym.owner.flags_field & STRICTFP;
@@ -1320,12 +1313,12 @@ public class Check {
         return flags & (mask | ~ExtendedStandardFlags) | implicit;
     }
 
-    private void warnOnExplicitStrictfp(DiagnosticPosition pos) {
-        DiagnosticPosition prevLintPos = deferredLintHandler.setPos(pos);
+    private void warnOnExplicitStrictfp(JCTree tree) {
+        deferredLintHandler.push(tree);
         try {
-            deferredLintHandler.report(_ -> lint.logIfEnabled(pos, LintWarnings.Strictfp));
+            deferredLintHandler.report(_ -> lint.logIfEnabled(tree.pos(), LintWarnings.Strictfp));
         } finally {
-            deferredLintHandler.setPos(prevLintPos);
+            deferredLintHandler.pop();
         }
     }
 
