@@ -28,6 +28,7 @@ package jdk.internal.net.http;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
@@ -96,6 +97,14 @@ abstract class HttpConnection implements Closeable {
 
     private long id() {
         return id;
+    }
+
+    /**
+     * {@return a label identifying the connection to facilitate
+     * {@link HttpResponse#connectionLabel() HttpResponse::connectionLabel}}
+     */
+    public String connectionLabel() {
+        return dbgString();
     }
 
     private static final class TrailingOperations {

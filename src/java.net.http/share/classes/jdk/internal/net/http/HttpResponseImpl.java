@@ -44,6 +44,7 @@ import jdk.internal.net.http.websocket.RawChannel;
 class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
 
     final int responseCode;
+    private final Optional<String> connectionLabel;
     final HttpRequest initialRequest;
     final Optional<HttpResponse<T>> previousResponse;
     final HttpHeaders headers;
@@ -59,6 +60,7 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
                             T body,
                             Exchange<T> exch) {
         this.responseCode = response.statusCode();
+        this.connectionLabel = connectionLabel(exch);
         this.initialRequest = initialRequest;
         this.previousResponse = Optional.ofNullable(previousResponse);
         this.headers = response.headers();
@@ -70,9 +72,30 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
         this.body = body;
     }
 
+    private static Optional<String> connectionLabel(Exchange<?> exchange) {
+        if (exchange == null) {
+            return Optional.empty();
+        }
+        ExchangeImpl<?> exchImpl = exchange.exchImpl;
+        if (exchImpl == null) {
+            return Optional.empty();
+        }
+        @SuppressWarnings("resource")
+        HttpConnection connection = exchImpl.connection();
+        if (connection == null) {
+            return Optional.empty();
+        }
+        return Optional.of(connection.connectionLabel());
+    }
+
     @Override
     public int statusCode() {
         return responseCode;
+    }
+
+    @Override
+    public Optional<String> connectionLabel() {
+        return connectionLabel;
     }
 
     @Override
