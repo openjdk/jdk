@@ -687,7 +687,6 @@ class StubGenerator: public StubCodeGenerator {
     // https://web.archive.org/web/20110609115824/https://software.intel.com/file/24918
     //
     Label L_aligned_loop, L_store, L_unaligned_loop;
-    __ vspltisb(vZero, 0);
     __ andi(temp1, data, 15);
     __ cmpwi(CR0, temp1, 0);
     __ beq(CR0, L_aligned_loop);
