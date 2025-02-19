@@ -47,7 +47,7 @@
 # tests which require two displays connected.
 
 keys=headful sound printer multimon \
-     i18n intermittent randomness jfr cgroups
+     i18n intermittent randomness cgroups
 
 # Tests that must run in othervm mode
 othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/swing javax/print \
@@ -114,7 +114,7 @@ requires.properties= \
     jlink.packagedModules
 
 # Minimum jtreg version
-requiredVersion=7.4+1
+requiredVersion=7.5.1+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them
