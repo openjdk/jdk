@@ -43,6 +43,7 @@ public class RuntimeStub extends RuntimeBlob {
   }
 
   private static void initialize(TypeDataBase db) {
+    Type type = db.lookupType("RuntimeStub");
     callerMustGCArgumentsField = type.getCIntegerField("_caller_must_gc_arguments");
   }
 
