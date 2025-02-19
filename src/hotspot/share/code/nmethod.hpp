@@ -996,7 +996,7 @@ public:
     }
   };
 
-  static const Vptr _vptr;
+  static const Vptr _vpntr;
 };
 
 #endif // SHARE_CODE_NMETHOD_HPP
