@@ -743,10 +743,10 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #     UsageConstraint:
 #       usage [HANDSHAKE] [CERTIFICATE]
 #
-#     HANDSHAKE restricts algorithm to be used for signing TSL handshake.
+#     HANDSHAKE restricts algorithm to be used for signing TLS handshake.
 #     CERTIFICATE restricts algorithm to be used for signatures in certificates.
-#     These constraints can't be mixed with any other usage constraints for a
-#     single algorithm, they also can't be linked with other constraints by an
+#     These constraints can't be mixed with any other usage constraints for the
+#     same algorithm, they also can't be linked with other constraints by an
 #     ampersand '&'.
 #     See https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.3 for more
 #     information on signatures used in TLS handshake and in certificates.
