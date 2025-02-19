@@ -53,6 +53,53 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
+#include <type_traits>
+
+// Virtual methods are not allowed in code blobs to simplify caching compiled code.
+// Check all "leaf" subclasses of CodeBlob class.
+
+static_assert(!std::is_polymorphic<nmethod>::value,            "no virtual methods are allowed in nmethod");
+static_assert(!std::is_polymorphic<AdapterBlob>::value,        "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<VtableBlob>::value,         "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<MethodHandlesAdapterBlob>::value, "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<RuntimeStub>::value,        "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<DeoptimizationBlob>::value, "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<SafepointBlob>::value,      "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<UpcallStub>::value,         "no virtual methods are allowed in code blobs");
+#ifdef COMPILER2
+static_assert(!std::is_polymorphic<ExceptionBlob>::value,      "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<UncommonTrapBlob>::value,   "no virtual methods are allowed in code blobs");
+#endif
+
+// Add proxy vtables.
+// We need only few for now - they are used only from prints.
+const nmethod::Vptr                  nmethod::_vptr;
+const BufferBlob::Vptr               BufferBlob::_vptr;
+const RuntimeStub::Vptr              RuntimeStub::_vptr;
+const SingletonBlob::Vptr            SingletonBlob::_vptr;
+const DeoptimizationBlob::Vptr       DeoptimizationBlob::_vptr;
+const UpcallStub::Vptr               UpcallStub::_vptr;
+
+const CodeBlob::Vptr* CodeBlob::vptr() const {
+  constexpr const CodeBlob::Vptr* array[(size_t)CodeBlobKind::Number_Of_Kinds] = {
+      nullptr/* None */,
+      &nmethod::_vptr,
+      &BufferBlob::_vptr,
+      &AdapterBlob::_vptr,
+      &VtableBlob::_vptr,
+      &MethodHandlesAdapterBlob::_vptr,
+      &RuntimeStub::_vptr,
+      &DeoptimizationBlob::_vptr,
+      &SafepointBlob::_vptr,
+#ifdef COMPILER2
+      &ExceptionBlob::_vptr,
+      &UncommonTrapBlob::_vptr,
+#endif
+      &UpcallStub::_vptr
+  };
+
+  return array[(size_t)_kind];
+}
 
 unsigned int CodeBlob::align_code_offset(int offset) {
   // align the size to CodeEntryAlignment
@@ -386,7 +433,7 @@ RuntimeStub::RuntimeStub(
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments
 )
-: RuntimeBlob(name, CodeBlobKind::Runtime_Stub, cb, size, sizeof(RuntimeStub),
+: RuntimeBlob(name, CodeBlobKind::RuntimeStub, cb, size, sizeof(RuntimeStub),
               frame_complete, frame_size, oop_maps, caller_must_gc_arguments)
 {
 }
@@ -482,18 +529,18 @@ DeoptimizationBlob* DeoptimizationBlob::create(
   return blob;
 }
 
+#ifdef COMPILER2
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of UncommonTrapBlob
 
-#ifdef COMPILER2
 UncommonTrapBlob::UncommonTrapBlob(
   CodeBuffer* cb,
   int         size,
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("UncommonTrapBlob", CodeBlobKind::Uncommon_Trap, cb,
+: SingletonBlob("UncommonTrapBlob", CodeBlobKind::UncommonTrap, cb,
                 size, sizeof(UncommonTrapBlob), frame_size, oop_maps)
 {}
 
@@ -516,14 +563,9 @@ UncommonTrapBlob* UncommonTrapBlob::create(
   return blob;
 }
 
-
-#endif // COMPILER2
-
-
 //----------------------------------------------------------------------------------------------------
 // Implementation of ExceptionBlob
 
-#ifdef COMPILER2
 ExceptionBlob::ExceptionBlob(
   CodeBuffer* cb,
   int         size,
@@ -553,9 +595,7 @@ ExceptionBlob* ExceptionBlob::create(
   return blob;
 }
 
-
 #endif // COMPILER2
-
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of SafepointBlob
@@ -644,16 +684,44 @@ void UpcallStub::free(UpcallStub* blob) {
 //----------------------------------------------------------------------------------------------------
 // Verification and printing
 
+void CodeBlob::verify() {
+  if (is_nmethod()) {
+    as_nmethod()->verify();
+  }
+}
+
 void CodeBlob::print_on(outputStream* st) const {
-  st->print_cr("[CodeBlob (" INTPTR_FORMAT ")]", p2i(this));
-  st->print_cr("Framesize: %d", _frame_size);
+  vptr()->print_on(this, st);
 }
 
 void CodeBlob::print() const { print_on(tty); }
 
 void CodeBlob::print_value_on(outputStream* st) const {
+  vptr()->print_value_on(this, st);
+}
+
+void CodeBlob::print_on_impl(outputStream* st) const {
+  st->print_cr("[CodeBlob (" INTPTR_FORMAT ")]", p2i(this));
+  st->print_cr("Framesize: %d", _frame_size);
+}
+
+void CodeBlob::print_value_on_impl(outputStream* st) const {
   st->print_cr("[CodeBlob]");
 }
+
+void CodeBlob::print_block_comment(outputStream* stream, address block_begin) const {
+#if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
+  if (is_nmethod()) {
+    as_nmethod()->print_nmethod_labels(stream, block_begin);
+  }
+#endif
+
+#ifndef PRODUCT
+  ptrdiff_t offset = block_begin - code_begin();
+  assert(offset >= 0, "Expecting non-negative offset!");
+  _asm_remarks.print(uint(offset), stream);
+#endif
+  }
 
 void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const {
   if (is_buffer_blob() || is_adapter_blob() || is_vtable_blob() || is_method_handles_adapter_blob()) {
@@ -708,7 +776,7 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
       // verbose is only ever true when called from findpc in debug.cpp
       nm->print_nmethod(true);
     } else {
-      nm->print(st);
+      nm->print_on(st);
     }
     return;
   }
@@ -716,61 +784,45 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
   print_on(st);
 }
 
-void BufferBlob::verify() {
-  // unimplemented
+void BufferBlob::print_on_impl(outputStream* st) const {
+  RuntimeBlob::print_on_impl(st);
+  print_value_on_impl(st);
 }
 
-void BufferBlob::print_on(outputStream* st) const {
-  RuntimeBlob::print_on(st);
-  print_value_on(st);
-}
-
-void BufferBlob::print_value_on(outputStream* st) const {
+void BufferBlob::print_value_on_impl(outputStream* st) const {
   st->print_cr("BufferBlob (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
 }
 
-void RuntimeStub::verify() {
-  // unimplemented
-}
-
-void RuntimeStub::print_on(outputStream* st) const {
+void RuntimeStub::print_on_impl(outputStream* st) const {
   ttyLocker ttyl;
-  RuntimeBlob::print_on(st);
+  RuntimeBlob::print_on_impl(st);
   st->print("Runtime Stub (" INTPTR_FORMAT "): ", p2i(this));
   st->print_cr("%s", name());
   Disassembler::decode((RuntimeBlob*)this, st);
 }
 
-void RuntimeStub::print_value_on(outputStream* st) const {
+void RuntimeStub::print_value_on_impl(outputStream* st) const {
   st->print("RuntimeStub (" INTPTR_FORMAT "): ", p2i(this)); st->print("%s", name());
 }
 
-void SingletonBlob::verify() {
-  // unimplemented
-}
-
-void SingletonBlob::print_on(outputStream* st) const {
+void SingletonBlob::print_on_impl(outputStream* st) const {
   ttyLocker ttyl;
-  RuntimeBlob::print_on(st);
+  RuntimeBlob::print_on_impl(st);
   st->print_cr("%s", name());
   Disassembler::decode((RuntimeBlob*)this, st);
 }
 
-void SingletonBlob::print_value_on(outputStream* st) const {
+void SingletonBlob::print_value_on_impl(outputStream* st) const {
   st->print_cr("%s", name());
 }
 
-void DeoptimizationBlob::print_value_on(outputStream* st) const {
+void DeoptimizationBlob::print_value_on_impl(outputStream* st) const {
   st->print_cr("Deoptimization (frame not available)");
 }
 
-void UpcallStub::verify() {
-  // unimplemented
-}
-
-void UpcallStub::print_on(outputStream* st) const {
-  RuntimeBlob::print_on(st);
-  print_value_on(st);
+void UpcallStub::print_on_impl(outputStream* st) const {
+  RuntimeBlob::print_on_impl(st);
+  print_value_on_impl(st);
   st->print_cr("Frame data offset: %d", (int) _frame_data_offset);
   oop recv = JNIHandles::resolve(_receiver);
   st->print("Receiver MH=");
@@ -778,6 +830,6 @@ void UpcallStub::print_on(outputStream* st) const {
   Disassembler::decode((RuntimeBlob*)this, st);
 }
 
-void UpcallStub::print_value_on(outputStream* st) const {
+void UpcallStub::print_value_on_impl(outputStream* st) const {
   st->print_cr("UpcallStub (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
 }
