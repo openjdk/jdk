@@ -120,8 +120,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      */
     public X509CertImpl(X509CertInfo info, AlgorithmId algId, byte[] signature,
                         byte[] signedCert) {
-        Objects.requireNonNull(info);
-        this.info = info;
+        this.info = Objects.requireNonNull(info);
         this.algId = algId;
         this.signature = signature;
         this.signedCert = Objects.requireNonNull(signedCert);
@@ -683,10 +682,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * @exception CertificateEncodingException if an encoding error occurs.
      */
     public byte[] getTBSCertificate() throws CertificateEncodingException {
-        if (info != null) {
-            return info.getEncodedInfo();
-        } else
-            throw new CertificateEncodingException("Uninitialized certificate");
+        return info.getEncodedInfo();
     }
 
     /**
