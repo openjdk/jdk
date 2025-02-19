@@ -577,6 +577,47 @@ public class ForkJoinPool20Test extends JSR166TestCase {
         Thread.sleep(timeoutMillis());
         assertTrue(task.isCancelled());
     }
+
+    static final class SubmitWithTimeoutException extends RuntimeException {}
+
+    /**
+     * submitWithTimeout using complete completes after timeout
+     */
+    public void testSubmitWithCompleterTimeoutCompletes() throws InterruptedException {
+        final ForkJoinPool p = ForkJoinPool.commonPool();
+        Callable<Item> c = new Callable<Item>() {
+            public Item call() throws Exception {
+                Thread.sleep(LONGER_DELAY_MS); return one; }};
+        ForkJoinTask<Item> task = p.submitWithTimeout(
+            c, 1, NANOSECONDS,
+            (ForkJoinTask<Item> t) ->
+            t.complete(two));
+        Thread.sleep(timeoutMillis());
+        assertEquals(task.join(), two);
+    }
+
+    /**
+     * submitWithTimeout using completeExceptionally throws after timeout
+     */
+    public void testSubmitWithTimeoutThrows() throws InterruptedException {
+        final ForkJoinPool p = ForkJoinPool.commonPool();
+        Callable<Boolean> c = new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                Thread.sleep(LONGER_DELAY_MS); return Boolean.TRUE; }};
+        ForkJoinTask<Boolean> task = p.submitWithTimeout(
+            c, 1, NANOSECONDS,
+            (ForkJoinTask<Boolean> t) ->
+            t.completeExceptionally(new SubmitWithTimeoutException()));
+        Thread.sleep(timeoutMillis());
+        try {
+            task.join();
+            shouldThrow();
+        }
+        catch (Exception ex) {
+            assertTrue(ex instanceof SubmitWithTimeoutException);
+        }
+    }
+
     /**
      * submitWithTimeout doesn't cancel if completed before timeout
      */

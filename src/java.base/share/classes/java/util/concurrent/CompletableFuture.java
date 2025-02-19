@@ -2814,6 +2814,34 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return this;
     }
 
+    /** Action to complete (possibly exceptionally) on timeout */
+    static final class Timeout<U> implements Runnable {
+        final CompletableFuture<U> f;
+        final U value;
+        final boolean exceptional;
+        Timeout(CompletableFuture<U> f, U value, boolean exceptional) {
+            this.f = f; this.value = value; this.exceptional = exceptional;
+        }
+        public void run() {
+            if (f != null && !f.isDone()) {
+                if (exceptional)
+                    f.completeExceptionally(new TimeoutException());
+                else
+                    f.complete(value);
+            }
+        }
+    }
+
+    /** Action to cancel unneeded timeouts */
+    static final class Canceller implements BiConsumer<Object, Throwable> {
+        final Future<?> f;
+        Canceller(Future<?> f) { this.f = f; }
+        public void accept(Object ignore, Throwable ex) {
+            if (f != null)
+                f.cancel(false);
+        }
+    }
+
     /**
      * Schedules a timeout action, as well as whenComplete handling to
      * cancel the action if not needed.
@@ -2822,7 +2850,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         ForkJoinPool e = ASYNC_POOL;
         if (result == null) {
             ScheduledForkJoinTask<Void> t =  new ScheduledForkJoinTask<Void>(
-                nanoDelay, 0L, false, onTimeout, null, e);
+                nanoDelay, 0L, true, onTimeout, null, e);
             whenComplete(new Canceller(t));
             e.scheduleDelayedTask(t);
         }
@@ -2930,34 +2958,6 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
             this.action = action;
         }
         public void run() { executor.execute(action); }
-    }
-
-    /** Action to complete (possibly exceptionally) on timeout */
-    static final class Timeout<U> implements Runnable {
-        final CompletableFuture<U> f;
-        final U value;
-        final boolean exceptional;
-        Timeout(CompletableFuture<U> f, U value, boolean exceptional) {
-            this.f = f; this.value = value; this.exceptional = exceptional;
-        }
-        public void run() {
-            if (f != null && !f.isDone()) {
-                if (exceptional)
-                    f.completeExceptionally(new TimeoutException());
-                else
-                    f.complete(value);
-            }
-        }
-    }
-
-    /** Action to cancel unneeded timeouts */
-    static final class Canceller implements BiConsumer<Object, Throwable> {
-        final Future<?> f;
-        Canceller(Future<?> f) { this.f = f; }
-        public void accept(Object ignore, Throwable ex) {
-            if (f != null)
-                f.cancel(false);
-        }
     }
 
     /**

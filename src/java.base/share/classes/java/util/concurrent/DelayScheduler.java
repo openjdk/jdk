@@ -73,9 +73,9 @@ final class DelayScheduler extends Thread {
      * it doesn't seem worthwhile even under heavy loads.
      *
      * The implementation relies on the scheduler being a non-virtual
-     * Thread subclass.  Field "active" records whether the scheduler
-     * may have any pending tasks (and/or shutdown actions) to
-     * process, otherwise parking either indefinitely or until the
+     * final Thread subclass.  Field "active" records whether the
+     * scheduler may have any pending tasks (and/or shutdown actions)
+     * to process, otherwise parking either indefinitely or until the
      * next task deadline. Incoming pending tasks ensure active
      * status, unparking if necessary. The scheduler thread sets
      * status to inactive when there is apparently no work, and then
@@ -118,8 +118,8 @@ final class DelayScheduler extends Thread {
     volatile int active;             // 0: inactive, -1: stopped, +1: running
     int restingSize;                 // written only before parking
     volatile int cancelDelayedTasksOnShutdown; // policy control
-    // reduce trailing false sharing
-    int pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7, pad8, pad9, padA;
+    int pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+    int pad8, pad9, padA, padB, padC, padD, padE; // reduce false sharing
 
     private static final int INITIAL_HEAP_CAPACITY = 1 << 6;
     private static final int POOL_STOPPING = 1; // must match ForkJoinPool
@@ -153,7 +153,7 @@ final class DelayScheduler extends Thread {
      * Ensures the scheduler is not parked unless stopped.
      * Returns negative if already stopped
      */
-    final int ensureActive() {
+    final int signal() {
         int state;
         if ((state = active) == 0 && U.getAndBitwiseOrInt(this, ACTIVE, 1) == 0)
             U.unpark(this);
@@ -171,8 +171,8 @@ final class DelayScheduler extends Thread {
                 f != (f = (ScheduledForkJoinTask<?>)
                       U.compareAndExchangeReference(
                           this, PENDING, task.nextPending = f, task)));
-            ensureActive();
         }
+        signal();
     }
 
     /**
@@ -183,9 +183,9 @@ final class DelayScheduler extends Thread {
     }
 
     /**
-     * Returns an approximate number of elements in heap
+     * Returns the number of elements in heap when last idle
      */
-    final int approximateSize() {
+    final int lastStableSize() {
         return (active < 0) ? 0 : restingSize;
     }
 
@@ -194,7 +194,7 @@ final class DelayScheduler extends Thread {
      */
     final void  cancelDelayedTasksOnShutdown() {
         cancelDelayedTasksOnShutdown = 1;
-        ensureActive();
+        signal();
     }
 
     /**
@@ -211,7 +211,7 @@ final class DelayScheduler extends Thread {
             } finally {
                 restingSize = 0;
                 active = -1;
-                p.tryStopIfEnabled();
+                p.tryStopIfShutdown();
             }
         }
     }
@@ -251,8 +251,7 @@ final class DelayScheduler extends Thread {
                             t.trySetCancelled();
                         else {                 // add and sift up
                             ScheduledForkJoinTask<?> parent;
-                            ScheduledForkJoinTask<?>[] nh;
-                            int k = n++, pk, nc;
+                            int k = n++, pk, newCap;
                             while (k > 0 &&
                                    (parent = h[pk = (k - 1) >>> 2]) != null &&
                                    (parent.when > d)) {
@@ -262,17 +261,23 @@ final class DelayScheduler extends Thread {
                             }
                             t.heapIndex = k;
                             h[k] = t;
-                            if (n >= cap && (nh = growHeap(h)) != null &&
-                                (nc = nh.length) > cap) {
-                                cap = nc;     // else keep using old array
-                                h = nh;
+                            if (n >= cap && (newCap = cap << 1) > cap) {
+                                ScheduledForkJoinTask<?>[] a = null;
+                                try {           // try to resize
+                                    a = Arrays.copyOf(h, newCap);
+                                } catch (Error | RuntimeException ex) {
+                                }
+                                if (a != null && a.length == newCap) {
+                                    cap = newCap; // else keep using old array
+                                    h = a;
+                                }
                             }
                         }
                     }
                 } while ((t = next) != null);
             }
 
-            if ((runStatus = p.delaySchedulerRunStatus()) != 0) {
+            if ((runStatus = p.shutdownStatus()) != 0) {
                 if ((n = tryStop(p, h, n, runStatus, prevRunStatus)) < 0)
                     break;
                 prevRunStatus = runStatus;
@@ -307,21 +312,6 @@ final class DelayScheduler extends Thread {
                     U.compareAndSetInt(this, ACTIVE, 1, 0);
             }
         }
-    }
-
-    /**
-     * Tries to reallocate the heap array, returning null on failure
-     */
-    private static ScheduledForkJoinTask<?>[] growHeap(ScheduledForkJoinTask<?>[] h) {
-        int cap, newCap;
-        ScheduledForkJoinTask<?>[] nh = null;
-        if (h != null && (cap = h.length) < (newCap = cap << 1)) {
-            try {
-                nh = Arrays.copyOf(h, newCap);
-            } catch (Error | RuntimeException ex) {
-            }
-        }
-        return nh;
     }
 
     /**
@@ -412,7 +402,7 @@ final class DelayScheduler extends Thread {
                     }
                 }
             }
-            if (n > 0 || p == null || !p.tryStopIfEnabled())
+            if (n > 0 || p == null || !p.tryStopIfShutdown())
                 return n;       // check for quiescent shutdown
         }
         if (n > 0)
@@ -504,7 +494,7 @@ final class DelayScheduler extends Thread {
             if ((d = nextDelay) != 0L && // is periodic
                 status >= 0 &&           // not abnormally completed
                 (p = pool) != null && (ds = p.delayScheduler) != null) {
-                if (p.delaySchedulerRunStatus() == 0) {
+                if (p.shutdownStatus() == 0) {
                     heapIndex = -1;
                     if (d < 0L)
                         when = DelayScheduler.now() - d;

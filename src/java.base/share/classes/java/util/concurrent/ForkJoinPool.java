@@ -161,7 +161,8 @@ import static java.util.concurrent.DelayScheduler.ScheduledForkJoinTask;
  * setting the following {@linkplain System#getProperty system properties}:
  * <ul>
  * <li>{@systemProperty java.util.concurrent.ForkJoinPool.common.parallelism}
- * - the parallelism level, a non-negative integer
+ * - the parallelism level, a non-negative integer. Usage is discouraged.
+ *   Use {@link #setParallelism} instead.
  * <li>{@systemProperty java.util.concurrent.ForkJoinPool.common.threadFactory}
  * - the class name of a {@link ForkJoinWorkerThreadFactory}.
  * The {@linkplain ClassLoader#getSystemClassLoader() system class loader}
@@ -179,10 +180,11 @@ import static java.util.concurrent.DelayScheduler.ScheduledForkJoinTask;
  * {@linkplain Thread#getContextClassLoader() thread context class loader}.
  *
  * Upon any error in establishing these settings, default parameters
- * are used. It is possible to disable or limit the use of threads in
- * the common pool by setting the parallelism property to zero, and/or
- * using a factory that may return {@code null}. However doing so may
- * cause unjoined tasks to never be executed.
+ * are used. It is possible to disable use of threads by using a
+ * factory that may return {@code null}, in which case some tasks may
+ * never execute. It is also possible but strongly discouraged to set
+ * the parallelism property to zero, which may be internally
+ * overridden in the presence of intrinsically async tasks.
  *
  * @implNote This implementation restricts the maximum number of
  * running threads to 32767. Attempts to create pools with greater
@@ -854,8 +856,11 @@ public class ForkJoinPool extends AbstractExecutorService
      * including those that retry helping steps until we are sure that
      * none apply if there are no workers. To deal with conflicting
      * requirements, uses of the commonPool that require async because
-     * caller-runs does not apply, ensure at least one thread (method
-     * asyncCommonPool) before proceeding.
+     * caller-runs need not apply, ensure threads are enabled (by
+     * setting parallelism) via method asyncCommonPool before
+     * proceeding. (In principle, these need to ensure at least one
+     * worker, but due to other backward compatibility contraints,
+     * ensure two.)
      *
      * As a more appropriate default in managed environments, unless
      * overridden by system properties, we use workers of subclass
@@ -917,16 +922,17 @@ public class ForkJoinPool extends AbstractExecutorService
      * methods (via startDelayScheduler, with callback
      * onDelaySchedulerStart). The scheduler operates independently in
      * its own thread, relaying tasks to the pool to execute as they
-     * become ready (see method
-     * executeReadyScheculedTask). The only other interactions
-     * with the delayScheduler are to control shutdown and maintain
-     * shutdown-related policies in methods quiescent() and
-     * tryTerminate(). In particular, to conform to policies,
-     * shutdown-related processing must deal with cases in which tasks
-     * are submitted before shutdown, but not ready until afterwards,
-     * in which case they must bypass some screening to be allowed to
-     * run. Conversely, the DelayScheduler interacts with the pool
-     * only to check runState status and complete termination.
+     * become ready (see method executeReadyScheduledTask).  The only
+     * other interactions with the delayScheduler are to control
+     * shutdown and maintain shutdown-related policies in methods
+     * quiescent() and tryTerminate(). In particular, to conform to
+     * policies, shutdown-related processing must deal with cases in
+     * which tasks are submitted before shutdown, but not ready until
+     * afterwards, in which case they must bypass some screening to be
+     * allowed to run. Conversely, the DelayScheduler interacts with
+     * the pool only to check runState status and complete
+     * termination, using only methods shutdownStatus and
+     * tryStopIfShutdown.
      *
      * Memory placement
      * ================
@@ -1737,6 +1743,14 @@ public class ForkJoinPool extends AbstractExecutorService
         return p != null && (p.runState & STOP) != 0L;
     }
 
+    /**
+     * Returns STOP and SHUTDOWN status (zero if neither), masking or
+     * truncating out other bits.
+     */
+    final int shutdownStatus() {
+        return (int)(runState & (SHUTDOWN | STOP));
+    }
+
     // Creating, registering, and deregistering workers
 
     /**
@@ -1860,7 +1874,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 unlockRunState();
             }
         }
-        if (!tryStopIfEnabled() && phase != 0 && w != null && w.source != DROPPED) {
+        if (!tryStopIfShutdown() && phase != 0 && w != null && w.source != DROPPED) {
             signalWork();                  // possibly replace
             w.cancelTasks();               // clean queue
         }
@@ -2760,14 +2774,14 @@ public class ForkJoinPool extends AbstractExecutorService
             if ((quiet = quiescent()) > 0)
                 now = true;
             else if (quiet == 0 && (ds = delayScheduler) != null)
-                ds.ensureActive();
+                ds.signal();
         }
 
         if (now) {
             DelayScheduler ds;
             releaseWaiters();
             if ((ds = delayScheduler) != null)
-                ds.ensureActive();
+                ds.signal();
             for (;;) {
                 if (((e = runState) & CLEANED) == 0L) {
                     boolean clean = cleanQueues();
@@ -2778,7 +2792,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     break;
                 if (ctl != 0L) // else loop if didn't finish cleaning
                     break;
-                if ((ds = delayScheduler) != null && ds.ensureActive() >= 0)
+                if ((ds = delayScheduler) != null && ds.signal() >= 0)
                     break;
                 if ((e & CLEANED) != 0L) {
                     e |= TERMINATED;
@@ -2799,7 +2813,7 @@ public class ForkJoinPool extends AbstractExecutorService
     /**
      * Tries to stop and possibly terminate if already enabled, return success.
      */
-    final boolean tryStopIfEnabled() {
+    final boolean tryStopIfShutdown() {
         return (tryTerminate(false, false) & STOP) != 0L;
     }
 
@@ -3123,9 +3137,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * Package-private access to commonPool overriding zero parallelism
      */
     static ForkJoinPool asyncCommonPool() {
-        ForkJoinPool cp;
-        if ((cp = common).parallelism == 0)
-            U.compareAndSetInt(cp, PARALLELISM, 0, 1);
+        ForkJoinPool cp; int p;
+        if ((p = (cp = common).parallelism) < 2)
+            U.compareAndSetInt(cp, PARALLELISM, p, 2);
         return cp;
     }
 
@@ -3478,14 +3492,6 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
-     * Returns STOP and SHUTDOWN status for DelayScheduler (zero if
-     * neither).
-     */
-    final int delaySchedulerRunStatus() {
-        return (int)(runState & (SHUTDOWN | STOP));
-    }
-
-    /**
      * Arranges execution of a ready task from DelayScheduler, or
      * cancels it on error
      */
@@ -3713,19 +3719,19 @@ public class ForkJoinPool extends AbstractExecutorService
      * Submits a task executing the given function, cancelling or
      * performing a given timeoutAction if not completed within the
      * given timeout period. If the optional {@code timeoutAction} is
-     * null, the task is cancelled (via {@code
-     * cancel(true)}. Otherwise, the action is applied and the task is
+     * null, the task is cancelled (via {@code cancel(true)}.
+     * Otherwise, the action is applied and the task may be
      * interrupted if running. Actions may include {@link
      * ForkJoinTask#complete} to set a replacement value or {@link
-     * ForkJoinTask#completeExceptionally} to throw a {@link
-     * TimeoutException} or related exception.
+     * ForkJoinTask#completeExceptionally} to throw an appropriate
+     * exception.
      *
      * @param callable the function to execute
      * @param <V> the type of the callable's result
      * @param timeout the time to wait before cancelling if not completed
      * @param timeoutAction if nonnull, an action to perform on
-     * timeout, otherwise the default action is to cancel using {@code
-     * cancel(true)}.
+     *        timeout, otherwise the default action is to cancel using
+     *        {@code cancel(true)}.
      * @param unit the time unit of the timeout parameter
      * @return a Future that can be used to extract result or cancel
      * @throws RejectedExecutionException if the task cannot be
@@ -3951,7 +3957,7 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     public int getDelayedTaskCount() {
         DelayScheduler ds;
-        return ((ds = delayScheduler) == null ? 0 : ds.approximateSize());
+        return ((ds = delayScheduler) == null ? 0 : ds.lastStableSize());
     }
 
     /**
@@ -4038,7 +4044,7 @@ public class ForkJoinPool extends AbstractExecutorService
             }
         }
         String delayed = ((ds = delayScheduler) == null ? "" :
-                          ", delayed = " + ds.approximateSize());
+                          ", delayed = " + ds.lastStableSize());
         int pc = parallelism;
         long c = ctl;
         int tc = (short)(c >>> TC_SHIFT);
