@@ -1653,7 +1653,7 @@ Node* ModFloatingNode::remove(PhaseGVN* phase) {
         TypeFunc::FramePtr,
         TypeFunc::ReturnAdr,
     };
-    for(int projection: projections) {
+    for (int projection : projections) {
       if (proj_out_or_null(projection) != nullptr) {
         igvn->replace_node(proj_out(projection), in(projection));
       }
