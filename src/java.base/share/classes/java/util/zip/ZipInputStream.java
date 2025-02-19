@@ -29,10 +29,9 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PushbackInputStream;
+import java.io.TrackPushbackInputStream;
 import java.nio.charset.Charset;
 import java.util.Objects;
-import jdk.internal.access.SharedSecrets;
 
 import sun.nio.cs.UTF_8;
 
@@ -132,7 +131,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * @since 1.7
      */
     public ZipInputStream(InputStream in, Charset charset) {
-        super(new PushbackInputStream(in, 512), new Inflater(true), 512);
+        super(new TrackPushbackInputStream(in, 512),
+                new Inflater(true), 512);
         usesDefaultInflater = true;
         if (in == null) {
             throw new NullPointerException("in is null");
@@ -495,8 +495,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * Reads local file (LOC) header for next entry.
      */
     private ZipEntry readLOC() throws IOException {
-        long currentPos = SharedSecrets.getJavaPBInputStreamAccess()
-            .getRealPos((PushbackInputStream) in);
+        long currentPos = ((TrackPushbackInputStream) in).getRealPos();
         try {
             readFully(tmpbuf, 0, LOCHDR);
         } catch (EOFException e) {
@@ -595,7 +594,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     private void readEnd(ZipEntry e) throws IOException {
         int n = inf.getRemaining();
         if (n > 0) {
-            ((PushbackInputStream)in).unread(buf, len - n, n);
+            ((TrackPushbackInputStream)in).unread(buf, len - n, n);
         }
         if ((flag & 8) == 8) {
             /* "Data Descriptor" present */
@@ -609,7 +608,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                     e.crc = sig;
                     e.csize = get64S(tmpbuf, ZIP64_EXTSIZ - ZIP64_EXTCRC);
                     e.size = get64S(tmpbuf, ZIP64_EXTLEN - ZIP64_EXTCRC);
-                    ((PushbackInputStream)in).unread(
+                    ((TrackPushbackInputStream)in).unread(
                         tmpbuf, ZIP64_EXTHDR - ZIP64_EXTCRC, ZIP64_EXTCRC);
                 } else {
                     e.crc = get32(tmpbuf, ZIP64_EXTCRC);
@@ -623,7 +622,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                     e.crc = sig;
                     e.csize = get32(tmpbuf, EXTSIZ - EXTCRC);
                     e.size = get32(tmpbuf, EXTLEN - EXTCRC);
-                    ((PushbackInputStream)in).unread(
+                    ((TrackPushbackInputStream)in).unread(
                                                tmpbuf, EXTHDR - EXTCRC, EXTCRC);
                 } else {
                     e.crc = get32(tmpbuf, EXTCRC);

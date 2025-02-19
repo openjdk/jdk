@@ -765,9 +765,11 @@ public class Main {
             // Store all entries from JarFile into a list for cross-checking
             ArrayList<JarEntry> cen = Collections.list(jf.entries());
 
-            // First pass: Iterate through JarInputStream. Check if each
-            // entry is in the CEN list and sets the type classification
-            // accordingly.
+            /*
+             * First pass: Iterate through JarInputStream. Check if each
+             * entry is in the CEN list and sets the type classification
+             * accordingly.
+             */
             boolean inStream = true;
             while (true) {
                 int type = 0;
@@ -895,10 +897,6 @@ public class Main {
                         externalAttributes = JUZFA.getExternalFileAttributes(cenEntry);
                     }
 
-                    if (externalAttributes == -1) {
-                        externalAttributes = JUZFA.getExternalFileAttributes(je);
-                    }
-
                     if (!externalFileAttributesDetected && externalAttributes != -1) {
                         externalFileAttributesDetected = true;
                     }
@@ -1006,9 +1004,9 @@ public class Main {
                                 append(new Date(je.getTime()).toString());
                         fb.append(' ').append(name);
                         if (type == 1) {
-                            fb.append(" (JarInputStream only)");
+                            fb.append(rb.getString(".JarInputStream.only."));
                         } else if (type == 2) {
-                            fb.append(" (JarFile only)");
+                            fb.append(rb.getString(".JarFile.only."));
                         }
 
                         output.get(label).add(fb.toString());
