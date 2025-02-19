@@ -34,6 +34,7 @@ import java.util.Arrays;
  * @bug 8349664
  * @summary HEX dump should always use ASCII or ISO_8859_1
  * @modules java.base/sun.security.util
+ * @library /test/lib
  */
 public class HexDumpEncoderTests {
 
