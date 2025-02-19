@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,13 @@
 /*
  * @test
  * @bug 4404399
- * @ignore this test does not work any more as the TLS spec changes the
- *         behaviors of close_notify.
+ * @comment this test does not work in TLSv1.3 as the spec changes the
+ *          behaviors of close_notify.
  * @summary When a layered SSL socket is closed, it should wait for close_notify
- * @run main/othervm NonAutoClose
+ * @library /test/lib
+ * @run main/othervm NonAutoClose TLSv1
+ * @run main/othervm NonAutoClose TLSv1.1
+ * @run main/othervm NonAutoClose TLSv1.2
  * @author Brad Wetmore
  */
 
@@ -40,9 +43,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import javax.net.ssl.*;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-
+import jdk.test.lib.security.SecurityUtils;
 
 public class NonAutoClose {
     /*
@@ -148,6 +149,7 @@ public class NonAutoClose {
             SSLSocket ssls = (SSLSocket) sslsf.createSocket(plainSocket,
                 SERVER_NAME, plainSocket.getPort(), false);
 
+            ssls.setEnabledProtocols(new String[] { protocol });
             ssls.setUseClientMode(false);
             InputStream sslis = ssls.getInputStream();
             OutputStream sslos = ssls.getOutputStream();
@@ -276,6 +278,10 @@ public class NonAutoClose {
 
    // Used for running test standalone
     public static void main(String[] args) throws Exception {
+        String protocol = args[0];
+        if ("TLSv1".equals(protocol) || "TLSv1.1".equals(protocol)) {
+            SecurityUtils.removeFromDisabledTlsAlgs(protocol);
+        }
         System.setProperty("javax.net.ssl.keyStore", keyFilename);
         System.setProperty("javax.net.ssl.keyStorePassword", passwd);
         System.setProperty("javax.net.ssl.trustStore", trustFilename);
@@ -287,18 +293,20 @@ public class NonAutoClose {
         /*
          * Start the tests.
          */
-        new NonAutoClose();
+        new NonAutoClose(protocol);
     }
 
     private Thread clientThread = null;
     private Thread serverThread = null;
+    private final String protocol;
 
     /*
      * Primary constructor, used to drive remainder of the test.
      *
      * Fork off the other side, then do your work.
      */
-    NonAutoClose() throws Exception {
+    NonAutoClose(String protocol) throws Exception {
+        this.protocol = protocol;
         if (separateServerThread) {
             startServer(true);
             startClient(false);

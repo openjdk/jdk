@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,13 @@
 /*
  * @test
  * @bug 6223624
- * @ignore this test does not grant to work.  The handshake may have completed
- *        when getSession() return.  Please update or remove this test case.
+ * @library /test/lib
  * @summary SSLSocket.setUseClientMode() fails to throw expected
  *        IllegalArgumentException
- * @run main/othervm SetClientMode
+ * @run main/othervm SetClientMode TLSv1
+ * @run main/othervm SetClientMode TLSv1.1
+ * @run main/othervm SetClientMode TLSv1.2
+ * @run main/othervm SetClientMode TLSv1.3
  */
 
 /*
@@ -50,13 +52,14 @@
 import java.io.*;
 import java.lang.*;
 import java.net.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.*;
-import java.security.*;
-import java.security.cert.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class SetClientMode {
-    private static String[] algorithms = {"TLS", "SSL", "SSLv3", "TLS"};
     volatile int serverPort = 0;
+    private static final CountDownLatch handshakeComplete = new CountDownLatch(1);
 
     /*
      * Where do we find the keystores?
@@ -72,6 +75,11 @@ public class SetClientMode {
     }
 
     public static void main(String[] args) throws Exception {
+        String protocol = args[0];
+
+        if ("TLSv1".equals(protocol) || "TLSv1.1".equals(protocol)) {
+          SecurityUtils.removeFromDisabledTlsAlgs(protocol);
+        }
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + keyStoreFile;
@@ -84,16 +92,10 @@ public class SetClientMode {
         System.setProperty("javax.net.ssl.trustStore", trustFilename);
         System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
-        new SetClientMode().run();
+        new SetClientMode().run(protocol);
     }
 
-    public void run() throws Exception {
-        for (int i = 0; i < algorithms.length; i++) {
-            testCombo( algorithms[i] );
-        }
-    }
-
-    public void testCombo(String algorithm) throws Exception {
+    public void run(String protocol) throws Exception {
         Exception modeException = null ;
 
         // Create a server socket
@@ -101,6 +103,7 @@ public class SetClientMode {
             (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
         SSLServerSocket serverSocket =
             (SSLServerSocket)ssf.createServerSocket(serverPort);
+        serverSocket.setEnabledProtocols(new String[] { protocol });
         serverPort = serverSocket.getLocalPort();
 
         // Create a client socket
@@ -119,6 +122,10 @@ public class SetClientMode {
 
         // force handshaking to complete
         connectedSocket.getSession();
+
+        if (!handshakeComplete.await(5, TimeUnit.SECONDS)) {
+          throw new RuntimeException("Handshake didn't complete within 5 seconds.");
+        }
 
         try {
             // Now try invoking setClientMode() on one
@@ -149,8 +156,6 @@ public class SetClientMode {
     // start handshaking on the socket it's given.
     class SocketClient extends Thread {
         SSLSocket clientsideSocket;
-        Exception clientException = null;
-        boolean done = false;
 
         public SocketClient( SSLSocket s ) {
             clientsideSocket = s;
@@ -158,7 +163,8 @@ public class SetClientMode {
 
         public void run() {
             try {
-                clientsideSocket.startHandshake();
+              clientsideSocket.startHandshake();
+              handshakeComplete.countDown();
 
                 // If we were to invoke setUseClientMode()
                 // here, the expected exception will happen.
@@ -166,24 +172,13 @@ public class SetClientMode {
                 //clientsideSocket.setUseClientMode( false );
             } catch ( Exception e ) {
                 e.printStackTrace();
-                clientException = e;
             } finally {
-                done = true;
                 try {
                     clientsideSocket.close();
                 } catch ( IOException e ) {
                     // eat it
                 }
             }
-            return;
-        }
-
-        boolean isDone() {
-            return done;
-        }
-
-        Exception getException() {
-            return clientException;
         }
     }
 }
