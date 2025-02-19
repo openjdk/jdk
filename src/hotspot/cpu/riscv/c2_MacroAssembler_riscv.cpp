@@ -1383,7 +1383,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 }
 
 // Compare longwords
-void C2_MacroAssembler::string_compare_long_LL_UU(Register result, Register str1, Register str2,
+void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Register str1, Register str2,
                                                   Register cnt1, Register cnt2,
                                                   Register tmp1, Register tmp2, Register tmp3,
                                                   const bool isLL, const int base_offset, const int minCharsInWord,
@@ -1449,7 +1449,6 @@ void C2_MacroAssembler::string_compare_long_LL_UU(Register result, Register str1
   bind(TAIL_CHECK);
   beq(tmp1, tmp2, *DONE);
 
-
   // Find the first different characters in the longwords and
   // compute their difference.
   bind(DIFFERENCE);
@@ -1471,7 +1470,7 @@ void C2_MacroAssembler::string_compare_long_LL_UU(Register result, Register str1
 }
 
 // Compare longwords
-void C2_MacroAssembler::string_compare_long_LU(Register result, Register strL, Register strU,
+void C2_MacroAssembler::string_compare_long_different_encoding(Register result, Register strL, Register strU,
                                                Register cnt1, Register cnt2,
                                                Register tmpL, Register tmpU, Register tmp3,
                                                const int base_offset2, const int STUB_THRESHOLD,
@@ -1518,7 +1517,6 @@ void C2_MacroAssembler::string_compare_long_LU(Register result, Register strL, R
   mv(tmpL, tmp3);
 
   beq(tmpL, tmpU, *DONE);
-
 
   // Find the first different characters in the longwords and
   // compute their difference.
@@ -1598,12 +1596,12 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   // Compare longwords
   {
     if (str1_isL == str2_isL) { // LL or UU
-      string_compare_long_LL_UU(result, str1, str2,
+      string_compare_long_same_encoding(result, str1, str2,
                                 cnt1, cnt2, tmp1, tmp2, tmp3,
                                 isLL, isLL ? base_offset1 : base_offset2, minCharsInWord,
                                 STUB_THRESHOLD, &DONE, &STUB);
     } else { // LU or UL
-      string_compare_long_LU(result,
+      string_compare_long_different_encoding(result,
                              isLU ? str1 : str2,
                              isLU ? str2 : str1,
                              cnt1, cnt2, tmp1, tmp2, tmp3,
