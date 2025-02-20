@@ -274,7 +274,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         };
 
         addPrerequisiteAction(cmd -> {
-            Path fakeRuntimeDir = TKit.workDir().resolve("fake_runtime");
+            Path fakeRuntimeDir = TKit.createTempDirectory("fake_runtime");
 
             TKit.trace(String.format("Init fake runtime in [%s] directory",
                     fakeRuntimeDir));
