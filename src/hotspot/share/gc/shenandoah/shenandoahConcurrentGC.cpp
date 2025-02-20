@@ -947,11 +947,25 @@ public:
 void ShenandoahConcurrentGC::op_weak_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(heap->is_concurrent_weak_root_in_progress(), "Only during this phase");
-  // Concurrent weak root processing
-  ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_work);
-  ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
-  ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
-  heap->workers()->run_task(&task);
+  {
+    // Concurrent weak root processing
+    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_work);
+    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
+    ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
+    heap->workers()->run_task(&task);
+  }
+
+  {
+    // It is possible for mutators executing the load reference barrier to have
+    // loaded an oop through a weak handle that has since been nulled out by
+    // weak root processing. Handshaking here forces them to complete the
+    // barrier before the GC cycle continues and does something that would
+    // change the evaluation of the barrier (for example, resetting the TAMS
+    // on trashed regions could make an oop appear to be marked _after_ the
+    // region has been recycled).
+    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
+    heap->rendezvous_threads("Shenandoah Concurrent Weak Roots");
+  }
 }
 
 void ShenandoahConcurrentGC::op_class_unloading() {
