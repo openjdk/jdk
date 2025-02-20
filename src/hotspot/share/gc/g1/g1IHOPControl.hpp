@@ -55,6 +55,10 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Most recent time from the end of the concurrent start to the start of the first
   // mixed gc.
   virtual double last_marking_length_s() const = 0;
+
+  // Default non-young occupancy at which concurrent marking should start.
+  size_t default_conc_mark_start_threshold();
+
  public:
   virtual ~G1IHOPControl() { }
 
@@ -92,8 +96,7 @@ class G1StaticIHOPControl : public G1IHOPControl {
   G1StaticIHOPControl(double ihop_percent, G1OldGenAllocationTracker const* old_gen_alloc_tracker);
 
   size_t get_conc_mark_start_threshold() {
-    guarantee(_target_occupancy > 0, "Target occupancy must have been initialized.");
-    return (size_t) (_initial_ihop_percent * _target_occupancy / 100.0);
+    return default_conc_mark_start_threshold();
   }
 
   virtual void update_marking_length(double marking_length_s) {
