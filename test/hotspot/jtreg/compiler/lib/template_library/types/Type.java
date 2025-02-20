@@ -45,4 +45,6 @@ public abstract class Type {
     public abstract String name();
 
     public abstract Object con();
+
+    public abstract List<Operation> operations();
 }

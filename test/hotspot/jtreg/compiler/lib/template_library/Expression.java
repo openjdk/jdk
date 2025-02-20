@@ -24,8 +24,6 @@
 package compiler.lib.template_library;
 
 import java.util.List;
-import java.util.ArrayList;
-import java.util.HashSet;
 
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateWithArgs;
@@ -38,49 +36,24 @@ import static compiler.lib.template_framework.Template.countNames;
 import static compiler.lib.template_framework.Template.sampleName;
 
 import compiler.lib.template_library.types.Type;
-import compiler.lib.template_library.types.Operation;
 
-public abstract class Expressions {
+/**
+ * TODO: description
+ * Idea: generates a template that has a list of {@link Type} holes.
+ */
+public final class Expression {
+    private final Template.OneArgs<List<Object>> template;
+    private final List<Type> types;
 
-    public static final Expression constant(Type type) {
-        var template = Template.make("args", (List<Object> args) -> body(
-            type.con()
-        ));
-        return new Expression(template, List.of());
+    Expression(final Template.OneArgs<List<Object>> template, final List<Type> types) {
+        this.template = template;
+        this.types = types;
     }
 
-    private interface ExpressionGenerator {
-        List<Object> tokens(List<Object> args);
+    public final List<Type> types() { return this.types; }
+
+    public final TemplateWithArgs withArgs(List<Object> args) {
+        // TODO: check length?
+        return template.withArgs(args);
     }
-
-    private interface ExpressionGeneratorStep {
-        void addTokens(List<Object> tokens, List<Object> args);
-    }
-
-    public static final Expression expression(Type resultType, List<Type> allowedTypes, int maxDepth) {
-        HashSet<Type> allowedTypesSet = new HashSet(allowedTypes);
-
-        List<Type> types = new ArrayList<Type>();
-        ExpressionGenerator generator = expressionGenerator(resultType, allowedTypesSet, maxDepth, types);
-        // TODO:
-        // Output: lambda(args) -> list of tokens, using args
-        // Step: lambda(args, tokens) -> update tokens
-
-        var template = Template.make("args", (List<Object> args) -> body(
-            generator.tokens(args)
-        ));
-        return new Expression(template, List.of());
-    }
-
-    private static final ExpressionGenerator expressionGenerator(Type resultType, HashSet<Type> allowedTypes, int maxDepth, List<Type> types) {
-        return (List<Object> args) -> {
-            List<Object> tokens = new ArrayList<Object>();
-            tokens.add(resultType.con());
-            return tokens;
-        };
-    }
-
-    //    List<Operation> ops = resultType.operations().stream().filter(o -> o.hasOnlyTypes(allowedTypesSet)).toList();
-    //    return null;
-    //}
-}
+} 

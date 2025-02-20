@@ -23,13 +23,15 @@
 
 package compiler.lib.template_library.types;
 
-abstract class Operator {
-    public abstract TemplateWithArgs instanciate();
+import java.util.HashSet;
 
-    public static class Unary extends Operator {
+public sealed interface Operation permits Operation.Unary {
+    boolean hasOnlyTypes(HashSet<Type> types);
+
+    public static record Unary(String s0, Type t0, String s1) implements Operation {
         @Override
-        public final TemplateWithArgs instanciate() {
-            return null;
+        public boolean hasOnlyTypes(HashSet<Type> types) {
+            return types.contains(t0);
         }
     }
 }

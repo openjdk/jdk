@@ -49,6 +49,7 @@ import static compiler.lib.template_framework.Template.let;
 import compiler.lib.template_library.Library;
 import compiler.lib.template_library.IRTestClass;
 import compiler.lib.template_library.types.Type;
+import compiler.lib.template_library.Expression;
 import compiler.lib.template_library.Expressions;
 
 /**
@@ -87,47 +88,51 @@ public class TestFuzzExpression {
                                                      List.of("compiler.lib.generators.*",
                                                              "compiler.lib.verify.*"));
 
-        var template1 = Template.make("type", (Type type)-> body(
-            """
-            // --- $test start ---
-            // type: #type
-            """,
-            // We set a dedicated class hook here, so that fields are
-            // NOT available across the tests.
-            Library.CLASS_HOOK.set(
-            """
-
-            private static Object $GOLD = $test();
-
-            @Test
-            public static Object $test() {
-            """,
-            Library.METHOD_HOOK.set(
-                // We need to catch Exceptions like ArithmeticException, so that we do
-                // not get ExceptionInInitializerError when loading the class and running
-                // the static code blocks.
-                "try {\n",
-                "    return ", Expressions.expression(type), ";\n",
+        var template1 = Template.make("type", (Type type)-> {
+            Expression exp = Expressions.expression(type, Type.primitives(), 2);
+            return body(
                 """
-                } catch (Exception e) {
-                    return e;
+                // --- $test start ---
+                // type: #type
+                """,
+                // We set a dedicated class hook here, so that fields are
+                // NOT available across the tests.
+                Library.CLASS_HOOK.set(
+                """
+
+                private static Object $GOLD = $test();
+
+                @Test
+                public static Object $test() {
+                """,
+                Library.METHOD_HOOK.set(
+                    // We need to catch Exceptions like ArithmeticException, so that we do
+                    // not get ExceptionInInitializerError when loading the class and running
+                    // the static code blocks.
+                    "try {\n",
+                    //"    return ", Expressions.constant(type).withArgs(List.of()), ";\n",
+                    "    return ", exp.withArgs(List.of()), ";\n",
+                    """
+                    } catch (Exception e) {
+                        return e;
+                    }
+                    """
+                ),
+                """
                 }
+
+                @Check(test = "$test")
+                public static void $check(Object result) {
+                    Verify.checkEQ(result, $GOLD);
+                }
+
                 """
-            ),
-            """
-            }
-
-            @Check(test = "$test")
-            public static void $check(Object result) {
-                Verify.checkEQ(result, $GOLD);
-            }
-
-            """
-            ),
-            """
-            // --- $test end   ---
-            """
-        ));
+                ),
+                """
+                // --- $test end   ---
+                """
+            );
+        });
 
         // Use template1 100 times with every type.
         List<TemplateWithArgs> templates = new ArrayList<>();

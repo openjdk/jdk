@@ -23,6 +23,8 @@
 
 package compiler.lib.template_library.types;
 
+import java.util.List;
+
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.RestrictableGenerator;
 
@@ -30,11 +32,21 @@ public final class Int extends Type {
     public static final Int INSTANCE = new Int();
     private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
 
+    private static final List<Operation> OPERATIONS = List.of(
+        new Operation.Unary("(-(", Int.INSTANCE, "))"),
+        new Operation.Unary("(~", Int.INSTANCE, ")")
+    );
+
     @Override
     public final String name() { return "int"; }
 
     @Override
     public final Object con() {
         return GEN_INT.next();
+    }
+
+    @Override
+    public final List<Operation> operations() {
+        return OPERATIONS;
     }
 }
