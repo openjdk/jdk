@@ -32,9 +32,8 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/rbTree.hpp"
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::replace_child(
-    RBNode* old_child, RBNode* new_child) {
+template <typename K, typename V>
+inline void RBNode<K, V>::replace_child(RBNode<K, V>* old_child, RBNode<K, V>* new_child) {
   if (_left == old_child) {
     _left = new_child;
   } else if (_right == old_child) {
@@ -44,11 +43,10 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::replace_child(
   }
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
-RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::rotate_left() {
+template <typename K, typename V>
+inline RBNode<K, V>* RBNode<K, V>::rotate_left() {
   // This node down, right child up
-  RBNode* old_right = _right;
+  RBNode<K, V>* old_right = _right;
 
   _right = old_right->_left;
   if (_right != nullptr) {
@@ -66,11 +64,10 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::rotate_left() {
   return old_right;
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
-RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::rotate_right() {
+template <typename K, typename V>
+inline RBNode<K, V>* RBNode<K, V>::rotate_right() {
   // This node down, left child up
-  RBNode* old_left = _left;
+  RBNode<K, V>* old_left = _left;
 
   _left = old_left->_right;
   if (_left != nullptr) {
@@ -88,10 +85,9 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::rotate_right() {
   return old_left;
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline const typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
-RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::prev() const {
-  const RBNode* node = this;
+template <typename K, typename V>
+inline const RBNode<K, V>* RBNode<K, V>::prev() const {
+  const RBNode<K, V>* node = this;
   if (_left != nullptr) { // right subtree exists
     node = _left;
     while (node->_right != nullptr) {
@@ -106,10 +102,9 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::prev() const {
   return node->parent();
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline const typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
-RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::next() const {
-  const RBNode* node = this;
+template <typename K, typename V>
+inline const RBNode<K, V>* RBNode<K, V>::next() const {
+  const RBNode<K, V>* node = this;
   if (_right != nullptr) { // right subtree exists
     node = _right;
     while (node->_left != nullptr) {
@@ -125,10 +120,10 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::next() const {
 }
 
 #ifdef ASSERT
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::verify(
+template <typename K, typename V>
+inline void RBNode<K, V>::verify(
     size_t& num_nodes, size_t& black_nodes_until_leaf, size_t& shortest_leaf_path, size_t& longest_leaf_path,
-    size_t& tree_depth, bool expect_visited) const {
+    size_t& tree_depth, bool expect_visited, int (*cmp)(K, K)) const {
   assert(expect_visited != _visited, "node already visited");
   _visited = !_visited;
 
@@ -141,11 +136,11 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::verify(
     if (_right == nullptr) {
       assert(is_black() && _left->is_red(), "if one child it must be red and node black");
     }
-    assert(COMPARATOR::cmp(_left->key(), _key) < 0, "left node must be less than parent");
+    assert(cmp(_left->key(), _key) < 0, "left node must be less than parent");
     assert(is_black() || _left->is_black(), "2 red nodes in a row");
     assert(_left->parent() == this, "pointer mismatch");
     _left->verify(num_nodes, num_black_nodes_left, shortest_leaf_path_left,
-                  longest_leaf_path_left, tree_depth_left, expect_visited);
+                  longest_leaf_path_left, tree_depth_left, expect_visited, cmp);
   }
 
   size_t num_black_nodes_right = 0;
@@ -157,11 +152,11 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::verify(
     if (_left == nullptr) {
       assert(is_black() && _right->is_red(), "if one child it must be red and node black");
     }
-    assert(COMPARATOR::cmp(_right->key(), _key) > 0, "right node must be greater than parent");
+    assert(cmp(_right->key(), _key) > 0, "right node must be greater than parent");
     assert(is_black() || _left->is_black(), "2 red nodes in a row");
     assert(_right->parent() == this, "pointer mismatch");
     _right->verify(num_nodes, num_black_nodes_right, shortest_leaf_path_right,
-                   longest_leaf_path_right, tree_depth_right, expect_visited);
+                   longest_leaf_path_right, tree_depth_right, expect_visited, cmp);
   }
 
   shortest_leaf_path = MAX2(longest_leaf_path_left, longest_leaf_path_right);
@@ -187,13 +182,35 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::verify(
 
 #endif // ASSERT
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline const typename RBTree<K, V, COMPARATOR, ALLOCATOR>::Cursor
-RBTree<K, V, COMPARATOR, ALLOCATOR>::cursor(const K& key) const {
-  RBNode* parent = nullptr;
-  RBNode* const* insert_location = &_root;
+template <typename K, typename V, typename COMPARATOR>
+inline const typename AbstractRBTree<K, V, COMPARATOR>::Cursor
+AbstractRBTree<K, V, COMPARATOR>::cursor(const K& key, const RBNode<K, V>* hint_node) const {
+  RBNode<K, V>* parent = nullptr;
+  RBNode<K, V>* const* insert_location = &_root;
+
+  if (hint_node != nullptr) {
+    const int hint_cmp = COMPARATOR::cmp(hint_node->key(), key);
+    while (hint_node->parent() != nullptr) {
+      const int parent_cmp = COMPARATOR::cmp(hint_node->parent()->key(), key);
+      // Move up until the parent would put us on the other side of the key.
+      // Meaning we are in the correct subtree.
+      if ((parent_cmp <= 0 && hint_cmp < 0) ||
+          (parent_cmp >= 0 && hint_cmp > 0)) {
+        hint_node = hint_node->parent();
+      } else {
+        break;
+      }
+    }
+
+    if (hint_node->is_left_child()) {
+      insert_location = &hint_node->parent()->_left;
+    } else if (hint_node->is_right_child()) {
+      insert_location = &hint_node->parent()->_right;
+    }
+  }
+
   while (*insert_location != nullptr) {
-    RBNode* curr = *insert_location;
+    RBNode<K, V>* curr = *insert_location;
     const int key_cmp_k = COMPARATOR::cmp(key, curr->key());
 
     if (key_cmp_k == 0) {
@@ -207,11 +224,12 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::cursor(const K& key) const {
       insert_location = &curr->_right;
     }
   }
+
   return Cursor(insert_location, parent, key);
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::insert_at_cursor(RBNode* node, const Cursor& node_cursor) {
+template <typename K, typename V, typename COMPARATOR>
+inline void AbstractRBTree<K, V, COMPARATOR>::insert_at_cursor(RBNode<K, V>* node, const Cursor& node_cursor) {
   assert(node_cursor.valid() && !node_cursor.found(), "must be");
   _num_nodes++;
 
@@ -234,24 +252,24 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::insert_at_cursor(RBNode* node, 
   fix_insert_violations(node);
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::fix_insert_violations(RBNode* node) {
+template <typename K, typename V, typename COMPARATOR>
+inline void AbstractRBTree<K, V, COMPARATOR>::fix_insert_violations(RBNode<K, V>* node) {
   if (node->is_black()) { // node's value was updated
     return;               // Tree is already correct
   }
 
-  RBNode* parent = node->parent();
+  RBNode<K, V>* parent = node->parent();
   while (parent != nullptr && parent->is_red()) {
     // Node and parent are both red, creating a red-violation
 
-    RBNode* grandparent = parent->parent();
+    RBNode<K, V>* grandparent = parent->parent();
     if (grandparent == nullptr) { // Parent is the tree root
       assert(parent == _root, "parent must be root");
       parent->set_black(); // Color parent black to eliminate the red-violation
       return;
     }
 
-    RBNode* uncle = parent->is_left_child() ? grandparent->_right : grandparent->_left;
+    RBNode<K, V>* uncle = parent->is_left_child() ? grandparent->_right : grandparent->_left;
     if (is_black(uncle)) { // Parent is red, uncle is black
       // Rotate the parent to the position of the grandparent
       if (parent->is_left_child()) {
@@ -293,14 +311,14 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::fix_insert_violations(RBNode* n
   }
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_black_leaf(RBNode* node) {
+template <typename K, typename V, typename COMPARATOR>
+inline void AbstractRBTree<K, V, COMPARATOR>::remove_black_leaf(RBNode<K, V>* node) {
   // Black node removed, balancing needed
-  RBNode* parent = node->parent();
+  RBNode<K, V>* parent = node->parent();
   while (parent != nullptr) {
     // Sibling must exist. If it did not, node would need to be red to not break
     // tree properties, and could be trivially removed before reaching here
-    RBNode* sibling = node->is_left_child() ? parent->_right : parent->_left;
+    RBNode<K, V>* sibling = node->is_left_child() ? parent->_right : parent->_left;
     if (is_red(sibling)) { // Sibling red, parent and nephews must be black
       assert(is_black(parent), "parent must be black");
       assert(is_black(sibling->_left), "nephew must be black");
@@ -324,8 +342,8 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_black_leaf(RBNode* node)
       // Further balancing needed
     }
 
-    RBNode* close_nephew = node->is_left_child() ? sibling->_left : sibling->_right;
-    RBNode* distant_nephew = node->is_left_child() ? sibling->_right : sibling->_left;
+    RBNode<K, V>* close_nephew = node->is_left_child() ? sibling->_left : sibling->_right;
+    RBNode<K, V>* distant_nephew = node->is_left_child() ? sibling->_right : sibling->_left;
     if (is_red(distant_nephew) || is_red(close_nephew)) {
       if (is_black(distant_nephew)) { // close red, distant black
         // Rotate sibling down and inner nephew up
@@ -381,11 +399,11 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_black_leaf(RBNode* node)
   }
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_from_tree(RBNode* node) {
-  RBNode* parent = node->parent();
-  RBNode* left = node->_left;
-  RBNode* right = node->_right;
+template <typename K, typename V, typename COMPARATOR>
+inline void AbstractRBTree<K, V, COMPARATOR>::remove_from_tree(RBNode<K, V>* node) {
+  RBNode<K, V>* parent = node->parent();
+  RBNode<K, V>* left = node->_left;
+  RBNode<K, V>* right = node->_right;
   if (left != nullptr) { // node has a left only-child
     // node must be black, and child red, otherwise a black-violation would
     // exist Remove node and color the child black.
@@ -427,16 +445,16 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_from_tree(RBNode* node) 
   }
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_at_cursor(const Cursor& node_cursor) {
+template <typename K, typename V, typename COMPARATOR>
+inline void AbstractRBTree<K, V, COMPARATOR>::remove_at_cursor(const Cursor& node_cursor) {
   assert(node_cursor.valid() && node_cursor.found(), "must be");
   _num_nodes--;
 
-  RBNode* node = node_cursor.node();
+  RBNode<K, V>* node = node_cursor.node();
 
   if (node->_left != nullptr && node->_right != nullptr) { // node has two children
     // Swap place with the in-order successor and delete there instead
-    RBNode* curr = node->_right;
+    RBNode<K, V>* curr = node->_right;
     while (curr->_left != nullptr) {
       curr = curr->_left;
     }
@@ -468,9 +486,9 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_at_cursor(const Cursor& 
   remove_from_tree(node);
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline const typename RBTree<K, V, COMPARATOR, ALLOCATOR>::Cursor
-RBTree<K, V, COMPARATOR, ALLOCATOR>::cursor(const RBNode* node) const {
+template <typename K, typename V, typename COMPARATOR>
+inline const typename AbstractRBTree<K, V, COMPARATOR>::Cursor
+AbstractRBTree<K, V, COMPARATOR>::cursor(const RBNode<K, V>* node) const {
   if (node == nullptr) {
     return Cursor();
   }
@@ -479,15 +497,15 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::cursor(const RBNode* node) const {
     return Cursor(&_root, nullptr, node->key());
   }
 
-  RBNode* parent = node->parent();
-  RBNode** insert_location =
+  RBNode<K, V>* parent = node->parent();
+  RBNode<K, V>** insert_location =
       node->is_left_child() ? &parent->_left : &parent->_right;
   return Cursor(insert_location, parent, node->key());
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline const typename RBTree<K, V, COMPARATOR, ALLOCATOR>::Cursor
-RBTree<K, V, COMPARATOR, ALLOCATOR>::next(const Cursor& node_cursor) const {
+template <typename K, typename V, typename COMPARATOR>
+inline const typename AbstractRBTree<K, V, COMPARATOR>::Cursor
+AbstractRBTree<K, V, COMPARATOR>::next(const Cursor& node_cursor) const {
   if (node_cursor.found()) {
     return cursor(node_cursor.node()->next());
   }
@@ -504,9 +522,9 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::next(const Cursor& node_cursor) const {
   return cursor(node_cursor._parent->next()); // Right child, parent's next is also node's next
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline const typename RBTree<K, V, COMPARATOR, ALLOCATOR>::Cursor
-RBTree<K, V, COMPARATOR, ALLOCATOR>::prev(const Cursor& node_cursor) const {
+template <typename K, typename V, typename COMPARATOR>
+inline const typename AbstractRBTree<K, V, COMPARATOR>::Cursor
+AbstractRBTree<K, V, COMPARATOR>::prev(const Cursor& node_cursor) const {
   if (node_cursor.found()) {
     return cursor(node_cursor.node()->prev());
   }
@@ -523,10 +541,10 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::prev(const Cursor& node_cursor) const {
   return cursor(node_cursor._parent->prev()); // Left child, parent's prev is also node's prev
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::replace_at_cursor(RBNode* new_node, const Cursor& node_cursor) {
+template <typename K, typename V, typename COMPARATOR>
+inline void AbstractRBTree<K, V, COMPARATOR>::replace_at_cursor(RBNode<K, V>* new_node, const Cursor& node_cursor) {
   assert(node_cursor.valid() && node_cursor.found(), "must be");
-  RBNode* old_node = node_cursor.node();
+  RBNode<K, V>* old_node = node_cursor.node();
   if (old_node == new_node) {
     return;
   }
@@ -551,43 +569,43 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::replace_at_cursor(RBNode* new_n
 #endif // ASSERT
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::Cursor
-RBTree<K, V, COMPARATOR, ALLOCATOR>::cursor(const K& key) {
-  return static_cast<const RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->cursor(key);
+template <typename K, typename V, typename COMPARATOR>
+inline typename AbstractRBTree<K, V, COMPARATOR>::Cursor
+AbstractRBTree<K, V, COMPARATOR>::cursor(const K& key, const RBNode<K, V>* hint_node) {
+  return static_cast<const AbstractRBTree<K, V, COMPARATOR>*>(this)->cursor(key, hint_node);
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::Cursor
-RBTree<K, V, COMPARATOR, ALLOCATOR>::cursor(const RBNode* node) {
-  return static_cast<const RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->cursor(node);
+template <typename K, typename V, typename COMPARATOR>
+inline typename AbstractRBTree<K, V, COMPARATOR>::Cursor
+AbstractRBTree<K, V, COMPARATOR>::cursor(const RBNode<K, V>* node) {
+  return static_cast<const AbstractRBTree<K, V, COMPARATOR>*>(this)->cursor(node);
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::Cursor
-RBTree<K, V, COMPARATOR, ALLOCATOR>::next(const Cursor& node_cursor) {
-  return static_cast<const RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->next(node_cursor);
+template <typename K, typename V, typename COMPARATOR>
+inline typename AbstractRBTree<K, V, COMPARATOR>::Cursor
+AbstractRBTree<K, V, COMPARATOR>::next(const Cursor& node_cursor) {
+  return static_cast<const AbstractRBTree<K, V, COMPARATOR>*>(this)->next(node_cursor);
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::Cursor
-RBTree<K, V, COMPARATOR, ALLOCATOR>::prev(const Cursor& node_cursor) {
-  return static_cast<const RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->prev(node_cursor);
+template <typename K, typename V, typename COMPARATOR>
+inline typename AbstractRBTree<K, V, COMPARATOR>::Cursor
+AbstractRBTree<K, V, COMPARATOR>::prev(const Cursor& node_cursor) {
+  return static_cast<const AbstractRBTree<K, V, COMPARATOR>*>(this)->prev(node_cursor);
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+template <typename K, typename V, typename COMPARATOR>
 template <typename F>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_in_order(F f) const {
-  const RBNode* node = leftmost();
+inline void AbstractRBTree<K, V, COMPARATOR>::visit_in_order(F f) const {
+  const RBNode<K, V>* node = leftmost();
   while (node != nullptr) {
     f(node);
     node = node->next();
   }
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+template <typename K, typename V, typename COMPARATOR>
 template <typename F>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_range_in_order(const K& from, const K& to, F f) const {
+inline void AbstractRBTree<K, V, COMPARATOR>::visit_range_in_order(const K& from, const K& to, F f) const {
   assert(COMPARATOR::cmp(from, to) <= 0, "from must be less or equal to to");
   if (_root == nullptr) {
     return;
@@ -595,8 +613,8 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_range_in_order(const K& f
 
   Cursor cursor_start = cursor(from);
   Cursor cursor_end = cursor(to);
-  const RBNode* start = cursor_start.found() ? cursor_start.node() : next(cursor_start).node();
-  const RBNode* end = cursor_end.found() ? cursor_end.node() : next(cursor_end).node();
+  const RBNode<K, V>* start = cursor_start.found() ? cursor_start.node() : next(cursor_start).node();
+  const RBNode<K, V>* end = cursor_end.found() ? cursor_end.node() : next(cursor_end).node();
 
   while (start != end) {
     f(start);
@@ -605,8 +623,8 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_range_in_order(const K& f
 }
 
 #ifdef ASSERT
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::verify_self() const {
+template <typename K, typename V, typename COMPARATOR>
+inline void AbstractRBTree<K, V, COMPARATOR>::verify_self() const {
   if (_root == nullptr) {
     assert(_num_nodes == 0, "rbtree has %zu nodes but no root", _num_nodes);
     return;
@@ -621,7 +639,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::verify_self() const {
   size_t longest_leaf_path = 0;
   _expected_visited = !_expected_visited;
 
-  _root->verify(num_nodes, black_depth, shortest_leaf_path, longest_leaf_path, tree_depth, _expected_visited);
+  _root->verify(num_nodes, black_depth, shortest_leaf_path, longest_leaf_path, tree_depth, _expected_visited, COMPARATOR::cmp);
 
   const unsigned int maximum_depth = log2i(size() + 1) * 2;
 
@@ -655,8 +673,8 @@ void print_T(outputStream* st, T x) {
   st->print(PTR_FORMAT, p2i(x));
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-void RBTree<K, V, COMPARATOR, ALLOCATOR>::print_node_on(outputStream* st, int depth, const NodeType* n) const {
+template <typename K, typename V, typename COMPARATOR>
+void AbstractRBTree<K, V, COMPARATOR>::print_node_on(outputStream* st, int depth, const NodeType* n) const {
   st->print("(%d)", depth);
   st->sp(1 + depth * 2);
   st->print("@" PTR_FORMAT ": [", p2i(n));
@@ -673,8 +691,8 @@ void RBTree<K, V, COMPARATOR, ALLOCATOR>::print_node_on(outputStream* st, int de
   }
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-void RBTree<K, V, COMPARATOR, ALLOCATOR>::print_on(outputStream* st) const {
+template <typename K, typename V, typename COMPARATOR>
+void AbstractRBTree<K, V, COMPARATOR>::print_on(outputStream* st) const {
   if (_root != nullptr) {
     print_node_on(st, 0, _root);
   }

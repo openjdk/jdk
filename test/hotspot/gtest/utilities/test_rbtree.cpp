@@ -72,16 +72,10 @@ struct ArrayAllocator {
   void free(void* ptr) { }
 };
 
-#ifdef ASSERT
-  template<typename K, typename V, typename CMP, typename ALLOC>
-  void verify_it(RBTree<K, V, CMP, ALLOC>& t) {
-    t.verify_self();
-  }
-#endif // ASSERT
-
   using RBTreeInt = RBTreeCHeap<int, int, Cmp, mtTest>;
+  using RBTreeIntNode = RBNode<int, int>;
   using IntrusiveTreeInt = IntrusiveRBTree<int, Cmp>;
-  using IntrusiveNode = IntrusiveTreeInt::RBNode;
+  using IntrusiveNode = IntrusiveNode<int>;
   using IntrusiveCursor = IntrusiveTreeInt::Cursor;
 
   struct IntrusiveHolder {
@@ -110,7 +104,7 @@ public:
       rbtree.upsert(i, i);
     }
 
-    rbtree_const.visit_in_order([&](const RBTreeInt::RBNode* node) {
+    rbtree_const.visit_in_order([&](const RBTreeIntNode* node) {
       nums_seen.at(node->key())++;
     });
     for (int i = 0; i < up_to; i++) {
@@ -169,7 +163,7 @@ public:
   void test_find() {
     struct Empty {};
     RBTreeCHeap<float, Empty, FCmp, mtOther> rbtree;
-    using Node = RBTreeCHeap<float, Empty, FCmp, mtOther>::RBNode;
+    using Node = RBNode<float, Empty>;
 
     Node* n = nullptr;
     auto test = [&](float f) {
@@ -189,7 +183,7 @@ public:
     { // Tests with 'default' ordering (ascending)
       RBTreeInt rbtree;
       const RBTreeInt& rbtree_const = rbtree;
-      using Node = RBTreeInt::RBNode;
+      using Node = RBTreeIntNode;
 
       rbtree_const.visit_range_in_order(0, 100, [&](const Node* x) {
         EXPECT_TRUE(false) << "Empty rbtree has no nodes to visit";
@@ -265,7 +259,7 @@ public:
     { // Test with descending ordering
       RBTreeCHeap<int, int, CmpInverse, mtOther> rbtree;
       const RBTreeCHeap<int, int, CmpInverse, mtOther>& rbtree_const = rbtree;
-      using Node = RBTreeCHeap<int, int, CmpInverse, mtOther>::RBNode;
+      using Node = RBNode<int, int>;
 
       for (int i = 0; i < 10; i++) {
         rbtree.upsert(i, 0);
@@ -292,7 +286,7 @@ public:
   }
 
   void test_closest_leq() {
-    using Node = RBTreeInt::RBNode;
+    using Node = RBTreeIntNode;
     {
       RBTreeInt rbtree;
       const RBTreeInt& rbtree_const = rbtree;
@@ -317,7 +311,7 @@ public:
   }
 
   void test_closest_gt() {
-    using Node = RBTreeInt::RBNode;
+    using Node = RBTreeIntNode;
     {
       RBTreeInt rbtree;
       Node* n = rbtree.closest_gt(0);
@@ -347,7 +341,7 @@ public:
   }
 
   void test_leftmost() {
-    using Node = RBTreeInt::RBNode;
+    using Node = RBTreeIntNode;
 
     RBTreeInt rbtree;
     Node* n = rbtree.leftmost();
@@ -390,7 +384,7 @@ public:
   void test_node_prev() {
     RBTreeInt rbtree;
     const RBTreeInt& rbtree_const = rbtree;
-    using Node = RBTreeInt::RBNode;
+    using Node = RBTreeIntNode;
     constexpr int num_nodes = 100;
 
     for (int i = num_nodes; i > 0; i--) {
@@ -411,7 +405,7 @@ public:
   void test_node_next() {
     RBTreeInt rbtree;
     const RBTreeInt& rbtree_const = rbtree;
-    using Node = RBTreeInt::RBNode;
+    using Node = RBTreeIntNode;
     constexpr int num_nodes = 100;
 
     for (int i = 0; i < num_nodes; i++) {
@@ -432,7 +426,7 @@ public:
   void test_stable_nodes() {
     RBTreeInt rbtree;
     const RBTreeInt& rbtree_const = rbtree;
-    using Node = RBTreeInt::RBNode;
+    using Node = RBTreeIntNode;
     ResourceMark rm;
     GrowableArray<Node*> a(10000);
     for (int i = 0; i < 10000; i++) {
@@ -460,10 +454,10 @@ public:
 
   void test_stable_nodes_addresses() {
     using Tree = RBTreeCHeap<int, void*, Cmp, mtOther>;
-    using Node = Tree::RBNode;
+    using Node = RBNode<int, void*>;
     Tree rbtree;
     for (int i = 0; i < 10000; i++) {
-      rbtree.upsert(i, nullptr);
+      rbtree.upsert(i, (void*)nullptr);
       Node* inserted_node = rbtree.find_node(i);
       inserted_node->val() = inserted_node;
     }
@@ -483,8 +477,35 @@ public:
     });
   }
 
+  void test_node_hints() {
+    constexpr int num_nodes = 100;
+    RBTreeInt tree;
+    RBTreeIntNode* nodes[num_nodes];
+
+    RBTreeIntNode* prev_node = nullptr;
+    for (int i = 0; i < num_nodes; i++) {
+      RBTreeIntNode* node = tree.allocate_node(i, i);
+      nodes[i] = node;
+      tree.insert(node, prev_node);
+      prev_node = node;
+    }
+
+    for (int i = 0; i < num_nodes; i++) {
+      RBTreeIntNode* target_node = nodes[i];
+      for (int j = 0; j < num_nodes; j++) {
+        if (i == j) continue;
+        RBTreeIntNode* hint_node = nodes[j];
+        RBTreeIntNode* find_node = tree.find_node(i);
+        RBTreeIntNode* hint_find_node = tree.find_node(i, hint_node);
+
+        ASSERT_EQ(find_node, hint_find_node);
+        ASSERT_EQ(target_node, hint_find_node);
+      }
+    }
+  }
+
   void test_cursor() {
-    constexpr const int num_nodes = 10;
+    constexpr int num_nodes = 10;
     RBTreeInt tree;
 
     for (int n = 0; n <= num_nodes; n++) {
@@ -506,7 +527,7 @@ public:
   }
 
   void test_get_cursor() {
-    constexpr const int num_nodes = 10;
+    constexpr int num_nodes = 10;
     IntrusiveTreeInt tree;
     GrowableArrayCHeap<IntrusiveHolder*, mtTest> nodes(num_nodes);
 
@@ -542,7 +563,7 @@ public:
   }
 
   void test_cursor_iterate() {
-    constexpr const int num_nodes = 100;
+    constexpr int num_nodes = 100;
     RBTreeInt tree;
     for (int n = 0; n <= num_nodes; n++) {
       tree.upsert(n, n);
@@ -566,7 +587,7 @@ public:
   }
 
   void test_leftmost_rightmost() {
-    using Node = RBTreeInt::RBNode;
+    using Node = RBTreeIntNode;
     for (int i = 0; i < 10; i++) {
       RBTreeInt rbtree;
       const RBTreeInt& rbtree_const = rbtree;
@@ -663,7 +684,7 @@ public:
 
       EXPECT_NOT_NULL(cursor2.node());
 
-      verify_it(intrusive_tree);
+      intrusive_tree.verify_self();
     }
 
     // Check inserted values
@@ -683,7 +704,7 @@ public:
 
       EXPECT_NULL(cursor2.node());
 
-      verify_it(intrusive_tree);
+      intrusive_tree.verify_self();
     }
 
     // Check removed values
@@ -696,7 +717,7 @@ public:
   void test_nodes_visited_once() {
     constexpr size_t memory_size = 65536;
     using Tree = RBTree<int, int, Cmp, ArrayAllocator<memory_size>>;
-    using Node = Tree::RBNode;
+    using Node = RBNode<int, int>;
 
     Tree tree;
 
@@ -771,6 +792,10 @@ TEST_VM_F(RBTreeTest, NodeStableAddressTest) {
 }
 
 
+TEST_VM_F(RBTreeTest, NodeHints) {
+  this->test_node_hints();
+}
+
 TEST_VM_F(RBTreeTest, CursorFind) {
   this->test_cursor();
 }
@@ -817,9 +842,9 @@ TEST_VM(RBTreeTestNonFixture, TestPrintPointerTree) {
   const void* const p3 = (const void*) 0x7f223fbaULL;
   const char* const s3 = "[0x7f223fba] = 3";
 #endif
-  tree.upsert(p1, 1);
-  tree.upsert(p2, 2);
-  tree.upsert(p3, 3);
+  tree.upsert(p1, 1U);
+  tree.upsert(p2, 2U);
+  tree.upsert(p3, 3U);
   stringStream ss;
   tree.print_on(&ss);
   const char* const N = nullptr;
@@ -841,9 +866,9 @@ TEST_VM(RBTreeTestNonFixture, TestPrintIntegerTree) {
     const char* const s2 = "[-13591] = 2";
     const int i3 = 0;
     const char* const s3 = "[0] = 3";
-    tree.upsert(i1, 1);
-    tree.upsert(i2, 2);
-    tree.upsert(i3, 3);
+    tree.upsert(i1, 1U);
+    tree.upsert(i2, 2U);
+    tree.upsert(i3, 3U);
     stringStream ss;
     tree.print_on(&ss);
     const char* const N = nullptr;
@@ -909,10 +934,10 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
     }
   }
   { // Make a very large tree and verify at the end
-    RBTreeCHeap<int, void, Cmp, mtOther> rbtree;
+    RBTreeCHeap<int, int, Cmp, mtOther> rbtree;
     constexpr int one_hundred_thousand = 100000;
     for (int i = 0; i < one_hundred_thousand; i++) {
-      rbtree.insert(i);
+      rbtree.upsert(i, i);
     }
     EXPECT_EQ((size_t)one_hundred_thousand, rbtree.size());
     rbtree.verify_self();
