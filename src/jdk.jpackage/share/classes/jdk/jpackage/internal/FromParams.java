@@ -70,8 +70,14 @@ import jdk.jpackage.internal.util.function.ThrowingFunction;
 final class FromParams {
 
     static ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
-            Function<Map<String, ? super Object>, Launcher> launcherMapper, ApplicationLayout appLayout)
-            throws ConfigException, IOException {
+            Function<Map<String, ? super Object>, Launcher> launcherMapper,
+            ApplicationLayout appLayout) throws ConfigException, IOException {
+        return createApplicationBuilder(params, launcherMapper, appLayout, Optional.of(RuntimeLayout.DEFAULT));
+    }
+
+    static ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
+            Function<Map<String, ? super Object>, Launcher> launcherMapper,
+            ApplicationLayout appLayout, Optional<RuntimeLayout> predefinedRuntimeLayout) throws ConfigException, IOException {
 
         final var appBuilder = new ApplicationBuilder();
 
@@ -85,8 +91,13 @@ final class FromParams {
 
         final var isRuntimeInstaller = isRuntimeInstaller(params);
 
+        final var predefinedRuntimeImage = PREDEFINED_RUNTIME_IMAGE.findIn(params);
+
+        final var predefinedRuntimeDirectory = predefinedRuntimeLayout.flatMap(
+                layout -> predefinedRuntimeImage.map(layout::resolveAt)).map(RuntimeLayout::runtimeDirectory);
+
         if (isRuntimeInstaller) {
-            appBuilder.appImageLayout(RuntimeLayout.DEFAULT);
+            appBuilder.appImageLayout(predefinedRuntimeLayout.orElseThrow());
         } else {
             appBuilder.appImageLayout(appLayout);
 
@@ -103,8 +114,7 @@ final class FromParams {
 
                 MODULE_PATH.copyInto(params, runtimeBuilderBuilder::modulePath);
 
-                final var predefinedRuntimeImage = PREDEFINED_RUNTIME_IMAGE.findIn(params);
-                predefinedRuntimeImage.ifPresentOrElse(runtimeBuilderBuilder::forRuntime, () -> {
+                predefinedRuntimeDirectory.ifPresentOrElse(runtimeBuilderBuilder::forRuntime, () -> {
                     final var startupInfos = launchers.asList().stream()
                             .map(Launcher::startupInfo)
                             .map(Optional::orElseThrow).toList();
