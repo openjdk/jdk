@@ -90,7 +90,6 @@ final class TestCarrierLocalArenaPoolsStress {
             System.out.println(duration(begin) + "CREATING " + noThreads + " THREADS USING " + threadBuilder);
             final Thread[] threads = IntStream.range(0, noThreads).mapToObj(_ ->
                     threadBuilder.start(() -> {
-                        final long adr = UNSAFE.allocateMemory(POOL_SIZE);
                         /*final var seg = Arena.ofConfined().allocate(100);
                         final Arena arena = new ReusingArena(seg);*/
                         final long threadId = Thread.currentThread().threadId();
@@ -104,9 +103,11 @@ final class TestCarrierLocalArenaPoolsStress {
                                     LONG_HANDLE.setVolatile(segment, 0L, threadId);
                                     assertEquals(threadId, (long) LONG_HANDLE.getVolatile(segment, 0L));
                                     */
+                                final long adr = UNSAFE.allocateMemory(POOL_SIZE);
                                 UNSAFE.putLongVolatile(null, adr, threadId);
                                 long v = UNSAFE.getLongVolatile(null, adr);
                                 assertEquals(threadId, v);
+                                UNSAFE.freeMemory(adr);
                                 //}
                             }
                             Thread.yield(); // make sure the driver thread gets a chance.
