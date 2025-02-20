@@ -26,6 +26,8 @@ package compiler.lib.template_library;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateWithArgs;
@@ -41,6 +43,14 @@ import compiler.lib.template_library.types.Type;
 import compiler.lib.template_library.types.Operation;
 
 public abstract class Expressions {
+
+    private static final Random RANDOM = Utils.getRandomInstance();
+
+    private static <T> T choice(List<T> list) {
+        if (list.isEmpty()) { return null; }
+        int i = RANDOM.nextInt(list.size());
+        return list.get(i);
+    }
 
     public static final Expression constant(Type type) {
         var template = Template.make("args", (List<Object> args) -> body(
@@ -73,15 +83,36 @@ public abstract class Expressions {
     }
 
     private static final ExpressionGenerator expressionGenerator(Type resultType, HashSet<Type> allowedTypes, int maxDepth, List<Type> types) {
-        Object c = resultType.con();
+        ExpressionGeneratorStep step = expressionGeneratorStep(resultType, allowedTypes, maxDepth, types);
         return (List<Object> args) -> {
             List<Object> tokens = new ArrayList<Object>();
-            tokens.add(c);
+            step.addTokens(tokens, args);
             return tokens;
         };
     }
 
-    //    List<Operation> ops = resultType.operations().stream().filter(o -> o.hasOnlyTypes(allowedTypesSet)).toList();
-    //    return null;
-    //}
+    private static final ExpressionGeneratorStep expressionGeneratorStep(Type resultType, HashSet<Type> allowedTypes, int maxDepth, List<Type> types) {
+        List<Operation> ops = resultType.operations().stream().filter(o -> o.hasOnlyTypes(allowedTypes)).toList();
+        if (maxDepth <= 0 || ops.isEmpty()) {
+            // TODO: add to types in some cases!
+            return expressionGeneratorStepCon(resultType);
+        }
+        switch (choice(ops)) {
+            case Operation.Unary(String s0, Type t0, String s1) -> {
+                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, allowedTypes, maxDepth-1, types);
+                return (List<Object> tokens, List<Object> args) -> {
+                    tokens.add(s0);
+                    step0.addTokens(tokens, args);
+                    tokens.add(s1);
+                };
+            }
+        }
+    }
+
+    private static final ExpressionGeneratorStep expressionGeneratorStepCon(Type type) {
+        Object c = type.con();
+        return (List<Object> tokens, List<Object> args) -> {
+            tokens.add(c);
+        };
+    }
 }
