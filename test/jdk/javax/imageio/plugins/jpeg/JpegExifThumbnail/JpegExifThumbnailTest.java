@@ -135,6 +135,11 @@ public class JpegExifThumbnailTest {
                 1998,12,1,14,22,36,
                 new Dimension(80, 60)).run();
 
+        // TODO: this file contains two thumbnails; we should parse both
+        new JpegExifThumbnailTest("jdk_8160327-jfif-jfif-and-exif-thumbnail-sharpshot-iphone.jpg",
+                2010,2,11,20,41,27,
+                new Dimension(160, 120)).run();
+
         // this includes Exif data, but the `compression` tag is 0x60000 instead of 0x6,
         // also it doesn't include any date
         new JpegExifThumbnailTest("jdk_8160327-plastic-wrap.jpg",
