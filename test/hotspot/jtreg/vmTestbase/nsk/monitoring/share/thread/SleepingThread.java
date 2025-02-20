@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,10 @@ public class SleepingThread extends RecursiveMonitoringThread {
                 "java.lang.Thread.beforeSleep",
                 "java.lang.Thread.afterSleep",
                 "java.util.concurrent.TimeUnit.toNanos",
+                "java.lang.Object.<init>",
+                "jdk.internal.event.Event.<init>",
+                "jdk.internal.event.ThreadSleepEvent.<init>",
                 "jdk.internal.event.ThreadSleepEvent.<clinit>",
-                "jdk.internal.event.ThreadSleepEvent.isTurnedOn",
                 "jdk.internal.event.ThreadSleepEvent.isEnabled",
                 "nsk.monitoring.share.thread.SleepingThread.runInside"
         };

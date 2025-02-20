@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -71,6 +70,94 @@ public class TestSegmentCopy {
                 //check that copy actually worked
                 for (int i = 0; i < copySize; i++) {
                     Type.BYTE.check(s2, s2Offset, i, i);
+                }
+            }
+        }
+    }
+
+    @Test(dataProvider = "conjunctSegments")
+    public void testCopy5ArgInvariants(MemorySegment src, MemorySegment dst) {
+        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.copy(src, 0, dst, 0, -1));
+        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.copy(src, -1, dst, 0, src.byteSize()));
+        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.copy(src, 0, dst, -1, src.byteSize()));
+        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.copy(src, 1, dst, 0, src.byteSize()));
+        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.copy(src, 0, dst, 1, src.byteSize()));
+    }
+
+    @Test(dataProvider = "conjunctSegments")
+    public void testConjunctCopy7ArgRight(MemorySegment src, MemorySegment dst) {
+        testConjunctCopy(src, 0, dst, 1, CopyOp.of7Arg());
+    }
+
+    @Test(dataProvider = "conjunctSegments")
+    public void testConjunctCopy5ArgRight(MemorySegment src, MemorySegment dst) {
+        testConjunctCopy(src, 0, dst, 1, CopyOp.of5Arg());
+    }
+
+    @Test(dataProvider = "conjunctSegments")
+    public void testConjunctCopy7ArgLeft(MemorySegment src, MemorySegment dst) {
+        testConjunctCopy(src, 1, dst, 0, CopyOp.of7Arg());
+    }
+
+    @Test(dataProvider = "conjunctSegments")
+    public void testConjunctCopy5ArgLeft(MemorySegment src, MemorySegment dst) {
+        testConjunctCopy(src, 1, dst, 0, CopyOp.of5Arg());
+    }
+
+    void testConjunctCopy(MemorySegment src, long srcOffset, MemorySegment dst, long dstOffset, CopyOp op) {
+        if (src.byteSize() < 4 || src.address() != dst.address()) {
+            // Only test larger segments where the skew is zero
+            return;
+        }
+
+        try (var arena = Arena.ofConfined()) {
+            // Create a disjoint segment for expected behavior
+            MemorySegment disjoint = arena.allocate(dst.byteSize());
+            disjoint.copyFrom(src);
+            op.copy(src, srcOffset, disjoint, dstOffset, 3);
+            byte[] expected = disjoint.toArray(JAVA_BYTE);
+
+            // Do a conjoint copy
+            op.copy(src, srcOffset, dst, dstOffset, 3);
+            byte[] actual = dst.toArray(JAVA_BYTE);
+
+            assertEquals(actual, expected);
+        }
+    }
+
+    @FunctionalInterface
+    interface CopyOp {
+        void copy(MemorySegment src, long srcOffset, MemorySegment dst, long dstOffset, long bytes);
+
+        static CopyOp of5Arg() {
+            return MemorySegment::copy;
+        }
+
+        static CopyOp of7Arg() {
+            return (MemorySegment src, long srcOffset, MemorySegment dst, long dstOffset, long bytes) ->
+                    MemorySegment.copy(src, JAVA_BYTE, srcOffset, dst, JAVA_BYTE, dstOffset, bytes);
+        }
+
+    }
+
+    @Test(dataProvider = "segmentKinds")
+    public void testByteCopySizes(SegmentKind kind1, SegmentKind kind2) {
+
+        record Offsets(int src, int dst){}
+
+        for (Offsets offsets : List.of(new Offsets(3, 7), new Offsets(7, 3))) {
+            for (int size = 0; size < 513; size++) {
+                MemorySegment src = kind1.makeSegment(size + offsets.src());
+                MemorySegment dst = kind2.makeSegment(size + offsets.dst());
+                //prepare source slice
+                for (int i = 0; i < size; i++) {
+                    src.set(JAVA_BYTE, i + offsets.src(), (byte) i);
+                }
+                //perform copy
+                MemorySegment.copy(src, offsets.src(), dst, offsets.dst(), size);
+                //check that copy actually worked
+                for (int i = 0; i < size; i++) {
+                    assertEquals(dst.get(JAVA_BYTE, i + offsets.dst()), (byte) i);
                 }
             }
         }
@@ -272,6 +359,28 @@ public class TestSegmentCopy {
         for (SegmentKind kind1 : SegmentKind.values()) {
             for (SegmentKind kind2 : SegmentKind.values()) {
                 cases.add(new Object[] {kind1, kind2});
+            }
+        }
+        return cases.toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    static Object[][] conjunctSegments() {
+        List<Object[]> cases = new ArrayList<>();
+        for (SegmentKind kind : SegmentKind.values()) {
+            // Different paths might be taken in the implementation depending on the
+            // size, type, and address of the underlying segments.
+            for (int len : new int[]{0, 1, 7, 512}) {
+                for (int offset : new int[]{-1, 0, 1}) {
+                    MemorySegment segment = kind.makeSegment(len + 2);
+                    MemorySegment src = segment.asSlice(1 + offset, len);
+                    MemorySegment dst = segment.asSlice(1, len);
+                    for (int i = 0; i < len; i++) {
+                        src.set(JAVA_BYTE, i, (byte) i);
+                    }
+                    // src = 0, 1, ... , len-1
+                    cases.add(new Object[]{src, dst});
+                }
             }
         }
         return cases.toArray(Object[][]::new);

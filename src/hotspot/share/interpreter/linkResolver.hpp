@@ -99,7 +99,6 @@ class CallInfo : public StackObj {
   // Materialize a java.lang.invoke.ResolvedMethodName for this resolved_method
   void     set_resolved_method_name(TRAPS);
 
-  BasicType    result_type() const               { return selected_method()->result_type(); }
   CallKind     call_kind() const                 { return _call_kind; }
   int          vtable_index() const {
     // Even for interface calls the vtable index could be non-negative.

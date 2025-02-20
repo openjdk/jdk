@@ -49,8 +49,8 @@ public class JdpOffTestCase extends JdpTestCase {
      * The socket has not received anything, and this is the expected behavior.
      */
     @Override
-    protected void onSocketTimeOut(SocketTimeoutException e) throws Exception {
-        log.fine("No packages received. Test passed!");
+    protected void onSocketTimeout(SocketTimeoutException e) throws Exception {
+        log.fine("No packets received. Test passed!");
         testPassed = true;
     }
 
@@ -77,7 +77,7 @@ public class JdpOffTestCase extends JdpTestCase {
 
 
     /**
-     * The test should stop after the socket has timed out. See onSocketTimeOut {@link}.
+     * The test should stop after the socket has timed out. See onSocketTimeout {@link}.
      */
     @Override
     protected boolean shouldContinue() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,6 @@ import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-/** This is an abstract class because there are certain OS- and
-    CPU-specific operations (like the setting and getting of the last
-    Java frame pointer) which need to be factored out. These
-    operations are implemented by, for example,
-    SolarisSPARCJavaThread, and the concrete subclasses are
-    instantiated by the JavaThreadFactory in the Threads class. */
-
 public class JavaThread extends Thread {
   private static final boolean DEBUG = System.getProperty("sun.jvm.hotspot.runtime.JavaThread.DEBUG") != null;
 
@@ -55,8 +48,10 @@ public class JavaThread extends Thread {
   private static CIntegerField stackSizeField;
   private static CIntegerField terminatedField;
   private static AddressField activeHandlesField;
+  private static CIntegerField monitorOwnerIDField;
   private static long oopPtrSize;
 
+  // For accessing platform dependent functionality
   private static JavaThreadPDAccess access;
 
   // JavaThreadStates read from underlying process
@@ -101,6 +96,7 @@ public class JavaThread extends Thread {
     stackSizeField    = type.getCIntegerField("_stack_size");
     terminatedField   = type.getCIntegerField("_terminated");
     activeHandlesField = type.getAddressField("_active_handles");
+    monitorOwnerIDField = type.getCIntegerField("_monitor_owner_id");
 
     lockStackTopOffset = type.getField("_lock_stack").getOffset() + typeLockStack.getField("_top").getOffset();
     lockStackBaseOffset = type.getField("_lock_stack").getOffset() + typeLockStack.getField("_base[0]").getOffset();
@@ -130,16 +126,6 @@ public class JavaThread extends Thread {
   void setThreadPDAccess(JavaThreadPDAccess access) {
     this.access = access;
   }
-
-  /** NOTE: for convenience, this differs in definition from the underlying VM.
-      Only "pure" JavaThreads return true; CompilerThreads,
-      JVMDIDebuggerThreads return false.
-      FIXME:
-      consider encapsulating platform-specific functionality in an
-      object instead of using inheritance (which is the primary reason
-      we can't traverse CompilerThreads, etc; didn't want to have, for
-      example, "SolarisSPARCCompilerThread".) */
-  public boolean isJavaThread() { return true; }
 
   public boolean isExiting () {
       return (getTerminated() == EXITING) || isTerminated();
@@ -374,6 +360,10 @@ public class JavaThread extends Thread {
         return "<null>";
     }
     return OopUtilities.threadOopGetName(threadObj);
+  }
+
+  public Address getMonitorOwnerID() {
+    return monitorOwnerIDField.getAddress(addr);
   }
 
   //

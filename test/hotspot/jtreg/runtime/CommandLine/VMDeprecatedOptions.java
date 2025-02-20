@@ -57,13 +57,19 @@ public class VMDeprecatedOptions {
           Arrays.asList(new String[][] {
             // deprecated non-alias flags:
             {"AllowRedefinitionToAddDeleteMethods", "true"},
-            {"ZGenerational", "false"},
             {"LockingMode", "1"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
+        if (Platform.isLinux()) {
+          deprecated.addAll(
+            Arrays.asList(new String[][] {
+              {"UseOprofile", "false"}
+            })
+          );
+        }
         if (Platform.isX86() || Platform.isX64()) {
           deprecated.addAll(
             Arrays.asList(new String[][] {

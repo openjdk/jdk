@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,6 +234,20 @@ tstring CfgFile::asString(Properties::const_reference property) {
     return *property.second.rbegin();
 }
 
+bool CfgFile::asBoolean(Properties::const_reference property) {
+    const auto str = asString(property);
+    if (tstrings::equals(str, _T("true"), tstrings::IGNORE_CASE)) {
+        return true;
+    }
+
+    // Parse integer.
+    tistringstream iss(str);
+    int intValue = 0;
+    iss >> intValue;
+
+    return intValue != 0;
+}
+
 tstring CfgFile::asPathList(Properties::const_reference property) {
     return join(property.second, FileUtils::pathSeparator);
 }
@@ -276,6 +290,7 @@ namespace {
     JP_PROPERTY(memory, "app.memory"); \
     JP_PROPERTY(arguments, "arguments"); \
     JP_PROPERTY(javaOptions, "java-options"); \
+    JP_PROPERTY(winNorestart, "win.norestart"); \
 
 namespace PropertyName {
 #define JP_PROPERTY(varName, name) const CfgFile::PropertyName varName(_T(name))

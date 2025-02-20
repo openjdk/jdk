@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -562,8 +562,8 @@ class SignatureStream : public StackObj {
 
   // free-standing lookups (bring your own CL/PD pair)
   enum FailureMode { ReturnNull, NCDFError, CachedOrNull };
-  Klass* as_klass(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
-  oop as_java_mirror(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
+  Klass* as_klass(Handle class_loader, FailureMode failure_mode, TRAPS);
+  oop as_java_mirror(Handle class_loader, FailureMode failure_mode, TRAPS);
 };
 
 // Specialized SignatureStream: used for invoking SystemDictionary to either find
@@ -573,7 +573,6 @@ class ResolvingSignatureStream : public SignatureStream {
   Klass*       _load_origin;
   bool         _handles_cached;
   Handle       _class_loader;       // cached when needed
-  Handle       _protection_domain;  // cached when needed
 
   void initialize_load_origin(Klass* load_origin) {
     _load_origin = load_origin;
@@ -589,20 +588,18 @@ class ResolvingSignatureStream : public SignatureStream {
 
  public:
   ResolvingSignatureStream(Symbol* signature, Klass* load_origin, bool is_method = true);
-  ResolvingSignatureStream(Symbol* signature, Handle class_loader, Handle protection_domain, bool is_method = true);
+  ResolvingSignatureStream(Symbol* signature, Handle class_loader, bool is_method = true);
   ResolvingSignatureStream(const Method* method);
 
   Klass* as_klass(FailureMode failure_mode, TRAPS) {
     need_handles();
-    return SignatureStream::as_klass(_class_loader, _protection_domain,
-                                     failure_mode, THREAD);
+    return SignatureStream::as_klass(_class_loader, failure_mode, THREAD);
   }
   oop as_java_mirror(FailureMode failure_mode, TRAPS) {
     if (is_reference()) {
       need_handles();
     }
-    return SignatureStream::as_java_mirror(_class_loader, _protection_domain,
-                                           failure_mode, THREAD);
+    return SignatureStream::as_java_mirror(_class_loader, failure_mode, THREAD);
   }
 };
 

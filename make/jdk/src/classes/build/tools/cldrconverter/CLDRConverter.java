@@ -33,6 +33,7 @@ import java.nio.file.*;
 import java.time.*;
 import java.util.*;
 import java.util.ResourceBundle.Control;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -786,7 +787,10 @@ public class CLDRConverter {
             String tzKey = Optional.ofNullable((String)handlerSupplMeta.get(tzid))
                                    .orElse(tzid);
             // Follow link, if needed
-            var tzLink = tzdbLinks.get(tzKey);
+            String tzLink = null;
+            for (var k = tzKey; tzdbLinks.containsKey(k);) {
+                k = tzLink = tzdbLinks.get(k);
+            }
             if (tzLink == null && tzdbLinks.containsValue(tzKey)) {
                 // reverse link search
                 // this is needed as in tzdb, "America/Buenos_Aires" links to
@@ -1214,7 +1218,7 @@ public class CLDRConverter {
     private static Set<String> getAvailableZoneIds() {
         assert handlerMetaZones != null;
         if (AVAILABLE_TZIDS == null) {
-            AVAILABLE_TZIDS = new HashSet<>(ZoneId.getAvailableZoneIds());
+            AVAILABLE_TZIDS = new HashSet<>(Arrays.asList(TimeZone.getAvailableIDs()));
             AVAILABLE_TZIDS.addAll(handlerMetaZones.keySet());
             AVAILABLE_TZIDS.remove(MetaZonesParseHandler.NO_METAZONE_KEY);
         }
@@ -1239,7 +1243,8 @@ public class CLDRConverter {
     private static Stream<String> tzDataLinkEntry() {
         try {
             return Files.walk(Paths.get(tzDataDir), 1)
-                .filter(p -> !Files.isDirectory(p))
+                .filter(p -> p.toFile().isFile())
+                .filter(p -> p.getFileName().toString().matches("africa|antarctica|asia|australasia|backward|etcetera|europe|northamerica|southamerica"))
                 .flatMap(CLDRConverter::extractLinks)
                 .sorted();
         } catch (IOException e) {
@@ -1270,8 +1275,27 @@ public class CLDRConverter {
     // Note: the entries are alphabetically sorted, *except* the "world" region
     // code, i.e., "001". It should be the last entry for the same windows time
     // zone name entries. (cf. TimeZone_md.c)
+    //
+    // The default entries from CLDR's windowsZones.xml file can be modified
+    // with <tzDataDir>/tzmappings.override where mapping overrides
+    // can be specified.
+    private static Pattern OVERRIDE_PATTERN = Pattern.compile("(?<win>([^:]+:[^:]+)):(?<java>[^:]+):");
     private static void generateWindowsTZMappings() throws Exception {
         Files.createDirectories(Paths.get(DESTINATION_DIR, "windows", "conf"));
+        var override = Path.of(tzDataDir, "tzmappings.override");
+        if (override.toFile().exists()) {
+            Files.readAllLines(override).stream()
+                .map(String::trim)
+                .filter(o -> !o.isBlank() && !o.startsWith("#"))
+                .forEach(o -> {
+                    var m = OVERRIDE_PATTERN.matcher(o);
+                    if (m.matches()) {
+                        handlerWinZones.put(m.group("win"), m.group("java"));
+                    } else {
+                        System.out.printf("Unrecognized tzmappings override: %s. Ignored%n", o);
+                    }
+                });
+        }
         Files.write(Paths.get(DESTINATION_DIR, "windows", "conf", "tzmappings"),
             handlerWinZones.keySet().stream()
                 .filter(k -> k.endsWith(":001") ||
@@ -1372,6 +1396,7 @@ public class CLDRConverter {
     private static void generateTZDBShortNamesMap() throws IOException {
         Files.walk(Path.of(tzDataDir), 1, FileVisitOption.FOLLOW_LINKS)
             .filter(p -> p.toFile().isFile())
+            .filter(p -> p.getFileName().toString().matches("africa|antarctica|asia|australasia|backward|etcetera|europe|northamerica|southamerica"))
             .forEach(p -> {
                 try {
                     String zone = null;
@@ -1394,43 +1419,41 @@ public class CLDRConverter {
                         }
                         // remove comments in-line
                         line = line.replaceAll("[ \t]*#.*", "");
-
+                        var tokens = line.split("[ \t]+", -1);
+                        var token0len = tokens.length > 0 ? tokens[0].length() : 0;
                         // Zone line
-                        if (line.startsWith("Zone")) {
+                        if (token0len > 0 && tokens[0].regionMatches(true, 0, "Zone", 0, token0len)) {
                             if (zone != null) {
                                 tzdbShortNamesMap.put(zone, format + NBSP + rule);
                             }
-                            var zl = line.split("[ \t]+", -1);
-                            zone = zl[1];
-                            rule = zl[3];
-                            format = flipIfNeeded(inVanguard, zl[4]);
+                            zone = tokens[1];
+                            rule = tokens[3];
+                            format = flipIfNeeded(inVanguard, tokens[4]);
                         } else {
                             if (zone != null) {
-                                if (line.startsWith("Rule") ||
-                                    line.startsWith("Link")) {
+                                if (token0len > 0 &&
+                                   (tokens[0].regionMatches(true, 0, "Rule", 0, token0len) ||
+                                    tokens[0].regionMatches(true, 0, "Link", 0, token0len))) {
                                     tzdbShortNamesMap.put(zone, format + NBSP + rule);
                                     zone = null;
                                     rule = null;
                                     format = null;
                                 } else {
-                                    var s = line.split("[ \t]+", -1);
-                                    rule = s[2];
-                                    format = flipIfNeeded(inVanguard, s[3]);
+                                    rule = tokens[2];
+                                    format = flipIfNeeded(inVanguard, tokens[3]);
                                 }
                             }
                         }
 
                         // Rule line
-                        if (line.startsWith("Rule")) {
-                            var rl = line.split("[ \t]+", -1);
-                            tzdbSubstLetters.put(rl[1] + NBSP + (rl[8].equals("0") ? STD : DST),
-                                    rl[9].replace(NO_SUBST, ""));
+                        if (token0len > 0 && tokens[0].regionMatches(true, 0, "Rule", 0, token0len)) {
+                            tzdbSubstLetters.put(tokens[1] + NBSP + (tokens[8].equals("0") ? STD : DST),
+                                    tokens[9].replace(NO_SUBST, ""));
                         }
 
                         // Link line
-                        if (line.startsWith("Link")) {
-                            var ll = line.split("[ \t]+", -1);
-                            tzdbLinks.put(ll[2], ll[1]);
+                        if (token0len > 0 && tokens[0].regionMatches(true, 0, "Link", 0, token0len)) {
+                            tzdbLinks.put(tokens[2], tokens[1]);
                         }
                     }
 
@@ -1491,13 +1514,14 @@ public class CLDRConverter {
     /*
      * Convert TZDB offsets to JDK's offsets, eg, "-08" to "GMT-08:00".
      * If it cannot recognize the pattern, return the argument as is.
+     * Returning null results in generating the GMT format at runtime.
      */
     private static String convertGMTName(String f) {
         try {
-            // Should pre-fill GMT format once COMPAT is gone.
-            // Till then, fall back to GMT format at runtime, after COMPAT short
-            // names are populated
-            ZoneOffset.of(f);
+            if (!f.equals("%z")) {
+                // Validate if the format is an offset
+                ZoneOffset.of(f);
+            }
             return null;
         } catch (DateTimeException dte) {
             // textual representation. return as is

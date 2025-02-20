@@ -64,6 +64,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bi">ბისლამა</language>
 			<language type="bin">ბინი</language>
 			<language type="bla">სიკსიკა</language>
+			<language type="blo">ანიი</language>
 			<language type="bm">ბამბარა</language>
 			<language type="bn">ბენგალური</language>
 			<language type="bo">ტიბეტური</language>
@@ -271,6 +272,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">კომი</language>
 			<language type="kw">კორნული</language>
 			<language type="kwk">კვაკვალა</language>
+			<language type="kxv">კუვი</language>
 			<language type="ky">ყირგიზული</language>
 			<language type="la">ლათინური</language>
 			<language type="lad">ლადინო</language>
@@ -281,8 +283,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">ლეზგიური</language>
 			<language type="lg">განდა</language>
 			<language type="li">ლიმბურგული</language>
+			<language type="lij">ლიგურიული</language>
 			<language type="lil">ლილიეტი</language>
 			<language type="lkt">ლაკოტა</language>
+			<language type="lmo">ლომბარდიული</language>
 			<language type="ln">ლინგალა</language>
 			<language type="lo">ლაოსური</language>
 			<language type="lol">მონგო</language>
@@ -466,6 +470,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">კომორული</language>
 			<language type="syc">კლასიკური სირიული</language>
 			<language type="syr">სირიული</language>
+			<language type="szl">სილესიური</language>
 			<language type="ta">ტამილური</language>
 			<language type="tce">სამხრეთ ტუჩონი</language>
 			<language type="te">ტელუგუ</language>
@@ -507,7 +512,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">უზბეკური</language>
 			<language type="vai">ვაი</language>
 			<language type="ve">ვენდა</language>
+			<language type="vec">ვენეციური</language>
 			<language type="vi">ვიეტნამური</language>
+			<language type="vmw">მაკჰუვა</language>
 			<language type="vo">ვოლაპუკი</language>
 			<language type="vun">ვუნჯო</language>
 			<language type="wa">ვალონური</language>
@@ -519,6 +526,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">ვუ</language>
 			<language type="xal">ყალმუხური</language>
 			<language type="xh">ქჰოსა</language>
+			<language type="xnr">კანგრი</language>
 			<language type="xog">სოგა</language>
 			<language type="yav">იანგბენი</language>
 			<language type="ybb">იემბა</language>
@@ -527,6 +535,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl">ნენგატუ</language>
 			<language type="yue">კანტონური</language>
 			<language type="yue" alt="menu">ჩინური, კანტონური</language>
+			<language type="za">ზჰუანგი</language>
 			<language type="zbl">ბლისსიმბოლოები</language>
 			<language type="zen">ზენაგა</language>
 			<language type="zgh">სტანდარტული მაროკოული ტამაზიგხტი</language>
@@ -2109,6 +2118,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>დრო: {0}</regionFormat>
 			<regionFormat type="daylight">{0} ზაფხულის დრო</regionFormat>
 			<regionFormat type="standard">{0} სტანდარტული დრო</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ჰონოლულუ</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>მსოფლიო კოორდინირებული დრო</standard>
@@ -2846,9 +2858,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>ულანბატარი</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>ჩოიბალსანი</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>მაკაო</exemplarCity>
 			</zone>
@@ -3248,9 +3257,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>ნომი</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ჰონოლულუ</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>ენქორაჯი</exemplarCity>
 			</zone>
@@ -3595,13 +3601,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ჩინეთის დროის სარტყელი</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>ჩოიბალსანის დრო</generic>
-					<standard>ჩოიბალსანის სტანდარტული დრო</standard>
-					<daylight>ჩოიბალსანის ზაფხულის დრო</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>შობის კუნძულის დრო</standard>
@@ -3838,6 +3837,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>იაპონიის დრო</generic>
 					<standard>იაპონიის სტანდარტული დრო</standard>
 					<daylight>იაპონიის ზაფხულის დრო</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>ყაზახეთის დრო</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4359,8 +4363,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 ტრლ'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -5991,6 +5993,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ბრიტანული კვარტი</unitPattern>
 				<unitPattern count="other">{0} ბრიტანული კვარტი</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>ნაწილი მილიარდზე</displayName>
+				<unitPattern count="one">{0} ნაწილი მილიარდზე</unitPattern>
+				<unitPattern count="other">{0} ნაწილი მილიარდზე</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>ღამე</displayName>
+				<unitPattern count="one">{0} ღამე</unitPattern>
+				<unitPattern count="other">{0} ღამე</unitPattern>
+				<perUnitPattern>{0}/ღამე</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>კარდინალური მიმართულება</displayName>
 				<coordinateUnitPattern type="east">{0} აღმოსავლეთით</coordinateUnitPattern>
@@ -6961,6 +6974,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ბრიტ. კვარტი</unitPattern>
 				<unitPattern count="other">{0} ბრიტ. კვარტი</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>ნაწილი/მილიარდზე</displayName>
+				<unitPattern count="one">{0} ნ/მ</unitPattern>
+				<unitPattern count="other">{0} ნ/მ</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>ღამე</displayName>
+				<unitPattern count="one">{0} ღამე</unitPattern>
+				<unitPattern count="other">{0} ღამე</unitPattern>
+				<perUnitPattern>{0}/ღამე</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>მიმართულება</displayName>
 				<coordinateUnitPattern type="east">{0}აღმ.</coordinateUnitPattern>
@@ -7038,6 +7062,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-liter">
 				<unitPattern count="one">{0}ლ</unitPattern>
 				<unitPattern count="other">{0}ლ</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>ნ/მ</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>ღამე</displayName>
+				<unitPattern count="one">{0} ღამე</unitPattern>
+				<unitPattern count="other">{0} ღამე</unitPattern>
+				<perUnitPattern>{0}/ღამე</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>

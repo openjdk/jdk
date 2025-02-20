@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 Red Hat, Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
@@ -102,7 +101,7 @@
 #include "jfr/jfr.hpp"
 #endif
 
-static jint CurrentVersion = JNI_VERSION_21;
+static jint CurrentVersion = JNI_VERSION_24;
 
 #if defined(_WIN32) && !defined(USE_VECTORED_EXCEPTION_HANDLING)
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
@@ -288,7 +287,7 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
                                         CHECK_NULL);
 
   ResourceMark rm(THREAD);
-  ClassFileStream st((u1*)buf, bufLen, nullptr, ClassFileStream::verify);
+  ClassFileStream st((u1*)buf, bufLen, nullptr);
   Handle class_loader (THREAD, JNIHandles::resolve(loaderRef));
   Handle protection_domain;
   ClassLoadInfo cl_info(protection_domain);
@@ -321,8 +320,6 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
     SystemDictionary::class_name_symbol(name, vmSymbols::java_lang_NoClassDefFoundError(),
                                         CHECK_NULL);
 
-  //%note jni_3
-  Handle protection_domain;
   // Find calling class
   Klass* k = thread->security_get_caller_class(0);
   // default to the system loader when no context
@@ -344,15 +341,13 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
       if (mirror != nullptr) {
         Klass* fromClass = java_lang_Class::as_Klass(mirror);
         loader = Handle(THREAD, fromClass->class_loader());
-        protection_domain = Handle(THREAD, fromClass->protection_domain());
       }
     } else {
       loader = Handle(THREAD, k->class_loader());
     }
   }
 
-  result = find_class_from_class_loader(env, class_name, true, loader,
-                                        protection_domain, true, thread);
+  result = find_class_from_class_loader(env, class_name, true, loader, true, thread);
 
   if (log_is_enabled(Debug, class, resolve) && result != nullptr) {
     trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
@@ -444,9 +439,11 @@ JNI_ENTRY(jobject, jni_ToReflectedMethod(JNIEnv *env, jclass cls, jmethodID meth
   methodHandle m (THREAD, Method::resolve_jmethod_id(method_id));
   assert(m->is_static() == (isStatic != 0), "jni_ToReflectedMethod access flags doesn't match");
   oop reflection_method;
-  if (m->is_initializer()) {
+  if (m->is_object_initializer()) {
     reflection_method = Reflection::new_constructor(m, CHECK_NULL);
   } else {
+    // Note: Static initializers can theoretically be here, if JNI users manage
+    // to get their jmethodID. Record them as plain methods.
     reflection_method = Reflection::new_method(m, false, CHECK_NULL);
   }
   ret = JNIHandles::make_local(THREAD, reflection_method);
@@ -535,8 +532,7 @@ JNI_ENTRY(jint, jni_ThrowNew(JNIEnv *env, jclass clazz, const char *message))
   InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
   Symbol*  name = k->name();
   Handle class_loader (THREAD,  k->class_loader());
-  Handle protection_domain (THREAD, k->protection_domain());
-  THROW_MSG_LOADER_(name, (char *)message, class_loader, protection_domain, JNI_OK);
+  THROW_MSG_LOADER_(name, (char *)message, class_loader, JNI_OK);
   ShouldNotReachHere();
   return 0;  // Mute compiler.
 JNI_END
@@ -2221,11 +2217,19 @@ JNI_END
 
 
 JNI_ENTRY(jsize, jni_GetStringUTFLength(JNIEnv *env, jstring string))
- HOTSPOT_JNI_GETSTRINGUTFLENGTH_ENTRY(env, string);
+  HOTSPOT_JNI_GETSTRINGUTFLENGTH_ENTRY(env, string);
   oop java_string = JNIHandles::resolve_non_null(string);
-  jsize ret = java_lang_String::utf8_length(java_string);
+  jsize ret = java_lang_String::utf8_length_as_int(java_string);
   HOTSPOT_JNI_GETSTRINGUTFLENGTH_RETURN(ret);
   return ret;
+JNI_END
+
+JNI_ENTRY(jlong, jni_GetStringUTFLengthAsLong(JNIEnv *env, jstring string))
+  HOTSPOT_JNI_GETSTRINGUTFLENGTHASLONG_ENTRY(env, string);
+  oop java_string = JNIHandles::resolve_non_null(string);
+  size_t ret = java_lang_String::utf8_length(java_string);
+  HOTSPOT_JNI_GETSTRINGUTFLENGTHASLONG_RETURN(ret);
+return checked_cast<jlong>(ret);
 JNI_END
 
 
@@ -2236,10 +2240,11 @@ JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboole
   typeArrayOop s_value = java_lang_String::value(java_string);
   if (s_value != nullptr) {
     size_t length = java_lang_String::utf8_length(java_string, s_value);
-    /* JNI Specification states return null on OOM */
+    // JNI Specification states return null on OOM.
+    // The resulting sequence doesn't have to be NUL-terminated but we do.
     result = AllocateHeap(length + 1, mtInternal, AllocFailStrategy::RETURN_NULL);
     if (result != nullptr) {
-      java_lang_String::as_utf8_string(java_string, s_value, result, (int) length + 1);
+      java_lang_String::as_utf8_string(java_string, s_value, result, length + 1);
       if (isCopy != nullptr) {
         *isCopy = JNI_TRUE;
       }
@@ -2396,11 +2401,10 @@ static char* get_bad_address() {
   static char* bad_address = nullptr;
   if (bad_address == nullptr) {
     size_t size = os::vm_allocation_granularity();
-    bad_address = os::reserve_memory(size);
+    bad_address = os::reserve_memory(size, false, mtInternal);
     if (bad_address != nullptr) {
       os::protect_memory(bad_address, size, os::MEM_PROT_READ,
                          /*is_committed*/false);
-      MemTracker::record_virtual_memory_type((void*)bad_address, mtInternal);
     }
   }
   return bad_address;
@@ -2408,7 +2412,7 @@ static char* get_bad_address() {
 
 
 
-#define DEFINE_GETSCALARARRAYELEMENTS(ElementTag,ElementType,Result, Tag \
+#define DEFINE_GETSCALARARRAYELEMENTS(ElementType,Result \
                                       , EntryProbe, ReturnProbe) \
 \
 JNI_ENTRY_NO_PRESERVE(ElementType*, \
@@ -2442,35 +2446,35 @@ JNI_ENTRY_NO_PRESERVE(ElementType*, \
   return result; \
 JNI_END
 
-DEFINE_GETSCALARARRAYELEMENTS(T_BOOLEAN, jboolean, Boolean, bool
+DEFINE_GETSCALARARRAYELEMENTS(jboolean, Boolean
                               , HOTSPOT_JNI_GETBOOLEANARRAYELEMENTS_ENTRY(env, array, (uintptr_t *) isCopy),
                               HOTSPOT_JNI_GETBOOLEANARRAYELEMENTS_RETURN((uintptr_t*)result))
-DEFINE_GETSCALARARRAYELEMENTS(T_BYTE,    jbyte,    Byte,    byte
+DEFINE_GETSCALARARRAYELEMENTS(jbyte,    Byte
                               , HOTSPOT_JNI_GETBYTEARRAYELEMENTS_ENTRY(env, array, (uintptr_t *) isCopy),
                               HOTSPOT_JNI_GETBYTEARRAYELEMENTS_RETURN((char*)result))
-DEFINE_GETSCALARARRAYELEMENTS(T_SHORT,   jshort,   Short,   short
+DEFINE_GETSCALARARRAYELEMENTS(jshort,   Short
                               , HOTSPOT_JNI_GETSHORTARRAYELEMENTS_ENTRY(env, (uint16_t*) array, (uintptr_t *) isCopy),
                               HOTSPOT_JNI_GETSHORTARRAYELEMENTS_RETURN((uint16_t*)result))
-DEFINE_GETSCALARARRAYELEMENTS(T_CHAR,    jchar,    Char,    char
+DEFINE_GETSCALARARRAYELEMENTS(jchar,    Char
                               , HOTSPOT_JNI_GETCHARARRAYELEMENTS_ENTRY(env, (uint16_t*) array, (uintptr_t *) isCopy),
                               HOTSPOT_JNI_GETCHARARRAYELEMENTS_RETURN(result))
-DEFINE_GETSCALARARRAYELEMENTS(T_INT,     jint,     Int,     int
+DEFINE_GETSCALARARRAYELEMENTS(jint,     Int
                               , HOTSPOT_JNI_GETINTARRAYELEMENTS_ENTRY(env, array, (uintptr_t *) isCopy),
                               HOTSPOT_JNI_GETINTARRAYELEMENTS_RETURN((uint32_t*)result))
-DEFINE_GETSCALARARRAYELEMENTS(T_LONG,    jlong,    Long,    long
+DEFINE_GETSCALARARRAYELEMENTS(jlong,    Long
                               , HOTSPOT_JNI_GETLONGARRAYELEMENTS_ENTRY(env, array, (uintptr_t *) isCopy),
                               HOTSPOT_JNI_GETLONGARRAYELEMENTS_RETURN(((uintptr_t*)result)))
 // Float and double probes don't return value because dtrace doesn't currently support it
-DEFINE_GETSCALARARRAYELEMENTS(T_FLOAT,   jfloat,   Float,   float
+DEFINE_GETSCALARARRAYELEMENTS(jfloat,   Float
                               , HOTSPOT_JNI_GETFLOATARRAYELEMENTS_ENTRY(env, array, (uintptr_t *) isCopy),
                               HOTSPOT_JNI_GETFLOATARRAYELEMENTS_RETURN(result))
-DEFINE_GETSCALARARRAYELEMENTS(T_DOUBLE,  jdouble,  Double,  double
+DEFINE_GETSCALARARRAYELEMENTS(jdouble,  Double
                               , HOTSPOT_JNI_GETDOUBLEARRAYELEMENTS_ENTRY(env, array, (uintptr_t *) isCopy),
                               HOTSPOT_JNI_GETDOUBLEARRAYELEMENTS_RETURN(result))
 
 
-#define DEFINE_RELEASESCALARARRAYELEMENTS(ElementTag,ElementType,Result,Tag \
-                                          , EntryProbe, ReturnProbe);\
+#define DEFINE_RELEASESCALARARRAYELEMENTS(ElementType,Result \
+                                          , EntryProbe, ReturnProbe) \
 \
 JNI_ENTRY_NO_PRESERVE(void, \
           jni_Release##Result##ArrayElements(JNIEnv *env, ElementType##Array array, \
@@ -2489,28 +2493,28 @@ JNI_ENTRY_NO_PRESERVE(void, \
   ReturnProbe; \
 JNI_END
 
-DEFINE_RELEASESCALARARRAYELEMENTS(T_BOOLEAN, jboolean, Boolean, bool
+DEFINE_RELEASESCALARARRAYELEMENTS(jboolean, Boolean
                                   , HOTSPOT_JNI_RELEASEBOOLEANARRAYELEMENTS_ENTRY(env, array, (uintptr_t *) buf, mode),
                                   HOTSPOT_JNI_RELEASEBOOLEANARRAYELEMENTS_RETURN())
-DEFINE_RELEASESCALARARRAYELEMENTS(T_BYTE,    jbyte,    Byte,    byte
+DEFINE_RELEASESCALARARRAYELEMENTS(jbyte,    Byte
                                   , HOTSPOT_JNI_RELEASEBYTEARRAYELEMENTS_ENTRY(env, array, (char *) buf, mode),
                                   HOTSPOT_JNI_RELEASEBYTEARRAYELEMENTS_RETURN())
-DEFINE_RELEASESCALARARRAYELEMENTS(T_SHORT,   jshort,   Short,   short
+DEFINE_RELEASESCALARARRAYELEMENTS(jshort,   Short
                                   ,  HOTSPOT_JNI_RELEASESHORTARRAYELEMENTS_ENTRY(env, array, (uint16_t *) buf, mode),
                                   HOTSPOT_JNI_RELEASESHORTARRAYELEMENTS_RETURN())
-DEFINE_RELEASESCALARARRAYELEMENTS(T_CHAR,    jchar,    Char,    char
+DEFINE_RELEASESCALARARRAYELEMENTS(jchar,    Char
                                   ,  HOTSPOT_JNI_RELEASECHARARRAYELEMENTS_ENTRY(env, array, (uint16_t *) buf, mode),
                                   HOTSPOT_JNI_RELEASECHARARRAYELEMENTS_RETURN())
-DEFINE_RELEASESCALARARRAYELEMENTS(T_INT,     jint,     Int,     int
+DEFINE_RELEASESCALARARRAYELEMENTS(jint,     Int
                                   , HOTSPOT_JNI_RELEASEINTARRAYELEMENTS_ENTRY(env, array, (uint32_t *) buf, mode),
                                   HOTSPOT_JNI_RELEASEINTARRAYELEMENTS_RETURN())
-DEFINE_RELEASESCALARARRAYELEMENTS(T_LONG,    jlong,    Long,    long
+DEFINE_RELEASESCALARARRAYELEMENTS(jlong,    Long
                                   , HOTSPOT_JNI_RELEASELONGARRAYELEMENTS_ENTRY(env, array, (uintptr_t *) buf, mode),
                                   HOTSPOT_JNI_RELEASELONGARRAYELEMENTS_RETURN())
-DEFINE_RELEASESCALARARRAYELEMENTS(T_FLOAT,   jfloat,   Float,   float
+DEFINE_RELEASESCALARARRAYELEMENTS(jfloat,   Float
                                   , HOTSPOT_JNI_RELEASEFLOATARRAYELEMENTS_ENTRY(env, array, (float *) buf, mode),
                                   HOTSPOT_JNI_RELEASEFLOATARRAYELEMENTS_RETURN())
-DEFINE_RELEASESCALARARRAYELEMENTS(T_DOUBLE,  jdouble,  Double,  double
+DEFINE_RELEASESCALARARRAYELEMENTS(jdouble,  Double
                                   , HOTSPOT_JNI_RELEASEDOUBLEARRAYELEMENTS_ENTRY(env, array, (double *) buf, mode),
                                   HOTSPOT_JNI_RELEASEDOUBLEARRAYELEMENTS_RETURN())
 
@@ -2528,8 +2532,8 @@ static void check_bounds(jsize start, jsize copy_len, jsize array_len, TRAPS) {
   }
 }
 
-#define DEFINE_GETSCALARARRAYREGION(ElementTag,ElementType,Result, Tag \
-                                    , EntryProbe, ReturnProbe); \
+#define DEFINE_GETSCALARARRAYREGION(ElementType,Result \
+                                    , EntryProbe, ReturnProbe) \
   DT_VOID_RETURN_MARK_DECL(Get##Result##ArrayRegion \
                            , ReturnProbe); \
 \
@@ -2545,34 +2549,34 @@ jni_Get##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
   } \
 JNI_END
 
-DEFINE_GETSCALARARRAYREGION(T_BOOLEAN, jboolean,Boolean, bool
+DEFINE_GETSCALARARRAYREGION(jboolean,Boolean
                             , HOTSPOT_JNI_GETBOOLEANARRAYREGION_ENTRY(env, array, start, len, (uintptr_t *) buf),
                             HOTSPOT_JNI_GETBOOLEANARRAYREGION_RETURN());
-DEFINE_GETSCALARARRAYREGION(T_BYTE,    jbyte,   Byte,    byte
+DEFINE_GETSCALARARRAYREGION(jbyte,   Byte
                             ,  HOTSPOT_JNI_GETBYTEARRAYREGION_ENTRY(env, array, start, len, (char *) buf),
                             HOTSPOT_JNI_GETBYTEARRAYREGION_RETURN());
-DEFINE_GETSCALARARRAYREGION(T_SHORT,   jshort,  Short,   short
+DEFINE_GETSCALARARRAYREGION(jshort,  Short
                             , HOTSPOT_JNI_GETSHORTARRAYREGION_ENTRY(env, array, start, len, (uint16_t *) buf),
                             HOTSPOT_JNI_GETSHORTARRAYREGION_RETURN());
-DEFINE_GETSCALARARRAYREGION(T_CHAR,    jchar,   Char,    char
+DEFINE_GETSCALARARRAYREGION(jchar,   Char
                             ,  HOTSPOT_JNI_GETCHARARRAYREGION_ENTRY(env, array, start, len, (uint16_t*) buf),
                             HOTSPOT_JNI_GETCHARARRAYREGION_RETURN());
-DEFINE_GETSCALARARRAYREGION(T_INT,     jint,    Int,     int
+DEFINE_GETSCALARARRAYREGION(jint,    Int
                             , HOTSPOT_JNI_GETINTARRAYREGION_ENTRY(env, array, start, len, (uint32_t*) buf),
                             HOTSPOT_JNI_GETINTARRAYREGION_RETURN());
-DEFINE_GETSCALARARRAYREGION(T_LONG,    jlong,   Long,    long
+DEFINE_GETSCALARARRAYREGION(jlong,   Long
                             ,  HOTSPOT_JNI_GETLONGARRAYREGION_ENTRY(env, array, start, len, (uintptr_t *) buf),
                             HOTSPOT_JNI_GETLONGARRAYREGION_RETURN());
-DEFINE_GETSCALARARRAYREGION(T_FLOAT,   jfloat,  Float,   float
+DEFINE_GETSCALARARRAYREGION(jfloat,  Float
                             , HOTSPOT_JNI_GETFLOATARRAYREGION_ENTRY(env, array, start, len, (float *) buf),
                             HOTSPOT_JNI_GETFLOATARRAYREGION_RETURN());
-DEFINE_GETSCALARARRAYREGION(T_DOUBLE,  jdouble, Double,  double
+DEFINE_GETSCALARARRAYREGION(jdouble, Double
                             , HOTSPOT_JNI_GETDOUBLEARRAYREGION_ENTRY(env, array, start, len, (double *) buf),
                             HOTSPOT_JNI_GETDOUBLEARRAYREGION_RETURN());
 
 
-#define DEFINE_SETSCALARARRAYREGION(ElementTag,ElementType,Result, Tag \
-                                    , EntryProbe, ReturnProbe); \
+#define DEFINE_SETSCALARARRAYREGION(ElementType,Result \
+                                    , EntryProbe, ReturnProbe) \
   DT_VOID_RETURN_MARK_DECL(Set##Result##ArrayRegion \
                            ,ReturnProbe);           \
 \
@@ -2588,28 +2592,28 @@ jni_Set##Result##ArrayRegion(JNIEnv *env, ElementType##Array array, jsize start,
   } \
 JNI_END
 
-DEFINE_SETSCALARARRAYREGION(T_BOOLEAN, jboolean, Boolean, bool
+DEFINE_SETSCALARARRAYREGION(jboolean, Boolean
                             , HOTSPOT_JNI_SETBOOLEANARRAYREGION_ENTRY(env, array, start, len, (uintptr_t *)buf),
                             HOTSPOT_JNI_SETBOOLEANARRAYREGION_RETURN())
-DEFINE_SETSCALARARRAYREGION(T_BYTE,    jbyte,    Byte,    byte
+DEFINE_SETSCALARARRAYREGION(jbyte,    Byte
                             , HOTSPOT_JNI_SETBYTEARRAYREGION_ENTRY(env, array, start, len, (char *) buf),
                             HOTSPOT_JNI_SETBYTEARRAYREGION_RETURN())
-DEFINE_SETSCALARARRAYREGION(T_SHORT,   jshort,   Short,   short
+DEFINE_SETSCALARARRAYREGION(jshort,   Short
                             , HOTSPOT_JNI_SETSHORTARRAYREGION_ENTRY(env, array, start, len, (uint16_t *) buf),
                             HOTSPOT_JNI_SETSHORTARRAYREGION_RETURN())
-DEFINE_SETSCALARARRAYREGION(T_CHAR,    jchar,    Char,    char
+DEFINE_SETSCALARARRAYREGION(jchar,    Char
                             , HOTSPOT_JNI_SETCHARARRAYREGION_ENTRY(env, array, start, len, (uint16_t *) buf),
                             HOTSPOT_JNI_SETCHARARRAYREGION_RETURN())
-DEFINE_SETSCALARARRAYREGION(T_INT,     jint,     Int,     int
+DEFINE_SETSCALARARRAYREGION(jint,     Int
                             , HOTSPOT_JNI_SETINTARRAYREGION_ENTRY(env, array, start, len, (uint32_t *) buf),
                             HOTSPOT_JNI_SETINTARRAYREGION_RETURN())
-DEFINE_SETSCALARARRAYREGION(T_LONG,    jlong,    Long,    long
+DEFINE_SETSCALARARRAYREGION(jlong,    Long
                             , HOTSPOT_JNI_SETLONGARRAYREGION_ENTRY(env, array, start, len, (uintptr_t *) buf),
                             HOTSPOT_JNI_SETLONGARRAYREGION_RETURN())
-DEFINE_SETSCALARARRAYREGION(T_FLOAT,   jfloat,   Float,   float
+DEFINE_SETSCALARARRAYREGION(jfloat,   Float
                             , HOTSPOT_JNI_SETFLOATARRAYREGION_ENTRY(env, array, start, len, (float *) buf),
                             HOTSPOT_JNI_SETFLOATARRAYREGION_RETURN())
-DEFINE_SETSCALARARRAYREGION(T_DOUBLE,  jdouble,  Double,  double
+DEFINE_SETSCALARARRAYREGION(jdouble,  Double
                             , HOTSPOT_JNI_SETDOUBLEARRAYREGION_ENTRY(env, array, start, len, (double *) buf),
                             HOTSPOT_JNI_SETDOUBLEARRAYREGION_RETURN())
 
@@ -2918,10 +2922,9 @@ static jfieldID  bufferCapacityField         = nullptr;
 
 static jclass lookupOne(JNIEnv* env, const char* name, TRAPS) {
   Handle loader;            // null (bootstrap) loader
-  Handle protection_domain; // null protection domain
 
   TempNewSymbol sym = SymbolTable::new_symbol(name);
-  jclass result =  find_class_from_class_loader(env, sym, true, loader, protection_domain, true, CHECK_NULL);
+  jclass result =  find_class_from_class_loader(env, sym, true, loader, true, CHECK_NULL);
 
   if (log_is_enabled(Debug, class, resolve) && result != nullptr) {
     trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
@@ -3397,7 +3400,11 @@ struct JNINativeInterface_ jni_NativeInterface = {
 
     // Virtual threads
 
-    jni_IsVirtualThread
+    jni_IsVirtualThread,
+
+    // Large UTF8 support
+
+    jni_GetStringUTFLengthAsLong
 };
 
 
@@ -3782,11 +3789,12 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   // be set in order for the Safepoint code to deal with it correctly.
   thread->set_thread_state(_thread_in_vm);
   thread->record_stack_base_and_size();
-  thread->register_thread_stack_with_NMT();
   thread->initialize_thread_current();
+  thread->register_thread_stack_with_NMT();
   MACOS_AARCH64_ONLY(thread->init_wx());
 
   if (!os::create_attached_thread(thread)) {
+    thread->unregister_thread_stack_with_NMT();
     thread->smr_delete();
     return JNI_ERR;
   }
@@ -3831,8 +3839,13 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   if (attach_failed) {
     // Added missing cleanup
     thread->cleanup_failed_attach_current_thread(daemon);
+    thread->unregister_thread_stack_with_NMT();
+    thread->smr_delete();
     return JNI_ERR;
   }
+
+  // Want this inside 'attaching via jni'.
+  JFR_ONLY(Jfr::on_thread_start(thread);)
 
   // mark the thread as no longer attaching
   // this uses a fence to push the change through so we don't have
@@ -3847,8 +3860,6 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_start(thread);
   }
-
-  JFR_ONLY(Jfr::on_thread_start(thread);)
 
   *(JNIEnv**)penv = thread->jni_environment();
 
@@ -3926,6 +3937,7 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
   // (platform-dependent) methods where we do alternate stack
   // maintenance work?)
   thread->exit(false, JavaThread::jni_detach);
+  thread->unregister_thread_stack_with_NMT();
   thread->smr_delete();
 
   // Go to the execute mode, the initial state of the thread on creation.

@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 4449637 8008577 8174269
+ * @bug 4449637 8008577 8174269 8333582
  * @summary Basic acceptance test for international J2RE. Verifies that the
  * most important locale data and character converters exist and are
  * minimally functional.
@@ -97,9 +97,9 @@ public class InternationalBAT {
         "2001\u5e745\u670810\u65e5\u661f\u671f\u56db",
         "2001\u5E745\u670810\u65E5 \u661F\u671F\u56DB",
         "donderdag 10 mei 2001",
-        "Thursday 10 May 2001",
+        "Thursday, 10 May 2001",
         "Thursday, May 10, 2001",
-        "Thursday 10 May 2001",
+        "Thursday, 10 May 2001",
         "Thursday, May 10, 2001",
         "jeudi 10 mai 2001",
         "jeudi 10 mai 2001",

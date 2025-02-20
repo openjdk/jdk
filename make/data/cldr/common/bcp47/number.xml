@@ -28,12 +28,14 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="ethi" description="Ethiopic numerals — algorithmic"/>
             <type name="finance" description="Financial numerals — may be algorithmic" since="21"/>
             <type name="fullwide" description="Full width digits"/>
+            <type name="gara" description="Garay digits" since="46"/>
             <type name="geor" description="Georgian numerals — algorithmic"/>
             <type name="gong" description="Gunjala Gondi digits" since="33.1"/>
             <type name="gonm" description="Masaram Gondi digits" since="32"/>
             <type name="grek" description="Greek upper case numerals — algorithmic"/>
             <type name="greklow" description="Greek lower case numerals — algorithmic"/>
             <type name="gujr" description="Gujarati digits"/>
+            <type name="gukh" description="Gurung Khema digits" since="46"/>
             <type name="guru" description="Gurmukhi digits"/>
             <type name="hanidays" description="Han-character day-of-month numbering for lunar/other traditional calendars" since="25"/>
             <type name="hanidec" description="Positional decimal system using Chinese number ideographs as digits" since="1.9"/>
@@ -52,6 +54,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="kawi" description="Kawi digits" since="42"/>
             <type name="khmr" description="Khmer digits"/>
             <type name="knda" description="Kannada digits"/>
+            <type name="krai" description="Kirat Rai digits" since="46"/>
             <type name="lana" description="Tai Tham Hora (secular) digits" since="21"/>
             <type name="lanatham" description="Tai Tham Tham (ecclesiastical) digits" since="21"/>
             <type name="laoo" description="Lao digits"/>
@@ -69,6 +72,8 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="mroo" description="Mro digits" since="28"/>
             <type name="mtei" description="Meetei Mayek digits" since="21"/>
             <type name="mymr" description="Myanmar digits"/>
+            <type name="mymrepka" description="Myanmar Eastern Pwo Karen digits" since="46"/>
+            <type name="mymrpao" description="Myanmar Pao digits" since="46"/>
             <type name="mymrshan" description="Myanmar Shan digits" since="21"/>
             <type name="mymrtlng" description="Myanmar Tai Laing digits" since="28"/>
             <type name="nagm" description="Nag Mundari digits" since="42"/>
@@ -76,8 +81,10 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="newa" description="Newa digits" since="30"/>
             <type name="nkoo" description="N'Ko digits" since="21"/>
             <type name="olck" description="Ol Chiki digits" since="21"/>
+            <type name="onao" description="Ol Onal digits" since="46"/>
             <type name="orya" description="Oriya digits"/>
             <type name="osma" description="Osmanya digits" since="21"/>
+            <type name="outlined" description="Legacy computing outlined digits" since="46"/>
             <type name="rohg" description="Hanifi Rohingya digits" since="33.1"/>
             <type name="roman" description="Roman upper case numerals — algorithmic"/>
             <type name="romanlow" description="Roman lowercase numerals — algorithmic"/>
@@ -88,6 +95,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="sinh" description="Sinhala Lith digits" since="28"/>
             <type name="sora" description="Sora_Sompeng digits" since="21"/>
             <type name="sund" description="Sundanese digits" since="21"/>
+            <type name="sunu" description="Sunuwar digits" since="46"/>
             <type name="takr" description="Takri digits" since="21"/>
             <type name="talu" description="New Tai Lue digits" since="21"/>
             <type name="taml" description="Tamil numerals — algorithmic"/>

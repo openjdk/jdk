@@ -761,7 +761,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern draft="unconfirmed">d/MM/yy</pattern>
+							<pattern draft="unconfirmed">dd/MM/yy</pattern>
 							<datetimeSkeleton draft="unconfirmed">yyMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -775,13 +775,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern draft="unconfirmed">H'h'mm:ss z</pattern>
+							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
 							<datetimeSkeleton draft="unconfirmed">Hmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern draft="unconfirmed">H'h'mm:ss</pattern>
+							<pattern draft="unconfirmed">HH:mm:ss</pattern>
 							<datetimeSkeleton draft="unconfirmed">Hmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
@@ -807,18 +807,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'a' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'a' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Bh" draft="unconfirmed">h'h' B</dateFormatItem>
 						<dateFormatItem id="Bhm" draft="unconfirmed">h'h'mm B</dateFormatItem>
-						<dateFormatItem id="Bhms" draft="unconfirmed">h'h'mm:ss B</dateFormatItem>
 						<dateFormatItem id="EBhm" draft="unconfirmed">E h'h'mm B</dateFormatItem>
-						<dateFormatItem id="EBhms" draft="unconfirmed">E h'h'mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed" draft="unconfirmed">ccc d</dateFormatItem>
 						<dateFormatItem id="Ehm" draft="unconfirmed">E h'h'mm a</dateFormatItem>
 						<dateFormatItem id="EHm" draft="unconfirmed">E HH'h'mm</dateFormatItem>
@@ -973,7 +977,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d" draft="unconfirmed">d – d MMM y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">MMM d – d 'de' y</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM 'de' y</greatestDifference>
 							<greatestDifference id="y" draft="unconfirmed">d LLL 'de' y – d LLL 'de' y</greatestDifference>
 						</intervalFormatItem>
@@ -1418,13 +1422,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="unconfirmed">ora de China</generic>
 					<standard draft="unconfirmed">ora estandarda de China</standard>
 					<daylight draft="unconfirmed">ora d’estiu de China</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic draft="unconfirmed">ora de Choibalsan</generic>
-					<standard draft="unconfirmed">ora estandarda de Choibalsan</standard>
-					<daylight draft="unconfirmed">ora d’estiu de Choibalsan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">

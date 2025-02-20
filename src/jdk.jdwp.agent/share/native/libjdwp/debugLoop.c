@@ -87,7 +87,9 @@ debugLoop_run(void)
     /* Initialize all statics */
     /* We may be starting a new connection after an error */
     cmdQueue = NULL;
-    cmdQueueLock = debugMonitorCreate(cmdQueueLock_Rank, "JDWP Command Queue Lock");
+    if (cmdQueueLock == NULL) {
+        cmdQueueLock = debugMonitorCreate(cmdQueueLock_Rank, "JDWP Command Queue Lock");
+    }
     transportError = JNI_FALSE;
 
     shouldListen = JNI_TRUE;
@@ -190,7 +192,6 @@ debugLoop_run(void)
      * be trying to send.
      */
     transport_close();
-    debugMonitorDestroy(cmdQueueLock);
 
     /* Reset for a new connection to this VM if it's still alive */
     if ( ! gdata->vmDead ) {

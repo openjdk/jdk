@@ -37,6 +37,11 @@ import jdk.test.lib.Platform;
 // Note: base image version should not be an empty string. Use "latest" to get the latest version.
 
 public class DockerfileConfig {
+
+    public static boolean isUbsan() {
+        return Boolean.getBoolean("jdk.test.docker.image.isUbsan");
+    }
+
     public static String getBaseImageName() {
         String name = System.getProperty("jdk.test.docker.image.name");
         if (name != null) {

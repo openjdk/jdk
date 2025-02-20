@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,18 +36,6 @@
 
 class ZGeneration;
 
-enum class ZPageResetType {
-  // Normal allocation path
-  Allocation,
-  // Relocation failed and started to relocate in-place
-  InPlaceRelocation,
-  // Page was not selected for relocation, all objects
-  // stayed, but the page aged.
-  FlipAging,
-  // The page was split and needs to be reset
-  Splitting,
-};
-
 class ZPage : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class ZList<ZPage>;
@@ -82,17 +70,13 @@ private:
   const ZGeneration* generation() const;
 
   void reset_seqnum();
-  void reset_remembered_set();
 
   ZPage* split_with_pmem(ZPageType type, const ZPhysicalMemory& pmem);
-
-  void verify_remset_after_reset(ZPageAge prev_age, ZPageResetType type);
 
 public:
   ZPage(ZPageType type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem);
 
   ZPage* clone_limited() const;
-  ZPage* clone_limited_promote_flipped() const;
 
   uint32_t object_max_count() const;
   size_t object_alignment_shift() const;
@@ -128,10 +112,9 @@ public:
   uint64_t last_used() const;
   void set_last_used();
 
-  void reset(ZPageAge age, ZPageResetType type);
-
-  void finalize_reset_for_in_place_relocation();
-
+  void reset(ZPageAge age);
+  void reset_livemap();
+  void reset_top_for_allocation();
   void reset_type_and_size(ZPageType type);
 
   ZPage* retype(ZPageType type);
@@ -172,7 +155,8 @@ public:
   void clear_remset_range_non_par_current(uintptr_t l_offset, size_t size);
   void swap_remset_bitmaps();
 
-  void remset_clear();
+  void remset_alloc();
+  void remset_delete();
 
   ZBitMap::ReverseIterator remset_reverse_iterator_previous();
   BitMap::Iterator remset_iterator_limited_current(uintptr_t l_offset, size_t size);
@@ -197,7 +181,6 @@ public:
   void verify_remset_cleared_current() const;
   void verify_remset_cleared_previous() const;
 
-  void clear_remset_current();
   void clear_remset_previous();
 
   void* remset_current();

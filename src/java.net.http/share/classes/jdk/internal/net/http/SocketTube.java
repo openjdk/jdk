@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -557,7 +558,7 @@ final class SocketTube implements FlowTube {
             implements Flow.Publisher<List<ByteBuffer>> {
         private final InternalReadSubscription subscriptionImpl
                 = new InternalReadSubscription();
-        AtomicReference<ReadSubscription> pendingSubscription = new AtomicReference<>();
+        ConcurrentLinkedQueue<ReadSubscription> pendingSubscriptions = new ConcurrentLinkedQueue<>();
         private volatile ReadSubscription subscription;
 
         @Override
@@ -565,10 +566,8 @@ final class SocketTube implements FlowTube {
             Objects.requireNonNull(s);
 
             TubeSubscriber sub = FlowTube.asTubeSubscriber(s);
-            ReadSubscription target = new ReadSubscription(subscriptionImpl, sub);
-            ReadSubscription previous = pendingSubscription.getAndSet(target);
-
-            if (previous != null && previous != target) {
+            ReadSubscription previous;
+            while ((previous = pendingSubscriptions.poll()) != null) {
                 if (debug.on())
                     debug.log("read publisher: dropping pending subscriber: "
                               + previous.subscriber);
@@ -582,8 +581,10 @@ final class SocketTube implements FlowTube {
                     previous.subscriber.dropSubscription();
                 }
             }
+            ReadSubscription target = new ReadSubscription(subscriptionImpl, sub);
+            pendingSubscriptions.offer(target);
 
-            if (debug.on()) debug.log("read publisher got subscriber");
+            if (debug.on()) debug.log("read publisher got new subscriber: " + s);
             subscriptionImpl.signalSubscribe();
             debugState("leaving read.subscribe: ");
         }
@@ -608,7 +609,7 @@ final class SocketTube implements FlowTube {
             volatile boolean subscribed;
             volatile boolean cancelled;
             volatile boolean completed;
-            volatile boolean stopped;
+            private volatile boolean stopped;
 
             public ReadSubscription(InternalReadSubscription impl,
                                     TubeSubscriber subscriber) {
@@ -627,6 +628,7 @@ final class SocketTube implements FlowTube {
             @Override
             public void request(long n) {
                 if (!cancelled && !stopped) {
+                    // should be safe to not synchronize here.
                     impl.request(n);
                 } else {
                     if (debug.on())
@@ -673,10 +675,22 @@ final class SocketTube implements FlowTube {
              * This should ensure that no data is routed to this subscriber
              * until the new subscriber is subscribed.
              */
-            void stopReading() {
+            synchronized void stopReading() {
                 stopped = true;
                 impl.demand.reset();
-                impl.pauseReadEvent();
+            }
+
+            synchronized boolean tryDecrementDemand() {
+                if (stopped) return false;
+                return impl.demand.tryDecrement();
+            }
+
+            synchronized boolean isStopped() {
+                return stopped;
+            }
+
+            synchronized void increaseDemand(long n) {
+                if (!stopped) impl.demand.increase(n);
             }
         }
 
@@ -852,7 +866,7 @@ final class SocketTube implements FlowTube {
 
                         // If we reach here then we must be in the selector thread.
                         assert client.isSelectorThread();
-                        if (demand.tryDecrement()) {
+                        if (current.tryDecrementDemand()) {
                             // we have demand.
                             try {
                                 List<ByteBuffer> bytes = readAvailable(current.bufferSource);
@@ -898,8 +912,10 @@ final class SocketTube implements FlowTube {
                                     // event. This ensures that this loop is
                                     // executed again when the socket becomes
                                     // readable again.
-                                    demand.increase(1);
-                                    resumeReadEvent();
+                                    if (!current.isStopped()) {
+                                        current.increaseDemand(1);
+                                        resumeReadEvent();
+                                    }
                                     if (errorRef.get() != null) continue;
                                     debugState("leaving read() loop with no bytes");
                                     return;
@@ -939,30 +955,35 @@ final class SocketTube implements FlowTube {
             }
 
             boolean handlePending() {
-                ReadSubscription pending = pendingSubscription.getAndSet(null);
-                if (pending == null) return false;
-                if (debug.on())
-                    debug.log("handling pending subscription for %s",
+                ReadSubscription pending;
+                boolean subscribed = false;
+                while ((pending = pendingSubscriptions.poll()) != null) {
+                    subscribed = true;
+                    if (debug.on())
+                        debug.log("handling pending subscription for %s",
                             pending.subscriber);
-                ReadSubscription current = subscription;
-                if (current != null && current != pending && !completed) {
-                    current.subscriber.dropSubscription();
-                }
-                if (debug.on()) debug.log("read demand reset to 0");
-                subscriptionImpl.demand.reset(); // subscriber will increase demand if it needs to.
-                pending.errorRef.compareAndSet(null, errorRef.get());
-                if (!readScheduler.isStopped()) {
-                    subscription = pending;
-                } else {
-                    if (debug.on()) debug.log("socket tube is already stopped");
-                }
-                if (debug.on()) debug.log("calling onSubscribe");
-                pending.signalOnSubscribe();
-                if (completed) {
+                    ReadSubscription current = subscription;
+                    if (current != null && current != pending && !completed) {
+                        debug.log("dropping pending subscription for current %s",
+                                current.subscriber);
+                        current.subscriber.dropSubscription();
+                    }
+                    if (debug.on()) debug.log("read demand reset to 0");
+                    subscriptionImpl.demand.reset(); // subscriber will increase demand if it needs to.
                     pending.errorRef.compareAndSet(null, errorRef.get());
-                    pending.signalCompletion();
+                    if (!readScheduler.isStopped()) {
+                        subscription = pending;
+                    } else {
+                        if (debug.on()) debug.log("socket tube is already stopped");
+                    }
+                    if (debug.on()) debug.log("calling onSubscribe on " + pending.subscriber);
+                    pending.signalOnSubscribe();
+                    if (completed) {
+                        pending.errorRef.compareAndSet(null, errorRef.get());
+                        pending.signalCompletion();
+                    }
                 }
-                return true;
+                return subscribed;
             }
         }
 

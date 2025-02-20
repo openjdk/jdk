@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -40,6 +39,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -62,6 +62,7 @@
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -94,6 +95,7 @@ SerialHeap::SerialHeap() :
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
     _young_manager(nullptr),
     _old_manager(nullptr),
+    _is_heap_almost_full(false),
     _eden_pool(nullptr),
     _survivor_pool(nullptr),
     _old_pool(nullptr) {
@@ -185,10 +187,10 @@ jint SerialHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
 
-  ReservedSpace young_rs = heap_rs.first_part(MaxNewSize);
-  ReservedSpace old_rs = heap_rs.last_part(MaxNewSize);
+  ReservedSpace young_rs = heap_rs.first_part(MaxNewSize, GenAlignment);
+  ReservedSpace old_rs = heap_rs.last_part(MaxNewSize, GenAlignment);
 
-  _rem_set = new CardTableRS(heap_rs.region());
+  _rem_set = new CardTableRS(_reserved);
   _rem_set->initialize(young_rs.base(), old_rs.base());
 
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
@@ -199,6 +201,8 @@ jint SerialHeap::initialize() {
   _old_gen = new TenuredGeneration(old_rs, OldSize, MinOldSize, MaxOldSize, rem_set());
 
   GCInitLogger::print();
+
+  FullGCForwarding::initialize(_reserved);
 
   return JNI_OK;
 }
@@ -215,8 +219,7 @@ ReservedHeapSpace SerialHeap::allocate(size_t alignment) {
                                   "the maximum representable size");
   }
   assert(total_reserved % alignment == 0,
-         "Gen size; total_reserved=" SIZE_FORMAT ", alignment="
-         SIZE_FORMAT, total_reserved, alignment);
+         "Gen size; total_reserved=%zu, alignment=%zu", total_reserved, alignment);
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(total_reserved, alignment);
   size_t used_page_size = heap_rs.page_size();
@@ -280,13 +283,12 @@ size_t SerialHeap::max_capacity() const {
 // Return true if any of the following is true:
 // . the allocation won't fit into the current young gen heap
 // . gc locker is occupied (jni critical section)
-// . heap memory is tight -- the most recent previous collection
-//   was a full collection because a partial collection (would
-//   have) failed and is likely to fail again
+// . heap memory is tight
 bool SerialHeap::should_try_older_generation_allocation(size_t word_size) const {
   size_t young_capacity = _young_gen->capacity_before_gc();
   return    (word_size > heap_word_size(young_capacity))
-         || GCLocker::is_active_and_needs_gc();
+         || GCLocker::is_active_and_needs_gc()
+         || _is_heap_almost_full;
 }
 
 HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
@@ -396,7 +398,7 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size,
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
           log_warning(gc, ergo)("SerialHeap::mem_allocate_work retries %d times,"
-                                " size=" SIZE_FORMAT " %s", try_count, size, is_tlab ? "(TLAB)" : "");
+                                " size=%zu %s", try_count, size, is_tlab ? "(TLAB)" : "");
     }
   }
 }
@@ -458,7 +460,7 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
     prepare_for_verify();
     Universe::verify("Before GC");
   }
-  gc_prologue(false);
+  gc_prologue();
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
 
   save_marks();
@@ -726,7 +728,7 @@ void SerialHeap::do_full_collection_no_gc_locker(bool clear_all_soft_refs) {
     Universe::verify("Before GC");
   }
 
-  gc_prologue(true);
+  gc_prologue();
   COMPILER2_OR_JVMCI_PRESENT(DerivedPointerTable::clear());
   CodeCache::on_gc_marking_cycle_start();
   ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
@@ -882,12 +884,12 @@ void SerialHeap::verify(VerifyOption option /* ignored */) {
 }
 
 void SerialHeap::print_on(outputStream* st) const {
-  if (_young_gen != nullptr) {
-    _young_gen->print_on(st);
-  }
-  if (_old_gen != nullptr) {
-    _old_gen->print_on(st);
-  }
+  assert(_young_gen != nullptr, "precondition");
+  assert(_old_gen   != nullptr, "precondition");
+
+  _young_gen->print_on(st);
+  _old_gen->print_on(st);
+
   MetaspaceUtils::print_on(st);
 }
 
@@ -908,7 +910,7 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
   log_info(gc, heap)(HEAP_CHANGE_FORMAT" "
                      HEAP_CHANGE_FORMAT" "
                      HEAP_CHANGE_FORMAT,
-                     HEAP_CHANGE_FORMAT_ARGS(def_new_gen->short_name(),
+                     HEAP_CHANGE_FORMAT_ARGS(def_new_gen->name(),
                                              pre_gc_values.young_gen_used(),
                                              pre_gc_values.young_gen_capacity(),
                                              def_new_gen->used(),
@@ -924,7 +926,7 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
                                              def_new_gen->from()->used(),
                                              def_new_gen->from()->capacity()));
   log_info(gc, heap)(HEAP_CHANGE_FORMAT,
-                     HEAP_CHANGE_FORMAT_ARGS(old_gen()->short_name(),
+                     HEAP_CHANGE_FORMAT_ARGS(old_gen()->name(),
                                              pre_gc_values.old_gen_used(),
                                              pre_gc_values.old_gen_capacity(),
                                              old_gen()->used(),
@@ -932,7 +934,7 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
   MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
 }
 
-void SerialHeap::gc_prologue(bool full) {
+void SerialHeap::gc_prologue() {
   // Fill TLAB's and such
   ensure_parsability(true);   // retire TLABs
 
@@ -948,6 +950,19 @@ void SerialHeap::gc_epilogue(bool full) {
 
   _young_gen->gc_epilogue(full);
   _old_gen->gc_epilogue();
+
+  if (_is_heap_almost_full) {
+    // Reset the emergency state if eden is empty after a young/full gc
+    if (_young_gen->eden()->is_empty()) {
+      _is_heap_almost_full = false;
+    }
+  } else {
+    if (full && !_young_gen->eden()->is_empty()) {
+      // Usually eden should be empty after a full GC, so heap is probably too
+      // full now; entering emergency state.
+      _is_heap_almost_full = true;
+    }
+  }
 
   MetaspaceCounters::update_performance_counters();
 };

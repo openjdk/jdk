@@ -833,47 +833,18 @@ class UnixPath implements Path {
         return open(this, flags, 0);
     }
 
-    void checkRead() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkRead(getPathForPermissionCheck());
-    }
-
-    void checkWrite() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkWrite(getPathForPermissionCheck());
-    }
-
-    void checkDelete() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkDelete(getPathForPermissionCheck());
-    }
-
     @Override
     public UnixPath toAbsolutePath() {
         if (isAbsolute()) {
             return this;
         }
-        // The path is relative so need to resolve against default directory,
-        // taking care not to reveal the user.dir
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertyAccess("user.dir");
-        }
+        // The path is relative so need to resolve against default directory
         return new UnixPath(getFileSystem(),
             resolve(getFileSystem().defaultDirectory(), path));
     }
 
     @Override
     public Path toRealPath(LinkOption... options) throws IOException {
-        checkRead();
-
         UnixPath absolute = toAbsolutePath();
 
         // if resolving links then use realpath
@@ -1022,7 +993,6 @@ class UnixPath implements Path {
             throw new NullPointerException();
         if (!(watcher instanceof AbstractWatchService))
             throw new ProviderMismatchException();
-        checkRead();
         return ((AbstractWatchService)watcher).register(this, events, modifiers);
     }
 }

@@ -890,7 +890,7 @@ saveEventInfoRefs(JNIEnv *env, EventInfo *evinfo)
             break;
     }
 
-    if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+    if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
         EXIT_ERROR(AGENT_ERROR_INVALID_EVENT_TYPE,"ExceptionOccurred");
     }
 }

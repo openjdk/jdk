@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,7 +328,7 @@ public:
             printf("*** cannot allocate memory\n");
             doabort();
         }
-        _snprintf(cptr, MAX_PATH, "\"%s\" %s", argv[0], cmdline);
+        snprintf(cptr, MAX_PATH, "\"%s\" %s", argv[0], cmdline);
         JLI_CmdToArgs(cptr);
         free(cptr);
         StdArg *kargv = JLI_GetStdArgs();

@@ -309,6 +309,7 @@ public:
   // Reference processing
   ReferenceDiscoverer* reference_discoverer();
   void set_soft_reference_policy(bool clear);
+  bool uses_clear_all_soft_reference_policy() const;
 
   uint total_collections_at_start() const;
 

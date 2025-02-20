@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
@@ -731,6 +730,11 @@ void ThreadSafepointState::account_safe_thread() {
   DEBUG_ONLY(_thread->set_visited_for_critical_count(SafepointSynchronize::safepoint_counter());)
   assert(!_safepoint_safe, "Must be unsafe before safe");
   _safepoint_safe = true;
+
+  // The oops in the monitor cache are cleared to prevent stale cache entries
+  // from keeping dead objects alive. Because these oops are always cleared
+  // before safepoint operations they are not visited in JavaThread::oops_do.
+  _thread->om_clear_monitor_cache();
 }
 
 void ThreadSafepointState::restart() {

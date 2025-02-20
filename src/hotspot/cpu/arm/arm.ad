@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -283,7 +283,7 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   }
   st->print_cr("PUSH   R_FP|R_LR_LR"); st->print("\t");
   if (framesize != 0) {
-    st->print   ("SUB    R_SP, R_SP, " SIZE_FORMAT,framesize);
+    st->print   ("SUB    R_SP, R_SP, %zu", framesize);
   }
 
   if (C->stub_function() == nullptr && BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
@@ -362,7 +362,7 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   framesize -= 2*wordSize;
 
   if (framesize != 0) {
-    st->print("ADD    R_SP, R_SP, " SIZE_FORMAT "\n\t",framesize);
+    st->print("ADD    R_SP, R_SP, %zu\n\t",framesize);
   }
   st->print("POP    R_FP|R_LR_LR");
 
@@ -999,11 +999,11 @@ bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
-const RegMask* Matcher::predicate_reg_mask(void) {
-  return nullptr;
+bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
+  return false;
 }
 
-const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+const RegMask* Matcher::predicate_reg_mask(void) {
   return nullptr;
 }
 
@@ -3890,6 +3890,7 @@ instruct loadRange(iRegI dst, memoryI mem) %{
 
 
 instruct loadP(iRegP dst, memoryP mem) %{
+  predicate(!(UseG1GC && n->as_Load()->barrier_data() != 0));
   match(Set dst (LoadP mem));
   ins_cost(MEMORY_REF_COST);
   size(4);
@@ -4225,18 +4226,6 @@ instruct storeB(memoryB mem, store_RegI src) %{
   ins_pipe(istore_mem_reg);
 %}
 
-instruct storeCM(memoryB mem, store_RegI src) %{
-  match(Set mem (StoreCM mem src));
-  ins_cost(MEMORY_REF_COST);
-
-  size(4);
-  format %{ "STRB    $src,$mem\t! CMS card-mark byte" %}
-  ins_encode %{
-    __ strb($src$$Register, $mem$$Address);
-  %}
-  ins_pipe(istore_mem_reg);
-%}
-
 // Store Char/Short
 
 
@@ -4356,6 +4345,7 @@ instruct movSP(store_ptr_RegP dst, SPRegP src) %{
 
 
 instruct storeP(memoryP mem, store_ptr_RegP src) %{
+  predicate(!(UseG1GC && n->as_Store()->barrier_data() != 0));
   match(Set mem (StoreP mem src));
   ins_cost(MEMORY_REF_COST);
   size(4);
@@ -5390,6 +5380,7 @@ instruct compareAndSwapI_bool(memoryex mem, iRegI oldval, iRegI newval, iRegI re
 %}
 
 instruct compareAndSwapP_bool(memoryex mem, iRegP oldval, iRegP newval, iRegI res, iRegI tmp, flagsReg ccr ) %{
+  predicate(!(UseG1GC && n->as_LoadStore()->barrier_data() != 0));
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   effect( KILL ccr, TEMP tmp);
   size(28);
@@ -5659,6 +5650,7 @@ instruct xchgL(memoryex mem, iRegLd newval, iRegLd res, iRegI tmp, flagsReg ccr)
 %}
 
 instruct xchgP(memoryex mem, iRegP newval, iRegP res, iRegI tmp, flagsReg ccr) %{
+  predicate(!(UseG1GC && n->as_LoadStore()->barrier_data() != 0));
   match(Set res (GetAndSetP mem newval));
   effect(KILL ccr, TEMP tmp, TEMP res);
   size(16);

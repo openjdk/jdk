@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @requires vm.debug == true & vm.flavor == "server"
  * @summary Test which uses some special flags in order to test Node::find() in debug builds which could result in an endless loop or a stack overflow crash.
  *
- * @run main/othervm -Xbatch -XX:CompileCommand=option,*::*,bool,Vectorize,true -XX:CompileCommand=memlimit,compiler.c2.TestFindNode::*,0
+ * @run main/othervm -Xbatch -XX:CompileCommand=option,*::*,bool,Vectorize,true
  *                   -XX:+PrintOpto -XX:+TraceLoopOpts compiler.c2.TestFindNode
  */
 package compiler.c2;

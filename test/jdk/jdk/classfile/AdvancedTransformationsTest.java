@@ -37,8 +37,8 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.StackMapGenerator;
-import java.lang.classfile.components.ClassRemapper;
-import java.lang.classfile.components.CodeLocalsShifter;
+import jdk.internal.classfile.components.ClassRemapper;
+import jdk.internal.classfile.components.CodeLocalsShifter;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static helpers.TestUtil.assertEmpty;
@@ -59,9 +59,9 @@ import java.lang.classfile.instruction.InvokeInstruction;
 import java.lang.classfile.instruction.ReturnInstruction;
 import java.lang.classfile.instruction.StoreInstruction;
 import java.lang.reflect.AccessFlag;
-import java.lang.classfile.components.CodeRelabeler;
+import jdk.internal.classfile.components.CodeRelabeler;
 import java.lang.constant.ModuleDesc;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 import static java.lang.annotation.ElementType.*;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -85,10 +85,10 @@ class AdvancedTransformationsTest {
                             mb.transformCode(com, new CodeTransform() {
                                 @Override
                                 public void atStart(CodeBuilder builder) {
-                                    builder.allocateLocal(TypeKind.ReferenceType);
-                                    builder.allocateLocal(TypeKind.LongType);
-                                    builder.allocateLocal(TypeKind.IntType);
-                                    builder.allocateLocal(TypeKind.DoubleType);
+                                    builder.allocateLocal(TypeKind.REFERENCE);
+                                    builder.allocateLocal(TypeKind.LONG);
+                                    builder.allocateLocal(TypeKind.INT);
+                                    builder.allocateLocal(TypeKind.DOUBLE);
                                 }
                                 @Override
                                 public void accept(CodeBuilder builder, CodeElement element) {
@@ -324,7 +324,7 @@ class AdvancedTransformationsTest {
                                                 var storeStack = new ArrayDeque<StoreInstruction>();
                                                 int slot = 0;
                                                 if (!mm.flags().has(AccessFlag.STATIC))
-                                                    storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
+                                                    storeStack.push(StoreInstruction.of(TypeKind.REFERENCE, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
                                                     var tk = TypeKind.from(pt);
                                                     storeStack.push(StoreInstruction.of(tk, slot));

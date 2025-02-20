@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,14 @@ public class CheckIntegerCacheApp {
                     throw new RuntimeException(
                             "FAILED. All Character values in range [0, 127] should be interned in cache: " + i);
                 }
+            }
+        }
+
+        // Check that archived integer cache agrees with runtime integer cache.
+        for (int i = -128; i <= 127; i++) {
+            if (ArchivedIntegerHolder.archivedObjects[i + 128] != Integer.valueOf(i)) {
+                throw new RuntimeException(
+                        "FAILED. Archived and runtime caches disagree for " + i);
             }
         }
 

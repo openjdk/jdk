@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class TestVoidHtmlElements {
     }
 
     private static void check(HtmlTag htmlTag) {
-        boolean elementIsVoid = new HtmlTree(htmlTag).isVoid();
+        boolean elementIsVoid = HtmlTree.of(htmlTag).isVoid();
         boolean elementHasNoEndTag = htmlTag.endKind == HtmlTag.EndKind.NONE;
         if (elementIsVoid != elementHasNoEndTag) {
             throw new AssertionError(htmlTag + ", " + elementIsVoid + ", " + elementHasNoEndTag);

@@ -121,8 +121,7 @@ public:
                     CardTableRS* remset);
 
   // Printing
-  const char* name() const { return "tenured generation"; }
-  const char* short_name() const { return "Tenured"; }
+  const char* name() const { return "Tenured"; }
 
   // Iteration
   void object_iterate(ObjectClosure* blk);

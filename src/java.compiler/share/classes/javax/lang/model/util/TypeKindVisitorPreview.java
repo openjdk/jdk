@@ -29,7 +29,6 @@ import jdk.internal.javac.PreviewFeature;
 
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.type.*;
 import static javax.lang.model.SourceVersion.*;
 
@@ -67,7 +66,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see TypeKindVisitor14
  * @since 23
  */
-@SupportedSourceVersion(RELEASE_24)
+@SupportedSourceVersion(RELEASE_25)
 @PreviewFeature(feature=PreviewFeature.Feature.LANGUAGE_MODEL, reflective=true)
 public class TypeKindVisitorPreview<R, P> extends TypeKindVisitor14<R, P> {
     /**

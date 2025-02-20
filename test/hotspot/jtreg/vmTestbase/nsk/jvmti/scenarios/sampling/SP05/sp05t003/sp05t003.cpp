@@ -74,6 +74,7 @@ static volatile int eventsEnd   = 0;
 /* testcase(s) */
 static int prepare();
 static int checkThreads(const char* kind);
+static int waitSuspended(const char* kind);
 static int resumeThreads(const char* kind);
 static int clean();
 
@@ -125,12 +126,17 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
                 nsk_jvmti_setFailStatus();
             }
 
-            /* check if all threads suspended on THREAD_START events */
+            /* check if all THREAD_START events are generated */
             if (eventsStart != THREADS_COUNT) {
                 NSK_COMPLAIN2("Unexpected number of THREAD_START events:\n"
                              "#   received: %d\n"
                              "#   expected: %d\n",
                              eventsStart, THREADS_COUNT);
+            }
+
+            /* wait until all threads are suspended */
+            if (!NSK_VERIFY(waitSuspended("starting"))) {
+                return;
             }
 
             NSK_DISPLAY0("Testcase #1: check threads on THREAD_START\n");
@@ -175,12 +181,17 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
                 nsk_jvmti_setFailStatus();
             }
 
-            /* check ia all threads suspended on THREAD_END event */
+            /* check if all THREAD_END event are generated */
             if (eventsEnd != THREADS_COUNT) {
                 NSK_COMPLAIN2("Unexpected number of THREAD_END events:\n"
                              "#   received: %d\n"
                              "#   expected: %d\n",
                              eventsEnd, THREADS_COUNT);
+            }
+
+            /* wait until all threads are suspended */
+            if (!NSK_VERIFY(waitSuspended("finishing"))) {
+                return;
             }
 
             NSK_DISPLAY0("Testcase #2: check threads on THREAD_END\n");
@@ -209,6 +220,31 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
 }
 
 /* ============================================================================= */
+
+static int waitSuspended(const char* kind) {
+    NSK_DISPLAY1("Wait for %s threads to be suspended\n", kind);
+    for (int i = 0; i < THREADS_COUNT; i++) {
+        for (int j = 0; j * TIMEOUT_DELTA < timeout; j++) {
+            jint state = 0;
+            if (!NSK_JVMTI_VERIFY(jvmti->GetThreadState(threadsList[i], &state))) {
+                nsk_jvmti_setFailStatus();
+                break;
+            }
+            if ((state & JVMTI_THREAD_STATE_ALIVE) == 0) {
+                NSK_COMPLAIN3("%s thread %s is not alive: %x\n", kind, threadsName[i], (int)state);
+                nsk_jvmti_setFailStatus();
+                break;
+            }
+            if ((state & JVMTI_THREAD_STATE_SUSPENDED) != 0) {
+                NSK_DISPLAY2("  OK: %s thread %s is suspended\n", kind, threadsName[i]);
+                break;
+            }
+            NSK_DISPLAY2("  %s thread %s is not suspended, waiting\n", kind, threadsName[i]);
+            nsk_jvmti_sleep(TIMEOUT_DELTA);
+        }
+    }
+    return NSK_TRUE;  // continue execution
+}
 
 /**
  * Resume all threads in given state.

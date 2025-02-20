@@ -40,8 +40,8 @@
 class Thread;
 class Mutex;
 
-template <typename CONFIG, MEMFLAGS F>
-class ConcurrentHashTable : public CHeapObj<F> {
+template <typename CONFIG, MemTag MT>
+class ConcurrentHashTable : public CHeapObj<MT> {
   typedef typename CONFIG::Value VALUE;
  private:
   // _stats_rate is null if statistics are not enabled.
@@ -61,7 +61,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   TableStatistics statistics_calculate(Thread* thread, VALUE_SIZE_FUNC& vs_f);
 
   // This is the internal node structure.
-  // Only constructed with placement new from memory allocated with MEMFLAGS of
+  // Only constructed with placement new from memory allocated with MemTag of
   // the InternalTable or user-defined memory.
   class Node {
    private:
@@ -105,7 +105,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
     }
   };
 
-  // Only constructed with placement new from an array allocated with MEMFLAGS
+  // Only constructed with placement new from an array allocated with MemTag
   // of InternalTable.
   class Bucket {
    private:
@@ -202,7 +202,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   // - Re-size can only change the size into half or double
   //   (any pow 2 would also be possible).
   // - Use masking of hash for bucket index.
-  class InternalTable : public CHeapObj<F> {
+  class InternalTable : public CHeapObj<MT> {
    private:
     Bucket* _buckets;        // Bucket array.
    public:
@@ -277,10 +277,10 @@ class ConcurrentHashTable : public CHeapObj<F> {
   class ScopedCS: public StackObj {
    protected:
     Thread* _thread;
-    ConcurrentHashTable<CONFIG, F>* _cht;
+    ConcurrentHashTable<CONFIG, MT>* _cht;
     GlobalCounter::CSContext _cs_context;
    public:
-    ScopedCS(Thread* thread, ConcurrentHashTable<CONFIG, F>* cht);
+    ScopedCS(Thread* thread, ConcurrentHashTable<CONFIG, MT>* cht);
     ~ScopedCS();
   };
 
@@ -372,7 +372,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   // Check for dead items in a bucket.
   template <typename EVALUATE_FUNC>
   size_t delete_check_nodes(Bucket* bucket, EVALUATE_FUNC& eval_f,
-                            size_t num_del, Node** ndel, GrowableArrayCHeap<Node*, F>& ndel_heap);
+                            size_t num_del, Node** ndel, GrowableArrayCHeap<Node*, MT>& ndel_heap);
 
   // Check for dead items in this table. During shrink/grow we cannot guarantee
   // that we only visit nodes once. To keep it simple caller will have locked
@@ -539,12 +539,12 @@ class ConcurrentHashTable : public CHeapObj<F> {
 
   // Moves all nodes from this table to to_cht with new hash code.
   // Must be done at a safepoint.
-  void rehash_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, F>* to_cht);
+  void rehash_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, MT>* to_cht);
 
   // Scoped multi getter.
   class MultiGetHandle : private ScopedCS {
    public:
-    MultiGetHandle(Thread* thread, ConcurrentHashTable<CONFIG, F>* cht)
+    MultiGetHandle(Thread* thread, ConcurrentHashTable<CONFIG, MT>* cht)
       : ScopedCS(thread, cht) {}
     // In the MultiGetHandle scope you can lookup items matching LOOKUP_FUNC.
     // The VALUEs are safe as long as you never save the VALUEs outside the

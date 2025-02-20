@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6921644
  * @summary Tests references to cached integer
- * @run main/othervm -Djava.security.manager=allow Test6921644
+ * @run main/othervm Test6921644
  * @author Sergey Malenkov
  */
 
@@ -35,7 +35,7 @@ import java.util.List;
 
 public final class Test6921644 extends AbstractTest {
     public static void main(String[] args) {
-        new Test6921644().test(true);
+        new Test6921644().test();
     }
 
     protected Object getObject() {

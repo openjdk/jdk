@@ -54,6 +54,7 @@ class DefNewGeneration;
 class GCMemoryManager;
 class ContiguousSpace;
 class OopClosure;
+class ReservedSpace;
 
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
@@ -102,13 +103,6 @@ class Generation: public CHeapObj<mtGC> {
   bool is_in_reserved(const void* p) const {
     return _reserved.contains(p);
   }
-
-  // Printing
-  virtual const char* name() const = 0;
-  virtual const char* short_name() const = 0;
-
-  virtual void print() const;
-  virtual void print_on(outputStream* st) const;
 
   virtual void verify() = 0;
 

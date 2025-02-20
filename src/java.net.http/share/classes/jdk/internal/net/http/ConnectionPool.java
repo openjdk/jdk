@@ -525,7 +525,7 @@ final class ConnectionPool {
         return false;
     }
 
-    void cleanup(HttpConnection c, Throwable error) {
+    void cleanup(HttpConnection c, long pendingData, Throwable error) {
         if (debug.on())
             debug.log("%s : ConnectionPool.cleanup(%s)",
                     String.valueOf(c.getConnectionFlow()), error);
@@ -537,19 +537,21 @@ final class ConnectionPool {
         } finally {
             stateLock.unlock();
         }
-        if (!removed) {
+        if (!removed && pendingData != 0) {
             // this should not happen; the cleanup may have consumed
             // some data that wasn't supposed to be consumed, so
             // the only thing we can do is log it and close the
             // connection.
             if (Log.errors()) {
                 Log.logError("WARNING: CleanupTrigger triggered for" +
-                        " a connection not found in the pool: closing {0}", c);
-            } else if (debug.on()) {
-                debug.log("WARNING: CleanupTrigger triggered for" +
-                        " a connection not found in the pool: closing %s", c);
+                        " a connection not found in the pool: closing {0}", c.dbgString());
             }
-            c.close(new IOException("Unexpected cleanup triggered for non pooled connection"));
+            if (debug.on()) {
+                debug.log("WARNING: CleanupTrigger triggered for" +
+                        " a connection not found in the pool: closing %s", c.dbgString());
+            }
+            Throwable cause = new IOException("Unexpected cleanup triggered for non pooled connection", error);
+            c.close(cause);
         } else {
             c.close();
         }
@@ -574,9 +576,12 @@ final class ConnectionPool {
 
         public boolean isDone() { return done;}
 
-        private void triggerCleanup(Throwable error) {
+        private void triggerCleanup(long pendingData, Throwable error) {
             done = true;
-            cleanup(connection, error);
+            if (debug.on()) {
+                debug.log("Cleanup triggered for %s: pendingData:%s error:%s", this, pendingData, error);
+            }
+            cleanup(connection, pendingData, error);
         }
 
         @Override public void request(long n) {}
@@ -588,12 +593,12 @@ final class ConnectionPool {
             subscription.request(1);
         }
         @Override
-        public void onError(Throwable error) { triggerCleanup(error); }
+        public void onError(Throwable error) { triggerCleanup(0, error); }
         @Override
-        public void onComplete() { triggerCleanup(null); }
+        public void onComplete() { triggerCleanup(0, null); }
         @Override
         public void onNext(List<ByteBuffer> item) {
-            triggerCleanup(new IOException("Data received while in pool"));
+            triggerCleanup(Utils.remaining(item), new IOException("Data received while in pool"));
         }
 
         @Override
