@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic;
+import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 
 /**
  * A var handle form containing a set of member name, one for each operation.
@@ -50,6 +51,7 @@ final class VarForm {
     final @Stable MemberName[] memberName_table;
 
     VarForm(Class<?> implClass, Class<?> receiver, Class<?> value, Class<?>... intermediate) {
+        assert !UNSAFE.shouldBeInitialized(implClass) : implClass; // required for memberName access
         this.methodType_table = new MethodType[VarHandle.AccessType.COUNT];
         this.memberName_table = new MemberName[VarHandle.AccessMode.COUNT];
         this.implClass = implClass;
@@ -64,6 +66,7 @@ final class VarForm {
     }
 
     VarForm(Class<?> implClass, VarForm methodTypeSource) {
+        assert !UNSAFE.shouldBeInitialized(implClass) : implClass; // required for memberName access
         this.implClass = implClass;
         // methodTypeSource already called initMethodTypes
         this.methodType_table = methodTypeSource.methodType_table;

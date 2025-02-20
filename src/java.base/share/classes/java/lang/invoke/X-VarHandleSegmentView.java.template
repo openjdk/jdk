@@ -41,30 +41,30 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 
 final class VarHandleSegmentAs$Type$s {
 
-    static final VarForm ALIGNED_FORM = new VarForm(Aligned.class, MemorySegment.class, $type$.class, long.class);
-    static final VarForm ALIGNED_OFFSET_FORM = new VarForm(Aligned.class, MemorySegment.class, $type$.class, long.class, long.class);
 #if[!byte]
     static final int NON_PLAIN_ACCESS_MIN_ALIGN_MASK = $BoxType$.BYTES - 1;
-    static final VarForm UNALIGNED_FORM = new VarForm(Unaligned.class, ALIGNED_FORM);
-    static final VarForm UNALIGNED_OFFSET_FORM = new VarForm(Unaligned.class, ALIGNED_OFFSET_FORM);
+
 #end[byte]
-
-
     static VarForm selectForm(long alignmentMask, boolean fixedOffset) {
 #if[byte]
-        return fixedOffset ? ALIGNED_FORM : ALIGNED_OFFSET_FORM;
+        return fixedOffset ? Unaligned.FORM : Unaligned.OFFSET_FORM;
 #else[byte]
         return (alignmentMask & NON_PLAIN_ACCESS_MIN_ALIGN_MASK) != NON_PLAIN_ACCESS_MIN_ALIGN_MASK ?
-                (fixedOffset ? UNALIGNED_FORM : UNALIGNED_OFFSET_FORM) :
-                (fixedOffset ? ALIGNED_FORM : ALIGNED_OFFSET_FORM);
+                (fixedOffset ? Unaligned.FORM : Unaligned.OFFSET_FORM) :
+                (fixedOffset ? Aligned.FORM : Aligned.OFFSET_FORM);
 #end[byte]
     }
 
-    static sealed class Unaligned {
+    static {#if[byte]?final:sealed} class Unaligned {
 
+#if[!byte]
         static final boolean BE = UNSAFE.isBigEndian();
 
+#end[byte]
         static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+
+        static final VarForm FORM = new VarForm(Unaligned.class, MemorySegment.class, $type$.class, long.class);
+        static final VarForm OFFSET_FORM = new VarForm(Unaligned.class, MemorySegment.class, $type$.class, long.class, long.class);
 
         Unaligned() { throw new AssertionError(); }
 
@@ -140,11 +140,16 @@ final class VarHandleSegmentAs$Type$s {
 #end[byte]
 #end[floatingPoint]
         }
+#if[!byte]
     }
 
     static final class Aligned extends Unaligned {
 
+        static final VarForm FORM = new VarForm(Aligned.class, Unaligned.FORM);
+        static final VarForm OFFSET_FORM = new VarForm(Aligned.class, Unaligned.OFFSET_FORM);
+
         Aligned() { throw new AssertionError(); }
+#end[byte]
 
 #if[floatingPoint]
         @ForceInline
