@@ -164,6 +164,12 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 #ifndef PV_10_Compat
   #define PV_10_Compat  0x508000  /* Power PC 10 */
 #endif
+#ifndef PV_11
+  #define PV_11           0x600000        /* Power PC 11 */
+#endif
+#ifndef PV_11_Compat
+  #define PV_11_Compat    0x608000        /* Power PC 11 */
+#endif
 
 static address resolve_function_descriptor_to_code_pointer(address p);
 
@@ -1219,6 +1225,9 @@ void os::print_memory_info(outputStream* st) {
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
   // read _system_configuration.version
   switch (_system_configuration.version) {
+  case PV_11:
+    strncpy(buf, "Power PC 11", buflen);
+    break;
   case PV_10:
     strncpy(buf, "Power PC 10", buflen);
     break;
@@ -1263,6 +1272,9 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
     break;
   case PV_10_Compat:
     strncpy(buf, "PV_10_Compat", buflen);
+    break;
+  case PV_11_Compat:
+    strncpy(buf, "PV_11_Compat", buflen);
     break;
   default:
     strncpy(buf, "unknown", buflen);
