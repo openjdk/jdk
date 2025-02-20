@@ -37,7 +37,7 @@ class CompilationMemoryStatistic : public AllStatic {
   friend class CompilationMemoryStatisticMark;
   static bool _enabled; // set to true if memstat is active for any method.
 
-  static void on_phase_start_0(int phase_trc_id, int num, const char* text);
+  static void on_phase_start_0(int phase_trc_id, const char* text);
   static void on_phase_end_0();
   static void on_arena_chunk_allocation_0(size_t size, int arenatag, uint64_t* stamp);
   static void on_arena_chunk_deallocation_0(size_t size, uint64_t stamp);
@@ -57,9 +57,9 @@ public:
   // true if we are in a fatal error inited by hitting the MemLimit
   static bool in_oom_crash();
 
-  static inline void on_phase_start(int phase_trc_id, int num, const char* text) {
+  static inline void on_phase_start(int phase_trc_id, const char* text) {
     if (enabled()) {
-      on_phase_start_0(phase_trc_id, num, text);
+      on_phase_start_0(phase_trc_id, text);
     }
   }
 

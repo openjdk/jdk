@@ -264,7 +264,7 @@ ArenaStatCounter::ArenaStatCounter(const CompileTask* task, size_t limit) :
     _should_crash_on_memlimit(task->directive()->should_crash_at_mem_limit()),
     _current(0), _peak(0), _live_nodes_current(0), _live_nodes_at_global_peak(0),
     _limit(limit), _hit_limit(false), _limit_in_process(false),
-    _comp_type(task->compiler()->type()), _comp_id(task->compile_id())
+    _phase_counter(0), _comp_type(task->compiler()->type()), _comp_id(task->compile_id())
     DEBUG_ONLY(COMMA _is_test_class(false))
 {
   _fmn.make_permanent();
@@ -976,7 +976,7 @@ void CompilationMemoryStatistic::on_arena_chunk_deallocation_0(size_t size, uint
   arena_stat->on_arena_chunk_deallocation(size, stamp);
 }
 
-void CompilationMemoryStatistic::on_phase_start_0(int phase_trc_id, int num, const char* text) {
+void CompilationMemoryStatistic::on_phase_start_0(int phase_trc_id, const char* text) {
   assert(enabled(), "Not enabled?");
   assert(phase_trc_id >= 0 && phase_trc_id < phase_trc_id_max, "Phase trace id OOB (%d)", phase_trc_id);
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
@@ -986,7 +986,7 @@ void CompilationMemoryStatistic::on_phase_start_0(int phase_trc_id, int num, con
   }
   PhaseInfo info;
   info.id = phase_trc_id;
-  info.num = num;
+  info.num = arena_stat->advance_phase_counter();
   info.text = text;
   arena_stat->on_phase_start(info);
 }

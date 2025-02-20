@@ -651,7 +651,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _unstable_if_traps(comp_arena(), 8, 0, nullptr),
       _coarsened_locks(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
-      _phase_num(0),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
           _unique(0),
       _dead_node_count(0),
@@ -922,7 +921,6 @@ Compile::Compile(ciEnv* ci_env,
       _first_failure_details(nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
-      _phase_num(0),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
           _unique(0),
       _dead_node_count(0),
@@ -4317,9 +4315,7 @@ Compile::TracePhase::TracePhase(const char* name, PhaseTraceId id)
   : TraceTime(name, &Phase::timers[id], CITime, CITimeVerbose),
     _compile(Compile::current()),
     _log(nullptr),
-    _dolog(CITimeVerbose),
-    _id(id),
-    _num(_compile->advance_phasenum())
+    _dolog(CITimeVerbose)
 {
   assert(_compile != nullptr, "sanity check");
   assert(id != PhaseTraceId::_t_none, "Don't use none");
@@ -4333,7 +4329,7 @@ Compile::TracePhase::TracePhase(const char* name, PhaseTraceId id)
   }
 
   // Inform memory statistic, if enabled
-  CompilationMemoryStatistic::on_phase_start((int)_id, _num, name);
+  CompilationMemoryStatistic::on_phase_start((int)id, name);
 }
 
 Compile::TracePhase::TracePhase(PhaseTraceId id)

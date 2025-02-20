@@ -227,6 +227,7 @@ class ArenaStatCounter : public CHeapObj<mtCompiler> {
   bool _limit_in_process;
 
   // Keep track of current C2 phase
+  int _phase_counter;
   PhaseInfoStack _phase_info_stack;
 
   // Keep track of C2 phase allocations over time
@@ -277,6 +278,8 @@ public:
   const FootprintTimeline& timeline() const                { return _timeline; }
   // Number of live nodes at global peak (C2 only)
   unsigned live_nodes_at_global_peak() const { return _live_nodes_at_global_peak; }
+
+  int advance_phase_counter() { return ++_phase_counter; }
 };
 
 #endif // SHARE_COMPILER_COMPILATIONMEMSTATINTERNALS_HPP
