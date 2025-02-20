@@ -137,22 +137,22 @@ public class SnippetTaglet extends BaseTaglet {
                 code.add(text);
             } else {
                 Element e = null;
-                String linkEncountered = null;
+                String linkTarget = null;
                 boolean markupEncountered = false;
                 Set<String> classes = new HashSet<>();
                 for (Style s : styles) {
                     switch (s) {
                         case Style.Name n -> classes.add(n.name());
                         case Style.Link l -> {
-                            if (linkEncountered != null) {
+                            if (linkTarget != null) {
                                 messages.error(utils.getCommentHelper(element).getDocTreePath(tag),
                                         "doclet.error.snippet.ambiguous.link",
-                                        linkEncountered,
+                                        linkTarget,
                                         l.target(),
                                         content.asCharSequence().toString().trim());
                             }
-                            linkEncountered = l.target();
-                            e = getLinkedElement(element, linkEncountered);
+                            linkTarget = l.target();
+                            e = getLinkedElement(element, linkTarget);
                             if (e == null) {
                                 // TODO: diagnostic output
                             }
@@ -163,7 +163,7 @@ public class SnippetTaglet extends BaseTaglet {
                 Content c;
                 if (markupEncountered) {
                     return;
-                } else if (linkEncountered != null) {
+                } else if (linkTarget != null) {
                     assert e != null;
                     //disable preview tagging inside the snippets:
                     Utils.PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
@@ -171,7 +171,7 @@ public class SnippetTaglet extends BaseTaglet {
                         var lt = (LinkTaglet) config.tagletManager.getTaglet(DocTree.Kind.LINK);
                         c = lt.linkSeeReferenceOutput(element,
                                 null,
-                                linkEncountered,
+                                linkTarget,
                                 e,
                                 false, // TODO: for now
                                 Text.of(sequence.toString()),

@@ -68,5 +68,11 @@ public class ReproducibleSnippetTest extends JavadocTester {
                 src.toString(),
                 "p");
         checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true,
+                """
+                        One.java:5: error: snippet link tags: One#ab and #a overlap in obj1.ab(a());
+                             * {@snippet lang = java:
+                               ^""");
     }
 }
