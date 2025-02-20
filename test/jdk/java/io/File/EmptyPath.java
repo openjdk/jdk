@@ -34,6 +34,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.FileStore;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -49,36 +52,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(OrderAnnotation.class)
 public class EmptyPath {
+    private static final String EMPTY_STRING = "";
+
     static File f;
+    static Path p;
 
     @BeforeAll
     public static void init() {
-        f = new File("");
-    }
-
-    @Test
-    @Order(1)
-    public void mkdir() {
-        assertFalse(f.mkdir());
-    }
-
-    @Test
-    @Order(1)
-    public void createNewFile() {
-        assertThrows(IOException.class, () -> f.createNewFile());
-    }
-
-    @Test
-    @Order(1)
-    public void close() throws FileNotFoundException {
-        assertThrows(FileNotFoundException.class,
-                     () -> new FileInputStream(f));
-    }
-
-    @Test
-    @Order(1)
-    public void exists() {
-        assertTrue(f.exists());
+        f = new File(EMPTY_STRING);
+        p = Path.of(EMPTY_STRING);
     }
 
     @Test
@@ -97,6 +79,51 @@ public class EmptyPath {
     @Order(1)
     public void canWrite() {
         assertTrue(f.canWrite());
+    }
+
+    @Test
+    @Order(1)
+    public void compareTo() {
+        assertEquals(0, f.compareTo(p.toFile()));
+    }
+
+    @Test
+    @Order(1)
+    public void createNewFile() {
+        assertThrows(IOException.class, () -> f.createNewFile());
+    }
+
+    @Test
+    @Order(1)
+    public void open() throws FileNotFoundException {
+        assertThrows(FileNotFoundException.class,
+                     () -> new FileInputStream(f));
+    }
+
+    @Test
+    @Order(1)
+    public void delete() {
+        assertFalse(f.delete());
+    }
+
+    @Test
+    @Order(1)
+    public void equals() {
+        assertTrue(f.equals(p.toFile()));
+    }
+
+    @Test
+    @Order(1)
+    public void exists() {
+        assertTrue(f.exists());
+    }
+
+    @Test
+    @Order(1)
+    public void getAbsolutePath() {
+        System.out.println(p.toAbsolutePath().toString() + "\n" +
+                           f.getAbsolutePath());
+        assertEquals(p.toAbsolutePath().toString(), f.getAbsolutePath());
     }
 
     private void checkSpace(long expected, long actual) {
@@ -118,6 +145,24 @@ public class EmptyPath {
 
     @Test
     @Order(1)
+    public void getName() {
+        assertEquals(p.getFileName().toString(), f.getName());
+    }
+
+    @Test
+    @Order(1)
+    public void getParent() {
+        assertNull(f.getParent());
+    }
+
+    @Test
+    @Order(1)
+    public void getPath() {
+        assertEquals(p.toString(), f.getPath());
+    }
+
+    @Test
+    @Order(1)
     public void getTotalSpace() throws IOException {
         FileStore fs = Files.getFileStore(f.toPath());
         checkSpace(fs.getTotalSpace(), f.getTotalSpace());
@@ -128,6 +173,18 @@ public class EmptyPath {
     public void getUsableSpace() throws IOException {
         FileStore fs = Files.getFileStore(f.toPath());
         checkSpace(fs.getUsableSpace(), f.getUsableSpace());
+    }
+
+    @Test
+    @Order(1)
+    public void isNotAbsolute() {
+        assertFalse(f.isAbsolute());
+    }
+
+    @Test
+    @Order(1)
+    public void isAbsolute() {
+        assertTrue(f.getAbsoluteFile().isAbsolute());
     }
 
     @Test
@@ -157,26 +214,40 @@ public class EmptyPath {
     @Test
     @Order(1)
     public void length() throws IOException {
-        assertEquals(f.length(), Files.size(f.toPath()));
+        assertEquals(Files.size(f.toPath()), f.length());
     }
 
     @Test
     @Order(1)
-    public void list() {
+    public void list() throws IOException {
         String[] files = f.list();
         assertNotNull(files);
+        Set<String> ioSet = new HashSet(Arrays.asList(files));
+        Set<String> nioSet = new HashSet();
+        Files.list(p).forEach((x) -> nioSet.add(x.toString()));
+        assertEquals(nioSet, ioSet);
     }
 
     @Test
     @Order(1)
-    public void listFiles() {
-        File[] files = f.listFiles();
-        assertNotNull(files);
+    public void mkdir() {
+        assertFalse(f.mkdir());
+    }
+
+    @Test
+    @Order(2)
+    public void setLastModified() {
+        long t0 = f.lastModified();
+        long t = System.currentTimeMillis();
+        assertTrue(f.setLastModified(t));
+        assertEquals(t, f.lastModified());
+        assertTrue(f.setLastModified(t0));
+        assertEquals(t0, f.lastModified());
     }
 
     // Note: Testing File.setExecutable is omitted because calling
     // File.setExecutable(false) makes it impossible to set the CWD to
-    // exeuctable again which makes subsequent tests fail
+    // executable again which makes subsequent tests fail
 
     @Test
     @Order(3)
@@ -215,19 +286,14 @@ public class EmptyPath {
     }
 
     @Test
-    @Order(2)
-    public void setLastModified() {
-        long t0 = f.lastModified();
-        long t = System.currentTimeMillis();
-        assertTrue(f.setLastModified(t));
-        assertEquals(t, f.lastModified());
-        assertTrue(f.setLastModified(t0));
-        assertEquals(t0, f.lastModified());
+    @Order(1)
+    public void toPath() {
+        assertEquals(p, f.toPath());
     }
 
     @Test
     @Order(1)
     public void toURI() {
-        assertEquals(f.toURI(), f.toPath().toUri());
+        assertEquals(f.toPath().toUri(), f.toURI());
     }
 }
