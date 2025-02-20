@@ -605,11 +605,6 @@ class StubGenerator: public StubCodeGenerator {
     Register data = R5_ARG3;                      // byte[] data
     Register blocks = R6_ARG4;
     Register temp1 = R8;
-    Register temp2 = R9;
-    Register temp3 = R10;
-    Register temp4 = R11;
-    Register align = data;
-    Register load = R12;
     // Vector Registers
     VectorRegister vZero = VR0;
     VectorRegister vH = VR1;
@@ -630,7 +625,6 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vState = VR16;
     VectorRegister vPerm = VR17;
     VectorRegister vConstC2 = VR19;
-    Label L_end, L_aligned, L_error, L_trigger_assert, L_skip_assert;
 
     __ li(temp1, 0xc2);
     __ sldi(temp1, temp1, 56);
@@ -654,12 +648,8 @@ class StubGenerator: public StubCodeGenerator {
     __ vsldoi(vHigherH, vTmp11, vZero, 8);        // H.H
 #ifdef ASSERT
     __ cmpwi(CR0, blocks, 0);                     // Compare 'blocks' (R6_ARG4) with zero
-    __ beq(CR0, L_trigger_assert);
-    __ b(L_skip_assert);                          // Skip assertion if 'blocks' is nonzero
-    __ bind(L_trigger_assert);
-    __ asm_assert_eq("blocks should NOT be zero");
+    __ asm_assert_ne("blocks should NOT be zero");
 #endif
-    __ bind(L_skip_assert);
     __ clrldi(blocks, blocks, 32);
     __ mtctr(blocks);
     __ lvsl(loadOrder, temp1);
@@ -686,14 +676,11 @@ class StubGenerator: public StubCodeGenerator {
     // "Intel® Carry-Less Multiplication Instruction and its Usage for Computing the GCM Mode"
     // https://web.archive.org/web/20110609115824/https://software.intel.com/file/24918
     //
-    Label L_aligned_loop, L_store, L_unaligned_loop;
+    Label L_aligned_loop, L_store, L_unaligned_loop, L_initialize_unaligned_loop;
     __ andi(temp1, data, 15);
     __ cmpwi(CR0, temp1, 0);
-    __ beq(CR0, L_aligned_loop);
-    __ li(temp1,0);
-    __ lvsl(vPerm, temp1, data);
-    __ lvx(vHigh, temp1, data);
-    __ b(L_unaligned_loop);
+    __ bne(CR0, L_initialize_unaligned_loop);
+
     __ bind(L_aligned_loop);
       __ lvx(vH, temp1, data);
       __ vec_perm(vH, vH, vH, loadOrder);
@@ -702,6 +689,12 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(data, data, 16);
       __ bdnz(L_aligned_loop);
     __ b(L_store);
+
+    __ bind(L_initialize_unaligned_loop);
+    __ li(temp1,0);
+    __ lvsl(vPerm, temp1, data);
+    __ lvx(vHigh, temp1, data);
+
     __ bind(L_unaligned_loop);
       __ addi(data, data, 16);
       __ lvx(vLow, temp1, data);
@@ -712,9 +705,11 @@ class StubGenerator: public StubCodeGenerator {
                     vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11);
       __ vmr(vHigh, vLow);
       __ bdnz(L_unaligned_loop);
+
     __ bind(L_store);
     __ stxvd2x(vState->to_vsr(), state);
     __ blr();
+
     return start;
   }
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
