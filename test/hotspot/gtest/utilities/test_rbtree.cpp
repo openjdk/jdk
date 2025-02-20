@@ -75,18 +75,18 @@ struct ArrayAllocator {
   using RBTreeInt = RBTreeCHeap<int, int, Cmp, mtTest>;
   using RBTreeIntNode = RBNode<int, int>;
   using IntrusiveTreeInt = IntrusiveRBTree<int, Cmp>;
-  using IntrusiveNode = IntrusiveNode<int>;
+  using IntrusiveTreeNode = IntrusiveNode<int>;
   using IntrusiveCursor = IntrusiveTreeInt::Cursor;
 
   struct IntrusiveHolder {
-    IntrusiveNode node;
+    IntrusiveTreeNode node;
     int data;
 
-    IntrusiveNode* get_node() { return &node; }
+    IntrusiveTreeNode* get_node() { return &node; }
 
     IntrusiveHolder() {}
     IntrusiveHolder(int data) : data(data) {}
-    static IntrusiveHolder* cast_to_self(IntrusiveNode* node) { return (IntrusiveHolder*)node; }
+    static IntrusiveHolder* cast_to_self(IntrusiveTreeNode* node) { return (IntrusiveHolder*)node; }
   };
 
 public:
@@ -540,7 +540,7 @@ public:
     }
 
     for (int n = 0; n <= num_nodes; n++) {
-      IntrusiveNode* node = nodes.at(n)->get_node();
+      IntrusiveTreeNode* node = nodes.at(n)->get_node();
       IntrusiveCursor cursor = tree.cursor(node);
       IntrusiveCursor find_cursor = tree.cursor(n);
       EXPECT_TRUE(cursor.found());
