@@ -24,24 +24,27 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.I18N.buildConfigException;
+import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
-import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.RuntimeBuilder;
-import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
 import jdk.jpackage.internal.util.FileUtils;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import jdk.jpackage.internal.util.PathGroup;
 
 final class RuntimeBuilderBuilder {
 
@@ -113,11 +116,15 @@ final class RuntimeBuilderBuilder {
 
         return appImageLayout -> {
             try {
-                // copy whole runtime, need to skip jmods and src.zip
-                final List<Path> excludes = List.of(Path.of("jmods"), Path.of("src.zip"));
-                FileUtils.copyRecursive(runtimeDir,
-                        appImageLayout.runtimeDirectory(),
-                        excludes,
+                // copy whole runtime, skipping jmods and src.zip
+                final var srcPathGroup = new PathGroup(Map.of("root", runtimeDir));
+                // JDK8
+                srcPathGroup.ghostPath(runtimeDir.resolve("src.zip"));
+                // Newer JDKs
+                srcPathGroup.ghostPath(runtimeDir.resolve("lib/src.zip"));
+                srcPathGroup.ghostPath(runtimeDir.resolve("jmods"));
+
+                srcPathGroup.copy(new PathGroup(Map.of("root", appImageLayout.runtimeDirectory())),
                         LinkOption.NOFOLLOW_LINKS);
 
                 // if module-path given - copy modules to appDir/mods
