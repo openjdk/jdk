@@ -36,7 +36,7 @@ ZMarkStack* ZMarkStack::create(bool first_stack) {
   // threads instead. Once more than one stack is needed, we revert
   // to a larger stack size instead, which reduces synchronization
   // overhead of churning around stacks on a stripe.
-  size_t capacity = first_stack ? 128 : 512;
+  const size_t capacity = first_stack ? 128 : 512;
 
   void* const memory = AttachedArray::alloc(capacity);
   return ::new (memory) ZMarkStack(capacity);
@@ -76,13 +76,13 @@ bool ZMarkStackList::is_empty() const {
 }
 
 void ZMarkStackList::push(ZMarkStack* stack) {
-  ZMarkStackListNode* node = new ZMarkStackListNode(stack);
+  ZMarkStackListNode* const node = new ZMarkStackListNode(stack);
   ZMarkStackListNode* head = Atomic::load(&_head);
   for (;;) {
     node->set_next(head);
     // Between reading the head and the linearizing CAS that pushes
     // the node onto the list, there could be an ABA problem. Except,
-    // on the pushing sidee, that is benign. The node is never
+    // on the pushing side, that is benign. The node is never
     // dereferenced while pushing and if we were to detect the ABA
     // situation and run this loop one more time, we would end up
     // having the same side effects: set the next pointer to the same
@@ -103,7 +103,7 @@ void ZMarkStackList::push(ZMarkStack* stack) {
 }
 
 ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
-  ZMarkStackListNode* volatile* hazard_ptr = marking_smr->hazard_ptr();
+  ZMarkStackListNode* volatile* const hazard_ptr = marking_smr->hazard_ptr();
 
   ZMarkStackListNode* head = Atomic::load(&_head);
   for (;;) {
@@ -119,7 +119,7 @@ ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
 
     // A full fence is needed to ensure the store and subsequent load do
     // not reorder. If they did reorder, the second head load could happen
-    // before other threads scanning hazard poitners can observe it, meaning
+    // before other threads scanning hazard pointers can observe it, meaning
     // it could get concurrently freed.
     OrderAccess::fence();
 
@@ -167,7 +167,7 @@ ZMarkStack* ZMarkStackList::pop(ZMarkingSMR* marking_smr) {
 }
 
 size_t ZMarkStackList::length() const {
-  ssize_t result = Atomic::load(&_length);
+  const ssize_t result = Atomic::load(&_length);
 
   if (result < 0) {
     return 0;
@@ -204,7 +204,7 @@ void ZMarkStripeSet::set_nstripes(size_t nstripes) {
   assert(nstripes >= 1, "Invalid number of stripes");
   assert(nstripes <= ZMarkStripesMax, "Invalid number of stripes");
 
-  size_t new_nstripes_mask = nstripes - 1;
+  const size_t new_nstripes_mask = nstripes - 1;
   _nstripes_mask = new_nstripes_mask;
 
   log_debug(gc, marking)("Using %zu mark stripes", nstripes);
@@ -216,8 +216,8 @@ bool ZMarkStripeSet::try_set_nstripes(size_t old_nstripes, size_t new_nstripes) 
   assert(new_nstripes >= 1, "Invalid number of stripes");
   assert(new_nstripes <= ZMarkStripesMax, "Invalid number of stripes");
 
-  size_t old_nstripes_mask = old_nstripes - 1;
-  size_t new_nstripes_mask = new_nstripes - 1;
+  const size_t old_nstripes_mask = old_nstripes - 1;
+  const size_t new_nstripes_mask = new_nstripes - 1;
 
   // Mutators may read these values concurrently. It doesn't matter
   // if they see the old or new values.

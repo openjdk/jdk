@@ -473,7 +473,7 @@ bool ZMark::rebalance_work(ZMarkContext* context) {
     // We are running on a reduced number of threads to minimize the amount of work
     // hidden in local stacks when the stripes are less well balanced. When this situation
     // starts getting crowded, we bump the number of stripes again.
-    size_t new_nstripes = nstripes << 1;
+    const size_t new_nstripes = nstripes << 1;
     if (_stripes.try_set_nstripes(nstripes, new_nstripes)) {
       context->set_nstripes(new_nstripes);
     }
