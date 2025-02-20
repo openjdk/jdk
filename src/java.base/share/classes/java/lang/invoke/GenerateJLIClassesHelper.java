@@ -393,6 +393,16 @@ class GenerateJLIClassesHelper {
                 names.add(name);
                 forms.add(identity);
             }
+
+            if (type != V_TYPE) {
+                LambdaForm constant = LambdaForm.constantForm(type);
+                name = constant.kind.defaultLambdaName
+                        + "_" + constant.returnType().basicTypeChar();
+                if (dedupSet.add(name)) {
+                    names.add(name);
+                    forms.add(constant);
+                }
+            }
         }
         return generateCodeBytesForLFs(className,
                 names.toArray(new String[0]),

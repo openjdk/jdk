@@ -458,7 +458,8 @@ class InvokerBytecodeGenerator {
             }
             case DELEGATE:                  return resolveFrom(name, invokerType, DelegatingMethodHandle.Holder.class);
             case ZERO:                      // fall-through
-            case IDENTITY: {
+            case IDENTITY:                  // fall-through
+            case CONSTANT: {
                 name = name + "_" + form.returnType().basicTypeChar();
                 return resolveFrom(name, invokerType, LambdaForm.Holder.class);
             }

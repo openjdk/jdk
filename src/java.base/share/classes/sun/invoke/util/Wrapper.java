@@ -608,7 +608,7 @@ public enum Wrapper {
         throw new InternalError("bad wrapper");
     }
 
-    private static Number numberValue(Object x) {
+    public static Number numberValue(Object x) {
         if (x instanceof Number n)     return n;
         if (x instanceof Character c)  return (int) c;
         if (x instanceof Boolean b)    return b ? 1 : 0;

@@ -247,6 +247,7 @@ class LambdaForm {
         GENERIC("invoke"),
         ZERO("zero"),
         IDENTITY("identity"),
+        CONSTANT("constant"),
         BOUND_REINVOKER("BMH.reinvoke", "reinvoke"),
         REINVOKER("MH.reinvoke", "reinvoke"),
         DELEGATE("MH.delegate", "delegate"),
@@ -1696,10 +1697,36 @@ class LambdaForm {
         return NF_zero[ord];
     }
 
+    static LambdaForm constantForm(BasicType type) {
+        assert type != null && type != V_TYPE;
+        var cached = LF_constant[type.ordinal()];
+        if (cached != null)
+            return cached;
+        return computeConstantForm(type);
+    }
+
+    private static LambdaForm computeConstantForm(BasicType type) {
+        var species = boundSpecies(type);
+        var carrier = argument(0, L_TYPE).withConstraint(species); // BMH bound with data
+        Name[] constNames = new Name[] { carrier, new Name(species.getterFunction(0), carrier) };
+        return LF_constant[type.ordinal()] = create(1, constNames, Kind.CONSTANT);
+    }
+
+    static BoundMethodHandle.SpeciesData boundSpecies(BasicType type) {
+        int ord = type.ordinal();
+        var cached = BASIC_SPECIES[ord];
+        if (cached != null)
+            return cached;
+        return BASIC_SPECIES[ord] = SimpleMethodHandle.BMH_SPECIES.extendWith(type);
+    }
+
     private static final @Stable LambdaForm[] LF_identity = new LambdaForm[TYPE_LIMIT];
     private static final @Stable LambdaForm[] LF_zero = new LambdaForm[TYPE_LIMIT];
     private static final @Stable NamedFunction[] NF_identity = new NamedFunction[TYPE_LIMIT];
     private static final @Stable NamedFunction[] NF_zero = new NamedFunction[TYPE_LIMIT];
+    // Initializes separately; constant has extra dependency on BMH$Species_T
+    private static final @Stable BoundMethodHandle.SpeciesData[] BASIC_SPECIES = new BoundMethodHandle.SpeciesData[ARG_TYPE_LIMIT];
+    private static final @Stable LambdaForm[] LF_constant = new LambdaForm[ARG_TYPE_LIMIT]; // no void
 
     private static final Object createFormsLock = new Object();
     private static void createFormsFor(BasicType type) {
@@ -1814,7 +1841,7 @@ class LambdaForm {
         UNSAFE.ensureClassInitialized(Holder.class);
     }
 
-    /* Placeholder class for zero and identity forms generated ahead of time */
+    /* Placeholder class for zero, identity, and constant forms generated ahead of time */
     final class Holder {}
 
     // The following hack is necessary in order to suppress TRACE_INTERPRETER

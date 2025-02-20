@@ -2303,4 +2303,59 @@ abstract class MethodHandleImpl {
         }
         throw newInternalError("Unknown function index: " + idx);
     }
+
+    static MethodHandle makeConstantI(Wrapper type, int value) {
+        try {
+            return (MethodHandle) boundSpecies(BasicType.I_TYPE).factory().invokeBasic(
+                    MethodType.methodType(type.primitiveType()),
+                    constantForm(BasicType.I_TYPE),
+                    value);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
+
+    static MethodHandle makeConstantJ(long value) {
+        try {
+            return (MethodHandle) boundSpecies(BasicType.J_TYPE).factory().invokeBasic(
+                    MethodType.methodType(long.class),
+                    constantForm(BasicType.J_TYPE),
+                    value);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
+
+    static MethodHandle makeConstantF(float value) {
+        try {
+            return (MethodHandle) boundSpecies(BasicType.F_TYPE).factory().invokeBasic(
+                    MethodType.methodType(float.class),
+                    constantForm(BasicType.F_TYPE),
+                    value);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
+
+    static MethodHandle makeConstantD(double value) {
+        try {
+            return (MethodHandle) boundSpecies(BasicType.D_TYPE).factory().invokeBasic(
+                    MethodType.methodType(double.class),
+                    constantForm(BasicType.D_TYPE),
+                    value);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
+
+    static MethodHandle makeConstantL(Class<?> type, Object value) {
+        try {
+            return BoundMethodHandle.bindSingle(
+                    MethodType.methodType(type),
+                    constantForm(BasicType.L_TYPE),
+                    value);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
 }

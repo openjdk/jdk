@@ -64,9 +64,7 @@ import java.util.stream.Stream;
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
-import static java.lang.invoke.MethodHandleStatics.UNSAFE;
-import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
-import static java.lang.invoke.MethodHandleStatics.newInternalError;
+import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
@@ -4834,11 +4832,22 @@ assert((int)twice.invokeExact(21) == 42);
             value = w.convert(value, type);
             if (w.zero().equals(value))
                 return zero(w, type);
-            return insertArguments(identity(type), 0, value);
+            int intOrdinal = 4;
+            assert intOrdinal == Wrapper.INT.ordinal() : "check out of date";
+            if (w.ordinal() > intOrdinal) {
+                if (w == Wrapper.LONG) return MethodHandleImpl.makeConstantJ((long) value);
+                if (w == Wrapper.FLOAT) return MethodHandleImpl.makeConstantF((float) value);
+                if (w == Wrapper.DOUBLE) return MethodHandleImpl.makeConstantD((double) value);
+                throw newIllegalArgumentException("void type");
+            }
+            assert w == Wrapper.BOOLEAN || w == Wrapper.BYTE || w == Wrapper.SHORT
+                    || w == Wrapper.CHAR || w == Wrapper.INT;
+            return MethodHandleImpl.makeConstantI(w, Wrapper.numberValue(value).intValue());
         } else {
             if (value == null)
                 return zero(Wrapper.OBJECT, type);
-            return identity(type).bindTo(value);
+            type.cast(value); // do it now
+            return MethodHandleImpl.makeConstantL(type, value);
         }
     }
 
