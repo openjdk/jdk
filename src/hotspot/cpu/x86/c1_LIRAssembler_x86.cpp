@@ -1710,7 +1710,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ bind(not_null);
 
     Label update_done;
-    // __ maybe_skip(r14, k_RInfo, update_done);
+
+    __ maybe_skip(r14, k_RInfo, update_done);
 
     Register recv = k_RInfo;
     __ load_klass(recv, obj, tmp_load_klass);
@@ -3727,22 +3728,6 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 
   __ verify_oop(obj);
 
-  if (ProfileCaptureRatio != 1) {
-
-    // Subsampling profile capture
-    int ratio_shift = exact_log2(ProfileCaptureRatio);
-    int threshold = (1ull << 32) >> ratio_shift;
-    __ step_random(r14, tmp);
-
-    __ cmpl(r14, threshold);
-    __ jcc(Assembler::aboveEqual, next);
-  }
-
-    if (getenv("APH_TRACE2")) {
-      __ lea(tmp, ExternalAddress((address)&kludge));
-      __ incl(Address(tmp));
-    }
-
 #ifdef ASSERT
   if (obj == tmp) {
 #ifdef _LP64
@@ -3758,6 +3743,24 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #endif
   }
 #endif
+
+  if (ProfileCaptureRatio != 1) {
+
+    // Subsampling profile capture
+    int ratio_shift = exact_log2(ProfileCaptureRatio);
+    int threshold = (1ull << 32) >> ratio_shift;
+    // Can't use tmp here because sometimes obj == tmp!
+    __ step_random(r14, rscratch1);
+
+    __ cmpl(r14, threshold);
+    __ jcc(Assembler::aboveEqual, next);
+  }
+
+  if (getenv("APH_TRACE2")) {
+    __ lea(tmp, ExternalAddress((address)&kludge));
+    __ incl(Address(tmp));
+  }
+
   if (do_null) {
     __ testptr(obj, obj);
     __ jccb(Assembler::notZero, update);
