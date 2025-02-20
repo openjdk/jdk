@@ -662,13 +662,6 @@ void CallGenerator::do_late_inline_helper() {
       map->disconnect_inputs(C);
       return;
     }
-    if (C->print_inlining() && (is_mh_late_inline() || is_virtual_late_inline())) {
-      if (inline_cg()->is_intrinsic()) {
-        assert(C->print_inlining_stream()->is_empty(), ""); // FIXME: fix for 8320237 is incomplete (observed w/ -XX:+AlwaysIncrementalInlining)
-      } else {
-        C->print_inlining_update_delayed(this);
-      }
-    }
 
     // Setup default node notes to be picked up by the inlining
     Node_Notes* old_nn = C->node_notes_at(call->_idx);
