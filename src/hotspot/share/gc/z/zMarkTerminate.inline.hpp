@@ -28,6 +28,7 @@
 
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zLock.inline.hpp"
+#include "gc/z/zMarkStack.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/osThread.hpp"
