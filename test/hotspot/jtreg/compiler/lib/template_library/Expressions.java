@@ -73,9 +73,10 @@ public abstract class Expressions {
     }
 
     private static final ExpressionGenerator expressionGenerator(Type resultType, HashSet<Type> allowedTypes, int maxDepth, List<Type> types) {
+        Object c = resultType.con();
         return (List<Object> args) -> {
             List<Object> tokens = new ArrayList<Object>();
-            tokens.add(resultType.con());
+            tokens.add(c);
             return tokens;
         };
     }

@@ -94,41 +94,35 @@ public class TestFuzzExpression {
                 """
                 // --- $test start ---
                 // type: #type
+
+                @DontCompile
+                public static Object $reference() {
+                    try {
                 """,
-                // We set a dedicated class hook here, so that fields are
-                // NOT available across the tests.
-                Library.CLASS_HOOK.set(
+                "        return ", exp.withArgs(List.of()), ";\n",
                 """
-
-                private static Object $GOLD = $test();
-
-                @Test
-                public static Object $test() {
-                """,
-                Library.METHOD_HOOK.set(
-                    // We need to catch Exceptions like ArithmeticException, so that we do
-                    // not get ExceptionInInitializerError when loading the class and running
-                    // the static code blocks.
-                    "try {\n",
-                    //"    return ", Expressions.constant(type).withArgs(List.of()), ";\n",
-                    "    return ", exp.withArgs(List.of()), ";\n",
-                    """
                     } catch (Exception e) {
                         return e;
                     }
-                    """
-                ),
+                }
+
+                @Test
+                public static Object $test() {
+                    try {
+                """,
+                "        return ", exp.withArgs(List.of()), ";\n",
                 """
+                    } catch (Exception e) {
+                        return e;
+                    }
                 }
 
                 @Check(test = "$test")
                 public static void $check(Object result) {
-                    Verify.checkEQ(result, $GOLD);
+                    Object gold = $reference();
+                    Verify.checkEQ(result, gold);
                 }
 
-                """
-                ),
-                """
                 // --- $test end   ---
                 """
             );
