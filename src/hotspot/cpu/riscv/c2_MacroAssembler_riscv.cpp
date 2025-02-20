@@ -2993,51 +2993,6 @@ void C2_MacroAssembler::reduce_mul_integral_v(Register dst, Register src1, Vecto
   }
 }
 
-void C2_MacroAssembler::reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, VectorRegister src2,
-                                        VectorRegister vtmp1, VectorRegister vtmp2,
-                                        BasicType bt, uint len, VectorMask vm) {
-  assert(bt == T_FLOAT || bt == T_DOUBLE, "unsupported element type");
-  vsetvli_helper(bt, len);
-
-  len /= 2;
-  if (vm != Assembler::unmasked) {
-    // This behaviour is consistent with spec requirements of vector API, for `reduceLanes`:
-    //  If no elements are selected, an operation-specific identity value is returned.
-    //    If the operation is MUL, then the identity value is one.
-    if (bt == T_FLOAT) {
-      mv(t0, 0x3f800000); // 1.0f
-    } else {
-      mv(t0, 0x3ff00000); // 1.0d
-      slli(t0, t0, 32);
-    }
-    vmv_v_x(vtmp1, t0);
-    vmerge_vvm(vtmp2, vtmp1, src2); // vm == v0
-    vslidedown_vi(vtmp1, vtmp2, len);
-
-    vsetvli_helper(bt, len);
-    vfmul_vv(vtmp1, vtmp1, vtmp2);
-  } else {
-    vslidedown_vi(vtmp1, src2, len);
-
-    vsetvli_helper(bt, len);
-    vfmul_vv(vtmp1, vtmp1, src2);
-  }
-
-  while (len > 1) {
-    len /= 2;
-    vslidedown_vi(vtmp2, vtmp1, len);
-    vsetvli_helper(bt, len);
-    vfmul_vv(vtmp1, vtmp1, vtmp2);
-  }
-
-  vfmv_f_s(dst, vtmp1);
-  if (bt == T_FLOAT) {
-    fmul_s(dst, dst, src1);
-  } else {
-    fmul_d(dst, dst, src1);
-  }
-}
-
 // Set vl and vtype for full and partial vector operations.
 // (vma = mu, vta = tu, vill = false)
 void C2_MacroAssembler::vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul, Register tmp) {

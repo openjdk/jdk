@@ -102,8 +102,6 @@ source %{
         break;
       case Op_MulReductionVI:
       case Op_MulReductionVL:
-      case Op_MulReductionVF:
-      case Op_MulReductionVD:
         // When vlen < 4, our log2(vlen) implementation does not help to gain performance improvement.
         if (vlen < 4) {
           return false;
@@ -2486,73 +2484,6 @@ instruct reduce_mulL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc,
                              as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
                              Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc),
                              Assembler::v0_t);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// Floating-point addition and multiplication are non-associative, so
-// AddReductionVF/D and MulReductionVF/D require strict ordering
-// in auto-vectorization. Vector API can generate AddReductionVF/D
-// and MulReductionVF/VD without strict ordering, which can benefit
-// some platforms.
-instruct reduce_mulF_unordered(fRegF dst, fRegF fsrc, vReg vsrc,
-                     vReg tmp1, vReg tmp2) %{
-  predicate(!n->as_Reduction()->requires_strict_order());
-  match(Set dst (MulReductionVF fsrc vsrc));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
-  format %{ "reduce_mulF_unordered $dst, $fsrc, $vsrc\t" %}
-
-  ins_encode %{
-    __ reduce_mul_fp_v($dst$$FloatRegister, $fsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
-                       as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                       Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct reduce_mulF_masked_unordered(fRegF dst, fRegF fsrc, vReg vsrc,
-                            vRegMask_V0 v0, vReg tmp1, vReg tmp2) %{
-  predicate(!n->as_Reduction()->requires_strict_order());
-  match(Set dst (MulReductionVF (Binary fsrc vsrc) v0));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
-  format %{ "reduce_mulF_masked_unordered $dst, $fsrc, $vsrc, $v0\t" %}
-
-  ins_encode %{
-    __ reduce_mul_fp_v($dst$$FloatRegister, $fsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
-                       as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                       Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc),
-                       Assembler::v0_t);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct reduce_mulD_unordered(fRegD dst, fRegD fsrc, vReg vsrc,
-                     vReg tmp1, vReg tmp2) %{
-  predicate(!n->as_Reduction()->requires_strict_order());
-  match(Set dst (MulReductionVD fsrc vsrc));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
-  format %{ "reduce_mulD_unordered $dst, $fsrc, $vsrc\t" %}
-
-  ins_encode %{
-    __ reduce_mul_fp_v($dst$$FloatRegister, $fsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
-                       as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                       Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct reduce_mulD_masked_unordered(fRegD dst, fRegD fsrc, vReg vsrc,
-                            vRegMask_V0 v0, vReg tmp1, vReg tmp2) %{
-  predicate(!n->as_Reduction()->requires_strict_order());
-  match(Set dst (MulReductionVD (Binary fsrc vsrc) v0));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
-  format %{ "reduce_mulD_masked_unordered $dst, $fsrc, $vsrc, $v0\t" %}
-
-  ins_encode %{
-    __ reduce_mul_fp_v($dst$$FloatRegister, $fsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
-                       as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                       Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc),
-                       Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}

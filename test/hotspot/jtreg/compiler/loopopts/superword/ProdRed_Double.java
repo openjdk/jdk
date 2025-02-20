@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,10 +88,6 @@ public class ProdRed_Double {
     @IR(applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         applyIfCPUFeature = {"sse2", "true"},
         counts = {IRNode.MUL_REDUCTION_VD, ">= 1"})
-    @IR(applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
-        applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"rvv", "true"},
-        counts = {IRNode.MUL_REDUCTION_VD, ">= 1"})
     public static double prodReductionImplement(double[] a, double[] b, double total) {
         for (int i = 0; i < a.length; i++) {
             total *= a[i] - b[i];
@@ -104,10 +100,6 @@ public class ProdRed_Double {
         failOn = {IRNode.MUL_REDUCTION_VD})
     @IR(applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         applyIfCPUFeature = {"sse2", "true"},
-        counts = {IRNode.MUL_REDUCTION_VD, ">= 1"})
-    @IR(applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
-        applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"rvv", "true"},
         counts = {IRNode.MUL_REDUCTION_VD, ">= 1"})
     public static double prodReductionWithStoreImplement(double[] a, double[] b, double[] c, double total) {
         for (int i = 0; i < a.length; i++) {

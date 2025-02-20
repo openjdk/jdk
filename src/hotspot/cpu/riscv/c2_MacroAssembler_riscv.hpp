@@ -243,10 +243,6 @@
                              VectorRegister vtmp1, VectorRegister vtmp2, BasicType bt,
                              uint len, VectorMask vm = Assembler::unmasked);
 
-  void reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, VectorRegister src2,
-                       VectorRegister vtmp1, VectorRegister vtmp2, BasicType bt,
-                       uint len, VectorMask vm = Assembler::unmasked);
-
   void vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
 
   void compare_integral_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,

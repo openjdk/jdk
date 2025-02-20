@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,10 +85,6 @@ public class ProdRed_Float {
         failOn = {IRNode.MUL_REDUCTION_VF})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
-        counts = {IRNode.MUL_REDUCTION_VF, ">= 1"})
-    @IR(applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
-        applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"rvv", "true"},
         counts = {IRNode.MUL_REDUCTION_VF, ">= 1"})
     public static float prodReductionImplement(float[] a, float[] b, float total) {
         for (int i = 0; i < a.length; i++) {
