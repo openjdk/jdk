@@ -481,9 +481,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, ZapTLAB, trueInDebug,                                       \
           "Zap allocated TLABs")                                            \
-  develop(bool, TestingAsyncLoggingDeathTest, falseInDebug,                 \
+  develop(bool, TestingAsyncLoggingDeathTest, false,                        \
           "Recursive logging death test")                                   \
-  develop(bool, TestingAsyncLoggingDeathTestNoCrash, falseInDebug,          \
+  develop(bool, TestingAsyncLoggingDeathTestNoCrash, false,                 \
           "Recursive logging death test (no crash)")                        \
                                                                             \
   product(bool, ExecutingUnitTests, false,                                  \
