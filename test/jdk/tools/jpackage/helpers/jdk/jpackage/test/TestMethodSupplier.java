@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ final class TestMethodSupplier {
     record MethodQuery(String className, String methodName) {
 
         List<Method> lookup() throws ClassNotFoundException {
-            final Class methodClass = Class.forName(className);
+            final Class<?> methodClass = Class.forName(className);
 
             // Get the list of all public methods as need to deal with overloads.
             return Stream.of(methodClass.getMethods()).filter(method -> {
@@ -256,12 +256,17 @@ final class TestMethodSupplier {
         }
 
         final Class<?> execClass = exec.getDeclaringClass();
-        final var supplierFuncName = a.value();
+        final String supplierFuncName;
+        if (a.value().isEmpty()) {
+            supplierFuncName = exec.getName();
+        } else {
+            supplierFuncName = a.value();
+        }
 
         final MethodQuery methodQuery;
-        if (!a.value().contains(".")) {
+        if (!supplierFuncName.contains(".")) {
             // No class name specified
-            methodQuery = new MethodQuery(execClass.getName(), a.value());
+            methodQuery = new MethodQuery(execClass.getName(), supplierFuncName);
         } else {
             methodQuery = MethodQuery.fromQualifiedMethodName(supplierFuncName);
         }
@@ -269,7 +274,7 @@ final class TestMethodSupplier {
         final Method supplierMethod;
         try {
             final var parameterSupplierCandidates = findNullaryLikeMethods(methodQuery);
-            final Function<String, Class> classForName = toFunction(Class::forName);
+            final Function<String, Class<?>> classForName = toFunction(Class::forName);
             final var supplierMethodClass = classForName.apply(methodQuery.className());
             if (parameterSupplierCandidates.isEmpty()) {
                 throw new RuntimeException(String.format(
@@ -348,11 +353,11 @@ final class TestMethodSupplier {
 
     private static Parameter[] getMethodParameters(Method method) {
         if (method.isAnnotationPresent(ParameterGroup.class)) {
-            return ((ParameterGroup) method.getAnnotation(ParameterGroup.class)).value();
+            return method.getAnnotation(ParameterGroup.class).value();
         }
 
         if (method.isAnnotationPresent(Parameter.class)) {
-            return new Parameter[]{(Parameter) method.getAnnotation(Parameter.class)};
+            return new Parameter[]{method.getAnnotation(Parameter.class)};
         }
 
         return new Parameter[0];
@@ -360,12 +365,11 @@ final class TestMethodSupplier {
 
     private static ParameterSupplier[] getMethodParameterSuppliers(Method method) {
         if (method.isAnnotationPresent(ParameterSupplierGroup.class)) {
-            return ((ParameterSupplierGroup) method.getAnnotation(ParameterSupplierGroup.class)).value();
+            return (method.getAnnotation(ParameterSupplierGroup.class)).value();
         }
 
         if (method.isAnnotationPresent(ParameterSupplier.class)) {
-            return new ParameterSupplier[]{(ParameterSupplier) method.getAnnotation(
-                ParameterSupplier.class)};
+            return new ParameterSupplier[]{method.getAnnotation(ParameterSupplier.class)};
         }
 
         return new ParameterSupplier[0];
@@ -378,18 +382,20 @@ final class TestMethodSupplier {
                 .sorted(Comparator.comparing(Method::getName));
     }
 
+    @SuppressWarnings("unchecked")
     private static Stream<Object[]> createArgs(Method ... parameterSuppliers) throws
             IllegalAccessException, InvocationTargetException {
         List<Object[]> args = new ArrayList<>();
         for (var parameterSupplier : parameterSuppliers) {
-            args.addAll((Collection) parameterSupplier.invoke(null));
+            args.addAll((Collection<Object[]>) parameterSupplier.invoke(null));
         }
         return args.stream();
     }
 
-    private static Object fromString(String value, Class toType) {
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Object fromString(String value, Class<?> toType) {
         if (toType.isEnum()) {
-            return Enum.valueOf(toType, value);
+            return Enum.valueOf((Class<? extends Enum>)toType, value);
         }
         Function<String, Object> converter = FROM_STRING.get(toType);
         if (converter == null) {
@@ -410,6 +416,7 @@ final class TestMethodSupplier {
         InvalidAnnotationException(String msg) {
             super(msg);
         }
+        private static final long serialVersionUID = 1L;
     }
 
     private static class Verifier {
@@ -476,10 +483,10 @@ final class TestMethodSupplier {
 
     private static final Object[] DEFAULT_CTOR_ARGS = new Object[0];
 
-    private static final Map<Class, Function<String, Object>> FROM_STRING;
+    private static final Map<Class<?>, Function<String, Object>> FROM_STRING;
 
     static {
-        Map<Class, Function<String, Object>> primitives = Map.of(
+        Map<Class<?>, Function<String, Object>> primitives = Map.of(
             boolean.class, Boolean::valueOf,
             byte.class, Byte::valueOf,
             short.class, Short::valueOf,
@@ -488,7 +495,7 @@ final class TestMethodSupplier {
             float.class, Float::valueOf,
             double.class, Double::valueOf);
 
-        Map<Class, Function<String, Object>> boxed = Map.of(
+        Map<Class<?>, Function<String, Object>> boxed = Map.of(
             Boolean.class, Boolean::valueOf,
             Byte.class, Byte::valueOf,
             Short.class, Short::valueOf,
@@ -497,11 +504,11 @@ final class TestMethodSupplier {
             Float.class, Float::valueOf,
             Double.class, Double::valueOf);
 
-        Map<Class, Function<String, Object>> other = Map.of(
+        Map<Class<?>, Function<String, Object>> other = Map.of(
             String.class, String::valueOf,
             Path.class, Path::of);
 
-        Map<Class, Function<String, Object>> combined = new HashMap<>(primitives);
+        Map<Class<?>, Function<String, Object>> combined = new HashMap<>(primitives);
         combined.putAll(other);
         combined.putAll(boxed);
 

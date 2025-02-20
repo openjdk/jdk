@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -584,6 +584,13 @@ final class WinNTFileSystem extends FileSystem {
     @Override
     public long getSpace(File f, int t) {
         if (f.exists()) {
+            // the value for the number of bytes of free space returned by the
+            // native layer is not used here as it represents the number of free
+            // bytes not considering quotas, whereas the value returned for the
+            // number of usable bytes does respect quotas, and it is required
+            // that free space <= total space
+            if (t == SPACE_FREE)
+                t = SPACE_USABLE;
             return getSpace0(f, t);
         }
         return 0;

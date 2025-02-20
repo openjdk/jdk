@@ -330,7 +330,104 @@ class InternalAddress: public Address {
 };
 
 class Assembler : public AbstractAssembler {
-public:
+protected:
+
+  static int zfa_zli_lookup_double(uint64_t value) {
+    switch(value) {
+      case 0xbff0000000000000 : return   0;
+      case 0x0010000000000000 : return   1;
+      case 0x3ef0000000000000 : return   2;
+      case 0x3f00000000000000 : return   3;
+      case 0x3f70000000000000 : return   4;
+      case 0x3f80000000000000 : return   5;
+      case 0x3fb0000000000000 : return   6;
+      case 0x3fc0000000000000 : return   7;
+      case 0x3fd0000000000000 : return   8;
+      case 0x3fd4000000000000 : return   9;
+      case 0x3fd8000000000000 : return  10;
+      case 0x3fdc000000000000 : return  11;
+      case 0x3fe0000000000000 : return  12;
+      case 0x3fe4000000000000 : return  13;
+      case 0x3fe8000000000000 : return  14;
+      case 0x3fec000000000000 : return  15;
+      case 0x3ff0000000000000 : return  16;
+      case 0x3ff4000000000000 : return  17;
+      case 0x3ff8000000000000 : return  18;
+      case 0x3ffc000000000000 : return  19;
+      case 0x4000000000000000 : return  20;
+      case 0x4004000000000000 : return  21;
+      case 0x4008000000000000 : return  22;
+      case 0x4010000000000000 : return  23;
+      case 0x4020000000000000 : return  24;
+      case 0x4030000000000000 : return  25;
+      case 0x4060000000000000 : return  26;
+      case 0x4070000000000000 : return  27;
+      case 0x40e0000000000000 : return  28;
+      case 0x40f0000000000000 : return  29;
+      case 0x7ff0000000000000 : return  30;
+      case 0x7ff8000000000000 : return  31;
+      default: break;
+    }
+    return -1;
+  }
+
+
+  static int zfa_zli_lookup_float(uint32_t value) {
+    switch(value) {
+      case 0xbf800000 : return  0;
+      case 0x00800000 : return  1;
+      case 0x37800000 : return  2;
+      case 0x38000000 : return  3;
+      case 0x3b800000 : return  4;
+      case 0x3c000000 : return  5;
+      case 0x3d800000 : return  6;
+      case 0x3e000000 : return  7;
+      case 0x3e800000 : return  8;
+      case 0x3ea00000 : return  9;
+      case 0x3ec00000 : return 10;
+      case 0x3ee00000 : return 11;
+      case 0x3f000000 : return 12;
+      case 0x3f200000 : return 13;
+      case 0x3f400000 : return 14;
+      case 0x3f600000 : return 15;
+      case 0x3f800000 : return 16;
+      case 0x3fa00000 : return 17;
+      case 0x3fc00000 : return 18;
+      case 0x3fe00000 : return 19;
+      case 0x40000000 : return 20;
+      case 0x40200000 : return 21;
+      case 0x40400000 : return 22;
+      case 0x40800000 : return 23;
+      case 0x41000000 : return 24;
+      case 0x41800000 : return 25;
+      case 0x43000000 : return 26;
+      case 0x43800000 : return 27;
+      case 0x47000000 : return 28;
+      case 0x47800000 : return 29;
+      case 0x7f800000 : return 30;
+      case 0x7fc00000 : return 31;
+      default: break;
+    }
+    return -1;
+  }
+
+ public:
+
+  static bool can_zfa_zli_float(jfloat f) {
+    if (!UseZfa) {
+      return false;
+    }
+    uint32_t f_bits = (uint32_t)jint_cast(f);
+    return zfa_zli_lookup_float(f_bits) != -1;
+  }
+
+  static bool can_zfa_zli_double(jdouble d) {
+    if (!UseZfa) {
+      return false;
+    }
+    uint64_t d_bits = (uint64_t)julong_cast(d);
+    return zfa_zli_lookup_double(d_bits) != -1;
+  }
 
   enum {
     instruction_size = 4,
@@ -972,6 +1069,13 @@ enum operand_size { int8, int16, int32, uint32, int64 };
     fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1->raw_encoding(), Rs2, (RoundingMode)rm);
   }
 
+  template <FmtPrecision Fmt, uint8_t funct5>
+  void fp_base(FloatRegister Rd, uint8_t Rs1, uint8_t Rs2, int8_t rm) {
+    guarantee(is_uimm5(Rs1), "Rs1 is out of validity");
+    guarantee(is_uimm5(Rs2), "Rs2 is out of validity");
+    fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1, Rs2, (RoundingMode)rm);
+  }
+
  public:
 
   enum FClassBits {
@@ -1291,6 +1395,18 @@ enum operand_size { int8, int16, int32, uint32, int64 };
   void fmv_x_h(Register Rd, FloatRegister Rs1) {
     assert_cond(UseZfh || UseZfhmin);
     fp_base<H_16_hp, 0b11100>(Rd, Rs1, 0b00000, 0b000);
+  }
+
+// --------------  ZFA Instruction Definitions  --------------
+// Zfa Extension for Additional Floating-Point Instructions
+  void _fli_s(FloatRegister Rd, uint8_t Rs1) {
+    assert_cond(UseZfa);
+    fp_base<S_32_sp, 0b11110>(Rd, Rs1, 0b00001, 0b000);
+  }
+
+  void _fli_d(FloatRegister Rd, uint8_t Rs1) {
+    assert_cond(UseZfa);
+    fp_base<D_64_dp, 0b11110>(Rd, Rs1, 0b00001, 0b000);
   }
 
 // ==========================

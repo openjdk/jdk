@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,8 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
     if (UseCompressedOops && in_heap) {
       if (L_handle_null != nullptr) { // Label provided.
         __ lwz(dst, ind_or_offs, base);
-        __ cmpwi(CCR0, dst, 0);
-        __ beq(CCR0, *L_handle_null);
+        __ cmpwi(CR0, dst, 0);
+        __ beq(CR0, *L_handle_null);
         __ decode_heap_oop_not_null(dst);
       } else if (not_null) { // Guaranteed to be not null.
         Register narrowOop = (tmp1 != noreg && CompressedOops::base_disjoint()) ? tmp1 : dst;
@@ -103,8 +103,8 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
     } else {
       __ ld(dst, ind_or_offs, base);
       if (L_handle_null != nullptr) {
-        __ cmpdi(CCR0, dst, 0);
-        __ beq(CCR0, *L_handle_null);
+        __ cmpdi(CR0, dst, 0);
+        __ beq(CR0, *L_handle_null);
       }
     }
     break;
@@ -118,11 +118,11 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
                                           Register tmp1, Register tmp2,
                                           MacroAssembler::PreservationLevel preservation_level) {
   Label done, tagged, weak_tagged, verify;
-  __ cmpdi(CCR0, value, 0);
-  __ beq(CCR0, done);         // Use null as-is.
+  __ cmpdi(CR0, value, 0);
+  __ beq(CR0, done);         // Use null as-is.
 
   __ andi_(tmp1, value, JNIHandles::tag_mask);
-  __ bne(CCR0, tagged);       // Test for tag.
+  __ bne(CR0, tagged);       // Test for tag.
 
   __ access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, // no uncoloring
                     value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
@@ -131,7 +131,7 @@ void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
   __ bind(tagged);
   __ andi_(tmp1, value, JNIHandles::TypeTag::weak_global);
   __ clrrdi(value, value, JNIHandles::tag_size); // Untag.
-  __ bne(CCR0, weak_tagged);   // Test for jweak tag.
+  __ bne(CR0, weak_tagged);   // Test for jweak tag.
 
   __ access_load_at(T_OBJECT, IN_NATIVE,
                     value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
@@ -152,14 +152,14 @@ void BarrierSetAssembler::resolve_global_jobject(MacroAssembler* masm, Register 
                                           MacroAssembler::PreservationLevel preservation_level) {
   Label done;
 
-  __ cmpdi(CCR0, value, 0);
-  __ beq(CCR0, done);         // Use null as-is.
+  __ cmpdi(CR0, value, 0);
+  __ beq(CR0, done);         // Use null as-is.
 
 #ifdef ASSERT
   {
     Label valid_global_tag;
     __ andi_(tmp1, value, JNIHandles::TypeTag::global);
-    __ bne(CCR0, valid_global_tag);       // Test for global tag.
+    __ bne(CR0, valid_global_tag);       // Test for global tag.
     __ stop("non global jobject using resolve_global_jobject");
     __ bind(valid_global_tag);
   }
@@ -200,9 +200,9 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
 
   // Low order half of 64 bit value is currently used.
   __ ld(R0, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), R16_thread);
-  __ cmpw(CCR0, R0, tmp);
+  __ cmpw(CR0, R0, tmp);
 
-  __ bnectrl(CCR0);
+  __ bnectrl(CR0);
 
   // Oops may have been changed. Make those updates observable.
   // "isync" can serve both, data and instruction patching.
@@ -229,8 +229,8 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
   Label bad_call, skip_barrier;
 
   // Fast path: If no method is given, the call is definitely bad.
-  __ cmpdi(CCR0, R19_method, 0);
-  __ beq(CCR0, bad_call);
+  __ cmpdi(CR0, R19_method, 0);
+  __ beq(CR0, bad_call);
 
   // Load class loader data to determine whether the method's holder is concurrently unloading.
   __ load_method_holder(tmp1, R19_method);
@@ -238,14 +238,14 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
 
   // Fast path: If class loader is strong, the holder cannot be unloaded.
   __ lwz(tmp2, in_bytes(ClassLoaderData::keep_alive_ref_count_offset()), tmp1_class_loader_data);
-  __ cmpdi(CCR0, tmp2, 0);
-  __ bne(CCR0, skip_barrier);
+  __ cmpdi(CR0, tmp2, 0);
+  __ bne(CR0, skip_barrier);
 
   // Class loader is weak. Determine whether the holder is still alive.
   __ ld(tmp2, in_bytes(ClassLoaderData::holder_offset()), tmp1_class_loader_data);
   __ resolve_weak_handle(tmp2, tmp1, tmp3, MacroAssembler::PreservationLevel::PRESERVATION_FRAME_LR_GP_FP_REGS);
-  __ cmpdi(CCR0, tmp2, 0);
-  __ bne(CCR0, skip_barrier);
+  __ cmpdi(CR0, tmp2, 0);
+  __ bne(CR0, skip_barrier);
 
   __ bind(bad_call);
 

@@ -262,7 +262,6 @@
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \
   nonstatic_field(Klass,                       _primary_supers[0],                            Klass*)                                \
   nonstatic_field(Klass,                       _java_mirror,                                  OopHandle)                             \
-  nonstatic_field(Klass,                       _modifier_flags,                               u2)                                    \
   nonstatic_field(Klass,                       _super,                                        Klass*)                                \
   volatile_nonstatic_field(Klass,              _subklass,                                     Klass*)                                \
   nonstatic_field(Klass,                       _layout_helper,                                jint)                                  \
@@ -550,6 +549,7 @@
                                                                                                                                      \
   nonstatic_field(CodeBlob,                    _name,                                         const char*)                           \
   nonstatic_field(CodeBlob,                    _size,                                         int)                                   \
+  nonstatic_field(CodeBlob,                    _kind,                                         CodeBlobKind)                          \
   nonstatic_field(CodeBlob,                    _header_size,                                  u2)                                    \
   nonstatic_field(CodeBlob,                    _relocation_size,                              int)                                   \
   nonstatic_field(CodeBlob,                    _content_offset,                               int)                                   \
@@ -1261,6 +1261,8 @@
         declare_type(CompilerThread, JavaThread)                          \
         declare_type(StringDedupThread, JavaThread)                       \
         declare_type(AttachListenerThread, JavaThread)                    \
+        DEBUG_ONLY(COMPILER2_OR_JVMCI_PRESENT(                            \
+          declare_type(DeoptimizeObjectsALotThread, JavaThread)))         \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
                                                                           \
@@ -1915,6 +1917,7 @@
                                                                           \
   declare_integer_type(CompLevel)                                         \
   declare_integer_type(ByteSize)                                          \
+  declare_integer_type(CodeBlobKind)                                      \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo))                       \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo*))                      \
   declare_toplevel_type(CodeBlob*)                                        \
@@ -2371,6 +2374,23 @@
   declare_constant(CompLevel_limited_profile)                             \
   declare_constant(CompLevel_full_profile)                                \
   declare_constant(CompLevel_full_optimization)                           \
+                                                                          \
+  /****************/                                                      \
+  /* CodeBlobKind */                                                      \
+  /****************/                                                      \
+                                                                          \
+  declare_constant(CodeBlobKind::Nmethod)                                 \
+  declare_constant(CodeBlobKind::Buffer)                                  \
+  declare_constant(CodeBlobKind::Adapter)                                 \
+  declare_constant(CodeBlobKind::Vtable)                                  \
+  declare_constant(CodeBlobKind::MHAdapter)                               \
+  declare_constant(CodeBlobKind::RuntimeStub)                             \
+  declare_constant(CodeBlobKind::Deoptimization)                          \
+  declare_constant(CodeBlobKind::Safepoint)                               \
+  COMPILER2_PRESENT(declare_constant(CodeBlobKind::Exception))            \
+  COMPILER2_PRESENT(declare_constant(CodeBlobKind::UncommonTrap))         \
+  declare_constant(CodeBlobKind::Upcall)                                  \
+  declare_constant(CodeBlobKind::Number_Of_Kinds)                         \
                                                                           \
   /***************/                                                       \
   /* OopMapValue */                                                       \
