@@ -687,7 +687,7 @@ class StubGenerator: public StubCodeGenerator {
       computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
                     vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11);
       __ addi(data, data, 16);
-      __ bdnz(L_aligned_loop);
+    __ bdnz(L_aligned_loop);
     __ b(L_store);
 
     __ bind(L_initialize_unaligned_loop);
@@ -704,7 +704,7 @@ class StubGenerator: public StubCodeGenerator {
       computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
                     vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11);
       __ vmr(vHigh, vLow);
-      __ bdnz(L_unaligned_loop);
+    __ bdnz(L_unaligned_loop);
 
     __ bind(L_store);
     __ stxvd2x(vState->to_vsr(), state);
