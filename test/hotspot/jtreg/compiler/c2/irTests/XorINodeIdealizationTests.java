@@ -291,7 +291,7 @@ public class XorINodeIdealizationTests {
     }
 
     @Run(test = {
-            "testFoldableXor", "testXorConstRange"
+            "testFoldableXor", "testFoldableXorPow2", "testUnfoldableXorPow2"
     })
     public void runRangeTests() {
         int a = G.next();
@@ -308,12 +308,21 @@ public class XorINodeIdealizationTests {
     @DontCompile
     public void checkXor(int a, int b) {
         Asserts.assertEQ(true, testFoldableXor(a, b));
-        Asserts.assertEQ((a & 0b1000) ^ (b & 0b1000), testXorConstRange(a, b));
+        Asserts.assertEQ(((a & 0b1000) ^ (b & 0b1000)) < 0b1000, testUnfoldableXorPow2(a, b));
+        Asserts.assertEQ(true, testFoldableXorPow2(a, b));
     }
 
     @Test
-    public int testXorConstRange(int x, int y) {
-        return (x & 0b1000) ^ (y & 0b1000);
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"})
+    public boolean testFoldableXorPow2(int x, int y) {
+        return ((x & 0b1000) ^ (y & 0b1000)) < 0b10000;
+    }
+
+    @Test
+    @IR(counts = {IRNode.XOR, "1"})
+    public boolean testUnfoldableXorPow2(int x, int y) {
+        return ((x & 0b1000) ^ (y & 0b1000)) < 0b1000;
     }
 
     @Test
