@@ -110,8 +110,7 @@ public class CertificateBuilder {
             throws CertificateException, IOException {
         SecureRandom random = new SecureRandom();
 
-        boolean [] keyUsage = new boolean[]{false, false, false,
-                false, false, false, false, false, false};
+        boolean [] keyUsage = new boolean[KeyUsage.values().length];
         for (KeyUsage ku : keyUsages) {
             keyUsage[ku.ordinal()] = true;
         }
