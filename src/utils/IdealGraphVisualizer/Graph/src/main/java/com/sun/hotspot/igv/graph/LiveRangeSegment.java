@@ -40,6 +40,8 @@ public class LiveRangeSegment extends Properties.Entity implements Segment {
     private Point endPoint;
     private boolean lastOfLiveRange;
     private boolean instantaneous;
+    private boolean opening;
+    private boolean closing;
     private Set<LiveRangeSegment> segmentSet;
     private Color color;
 
@@ -103,6 +105,22 @@ public class LiveRangeSegment extends Properties.Entity implements Segment {
 
     public boolean isInstantaneous() {
         return instantaneous;
+    }
+
+    public void setOpening(boolean opening) {
+        this.opening = opening;
+    }
+
+    public boolean isOpening() {
+        return opening;
+    }
+
+    public void setClosing(boolean closing) {
+        this.closing = closing;
+    }
+
+    public boolean isClosing() {
+        return closing;
     }
 
     public Set<LiveRangeSegment> getSegmentSet() {

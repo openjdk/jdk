@@ -33,12 +33,20 @@ import java.util.stream.*;
 @ServiceProvider(service = PreProcessor.class)
 public class ServerCompilerPreProcessor implements PreProcessor {
 
-    private static boolean isPhi(InputNode node) {
+    private static boolean isPhi(InputNode node, int defLiveRange, List<Integer> uses) {
         String nodeName = node.getProperties().get("name");
         if (nodeName == null) {
             return false;
         }
-        return nodeName.equals("Phi");
+        if (!nodeName.equals("Phi")) {
+            return false;
+        }
+        Set<Integer> useSet = new HashSet<>(uses);
+        if (useSet.size() == 1 && useSet.iterator().next() == defLiveRange) {
+            // The phi operands have been coalesced, treat as a regular instruction.
+            return false;
+        }
+        return true;
     }
 
     private static int getNumericPropertyOrZero(InputNode node, String k) {
@@ -103,7 +111,7 @@ public class ServerCompilerPreProcessor implements PreProcessor {
                 List<Integer> uses = usedLiveRanges.get(n.getId());
                 if (uses != null) {
                     String useList = liveRangeList(uses.stream());
-                    if (isPhi(n)) {
+                    if (isPhi(n, defLiveRange, uses)) {
                         // A phi's uses are not live simultaneously.
                         // Conceptually, they die at the block's incoming egdes.
                         n.getProperties().setProperty("joins", useList);

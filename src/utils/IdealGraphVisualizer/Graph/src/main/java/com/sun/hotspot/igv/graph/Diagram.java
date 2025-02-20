@@ -137,16 +137,38 @@ public class Diagram {
             liveRangeHash.put(lrg.getId(), lrg);
         }
 
+        // Pre-compute live ranges joined by each block.
+        Map<InputBlock, Set<Integer>> blockJoined = new HashMap<>();
+        for (InputBlock b : graph.getBlocks()) {
+            blockJoined.put(b, new HashSet<>());
+            for (InputNode n : b.getNodes()) {
+                LivenessInfo l = graph.getLivenessInfoForNode(n);
+                if (l != null && l.join != null) {
+                    blockJoined.get(b).addAll(l.join);
+                }
+            }
+        }
+
         for (InputBlock b : graph.getBlocks()) {
             if (b.getNodes().isEmpty()) {
                 continue;
             }
             Map<Integer, InputNode> active = new HashMap<>();
             Set<Integer> instant = new HashSet<>();
+            Set<Integer> opening = new HashSet<>();
             InputNode header = b.getNodes().get(0);
             if (graph.getLivenessInfoForNode(header) == null) {
                 // No liveness information available, skip.
                 continue;
+            }
+            Set<Integer> joined = new HashSet<>();
+            if (b.getSuccessors().size() == 1) {
+                // We assume the live-out ranges in this block might only be
+                // joined if there is exactly one successor block (i.e. the CFG
+                // does not contain critical edges).
+                joined.addAll(b.getLiveOut());
+                InputBlock succ = b.getSuccessors().iterator().next();
+                joined.retainAll(blockJoined.get(succ));
             }
             for (int liveRangeId : graph.getLivenessInfoForNode(header).livein) {
                 active.put(liveRangeId, null);
@@ -160,8 +182,12 @@ public class Diagram {
                         Figure start = startNode == null ? null : figureHash.get(startNode.getId());
                         InputNode endNode = n;
                         Figure end = figureHash.get(endNode.getId());
-                        liveRangeSegments
-                            .add(new LiveRangeSegment(liveRangeHash.get(liveRangeId), getBlock(b), start, end));
+                        LiveRangeSegment s = new LiveRangeSegment(liveRangeHash.get(liveRangeId), getBlock(b), start, end);
+                        if (opening.contains(liveRangeId)) {
+                            s.setOpening(true);
+                        }
+                        s.setClosing(true);
+                        liveRangeSegments.add(s);
                         active.remove(liveRangeId);
                     }
                 }
@@ -174,6 +200,7 @@ public class Diagram {
                         startNode = null;
                     }
                     active.put(l.def, startNode);
+                    opening.add(l.def);
                     if (!l.liveout.contains(l.def)) {
                         instant.add(l.def);
                     }
@@ -186,6 +213,12 @@ public class Diagram {
                 LiveRangeSegment s = new LiveRangeSegment(liveRangeHash.get(liveRangeId), getBlock(b), start, null);
                 if (instant.contains(liveRangeId)) {
                     s.setInstantaneous(true);
+                }
+                if (opening.contains(liveRangeId)) {
+                    s.setOpening(true);
+                }
+                if (instant.contains(liveRangeId) || joined.contains(liveRangeId)) {
+                    s.setClosing(true);
                 }
                 liveRangeSegments.add(s);
             }

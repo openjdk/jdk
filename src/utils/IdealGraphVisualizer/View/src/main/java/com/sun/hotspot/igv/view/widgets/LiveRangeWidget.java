@@ -135,20 +135,20 @@ public class LiveRangeWidget extends Widget implements Properties.Provider, Popu
         if (highlighted) {
             g.setStroke(new BasicStroke(2));
         }
-        if (liveRangeSegment.getStart() != null) {
+        int start = 0;
+        int end = length;
+        if (length == 0 && !liveRangeSegment.isInstantaneous()) {
+            // Continuation segment in empty basic block.
+            assert liveRangeSegment.getStart() == null && liveRangeSegment.getEnd() == null;
+            start = -2;
+            end = 3;
+        }
+        g.drawLine(0, start, 0, end);
+        if (liveRangeSegment.isOpening()) {
             g.drawLine(-RANGE_WIDTH, 0, RANGE_WIDTH, 0);
         }
-        if (length != 0) {
-            g.drawLine(0, 0, 0, length);
-            if (liveRangeSegment.getEnd() != null) {
-                g.drawLine(-RANGE_WIDTH, length, RANGE_WIDTH, length);
-            }
-        }
-        if (liveRangeSegment.getStart() == null &&
-            liveRangeSegment.getEnd() == null &&
-            length == 0) {
-            // Continuation segment in empty basic block.
-            g.drawLine(0, -2, 0, 3);
+        if (liveRangeSegment.isClosing()) {
+            g.drawLine(-RANGE_WIDTH, end, RANGE_WIDTH, end);
         }
     }
 
