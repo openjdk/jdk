@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,11 @@
 /**
  * @test
  * @bug 8349759
- * @summary Fix CertificateBuilder and SimpleOCSPServer test utilities to
- *          support PQC algorithms
+ * @summary Test the CertificateBuilder and SimpleOCSPServer test utility
+ *          classes using a range of signature algorithms and parameters.
+ *          The goal is to test with both no-parameter and parameterized
+ *          signature algorithms and use the CertPathValidator to validate
+ *          the correctness of the certificate and OCSP server-side structures.
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.provider.certpath
  *          java.base/sun.security.util
