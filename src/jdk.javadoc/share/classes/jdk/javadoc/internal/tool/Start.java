@@ -555,7 +555,8 @@ public class Start {
         if (options.modules().isEmpty()) {
             if (options.subpackages().isEmpty()) {
                 if (javaNames.isEmpty() && isEmpty(fileObjects)) {
-                    JavadocLog.printRawLines(log.getDiagnosticWriter(), log.getText("main.no-arg"));
+                    showLinesUsingKey("main.usage.short");
+                    showLinesUsingKey("main.for-more-details-see-usage");
                     return OK;
                 }
             }

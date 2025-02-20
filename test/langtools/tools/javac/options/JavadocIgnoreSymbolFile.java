@@ -41,7 +41,7 @@ public class JavadocIgnoreSymbolFile {
         try (PrintWriter pw = new PrintWriter(buf)) {
             jdk.javadoc.internal.tool.Main.execute(javadocArgs, pw);
         }
-        String expected = "Usage: javadoc [options] [packagenames] [sourcefiles] [@files] For additional help on usage: javadoc --help";
+        String expected = "Usage: javadoc [options] [packagenames] [sourcefiles] [@files] For more details on available options, use --help or --help-extra";
         String actual = buf.toString().trim().replaceAll("\\s+", " ");
         if (!actual.equals(expected))
             throw new AssertionError("unexpected output:\n" + actual);
