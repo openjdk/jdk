@@ -68,14 +68,8 @@ public class ServerCompilerPreProcessor implements PreProcessor {
 
     @Override
     public void preProcess(InputGraph graph) {
-        boolean empty = true;
-        for (InputBlock b : graph.getBlocks()) {
-            if (!b.getLiveOut().isEmpty()) {
-                empty = false;
-                break;
-            }
-        }
-        if (empty) { // No block-level liveness information available, move on.
+        if (graph.getLiveRanges().isEmpty()) {
+            // No block-level liveness information available, move on.
             return;
         }
         // Build a map from nodes to live ranges used.
