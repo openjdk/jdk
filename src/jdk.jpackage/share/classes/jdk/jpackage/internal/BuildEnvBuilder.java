@@ -87,7 +87,7 @@ final class BuildEnvBuilder {
         return this;
     }
 
-    static Path defaultAppImageDir(Path root) {
+    private static Path defaultAppImageDir(Path root) {
         return root.resolve("image");
     }
 
