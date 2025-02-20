@@ -168,7 +168,7 @@ ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 //   Since the successor is chosen in FIFO order, the exiting thread
 //   needs to find the tail of the entry_list. This is done by walking
 //   from the entry_list head. While walking the list we also assign
-//   the prev pointers of each thread, essentially forming a doubly 
+//   the prev pointers of each thread, essentially forming a doubly
 //   linked list, see 2) below.
 //
 //   Once we have formed a doubly linked list it's easy to find the
@@ -701,7 +701,7 @@ void ObjectMonitor::add_to_entry_list(JavaThread* current, ObjectWaiter* node) {
   node->TState  = ObjectWaiter::TS_ENTER;
 
   for (;;) {
-    ObjectWaiter* front = Atomic::load_acquire(&_entry_list);
+    ObjectWaiter* front = Atomic::load(&_entry_list);
 
     node->_next = front;
     if (Atomic::cmpxchg(&_entry_list, front, node) == front) {
@@ -720,7 +720,7 @@ bool ObjectMonitor::try_lock_or_add_to_entry_list(JavaThread* current, ObjectWai
   node->TState  = ObjectWaiter::TS_ENTER;
 
   for (;;) {
-    ObjectWaiter* front = Atomic::load_acquire(&_entry_list);
+    ObjectWaiter* front = Atomic::load(&_entry_list);
 
     node->_next = front;
     if (Atomic::cmpxchg(&_entry_list, front, node) == front) {
@@ -1261,6 +1261,8 @@ ObjectWaiter* ObjectMonitor::entry_list_tail(JavaThread* current) {
   if (w != nullptr) {
     return w;
   }
+  // Need acquire here to match the implicit release of the cmpxchg
+  // that updated _entry_list, so we can access w->_next.
   w = Atomic::load_acquire(&_entry_list);
   assert(w != nullptr, "invariant");
   if (w->_next == nullptr) {
@@ -1303,7 +1305,7 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
   if (currentNode->_next == nullptr) {
     assert(_entry_list_tail == nullptr || _entry_list_tail == currentNode, "invariant");
 
-    ObjectWaiter* v = Atomic::load_acquire(&_entry_list);
+    ObjectWaiter* v = Atomic::load(&_entry_list);
     if (v == currentNode) {
       // The currentNode is the only element in _entry_list.
       if (Atomic::cmpxchg(&_entry_list, v, (ObjectWaiter*)nullptr) == v) {
@@ -1322,7 +1324,6 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
       _entry_list_tail = nullptr;
       entry_list_tail(current);
       assert(currentNode->_prev != nullptr, "must be");
-
     }
     // The currentNode is the last element in _entry_list and we know
     // which element is the previous one.
@@ -1344,7 +1345,7 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
   // _entry_list. If we are the head then we try to remove ourselves,
   // else we convert to the doubly-linked list.
   if (currentNode->_prev == nullptr) {
-    ObjectWaiter* v = Atomic::load_acquire(&_entry_list);
+    ObjectWaiter* v = Atomic::load(&_entry_list);
 
     assert(v != nullptr, "invariant");
     if (v == currentNode) {
@@ -1531,7 +1532,7 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
 
     ObjectWaiter* w = nullptr;
 
-    w = _entry_list;
+    w = Atomic::load(&_entry_list);
     if (w != nullptr) {
       w = entry_list_tail(current);
       // I'd like to write: guarantee (w->_thread != current).
