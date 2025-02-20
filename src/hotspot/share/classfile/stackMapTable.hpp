@@ -131,7 +131,7 @@ class StackMapReader : StackObj {
   bool _first;
 
   StackMapFrame* next_helper(TRAPS);
-  void check_offset(StackMapFrame* frame);
+  void check_offset(StackMapFrame* frame, TRAPS);
   void check_size(TRAPS);
   int32_t chop(VerificationType* locals, int32_t length, int32_t chops);
   VerificationType parse_verification_type(u1* flags, TRAPS);
