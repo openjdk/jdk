@@ -46,7 +46,7 @@ StackMapTable::StackMapTable(StackMapReader* reader, TRAPS) {
   }
 }
 
-void StackMapReader::check_offset(StackMapFrame* frame, TRAPS) {
+void StackMapReader::check_offset(StackMapFrame* frame) {
   int offset = frame->offset();
   if (offset >= _code_length || _code_data[offset] == 0) {
     _verifier->verify_error(ErrorContext::bad_stackmap(0, frame),
@@ -230,7 +230,10 @@ StackMapFrame* StackMapReader::next(TRAPS) {
   check_size(CHECK_NULL);
   StackMapFrame* frame = next_helper(CHECK_VERIFY_(_verifier, nullptr));
   if (frame != nullptr) {
-    check_offset(frame, CHECK_VERIFY_(frame->verifier(), nullptr));
+    check_offset(frame);
+    if (frame->verifier()->has_error()) {
+      return nullptr;
+    }
     _prev_frame = frame;
   }
   return frame;
