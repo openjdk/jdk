@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,31 +90,24 @@ final class P11Mac extends MacSpi {
     // one byte buffer for the update(byte) method, initialized on demand
     private byte[] oneByte;
 
-    P11Mac(Token token, String algorithm, long mechanism)
-            throws PKCS11Exception {
+    P11Mac(Token token, String algorithm, long mechanism) {
         super();
         this.token = token;
         this.algorithm = algorithm;
         this.svcPbeKi = P11SecretKeyFactory.getPBEKeyInfo(algorithm);
-        Long params = null;
-        macLength = switch ((int) mechanism) {
-            case (int) CKM_MD5_HMAC -> 16;
-            case (int) CKM_SHA_1_HMAC -> 20;
-            case (int) CKM_SHA224_HMAC, (int) CKM_SHA512_224_HMAC, (int) CKM_SHA3_224_HMAC -> 28;
-            case (int) CKM_SHA256_HMAC, (int) CKM_SHA512_256_HMAC, (int) CKM_SHA3_256_HMAC -> 32;
-            case (int) CKM_SHA384_HMAC, (int) CKM_SHA3_384_HMAC -> 48;
-            case (int) CKM_SHA512_HMAC, (int) CKM_SHA3_512_HMAC -> 64;
-            case (int) CKM_SSL3_MD5_MAC -> {
-                params = Long.valueOf(16);
-                yield 16;
+        if (svcPbeKi != null) {
+            macLength = svcPbeKi.keyLen / 8;
+        } else {
+            P11SecretKeyFactory.HMACKeyInfo svcKi =
+                    P11SecretKeyFactory.getHMACKeyInfo(algorithm);
+            if (svcKi == null) {
+                throw new ProviderException("Unknown mechanism: " + mechanism);
             }
-            case (int) CKM_SSL3_SHA1_MAC -> {
-                params = Long.valueOf(20);
-                yield 20;
-            }
-            default -> throw new ProviderException("Unknown mechanism: " + mechanism);
-        };
-        ckMechanism = new CK_MECHANISM(mechanism, params);
+            macLength = svcKi.keyLen / 8;
+        }
+        ckMechanism = new CK_MECHANISM(mechanism, mechanism == CKM_SSL3_MD5_MAC
+                || mechanism == CKM_SSL3_SHA1_MAC ? Long.valueOf(macLength) :
+                null);
     }
 
     // reset the states to the pre-initialized values
