@@ -925,6 +925,52 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
+    case C1StubId::is_instance_of_id:
+      {
+        // Mirror: x10
+        // Object: x11
+        // Temps: x13, x14, x15, x16, x17
+        // Result: x10
+
+        // Get the Klass* into x16
+        Register klass = x16, obj = x11, result = x10;
+        __ ld(klass, Address(x10, java_lang_Class::klass_offset()));
+
+        Label fail, is_secondary, success;
+
+        __ beqz(klass, fail); // Klass is null
+        __ beqz(obj, fail); // obj is null
+
+        __ lwu(x13, Address(klass, in_bytes(Klass::super_check_offset_offset())));
+        __ mv(x17, in_bytes(Klass::secondary_super_cache_offset()));
+        __ beq(x13, x17, is_secondary); // Klass is a secondary superclass
+
+        // Klass is a concrete class
+        __ load_klass(x15, obj);
+        __ add(x17, x15, x13);
+        __ ld(x17, Address(x17));
+        __ beq(klass, x17, success);
+        __ mv(result, 0);
+        __ ret();
+
+        __ bind(is_secondary);
+        __ load_klass(obj, obj);
+
+        // This is necessary because I am never in my own secondary_super list.
+        __ beq(obj, klass, success);
+
+        __ lookup_secondary_supers_table_var(obj, klass, result, x13, x14, x15, x17, &success);
+
+        __ bind(fail);
+        __ mv(result, 0);
+        __ ret();
+
+        __ bind(success);
+        __ mv(result, 1);
+        __ ret();
+      }
+      break;
+
     case C1StubId::monitorexit_nofpu_id:
       save_fpu_registers = false;
       // fall through
