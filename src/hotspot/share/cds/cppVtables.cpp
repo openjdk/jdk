@@ -189,13 +189,22 @@ enum ClonedVtableKind {
   _num_cloned_vtable_kinds
 };
 
-// This is a map of all the original vtptrs. E.g., for
+// _orig_cpp_vtptrs and _archived_cpp_vtptrs are used for type checking in
+// CppVtables::get_archived_vtable().
+//
+// _orig_cpp_vtptrs is a map of all the original vtptrs. E.g., for
 //     ConstantPool *cp = new (...) ConstantPool(...) ; // a dynamically allocated constant pool
 // the following holds true:
-//     _orig_cpp_vtptrs[ConstantPool_Kind] ==  ((intptr_t**)cp)[0]
-static intptr_t* _orig_cpp_vtptrs[_num_cloned_vtable_kinds];      // vtptrs set by the C++ compiler
-static intptr_t* _archived_cpp_vtptrs[_num_cloned_vtable_kinds];  // vtptrs used in the static archive
+//     _orig_cpp_vtptrs[ConstantPool_Kind] == ((intptr_t**)cp)[0]
+//
+// _archived_cpp_vtptrs is a map of all the vptprs used by classes in a preimage. E.g., for
+//    InstanceKlass* k = a class loaded from the preimage;
+//    ConstantPool* cp = k->constants();
+// the following holds true:
+//     _archived_cpp_vtptrs[ConstantPool_Kind] == ((intptr_t**)cp)[0]
 static bool _orig_cpp_vtptrs_inited = false;
+static intptr_t* _orig_cpp_vtptrs[_num_cloned_vtable_kinds];
+static intptr_t* _archived_cpp_vtptrs[_num_cloned_vtable_kinds];
 
 template <class T>
 void CppVtableCloner<T>::init_orig_cpp_vtptr(int kind) {
@@ -245,7 +254,9 @@ void CppVtables::serialize(SerializeClosure* soc) {
     CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
   }
 
-  if (soc->writing() && CDSConfig::is_dumping_final_static_archive()) {
+  if (soc->writing() && !CDSConfig::is_dumping_preimage_static_archive()) {
+    // This table is written only when creating the preimage. It will be used
+    // only when writing the final static archive.
     memset(_archived_cpp_vtptrs, 0, sizeof(_archived_cpp_vtptrs));
   }
 

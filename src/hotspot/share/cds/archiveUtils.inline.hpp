@@ -66,6 +66,10 @@ Array<T>* ArchiveUtils::archive_non_ptr_array(GrowableArray<T>* tmp_array) {
 }
 
 // Returns the address of an Array<T> that's allocated in the ArchiveBuilder "buffer" space.
+// All pointers in tmp_array must point to:
+//    - a buffered object; or
+//    - a source object that has been archived; or
+//    - (only when dumping dynamic archive) an object in the static archive.
 template <typename T>
 Array<T>* ArchiveUtils::archive_ptr_array(GrowableArray<T>* tmp_array) {
   ArchiveBuilder* builder = ArchiveBuilder::current();

@@ -547,7 +547,7 @@ bool CDSConfig::is_dumping_classic_static_archive() {
 }
 
 bool CDSConfig::is_dumping_preimage_static_archive() {
-  return _is_dumping_static_archive && _is_dumping_preimage_static_archive;
+  return _is_dumping_preimage_static_archive;
 }
 
 bool CDSConfig::is_dumping_final_static_archive() {
