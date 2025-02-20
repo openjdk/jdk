@@ -38,22 +38,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-final class ImmutableDAGTest {
+final class FixedDAGTest {
 
     @Test
     public void testInvalidCtorArgs() {
         final var matrix1x2 = new BinaryMatrix(1, 2);
-        final var nodes = ImmutableDAG.Nodes.<String>ofList(List.of(A, B));
+        final var nodes = FixedDAG.Nodes.<String>ofList(List.of(A, B));
 
-        assertThrows(IllegalArgumentException.class, () -> new ImmutableDAG<>(matrix1x2, nodes));
+        assertThrows(IllegalArgumentException.class, () -> new FixedDAG<>(matrix1x2, nodes));
 
         final var matrix3x3 = new BinaryMatrix(3, 3);
-        assertThrows(IllegalArgumentException.class, () -> new ImmutableDAG<>(matrix3x3, nodes));
+        assertThrows(IllegalArgumentException.class, () -> new FixedDAG<>(matrix3x3, nodes));
     }
 
     @Test
     public void testNodesToList() {
-        final var nodes = ImmutableDAG.Nodes.<String>ofList(List.of(A, B));
+        final var nodes = FixedDAG.Nodes.<String>ofList(List.of(A, B));
 
         assertEquals(2, nodes.size());
 
@@ -187,7 +187,7 @@ final class ImmutableDAGTest {
         // |    |      |
         // +----+------+
 
-        final var graphBuilder = ImmutableDAG.<String>build();
+        final var graphBuilder = FixedDAG.<String>build();
 
         graphBuilder.addEdge(edge(C, L));
         graphBuilder.addEdge(edge(D, B));
@@ -234,7 +234,7 @@ final class ImmutableDAGTest {
         // +--- L ---+
         //
 
-        final var graphBuilder = ImmutableDAG.<String>build();
+        final var graphBuilder = FixedDAG.<String>build();
 
         graphBuilder.addEdge(edge(B, A));
         graphBuilder.addEdge(edge(C, A));
@@ -312,7 +312,7 @@ final class ImmutableDAGTest {
             return Stream.of(edge.tail(), edge.head());
         }).flatMap(x -> x).sorted().distinct().toList();
 
-        assertArrayEquals(expectedNodes, ImmutableDAG.create(edges, nodes).topologicalSort().stream().mapToInt(x -> x).toArray());
+        assertArrayEquals(expectedNodes, FixedDAG.create(edges, nodes).topologicalSort().stream().mapToInt(x -> x).toArray());
     }
 
     private static List<Object[]> testTopologicalSort() {
@@ -386,19 +386,19 @@ final class ImmutableDAGTest {
 
     @Test
     public void testEmptyBuilder() {
-        assertThrows(IllegalArgumentException.class, ImmutableDAG.<String>build()::create);
+        assertThrows(IllegalArgumentException.class, FixedDAG.<String>build()::create);
     }
 
     @Test
     public void testSingleNodeBuilder() {
-        final var graphBuilder = ImmutableDAG.<String>build();
+        final var graphBuilder = FixedDAG.<String>build();
         graphBuilder.addNode(A);
         assertNodesEquals(graphBuilder.create().nodes(), A);
     }
 
     @Test
     public void testIsolatedNodesBuilder() {
-        final var graphBuilder = ImmutableDAG.<String>build();
+        final var graphBuilder = FixedDAG.<String>build();
         graphBuilder.addNode(A);
         graphBuilder.addNode(B);
         assertNodesEquals(graphBuilder.create().nodes(), A, B);
@@ -411,12 +411,12 @@ final class ImmutableDAGTest {
         assertEquals(graphBuilder.create().getNoIncomingEdges(), List.of(A, B));
     }
 
-    private static void assertNodesEquals(ImmutableDAG.Nodes<String> actual, String... expected) {
+    private static void assertNodesEquals(FixedDAG.Nodes<String> actual, String... expected) {
         assertEquals(List.of(expected), StreamSupport.stream(actual.spliterator(), false).toList());
     }
 
-    private static ImmutableDAG<String> create(Collection<DirectedEdge<String>> edges) {
-        final var graphBuilder = ImmutableDAG.<String>build();
+    private static FixedDAG<String> create(Collection<DirectedEdge<String>> edges) {
+        final var graphBuilder = FixedDAG.<String>build();
         edges.forEach(graphBuilder::addEdge);
         return graphBuilder.create();
     }

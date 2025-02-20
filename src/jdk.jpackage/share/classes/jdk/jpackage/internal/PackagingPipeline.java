@@ -47,7 +47,7 @@ import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.pipeline.DirectedEdge;
-import jdk.jpackage.internal.pipeline.ImmutableDAG;
+import jdk.jpackage.internal.pipeline.FixedDAG;
 import jdk.jpackage.internal.pipeline.TaskPipelineBuilder;
 import jdk.jpackage.internal.pipeline.TaskSpecBuilder;
 import jdk.jpackage.internal.util.function.ExceptionBox;
@@ -280,7 +280,7 @@ final class PackagingPipeline {
             return this;
         }
 
-        ImmutableDAG<TaskID> taskGraphSnapshot() {
+        FixedDAG<TaskID> taskGraphSnapshot() {
             if (taskGraphSnapshot == null) {
                 taskGraphSnapshot = taskGraphBuilder.create();
             }
@@ -303,13 +303,13 @@ final class PackagingPipeline {
                     validatedAppImageLayoutForPackaging());
         }
 
-        private final ImmutableDAG.Builder<TaskID> taskGraphBuilder = ImmutableDAG.build();
+        private final FixedDAG.Builder<TaskID> taskGraphBuilder = FixedDAG.build();
         private final List<Path> excludeCopyDirs = new ArrayList<>();
         private final Map<TaskID, TaskConfig> taskConfig = new HashMap<>();
         private UnaryOperator<TaskContext> appContextMapper;
         private UnaryOperator<TaskContext> pkgContextMapper;
         private Function<Package, AppImageLayout> appImageLayoutForPackaging;
-        private ImmutableDAG<TaskID> taskGraphSnapshot;
+        private FixedDAG<TaskID> taskGraphSnapshot;
     }
 
     static Builder build() {
@@ -400,7 +400,7 @@ final class PackagingPipeline {
                 .run(env.env(), env.pkg().packageName());
     }
 
-    private PackagingPipeline(ImmutableDAG<TaskID> taskGraph, Map<TaskID, TaskConfig> taskConfig,
+    private PackagingPipeline(FixedDAG<TaskID> taskGraph, Map<TaskID, TaskConfig> taskConfig,
             UnaryOperator<TaskContext> appContextMapper, UnaryOperator<TaskContext> pkgContextMapper,
             Function<Package, AppImageLayout> appImageLayoutForPackaging) {
         this.taskGraph = Objects.requireNonNull(taskGraph);
@@ -526,7 +526,7 @@ final class PackagingPipeline {
         }
     }
 
-    private record DefaultTaskContext(ImmutableDAG<TaskID> taskGraph, BuildEnv env, Application app,
+    private record DefaultTaskContext(FixedDAG<TaskID> taskGraph, BuildEnv env, Application app,
             Optional<ApplicationLayout> appLayout, Optional<PackagingTaskContext> pkg) implements TaskContext {
 
         DefaultTaskContext {
@@ -606,7 +606,7 @@ final class PackagingPipeline {
         };
     }
 
-    private final ImmutableDAG<TaskID> taskGraph;
+    private final FixedDAG<TaskID> taskGraph;
     private final Map<TaskID, TaskConfig> taskConfig;
     private final Function<Package, AppImageLayout> appImageLayoutForPackaging;
     private final UnaryOperator<TaskContext> appContextMapper;

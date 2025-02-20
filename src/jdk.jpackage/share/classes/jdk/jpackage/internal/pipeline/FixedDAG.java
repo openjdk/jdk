@@ -42,7 +42,9 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * Immutable directed acyclic graph (DAG).
+ * Fixed directed acyclic graph (DAG).
+ * <p>
+ * Number of nodes is fixed, links between nodes can be added or removed.
  *
  * @param edgeMatrix the edge matrix. [i,j] addresses an edge, where 'i' is the
  *                   index of the head node of the edge in the node container
@@ -50,7 +52,7 @@ import java.util.stream.StreamSupport;
  *                   node container
  * @param nodes      the node container
  */
-public record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
+public record FixedDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
 
     public static <U> Builder<U> build() {
         return new Builder<>();
@@ -77,8 +79,8 @@ public record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
             return this;
         }
 
-        public ImmutableDAG<U> create() {
-            return ImmutableDAG.create(edges, nodes);
+        public FixedDAG<U> create() {
+            return FixedDAG.create(edges, nodes);
         }
 
         private final List<U> nodes = new ArrayList<>();
@@ -121,7 +123,7 @@ public record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         }
     }
 
-    public ImmutableDAG {
+    public FixedDAG {
         Objects.requireNonNull(nodes);
 
         Objects.requireNonNull(edgeMatrix);
@@ -134,11 +136,11 @@ public record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         }
     }
 
-    public static <U> ImmutableDAG<U> create(Collection<DirectedEdge<U>> edges, List<U> nodes) {
+    public static <U> FixedDAG<U> create(Collection<DirectedEdge<U>> edges, List<U> nodes) {
         return create(edges, Nodes.ofList(nodes));
     }
 
-    static <U> ImmutableDAG<U> create(Collection<DirectedEdge<U>> edges, Nodes<U> nodes) {
+    static <U> FixedDAG<U> create(Collection<DirectedEdge<U>> edges, Nodes<U> nodes) {
         final var edgeMatrix = new BinaryMatrix(nodes.size());
         for (final var edge : edges) {
             final int row = nodes.indexOf(edge.tail());
@@ -150,7 +152,7 @@ public record ImmutableDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
             throw new UnsupportedOperationException("Cyclic edges not allowed");
         }
 
-        return new ImmutableDAG<>(edgeMatrix, nodes);
+        return new FixedDAG<>(edgeMatrix, nodes);
     }
 
     /**

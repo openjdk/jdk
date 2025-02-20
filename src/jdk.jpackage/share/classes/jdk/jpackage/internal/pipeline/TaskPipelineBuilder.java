@@ -25,8 +25,8 @@
 
 package jdk.jpackage.internal.pipeline;
 
-import static jdk.jpackage.internal.pipeline.ImmutableDAG.getIncomingEdges;
-import static jdk.jpackage.internal.pipeline.ImmutableDAG.getNoOutgoingEdges;
+import static jdk.jpackage.internal.pipeline.FixedDAG.getIncomingEdges;
+import static jdk.jpackage.internal.pipeline.FixedDAG.getNoOutgoingEdges;
 
 import java.util.Collection;
 import java.util.List;
@@ -134,7 +134,7 @@ public final class TaskPipelineBuilder {
 
     }
 
-    private record ParallelWrapperTask(ImmutableDAG<Callable<Void>> taskGraph, Executor executor) implements Callable<Void> {
+    private record ParallelWrapperTask(FixedDAG<Callable<Void>> taskGraph, Executor executor) implements Callable<Void> {
 
         ParallelWrapperTask {
             Objects.requireNonNull(taskGraph);
@@ -206,6 +206,6 @@ public final class TaskPipelineBuilder {
 
     }
 
-    private final ImmutableDAG.Builder<Callable<Void>> taskGraphBuilder = new ImmutableDAG.Builder<>();
+    private final FixedDAG.Builder<Callable<Void>> taskGraphBuilder = new FixedDAG.Builder<>();
     private Executor executor;
 }
