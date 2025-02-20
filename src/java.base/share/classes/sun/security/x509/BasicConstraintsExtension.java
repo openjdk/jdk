@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ public class BasicConstraintsExtension extends Extension {
      public String toString() {
          String pathLenAsString;
          if (pathLen < 0 || pathLen == Integer.MAX_VALUE) {
-             pathLenAsString = " unconstained";
+             pathLenAsString = " no limit";
          } else {
              pathLenAsString = String.valueOf(pathLen);
          }
@@ -183,7 +183,6 @@ public class BasicConstraintsExtension extends Extension {
      public void encode(DerOutputStream out) {
          if (extensionValue == null) {
              this.extensionId = PKIXExtensions.BasicConstraints_Id;
-             critical = ca;
              encodeThis();
          }
          super.encode(out);
