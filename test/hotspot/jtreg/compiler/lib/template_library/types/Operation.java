@@ -28,6 +28,8 @@ abstract class Operator {
 
     public static class Unary extends Operator {
         @Override
-
+        public final TemplateWithArgs instanciate() {
+            return null;
+        }
     }
 }
