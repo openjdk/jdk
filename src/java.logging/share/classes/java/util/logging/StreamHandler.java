@@ -210,6 +210,7 @@ public class StreamHandler extends Handler {
                     doneHeader = true;
                 }
                 writer.write(msg);
+                synchronousPostWriteHook();
             }
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
@@ -218,6 +219,15 @@ public class StreamHandler extends Handler {
         }
     }
 
+    /**
+     * Overridden by other handlers in this package to facilitate synchronous
+     * post-write behaviour. If other handlers need similar functionality, it
+     * might be feasible to make this method protected (see JDK-8349206), but
+     * please find a better name if you do ;).
+     */
+    void synchronousPostWriteHook() {
+        // Empty by default.
+    }
 
     /**
      * Check if this {@code Handler} would actually log a given {@code LogRecord}.
@@ -255,6 +265,7 @@ public class StreamHandler extends Handler {
         }
     }
 
+    // Called synchronously.
     private void flushAndClose() {
         Writer writer = this.writer;
         if (writer != null) {

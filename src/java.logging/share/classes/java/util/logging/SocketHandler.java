@@ -173,9 +173,6 @@ public class SocketHandler extends StreamHandler {
      */
     @Override
     public void publish(LogRecord record) {
-        if (!isLoggable(record)) {
-            return;
-        }
         // JDK-8349206: Do NOT synchronize around the parent's publish() method.
         super.publish(record);
         flush();

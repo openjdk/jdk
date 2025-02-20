@@ -27,7 +27,6 @@
  * @summary j.u.l.Handler classes create deadlock risk via synchronized publish() method.
  * @modules java.base/sun.util.logging
  *          java.logging
- * @compile -XDignore.symbol.file LoggingDeadlock5.java
  * @run main/othervm LoggingDeadlock5
  */
 

@@ -740,21 +740,14 @@ public class FileHandler extends StreamHandler {
      */
     @Override
     public void publish(LogRecord record) {
-        if (!isLoggable(record)) {
-            return;
-        }
-        // JDK-8349206: Do NOT synchronize around the parent's publish() method.
-        // StreamHandler will lock the instance, as needed, to protect writes to
-        // the metered stream.
         super.publish(record);
-        // We must lock around the check of meter.xxx fields and the call to
-        // rotate(), and since flush() is also synchronized on the same instance
-        // we might as well lock around everything.
-        synchronized(this) {
-            flush();
-            if (limit > 0 && (meter.written >= limit || meter.written < 0)) {
-                rotate();
-            }
+    }
+
+    @Override
+    void synchronousPostWriteHook() {
+        flush();
+        if (limit > 0 && (meter.written >= limit || meter.written < 0)) {
+            rotate();
         }
     }
 
