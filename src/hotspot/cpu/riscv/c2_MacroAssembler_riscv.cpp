@@ -2956,32 +2956,32 @@ void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
 
 void C2_MacroAssembler::reduce_mul_integral_v(Register dst, Register src1, VectorRegister src2,
                                               VectorRegister vtmp1, VectorRegister vtmp2,
-                                              BasicType bt, uint len, VectorMask vm) {
+                                              BasicType bt, uint vector_length, VectorMask vm) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
-  vsetvli_helper(bt, len);
+  vsetvli_helper(bt, vector_length);
 
-  len /= 2;
+  vector_length /= 2;
   if (vm != Assembler::unmasked) {
     // This behaviour is consistent with spec requirements of vector API, for `reduceLanes`:
     //  If no elements are selected, an operation-specific identity value is returned.
     //    If the operation is MUL, then the identity value is one.
     vmv_v_i(vtmp1, 1);
     vmerge_vvm(vtmp2, vtmp1, src2); // vm == v0
-    vslidedown_vi(vtmp1, vtmp2, len);
+    vslidedown_vi(vtmp1, vtmp2, vector_length);
 
-    vsetvli_helper(bt, len);
+    vsetvli_helper(bt, vector_length);
     vmul_vv(vtmp1, vtmp1, vtmp2);
   } else {
-    vslidedown_vi(vtmp1, src2, len);
+    vslidedown_vi(vtmp1, src2, vector_length);
 
-    vsetvli_helper(bt, len);
+    vsetvli_helper(bt, vector_length);
     vmul_vv(vtmp1, vtmp1, src2);
   }
 
-  while (len > 1) {
-    len /= 2;
-    vslidedown_vi(vtmp2, vtmp1, len);
-    vsetvli_helper(bt, len);
+  while (vector_length > 1) {
+    vector_length /= 2;
+    vslidedown_vi(vtmp2, vtmp1, vector_length);
+    vsetvli_helper(bt, vector_length);
     vmul_vv(vtmp1, vtmp1, vtmp2);
   }
 
