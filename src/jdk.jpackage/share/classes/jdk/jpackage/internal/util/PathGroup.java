@@ -29,7 +29,9 @@ import static java.util.stream.Collectors.toMap;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.CopyOption;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -211,7 +213,8 @@ public final class PathGroup {
      * @throws IOException If an I/O error occurs
      */
     public void copy(PathGroup dst, CopyOption ...options) throws IOException {
-        copy(this, dst, new Copy(false, options));
+        final var handler = new Copy(false, options);
+        copy(this, dst, handler, handler.followSymlinks());
     }
 
     /**
@@ -222,7 +225,8 @@ public final class PathGroup {
      * @throws IOException If an I/O error occurs
      */
     public void move(PathGroup dst, CopyOption ...options) throws IOException {
-        copy(this, dst, new Copy(true, options));
+        final var handler = new Copy(true, options);
+        copy(this, dst, handler, handler.followSymlinks());
         deleteEntries();
     }
 
@@ -235,7 +239,7 @@ public final class PathGroup {
      * @throws IOException If an I/O error occurs
      */
     public void transform(PathGroup dst, TransformHandler handler) throws IOException {
-        copy(this, dst, handler);
+        copy(this, dst, handler, false);
     }
 
     /**
@@ -270,6 +274,20 @@ public final class PathGroup {
         default void createDirectory(Path dir) throws IOException {
 
         }
+
+        /**
+         * Request to copy a symbolic link from the given source location into the given
+         * destination location.
+         *
+         * @implNote Default implementation calls {@link #copyFile}.
+         *
+         * @param src the source symbolic link location
+         * @param dst the destination symbolic link location
+         * @throws IOException If an I/O error occurs
+         */
+        default void copySymbolicLink(Path src, Path dst) throws IOException {
+            copyFile(src, dst);
+        }
     }
 
     private void deleteEntries() throws IOException {
@@ -295,7 +313,7 @@ public final class PathGroup {
         }
     }
 
-    private static void copy(PathGroup src, PathGroup dst, TransformHandler handler) throws IOException {
+    private static void copy(PathGroup src, PathGroup dst, TransformHandler handler, boolean followSymlinks) throws IOException {
         List<CopySpec> copySpecs = new ArrayList<>();
         List<Path> excludePaths = new ArrayList<>();
 
@@ -309,10 +327,15 @@ public final class PathGroup {
             }
         }
 
-        copy(copySpecs, excludePaths, handler);
+        copy(copySpecs, excludePaths, handler, followSymlinks);
     }
 
-    private record Copy(boolean move, CopyOption ... options) implements TransformHandler {
+    private record Copy(boolean move, boolean followSymlinks, CopyOption ... options) implements TransformHandler {
+
+        Copy(boolean move, CopyOption ... options) {
+            this(move, !Set.of(options).contains(LinkOption.NOFOLLOW_LINKS), options);
+        }
+
         @Override
         public void copyFile(Path src, Path dst) throws IOException {
             Files.createDirectories(dst.getParent());
@@ -334,7 +357,7 @@ public final class PathGroup {
     }
 
     private static void copy(List<CopySpec> copySpecs, List<Path> excludePaths,
-            TransformHandler handler) throws IOException {
+            TransformHandler handler, boolean followSymlinks) throws IOException {
         Objects.requireNonNull(excludePaths);
         Objects.requireNonNull(handler);
 
@@ -347,7 +370,8 @@ public final class PathGroup {
 
             if (Files.isDirectory(copySpec.from)) {
                 final var dst = copySpec.to;
-                try (final var files = Files.walk(src)) {
+                final var walkMode = followSymlinks ? new FileVisitOption[] { FileVisitOption.FOLLOW_LINKS } : new FileVisitOption[0];
+                try (final var files = Files.walk(src, walkMode)) {
                     files.filter(file -> {
                         return !match(file, excludePaths);
                     }).map(file -> {
@@ -372,7 +396,9 @@ public final class PathGroup {
         try {
             copySpecMap.values().stream().forEach(copySpec -> {
                 try {
-                    if (Files.isDirectory(copySpec.from)) {
+                    if (Files.isSymbolicLink(copySpec.from)) {
+                        handler.copySymbolicLink(copySpec.from, copySpec.to);
+                    } else if (Files.isDirectory(copySpec.from)) {
                         handler.createDirectory(copySpec.to);
                     } else {
                         handler.copyFile(copySpec.from, copySpec.to);
