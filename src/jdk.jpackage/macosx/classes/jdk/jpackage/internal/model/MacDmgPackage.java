@@ -26,9 +26,9 @@ package jdk.jpackage.internal.model;
 
 import jdk.jpackage.internal.util.CompositeProxy;
 
-public interface MacDmgPackage extends Package, MacDmgPackageMixin {
+public interface MacDmgPackage extends MacPackage, MacDmgPackageMixin {
 
-    public static MacDmgPackage create(Package pkg, MacDmgPackageMixin mixin) {
+    public static MacDmgPackage create(MacPackage pkg, MacDmgPackageMixin mixin) {
         return CompositeProxy.create(MacDmgPackage.class, pkg, mixin);
     }
 }

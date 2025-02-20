@@ -26,13 +26,13 @@ package jdk.jpackage.internal.model;
 
 import jdk.jpackage.internal.util.CompositeProxy;
 
-public interface MacPkgPackage extends Package, MacPkgPackageMixin {
+public interface MacPkgPackage extends MacPackage, MacPkgPackageMixin {
 
     default boolean sign() {
         return signingConfig().flatMap(SigningConfig::identifier).isPresent();
     }
 
-    public static MacPkgPackage create(Package pkg, MacPkgPackageMixin mixin) {
+    public static MacPkgPackage create(MacPackage pkg, MacPkgPackageMixin mixin) {
         return CompositeProxy.create(MacPkgPackage.class, pkg, mixin);
     }
 }
