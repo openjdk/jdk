@@ -139,6 +139,42 @@ public class MigrationCheck {
                 new sun.security.util.resources.security_it());
     }
 
+    @Test
+    public void testSecurity_ja() {
+        checkResourcesMigration(new sun.security.util.Resources_ja(),
+                new sun.security.util.resources.security_ja());
+    }
+
+    @Test
+    public void testSecurity_ko() {
+        checkResourcesMigration(new sun.security.util.Resources_ko(),
+                new sun.security.util.resources.security_ko());
+    }
+
+    @Test
+    public void testSecurity_pt_BR() {
+        checkResourcesMigration(new sun.security.util.Resources_pt_BR(),
+                new sun.security.util.resources.security_pt_BR());
+    }
+
+    @Test
+    public void testSecurity_sv() {
+        checkResourcesMigration(new sun.security.util.Resources_sv(),
+                new sun.security.util.resources.security_sv());
+    }
+
+    @Test
+    public void testSecurity_zh_CN() {
+        checkResourcesMigration(new sun.security.util.Resources_zh_CN(),
+                new sun.security.util.resources.security_zh_CN());
+    }
+
+    @Test
+    public void testSecurity_zh_TW() {
+        checkResourcesMigration(new sun.security.util.Resources_zh_TW(),
+                new sun.security.util.resources.security_zh_TW());
+    }
+
     // ResourcesMgr
 
     @Test
