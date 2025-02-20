@@ -48,7 +48,8 @@ import static compiler.lib.template_framework.Template.let;
 
 import compiler.lib.template_library.Library;
 import compiler.lib.template_library.IRTestClass;
-import compiler.lib.template_library.Types;
+import compiler.lib.template_library.types.Type;
+import compiler.lib.template_library.Expressions;
 
 /**
  * This is a basic expression fuzzer: it generates random expressions using {@link Library.Expression},
@@ -86,7 +87,7 @@ public class TestFuzzExpression {
                                                      List.of("compiler.lib.generators.*",
                                                              "compiler.lib.verify.*"));
 
-        var template1 = Template.make("type", (Types.ExpressionType type)-> body(
+        var template1 = Template.make("type", (Type type)-> body(
             """
             // --- $test start ---
             // type: #type
@@ -106,7 +107,7 @@ public class TestFuzzExpression {
                 // not get ExceptionInInitializerError when loading the class and running
                 // the static code blocks.
                 "try {\n",
-                "    return ", Types.EXPRESSION.withArgs(type), ";\n",
+                "    return ", Expressions.expression(type), ";\n",
                 """
                 } catch (Exception e) {
                     return e;
@@ -131,7 +132,7 @@ public class TestFuzzExpression {
         // Use template1 100 times with every type.
         List<TemplateWithArgs> templates = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            for (Types.ExpressionType type : Types.ALL_EXPRESSION_TYPES) {
+            for (Type type : Type.primitives()) {
                 templates.add(template1.withArgs(type));
             }
         }
