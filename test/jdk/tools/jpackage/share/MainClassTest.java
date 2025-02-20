@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,28 @@
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.jar.JarFile;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
-import jdk.jpackage.test.JavaAppDesc;
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.Executor;
-import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.JavaTool;
+import java.util.jar.JarFile;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CfgFile;
-import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.HelloApp;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JavaAppDesc;
+import jdk.jpackage.test.JavaTool;
+import jdk.jpackage.test.TKit;
 
 
 
@@ -53,7 +54,7 @@ import jdk.jpackage.internal.util.function.ThrowingConsumer;
  * @summary test different settings of main class name for jpackage
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile MainClassTest.java
+ * @compile -Xlint:all -Werror MainClassTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MainClassTest
  */
@@ -124,7 +125,7 @@ public final class MainClassTest {
             }
 
             private final String label;
-        };
+        }
 
         private JavaAppDesc appDesc;
         private boolean withJLink;
@@ -166,11 +167,16 @@ public final class MainClassTest {
                 } else {
                     cmd.setArgumentValue("--main-class", nonExistingMainClass);
                 }
+                break;
+
+            case SetRight:
+                // NOP
+                break;
         }
     }
 
     @Parameters
-    public static Collection scripts() {
+    public static Collection<?> scripts() {
         final var withMainClass = Set.of(Script.MainClassType.SetWrong,
                 Script.MainClassType.SetRight);
 

@@ -24,14 +24,15 @@ enum spa_param_buffers {
     SPA_PARAM_BUFFERS_size,        /**< size of a data block memory (Int)*/
     SPA_PARAM_BUFFERS_stride,    /**< stride of data block memory (Int) */
     SPA_PARAM_BUFFERS_align,    /**< alignment of data block memory (Int) */
-    SPA_PARAM_BUFFERS_dataType,    /**< possible memory types (Int, mask of enum spa_data_type) */
+    SPA_PARAM_BUFFERS_dataType,    /**< possible memory types (flags choice Int, mask of enum spa_data_type) */
+    SPA_PARAM_BUFFERS_metaType,    /**< required meta data types (Int, mask of enum spa_meta_type) */
 };
 
 /** properties for SPA_TYPE_OBJECT_ParamMeta */
 enum spa_param_meta {
     SPA_PARAM_META_START,
-    SPA_PARAM_META_type,    /**< the metadata, one of enum spa_meta_type (Id enum spa_meta_type) */
-    SPA_PARAM_META_size,    /**< the expected maximum size the meta (Int) */
+    SPA_PARAM_META_type,        /**< the metadata, one of enum spa_meta_type (Id enum spa_meta_type) */
+    SPA_PARAM_META_size,        /**< the expected maximum size the meta (Int) */
 };
 
 /** properties for SPA_TYPE_OBJECT_ParamIO */

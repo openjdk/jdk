@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
+
 include FindTests.gmk
 
 # We will always run multiple tests serially
@@ -72,12 +72,12 @@ ifeq ($(call isTargetOs, windows), true)
 endif
 
 ################################################################################
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, RunTests.gmk))
-################################################################################
 
 # This is the JDK that we will test
 JDK_UNDER_TEST := $(JDK_IMAGE_DIR)
+# The JDK used to compile jtreg test code. By default it is the same as
+# JDK_UNDER_TEST.
+JDK_FOR_COMPILE := $(JDK_IMAGE_DIR)
 
 TEST_RESULTS_DIR := $(OUTPUTDIR)/test-results
 TEST_SUPPORT_DIR := $(OUTPUTDIR)/test-support
@@ -108,8 +108,8 @@ ifneq ($(wildcard $(JTREG_FAILURE_HANDLER)), )
       #
 endif
 
-GTEST_LAUNCHER_DIRS := $(patsubst %/gtestLauncher, %, \
-    $(wildcard $(TEST_IMAGE_DIR)/hotspot/gtest/*/gtestLauncher))
+GTEST_LAUNCHER_DIRS := $(patsubst %/gtestLauncher$(EXECUTABLE_SUFFIX), %, \
+    $(wildcard $(TEST_IMAGE_DIR)/hotspot/gtest/*/gtestLauncher$(EXECUTABLE_SUFFIX)))
 GTEST_VARIANTS := $(strip $(patsubst $(TEST_IMAGE_DIR)/hotspot/gtest/%, %, \
     $(GTEST_LAUNCHER_DIRS)))
 
@@ -979,6 +979,7 @@ define SetupRunJtregTestBody
       $$(JTREG_JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
           -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
           $$($1_JTREG_BASIC_OPTIONS) \
+          -compilejdk:$$(JDK_FOR_COMPILE) \
           -testjdk:$$(JDK_UNDER_TEST) \
           -dir:$$(JTREG_TOPDIR) \
           -reportDir:$$($1_TEST_RESULTS_DIR) \
@@ -1353,4 +1354,8 @@ endif
 
 all: run-test
 
-.PHONY: default all $(TARGETS)
+.PHONY: $(TARGETS)
+
+################################################################################
+
+include MakeFileEnd.gmk

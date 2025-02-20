@@ -793,7 +793,7 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        Label *retaddr) {
   int32_t offset = 0;
   push_reg(RegSet::of(t1, xmethod), sp);   // push << t1 & xmethod >> to sp
-  mv(t1, entry_point, offset);
+  movptr(t1, entry_point, offset, t0);
   jalr(t1, offset);
   if (retaddr != nullptr) {
     bind(*retaddr);
@@ -4307,7 +4307,7 @@ void MacroAssembler::population_count(Register dst, Register src,
     {
       bind(loop);
       addi(dst, dst, 1);
-      addi(tmp2, tmp1, -1);
+      subi(tmp2, tmp1, 1);
       andr(tmp1, tmp1, tmp2);
       bnez(tmp1, loop);
     }

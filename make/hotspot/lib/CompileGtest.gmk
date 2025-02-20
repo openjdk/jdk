@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,10 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
 
-$(eval $(call IncludeCustomExtension, hotspot/lib/CompileGtest.gmk))
+################################################################################
 
 GTEST_TEST_SRC += $(TOPDIR)/test/hotspot/gtest
 
@@ -159,3 +161,6 @@ $(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
 TARGETS += $(BUILD_GTEST_LAUNCHER)
 
 ################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk
