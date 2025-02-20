@@ -243,11 +243,7 @@ class SocketChannelImpl
     public SocketAddress getLocalAddress() throws IOException {
         synchronized (stateLock) {
             ensureOpen();
-            if (isUnixSocket()) {
-                return UnixDomainSockets.getRevealedLocalAddress(localAddress);
-            } else {
-                return Net.getRevealedLocalAddress(localAddress);
-            }
+            return localAddress;
         }
     }
 
@@ -811,7 +807,6 @@ class SocketChannelImpl
     }
 
     private SocketAddress unixBind(SocketAddress local) throws IOException {
-        UnixDomainSockets.checkPermission();
         if (local == null) {
             return UnixDomainSockets.unnamed();
         } else {
@@ -832,11 +827,6 @@ class SocketChannelImpl
             isa = new InetSocketAddress(Net.anyLocalAddress(family), 0);
         } else {
             isa = Net.checkAddress(local, family);
-        }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkListen(isa.getPort());
         }
         NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
         Net.bind(family, fd, isa.getAddress(), isa.getPort());
@@ -923,15 +913,9 @@ class SocketChannelImpl
      */
     private SocketAddress checkRemote(SocketAddress sa) {
         if (isUnixSocket()) {
-            UnixDomainSockets.checkPermission();
             return UnixDomainSockets.checkAddress(sa);
         } else {
             InetSocketAddress isa = Net.checkAddress(sa, family);
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkConnect(isa.getAddress().getHostAddress(), isa.getPort());
-            }
             InetAddress address = isa.getAddress();
             if (address.isAnyLocalAddress()) {
                 int port = isa.getPort();
@@ -1617,15 +1601,11 @@ class SocketChannelImpl
                 SocketAddress addr = localAddress();
                 if (addr != null) {
                     sb.append(" local=");
-                    if (isUnixSocket()) {
-                        sb.append(UnixDomainSockets.getRevealedLocalAddressAsString(addr));
-                    } else {
-                        sb.append(Net.getRevealedLocalAddressAsString(addr));
-                    }
+                    sb.append(addr);
                 }
                 if (remoteAddress() != null) {
                     sb.append(" remote=");
-                    sb.append(remoteAddress().toString());
+                    sb.append(remoteAddress());
                 }
             }
         }

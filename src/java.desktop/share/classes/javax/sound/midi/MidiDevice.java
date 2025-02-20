@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,8 +117,6 @@ public interface MidiDevice extends AutoCloseable {
      *
      * @throws MidiUnavailableException thrown if the device cannot be opened
      *         due to resource restrictions
-     * @throws SecurityException thrown if the device cannot be opened due to
-     *         security restrictions
      * @see #close
      * @see #isOpen
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
@@ -105,7 +104,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[UpdateDerivedPointers] = new WorkerDataArray<double>("UpdateDerivedPointers", "Update Derived Pointers (ms):", max_gc_threads);
 #endif
   _gc_par_phases[EagerlyReclaimHumongousObjects] = new WorkerDataArray<double>("EagerlyReclaimHumongousObjects", "Eagerly Reclaim Humongous Objects (ms):", max_gc_threads);
-  _gc_par_phases[RestorePreservedMarks] = new WorkerDataArray<double>("RestorePreservedMarks", "Restore Preserved Marks (ms):", max_gc_threads);
+  _gc_par_phases[ResetPartialArrayStateManager] = new WorkerDataArray<double>("ResetPartialArrayStateManager", "Reset Partial Array State Manager (ms):", max_gc_threads);
   _gc_par_phases[ProcessEvacuationFailedRegions] = new WorkerDataArray<double>("ProcessEvacuationFailedRegions", "Process Evacuation Failed Regions (ms):", max_gc_threads);
 
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
@@ -405,7 +404,7 @@ void G1GCPhaseTimes::trace_time(const char* name, double value) const {
 }
 
 void G1GCPhaseTimes::trace_count(const char* name, size_t value) const {
-  log_trace(gc, phases)("      %s: " SIZE_FORMAT, name, value);
+  log_trace(gc, phases)("      %s: %zu", name, value);
 }
 
 double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
@@ -512,13 +511,13 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   debug_time("Post Evacuate Cleanup 2", _cur_post_evacuate_cleanup_2_time_ms);
   if (evacuation_failed) {
     debug_phase(_gc_par_phases[RecalculateUsed], 1);
-    debug_phase(_gc_par_phases[RestorePreservedMarks], 1);
     debug_phase(_gc_par_phases[ProcessEvacuationFailedRegions], 1);
   }
 #if COMPILER2_OR_JVMCI
   debug_phase(_gc_par_phases[UpdateDerivedPointers], 1);
 #endif
   debug_phase(_gc_par_phases[EagerlyReclaimHumongousObjects], 1);
+  trace_phase(_gc_par_phases[ResetPartialArrayStateManager]);
 
   if (G1CollectedHeap::heap()->should_sample_collection_set_candidates()) {
     debug_phase(_gc_par_phases[SampleCollectionSetCandidates], 1);

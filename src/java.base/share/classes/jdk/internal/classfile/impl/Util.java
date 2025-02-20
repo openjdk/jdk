@@ -26,7 +26,7 @@ package jdk.internal.classfile.impl;
 
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.CodeAttribute;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.classfile.constantpool.PoolEntry;
@@ -42,6 +42,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -133,10 +134,10 @@ public class Util {
     }
 
     public static String toInternalName(ClassDesc cd) {
-        var desc = cd.descriptorString();
-        if (desc.charAt(0) == 'L')
-            return desc.substring(1, desc.length() - 1);
-        throw new IllegalArgumentException(desc);
+        if (cd instanceof ClassOrInterfaceDescImpl coi) {
+            return coi.internalName();
+        }
+        throw new IllegalArgumentException(cd.descriptorString());
     }
 
     public static ClassDesc toClassDesc(String classInternalNameOrArrayDesc) {
@@ -280,6 +281,11 @@ public class Util {
                                     b.writeBytes(bytecode.array(), 0, bytecode.length());
                                     b.writeU2U2(0, 0);//exception handlers & attributes
                                 }
+
+                                @Override
+                                public Utf8Entry attributeName() {
+                                    return cp.utf8Entry(Attributes.NAME_CODE);
+                                }
                     }))));
             ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, dump);
         } catch (Error | Exception _) {
@@ -319,15 +325,6 @@ public class Util {
 
     interface WritableLocalVariable {
         boolean writeLocalTo(BufWriterImpl buf);
-    }
-
-    /**
-     * Returns the hash code of an internal name given the class or interface L descriptor.
-     */
-    public static int internalNameHash(String desc) {
-        if (desc.length() > 0xffff)
-            throw new IllegalArgumentException("String too long: ".concat(Integer.toString(desc.length())));
-        return (desc.hashCode() - pow31(desc.length() - 1) * 'L' - ';') * INVERSE_31;
     }
 
     /**

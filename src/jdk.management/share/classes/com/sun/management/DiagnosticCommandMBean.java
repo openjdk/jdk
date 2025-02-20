@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,26 +136,6 @@ import javax.management.DynamicMBean;
  *   <tr>
  *     <th scope="row">dcmd.enabled</th><td>boolean</td>
  *     <td>True if the diagnostic command is enabled, false otherwise</td>
- *   </tr>
- *   <tr>
- *     <th scope="row">dcmd.permissionClass</th><td>String</td>
- *     <td>Some diagnostic command might require a specific permission to be
- *          executed, in addition to the MBeanPermission to invoke their
- *          associated MBean operation. This field returns the fully qualified
- *          name of the permission class or null if no permission is required
- *   </td>
- *   </tr>
- *   <tr>
- *     <th scope="row">dcmd.permissionName</th><td>String</td>
- *     <td>The fist argument of the permission required to execute this
- *          diagnostic command or null if no permission is required</td>
- *   </tr>
- *   <tr>
- *     <th scope="row">dcmd.permissionAction</th><td>String</td>
- *     <td>The second argument of the permission required to execute this
- *          diagnostic command or null if the permission constructor has only
- *          one argument (like the ManagementPermission) or if no permission
- *          is required</td>
  *   </tr>
  *   <tr>
  *     <th scope="row">dcmd.arguments</th><td>Descriptor</td>

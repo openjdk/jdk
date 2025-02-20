@@ -36,7 +36,7 @@ class outputStream;
 /*
  * Malloc tracking header.
  *
- * If NMT is active (state >= minimal), we need to track allocations. A simple and cheap way to
+ * If NMT is active (state >= summary), we need to track allocations. A simple and cheap way to
  * do this is by using malloc headers.
  *
  * +--------------+-------------  ....  ------------------+

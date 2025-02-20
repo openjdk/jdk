@@ -25,7 +25,6 @@
  * @test
  * @bug 8140450
  * @summary Basic test for the StackWalker::getByteCodeIndex method
- * @enablePreview
  * @run main TestBCI
  */
 

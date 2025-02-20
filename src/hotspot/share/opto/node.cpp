@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "libadt/vectset.hpp"
@@ -548,10 +547,6 @@ Node *Node::clone() const {
     if (cg != nullptr) {
       CallGenerator* cloned_cg = cg->with_call_node(n->as_Call());
       n->as_Call()->set_generator(cloned_cg);
-
-      C->print_inlining_assert_ready();
-      C->print_inlining_move_to(cg);
-      C->print_inlining_update(cloned_cg);
     }
   }
   if (n->is_SafePoint()) {
@@ -611,7 +606,7 @@ void Node::destruct(PhaseValues* phase) {
   if (is_expensive()) {
     compile->remove_expensive_node(this);
   }
-  if (is_Opaque4()) {
+  if (is_OpaqueTemplateAssertionPredicate()) {
     compile->remove_template_assertion_predicate_opaq(this);
   }
   if (is_ParsePredicate()) {
@@ -1596,6 +1591,13 @@ jfloat Node::getf() const {
   return ((ConFNode*)this)->type()->is_float_constant()->getf();
 }
 
+// Get a half float constant from a ConstNode.
+// Returns the constant if it is a float ConstNode
+jshort Node::geth() const {
+  assert( Opcode() == Op_ConH, "" );
+  return ((ConHNode*)this)->type()->is_half_float_constant()->geth();
+}
+
 #ifndef PRODUCT
 
 // Call this from debugger:
@@ -1830,6 +1832,8 @@ private:
   bool _print_blocks = false;
   bool _print_old = false;
   bool _dump_only = false;
+  bool _print_igv = false;
+
   void print_options_help(bool print_examples);
   bool parse_options();
 
@@ -2047,6 +2051,11 @@ void PrintBFS::print() {
       const Node* n = _print_list.at(i);
       print_node(n);
     }
+    if (_print_igv) {
+      Compile* C = Compile::current();
+      C->init_igv();
+      C->igv_print_graph_to_network("PrintBFS", (Node*) C->root(), _print_list);
+    }
   } else {
     _output->print_cr("No nodes to print.");
   }
@@ -2089,6 +2098,7 @@ void PrintBFS::print_options_help(bool print_examples) {
   _output->print_cr("      @: print old nodes - before matching (if available)");
   _output->print_cr("      B: print scheduling blocks (if available)");
   _output->print_cr("      $: dump only, no header, no other columns");
+  _output->print_cr("      !: show nodes on IGV (sent over network stream)");
   _output->print_cr("");
   _output->print_cr("recursively follow edges to nodes with permitted visit types,");
   _output->print_cr("on the boundary additionally display nodes allowed in boundary types");
@@ -2201,6 +2211,9 @@ bool PrintBFS::parse_options() {
         break;
       case '$':
         _dump_only = true;
+        break;
+      case '!':
+        _print_igv = true;
         break;
       case 'h':
         print_options_help(false);
@@ -2412,9 +2425,9 @@ void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   bool is_new = C->node_arena()->contains(this);
   if (align) { // print prefix empty spaces$
     // +1 for leading digit, +1 for "o"
-    uint max_width = static_cast<uint>(log10(static_cast<double>(C->unique()))) + 2;
+    uint max_width = (C->unique() == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(C->unique())))) + 2;
     // +1 for leading digit, maybe +1 for "o"
-    uint width = static_cast<uint>(log10(static_cast<double>(_idx))) + 1 + (is_new ? 0 : 1);
+    uint width = (_idx == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(_idx)))) + 1 + (is_new ? 0 : 1);
     while (max_width > width) {
       st->print(" ");
       width++;
@@ -2770,9 +2783,7 @@ const RegMask &Node::in_RegMask(uint) const {
 
 void Node_Array::grow(uint i) {
   _nesting.check(_a); // Check if a potential reallocation in the arena is safe
-  if (i < _max) {
-    return; // No need to grow
-  }
+  assert(i >= _max, "Should have been checked before, use maybe_grow?");
   assert(_max > 0, "invariant");
   uint old = _max;
   _max = next_power_of_2(i);
@@ -2885,6 +2896,15 @@ void Node::ensure_control_or_add_prec(Node* c) {
   }
 }
 
+void Node::add_prec_from(Node* n) {
+  for (uint i = n->req(); i < n->len(); i++) {
+    Node* prec = n->in(i);
+    if (prec != nullptr) {
+      add_prec(prec);
+    }
+  }
+}
+
 bool Node::is_dead_loop_safe() const {
   if (is_Phi()) {
     return true;
@@ -2907,6 +2927,9 @@ bool Node::is_dead_loop_safe() const {
   }
   return false;
 }
+
+bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
+                                                      Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
 
 //=============================================================================
 //------------------------------yank-------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -70,7 +70,7 @@ import jdk.xml.internal.SecuritySupport;
  * @see SerializerFactory
  * @see Method
  * @see Serializer
- * @LastModified: May 2021
+ * @LastModified: Nov 2024
  */
 public final class OutputPropertiesFactory
 {
@@ -354,7 +354,7 @@ public final class OutputPropertiesFactory
 
         for (int i = 0; i < keys.length; i++) {
             // check System Property. This is kept as is for binary compatibility
-            String sys = SecuritySupport.getSystemProperty(keys[i]);
+            String sys = System.getProperty(keys[i]);
             props.put(keys[i], (sys == null) ? values[i] : sys);
         }
 

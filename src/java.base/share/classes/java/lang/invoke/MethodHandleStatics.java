@@ -28,7 +28,6 @@ package java.lang.invoke;
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ClassFileDumper;
-import sun.security.action.GetPropertyAction;
 
 import java.lang.reflect.ClassFileFormatVersion;
 import java.util.Properties;
@@ -66,7 +65,7 @@ class MethodHandleStatics {
     static final ClassFileDumper DUMP_CLASS_FILES;
 
     static {
-        Properties props = GetPropertyAction.privilegedGetProperties();
+        Properties props = System.getProperties();
         DEBUG_METHOD_HANDLE_NAMES = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.MethodHandle.DEBUG_NAMES"));
 

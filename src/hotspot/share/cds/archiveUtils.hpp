@@ -25,16 +25,23 @@
 #ifndef SHARE_CDS_ARCHIVEUTILS_HPP
 #define SHARE_CDS_ARCHIVEUTILS_HPP
 
+#include "cds/cds_globals.hpp"
 #include "cds/serializeClosure.hpp"
 #include "logging/log.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "runtime/nonJavaThread.hpp"
+#include "runtime/semaphore.hpp"
 
 class BootstrapInfo;
 class ReservedSpace;
 class VirtualSpace;
+
+template<class E> class Array;
+template<class E> class GrowableArray;
 
 // ArchivePtrMarker is used to mark the location of pointers embedded in a CDS archive. E.g., when an
 // InstanceKlass k is dumped, we mark the location of the k->_name pointer by effectively calling
@@ -156,10 +163,11 @@ private:
 public:
   DumpRegion(const char* name, uintx max_delta = 0)
     : _name(name), _base(nullptr), _top(nullptr), _end(nullptr),
-      _max_delta(max_delta), _is_packed(false) {}
+      _max_delta(max_delta), _is_packed(false),
+      _rs(nullptr), _vs(nullptr) {}
 
   char* expand_top_to(char* newtop);
-  char* allocate(size_t num_bytes);
+  char* allocate(size_t num_bytes, size_t alignment = 0);
 
   void append_intptr_t(intptr_t n, bool need_to_mark = false) NOT_CDS_RETURN;
 
@@ -228,13 +236,14 @@ public:
 class ReadClosure : public SerializeClosure {
 private:
   intptr_t** _ptr_array;
-
+  intptr_t _base_address;
   inline intptr_t nextPtr() {
     return *(*_ptr_array)++;
   }
 
 public:
-  ReadClosure(intptr_t** ptr_array) { _ptr_array = ptr_array; }
+  ReadClosure(intptr_t** ptr_array, intptr_t base_address) :
+    _ptr_array(ptr_array), _base_address(base_address) {}
 
   void do_ptr(void** p);
   void do_u4(u4* p);
@@ -247,7 +256,54 @@ public:
 
 class ArchiveUtils {
 public:
+  static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
+  static bool has_aot_initialized_mirror(InstanceKlass* src_ik);
+  template <typename T> static Array<T>* archive_array(GrowableArray<T>* tmp_array);
+
+  // The following functions translate between a u4 offset and an address in the
+  // the range of the mapped CDS archive (e.g., Metaspace::is_in_shared_metaspace()).
+  // Since the first 16 bytes in this range are dummy data (see ArchiveBuilder::reserve_buffer()),
+  // we know that offset 0 never represents a valid object. As a result, an offset of 0
+  // is used to encode a nullptr.
+  //
+  // Use the "archived_address_or_null" variants if a nullptr may be encoded.
+
+  // offset must represent an object of type T in the mapped shared space. Return
+  // a direct pointer to this object.
+  template <typename T> T static offset_to_archived_address(u4 offset) {
+    assert(offset != 0, "sanity");
+    T p = (T)(SharedBaseAddress + offset);
+    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    return p;
+  }
+
+  template <typename T> T static offset_to_archived_address_or_null(u4 offset) {
+    if (offset == 0) {
+      return nullptr;
+    } else {
+      return offset_to_archived_address<T>(offset);
+    }
+  }
+
+  // p must be an archived object. Get its offset from SharedBaseAddress
+  template <typename T> static u4 archived_address_to_offset(T p) {
+    uintx pn = (uintx)p;
+    uintx base = (uintx)SharedBaseAddress;
+    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    assert(pn > base, "sanity"); // No valid object is stored at 0 offset from SharedBaseAddress
+    uintx offset = pn - base;
+    assert(offset <= MAX_SHARED_DELTA, "range check");
+    return static_cast<u4>(offset);
+  }
+
+  template <typename T> static u4 archived_address_or_null_to_offset(T p) {
+    if (p == nullptr) {
+      return 0;
+    } else {
+      return archived_address_to_offset<T>(p);
+    }
+  }
 };
 
 class HeapRootSegments {
@@ -288,6 +344,76 @@ public:
   // This class is trivially copyable and assignable.
   HeapRootSegments(const HeapRootSegments&) = default;
   HeapRootSegments& operator=(const HeapRootSegments&) = default;
+};
+
+class ArchiveWorkers;
+
+// A task to be worked on by worker threads
+class ArchiveWorkerTask : public CHeapObj<mtInternal> {
+  friend class ArchiveWorkers;
+private:
+  const char* _name;
+  int _max_chunks;
+  volatile int _chunk;
+
+  void run();
+
+  void configure_max_chunks(int max_chunks);
+
+public:
+  ArchiveWorkerTask(const char* name) :
+      _name(name), _max_chunks(0), _chunk(0) {}
+  const char* name() const { return _name; }
+  virtual void work(int chunk, int max_chunks) = 0;
+};
+
+class ArchiveWorkerThread : public NamedThread {
+  friend class ArchiveWorkers;
+private:
+  ArchiveWorkers* const _pool;
+
+  void post_run() override;
+
+public:
+  ArchiveWorkerThread(ArchiveWorkers* pool);
+  const char* type_name() const override { return "Archive Worker Thread"; }
+  void run() override;
+};
+
+// Special archive workers. The goal for this implementation is to startup fast,
+// distribute spiky workloads efficiently, and shutdown immediately after use.
+// This makes the implementation quite different from the normal GC worker pool.
+class ArchiveWorkers : public StackObj {
+  friend class ArchiveWorkerThread;
+private:
+  // Target number of chunks per worker. This should be large enough to even
+  // out work imbalance, and small enough to keep bookkeeping overheads low.
+  static constexpr int CHUNKS_PER_WORKER = 4;
+  static int max_workers();
+
+  Semaphore _end_semaphore;
+
+  int _num_workers;
+  int _started_workers;
+  int _finish_tokens;
+
+  typedef enum { UNUSED, WORKING, SHUTDOWN } State;
+  volatile State _state;
+
+  ArchiveWorkerTask* _task;
+
+  void run_as_worker();
+  void start_worker_if_needed();
+
+  void run_task_single(ArchiveWorkerTask* task);
+  void run_task_multi(ArchiveWorkerTask* task);
+
+  bool is_parallel();
+
+public:
+  ArchiveWorkers();
+  ~ArchiveWorkers();
+  void run_task(ArchiveWorkerTask* task);
 };
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP

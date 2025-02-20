@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,12 +72,12 @@ protected:
   void initialize(HeapWord* bottom, HeapWord* end, size_t target_elem_size_in_bytes, size_t mapping_granularity_in_bytes) {
     assert(mapping_granularity_in_bytes > 0, "just checking");
     assert(is_power_of_2(mapping_granularity_in_bytes),
-           "mapping granularity must be power of 2, is " SIZE_FORMAT, mapping_granularity_in_bytes);
+           "mapping granularity must be power of 2, is %zu", mapping_granularity_in_bytes);
     assert((uintptr_t)bottom % mapping_granularity_in_bytes == 0,
-           "bottom mapping area address must be a multiple of mapping granularity " SIZE_FORMAT ", is  " PTR_FORMAT,
+           "bottom mapping area address must be a multiple of mapping granularity %zu, is  " PTR_FORMAT,
            mapping_granularity_in_bytes, p2i(bottom));
     assert((uintptr_t)end % mapping_granularity_in_bytes == 0,
-           "end mapping area address must be a multiple of mapping granularity " SIZE_FORMAT ", is " PTR_FORMAT,
+           "end mapping area address must be a multiple of mapping granularity %zu, is " PTR_FORMAT,
            mapping_granularity_in_bytes, p2i(end));
     size_t num_target_elems = pointer_delta(end, bottom, mapping_granularity_in_bytes);
     idx_t bias = (uintptr_t)bottom / mapping_granularity_in_bytes;

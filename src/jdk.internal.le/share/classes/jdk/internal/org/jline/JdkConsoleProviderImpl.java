@@ -99,6 +99,11 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         }
 
         @Override
+        public String readln() {
+            return getDelegate(true).readln();
+        }
+
+        @Override
         public JdkConsole format(Locale locale, String format, Object... args) {
             JdkConsole delegate = getDelegate(false);
 
@@ -225,6 +230,11 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         }
 
         @Override
+        public String readln() {
+            return readLine();
+        }
+
+        @Override
         public JdkConsole format(Locale locale, String format, Object ... args) {
             writer().format(locale, format, args).flush();
             return this;
@@ -242,7 +252,12 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public String readLine() {
-            return readLine(Locale.getDefault(Locale.Category.FORMAT), "");
+            try {
+                initJLineIfNeeded();
+                return jline.readLine();
+            } catch (EndOfFileException eofe) {
+                return null;
+            }
         }
 
         @Override

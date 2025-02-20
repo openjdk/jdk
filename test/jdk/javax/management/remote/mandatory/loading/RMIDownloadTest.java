@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,25 +24,30 @@
 /*
  * @test
  * @bug 5021246
- * @summary Check that class downloading is supported by RMI connector
+ * @summary Check that class downloading is NOT supported by RMI connector
  * @author Eamonn McManus
  *
- * @run main/othervm -Djava.security.manager=allow RMIDownloadTest receive without
- * @run main/othervm -Djava.security.manager=allow RMIDownloadTest send without
- * @run main/othervm -Djava.security.manager=allow RMIDownloadTest receive with
- * @run main/othervm -Djava.security.manager=allow RMIDownloadTest send with
+ * @run main/othervm RMIDownloadTest receive without
+ * @run main/othervm RMIDownloadTest send without
+ * @run main/othervm RMIDownloadTest receive with
+ * @run main/othervm RMIDownloadTest send with
  */
 
 /*
- * This test checks that class downloading is supported by the RMI connector.
+ * This test checks that class downloading is NOT supported by the RMI connector,
+ * after SM removal.
+ *
  * We copy a precompiled class file into the temporary directory (which we
  * assume is not in the classpath).  We also create an instance of that
  * class using a hardcoded ClassLoader.  Then we try to get a remote attribute
  * that returns that instance, and we try to set the remote attribute to the
- * instance.  In both cases, this will only work if the class can be downloaded
- * based on the codebase that we have set to the temporary directory.  We also
- * test that it does *not* work when the codebase is not set, in case the test
- * is succeeding for some other reason.
+ * instance.
+ *
+ * This used to only work if the class can be downloaded based on the codebase
+ * that we have set to the temporary directory.
+ *
+ * Post SM removal, we test that it does *not* work either when the codebase
+ * is set, or is not.
  *
  * We run the test four times, for each combination of (send, receive) x
  * (with-codebase, without-codebase).  Doing all four tests within the same
@@ -132,8 +137,6 @@ public class RMIDownloadTest {
         getSetInstance = new GetSet();
         pmbs.registerMBean(getSetInstance, getSetName);
 
-        System.setSecurityManager(new LaidBackSecurityManager());
-
 //        System.setProperty("sun.rmi.loader.logLevel", "VERBOSE");
 
         String tmpdir = System.getProperty("java.io.tmpdir");
@@ -159,13 +162,13 @@ public class RMIDownloadTest {
             System.out.println("Testing we can receive an object from server to client");
 
         if (with) {
-            // Test with the codebase property.  Downloading should work.
+            // Test with the codebase property.  Downloading should NOT work (after SM removal).
             URL zoobyURL = zoobyFile.getParentFile().toURI().toURL();
             System.setProperty("java.rmi.server.codebase", zoobyURL.toString());
-            System.out.println("Testing with codebase, should work");
+            System.out.println("Testing with codebase, should NOT work");
             System.out.println("Codebase is " +
                     System.getProperty("java.rmi.server.codebase"));
-            test(send, true);
+            test(send, false);
         } else {
             // Test without setting the codebase property.
             // This should not work; if it does it probably means java.io.tmpdir
@@ -245,11 +248,5 @@ public class RMIDownloadTest {
         }
 
         private Object what;
-    }
-
-    public static class LaidBackSecurityManager extends SecurityManager {
-        public void checkPermission(Permission perm) {
-            // OK, dude
-        }
     }
 }

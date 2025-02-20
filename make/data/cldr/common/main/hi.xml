@@ -58,6 +58,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="be">बेलारूसी</language>
 			<language type="bej">बेजा</language>
 			<language type="bem">बेम्बा</language>
+			<language type="bew" draft="contributed">बेतावी</language>
 			<language type="bez">बेना</language>
 			<language type="bg">बुल्गारियाई</language>
 			<language type="bgc">हरियाणवी</language>
@@ -67,6 +68,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bik">बिकोल</language>
 			<language type="bin">बिनी</language>
 			<language type="bla">सिक्सिका</language>
+			<language type="blo">अनी</language>
 			<language type="bm">बाम्बारा</language>
 			<language type="bn">बंगाली</language>
 			<language type="bo">तिब्बती</language>
@@ -74,6 +76,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bra">ब्रज</language>
 			<language type="brx">बोडो</language>
 			<language type="bs">बोस्नियाई</language>
+			<language type="bss" draft="contributed">अकूसे</language>
 			<language type="bua">बुरियात</language>
 			<language type="bug">बगिनीस</language>
 			<language type="byn">ब्लिन</language>
@@ -96,6 +99,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chp">शिपेव्यान</language>
 			<language type="chr">चेरोकी</language>
 			<language type="chy">शेयेन्न</language>
+			<language type="cic" draft="contributed">चिकसॉ</language>
 			<language type="ckb">सोरानी कुर्दिश</language>
 			<language type="ckb" alt="menu">कुर्दी, सोरानी</language>
 			<language type="clc">चिलकोटिन</language>
@@ -211,6 +215,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hil">हिलिगेनन</language>
 			<language type="hit">हिताइत</language>
 			<language type="hmn">ह्मॉंग</language>
+			<language type="hnj" draft="contributed">हमोंग नजुआ</language>
 			<language type="ho">हिरी मोटू</language>
 			<language type="hr">क्रोएशियाई</language>
 			<language type="hsb">ऊपरी सॉर्बियन</language>
@@ -287,6 +292,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">कोमी</language>
 			<language type="kw">कोर्निश</language>
 			<language type="kwk">क्वॉकवाला</language>
+			<language type="kxv">कुवी</language>
 			<language type="ky">किर्गीज़</language>
 			<language type="la">लैटिन</language>
 			<language type="lad">लादीनो</language>
@@ -297,10 +303,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">लेज़्घीयन</language>
 			<language type="lg">गांडा</language>
 			<language type="li">लिंबर्गिश</language>
-			<language type="lij" draft="unconfirmed">लिगुरियन</language>
+			<language type="lij">लिगुरियन</language>
 			<language type="lil">लिलोएट</language>
 			<language type="lkt">लैकोटा</language>
-			<language type="lmo" draft="contributed">लॉमबर्ड</language>
+			<language type="lmo">लॉमबर्ड</language>
 			<language type="ln">लिंगाला</language>
 			<language type="lo">लाओ</language>
 			<language type="lol">मोंगो</language>
@@ -491,6 +497,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">कोमोरियन</language>
 			<language type="syc">क्लासिकल सिरिएक</language>
 			<language type="syr">सिरिएक</language>
+			<language type="szl">सायलिज़ियन</language>
 			<language type="ta">तमिल</language>
 			<language type="tce">दक्षिणी टशोनी</language>
 			<language type="te">तेलुगू</language>
@@ -539,7 +546,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">उज़्बेक</language>
 			<language type="vai">वाई</language>
 			<language type="ve">वेन्दा</language>
+			<language type="vec">वनीशन</language>
 			<language type="vi">वियतनामी</language>
+			<language type="vmw">मखुवा</language>
 			<language type="vo">वोलापुक</language>
 			<language type="vot">वॉटिक</language>
 			<language type="vun">वुंजो</language>
@@ -553,6 +562,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">वू चीनी</language>
 			<language type="xal">काल्मिक</language>
 			<language type="xh">ख़ोसा</language>
+			<language type="xnr">कांगड़ी</language>
 			<language type="xog">सोगा</language>
 			<language type="yao">याओ</language>
 			<language type="yap">यापीस</language>
@@ -1213,7 +1223,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -2533,6 +2543,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} समय</regionFormat>
 			<regionFormat type="daylight">{0} डेलाइट समय</regionFormat>
 			<regionFormat type="standard">{0} मानक समय</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<short>
+					<generic>एचएसटी</generic>
+					<standard>एचएसटी</standard>
+					<daylight draft="contributed">HST</daylight>
+				</short>
+				<exemplarCity>होनोलुलु</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>समन्वित वैश्विक समय</standard>
@@ -3270,9 +3288,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>उलानबातर</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>चोइबालसन</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>मकाऊ</exemplarCity>
 			</zone>
@@ -3672,14 +3687,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>नोम</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>एचएसटी</generic>
-					<standard>एचएसटी</standard>
-					<daylight draft="contributed">HST</daylight>
-				</short>
-				<exemplarCity>होनोलुलु</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>एंकरेज</exemplarCity>
 			</zone>
@@ -4031,13 +4038,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>चीन डेलाइट समय</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>कॉइबाल्सन समय</generic>
-					<standard>कॉइबाल्सन मानक समय</standard>
-					<daylight>कॉइबाल्सन ग्रीष्मकालीन समय</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>क्रिसमस द्वीप समय</standard>
@@ -4284,6 +4284,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic draft="contributed">पेट्रोपेवलास्क-कैमचात्सकी समय</generic>
 					<standard draft="contributed">पेट्रोपेवलास्क-कैमचात्सकी मानक समय</standard>
 					<daylight draft="contributed">पेट्रोपेवलास्क-कैमचात्सकी ग्रीष्मकालीन समय</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>कज़ाखस्तान समय</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4851,8 +4856,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyPatternAppendISO>¤¤ {0}</currencyPatternAppendISO>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -5688,9 +5691,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="oblique">{0} कैरट</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender>masculine</gender>
 				<displayName>मिलिग्राम प्रति डेसीलीटर</displayName>
 				<unitPattern count="one">{0} मिलिग्राम प्रति डेसीलीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मिलिग्राम प्रति डेसीलीटर</unitPattern>
 				<unitPattern count="other">{0} मिलिग्राम प्रति डेसीलीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मिलिग्राम प्रति डेसीलीटर</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<gender>masculine</gender>
@@ -6227,6 +6233,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} मील-स्कैण्डिनेवियन</unitPattern>
 				<unitPattern count="other" case="oblique">{0} मील-स्कैण्डिनेवियन</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<gender>masculine</gender>
+			</unit>
 			<unit type="length-solar-radius">
 				<gender>masculine</gender>
 				<displayName>सौर अर्धव्यास</displayName>
@@ -6397,9 +6406,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} अश्वशक्ति</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>feminine</gender>
 				<displayName>मर्क्यूरी मिलीमीटर</displayName>
 				<unitPattern count="one">{0} मर्क्यूरी मिलीमीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मर्क्यूरी मिलीमीटर</unitPattern>
 				<unitPattern count="other">{0} मर्क्यूरी मिलीमीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मर्क्यूरी मिलीमीटर</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>पाउंड प्रति वर्ग इंच</displayName>
@@ -6714,6 +6726,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="oblique">{0} क्वार्ट इम्पीरियल</unitPattern>
 				<unitPattern count="other">{0} क्वार्ट इम्पीरियल</unitPattern>
 				<unitPattern count="other" case="oblique">{0} क्वार्ट इम्पीरियल</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<gender>feminine</gender>
+				<displayName>लाइट</displayName>
+				<unitPattern count="one">{0} लाइट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} लाइट</unitPattern>
+				<unitPattern count="other">{0} लाइट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} लाइट</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>masculine</gender>
+				<displayName>पार्ट्स प्रति बिलियन</displayName>
+				<unitPattern count="one">{0} पार्ट प्रति बिलियन</unitPattern>
+				<unitPattern count="one" case="oblique">{0} पार्ट प्रति बिलियन</unitPattern>
+				<unitPattern count="other">{0} पार्ट्स प्रति बिलियन</unitPattern>
+				<unitPattern count="other" case="oblique">{0} पार्ट्स प्रति बिलियन</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>feminine</gender>
+				<displayName>रातें</displayName>
+				<unitPattern count="one">{0} रात</unitPattern>
+				<unitPattern count="one" case="oblique">{0} रात</unitPattern>
+				<unitPattern count="other">{0} रातें</unitPattern>
+				<unitPattern count="other" case="oblique">{0} रातें</unitPattern>
+				<perUnitPattern>{0} प्रति रात</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>प्रधान दिशा</displayName>
@@ -7499,6 +7536,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} क. इम्पी.</unitPattern>
 				<unitPattern count="other">{0} क. इम्पी.</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>लाइट</displayName>
+				<unitPattern count="one">{0} लाइट</unitPattern>
+				<unitPattern count="other">{0} लाइट</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>पार्ट्स/बिलियन</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>रातें</displayName>
+				<unitPattern count="one">{0} रात</unitPattern>
+				<unitPattern count="other">{0} रातें</unitPattern>
+				<perUnitPattern>{0}/रात</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>दिशा</displayName>
 			</coordinateUnit>
@@ -7994,6 +8045,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>qt Imp</displayName>
 				<unitPattern count="one">{0} qt-Imp.</unitPattern>
 				<unitPattern count="other">{0} qt-Imp.</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>लाइट</displayName>
+				<unitPattern count="one">{0} लाइट</unitPattern>
+				<unitPattern count="other">{0} लाइट</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>रातें</displayName>
+				<unitPattern count="one">{0}रात</unitPattern>
+				<unitPattern count="other">{0}रातें</unitPattern>
+				<perUnitPattern>{0}/रात</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>

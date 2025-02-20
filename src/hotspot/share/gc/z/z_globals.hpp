@@ -34,6 +34,31 @@
                    range,                                                   \
                    constraint)                                              \
                                                                             \
+  product(double, ZAllocationSpikeTolerance, 2.0,                           \
+          "Allocation spike tolerance factor")                              \
+                                                                            \
+  product(double, ZFragmentationLimit, 5.0,                                 \
+          "Maximum allowed heap fragmentation")                             \
+          range(0, 100)                                                     \
+                                                                            \
+  product(size_t, ZMarkStackSpaceLimit, 8*G,                                \
+          "Maximum number of bytes allocated for mark stacks")              \
+          range(32*M, 1024*G)                                               \
+                                                                            \
+  product(double, ZCollectionInterval, 0,                                   \
+          "Force GC at a fixed time interval (in seconds). "                \
+          "Backwards compatible alias for ZCollectionIntervalMajor")        \
+                                                                            \
+  product(bool, ZProactive, true,                                           \
+          "Enable proactive GC cycles")                                     \
+                                                                            \
+  product(bool, ZUncommit, true,                                            \
+          "Uncommit unused memory")                                         \
+                                                                            \
+  product(uintx, ZUncommitDelay, 5 * 60,                                    \
+          "Uncommit memory if it has been unused for the specified "        \
+          "amount of time (in seconds)")                                    \
+                                                                            \
   product(double, ZYoungCompactionLimit, 25.0,                              \
           "Maximum allowed garbage in young pages")                         \
           range(0, 100)                                                     \
@@ -46,6 +71,32 @@
                                                                             \
   product(bool, ZCollectionIntervalOnly, false,                             \
           "Only use timers for GC heuristics")                              \
+                                                                            \
+  product(double, ZAsyncUnmappingLimit, 100.0, DIAGNOSTIC,                  \
+          "Specify the max amount (percentage of max heap size) of async "  \
+          "unmapping that can be in-flight before unmapping requests are "  \
+          "temporarily forced to be synchronous instead. "                  \
+          "The default means after an amount of pages proportional to the " \
+          "max capacity is enqueued, we resort to synchronous unmapping.")  \
+                                                                            \
+  product(uint, ZStatisticsInterval, 10, DIAGNOSTIC,                        \
+          "Time between statistics print outs (in seconds)")                \
+          range(1, (uint)-1)                                                \
+                                                                            \
+  product(bool, ZStressRelocateInPlace, false, DIAGNOSTIC,                  \
+          "Always relocate pages in-place")                                 \
+                                                                            \
+  product(bool, ZVerifyRoots, trueInDebug, DIAGNOSTIC,                      \
+          "Verify roots")                                                   \
+                                                                            \
+  product(bool, ZVerifyObjects, false, DIAGNOSTIC,                          \
+          "Verify objects")                                                 \
+                                                                            \
+  product(bool, ZVerifyMarking, trueInDebug, DIAGNOSTIC,                    \
+          "Verify marking stacks")                                          \
+                                                                            \
+  product(bool, ZVerifyForwarding, false, DIAGNOSTIC,                       \
+          "Verify forwarding tables")                                       \
                                                                             \
   product(bool, ZBufferStoreBarriers, true, DIAGNOSTIC,                     \
           "Buffer store barriers")                                          \
@@ -64,12 +115,12 @@
   product(bool, ZVerifyRemembered, trueInDebug, DIAGNOSTIC,                 \
           "Verify remembered sets")                                         \
                                                                             \
-  develop(bool, ZVerifyOops, false,                                         \
-          "Verify accessed oops")                                           \
-                                                                            \
   product(int, ZTenuringThreshold, -1, DIAGNOSTIC,                          \
           "Young generation tenuring threshold, -1 for dynamic computation")\
           range(-1, static_cast<int>(ZPageAgeMax))                          \
+                                                                            \
+  develop(bool, ZVerifyOops, false,                                         \
+          "Verify accessed oops")                                           \
                                                                             \
   develop(size_t, ZForceDiscontiguousHeapReservations, 0,                   \
           "The gc will attempt to split the heap reservation into this "    \

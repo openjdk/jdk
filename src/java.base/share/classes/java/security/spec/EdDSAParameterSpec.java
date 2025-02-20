@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import java.util.Optional;
  * <li>Otherwise, the mode is Ed25519 or Ed448</li>
  * </ul>
  *
+ * @spec https://www.rfc-editor.org/info/rfc8032
+ *      RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)
  * @since 15
  */
 

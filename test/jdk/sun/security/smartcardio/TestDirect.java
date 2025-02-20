@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @summary Make sure that direct protocol is available
  * @modules java.smartcardio/javax.smartcardio
  * @run main/manual TestDirect
- * @run main/othervm/manual/java.security.policy==test.policy TestDirect
  */
 
 // This test requires special hardware.

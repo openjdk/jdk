@@ -119,7 +119,7 @@ check_contended_monitor(jvmtiEnv *jvmti, JNIEnv *jni, const char* func,
 
 static void
 check_owned_monitor(jvmtiEnv *jvmti, JNIEnv *jni, const char* func,
-                    jthread thread, char* tname, jboolean is_vt, jobject monitor) {
+                    jthread thread, char* tname, jboolean is_vt, jint expected_count) {
   jvmtiError err;
   jint state = 0;
   jint mcount = -1;
@@ -135,8 +135,8 @@ check_owned_monitor(jvmtiEnv *jvmti, JNIEnv *jni, const char* func,
   LOG("\n%s: GetOwnedMonitorInfo: %s owns %d monitor(s)\n", func, tname, mcount);
   jvmti->Deallocate((unsigned char *)owned_monitors);
 
-  if (is_vt == JNI_TRUE && mcount < 2) {
-    LOG("%s: FAIL: monitorCount for %s expected to be >= 2\n", func, tname);
+  if (is_vt == JNI_TRUE && mcount != expected_count) {
+    LOG("%s: FAIL: monitorCount for %s expected to be %d\n", func, tname, expected_count);
     status = STATUS_FAILED;
     return;
   }
@@ -186,9 +186,9 @@ MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread, jobject mon
   check_contended_monitor(jvmti, jni, "MonitorContendedEnter",
                           cthread,  ctname, JNI_FALSE, nullptr, nullptr);
   check_owned_monitor(jvmti, jni, "MonitorContendedEnter",
-                      vthread, vtname, JNI_TRUE, monitor);
+                      vthread, vtname, JNI_TRUE, 2);
   check_owned_monitor(jvmti, jni, "MonitorContendedEnter",
-                      cthread, ctname, JNI_FALSE, monitor);
+                      cthread, ctname, JNI_FALSE, 2);
   deallocate(jvmti, jni, (void*)vtname);
   deallocate(jvmti, jni, (void*)ctname);
 }
@@ -348,6 +348,15 @@ Java_VThreadMonitorTest_checkContendedMonitor(JNIEnv *jni, jclass cls, jthread v
 
   check_contended_monitor(jvmti, jni, "checkContendedMonitor",
                           vthread, tname, JNI_TRUE, monitor1, monitor2);
+
+  deallocate(jvmti, jni, (void*)tname);
+}
+
+JNIEXPORT void JNICALL
+Java_VThreadMonitorTest_checkOwnedMonitor(JNIEnv *jni, jclass cls, jthread vthread, jint expected_count) {
+  char* tname = get_thread_name(jvmti, jni, vthread);
+
+  check_owned_monitor(jvmti, jni, "checkOwnedMonitor", vthread, tname, JNI_TRUE, expected_count);
 
   deallocate(jvmti, jni, (void*)tname);
 }

@@ -103,20 +103,6 @@ class UtilTest {
         }
     }
 
-    @ParameterizedTest
-    @ValueSource(classes = {
-            Long.class,
-            Object.class,
-            Util.class,
-            Test.class,
-            CopyOnWriteArrayList.class,
-            AtomicReferenceFieldUpdater.class
-    })
-    void testInternalNameHash(Class<?> type) {
-        var cd = type.describeConstable().orElseThrow();
-        assertEquals(ConstantUtils.binaryToInternal(type.getName()).hashCode(), Util.internalNameHash(cd.descriptorString()));
-    }
-
     // Ensures the initialization statement of the powers array is filling in the right values
     @Test
     void testPowersArray() {

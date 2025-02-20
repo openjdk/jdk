@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,9 @@ class ArchiveHeapWriter : AllStatic {
   // - "source objects" are regular Java objects allocated during the execution
   //   of "java -Xshare:dump". They can be used as regular oops.
   //
-  //   HeapShared::archive_objects() recursively searches for the oops that need to be
-  //   stored into the CDS archive. These are entered into HeapShared::archived_object_cache().
+  //   Between HeapShared::start_scanning_for_oops() and HeapShared::end_scanning_for_oops(),
+  //   we recursively search for the oops that need to be stored into the CDS archive.
+  //   These are entered into HeapShared::archived_object_cache().
   //
   // - "buffered objects" are copies of the "source objects", and are stored in into
   //   ArchiveHeapWriter::_buffer, which is a GrowableArray that sits outside of
@@ -239,17 +240,6 @@ public:
   static oop source_obj_to_requested_obj(oop src_obj);
   static oop buffered_addr_to_source_obj(address buffered_addr);
   static address buffered_addr_to_requested_addr(address buffered_addr);
-
-  // Archived heap object headers carry pre-computed narrow Klass ids calculated with the
-  // following scheme:
-  // 1) the encoding base must be the mapping start address.
-  // 2) shift must be large enough to result in an encoding range that covers the runtime Klass range.
-  //    That Klass range is defined by CDS archive size and runtime class space size. Luckily, the maximum
-  //    size can be predicted: archive size is assumed to be <1G, class space size capped at 3G, and at
-  //    runtime we put both regions adjacent to each other. Therefore, runtime Klass range size < 4G.
-  //    Since nKlass itself is 32 bit, our encoding range len is 4G, and since we set the base directly
-  //    at mapping start, these 4G are enough. Therefore, we don't need to shift at all (shift=0).
-  static constexpr int precomputed_narrow_klass_shift = 0;
 
 };
 #endif // INCLUDE_CDS_JAVA_HEAP

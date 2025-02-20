@@ -1,6 +1,6 @@
 
 /*
-* Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -112,7 +111,7 @@ void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
 
 void ThreadIdTable::create_table(size_t size) {
   assert(_local_table == nullptr, "Thread table is already created");
-  size_t size_log = ceil_log2(size);
+  size_t size_log = log2i_ceil(size);
   size_t start_size_log =
       size_log > DEFAULT_TABLE_SIZE_LOG ? size_log : DEFAULT_TABLE_SIZE_LOG;
   _current_size = (size_t)1 << start_size_log;
@@ -174,7 +173,7 @@ void ThreadIdTable::grow(JavaThread* jt) {
   }
   gt.done(jt);
   _current_size = table_size();
-  log_info(thread, table)("Grown to size:" SIZE_FORMAT, _current_size);
+  log_info(thread, table)("Grown to size:%zu", _current_size);
 }
 
 class ThreadIdTableLookup : public StackObj {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zArray.inline.hpp"
@@ -30,6 +29,7 @@
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageAge.hpp"
@@ -46,6 +46,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -205,12 +206,12 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
     return;
   }
 
-  log_info_p(gc, init)("Min Capacity: " SIZE_FORMAT "M", min_capacity / M);
-  log_info_p(gc, init)("Initial Capacity: " SIZE_FORMAT "M", initial_capacity / M);
-  log_info_p(gc, init)("Max Capacity: " SIZE_FORMAT "M", max_capacity / M);
-  log_info_p(gc, init)("Soft Max Capacity: " SIZE_FORMAT "M", soft_max_capacity / M);
+  log_info_p(gc, init)("Min Capacity: %zuM", min_capacity / M);
+  log_info_p(gc, init)("Initial Capacity: %zuM", initial_capacity / M);
+  log_info_p(gc, init)("Max Capacity: %zuM", max_capacity / M);
+  log_info_p(gc, init)("Soft Max Capacity: %zuM", soft_max_capacity / M);
   if (ZPageSizeMedium > 0) {
-    log_info_p(gc, init)("Medium Page Size: " SIZE_FORMAT "M", ZPageSizeMedium / M);
+    log_info_p(gc, init)("Medium Page Size: %zuM", ZPageSizeMedium / M);
   } else {
     log_info_p(gc, init)("Medium Page Size: N/A");
   }
@@ -232,29 +233,38 @@ bool ZPageAllocator::is_initialized() const {
 
 class ZPreTouchTask : public ZTask {
 private:
-  const ZPhysicalMemoryManager* const _physical;
-  volatile zoffset                    _start;
-  const zoffset_end                   _end;
+  volatile uintptr_t _current;
+  const uintptr_t    _end;
+
+  static void pretouch(zaddress zaddr, size_t size) {
+    const uintptr_t addr = untype(zaddr);
+    const size_t page_size = ZLargePages::is_explicit() ? ZGranuleSize : os::vm_page_size();
+    os::pretouch_memory((void*)addr, (void*)(addr + size), page_size);
+  }
 
 public:
-  ZPreTouchTask(const ZPhysicalMemoryManager* physical, zoffset start, zoffset_end end)
+  ZPreTouchTask(zoffset start, zoffset_end end)
     : ZTask("ZPreTouchTask"),
-      _physical(physical),
-      _start(start),
-      _end(end) {}
+      _current(untype(start)),
+      _end(untype(end)) {}
 
   virtual void work() {
+    const size_t size = ZGranuleSize;
+
     for (;;) {
-      // Get granule offset
-      const size_t size = ZGranuleSize;
-      const zoffset offset = to_zoffset(Atomic::fetch_then_add((uintptr_t*)&_start, size));
-      if (offset >= _end) {
+      // Claim an offset for this thread
+      const uintptr_t claimed = Atomic::fetch_then_add(&_current, size);
+      if (claimed >= _end) {
         // Done
         break;
       }
 
-      // Pre-touch granule
-      _physical->pretouch(offset, size);
+      // At this point we know that we have a valid zoffset / zaddress.
+      const zoffset offset = to_zoffset(claimed);
+      const zaddress addr = ZOffset::address(offset);
+
+      // Pre-touch the granule
+      pretouch(addr, size);
     }
   }
 };
@@ -271,7 +281,7 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
 
   if (AlwaysPreTouch) {
     // Pre-touch page
-    ZPreTouchTask task(&_physical, page->start(), page->end());
+    ZPreTouchTask task(page->start(), page->end());
     workers->run_all(&task);
   }
 
@@ -366,7 +376,7 @@ void ZPageAllocator::decrease_capacity(size_t size, bool set_max_capacity) {
   if (set_max_capacity) {
     // Adjust current max capacity to avoid further attempts to increase capacity
     log_error_p(gc)("Forced to lower max Java heap size from "
-                    SIZE_FORMAT "M(%.0f%%) to " SIZE_FORMAT "M(%.0f%%)",
+                    "%zuM(%.0f%%) to %zuM(%.0f%%)",
                     _current_max_capacity / M, percent_of(_current_max_capacity, _max_capacity),
                     _capacity / M, percent_of(_capacity, _max_capacity));
 
@@ -639,7 +649,7 @@ ZPage* ZPageAllocator::alloc_page_create(ZPageAllocation* allocation) {
 
     // Update statistics
     ZStatInc(ZCounterPageCacheFlush, flushed);
-    log_debug(gc, heap)("Page Cache Flushed: " SIZE_FORMAT "M", flushed / M);
+    log_debug(gc, heap)("Page Cache Flushed: %zuM", flushed / M);
   }
 
   // Allocate any remaining physical memory. Capacity and used has
@@ -798,6 +808,11 @@ ZPage* ZPageAllocator::prepare_to_recycle(ZPage* page, bool allow_defragment) {
     return defragment_page(to_recycle);
   }
 
+  // Remove the remset before recycling
+  if (to_recycle->is_old() && to_recycle == page) {
+    to_recycle->remset_delete();
+  }
+
   return to_recycle;
 }
 
@@ -869,18 +884,9 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
 }
 
 void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
-  ZArray<ZPage*> to_recycle_pages;
-
-  // Prepare pages for recycling before taking the lock
-  ZListRemoveIterator<ZPage> allocation_pages_iter(allocation->pages());
-  for (ZPage* page; allocation_pages_iter.next(&page);) {
-    // Prepare to recycle
-    ZPage* const to_recycle = prepare_to_recycle(page, false /* allow_defragment */);
-
-    // Register for recycling
-    to_recycle_pages.push(to_recycle);
-  }
-
+  // The page(s) in the allocation are either taken from the cache or a newly
+  // created, mapped and commited ZPage. These page(s) have not been inserted in
+  // the page table, nor allocated a remset, so prepare_to_recycle is not required.
   ZLocker<ZLock> locker(&_lock);
 
   // Only decrease the overall used and not the generation used,
@@ -890,7 +896,7 @@ void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
   size_t freed = 0;
 
   // Free any allocated/flushed pages
-  ZArrayIterator<ZPage*> iter(&to_recycle_pages);
+  ZListRemoveIterator<ZPage> iter(allocation->pages());
   for (ZPage* page; iter.next(&page);) {
     freed += page->size();
     recycle_page(page);

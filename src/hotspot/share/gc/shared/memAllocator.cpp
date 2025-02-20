@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
@@ -294,13 +293,13 @@ HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) co
   mem = Universe::heap()->allocate_new_tlab(min_tlab_size, new_tlab_size, &allocation._allocated_tlab_size);
   if (mem == nullptr) {
     assert(allocation._allocated_tlab_size == 0,
-           "Allocation failed, but actual size was updated. min: " SIZE_FORMAT
-           ", desired: " SIZE_FORMAT ", actual: " SIZE_FORMAT,
+           "Allocation failed, but actual size was updated. min: %zu"
+           ", desired: %zu, actual: %zu",
            min_tlab_size, new_tlab_size, allocation._allocated_tlab_size);
     return nullptr;
   }
   assert(allocation._allocated_tlab_size != 0, "Allocation succeeded but actual size not updated. mem at: "
-         PTR_FORMAT " min: " SIZE_FORMAT ", desired: " SIZE_FORMAT,
+         PTR_FORMAT " min: %zu, desired: %zu",
          p2i(mem), min_tlab_size, new_tlab_size);
 
   // ...and clear or zap just allocated TLAB, if needed.
@@ -361,18 +360,23 @@ void MemAllocator::mem_clear(HeapWord* mem) const {
   assert(mem != nullptr, "cannot initialize null object");
   const size_t hs = oopDesc::header_size();
   assert(_word_size >= hs, "unexpected object size");
-  oopDesc::set_klass_gap(mem, 0);
+  if (oopDesc::has_klass_gap()) {
+    oopDesc::set_klass_gap(mem, 0);
+  }
   Copy::fill_to_aligned_words(mem + hs, _word_size - hs);
 }
 
 oop MemAllocator::finish(HeapWord* mem) const {
   assert(mem != nullptr, "null object pointer");
-  // May be bootstrapping
-  oopDesc::set_mark(mem, markWord::prototype());
   // Need a release store to ensure array/class length, mark word, and
   // object zeroing are visible before setting the klass non-null, for
   // concurrent collectors.
-  oopDesc::release_set_klass(mem, _klass);
+  if (UseCompactObjectHeaders) {
+    oopDesc::release_set_mark(mem, _klass->prototype_header());
+  } else {
+    oopDesc::set_mark(mem, markWord::prototype());
+    oopDesc::release_set_klass(mem, _klass);
+  }
   return cast_to_oop(mem);
 }
 

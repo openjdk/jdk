@@ -78,8 +78,7 @@ public final class Boolean implements java.io.Serializable,
      *
      * @since   1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Boolean> TYPE = (Class<Boolean>) Class.getPrimitiveClass("boolean");
+    public static final Class<Boolean> TYPE = Class.getPrimitiveClass("boolean");
 
     /**
      * The value of the Boolean.
@@ -255,8 +254,8 @@ public final class Boolean implements java.io.Serializable,
      *          same value; {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Boolean) {
-            return value == ((Boolean)obj).booleanValue();
+        if (obj instanceof Boolean b) {
+            return value == b.booleanValue();
         }
         return false;
     }
@@ -272,18 +271,11 @@ public final class Boolean implements java.io.Serializable,
      *
      * @param   name   the system property name.
      * @return  the {@code boolean} value of the system property.
-     * @throws  SecurityException for the same reasons as
-     *          {@link System#getProperty(String) System.getProperty}
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
     public static boolean getBoolean(String name) {
-        boolean result = false;
-        try {
-            result = parseBoolean(System.getProperty(name));
-        } catch (IllegalArgumentException | NullPointerException e) {
-        }
-        return result;
+        return name != null && !name.isEmpty() && parseBoolean(System.getProperty(name));
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/oop.hpp"
 #include "utilities/macros.hpp"
@@ -34,11 +35,12 @@
 class ArchiveBuilder;
 class ArchiveHeapInfo;
 class FileMapInfo;
+class Method;
 class outputStream;
 class SerializeClosure;
 class StaticArchiveBuilder;
 
-template<class E> class GrowableArray;
+template<class E> class Array;
 
 enum MapArchiveResult {
   MAP_ARCHIVE_SUCCESS,
@@ -56,6 +58,7 @@ class MetaspaceShared : AllStatic {
   static intx _relocation_delta;
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
+  static Array<Method*>* _archived_method_handle_intrinsics;
 
  public:
   enum {
@@ -75,6 +78,7 @@ class MetaspaceShared : AllStatic {
 #endif
 
 private:
+  static void exercise_runtime_cds_code(TRAPS) NOT_CDS_RETURN;
   static void preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) NOT_CDS_RETURN;
   static void preload_classes(TRAPS) NOT_CDS_RETURN;
 
@@ -110,6 +114,10 @@ public:
   static void unrecoverable_writing_error(const char* message = nullptr);
   static void writing_error(const char* message = nullptr);
 
+  static void make_method_handle_intrinsics_shareable() NOT_CDS_RETURN;
+  static void write_method_handle_intrinsics() NOT_CDS_RETURN;
+  static Array<Method*>* archived_method_handle_intrinsics() { return _archived_method_handle_intrinsics; }
+  static void early_serialize(SerializeClosure* sc) NOT_CDS_RETURN;
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
 
   // JVM/TI RedefineClasses() support:

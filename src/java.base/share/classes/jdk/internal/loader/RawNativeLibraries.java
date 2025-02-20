@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import jdk.internal.misc.VM;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -78,18 +76,11 @@ public final class RawNativeLibraries {
      *
      * @param path the path of the native library
      */
-    @SuppressWarnings("removal")
     public NativeLibrary load(Path path) {
-        String name = AccessController.doPrivileged(new PrivilegedAction<>() {
-            public String run() {
-                try {
-                    return path.toRealPath().toString();
-                } catch (IOException e) {
-                    return null;
-                }
-            }
-        });
-        if (name == null) {
+        String name;
+        try {
+            name = path.toRealPath().toString();
+        } catch (IOException e) {
             return null;
         }
         return load(name);

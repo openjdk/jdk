@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/osThread.hpp"
@@ -32,7 +31,6 @@
 
 OSThread::OSThread()
   : _thread_id(0),
-    _thread_type(),
     _kernel_thread_id(0),
     _caller_sigmask(),
     sr(),

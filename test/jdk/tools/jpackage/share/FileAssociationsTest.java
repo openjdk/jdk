@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
 
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.List;
-import jdk.jpackage.test.TKit;
+
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.FileAssociations;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.FileAssociations;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.TKit;
 
 /**
  * Test --file-associations parameter. Output of the test should be
@@ -57,12 +57,11 @@ import jdk.jpackage.test.Annotations.Parameter;
 /*
  * @test
  * @summary jpackage with --file-associations
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest == null
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile FileAssociationsTest.java
+ * @compile -Xlint:all -Werror FileAssociationsTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=FileAssociationsTest
  */
@@ -70,12 +69,11 @@ import jdk.jpackage.test.Annotations.Parameter;
 /*
  * @test
  * @summary jpackage with --file-associations
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @requires jpackage.test.SQETest != null
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile FileAssociationsTest.java
+ * @compile -Xlint:all -Werror FileAssociationsTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=FileAssociationsTest.test
  */

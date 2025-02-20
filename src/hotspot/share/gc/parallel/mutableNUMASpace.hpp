@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,12 +53,10 @@
  * bytes that can be moved during the adaptation phase.
  *   Chunks may contain pages from a wrong locality group. The page-scanner has
  * been introduced to address the problem. Remote pages typically appear due to
- * the memory shortage in the target locality group. Besides Solaris would
- * allocate a large page from the remote locality group even if there are small
- * local pages available. The page-scanner scans the pages right after the
- * collection and frees remote pages in hope that subsequent reallocation would
- * be more successful. This approach proved to be useful on systems with high
- * load where multiple processes are competing for the memory.
+ * the memory shortage in the target locality group. The page-scanner scans the pages
+ * right after the collection and frees remote pages in hope that subsequent
+ * reallocation would be more successful. This approach proved to be useful on systems
+ * with high load where multiple processes are competing for the memory.
  */
 
 class MutableNUMASpace : public MutableSpace {
