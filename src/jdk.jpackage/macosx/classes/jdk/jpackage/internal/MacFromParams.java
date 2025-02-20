@@ -42,6 +42,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FI
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
+import static jdk.jpackage.internal.model.MacPackage.RUNTIME_PACKAGE_LAYOUT;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_DMG;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
@@ -62,6 +63,7 @@ import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.MacLauncher;
 import jdk.jpackage.internal.model.MacPkgPackage;
+import jdk.jpackage.internal.model.RuntimeLayout;
 
 
 final class MacFromParams {
@@ -69,14 +71,20 @@ final class MacFromParams {
     private static MacApplication createMacApplication(
             Map<String, ? super Object> params) throws ConfigException, IOException {
 
-        adjustRuntimeDir(params);
+        final var predefinedRuntimeLayout = PREDEFINED_RUNTIME_IMAGE.findIn(params).map(predefinedRuntimeImage -> {
+            if (Files.isDirectory(RUNTIME_PACKAGE_LAYOUT.resolveAt(predefinedRuntimeImage).runtimeDirectory())) {
+                return RUNTIME_PACKAGE_LAYOUT;
+            } else {
+                return RuntimeLayout.DEFAULT;
+            }
+        });
 
         final var launcherFromParams = new LauncherFromParams(Optional.of(MacFromParams::createMacFa));
 
         final var app = createApplicationBuilder(params, toFunction(launcherParams -> {
             var launcher = launcherFromParams.create(launcherParams);
             return MacLauncher.create(launcher);
-        }), APPLICATION_LAYOUT).create();
+        }), APPLICATION_LAYOUT, predefinedRuntimeLayout).create();
 
         final var appBuilder = new MacApplicationBuilder(app);
 
@@ -162,15 +170,6 @@ final class MacFromParams {
         FA_MAC_UTTYPECONFORMSTO.copyInto(params, builder::utTypeConformsTo);
 
         return toFunction(builder::create).apply(fa);
-    }
-
-    private static void adjustRuntimeDir(Map<String, ? super Object> params) {
-        PREDEFINED_RUNTIME_IMAGE.copyInto(params, runtimeRoot -> {
-            final var runtimeDir = runtimeRoot.resolve("Contents/Home");
-            if (Files.isDirectory(runtimeDir)) {
-                params.put(PREDEFINED_RUNTIME_IMAGE.getID(), runtimeDir);
-            }
-        });
     }
 
     static final BundlerParamInfo<MacApplication> APPLICATION = createApplicationBundlerParam(

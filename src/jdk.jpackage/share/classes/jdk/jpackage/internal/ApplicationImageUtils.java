@@ -37,7 +37,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.PackagingPipeline.ApplicationImageTaskAction;
 import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.CustomLauncherIcon;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.util.FileUtils;
@@ -79,45 +81,45 @@ final class ApplicationImageUtils {
         return Optional.of(resource);
     }
 
-    static PackagingPipeline.ApplicationImageTaskAction createWriteRuntimeAction() {
-        return (env, app, appLayout) -> {
-            app.runtimeBuilder().orElseThrow().createRuntime(appLayout);
+    static ApplicationImageTaskAction<Application, ApplicationLayout> createWriteRuntimeAction() {
+        return env -> {
+            env.app().runtimeBuilder().orElseThrow().createRuntime(env.resolvedLayout());
         };
     }
 
-    static PackagingPipeline.ApplicationImageTaskAction createWriteAppImageFileAction() {
-        return (env, app, appLayout) -> {
-            new AppImageFile(app).save(appLayout);
+    static ApplicationImageTaskAction<Application, ApplicationLayout> createWriteAppImageFileAction() {
+        return env -> {
+            new AppImageFile(env.app()).save(env.resolvedLayout());
         };
     }
 
-    static PackagingPipeline.ApplicationImageTaskAction createCopyContentAction(Supplier<List<Path>> excludeCopyDirs) {
-        return (env, app, appLayout) -> {
+    static ApplicationImageTaskAction<Application, ApplicationLayout> createCopyContentAction(Supplier<List<Path>> excludeCopyDirs) {
+        return env -> {
             var excludeCandidates = Stream.concat(
                     excludeCopyDirs.get().stream(),
-                    Stream.of(env.buildRoot(), env.appImageDir())
+                    Stream.of(env.env().buildRoot(), env.env().appImageDir())
             ).map(Path::toAbsolutePath).toList();
 
-            app.srcDir().ifPresent(toConsumer(srcDir -> {
-                copyRecursive(srcDir, appLayout.appDirectory(), excludeCandidates);
+            env.app().srcDir().ifPresent(toConsumer(srcDir -> {
+                copyRecursive(srcDir, env.resolvedLayout().appDirectory(), excludeCandidates);
             }));
 
-            for (var srcDir : app.contentDirs()) {
+            for (var srcDir : env.app().contentDirs()) {
                 copyRecursive(srcDir,
-                        appLayout.contentDirectory().resolve(srcDir.getFileName()),
+                        env.resolvedLayout().contentDirectory().resolve(srcDir.getFileName()),
                         excludeCandidates);
             }
         };
     }
 
-    static PackagingPipeline.ApplicationImageTaskAction createWriteLaunchersAction() {
-        return (env, app, appLayout) -> {
-            for (var launcher : app.launchers()) {
+    static ApplicationImageTaskAction<Application, ApplicationLayout> createWriteLaunchersAction() {
+        return env -> {
+            for (var launcher : env.app().launchers()) {
                 // Create corresponding .cfg file
-                new CfgFile(app, launcher).create(appLayout);
+                new CfgFile(env.app(), launcher).create(env.resolvedLayout());
 
                 // Copy executable to launchers folder
-                Path executableFile = appLayout.launchersDirectory().resolve(
+                Path executableFile = env.resolvedLayout().launchersDirectory().resolve(
                         launcher.executableNameWithSuffix());
                 try (var in = launcher.executableResource()) {
                     Files.createDirectories(executableFile.getParent());

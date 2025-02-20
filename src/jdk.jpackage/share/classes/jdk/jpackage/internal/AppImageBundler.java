@@ -118,15 +118,6 @@ class AppImageBundler extends AbstractBundler {
         return false;
     }
 
-    final AppImageBundler setDependentTask(boolean v) {
-        dependentTask = v;
-        return this;
-    }
-
-    final boolean isDependentTask() {
-        return dependentTask;
-    }
-
     @FunctionalInterface
     static interface AppImageSupplier {
 
@@ -159,11 +150,9 @@ class AppImageBundler extends AbstractBundler {
             imageName = imageName + ".app";
         }
 
-        if (!dependentTask) {
-            Log.verbose(MessageFormat.format(
-                    I18N.getString("message.creating-app-bundle"),
-                    imageName, outputDirectory.toAbsolutePath()));
-        }
+        Log.verbose(MessageFormat.format(
+                I18N.getString("message.creating-app-bundle"),
+                imageName, outputDirectory.toAbsolutePath()));
 
         // Create directory structure
         Path rootDirectory = outputDirectory.resolve(imageName);
@@ -177,7 +166,6 @@ class AppImageBundler extends AbstractBundler {
         return rootDirectory;
     }
 
-    private boolean dependentTask;
     private ParamsValidator paramsValidator;
     private AppImageSupplier appImageSupplier;
 }

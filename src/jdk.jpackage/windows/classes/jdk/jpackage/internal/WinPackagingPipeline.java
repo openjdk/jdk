@@ -28,11 +28,13 @@ import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconReso
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import jdk.jpackage.internal.PackagingPipeline.AppImageTaskID;
+import jdk.jpackage.internal.PackagingPipeline.AppImageBuildEnv;
+import jdk.jpackage.internal.PackagingPipeline.BuildApplicationTaskID;
+import jdk.jpackage.internal.PackagingPipeline.CopyAppImageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
-import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinLauncher;
@@ -45,19 +47,19 @@ final class WinPackagingPipeline {
 
     static PackagingPipeline.Builder build() {
         return PackagingPipeline.buildStandard()
-                .inputApplicationLayoutForPackaging(pkg -> pkg.app().asApplicationLayout())
-                .task(PrimaryTaskID.COPY_APP_IMAGE).noaction().add()
+                .appImageLayoutForPackaging(Package::appImageLayout)
+                .task(CopyAppImageTaskID.COPY).noaction().add()
                 .task(WinAppImageTaskID.REBRAND_LAUNCHERS)
-                        .addDependency(AppImageTaskID.LAUNCHERS)
+                        .addDependency(BuildApplicationTaskID.LAUNCHERS)
                         .addDependent(PrimaryTaskID.BUILD_APPLICATION_IMAGE)
-                        .action(WinPackagingPipeline::rebrandLaunchers).add();
+                        .applicationAction(WinPackagingPipeline::rebrandLaunchers).add();
     }
 
-    private static void rebrandLaunchers(BuildEnv env, Application app,
-            ApplicationLayout appLayout) throws IOException, PackagerException {
-        for (var launcher : app.launchers()) {
-            final var iconTarget = createLauncherIconResource(app, launcher, env::createResource).map(iconResource -> {
-                var iconDir = env.buildRoot().resolve("icons");
+    private static void rebrandLaunchers(AppImageBuildEnv<WinApplication, ApplicationLayout> env)
+            throws IOException, PackagerException {
+        for (var launcher : env.app().launchers()) {
+            final var iconTarget = createLauncherIconResource(env.app(), launcher, env.env()::createResource).map(iconResource -> {
+                var iconDir = env.env().buildRoot().resolve("icons");
                 var theIconTarget = iconDir.resolve(launcher.executableName() + ".ico");
                 try {
                     if (null == iconResource.saveToFile(theIconTarget)) {
@@ -69,13 +71,13 @@ final class WinPackagingPipeline {
                 return theIconTarget;
             });
 
-            var launcherExecutable = appLayout.launchersDirectory().resolve(
+            var launcherExecutable = env.resolvedLayout().launchersDirectory().resolve(
                     launcher.executableNameWithSuffix());
 
             // Update branding of launcher executable
-            new ExecutableRebrander((WinApplication) app,
-                    (WinLauncher) launcher, env::createResource).execute(
-                    env, launcherExecutable, iconTarget);
+            new ExecutableRebrander(env.app(),
+                    (WinLauncher) launcher, env.env()::createResource).execute(
+                            env.env(), launcherExecutable, iconTarget);
         }
     }
 

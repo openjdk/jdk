@@ -52,9 +52,11 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import jdk.jpackage.internal.PackagingPipeline.PackageBuildEnv;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.model.WinMsiPackage;
@@ -204,14 +206,8 @@ public class WinMsiBundler  extends AbstractBundler {
         }
     }
 
-    private void prepareProto(WinMsiPackage pkg, BuildEnv env, Path msiOutputDir) throws
+    private void prepareProto(Package pkg, BuildEnv env, AppImageLayout appImageLayout) throws
             PackagerException, IOException {
-
-        final var taskPipeline = WinPackagingPipeline.build().excludeDirFromCopying(msiOutputDir).create();
-
-        taskPipeline.execute(env, pkg, msiOutputDir);
-
-        final AppImageLayout appImageLayout = taskPipeline.analyzeAppImageDir(env, pkg).resolvedImagelayout();
 
         // Configure installer icon
         if (appImageLayout instanceof RuntimeLayout runtimeLayout) {
@@ -251,32 +247,32 @@ public class WinMsiBundler  extends AbstractBundler {
         var pkg = WinFromParams.MSI_PACKAGE.fetchFrom(params);
         var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
-        Path imageDir = env.appImageDir();
-        try {
-            prepareProto(pkg, env, outputParentDir);
-            for (var wixFragment : wixFragments) {
-                wixFragment.initFromParams(env, pkg);
-                wixFragment.addFilesToConfigRoot();
-            }
+        WinPackagingPipeline.build()
+                .excludeDirFromCopying(outputParentDir)
+                .task(PackagingPipeline.PackageTaskID.CREATE_PACKAGE_FILE)
+                        .packageAction(this::buildPackage)
+                        .add()
+                .create().execute(env, pkg, outputParentDir);
 
-            Map<String, String> wixVars = prepareMainProjectFile(env, pkg);
-
-            new ScriptRunner()
-            .setDirectory(imageDir)
-            .setResourceCategoryId("resource.post-app-image-script")
-            .setScriptNameSuffix("post-image")
-            .setEnvironmentVariable("JpAppImageDir", imageDir.toAbsolutePath().toString())
-            .run(env, pkg.packageName());
-
-            return buildMSI(env, pkg, wixVars, outputParentDir);
-        } catch (IOException ex) {
-            Log.verbose(ex);
-            throw new PackagerException(ex);
-        }
+        return outputParentDir.resolve(pkg.packageFileNameWithSuffix()).toAbsolutePath();
     }
 
-    private Map<String, String> prepareMainProjectFile(BuildEnv env, WinMsiPackage pkg) throws IOException {
+    private void buildPackage(PackageBuildEnv<WinMsiPackage, AppImageLayout> env) throws PackagerException, IOException {
+        prepareProto(env.pkg(), env.env(), env.resolvedLayout());
+        for (var wixFragment : wixFragments) {
+            wixFragment.initFromParams(env.env(), env.pkg());
+            wixFragment.addFilesToConfigRoot();
+        }
+
+        Map<String, String> wixVars = prepareMainProjectFile(env);
+
+        buildMSI(env.env(), env.pkg(), wixVars, env.outputDir());
+    }
+
+    private Map<String, String> prepareMainProjectFile(PackageBuildEnv<WinMsiPackage, AppImageLayout> env) throws IOException {
         Map<String, String> data = new HashMap<>();
+
+        final var pkg = env.pkg();
 
         data.put("JpProductCode", pkg.productCode().toString());
         data.put("JpProductUpgradeCode", pkg.upgradeCode().toString());
@@ -310,9 +306,9 @@ public class WinMsiBundler  extends AbstractBundler {
         });
 
         data.put("JpAppSizeKb", Long.toString(AppImageLayout.toPathGroup(
-                pkg.packageLayout().resolveAt(env.appImageDir())).sizeInBytes() >> 10));
+                env.resolvedLayout()).sizeInBytes() >> 10));
 
-        data.put("JpConfigDir", env.configDir().toAbsolutePath().toString());
+        data.put("JpConfigDir", env.env().configDir().toAbsolutePath().toString());
 
         if (pkg.isSystemWideInstall()) {
             data.put("JpIsSystemWide", "yes");

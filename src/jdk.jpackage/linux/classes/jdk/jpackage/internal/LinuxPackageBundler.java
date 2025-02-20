@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.PackagingPipeline.PackageBuildEnv;
+import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.Package;
@@ -103,48 +105,41 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         final LinuxPackage pkg = pkgParam.fetchFrom(params);
         final var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
-        final BuildEnv pkgEnv;
-
-        if (pkg.app().runtimeBuilder().isEmpty()) {
-            // Packaging external app image
-            pkgEnv = BuildEnv.withAppImageDir(env, BuildEnvBuilder.defaultAppImageDir(env.buildRoot()));
-        } else {
-            pkgEnv = env;
-        }
-
         LinuxPackagingPipeline.build()
                 .excludeDirFromCopying(outputParentDir)
-                .pkgBuildEnvFactory((e, p) -> pkgEnv)
+                .task(PackagingPipeline.PackageTaskID.CREATE_PACKAGE_FILE)
+                        .packageAction(this::buildPackage)
+                        .add()
+                .task(PackagingPipeline.PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
+                        .noaction() // FIXME: implement post-app-image script execution on Linux
+                        .add()
                 .create().execute(env, pkg, outputParentDir);
 
-        try {
-            for (var ca : customActions) {
-                ca.init(pkgEnv, pkg);
-            }
+        return outputParentDir.resolve(pkg.packageFileNameWithSuffix()).toAbsolutePath();
+    }
 
-            Map<String, String> data = createDefaultReplacementData(pkgEnv, pkg);
-
-            for (var ca : customActions) {
-                ShellCustomAction.mergeReplacementData(data, ca.instance.create());
-            }
-
-            data.putAll(createReplacementData(pkgEnv, pkg));
-
-            Path packageBundle = buildPackageBundle(Collections.unmodifiableMap(
-                    data), pkgEnv, pkg, outputParentDir);
-
-            verifyOutputBundle(pkgEnv, pkg, packageBundle).stream()
-                    .filter(Objects::nonNull)
-                    .forEachOrdered(ex -> {
-                Log.verbose(ex.getLocalizedMessage());
-                Log.verbose(ex.getAdvice());
-            });
-
-            return packageBundle;
-        } catch (IOException ex) {
-            Log.verbose(ex);
-            throw new PackagerException(ex);
+    private void buildPackage(PackageBuildEnv<LinuxPackage, AppImageLayout> env) throws PackagerException, IOException {
+        for (var ca : customActions) {
+            ca.init(env.env(), env.pkg());
         }
+
+        Map<String, String> data = createDefaultReplacementData(env.env(), env.pkg());
+
+        for (var ca : customActions) {
+            ShellCustomAction.mergeReplacementData(data, ca.instance.create());
+        }
+
+        data.putAll(createReplacementData(env.env(), env.pkg()));
+
+        Path packageBundle = buildPackageBundle(Collections.unmodifiableMap(
+                data), env.env(), env.pkg(), env.outputDir());
+
+        verifyOutputBundle(env.env(), env.pkg(), packageBundle).stream()
+                .filter(Objects::nonNull)
+                .forEachOrdered(ex -> {
+            Log.verbose(ex.getLocalizedMessage());
+            Log.verbose(ex.getAdvice());
+        });
     }
 
     private List<String> getListOfNeededPackages(BuildEnv env) throws IOException {

@@ -25,12 +25,13 @@
 package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconResource;
+import jdk.jpackage.internal.PackagingPipeline.AppImageBuildEnv;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import jdk.jpackage.internal.PackagingPipeline.AppImageTaskID;
+import jdk.jpackage.internal.PackagingPipeline.BuildApplicationTaskID;
 import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.Application;
@@ -48,27 +49,29 @@ final class LinuxPackagingPipeline {
         return PackagingPipeline.buildStandard()
                 .task(LinuxAppImageTaskID.LAUNCHER_LIB)
                         .addDependent(PrimaryTaskID.BUILD_APPLICATION_IMAGE)
-                        .action(LinuxPackagingPipeline::writeLauncherLib).add()
+                        .applicationAction(LinuxPackagingPipeline::writeLauncherLib).add()
                 .task(LinuxAppImageTaskID.LAUNCHER_ICONS)
-                        .addDependent(AppImageTaskID.CONTENT)
-                        .action(LinuxPackagingPipeline::writeLauncherIcons).add();
+                        .addDependent(BuildApplicationTaskID.CONTENT)
+                        .applicationAction(LinuxPackagingPipeline::writeLauncherIcons).add();
     }
 
-    private static void writeLauncherLib(BuildEnv env, Application app,
-            ApplicationLayout appLayout) throws IOException {
-        var launcherLib = ((LinuxApplicationLayout)appLayout).libAppLauncher();
+    private static void writeLauncherLib(
+            AppImageBuildEnv<Application, LinuxApplicationLayout> env) throws IOException {
+
+        final var launcherLib = env.resolvedLayout().libAppLauncher();
         try (var in = ResourceLocator.class.getResourceAsStream("libjpackageapplauncheraux.so")) {
             Files.createDirectories(launcherLib.getParent());
             Files.copy(in, launcherLib);
         }
     }
 
-    private static void writeLauncherIcons(BuildEnv env, Application app,
-            ApplicationLayout appLayout) throws IOException {
-        for (var launcher : app.launchers()) {
-            createLauncherIconResource(app, launcher, env::createResource).ifPresent(iconResource -> {
+    private static void writeLauncherIcons(
+            AppImageBuildEnv<Application, ApplicationLayout> env) throws IOException {
+
+        for (var launcher : env.app().launchers()) {
+            createLauncherIconResource(env.app(), launcher, env.env()::createResource).ifPresent(iconResource -> {
                 String iconFileName = launcher.executableName() + ".png";
-                Path iconTarget = appLayout.destktopIntegrationDirectory().resolve(iconFileName);
+                Path iconTarget = env.resolvedLayout().destktopIntegrationDirectory().resolve(iconFileName);
                 try {
                     iconResource.saveToFile(iconTarget);
                 } catch (IOException ex) {
