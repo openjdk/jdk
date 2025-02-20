@@ -130,6 +130,8 @@ static bool on_compiler_thread() {
   return false;
 }
 
+static volatile uint64_t xxx = 0;
+
 Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType alloc_failmode) {
   // - requested_size = sizeof(Chunk)
   // - length = payload size
@@ -173,10 +175,12 @@ Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType allo
   // We rely on arena alignment <= malloc alignment.
   assert(is_aligned(chunk, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
 
-  if (on_compiler_thread()) {
+  if (CompilationMemoryStatistic::enabled() && on_compiler_thread()) {
     uint64_t stamp = 0;
     CompilationMemoryStatistic::on_arena_chunk_allocation(chunk->length(), (int)arena->get_tag(), &stamp);
     chunk->set_stamp(stamp);
+  } else {
+    chunk->set_stamp(0);
   }
 
   return chunk;
@@ -185,8 +189,9 @@ Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType allo
 void ChunkPool::deallocate_chunk(Chunk* c) {
 
   // Inform compilation memstat
-  if (c->stamp() != 0 && on_compiler_thread()) {
-    assert(CompilationMemoryStatistic::enabled(), "we stamped, so memstat was enabled");
+  if (c->stamp() != 0) {
+    assert(CompilationMemoryStatistic::enabled(), "we stamped, so memstat was enabled already");
+    assert(on_compiler_thread(), "we stamped this chunk");
     CompilationMemoryStatistic::on_arena_chunk_deallocation(c->length(), c->stamp());
     c->set_stamp(0);
   }

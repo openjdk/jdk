@@ -39,8 +39,6 @@ class CompilationMemoryStatistic : public AllStatic {
 
   static void on_phase_start_0(int phase_trc_id, const char* text);
   static void on_phase_end_0();
-  static void on_arena_chunk_allocation_0(size_t size, int arenatag, uint64_t* stamp);
-  static void on_arena_chunk_deallocation_0(size_t size, uint64_t stamp);
 
   // Private, should only be called via CompilationMemoryStatisticMark
   static void on_start_compilation(const DirectiveSet* directive);
@@ -69,18 +67,8 @@ public:
     }
   }
 
-  static inline void on_arena_chunk_allocation(size_t size, int arena_tag, uint64_t* stamp) {
-    (*stamp) = 0; // defaults to "not tracked"
-    if (enabled()) {
-      on_arena_chunk_allocation_0(size, arena_tag, stamp);
-    }
-  }
-
-  static inline void on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
-    if (enabled()) {
-      on_arena_chunk_deallocation_0(size, stamp);
-    }
-  }
+  static void on_arena_chunk_allocation(size_t size, int arenatag, uint64_t* stamp);
+  static void on_arena_chunk_deallocation(size_t size, uint64_t stamp);
 
   static void print_final_report(outputStream* st);
   static void print_error_report(outputStream* st);

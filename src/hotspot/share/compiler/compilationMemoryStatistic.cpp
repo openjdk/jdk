@@ -892,7 +892,7 @@ static void inform_compilation_about_oom(CompilerType ct) {
   }
 }
 
-void CompilationMemoryStatistic::on_arena_chunk_allocation_0(size_t size, int arena_tag, uint64_t* stamp) {
+void CompilationMemoryStatistic::on_arena_chunk_allocation(size_t size, int arena_tag, uint64_t* stamp) {
 
   assert(enabled(), "Not enabled?");
   assert(arena_tag >= 0 && arena_tag < arena_tag_max, "Arena Tag OOB (%d)", arena_tag_max);
@@ -962,7 +962,7 @@ void CompilationMemoryStatistic::on_arena_chunk_allocation_0(size_t size, int ar
   }
 }
 
-void CompilationMemoryStatistic::on_arena_chunk_deallocation_0(size_t size, uint64_t stamp) {
+void CompilationMemoryStatistic::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   ArenaStatCounter* const arena_stat = th->arena_stat();
