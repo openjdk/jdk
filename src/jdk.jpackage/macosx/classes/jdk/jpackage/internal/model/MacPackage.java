@@ -22,47 +22,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.MacDmgPackage;
-import jdk.jpackage.internal.model.MacApplication;
-import jdk.jpackage.internal.model.MacDmgPackageMixin;
-import jdk.jpackage.internal.model.MacPackage;
+import jdk.jpackage.internal.util.CompositeProxy;
 
-final class MacDmgPackageBuilder {
+public interface MacPackage extends Package {
 
-    MacDmgPackageBuilder(PackageBuilder pkgBuilder) {
-        this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
+    @Override
+    default AppImageLayout appImageLayout() {
+        if (isRuntimeInstaller()) {
+            return RUNTIME_PACKAGE_LAYOUT;
+        } else {
+            return Package.super.appImageLayout();
+        }
     }
 
-    MacDmgPackageBuilder dmgContent(List<Path> v) {
-        dmgContent = v;
-        return this;
+    public static MacPackage create(Package pkg) {
+        return CompositeProxy.create(MacPackage.class, pkg);
     }
 
-    MacDmgPackageBuilder icon(Path v) {
-        icon = v;
-        return this;
-    }
-
-    List<Path> validatedDmgContent() {
-        return Optional.ofNullable(dmgContent).orElseGet(List::of);
-    }
-
-    MacDmgPackage create() throws ConfigException {
-        final var pkg = MacPackage.create(pkgBuilder.create());
-
-        return MacDmgPackage.create(pkg, new MacDmgPackageMixin.Stub(
-                Optional.ofNullable(icon).or(((MacApplication)pkg.app())::icon),
-                validatedDmgContent()));
-    }
-
-    private Path icon;
-    private List<Path> dmgContent;
-    private final PackageBuilder pkgBuilder;
+    public final static RuntimeLayout RUNTIME_PACKAGE_LAYOUT = RuntimeLayout.create(Path.of("Contents/Home"));
 }

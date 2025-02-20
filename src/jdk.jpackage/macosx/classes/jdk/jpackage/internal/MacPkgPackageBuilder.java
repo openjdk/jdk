@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.MacPkgPackageMixin;
 import jdk.jpackage.internal.model.SigningConfig;
@@ -43,7 +44,7 @@ final class MacPkgPackageBuilder {
     }
 
     MacPkgPackage create() throws ConfigException {
-        return MacPkgPackage.create(pkgBuilder.create(),
+        return MacPkgPackage.create(MacPackage.create(pkgBuilder.create()),
                 new MacPkgPackageMixin.Stub(createSigningConfig()));
     }
 
