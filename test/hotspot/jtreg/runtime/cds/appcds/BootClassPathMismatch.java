@@ -60,10 +60,14 @@ public class BootClassPathMismatch {
             // this test is not applicable to dynamic archive since
             // there is no class to be archived in the top archive
             test.testBootClassPathMatchWithAppend();
+
+            // this test is not applicable to dynamic archive since
+            // there is no class path (-cp) specified at dyanmic archive
+            // creation.
+            test.testBootClassPathAppend();
         }
         test.testBootClassPathMatch();
         test.testBootClassPathMismatchTwoJars();
-        test.testBootClassPathAppend();
     }
 
     /* Archive contains boot classes only, with Hello class on -Xbootclasspath/a path.
