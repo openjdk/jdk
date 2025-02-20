@@ -613,7 +613,7 @@ public class Symtab {
         valueBasedInternalType = enterSyntheticAnnotation("jdk.internal.ValueBased+Annotation");
         classDescType = enterClass("java.lang.constant.ClassDesc");
         enumDescType = enterClass("java.lang.Enum$EnumDesc");
-        ioType = enterClass("java.io.IO");
+        ioType = enterClass("java.lang.IO");
         // For serialization lint checking
         objectStreamFieldType = enterClass("java.io.ObjectStreamField");
         objectInputStreamType = enterClass("java.io.ObjectInputStream");

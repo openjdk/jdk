@@ -59,39 +59,47 @@ public class ConsoleToolTest extends ReplToolTesting {
     @Test //JDK-8341631
     public void testIO() {
         test(new String[] {"--enable-preview"},
-             a -> {assertCommandWithOutputAndTerminal(a,
-                                                      "java.io.IO.readln(\"%%s\");\ninput", //newline automatically appended
+             a -> {assertCommandWithOutputAndInput(a,
+                                                      "java.lang.IO.readln(\"%%s\");",
+                                                      "input\n",
                                                       "$1 ==> \"input\"",
+                                                      "%%s",
                                                       """
-                                                      \u0005java.io.IO.readln(\"%%s\");
-                                                      %%sinput
+                                                      \u0005java.lang.IO.readln(\"%%s\");
                                                       """);},
-             a -> {assertCommandWithOutputAndTerminal(a,
-                                                      "java.io.IO.readln();\ninput!", //newline automatically appended
+             a -> {assertCommandWithOutputAndInput(a,
+                                                      "java.lang.IO.readln();",
+                                                      "input!\n",
                                                       "$2 ==> \"input!\"",
-                                                      """
-                                                      \u0005java.io.IO.readln();
-                                                      input!
-                                                      """);},
-             a -> {assertCommandWithOutputAndTerminal(a,
-                                                      "java.io.IO.println(\"Hello, World!\");",
                                                       "",
                                                       """
-                                                      \u0005java.io.IO.println(\"Hello, World!\");
-                                                      Hello, World!
+                                                      \u0005java.lang.IO.readln();
                                                       """);},
-             a -> {assertCommandWithOutputAndTerminal(a,
-                                                      "java.io.IO.println();",
+             a -> {assertCommandWithOutputAndInput(a,
+                                                      "java.lang.IO.println(\"Hello, World!\");",
                                                       "",
+                                                      "",
+                                                      "Hello, World!\n",
                                                       """
-                                                      \u0005java.io.IO.println();
-
+                                                      \u0005java.lang.IO.println(\"Hello, World!\");
+                                                      """);},
+             a -> {assertCommandWithOutputAndInput(a,
+                                                      "java.lang.IO.println();",
+                                                      "",
+                                                      "",
+                                                      "\n",
+                                                      """
+                                                      \u0005java.lang.IO.println();
                                                       """);}
             );
     }
 
     void assertCommandWithOutputAndTerminal(boolean a, String command, String out, String terminalOut) {
         assertCommand(a, command, out, null, null, null, null, terminalOut);
+    }
+
+    void assertCommandWithOutputAndInput(boolean a, String command, String input, String out, String print, String terminalOut) {
+        assertCommand(a, command, out, null, input, print, null, terminalOut);
     }
 
 }

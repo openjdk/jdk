@@ -1,2 +1,2 @@
 import module java.base;
-import static java.io.IO.*;
+import static java.lang.IO.*;
