@@ -1321,6 +1321,8 @@ public class Attr extends JCTree.Visitor {
                 if (tree.isImplicitlyTyped()) {
                     setSyntheticVariableType(tree, v.type);
                 }
+                chk.checkLossOfPrecision(tree.init.pos(), tree.init.type, v.type, tree.init.type.constValue(),
+                  LintWarnings::PossibleLossOfPrecisionAssignment);
             }
             result = tree.type = v.type;
             if (env.enclClass.sym.isRecord() && tree.sym.owner.kind == TYP && !v.isStatic()) {
@@ -2542,6 +2544,9 @@ public class Attr extends JCTree.Visitor {
         // a new environment nested in the current one.
         Env<AttrContext> localEnv = env.dup(tree, env.info.dup());
 
+        // The method symbol
+        Symbol sym = null;
+
         // The types of the actual method arguments.
         List<Type> argtypes;
 
@@ -2620,7 +2625,7 @@ public class Attr extends JCTree.Visitor {
                 boolean selectSuperPrev = localEnv.info.selectSuper;
                 localEnv.info.selectSuper = true;
                 localEnv.info.pendingResolutionPhase = null;
-                Symbol sym = rs.resolveConstructor(
+                sym = rs.resolveConstructor(
                     tree.meth.pos(), localEnv, site, argtypes, typeargtypes);
                 localEnv.info.selectSuper = selectSuperPrev;
 
@@ -2659,7 +2664,7 @@ public class Attr extends JCTree.Visitor {
             Type qualifier = (tree.meth.hasTag(SELECT))
                     ? ((JCFieldAccess) tree.meth).selected.type
                     : env.enclClass.sym.type;
-            Symbol msym = TreeInfo.symbol(tree.meth);
+            Symbol msym = sym = TreeInfo.symbol(tree.meth);
             restype = adjustMethodReturnType(msym, qualifier, methName, argtypes, restype);
 
             chk.checkRefTypes(tree.typeargs, typeargtypes);
@@ -2670,6 +2675,9 @@ public class Attr extends JCTree.Visitor {
             result = check(tree, capturedRes, KindSelector.VAL, resultInfo);
         }
         chk.validate(tree.typeargs, localEnv);
+        if (sym instanceof MethodSymbol msym) {
+            chk.checkLossOfPrecision(tree.args, msym.params().map(v -> v.type));
+        }
     }
     //where
         Type adjustMethodReturnType(Symbol msym, Type qualifierType, Name methodName, List<Type> argtypes, Type restype) {
@@ -3969,7 +3977,11 @@ public class Attr extends JCTree.Visitor {
     public void visitAssign(JCAssign tree) {
         Type owntype = attribTree(tree.lhs, env.dup(tree), varAssignmentInfo);
         Type capturedType = capture(owntype);
-        attribExpr(tree.rhs, env, owntype);
+        Type vartype = attribExpr(tree.rhs, env, owntype);
+        if (!owntype.isErroneous() && !capturedType.isErroneous()) {
+            chk.checkLossOfPrecision(tree.rhs.pos(), vartype, capturedType,
+                vartype.constValue(), LintWarnings::PossibleLossOfPrecisionAssignment);
+        }
         result = check(tree, capturedType, KindSelector.VAL, resultInfo);
     }
 
@@ -3986,7 +3998,7 @@ public class Attr extends JCTree.Visitor {
             chk.checkCastable(tree.rhs.pos(),
                               operator.type.getReturnType(),
                               owntype);
-            chk.checkLossOfPrecision(tree.rhs.pos(), operand, owntype);
+            chk.checkLossOfPrecision(tree.rhs.pos(), operand, owntype, null, LintWarnings::PossibleLossOfPrecision);
         }
         result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }

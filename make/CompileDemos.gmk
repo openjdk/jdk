@@ -173,14 +173,14 @@ $(BUILD_DEMO_CodePointIM_JAR): $(CODEPOINT_METAINF_SERVICE_FILE)
 
 $(eval $(call SetupBuildDemo, FileChooserDemo, \
     DEMO_SUBDIR := jfc, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked this-escape, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked this-escape lossy-conversions, \
 ))
 
 $(eval $(call SetupBuildDemo, SwingSet2, \
     DEMO_SUBDIR := jfc, \
     EXTRA_COPY_TO_JAR := .java, \
     EXTRA_MANIFEST_ATTR := SplashScreen-Image: resources/images/splash.png, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked static serial cast this-escape, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked static serial cast this-escape lossy-conversions, \
 ))
 
 $(eval $(call SetupBuildDemo, Font2DTest, \
@@ -222,7 +222,7 @@ $(eval $(call SetupBuildDemo, TableExample, \
 ))
 
 $(eval $(call SetupBuildDemo, TransparentRuler, \
-    DISABLED_WARNINGS := this-escape, \
+    DISABLED_WARNINGS := this-escape lossy-conversions, \
     DEMO_SUBDIR := jfc, \
     MAIN_CLASS := transparentruler.Ruler, \
 ))

@@ -113,15 +113,15 @@ public class LossyConversions {
 
         e += a; e -= a; e *= a; e /= a; //no warnings
         e += b; e -= b; e *= b; e /= b; //no warnings
-        e += c; e -= c; e *= c; e /= c; //no warnings
-        e += d; e -= d; e *= d; e /= d; //no warnings
+        e += c; e -= c; e *= c; e /= c;
+        e += d; e -= d; e *= d; e /= d;
         e += e; e -= e; e *= e; e /= e; //no warnings
         e += f; e -= f; e *= f; e /= f;
 
         f += a; f -= a; f *= a; f /= a; //no warnings
         f += b; f -= b; f *= b; f /= b; //no warnings
         f += c; f -= c; f *= c; f /= c; //no warnings
-        f += d; f -= d; f *= d; f /= d; //no warnings
+        f += d; f -= d; f *= d; f /= d;
         f += e; f -= e; f *= e; f /= e; //no warnings
         f += f; f -= f; f *= f; f /= f; //no warnings
     }
@@ -188,5 +188,44 @@ public class LossyConversions {
         d += f; d -= f; d *= f; d /= f;
 
         e += f; e -= f; e *= f; e /= f;
+    }
+
+    public static final int INT2FLOAT_SAFE   = 0x10000000;
+    public static final int INT2FLOAT_UNSAFE = 0x10000001;
+
+    public static final long LONG2FLOAT_SAFE   = 0x10000000L;
+    public static final long LONG2FLOAT_UNSAFE = 0x10000001L;
+
+    public static final long LONG2DOUBLE_SAFE   = 0x1000000000000000L;
+    public static final long LONG2DOUBLE_UNSAFE = 0x1000000000000001L;
+
+    public void lossyAssignments() {
+
+        float f;
+        double d;
+
+        f = INT2FLOAT_SAFE;             // no warning
+        f = INT2FLOAT_UNSAFE;
+
+        f = LONG2FLOAT_SAFE;            // no warning
+        f = LONG2FLOAT_UNSAFE;
+
+        d = LONG2DOUBLE_SAFE;           // no warning
+        d = LONG2DOUBLE_UNSAFE;
+
+        floatMethod(INT2FLOAT_SAFE);    // no warning
+        floatMethod(INT2FLOAT_UNSAFE);
+
+        floatMethod(LONG2FLOAT_SAFE);   // no warning
+        floatMethod(LONG2FLOAT_UNSAFE);
+
+        doubleMethod(LONG2DOUBLE_SAFE); // no warning
+        doubleMethod(LONG2DOUBLE_UNSAFE);
+    }
+
+    public void floatMethod(float x) {
+    }
+
+    public void doubleMethod(double x) {
     }
 }

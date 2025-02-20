@@ -27,6 +27,7 @@ package com.sun.tools.javac.comp;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -102,6 +103,7 @@ public class Check {
     private final Resolve rs;
     private final Symtab syms;
     private final Enter enter;
+    private final ConstFold cfolder;
     private final DeferredAttr deferredAttr;
     private final Infer infer;
     private final Types types;
@@ -141,6 +143,7 @@ public class Check {
         rs = Resolve.instance(context);
         syms = Symtab.instance(context);
         enter = Enter.instance(context);
+        cfolder = ConstFold.instance(context);;
         deferredAttr = DeferredAttr.instance(context);
         infer = Infer.instance(context);
         types = Types.instance(context);
@@ -4120,15 +4123,37 @@ public class Check {
     }
 
     /**
-     *  Check for possible loss of precission
-     *  @param pos           Position for error reporting.
-     *  @param found    The computed type of the tree
-     *  @param req  The computed type of the tree
+     *  Check for possible loss of precision in the parameters to a method.
+     *  @param actual   Actual parameters
+     *  @param formal   Formal parameters
      */
-    void checkLossOfPrecision(final DiagnosticPosition pos, Type found, Type req) {
-        if (found.isNumeric() && req.isNumeric() && !types.isAssignable(found, req)) {
-            deferredLintHandler.report(_ ->
-                lint.logIfEnabled(pos, LintWarnings.PossibleLossOfPrecision(found, req)));
+    void checkLossOfPrecision(List<JCExpression> actual, List<Type> formal) {
+        while (!formal.isEmpty() && !actual.isEmpty()) {
+            Type actualType = actual.head.type;
+            Type formalType = formal.head;
+            checkLossOfPrecision(actual.head.pos(), actualType, formalType,
+                actualType.constValue(), LintWarnings::PossibleLossOfPrecisionParameter);
+            formal = formal.tail;
+            actual = actual.tail;
+        }
+    }
+
+    /**
+     *  Check for possible loss of precision.
+     *  @param pos          Position for error reporting
+     *  @param srcType      The type being assigned from
+     *  @param dstType      The type being assigned to
+     *  @param constValue   The value being assigned if known, else null
+     *  @param builder      Warning builder
+     */
+    void checkLossOfPrecision(DiagnosticPosition pos, Type srcType, Type dstType,
+            Object constValue, BiFunction<Type, Type, LintWarning> builder) {
+        if (srcType.isNumeric() && dstType.isNumeric() &&
+            (!types.isAssignable(srcType, dstType) ||
+              (dstType.getTag().isInLossySuperclassesOf(srcType.getTag()) &&
+                (constValue == null ||
+                  !constValue.equals(cfolder.fold(cfolder.fold((Number)constValue, dstType), srcType)))))) {
+            deferredLintHandler.report(_ -> lint.logIfEnabled(pos, builder.apply(srcType, dstType)));
         }
     }
 

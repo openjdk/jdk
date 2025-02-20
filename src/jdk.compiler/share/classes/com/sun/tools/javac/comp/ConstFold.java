@@ -316,24 +316,51 @@ strictfp class ConstFold {
          if (etype.tsym.type == ttype.tsym.type)
              return etype;
          if (etype.isNumeric()) {
-             Object n = etype.constValue();
+             Number folded = fold((Number)etype.constValue(), ttype);
              switch (ttype.getTag()) {
              case BYTE:
-                 return syms.byteType.constType(0 + (byte)intValue(n));
+                 return syms.byteType.constType(folded);
              case CHAR:
-                 return syms.charType.constType(0 + (char)intValue(n));
+                 return syms.charType.constType(folded);
              case SHORT:
-                 return syms.shortType.constType(0 + (short)intValue(n));
+                 return syms.shortType.constType(folded);
              case INT:
-                 return syms.intType.constType(intValue(n));
+                 return syms.intType.constType(folded);
              case LONG:
-                 return syms.longType.constType(longValue(n));
+                 return syms.longType.constType(folded);
              case FLOAT:
-                 return syms.floatType.constType(floatValue(n));
+                 return syms.floatType.constType(folded);
              case DOUBLE:
-                 return syms.doubleType.constType(doubleValue(n));
+                 return syms.doubleType.constType(folded);
              }
          }
          return ttype;
      }
+
+    /** Fold the given numeric constant to fit into the target numeric type.
+     *  For types smaller than 32 bits, {@link Integer}s are returned.
+     *  @param value      constant value
+     *  @param ttype      The target type of the coercion
+     *  @return folded value, or null if operation is invalid
+     */
+    Number fold(Number value, Type ttype) {
+        switch (ttype.getTag()) {
+        case BYTE:
+            return (int)value.byteValue();
+        case CHAR:
+            return (int)(char)value.intValue();
+        case SHORT:
+            return (int)value.shortValue();
+        case INT:
+            return value.intValue();
+        case LONG:
+            return value.longValue();
+        case FLOAT:
+            return value.floatValue();
+        case DOUBLE:
+            return value.doubleValue();
+        default:
+            return null;
+        }
+    }
 }

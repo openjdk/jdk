@@ -25,7 +25,7 @@
 
 ################################################################################
 
-DISABLED_WARNINGS_java += dangling-doc-comments this-escape
+DISABLED_WARNINGS_java += dangling-doc-comments this-escape lossy-conversions
 
 # -parameters provides method's parameters information in class file,
 # JVMCI compilers make use of that information for various sanity checks.

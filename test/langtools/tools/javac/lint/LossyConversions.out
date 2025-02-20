@@ -170,10 +170,28 @@ LossyConversions.java:112:14: compiler.warn.possible.loss.of.precision: double, 
 LossyConversions.java:112:22: compiler.warn.possible.loss.of.precision: double, long
 LossyConversions.java:112:30: compiler.warn.possible.loss.of.precision: double, long
 LossyConversions.java:112:38: compiler.warn.possible.loss.of.precision: double, long
+LossyConversions.java:116:14: compiler.warn.possible.loss.of.precision: int, float
+LossyConversions.java:116:22: compiler.warn.possible.loss.of.precision: int, float
+LossyConversions.java:116:30: compiler.warn.possible.loss.of.precision: int, float
+LossyConversions.java:116:38: compiler.warn.possible.loss.of.precision: int, float
+LossyConversions.java:117:14: compiler.warn.possible.loss.of.precision: long, float
+LossyConversions.java:117:22: compiler.warn.possible.loss.of.precision: long, float
+LossyConversions.java:117:30: compiler.warn.possible.loss.of.precision: long, float
+LossyConversions.java:117:38: compiler.warn.possible.loss.of.precision: long, float
 LossyConversions.java:119:14: compiler.warn.possible.loss.of.precision: double, float
 LossyConversions.java:119:22: compiler.warn.possible.loss.of.precision: double, float
 LossyConversions.java:119:30: compiler.warn.possible.loss.of.precision: double, float
 LossyConversions.java:119:38: compiler.warn.possible.loss.of.precision: double, float
+LossyConversions.java:124:14: compiler.warn.possible.loss.of.precision: long, double
+LossyConversions.java:124:22: compiler.warn.possible.loss.of.precision: long, double
+LossyConversions.java:124:30: compiler.warn.possible.loss.of.precision: long, double
+LossyConversions.java:124:38: compiler.warn.possible.loss.of.precision: long, double
+LossyConversions.java:208:13: compiler.warn.possible.loss.of.precision.assignment: int, float
+LossyConversions.java:211:13: compiler.warn.possible.loss.of.precision.assignment: long, float
+LossyConversions.java:214:13: compiler.warn.possible.loss.of.precision.assignment: long, double
+LossyConversions.java:217:21: compiler.warn.possible.loss.of.precision.parameter: int, float
+LossyConversions.java:220:21: compiler.warn.possible.loss.of.precision.parameter: long, float
+LossyConversions.java:223:22: compiler.warn.possible.loss.of.precision.parameter: long, double
 - compiler.err.warnings.and.werror
 1 error
-176 warnings
+194 warnings
