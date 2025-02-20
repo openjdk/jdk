@@ -2265,26 +2265,27 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
 // generic (count must be >0)
 // iff found: CR0 eq, scratch == 0
 void MacroAssembler::repne_scan(Register addr, Register value, Register count, Register scratch) {
-  Label Lloop, Lexit;
+  Label Lloop, Lafter_loop, Lexit;
 
-#ifdef ASSERT
-  {
-    Label ok;
-    cmpdi(CR0, count, 0);
-    bgt(CR0, ok);
-    stop("count must be positive");
-    bind(ok);
-  }
-#endif
+  srdi_(scratch, count, 1);
+  beq(CR0, Lafter_loop);
+  mtctr(scratch);
 
-  mtctr(count);
-
-  bind(Lloop);
-  ld(scratch, 0 , addr);
+  bind(Lloop); // 2x unrolled
+  ld(scratch, 0, addr);
   xor_(scratch, scratch, value);
   beq(CR0, Lexit);
-  addi(addr, addr, wordSize);
+  ld(scratch, 8, addr);
+  xor_(scratch, scratch, value);
+  beq(CR0, Lexit);
+  addi(addr, addr, 2 * wordSize);
   bdnz(Lloop);
+
+  bind(Lafter_loop);
+  andi_(scratch, count, 1);
+  beq(CR0, Lexit); // if taken: CR0 eq and scratch == 0
+  ld(scratch, 0, addr);
+  xor_(scratch, scratch, value);
 
   bind(Lexit);
 }
