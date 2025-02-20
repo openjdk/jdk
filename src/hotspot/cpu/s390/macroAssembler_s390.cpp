@@ -3671,7 +3671,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
                                                    Register r_temp1,
                                                    Register r_temp2,
                                                    Register r_temp3) {
-  assert_different_registers(r_sub_klass, r_super_klass, r_result, r_temp1, r_temp2, r_temp3, Z_R0_scratch);
+  assert_different_registers(r_sub_klass, r_super_klass, r_result, r_temp1, r_temp2, r_temp3);
 
   const Register
     r_array_base   = r_temp1,
@@ -3704,18 +3704,17 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
 
   // report fatal error and terminate VM
 
-  // Argument shuffle. Using stack to avoid clashes.
-  resize_frame(-(4*8), /* fp */ Z_R0, /*load_fp*/ true); // provide space for 3 registers
-  z_stg(r_super_klass, 8, Z_SP);
-  z_stg(r_sub_klass, 16, Z_SP);
-  z_stg(r_linear_result, 24, Z_SP);
+  // Argument shuffle
+  // Z_F1, Z_F3, Z_F5 are volatile regs
+  z_ldgr(Z_F1, r_super_klass);
+  z_ldgr(Z_F3, r_sub_klass);
+  z_ldgr(Z_F5, r_linear_result);
 
   z_lgr(Z_ARG4, r_result);
 
-  z_lg(Z_ARG1, 8, Z_SP); // r_super_klass
-  z_lg(Z_ARG2, 16, Z_SP); // r_sub_klass
-  z_lg(Z_ARG3, 24, Z_SP); // r_linear_result
-  resize_frame(+(4*8), /*fp*/ Z_R0, /*load_fp*/ true);
+  z_lgdr(Z_ARG1, Z_F1); // r_super_klass
+  z_lgdr(Z_ARG2, Z_F3); // r_sub_klass
+  z_lgdr(Z_ARG3, Z_F5); // r_linear_result
 
   const char* msg = "mismatch";
   load_const_optimized(Z_ARG5, (address)msg);
