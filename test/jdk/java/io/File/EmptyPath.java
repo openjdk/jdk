@@ -39,10 +39,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -50,7 +47,6 @@ import org.junit.jupiter.api.condition.OS;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@TestMethodOrder(OrderAnnotation.class)
 public class EmptyPath {
     private static final String EMPTY_STRING = "";
 
@@ -64,62 +60,52 @@ public class EmptyPath {
     }
 
     @Test
-    @Order(1)
     public void canExecute() {
         assertTrue(f.canExecute());
     }
 
     @Test
-    @Order(1)
     public void canRead() {
         assertTrue(f.canRead());
     }
 
     @Test
-    @Order(1)
     public void canWrite() {
         assertTrue(f.canWrite());
     }
 
     @Test
-    @Order(1)
     public void compareTo() {
         assertEquals(0, f.compareTo(p.toFile()));
     }
 
     @Test
-    @Order(1)
     public void createNewFile() {
         assertThrows(IOException.class, () -> f.createNewFile());
     }
 
     @Test
-    @Order(1)
     public void open() throws FileNotFoundException {
         assertThrows(FileNotFoundException.class,
                      () -> new FileInputStream(f));
     }
 
     @Test
-    @Order(1)
     public void delete() {
         assertFalse(f.delete());
     }
 
     @Test
-    @Order(1)
     public void equals() {
         assertTrue(f.equals(p.toFile()));
     }
 
     @Test
-    @Order(1)
     public void exists() {
         assertTrue(f.exists());
     }
 
     @Test
-    @Order(1)
     public void getAbsolutePath() {
         System.out.println(p.toAbsolutePath().toString() + "\n" +
                            f.getAbsolutePath());
@@ -137,88 +123,74 @@ public class EmptyPath {
     }
 
     @Test
-    @Order(1)
     public void getFreeSpace() throws IOException {
         FileStore fs = Files.getFileStore(f.toPath());
         checkSpace(fs.getUnallocatedSpace(), f.getFreeSpace());
     }
 
     @Test
-    @Order(1)
     public void getName() {
         assertEquals(p.getFileName().toString(), f.getName());
     }
 
     @Test
-    @Order(1)
     public void getParent() {
         assertNull(f.getParent());
     }
 
     @Test
-    @Order(1)
     public void getPath() {
         assertEquals(p.toString(), f.getPath());
     }
 
     @Test
-    @Order(1)
     public void getTotalSpace() throws IOException {
         FileStore fs = Files.getFileStore(f.toPath());
         checkSpace(fs.getTotalSpace(), f.getTotalSpace());
     }
 
     @Test
-    @Order(1)
     public void getUsableSpace() throws IOException {
         FileStore fs = Files.getFileStore(f.toPath());
         checkSpace(fs.getUsableSpace(), f.getUsableSpace());
     }
 
     @Test
-    @Order(1)
     public void isNotAbsolute() {
         assertFalse(f.isAbsolute());
     }
 
     @Test
-    @Order(1)
     public void isAbsolute() {
         assertTrue(f.getAbsoluteFile().isAbsolute());
     }
 
     @Test
-    @Order(1)
     public void isDirectory() {
         assertTrue(f.isDirectory());
     }
 
     @Test
-    @Order(1)
     public void isFile() {
         assertFalse(f.isFile());
     }
 
     @Test
-    @Order(1)
     public void isHidden() {
         assertFalse(f.isHidden());
     }
 
     @Test
-    @Order(1)
     public void lastModified() {
         assertTrue(f.lastModified() > 0);
     }
 
     @Test
-    @Order(1)
     public void length() throws IOException {
         assertEquals(Files.size(f.toPath()), f.length());
     }
 
     @Test
-    @Order(1)
     public void list() throws IOException {
         String[] files = f.list();
         assertNotNull(files);
@@ -229,20 +201,22 @@ public class EmptyPath {
     }
 
     @Test
-    @Order(1)
     public void mkdir() {
         assertFalse(f.mkdir());
     }
 
     @Test
-    @Order(2)
     public void setLastModified() {
         long t0 = f.lastModified();
         long t = System.currentTimeMillis();
-        assertTrue(f.setLastModified(t));
-        assertEquals(t, f.lastModified());
-        assertTrue(f.setLastModified(t0));
-        assertEquals(t0, f.lastModified());
+        try {
+            assertTrue(f.setLastModified(t));
+            assertEquals(t, f.lastModified());
+            assertTrue(f.setLastModified(t0));
+            assertEquals(t0, f.lastModified());
+        } finally {
+            f.setLastModified(t0);
+        }
     }
 
     // Note: Testing File.setExecutable is omitted because calling
@@ -250,49 +224,56 @@ public class EmptyPath {
     // executable again which makes subsequent tests fail
 
     @Test
-    @Order(3)
     @DisabledOnOs({OS.WINDOWS})
     public void setReadable() {
         assertTrue(f.canRead());
-        assertTrue(f.setReadable(false));
-        assertFalse(f.canRead());
-        assertTrue(f.setReadable(true));
-        assertTrue(f.canRead());
+        try {
+            assertTrue(f.setReadable(false));
+            assertFalse(f.canRead());
+            assertTrue(f.setReadable(true));
+            assertTrue(f.canRead());
+        } finally {
+            f.setReadable(true);
+        }
     }
 
     @Test
-    @Order(3)
     @DisabledOnOs({OS.WINDOWS})
     public void setReadOnly() {
         assertTrue(f.canExecute());
         assertTrue(f.canRead());
         assertTrue(f.canWrite());
-        assertTrue(f.setReadOnly());
-        assertTrue(f.canRead());
-        assertFalse(f.canWrite());
-        assertTrue(f.setWritable(true));
-        assertTrue(f.canWrite());
+        try {
+            assertTrue(f.setReadOnly());
+            assertTrue(f.canRead());
+            assertFalse(f.canWrite());
+            assertTrue(f.setWritable(true, true));
+            assertTrue(f.canWrite());
+        } finally {
+            f.setWritable(true, true);
+        }
     }
 
     @Test
-    @Order(3)
     @DisabledOnOs({OS.WINDOWS})
     public void setWritable() {
         assertTrue(f.canWrite());
-        assertTrue(f.setWritable(false));
-        assertFalse(f.canWrite());
-        assertTrue(f.setWritable(true));
-        assertTrue(f.canWrite());
+        try {
+            assertTrue(f.setWritable(false, true));
+            assertFalse(f.canWrite());
+            assertTrue(f.setWritable(true, true));
+            assertTrue(f.canWrite());
+        } finally {
+            f.setWritable(true, true);
+        }
     }
 
     @Test
-    @Order(1)
     public void toPath() {
         assertEquals(p, f.toPath());
     }
 
     @Test
-    @Order(1)
     public void toURI() {
         assertEquals(f.toPath().toUri(), f.toURI());
     }

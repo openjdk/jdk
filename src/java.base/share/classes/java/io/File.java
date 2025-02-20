@@ -245,13 +245,6 @@ public class File
      */
     public static final String pathSeparator = String.valueOf(pathSeparatorChar);
 
-    /**
-     * The {@code File} object representing the current directory.
-     */
-    private static final File CWD = new File(".");
-    static File getCWD() {
-        return CWD;
-    }
 
     /* -- Constructors -- */
 
