@@ -1292,8 +1292,8 @@ public final class Class<T> implements java.io.Serializable,
         return componentType;
     }
 
-    // The componentType field's null value is the sole indication that the class is an array,
-    // see isArray().
+    // The componentType field's null value is the sole indication that the class 
+    // is an array - see isArray().
     private transient final Class<?> componentType;
 
     /*
