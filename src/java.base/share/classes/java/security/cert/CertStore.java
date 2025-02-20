@@ -202,12 +202,21 @@ public class CertStore {
      * cloned.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses the
-     * {@code jdk.security.provider.preferred}
-     * {@link Security#getProperty(String) Security} property to determine
-     * the preferred provider order for the specified algorithm. This
-     * may be different from the order of providers returned by
-     * {@link Security#getProviders() Security.getProviders()}.
+     * The JDK Reference Implementation additionally uses the following
+     * properties to customize the behavior of this method:
+     * <ul>
+     * <li> The {@code jdk.security.provider.preferred}
+     * {@link Security#getProperty(String) Security} property determines
+     * the preferred provider order for the specified {@code CertStore} type.
+     * This may be different from the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.</li>
+     * <li> The {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties determine
+     * which services are enabled. A service that is not enabled by the
+     * filter will not make its {@code CertStore} type implementation
+     * available.</li>
+     * </ul>
      *
      * @param type the name of the requested {@code CertStore} type.
      * See the CertStore section in the <a href=
@@ -274,6 +283,14 @@ public class CertStore {
      * Note that the specified {@code CertStoreParameters} object is
      * cloned.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which services are enabled. A service that is not enabled by the filter
+     * will not make its {@code CertStore} type implementation available.
+     *
      * @param type the requested {@code CertStore} type.
      * See the CertStore section in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#certstore-types">
@@ -335,6 +352,14 @@ public class CertStore {
      * needed may vary between different types of {@code CertStore}s.
      * Note that the specified {@code CertStoreParameters} object is
      * cloned.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which services are enabled. A service that is not enabled by the filter
+     * will not make its {@code CertStore} type implementation available.
      *
      * @param type the requested {@code CertStore} type.
      * See the CertStore section in the <a href=

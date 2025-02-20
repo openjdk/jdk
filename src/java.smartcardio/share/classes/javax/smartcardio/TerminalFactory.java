@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,12 +232,20 @@ public final class TerminalFactory {
      * needed may vary between different types of <code>TerminalFactory</code>s.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses the
-     * {@code jdk.security.provider.preferred}
-     * {@link Security#getProperty(String) Security} property to determine
-     * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
-     * {@link Security#getProviders() Security.getProviders()}.
+     * The JDK Reference Implementation additionally uses the following
+     * properties to customize the behavior of this method:
+     * <ul>
+     * <li> The {@code jdk.security.provider.preferred}
+     * {@link Security#getProperty(String) Security} property determines
+     * the preferred provider order for the specified type.
+     * This may be different from the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.</li>
+     * <li> The {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties determine
+     * which services are enabled. A service that is not enabled by the
+     * filter will not make its type implementation available.</li>
+     * </ul>
      *
      * @param type the type of the requested TerminalFactory
      * @param params the parameters to pass to the TerminalFactorySpi
@@ -271,6 +279,14 @@ public final class TerminalFactory {
      * <p>The <code>TerminalFactory</code> is initialized with the
      * specified parameters Object. The type of parameters
      * needed may vary between different types of <code>TerminalFactory</code>s.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which services are enabled. A service that is not enabled by the filter
+     * will not make its type implementation available.
      *
      * @param type the type of the requested TerminalFactory
      * @param params the parameters to pass to the TerminalFactorySpi
@@ -307,6 +323,14 @@ public final class TerminalFactory {
      * <p>The <code>TerminalFactory</code> is initialized with the
      * specified parameters Object. The type of parameters
      * needed may vary between different types of <code>TerminalFactory</code>s.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.providers.filter}
+     * {@link System#getProperty(String) System} and
+     * {@link Security#getProperty(String) Security} properties to determine
+     * which services are enabled. A service that is not enabled by the filter
+     * will not make its type implementation available.
      *
      * @param type the type of the requested TerminalFactory
      * @param params the parameters to pass to the TerminalFactorySpi

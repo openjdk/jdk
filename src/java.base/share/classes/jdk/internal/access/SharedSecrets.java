@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.io.FileDescriptor;
 import java.io.FilePermission;
 import java.io.ObjectInputStream;
 import java.io.RandomAccessFile;
+import java.security.Provider;
 import java.security.Signature;
 import javax.security.auth.x500.X500Principal;
 
@@ -87,6 +88,7 @@ public class SharedSecrets {
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
     private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
+    private static JavaSecurityProviderAccess javaSecurityProviderAccess;
     private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     private static JavaSecuritySpecAccess javaSecuritySpecAccess;
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
@@ -318,6 +320,20 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(Security.class);
             access = javaSecurityPropertiesAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaSecurityProviderAccess(
+            JavaSecurityProviderAccess jspa) {
+        javaSecurityProviderAccess = jspa;
+    }
+
+    public static JavaSecurityProviderAccess getJavaSecurityProviderAccess() {
+        var access = javaSecurityProviderAccess;
+        if (access == null) {
+            ensureClassInitialized(Provider.class);
+            access = javaSecurityProviderAccess;
         }
         return access;
     }

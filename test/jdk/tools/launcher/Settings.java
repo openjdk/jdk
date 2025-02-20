@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  */
 import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
 
 /*
  * @test
- * @bug 6994753 7123582 8305950 8281658 8310201 8311653 8343804
+ * @bug 6994753 7123582 8305950 8281658 8310201 8311653 8343804 8315487
  * @summary tests -XshowSettings options
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -61,6 +62,28 @@ public class Settings extends TestHelper {
         if (!tr.notContains(str)) {
             System.out.println(tr);
             throw new RuntimeException(str + " found");
+        }
+    }
+
+    static void checkServicesAllowed(TestResult tr, boolean servicesAllowed) {
+        String noneSvcHdr = "Provider services " + (servicesAllowed ?
+                "NOT " : "") + "allowed: (type : algorithm)";
+        String errorMsg = "Expected header '" + noneSvcHdr + "' not found";
+        Iterator<String> oi = tr.testOutput.iterator();
+        while (oi.hasNext()) {
+            if (oi.next().contains(noneSvcHdr)) {
+                if (oi.next().contains("<none>")) {
+                    errorMsg = null;
+                } else {
+                    errorMsg = "Unexpected services listed under '" +
+                            noneSvcHdr + "'";
+                    break;
+                }
+            }
+        }
+        if (errorMsg != null) {
+            System.out.println(tr);
+            throw new RuntimeException(errorMsg);
         }
     }
 
@@ -215,8 +238,11 @@ public class Settings extends TestHelper {
         checkContains(tr, "keystore.type=pkcs12");
     }
 
-    static void runTestOptionSecurityProv() throws IOException {
-        TestResult tr = doExec(javaCmd, "-XshowSettings:security:providers");
+    static void runTestOptionSecurityProv(boolean servicesAllowed)
+            throws IOException {
+        TestResult tr = doExec(javaCmd, "-XshowSettings:security:providers",
+                "-Djdk.security.providers.filter=" + (servicesAllowed ? "" :
+                        "!*"));
         checkNotContains(tr, SEC_PROPS_SETTINGS);
         checkContains(tr, SEC_PROVIDER_SETTINGS);
         checkNotContains(tr, SEC_TLS_SETTINGS);
@@ -225,6 +251,13 @@ public class Settings extends TestHelper {
         // test for a well known alias (SunJCE: AlgorithmParameterGenerator.DiffieHellman)
         checkContains(tr, "aliases: [1.2.840.113549.1.3.1, " +
                 "DH, OID.1.2.840.113549.1.3.1]");
+        // test services filter information
+        checkServicesAllowed(tr, servicesAllowed);
+    }
+
+    static void runTestOptionSecurityProv() throws IOException {
+        runTestOptionSecurityProv(true);
+        runTestOptionSecurityProv(false);
     }
 
     static void runTestOptionSecurityTLS() throws IOException {
