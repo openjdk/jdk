@@ -38,19 +38,18 @@ ZMarkStack* ZMarkStack::create(bool first_stack) {
   // overhead of churning around stacks on a stripe.
   size_t capacity = first_stack ? 128 : 512;
 
-  size_t size = sizeof(ZMarkStack) + capacity * sizeof(ZMarkStackEntry);
-  char* memory = NEW_C_HEAP_ARRAY(char, size, mtGC);
-  return new (memory) ZMarkStack(capacity);
+  void* const memory = AttachedArray::alloc(capacity);
+  return ::new (memory) ZMarkStack(capacity);
 }
 
 void ZMarkStack::destroy(ZMarkStack* stack) {
-  char* memory = (char*)stack;
-  FREE_C_HEAP_ARRAY(char, memory);
+  stack->~ZMarkStack();
+  AttachedArray::free(stack);
 }
 
 ZMarkStack::ZMarkStack(size_t capacity)
   : _top(0),
-    _capacity(capacity) {}
+    _entries(capacity) {}
 
 ZMarkStackListNode::ZMarkStackListNode(ZMarkStack* stack)
   : _stack(stack),

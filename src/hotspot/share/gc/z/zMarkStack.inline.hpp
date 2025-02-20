@@ -26,6 +26,7 @@
 
 #include "gc/z/zMarkStack.hpp"
 
+#include "gc/z/zAttachedArray.inline.hpp"
 #include "gc/z/zMarkTerminate.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -34,13 +35,11 @@ inline bool ZMarkStack::is_empty() const {
 }
 
 inline bool ZMarkStack::is_full() const {
-  return _top == _capacity;
+  return _top == _entries.length();
 }
 
 inline ZMarkStackEntry* ZMarkStack::slots() {
-  uintptr_t start = (uintptr_t)this;
-  uintptr_t result = start + sizeof(ZMarkStack);
-  return (ZMarkStackEntry*)result;
+  return _entries(this);
 }
 
 inline void ZMarkStack::push(ZMarkStackEntry value) {

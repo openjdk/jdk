@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZMARKSTACK_HPP
 #define SHARE_GC_Z_ZMARKSTACK_HPP
 
+#include "gc/z/zAttachedArray.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zMarkStackEntry.hpp"
 #include "memory/allocation.hpp"
@@ -35,8 +36,10 @@ class ZMarkTerminate;
 
 class ZMarkStack {
 private:
-  size_t           _top;
-  size_t           _capacity;
+  using AttachedArray = ZAttachedArray<ZMarkStack, ZMarkStackEntry>;
+
+  size_t              _top;
+  const AttachedArray _entries;
 
   ZMarkStackEntry* slots();
 
