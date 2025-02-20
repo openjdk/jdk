@@ -2458,7 +2458,15 @@ class StubGenerator: public StubCodeGenerator {
     assert((base_offset % (UseCompactObjectHeaders ? 4 :
                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
-    // strL is 8-byte aligned
+#ifdef ASSERT
+    if (AvoidUnalignedAccesses) {
+      Label align_ok;
+      __ andi(t0, strL, 0x7);
+      __ beqz(t0, align_ok);
+      __ stop("bad alignment");
+      __ bind(align_ok);
+    }
+#endif
     __ ld(tmpLval, Address(strL));
     __ addi(strL, strL, wordSize);
 
@@ -2512,24 +2520,13 @@ class StubGenerator: public StubCodeGenerator {
     assert((base_offset2 % (UseCompactObjectHeaders ? 4 :
                             (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
-    // cnt2 == amount of characters left to compare
-    // Check already loaded first 4 symbols
-    __ inflate_lo32(tmp3, isLU ? tmp1 : tmp2);
-    __ mv(isLU ? tmp1 : tmp2, tmp3);
-    __ addi(str1, str1, isLU ? wordSize / 2 : wordSize);
-    __ addi(str2, str2, isLU ? wordSize : wordSize / 2);
-    __ subi(cnt2, cnt2, wordSize / 2); // Already loaded 4 symbols
-
-    __ xorr(tmp3, tmp1, tmp2);
-    __ bnez(tmp3, CALCULATE_DIFFERENCE);
-
     Register strU = isLU ? str2 : str1,
              strL = isLU ? str1 : str2,
              tmpU = isLU ? tmp2 : tmp1, // where to keep U for comparison
              tmpL = isLU ? tmp1 : tmp2; // where to keep L for comparison
 
-    if (AvoidUnalignedAccesses && (base_offset1 % 8) == 0) {
-      // Load another 4 bytes from strL to make sure main loop is 8-byte aligned
+    if (AvoidUnalignedAccesses && (base_offset1 % 8) != 0) {
+      // Load 4 bytes from strL to make sure main loop is 8-byte aligned
       // cnt2 is >= 68 here, no need to check it for >= 0
       __ lwu(tmpL, Address(strL));
       __ addi(strL, strL, wordSize / 2);
@@ -2542,7 +2539,7 @@ class StubGenerator: public StubCodeGenerator {
       __ subi(cnt2, cnt2, wordSize / 2);
     }
 
-    // we are now 8-bytes aligned on strL
+    // we are now 8-bytes aligned on strL when AvoidUnalignedAccesses is true
     __ subi(cnt2, cnt2, wordSize * 2);
     __ bltz(cnt2, TAIL);
     __ bind(SMALL_LOOP); // smaller loop
