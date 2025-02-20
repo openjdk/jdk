@@ -73,11 +73,11 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         final var pkg = MacFromParams.DMG_PACKAGE.fetchFrom(params);
         var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
-        final var builder = MacDmgPackager.build().outputDir(outputParentDir).pkg(pkg).env(env);
+        final var packager = MacDmgPackager.build().outputDir(outputParentDir).pkg(pkg).env(env);
 
-        MacDmgPackager.findSetFileUtility().ifPresent(builder::setFileUtility);
+        MacDmgPackager.findSetFileUtility().ifPresent(packager::setFileUtility);
 
-        return builder.execute();
+        return packager.execute();
     }
 
     @Override
