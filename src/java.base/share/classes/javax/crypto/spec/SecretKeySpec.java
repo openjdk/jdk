@@ -145,7 +145,7 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * @exception IllegalArgumentException if {@code algorithm}
      * is {@code null} or {@code key} is {@code null}, empty, or too short,
      * i.e. {@code key.length-offset<len}.
-     * @exception ArrayIndexOutOfBoundsException is thrown if
+     * @exception ArrayIndexOutOfBoundsException if
      * {@code offset} or {@code len} are negative.
      *
      * @spec security/standard-names.html Java Security Standard Algorithm Names

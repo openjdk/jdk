@@ -93,7 +93,7 @@ public class RC2ParameterSpec implements AlgorithmParameterSpec {
      * starts.
      * @exception IllegalArgumentException if {@code iv} is {@code null}
      * or {@code iv.length - offset < 8}.
-     * @exception ArrayIndexOutOfBoundsException is thrown if
+     * @exception ArrayIndexOutOfBoundsException if
      * {@code offset} is negative.
      */
     public RC2ParameterSpec(int effectiveKeyBits, byte[] iv, int offset) {
