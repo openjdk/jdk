@@ -113,8 +113,8 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
 
 void PSOldGen::initialize_performance_counters(const char* perf_data_name, int level) {
   // Generation Counters, generation 'level', 1 subspace
-  _gen_counters = new PSGenerationCounters(perf_data_name, level, 1, min_gen_size(),
-                                           max_gen_size(), virtual_space());
+  _gen_counters = new GenerationCounters(perf_data_name, level, 1, min_gen_size(),
+                                         max_gen_size(), virtual_space()->committed_size());
   _space_counters = new SpaceCounters(perf_data_name, 0,
                                       virtual_space()->reserved_size(),
                                       _object_space, _gen_counters);
@@ -243,7 +243,7 @@ bool PSOldGen::expand_by(size_t bytes) {
     post_resize();
     if (UsePerfData) {
       _space_counters->update_capacity();
-      _gen_counters->update_all();
+      _gen_counters->update_all(_virtual_space->committed_size());
     }
   }
 
@@ -379,7 +379,7 @@ void PSOldGen::print_on(outputStream* st) const {
 void PSOldGen::update_counters() {
   if (UsePerfData) {
     _space_counters->update_all();
-    _gen_counters->update_all();
+    _gen_counters->update_all(_virtual_space->committed_size());
   }
 }
 
