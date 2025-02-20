@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,15 @@
 
 package sun.jvm.hotspot.runtime;
 
-import java.io.*;
-
 import sun.jvm.hotspot.debugger.Address;
 
-public class AttachListenerThread extends JavaThread {
+public class HiddenJavaThread extends JavaThread {
 
-  public AttachListenerThread (Address addr) {
-    super(addr);
-  }
+    public HiddenJavaThread(Address addr) {
+        super(addr);
+    }
 
-  public boolean isJavaThread() { return false; }
-
-  public boolean isAttachListenerThread() { return true; }
+    @Override
+    public boolean isHiddenFromExternalView() { return true; }
 
 }

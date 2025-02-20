@@ -72,7 +72,6 @@ class ThreadsList extends VMObject {
 }
 
 public class Threads {
-    private static JavaThreadFactory threadFactory;
     private static AddressField      threadListField;
     private static VirtualConstructor virtualConstructor;
     private static JavaThreadPDAccess access;
@@ -90,7 +89,6 @@ public class Threads {
         Type type = db.lookupType("ThreadsSMRSupport");
         threadListField = type.getAddressField("_java_thread_list");
 
-        // Instantiate appropriate platform-specific JavaThreadFactory
         String os  = VM.getVM().getOS();
         String cpu = VM.getVM().getCPU();
 
@@ -144,21 +142,29 @@ public class Threads {
         }
 
         virtualConstructor = new VirtualConstructor(db);
-        // Add mappings for all known thread types
+
+        /*
+         * Add mappings for JavaThread types
+         */
+
         virtualConstructor.addMapping("JavaThread", JavaThread.class);
+
         if (!VM.getVM().isCore()) {
             virtualConstructor.addMapping("CompilerThread", CompilerThread.class);
         }
-        virtualConstructor.addMapping("JvmtiAgentThread", JvmtiAgentThread.class);
-        virtualConstructor.addMapping("ServiceThread", ServiceThread.class);
-        virtualConstructor.addMapping("MonitorDeflationThread", MonitorDeflationThread.class);
-        virtualConstructor.addMapping("NotificationThread", NotificationThread.class);
-        virtualConstructor.addMapping("StringDedupThread", StringDedupThread.class);
-        virtualConstructor.addMapping("AttachListenerThread", AttachListenerThread.class);
 
-        /* Only add DeoptimizeObjectsALotThread if it is actually present in the type database. */
+        // These are all the visible JavaThread subclasses that execute java code.
+        virtualConstructor.addMapping("JvmtiAgentThread", JavaThread.class);
+        virtualConstructor.addMapping("NotificationThread", JavaThread.class);
+        virtualConstructor.addMapping("AttachListenerThread", JavaThread.class);
+
+        // These are all the hidden JavaThread subclasses that don't execute java code.
+        virtualConstructor.addMapping("StringDedupThread", HiddenJavaThread.class);
+        virtualConstructor.addMapping("ServiceThread", HiddenJavaThread.class);
+        virtualConstructor.addMapping("MonitorDeflationThread", HiddenJavaThread.class);
+        // Only add DeoptimizeObjectsALotThread if it is actually present in the type database.
         if (db.lookupType("DeoptimizeObjectsALotThread", false) != null) {
-            virtualConstructor.addMapping("DeoptimizeObjectsALotThread", DeoptimizeObjectsALotThread.class);
+            virtualConstructor.addMapping("DeoptimizeObjectsALotThread", HiddenJavaThread.class);
         }
     }
 
@@ -166,17 +172,6 @@ public class Threads {
         _list = VMObjectFactory.newObject(ThreadsList.class, threadListField.getValue());
     }
 
-    /** NOTE: this returns objects of type JavaThread or one if its subclasses:
-      CompilerThread, JvmtiAgentThread, NotificationThread, MonitorDeflationThread,
-      StringDedupThread, AttachListenerThread, DeoptimizeObjectsALotThread and
-      ServiceThread. Most operations (fetching the top frame, etc.) are only
-      allowed to be performed on a "pure" JavaThread. For this reason,
-      {@link sun.jvm.hotspot.runtime.JavaThread#isJavaThread} has been
-      changed from the definition in the VM (which returns true for
-      all of these thread types) to return true for JavaThreads and
-      false for the seven subclasses. FIXME: should reconsider the
-      inheritance hierarchy; see {@link
-      sun.jvm.hotspot.runtime.JavaThread#isJavaThread}. */
     public JavaThread getJavaThreadAt(int i) {
         if (i < _list.length()) {
             return createJavaThreadWrapper(_list.getJavaThreadAddressAt(i));
@@ -260,7 +255,7 @@ public class Threads {
         List<JavaThread> pendingThreads = new ArrayList<>();
         for (int i = 0; i < getNumberOfThreads(); i++) {
             JavaThread thread = getJavaThreadAt(i);
-            if (thread.isCompilerThread() || thread.isCodeCacheSweeperThread()) {
+            if (thread.isHiddenFromExternalView()) {
                 continue;
             }
             ObjectMonitor pending = thread.getCurrentPendingMonitor();

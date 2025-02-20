@@ -72,7 +72,7 @@ public class WindowsHelper {
         for (int attempt = 0; attempt < 8; ++attempt) {
             result = misexec.executeWithoutExitCodeCheck();
 
-            if (result.exitCode == 1605) {
+            if (result.exitCode() == 1605) {
                 // ERROR_UNKNOWN_PRODUCT, attempt to uninstall not installed
                 // package
                 return;
@@ -81,7 +81,7 @@ public class WindowsHelper {
             // The given Executor may either be of an msiexec command or an
             // unpack.bat script containing the msiexec command. In the later
             // case, when misexec returns 1618, the unpack.bat may return 1603
-            if ((result.exitCode == 1618) || (result.exitCode == 1603)) {
+            if ((result.exitCode() == 1618) || (result.exitCode() == 1603)) {
                 // Another installation is already in progress.
                 // Wait a little and try again.
                 Long timeout = 1000L * (attempt + 3); // from 3 to 10 seconds
@@ -523,7 +523,7 @@ public class WindowsHelper {
         var status = Executor.of("reg", "query", keyPath, "/v", valueName)
                 .saveOutput()
                 .executeWithoutExitCodeCheck();
-        if (status.exitCode == 1) {
+        if (status.exitCode() == 1) {
             // Should be the case of no such registry value or key
             String lookupString = "ERROR: The system was unable to find the specified registry key or value.";
             TKit.assertTextStream(lookupString)

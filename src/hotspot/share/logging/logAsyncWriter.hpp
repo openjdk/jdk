@@ -195,9 +195,12 @@ class AsyncLogWriter : public NonJavaThread {
     ~BufferUpdater();
   };
 
- public:
-  void enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg);
-  void enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator);
+  static bool is_enqueue_allowed();
+
+public:
+  DEBUG_ONLY(static bool ignore_recursive_logging;)
+  static bool enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg);
+  static bool enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator);
 
   static AsyncLogWriter* instance();
   static void initialize();
