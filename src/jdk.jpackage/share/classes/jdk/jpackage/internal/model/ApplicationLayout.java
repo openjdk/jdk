@@ -24,10 +24,11 @@
  */
 package jdk.jpackage.internal.model;
 
+import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
+
 import java.nio.file.Path;
 import java.util.Objects;
 import jdk.jpackage.internal.util.CompositeProxy;
-import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 /**
  * Application app image layout.
@@ -72,6 +73,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
         }
 
         private Builder(ApplicationLayout appLayout) {
+            rootDirectory = appLayout.rootDirectory();
             launchersDirectory = appLayout.launchersDirectory();
             appDirectory = appLayout.appDirectory();
             runtimeDirectory = appLayout.runtimeDirectory();
@@ -82,6 +84,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
 
         public ApplicationLayout create() {
 
+            Objects.requireNonNull(rootDirectory);
             Objects.requireNonNull(runtimeDirectory);
             Objects.requireNonNull(launchersDirectory);
             Objects.requireNonNull(appDirectory);
@@ -90,7 +93,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             Objects.requireNonNull(contentDirectory);
 
             return ApplicationLayout.create(new AppImageLayout.Stub(
-                    runtimeDirectory), new ApplicationLayoutMixin.Stub(
+                    rootDirectory, runtimeDirectory), new ApplicationLayoutMixin.Stub(
                     launchersDirectory, appDirectory, appModsDirectory,
                     destktopIntegrationDirectory, contentDirectory));
         }
@@ -100,6 +103,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
         }
 
         public Builder setAll(Path path) {
+            rootDirectory(path);
             launchersDirectory(path);
             appDirectory(path);
             runtimeDirectory(path);
@@ -110,12 +114,22 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
         }
 
         public Builder resolveAt(Path base) {
+            rootDirectory(resolveNullablePath(base, rootDirectory));
             launchersDirectory(resolveNullablePath(base, launchersDirectory));
             appDirectory(resolveNullablePath(base, appDirectory));
             runtimeDirectory(resolveNullablePath(base, runtimeDirectory));
             appModsDirectory(resolveNullablePath(base, appModsDirectory));
             destktopIntegrationDirectory(resolveNullablePath(base, destktopIntegrationDirectory));
             contentDirectory(resolveNullablePath(base, contentDirectory));
+            return this;
+        }
+
+        public Builder rootDirectory(String v) {
+            return rootDirectory(Path.of(v));
+        }
+
+        public Builder rootDirectory(Path v) {
+            rootDirectory = v;
             return this;
         }
 
@@ -173,6 +187,7 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
             return this;
         }
 
+        private Path rootDirectory = Path.of("");
         private Path launchersDirectory;
         private Path appDirectory;
         private Path runtimeDirectory;

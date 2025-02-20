@@ -56,6 +56,14 @@ public interface AppImageLayout {
     Path runtimeDirectory();
 
     /**
+     * Root directory of this app image.
+     * It should normally be equal to <code>Path.of("")</code> for unresolved layout.
+     *
+     * @return the root directory of this app image
+     */
+    Path rootDirectory();
+
+    /**
      * Creates a copy of this app image resolved at the given root directory.
      *
      * @param root path to a directory at which to resolve the layout
@@ -66,11 +74,11 @@ public interface AppImageLayout {
     /**
      * Default implementation of {@link AppImageLayout} interface.
     */
-    record Stub(Path runtimeDirectory) implements AppImageLayout {
+    record Stub(Path rootDirectory, Path runtimeDirectory) implements AppImageLayout {
 
         @Override
         public AppImageLayout resolveAt(Path base) {
-            return new Stub(resolveNullablePath(base, runtimeDirectory));
+            return new Stub(resolveNullablePath(base, rootDirectory), resolveNullablePath(base, runtimeDirectory));
         }
     }
 
@@ -79,7 +87,8 @@ public interface AppImageLayout {
      * instance.
      *
      * It will call every non-static accessible method without parameters and with
-     * {@link Path} return type of the given {@link AppImageLayout} instance.
+     * {@link Path} return type of the given {@link AppImageLayout} instance except
+     * {@link #rootDirectory()} method.
      * <p>
      * For every call, it will save the return value in the output {@link PathGroup}
      * object under the key equals the name of a function used in the call.
@@ -98,6 +107,7 @@ public interface AppImageLayout {
                 .map(Class::getMethods)
                 .flatMap(Stream::of)
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
+                .filter(m -> !"rootDirectory".equals(m.getName()))
                 .filter(m -> {
                     return m.getReturnType().isAssignableFrom(Path.class) && m.getParameterCount() == 0;
                 }).<Map.Entry<String, Path>>mapMulti((m, consumer) -> {
