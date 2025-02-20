@@ -72,7 +72,7 @@ public class SetClientMode {
         String protocol = args[0];
 
         if ("TLSv1".equals(protocol) || "TLSv1.1".equals(protocol)) {
-          SecurityUtils.removeFromDisabledTlsAlgs(protocol);
+            SecurityUtils.removeFromDisabledTlsAlgs(protocol);
         }
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
@@ -95,7 +95,7 @@ public class SetClientMode {
             (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
         try (SSLServerSocket serverSocket =
-            (SSLServerSocket) ssf.createServerSocket(serverPort)) {
+                (SSLServerSocket) ssf.createServerSocket(serverPort)) {
             serverSocket.setEnabledProtocols(new String[]{ protocol });
             serverPort = serverSocket.getLocalPort();
 
@@ -140,7 +140,7 @@ public class SetClientMode {
     static class Client extends Thread {
         private final SSLSocket socket;
 
-        public Client(SSLSocket s ) {
+        public Client(SSLSocket s) {
             socket = s;
         }
 
@@ -148,12 +148,7 @@ public class SetClientMode {
             try {
                 socket.startHandshake();
                 HANDSHAKE_COMPLETE.countDown();
-
-                // If we were to invoke setUseClientMode()
-                // here, the expected exception will happen.
-                //clientsideSocket.getSession();
-                //clientsideSocket.setUseClientMode( false );
-            } catch (Exception e ) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
