@@ -41,7 +41,7 @@ public:
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const;
 
-  bool use_ReduceInitialCardMarks() const;
+  static bool use_ReduceInitialCardMarks();
 };
 
 #endif // SHARE_GC_SHARED_C2_CARDTABLEBARRIERSETC2_HPP

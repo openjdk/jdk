@@ -92,10 +92,11 @@ requires.properties= \
     systemd.support \
     jdk.containerized \
     jlink.runtime.linkable \
-    jlink.packagedModules
+    jlink.packagedModules \
+    jdk.static
 
 # Minimum jtreg version
-requiredVersion=7.4+1
+requiredVersion=7.5.1+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../../ notation to reach them
