@@ -148,8 +148,7 @@ abstract public class TLSBase {
         ConcurrentHashMap<Integer, SSLSocket> clientMap =
                 new ConcurrentHashMap<>();
         List<Exception> exceptionList = new ArrayList<>();
-        ExecutorService threadPool = Executors.newFixedThreadPool(1,
-            r -> Executors.defaultThreadFactory().newThread(r));
+        ExecutorService threadPool = Executors.newFixedThreadPool(1);
         CountDownLatch serverLatch = new CountDownLatch(1);
         Server(ServerBuilder builder) {
             super();

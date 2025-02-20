@@ -81,7 +81,6 @@ public class MultiNSTClient {
                 Utils.addTestJavaOpts("MultiNSTClient", "p"));
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
-            System.out.println("I'm here");
             boolean pass = true;
             try {
                 List<String> list = output.stderrShouldContain("MultiNST PSK").
