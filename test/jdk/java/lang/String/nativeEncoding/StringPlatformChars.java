@@ -23,6 +23,7 @@
 
  /*
  * @test
+ * @requires !jdk.static
  * @run main/othervm/native -Xcheck:jni StringPlatformChars
  */
 import java.util.Arrays;
