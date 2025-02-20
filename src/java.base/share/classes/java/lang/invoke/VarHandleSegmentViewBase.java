@@ -49,7 +49,7 @@ final class VarHandleSegmentViewBase extends VarHandle {
 
     @Override
     final MethodType accessModeTypeUncached(VarHandle.AccessType accessType) {
-        var getType = vform.methodType_table[0]; // erased, but we our value type is erase-compatible
+        var getType = vform.methodType_table[0]; // erased, but our value type is erase-compatible
         return getType.parameterCount() == 2
                 ? accessType.accessModeType(MemorySegment.class, getType.returnType(), long.class)
                 : accessType.accessModeType(MemorySegment.class, getType.returnType(), long.class, long.class);
