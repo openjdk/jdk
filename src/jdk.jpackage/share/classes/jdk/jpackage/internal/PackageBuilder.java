@@ -24,22 +24,17 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.model.Application;
+import static jdk.jpackage.internal.I18N.buildConfigException;
+
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
-import static jdk.jpackage.internal.I18N.buildConfigException;
+import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.Package.Stub;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.StandardPackageType;
-import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
-import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
-import static jdk.jpackage.internal.model.StandardPackageType.MAC_DMG;
-import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
-import static jdk.jpackage.internal.model.StandardPackageType.WIN_EXE;
-import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
 
 final class PackageBuilder {
 
@@ -55,24 +50,23 @@ final class PackageBuilder {
         if (installDir != null) {
             var normalizedInstallDir = mapInstallDir(installDir, type);
             if (type instanceof StandardPackageType stdType) {
-                boolean addPackageName = true;
+                Optional<Path> installDirName = Optional.of(Path.of(effectiveName));
                 switch (stdType) {
                     case LINUX_DEB, LINUX_RPM -> {
                         switch (normalizedInstallDir.toString()) {
                             case "/usr", "/usr/local" -> {
-                                addPackageName = false;
+                                installDirName = Optional.empty();
                             }
                         }
                     }
                     case WIN_EXE, WIN_MSI -> {
-                        addPackageName = false;
+                        installDirName = Optional.empty();
                     }
                     case MAC_DMG,MAC_PKG -> {
+                        installDirName = Optional.of(app.appImageDirName());
                     }
                 }
-                if (addPackageName) {
-                    normalizedInstallDir = normalizedInstallDir.resolve(effectiveName);
-                }
+                normalizedInstallDir = installDirName.map(normalizedInstallDir::resolve).orElse(normalizedInstallDir);
             }
             relativeInstallDir = normalizedInstallDir;
         } else if (type instanceof StandardPackageType stdType) {
@@ -82,7 +76,7 @@ final class PackageBuilder {
         }
 
         if (relativeInstallDir.isAbsolute()) {
-            relativeInstallDir = Path.of("/").relativize(relativeInstallDir);
+            relativeInstallDir = relativeInstallDir.getRoot().relativize(relativeInstallDir);
         }
 
         return new Stub(
@@ -178,19 +172,17 @@ final class PackageBuilder {
     private static Path defaultInstallDir(StandardPackageType pkgType, String pkgName, Application app) {
         switch (pkgType) {
             case WIN_EXE, WIN_MSI -> {
-                return Path.of(app.name());
+                return app.appImageDirName();
             }
             case LINUX_DEB, LINUX_RPM -> {
                 return Path.of("/opt").resolve(pkgName);
             }
             case MAC_DMG, MAC_PKG -> {
+                final Path dirName = app.appImageDirName();
                 final Path base;
-                final String dirName;
                 if (app.isRuntime()) {
-                    dirName = pkgName;
                     base = Path.of("/Library/Java/JavaVirtualMachines");
                 } else {
-                    dirName = pkgName + ".app";
                     base = Path.of("/Applications");
                 }
                 return base.resolve(dirName);
