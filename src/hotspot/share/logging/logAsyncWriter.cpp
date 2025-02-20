@@ -30,8 +30,8 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/globals.hpp"
 
-DEBUG_ONLY(bool AsyncLogWriter::ignore_recursive_logging = false;)
 
 class AsyncLogWriter::AsyncLogLocker : public StackObj {
   static Thread* _holder;
@@ -116,10 +116,11 @@ bool AsyncLogWriter::is_enqueue_allowed() {
     // Do not log while holding the Async log lock.
     // Try to catch possible occurrences in debug builds.
 #ifdef ASSERT
-    if (!AsyncLogWriter::ignore_recursive_logging) {
+    if (!TestingAsyncLoggingDeathTestNoCrash) {
       ShouldNotReachHere();
     }
 #endif // ASSERT
+
     return false;
   }
 
@@ -142,8 +143,13 @@ bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& 
   }
 
   AsyncLogLocker locker;
-  DEBUG_ONLY(log_debug(deathtest)("Induce a recursive log for testing (for crashing)");)
-  DEBUG_ONLY(log_debug(deathtest2)("Induce a recursive log for testing");)
+
+#ifdef ASSERT
+  if (TestingAsyncLoggingDeathTest || TestingAsyncLoggingDeathTestNoCrash) {
+    log_debug(deathtest)("Induce a recursive log for testing");
+  }
+#endif // ASSERT
+
   AsyncLogWriter::instance()->enqueue_locked(&output, decorations, msg);
   return true;
 }
