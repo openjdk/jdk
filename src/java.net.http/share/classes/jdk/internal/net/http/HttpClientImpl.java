@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,12 +145,14 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     static final class DelegatingExecutor implements Executor {
         private final BooleanSupplier isInSelectorThread;
         private final Executor delegate;
+        private final Executor safeDelegate;
         private final BiConsumer<Runnable, Throwable> errorHandler;
         DelegatingExecutor(BooleanSupplier isInSelectorThread,
                            Executor delegate,
                            BiConsumer<Runnable, Throwable> errorHandler) {
             this.isInSelectorThread = isInSelectorThread;
             this.delegate = delegate;
+            this.safeDelegate = this::ensureExecutedAsync;
             this.errorHandler = errorHandler;
         }
 
@@ -158,7 +160,9 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             return delegate;
         }
 
-
+        Executor safeDelegate() {
+            return safeDelegate;
+        }
 
         @Override
         public void execute(Runnable command) {

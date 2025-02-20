@@ -386,6 +386,12 @@ public final class Utils {
         return cause;
     }
 
+    public static IOException toIOException(Throwable x) {
+        Throwable cause = getCompletionCause(x);
+        if (cause instanceof IOException io) return io;
+        return new IOException(cause.getMessage(), x);
+    }
+
     public static Throwable getCancelCause(Throwable x) {
         Throwable cause = getCompletionCause(x);
         if (cause instanceof ConnectionExpiredException) {

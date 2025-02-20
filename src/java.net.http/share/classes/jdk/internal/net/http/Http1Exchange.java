@@ -172,7 +172,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                     }
                 }
                 sub.cancel();
-            } catch(Throwable t) {
+            } catch (Throwable t) {
                 String msg = "Ignoring exception raised when canceling BodyPublisher subscription";
                 if (debug.on()) debug.log("%s: %s", msg, t);
                 Log.logError("{0}: {1}", msg, (Object)t);
@@ -269,7 +269,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     // to ensure that it gets completed if the SelectorManager aborts due
     // to unexpected exceptions.
     private boolean registerResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
-        Throwable failed = null;
+        Throwable failed;
         lock.lock();
         try {
             failed = failedRef.get();
@@ -402,7 +402,8 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 // start
                 bodySubscriber.whenSubscribed
                         .thenAccept(this::cancelIfFailed)
-                        .thenAccept((s) -> requestMoreBody());
+                        .thenAcceptAsync((s) -> requestMoreBody(),
+                                exchange.executor().safeDelegate());
             }
         } catch (Throwable t) {
             cancelImpl(t);
@@ -450,18 +451,13 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         var responseInfo = new ResponseInfoImpl(response.responseCode(),
                 response.responseHeaders(), HTTP_1_1);
         BodySubscriber<T> bs = createResponseSubscriber(handler, responseInfo);
-        CompletableFuture<T> bodyCF = response.readBody(bs,
-                                                        returnConnectionToPool,
-                                                        executor);
-        return bodyCF;
+        return response.readBody(bs, returnConnectionToPool, executor);
     }
 
     @Override
     Http1ResponseBodySubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
         BodySubscriber<T> subscriber = handler.apply(response);
-        Http1ResponseBodySubscriber<T> bs =
-                new Http1ResponseBodySubscriber<T>(subscriber, this);
-        return bs;
+        return new Http1ResponseBodySubscriber<T>(subscriber, this);
     }
 
     @Override
@@ -668,7 +664,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     // ALL tasks should execute off the Selector-Manager thread
     /** Returns the next portion of the HTTP request, or the error. */
     private DataPair getOutgoing() {
-        final Executor exec = executor;
+        final DelegatingExecutor exec = executor;
         final DataPair dp = outgoing.pollFirst();
 
         if (writePublisher.cancelled) {
@@ -704,7 +700,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                     if (debug.on()) debug.log("initiating completion of bodySentCF");
                     bodySentCF.completeAsync(() -> this, exec);
                 } else {
-                    exec.execute(this::requestMoreBody);
+                    exec.ensureExecutedAsync(this::requestMoreBody);
                 }
                 break;
             case INITIAL:
@@ -782,7 +778,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 switch (state) {
                     case BODY:
                         cancelUpstreamSubscription();
-                        // fall trough to HEADERS
+                        // fall through to HEADERS
                     case HEADERS:
                         Throwable cause = getCancelCause();
                         if (cause == null) cause = new IOException("Request cancelled");

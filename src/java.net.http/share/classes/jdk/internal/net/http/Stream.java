@@ -1100,6 +1100,19 @@ class Stream<T> extends ExchangeImpl<T> {
                     SequentialScheduler.lockingScheduler(this::trySend);
         }
 
+        private void tryRequestMore() {
+            try {
+                subscription.request(1);
+            } catch (Throwable ex) {
+                requestBodyCF.completeExceptionally(ex);
+                // need to cancel the stream to 1. tell the server
+                // we don't want to receive any more data and
+                // 2. ensure that the operation ref count will be
+                // decremented on the HttpClient.
+                cancelImpl(ex);
+            }
+        }
+
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
             if (this.subscription != null) {
@@ -1108,7 +1121,7 @@ class Stream<T> extends ExchangeImpl<T> {
             this.subscription = subscription;
             if (debug.on())
                 debug.log("RequestSubscriber: onSubscribe, request 1");
-            subscription.request(1);
+            exchange.executor().safeDelegate().execute(this::tryRequestMore);
         }
 
         @Override

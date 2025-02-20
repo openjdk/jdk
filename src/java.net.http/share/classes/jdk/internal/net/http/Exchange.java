@@ -421,8 +421,23 @@ final class Exchange<T> {
     }
 
     private CompletableFuture<Response> startSendingBody(DelegatingExecutor executor) {
-        return exchImpl.sendBodyAsync()
-                        .thenCompose(exIm -> exIm.getResponseAsync(executor));
+        // don't wait until the body has been fully sent to
+        // parse and return the response headers
+        var sendBody = exchImpl.sendBodyAsync();
+        CompletableFuture<Response> cf = exchImpl.getResponseAsync(executor);
+        sendBody.exceptionally((t) -> {
+            exchImpl.cancel(failed(Utils.toIOException(t)));
+            cf.completeExceptionally(t);
+            return exchImpl;
+        });
+        if (upgrading && !upgraded && request.bodyPublisher().isPresent()) {
+            // when upgrading we must wait until the body has been sent
+            // before creating the HTTP/2 stream
+            return cf.thenCompose(r -> r.statusCode == 101 // upgraded
+                    ? CompletableFuture.allOf(sendBody, cf).thenCompose(rr -> cf)
+                    : cf);
+        }
+        return cf;
     }
 
     // After sending the request headers, if no ProxyAuthorizationRequired
