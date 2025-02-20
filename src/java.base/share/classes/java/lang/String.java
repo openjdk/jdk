@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3645,8 +3645,6 @@ public final class String
      */
     public static String join(CharSequence delimiter,
             Iterable<? extends CharSequence> elements) {
-        Objects.requireNonNull(delimiter);
-        Objects.requireNonNull(elements);
         var delim = delimiter.toString();
         var elems = new String[8];
         int size = 0;
