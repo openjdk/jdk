@@ -35,6 +35,8 @@ public final class Int extends Type {
     private static final List<Operation> OPERATIONS = List.of(
         new Operation.Unary("(-(", Int.INSTANCE, "))"),
         new Operation.Unary("(~", Int.INSTANCE, ")")
+
+
     );
 
     @Override

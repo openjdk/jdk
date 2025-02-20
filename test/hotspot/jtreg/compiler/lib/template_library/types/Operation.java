@@ -25,13 +25,32 @@ package compiler.lib.template_library.types;
 
 import java.util.HashSet;
 
-public sealed interface Operation permits Operation.Unary {
+public sealed interface Operation permits Operation.Unary,
+                                          Operation.Binary,
+                                          Operation.Ternary {
     boolean hasOnlyTypes(HashSet<Type> types);
 
     public static record Unary(String s0, Type t0, String s1) implements Operation {
         @Override
         public boolean hasOnlyTypes(HashSet<Type> types) {
             return types.contains(t0);
+        }
+    }
+
+    public static record Binary(String s0, Type t0, String s1, Type t1, String s2) implements Operation {
+        @Override
+        public boolean hasOnlyTypes(HashSet<Type> types) {
+            return types.contains(t0) &&
+                   types.contains(t1);
+        }
+    }
+
+    public static record Ternary(String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3) implements Operation {
+        @Override
+        public boolean hasOnlyTypes(HashSet<Type> types) {
+            return types.contains(t0) &&
+                   types.contains(t1) &&
+                   types.contains(t2);
         }
     }
 }

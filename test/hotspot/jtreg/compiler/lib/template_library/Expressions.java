@@ -106,6 +106,31 @@ public abstract class Expressions {
                     tokens.add(s1);
                 };
             }
+            case Operation.Binary(String s0, Type t0, String s1, Type t1, String s2) -> {
+                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, allowedTypes, maxDepth-1, types);
+                ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, allowedTypes, maxDepth-1, types);
+                return (List<Object> tokens, List<Object> args) -> {
+                    tokens.add(s0);
+                    step0.addTokens(tokens, args);
+                    tokens.add(s1);
+                    step1.addTokens(tokens, args);
+                    tokens.add(s2);
+                };
+            }
+            case Operation.Ternary(String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3) -> {
+                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, allowedTypes, maxDepth-1, types);
+                ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, allowedTypes, maxDepth-1, types);
+                ExpressionGeneratorStep step2 = expressionGeneratorStep(t1, allowedTypes, maxDepth-1, types);
+                return (List<Object> tokens, List<Object> args) -> {
+                    tokens.add(s0);
+                    step0.addTokens(tokens, args);
+                    tokens.add(s1);
+                    step1.addTokens(tokens, args);
+                    tokens.add(s2);
+                    step2.addTokens(tokens, args);
+                    tokens.add(s3);
+                };
+            }
         }
     }
 
