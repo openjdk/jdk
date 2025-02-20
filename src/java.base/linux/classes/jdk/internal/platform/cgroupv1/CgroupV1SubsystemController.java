@@ -60,7 +60,7 @@ public class CgroupV1SubsystemController implements CgroupSubsystemController {
                         // When moved to a subgroup, between subgroups, the path suffix will change.
                         Path cgp = Path.of(cgroupPath);
                         int nameCount = cgp.getNameCount();
-                        for (int i=0; i<nameCount; ++i) {
+                        for (int i=0; i < nameCount; i++) {
                             Path dir = Path.of(mountPoint, cgp.toString());
                             if (Files.isDirectory(dir)) {
                                 path = dir.toString();

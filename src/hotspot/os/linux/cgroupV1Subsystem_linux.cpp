@@ -72,7 +72,7 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
               }
               break;
             }
-            suffix = strchr(suffix+1, '/');
+            suffix = strchr(suffix + 1, '/');
           }
         }
       }
