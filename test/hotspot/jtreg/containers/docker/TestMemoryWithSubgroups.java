@@ -30,6 +30,8 @@ import jdk.internal.platform.Metrics;
 
 import java.util.ArrayList;
 
+import jtreg.SkippedException;
+
 /*
  * @test
  * @bug 8343191
@@ -54,38 +56,33 @@ public class TestMemoryWithSubgroups {
             System.out.println("Unable to run docker tests.");
             return;
         }
+        Common.prepareWhiteBox();
+        DockerTestUtils.buildJdkContainerImage(imageName);
+
         if ("cgroupv1".equals(metrics.getProvider())) {
-
-            Common.prepareWhiteBox();
-            DockerTestUtils.buildJdkContainerImage(imageName);
-
             try {
-                testMemoryLimitSubgroupV1("100m", "104857600", false);
-                testMemoryLimitSubgroupV1("500m", "524288000", false);
-                testMemoryLimitSubgroupV1("100m", "104857600", true);
-                testMemoryLimitSubgroupV1("500m", "524288000", true);
+                testMemoryLimitSubgroupV1("200m", "100m", "104857600", false);
+                testMemoryLimitSubgroupV1("1g", "500m", "524288000", false);
+                testMemoryLimitSubgroupV1("200m", "100m", "104857600", true);
+                testMemoryLimitSubgroupV1("1g", "500m", "524288000", true);
             } finally {
                 DockerTestUtils.removeDockerImage(imageName);
             }
         } else if ("cgroupv2".equals(metrics.getProvider())) {
-
-            Common.prepareWhiteBox();
-            DockerTestUtils.buildJdkContainerImage(imageName);
-
             try {
-                testMemoryLimitSubgroupV2("100m", "104857600", false);
-                testMemoryLimitSubgroupV2("500m", "524288000", false);
-                testMemoryLimitSubgroupV2("100m", "104857600", true);
-                testMemoryLimitSubgroupV2("500m", "524288000", true);
+                testMemoryLimitSubgroupV2("200m", "100m", "104857600", false);
+                testMemoryLimitSubgroupV2("1g", "500m", "524288000", false);
+                testMemoryLimitSubgroupV2("200m", "100m", "104857600", true);
+                testMemoryLimitSubgroupV2("1g", "500m", "524288000", true);
             } finally {
                 DockerTestUtils.removeDockerImage(imageName);
             }
         } else {
-            System.out.println("Metrics are from neither cgroup v1 nor v2, skipped for now.");
+            throw new SkippedException("Metrics are from neither cgroup v1 nor v2, skipped for now.");
         }
     }
 
-    private static void testMemoryLimitSubgroupV1(String valueToSet, String expectedValue, boolean privateNamespace)
+    private static void testMemoryLimitSubgroupV1(String containerMemorySize, String valueToSet, String expectedValue, boolean privateNamespace)
             throws Exception {
 
         Common.logNewTestCase("Cgroup V1 subgroup memory limit: " + valueToSet);
@@ -95,7 +92,7 @@ public class TestMemoryWithSubgroups {
         opts.appendTestJavaOptions = false;
         opts.addDockerOpts("--privileged")
             .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))
-            .addDockerOpts("--memory", "1g");
+            .addDockerOpts("--memory", containerMemorySize);
         opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
             "echo " + valueToSet + " > /sys/fs/cgroup/memory/test/memory.limit_in_bytes ; " +
             "echo $$ > /sys/fs/cgroup/memory/test/cgroup.procs ; " +
@@ -105,7 +102,7 @@ public class TestMemoryWithSubgroups {
             .shouldMatch("Lowest limit was:.*" + expectedValue);
     }
 
-    private static void testMemoryLimitSubgroupV2(String valueToSet, String expectedValue, boolean privateNamespace)
+    private static void testMemoryLimitSubgroupV2(String containerMemorySize, String valueToSet, String expectedValue, boolean privateNamespace)
             throws Exception {
 
         Common.logNewTestCase("Cgroup V2 subgroup memory limit: " + valueToSet);
@@ -115,7 +112,7 @@ public class TestMemoryWithSubgroups {
         opts.appendTestJavaOptions = false;
         opts.addDockerOpts("--privileged")
             .addDockerOpts("--cgroupns=" + (privateNamespace ? "private" : "host"))
-            .addDockerOpts("--memory", "1g");
+            .addDockerOpts("--memory", containerMemorySize);
         opts.addClassOptions("mkdir -p /sys/fs/cgroup/memory/test ; " +
             "echo $$ > /sys/fs/cgroup/memory/test/cgroup.procs ; " +
             "echo '+memory' > /sys/fs/cgroup/cgroup.subtree_control ; " +

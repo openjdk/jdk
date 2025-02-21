@@ -30,6 +30,8 @@ import jdk.test.lib.containers.docker.DockerTestUtils;
 
 import java.util.ArrayList;
 
+import jtreg.SkippedException;
+
 /*
  * @test
  * @bug 8343191
@@ -68,7 +70,7 @@ public class TestDockerMemoryMetricsSubgroup {
             testMemoryLimitSubgroupV2("200m", "400m", true);
             testMemoryLimitSubgroupV2("500m", "1G", true);
         } else {
-            System.out.println("Metrics are from neither cgroup v1 nor v2, skipped for now.");
+            throw new SkippedException("Metrics are from neither cgroup v1 nor v2, skipped for now.");
         }
     }
 
