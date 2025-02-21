@@ -38,7 +38,15 @@ public class LShiftINodeIdealizationTests {
     }
 
     @Run(test = {"test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8",
-            "testDoubleShift1", "testDoubleShift2", "testDoubleShift3", "testDoubleShift4", "testDoubleShift5", "testDoubleShift6", "testDoubleShift7",})
+            "testDoubleShift1",
+            "testDoubleShift2",
+            "testDoubleShift3",
+            "testDoubleShift4",
+            "testDoubleShift5",
+            "testDoubleShift6",
+            "testDoubleShift7",
+            "testDoubleShiftSliceAndStore",
+    })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -144,6 +152,10 @@ public class LShiftINodeIdealizationTests {
         Asserts.assertEQ(((a << 30) << 1) << 1, testDoubleShift5(a));
         Asserts.assertEQ((a * 4) << 3, testDoubleShift6(a));
         Asserts.assertEQ((a << 3) * 4, testDoubleShift7(a));
+
+        short[] arr = new short[1];
+        arr[0] = (short)1;
+        Asserts.assertEQ((short)(1 << 3), testDoubleShiftSliceAndStore(arr)[0]);
     }
 
     @Test
@@ -195,5 +207,15 @@ public class LShiftINodeIdealizationTests {
     // Checks (x << 3) * 4 => x << 5
     public int testDoubleShift7(int x) {
         return (x << 3) * 4;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MUL, IRNode.RSHIFT})
+    @IR(counts = {IRNode.LSHIFT, "1"})
+    // Checks (short) (a[0] << 3) => (((a[0] << 3) << 16) >> 16) => ((a[0] << 19) >> 16) => (a[0] << 3)
+    public short[] testDoubleShiftSliceAndStore(short[] a) {
+        short[] res = new short[1];
+        res[0] = (short) (a[0] << 3);
+        return res;
     }
 }

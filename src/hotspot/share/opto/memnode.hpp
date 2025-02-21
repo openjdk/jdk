@@ -579,7 +579,7 @@ protected:
   virtual bool depends_only_on_test() const { return false; }
 
   Node *Ideal_masked_input       (PhaseGVN *phase, uint mask);
-  Node *Ideal_sign_extended_input(PhaseGVN *phase, int  num_bits);
+  Node* Ideal_sign_extended_input(PhaseGVN* phase, int num_rejected_bits);
 
 public:
   // We must ensure that stores of object references will be visible

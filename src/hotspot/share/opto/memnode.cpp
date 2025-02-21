@@ -3519,17 +3519,75 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // (StoreB ... (RShiftI _ (LShiftI _ valIn conIL ) conIR) )
 // If (conIL == conIR && conIR <= num_bits)  this simplifies to
 // (StoreB ... (valIn) )
-Node *StoreNode::Ideal_sign_extended_input(PhaseGVN *phase, int num_bits) {
+// If (conIL > conIR) we are inventing 0 lower bits, and throwing
+// away upper bits, but we are not introducing garbage bits by above.
+// We can simplify into
+// (StoreB ... (LShiftI _ valIn (conIL - conIR)) )
+// This case happens when the store source was itself a left shift, that gets merged
+// into the inner left shift of the sign-extension.
+// Let's assume we have the following 32 bits integer that we want to stuff in 8 bits char:
+// +------------------------+---------+
+// |        v[8..31]        | v[0..7] |
+// +------------------------+---------+
+//  31                     8 7        0
+// v[0..7] is meaningful, but v[8..31] is not. In this case, num_rejected_bits == 24
+// If we do the shift left then right by 24 bits, we get:
+// after << 24
+// +---------+------------------------+
+// | v[0..7] |           0            |
+// +---------+------------------------+
+//  31     24 23                      0
+// after >> 24
+// +------------------------+---------+
+// |        sign bit        | v[0..7] |
+// +------------------------+---------+
+//  31                     8 7        0
+// so, indeed, simplifying is fine. If we shift by more than 24 (e.g. 26),
+// but then, shift right by 24:
+// after << 26
+// +---------+------------------------+
+// | v[0..5] |           0            |
+// +---------+------------------------+
+//  31     26 25                      0
+// after >> 24
+// +------------------+---------+-----+
+// |     sign bit     | v[0..5] |  0  |
+// +------------------+---------+-----+
+//  31               8 7       2 1   0
+// Now, if we shift right by less than the number of rejected bits:
+// after << 26
+// +---------+------------------------+
+// | v[0..5] |           0            |
+// +---------+------------------------+
+//  31     26 25                      0
+// after >> 22
+// +------------------+---------+-----+
+// |     sign bit     | v[0..5] |  0  |
+// +------------------+---------+-----+
+//  31              10 9       4 3   0
+//
+// Basically, we decompose
+// StoreB ... (RShiftI _ (LShiftI _ valIn conIL ) conIR)
+// into
+// StoreB ... (RShiftI _ (LShiftI _ (LShiftI _ valIn (conIL - conIR)) conIR ) conIR)
+Node* StoreNode::Ideal_sign_extended_input(PhaseGVN* phase, int num_rejected_bits) {
   Node *val = in(MemNode::ValueIn);
   if( val->Opcode() == Op_RShiftI ) {
-    const TypeInt *t = phase->type( val->in(2) )->isa_int();
-    if( t && t->is_con() && (t->get_con() <= num_bits) ) {
+    const TypeInt* conIR = phase->type(val->in(2))->isa_int();
+    if (conIR != nullptr && conIR->is_con() && (conIR->get_con() <= num_rejected_bits)) {
       Node *shl = val->in(1);
       if( shl->Opcode() == Op_LShiftI ) {
-        const TypeInt *t2 = phase->type( shl->in(2) )->isa_int();
-        if( t2 && t2->is_con() && (t2->get_con() == t->get_con()) ) {
-          set_req_X(MemNode::ValueIn, shl->in(1), phase);
-          return this;
+        const TypeInt* conIL = phase->type(shl->in(2))->isa_int();
+        if (conIL != nullptr && conIL->is_con()) {
+          if (conIL->get_con() == conIR->get_con()) {
+            set_req_X(MemNode::ValueIn, shl->in(1), phase);
+            return this;
+          }
+          if (conIL->get_con() > conIR->get_con()) {
+            Node* new_shl = phase->transform(new LShiftINode(shl->in(1), phase->intcon(conIL->get_con() - conIR->get_con())));
+            set_req_X(MemNode::ValueIn, new_shl, phase);
+            return this;
+          }
         }
       }
     }
