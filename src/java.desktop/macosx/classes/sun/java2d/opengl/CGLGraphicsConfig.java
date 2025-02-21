@@ -36,7 +36,6 @@ import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.Window;
 import java.awt.color.ColorSpace;
-import java.awt.image.BaseMultiResolutionImage;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
@@ -260,7 +259,7 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         ColorModel model = getColorModel(transparency);
         WritableRaster wr = model.createCompatibleWritableRaster(width, height);
         return new OffScreenImage(target, model, wr,
-                model.isAlphaPremultiplied());
+                                  model.isAlphaPremultiplied());
     }
 
     @Override
