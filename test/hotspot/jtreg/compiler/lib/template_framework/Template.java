@@ -383,29 +383,27 @@ public interface Template {
     }
 
     /**
-     * Define a name in the current code frame.
+     * Add a {@link Name} in the current code frame.
      * Note that there can be duplicate definitions, and they simply increase
-     * the {@link countNames} count, and increase the probability of sampling
+     * the {@link weighNames} weight, and increase the probability of sampling
      * the name with {@link sampleName}.
      *
-     * @param name The {@code 'name'} of the name.
-     * @param type The type of the name.
-     * @param mutable Determines if the name is mutable or immutable.
+     * @param name The {@link Name} to be added to the current code frame.
      * @return The token that performs the defining action.
      */
-    static Token defineName(String name, Object type, boolean mutable) {
-        return new DefineNameToken(name, type, mutable);
+    static Token addName(Name name) {
+        return new AddNameToken(name);
     }
 
     /**
-     * Count the number of names defined for the specified type.
+     * Weight the {@link Name}s for the specified {@link Name.Type}.
      *
-     * @param type The type of the names to be counted.
-     * @param onlyMutable Determines if we count the mutable names or all.
-     * @return The number of names for the specified parameters.
+     * @param type The type of the names to weigh.
+     * @param onlyMutable Determines if we weigh the mutable names or all.
+     * @return The weight of names for the specified parameters.
      */
-    static int countNames(Object type, boolean onlyMutable) {
-        return Renderer.getCurrent().countNames(type, onlyMutable);
+    static long weighNames(Name.Type type, boolean onlyMutable) {
+        return Renderer.getCurrent().weighNames(type, onlyMutable);
     }
 
     /**
@@ -415,7 +413,7 @@ public interface Template {
      * @param onlyMutable Determines if we sample from the mutable names or all.
      * @return The sampled name.
      */
-    static String sampleName(Object type, boolean onlyMutable) {
+    static Name sampleName(Name.Type type, boolean onlyMutable) {
         return Renderer.getCurrent().sampleName(type, onlyMutable);
     }
 }

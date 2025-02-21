@@ -23,8 +23,6 @@
 
 package compiler.lib.template_framework;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -32,63 +30,62 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /**
- * The {@link NameSet} defines a set of names (e.g. fields or variable names). They extend the
+ * The {@link NameSet} defines a set of {@link Name}s (e.g. fields or variable names). They extend the
  * set of the {@code 'parent'} set.
  */
 class NameSet {
     static final Random RANDOM = Utils.getRandomInstance();
 
     private final NameSet parent;
-    private final Map<Object,List<String>> names = new HashMap<>();
+    private final List<Name> names = new ArrayList<>();
 
     NameSet(NameSet parent) {
         this.parent = parent;
     }
 
-    public int countLocal(Object type) {
-        List<String> locals = names.get(type);
-        return (locals == null) ? 0 : locals.size();
+    private long localWeight(Name.Type type, boolean onlyMutable) {
+        long sum = 0;
+        for (var name : names) {
+            if (name.type().isSubtypeOf(type) && (name.mutable() || !onlyMutable)) {
+                sum += name.weight();
+            }
+        }
+        return sum;
     }
 
-    public int count(Object type) {
-        int c = countLocal(type);
-        if (parent != null) { c += parent.count(type); }
-        return c;
+    public long weight(Name.Type type, boolean onlyMutable) {
+        long w = localWeight(type, onlyMutable);
+        if (parent != null) { w += parent.weight(type, onlyMutable); }
+        return w;
     }
 
     /**
      * Randomly sample a name from this set or a parent set, restricted to the specified type.
      */
-    public String sample(Object type) {
-        int c = count(type);
-        if (c == 0) {
+    public Name sample(Name.Type type, boolean onlyMutable) {
+        long w = weight(type, onlyMutable);
+        if (w <= 0) {
             throw new RendererException("No variable of type '" + type.toString() + "'.");
         }
 
-        // Maybe sample from parent.
-        if (parent != null) {
-            int pc = parent.count(type);
-            int r = RANDOM.nextInt(c);
-            if (r < pc) {
-                return parent.sample(type);
+        long r = RANDOM.nextLong(w);
+        return sample(type, onlyMutable, r);
+    }
+
+    private Name sample(Name.Type type, boolean onlyMutable, long r) {
+        for (var name : names) {
+            if (name.type().isSubtypeOf(type) && (name.mutable() || !onlyMutable)) {
+                r -= name.weight();
+                if (r < 0) { return name; }
             }
         }
-
-        List<String> locals = names.get(type);
-        int r = RANDOM.nextInt(locals.size());
-        return locals.get(r);
+        return parent.sample(type, onlyMutable, r);
     }
 
     /**
      * Add a variable of a specified type to the set.
      */
-    public void add(String name, Object type) {
-        // Fetch list of variables - if non-existant create a new one.
-        List<String> locals = names.get(type);
-        if (locals == null) {
-            locals = new ArrayList<String>();
-            names.put(type, locals);
-        }
-        locals.add(name);
+    public void add(Name name) {
+        names.add(name);
     }
 }

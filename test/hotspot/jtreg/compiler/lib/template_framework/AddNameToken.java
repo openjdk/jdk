@@ -23,4 +23,4 @@
 
 package compiler.lib.template_framework;
 
-record DefineNameToken(String name, Object type, boolean mutable) implements Token {}
+record AddNameToken(Name name) implements Token {}

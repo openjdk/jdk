@@ -40,7 +40,7 @@ sealed interface Token permits StringToken,
                                TemplateWithArgs.TwoArgsUse,
                                HookSetToken,
                                HookInsertToken,
-                               DefineNameToken,
+                               AddNameToken,
                                NothingToken
 {
     static List<Token> parse(Object[] objects) {

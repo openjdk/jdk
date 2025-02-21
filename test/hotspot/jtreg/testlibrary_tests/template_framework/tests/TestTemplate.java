@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.HashSet;
 
 import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.Name;
 import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
 import compiler.lib.template_framework.RendererException;
@@ -46,14 +47,26 @@ import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.fuel;
 import static compiler.lib.template_framework.Template.setFuelCost;
-import static compiler.lib.template_framework.Template.defineName;
-import static compiler.lib.template_framework.Template.countNames;
+import static compiler.lib.template_framework.Template.addName;
+import static compiler.lib.template_framework.Template.weighNames;
 import static compiler.lib.template_framework.Template.sampleName;
 
 public class TestTemplate {
     interface FailingTest {
         void run();
     }
+
+    private record MyPrimitive(String name) implements Name.Type {
+        @Override
+        public boolean isSubtypeOf(Name.Type other) {
+            return other instanceof MyPrimitive(String n) && n == name();
+        }
+
+        @Override
+        public String toString() { return name(); }
+    }
+    private static final MyPrimitive myInt = new MyPrimitive("int");
+    private static final MyPrimitive myLong = new MyPrimitive("long");
 
     public static void main(String[] args) {
         testSingleLine();
@@ -82,8 +95,8 @@ public class TestTemplate {
         expectRendererException(() -> let("x","y"),                       "A Template method such as");
         expectRendererException(() -> fuel(),                             "A Template method such as");
         expectRendererException(() -> setFuelCost(1.0f),                  "A Template method such as");
-        expectRendererException(() -> countNames("int", true),            "A Template method such as");
-        expectRendererException(() -> sampleName("int", true),            "A Template method such as");
+        expectRendererException(() -> weighNames(myInt, true),            "A Template method such as");
+        expectRendererException(() -> sampleName(myInt, true),            "A Template method such as");
         expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
         expectRendererException(() -> testFailingSample(), "No variable of type 'int'.");
         expectRendererException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
@@ -805,18 +818,18 @@ public class TestTemplate {
         var hook1 = new Hook("Hook1");
 
         var template1 = Template.make(() -> body(
-            "[", countNames("int", true), "]\n"
+            "[", weighNames(myInt, true), "]\n"
         ));
 
-        var template2 = Template.make("name", "type", (String name, Object type) -> body(
-            defineName(name, type, true),
+        var template2 = Template.make("name", "type", (String name, Name.Type type) -> body(
+            addName(new Name(name, type, true, 1)),
             "define #type #name\n",
             template1.withArgs()
         ));
 
         var template3 = Template.make(() -> body(
             "<\n",
-            hook1.insert(template2.withArgs($("name"), "int")),
+            hook1.insert(template2.withArgs($("name"), myInt)),
             "$name = 5\n",
             ">\n"
         ));
@@ -831,7 +844,7 @@ public class TestTemplate {
                 "more\n",
                 template1.withArgs(),
                 "more\n",
-                template2.withArgs($("name"), "int"),
+                template2.withArgs($("name"), myInt),
                 "more\n",
                 template1.withArgs()
             ),
@@ -843,22 +856,22 @@ public class TestTemplate {
         String expected =
             """
             {
-            [0]
+            [0L]
             define int name_4
-            [1]
-            [0]
+            [1L]
+            [0L]
             something
             <
             name_4 = 5
             >
             more
-            [1]
+            [1L]
             more
             define int name_1
-            [2]
+            [2L]
             more
-            [1]
-            [0]
+            [1L]
+            [0L]
             }
             """;
         checkEQ(code, expected);
@@ -867,46 +880,46 @@ public class TestTemplate {
     public static void testNames2() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make("type", (Object type) -> body(
-            "[#type: ", countNames(type, true), " and ", countNames(type, false), "]\n"
+        var template1 = Template.make("type", (Name.Type type) -> body(
+            "[#type: ", weighNames(type, true), " and ", weighNames(type, false), "]\n"
         ));
 
 
-        var template2 = Template.make("name", "type", (String name, Object type) -> body(
-            defineName(name, type, true),
+        var template2 = Template.make("name", "type", (String name, Name.Type type) -> body(
+            addName(new Name(name, type, true, 1)),
             "define mutable #type #name\n",
             template1.withArgs(type)
         ));
 
-        var template3 = Template.make("name", "type", (String name, Object type) -> body(
-            defineName(name, type, false),
+        var template3 = Template.make("name", "type", (String name, Name.Type type) -> body(
+            addName(new Name(name, type, false, 1)),
             "define immutable #type #name\n",
             template1.withArgs(type)
         ));
 
-        var template4 = Template.make("type", (Object type) -> body(
+        var template4 = Template.make("type", (Name.Type type) -> body(
             "{ $store\n",
             hook1.insert(template2.withArgs($("name"), type)),
             "$name = 5\n",
             "} $store\n"
         ));
 
-        var template5 = Template.make("type", (Object type) -> body(
+        var template5 = Template.make("type", (Name.Type type) -> body(
             "{ $load\n",
             hook1.insert(template3.withArgs($("name"), type)),
             "blackhole($name)\n",
             "} $load\n"
         ));
 
-        var template6 = Template.make("type", (Object type) -> body(
-            let("v", sampleName(type, true)),
+        var template6 = Template.make("type", (Name.Type type) -> body(
+            let("v", sampleName(type, true).name()),
             "{ $sample\n",
             "#v = 7\n",
             "} $sample\n"
         ));
 
-        var template7 = Template.make("type", (Object type) -> body(
-            let("v", sampleName(type, false)),
+        var template7 = Template.make("type", (Name.Type type) -> body(
+            let("v", sampleName(type, false).name()),
             "{ $sample\n",
             "blackhole(#v)\n",
             "} $sample\n"
@@ -914,22 +927,22 @@ public class TestTemplate {
 
         var template8 = Template.make(() -> body(
             "class $X {\n",
-            template1.withArgs("int"),
+            template1.withArgs(myInt),
             hook1.set(
                 "begin $body\n",
-                template1.withArgs("int"),
+                template1.withArgs(myInt),
                 "start with immutable\n",
-                template5.withArgs("int"),
+                template5.withArgs(myInt),
                 "then load from it\n",
-                template7.withArgs("int"),
-                template1.withArgs("int"),
+                template7.withArgs(myInt),
+                template1.withArgs(myInt),
                 "now make something mutable\n",
-                template4.withArgs("int"),
+                template4.withArgs(myInt),
                 "then store to it\n",
-                template6.withArgs("int"),
-                template1.withArgs("int")
+                template6.withArgs(myInt),
+                template1.withArgs(myInt)
             ),
-            template1.withArgs("int"),
+            template1.withArgs(myInt),
             "}\n"
         ));
 
@@ -937,13 +950,13 @@ public class TestTemplate {
         String expected =
             """
             class X_1 {
-            [int: 0 and 0]
+            [int: 0L and 0L]
             define immutable int name_4
-            [int: 0 and 1]
+            [int: 0L and 1L]
             define mutable int name_9
-            [int: 1 and 2]
+            [int: 1L and 2L]
             begin body_1
-            [int: 0 and 0]
+            [int: 0L and 0L]
             start with immutable
             { load_4
             blackhole(name_4)
@@ -952,7 +965,7 @@ public class TestTemplate {
             { sample_7
             blackhole(name_4)
             } sample_7
-            [int: 0 and 1]
+            [int: 0L and 1L]
             now make something mutable
             { store_9
             name_9 = 5
@@ -961,8 +974,8 @@ public class TestTemplate {
             { sample_12
             name_9 = 7
             } sample_12
-            [int: 1 and 2]
-            [int: 0 and 0]
+            [int: 1L and 2L]
+            [int: 0L and 0L]
             }
             """;
         checkEQ(code, expected);
@@ -971,26 +984,26 @@ public class TestTemplate {
     public static void testNames3() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make("type", (Object type) -> body(
-            "[#type: ", countNames(type, true), " and ", countNames(type, false), "]\n"
+        var template1 = Template.make("type", (Name.Type type) -> body(
+            "[#type: ", weighNames(type, true), " and ", weighNames(type, false), "]\n"
         ));
 
-        // Example that shows that defineName runs before any code gets generated.
-        // To avoid this behaviour, you have to wrap the defineName in their own template.
+        // Example that shows that addName runs before any code gets generated.
+        // To avoid this behaviour, you have to wrap the addName in their own template.
         var template2 = Template.make(() -> body(
             "class $Y {\n",
-            template1.withArgs("int"),
+            template1.withArgs(myInt),
             hook1.set(
                 "begin $body\n",
-                template1.withArgs("int"),
+                template1.withArgs(myInt),
                 "define mutable\n",
-                defineName($("v1"), "int", true),
-                template1.withArgs("int"),
+                addName(new Name($("v1"), myInt, true, 1)),
+                template1.withArgs(myInt),
                 "define immutable\n",
-                defineName($("v1"), "int", false),
-                template1.withArgs("int")
+                addName(new Name($("v1"), myInt, false, 1)),
+                template1.withArgs(myInt)
             ),
-            template1.withArgs("int"),
+            template1.withArgs(myInt),
             "}\n"
         ));
 
@@ -998,20 +1011,20 @@ public class TestTemplate {
         String expected =
             """
             class Y_1 {
-            [int: 0 and 0]
+            [int: 0L and 0L]
             begin body_1
-            [int: 0 and 0]
+            [int: 0L and 0L]
             define mutable
-            [int: 1 and 1]
+            [int: 1L and 1L]
             define immutable
-            [int: 1 and 2]
-            [int: 0 and 0]
+            [int: 1L and 2L]
+            [int: 0L and 0L]
             }
             """;
         checkEQ(code, expected);
     }
 
-    record MyItem(Object type, String op) {}
+    record MyItem(Name.Type type, String op) {}
 
     public static void testListArgument() {
         var template1 = Template.make("item", (MyItem item) -> body(
@@ -1027,14 +1040,14 @@ public class TestTemplate {
             "}\n"
         ));
 
-        List<MyItem> list = List.of(new MyItem("int", "+"),
-                                    new MyItem("int", "-"),
-                                    new MyItem("int", "*"),
-                                    new MyItem("int", "/"),
-                                    new MyItem("long", "+"),
-                                    new MyItem("long", "-"),
-                                    new MyItem("long", "*"),
-                                    new MyItem("long", "/"));
+        List<MyItem> list = List.of(new MyItem(myInt, "+"),
+                                    new MyItem(myInt, "-"),
+                                    new MyItem(myInt, "*"),
+                                    new MyItem(myInt, "/"),
+                                    new MyItem(myLong, "+"),
+                                    new MyItem(myLong, "-"),
+                                    new MyItem(myLong, "*"),
+                                    new MyItem(myLong, "/"));
 
         String code = template2.withArgs(list).render();
         String expected =
@@ -1087,7 +1100,7 @@ public class TestTemplate {
 
     public static void testFailingSample() {
         var template1 = Template.make(() -> body(
-            let("v", sampleName("int", true)),
+            let("v", sampleName(myInt, true).name()),
             "v is #v\n"
         ));
 

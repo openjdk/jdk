@@ -53,27 +53,21 @@ class CodeFrame {
     private final Map<Hook, Code.CodeList> hookCodeLists = new HashMap<>();
 
     /**
-     * The {@link NameSet}s are used for variable and fields etc. There is one set that
-     * contains only the mutable names, and another that contains all. This sampling only
-     * mutable names, or sampling from all names including immutable names.
+     * The {@link NameSet} is used for variable and fields etc.
      */
-    final NameSet mutableNames;
-    final NameSet allNames;
+    final NameSet names;
 
     private CodeFrame(CodeFrame parent, boolean isTransparentForNames) {
         this.parent = parent;
         if (parent == null) {
-            // NameSets without any parent.
-            this.mutableNames = new NameSet(null);
-            this.allNames     = new NameSet(null);
+            // NameSet without any parent.
+            this.names = new NameSet(null);
         } else if (isTransparentForNames) {
-            // We use the same NameSets as the parent - makes it transparent.
-            this.mutableNames = parent.mutableNames;
-            this.allNames     = parent.allNames;
+            // We use the same NameSet as the parent - makes it transparent.
+            this.names     = parent.names;
         } else {
-            // New NameSets, to make sure we have a nested scope for the names.
-            this.mutableNames = new NameSet(parent.mutableNames);
-            this.allNames     = new NameSet(parent.allNames);
+            // New NameSet, to make sure we have a nested scope for the names.
+            this.names     = new NameSet(parent.names);
         }
     }
 
@@ -125,29 +119,16 @@ class CodeFrame {
         return hookCodeLists.containsKey(hook);
     }
 
-    private NameSet nameSet(boolean onlyMutable) {
-        if (onlyMutable) {
-            return mutableNames;
-        } else {
-            return allNames;
-        }
+    void addName(Name name) {
+        names.add(name);
     }
 
-    void defineName(String name, Object type, boolean mutable) {
-        if (mutable) {
-            mutableNames.add(name, type);
-            allNames.add(name, type);
-        } else {
-            allNames.add(name, type);
-        }
+    long weighNames(Name.Type type, boolean onlyMutable) {
+        return names.weight(type, onlyMutable);
     }
 
-    int countNames(Object type, boolean onlyMutable) {
-        return nameSet(onlyMutable).count(type);
-    }
-
-    String sampleName(Object type, boolean onlyMutable) {
-        return nameSet(onlyMutable).sample(type);
+    Name sampleName(Name.Type type, boolean onlyMutable) {
+        return names.sample(type, onlyMutable);
     }
 
     Code getCode() {

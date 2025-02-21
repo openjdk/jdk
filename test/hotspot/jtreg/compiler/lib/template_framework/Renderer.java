@@ -127,11 +127,11 @@ class Renderer {
         currentTemplateFrame.setFuelCost(fuelCost);
     }
 
-    int countNames(Object type, boolean onlyMutable) {
-        return currentCodeFrame.countNames(type, onlyMutable);
+    long weighNames(Name.Type type, boolean onlyMutable) {
+        return currentCodeFrame.weighNames(type, onlyMutable);
     }
 
-    String sampleName(Object type, boolean onlyMutable) {
+    Name sampleName(Name.Type type, boolean onlyMutable) {
         return currentCodeFrame.sampleName(type, onlyMutable);
     }
 
@@ -260,8 +260,8 @@ class Renderer {
                 callerCodeFrame.addCode(currentCodeFrame.getCode());
                 currentCodeFrame = callerCodeFrame;
             }
-            case DefineNameToken(String name, Object type, boolean mutable) -> {
-                currentCodeFrame.defineName(name, type, mutable);
+            case AddNameToken(Name name) -> {
+                currentCodeFrame.addName(name);
             }
         }
     }
