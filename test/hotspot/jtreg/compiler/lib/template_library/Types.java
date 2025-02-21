@@ -44,7 +44,7 @@ import static compiler.lib.template_framework.Template.countNames;
 import static compiler.lib.template_framework.Template.sampleName;
 
 /**
- *
+ * TODO: remove this file !!!!!!!!
  */
 public abstract class Types {
     private static final Random RANDOM = Utils.getRandomInstance();

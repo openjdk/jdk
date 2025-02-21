@@ -93,6 +93,7 @@ public class TestFuzzExpression {
             return body(
                 """
                 // --- $test start ---
+                // Using $reference
                 // type: #type
 
                 @DontCompile
@@ -128,11 +129,43 @@ public class TestFuzzExpression {
             );
         });
 
+        var template2 = Template.make("type", (Type type)-> {
+            Expression exp = Expressions.expression(type, Type.primitives(), 2);
+            return body(
+                """
+                // --- $test start ---
+                // Using $GOLD
+                // type: #type
+
+                static final Object $GOLD = $test();
+
+                @Test
+                public static Object $test() {
+                    try {
+                """,
+                "        return ", exp.withArgs(List.of()), ";\n",
+                """
+                    } catch (Exception e) {
+                        return e;
+                    }
+                }
+
+                @Check(test = "$test")
+                public static void $check(Object result) {
+                    Verify.checkEQ(result, $GOLD);
+                }
+
+                // --- $test end   ---
+                """
+            );
+        });
+
         // Use template1 100 times with every type.
         List<TemplateWithArgs> templates = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 50; i++) {
             for (Type type : Type.primitives()) {
                 templates.add(template1.withArgs(type));
+                templates.add(template2.withArgs(type));
             }
         }
         return IRTestClass.TEMPLATE.withArgs(info, templates).render();
