@@ -32,11 +32,13 @@
 *           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*") |
 *           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*zvbb.*")
 * @library /test/lib /
+* @modules jdk.incubator.vector
 * @run driver compiler.vectorization.TestNumberOfContinuousZeros
 */
 
 package compiler.vectorization;
 
+import jdk.incubator.vector.*;
 import compiler.lib.ir_framework.*;
 import java.util.Random;
 import jdk.test.lib.Asserts;
@@ -51,8 +53,8 @@ public class TestNumberOfContinuousZeros {
     private static final int LEN = 1024;
     private Random rng;
 
-    public static void main(String args[]) {
-        TestFramework.run();
+    public static void main(String[] args) {
+        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
     }
 
     public TestNumberOfContinuousZeros() {
@@ -158,6 +160,43 @@ public class TestNumberOfContinuousZeros {
 
             if (out[i] != value) {
                 throw new IllegalStateException("Expected lzcnt(" + in[i] + ") to be " + value + " but got " + out[i]);
+            }
+        }
+    }
+
+    private static final VectorSpecies<Integer> SPECIES = IntVector.SPECIES_PREFERRED;
+
+    @Test
+    @IR(counts = {IRNode.COUNT_LEADING_ZEROS_VI, "> 0"})
+    @Arguments(setup = "setupSpecialIntArray")
+    public Object[] checkSpecialIntLeadingZerosVector(int[] ints) {
+        int[] res = new int[LEN];
+
+        for (int i = 0; i < ints.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, ints, i);
+            av.lanewise(VectorOperators.LEADING_ZEROS_COUNT).intoArray(res, i);
+        }
+
+        return new Object[] { ints, res };
+    }
+
+    @Check(test = "checkSpecialIntLeadingZerosVector")
+    public void checkSpecialIntLeadingZerosVector(Object[] vals) {
+        int[] ints = (int[]) vals[0];
+        int[] res = (int[]) vals[1];
+
+        // Verification
+
+        int[] check = new int[LEN];
+
+        for (int i = 0; i < ints.length; i += SPECIES.length()) {
+            IntVector av = IntVector.fromArray(SPECIES, ints, i);
+            av.lanewise(VectorOperators.LEADING_ZEROS_COUNT).intoArray(check, i);
+        }
+
+        for (int i = 0; i < LEN; i++) {
+            if (res[i] != check[i]) {
+                throw new IllegalStateException("Expected " + check[i] + " but got " + res[i]);
             }
         }
     }
