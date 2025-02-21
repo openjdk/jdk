@@ -35,8 +35,6 @@ import static compiler.lib.template_framework.Template.defineName;
 import static compiler.lib.template_framework.Template.countNames;
 import static compiler.lib.template_framework.Template.sampleName;
 
-import compiler.lib.template_library.types.Type;
-
 /**
  * TODO: description
  * Idea: generates a template that has a list of {@link Type} holes.

@@ -39,9 +39,6 @@ import static compiler.lib.template_framework.Template.defineName;
 import static compiler.lib.template_framework.Template.countNames;
 import static compiler.lib.template_framework.Template.sampleName;
 
-import compiler.lib.template_library.types.Type;
-import compiler.lib.template_library.types.Operation;
-
 public abstract class Expressions {
 
     private static final Random RANDOM = Utils.getRandomInstance();

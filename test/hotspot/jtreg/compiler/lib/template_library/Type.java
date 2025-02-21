@@ -21,9 +21,11 @@
  * questions.
  */
 
-package compiler.lib.template_library.types;
+package compiler.lib.template_library;
 
 import java.util.List;
+
+import compiler.lib.template_library.types.Int;
 
 /**
  * The {@link Type} abstract class defines the basic functionalities that any {@link Type}

@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.lib.template_library.types;
+package compiler.lib.template_library;
 
 import java.util.HashSet;
 

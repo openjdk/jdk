@@ -48,7 +48,7 @@ import static compiler.lib.template_framework.Template.let;
 
 import compiler.lib.template_library.Library;
 import compiler.lib.template_library.IRTestClass;
-import compiler.lib.template_library.types.Type;
+import compiler.lib.template_library.Type;
 import compiler.lib.template_library.Expression;
 import compiler.lib.template_library.Expressions;
 
