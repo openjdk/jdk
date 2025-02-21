@@ -135,10 +135,11 @@ public class JpegExifThumbnailTest {
                 1998,12,1,14,22,36,
                 new Dimension(80, 60)).run();
 
-        new JpegExifThumbnailTest("jdk_8160327-jfif-jfif-and-exif-thumbnail-sharpshot-iphone.jpg",
-                2010,2,11,20,41,27,
-                new Dimension(131, 122),
-                new Dimension(160, 120)).run();
+        // This includes a JFIF thumbnail and an EXIF thumbnail.
+        new JpegExifThumbnailTest("jdk_8160327-jfif_and_exif.jpg",
+                2025,2,21,1,14,51,
+                new Dimension(150, 200),
+                new Dimension(120, 160)).run();
 
         // this includes Exif data, but the `compression` tag is 0x60000 instead of 0x6,
         // also it doesn't include any date
