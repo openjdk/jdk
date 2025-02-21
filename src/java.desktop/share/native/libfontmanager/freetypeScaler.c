@@ -300,11 +300,13 @@ static void setInterpreterVersion(FT_Library library) {
     FT_Property_Set(library, module, property, (void*)(&version));
 #else
 
+    FT_Prop_Set_Func func = NULL;
     if (JVM_IsStaticallyLinked()) {
       // The bundled libfreetype may be statically linked with
       // the launcher.
-      if (dlsym(RTLD_DEFAULT, "FT_Property_Set") != NULL) {
-        FT_Property_Set(library, module, property, (void*)(&version));
+      func = (FT_Prop_Set_Func)dlsym(RTLD_DEFAULT, "FT_Property_Set");
+      if (func != NULL) {
+        func(library, module, property, (void*)(&version));
         return;
       }
 
@@ -319,7 +321,7 @@ static void setInterpreterVersion(FT_Library library) {
             return;
         }
     }
-    FT_Prop_Set_Func func = (FT_Prop_Set_Func)dlsym(lib, "FT_Property_Set");
+    func = (FT_Prop_Set_Func)dlsym(lib, "FT_Property_Set");
     if (func != NULL) {
         func(library, module, property, (void*)(&version));
     }

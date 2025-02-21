@@ -924,19 +924,34 @@ class methodHandle;
    do_signature(getAndAddShort_signature,                               "(Ljava/lang/Object;JS)S" )                           \
   do_intrinsic(_getAndSetInt,             jdk_internal_misc_Unsafe,     getAndSetInt_name, getAndSetInt_signature, F_R)       \
    do_name(     getAndSetInt_name,                                      "getAndSetInt")                                       \
-   do_alias(    getAndSetInt_signature,                                 /*"(Ljava/lang/Object;JI)I"*/ getAndAddInt_signature)   \
+   do_alias(    getAndSetInt_signature,                                 /*"(Ljava/lang/Object;JI)I"*/ getAndAddInt_signature) \
   do_intrinsic(_getAndSetLong,            jdk_internal_misc_Unsafe,     getAndSetLong_name, getAndSetLong_signature, F_R)     \
    do_name(     getAndSetLong_name,                                     "getAndSetLong")                                      \
-   do_alias(    getAndSetLong_signature,                                /*"(Ljava/lang/Object;JJ)J"*/ getAndAddLong_signature)  \
+   do_alias(    getAndSetLong_signature,                                /*"(Ljava/lang/Object;JJ)J"*/ getAndAddLong_signature)\
   do_intrinsic(_getAndSetByte,            jdk_internal_misc_Unsafe,     getAndSetByte_name, getAndSetByte_signature, F_R)     \
    do_name(     getAndSetByte_name,                                     "getAndSetByte")                                      \
-   do_alias(    getAndSetByte_signature,                                /*"(Ljava/lang/Object;JB)B"*/ getAndAddByte_signature)  \
+   do_alias(    getAndSetByte_signature,                                /*"(Ljava/lang/Object;JB)B"*/ getAndAddByte_signature)\
   do_intrinsic(_getAndSetShort,           jdk_internal_misc_Unsafe,     getAndSetShort_name, getAndSetShort_signature, F_R)   \
-   do_name(     getAndSetShort_name,                                    "getAndSetShort")                                     \
-   do_alias(    getAndSetShort_signature,                               /*"(Ljava/lang/Object;JS)S"*/ getAndAddShort_signature) \
-  do_intrinsic(_getAndSetReference,       jdk_internal_misc_Unsafe,     getAndSetReference_name, getAndSetReference_signature, F_R) \
-   do_name(     getAndSetReference_name,                                "getAndSetReference")                                  \
+   do_name(     getAndSetShort_name,                                    "getAndSetShort")                                             \
+   do_alias(    getAndSetShort_signature,                               /*"(Ljava/lang/Object;JS)S"*/ getAndAddShort_signature)       \
+  do_intrinsic(_getAndSetReference,       jdk_internal_misc_Unsafe,     getAndSetReference_name, getAndSetReference_signature, F_R)   \
+   do_name(     getAndSetReference_name,                                "getAndSetReference")                                         \
    do_signature(getAndSetReference_signature,                           "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
+                                                                                                                             \
+  /* Float16Math API intrinsification support */                                                                             \
+  /* Float16 signatures */                                                                                                   \
+  do_signature(float16_unary_math_op_sig, "(Ljava/lang/Class;"                                                               \
+                                           "Ljava/lang/Object;"                                                              \
+                                           "Ljava/util/function/UnaryOperator;)"                                             \
+                                           "Ljava/lang/Object;")                                                             \
+  do_signature(float16_ternary_math_op_sig, "(Ljava/lang/Class;"                                                             \
+                                             "Ljava/lang/Object;"                                                            \
+                                             "Ljava/lang/Object;"                                                            \
+                                             "Ljava/lang/Object;"                                                            \
+                                             "Ljdk/internal/vm/vector/Float16Math$TernaryOperator;)"                         \
+                                             "Ljava/lang/Object;")                                                           \
+  do_intrinsic(_sqrt_float16, jdk_internal_vm_vector_Float16Math, sqrt_name, float16_unary_math_op_sig, F_S)                 \
+  do_intrinsic(_fma_float16, jdk_internal_vm_vector_Float16Math, fma_name, float16_ternary_math_op_sig, F_S)                 \
                                                                                                                                                \
   /* Vector API intrinsification support */                                                                                                    \
                                                                                                                                                \
