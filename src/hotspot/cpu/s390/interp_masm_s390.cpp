@@ -657,12 +657,16 @@ void InterpreterMacroAssembler::restore_bcp() {
 }
 
 void InterpreterMacroAssembler::save_esp() {
-  z_stg(Z_esp, Address(Z_fp, _z_ijava_state_neg(esp)));
+  z_sgrk(Z_R1, Z_esp, Z_fp);
+  z_srlg(Z_R1, Z_R1, Interpreter::logStackElementSize);
+  z_stg(Z_R1, Address(Z_fp, _z_ijava_state_neg(esp)));
 }
 
 void InterpreterMacroAssembler::restore_esp() {
   asm_assert_ijava_state_magic(Z_esp);
   z_lg(Z_esp, Address(Z_fp, _z_ijava_state_neg(esp)));
+  z_sllg(Z_esp, Z_esp, Interpreter::logStackElementSize);
+  z_agr(Z_esp, Z_fp);
 }
 
 void InterpreterMacroAssembler::get_monitors(Register reg) {

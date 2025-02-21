@@ -1170,7 +1170,13 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ add2reg(Z_esp, -frame::z_ijava_state_size, fp);
   __ z_stg(Z_esp, _z_ijava_state_neg(monitors), fp);
   __ add2reg(Z_esp, -Interpreter::stackElementSize);
-  __ z_stg(Z_esp, _z_ijava_state_neg(esp), fp);
+
+  __ z_ldgr(Z_F1, Z_R1); // this is not required, once locals PR merges.
+  __ z_sgrk(Z_R1, Z_esp, Z_fp);
+  __ z_srlg(Z_R1, Z_R1, Interpreter::logStackElementSize);
+  __ z_stg(Z_R1, _z_ijava_state_neg(esp), fp);
+
+  __ z_lgdr(Z_R1, Z_F1);
 
   // z_ijava_state->cpoolCache = Z_R1_scratch (see load above);
   __ z_stg(Z_R1_scratch, _z_ijava_state_neg(cpoolCache), fp);
