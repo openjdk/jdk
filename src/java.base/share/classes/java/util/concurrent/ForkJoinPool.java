@@ -139,23 +139,25 @@ import static java.util.concurrent.DelayScheduler.ScheduledForkJoinTask;
  *
  * <p>Additionally, this class supports {@link
  * ScheduledExecutorService} methods to delay or periodically execute
- * tasks, as well as method {#link #submitWithTimeout} to cancel tasks
+ * tasks, as well as method {@link #submitWithTimeout} to cancel tasks
  * that take too long. The scheduled functions or actions may create
- * and invoke other {@linkplain ForkJoinTask ForkJoinTasks}. The
- * schedule methods return {@linkplain ForkJoinTask ForkJoinTasks}
- * that implement the {@link ScheduledFuture} interface. Resource
- * exhaustion encountered after initial submission results in task
- * cancellation. When time-based methods are used, shutdown policies
- * are based on the default policies of class {@link
- * ScheduledThreadPoolExecutor}: upon {@link #shutdown}, existing
- * periodic tasks will not re-execute, and the pool terminates when
- * quiescent and existing delayed tasks complete. Method {@link
- * #cancelDelayedTasksOnShutdown} may be used to disable all delayed
- * tasks upon shutdown, and method {@link #shutdownNow} may be used to
- * instead unconditionally initiate pool termination. Monitoring
- * methods such as {@link getQueuedTaskCount} do not include scheduled
- * tasks that are not yet ready to execute, whcih are reported
- * separately by method {@link getDelayedTaskCount}.
+ * and invoke other {@linkplain ForkJoinTask ForkJoinTasks}. Delayed
+ * actions become <em>enabled</em> and behave as ordinary submitted
+ * tasks when their delays elapse.  schedule methods return
+ * {@linkplain ForkJoinTask ForkJoinTasks} that implement the {@link
+ * ScheduledFuture} interface. Resource exhaustion encountered after
+ * initial submission results in task cancellation. When time-based
+ * methods are used, shutdown policies are based on the default
+ * policies of class {@link ScheduledThreadPoolExecutor}: upon {@link
+ * #shutdown}, existing periodic tasks will not re-execute, and the
+ * pool terminates when quiescent and existing delayed tasks
+ * complete. Method {@link #cancelDelayedTasksOnShutdown} may be used
+ * to disable all delayed tasks upon shutdown, and method {@link
+ * #shutdownNow} may be used to instead unconditionally initiate pool
+ * termination. Monitoring methods such as {@link getQueuedTaskCount}
+ * do not include scheduled tasks that are not yet ready to execute,
+ * whcih are reported separately by method {@link
+ * getDelayedTaskCount}.
  *
  * <p>The parameters used to construct the common pool may be controlled by
  * setting the following {@linkplain System#getProperty system properties}:
@@ -3716,15 +3718,16 @@ public class ForkJoinPool extends AbstractExecutorService
     }
 
     /**
-     * Submits a task executing the given function, cancelling or
-     * performing a given timeoutAction if not completed within the
-     * given timeout period. If the optional {@code timeoutAction} is
-     * null, the task is cancelled (via {@code cancel(true)}.
-     * Otherwise, the action is applied and the task may be
-     * interrupted if running. Actions may include {@link
+     * Submits a task executing the given function, cancelling the
+     * task or performing a given timeoutAction if not completed
+     * within the given timeout period. If the optional {@code
+     * timeoutAction} is null, the task is cancelled (via {@code
+     * cancel(true)}.  Otherwise, the action is applied and the task
+     * may be interrupted if running. Actions may include {@link
      * ForkJoinTask#complete} to set a replacement value or {@link
      * ForkJoinTask#completeExceptionally} to throw an appropriate
-     * exception.
+     * exception. Note that these will only succeed if the task has
+     * not already completed when the timeoutAction executes.
      *
      * @param callable the function to execute
      * @param <V> the type of the callable's result

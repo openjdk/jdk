@@ -55,7 +55,7 @@ final class DelayScheduler extends Thread {
      * (known, non-blocking) action is to cancel, unblock or
      * differently relay another async task. If processing encounters
      * resource failures (possible when growing heap or ForkJoinPool
-     * WorkQUeue arrays), tasks are cancelled.
+     * WorkQueue arrays), tasks are cancelled.
      *
      * To reduce memory contention, the heap is maintained solely via
      * local variables in method loop() (forcing noticeable code
@@ -284,23 +284,25 @@ final class DelayScheduler extends Thread {
             }
 
             long parkTime = 0L;             // zero for untimed park
-            while (n > 0 && h.length > 0) { // submit ready tasks
-                ScheduledForkJoinTask<?> f; int stat;
-                if ((f = h[0]) != null) {
-                    long d = f.when - now();
-                    if ((stat = f.status) >= 0 && d > 0L) {
-                        parkTime = d;
-                        break;
+            if (n > 0 && h.length > 0) {    // submit ready tasks
+                long now = now();
+                do {
+                    ScheduledForkJoinTask<?> f; int stat;
+                    if ((f = h[0]) != null) {
+                        long d = f.when - now;
+                        if ((stat = f.status) >= 0 && d > 0L) {
+                            parkTime = d;
+                            break;
+                        }
+                        f.heapIndex = -1;
+                        if (stat >= 0) {
+                            if (f.isImmediate)
+                                f.doExec();
+                            else
+                                p.executeReadyScheduledTask(f);
+                        }
                     }
-                    f.heapIndex = -1;
-                    if (stat >= 0) {
-                        if (f.isImmediate)
-                            f.doExec();
-                        else
-                            p.executeReadyScheduledTask(f);
-                    }
-                }
-                n = replace(h, 0, n);
+                } while ((n = replace(h, 0, n)) > 0);
             }
 
             if (pending == null) {
