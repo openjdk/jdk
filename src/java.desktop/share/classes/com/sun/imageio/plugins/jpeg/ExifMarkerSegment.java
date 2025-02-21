@@ -25,36 +25,24 @@
 
 package com.sun.imageio.plugins.jpeg;
 
-import java.io.InputStream;
-import java.nio.ByteOrder;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import com.sun.imageio.plugins.tiff.TIFFImageReader;
 
-import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
-import javax.imageio.event.IIOReadProgressListener;
-import javax.imageio.metadata.IIOInvalidTreeException;
-import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.ImageOutputStream;
-import javax.imageio.plugins.jpeg.JPEGQTable;
 import javax.imageio.stream.MemoryCacheImageInputStream;
-
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.io.InputStream;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
-
-import com.sun.imageio.plugins.tiff.TIFFImageReader;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.NamedNodeMap;
-
+import java.util.List;
+import java.util.Map;
 
 /**
  * An Exif (Exchangeable Image File Format) APP1 (Application-Specific)
@@ -206,7 +194,7 @@ class ExifMarkerSegment extends MarkerSegment {
             int dateTimeOffset = ifd.getTagValueAsInt(TAG_DATE_TIME);
             if (dateTimeOffset != NO_VALUE) {
                 try {
-                    String dateTime = new String(data, dateTimeOffset + 6, 19, "US-ASCII");
+                    String dateTime = new String(data, dateTimeOffset + 6, 19, StandardCharsets.US_ASCII);
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu:MM:dd HH:mm:ss");
                     imageCreationTime = LocalDateTime.parse(dateTime, formatter);
                 } catch(Exception e) {
