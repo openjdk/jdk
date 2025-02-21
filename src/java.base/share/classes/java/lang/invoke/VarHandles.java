@@ -292,21 +292,26 @@ final class VarHandles {
     }
 
     /**
-     * Creates a memory segment view var handle.
-     *
+     * Creates a memory segment view var handle accessing a {@code carrier} element. It has access coordinates
+     * {@code (MS, long)} if {@code noStride}, {@code (MS, long, (unchecked) long)} otherwise.
+     * <p>
      * The resulting var handle will take a memory segment as first argument (the segment to be dereferenced),
-     * and a {@code long} as second argument (the offset into the segment).
+     * and a {@code long} as second argument (the offset into the segment). Both arguments are checked.
+     * <p>
+     * If {@code noStride == false}, the resulting var handle will take a third unchecked additional
+     * offset instead of the given fixed {@code offset}, and caller must ensure that passed additional offset,
+     * either to the handle (such as computing through method handles) or as fixed {@code offset} here, is valid.
      *
-     * Note: the returned var handle does not perform any size or alignment check. It is up to clients
-     * to adapt the returned var handle and insert the appropriate checks.
-     *
-     * @param carrier the Java carrier type.
-     * @param alignmentMask alignment requirement to be checked upon access. In bytes. Expressed as a mask.
-     * @param byteOrder the byte order.
-     * @return the created VarHandle.
+     * @param carrier the Java carrier type of the element
+     * @param enclosing the enclosing layout to perform bound and alignment checks against
+     * @param alignmentMask alignment of this accessed element in the enclosing layout
+     * @param noStride if access path to this element has no stride; we can use fixed offset if there is none
+     * @param offset the fixed offset, if there is no strides
+     * @param byteOrder the byte order
+     * @return the created var handle
      */
     static VarHandle memorySegmentViewHandle(Class<?> carrier, MemoryLayout enclosing, long alignmentMask,
-                                             boolean fixedOffset, long offset, ByteOrder byteOrder) {
+                                             boolean noStride, long offset, ByteOrder byteOrder) {
         if (!carrier.isPrimitive() || carrier == void.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
@@ -316,26 +321,26 @@ final class VarHandles {
         // All carrier types must persist across MethodType erasure
         VarForm form;
         if (carrier == byte.class) {
-            form = VarHandleSegmentAsBytes.selectForm(alignmentMask, fixedOffset);
+            form = VarHandleSegmentAsBytes.selectForm(alignmentMask, noStride);
         } else if (carrier == char.class) {
-            form = VarHandleSegmentAsChars.selectForm(alignmentMask, fixedOffset);
+            form = VarHandleSegmentAsChars.selectForm(alignmentMask, noStride);
         } else if (carrier == short.class) {
-            form = VarHandleSegmentAsShorts.selectForm(alignmentMask, fixedOffset);
+            form = VarHandleSegmentAsShorts.selectForm(alignmentMask, noStride);
         } else if (carrier == int.class) {
-            form = VarHandleSegmentAsInts.selectForm(alignmentMask, fixedOffset);
+            form = VarHandleSegmentAsInts.selectForm(alignmentMask, noStride);
         } else if (carrier == float.class) {
-            form = VarHandleSegmentAsFloats.selectForm(alignmentMask, fixedOffset);
+            form = VarHandleSegmentAsFloats.selectForm(alignmentMask, noStride);
         } else if (carrier == long.class) {
-            form = VarHandleSegmentAsLongs.selectForm(alignmentMask, fixedOffset);
+            form = VarHandleSegmentAsLongs.selectForm(alignmentMask, noStride);
         } else if (carrier == double.class) {
-            form = VarHandleSegmentAsDoubles.selectForm(alignmentMask, fixedOffset);
+            form = VarHandleSegmentAsDoubles.selectForm(alignmentMask, noStride);
         } else if (carrier == boolean.class) {
-            form = VarHandleSegmentAsBooleans.selectForm(alignmentMask, fixedOffset);
+            form = VarHandleSegmentAsBooleans.selectForm(alignmentMask, noStride);
         } else {
             throw new IllegalStateException("Cannot get here");
         }
 
-        return maybeAdapt(new VarHandleSegmentViewBase(form, be, enclosing, offset, exact));
+        return maybeAdapt(new SegmentVarHandle(form, be, enclosing, offset, exact));
     }
 
     private static VarHandle maybeAdapt(VarHandle target) {

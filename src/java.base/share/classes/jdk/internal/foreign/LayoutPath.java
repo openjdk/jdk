@@ -206,10 +206,11 @@ public class LayoutPath {
                     String.format("Path does not select a value layout: %s", breadcrumbs()));
         }
 
-        // (MS, long, long) if has strides, (MS, long) if no stride
-        VarHandle handle = Utils.makeRawSegmentViewVarHandle(rootLayout(), valueLayout, strides.length == 0, offset);
-        if (strides.length > 0) {
-            MethodHandle offsetAdapter = offsetHandle();
+        boolean noStride = strides.length == 0;
+        // (MS, long, long) if any stride, (MS, long) if no stride
+        VarHandle handle = Utils.makeRawSegmentViewVarHandle(rootLayout(), valueLayout, noStride, offset);
+        if (!noStride) {
+            MethodHandle offsetAdapter = offsetHandle();  // Adapter performs the bound checks
             offsetAdapter = MethodHandles.insertArguments(offsetAdapter, 0, 0L);
             handle = MethodHandles.collectCoordinates(handle, 2, offsetAdapter);    // (MS, long)
         }

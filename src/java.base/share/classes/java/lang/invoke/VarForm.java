@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,11 @@ final class VarForm {
 
     VarForm(Class<?> implClass, VarForm methodTypeSource) {
         this.implClass = implClass;
-        // methodTypeSource already called initMethodTypes
+        // reuse initMethodTypes result from methodTypeSource
         this.methodType_table = methodTypeSource.methodType_table;
         this.methodType_V_table = methodTypeSource.methodType_V_table;
         this.memberName_table = new MemberName[VarHandle.AccessMode.COUNT];
+        assert assertMethodTypeTableInitialized() : implClass;
     }
 
     // Used by IndirectVarHandle
@@ -111,6 +112,15 @@ final class VarForm {
         // (Receiver, <Intermediates>, Value, Value)boolean
         methodType_table[VarHandle.AccessType.COMPARE_AND_SET.ordinal()] =
                 type.changeReturnType(boolean.class);
+    }
+
+    private boolean assertMethodTypeTableInitialized() {
+        if (methodType_table == null)
+            return false;
+        for (int i = 0; i < VarHandle.AccessType.COUNT; i++) {
+            assert methodType_table[i] != null : implClass + " " + VarHandle.AccessType.values()[i];
+        }
+        return true;
     }
 
     @ForceInline
