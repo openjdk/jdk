@@ -969,7 +969,7 @@ class LambdaFormEditor {
             if (newType == V_TYPE)
                 callFilter = null;
             else
-                callFilter = new Name(constantZero(newType));
+                callFilter = new Name(LambdaForm.identity(newType), newType.btWrapper.zero());
         } else {
             BoundMethodHandle.SpeciesData oldData = oldSpeciesData();
             BoundMethodHandle.SpeciesData newData = newSpeciesData(L_TYPE);

@@ -4830,8 +4830,6 @@ assert((int)twice.invokeExact(21) == 42);
                 throw newIllegalArgumentException("void type");
             Wrapper w = Wrapper.forPrimitiveType(type);
             value = w.convert(value, type);
-            if (w.zero().equals(value))
-                return zero(w, type);
             int intOrdinal = 4;
             assert intOrdinal == Wrapper.INT.ordinal() : "check out of date";
             if (w.ordinal() > intOrdinal) {
@@ -4844,9 +4842,7 @@ assert((int)twice.invokeExact(21) == 42);
                     || w == Wrapper.CHAR || w == Wrapper.INT;
             return MethodHandleImpl.makeConstantI(w, Wrapper.numberValue(value).intValue());
         } else {
-            if (value == null)
-                return zero(Wrapper.OBJECT, type);
-            type.cast(value); // do it now
+            type.cast(value); // throw CCE before entering basic types
             return MethodHandleImpl.makeConstantL(type, value);
         }
     }
@@ -4934,13 +4930,21 @@ assert((int)twice.invokeExact(21) == 42);
         if (zero.type().returnType() == rtype)
             return zero;
         assert(btw == Wrapper.OBJECT);
-        return makeZero(rtype);
+        return MethodHandleImpl.makeConstantL(rtype, null);
     }
     private static final MethodHandle[] ZERO_MHS = new MethodHandle[Wrapper.COUNT];
     private static MethodHandle makeZero(Class<?> rtype) {
-        MethodType mtype = methodType(rtype);
-        LambdaForm lform = LambdaForm.zeroForm(BasicType.basicType(rtype));
-        return MethodHandleImpl.makeIntrinsic(mtype, lform, Intrinsic.ZERO);
+        var bt = BasicType.basicType(rtype);
+        if (bt == BasicType.I_TYPE) {
+            return MethodHandleImpl.makeConstantI(Wrapper.forPrimitiveType(rtype), 0);
+        } else if (bt == BasicType.J_TYPE) {
+            return MethodHandleImpl.makeConstantJ(0L);
+        } else if (bt == BasicType.F_TYPE) {
+            return MethodHandleImpl.makeConstantF(0.0F);
+        } else if (bt == BasicType.D_TYPE) {
+            return MethodHandleImpl.makeConstantD(0.0D);
+        }
+        return MethodHandleImpl.makeConstantL(rtype, null);
     }
 
     private static synchronized MethodHandle setCachedMethodHandle(MethodHandle[] cache, int pos, MethodHandle value) {

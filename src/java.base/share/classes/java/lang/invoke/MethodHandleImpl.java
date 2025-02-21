@@ -1343,7 +1343,7 @@ abstract class MethodHandleImpl {
         ARRAY_STORE,
         ARRAY_LENGTH,
         IDENTITY,
-        ZERO,
+        CONSTANT,
         NONE // no intrinsic associated
     }
 
@@ -2306,10 +2306,10 @@ abstract class MethodHandleImpl {
 
     static MethodHandle makeConstantI(Wrapper type, int value) {
         try {
-            return (MethodHandle) boundSpecies(BasicType.I_TYPE).factory().invokeBasic(
+            return makeIntrinsic((MethodHandle) boundSpecies(BasicType.I_TYPE).factory().invokeBasic(
                     MethodType.methodType(type.primitiveType()),
                     constantForm(BasicType.I_TYPE),
-                    value);
+                    value), Intrinsic.CONSTANT, value);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
@@ -2317,10 +2317,10 @@ abstract class MethodHandleImpl {
 
     static MethodHandle makeConstantJ(long value) {
         try {
-            return (MethodHandle) boundSpecies(BasicType.J_TYPE).factory().invokeBasic(
+            return makeIntrinsic((MethodHandle) boundSpecies(BasicType.J_TYPE).factory().invokeBasic(
                     MethodType.methodType(long.class),
                     constantForm(BasicType.J_TYPE),
-                    value);
+                    value), Intrinsic.CONSTANT, value);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
@@ -2328,10 +2328,10 @@ abstract class MethodHandleImpl {
 
     static MethodHandle makeConstantF(float value) {
         try {
-            return (MethodHandle) boundSpecies(BasicType.F_TYPE).factory().invokeBasic(
+            return makeIntrinsic((MethodHandle) boundSpecies(BasicType.F_TYPE).factory().invokeBasic(
                     MethodType.methodType(float.class),
                     constantForm(BasicType.F_TYPE),
-                    value);
+                    value), Intrinsic.CONSTANT, value);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
@@ -2339,10 +2339,10 @@ abstract class MethodHandleImpl {
 
     static MethodHandle makeConstantD(double value) {
         try {
-            return (MethodHandle) boundSpecies(BasicType.D_TYPE).factory().invokeBasic(
+            return makeIntrinsic((MethodHandle) boundSpecies(BasicType.D_TYPE).factory().invokeBasic(
                     MethodType.methodType(double.class),
                     constantForm(BasicType.D_TYPE),
-                    value);
+                    value), Intrinsic.CONSTANT, value);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
@@ -2350,10 +2350,10 @@ abstract class MethodHandleImpl {
 
     static MethodHandle makeConstantL(Class<?> type, Object value) {
         try {
-            return BoundMethodHandle.bindSingle(
+            return makeIntrinsic(BoundMethodHandle.bindSingle(
                     MethodType.methodType(type),
                     constantForm(BasicType.L_TYPE),
-                    value);
+                    value), Intrinsic.CONSTANT, value);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }

@@ -39,6 +39,7 @@ import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.FieldRefEntry;
 import java.lang.classfile.instruction.SwitchCase;
 import java.lang.constant.ClassDesc;
+import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.LambdaForm.BasicType;
@@ -457,7 +458,6 @@ class InvokerBytecodeGenerator {
                 return resolveFrom(name, invokerType, DelegatingMethodHandle.Holder.class);
             }
             case DELEGATE:                  return resolveFrom(name, invokerType, DelegatingMethodHandle.Holder.class);
-            case ZERO:                      // fall-through
             case IDENTITY:                  // fall-through
             case CONSTANT: {
                 name = name + "_" + form.returnType().basicTypeChar();
@@ -632,9 +632,10 @@ class InvokerBytecodeGenerator {
                                     assert(name.arguments.length == 1);
                                     emitPushArguments(cob, name, 0);
                                     continue;
-                                case ZERO:
+                                case CONSTANT:
                                     assert(name.arguments.length == 0);
-                                    cob.loadConstant((ConstantDesc)name.type.basicTypeWrapper().zero());
+                                    var constant = name.function.intrinsicData();
+                                    emitPushArgument(cob, name.type.btClass, constant);
                                     continue;
                                 case NONE:
                                     // no intrinsic associated
