@@ -49,9 +49,10 @@ public class CodeBlob extends VMObject {
   private static CIntegerField contentOffsetField;
   private static CIntegerField codeOffsetField;
   private static CIntField     frameCompleteOffsetField;
-  private static CIntegerField dataOffsetField;
   private static CIntegerField frameSizeField;
   private static AddressField  oopMapsField;
+  private static AddressField  mutableDataField;
+  private static CIntegerField mutableDataSizeField;
 
   // Kinds of Codeblob
   private static int NMethodKind;
@@ -86,9 +87,10 @@ public class CodeBlob extends VMObject {
     contentOffsetField       = type.getCIntegerField("_content_offset");
     codeOffsetField          = type.getCIntegerField("_code_offset");
     frameCompleteOffsetField = new CIntField(type.getCIntegerField("_frame_complete_offset"), 0);
-    dataOffsetField          = type.getCIntegerField("_data_offset");
     frameSizeField           = type.getCIntegerField("_frame_size");
     oopMapsField             = type.getAddressField("_oop_maps");
+    mutableDataField         = type.getAddressField("_mutable_data");
+    mutableDataSizeField     = type.getCIntegerField("_mutable_data_size");
 
     if (VM.getVM().isServerCompiler()) {
       matcherInterpreterFramePointerReg =
@@ -149,15 +151,16 @@ public class CodeBlob extends VMObject {
 
   public Address contentBegin()   { return headerBegin().addOffsetTo(getContentOffset()); }
 
-  public Address contentEnd()     { return headerBegin().addOffsetTo(getDataOffset()); }
+  public Address contentEnd()     { return headerBegin().addOffsetTo(getSize()); }
 
   public Address codeBegin()      { return headerBegin().addOffsetTo(getCodeOffset()); }
 
-  public Address codeEnd()        { return headerBegin().addOffsetTo(getDataOffset()); }
+  public Address codeEnd()        { return headerBegin().addOffsetTo(getSize()); }
 
-  public Address dataBegin()      { return headerBegin().addOffsetTo(getDataOffset()); }
+  public Address dataBegin()      { return mutableDataField.getValue(addr); }
 
-  public Address dataEnd()        { return headerBegin().addOffsetTo(getSize()); }
+  public Address dataEnd()        { return (dataBegin() == null) ? dataBegin() :
+                                        dataBegin().addOffsetTo(mutableDataSizeField.getValue(addr)); }
 
   // Offsets
   public int getContentOffset()   { return (int) contentOffsetField.getValue(addr); }
@@ -165,8 +168,6 @@ public class CodeBlob extends VMObject {
   public int getCodeOffset()      { return (int) codeOffsetField.getValue(addr); }
 
   public long getFrameCompleteOffset() { return frameCompleteOffsetField.getValue(addr); }
-
-  public int getDataOffset()      { return (int) dataOffsetField.getValue(addr); }
 
   // Sizes
   public int getSize()            { return (int) sizeField.getValue(addr); }
@@ -239,14 +240,15 @@ public class CodeBlob extends VMObject {
   public int getDataSize()         { return (int) dataEnd()   .minus(dataBegin());    }
 
   // Containment
-  public boolean blobContains(Address addr)    { return headerBegin() .lessThanOrEqual(addr) && dataEnd()   .greaterThan(addr); }
+  public boolean blobContains(Address addr)    { return headerBegin() .lessThanOrEqual(addr) && codeEnd()   .greaterThan(addr); }
 
   // FIXME: add relocationContains
   public boolean contentContains(Address addr) { return contentBegin().lessThanOrEqual(addr) && contentEnd().greaterThan(addr); }
 
   public boolean codeContains(Address addr)    { return codeBegin()   .lessThanOrEqual(addr) && codeEnd()   .greaterThan(addr); }
 
-  public boolean dataContains(Address addr)    { return dataBegin()   .lessThanOrEqual(addr) && dataEnd()   .greaterThan(addr); }
+  public boolean dataContains(Address addr)    { return (dataBegin() == null) ? false :
+                                                        dataBegin()   .lessThanOrEqual(addr) && dataEnd()   .greaterThan(addr); }
 
   public boolean contains(Address addr)        { return contentContains(addr);                                                  }
 
