@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.OverridableResource.createResource;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -129,9 +131,11 @@ public class WinExeBundler extends AbstractBundler {
 
         // Copy template msi wrapper next to msi file
         final Path exePath = PathUtils.replaceSuffix(msi, ".exe");
-        try (InputStream is = OverridableResource.readDefault(EXE_WRAPPER_NAME)) {
-            Files.copy(is, exePath);
-        }
+
+        createResource(EXE_WRAPPER_NAME, params)
+                .setCategory(I18N.getString("resource.installer-exe"))
+                .setPublicName("installer.exe")
+                .saveToFile(exePath);
 
         new ExecutableRebrander().addAction((resourceLock) -> {
             // Embed msi in msi wrapper exe.
