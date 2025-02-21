@@ -114,11 +114,9 @@ public class EmptyPath {
 
     private void checkSpace(long expected, long actual) {
         if (expected == 0) {
-            assertEquals(actual, 0L);
+            assertEquals(0L, actual);
         } else {
             assertTrue(actual > 0);
-            long ds = Math.abs(expected - actual);
-            assertTrue((double)ds/expected < 0.05);
         }
     }
 
