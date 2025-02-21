@@ -68,7 +68,11 @@ import java.util.List;
  * <p>
  * Code generation often involves defining fields and variables, which are then available inside a defined
  * scope, and can be sampled in any nested scope. To allow the use of names for multiple applications (e.g.
- * fields, variables, methods, etc) ... TODO
+ * fields, variables, methods, etc), we define a {@link Name}, which captures the {@link String} representation
+ * to be used in code, as well as its type and if it is mutable. One can add such a {@link Name} to the
+ * current code scope with {@link addName}, and sample from the current or outer scopes with {@link sampleName}.
+ * When generating code, one might want to create {@link Name}s (variables, fields, etc) in local scope, or
+ * in some outer scope with the use of {@link Hook}s.
  */
 public interface Template {
 
