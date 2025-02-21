@@ -29,9 +29,9 @@
  * @run testng/othervm InconsistentEntries
  */
 
+import java.io.IOException;
 import java.util.List;
 import jdk.test.lib.Utils;
-import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import org.testng.Assert;
 import org.testng.annotations.BeforeTest;
@@ -44,6 +44,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.Security;
+import java.util.stream.Stream;
 
 public class InconsistentEntries {
 
@@ -59,7 +60,7 @@ public class InconsistentEntries {
     @BeforeTest
     public void setUp() throws Exception {
         // Clone the tested JDK to the scratch directory
-        CDSTestUtils.clone(new File(JDK_HOME), new File(TEMP_JDK_HOME.toString()));
+        cloneJDK(Path.of(JDK_HOME), TEMP_JDK_HOME);
 
         // create policy directory in the cloned JDK
         if (!POLICY_DIR.toFile().exists()) {
@@ -97,5 +98,19 @@ public class InconsistentEntries {
         ProcessTools
             .executeProcess(pb)
             .shouldHaveExitValue(0);
+    }
+
+    private static void cloneJDK(Path src, Path dest) throws IOException {
+        try (Stream<Path> stream = Files.walk(src)) {
+            stream.forEach(sourcePath -> {
+                try {
+                    Path destPath = dest.resolve(src.relativize(sourcePath));
+                    Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                    destPath.toFile().setWritable(true);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
     }
 }
