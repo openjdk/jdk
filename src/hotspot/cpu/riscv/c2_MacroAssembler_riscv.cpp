@@ -1471,7 +1471,7 @@ void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Regis
 
 // Compare longwords
 void C2_MacroAssembler::string_compare_long_different_encoding(Register result, Register strL, Register strU,
-                                               Register cnt1, Register cnt2,
+                                               bool isUL, Register cnt1, Register cnt2,
                                                Register tmpL, Register tmpU, Register tmp3,
                                                const int base_offset2, const int STUB_THRESHOLD,
                                                Label *DONE, Label *STUB) {
@@ -1528,7 +1528,11 @@ void C2_MacroAssembler::string_compare_long_different_encoding(Register result, 
   srl(tmpU, tmpU, result);
   zext(tmpL, tmpL, 16);
   zext(tmpU, tmpU, 16);
-  sub(result, tmpL, tmpU);
+  if (isUL) {
+    sub(result, tmpU, tmpL);
+  } else {
+    sub(result, tmpL, tmpU);
+  }
 
   j(*DONE);
 }
@@ -1604,6 +1608,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       string_compare_long_different_encoding(result,
                              isLU ? str1 : str2,
                              isLU ? str2 : str1,
+                             isUL,
                              cnt1, cnt2, tmp1, tmp2, tmp3,
                              base_offset2, STUB_THRESHOLD,
                              &DONE, &STUB);
