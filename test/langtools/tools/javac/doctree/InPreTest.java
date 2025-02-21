@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8078320 8273244 8284908
+ * @bug 8078320 8273244 8284908 8346118
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -136,7 +136,7 @@ DocComment[DOC_COMMENT, pos:1
       attributes: empty
     ]
     Text[TEXT, pos:6, _abc]
-    Literal[CODE, pos:10, |_def__]
+    Literal[CODE, pos:10, |def__]
     Text[TEXT, pos:24, ghi]
   body: 1
     EndElement[END_ELEMENT, pos:27, pre]

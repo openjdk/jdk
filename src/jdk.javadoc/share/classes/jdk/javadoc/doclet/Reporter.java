@@ -94,9 +94,9 @@ public interface Reporter {
      * The positions are all 0-based character offsets from the beginning of string.
      * The positions should satisfy the relation {@code start <= pos <= end}.
      *
-     * @implSpec
-     * This implementation ignores the {@code (start, pos, end)} values and simply calls
-     * {@link #print(Diagnostic.Kind, DocTreePath, String) print(kind, path, message)}.
+     * @implNote
+     * This implementation may report a wrong position for {@code TextTree} content
+     * contained within a {@code <pre>} element subject to whitespace normalization.
      *
      * @param kind    the kind of diagnostic
      * @param path    the path for the tree node
@@ -105,6 +105,8 @@ public interface Reporter {
      * @param end     the end of the enclosing range
      * @param message the message to be printed
      *
+     * @throws IllegalArgumentException if {@code path} points to an unsupported kind
+     *          of {@code DocTree}.
      * @throws IllegalArgumentException if {@code start}, {@code pos} and {@code end} do
      *          not form a valid range.
      *

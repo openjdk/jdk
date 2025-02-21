@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1026,6 +1026,10 @@ public class DocCommentTester {
         String normalize(String s, boolean isLineComment, boolean normalizeTags) {
             String s2 = (isLineComment ? s : s.trim())
                     .replaceFirst("\\.\\s*\\n *@(?![@*])", ".\n@"); // Between block tags
+            // Whitespace normalization in {@code} and {@literal} tags
+            if (Pattern.compile("\\{@(?:code|literal)(?:.*\n )+.*}").matcher(s2).find()) {
+                s2 = s2.replaceAll("\\n ", "\n");
+            }
             StringBuilder sb = new StringBuilder();
             Pattern p = Pattern.compile("(?i)\\{@([a-z][a-z0-9.:-]*)( )?");
             Matcher m = p.matcher(s2);

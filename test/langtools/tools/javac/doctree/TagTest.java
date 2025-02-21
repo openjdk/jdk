@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ DocComment[DOC_COMMENT, pos:1
 /*
 DocComment[DOC_COMMENT, pos:1
   firstSentence: 1
-    Literal[CODE, pos:1, |_abc|_@def|_ghi|_]
+    Literal[CODE, pos:1, |abc|@def|ghi|]
   body: empty
   block tags: empty
 ]

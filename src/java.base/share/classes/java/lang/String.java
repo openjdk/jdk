@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2352,9 +2352,9 @@ public final class String
      *          negative or greater than the length of this
      *          {@code String} object; otherwise the result is the same
      *          as the result of the expression
-     *          <pre>
-     *          this.substring(toffset).startsWith(prefix)
-     *          </pre>
+     *          <blockquote>
+     *          <pre>this.substring(toffset).startsWith(prefix)</pre>
+     *          </blockquote>
      */
     public boolean startsWith(String prefix, int toffset) {
         // Note: toffset might be near -1>>>1.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,6 +126,10 @@ public class DocCommentParser {
     private int lastNonWhite = -1;
     private boolean newline = true;
 
+    /** Used for whitespace normalization in pre/code/literal tags. */
+    private boolean stripLeadingSpace = false;
+    private boolean inPreElement = false;
+
     private final Map<Name, TagParser> tagParsers;
 
     /**
@@ -203,6 +207,7 @@ public class DocCommentParser {
      */
     public DCDocComment parse() {
         String c = comment.getText();
+        stripLeadingSpace = canStripLeadingSpace(c);
         buf = new char[c.length() + 1];
         c.getChars(0, c.length(), buf, 0);
         buf[buf.length - 1] = EOI;
@@ -223,6 +228,24 @@ public class DocCommentParser {
                 : 0;
 
         return m.at(pos).newDocCommentTree(comment, body, tags, preamble, postamble);
+    }
+
+    /**
+     * Check if every non-blank line in a traditional comment has at least one leading space.
+     */
+    boolean canStripLeadingSpace(String comment) {
+        if (textKind == DocTree.Kind.MARKDOWN || isHtmlFile) {
+            return false;
+        }
+        for (int i = 0; i < comment.length(); i++) {
+            if (i == 0 || comment.charAt(i - 1) == '\n') {
+                char c = comment.charAt(i);
+                if (c != '\n' && c != ' ') {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     void nextChar() {
@@ -692,7 +715,7 @@ public class DocCommentParser {
 
                 case '}' -> {
                     if (--depth == 0) {
-                        return m.at(pos).newTextTree(newString(pos, bp));
+                        return m.at(pos).newTextTree(newString(pos, bp, whitespacePolicy));
                     }
                     newline = false;
                     lastNonWhite = bp;
@@ -1054,6 +1077,9 @@ public class DocCommentParser {
                 }
                 if (ch == '>') {
                     nextChar();
+                    if ("pre".equalsIgnoreCase(name.toString())) {
+                        inPreElement = true;
+                    }
                     return m.at(p).newStartElementTree(name, attrs, selfClosing).setEndPos(bp);
                 }
             }
@@ -1064,6 +1090,9 @@ public class DocCommentParser {
                 skipWhitespace();
                 if (ch == '>') {
                     nextChar();
+                    if ("pre".equalsIgnoreCase(name.toString())) {
+                        inPreElement = false;
+                    }
                     return m.at(p).newEndElementTree(name).setEndPos(bp);
                 }
             }
@@ -1203,11 +1232,15 @@ public class DocCommentParser {
             if (textStart <= textEnd) {
                 switch (kind) {
                     case TEXT ->
-                            list.add(m.at(textStart).newTextTree(newString(textStart, textEnd + 1)));
+                            list.add(m.at(textStart).newTextTree(
+                                    newString(textStart, textEnd + 1, inPreElement
+                                            ? WhitespaceRetentionPolicy.REMOVE_FIRST_SPACE
+                                            : WhitespaceRetentionPolicy.RETAIN_ALL)));
                     case MARKDOWN ->
-                            list.add(m.at(textStart).newRawTextTree(DocTree.Kind.MARKDOWN, newString(textStart, textEnd + 1)));
+                            list.add(m.at(textStart).newRawTextTree(DocTree.Kind.MARKDOWN,
+                                    newString(textStart, textEnd + 1)));
                     default ->
-                        throw new IllegalArgumentException(kind.toString());
+                            throw new IllegalArgumentException(kind.toString());
                 }
             }
             textStart = -1;
@@ -1804,6 +1837,28 @@ public class DocCommentParser {
     }
 
     /**
+     * Variant of newString that optionally skips a leading space in each line.
+     */
+    String newString(int start, int end, WhitespaceRetentionPolicy whitespacePolicy) {
+        if (stripLeadingSpace && whitespacePolicy == WhitespaceRetentionPolicy.REMOVE_FIRST_SPACE) {
+            StringBuilder sb = new StringBuilder(end - start);
+            int pos = start;
+            // The parser will never call this with a strippable space at buf[start].
+            for (int i = start; i < end - 1; i++) {
+                if (buf[i] == '\n' && buf[i + 1] == ' ') {
+                    sb.append(buf, pos, ++i - pos);
+                    pos = i + 1;
+                }
+            }
+            if (pos < end) {
+                sb.append(buf, pos, end - pos);
+            }
+            return sb.toString();
+        }
+        return newString(start, end);
+    }
+
+    /**
      * @param start position of first character of string
      * @param end position of character beyond last character to be included
      */
@@ -2110,7 +2165,7 @@ public class DocCommentParser {
                     DCIdentifier name = identifier();
                     skipWhitespace();
                     DCReference type = reference(ReferenceParser.Mode.MEMBER_DISALLOWED);
-                    List<DCTree> description = null;
+                    List<DCTree> description = List.nil();
                     if (isWhitespace(ch)) {
                         skipWhitespace();
                         description = blockContent();
