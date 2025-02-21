@@ -500,15 +500,17 @@ bool ciTypeFlow::StateVector::meet_exception(ciInstanceKlass* exc,
   bool different = false;
 
   // Meet locals from incoming array.
-  Cell limit = local(_outer->max_locals()-1);
-  for (Cell c = start_cell(); c <= limit; c = next_cell(c)) {
-    ciType* t1 = type_at(c);
-    ciType* t2 = incoming->type_at(c);
-    if (!t1->equals(t2)) {
-      ciType* new_type = type_meet(t1, t2);
-      if (!t1->equals(new_type)) {
-        set_type_at(c, new_type);
-        different = true;
+  if (_outer->max_locals() > 0) {
+    Cell limit = local(_outer->max_locals() - 1);
+    for (Cell c = start_cell(); c <= limit; c = next_cell(c)) {
+      ciType* t1 = type_at(c);
+      ciType* t2 = incoming->type_at(c);
+      if (!t1->equals(t2)) {
+        ciType* new_type = type_meet(t1, t2);
+        if (!t1->equals(new_type)) {
+          set_type_at(c, new_type);
+          different = true;
+        }
       }
     }
   }
