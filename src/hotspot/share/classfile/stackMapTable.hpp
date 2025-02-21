@@ -44,16 +44,14 @@ class StackMapTable : public StackObj {
   // Widening the type and making it signed will help detect these.
   int32_t              _code_length;
   int32_t              _frame_count;     // Stackmap frame count
-  StackMapFrame**       _frame_array;
+  GrowableArray<StackMapFrame*>* _frame_array;
 
  public:
-  StackMapTable(StackMapReader* reader, StackMapFrame* init_frame,
-                u2 max_locals, u2 max_stack,
-                char* code_data, int code_len, TRAPS);
+  StackMapTable(StackMapReader* reader, TRAPS);
 
   inline int32_t get_frame_count() const { return _frame_count; }
   inline int get_offset(int index) const {
-    return _frame_array[index]->offset();
+    return _frame_array->at(index)->offset();
   }
 
   // Match and/or update current_frame to the frame in stackmap table with
@@ -116,9 +114,25 @@ class StackMapReader : StackObj {
   char* _code_data;
   int32_t _code_length;
 
-  // information get from the attribute
-  int32_t  _frame_count;       // frame count
+  // information from the attribute
+  int32_t  _frame_count;
 
+  // Number of frames parsed
+  int32_t  _parsed_frame_count;
+
+  // Previous frame buffer
+  StackMapFrame* _prev_frame;
+
+  // information from method
+  u2 _max_locals;
+  u2 _max_stack;
+
+  // Check if reading first entry
+  bool _first;
+
+  StackMapFrame* next_helper(TRAPS);
+  void check_offset(StackMapFrame* frame);
+  void check_size(TRAPS);
   int32_t chop(VerificationType* locals, int32_t length, int32_t chops);
   VerificationType parse_verification_type(u1* flags, TRAPS);
   void check_verification_type_array_size(
@@ -141,18 +155,19 @@ class StackMapReader : StackObj {
 
  public:
   // Constructor
-  StackMapReader(ClassVerifier* v, StackMapStream* stream, char* code_data,
-                 int32_t code_len, TRAPS);
+  StackMapReader(ClassVerifier* v, StackMapStream* stream,
+                 char* code_data, int32_t code_len,
+                 StackMapFrame* init_frame,
+                 u2 max_locals, u2 max_stack, TRAPS);
 
-  inline int32_t get_frame_count() const                { return _frame_count; }
-  StackMapFrame* next(StackMapFrame* pre_frame, bool first,
-                      u2 max_locals, u2 max_stack, TRAPS);
+  inline int32_t get_frame_count()   const { return _frame_count; }
+  inline StackMapFrame* prev_frame() const { return _prev_frame; }
+  inline char* code_data()           const { return _code_data; }
+  inline int32_t code_length()       const { return _code_length; }
+  inline bool at_end()               const { return _stream->at_end(); }
 
-  void check_end(TRAPS) {
-    if (!_stream->at_end()) {
-      StackMapStream::stackmap_format_error("wrong attribute size", CHECK);
-    }
-  }
+  StackMapFrame* next(TRAPS);
+  void check_end(TRAPS);
 };
 
 #endif // SHARE_CLASSFILE_STACKMAPTABLE_HPP
