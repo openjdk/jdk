@@ -40,20 +40,12 @@ import static compiler.lib.template_framework.Template.countNames;
 import static compiler.lib.template_framework.Template.sampleName;
 
 public abstract class Expressions {
-
     private static final Random RANDOM = Utils.getRandomInstance();
 
     private static <T> T choice(List<T> list) {
         if (list.isEmpty()) { return null; }
         int i = RANDOM.nextInt(list.size());
         return list.get(i);
-    }
-
-    public static final Expression constant(Type type) {
-        var template = Template.make("args", (List<Object> args) -> body(
-            type.con()
-        ));
-        return new Expression(template, List.of());
     }
 
     private interface ExpressionGenerator {

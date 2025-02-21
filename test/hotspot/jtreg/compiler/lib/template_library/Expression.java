@@ -55,8 +55,16 @@ public final class Expression {
         return template.withArgs(args);
     }
 
+    public final List<Object> randomArgs() {
+        return types.stream().map(type -> type.con()).toList();
+    }
+
+    // We would like to use identical args multiple times, but possible field / variable defs have to happen only once.
+    // So we need to separate possible generation for the arguments with the loads.
+    // So we have
+    // - def-tokens: define fields/vars, or do nothing if we reference something that already exists / con.
+    // - use-tokens: reference defined fields/vars, or just constant.
     public final TemplateWithArgs withRandomArgs() {
-        List<Object> args = types.stream().map(type -> type.con()).toList();
-        return withArgs(args);
+        return withArgs(randomArgs());
     }
 } 

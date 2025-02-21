@@ -90,7 +90,7 @@ public class TestFuzzExpression {
 
         var template1 = Template.make("type", (Type type)-> {
             Expression exp = Expressions.expression(type, Type.primitives(), 2);
-            List<Object> args = exp.types().stream().map(t -> t.con()).toList();
+            List<Object> args = exp.randomArgs();
             return body(
                 """
                 // --- $test start ---
