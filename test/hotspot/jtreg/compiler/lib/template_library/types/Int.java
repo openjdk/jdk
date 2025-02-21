@@ -34,9 +34,22 @@ public final class Int extends Type {
 
     private static final List<Operation> OPERATIONS = List.of(
         new Operation.Unary("(-(", Int.INSTANCE, "))"),
-        new Operation.Unary("(~", Int.INSTANCE, ")")
+        new Operation.Unary("(~", Int.INSTANCE, ")"),
 
+        new Operation.Binary("(", Int.INSTANCE, " + ",   Int.INSTANCE, ")"),
+        new Operation.Binary("(", Int.INSTANCE, " - ",   Int.INSTANCE, ")"),
+        new Operation.Binary("(", Int.INSTANCE, " * ",   Int.INSTANCE, ")"),
+        new Operation.Binary("(", Int.INSTANCE, " / ",   Int.INSTANCE, ")"),
+        new Operation.Binary("(", Int.INSTANCE, " % ",   Int.INSTANCE, ")"),
+        new Operation.Binary("(", Int.INSTANCE, " & ",   Int.INSTANCE, ")"),
+        new Operation.Binary("(", Int.INSTANCE, " | ",   Int.INSTANCE, ")"),
+        new Operation.Binary("(", Int.INSTANCE, " ^ ",   Int.INSTANCE, ")"),
+        new Operation.Binary("(", Int.INSTANCE, " << ",  Int.INSTANCE, ")"),
+        new Operation.Binary("(", Int.INSTANCE, " >> ",  Int.INSTANCE, ")"),
+        new Operation.Binary("(", Int.INSTANCE, " >>> ", Int.INSTANCE, ")")
 
+        // TODO:
+        // new TernaryOperator("(", ExpressionType.BOOLEAN, " ? ", ExpressionType.INT, " : ", ExpressionType.INT, ")")
     );
 
     @Override
