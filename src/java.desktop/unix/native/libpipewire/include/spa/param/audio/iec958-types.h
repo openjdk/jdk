@@ -12,6 +12,19 @@ extern "C" {
 #include <spa/utils/type.h>
 #include <spa/param/audio/iec958.h>
 
+/**
+ * \addtogroup spa_param
+ * \{
+ */
+
+#ifndef SPA_API_AUDIO_IEC958_TYPES
+ #ifdef SPA_API_IMPL
+  #define SPA_API_AUDIO_IEC958_TYPES SPA_API_IMPL
+ #else
+  #define SPA_API_AUDIO_IEC958_TYPES static inline
+ #endif
+#endif
+
 #define SPA_TYPE_INFO_AudioIEC958Codec        SPA_TYPE_INFO_ENUM_BASE "AudioIEC958Codec"
 #define SPA_TYPE_INFO_AUDIO_IEC958_CODEC_BASE    SPA_TYPE_INFO_AudioIEC958Codec ":"
 
@@ -28,6 +41,14 @@ static const struct spa_type_info spa_type_audio_iec958_codec[] = {
     { 0, 0, NULL, NULL },
 };
 
+SPA_API_AUDIO_IEC958_TYPES uint32_t spa_type_audio_iec958_codec_from_short_name(const char *name)
+{
+    return spa_type_from_short_name(name, spa_type_audio_iec958_codec, SPA_AUDIO_IEC958_CODEC_UNKNOWN);
+}
+SPA_API_AUDIO_IEC958_TYPES const char * spa_type_audio_iec958_codec_to_short_name(uint32_t type)
+{
+    return spa_type_to_short_name(type, spa_type_audio_iec958_codec, "UNKNOWN");
+}
 /**
  * \}
  */

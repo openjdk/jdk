@@ -24,6 +24,7 @@
 
 #include "asm/macroAssembler.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "ci/ciSymbols.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -119,9 +120,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
     const char *inline_msg = is_virtual() ? "(intrinsic, virtual)"
                                           : "(intrinsic)";
     CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, InliningResult::SUCCESS, inline_msg);
-    if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, InliningResult::SUCCESS, inline_msg);
-    }
+    C->inline_printer()->record(callee, jvms, InliningResult::SUCCESS, inline_msg);
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
       C->log()->elem("intrinsic id='%s'%s nodes='%d'",
@@ -131,7 +130,6 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
     }
     // Push the result from the inlined method onto the stack.
     kit.push_result();
-    C->print_inlining_update(this);
     return kit.transfer_exceptions_into_jvms();
   }
 
@@ -147,9 +145,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
                          : "failed to inline (intrinsic), method not annotated";
     }
     CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, InliningResult::FAILURE, msg);
-    if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, InliningResult::FAILURE, msg);
-    }
+    C->inline_printer()->record(callee, jvms, InliningResult::FAILURE, msg);
   } else {
     // Root compile
     ResourceMark rm;
@@ -164,7 +160,6 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
     }
   }
   C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_failed);
-  C->print_inlining_update(this);
 
   return nullptr;
 }
@@ -190,9 +185,8 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
     const char *inline_msg = is_virtual() ? "(intrinsic, virtual, predicate)"
                                           : "(intrinsic, predicate)";
     CompileTask::print_inlining_ul(callee, jvms->depth() - 1, bci, InliningResult::SUCCESS, inline_msg);
-    if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, InliningResult::SUCCESS, inline_msg);
-    }
+    C->inline_printer()->record(callee, jvms, InliningResult::SUCCESS, inline_msg);
+
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
       C->log()->elem("predicate_intrinsic id='%s'%s nodes='%d'",
@@ -208,9 +202,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
     // Not a root compile.
     const char* msg = "failed to generate predicate for intrinsic";
     CompileTask::print_inlining_ul(kit.callee(), jvms->depth() - 1, bci, InliningResult::FAILURE, msg);
-    if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(kit.callee(), jvms->depth() - 1, bci, InliningResult::FAILURE, msg);
-    }
+    C->inline_printer()->record(kit.callee(), jvms, InliningResult::FAILURE, msg);
   } else {
     // Root compile
     ResourceMark rm;
@@ -220,9 +212,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
                      is_virtual() ? " (virtual)" : "", bci);
     const char *msg = msg_stream.freeze();
     log_debug(jit, inlining)("%s", msg);
-    if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining_stream()->print("%s", msg);
-    }
+    C->inline_printer()->record(kit.callee(), jvms, InliningResult::FAILURE, msg);
   }
   C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_failed);
   return nullptr;
@@ -526,7 +516,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isAssignableFrom:         return inline_native_subtype_check();
 
   case vmIntrinsics::_isInstance:
-  case vmIntrinsics::_getModifiers:
   case vmIntrinsics::_isInterface:
   case vmIntrinsics::_isArray:
   case vmIntrinsics::_isPrimitive:
@@ -542,7 +531,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_longBitsToDouble:
   case vmIntrinsics::_floatToFloat16:
   case vmIntrinsics::_float16ToFloat:           return inline_fp_conversions(intrinsic_id());
-
+  case vmIntrinsics::_sqrt_float16:             return inline_fp16_operations(intrinsic_id(), 1);
+  case vmIntrinsics::_fma_float16:              return inline_fp16_operations(intrinsic_id(), 3);
   case vmIntrinsics::_floatIsFinite:
   case vmIntrinsics::_floatIsInfinite:
   case vmIntrinsics::_doubleIsFinite:
@@ -3017,7 +3007,7 @@ bool LibraryCallKit::inline_native_classID() {
   IdealKit ideal(this);
 #define __ ideal.
   IdealVariable result(ideal); __ declarations_done();
-  Node* kls = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(),
+  Node* kls = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(),
                                                  basic_plus_adr(cls, java_lang_Class::klass_offset()),
                                                  TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
 
@@ -3047,7 +3037,7 @@ bool LibraryCallKit::inline_native_classID() {
 
     ideal.set(result,  _gvn.transform(new URShiftLNode(kls_trace_id_raw, ideal.ConI(TRACE_ID_SHIFT))));
   } __ else_(); {
-    Node* array_kls = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(),
+    Node* array_kls = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(),
                                                    basic_plus_adr(cls, java_lang_Class::array_klass_offset()),
                                                    TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
     __ if_then(array_kls, BoolTest::ne, null()); {
@@ -3772,6 +3762,20 @@ bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
   Node* test_pin_count_over_underflow = _gvn.transform(new BoolNode(pin_count_cmp, BoolTest::eq));
   IfNode* iff_pin_count_over_underflow = create_and_map_if(control(), test_pin_count_over_underflow, PROB_MIN, COUNT_UNKNOWN);
 
+  // True branch, pin count over/underflow.
+  Node* pin_count_over_underflow = _gvn.transform(new IfTrueNode(iff_pin_count_over_underflow));
+  {
+    // Trap (but not deoptimize (Action_none)) and continue in the interpreter
+    // which will throw IllegalStateException for pin count over/underflow.
+    // No memory changed so far - we can use memory create by reset_memory()
+    // at the beginning of this intrinsic. No need to call reset_memory() again.
+    PreserveJVMState pjvms(this);
+    set_control(pin_count_over_underflow);
+    uncommon_trap(Deoptimization::Reason_intrinsic,
+                  Deoptimization::Action_none);
+    assert(stopped(), "invariant");
+  }
+
   // False branch, no pin count over/underflow. Increment or decrement pin count and store back.
   Node* valid_pin_count = _gvn.transform(new IfFalseNode(iff_pin_count_over_underflow));
   set_control(valid_pin_count);
@@ -3783,20 +3787,7 @@ bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
     next_pin_count = _gvn.transform(new AddINode(pin_count, _gvn.intcon(1)));
   }
 
-  Node* updated_pin_count_memory = store_to_memory(control(), pin_count_offset, next_pin_count, T_INT, MemNode::unordered);
-
-  // True branch, pin count over/underflow.
-  Node* pin_count_over_underflow = _gvn.transform(new IfTrueNode(iff_pin_count_over_underflow));
-  {
-    // Trap (but not deoptimize (Action_none)) and continue in the interpreter
-    // which will throw IllegalStateException for pin count over/underflow.
-    PreserveJVMState pjvms(this);
-    set_control(pin_count_over_underflow);
-    set_all_memory(input_memory_state);
-    uncommon_trap_exact(Deoptimization::Reason_intrinsic,
-                        Deoptimization::Action_none);
-    assert(stopped(), "invariant");
-  }
+  store_to_memory(control(), pin_count_offset, next_pin_count, T_INT, MemNode::unordered);
 
   // Result of top level CFG and Memory.
   RegionNode* result_rgn = new RegionNode(PATH_LIMIT);
@@ -3806,7 +3797,7 @@ bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
 
   result_rgn->init_req(_true_path, _gvn.transform(valid_pin_count));
   result_rgn->init_req(_false_path, _gvn.transform(continuation_is_null));
-  result_mem->init_req(_true_path, _gvn.transform(updated_pin_count_memory));
+  result_mem->init_req(_true_path, _gvn.transform(reset_memory()));
   result_mem->init_req(_false_path, _gvn.transform(input_memory_state));
 
   // Set output state.
@@ -3840,7 +3831,7 @@ Node* LibraryCallKit::load_klass_from_mirror_common(Node* mirror,
   if (region == nullptr)  never_see_null = true;
   Node* p = basic_plus_adr(mirror, offset);
   const TypeKlassPtr*  kls_type = TypeInstKlassPtr::OBJECT_OR_NULL;
-  Node* kls = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), p, TypeRawPtr::BOTTOM, kls_type));
+  Node* kls = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p, TypeRawPtr::BOTTOM, kls_type));
   Node* null_ctl = top();
   kls = null_check_oop(kls, &null_ctl, never_see_null);
   if (region != nullptr) {
@@ -3900,10 +3891,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     // nothing is an instance of a primitive type
     prim_return_value = intcon(0);
     obj = argument(1);
-    break;
-  case vmIntrinsics::_getModifiers:
-    prim_return_value = intcon(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
-    return_type = TypeInt::CHAR;
     break;
   case vmIntrinsics::_isInterface:
     prim_return_value = intcon(0);
@@ -3984,11 +3971,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     query_value = gen_instanceof(obj, kls, safe_for_replace);
     break;
 
-  case vmIntrinsics::_getModifiers:
-    p = basic_plus_adr(kls, in_bytes(Klass::modifier_flags_offset()));
-    query_value = make_load(nullptr, p, TypeInt::CHAR, T_CHAR, MemNode::unordered);
-    break;
-
   case vmIntrinsics::_isInterface:
     // (To verify this code sequence, check the asserts in JVM_IsInterface.)
     if (generate_interface_guard(kls, region) != nullptr)
@@ -4036,7 +4018,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
       phi->add_req(makecon(TypeInstPtr::make(env()->Object_klass()->java_mirror())));
     // If we fall through, it's a plain class.  Get its _super.
     p = basic_plus_adr(kls, in_bytes(Klass::super_offset()));
-    kls = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), p, TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
+    kls = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p, TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
     null_ctl = top();
     kls = null_check_oop(kls, &null_ctl);
     if (null_ctl != top()) {
@@ -4190,7 +4172,7 @@ bool LibraryCallKit::inline_native_subtype_check() {
     args[which_arg] = arg;
 
     Node* p = basic_plus_adr(arg, class_klass_offset);
-    Node* kls = LoadKlassNode::make(_gvn, nullptr, immutable_memory(), p, adr_type, kls_type);
+    Node* kls = LoadKlassNode::make(_gvn, immutable_memory(), p, adr_type, kls_type);
     klasses[which_arg] = _gvn.transform(kls);
   }
 
@@ -4302,7 +4284,12 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
   if (obj != nullptr && is_array_ctrl != nullptr && is_array_ctrl != top()) {
     // Keep track of the fact that 'obj' is an array to prevent
     // array specific accesses from floating above the guard.
-    *obj = _gvn.transform(new CastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
+    Node* cast = _gvn.transform(new CastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
+    // Check for top because in rare cases, the type system can determine that
+    // the object can't be an array but the layout helper check is not folded.
+    if (!cast->is_top()) {
+      *obj = cast;
+    }
   }
   return ctrl;
 }
@@ -8621,3 +8608,112 @@ bool LibraryCallKit::inline_blackhole() {
 
   return true;
 }
+
+Node* LibraryCallKit::unbox_fp16_value(const TypeInstPtr* float16_box_type, ciField* field, Node* box) {
+  const TypeInstPtr* box_type = _gvn.type(box)->isa_instptr();
+  if (box_type == nullptr || box_type->instance_klass() != float16_box_type->instance_klass()) {
+    return nullptr; // box klass is not Float16
+  }
+
+  // Null check; get notnull casted pointer
+  Node* null_ctl = top();
+  Node* not_null_box = null_check_oop(box, &null_ctl, true);
+  // If not_null_box is dead, only null-path is taken
+  if (stopped()) {
+    set_control(null_ctl);
+    return nullptr;
+  }
+  assert(not_null_box->bottom_type()->is_instptr()->maybe_null() == false, "");
+  const TypePtr* adr_type = C->alias_type(field)->adr_type();
+  Node* adr = basic_plus_adr(not_null_box, field->offset_in_bytes());
+  return access_load_at(not_null_box, adr, adr_type, TypeInt::SHORT, T_SHORT, IN_HEAP);
+}
+
+Node* LibraryCallKit::box_fp16_value(const TypeInstPtr* float16_box_type, ciField* field, Node* value) {
+  PreserveReexecuteState preexecs(this);
+  jvms()->set_should_reexecute(true);
+
+  const TypeKlassPtr* klass_type = float16_box_type->as_klass_type();
+  Node* klass_node = makecon(klass_type);
+  Node* box = new_instance(klass_node);
+
+  Node* value_field = basic_plus_adr(box, field->offset_in_bytes());
+  const TypePtr* value_adr_type = value_field->bottom_type()->is_ptr();
+
+  Node* field_store = _gvn.transform(access_store_at(box,
+                                                     value_field,
+                                                     value_adr_type,
+                                                     value,
+                                                     TypeInt::SHORT,
+                                                     T_SHORT,
+                                                     IN_HEAP));
+  set_memory(field_store, value_adr_type);
+  return box;
+}
+
+bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
+  if (!Matcher::match_rule_supported(Op_ReinterpretS2HF) ||
+      !Matcher::match_rule_supported(Op_ReinterpretHF2S)) {
+    return false;
+  }
+
+  const TypeInstPtr* box_type = _gvn.type(argument(0))->isa_instptr();
+  if (box_type == nullptr || box_type->const_oop() == nullptr) {
+    return false;
+  }
+
+  ciInstanceKlass* float16_klass = box_type->const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
+  const TypeInstPtr* float16_box_type = TypeInstPtr::make_exact(TypePtr::NotNull, float16_klass);
+  ciField* field = float16_klass->get_field_by_name(ciSymbols::value_name(),
+                                                    ciSymbols::short_signature(),
+                                                    false);
+  assert(field != nullptr, "");
+
+  // Transformed nodes
+  Node* fld1 = nullptr;
+  Node* fld2 = nullptr;
+  Node* fld3 = nullptr;
+  switch(num_args) {
+    case 3:
+      fld3 = unbox_fp16_value(float16_box_type, field, argument(3));
+      if (fld3 == nullptr) {
+        return false;
+      }
+      fld3 = _gvn.transform(new ReinterpretS2HFNode(fld3));
+    // fall-through
+    case 2:
+      fld2 = unbox_fp16_value(float16_box_type, field, argument(2));
+      if (fld2 == nullptr) {
+        return false;
+      }
+      fld2 = _gvn.transform(new ReinterpretS2HFNode(fld2));
+    // fall-through
+    case 1:
+      fld1 = unbox_fp16_value(float16_box_type, field, argument(1));
+      if (fld1 == nullptr) {
+        return false;
+      }
+      fld1 = _gvn.transform(new ReinterpretS2HFNode(fld1));
+      break;
+    default: fatal("Unsupported number of arguments %d", num_args);
+  }
+
+  Node* result = nullptr;
+  switch (id) {
+    // Unary operations
+    case vmIntrinsics::_sqrt_float16:
+      result = _gvn.transform(new SqrtHFNode(C, control(), fld1));
+      break;
+    // Ternary operations
+    case vmIntrinsics::_fma_float16:
+      result = _gvn.transform(new FmaHFNode(fld1, fld2, fld3));
+      break;
+    default:
+      fatal_unexpected_iid(id);
+      break;
+  }
+  result = _gvn.transform(new ReinterpretHF2SNode(result));
+  set_result(box_fp16_value(float16_box_type, field, result));
+  return true;
+}
+

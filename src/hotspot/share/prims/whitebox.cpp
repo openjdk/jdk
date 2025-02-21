@@ -47,6 +47,7 @@
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genArguments.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
@@ -300,11 +301,9 @@ WB_END
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
   size_t granularity = os::vm_allocation_granularity();
   ReservedHeapSpace rhs = HeapReserver::reserve(100 * granularity, granularity, os::vm_page_size(), nullptr);
-  VirtualSpace vs;
-  vs.initialize(rhs, 50 * granularity);
 
   // Check if constraints are complied
-  if (!( UseCompressedOops && rhs.base() != nullptr &&
+  if (!( UseCompressedOops && rhs.is_reserved() &&
          CompressedOops::base() != nullptr &&
          CompressedOops::use_implicit_null_checks() )) {
     tty->print_cr("WB_ReadFromNoaccessArea method is useless:\n "
@@ -318,6 +317,10 @@ WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
                   CompressedOops::use_implicit_null_checks());
     return;
   }
+
+  VirtualSpace vs;
+  vs.initialize(rhs, 50 * granularity);
+
   tty->print_cr("Reading from no access area... ");
   tty->print_cr("*(vs.low_boundary() - rhs.noaccess_prefix() / 2 ) = %c",
                 *(vs.low_boundary() - rhs.noaccess_prefix() / 2 ));
@@ -338,6 +341,11 @@ static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
                                            size_t magnitude, size_t iterations) {
   size_t granularity = os::vm_allocation_granularity();
   ReservedHeapSpace rhs = HeapReserver::reserve(reserved_space_size * granularity, granularity, os::vm_page_size(), nullptr);
+  if (!rhs.is_reserved()) {
+    tty->print_cr("Failed to initialize ReservedSpace. Can't proceed.");
+    return 3;
+  }
+
   VirtualSpace vs;
   if (!vs.initialize(rhs, 0)) {
     tty->print_cr("Failed to initialize VirtualSpace. Can't proceed.");
@@ -1808,6 +1816,10 @@ WB_ENTRY(jlong, WB_RootChunkWordSize(JNIEnv* env))
   return (jlong)Metaspace::reserve_alignment_words();
 WB_END
 
+WB_ENTRY(jboolean, WB_IsStaticallyLinked(JNIEnv* env, jobject wb))
+  return JVM_IsStaticallyLinked();
+WB_END
+
 //////////////
 
 WB_ENTRY(jlong, WB_AllocateMetaspace(JNIEnv* env, jobject wb, jobject class_loader, jlong size))
@@ -2192,7 +2204,7 @@ WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
 WB_END
 
 WB_ENTRY(jboolean, WB_CanWriteJavaHeapArchive(JNIEnv* env))
-  return HeapShared::can_write();
+  return !CDSConfig::are_vm_options_incompatible_with_dumping_heap();
 WB_END
 
 
@@ -3008,7 +3020,8 @@ static JNINativeMethod methods[] = {
   {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
   {CC"lockAndStuckInSafepoint", CC"()V", (void*)&WB_TakeLockAndHangInSafepoint},
   {CC"wordSize", CC"()J",                             (void*)&WB_WordSize},
-  {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize}
+  {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize},
+  {CC"isStatic", CC"()Z",                             (void*)&WB_IsStaticallyLinked}
 };
 
 

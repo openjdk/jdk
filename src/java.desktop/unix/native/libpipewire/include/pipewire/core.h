@@ -14,6 +14,8 @@ extern "C" {
 
 #include <spa/utils/hook.h>
 
+#include <pipewire/type.h>
+
 /** \defgroup pw_core Core
  *
  * \brief The core global object.
@@ -34,10 +36,19 @@ extern "C" {
 #define PW_TYPE_INTERFACE_Core        PW_TYPE_INFO_INTERFACE_BASE "Core"
 #define PW_TYPE_INTERFACE_Registry    PW_TYPE_INFO_INTERFACE_BASE "Registry"
 
+#define PW_CORE_PERM_MASK        PW_PERM_R|PW_PERM_X|PW_PERM_M
+
 #define PW_VERSION_CORE        4
 struct pw_core;
 #define PW_VERSION_REGISTRY    3
 struct pw_registry;
+
+#ifndef PW_API_CORE_IMPL
+#define PW_API_CORE_IMPL static inline
+#endif
+#ifndef PW_API_REGISTRY_IMPL
+#define PW_API_REGISTRY_IMPL static inline
+#endif
 
 /** The default remote name to connect to */
 #define PW_DEFAULT_REMOTE    "pipewire-0"
@@ -67,11 +78,13 @@ struct pw_core_info {
 #include <pipewire/properties.h>
 #include <pipewire/proxy.h>
 
-/** Update an existing \ref pw_core_info with \a update with reset */
+/** Update an existing \ref pw_core_info with \a update with reset. When info is NULL,
+ * a new one will be allocated. Returns NULL on failure. */
 struct pw_core_info *
 pw_core_info_update(struct pw_core_info *info,
         const struct pw_core_info *update);
-/** Update an existing \ref pw_core_info with \a update */
+/** Update an existing \ref pw_core_info with \a update. When info is NULL, a new one
+ * will be allocated. Returns NULL on failure */
 struct pw_core_info *
 pw_core_info_merge(struct pw_core_info *info,
         const struct pw_core_info *update, bool reset);
@@ -162,6 +175,9 @@ struct pw_core_events {
      * global ID. It is emitted before the global becomes visible in the
      * registry.
      *
+     * The bound_props event is an enhanced version of this event that
+     * also contains the extra global properties.
+     *
      * \param id bound object ID
      * \param global_id the global id bound to
      */
@@ -190,6 +206,21 @@ struct pw_core_events {
      */
     void (*remove_mem) (void *data, uint32_t id);
 
+    /**
+     * Notify an object binding
+     *
+     * This event is emitted when a local object ID is bound to a
+     * global ID. It is emitted before the global becomes visible in the
+     * registry.
+     *
+     * This is an enhanced version of the bound_id event.
+     *
+     * \param id bound object ID
+     * \param global_id the global id bound to
+     * \param props The properties of the new global object.
+     *
+     * Since version 4:1
+     */
     void (*bound_props) (void *data, uint32_t id, uint32_t global_id, const struct spa_dict *props);
 };
 
@@ -223,6 +254,8 @@ struct pw_core_methods {
      * Start a conversation with the server. This will send
      * the core info and will destroy all resources for the client
      * (except the core and client resource).
+     *
+     * This requires X permissions on the core.
      */
     int (*hello) (void *object, uint32_t version);
     /**
@@ -235,6 +268,8 @@ struct pw_core_methods {
      * methods and the resulting events have been handled.
      *
      * \param seq the seq number passed to the done event
+     *
+     * This requires X permissions on the core.
      */
     int (*sync) (void *object, uint32_t id, int seq);
     /**
@@ -243,6 +278,8 @@ struct pw_core_methods {
      * Reply to the server ping event with the same seq.
      *
      * \param seq the seq number received in the ping event
+     *
+     * This requires X permissions on the core.
      */
     int (*pong) (void *object, uint32_t id, int seq);
     /**
@@ -257,9 +294,11 @@ struct pw_core_methods {
      * This method is usually also emitted on the resource object with
      * \a id.
      *
-         * \param id object where the error occurred
+         * \param id resource id where the error occurred
          * \param res error code
          * \param message error description
+     *
+     * This requires X permissions on the core.
      */
     int (*error) (void *object, uint32_t id, int seq, int res, const char *message);
     /**
@@ -269,6 +308,8 @@ struct pw_core_methods {
      * the global objects available from the PipeWire server
      * \param version the client version
      * \param user_data_size extra size
+     *
+     * This requires X permissions on the core.
      */
     struct pw_registry * (*get_registry) (void *object, uint32_t version,
             size_t user_data_size);
@@ -281,6 +322,8 @@ struct pw_core_methods {
      * \param version the version of the interface
      * \param props extra properties
      * \param user_data_size extra size
+     *
+     * This requires X permissions on the core.
      */
     void * (*create_object) (void *object,
                    const char *factory_name,
@@ -294,27 +337,57 @@ struct pw_core_methods {
      * Destroy the server resource for the given proxy.
      *
      * \param obj the proxy to destroy
+     *
+     * This requires X permissions on the core.
      */
     int (*destroy) (void *object, void *proxy);
 };
 
-#define pw_core_method(o,method,version,...)            \
-({                                    \
-    int _res = -ENOTSUP;                        \
-    spa_interface_call_res((struct spa_interface*)o,        \
-            struct pw_core_methods, _res,        \
-            method, version, ##__VA_ARGS__);        \
-    _res;                                \
-})
 
-#define pw_core_add_listener(c,...)    pw_core_method(c,add_listener,0,__VA_ARGS__)
-#define pw_core_hello(c,...)        pw_core_method(c,hello,0,__VA_ARGS__)
-#define pw_core_sync(c,...)        pw_core_method(c,sync,0,__VA_ARGS__)
-#define pw_core_pong(c,...)        pw_core_method(c,pong,0,__VA_ARGS__)
-#define pw_core_error(c,...)        pw_core_method(c,error,0,__VA_ARGS__)
-
-
-static inline
+/** \copydoc pw_core_methods.add_listener
+ * \sa pw_core_methods.add_listener */
+PW_API_CORE_IMPL int pw_core_add_listener(struct pw_core *object,
+            struct spa_hook *listener,
+            const struct pw_core_events *events,
+            void *data)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            pw_core, (struct spa_interface*)object, add_listener, 0,
+            listener, events, data);
+}
+/** \copydoc pw_core_methods.hello
+ * \sa pw_core_methods.hello */
+PW_API_CORE_IMPL int pw_core_hello(struct pw_core *object, uint32_t version)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            pw_core, (struct spa_interface*)object, hello, 0,
+            version);
+}
+/** \copydoc pw_core_methods.sync
+ * \sa pw_core_methods.sync */
+PW_API_CORE_IMPL int pw_core_sync(struct pw_core *object, uint32_t id, int seq)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            pw_core, (struct spa_interface*)object, sync, 0,
+            id, seq);
+}
+/** \copydoc pw_core_methods.pong
+ * \sa pw_core_methods.pong */
+PW_API_CORE_IMPL int pw_core_pong(struct pw_core *object, uint32_t id, int seq)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            pw_core, (struct spa_interface*)object, pong, 0,
+            id, seq);
+}
+/** \copydoc pw_core_methods.error
+ * \sa pw_core_methods.error */
+PW_API_CORE_IMPL int pw_core_error(struct pw_core *object, uint32_t id, int seq, int res, const char *message)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            pw_core, (struct spa_interface*)object, error, 0,
+            id, seq, res, message);
+}
+PW_API_CORE_IMPL
 SPA_PRINTF_FUNC(5, 0) int
 pw_core_errorv(struct pw_core *core, uint32_t id, int seq,
         int res, const char *message, va_list args)
@@ -325,7 +398,7 @@ pw_core_errorv(struct pw_core *core, uint32_t id, int seq,
     return pw_core_error(core, id, seq, res, buffer);
 }
 
-static inline
+PW_API_CORE_IMPL
 SPA_PRINTF_FUNC(5, 6) int
 pw_core_errorf(struct pw_core *core, uint32_t id, int seq,
         int res, const char *message, ...)
@@ -338,17 +411,18 @@ pw_core_errorf(struct pw_core *core, uint32_t id, int seq,
     return r;
 }
 
-static inline struct pw_registry *
+/** \copydoc pw_core_methods.get_registry
+ * \sa pw_core_methods.get_registry */
+PW_API_CORE_IMPL struct pw_registry *
 pw_core_get_registry(struct pw_core *core, uint32_t version, size_t user_data_size)
 {
-    struct pw_registry *res = NULL;
-    spa_interface_call_res((struct spa_interface*)core,
-            struct pw_core_methods, res,
-            get_registry, 0, version, user_data_size);
-    return res;
+    return spa_api_method_r(struct pw_registry*, NULL,
+            pw_core, (struct spa_interface*)core, get_registry, 0,
+            version, user_data_size);
 }
-
-static inline void *
+/** \copydoc pw_core_methods.create_object
+ * \sa pw_core_methods.create_object */
+PW_API_CORE_IMPL void *
 pw_core_create_object(struct pw_core *core,
                 const char *factory_name,
                 const char *type,
@@ -356,15 +430,18 @@ pw_core_create_object(struct pw_core *core,
                 const struct spa_dict *props,
                 size_t user_data_size)
 {
-    void *res = NULL;
-    spa_interface_call_res((struct spa_interface*)core,
-            struct pw_core_methods, res,
-            create_object, 0, factory_name,
-            type, version, props, user_data_size);
-    return res;
+    return spa_api_method_r(void*, NULL,
+            pw_core, (struct spa_interface*)core, create_object, 0,
+            factory_name, type, version, props, user_data_size);
 }
-
-#define pw_core_destroy(c,...)        pw_core_method(c,destroy,0,__VA_ARGS__)
+/** \copydoc pw_core_methods.destroy
+ * \sa pw_core_methods.destroy */
+PW_API_CORE_IMPL void
+pw_core_destroy(struct pw_core *core, void *proxy)
+{
+    spa_api_method_v(pw_core, (struct spa_interface*)core, destroy, 0,
+            proxy);
+}
 
 /**
  * \}
@@ -474,36 +551,44 @@ struct pw_registry_methods {
      *
      * Try to destroy the global object.
      *
-     * \param id the global id to destroy
+     * \param id the global id to destroy. The client needs X permissions
+     * on the global.
      */
     int (*destroy) (void *object, uint32_t id);
 };
 
-#define pw_registry_method(o,method,version,...)            \
-({                                    \
-    int _res = -ENOTSUP;                        \
-    spa_interface_call_res((struct spa_interface*)o,        \
-            struct pw_registry_methods, _res,        \
-            method, version, ##__VA_ARGS__);        \
-    _res;                                \
-})
 
 /** Registry */
-#define pw_registry_add_listener(p,...)    pw_registry_method(p,add_listener,0,__VA_ARGS__)
-
-static inline void *
+/** \copydoc pw_registry_methods.add_listener
+ * \sa pw_registry_methods.add_listener */
+PW_API_REGISTRY_IMPL int pw_registry_add_listener(struct pw_registry *registry,
+            struct spa_hook *listener,
+            const struct pw_registry_events *events,
+            void *data)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            pw_registry, (struct spa_interface*)registry, add_listener, 0,
+            listener, events, data);
+}
+/** \copydoc pw_registry_methods.bind
+ * \sa pw_registry_methods.bind */
+PW_API_REGISTRY_IMPL void *
 pw_registry_bind(struct pw_registry *registry,
                uint32_t id, const char *type, uint32_t version,
                size_t user_data_size)
 {
-    void *res = NULL;
-    spa_interface_call_res((struct spa_interface*)registry,
-            struct pw_registry_methods, res,
-            bind, 0, id, type, version, user_data_size);
-    return res;
+    return spa_api_method_r(void*, NULL,
+            pw_registry, (struct spa_interface*)registry, bind, 0,
+            id, type, version, user_data_size);
 }
-
-#define pw_registry_destroy(p,...)    pw_registry_method(p,destroy,0,__VA_ARGS__)
+/** \copydoc pw_registry_methods.destroy
+ * \sa pw_registry_methods.destroy */
+PW_API_REGISTRY_IMPL int
+pw_registry_destroy(struct pw_registry *registry, uint32_t id)
+{
+    return spa_api_method_r(int, -ENOTSUP,
+            pw_registry, (struct spa_interface*)registry, destroy, 0, id);
+}
 
 /**
  * \}
