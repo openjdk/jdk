@@ -93,7 +93,7 @@ DocComment[DOC_COMMENT, pos:1
 /*
 DocComment[DOC_COMMENT, pos:1
   firstSentence: 1
-    Literal[CODE, pos:1, if_(a_<_b)_{|_______}|]
+    Literal[CODE, pos:1, if_(a_<_b)_{|________}|_]
   body: empty
   block tags: empty
 ]
@@ -108,7 +108,7 @@ DocComment[DOC_COMMENT, pos:1
 /*
 DocComment[DOC_COMMENT, pos:1
   firstSentence: 1
-    Literal[CODE, pos:1, |@tag|]
+    Literal[CODE, pos:1, |_@tag|_]
   body: empty
   block tags: empty
 ]
@@ -131,6 +131,69 @@ DocComment[DOC_COMMENT, pos:1
     Literal[CODE, pos:6, |____@Override|____void_m()_{_}|]
   body: 1
     EndElement[END_ELEMENT, pos:48, pre]
+  block tags: empty
+]
+*/
+
+    /**<pre>{@code
+     *     @Override
+     *     void m() { }
+     * }</pre>
+     */
+    void pre_code_first_line() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:0
+      name:pre
+      attributes: empty
+    ]
+    Literal[CODE, pos:5, |____@Override|____void_m()_{_}|]
+  body: 1
+    EndElement[END_ELEMENT, pos:47, pre]
+  block tags: empty
+]
+*/
+
+    /**
+     *<pre>{@code
+     *    @Override
+     *    void m() { }
+     *}</pre>
+     */
+    @NormalizeTags(false) // see DocCommentTester.PrettyChecker
+    void pre_code_no_indent() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:0
+      name:pre
+      attributes: empty
+    ]
+    Literal[CODE, pos:5, |____@Override|____void_m()_{_}|]
+  body: 1
+    EndElement[END_ELEMENT, pos:44, pre]
+  block tags: empty
+]
+*/
+
+    /**
+     *  <pre>{@code
+     *      @Override
+     *      void m() { }
+     *  }</pre>
+     */
+    void pre_code_double_indent() { }
+/*
+DocComment[DOC_COMMENT, pos:2
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:2
+      name:pre
+      attributes: empty
+    ]
+    Literal[CODE, pos:7, |_____@Override|_____void_m()_{_}|_]
+  body: 1
+    EndElement[END_ELEMENT, pos:52, pre]
   block tags: empty
 ]
 */

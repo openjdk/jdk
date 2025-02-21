@@ -1026,9 +1026,11 @@ public class DocCommentTester {
         String normalize(String s, boolean isLineComment, boolean normalizeTags) {
             String s2 = (isLineComment ? s : s.trim())
                     .replaceFirst("\\.\\s*\\n *@(?![@*])", ".\n@"); // Between block tags
-            // Whitespace normalization in {@code} and {@literal} tags
-            if (Pattern.compile("\\{@(?:code|literal)(?:.*\n )+.*}").matcher(s2).find()) {
-                s2 = s2.replaceAll("\\n ", "\n");
+            if (normalizeTags && !isLineComment) {
+                // Whitespace normalization within <pre> tags: remove single space from every new line
+                var p = Pattern.compile("(<pre>)(.*)(</pre>)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+                s2 = p.matcher(s2).replaceAll(
+                        r -> r.group(1) + r.group(2).replaceAll("\\n ", "\n") + r.group(3));
             }
             StringBuilder sb = new StringBuilder();
             Pattern p = Pattern.compile("(?i)\\{@([a-z][a-z0-9.:-]*)( )?");

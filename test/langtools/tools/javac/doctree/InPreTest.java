@@ -164,6 +164,68 @@ DocComment[DOC_COMMENT, pos:1
   block tags: empty
 ]
 */
+
+    /**
+     * {@literal before pre
+     * }
+     * <pre>
+     * in pre{@code
+     *   in @code
+     *   }
+     *   pre again
+     *   {@literal
+     *     in literal}
+     * </pre>{@code after pre
+     * }
+     */
+    public void in_pre_multi_line() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 2
+    Literal[LITERAL, pos:1, before_pre|_]
+    Text[TEXT, pos:24]
+  body: 8
+    StartElement[START_ELEMENT, pos:26
+      name:pre
+      attributes: empty
+    ]
+    Text[TEXT, pos:31, |in_pre]
+    Literal[CODE, pos:39, |__in_@code|__]
+    Text[TEXT, pos:62, |__pre_again|__]
+    Literal[LITERAL, pos:79, |____in_literal]
+    Text[TEXT, pos:105, |]
+    EndElement[END_ELEMENT, pos:107, pre]
+    Literal[CODE, pos:113, after_pre|_]
+  block tags: empty
+]
+*/
+
+    /**
+     * <pre>{@snippet :
+     *   snippet
+     *   text
+     * }</pre>
+     */
+    @NormalizeTags(false) // see DocCommentTester.PrettyChecker
+    public void snippet_in_pre() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:1
+      name:pre
+      attributes: empty
+    ]
+    Snippet[SNIPPET, pos:6
+      attributes: empty
+      body:
+        Text[TEXT, pos:18, ___snippet|___text|_]
+    ]
+  body: 1
+    EndElement[END_ELEMENT, pos:39, pre]
+  block tags: empty
+]
+*/
+
     /**
      * abc {@code
      */

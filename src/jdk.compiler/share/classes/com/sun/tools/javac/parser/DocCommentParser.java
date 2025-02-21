@@ -230,24 +230,6 @@ public class DocCommentParser {
         return m.at(pos).newDocCommentTree(comment, body, tags, preamble, postamble);
     }
 
-    /**
-     * Check if every non-blank line in a traditional comment has at least one leading space.
-     */
-    boolean canStripLeadingSpace(String comment) {
-        if (textKind == DocTree.Kind.MARKDOWN || isHtmlFile) {
-            return false;
-        }
-        for (int i = 0; i < comment.length(); i++) {
-            if (i == 0 || comment.charAt(i - 1) == '\n') {
-                char c = comment.charAt(i);
-                if (c != '\n' && c != ' ') {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
     void nextChar() {
         ch = buf[bp < buflen ? ++bp : buflen];
         switch (ch) {
@@ -1837,10 +1819,35 @@ public class DocCommentParser {
     }
 
     /**
+     * Check if this is a traditional doc comment where every non-emtpy line past
+     * the first newline character has at least one leading space. This suggests
+     * that indentation is incidental and should be removed in preformatted text.
+     */
+    boolean canStripLeadingSpace(String comment) {
+        if (textKind == DocTree.Kind.MARKDOWN || isHtmlFile) {
+            return false;
+        }
+        for (int i = 0; i < comment.length() - 1; i++) {
+            if (comment.charAt(i) == '\n') {
+                char c = comment.charAt(i + 1);
+                if (c != '\n' && c != ' ') {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
      * Variant of newString that optionally skips a leading space in each line.
+     *
+     * @param start position of first character of string
+     * @param end position of character beyond last character to be included
+     * @param whitespacePolicy whitespace retention policy
      */
     String newString(int start, int end, WhitespaceRetentionPolicy whitespacePolicy) {
-        if (stripLeadingSpace && whitespacePolicy == WhitespaceRetentionPolicy.REMOVE_FIRST_SPACE) {
+        if (stripLeadingSpace && inPreElement
+                && whitespacePolicy == WhitespaceRetentionPolicy.REMOVE_FIRST_SPACE) {
             StringBuilder sb = new StringBuilder(end - start);
             int pos = start;
             // The parser will never call this with a strippable space at buf[start].
