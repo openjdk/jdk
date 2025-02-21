@@ -23,6 +23,7 @@
  */
 
 #include "asm/macroAssembler.hpp"
+#include "assembler_aarch64.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
@@ -54,6 +55,7 @@
 #include "runtime/vframeArray.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -1874,7 +1876,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 }
 
 void TemplateInterpreterGenerator::count_bytecode() {
-  __ incrementl(ExternalAddress((address) &BytecodeCounter::_counter_value), rscratch1);
+  __ increment(ExternalAddress((address) &BytecodeCounter::_counter_value), rscratch1);
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
@@ -1914,10 +1916,14 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
 
 void TemplateInterpreterGenerator::stop_interpreter_at() {
   Label L;
-  // __ cmp64(ExternalAddress((address) &BytecodeCounter::_counter_value));
+  #ifndef _LP64
   __ cmp32(ExternalAddress((address) &BytecodeCounter::_counter_value),
            StopInterpreterAt,
            rscratch1);
+  #else
+  __ mov64(rscratch1, StopInterpreterAt);
+  __ cmpq((address) &BytecodeCounter::_counter_value, rscratch1);
+  #endif
   __ jcc(Assembler::notEqual, L);
   __ int3();
   __ bind(L);

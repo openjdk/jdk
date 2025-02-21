@@ -33,7 +33,7 @@
 
 // Implementation of BytecodeCounter
 
-julong BytecodeCounter::_counter_value = 0;
+uintx BytecodeCounter::_counter_value = 0;
 jlong  BytecodeCounter::_reset_time    = 0;
 
 

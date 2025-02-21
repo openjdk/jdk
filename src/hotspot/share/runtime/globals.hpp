@@ -1556,7 +1556,6 @@ const int ObjectAlignmentInBytes = 8;
           "Minimal number of lookupswitch entries for rewriting to binary " \
           "switch")                                                         \
                                                                             \
-  /* NOTE: does uintx work on 32 bit platforms with the 64 bit counter */   \
   develop(uintx, StopInterpreterAt, 0,                                      \
           "Stop interpreter execution at specified bytecode number")        \
                                                                             \
