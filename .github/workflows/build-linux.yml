@@ -61,6 +61,9 @@ on:
       make-arguments:
         required: false
         type: string
+      bundle-suffix:
+        required: false
+        type: string
 
 jobs:
   build-linux:
@@ -139,3 +142,4 @@ jobs:
         with:
           platform: ${{ inputs.platform }}
           debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
+          bundle-suffix: ${{ inputs.bundle-suffix }}

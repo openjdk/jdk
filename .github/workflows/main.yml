@@ -238,6 +238,8 @@ jobs:
       gcc-major-version: '10'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
+      # Upload static bundles to check libgraal build downstream.
+      bundle-suffix: "-static"
     if: needs.prepare.outputs.linux-x64-variants == 'true'
 
   build-linux-cross-compile:
