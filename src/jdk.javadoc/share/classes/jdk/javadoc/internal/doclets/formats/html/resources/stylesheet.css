@@ -1197,7 +1197,7 @@ section.detail > h3:target > a.anchor-link > img {
  * Styles for copy-to-clipboard buttons
  */
 button.copy {
-    opacity: 70%;
+    opacity: 60%;
     border: none;
     border-radius: 3px;
     position: relative;
@@ -1206,7 +1206,7 @@ button.copy {
     cursor: pointer;
 }
 :hover > button.copy {
-    opacity: 80%;
+    opacity: 70%;
 }
 button.copy:hover,
 button.copy:active,
