@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.FieldRefEntry;
 import java.lang.classfile.instruction.SwitchCase;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.LambdaForm.BasicType;
