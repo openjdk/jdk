@@ -22,7 +22,7 @@
  *
  */
 
-#include "cds/aotCodeSource.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -75,12 +75,12 @@ void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* resu
   s2 classloader_type = ClassLoader::BOOT_LOADER;
   if (SystemDictionary::is_system_class_loader(loader)) {
     classloader_type = ClassLoader::APP_LOADER;
-    AOTCodeSourceConfig::dumptime_set_has_app_classes();
+    AOTClassLocationConfig::dumptime_set_has_app_classes();
   } else if (SystemDictionary::is_platform_class_loader(loader)) {
     classloader_type = ClassLoader::PLATFORM_LOADER;
-    AOTCodeSourceConfig::dumptime_set_has_platform_classes();
+    AOTClassLocationConfig::dumptime_set_has_platform_classes();
   }
-  AOTCodeSourceConfig::dumptime_update_max_used_index(classpath_index);
+  AOTClassLocationConfig::dumptime_update_max_used_index(classpath_index);
   result->set_shared_classpath_index(classpath_index);
   result->set_shared_class_loader_type(classloader_type);
 #if INCLUDE_CDS_JAVA_HEAP
@@ -90,7 +90,7 @@ void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* resu
     // loaders are always loaded from known locations (jimage, classpath or modulepath),
     // so classpath_index should always be >= 0.
     // The only exception is when a java agent is used during dump time (for testing
-    // purposes only). If a class is transformed by the agent, the CodeSource of
+    // purposes only). If a class is transformed by the agent, the AOTClassLocation of
     // this class may point to an unknown location. This may break heap object archiving,
     // which requires all the boot classes to be from known locations. This is an
     // uncommon scenario (even in test cases). Let's simply disable heap object archiving.

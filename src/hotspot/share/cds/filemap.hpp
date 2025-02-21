@@ -42,7 +42,7 @@
 
 static const int JVM_IDENT_MAX = 256;
 
-class AOTCodeSourceConfig;
+class AOTClassLocationConfig;
 class ArchiveHeapInfo;
 class BitMapView;
 class CHeapBitMap;
@@ -127,7 +127,7 @@ private:
   // invoked with.
   char  _jvm_ident[JVM_IDENT_MAX];  // identifier string of the jvm that created this dump
 
-  size_t _code_source_config_offset;
+  size_t _class_location_config_offset;
 
   bool   _verify_local;                 // BytecodeVerificationLocal setting
   bool   _verify_remote;                // BytecodeVerificationRemote setting
@@ -210,12 +210,12 @@ public:
   void set_ro_ptrmap_start_pos(size_t n)         { _ro_ptrmap_start_pos = n; }
   void copy_base_archive_name(const char* name);
 
-  void set_code_source_config(AOTCodeSourceConfig* table) {
-    set_as_offset(table, &_code_source_config_offset);
+  void set_class_location_config(AOTClassLocationConfig* table) {
+    set_as_offset(table, &_class_location_config_offset);
   }
 
-  AOTCodeSourceConfig* code_source_config() {
-    return from_mapped_offset<AOTCodeSourceConfig*>(_code_source_config_offset);
+  AOTClassLocationConfig* class_location_config() {
+    return from_mapped_offset<AOTClassLocationConfig*>(_class_location_config_offset);
   }
 
   void set_requested_base(char* b) {
@@ -380,7 +380,7 @@ public:
     NOT_CDS(return false;)
   }
 
-  bool validate_code_source();
+  bool validate_class_location();
   bool validate_aot_class_linking();
 
 #if INCLUDE_JVMTI

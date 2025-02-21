@@ -22,7 +22,7 @@
  *
  */
 
-#include "cds/aotCodeSource.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
@@ -1193,7 +1193,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   int classpath_index = -1;
   PackageEntry* pkg_entry = ik->package();
 
-  if (!AOTCodeSourceConfig::dumptime_is_ready()) {
+  if (!AOTClassLocationConfig::dumptime_is_ready()) {
     // The shared path table is set up after module system initialization.
     // The path table contains no entry before that. Any classes loaded prior
     // to the setup of the shared path table must be from the modules image.
@@ -1205,13 +1205,13 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
     // must be valid since the class has been successfully parsed.
     const char* path = ClassLoader::uri_to_path(src);
     assert(path != nullptr, "sanity");
-    AOTCodeSourceConfig::dumptime_iterate([&] (AOTCodeSource* cs) {
-      int i = cs->index();
+    AOTClassLocationConfig::dumptime_iterate([&] (AOTClassLocation* cl) {
+      int i = cl->index();
       // for index 0 and the stream->source() is the modules image or has the jrt: protocol.
       // The class must be from the runtime modules image.
-      if (cs->is_modules_image() && (stream->from_boot_loader_modules_image() || string_starts_with(src, "jrt:"))) {
+      if (cl->is_modules_image() && (stream->from_boot_loader_modules_image() || string_starts_with(src, "jrt:"))) {
         classpath_index = i;
-      } else if (os::same_files(cs->path(), path)) {
+      } else if (os::same_files(cl->path(), path)) {
         // If the path (from the class stream source) is the same as the shared
         // class or module path, then we have a match.
         // src may come from the App/Platform class loaders, which would canonicalize
@@ -1224,10 +1224,10 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
         if ((pkg_entry == nullptr) || (pkg_entry->in_unnamed_module())) {
           // Ensure the index is within the -cp range before assigning
           // to the classpath_index.
-          if (SystemDictionary::is_system_class_loader(loader) && cs->from_app_classpath()) {
+          if (SystemDictionary::is_system_class_loader(loader) && cl->from_app_classpath()) {
             classpath_index = i;
           } else {
-            if (cs->from_boot_classpath()) {
+            if (cl->from_boot_classpath()) {
               // The class must be from boot loader append path which consists of
               // -Xbootclasspath/a and jvmti appended entries.
               assert(loader == nullptr, "sanity");
@@ -1237,7 +1237,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
         } else {
           // A class from a named module from the --module-path. Ensure the index is
           // within the --module-path range before assigning to the classpath_index.
-          if ((pkg_entry != nullptr) && !(pkg_entry->in_unnamed_module()) && cs->from_module_path()) {
+          if ((pkg_entry != nullptr) && !(pkg_entry->in_unnamed_module()) && cl->from_module_path()) {
             classpath_index = i;
           }
         }
@@ -1297,7 +1297,7 @@ void ClassLoader::record_hidden_class(InstanceKlass* ik) {
   } else {
     // Generated invoker classes.
     if (classloader_type == ClassLoader::APP_LOADER) {
-      ik->set_shared_classpath_index(AOTCodeSourceConfig::dumptime()->app_cp_start_index());
+      ik->set_shared_classpath_index(AOTClassLocationConfig::dumptime()->app_cp_start_index());
     } else {
       ik->set_shared_classpath_index(0);
     }

@@ -22,7 +22,7 @@
  *
  */
 
-#include "cds/aotCodeSource.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "classfile/classLoader.hpp"
@@ -50,10 +50,10 @@ OopHandle CDSProtectionDomain::_shared_jar_manifests;
 Handle CDSProtectionDomain::init_security_info(Handle class_loader, InstanceKlass* ik, PackageEntry* pkg_entry, TRAPS) {
   int index = ik->shared_classpath_index();
   assert(index >= 0, "Sanity");
-  const AOTCodeSource* cs = AOTCodeSourceConfig::runtime()->code_source_at(index);
+  const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(index);
   Symbol* class_name = ik->name();
 
-  if (cs->is_modules_image()) {
+  if (cl->is_modules_image()) {
     // For shared app/platform classes originated from the run-time image:
     //   The ProtectionDomains are cached in the corresponding ModuleEntries
     //   for fast access by the VM.
@@ -71,7 +71,7 @@ Handle CDSProtectionDomain::init_security_info(Handle class_loader, InstanceKlas
     //
     //     index = k->shared_classpath_index();
     //
-    //   AOTCodeSourceConfig::_runtime_instance->_array->at(index) identifies the JAR file that contains k.
+    //   AOTClassLocationConfig::_runtime_instance->_array->at(index) identifies the JAR file that contains k.
     //
     //   k's protection domain is:
     //
@@ -87,7 +87,7 @@ Handle CDSProtectionDomain::init_security_info(Handle class_loader, InstanceKlas
     //   the corresponding CDSProtectionDomain::get_shared_xxx() function.
     Handle manifest = get_shared_jar_manifest(index, CHECK_NH);
     Handle url = get_shared_jar_url(index, CHECK_NH);
-    int index_offset = index - AOTCodeSourceConfig::runtime()->app_cp_start_index();
+    int index_offset = index - AOTClassLocationConfig::runtime()->app_cp_start_index();
     if (index_offset < PackageEntry::max_index_for_defined_in_class_path()) {
       if (pkg_entry == nullptr || !pkg_entry->is_defined_by_cds_in_class_path(index_offset)) {
         // define_shared_package only needs to be called once for each package in a jar specified
@@ -178,14 +178,14 @@ Handle CDSProtectionDomain::create_jar_manifest(const char* manifest_chars, size
 Handle CDSProtectionDomain::get_shared_jar_manifest(int shared_path_index, TRAPS) {
   Handle manifest;
   if (shared_jar_manifest(shared_path_index) == nullptr) {
-    const AOTCodeSource* cs = AOTCodeSourceConfig::runtime()->code_source_at(shared_path_index);
-    size_t size = cs->manifest_length();
+    const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(shared_path_index);
+    size_t size = cl->manifest_length();
     if (size == 0) {
       return Handle();
     }
 
     // ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-    const char* src = cs->manifest();
+    const char* src = cl->manifest();
     assert(src != nullptr, "No Manifest data");
     manifest = create_jar_manifest(src, size, CHECK_NH);
     atomic_set_shared_jar_manifest(shared_path_index, manifest());
@@ -198,7 +198,7 @@ Handle CDSProtectionDomain::get_shared_jar_manifest(int shared_path_index, TRAPS
 Handle CDSProtectionDomain::get_shared_jar_url(int shared_path_index, TRAPS) {
   Handle url_h;
   if (shared_jar_url(shared_path_index) == nullptr) {
-    const char* path = AOTCodeSourceConfig::runtime()->code_source_at(shared_path_index)->path();
+    const char* path = AOTClassLocationConfig::runtime()->class_location_at(shared_path_index)->path();
     oop result_oop = to_file_URL(path, url_h, CHECK_(url_h));
     atomic_set_shared_jar_url(shared_path_index, result_oop);
   }

@@ -22,7 +22,7 @@
  *
  */
 
-#include "cds/aotCodeSource.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -31,6 +31,7 @@
 #include "cds/serializeClosure.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/javaClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metadataFactory.hpp"
@@ -46,12 +47,12 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-AOTCodeSourceConfig* AOTCodeSourceConfig::_dumptime_instance = nullptr;
-const AOTCodeSourceConfig* AOTCodeSourceConfig::_runtime_instance = nullptr;
+AOTClassLocationConfig* AOTClassLocationConfig::_dumptime_instance = nullptr;
+const AOTClassLocationConfig* AOTClassLocationConfig::_runtime_instance = nullptr;
 
-// A CodeSourceStream represents a list of code sources, which can be iterated using
+// A ClassLocationStream represents a list of code sources, which can be iterated using
 // start() and has_next().
-class CodeSourceStream {
+class ClassLocationStream {
 protected:
   GrowableArray<const char*> _array;
   int _current;
@@ -70,7 +71,7 @@ protected:
   }
 
 public:
-  CodeSourceStream() : _array(), _current(0) {}
+  ClassLocationStream() : _array(), _current(0) {}
 
   void print(outputStream* st) const {
     const char* sep = "";
@@ -80,7 +81,7 @@ public:
     }
   }
 
-  void add(CodeSourceStream& css) {
+  void add(ClassLocationStream& css) {
     for (css.start(); css.has_next();) {
       add_one_path(css.get_next());
     }
@@ -97,9 +98,9 @@ public:
   bool is_empty() const { return _array.length() == 0; }
 };
 
-class BootCpCodeSourceStream : public CodeSourceStream {
+class BootCpClassLocationStream : public ClassLocationStream {
 public:
-  BootCpCodeSourceStream() : CodeSourceStream() {
+  BootCpClassLocationStream() : ClassLocationStream() {
     // Arguments::get_boot_class_path() contains $JAVA_HOME/lib/modules, but we treat that separately
     for (const char* bootcp = Arguments::get_boot_class_path(); *bootcp != '\0'; ++bootcp) {
       if (*bootcp == *os::path_separator()) {
@@ -111,9 +112,9 @@ public:
   }
 };
 
-class AppCpCodeSourceStream : public CodeSourceStream {
+class AppCpClassLocationStream : public ClassLocationStream {
 public:
-  AppCpCodeSourceStream() : CodeSourceStream() {
+  AppCpClassLocationStream() : ClassLocationStream() {
     const char* appcp = Arguments::get_appclasspath();
     if (strcmp(appcp, ".") == 0) {
       appcp = "";
@@ -122,32 +123,32 @@ public:
   }
 };
 
-class ModulePathCodeSourceStream : public CodeSourceStream {
+class ModulePathClassLocationStream : public ClassLocationStream {
   bool _has_non_jar_modules;
 public:
-  ModulePathCodeSourceStream();
+  ModulePathClassLocationStream();
   bool has_non_jar_modules() { return _has_non_jar_modules; }
 };
 
-// AllCodeSourceStreams is used to iterate over all the code sources that
+// AllClassLocationStreams is used to iterate over all the code sources that
 // are available to the application from -Xbootclasspath, -classpath and --module-path.
-// When creating an AOT cache, we store the contents from AllCodeSourceStreams
-// into an array of AOTCodeSources. See AOTCodeSourceConfig::dumptime_init_helper().
+// When creating an AOT cache, we store the contents from AllClassLocationStreams
+// into an array of AOTClassLocations. See AOTClassLocationConfig::dumptime_init_helper().
 // When loading the AOT cache in a production run, we compare the contents of the
-// stored AOTCodeSources against the current AllCodeSourceStreams to determine whether
-// the AOT cache is compatible with the current JVM. See AOTCodeSourceConfig::validate().
-class AllCodeSourceStreams {
-  BootCpCodeSourceStream _boot_cp;          // Specified by -Xbootclasspath/a
-  AppCpCodeSourceStream _app_cp;            // Specified by -classpath
-  ModulePathCodeSourceStream _module_path;  // Specified by --module-path
-  CodeSourceStream _boot_and_app_cp;        // Convenience for iterating over both _boot and _app
+// stored AOTClassLocations against the current AllClassLocationStreams to determine whether
+// the AOT cache is compatible with the current JVM. See AOTClassLocationConfig::validate().
+class AllClassLocationStreams {
+  BootCpClassLocationStream _boot_cp;          // Specified by -Xbootclasspath/a
+  AppCpClassLocationStream _app_cp;            // Specified by -classpath
+  ModulePathClassLocationStream _module_path;  // Specified by --module-path
+  ClassLocationStream _boot_and_app_cp;        // Convenience for iterating over both _boot and _app
 public:
-  BootCpCodeSourceStream& boot_cp()             { return _boot_cp; }
-  AppCpCodeSourceStream& app_cp()               { return _app_cp; }
-  ModulePathCodeSourceStream& module_path()     { return _module_path; }
-  CodeSourceStream& boot_and_app_cp()           { return _boot_and_app_cp; }
+  BootCpClassLocationStream& boot_cp()             { return _boot_cp; }
+  AppCpClassLocationStream& app_cp()               { return _app_cp; }
+  ModulePathClassLocationStream& module_path()     { return _module_path; }
+  ClassLocationStream& boot_and_app_cp()           { return _boot_and_app_cp; }
 
-  AllCodeSourceStreams() : _boot_cp(), _app_cp(), _module_path(), _boot_and_app_cp() {
+  AllClassLocationStreams() : _boot_cp(), _app_cp(), _module_path(), _boot_and_app_cp() {
     _boot_and_app_cp.add(_boot_cp);
     _boot_and_app_cp.add(_app_cp);
   }
@@ -167,7 +168,7 @@ static int compare_module_path_by_name(const char** p1, const char** p2) {
   return strcmp(*p1, *p2);
 }
 
-ModulePathCodeSourceStream::ModulePathCodeSourceStream() : CodeSourceStream(), _has_non_jar_modules(false) {
+ModulePathClassLocationStream::ModulePathClassLocationStream() : ClassLocationStream(), _has_non_jar_modules(false) {
   // Note: for handling of --module-path, see
   //   https://openjdk.org/jeps/261#Module-paths
   //   https://docs.oracle.com/en/java/javase/23/docs/api/java.base/java/lang/module/ModuleFinder.html#of(java.nio.file.Path...)
@@ -214,8 +215,8 @@ ModulePathCodeSourceStream::ModulePathCodeSourceStream() : CodeSourceStream(), _
   _array.sort(compare_module_path_by_name);
 }
 
-AOTCodeSource* AOTCodeSource::allocate(JavaThread* current, const char* path, int index,
-                                       Group group, bool from_cpattr, bool is_jrt) {
+AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* path, int index,
+                                             Group group, bool from_cpattr, bool is_jrt) {
   size_t path_length = 0;
   size_t manifest_length = 0;
   bool check_time = false;
@@ -263,7 +264,7 @@ AOTCodeSource* AOTCodeSource::allocate(JavaThread* current, const char* path, in
     + path_length + 1 /* nul-terminated */
     + manifest_length + 1; /* nul-terminated */
 
-  AOTCodeSource* cs = (AOTCodeSource*)os::malloc(cs_size, mtClassShared);
+  AOTClassLocation* cs = (AOTClassLocation*)os::malloc(cs_size, mtClassShared);
   memset(cs, 0, cs_size);
   cs->_path_length = path_length;
   cs->_manifest_length = manifest_length;
@@ -292,7 +293,7 @@ AOTCodeSource* AOTCodeSource::allocate(JavaThread* current, const char* path, in
   return cs;
 }
 
-char* AOTCodeSource::read_manifest(JavaThread* current, const char* path, size_t& manifest_length) {
+char* AOTClassLocation::read_manifest(JavaThread* current, const char* path, size_t& manifest_length) {
   manifest_length = 0;
 
   struct stat st;
@@ -323,7 +324,7 @@ char* AOTCodeSource::read_manifest(JavaThread* current, const char* path, size_t
 }
 
 // The result is resource allocated.
-char* AOTCodeSource::get_cpattr() const {
+char* AOTClassLocation::get_cpattr() const {
   if (_manifest_length == 0) {
     return nullptr;
   }
@@ -372,13 +373,13 @@ char* AOTCodeSource::get_cpattr() const {
   return found;
 }
 
-AOTCodeSource* AOTCodeSource::write_to_archive() const {
-  AOTCodeSource* archived_copy = (AOTCodeSource*)ArchiveBuilder::ro_region_alloc(total_size());
+AOTClassLocation* AOTClassLocation::write_to_archive() const {
+  AOTClassLocation* archived_copy = (AOTClassLocation*)ArchiveBuilder::ro_region_alloc(total_size());
   memcpy((char*)archived_copy, (char*)this, total_size());
   return archived_copy;
 }
 
-const char* AOTCodeSource::file_type_string() const {
+const char* AOTClassLocation::file_type_string() const {
   switch (_file_type) {
   case FileType::NORMAL: return "file";
   case FileType::DIR: return "dir";
@@ -386,7 +387,7 @@ const char* AOTCodeSource::file_type_string() const {
   }
 }
 
-bool AOTCodeSource::check(const char* runtime_path, bool has_aot_linked_classes) const {
+bool AOTClassLocation::check(const char* runtime_path, bool has_aot_linked_classes) const {
   struct stat st;
   if (os::stat(runtime_path, &st) != 0) {
     if (_file_type != FileType::NOT_EXIST) {
@@ -441,18 +442,24 @@ bool AOTCodeSource::check(const char* runtime_path, bool has_aot_linked_classes)
   return true;
 }
 
-void AOTCodeSourceConfig::dumptime_init(TRAPS) {
+void AOTClassLocationConfig::dumptime_init(JavaThread* current) {
   assert(CDSConfig::is_dumping_archive(), "");
-  _dumptime_instance = NEW_C_HEAP_OBJ(AOTCodeSourceConfig, mtClassShared);
-  _dumptime_instance->dumptime_init_helper(CHECK);
+  _dumptime_instance = NEW_C_HEAP_OBJ(AOTClassLocationConfig, mtClassShared);
+  _dumptime_instance->dumptime_init_helper(current);
+  if (current->has_pending_exception()) {
+    // we can get an exception only when we run out of metaspace, but that
+    // shouldn't happen this early in bootstrap.
+    java_lang_Throwable::print(current->pending_exception(), tty);
+    vm_exit_during_initialization("AOTClassLocationConfig::dumptime_init_helper() failed unexpectedly");
+  }
 }
 
-void AOTCodeSourceConfig::dumptime_init_helper(TRAPS) {
+void AOTClassLocationConfig::dumptime_init_helper(TRAPS) {
   ResourceMark rm;
-  GrowableCodeSourceArray tmp_array;
-  AllCodeSourceStreams all_css;
+  GrowableClassLocationArray tmp_array;
+  AllClassLocationStreams all_css;
 
-  AOTCodeSource* jrt = AOTCodeSource::allocate(THREAD, ClassLoader::get_jrt_entry()->name(),
+  AOTClassLocation* jrt = AOTClassLocation::allocate(THREAD, ClassLoader::get_jrt_entry()->name(),
                                                0, Group::MODULES_IMAGE,
                                                /*from_cpattr*/false, /*is_jrt*/true);
   tmp_array.append(jrt);
@@ -466,10 +473,10 @@ void AOTCodeSourceConfig::dumptime_init_helper(TRAPS) {
   parse(THREAD, tmp_array, all_css.module_path(), Group::MODULE_PATH, /*parse_manifest*/false);
   _module_end = tmp_array.length();
 
-  _code_sources =  MetadataFactory::new_array<AOTCodeSource*>(ClassLoaderData::the_null_class_loader_data(),
+  _class_locations =  MetadataFactory::new_array<AOTClassLocation*>(ClassLoaderData::the_null_class_loader_data(),
                                                                tmp_array.length(), CHECK);
   for (int i = 0; i < tmp_array.length(); i++) {
-    _code_sources->at_put(i, tmp_array.at(i));
+    _class_locations->at_put(i, tmp_array.at(i));
   }
 
   const char* lcp = find_lcp(all_css.boot_and_app_cp(), _dumptime_lcp_len);
@@ -513,7 +520,7 @@ static size_t find_lcp_of_two_paths(const char* p1, const char* p2, size_t max_l
 }
 
 // cheap-allocated if lcp_len > 0
-const char* AOTCodeSourceConfig::find_lcp(CodeSourceStream& css, size_t& lcp_len) {
+const char* AOTClassLocationConfig::find_lcp(ClassLocationStream& css, size_t& lcp_len) {
   const char* first_path = nullptr;
   char sep = os::file_separator()[0];
 
@@ -547,16 +554,16 @@ const char* AOTCodeSourceConfig::find_lcp(CodeSourceStream& css, size_t& lcp_len
   }
 }
 
-void AOTCodeSourceConfig::parse(JavaThread* current, GrowableCodeSourceArray& tmp_array,
-                                CodeSourceStream& css, Group group, bool parse_manifest) {
+void AOTClassLocationConfig::parse(JavaThread* current, GrowableClassLocationArray& tmp_array,
+                                   ClassLocationStream& css, Group group, bool parse_manifest) {
   for (css.start(); css.has_next(); ) {
-    add_code_source(current, tmp_array, css.get_next(), group, parse_manifest, /*from_cpattr*/false);
+    add_class_location(current, tmp_array, css.get_next(), group, parse_manifest, /*from_cpattr*/false);
   }
 }
 
-void AOTCodeSourceConfig::add_code_source(JavaThread* current, GrowableCodeSourceArray& tmp_array,
-                                          const char* path, Group group, bool parse_manifest, bool from_cpattr) {
-  AOTCodeSource* cs = AOTCodeSource::allocate(current, path, tmp_array.length(), group, from_cpattr);
+void AOTClassLocationConfig::add_class_location(JavaThread* current, GrowableClassLocationArray& tmp_array,
+                                                const char* path, Group group, bool parse_manifest, bool from_cpattr) {
+  AOTClassLocation* cs = AOTClassLocation::allocate(current, path, tmp_array.length(), group, from_cpattr);
   tmp_array.append(cs);
 
   if (!parse_manifest) {
@@ -619,7 +626,7 @@ void AOTCodeSourceConfig::add_code_source(JavaThread* current, GrowableCodeSourc
           }
         }
         if (!found_duplicate) {
-          add_code_source(current, tmp_array, libname, group, parse_manifest, /*from_cpattr*/true);
+          add_class_location(current, tmp_array, libname, group, parse_manifest, /*from_cpattr*/true);
         }
       }
 
@@ -628,13 +635,13 @@ void AOTCodeSourceConfig::add_code_source(JavaThread* current, GrowableCodeSourc
   }
 }
 
-AOTCodeSource const* AOTCodeSourceConfig::code_source_at(int index) const {
-  return _code_sources->at(index);
+AOTClassLocation const* AOTClassLocationConfig::class_location_at(int index) const {
+  return _class_locations->at(index);
 }
 
-int AOTCodeSourceConfig::get_module_shared_path_index(Symbol* location) const {
+int AOTClassLocationConfig::get_module_shared_path_index(Symbol* location) const {
   if (location->starts_with("jrt:", 4)) {
-    assert(code_source_at(0)->is_modules_image(), "sanity");
+    assert(class_location_at(0)->is_modules_image(), "sanity");
     return 0;
   }
 
@@ -651,7 +658,7 @@ int AOTCodeSourceConfig::get_module_shared_path_index(Symbol* location) const {
   ResourceMark rm;
   const char* file = ClassLoader::uri_to_path(location->as_C_string());
   for (int i = module_path_start_index(); i < module_path_end_index(); i++) {
-    const AOTCodeSource* cs = code_source_at(i);
+    const AOTClassLocation* cs = class_location_at(i);
     assert(!cs->has_unnamed_module(), "must be");
     bool same = os::same_files(file, cs->path());
     log_debug(class, path)("get_module_shared_path_index (%d) %s : %s = %s", i,
@@ -664,11 +671,11 @@ int AOTCodeSourceConfig::get_module_shared_path_index(Symbol* location) const {
 }
 
 // We allow non-empty dirs as long as no classes have been loaded from them.
-void AOTCodeSourceConfig::check_nonempty_dirs() const {
+void AOTClassLocationConfig::check_nonempty_dirs() const {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
   bool has_nonempty_dir = false;
-  dumptime_iterate([&](AOTCodeSource* cs) {
+  dumptime_iterate([&](AOTClassLocation* cs) {
     if (cs->index() > _max_used_index) {
       return false; // stop iterating
     }
@@ -686,26 +693,26 @@ void AOTCodeSourceConfig::check_nonempty_dirs() const {
   }
 }
 
-AOTCodeSourceConfig* AOTCodeSourceConfig::write_to_archive() const {
-  Array<AOTCodeSource*>* archived_copy = ArchiveBuilder::new_ro_array<AOTCodeSource*>(_code_sources->length());
-  for (int i = 0; i < _code_sources->length(); i++) {
-    archived_copy->at_put(i, _code_sources->at(i)->write_to_archive());
+AOTClassLocationConfig* AOTClassLocationConfig::write_to_archive() const {
+  Array<AOTClassLocation*>* archived_copy = ArchiveBuilder::new_ro_array<AOTClassLocation*>(_class_locations->length());
+  for (int i = 0; i < _class_locations->length(); i++) {
+    archived_copy->at_put(i, _class_locations->at(i)->write_to_archive());
     ArchivePtrMarker::mark_pointer((address*)archived_copy->adr_at(i));
   }
 
-  AOTCodeSourceConfig* dumped = (AOTCodeSourceConfig*)ArchiveBuilder::ro_region_alloc(sizeof(AOTCodeSourceConfig));
-  memcpy(dumped, this, sizeof(AOTCodeSourceConfig));
-  dumped->_code_sources = archived_copy;
-  ArchivePtrMarker::mark_pointer(&dumped->_code_sources);
+  AOTClassLocationConfig* dumped = (AOTClassLocationConfig*)ArchiveBuilder::ro_region_alloc(sizeof(AOTClassLocationConfig));
+  memcpy(dumped, this, sizeof(AOTClassLocationConfig));
+  dumped->_class_locations = archived_copy;
+  ArchivePtrMarker::mark_pointer(&dumped->_class_locations);
 
   return dumped;
 }
 
-bool AOTCodeSourceConfig::check_classpaths(bool is_boot_classpath, bool has_aot_linked_classes,
-                                           int index_start, int index_end,
-                                           CodeSourceStream& runtime_css,
-                                           bool use_lcp_match, const char* runtime_lcp,
-                                           size_t runtime_lcp_len) const {
+bool AOTClassLocationConfig::check_classpaths(bool is_boot_classpath, bool has_aot_linked_classes,
+                                              int index_start, int index_end,
+                                              ClassLocationStream& runtime_css,
+                                              bool use_lcp_match, const char* runtime_lcp,
+                                              size_t runtime_lcp_len) const {
   if (index_start >= index_end && runtime_css.is_empty()) { // nothing to check
     return true;
   }
@@ -728,7 +735,7 @@ bool AOTCodeSourceConfig::check_classpaths(bool is_boot_classpath, bool has_aot_
   runtime_css.start();
   for (int i = index_start; i < index_end; i++) {
     ResourceMark rm;
-    const AOTCodeSource* cs = code_source_at(i);
+    const AOTClassLocation* cs = class_location_at(i);
     const char* effective_dumptime_path = cs->path();
     if (use_lcp_match && _dumptime_lcp_len > 0) {
       effective_dumptime_path = substitute(effective_dumptime_path, _dumptime_lcp_len, runtime_lcp, runtime_lcp_len);
@@ -770,12 +777,12 @@ bool AOTCodeSourceConfig::check_classpaths(bool is_boot_classpath, bool has_aot_
   return true;
 }
 
-bool AOTCodeSourceConfig::file_exists(const char* filename) const{
+bool AOTClassLocationConfig::file_exists(const char* filename) const{
   struct stat st;
   return (os::stat(filename, &st) == 0 && st.st_size > 0);
 }
 
-bool AOTCodeSourceConfig::check_paths_existence(CodeSourceStream& runtime_css) const {
+bool AOTClassLocationConfig::check_paths_existence(ClassLocationStream& runtime_css) const {
   bool exist = false;
   while (runtime_css.has_next()) {
     const char* path = runtime_css.get_next();
@@ -787,9 +794,9 @@ bool AOTCodeSourceConfig::check_paths_existence(CodeSourceStream& runtime_css) c
   return exist;
 }
 
-bool AOTCodeSourceConfig::check_module_paths(bool has_aot_linked_classes, int index_start, int index_end,
-                                             CodeSourceStream& runtime_css,
-                                             bool* has_extra_module_paths) const {
+bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, int index_start, int index_end,
+                                                ClassLocationStream& runtime_css,
+                                                bool* has_extra_module_paths) const {
   if (index_start >= index_end && runtime_css.is_empty()) { // nothing to check
     return true;
   }
@@ -810,7 +817,7 @@ bool AOTCodeSourceConfig::check_module_paths(bool has_aot_linked_classes, int in
 
   // Make sure all the dumptime module paths exist and are unchanged
   for (int i = index_start; i < index_end; i++) {
-    const AOTCodeSource* cs = code_source_at(i);
+    const AOTClassLocation* cs = class_location_at(i);
     const char* dumptime_path = cs->path();
 
     assert(!cs->from_cpattr(), "not applicable for module path");
@@ -826,7 +833,7 @@ bool AOTCodeSourceConfig::check_module_paths(bool has_aot_linked_classes, int in
   // Runtime:     A:B:C
   runtime_css.start();
   for (int i = index_start; i < index_end; i++) {
-    const AOTCodeSource* cs = code_source_at(i);
+    const AOTClassLocation* cs = class_location_at(i);
     const char* dumptime_path = cs->path();
 
     while (true) {
@@ -835,7 +842,7 @@ bool AOTCodeSourceConfig::check_module_paths(bool has_aot_linked_classes, int in
         *has_extra_module_paths = true;
         return true;
       }
-      // Both this->code_sources() and runtime_css are alphabetically sorted. Skip
+      // Both this->class_locations() and runtime_css are alphabetically sorted. Skip
       // items in runtime_css until we see dumptime_path.
       const char* runtime_path = runtime_css.get_next();
       if (!os::same_files(dumptime_path, runtime_path)) {
@@ -854,13 +861,13 @@ bool AOTCodeSourceConfig::check_module_paths(bool has_aot_linked_classes, int in
   return true;
 }
 
-void AOTCodeSourceConfig::print_dumptime_classpath(LogStream& ls, int index_start, int index_end,
-                                                   bool do_substitute, size_t remove_prefix_len,
-                                                   const char* prepend, size_t prepend_len) const {
+void AOTClassLocationConfig::print_dumptime_classpath(LogStream& ls, int index_start, int index_end,
+                                                      bool do_substitute, size_t remove_prefix_len,
+                                                      const char* prepend, size_t prepend_len) const {
   const char* sep = "";
   for (int i = index_start; i < index_end; i++) {
     ResourceMark rm;
-    const AOTCodeSource* cs = code_source_at(i);
+    const AOTClassLocation* cs = class_location_at(i);
     const char* path = cs->path();
     if (!cs->from_cpattr()) {
       ls.print("%s", sep);
@@ -874,10 +881,10 @@ void AOTCodeSourceConfig::print_dumptime_classpath(LogStream& ls, int index_star
 }
 
 // Returned path is resource-allocated
-const char* AOTCodeSourceConfig::substitute(const char* path,         // start with this path (which was recorded from dump time)
-                                            size_t remove_prefix_len, // remove this number of chars from the beginning
-                                            const char* prepend,      // prepend this string
-                                            size_t prepend_len) {     // length of the prepended string
+const char* AOTClassLocationConfig::substitute(const char* path,         // start with this path (which was recorded from dump time)
+                                               size_t remove_prefix_len, // remove this number of chars from the beginning
+                                               const char* prepend,      // prepend this string
+                                               size_t prepend_len) {     // length of the prepended string
   size_t len = strlen(path);
   assert(len > remove_prefix_len, "sanity");
   assert(prepend_len == strlen(prepend), "sanity");
@@ -892,9 +899,9 @@ const char* AOTCodeSourceConfig::substitute(const char* path,         // start w
 }
 
 // For performance, we avoid using LCP match if there's at least one
-// CodeSource can be matched exactly: this means all other CodeSources must be
+// AOTClassLocation can be matched exactly: this means all other AOTClassLocations must be
 // matched exactly.
-bool AOTCodeSourceConfig::need_lcp_match(AllCodeSourceStreams& all_css) const {
+bool AOTClassLocationConfig::need_lcp_match(AllClassLocationStreams& all_css) const {
   if (app_cp_end_index() == boot_cp_start_index()) {
     // No need to use lcp-match when there are no boot/app paths.
     // TODO: LCP-match not yet supported for modules.
@@ -909,10 +916,10 @@ bool AOTCodeSourceConfig::need_lcp_match(AllCodeSourceStreams& all_css) const {
   }
 }
 
-bool AOTCodeSourceConfig::need_lcp_match_helper(int start, int end, CodeSourceStream& css) const {
+bool AOTClassLocationConfig::need_lcp_match_helper(int start, int end, ClassLocationStream& css) const {
   int i = start;
   for (css.start(); i < end && css.has_next(); ) {
-    const AOTCodeSource* cs = code_source_at(i++);
+    const AOTClassLocation* cs = class_location_at(i++);
     const char* runtime_path = css.get_next();
     if (cs->must_exist() && os::same_files(cs->path(), runtime_path)) {
       // Most likely, we will come to here at the first iteration.
@@ -922,17 +929,17 @@ bool AOTCodeSourceConfig::need_lcp_match_helper(int start, int end, CodeSourceSt
   return true;
 }
 
-bool AOTCodeSourceConfig::validate(bool has_aot_linked_classes, bool* has_extra_module_paths) const {
+bool AOTClassLocationConfig::validate(bool has_aot_linked_classes, bool* has_extra_module_paths) const {
   ResourceMark rm;
-  AllCodeSourceStreams all_css;
+  AllClassLocationStreams all_css;
 
   const char* jrt = ClassLoader::get_jrt_entry()->name();
-  bool success = code_source_at(0)->check(jrt, has_aot_linked_classes);
+  bool success = class_location_at(0)->check(jrt, has_aot_linked_classes);
   log_info(class, path)("Modules image %s validation: %s", jrt, success ? "passed" : "failed");
   if (!success) {
     return false;
   }
-  if (code_sources()->length() == 1) {
+  if (class_locations()->length() == 1) {
     if ((module_path_start_index() >= module_path_end_index()) && Arguments::get_property("jdk.module.path") != nullptr) {
       *has_extra_module_paths = true;
     } else {

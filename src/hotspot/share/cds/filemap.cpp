@@ -22,7 +22,7 @@
  *
  */
 
-#include "cds/aotCodeSource.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveHeapWriter.hpp"
@@ -232,7 +232,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 
   _verify_local = BytecodeVerificationLocal;
   _verify_remote = BytecodeVerificationRemote;
-  _has_platform_or_app_classes = AOTCodeSourceConfig::dumptime()->has_platform_or_app_classes();
+  _has_platform_or_app_classes = AOTClassLocationConfig::dumptime()->has_platform_or_app_classes();
   _requested_base_address = (char*)SharedBaseAddress;
   _mapped_base_address = (char*)SharedBaseAddress;
   _allow_archiving_with_java_agent = AllowArchivingWithJavaAgent;
@@ -277,7 +277,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- early_serialized_data_offset:   0x%zx", _early_serialized_data_offset);
   st->print_cr("- serialized_data_offset:         0x%zx", _serialized_data_offset);
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
-  st->print_cr("- code_source_config_offset:      0x%zx", _code_source_config_offset);
+  st->print_cr("- class_location_config_offset:   0x%zx", _class_location_config_offset);
   st->print_cr("- verify_local:                   %d", _verify_local);
   st->print_cr("- verify_remote:                  %d", _verify_remote);
   st->print_cr("- has_platform_or_app_classes:    %d", _has_platform_or_app_classes);
@@ -299,10 +299,10 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- has_archived_invokedynamic      %d", _has_archived_invokedynamic);
 }
 
-bool FileMapInfo::validate_code_source() {
+bool FileMapInfo::validate_class_location() {
   assert(CDSConfig::is_using_archive(), "runtime only");
 
-  AOTCodeSourceConfig* config = header()->code_source_config();
+  AOTClassLocationConfig* config = header()->class_location_config();
   bool has_extra_module_paths;
   if (!config->validate(header()->has_aot_linked_classes(), &has_extra_module_paths)) {
     if (PrintSharedArchiveAndExit) {
@@ -341,7 +341,7 @@ bool FileMapInfo::validate_code_source() {
   if (_classpath_entries_for_jvmti != nullptr) {
     os::free(_classpath_entries_for_jvmti);
   }
-  size_t sz = sizeof(ClassPathEntry*) * AOTCodeSourceConfig::runtime()->length();
+  size_t sz = sizeof(ClassPathEntry*) * AOTClassLocationConfig::runtime()->length();
   _classpath_entries_for_jvmti = (ClassPathEntry**)os::malloc(sz, mtClass);
   memset((void*)_classpath_entries_for_jvmti, 0, sz);
 #endif
@@ -1916,8 +1916,8 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
   }
   ClassPathEntry* ent = _classpath_entries_for_jvmti[i];
   if (ent == nullptr) {
-    const AOTCodeSource* cs = AOTCodeSourceConfig::runtime()->code_source_at(i);
-    const char* path = cs->path();
+    const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(i);
+    const char* path = cl->path();
     struct stat st;
     if (os::stat(path, &st) != 0) {
       char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
@@ -1948,7 +1948,7 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
 ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle class_loader, TRAPS) {
   int path_index = ik->shared_classpath_index();
   assert(path_index >= 0, "should be called for shared built-in classes only");
-  assert(path_index < AOTCodeSourceConfig::runtime()->length(), "sanity");
+  assert(path_index < AOTClassLocationConfig::runtime()->length(), "sanity");
 
   ClassPathEntry* cpe = get_classpath_entry_for_jvmti(path_index, CHECK_NULL);
   assert(cpe != nullptr, "must be");
@@ -1958,9 +1958,9 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle cl
   const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                       name->utf8_length());
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
-  const AOTCodeSource* cs = AOTCodeSourceConfig::runtime()->code_source_at(path_index);
+  const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(path_index);
   ClassFileStream* cfs;
-  if (class_loader() != nullptr && cs->is_multi_release_jar()) {
+  if (class_loader() != nullptr && cl->is_multi_release_jar()) {
     // This class was loaded from a multi-release JAR file during dump time. The
     // process for finding its classfile is complex. Let's defer to the Java code
     // in java.lang.ClassLoader.

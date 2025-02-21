@@ -24,7 +24,7 @@
 
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
-#include "cds/aotCodeSource.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
@@ -90,7 +90,7 @@ public:
   void sort_methods();
   void sort_methods(InstanceKlass* ik) const;
   void remark_pointers_for_instance_klass(InstanceKlass* k, bool should_mark) const;
-  void write_archive(char* serialized_data, AOTCodeSourceConfig* cs_config);
+  void write_archive(char* serialized_data, AOTClassLocationConfig* cl_config);
   void gather_array_klasses();
 
 public:
@@ -139,7 +139,7 @@ public:
     make_klasses_shareable();
 
     char* serialized_data;
-    AOTCodeSourceConfig* cs_config;
+    AOTClassLocationConfig* cl_config;
     {
       // Write the symbol table and system dictionaries to the RO space.
       // Note that these tables still point to the *original* objects, so
@@ -150,7 +150,7 @@ public:
 
       ArchiveBuilder::OtherROAllocMark mark;
       SystemDictionaryShared::write_to_archive(false);
-      cs_config = AOTCodeSourceConfig::dumptime()->write_to_archive();
+      cl_config = AOTClassLocationConfig::dumptime()->write_to_archive();
       DynamicArchive::dump_array_klasses();
       AOTClassLinker::write_to_archive();
 
@@ -164,7 +164,7 @@ public:
 
     relocate_to_requested();
 
-    write_archive(serialized_data, cs_config);
+    write_archive(serialized_data, cl_config);
     release_header();
     DynamicArchive::post_dump();
 
@@ -337,8 +337,8 @@ void DynamicArchiveBuilder::remark_pointers_for_instance_klass(InstanceKlass* k,
   }
 }
 
-void DynamicArchiveBuilder::write_archive(char* serialized_data, AOTCodeSourceConfig* cs_config) {
-  _header->set_code_source_config(cs_config);
+void DynamicArchiveBuilder::write_archive(char* serialized_data, AOTClassLocationConfig* cl_config) {
+  _header->set_class_location_config(cl_config);
   _header->set_serialized_data(serialized_data);
 
   FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();
@@ -391,7 +391,7 @@ public:
       log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
               "for testing purposes only and should not be used in a production environment");
     }
-    AOTCodeSourceConfig::dumptime_check_nonempty_dirs();
+    AOTClassLocationConfig::dumptime_check_nonempty_dirs();
     _builder.doit();
   }
   ~VM_PopulateDynamicDumpSharedSpace() {

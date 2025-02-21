@@ -24,7 +24,7 @@
 
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
-#include "cds/aotCodeSource.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -331,7 +331,7 @@ void MetaspaceShared::initialize_for_static_dump() {
 // Called by universe_post_init()
 void MetaspaceShared::post_initialize(TRAPS) {
   if (CDSConfig::is_using_archive()) {
-    int size = AOTCodeSourceConfig::runtime()->length();
+    int size = AOTClassLocationConfig::runtime()->length();
     if (size > 0) {
       CDSProtectionDomain::allocate_shared_data_arrays(size, CHECK);
     }
@@ -548,7 +548,7 @@ private:
     SymbolTable::write_to_archive(symbols);
   }
   char* dump_early_read_only_tables();
-  char* dump_read_only_tables(AOTCodeSourceConfig*& cs_config);
+  char* dump_read_only_tables(AOTClassLocationConfig*& cl_config);
 
 public:
 
@@ -603,11 +603,11 @@ char* VM_PopulateDumpSharedSpace::dump_early_read_only_tables() {
   return start;
 }
 
-char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTCodeSourceConfig*& cs_config) {
+char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*& cl_config) {
   ArchiveBuilder::OtherROAllocMark mark;
 
   SystemDictionaryShared::write_to_archive();
-  cs_config = AOTCodeSourceConfig::dumptime()->write_to_archive();
+  cl_config = AOTClassLocationConfig::dumptime()->write_to_archive();
   AOTClassLinker::write_to_archive();
   MetaspaceShared::write_method_handle_intrinsics();
 
@@ -635,7 +635,7 @@ void VM_PopulateDumpSharedSpace::doit() {
     SystemDictionary::get_all_method_handle_intrinsics(_pending_method_handle_intrinsics);
   }
 
-  AOTCodeSourceConfig::dumptime_check_nonempty_dirs();
+  AOTClassLocationConfig::dumptime_check_nonempty_dirs();
 
   NOT_PRODUCT(SystemDictionary::verify();)
 
@@ -669,8 +669,8 @@ void VM_PopulateDumpSharedSpace::doit() {
   dump_shared_symbol_table(_builder.symbols());
 
   char* early_serialized_data = dump_early_read_only_tables();
-  AOTCodeSourceConfig* cs_config;
-  char* serialized_data = dump_read_only_tables(cs_config);
+  AOTClassLocationConfig* cl_config;
+  char* serialized_data = dump_read_only_tables(cl_config);
 
   SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
 
@@ -686,7 +686,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   _map_info->set_early_serialized_data(early_serialized_data);
   _map_info->set_serialized_data(serialized_data);
   _map_info->set_cloned_vtables(CppVtables::vtables_serialized_base());
-  _map_info->header()->set_code_source_config(cs_config);
+  _map_info->header()->set_class_location_config(cl_config);
 }
 
 class CollectCLDClosure : public CLDClosure {
@@ -1636,7 +1636,7 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
     return result;
   }
 
-  if (!mapinfo->validate_code_source()) {
+  if (!mapinfo->validate_class_location()) {
     unmap_archive(mapinfo);
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
