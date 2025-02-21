@@ -186,11 +186,11 @@ void MemSummaryReporter::report() {
     MallocMemory* malloc_memory = _malloc_snapshot->by_type(mem_tag);
     VirtualMemory* virtual_memory = _vm_snapshot->by_type(mem_tag);
 
-    report_summary_of_tag(mem_tag, malloc_memory, virtual_memory);
+    report_summary_of_type(mem_tag, malloc_memory, virtual_memory);
   }
 }
 
-void MemSummaryReporter::report_summary_of_tag(MemTag mem_tag,
+void MemSummaryReporter::report_summary_of_type(MemTag mem_tag,
   MallocMemory*  malloc_memory, VirtualMemory* virtual_memory) {
 
   size_t reserved_amount  = reserved_total (malloc_memory, virtual_memory);
@@ -536,7 +536,7 @@ void MemSummaryDiffReporter::report_diff() {
     MemTag mem_tag = NMTUtil::index_to_tag(index);
     // thread stack is reported as part of thread category
     if (mem_tag == mtThreadStack) continue;
-    diff_summary_of_tag(mem_tag,
+    diff_summary_of_type(mem_tag,
       _early_baseline.malloc_memory(mem_tag),
       _early_baseline.virtual_memory(mem_tag),
       _early_baseline.metaspace_stats(),
@@ -606,7 +606,7 @@ void MemSummaryDiffReporter::print_virtual_memory_diff(size_t current_reserved, 
 }
 
 
-void MemSummaryDiffReporter::diff_summary_of_tag(MemTag mem_tag,
+void MemSummaryDiffReporter::diff_summary_of_type(MemTag mem_tag,
   const MallocMemory* early_malloc, const VirtualMemory* early_vm,
   const MetaspaceCombinedStats& early_ms,
   const MallocMemory* current_malloc, const VirtualMemory* current_vm,
