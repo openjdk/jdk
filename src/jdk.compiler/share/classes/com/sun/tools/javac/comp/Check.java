@@ -237,20 +237,16 @@ public class Check {
      */
     void warnDeprecated(DiagnosticPosition pos, Symbol sym) {
         if (sym.isDeprecatedForRemoval()) {
-            if (!lint.isSuppressed(LintCategory.REMOVAL)) {
-                boolean verbose = lint.isEnabled(LintCategory.REMOVAL);
-                if (sym.kind == MDL) {
-                    removalHandler.report(pos, LintWarnings.HasBeenDeprecatedForRemovalModule(sym), verbose);
-                } else {
-                    removalHandler.report(pos, LintWarnings.HasBeenDeprecatedForRemoval(sym, sym.location()), verbose);
-                }
-            }
-        } else if (!lint.isSuppressed(LintCategory.DEPRECATION)) {
-            boolean verbose = lint.isEnabled(LintCategory.DEPRECATION);
             if (sym.kind == MDL) {
-                deprecationHandler.report(pos, LintWarnings.HasBeenDeprecatedModule(sym), verbose);
+                removalHandler.report(lint, pos, LintWarnings.HasBeenDeprecatedForRemovalModule(sym));
             } else {
-                deprecationHandler.report(pos, LintWarnings.HasBeenDeprecated(sym, sym.location()), verbose);
+                removalHandler.report(lint, pos, LintWarnings.HasBeenDeprecatedForRemoval(sym, sym.location()));
+            }
+        } else {
+            if (sym.kind == MDL) {
+                deprecationHandler.report(lint, pos, LintWarnings.HasBeenDeprecatedModule(sym));
+            } else {
+                deprecationHandler.report(lint, pos, LintWarnings.HasBeenDeprecated(sym, sym.location()));
             }
         }
     }
@@ -286,8 +282,7 @@ public class Check {
      *  @param msg        A string describing the problem.
      */
     public void warnUnchecked(DiagnosticPosition pos, LintWarning warnKey) {
-        if (!lint.isSuppressed(LintCategory.UNCHECKED))
-            uncheckedHandler.report(pos, warnKey, lint.isEnabled(LintCategory.UNCHECKED));
+        uncheckedHandler.report(lint, pos, warnKey);
     }
 
     /**

@@ -26,6 +26,7 @@
 package com.sun.tools.javac.code;
 
 import com.sun.tools.javac.code.DeferredLintHandler;
+import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
@@ -69,9 +70,6 @@ public class Preview {
     /** flag: are preview features enabled */
     private final boolean enabled;
 
-    /** flag: is the "preview" lint category enabled? */
-    private final boolean verbose;
-
     /** the deferred lint warning handler */
     private final DeferredLintHandler deferredLintHandler;
 
@@ -88,6 +86,7 @@ public class Preview {
 
     private final Names names;
     private final Log log;
+    private final Lint rootLint;
     private final Source source;
 
     protected static final Context.Key<Preview> previewKey = new Context.Key<>();
@@ -107,8 +106,8 @@ public class Preview {
         names = Names.instance(context);
         enabled = options.isSet(PREVIEW);
         log = Log.instance(context);
+        rootLint = Lint.instance(context);
         source = Source.instance(context);
-        verbose = Lint.instance(context).isEnabled(LintCategory.PREVIEW);
         deferredLintHandler = DeferredLintHandler.instance(context);
         previewHandler = new MandatoryWarningHandler(log, source, true, LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
@@ -196,10 +195,9 @@ public class Preview {
         Assert.check(isEnabled());
         Assert.check(isPreview(feature));
         markUsesPreview(pos);
-        previewHandler.report(pos, feature.isPlural() ?
+        previewHandler.report(lint, pos, feature.isPlural() ?
                 LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
-                LintWarnings.PreviewFeatureUse(feature.nameFragment()),
-            lint.isEnabled(LintCategory.PREVIEW));
+                LintWarnings.PreviewFeatureUse(feature.nameFragment()));
     }
 
     /**
@@ -209,7 +207,7 @@ public class Preview {
      */
     public void warnPreview(JavaFileObject classfile, int majorVersion) {
         Assert.check(isEnabled());
-        if (verbose) {
+        if (rootLint.isEnabled(LintCategory.PREVIEW)) {
             log.mandatoryWarning(null,
                     LintWarnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
         }
@@ -225,7 +223,7 @@ public class Preview {
     }
 
     public void reportPreviewWarning(DiagnosticPosition pos, LintWarning warnKey) {
-        previewHandler.report(pos, warnKey, verbose);
+        previewHandler.report(rootLint, pos, warnKey);
     }
 
     public boolean usesPreview(JavaFileObject file) {
