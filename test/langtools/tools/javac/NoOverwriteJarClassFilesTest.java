@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
- * @run main NoOverwriteJarClassFilesByDefault
+ * @run junit NoOverwriteJarClassFilesTest
  */
 
 import toolbox.JavacTask;
@@ -42,10 +42,15 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test makes two specific assertions about javac behaviour when source
@@ -64,7 +69,7 @@ import java.util.zip.ZipFile;
  * class name may be overwritten, and the resulting set of class files in the
  * current directory may not be usable.
  */
-public class NoOverwriteJarClassFilesByDefault {
+public class NoOverwriteJarClassFilesTest {
 
     private static final String OLD_LIB_SOURCE =
             """
@@ -94,7 +99,8 @@ public class NoOverwriteJarClassFilesByDefault {
     private static final String LIB_CLASS_NAME = "lib/LibClass.class";
     private static final Path LIB_JAR = Path.of("lib.jar");
 
-    public static void main(String[] args) throws IOException {
+    @Test
+    public void jarFileNotModified() throws IOException {
         ToolBox tb = new ToolBox();
         tb.createDirectories("lib");
         tb.writeFile(LIB_SOURCE_NAME, OLD_LIB_SOURCE);
@@ -156,17 +162,11 @@ public class NoOverwriteJarClassFilesByDefault {
         // wrote the class file back to the JAR (bad) then that should now have
         // different contents. Note that the modification time of the class file
         // is NOT modified, even if the JAR is updated, so we cannot test that.
-        if (getLibCrc() != originalLibCrc) {
-            throw new AssertionError("Class library contents were modified in the JAR file.");
-        }
-        if (!Arrays.equals(Files.readAllBytes(LIB_JAR), originalJarContents)) {
-            throw new AssertionError("Jar file was modified.");
-        }
+        assertEquals(originalLibCrc, getLibCrc(), "Class library contents were modified in the JAR file.");
+        assertArrayEquals(originalJarContents, Files.readAllBytes(LIB_JAR), "Jar file was modified.");
 
         // Assertion 2: An output class file was written to the current directory.
-        if (!Files.exists(outputClassFile)) {
-            throw new AssertionError("Output class file was not written to the current directory.");
-        }
+        assertTrue(Files.exists(outputClassFile), "Output class file was not written to current directory.");
     }
 
     // Note: JarOutputStream only writes modification time, not creation time, but
@@ -188,7 +188,10 @@ public class NoOverwriteJarClassFilesByDefault {
 
     // ---- Debug helper methods ----
     private static String format(ZipEntry e) {
-        return String.format("name: %s, size: %s, modified: %s\n", e.getName(), e.getSize(), toLocalTime(e.getLastModifiedTime()));
+        return String.format("name: %s, size: %s, modified: %s\n",
+                e.getName(),
+                e.getSize(),
+                toLocalTime(e.getLastModifiedTime()));
     }
 
     private static String toLocalTime(FileTime t) {
