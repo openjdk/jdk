@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Intel Corporation. All rights reserved.
+ * Copyright (c) 2025, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -131,7 +131,7 @@ static address mask_limb5() {
  *                                                     +--+--+--+--+--+--+--+--+
  *          Acc1 = Acc1 + Acc2
  *      ---- done
- * 
+ *
  * At this point the result in Acc1 can overflow by 1 Modulus and needs carry
  * propagation. Subtract one modulus, carry-propagate both results and select
  * (constant-time) the positive number of the two
@@ -329,14 +329,15 @@ void montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Regi
  *                                                     +--+--+--+--+  +--+
  *          Acc1 = Acc1 + Acc2
  *      ---- done
- * 
+ *
  * At this point the result in Acc1 can overflow by 1 Modulus and needs carry
  * propagation. Subtract one modulus, carry-propagate both results and select
  * (constant-time) the positive number of the two
  */
-void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const Register rLimbs, 
-  const Register tmp_rax, const Register tmp_rdx, const Register tmp1, const Register tmp2, 
-  const Register tmp3, const Register tmp4, const Register tmp5, const Register tmp6, const Register tmp7, MacroAssembler* _masm) {
+void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const Register rLimbs,
+  const Register tmp_rax, const Register tmp_rdx, const Register tmp1, const Register tmp2,
+  const Register tmp3, const Register tmp4, const Register tmp5, const Register tmp6,
+  const Register tmp7, MacroAssembler* _masm) {
   Register rscratch = tmp1;
 
   // Inputs
@@ -439,7 +440,7 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
   __ vpsubq(Acc2, Acc1, Modulus, Assembler::AVX_256bit);
   __ vmovdqu(Address(rsp, -32), Acc2); //Assembler::AVX_256bit
 
-  // Carry propagate the subtraction result first (since the last carry is used 
+  // Carry propagate the subtraction result first (since the last carry is used
   // to select result)
   // acc1  = tmp2;
   // acc2  = tmp3;
@@ -455,7 +456,7 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
     if (i==4) break;
     __ sarq(carry, 52);
   }
-  __ sarq(carry, 63); 
+  __ sarq(carry, 63);
   __ notq(carry); //select
   Register select = carry;
   carry = tmp7;
@@ -524,7 +525,7 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
     __ movq(rLimbs, c_rarg2); // free-up rdx
     #endif
 
-    montgomeryMultiplyAVX2(aLimbs, bLimbs, rLimbs, rax, rdx, 
+    montgomeryMultiplyAVX2(aLimbs, bLimbs, rLimbs, rax, rdx,
                            tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, _masm);
     #ifdef _WIN64
     __ pop(rdi);

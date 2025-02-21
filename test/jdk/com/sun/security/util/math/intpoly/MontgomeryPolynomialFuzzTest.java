@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Intel Corporation. All rights reserved.
+ * Copyright (c) 2025, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -67,7 +67,7 @@ public class MontgomeryPolynomialFuzzTest {
             ref.add(BigInteger.valueOf(limbs[i]).shiftLeft(i*52));
         }
         if (ref.compareTo(mod)!=-1) {
-            throw new RuntimeException("SEED[" + seed + "]: " + 
+            throw new RuntimeException("SEED[" + seed + "]: " +
             ref.toString(16) + " != " + mod.toString(16));
         }
     }
@@ -76,7 +76,7 @@ public class MontgomeryPolynomialFuzzTest {
             ImmutableIntegerModuloP testValue, long seed) {
         BigInteger test = testValue.asBigInteger();
         if (!reference.equals(test)) {
-            throw new RuntimeException("SEED[" + seed + "]: " + 
+            throw new RuntimeException("SEED[" + seed + "]: " +
                 reference.toString(16) + " != " + test.toString(16));
         }
     }
