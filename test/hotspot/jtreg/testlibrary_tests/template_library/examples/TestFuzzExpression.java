@@ -50,6 +50,7 @@ import compiler.lib.template_library.Library;
 import compiler.lib.template_library.IRTestClass;
 import compiler.lib.template_library.Type;
 import compiler.lib.template_library.Expression;
+import compiler.lib.template_library.Value;
 
 /**
  * This is a basic expression fuzzer: it generates random expressions using {@link Library.Expression},
@@ -88,9 +89,12 @@ public class TestFuzzExpression {
                                                              "compiler.lib.verify.*"));
 
         var template1 = Template.make("type", (Type type)-> {
-            Expression exp = Expression.make(type, Type.primitives(), 2);
-            List<Object> args = exp.randomArgs();
+            Expression expression = Expression.make(type, Type.primitives(), 2);
+            List<Value> argValues = expression.randomArgValues();
+            List<Object> def = argValues.stream().map(v -> v.defTokens()).toList();
+            List<Object> use = argValues.stream().map(v -> v.useTokens()).toList();
             return body(
+                def,
                 """
                 // --- $test start ---
                 // Using $reference
@@ -100,7 +104,7 @@ public class TestFuzzExpression {
                 public static Object $reference() {
                     try {
                 """,
-                "        return ", exp.withArgs(args), ";\n",
+                "        return ", expression.withArgs(use), ";\n",
                 """
                     } catch (Exception e) {
                         return e;
@@ -111,7 +115,7 @@ public class TestFuzzExpression {
                 public static Object $test() {
                     try {
                 """,
-                "        return ", exp.withArgs(args), ";\n",
+                "        return ", expression.withArgs(use), ";\n",
                 """
                     } catch (Exception e) {
                         return e;
@@ -130,7 +134,7 @@ public class TestFuzzExpression {
         });
 
         var template2 = Template.make("type", (Type type)-> {
-            Expression exp = Expression.make(type, Type.primitives(), 2);
+            Expression expression = Expression.make(type, Type.primitives(), 2);
             return body(
                 """
                 // --- $test start ---
@@ -143,7 +147,7 @@ public class TestFuzzExpression {
                 public static Object $test() {
                     try {
                 """,
-                "        return ", exp.withRandomArgs(), ";\n",
+                "        return ", expression.withRandomArgs(), ";\n",
                 """
                     } catch (Exception e) {
                         return e;

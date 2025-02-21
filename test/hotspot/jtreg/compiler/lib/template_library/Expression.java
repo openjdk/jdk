@@ -23,11 +23,14 @@
 
 package compiler.lib.template_library;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
 
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateWithArgs;
 import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.setFuelCost;
 
 /**
  * TODO: description
@@ -49,8 +52,8 @@ public final class Expression {
         return template.withArgs(args);
     }
 
-    public final List<Object> randomArgs() {
-        return types.stream().map(type -> type.con()).toList();
+    public final List<Value> randomArgValues() {
+        return types.stream().map(Value::makeRandom).toList();
     }
 
     // We would like to use identical args multiple times, but possible field / variable defs have to happen only once.
@@ -59,7 +62,15 @@ public final class Expression {
     // - def-tokens: define fields/vars, or do nothing if we reference something that already exists / con.
     // - use-tokens: reference defined fields/vars, or just constant.
     public final TemplateWithArgs withRandomArgs() {
-        return withArgs(randomArgs());
+        List<Value> argValues = randomArgValues();
+        List<Object> def = argValues.stream().map(v -> v.defTokens()).toList();
+        List<Object> use = argValues.stream().map(v -> v.useTokens()).toList();
+        var template = Template.make(() -> body(
+            setFuelCost(0),
+            def,
+            withArgs(use)
+        ));
+        return template.withArgs();
     }
 
     private interface ExpressionGenerator {
@@ -138,5 +149,4 @@ public final class Expression {
             }
         }
     }
-
 } 
