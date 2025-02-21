@@ -43,17 +43,24 @@ import jdk.test.lib.SecurityTools;
 import sun.security.validator.Validator;
 
 /*
- * @test
- * @bug 6948803 6958869
- * @summary 1- CertPath validation regression caused by SHA1 replacement root and MD2 disable feature
-*           2&3- Regression: PKIXValidator fails when multiple trust anchors have same dn
+ * @test id=certreplace
+ * @bug 6948803
+ * @summary CertPath validation regression caused by SHA1 replacement root and MD2 disable feature
  * @library /test/lib
  * @modules java.base/sun.security.validator
  *
- * @run main CertReplace certreplace.jks certreplace.certs
+ * @run main/othervm CertReplace certreplace.jks certreplace.certs
+ */
+
+/*
+ * @test id=samedn
+ * @bug 6958869
+ * @summary Regression: PKIXValidator fails when multiple trust anchors have same dn
+ * @library /test/lib
+ * @modules java.base/sun.security.validator
  *
- * @run main CertReplace samedn.jks samedn1.certs
- * @run main CertReplace samedn.jks samedn2.certs
+ * @run main/othervm CertReplace samedn.jks samedn1.certs
+ * @run main/othervm CertReplace samedn.jks samedn2.certs
  */
 
 public class CertReplace {
@@ -104,9 +111,11 @@ public class CertReplace {
         final String outputUser = SecurityTools.keytool(ktBaseParameters +
                                                         "-export -alias user -rfc").getOutput();
         Files.write(certPath, outputUser.getBytes());
+
         final String outputInt = SecurityTools.keytool(ktBaseParameters +
                                                        "-export -rfc -alias int").getOutput();
         Files.write(certPath, outputInt.getBytes(), StandardOpenOption.APPEND);
+
         final String outputCa = SecurityTools.keytool(ktBaseParameters +
                                                       "-export -rfc -alias ca").getOutput();
         Files.write(certPath, outputCa.getBytes(), StandardOpenOption.APPEND);
@@ -137,9 +146,11 @@ public class CertReplace {
         // 1. Generate 3 aliases in a keystore: ca1, ca2, user. The CAs' startdate
         // is set to one year ago so that they are expired now
         SecurityTools.keytool(ktBaseParameters +
-                              " -genkeypair -alias ca1 -dname CN=CA -keyalg rsa -sigalg md5withrsa -ext bc -startdate -1y");
+                              " -genkeypair -alias ca1 -dname CN=CA -keyalg rsa " +
+                              "-sigalg md5withrsa -ext bc -startdate -1y");
         SecurityTools.keytool(ktBaseParameters +
-                              "-genkeypair -alias ca2 -dname CN=CA -keyalg rsa -sigalg sha1withrsa -ext bc -startdate -1y");
+                              "-genkeypair -alias ca2 -dname CN=CA -keyalg rsa " +
+                              "-sigalg sha1withrsa -ext bc -startdate -1y");
         SecurityTools.keytool(ktBaseParameters +
                               "-genkeypair -alias user -dname CN=User -keyalg rsa");
 
@@ -159,6 +170,7 @@ public class CertReplace {
         final String outputCa1 = SecurityTools.keytool(ktBaseParameters +
                                                        "-export -rfc -alias ca1").getOutput();
         Files.write(samedn1CertPath, outputCa1.getBytes(), StandardOpenOption.APPEND);
+
         final String outputCa2 = SecurityTools.keytool(ktBaseParameters +
                                                        "-export -rfc -alias ca2").getOutput();
         Files.write(samedn2CertPath, outputCa2.getBytes(), StandardOpenOption.APPEND);
@@ -172,6 +184,7 @@ public class CertReplace {
      * @param args {cacerts keystore, cert chain}
      */
     public static void main(String[] args) throws Exception {
+
         if (args[0].equals(CERTREPLACE_JKS)) {
             certReplace();
         } else if (args[0].equals(SAMEDN_JKS)) {
