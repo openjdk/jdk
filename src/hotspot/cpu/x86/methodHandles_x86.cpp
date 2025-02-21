@@ -122,7 +122,22 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
   __ bind(L);
 }
 
-#endif //ASSERT
+void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Register temp) {
+  BLOCK_COMMENT("verify_method {");
+  __ verify_method_ptr(method);
+#ifdef _LP64
+  if (VerifyMethodHandles) {
+    Label L_clinit_success;
+    Register method_holder = temp;
+    __ load_method_holder(method_holder, method);
+    __ clinit_barrier(method_holder, r15_thread, &L_clinit_success);
+    __ STOP("Method holder klass is not initialized");
+    __ BIND(L_clinit_success);
+  }
+#endif // _LP64
+  BLOCK_COMMENT("} verify_method");
+}
+#endif // ASSERT
 
 void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register method, Register temp,
                                             bool for_compiler_entry) {
@@ -132,7 +147,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
    __ testptr(rbx, rbx);
    __ jcc(Assembler::zero, L_no_such_method);
 
-  __ verify_method_ptr(method);
+  verify_method(_masm, method, temp);
 
   if (!for_compiler_entry && JvmtiExport::can_post_interpreter_events()) {
     Label run_compiled_code;
@@ -504,7 +519,6 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // After figuring out which concrete method to call, jump into it.
     // Note that this works in the interpreter with no data motion.
     // But the compiled version will require that rcx_recv be shifted out.
-    __ verify_method_ptr(rbx_method);
     jump_from_method_handle(_masm, rbx_method, temp1, for_compiler_entry);
 
     if (iid == vmIntrinsics::_linkToInterface) {
