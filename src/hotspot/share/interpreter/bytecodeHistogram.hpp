@@ -32,9 +32,8 @@
 
 class BytecodeCounter: AllStatic {
  private:
-  // uint64
-  NOT_PRODUCT(static int   _counter_value;)
-  NOT_PRODUCT(static jlong _reset_time;)
+  NOT_PRODUCT(static julong _counter_value;)
+  NOT_PRODUCT(static jlong  _reset_time;)
 
   friend class TemplateInterpreterGenerator;
   friend class         BytecodeInterpreter;
@@ -44,8 +43,7 @@ class BytecodeCounter: AllStatic {
   static void reset()                      PRODUCT_RETURN;
 
   // Counter info (all info since last reset)
-  // uint64?
-  static int    counter_value()            PRODUCT_RETURN0 NOT_PRODUCT({ return _counter_value; });
+  static julong counter_value()            PRODUCT_RETURN0 NOT_PRODUCT({ return _counter_value; });
   static double elapsed_time()             PRODUCT_RETURN0; // in seconds
   static double frequency()                PRODUCT_RETURN0; // bytecodes/seconds
 
