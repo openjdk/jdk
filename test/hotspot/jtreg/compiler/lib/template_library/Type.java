@@ -25,7 +25,11 @@ package compiler.lib.template_library;
 
 import java.util.List;
 
-import compiler.lib.template_library.types.Int;
+import compiler.lib.template_library.types.IntType;
+import compiler.lib.template_library.types.LongType;
+import compiler.lib.template_library.types.FloatType;
+import compiler.lib.template_library.types.DoubleType;
+import compiler.lib.template_library.types.BooleanType;
 
 /**
  * The {@link Type} abstract class defines the basic functionalities that any {@link Type}
@@ -36,7 +40,13 @@ import compiler.lib.template_library.types.Int;
 public abstract class Type {
 
     public static final List<Type> primitives() {
-        return List.of(Int.INSTANCE);
+        return List.of(
+            IntType.INSTANCE,
+            LongType.INSTANCE,
+            FloatType.INSTANCE,
+            DoubleType.INSTANCE,
+            BooleanType.INSTANCE
+        );
     }
 
     /**
@@ -45,6 +55,9 @@ public abstract class Type {
      * @return The name of the type that can be used in Java code.
      */
     public abstract String name();
+
+    @Override
+    public final String toString() { return name(); }
 
     public abstract Object con();
 

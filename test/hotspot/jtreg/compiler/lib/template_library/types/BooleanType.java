@@ -25,42 +25,33 @@ package compiler.lib.template_library.types;
 
 import java.util.List;
 
-import compiler.lib.generators.Generators;
-import compiler.lib.generators.RestrictableGenerator;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 import compiler.lib.template_library.Type;
 import compiler.lib.template_library.Operation;
 
-public final class Int extends Type {
-    public static final Int INSTANCE = new Int();
-    private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
+public final class BooleanType extends Type {
+    public static final BooleanType INSTANCE = new BooleanType();
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     private static final List<Operation> OPERATIONS = List.of(
-        new Operation.Unary("(-(", Int.INSTANCE, "))"),
-        new Operation.Unary("(~", Int.INSTANCE, ")"),
+        new Operation.Unary("(!(", BooleanType.INSTANCE, "))"),
 
-        new Operation.Binary("(", Int.INSTANCE, " + ",   Int.INSTANCE, ")"),
-        new Operation.Binary("(", Int.INSTANCE, " - ",   Int.INSTANCE, ")"),
-        new Operation.Binary("(", Int.INSTANCE, " * ",   Int.INSTANCE, ")"),
-        new Operation.Binary("(", Int.INSTANCE, " / ",   Int.INSTANCE, ")"),
-        new Operation.Binary("(", Int.INSTANCE, " % ",   Int.INSTANCE, ")"),
-        new Operation.Binary("(", Int.INSTANCE, " & ",   Int.INSTANCE, ")"),
-        new Operation.Binary("(", Int.INSTANCE, " | ",   Int.INSTANCE, ")"),
-        new Operation.Binary("(", Int.INSTANCE, " ^ ",   Int.INSTANCE, ")"),
-        new Operation.Binary("(", Int.INSTANCE, " << ",  Int.INSTANCE, ")"),
-        new Operation.Binary("(", Int.INSTANCE, " >> ",  Int.INSTANCE, ")"),
-        new Operation.Binary("(", Int.INSTANCE, " >>> ", Int.INSTANCE, ")")
+        new Operation.Binary("(", BooleanType.INSTANCE, " || ",   BooleanType.INSTANCE, ")"),
+        new Operation.Binary("(", BooleanType.INSTANCE, " && ",   BooleanType.INSTANCE, ")"),
+        new Operation.Binary("(", BooleanType.INSTANCE, " ^ ",    BooleanType.INSTANCE, ")"),
 
-        // TODO:
-        // new TernaryOperator("(", ExpressionType.BOOLEAN, " ? ", ExpressionType.INT, " : ", ExpressionType.INT, ")")
+        new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", BooleanType.INSTANCE, " : ", BooleanType.INSTANCE, ")")
     );
 
     @Override
-    public final String name() { return "int"; }
+    public final String name() { return "boolean"; }
 
     @Override
     public final Object con() {
-        return GEN_INT.next();
+        // TODO: generator for boolean? Could have different probabilities!
+        return RANDOM.nextInt() % 2 == 0;
     }
 
     @Override
