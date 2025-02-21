@@ -1150,8 +1150,17 @@ public sealed class ICC_Profile implements Serializable
      * The array should contain data in a format, corresponded to the
      * {@code tagSignature} as defined in the ICC specification, section 10.
      * This method is useful for advanced applications which need to access
-     * profile data directly. Only non-built-in, application provided profiles
-     * should be updated using this method.
+     * profile data directly.
+     *
+     * <p>
+     * Note: JDK built-in ICC Profiles cannot be updated using this method
+     * as it will result in IAE. JDK built-in profiles are those obtained by
+     * {@code ICC_Profile.getInstance(int colorSpaceID)} where colorSpaceID
+     * is one of the following:
+     * {@link ColorSpace#CS_sRGB}, {@link ColorSpace#CS_LINEAR_RGB},
+     * {@link ColorSpace#CS_PYCC}, {@link ColorSpace#CS_GRAY} or
+     * {@link ColorSpace#CS_CIEXYZ}.
+     * </p>
      *
      * @param  tagSignature the ICC tag signature for the data element you want
      *         to set
@@ -1163,7 +1172,7 @@ public sealed class ICC_Profile implements Serializable
      *         the {@code tagSignature}
      * @throws IllegalArgumentException if this is a profile for one of the
      *         built-in pre-defined ColorSpaces, i.e. those which can be obtained
-     *         by calling {@code ICC_Profile.getInstance(int cspace)}
+     *         by calling {@code ICC_Profile.getInstance(int colorSpaceID)}
      * @see #getData
      * @see ColorSpace
      */
