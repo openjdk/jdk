@@ -154,6 +154,13 @@ public class JpegExifThumbnailTest {
         // not fail with an EOFException in this case:
         new JpegExifThumbnailTest("jdk_8160327-unusual-ImageFileDirectory.jpeg",
                 2007, 11, 10, 21, 23, 4).run();
+
+        // This file is a replica of jdk_8160327-SV650.jpg, except the 14th byte was changed
+        // so ExifMarkerSegment's constructor throws a "Bad magic number" exception.
+        // The expected behavior here is: we do NOT catch an exception, because internally
+        // JPEGMetaData just recorded a generic MarkerSegment instead of an ExifMarkerSegment
+        new JpegExifThumbnailTest("jdk_8160327-corrupt-magic-number.jpg",
+                -1, -1, -1, -1, -1, -1).run();
     }
 
     final String filename;

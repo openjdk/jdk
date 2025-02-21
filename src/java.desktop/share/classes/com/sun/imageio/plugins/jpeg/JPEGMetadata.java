@@ -254,19 +254,21 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
                 }
                 break;
             case JPEG.APP1:
-                buffer.loadBuf(8);
-                buf = buffer.buf;
-                ptr = buffer.bufPtr;
-                if ((buf[ptr+3] == 'E')
-                        && (buf[ptr+4] == 'x')
-                        && (buf[ptr+5] == 'i')
-                        && (buf[ptr+6] == 'f')
-                        && (buf[ptr+7] == 0)
-                        && (buf[ptr+8] == 0)) {
-                    newGuy = new ExifMarkerSegment(buffer);
-                } else {
-                    newGuy = new MarkerSegment(buffer);
-                    newGuy.loadData(buffer);
+                newGuy = new MarkerSegment(buffer);
+                newGuy.loadData(buffer);
+
+                if (newGuy.data.length > 5 &&
+                        newGuy.data[0] == 'E' &&
+                        newGuy.data[1] == 'x' &&
+                        newGuy.data[2] == 'i' &&
+                        newGuy.data[3] == 'f' &&
+                        newGuy.data[4] == 0) {
+                    try {
+                        newGuy = new ExifMarkerSegment(newGuy);
+                    } catch(Exception e) {
+                        // This is intentionally empty.
+                        // Now we fallback to keeping the generic MarkerSegment
+                    }
                 }
                 break;
             case JPEG.APP2:

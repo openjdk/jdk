@@ -150,9 +150,10 @@ class ExifMarkerSegment extends MarkerSegment {
     final long firstIFDOffset;
     final List<ImageFileDirectory> imageFileDirectories = new LinkedList<>();
 
-    ExifMarkerSegment(JPEGBuffer buffer) throws IOException {
-        super(buffer);
-        loadData(buffer);
+    ExifMarkerSegment(MarkerSegment originalSegment) throws IOException {
+        super(originalSegment.tag);
+        this.length = originalSegment.length;
+        this.data = originalSegment.data;
 
         ByteArrayInputStream in = new ByteArrayInputStream(data, 6, data.length - 6);
 
