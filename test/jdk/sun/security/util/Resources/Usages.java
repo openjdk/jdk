@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8215937 8345940
  * @modules java.base/sun.security.util
  *          java.base/sun.security.util.resources
- *          java.base/sun.security.tools.keytool
+ *          java.base/sun.security.tools.keytool.resources
  *          jdk.jartool/sun.security.tools.jarsigner
  * @summary Check usages of security-related Resources files
  * @run main/othervm Usages
@@ -108,7 +108,7 @@ public class Usages {
 
     // For each Resources file, where and how the strings are used.
     static Map<ListResourceBundle, List<Pair>> MAP = Map.of(
-            new sun.security.tools.keytool.Resources(),
+            new sun.security.tools.keytool.resources.keytool(),
             List.of(
                     new Pair("java.base/share/classes/sun/security/tools/keytool/Main.java",
                             List.of(RB_GETSTRING, KT_ENUM)),

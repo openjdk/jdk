@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 8345940
  * @modules java.base/sun.security.util
  *          java.base/sun.security.util.resources
+ *          java.base/sun.security.tools.keytool
+ *          java.base/sun.security.tools.keytool.resources
  * @summary Check migration correctness of resources files
  * @run testng/othervm MigrationCheck
  */
@@ -173,6 +175,26 @@ public class MigrationCheck {
     public void testSecurity_zh_TW() {
         checkResourcesMigration(new sun.security.util.Resources_zh_TW(),
                 new sun.security.util.resources.security_zh_TW());
+    }
+
+    // Keytool
+
+    @Test
+    public void testKeytool() {
+        checkResourcesMigration(new sun.security.tools.keytool.Resources(),
+                new sun.security.tools.keytool.resources.keytool());
+    }
+
+    @Test
+    public void testKeytool_de() {
+        checkResourcesMigration(new sun.security.tools.keytool.Resources_de(),
+                new sun.security.tools.keytool.resources.keytool_de());
+    }
+
+    @Test
+    public void testKeytool_es() {
+        checkResourcesMigration(new sun.security.tools.keytool.Resources_es(),
+                new sun.security.tools.keytool.resources.keytool_es());
     }
 
     // ResourcesMgr
