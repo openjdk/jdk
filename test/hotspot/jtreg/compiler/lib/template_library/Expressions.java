@@ -69,14 +69,11 @@ public abstract class Expressions {
 
         List<Type> types = new ArrayList<Type>();
         ExpressionGenerator generator = expressionGenerator(resultType, allowedTypesSet, maxDepth, types);
-        // TODO:
-        // Output: lambda(args) -> list of tokens, using args
-        // Step: lambda(args, tokens) -> update tokens
 
         var template = Template.make("args", (List<Object> args) -> body(
             generator.tokens(args)
         ));
-        return new Expression(template, List.of());
+        return new Expression(template, types);
     }
 
     private static final ExpressionGenerator expressionGenerator(Type resultType, HashSet<Type> allowedTypes, int maxDepth, List<Type> types) {
@@ -91,8 +88,13 @@ public abstract class Expressions {
     private static final ExpressionGeneratorStep expressionGeneratorStep(Type resultType, HashSet<Type> allowedTypes, int maxDepth, List<Type> types) {
         List<Operation> ops = resultType.operations().stream().filter(o -> o.hasOnlyTypes(allowedTypes)).toList();
         if (maxDepth <= 0 || ops.isEmpty()) {
-            // TODO: add to types in some cases!
-            return expressionGeneratorStepCon(resultType);
+            // Remember which type we need to fill the ith argument with.
+            int i = types.size();
+            types.add(resultType);
+            return (List<Object> tokens, List<Object> args) -> {
+                // Extract the ith argument.
+                tokens.add(args.get(i));
+            };
         }
         switch (choice(ops)) {
             case Operation.Unary(String s0, Type t0, String s1) -> {
@@ -129,12 +131,5 @@ public abstract class Expressions {
                 };
             }
         }
-    }
-
-    private static final ExpressionGeneratorStep expressionGeneratorStepCon(Type type) {
-        Object c = type.con();
-        return (List<Object> tokens, List<Object> args) -> {
-            tokens.add(c);
-        };
     }
 }

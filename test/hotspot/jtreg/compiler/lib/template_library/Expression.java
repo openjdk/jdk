@@ -51,9 +51,12 @@ public final class Expression {
     public final List<Type> types() { return this.types; }
 
     public final TemplateWithArgs withArgs(List<Object> args) {
-        // TODO: check length?
+        if (args.size() != types.size()) { throw new RuntimeException("'args' must have the same size as 'types'"); }
         return template.withArgs(args);
     }
 
-
+    public final TemplateWithArgs withRandomArgs() {
+        List<Object> args = types.stream().map(type -> type.con()).toList();
+        return withArgs(args);
+    }
 } 

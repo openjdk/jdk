@@ -90,6 +90,7 @@ public class TestFuzzExpression {
 
         var template1 = Template.make("type", (Type type)-> {
             Expression exp = Expressions.expression(type, Type.primitives(), 2);
+            List<Object> args = exp.types().stream().map(t -> t.con()).toList();
             return body(
                 """
                 // --- $test start ---
@@ -100,7 +101,7 @@ public class TestFuzzExpression {
                 public static Object $reference() {
                     try {
                 """,
-                "        return ", exp.withArgs(List.of()), ";\n",
+                "        return ", exp.withArgs(args), ";\n",
                 """
                     } catch (Exception e) {
                         return e;
@@ -111,7 +112,7 @@ public class TestFuzzExpression {
                 public static Object $test() {
                     try {
                 """,
-                "        return ", exp.withArgs(List.of()), ";\n",
+                "        return ", exp.withArgs(args), ";\n",
                 """
                     } catch (Exception e) {
                         return e;
@@ -143,7 +144,7 @@ public class TestFuzzExpression {
                 public static Object $test() {
                     try {
                 """,
-                "        return ", exp.withArgs(List.of()), ";\n",
+                "        return ", exp.withRandomArgs(), ";\n",
                 """
                     } catch (Exception e) {
                         return e;
