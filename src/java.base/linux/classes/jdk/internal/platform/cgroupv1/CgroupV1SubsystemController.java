@@ -70,7 +70,8 @@ public class CgroupV1SubsystemController implements CgroupSubsystemController {
                                 }
                                 break;
                             }
-                            cgp = (cgp.getNameCount() > 1) ? cgp.subpath(1, cgp.getNameCount()) : Path.of("");
+                            int currentNameCount = cgp.getNameCount();
+                            cgp = (currentNameCount > 1) ? cgp.subpath(1, currentNameCount) : Path.of("");
                         }
                     }
                 }
