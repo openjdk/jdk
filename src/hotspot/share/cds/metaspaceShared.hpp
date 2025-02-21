@@ -34,7 +34,6 @@
 
 class ArchiveBuilder;
 class ArchiveHeapInfo;
-class DumpRegion;
 class FileMapInfo;
 class Method;
 class outputStream;
@@ -163,14 +162,6 @@ public:
   static char* requested_base_address() {
     return _requested_base_address;
   }
-
-  // Given a dump region (that should not yet have allocations), allocate and prepare a protection
-  // at the start of the region.
-  LP64_ONLY( static void allocate_and_mark_protection_zone(DumpRegion* region); )
-
-  // Given an address that should point to a mapped protection zone, check markers, then protect
-  // the zone. Will return false if markers don't match up (misshapen/tempered archive)
-  LP64_ONLY( static void check_and_establish_protection_zone(address address) );
 
   // Non-zero if the archive(s) need to be mapped a non-default location due to ASLR.
   static intx relocation_delta() { return _relocation_delta; }

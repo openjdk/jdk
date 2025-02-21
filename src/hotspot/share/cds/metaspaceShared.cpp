@@ -1366,13 +1366,6 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
               cds_base, ccs_end - cds_base // Klass range
               );
           }
-
-          // After narrowKlass encoding scheme is decided: if encoding base points to archive start (can happen
-          // for both cases above), establish protection zone.
-          if (CompressedKlassPointers::base() == cds_base) {
-            MetaspaceShared::check_and_establish_protection_zone(cds_base);
-          }
-
           // map_or_load_heap_region() compares the current narrow oop and klass encodings
           // with the archived ones, so it must be done after all encodings are determined.
           static_mapinfo->map_or_load_heap_region();
@@ -1389,51 +1382,6 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
   return result;
 }
 
-#ifdef _LP64
-
-// Protection zone handling.
-//
-// A Klass structure must never be located at the encoding base since that would encode to an
-// invalid nKlass of zero. At runtime, we set the encoding base to the start of the mapped
-// archive. In order to catch accidental accesses via a zero nKlass, we will establis a no-access
-// zone there, similar to how the heap does it. Space for that page must be prepared when dumping
-// the archive.
-static constexpr uint64_t protzone_tag       = 0x50524F545A4F4E45ULL; // "PROTZONE"
-static constexpr uint64_t protzone_tag_start = 0x2D3E2D3E50524F54ULL; // "->->PROT"
-static constexpr uint64_t protzone_tag_end   = 0x50524F543C2D3C2DULL; // "PROT<-<-"
-
-// Dumptime
-void MetaspaceShared::allocate_and_mark_protection_zone(DumpRegion* region) {
-
-  assert(region->used() == 0, "Should not have allocations yet");
-
-  // Note: not page size but core region alignment! Page size can differ at runtime.
-  const size_t protzone_size = MetaspaceShared::core_region_alignment();
-  uint64_t* const protzone = (uint64_t*) region->allocate(protzone_size);
-  const size_t len = protzone_size/sizeof(uint64_t);
-  protzone[0] = protzone_tag_start;
-  protzone[len - 1] = protzone_tag_end;
-
-  for (size_t i = 1; i < len - 1; i++) {
-    protzone[i] = protzone_tag;
-  }
-}
-
-// Runtime
-void MetaspaceShared::check_and_establish_protection_zone(address addr) {
-  const size_t protzone_size = MetaspaceShared::core_region_alignment();
-  const uint64_t* const protzone = (const uint64_t*) addr;
-  const size_t len = protzone_size/sizeof(uint64_t);
-  guarantee(protzone[0] == protzone_tag_start, "Corrupted CDS protection zone");
-  guarantee(protzone[len - 1] == protzone_tag_end, "Corrupted CDS protection zone");
-#ifdef ASSERT
-  for (size_t i = 1; i < len - 1; i++) {
-    assert(protzone[i] == protzone_tag, "Corrupted CDS protection zone");
-  }
-#endif
-  CompressedKlassPointers::establish_protection_zone((address)protzone, protzone_size);
-}
-#endif // _LP64
 
 // This will reserve two address spaces suitable to house Klass structures, one
 //  for the cds archives (static archive and optionally dynamic archive) and

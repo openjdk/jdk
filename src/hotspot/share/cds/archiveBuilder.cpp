@@ -363,13 +363,11 @@ address ArchiveBuilder::reserve_buffer() {
     MetaspaceShared::unrecoverable_writing_error();
   }
 
-#ifdef _LP64
   if (CDSConfig::is_dumping_static_archive()) {
-    // The region that will be located at the bottom of the encoding range at runtime shall have
-    // space for a protection zone.
-    MetaspaceShared::allocate_and_mark_protection_zone(rw_region());
+    // We don't want any valid object to be at the very bottom of the archive.
+    // See ArchivePtrMarker::mark_pointer().
+    rw_region()->allocate(16);
   }
-#endif // _LP64
 
   return buffer_bottom;
 }
