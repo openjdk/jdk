@@ -225,8 +225,8 @@ jobs:
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.prepare.outputs.linux-x64-variants == 'true'
 
-  build-linux-x64-static:
-    name: linux-x64-static
+  build-linux-x64-static-libs:
+    name: linux-x64-static-libs
     needs: prepare
     uses: ./.github/workflows/build-linux.yml
     with:
@@ -238,10 +238,10 @@ jobs:
       gcc-major-version: '10'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
-      # Upload static bundles separately to avoid interference with normal linux-x64 bundle.
+      # Upload static libs bundles separately to avoid interference with normal linux-x64 bundle.
       # This bundle is not used by testing jobs, but downstreams use it to check that
       # dependent projects, e.g. libgraal, builds fine.
-      bundle-suffix: "-static"
+      bundle-suffix: "-static-libs"
     if: needs.prepare.outputs.linux-x64-variants == 'true'
 
   build-linux-cross-compile:
