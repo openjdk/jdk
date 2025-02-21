@@ -62,10 +62,7 @@
 <p><B>{@systemProperty java.security.debug}</B><BR></p>
         <p>To monitor security access, you can set the java.security.debug system property,
         which determines what trace messages are printed during execution.
-        To view security properties, security providers, and TLS-related settings,
-        specify the -XshowSettings:security option in the java command.
-        You can enable debugging in JGSS and other related technologies with various system properties or environment variables.
-        The following table lists java.security.debug options table:</p>
+        The following table lists <code>java.security.debug</code> options table:</p>
 
 <table id="debug">
     <caption><b>Security Debug Options</b></caption>
@@ -169,14 +166,6 @@
         <td><code>SunPKCS11 provider debugging</code></td>
     </tr>
     <tr>
-        <th scope="row"><code>+thread</code></th>
-        <td><code>Print thread and caller information</code></td>
-    </tr>
-    <tr>
-        <th scope="row"><code>+timestamp</code></th>
-        <td><code>Print timestamp information</code></td>
-    </tr>
-    <tr>
         <th scope="row"><code>ts</code></th>
         <td><code>Timestamping debugging</code></td>
     </tr>
@@ -190,5 +179,18 @@
     </tr>
     </tbody>
 </table>
+<H2>Printing Thread and Timestamp Information</H2>
+<p>
+    You can append the following strings to the value specified in the <code>java.security.debug</code>
+    system property to print additional information:
+<ul>
+    <li><code>+thread:</code>Print thread and caller information</li>
+    <li><code>+timestamp:</code>Print timestamp information</li>
+</ul>
+<p>
+    For example, to add thread, caller, and timestamp information to all debuging output,
+    set the <code>java.security.debug</code> system property on the command line as follows:
+    <code>java -Djava.security.debug=all+thread+timestamp MyApp</code>
+</p>
 </body>
 </html>
