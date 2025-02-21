@@ -238,7 +238,9 @@ jobs:
       gcc-major-version: '10'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
-      # Upload static bundles to check libgraal build downstream.
+      # Upload static bundles separately to avoid interference with normal linux-x64 bundle.
+      # This bundle is not used by testing jobs, but downstreams use it to check that
+      # dependent projects, e.g. libgraal, builds fine.
       bundle-suffix: "-static"
     if: needs.prepare.outputs.linux-x64-variants == 'true'
 
