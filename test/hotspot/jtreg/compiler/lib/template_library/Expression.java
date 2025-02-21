@@ -27,6 +27,7 @@ import java.util.List;
 
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateWithArgs;
+import static compiler.lib.template_framework.Template.body;
 
 /**
  * TODO: description
@@ -60,4 +61,82 @@ public final class Expression {
     public final TemplateWithArgs withRandomArgs() {
         return withArgs(randomArgs());
     }
+
+    private interface ExpressionGenerator {
+        List<Object> tokens(List<Object> args);
+    }
+
+    private interface ExpressionGeneratorStep {
+        void addTokens(List<Object> tokens, List<Object> args);
+    }
+
+    public static final Expression make(Type resultType, List<Type> allowedTypes, int maxDepth) {
+        HashSet<Type> allowedTypesSet = new HashSet(allowedTypes);
+
+        List<Type> types = new ArrayList<Type>();
+        ExpressionGenerator generator = expressionGenerator(resultType, allowedTypesSet, maxDepth, types);
+
+        var template = Template.make("args", (List<Object> args) -> body(
+            generator.tokens(args)
+        ));
+        return new Expression(template, types);
+    }
+
+    private static final ExpressionGenerator expressionGenerator(Type resultType, HashSet<Type> allowedTypes, int maxDepth, List<Type> types) {
+        ExpressionGeneratorStep step = expressionGeneratorStep(resultType, allowedTypes, maxDepth, types);
+        return (List<Object> args) -> {
+            List<Object> tokens = new ArrayList<Object>();
+            step.addTokens(tokens, args);
+            return tokens;
+        };
+    }
+
+    private static final ExpressionGeneratorStep expressionGeneratorStep(Type resultType, HashSet<Type> allowedTypes, int maxDepth, List<Type> types) {
+        List<Operation> ops = resultType.operations().stream().filter(o -> o.hasOnlyTypes(allowedTypes)).toList();
+        if (maxDepth <= 0 || ops.isEmpty()) {
+            // Remember which type we need to fill the ith argument with.
+            int i = types.size();
+            types.add(resultType);
+            return (List<Object> tokens, List<Object> args) -> {
+                // Extract the ith argument.
+                tokens.add(args.get(i));
+            };
+        }
+        switch (Library.choice(ops)) {
+            case Operation.Unary(String s0, Type t0, String s1) -> {
+                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, allowedTypes, maxDepth-1, types);
+                return (List<Object> tokens, List<Object> args) -> {
+                    tokens.add(s0);
+                    step0.addTokens(tokens, args);
+                    tokens.add(s1);
+                };
+            }
+            case Operation.Binary(String s0, Type t0, String s1, Type t1, String s2) -> {
+                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, allowedTypes, maxDepth-1, types);
+                ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, allowedTypes, maxDepth-1, types);
+                return (List<Object> tokens, List<Object> args) -> {
+                    tokens.add(s0);
+                    step0.addTokens(tokens, args);
+                    tokens.add(s1);
+                    step1.addTokens(tokens, args);
+                    tokens.add(s2);
+                };
+            }
+            case Operation.Ternary(String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3) -> {
+                ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, allowedTypes, maxDepth-1, types);
+                ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, allowedTypes, maxDepth-1, types);
+                ExpressionGeneratorStep step2 = expressionGeneratorStep(t1, allowedTypes, maxDepth-1, types);
+                return (List<Object> tokens, List<Object> args) -> {
+                    tokens.add(s0);
+                    step0.addTokens(tokens, args);
+                    tokens.add(s1);
+                    step1.addTokens(tokens, args);
+                    tokens.add(s2);
+                    step2.addTokens(tokens, args);
+                    tokens.add(s3);
+                };
+            }
+        }
+    }
+
 } 

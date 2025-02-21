@@ -50,7 +50,6 @@ import compiler.lib.template_library.Library;
 import compiler.lib.template_library.IRTestClass;
 import compiler.lib.template_library.Type;
 import compiler.lib.template_library.Expression;
-import compiler.lib.template_library.Expressions;
 
 /**
  * This is a basic expression fuzzer: it generates random expressions using {@link Library.Expression},
@@ -89,7 +88,7 @@ public class TestFuzzExpression {
                                                              "compiler.lib.verify.*"));
 
         var template1 = Template.make("type", (Type type)-> {
-            Expression exp = Expressions.expression(type, Type.primitives(), 2);
+            Expression exp = Expression.make(type, Type.primitives(), 2);
             List<Object> args = exp.randomArgs();
             return body(
                 """
@@ -131,7 +130,7 @@ public class TestFuzzExpression {
         });
 
         var template2 = Template.make("type", (Type type)-> {
-            Expression exp = Expressions.expression(type, Type.primitives(), 2);
+            Expression exp = Expression.make(type, Type.primitives(), 2);
             return body(
                 """
                 // --- $test start ---
