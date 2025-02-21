@@ -23,6 +23,10 @@
 
 package compiler.lib.template_library;
 
+import java.util.List;
+import java.util.Random;
+import jdk.test.lib.Utils;
+
 import compiler.lib.template_framework.Hook;
 
 /**
@@ -34,6 +38,14 @@ import compiler.lib.template_framework.Hook;
  * TODO configure choice and other randomization?
  */
 public abstract class Library {
+    private static final Random RANDOM = Utils.getRandomInstance();
+
     public static final Hook CLASS_HOOK = new Hook("Class");
     public static final Hook METHOD_HOOK = new Hook("Method");
+
+    static <T> T choice(List<T> list) {
+        if (list.isEmpty()) { return null; }
+        int i = RANDOM.nextInt(list.size());
+        return list.get(i);
+    }
 } 

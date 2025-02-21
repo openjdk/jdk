@@ -26,28 +26,11 @@ package compiler.lib.template_library;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Random;
-import jdk.test.lib.Utils;
 
 import compiler.lib.template_framework.Template;
-import compiler.lib.template_framework.TemplateWithArgs;
 import static compiler.lib.template_framework.Template.body;
-import static compiler.lib.template_framework.Template.$;
-import static compiler.lib.template_framework.Template.fuel;
-import static compiler.lib.template_framework.Template.setFuelCost;
-import static compiler.lib.template_framework.Template.defineName;
-import static compiler.lib.template_framework.Template.countNames;
-import static compiler.lib.template_framework.Template.sampleName;
 
 public abstract class Expressions {
-    private static final Random RANDOM = Utils.getRandomInstance();
-
-    private static <T> T choice(List<T> list) {
-        if (list.isEmpty()) { return null; }
-        int i = RANDOM.nextInt(list.size());
-        return list.get(i);
-    }
-
     private interface ExpressionGenerator {
         List<Object> tokens(List<Object> args);
     }
@@ -88,7 +71,7 @@ public abstract class Expressions {
                 tokens.add(args.get(i));
             };
         }
-        switch (choice(ops)) {
+        switch (Library.choice(ops)) {
             case Operation.Unary(String s0, Type t0, String s1) -> {
                 ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, allowedTypes, maxDepth-1, types);
                 return (List<Object> tokens, List<Object> args) -> {

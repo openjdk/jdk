@@ -27,13 +27,6 @@ import java.util.List;
 
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateWithArgs;
-import static compiler.lib.template_framework.Template.body;
-import static compiler.lib.template_framework.Template.$;
-import static compiler.lib.template_framework.Template.fuel;
-import static compiler.lib.template_framework.Template.setFuelCost;
-import static compiler.lib.template_framework.Template.defineName;
-import static compiler.lib.template_framework.Template.countNames;
-import static compiler.lib.template_framework.Template.sampleName;
 
 /**
  * TODO: description
