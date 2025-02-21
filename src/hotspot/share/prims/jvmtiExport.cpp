@@ -422,6 +422,10 @@ JvmtiExport::get_jvmti_thread_state(JavaThread *thread) {
   assert(thread == JavaThread::current(), "must be current thread");
   if (thread->is_vthread_mounted() && thread->jvmti_thread_state() == nullptr) {
     JvmtiEventController::thread_started(thread);
+    if (thread->is_suspended()) {
+      // suspend here if there is a suspend request
+      ThreadBlockInVM tbivm(thread, true /* allow suspend */);
+    }
   }
   return thread->jvmti_thread_state();
 }
@@ -1990,10 +1994,6 @@ void JvmtiExport::post_single_step(JavaThread *thread, Method* method, address l
   }
   if (mh->jvmti_mount_transition() || thread->should_hide_jvmti_events()) {
     return;
-  }
-  if (thread->is_suspended()) {
-    // suspend here if there is a suspend request
-    ThreadBlockInVM tbivm(thread, true /* allow suspend */);
   }
 
   JvmtiEnvThreadStateIterator it(state);
