@@ -316,7 +316,10 @@ void MetaspaceShared::initialize_for_static_dump() {
   SharedBaseAddress = (size_t)_requested_base_address;
 
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
-  _symbol_rs = MemoryReserver::reserve(symbol_rs_size, mtClassShared);
+  _symbol_rs = MemoryReserver::reserve(symbol_rs_size,
+                                       os::vm_allocation_granularity(),
+                                       os::vm_page_size(),
+                                       mtClassShared);
   if (!_symbol_rs.is_reserved()) {
     log_error(cds)("Unable to reserve memory for symbols: %zu bytes.", symbol_rs_size);
     MetaspaceShared::unrecoverable_writing_error();
@@ -549,7 +552,7 @@ private:
   FileMapInfo* _map_info;
   StaticArchiveBuilder& _builder;
 
-  void dump_java_heap_objects(GrowableArray<Klass*>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
+  void dump_java_heap_objects();
   void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
     log_info(cds)("Dumping symbol table ...");
     SymbolTable::write_to_archive(symbols);
@@ -650,7 +653,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  if (HeapShared::can_write() && _extra_interned_strings != nullptr) {
+  if (CDSConfig::is_dumping_heap() && _extra_interned_strings != nullptr) {
     for (int i = 0; i < _extra_interned_strings->length(); i ++) {
       OopHandle string = _extra_interned_strings->at(i);
       HeapShared::add_to_dumped_interned_strings(string.resolve());
@@ -672,7 +675,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   _builder.make_klasses_shareable();
   MetaspaceShared::make_method_handle_intrinsics_shareable();
 
-  dump_java_heap_objects(_builder.klasses());
+  dump_java_heap_objects();
   dump_shared_symbol_table(_builder.symbols());
 
   char* early_serialized_data = dump_early_read_only_tables();
@@ -1040,19 +1043,13 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   }
 }
 
-#if INCLUDE_CDS_JAVA_HEAP
-void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* klasses) {
-  if (!HeapShared::can_write()) {
-    log_info(cds)(
-      "Archived java heap is not supported as UseG1GC "
-      "and UseCompressedClassPointers are required."
-      "Current settings: UseG1GC=%s, UseCompressedClassPointers=%s.",
-      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedClassPointers));
-    return;
+void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
+  if (CDSConfig::is_dumping_heap()) {
+    HeapShared::write_heap(&_heap_info);
+  } else {
+    CDSConfig::log_reasons_for_not_dumping_heap();
   }
-  HeapShared::write_heap(&_heap_info);
 }
-#endif // INCLUDE_CDS_JAVA_HEAP
 
 void MetaspaceShared::set_shared_metaspace_range(void* base, void *static_top, void* top) {
   assert(base <= static_top && static_top <= top, "must be");

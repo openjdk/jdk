@@ -5631,14 +5631,23 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
       // l is irreducible: we just found a second entry m.
       _has_irreducible_loops = true;
       RegionNode* secondary_entry = m->as_Region();
-      DEBUG_ONLY(secondary_entry->verify_can_be_irreducible_entry();)
+
+      if (!secondary_entry->can_be_irreducible_entry()) {
+        assert(!VerifyNoNewIrreducibleLoops, "A new irreducible loop was created after parsing.");
+        C->record_method_not_compilable("A new irreducible loop was created after parsing.");
+        return pre_order;
+      }
 
       // Walk up the loop-tree, mark all loops that are already post-visited as irreducible
       // Since m is a secondary entry to them all.
       while( is_postvisited(l->_head) ) {
         l->_irreducible = 1; // = true
         RegionNode* head = l->_head->as_Region();
-        DEBUG_ONLY(head->verify_can_be_irreducible_entry();)
+        if (!head->can_be_irreducible_entry()) {
+          assert(!VerifyNoNewIrreducibleLoops, "A new irreducible loop was created after parsing.");
+          C->record_method_not_compilable("A new irreducible loop was created after parsing.");
+          return pre_order;
+        }
         l = l->_parent;
         // Check for bad CFG here to prevent crash, and bailout of compile
         if (l == nullptr) {
@@ -6822,7 +6831,7 @@ void PhaseIdealLoop::get_idoms(Node* n, const uint count, Unique_Node_List& idom
 void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List& idom_list) const {
   Node* next;
   uint padding = 3;
-  uint node_index_padding_width = static_cast<int>(log10(static_cast<double>(C->unique()))) + 1;
+  uint node_index_padding_width = (C->unique() == 0 ? 0 : static_cast<int>(log10(static_cast<double>(C->unique())))) + 1;
   for (int i = idom_list.size() - 1; i >= 0; i--) {
     if (i == 9 || i == 99) {
       padding++;

@@ -1929,28 +1929,13 @@ JNIEnv* AwtToolkit::GetEnv() {
 
 BOOL AwtToolkit::GetScreenInsets(int screenNum, RECT * rect)
 {
-    /* if primary display */
-    if (screenNum == 0) {
-        RECT rRW;
-        if (::SystemParametersInfo(SPI_GETWORKAREA,0,(void *) &rRW,0) == TRUE) {
-            rect->top = rRW.top;
-            rect->left = rRW.left;
-            rect->bottom = ::GetSystemMetrics(SM_CYSCREEN) - rRW.bottom;
-            rect->right = ::GetSystemMetrics(SM_CXSCREEN) - rRW.right;
-            return TRUE;
-        }
-    }
-    /* if additional display */
-    else {
-        MONITORINFO *miInfo;
-        miInfo = AwtWin32GraphicsDevice::GetMonitorInfo(screenNum);
-        if (miInfo) {
-            rect->top = miInfo->rcWork.top    - miInfo->rcMonitor.top;
-            rect->left = miInfo->rcWork.left   - miInfo->rcMonitor.left;
-            rect->bottom = miInfo->rcMonitor.bottom - miInfo->rcWork.bottom;
-            rect->right = miInfo->rcMonitor.right - miInfo->rcWork.right;
-            return TRUE;
-        }
+    MONITORINFO *miInfo = AwtWin32GraphicsDevice::GetMonitorInfo(screenNum);
+    if (miInfo) {
+        rect->top = miInfo->rcWork.top - miInfo->rcMonitor.top;
+        rect->left = miInfo->rcWork.left - miInfo->rcMonitor.left;
+        rect->bottom = miInfo->rcMonitor.bottom - miInfo->rcWork.bottom;
+        rect->right = miInfo->rcMonitor.right - miInfo->rcWork.right;
+        return TRUE;
     }
     return FALSE;
 }
