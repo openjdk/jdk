@@ -4151,8 +4151,7 @@ public class Check {
         if (srcType.isNumeric() && dstType.isNumeric() &&
             (!types.isAssignable(srcType, dstType) ||
               (dstType.getTag().isInLossySuperclassesOf(srcType.getTag()) &&
-                (constValue == null ||
-                  !constValue.equals(cfolder.fold(cfolder.fold((Number)constValue, dstType), srcType)))))) {
+                (constValue == null || !cfolder.isExact(srcType, dstType, (Number)constValue))))) {
             deferredLintHandler.report(_ -> lint.logIfEnabled(pos, builder.apply(srcType, dstType)));
         }
     }

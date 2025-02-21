@@ -186,6 +186,10 @@ public enum TypeTag {
         return (this.superClasses & tag.numericClass) != 0 && this != tag;
     }
 
+    public boolean isNumeric() {
+        return this.numericClass != 0;
+    }
+
     public boolean isSubRangeOf(TypeTag tag) {
         return (this.superClasses & tag.numericClass) != 0;
     }

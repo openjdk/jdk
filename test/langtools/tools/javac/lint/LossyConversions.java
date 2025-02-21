@@ -3,7 +3,7 @@
  * @bug 8244681
  * @summary Test for -Xlint:lossy-conversions
  *
- * @compile/fail/ref=LossyConversions.out -XDrawDiagnostics -Xmaxwarns 200 -Xlint:lossy-conversions -Werror LossyConversions.java
+ * @compile/fail/ref=LossyConversions.out -XDrawDiagnostics -Xmaxwarns 300 -Xlint:lossy-conversions -Werror LossyConversions.java
  */
 
 public class LossyConversions {
@@ -206,21 +206,33 @@ public class LossyConversions {
 
         f = INT2FLOAT_SAFE;             // no warning
         f = INT2FLOAT_UNSAFE;
+        f = Integer.MIN_VALUE;          // no warning
+        f = Integer.MAX_VALUE;
 
         f = LONG2FLOAT_SAFE;            // no warning
         f = LONG2FLOAT_UNSAFE;
+        f = Long.MIN_VALUE;             // no warning
+        f = Long.MAX_VALUE;
 
         d = LONG2DOUBLE_SAFE;           // no warning
         d = LONG2DOUBLE_UNSAFE;
+        d = Long.MIN_VALUE;             // no warning
+        d = Long.MAX_VALUE;
 
         floatMethod(INT2FLOAT_SAFE);    // no warning
         floatMethod(INT2FLOAT_UNSAFE);
+        floatMethod(Integer.MIN_VALUE); // no warning
+        floatMethod(Integer.MAX_VALUE);
 
         floatMethod(LONG2FLOAT_SAFE);   // no warning
         floatMethod(LONG2FLOAT_UNSAFE);
+        floatMethod(Long.MIN_VALUE);    // no warning
+        floatMethod(Long.MAX_VALUE);
 
         doubleMethod(LONG2DOUBLE_SAFE); // no warning
         doubleMethod(LONG2DOUBLE_UNSAFE);
+        doubleMethod(Long.MIN_VALUE);   // no warning
+        doubleMethod(Long.MAX_VALUE);
     }
 
     public void floatMethod(float x) {

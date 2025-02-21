@@ -29,6 +29,8 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.util.*;
 
+import java.lang.runtime.ExactConversionsSupport;
+
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
 
 import static com.sun.tools.javac.jvm.ByteCodes.*;
@@ -316,51 +318,90 @@ strictfp class ConstFold {
          if (etype.tsym.type == ttype.tsym.type)
              return etype;
          if (etype.isNumeric()) {
-             Number folded = fold((Number)etype.constValue(), ttype);
+             Object n = etype.constValue();
              switch (ttype.getTag()) {
              case BYTE:
-                 return syms.byteType.constType(folded);
+                 return syms.byteType.constType(0 + (byte)intValue(n));
              case CHAR:
-                 return syms.charType.constType(folded);
+                 return syms.charType.constType(0 + (char)intValue(n));
              case SHORT:
-                 return syms.shortType.constType(folded);
+                 return syms.shortType.constType(0 + (short)intValue(n));
              case INT:
-                 return syms.intType.constType(folded);
+                 return syms.intType.constType(intValue(n));
              case LONG:
-                 return syms.longType.constType(folded);
+                 return syms.longType.constType(longValue(n));
              case FLOAT:
-                 return syms.floatType.constType(folded);
+                 return syms.floatType.constType(floatValue(n));
              case DOUBLE:
-                 return syms.doubleType.constType(folded);
+                 return syms.doubleType.constType(doubleValue(n));
              }
          }
          return ttype;
      }
 
-    /** Fold the given numeric constant to fit into the target numeric type.
-     *  For types smaller than 32 bits, {@link Integer}s are returned.
-     *  @param value      constant value
-     *  @param ttype      The target type of the coercion
-     *  @return folded value, or null if operation is invalid
+    /** Determine if the given coercion between numeric types loses information.
+     *  @param srcType  The type being assigned from
+     *  @param dstType  The type being assigned to
+     *  @param value    The value being assigned
      */
-    Number fold(Number value, Type ttype) {
-        switch (ttype.getTag()) {
+    boolean isExact(Type srcType, Type dstType, Number value) {
+        Assert.check(srcType.getTag().isNumeric() && dstType.getTag().isNumeric());
+        switch (srcType.getTag()) {
         case BYTE:
-            return (int)value.byteValue();
+            switch (dstType.getTag()) {
+            case CHAR:      return ExactConversionsSupport.isIntToCharExact(value.intValue());
+            }
+            break;
         case CHAR:
-            return (int)(char)value.intValue();
+            switch (dstType.getTag()) {
+            case BYTE:      return ExactConversionsSupport.isIntToByteExact(value.intValue());
+            case SHORT:     return ExactConversionsSupport.isIntToShortExact(value.intValue());
+            }
+            break;
         case SHORT:
-            return (int)value.shortValue();
+            switch (dstType.getTag()) {
+            case BYTE:      return ExactConversionsSupport.isIntToByteExact(value.intValue());
+            case CHAR:      return ExactConversionsSupport.isIntToCharExact(value.intValue());
+            }
+            break;
         case INT:
-            return value.intValue();
-        case LONG:
-            return value.longValue();
+            switch (dstType.getTag()) {
+            case BYTE:      return ExactConversionsSupport.isIntToByteExact(value.intValue());
+            case CHAR:      return ExactConversionsSupport.isIntToCharExact(value.intValue());
+            case SHORT:     return ExactConversionsSupport.isIntToShortExact(value.intValue());
+            case FLOAT:     return ExactConversionsSupport.isIntToFloatExact(value.intValue());
+            }
+            break;
         case FLOAT:
-            return value.floatValue();
+            switch (dstType.getTag()) {
+            case BYTE:      return ExactConversionsSupport.isFloatToByteExact(value.floatValue());
+            case CHAR:      return ExactConversionsSupport.isFloatToCharExact(value.floatValue());
+            case SHORT:     return ExactConversionsSupport.isFloatToShortExact(value.floatValue());
+            case INT:       return ExactConversionsSupport.isFloatToIntExact(value.floatValue());
+            case LONG:      return ExactConversionsSupport.isFloatToLongExact(value.floatValue());
+            }
+            break;
+        case LONG:
+            switch (dstType.getTag()) {
+            case BYTE:      return ExactConversionsSupport.isLongToByteExact(value.longValue());
+            case CHAR:      return ExactConversionsSupport.isLongToCharExact(value.longValue());
+            case SHORT:     return ExactConversionsSupport.isLongToShortExact(value.longValue());
+            case INT:       return ExactConversionsSupport.isLongToIntExact(value.longValue());
+            case FLOAT:     return ExactConversionsSupport.isLongToFloatExact(value.longValue());
+            case DOUBLE:    return ExactConversionsSupport.isLongToDoubleExact(value.longValue());
+            }
+            break;
         case DOUBLE:
-            return value.doubleValue();
-        default:
-            return null;
+            switch (dstType.getTag()) {
+            case BYTE:      return ExactConversionsSupport.isDoubleToByteExact(value.doubleValue());
+            case CHAR:      return ExactConversionsSupport.isDoubleToCharExact(value.doubleValue());
+            case SHORT:     return ExactConversionsSupport.isDoubleToShortExact(value.doubleValue());
+            case INT:       return ExactConversionsSupport.isDoubleToIntExact(value.doubleValue());
+            case FLOAT:     return ExactConversionsSupport.isDoubleToFloatExact(value.doubleValue());
+            case LONG:      return ExactConversionsSupport.isDoubleToLongExact(value.doubleValue());
+            }
+            break;
         }
+        return true;
     }
 }
