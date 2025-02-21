@@ -368,13 +368,14 @@ public final class FileUtils {
     }
 
     /**
-     *  Copies a directory and all entries in the directory to a destination path.
-     *  Makes the access permission of the destination entries writable.
+     * Copies a directory and all entries in the directory to a destination path.
+     * Makes the access permission of the destination entries writable.
      *
      * @param src the path of the source directory
      * @param dst the path of the destination directory
-     * @throws IOException
-     *         if an I/O error occurs
+     * @throws IOException      if an I/O error occurs while walking the file tree
+     * @throws RuntimeException if an I/O error occurs during the copy operation
+     *                          or if the source or destination paths are invalid
      */
     public static void copyDirectory(Path src, Path dst) throws IOException {
         try (Stream<Path> stream = Files.walk(src)) {
