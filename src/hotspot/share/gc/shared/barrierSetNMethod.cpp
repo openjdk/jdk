@@ -212,3 +212,11 @@ bool BarrierSetNMethod::nmethod_osr_entry_barrier(nmethod* nm) {
   OrderAccess::cross_modify_fence();
   return result;
 }
+
+oop BarrierSetNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
+  return NativeAccess<AS_NO_KEEPALIVE>::oop_load(nm->oop_addr_at(index));
+}
+
+oop BarrierSetNMethod::oop_load_phantom(const nmethod* nm, int index) {
+  return NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(nm->oop_addr_at(index));
+}

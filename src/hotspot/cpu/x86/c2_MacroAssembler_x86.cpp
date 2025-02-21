@@ -6675,6 +6675,18 @@ void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst
   }
 }
 
+void C2_MacroAssembler::efp16sh(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2) {
+  switch(opcode) {
+    case Op_AddHF: vaddsh(dst, src1, src2); break;
+    case Op_SubHF: vsubsh(dst, src1, src2); break;
+    case Op_MulHF: vmulsh(dst, src1, src2); break;
+    case Op_DivHF: vdivsh(dst, src1, src2); break;
+    case Op_MaxHF: vmaxsh(dst, src1, src2); break;
+    case Op_MinHF: vminsh(dst, src1, src2); break;
+    default: assert(false, "%s", NodeClassNames[opcode]); break;
+  }
+}
+
 void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc) {
   switch(elem_bt) {
     case T_BYTE:
