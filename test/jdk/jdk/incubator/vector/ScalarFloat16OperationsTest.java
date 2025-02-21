@@ -25,7 +25,6 @@
  * @test
  * @bug 8342103
  * @summary C2 compiler support for Float16 type and associated operations
- * @requires (os.arch != "ppc64" & os.arch != "ppc64le") | vm.cpu.features ~= ".*darn.*"
  * @modules jdk.incubator.vector
  * @library /test/lib
  * @compile ScalarFloat16OperationsTest.java
