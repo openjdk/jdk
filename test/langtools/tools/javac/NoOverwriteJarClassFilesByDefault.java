@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -65,14 +66,16 @@ import java.util.zip.ZipFile;
  */
 public class NoOverwriteJarClassFilesByDefault {
 
-    private static final String OLD_LIB_SOURCE = """
+    private static final String OLD_LIB_SOURCE =
+            """
             package lib;
             public class LibClass {
                 public static final String OLD_FIELD = "This will not compile with Target";
             }
             """;
 
-    private static final String NEW_LIB_SOURCE = """
+    private static final String NEW_LIB_SOURCE =
+            """
             package lib;
             public class LibClass {
                 public static final String NEW_FIELD = "Only this will compile with Target";
@@ -80,7 +83,8 @@ public class NoOverwriteJarClassFilesByDefault {
             """;
 
     // Target source references the field only available in the new source.
-    private static final String TARGET_SOURCE = """
+    private static final String TARGET_SOURCE =
+            """
             class TargetClass {
                 static final String VALUE = lib.LibClass.NEW_FIELD;
             }
@@ -88,6 +92,7 @@ public class NoOverwriteJarClassFilesByDefault {
 
     private static final String LIB_SOURCE_NAME = "lib/LibClass.java";
     private static final String LIB_CLASS_NAME = "lib/LibClass.class";
+    private static final Path LIB_JAR = Path.of("lib.jar");
 
     public static void main(String[] args) throws IOException {
         ToolBox tb = new ToolBox();
@@ -97,7 +102,10 @@ public class NoOverwriteJarClassFilesByDefault {
         // Compile the old (broken) source and then store the class file in the JAR.
         // The class file generated he is in the lib/ directory, which we delete
         // after making the JAR (just to be sure).
-        new JavacTask(tb).files(LIB_SOURCE_NAME).run();
+        new JavacTask(tb)
+                .files(LIB_SOURCE_NAME)
+                .run()
+                .writeAll();
 
         // The new (fixed) source is never written to disk, so if compilation works
         // it proves it's getting it from the source file in the JAR.
@@ -128,13 +136,19 @@ public class NoOverwriteJarClassFilesByDefault {
 
         // Before running the test itself, get the CRC of the class file in the JAR.
         long originalLibCrc = getLibCrc();
+        // And read the JAR file completely for comparison later.
+        byte[] originalJarContents = Files.readAllBytes(LIB_JAR);
 
         // Code under test:
         // Compile the target class with new library source only available in the JAR.
         //
         // This compilation only succeeds if 'NEW_FIELD' exists, which is only in
         // the source file written to the JAR, and nowhere on disk.
-        new JavacTask(tb).sources(TARGET_SOURCE).classpath("lib.jar").run();
+        new JavacTask(tb)
+                .sources(TARGET_SOURCE)
+                .classpath(LIB_JAR)
+                .run()
+                .writeAll();
 
         // Assertion 1: The class file in the JAR is unchanged.
         //
@@ -142,9 +156,11 @@ public class NoOverwriteJarClassFilesByDefault {
         // wrote the class file back to the JAR (bad) then that should now have
         // different contents. Note that the modification time of the class file
         // is NOT modified, even if the JAR is updated, so we cannot test that.
-        long actualLibCrc = getLibCrc();
-        if (actualLibCrc != originalLibCrc) {
+        if (getLibCrc() != originalLibCrc) {
             throw new AssertionError("Class library contents were modified in the JAR file.");
+        }
+        if (!Arrays.equals(Files.readAllBytes(LIB_JAR), originalJarContents)) {
+            throw new AssertionError("Jar file was modified.");
         }
 
         // Assertion 2: An output class file was written to the current directory.
