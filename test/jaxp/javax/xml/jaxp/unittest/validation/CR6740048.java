@@ -59,13 +59,9 @@ public class CR6740048 {
             DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
             docBuilderFactory.setNamespaceAware(true);
 
-            if (xsd != null) {
-                docBuilderFactory.setValidating(true);
-                docBuilderFactory.setAttribute(SCHEMA_LANGUAGE_URL, XML_SCHEMA_URL);
-                docBuilderFactory.setAttribute(SCHEMA_SOURCE_URL, xsd);
-            } else {
-                Assert.fail("getResourceAsStream CR6740048.xsd return null");
-            }
+            docBuilderFactory.setValidating(true);
+            docBuilderFactory.setAttribute(SCHEMA_LANGUAGE_URL, XML_SCHEMA_URL);
+            docBuilderFactory.setAttribute(SCHEMA_SOURCE_URL, xsd);
 
             final DocumentBuilder documentBuilder = docBuilderFactory.newDocumentBuilder();
             documentBuilder.setErrorHandler(new ErrorHandler() {
