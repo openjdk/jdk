@@ -89,6 +89,7 @@ public class WinInstallerResourceTest {
 
     private PackageTest createPackageTest(String name) {
         return new PackageTest()
+                .ignoreBundleOutputDir()
                 .forTypes(PackageType.WIN_EXE)
                 .configureHelloApp()
                 .addInitializer(cmd -> cmd.setArgumentValue("--name", name));
