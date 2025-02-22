@@ -38,8 +38,12 @@ import java.util.Set;
  * @test
  * @bug 8346129
  * @modules java.base/sun.security.util
- * @summary Check DisabledAlgorithmConstraints methods permit(Key) and
- * permit(Set<CryptoPrimitive>, String, APS) with EdDSA & XDH keys
+ * @summary Check DisabledAlgorithmConstraints using EdDSA & XDH against
+ * permit(Set<CryptoPrimitive>, String, AP) and
+ * permit(Set<CryptoPrimitive>, Key).  Results will differ based
+ * on method used.  The first method only can compare the String with the
+ * algorithms.  The second can check the algorithm and NamedParameterSpec
+ * while results in more 'false' cases.
  *
  * @run main/othervm DisabledAlgorithmPermits Ed25519
  * @run main/othervm DisabledAlgorithmPermits Ed448
@@ -58,40 +62,64 @@ public class DisabledAlgorithmPermits {
         List<TestCase> expected = switch (algorithm) {
             case "Ed25519" ->
                 Arrays.asList(
-                    new TestCase("EdDSA", false),
+                    new TestCase("EdDSA", true),
                     new TestCase("Ed25519", false),
                     new TestCase("Ed448", true),
-                    new TestCase("X448", true));
+                    new TestCase("X448", true),
+                    new TestCase(1,"EdDSA", false),
+                    new TestCase(1,"Ed25519", false),
+                    new TestCase(1,"Ed448", true),
+                    new TestCase(1,"X448", true));
             case "Ed448" ->
                 Arrays.asList(
                     new TestCase("EdDSA", true),
                     new TestCase("Ed25519", true),
                     new TestCase("Ed448", false),
-                    new TestCase("X448", true));
+                    new TestCase("X448", true),
+                    new TestCase(1,"EdDSA", true),
+                    new TestCase(1,"Ed25519", true),
+                    new TestCase(1,"Ed448", false),
+                    new TestCase(1,"X448", true));
             case "EdDSA" ->
                 Arrays.asList(
                     new TestCase("EdDSA", false),
-                    new TestCase("Ed25519", false),
-                    new TestCase("Ed448", false),
-                    new TestCase("X448", true));
+                    new TestCase("Ed25519", true),
+                    new TestCase("Ed448", true),
+                    new TestCase("X448", true),
+                    new TestCase(1,"EdDSA", false),
+                    new TestCase(1,"Ed25519", false),
+                    new TestCase(1,"Ed448", false),
+                    new TestCase(1,"X448", true));
             case "X25519" ->
                 Arrays.asList(
-                    new TestCase("XDH", false),
+                    new TestCase("XDH", true),
                     new TestCase("X25519", false),
                     new TestCase("X448", true),
-                    new TestCase("Ed448", true));
+                    new TestCase("Ed448", true),
+                    new TestCase(1, "XDH", false),
+                    new TestCase(1, "X25519", false),
+                    new TestCase(1, "X448", true),
+                    new TestCase(1, "Ed448", true));
             case "X448" ->
                 Arrays.asList(
                     new TestCase("XDH", true),
                     new TestCase("X25519", true),
                     new TestCase("X448", false),
-                    new TestCase("Ed448", true));
+                    new TestCase("Ed448", true),
+                    new TestCase(1, "XDH", true),
+                    new TestCase(1, "X25519", true),
+                    new TestCase(1, "X448", false),
+                    new TestCase(1, "Ed448", true));
             case "XDH" ->
                 Arrays.asList(
                     new TestCase("XDH", false),
-                    new TestCase("X25519", false),
-                    new TestCase("X448", false),
-                    new TestCase("Ed448", true));
+                    new TestCase("X25519", true),
+                    new TestCase("X448", true),
+                    new TestCase("Ed448", true),
+                    new TestCase(1, "XDH", false),
+                    new TestCase(1, "X25519", false),
+                    new TestCase(1, "X448", false),
+                    new TestCase(1, "Ed448", true));
             default -> null;
         };
 
@@ -100,7 +128,10 @@ public class DisabledAlgorithmPermits {
         System.out.println("---");
         var dac = new DisabledAlgorithmConstraints("x");
         System.out.println("disabled algorithms = " + Security.getProperty("x"));
-        expected.stream().forEach(tc -> {
+
+        // Using only testType 0, this tests that permit(Set<>, String, null)
+        // will check only the algorithm against the disabled list
+        expected.stream().filter(n->n.testType == 0).forEach(tc -> {
             boolean r;
             System.out.print("\tpermits(Set.of(CryptoPrimitive.SIGNATURE), \"" +
                 tc.testAlgo + "\", null): " +
@@ -113,7 +144,11 @@ public class DisabledAlgorithmPermits {
             }
             System.out.println("pass");
         });
-        expected.stream().forEach(tc -> {
+
+        // Using only testType 1, this tests permit(Set<>, Key) that will look
+        // at both the key.getAlgorithm() and the key.getParams().getName()
+        // against the disabled list
+        expected.stream().filter(n->n.testType == 1).forEach(tc -> {
             PrivateKey k;
             try {
                 k = KeyPairGenerator.getInstance(tc.testAlgo).generateKeyPair().
