@@ -40,7 +40,9 @@ import java.util.regex.Pattern;
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng/othervm -XX:+UsePerfData SystemDumpMapTest
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UsePerfData SystemDumpMapTest
  */
 public class SystemDumpMapTest extends SystemMapTestBase {
 

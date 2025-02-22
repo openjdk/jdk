@@ -26,6 +26,7 @@ import org.testng.annotations.Test;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test id=normal
@@ -36,7 +37,9 @@ import jdk.test.lib.process.OutputAnalyzer;
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng/othervm -XX:+UsePerfData SystemMapTest
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UsePerfData SystemMapTest
  */
 
 /*
@@ -49,7 +52,9 @@ import jdk.test.lib.process.OutputAnalyzer;
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng/othervm -XX:+UsePerfData -XX:+UseZGC SystemMapTest
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UsePerfData -XX:+UseZGC SystemMapTest
  */
 public class SystemMapTest extends SystemMapTestBase {
     public void run(CommandExecutor executor) {

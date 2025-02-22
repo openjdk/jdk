@@ -28,6 +28,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test
@@ -37,16 +38,25 @@ import jdk.test.lib.dcmd.JMXExecutor;
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng DynLibsTest
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DynLibsTest
  */
 
 public class DynLibsTest {
 
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("VM.dynlibs");
-        output.shouldContain(Platform.buildSharedLibraryName("jvm"));
-        output.shouldContain(Platform.buildSharedLibraryName("java"));
-        output.shouldContain(Platform.buildSharedLibraryName("management"));
+        if (WhiteBox.getWhiteBox().isStatic()) {
+            output.shouldContain("java");
+            output.shouldNotContain(Platform.buildSharedLibraryName("jvm"));
+            output.shouldNotContain(Platform.buildSharedLibraryName("java"));
+            output.shouldNotContain(Platform.buildSharedLibraryName("management"));
+        } else {
+            output.shouldContain(Platform.buildSharedLibraryName("jvm"));
+            output.shouldContain(Platform.buildSharedLibraryName("java"));
+            output.shouldContain(Platform.buildSharedLibraryName("management"));
+        }
     }
 
     @Test
