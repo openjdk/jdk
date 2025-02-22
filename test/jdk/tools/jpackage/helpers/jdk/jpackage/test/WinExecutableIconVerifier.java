@@ -286,5 +286,5 @@ public final class WinExecutableIconVerifier {
 
     private static final WinExecutableIconVerifier INSTANCE = new WinExecutableIconVerifier();
 
-    private final static Path EXTRACT_ICON_PS1 = TKit.TEST_SRC_ROOT.resolve(Path.of("resources/read-executable-icon.ps1")).normalize();
+    private static final Path EXTRACT_ICON_PS1 = TKit.TEST_SRC_ROOT.resolve(Path.of("resources/read-executable-icon.ps1")).normalize();
 }
