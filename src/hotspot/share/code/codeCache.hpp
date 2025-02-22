@@ -110,7 +110,7 @@ class CodeCache : AllStatic {
   static TruncatedSeq      _unloading_gc_intervals;
   static TruncatedSeq      _unloading_allocation_rates;
   static volatile bool     _on_gc_allocation_ongoing;
-  static bool              _unloading_gc_requested;
+  static volatile bool     _unloading_gc_requested;
   static double            _unloading_gc_requested_time;
 
   static ExceptionCache* volatile _exception_cache_purge_list;

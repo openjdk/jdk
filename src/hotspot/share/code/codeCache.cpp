@@ -860,7 +860,7 @@ uint64_t CodeCache::_cold_gc_count = INT_MAX;
 double CodeCache::_last_unloading_time = 0.0;
 size_t CodeCache::_last_unloading_used = 0;
 volatile bool CodeCache::_on_gc_allocation_ongoing = false;
-bool CodeCache::_unloading_gc_requested = false;
+volatile bool CodeCache::_unloading_gc_requested = false;
 double CodeCache::_unloading_gc_requested_time = 0;
 TruncatedSeq CodeCache::_unloading_gc_intervals(10 /* samples */);
 TruncatedSeq CodeCache::_unloading_allocation_rates(10 /* samples */);
