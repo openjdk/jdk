@@ -152,6 +152,9 @@ public:
   // the empty interval to include this region.  If recycled region r is not in the OldCollector partition, do nothing.
   inline void adjust_interval_for_recycled_old_region(ShenandoahHeapRegion* r);
 
+  // Same as above, but assume we already hold global heap lock
+  inline void adjust_interval_for_recycled_old_region_under_lock(ShenandoahHeapRegion* r);
+
   const char* partition_membership_name(ssize_t idx) const;
 
   // Return the index of the next available region >= start_index, or maximum_regions if not found.
