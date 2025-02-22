@@ -61,11 +61,20 @@ public final class IO {
      * so it's best not be saddled with this unnecessarily.
      */
 
-    /**
-     * TODO: should output be flushed automatically? Need to probe System.out to
-     * see what it's connected to and make a determination based on that.
+    /*
+     * Notes on flushing. We want flushing to occur after every call to println
+     * and print, so that the user can see output immediately. This could be
+     * important if the user calls print() to issue a prompt before calling
+     * readln() instead of the readln(prompt) overload. It's also important to
+     * flush after print() in case the user is relying on print() to emit output
+     * as sort of a progress indicator.
+     *
+     * We rely on System.out to have autoflush enabled, which flushes after every
+     * println() call, so we needn't flush again. We flush unconditionally after
+     * calls to print(). Since System.out is doing a lot of flushing anyway, there
+     * isn't much point trying to make this conditional, for example, only if
+     * stdout is connected to a terminal.
      */
-    private static final boolean AUTOFLUSH = true;
 
     /**
      * TODO: What should be the encoding of the internal BufferedReader? Need to
@@ -91,9 +100,6 @@ public final class IO {
      */
     public static void println(Object obj) {
         System.out.println(obj);
-        if (AUTOFLUSH) {
-            System.out.flush();
-        }
     }
 
     /**
@@ -104,9 +110,6 @@ public final class IO {
      */
     public static void println() {
         System.out.println();
-        if (AUTOFLUSH) {
-            System.out.flush();
-        }
     }
 
     /**
@@ -120,9 +123,7 @@ public final class IO {
      */
     public static void print(Object obj) {
         System.out.print(obj);
-        if (AUTOFLUSH) {
-            System.out.flush();
-        }
+        System.out.flush();
     }
 
     /**
