@@ -31,9 +31,6 @@
 #include "classfile/stackMapTableFormat.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#if INCLUDE_CDS
-#include "classfile/systemDictionaryShared.hpp"
-#endif
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -62,6 +59,9 @@
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
+#if INCLUDE_CDS
+#include "classfile/systemDictionaryShared.hpp"
+#endif
 
 #define NOFAILOVER_MAJOR_VERSION                       51
 #define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION  51
