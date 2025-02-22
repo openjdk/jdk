@@ -529,6 +529,11 @@ $(function() {
             if (request.term.trim() === "") {
                 return this.close();
             }
+            // Prevent selection of item at current mouse position
+            this.menu.previousFilter = "_";
+            this.menu.filterTimer = this.menu._delay( function() {
+                delete this.previousFilter;
+            }, 1000);
             return doSearch(request, response);
         },
         response: function(event, ui) {
