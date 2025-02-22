@@ -792,7 +792,7 @@ public final class Class<T> implements java.io.Serializable,
      *          {@code false} otherwise.
      */
     public boolean isInterface() {
-        return Modifier.isInterface(getModifiers());
+        return Modifier.isInterface(modifiers);
     }
 
 
