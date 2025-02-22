@@ -45,8 +45,8 @@ final class LinuxPackageBuilder {
     }
 
     LinuxPackage create() throws ConfigException {
-        if (directName != null) {
-            pkgBuilder.name(directName);
+        if (literalName != null) {
+            pkgBuilder.name(literalName);
         } else {
             // Lower case and turn spaces/underscores into dashes
             pkgBuilder.name(pkgBuilder.create().packageName().toLowerCase().replaceAll("[ _]", "-"));
@@ -77,8 +77,8 @@ final class LinuxPackageBuilder {
                 pkg.asStandardPackageType().map(LinuxPackageArch::getValue).orElseThrow()));
     }
 
-    LinuxPackageBuilder directName(String v) {
-        directName = v;
+    LinuxPackageBuilder literalName(String v) {
+        literalName = v;
         return this;
     }
 
@@ -161,7 +161,7 @@ final class LinuxPackageBuilder {
     private record Defaults(String release, String menuGroupName, String category) {
     }
 
-    private String directName;
+    private String literalName;
     private String menuGroupName;
     private String category;
     private String additionalDependencies;

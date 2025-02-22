@@ -74,7 +74,7 @@ final class LinuxFromParams {
         LINUX_CATEGORY.copyInto(params, pkgBuilder::category);
         LINUX_MENU_GROUP.copyInto(params, pkgBuilder::menuGroupName);
         RELEASE.copyInto(params, pkgBuilder::release);
-        LINUX_PACKAGE_NAME.copyInto(params, pkgBuilder::directName);
+        LINUX_PACKAGE_NAME.copyInto(params, pkgBuilder::literalName);
 
         return pkgBuilder;
     }
