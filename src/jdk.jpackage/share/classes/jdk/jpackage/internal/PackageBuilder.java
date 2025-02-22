@@ -44,13 +44,13 @@ final class PackageBuilder {
     }
 
     Package create() throws ConfigException {
-        final var effectiveName = Optional.ofNullable(name).orElseGet(app::name);
+        final var validatedName = validatedName();
 
         Path relativeInstallDir;
         if (installDir != null) {
             var normalizedInstallDir = mapInstallDir(installDir, type);
             if (type instanceof StandardPackageType stdType) {
-                Optional<Path> installDirName = Optional.of(Path.of(effectiveName));
+                Optional<Path> installDirName = Optional.of(Path.of(validatedName));
                 switch (stdType) {
                     case LINUX_DEB, LINUX_RPM -> {
                         switch (normalizedInstallDir.toString()) {
@@ -69,10 +69,8 @@ final class PackageBuilder {
                 normalizedInstallDir = installDirName.map(normalizedInstallDir::resolve).orElse(normalizedInstallDir);
             }
             relativeInstallDir = normalizedInstallDir;
-        } else if (type instanceof StandardPackageType stdType) {
-            relativeInstallDir = defaultInstallDir(stdType, effectiveName, app);
         } else {
-            throw new UnsupportedOperationException();
+            relativeInstallDir = defaultInstallDir().orElseThrow(UnsupportedOperationException::new);
         }
 
         if (relativeInstallDir.isAbsolute()) {
@@ -82,7 +80,7 @@ final class PackageBuilder {
         return new Stub(
                 app,
                 type,
-                effectiveName,
+                validatedName,
                 Optional.ofNullable(description).orElseGet(app::description),
                 version = Optional.ofNullable(version).orElseGet(app::version),
                 Optional.ofNullable(aboutURL),
@@ -95,10 +93,18 @@ final class PackageBuilder {
         name = v;
         return this;
     }
+    
+    Optional<String> name() {
+        return Optional.ofNullable(name);
+    }
 
     PackageBuilder fileName(Path v) {
         fileName = v;
         return this;
+    }
+    
+    Optional<Path> fileName() {
+        return Optional.ofNullable(fileName);
     }
 
     PackageBuilder description(String v) {
@@ -106,9 +112,17 @@ final class PackageBuilder {
         return this;
     }
 
+    Optional<String> description() {
+        return Optional.ofNullable(description);
+    }
+
     PackageBuilder version(String v) {
         version = v;
         return this;
+    }
+
+    Optional<String> version() {
+        return Optional.ofNullable(version);
     }
 
     PackageBuilder aboutURL(String v) {
@@ -116,9 +130,17 @@ final class PackageBuilder {
         return this;
     }
 
+    Optional<String> aboutURL() {
+        return Optional.ofNullable(aboutURL);
+    }
+
     PackageBuilder licenseFile(Path v) {
         licenseFile = v;
         return this;
+    }
+
+    Optional<Path> licenseFile() {
+        return Optional.ofNullable(licenseFile);
     }
 
     PackageBuilder predefinedAppImage(Path v) {
@@ -126,9 +148,29 @@ final class PackageBuilder {
         return this;
     }
 
+    Optional<Path> predefinedAppImage() {
+        return Optional.ofNullable(predefinedAppImage);
+    }
+
     PackageBuilder installDir(Path v) {
         installDir = v;
         return this;
+    }
+
+    Optional<Path> installDir() {
+        return Optional.ofNullable(installDir);
+    }
+
+    Optional<Path> defaultInstallDir() {
+        if (type instanceof StandardPackageType stdType) {
+            return defaultInstallDir(stdType, validatedName(), app);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private String validatedName() {
+        return name().orElseGet(app::name);
     }
 
     private static Path mapInstallDir(Path installDir, PackageType pkgType)
@@ -169,13 +211,13 @@ final class PackageBuilder {
         return installDir;
     }
 
-    private static Path defaultInstallDir(StandardPackageType pkgType, String pkgName, Application app) {
+    private static Optional<Path> defaultInstallDir(StandardPackageType pkgType, String pkgName, Application app) {
         switch (pkgType) {
             case WIN_EXE, WIN_MSI -> {
-                return app.appImageDirName();
+                return Optional.of(app.appImageDirName());
             }
             case LINUX_DEB, LINUX_RPM -> {
-                return Path.of("/opt").resolve(pkgName);
+                return Optional.of(Path.of("/opt").resolve(pkgName));
             }
             case MAC_DMG, MAC_PKG -> {
                 final Path dirName = app.appImageDirName();
@@ -185,10 +227,10 @@ final class PackageBuilder {
                 } else {
                     base = Path.of("/Applications");
                 }
-                return base.resolve(dirName);
+                return Optional.of(base.resolve(dirName));
             }
             default -> {
-                throw new UnsupportedOperationException();
+                return Optional.empty();
             }
         }
     }
