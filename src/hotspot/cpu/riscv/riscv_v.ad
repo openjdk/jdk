@@ -2,6 +2,7 @@
 // Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
 // Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+// Copyright (c) 2023, 2025, Rivos Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -99,6 +100,12 @@ source %{
           return false;
         }
         break;
+      case Op_MulReductionVI:
+      case Op_MulReductionVL:
+        // When vlen < 4, our log2(vlen) implementation does not help to gain performance improvement.
+        if (vlen < 4) {
+          return false;
+        }
       default:
         break;
     }
@@ -2423,6 +2430,67 @@ instruct vreduce_minD_masked(fRegD dst, fRegD src1, vReg src2, vRegMask_V0 v0, v
                           as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
                           true /* is_double */, true /* is_min */,
                           Matcher::vector_length(this, $src2), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
+// ------------------------------ Vector reduction mul -------------------------
+
+instruct reduce_mulI(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
+                     vReg tmp1, vReg tmp2) %{
+  match(Set dst (MulReductionVI isrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "reduce_mulI $dst, $isrc, $vsrc\t" %}
+
+  ins_encode %{
+    __ reduce_mul_integral_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
+                             as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
+                             Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mulI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
+                            vRegMask_V0 v0, vReg tmp1, vReg tmp2) %{
+  match(Set dst (MulReductionVI (Binary isrc vsrc) v0));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "reduce_mulI_masked $dst, $isrc, $vsrc, $v0\t" %}
+
+  ins_encode %{
+    __ reduce_mul_integral_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
+                             as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
+                             Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc),
+                             Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mulL(iRegLNoSp dst, iRegL isrc, vReg vsrc,
+                     vReg tmp1, vReg tmp2) %{
+  match(Set dst (MulReductionVL isrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "reduce_mulL $dst, $isrc, $vsrc\t" %}
+
+  ins_encode %{
+    __ reduce_mul_integral_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
+                             as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
+                             Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mulL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc,
+                            vRegMask_V0 v0, vReg tmp1, vReg tmp2) %{
+  match(Set dst (MulReductionVL (Binary isrc vsrc) v0));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "reduce_mulL_masked $dst, $isrc, $vsrc, $v0\t" %}
+
+  ins_encode %{
+    __ reduce_mul_integral_v($dst$$Register, $isrc$$Register, as_VectorRegister($vsrc$$reg),
+                             as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
+                             Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc),
+                             Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
