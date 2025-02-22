@@ -66,15 +66,15 @@ import java.util.Optional;
  * </tr>
  * <tr>
  * <th>Linux</th>
- * <td>bin/foo app/foo.jar</td>
- * <td>opt/duke/bin/foo opt/duke/app/foo.jar</td>
- * <td>/opt/duke/bin/foo /opt/duke/app/foo.jar</td>
+ * <td>bin/foo lib/app/foo.jar</td>
+ * <td>opt/duke/bin/foo opt/duke/lib/app/foo.jar</td>
+ * <td>/opt/duke/bin/foo /opt/duke/lib/app/foo.jar</td>
  * </tr>
  * <tr>
  * <th>OSX</th>
- * <td>bin/foo app/foo.jar</td>
- * <td>Applications/duke/bin/foo Applications/duke/app/foo.jar</td>
- * <td>/Applications/duke/bin/foo /Applications/duke/app/foo.jar</td>
+ * <td>Contents/MacOS/foo Contents/app/foo.jar</td>
+ * <td>Applications/Duke.app/Contents/MacOS/foo Applications/Duke.app/Contents/app/foo.jar</td>
+ * <td>/Applications/Duke.app/Contents/MacOS/foo /Applications/Duke.app/Contents/app/foo.jar</td>
  * </tr>
  * </table>
  */
