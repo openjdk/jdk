@@ -26,7 +26,6 @@ import org.testng.annotations.Test;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test id=normal
