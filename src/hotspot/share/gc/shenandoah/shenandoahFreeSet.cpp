@@ -768,11 +768,18 @@ void ShenandoahRegionPartitions::assert_bounds(bool old_trash_not_in_bounds) {
   beg_off = empty_leftmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
   end_off = empty_rightmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
   assert (beg_off >= _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-          "free empty region (%zd) before the leftmost bound %zd",
-          beg_off, _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)]);
+          "free empty region (%zd) before the leftmost bound %zd, old_trash_not_in_bounds: %s, region %s trash",
+          beg_off, _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
+	  old_trash_not_in_bounds? "yes": "no",
+	  (ShenandoahHeap::heap()->get_region(_leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)])->is_trash()?
+	   "is": "is not"));
   assert (end_off <= _rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-          "free empty region (%zd) past the rightmost bound %zd",
-          end_off, _rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)]);
+          "free empty region (%zd) past the rightmost bound %zd, old_trash_not_in_bounds: %s, region %s trash",
+          end_off, _rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
+	  old_trash_not_in_bounds? "yes": "no",
+	  (ShenandoahHeap::heap()->get_region(_rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)])->is_trash()?
+	   "is": "is not"));
+
 }
 #endif
 
