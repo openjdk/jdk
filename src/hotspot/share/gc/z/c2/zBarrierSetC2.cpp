@@ -28,7 +28,6 @@
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "opto/arraycopynode.hpp"
-#include "opto/addnode.hpp"
 #include "opto/block.hpp"
 #include "opto/compile.hpp"
 #include "opto/graphKit.hpp"
@@ -38,7 +37,6 @@
 #include "opto/node.hpp"
 #include "opto/output.hpp"
 #include "opto/regalloc.hpp"
-#include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/type.hpp"
 #include "utilities/debug.hpp"
@@ -475,267 +473,8 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
 
 #undef XTOP
 
-// == Dominating barrier elision ==
-
-static bool block_has_safepoint(const Block* block, uint from, uint to) {
-  for (uint i = from; i < to; i++) {
-    if (block->get_node(i)->is_MachSafePoint()) {
-      // Safepoint found
-      return true;
-    }
-  }
-
-  // Safepoint not found
-  return false;
-}
-
-static bool block_has_safepoint(const Block* block) {
-  return block_has_safepoint(block, 0, block->number_of_nodes());
-}
-
-static uint block_index(const Block* block, const Node* node) {
-  for (uint j = 0; j < block->number_of_nodes(); ++j) {
-    if (block->get_node(j) == node) {
-      return j;
-    }
-  }
-  ShouldNotReachHere();
-  return 0;
-}
-
-// Look through various node aliases
-static const Node* look_through_node(const Node* node) {
-  while (node != nullptr) {
-    const Node* new_node = node;
-    if (node->is_Mach()) {
-      const MachNode* const node_mach = node->as_Mach();
-      if (node_mach->ideal_Opcode() == Op_CheckCastPP) {
-        new_node = node->in(1);
-      }
-      if (node_mach->is_SpillCopy()) {
-        new_node = node->in(1);
-      }
-    }
-    if (new_node == node || new_node == nullptr) {
-      break;
-    } else {
-      node = new_node;
-    }
-  }
-
-  return node;
-}
-
-// Whether the given offset is undefined.
-static bool is_undefined(intptr_t offset) {
-  return offset == Type::OffsetTop;
-}
-
-// Whether the given offset is unknown.
-static bool is_unknown(intptr_t offset) {
-  return offset == Type::OffsetBot;
-}
-
-// Whether the given offset is concrete (defined and compile-time known).
-static bool is_concrete(intptr_t offset) {
-  return !is_undefined(offset) && !is_unknown(offset);
-}
-
-// Compute base + offset components of the memory address accessed by mach.
-// Return a node representing the base address, or null if the base cannot be
-// found or the offset is undefined or a concrete negative value. If a non-null
-// base is returned, the offset is a concrete, nonnegative value or unknown.
-static const Node* get_base_and_offset(const MachNode* mach, intptr_t& offset) {
-  const TypePtr* adr_type = nullptr;
-  offset = 0;
-  const Node* base = mach->get_base_and_disp(offset, adr_type);
-
-  if (base == nullptr || base == NodeSentinel) {
-    return nullptr;
-  }
-
-  if (offset == 0 && base->is_Mach() && base->as_Mach()->ideal_Opcode() == Op_AddP) {
-    // The memory address is computed by 'base' and fed to 'mach' via an
-    // indirect memory operand (indicated by offset == 0). The ultimate base and
-    // offset can be fetched directly from the inputs and Ideal type of 'base'.
-    const TypeOopPtr* oopptr = base->bottom_type()->isa_oopptr();
-    if (oopptr == nullptr) return nullptr;
-    offset = oopptr->offset();
-    // Even if 'base' is not an Ideal AddP node anymore, Matcher::ReduceInst()
-    // guarantees that the base address is still available at the same slot.
-    base = base->in(AddPNode::Base);
-    assert(base != nullptr, "");
-  }
-
-  if (is_undefined(offset) || (is_concrete(offset) && offset < 0)) {
-    return nullptr;
-  }
-
-  return look_through_node(base);
-}
-
-// Whether a phi node corresponds to an array allocation.
-// This test is incomplete: in some edge cases, it might return false even
-// though the node does correspond to an array allocation.
-static bool is_array_allocation(const Node* phi) {
-  precond(phi->is_Phi());
-  // Check whether phi has a successor cast (CheckCastPP) to Java array pointer,
-  // possibly below spill copies and other cast nodes. Limit the exploration to
-  // a single path from the phi node consisting of these node types.
-  const Node* current = phi;
-  while (true) {
-    const Node* next = nullptr;
-    for (DUIterator_Fast imax, i = current->fast_outs(imax); i < imax; i++) {
-      if (!current->fast_out(i)->isa_Mach()) {
-        continue;
-      }
-      const MachNode* succ = current->fast_out(i)->as_Mach();
-      if (succ->ideal_Opcode() == Op_CheckCastPP) {
-        if (succ->get_ptr_type()->isa_aryptr()) {
-          // Cast to Java array pointer: phi corresponds to an array allocation.
-          return true;
-        }
-        // Other cast: record as candidate for further exploration.
-        next = succ;
-      } else if (succ->is_SpillCopy() && next == nullptr) {
-        // Spill copy, and no better candidate found: record as candidate.
-        next = succ;
-      }
-    }
-    if (next == nullptr) {
-      // No evidence found that phi corresponds to an array allocation, and no
-      // candidates available to continue exploring.
-      return false;
-    }
-    // Continue exploring from the best candidate found.
-    current = next;
-  }
-  ShouldNotReachHere();
-}
-
-// Match the phi node that connects a TLAB allocation fast path with its slowpath
-static bool is_allocation(const Node* node) {
-  if (node->req() != 3) {
-    return false;
-  }
-  const Node* const fast_node = node->in(2);
-  if (!fast_node->is_Mach()) {
-    return false;
-  }
-  const MachNode* const fast_mach = fast_node->as_Mach();
-  if (fast_mach->ideal_Opcode() != Op_LoadP) {
-    return false;
-  }
-  const TypePtr* const adr_type = nullptr;
-  intptr_t offset;
-  const Node* const base = get_base_and_offset(fast_mach, offset);
-  if (base == nullptr || !base->is_Mach() || !is_concrete(offset)) {
-    return false;
-  }
-  const MachNode* const base_mach = base->as_Mach();
-  if (base_mach->ideal_Opcode() != Op_ThreadLocal) {
-    return false;
-  }
-  return offset == in_bytes(Thread::tlab_top_offset());
-}
-
-static void elide_mach_barrier(MachNode* mach) {
+void ZBarrierSetC2::elide_dominated_barrier(MachNode* mach) const {
   mach->set_barrier_data(ZBarrierElided);
-}
-
-void ZBarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators) const {
-  Compile* const C = Compile::current();
-  PhaseCFG* const cfg = C->cfg();
-
-  for (uint i = 0; i < accesses.size(); i++) {
-    MachNode* const access = accesses.at(i)->as_Mach();
-    intptr_t access_offset;
-    const Node* const access_obj = get_base_and_offset(access, access_offset);
-    Block* const access_block = cfg->get_block_for_node(access);
-    const uint access_index = block_index(access_block, access);
-
-    if (access_obj == nullptr) {
-      // No information available
-      continue;
-    }
-
-    for (uint j = 0; j < access_dominators.size(); j++) {
-     const  Node* const mem = access_dominators.at(j);
-      if (mem->is_Phi()) {
-        // Allocation node
-        if (mem != access_obj) {
-          continue;
-        }
-        if (is_unknown(access_offset) && !is_array_allocation(mem)) {
-          // The accessed address has an unknown offset, but the allocated
-          // object cannot be determined to be an array. Avoid eliding in this
-          // case, to be on the safe side.
-          continue;
-        }
-        assert((is_concrete(access_offset) && access_offset >= 0) || (is_unknown(access_offset) && is_array_allocation(mem)),
-               "candidate allocation-dominated access offsets must be either concrete and nonnegative, or unknown (for array allocations only)");
-      } else {
-        // Access node
-        const MachNode* const mem_mach = mem->as_Mach();
-        intptr_t mem_offset;
-        const Node* const mem_obj = get_base_and_offset(mem_mach, mem_offset);
-
-        if (mem_obj == nullptr ||
-            !is_concrete(access_offset) ||
-            !is_concrete(mem_offset)) {
-          // No information available
-          continue;
-        }
-
-        if (mem_obj != access_obj || mem_offset != access_offset) {
-          // Not the same addresses, not a candidate
-          continue;
-        }
-        assert(is_concrete(access_offset) && access_offset >= 0,
-               "candidate non-allocation-dominated access offsets must be concrete and nonnegative");
-      }
-
-      Block* mem_block = cfg->get_block_for_node(mem);
-      const uint mem_index = block_index(mem_block, mem);
-
-      if (access_block == mem_block) {
-        // Earlier accesses in the same block
-        if (mem_index < access_index && !block_has_safepoint(mem_block, mem_index + 1, access_index)) {
-          elide_mach_barrier(access);
-        }
-      } else if (mem_block->dominates(access_block)) {
-        // Dominating block? Look around for safepoints
-        ResourceMark rm;
-        Block_List stack;
-        VectorSet visited;
-        stack.push(access_block);
-        bool safepoint_found = block_has_safepoint(access_block);
-        while (!safepoint_found && stack.size() > 0) {
-          const Block* const block = stack.pop();
-          if (visited.test_set(block->_pre_order)) {
-            continue;
-          }
-          if (block_has_safepoint(block)) {
-            safepoint_found = true;
-            break;
-          }
-          if (block == mem_block) {
-            continue;
-          }
-
-          // Push predecessor blocks
-          for (uint p = 1; p < block->num_preds(); ++p) {
-            Block* const pred = cfg->get_block_for_node(block->pred(p));
-            stack.push(pred);
-          }
-        }
-
-        if (!safepoint_found) {
-          elide_mach_barrier(access);
-        }
-      }
-    }
-  }
 }
 
 void ZBarrierSetC2::analyze_dominating_barriers() const {
@@ -807,9 +546,9 @@ void ZBarrierSetC2::analyze_dominating_barriers() const {
   }
 
   // Step 2 - Find dominating accesses or allocations for each access
-  analyze_dominating_barriers_impl(loads, load_dominators);
-  analyze_dominating_barriers_impl(stores, store_dominators);
-  analyze_dominating_barriers_impl(atomics, atomic_dominators);
+  elide_dominated_barriers(loads, load_dominators);
+  elide_dominated_barriers(stores, store_dominators);
+  elide_dominated_barriers(atomics, atomic_dominators);
 }
 
 void ZBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {

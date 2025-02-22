@@ -929,7 +929,10 @@ public class TestResolvedJavaType extends TypeUniverse {
             return true;
         }
         if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(Class.class))) {
-            return f.getName().equals("classLoader") || f.getName().equals("classData") || f.getName().equals("modifiers");
+            return f.getName().equals("classLoader") ||
+                   f.getName().equals("classData") ||
+                   f.getName().equals("modifiers") ||
+                   f.getName().equals("protectionDomain");
         }
         if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(Lookup.class))) {
             return f.getName().equals("allowedModes") || f.getName().equals("lookupClass");
