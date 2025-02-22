@@ -25,6 +25,13 @@
 
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
+import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -32,12 +39,6 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Optional;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import jdk.jpackage.internal.util.FileUtils;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
@@ -102,16 +103,20 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
      static String getInstallDir(
             Map<String, ? super Object>  params, boolean defaultOnly) {
         String returnValue = INSTALL_DIR.fetchFrom(params);
-        if (defaultOnly && returnValue != null) {
-            Log.info(I18N.getString("message.install-dir-ignored"));
+
+        final String defaultInstallDir;
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+            defaultInstallDir = "/Library/Java/JavaVirtualMachines";
+        } else {
+            defaultInstallDir = "/Applications";
+        }
+
+        if (defaultOnly && returnValue != null && !Path.of(returnValue).equals(Path.of(defaultInstallDir))) {
+            Log.info(MessageFormat.format(I18N.getString("message.install-dir-ignored"), defaultInstallDir));
             returnValue = null;
         }
         if (returnValue == null) {
-            if (StandardBundlerParam.isRuntimeInstaller(params)) {
-                returnValue = "/Library/Java/JavaVirtualMachines";
-            } else {
-               returnValue = "/Applications";
-            }
+            returnValue = defaultInstallDir;
         }
         return returnValue;
     }

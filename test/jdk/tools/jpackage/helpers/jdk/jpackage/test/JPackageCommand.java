@@ -71,6 +71,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         ignoreDefaultRuntime = cmd.ignoreDefaultRuntime;
         ignoreDefaultVerbose = cmd.ignoreDefaultVerbose;
         immutable = cmd.immutable;
+        dmgInstallDir = cmd.dmgInstallDir;
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
         appLayoutAsserts = cmd.appLayoutAsserts;
@@ -501,7 +502,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         if (TKit.isOSX()) {
-            return MacHelper.getInstallationDirectory(this);
+            if (packageType() == PackageType.MAC_DMG && dmgInstallDir != null) {
+                return dmgInstallDir;
+            } else {
+                return MacHelper.getInstallationDirectory(this);
+            }
         }
 
         throw TKit.throwUnknownPlatformError();
@@ -867,6 +872,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             var copy = new JPackageCommand(cmd);
             copy.immutable = false;
             copy.removeArgumentWithValue("--runtime-image");
+            copy.dmgInstallDir = cmd.appInstallationDirectory();
             return copy;
         }
 
@@ -1164,6 +1170,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private boolean ignoreDefaultRuntime;
     private boolean ignoreDefaultVerbose;
     private boolean immutable;
+    private Path dmgInstallDir;
     private final Actions prerequisiteActions;
     private final Actions verifyActions;
     private Path executeInDirectory;
