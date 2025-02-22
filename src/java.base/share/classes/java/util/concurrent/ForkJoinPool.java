@@ -38,7 +38,6 @@ package java.util.concurrent;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +46,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
-import java.util.concurrent.locks.ReentrantLock;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaUtilConcurrentFJPAccess;
 import jdk.internal.access.SharedSecrets;
@@ -143,7 +141,7 @@ import static java.util.concurrent.DelayScheduler.ScheduledForkJoinTask;
  * that take too long. The scheduled functions or actions may create
  * and invoke other {@linkplain ForkJoinTask ForkJoinTasks}. Delayed
  * actions become <em>enabled</em> and behave as ordinary submitted
- * tasks when their delays elapse.  schedule methods return
+ * tasks when their delays elapse.  Scheduling methods return
  * {@linkplain ForkJoinTask ForkJoinTasks} that implement the {@link
  * ScheduledFuture} interface. Resource exhaustion encountered after
  * initial submission results in task cancellation. When time-based
@@ -154,10 +152,10 @@ import static java.util.concurrent.DelayScheduler.ScheduledForkJoinTask;
  * complete. Method {@link #cancelDelayedTasksOnShutdown} may be used
  * to disable all delayed tasks upon shutdown, and method {@link
  * #shutdownNow} may be used to instead unconditionally initiate pool
- * termination. Monitoring methods such as {@link getQueuedTaskCount}
- * do not include scheduled tasks that are not yet ready to execute,
- * whcih are reported separately by method {@link
- * getDelayedTaskCount}.
+ * termination. Monitoring methods such as {@link #getQueuedTaskCount}
+ * do not include scheduled tasks that are not yet enabled to execute,
+ * which are reported separately by method {@link
+ * #getDelayedTaskCount}.
  *
  * <p>The parameters used to construct the common pool may be controlled by
  * setting the following {@linkplain System#getProperty system properties}:
@@ -184,7 +182,7 @@ import static java.util.concurrent.DelayScheduler.ScheduledForkJoinTask;
  * Upon any error in establishing these settings, default parameters
  * are used. It is possible to disable use of threads by using a
  * factory that may return {@code null}, in which case some tasks may
- * never execute. It is also possible but strongly discouraged to set
+ * never execute. While possible, it is strongly discouraged to set
  * the parallelism property to zero, which may be internally
  * overridden in the presence of intrinsically async tasks.
  *
@@ -923,18 +921,20 @@ public class ForkJoinPool extends AbstractExecutorService
      * creating and starting a DelayScheduler on first use of these
      * methods (via startDelayScheduler, with callback
      * onDelaySchedulerStart). The scheduler operates independently in
-     * its own thread, relaying tasks to the pool to execute as they
-     * become ready (see method executeReadyScheduledTask).  The only
-     * other interactions with the delayScheduler are to control
-     * shutdown and maintain shutdown-related policies in methods
-     * quiescent() and tryTerminate(). In particular, to conform to
-     * policies, shutdown-related processing must deal with cases in
-     * which tasks are submitted before shutdown, but not ready until
-     * afterwards, in which case they must bypass some screening to be
-     * allowed to run. Conversely, the DelayScheduler interacts with
-     * the pool only to check runState status and complete
-     * termination, using only methods shutdownStatus and
-     * tryStopIfShutdown.
+     * its own thread, relaying tasks to the pool to execute when
+     * their delays elapse (see method executeEnabledScheduledTask).
+     * The only other interactions with the delayScheduler are to
+     * control shutdown and maintain shutdown-related policies in
+     * methods quiescent() and tryTerminate(). In particular, to
+     * conform to policies, shutdown-related processing must deal with
+     * cases in which tasks are submitted before shutdown, but not
+     * ready until afterwards, in which case they must bypass some
+     * screening to be allowed to run. Conversely, the DelayScheduler
+     * checks runState status and when enabled, completes termination,
+     * using only methods shutdownStatus and tryStopIfShutdown. All of
+     * these methods are final and have signatures referencing
+     * DelaySchedulers, so cannot conflict with those of any existing
+     * FJP subclasses.
      *
      * Memory placement
      * ================
@@ -1745,14 +1745,6 @@ public class ForkJoinPool extends AbstractExecutorService
         return p != null && (p.runState & STOP) != 0L;
     }
 
-    /**
-     * Returns STOP and SHUTDOWN status (zero if neither), masking or
-     * truncating out other bits.
-     */
-    final int shutdownStatus() {
-        return (int)(runState & (SHUTDOWN | STOP));
-    }
-
     // Creating, registering, and deregistering workers
 
     /**
@@ -1876,7 +1868,8 @@ public class ForkJoinPool extends AbstractExecutorService
                 unlockRunState();
             }
         }
-        if (!tryStopIfShutdown() && phase != 0 && w != null && w.source != DROPPED) {
+        if ((tryTerminate(false, false) & STOP) == 0L &&
+            phase != 0 && w != null && w.source != DROPPED) {
             signalWork();                  // possibly replace
             w.cancelTasks();               // clean queue
         }
@@ -2582,7 +2575,8 @@ public class ForkJoinPool extends AbstractExecutorService
      * Finds and locks a WorkQueue for an external submitter, or
      * throws RejectedExecutionException if shutdown or terminating.
      * @param r current ThreadLocalRandom.getProbe() value
-     * @param rejectOnShutdown true if throw RJE when shutdown
+     * @param rejectOnShutdown true if RejectedExecutionException
+     *        should be thrown when shutdown (else only if terminating)
      */
     private WorkQueue submissionQueue(int r, boolean rejectOnShutdown) {
         if (r == 0) {
@@ -2810,13 +2804,6 @@ public class ForkJoinPool extends AbstractExecutorService
             }
         }
         return e;
-    }
-
-    /**
-     * Tries to stop and possibly terminate if already enabled, return success.
-     */
-    final boolean tryStopIfShutdown() {
-        return (tryTerminate(false, false) & STOP) != 0L;
     }
 
     /**
@@ -3454,6 +3441,21 @@ public class ForkJoinPool extends AbstractExecutorService
     // Support for delayed tasks
 
     /**
+     * Returns STOP and SHUTDOWN status (zero if neither), masking or
+     * truncating out other bits.
+     */
+    final int shutdownStatus(DelayScheduler ds) {
+        return (int)(runState & (SHUTDOWN | STOP));
+    }
+
+    /**
+     * Tries to stop and possibly terminate if already enabled, return success.
+     */
+    final boolean tryStopIfShutdown(DelayScheduler ds) {
+        return (tryTerminate(false, false) & STOP) != 0L;
+    }
+
+    /**
      *  Creates and starts DelayScheduler
      */
     private DelayScheduler startDelayScheduler() {
@@ -3487,17 +3489,17 @@ public class ForkJoinPool extends AbstractExecutorService
     /**
      * Callback upon starting DelayScheduler
      */
-    final void onDelaySchedulerStart() {
+    final void onDelaySchedulerStart(DelayScheduler ds) {
         WorkQueue q;           // set up default submission queue
         if ((q = submissionQueue(0, false)) != null)
             q.unlockPhase();
     }
 
     /**
-     * Arranges execution of a ready task from DelayScheduler, or
-     * cancels it on error
+     * Arranges execution of a ScheduledForkJoinTask whose delay has
+     * elapsed, or cancels it on error
      */
-    final void executeReadyScheduledTask(ScheduledForkJoinTask<?> task) {
+    final void executeEnabledScheduledTask(ScheduledForkJoinTask<?> task) {
         if (task != null) {
             WorkQueue q;
             boolean cancel = false;
@@ -3523,7 +3525,7 @@ public class ForkJoinPool extends AbstractExecutorService
         DelayScheduler ds;
         if (((ds = delayScheduler) == null &&
              (ds = startDelayScheduler()) == null) ||
-            task == null || (runState & SHUTDOWN) != 0L)
+            (runState & SHUTDOWN) != 0L)
             throw new RejectedExecutionException();
         ds.pend(task);
         return task;
@@ -3531,7 +3533,7 @@ public class ForkJoinPool extends AbstractExecutorService
 
     /**
      * Submits a one-shot task that becomes enabled after the given
-     * delay, At which point it will execute unless explicitly
+     * delay.  At that point it will execute unless explicitly
      * cancelled, or fail to execute (eventually reporting
      * cancellation) when encountering resource exhaustion, or the
      * pool is {@link #shutdownNow}, or is {@link #shutdown} when
@@ -3553,13 +3555,13 @@ public class ForkJoinPool extends AbstractExecutorService
                                        long delay, TimeUnit unit) {
         Objects.requireNonNull(command);
         return scheduleDelayedTask(
-            new ScheduledForkJoinTask<Void>(
+            new ScheduledForkJoinTask<Void>( // implicit null check of unit
                 unit.toNanos(delay), 0L, false, command, null, this));
     }
 
     /**
      * Submits a value-returning one-shot task that becomes enabled
-     * after the given delay. At which point it will execute unless
+     * after the given delay. At that point it will execute unless
      * explicitly cancelled, or fail to execute (eventually reporting
      * cancellation) when encountering resource exhaustion, or the
      * pool is {@link #shutdownNow}, or is {@link #shutdown} when

@@ -2790,7 +2790,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * @since 9
      */
     public CompletableFuture<T> orTimeout(long timeout, TimeUnit unit) {
-        arrangeTimeout(unit.toNanos(timeout),
+        arrangeTimeout(unit.toNanos(timeout), // Implicit null-check of unit
                        new Timeout<T>(this, null, true));
         return this;
     }
@@ -2837,7 +2837,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         final Future<?> f;
         Canceller(Future<?> f) { this.f = f; }
         public void accept(Object ignore, Throwable ex) {
-            if (f != null)
+            if (f != null) // currently never null
                 f.cancel(false);
         }
     }
@@ -2871,7 +2871,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      */
     public static Executor delayedExecutor(long delay, TimeUnit unit,
                                            Executor executor) {
-        return new DelayedExecutor(unit.toNanos(delay),
+        return new DelayedExecutor(unit.toNanos(delay), // implicit null check
                                    Objects.requireNonNull(executor));
     }
 
@@ -2888,7 +2888,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * @since 9
      */
     public static Executor delayedExecutor(long delay, TimeUnit unit) {
-        return new DelayedExecutor(unit.toNanos(delay), ASYNC_POOL);
+        return new DelayedExecutor(unit.toNanos(delay), // implicit null check
+                                   ASYNC_POOL);
     }
 
     /**

@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CompletableFutureOrTimeoutExceptionallyTest {
     // updated February 2025 to adapt to CompletableFuture DelayScheduler changes
@@ -45,6 +45,7 @@ class CompletableFutureOrTimeoutExceptionallyTest {
     @Test
     void testOrTimeoutWithCompleteExceptionallyDoesNotLeak() throws InterruptedException {
         ForkJoinPool delayer = ForkJoinPool.commonPool();
+        assertEquals(delayer.getDelayedTaskCount(), 0);
         var future = new CompletableFuture<>().orTimeout(12, TimeUnit.HOURS);
         future.completeExceptionally(new RuntimeException("This is fine"));
         while (delayer.getDelayedTaskCount() != 0) {
@@ -58,6 +59,7 @@ class CompletableFutureOrTimeoutExceptionallyTest {
     @Test
     void testCompleteOnTimeoutWithCompleteExceptionallyDoesNotLeak() throws InterruptedException {
         ForkJoinPool delayer = ForkJoinPool.commonPool();
+        assertEquals(delayer.getDelayedTaskCount(), 0);
         var future = new CompletableFuture<>().completeOnTimeout(null, 12, TimeUnit.HOURS);
         future.completeExceptionally(new RuntimeException("This is fine"));
         while (delayer.getDelayedTaskCount() != 0) {

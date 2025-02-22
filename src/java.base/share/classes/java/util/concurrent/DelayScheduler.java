@@ -49,13 +49,15 @@ final class DelayScheduler extends Thread {
      * A DelayScheduler maintains a 4-ary heap (see
      * https://en.wikipedia.org/wiki/D-ary_heap) based on trigger
      * times (field ScheduledForkJoinTask.when) along with a pending
-     * queue of tasks submitted by other threads. When ready, tasks
-     * are relayed to the pool, or run directly if task.isImmediate.
-     * Immediate mode is designed for internal jdk usages in which the
-     * (known, non-blocking) action is to cancel, unblock or
-     * differently relay another async task. If processing encounters
-     * resource failures (possible when growing heap or ForkJoinPool
-     * WorkQueue arrays), tasks are cancelled.
+     * queue of tasks submitted by other threads. When enabled (their
+     * delays elapse), tasks are relayed to the pool, or run directly
+     * if task.isImmediate.  Immediate mode is designed for internal
+     * jdk usages in which the (known, non-blocking) action is to
+     * cancel, unblock or differently relay another async task (in
+     * some cases, this relies on user code to trigger async tasks
+     * actually being async). If processing encounters resource
+     * failures (possible when growing heap or ForkJoinPool WorkQueue
+     * arrays), tasks are cancelled.
      *
      * To reduce memory contention, the heap is maintained solely via
      * local variables in method loop() (forcing noticeable code
@@ -81,7 +83,7 @@ final class DelayScheduler extends Thread {
      * status to inactive when there is apparently no work, and then
      * rechecks before actually parking.  The active field takes on a
      * negative value on termination, as a sentinel used in pool
-     * tryTerminate checks as well as to suppress reactivation while
+     * termination checks as well as to suppress reactivation while
      * terminating.
      *
      * The implementation is designed to accommodate usages in which
@@ -161,7 +163,7 @@ final class DelayScheduler extends Thread {
     }
 
     /**
-     * Inserts the task (if non-null) to pending queue, to add,
+     * Inserts the task (if nonnull) to pending queue, to add,
      * remove, or ignore depending on task status when processed.
      */
     final void pend(ScheduledForkJoinTask<?> task) {
@@ -171,8 +173,8 @@ final class DelayScheduler extends Thread {
                 f != (f = (ScheduledForkJoinTask<?>)
                       U.compareAndExchangeReference(
                           this, PENDING, task.nextPending = f, task)));
+            signal();
         }
-        signal();
     }
 
     /**
@@ -211,7 +213,7 @@ final class DelayScheduler extends Thread {
             } finally {
                 restingSize = 0;
                 active = -1;
-                p.tryStopIfShutdown();
+                p.tryStopIfShutdown(this);
             }
         }
     }
@@ -220,12 +222,12 @@ final class DelayScheduler extends Thread {
      * After initialization, repeatedly:
      * 1. Process pending tasks in batches, to add or remove from heap
      * 2. Check for shutdown, either exiting or preparing for shutdown when empty
-     * 3. Trigger all ready tasks by externally submitting them to pool
+     * 3. Trigger all enabled tasks by externally submitting them to pool
      * 4. If active, set tentatively inactive,
      *    else park until next trigger time, or indefinitely if none
      */
     private void loop(ForkJoinPool p) {
-        p.onDelaySchedulerStart();
+        p.onDelaySchedulerStart(this);
         ScheduledForkJoinTask<?>[] h =         // heap array
             new ScheduledForkJoinTask<?>[INITIAL_HEAP_CAPACITY];
         int cap = h.length, n = 0, prevRunStatus = 0; // n is heap size
@@ -277,14 +279,14 @@ final class DelayScheduler extends Thread {
                 } while ((t = next) != null);
             }
 
-            if ((runStatus = p.shutdownStatus()) != 0) {
+            if ((runStatus = p.shutdownStatus(this)) != 0) {
                 if ((n = tryStop(p, h, n, runStatus, prevRunStatus)) < 0)
                     break;
                 prevRunStatus = runStatus;
             }
 
             long parkTime = 0L;             // zero for untimed park
-            if (n > 0 && h.length > 0) {    // submit ready tasks
+            if (n > 0 && h.length > 0) {    // submit enabled tasks
                 long now = now();
                 do {
                     ScheduledForkJoinTask<?> f; int stat;
@@ -299,7 +301,7 @@ final class DelayScheduler extends Thread {
                             if (f.isImmediate)
                                 f.doExec();
                             else
-                                p.executeReadyScheduledTask(f);
+                                p.executeEnabledScheduledTask(f);
                         }
                     }
                 } while ((n = replace(h, 0, n)) > 0);
@@ -404,7 +406,7 @@ final class DelayScheduler extends Thread {
                     }
                 }
             }
-            if (n > 0 || p == null || !p.tryStopIfShutdown())
+            if (n > 0 || p == null || !p.tryStopIfShutdown(this))
                 return n;       // check for quiescent shutdown
         }
         if (n > 0)
@@ -496,7 +498,7 @@ final class DelayScheduler extends Thread {
             if ((d = nextDelay) != 0L && // is periodic
                 status >= 0 &&           // not abnormally completed
                 (p = pool) != null && (ds = p.delayScheduler) != null) {
-                if (p.shutdownStatus() == 0) {
+                if (p.shutdownStatus(ds) == 0) {
                     heapIndex = -1;
                     if (d < 0L)
                         when = DelayScheduler.now() - d;
@@ -514,7 +516,7 @@ final class DelayScheduler extends Thread {
         }
 
         public final boolean cancel(boolean mayInterruptIfRunning) {
-            int s; Thread t; ForkJoinPool p; DelayScheduler ds;
+            int s; ForkJoinPool p; DelayScheduler ds;
             if ((s = trySetCancelled()) < 0)
                 return ((s & (ABNORMAL | THROWN)) == ABNORMAL);
             if ((p = pool) != null &&

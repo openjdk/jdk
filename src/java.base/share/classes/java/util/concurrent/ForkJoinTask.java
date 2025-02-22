@@ -43,7 +43,6 @@ import java.util.Objects;
 import java.util.RandomAccess;
 import java.util.concurrent.locks.LockSupport;
 import jdk.internal.misc.Unsafe;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * Abstract base class for tasks that run within a {@link ForkJoinPool}.
