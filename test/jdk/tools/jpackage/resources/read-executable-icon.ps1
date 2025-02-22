@@ -35,15 +35,18 @@ Add-Type -AssemblyName 'System.Drawing'
 
 $Shell32MethodDefinitions = @'
 [DllImport("shell32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-public static extern IntPtr ExtractIcon(IntPtr hInst, string lpszExeFileName, int nIconIndex);
+public static extern uint ExtractIconEx(string szFileName, int nIconIndex, IntPtr[] phiconLarge, IntPtr[] phiconSmall, uint nIcons);
 '@
 $Shell32 = Add-Type -MemberDefinition $Shell32MethodDefinitions -Name 'Shell32' -Namespace 'Win32' -PassThru
 
-$IconCount = $Shell32::ExtractIcon(0, $InputExecutable, -1);
-if ($IconCount -ne 0) {
-  # Execeutable has an icon.
-  $IconHandle = $Shell32::ExtractIcon(0, $InputExecutable, 0);
-  $Icon = [System.Drawing.Icon]::FromHandle($IconHandle);
+$IconHandleArray = New-Object IntPtr[] 1 # Allocate IntPtr[1] to recieve HICON
+$IconCount = $Shell32::ExtractIconEx($InputExecutable, 0, $IconHandleArray, $null, 1);
+if ($IconCount -eq [uint32]::MaxValue) {
+  Write-Error "Failed to read icon."
+  exit 100
+} elseif ($IconCount -ne 0) {
+  # Executable has an icon.
+  $Icon = [System.Drawing.Icon]::FromHandle($IconHandleArray[0]);
   $Icon.ToBitmap().Save($OutputIcon, [System.Drawing.Imaging.ImageFormat]::Bmp)
 } else {
   # Execeutable doesn't have an icon. Empty output icon file.
