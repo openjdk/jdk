@@ -29,8 +29,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.MacApplication;
+import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.MacDmgPackageMixin;
 import jdk.jpackage.internal.model.MacPackage;
 
@@ -55,6 +55,14 @@ final class MacDmgPackageBuilder {
     }
 
     MacDmgPackage create() throws ConfigException {
+        pkgBuilder.installDir().ifPresent(installDir -> {
+            final var defaultInstallDirLocation = pkgBuilder.defaultInstallDir().map(Path::getParent).orElseThrow();
+            if (!defaultInstallDirLocation.equals(installDir)) {
+                Log.info(I18N.format("message.install-dir-ignored", defaultInstallDirLocation));
+                pkgBuilder.installDir(defaultInstallDirLocation);
+            }
+        });
+
         final var pkg = MacPackage.create(pkgBuilder.create());
 
         return MacDmgPackage.create(pkg, new MacDmgPackageMixin.Stub(
