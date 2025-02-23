@@ -86,4 +86,16 @@ class NamedPackage {
     static Package toPackage(String name, Module module) {
         return new Package(name, module);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return (o instanceof NamedPackage other)
+                && name.equals(other.name)
+                && module == other.module;
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
 }

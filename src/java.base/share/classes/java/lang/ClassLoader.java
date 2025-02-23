@@ -2064,10 +2064,12 @@ public abstract class ClassLoader {
                                 implTitle, implVersion, implVendor,
                                 sealBase, this);
 
-        if (packages.putIfAbsent(name, p) != null)
-            throw new IllegalArgumentException(name);
-
-        return p;
+        NamedPackage ex = packages.putIfAbsent(name, p);
+        if (ex == null)
+            return p;
+        if (ex.equals(p))
+            return (Package) ex;
+        throw new IllegalArgumentException("Incompatible redefinition of package " + name);
     }
 
     /**

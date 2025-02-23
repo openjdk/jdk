@@ -593,8 +593,61 @@ public final class Package extends NamedPackage implements java.lang.reflect.Ann
             this.specVendor = specvendor;
             this.sealBase = sealbase;
         }
+
+        @Override
+        public final boolean equals(Object o) {
+            if (o == this)
+                return true;
+            if (o instanceof VersionInfo other) {
+                if (!(Objects.equals(specTitle, other.specTitle)
+                        && Objects.equals(specVersion, other.specVersion)
+                        && Objects.equals(specVendor, other.specVendor)
+                        && Objects.equals(implTitle, other.implTitle)
+                        && Objects.equals(implVersion, other.implVersion)
+                        && Objects.equals(implVendor, other.implVendor)))
+                    return false;
+
+                // Don't involve URLStreamHandler
+                if (sealBase == null && other.sealBase == null)
+                    return true;
+                if (sealBase == null || other.sealBase == null)
+                    return false;
+                return Objects.equals(sealBase.getProtocol(), other.sealBase.getProtocol())
+                        && Objects.equals(sealBase.getAuthority(), other.sealBase.getAuthority())
+                        && Objects.equals(sealBase.getPath(), other.sealBase.getPath());
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hashCode(specTitle);
+            result = 31 * result + Objects.hashCode(specVersion);
+            result = 31 * result + Objects.hashCode(specVendor);
+            result = 31 * result + Objects.hashCode(implTitle);
+            result = 31 * result + Objects.hashCode(implVersion);
+            result = 31 * result + Objects.hashCode(implVendor);
+
+            if (sealBase != null) {
+                // Don't involve URLStreamHandler
+                result = 31 * result + Objects.hashCode(sealBase.getProtocol());
+                result = 31 * result + Objects.hashCode(sealBase.getAuthority());
+                result = 31 * result + Objects.hashCode(sealBase.getPath());
+            }
+            return result;
+        }
     }
 
     private final VersionInfo versionInfo;
     private Class<?> packageInfo;
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this)
+            return true;
+        return (o instanceof Package other)
+                && super.equals(other)
+                && Objects.equals(versionInfo, other.versionInfo)
+                && Objects.equals(packageInfo, other.packageInfo);
+    }
 }
