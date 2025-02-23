@@ -152,23 +152,17 @@ function createMatcher(term, camelCase) {
             // ',' and '?' are the only delimiters commonly followed by space in java signatures
             pattern += "(" + escapeUnicodeRegex(s).replace(/[,?]/g, "$&\\s*?") + ")";
             upperCase.push(false);
-            var isWordToken =  /[\p{L}\p{Nd}_]$/u.test(s);
-            if (isWordToken) {
-                if (i === tokens.length - 1 && index < array.length - 1) {
-                    // space in query string matches all delimiters
-                    pattern += "(.*?)";
-                    upperCase.push(isUpperCase(s[0]));
-                } else {
-                    if (!camelCase && isUpperCase(s) && s.length === 1) {
-                        pattern += "()";
-                    } else {
-                        pattern += "([\\p{L}\\p{Nd}\\p{Sc}<>?[\\]]*?)";
-                    }
-                    upperCase.push(isUpperCase(s[0]));
-                }
+            if (i === tokens.length - 1 && index < array.length - 1) {
+                // space in query string matches all delimiters
+                pattern += "(.*?)";
+                upperCase.push(isUpperCase(s[0]));
             } else {
-                pattern += "()";
-                upperCase.push(false);
+                if (!camelCase && isUpperCase(s) && s.length === 1) {
+                    pattern += "()";
+                } else {
+                    pattern += "([\\p{L}\\p{Nd}\\p{Sc}<>?[\\]]*?)";
+                }
+                upperCase.push(isUpperCase(s[0]));
             }
         }
     });
