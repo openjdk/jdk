@@ -155,16 +155,21 @@ class ExifMarkerSegment extends MarkerSegment {
         }
 
         firstIFDOffset = input.readUnsignedInt();
-        long ifdOffset = firstIFDOffset;
-        while (ifdOffset != 0) {
-            ImageFileDirectory ifd = new ImageFileDirectory(input, ifdOffset);
-            imageFileDirectories.add(ifd);
-            ifdOffset = ifd.nextIFD;
+        ImageFileDirectory ifd1 = null;
+        ImageFileDirectory ifd2 = null;
+        if (firstIFDOffset != 0) {
+            ifd1 = new ImageFileDirectory(input, firstIFDOffset);
+            imageFileDirectories.add(ifd1);
+
+            long secondIFDOffset = ifd1.nextIFD;
+            if (secondIFDOffset != 0) {
+                ifd2 = new ImageFileDirectory(input, secondIFDOffset);
+                imageFileDirectories.add(ifd2);
+            }
         }
 
-        if (imageFileDirectories.size() == 2) {
+        if (ifd2 != null) {
             // the thumbnail should always be described in the 2nd IFD (if it exists at all)
-            ImageFileDirectory ifd2 = imageFileDirectories.get(1);
 
             thumbnailPos = ifd2.getTagValueAsInt(TAG_JPEG_INTERCHANGE_FORMAT);
             thumbnailLength = ifd2.getTagValueAsInt(TAG_JPEG_INTERCHANGE_FORMAT_LENGTH);

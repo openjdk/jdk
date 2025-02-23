@@ -162,6 +162,17 @@ public class JpegExifThumbnailTest {
         // JPEGMetaData just recorded a generic MarkerSegment instead of an ExifMarkerSegment
         new JpegExifThumbnailTest("corrupt-magic-number.jpg",
                 -1, -1, -1, -1, -1, -1).run();
+
+        // This file is set up so ImageFileDirectory X points to Y,
+        // then Y points back to X. An early draft of the ExifMarkerSegment
+        // class would get stuck parsing this loop. (After a few minutes this
+        // would probably fail with an OutOfMemoryError as the list of IFDs
+        // grew too large.)
+        // The expected behavior here is to stop after reading 2 IFDs, and
+        // otherwise read the JPEG as usual
+        new JpegExifThumbnailTest("malicious_looping_IFD.jpg",
+                2025, 2, 16, 15, 48, 34,
+                new Dimension(60, 80)).run();
     }
 
     final String filename;
