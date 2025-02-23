@@ -459,8 +459,9 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
     // Handle positive part of the divisor range
     const IntegerType* pos_part = compute_generic_div_type(i1, IntegerType::make(1, i2->_hi, widen), widen);
     // Merge results
-    int new_lo = MIN2(neg_part->_lo, pos_part->_lo);
-    int new_hi = MAX2(neg_part->_hi, pos_part->_hi);
+    NativeType new_lo = MIN2(neg_part->_lo, pos_part->_lo);
+    NativeType new_hi = MAX2(neg_part->_hi, pos_part->_hi);
+    assert(new_hi >= new_lo, "sanity");
     return IntegerType::make(new_lo, new_hi, widen);
   }
 
@@ -479,6 +480,7 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
     new_lo = MIN2(new_lo, c);
     new_hi = MAX2(new_hi, c);
   }
+  assert(new_hi >= new_lo, "sanity");
   return IntegerType::make(new_lo, new_hi, widen);
 }
 
@@ -583,7 +585,7 @@ const Type* DivINode::Value(PhaseGVN* phase) const {
     return TypeInt::INT;
   }
 
-  return compute_generic_div_type(i1, i2, widen);
+  return compute_generic_div_type<TypeInt>(i1, i2, widen);
 }
 
 
@@ -688,7 +690,7 @@ const Type* DivLNode::Value(PhaseGVN* phase) const {
     return TypeLong::LONG;
   }
 
-  return compute_generic_div_type(i1, i2, widen);
+  return compute_generic_div_type<TypeLong>(i1, i2, widen);
 }
 
 
