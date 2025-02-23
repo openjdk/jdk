@@ -195,26 +195,7 @@ public:
 #ifdef ASSERT
     void print_on(outputStream* out);
 #endif
-
-    SummaryDiff apply(SummaryDiff other) {
-      SummaryDiff out;
-      for (int i = 0; i < mt_number_of_tags; i++) {
-        out.tag[i] = SingleDiff {
-          this->tag[i].reserve + other.tag[i].reserve,
-          this->tag[i].commit + other.tag[i].commit
-        };
-      }
-      return out;
-    }
-
-    void print_self() {
-      for (int i = 0; i < mt_number_of_tags; i++) {
-        if (tag[i].reserve == 0 && tag[i].commit == 0) { continue; }
-        tty->print_cr("Flag %s R: " INT64_FORMAT " C: " INT64_FORMAT, NMTUtil::tag_to_enum_name((MemTag)i), tag[i].reserve, tag[i].commit);
-      }
-    }
   };
-
  private:
   SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
 
@@ -250,21 +231,10 @@ public:
 #ifdef ASSERT
   void print_on(outputStream* out);
 #endif
-
   template<typename F>
   void visit_range_in_order(const position& from, const position& to, F f) {
     _tree.visit_range_in_order(from, to, f);
   }
-
   VMATreap& tree() { return _tree; }
-
-  void print_self() {
-    visit_in_order([&](TreapNode* current) {
-      tty->print("(%s) - %s - ", NMTUtil::tag_to_name(current->val().out.mem_tag()), statetype_to_string(current->val().out.type()));
-      return true;
-    });
-    tty->cr();
-  }
 };
-
 #endif

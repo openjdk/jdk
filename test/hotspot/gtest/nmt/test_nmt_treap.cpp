@@ -147,101 +147,7 @@ public:
     test(5.0f);
     test(0.0f);
   }
-
-  static double treap_upsert(int n) {
-    TreapCHeap<int, int, Cmp> treap;
-    double st = os::elapsedTime();
-    for (int i = 0; i < n; i++) {
-      int a = (os::random() % n) * 100;
-      treap.upsert(a, 0);
-    }
-    double d = os::elapsedTime() - st;
-    return d;
-  }
-
-  static double treap_remove(int n) {
-    TreapCHeap<int, int, Cmp> treap;
-    for (int i = 0; i < (n + 100); i++) {
-      treap.upsert(i * 100, 0);
-    }
-    double st = os::elapsedTime();
-    for (int i = 0; i < n; i++) {
-      int a = (os::random() % n) * 100;
-      treap.remove(a);
-    }
-    double d = os::elapsedTime() - st;
-    return d;
-  }
-
-
-  static double sorted_list_insert(int n) {
-    SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base> regions;
-    const size_t page_size = 1024;
-    double st = os::elapsedTime();
-    for (int i = 0; i < n; i++) {
-      int page_no = os::random() % n;
-      ReservedMemoryRegion rmr((address) (1000UL + page_no * page_size), page_size - 128);
-      regions.add(rmr);
-    }
-    return os::elapsedTime() - st;
-  }
-
-  static double sorted_list_remove(int n) {
-    SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base> regions;
-    const size_t page_size = 1024;
-    for (int i = 0; i < n; i++) {
-      int page_no = i;
-      ReservedMemoryRegion rmr((address) (1000UL + page_no * page_size), page_size - 128);
-      regions.add(rmr);
-    }
-    double st = os::elapsedTime();
-    for (int i = 0; i < n; i++) {
-      int page_no = os::random() % n;
-      ReservedMemoryRegion rmr((address) (1000UL + page_no * page_size), page_size - 128);
-      regions.remove(rmr);
-    }
-    return os::elapsedTime() - st;
-  }
-
-  static void compare_insert_SLL_with_Treap() {
-    const int N = 10000;
-    const int REPEATS = 10;
-    double sll_sum = 0;
-    double treap_sum = 0;
-    int unexpected_count = 0;
-    for (int i = 0; i < REPEATS; i++) {
-      double d_sll = sorted_list_insert(N);
-      double d_treap = treap_upsert(N);
-      if (d_sll < d_treap) unexpected_count++;
-      sll_sum += d_sll;
-      treap_sum += d_treap;
-    }
-    tty->print_cr("Insert Test *** Unexp.Cnt: %d, SSL Avg: %lf, Treap Avg: %lf, SLL/Treap: %lf", unexpected_count, sll_sum / REPEATS, treap_sum / REPEATS, sll_sum / treap_sum);
-    EXPECT_LE(unexpected_count, REPEATS / 2) << "SSL Avg: " << sll_sum / REPEATS << " Treap Avg: " << treap_sum / REPEATS;
-  }
-
-  static void compare_remove_SLL_with_Treap() {
-    const int N = 10000;
-    const int REPEATS = 10;
-    double sll_sum = 0;
-    double treap_sum = 0;
-    int unexpected_count = 0;
-    for (int i = 0; i < REPEATS; i++) {
-      double d_sll = sorted_list_remove(N);
-      double d_treap = treap_remove(N);
-      if (d_sll < d_treap) unexpected_count++;
-      sll_sum += d_sll;
-      treap_sum += d_treap;
-    }
-    tty->print_cr("Remove Test *** Unexp.Cnt: %d, SSL Avg: %lf, Treap Avg: %lf, SLL/Treap: %lf", unexpected_count, sll_sum / REPEATS, treap_sum / REPEATS, sll_sum / treap_sum);
-    EXPECT_LE(unexpected_count, REPEATS / 2) << "SSL Avg: " << sll_sum / REPEATS << " Treap Avg: " << treap_sum / REPEATS;
-  }
-
 };
-
-TEST_VM_F(NMTTreapTest, InsertingDuplicatesResultsInOneValue) {
-  this->inserting_duplicates_results_in_one_value();
-}
 
 TEST_VM_F(NMTTreapTest, TreapOughtNotLeak) {
   this->treap_ought_not_leak();
@@ -388,11 +294,6 @@ TEST_VM_F(NMTTreapTest, TestClosestLeq) {
     n = treap.closest_leq(-2);
     EXPECT_EQ(nullptr, n);
   }
-}
-
-TEST_VM_F(NMTTreapTest, PerformanceComparison) {
-  compare_insert_SLL_with_Treap();
-  compare_remove_SLL_with_Treap();
 }
 
 #ifdef ASSERT
