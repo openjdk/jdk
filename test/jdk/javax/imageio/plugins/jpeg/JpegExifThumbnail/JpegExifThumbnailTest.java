@@ -126,41 +126,41 @@ public class JpegExifThumbnailTest {
         // all the timestamps were verified in a 3rd party app (such as Preview on Mac)
 
         // this is little endian, and uses a compression type 0x00000006
-        new JpegExifThumbnailTest("jdk_8160327-SV650.jpg",
+        new JpegExifThumbnailTest("SV650.jpg",
                 2015,6,24,10,3,55,
                 new Dimension(160, 120)).run();
 
         // this is big endian, and uses a compression type 0x00010000
-        new JpegExifThumbnailTest("jdk_8160327-exif-rgb-thumbnail-sony-d700.jpg",
+        new JpegExifThumbnailTest("exif-rgb-thumbnail-sony-d700.jpg",
                 1998,12,1,14,22,36,
                 new Dimension(80, 60)).run();
 
         // This includes a JFIF thumbnail and an EXIF thumbnail.
-        new JpegExifThumbnailTest("jdk_8160327-jfif_and_exif.jpg",
+        new JpegExifThumbnailTest("jfif_and_exif.jpg",
                 2025,2,21,1,14,51,
                 new Dimension(150, 200),
                 new Dimension(120, 160)).run();
 
         // this includes Exif data, but the `compression` tag is 0x60000 instead of 0x6,
         // also it doesn't include any date
-        new JpegExifThumbnailTest("jdk_8160327-plastic-wrap.jpg",
+        new JpegExifThumbnailTest("plastic-wrap.jpg",
                 -1, -1, -1, -1, -1, -1,
                 new Dimension(200, 132)).run();
 
         // here the timestamp doesn't match our parser, so we'll ignore it
-        new JpegExifThumbnailTest("jdk_8160327-bad-timestamp.jpg",
+        new JpegExifThumbnailTest("bad-timestamp.jpg",
                 -1, -1, -1, -1, -1, -1).run();
 
         // this ImageFileDirectory doesn't terminate like it should. We need to
         // not fail with an EOFException in this case:
-        new JpegExifThumbnailTest("jdk_8160327-unusual-ImageFileDirectory.jpeg",
+        new JpegExifThumbnailTest("unusual-ImageFileDirectory.jpeg",
                 2007, 11, 10, 21, 23, 4).run();
 
-        // This file is a replica of jdk_8160327-SV650.jpg, except the 14th byte was changed
+        // This file is a replica of SV650.jpg, except the 14th byte was changed
         // so ExifMarkerSegment's constructor throws a "Bad magic number" exception.
         // The expected behavior here is: we do NOT catch an exception, because internally
         // JPEGMetaData just recorded a generic MarkerSegment instead of an ExifMarkerSegment
-        new JpegExifThumbnailTest("jdk_8160327-corrupt-magic-number.jpg",
+        new JpegExifThumbnailTest("corrupt-magic-number.jpg",
                 -1, -1, -1, -1, -1, -1).run();
     }
 
