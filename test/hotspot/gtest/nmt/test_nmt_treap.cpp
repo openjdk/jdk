@@ -149,6 +149,10 @@ public:
   }
 };
 
+TEST_VM_F(NMTTreapTest, InsertingDuplicatesResultsInOneValue) {
+  this->inserting_duplicates_results_in_one_value();
+}
+
 TEST_VM_F(NMTTreapTest, TreapOughtNotLeak) {
   this->treap_ought_not_leak();
 }
