@@ -379,7 +379,7 @@ class VirtualMemoryTracker {
   bool remove_uncommitted_region (address base_addr, size_t size);
   bool remove_released_region    (address base_addr, size_t size);
   bool remove_released_region    (ReservedMemoryRegion* rgn);
-  void set_reserved_region_tag   (address addr, size_t size, MemTag mem_tag);
+  void set_reserved_region_tag   (address addr, MemTag mem_tag);
 
   // Given an existing memory mapping registered with NMT, split the mapping in
   //  two. The newly created two mappings will be registered under the call
@@ -413,7 +413,7 @@ class VirtualMemoryTracker {
     static bool remove_uncommitted_region (address base_addr, size_t size);
     static bool remove_released_region    (address base_addr, size_t size);
     static bool remove_released_region    (ReservedMemoryRegion* rgn);
-    static void set_reserved_region_tag   (address addr, size_t size, MemTag mem_tag);
+    static void set_reserved_region_tag   (address addr, MemTag mem_tag);
     static bool split_reserved_region(address addr, size_t size, size_t split, MemTag mem_tag, MemTag split_mem_tag);
     static bool walk_virtual_memory(VirtualMemoryWalker* walker);
     static bool print_containing_region(const void* p, outputStream* st);

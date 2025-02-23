@@ -76,14 +76,14 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
 
 }
 
-void VirtualMemoryTracker::Instance::set_reserved_region_tag(address addr, size_t size, MemTag mem_tag) {
+void VirtualMemoryTracker::Instance::set_reserved_region_tag(address addr, MemTag mem_tag) {
   assert(_tracker != nullptr, "Sanity check");
-  _tracker->set_reserved_region_tag(addr, size, mem_tag);
+  _tracker->set_reserved_region_tag(addr, mem_tag);
 }
 
-void VirtualMemoryTracker::set_reserved_region_tag(address addr, size_t size, MemTag mem_tag) {
-    VMATree::RegionData rd(NativeCallStackStorage::StackIndex(), mem_tag);
-    VMATree::SummaryDiff diff = tree()->set_tag((VMATree::position) addr, size, mem_tag);
+void VirtualMemoryTracker::set_reserved_region_tag(address addr, MemTag mem_tag) {
+    ReservedMemoryRegion rgn = tree()->find_reserved_region(addr);
+    VMATree::SummaryDiff diff = tree()->set_tag((VMATree::position) addr, rgn.size(), mem_tag);
     apply_summary_diff(diff);
 }
 

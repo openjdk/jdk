@@ -228,12 +228,12 @@ class MemTracker : AllStatic {
     }
   }
 
-  static inline void record_virtual_memory_tag(void* addr, size_t size, MemTag mem_tag) {
+  static inline void record_virtual_memory_tag(void* addr, MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::Instance::set_reserved_region_tag((address)addr, size, mem_tag);
+      VirtualMemoryTracker::Instance::set_reserved_region_tag((address)addr, mem_tag);
     }
   }
 
