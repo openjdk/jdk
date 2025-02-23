@@ -145,10 +145,10 @@ import static java.util.concurrent.DelayScheduler.ScheduledForkJoinTask;
  * {@linkplain ForkJoinTask ForkJoinTasks} that implement the {@link
  * ScheduledFuture} interface. Resource exhaustion encountered after
  * initial submission results in task cancellation. When time-based
- * methods are used, shutdown policies are based on the default
- * policies of class {@link ScheduledThreadPoolExecutor}: upon {@link
- * #shutdown}, existing periodic tasks will not re-execute, and the
- * pool terminates when quiescent and existing delayed tasks
+ * methods are used, shutdown policies match the default policies of
+ * class {@link ScheduledThreadPoolExecutor}: upon {@link #shutdown},
+ * existing periodic tasks will not re-execute, and the pool
+ * terminates when quiescent and existing delayed tasks
  * complete. Method {@link #cancelDelayedTasksOnShutdown} may be used
  * to disable all delayed tasks upon shutdown, and method {@link
  * #shutdownNow} may be used to instead unconditionally initiate pool
@@ -925,16 +925,15 @@ public class ForkJoinPool extends AbstractExecutorService
      * their delays elapse (see method executeEnabledScheduledTask).
      * The only other interactions with the delayScheduler are to
      * control shutdown and maintain shutdown-related policies in
-     * methods quiescent() and tryTerminate(). In particular, to
-     * conform to policies, shutdown-related processing must deal with
-     * cases in which tasks are submitted before shutdown, but not
-     * ready until afterwards, in which case they must bypass some
-     * screening to be allowed to run. Conversely, the DelayScheduler
-     * checks runState status and when enabled, completes termination,
-     * using only methods shutdownStatus and tryStopIfShutdown. All of
-     * these methods are final and have signatures referencing
-     * DelaySchedulers, so cannot conflict with those of any existing
-     * FJP subclasses.
+     * methods quiescent() and tryTerminate(). In particular,
+     * processing must deal with cases in which tasks are submitted
+     * before shutdown, but not enabled until afterwards, in which
+     * case they must bypass some screening to be allowed to
+     * run. Conversely, the DelayScheduler checks runState status and
+     * when enabled, completes termination, using only methods
+     * shutdownStatus and tryStopIfShutdown. All of these methods are
+     * final and have signatures referencing DelaySchedulers, so
+     * cannot conflict with those of any existing FJP subclasses.
      *
      * Memory placement
      * ================
@@ -1006,7 +1005,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * Nearly all explicit checks lead to bypass/return, not exception
      * throws, because they may legitimately arise during shutdown. A
      * few unusual loop constructions encourage (with varying
-     * effectiveness) JVMs about where (not) to place safepoints.
+     * effectiveness) JVMs about where (not) to place safepoints. All
+     * public methods screen arguments (mainly null checks) before
+     * creating or executing tasks.
      *
      * There is a lot of representation-level coupling among classes
      * ForkJoinPool, ForkJoinWorkerThread, and ForkJoinTask.  The
@@ -2617,7 +2618,7 @@ public class ForkJoinPool extends AbstractExecutorService
         throw new RejectedExecutionException();
     }
 
-    private void poolSubmit(boolean signalIfEmpty, ForkJoinTask<?> task) {
+    private <T> ForkJoinTask<T> poolSubmit(boolean signalIfEmpty, ForkJoinTask<T> task) {
         Thread t; ForkJoinWorkerThread wt; WorkQueue q; boolean internal;
         if (((t = JLA.currentCarrierThread()) instanceof ForkJoinWorkerThread) &&
             (wt = (ForkJoinWorkerThread)t).pool == this) {
@@ -2629,6 +2630,7 @@ public class ForkJoinPool extends AbstractExecutorService
             q = submissionQueue(ThreadLocalRandom.getProbe(), true);
         }
         q.push(task, signalIfEmpty ? this : null, internal);
+        return task;
     }
 
     /**
@@ -2960,12 +2962,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * event-style asynchronous tasks.  For default value, use {@code
      * false}.
      *
-     * @param corePoolSize the number of threads to keep in the pool
-     * (unless timed out after an elapsed keep-alive). Normally (and
-     * by default) this is the same value as the parallelism level,
-     * but may be set to a larger value to reduce dynamic overhead if
-     * tasks regularly block. Using a smaller value (for example
-     * {@code 0}) has the same effect as the default.
+     * @param corePoolSize ignored: used in previous versions of this
+     * class but no longer applicable. Using {@code 0} maintains
+     * compatibility across versions.
      *
      * @param maximumPoolSize the maximum number of threads allowed.
      * When the maximum is reached, attempts to replace blocked
@@ -3152,8 +3151,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *         scheduled for execution
      */
     public <T> T invoke(ForkJoinTask<T> task) {
-        Objects.requireNonNull(task);
-        poolSubmit(true, task);
+        poolSubmit(true, Objects.requireNonNull(task));
         try {
             return task.join();
         } catch (RuntimeException | Error unchecked) {
@@ -3172,8 +3170,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *         scheduled for execution
      */
     public void execute(ForkJoinTask<?> task) {
-        Objects.requireNonNull(task);
-        poolSubmit(true, task);
+        poolSubmit(true,  Objects.requireNonNull(task));
     }
 
     // AbstractExecutorService methods
@@ -3186,7 +3183,7 @@ public class ForkJoinPool extends AbstractExecutorService
     @Override
     @SuppressWarnings("unchecked")
     public void execute(Runnable task) {
-        poolSubmit(true, (task instanceof ForkJoinTask<?>)
+        poolSubmit(true, (Objects.requireNonNull(task) instanceof ForkJoinTask<?>)
                    ? (ForkJoinTask<Void>) task // avoid re-wrap
                    : new ForkJoinTask.RunnableExecuteAction(task));
     }
@@ -3206,9 +3203,7 @@ public class ForkJoinPool extends AbstractExecutorService
      *         scheduled for execution
      */
     public <T> ForkJoinTask<T> submit(ForkJoinTask<T> task) {
-        Objects.requireNonNull(task);
-        poolSubmit(true, task);
-        return task;
+        return poolSubmit(true,  Objects.requireNonNull(task));
     }
 
     /**
@@ -3218,12 +3213,12 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     @Override
     public <T> ForkJoinTask<T> submit(Callable<T> task) {
-        ForkJoinTask<T> t =
+        Objects.requireNonNull(task);
+        return poolSubmit(
+            true,
             (Thread.currentThread() instanceof ForkJoinWorkerThread) ?
             new ForkJoinTask.AdaptedCallable<T>(task) :
-            new ForkJoinTask.AdaptedInterruptibleCallable<T>(task);
-        poolSubmit(true, t);
-        return t;
+            new ForkJoinTask.AdaptedInterruptibleCallable<T>(task));
     }
 
     /**
@@ -3233,12 +3228,12 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     @Override
     public <T> ForkJoinTask<T> submit(Runnable task, T result) {
-        ForkJoinTask<T> t =
+        Objects.requireNonNull(task);
+        return poolSubmit(
+            true,
             (Thread.currentThread() instanceof ForkJoinWorkerThread) ?
             new ForkJoinTask.AdaptedRunnable<T>(task, result) :
-            new ForkJoinTask.AdaptedInterruptibleRunnable<T>(task, result);
-        poolSubmit(true, t);
-        return t;
+            new ForkJoinTask.AdaptedInterruptibleRunnable<T>(task, result));
     }
 
     /**
@@ -3249,13 +3244,14 @@ public class ForkJoinPool extends AbstractExecutorService
     @Override
     @SuppressWarnings("unchecked")
     public ForkJoinTask<?> submit(Runnable task) {
-        ForkJoinTask<?> f = (task instanceof ForkJoinTask<?>) ?
+        Objects.requireNonNull(task);
+        return poolSubmit(
+            true,
+            (task instanceof ForkJoinTask<?>) ?
             (ForkJoinTask<Void>) task : // avoid re-wrap
             ((Thread.currentThread() instanceof ForkJoinWorkerThread) ?
              new ForkJoinTask.AdaptedRunnable<Void>(task, null) :
-             new ForkJoinTask.AdaptedInterruptibleRunnable<Void>(task, null));
-        poolSubmit(true, f);
-        return f;
+             new ForkJoinTask.AdaptedInterruptibleRunnable<Void>(task, null)));
     }
 
     /**
@@ -3298,9 +3294,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * @since 19
      */
     public <T> ForkJoinTask<T> lazySubmit(ForkJoinTask<T> task) {
-        Objects.requireNonNull(task);
-        poolSubmit(false, task);
-        return task;
+        return poolSubmit(false,  Objects.requireNonNull(task));
     }
 
     /**
@@ -3553,10 +3547,10 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     public ScheduledFuture<?> schedule(Runnable command,
                                        long delay, TimeUnit unit) {
-        Objects.requireNonNull(command);
         return scheduleDelayedTask(
-            new ScheduledForkJoinTask<Void>( // implicit null check of unit
-                unit.toNanos(delay), 0L, false, command, null, this));
+            new ScheduledForkJoinTask<Void>(
+                unit.toNanos(delay), 0L, false, // implicit null check of unit
+                Objects.requireNonNull(command), null, this));
     }
 
     /**
@@ -3582,10 +3576,10 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     public <V> ScheduledFuture<V> schedule(Callable<V> callable,
                                            long delay, TimeUnit unit) {
-        Objects.requireNonNull(callable);
         return scheduleDelayedTask(
             new ScheduledForkJoinTask<V>(
-                unit.toNanos(delay), 0L, false, null, callable, this));
+                unit.toNanos(delay), 0L, false, null,
+                Objects.requireNonNull(callable), this));
     }
 
     /**
@@ -3633,14 +3627,13 @@ public class ForkJoinPool extends AbstractExecutorService
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command,
                                                   long initialDelay,
                                                   long period, TimeUnit unit) {
-        Objects.requireNonNull(command);
         if (period <= 0L)
             throw new IllegalArgumentException();
         return scheduleDelayedTask(
             new ScheduledForkJoinTask<Void>(
                 unit.toNanos(initialDelay),
-                unit.toNanos(period),
-                false, command, null, this));
+                unit.toNanos(period), false,
+                Objects.requireNonNull(command), null, this));
     }
 
     /**
@@ -3683,14 +3676,13 @@ public class ForkJoinPool extends AbstractExecutorService
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
                                                      long initialDelay,
                                                      long delay, TimeUnit unit) {
-        Objects.requireNonNull(command);
         if (delay <= 0L)
             throw new IllegalArgumentException();
         return scheduleDelayedTask(
             new ScheduledForkJoinTask<Void>(
                 unit.toNanos(initialDelay),
-                -unit.toNanos(delay),  // negative for fixed delay
-                false, command, null, this));
+                -unit.toNanos(delay), false, // negative for fixed delay
+                Objects.requireNonNull(command), null, this));
     }
 
     /**
@@ -3728,7 +3720,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * may be interrupted if running. Actions may include {@link
      * ForkJoinTask#complete} to set a replacement value or {@link
      * ForkJoinTask#completeExceptionally} to throw an appropriate
-     * exception. Note that these will only succeed if the task has
+     * exception. Note that these can succeed only if the task has
      * not already completed when the timeoutAction executes.
      *
      * @param callable the function to execute
@@ -3756,8 +3748,7 @@ public class ForkJoinPool extends AbstractExecutorService
         onTimeout.task = task =
             new ForkJoinTask.CallableWithTimeout<V>(callable, timeoutTask);
         scheduleDelayedTask(timeoutTask);
-        poolSubmit(true, task);
-        return task;
+        return poolSubmit(true, task);
     }
 
     /**
@@ -4395,6 +4386,7 @@ public class ForkJoinPool extends AbstractExecutorService
 
     @Override
     protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
+        Objects.requireNonNull(runnable);
         return (Thread.currentThread() instanceof ForkJoinWorkerThread) ?
             new ForkJoinTask.AdaptedRunnable<T>(runnable, value) :
             new ForkJoinTask.AdaptedInterruptibleRunnable<T>(runnable, value);
@@ -4402,6 +4394,7 @@ public class ForkJoinPool extends AbstractExecutorService
 
     @Override
     protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
+        Objects.requireNonNull(callable);
         return (Thread.currentThread() instanceof ForkJoinWorkerThread) ?
             new ForkJoinTask.AdaptedCallable<T>(callable) :
             new ForkJoinTask.AdaptedInterruptibleCallable<T>(callable);

@@ -1410,7 +1410,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return the task
      */
     public static ForkJoinTask<?> adapt(Runnable runnable) {
-        return new AdaptedRunnableAction(runnable);
+        return new AdaptedRunnableAction(
+            Objects.requireNonNull(runnable));
     }
 
     /**
@@ -1424,7 +1425,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return the task
      */
     public static <T> ForkJoinTask<T> adapt(Runnable runnable, T result) {
-        return new AdaptedRunnable<T>(runnable, result);
+        return new AdaptedRunnable<T>(
+            Objects.requireNonNull(runnable), result);
     }
 
     /**
@@ -1438,7 +1440,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return the task
      */
     public static <T> ForkJoinTask<T> adapt(Callable<? extends T> callable) {
-        return new AdaptedCallable<T>(callable);
+        return new AdaptedCallable<T>(
+            Objects.requireNonNull(callable));
     }
 
     /**
@@ -1456,7 +1459,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @since 19
      */
     public static <T> ForkJoinTask<T> adaptInterruptible(Callable<? extends T> callable) {
-        return new AdaptedInterruptibleCallable<T>(callable);
+        return new AdaptedInterruptibleCallable<T>(
+            Objects.requireNonNull(callable));
     }
 
     /**
@@ -1475,7 +1479,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @since 22
      */
     public static <T> ForkJoinTask<T> adaptInterruptible(Runnable runnable, T result) {
-        return new AdaptedInterruptibleRunnable<T>(runnable, result);
+        return new AdaptedInterruptibleRunnable<T>(
+            Objects.requireNonNull(runnable), result);
     }
 
     /**
@@ -1493,7 +1498,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @since 22
      */
     public static ForkJoinTask<?> adaptInterruptible(Runnable runnable) {
-        return new AdaptedInterruptibleRunnable<Void>(runnable, null);
+        return new AdaptedInterruptibleRunnable<Void>(
+            Objects.requireNonNull(runnable), null);
     }
 
     // Serialization support
@@ -1552,7 +1558,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         @SuppressWarnings("serial") // Conditionally serializable
         T result;
         AdaptedRunnable(Runnable runnable, T result) {
-            Objects.requireNonNull(runnable);
             this.runnable = runnable;
             this.result = result; // OK to set this even before completion
         }
@@ -1574,7 +1579,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         @SuppressWarnings("serial") // Conditionally serializable
         final Runnable runnable;
         AdaptedRunnableAction(Runnable runnable) {
-            Objects.requireNonNull(runnable);
             this.runnable = runnable;
         }
         public final Void getRawResult() { return null; }
@@ -1597,7 +1601,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         @SuppressWarnings("serial") // Conditionally serializable
         T result;
         AdaptedCallable(Callable<? extends T> callable) {
-            Objects.requireNonNull(callable);
             this.callable = callable;
         }
         public final T getRawResult() { return result; }
@@ -1695,7 +1698,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         @SuppressWarnings("serial") // Conditionally serializable
         T result;
         AdaptedInterruptibleCallable(Callable<? extends T> callable) {
-            Objects.requireNonNull(callable);
             this.callable = callable;
         }
         public final T getRawResult() { return result; }
@@ -1714,7 +1716,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         @SuppressWarnings("serial") // Conditionally serializable
         final T result;
         AdaptedInterruptibleRunnable(Runnable runnable, T result) {
-            Objects.requireNonNull(runnable);
             this.runnable = runnable;
             this.result = result;
         }
@@ -1732,7 +1733,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         @SuppressWarnings("serial") // Conditionally serializable
         final Runnable runnable;
         RunnableExecuteAction(Runnable runnable) {
-            Objects.requireNonNull(runnable);
             this.runnable = runnable;
         }
         public final Void getRawResult() { return null; }
@@ -1798,9 +1798,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 throw new NullPointerException();
             InvokeAnyTask<T> t = null; // list of submitted tasks
             try {
-                for (Callable<T> c : tasks)
+                for (Callable<T> c : tasks) {
+                    if (c == null)
+                        throw new NullPointerException();
                     pool.execute((ForkJoinTask<?>)
                                  (t = new InvokeAnyTask<T>(c, this, t)));
+                }
                 return timed ? get(nanos, TimeUnit.NANOSECONDS) : get();
             } finally {
                 for (; t != null; t = t.pred)
@@ -1827,7 +1830,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         final InvokeAnyTask<T> pred; // to traverse on cancellation
         InvokeAnyTask(Callable<T> callable, InvokeAnyRoot<T> root,
                       InvokeAnyTask<T> pred) {
-            Objects.requireNonNull(callable);
             this.callable = callable;
             this.root = root;
             this.pred = pred;
