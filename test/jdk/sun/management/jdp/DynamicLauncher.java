@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 
+import jtreg.SkippedException;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
@@ -60,6 +61,9 @@ public abstract class DynamicLauncher {
                 }
             }
         } while (tryAgain);
+        if (output.contains("java.net.SocketException: No such device")) {
+            throw new SkippedException("Network setup issue, skip this test");
+        }
         output.shouldHaveExitValue(0);
         // java.lang.Exception is thrown by JdpTestCase if something goes wrong
         // for instance - see JdpTestCase::shutdown()
