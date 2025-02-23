@@ -2036,14 +2036,19 @@ public abstract class ClassLoader {
      *         respect to the given code source {@link java.net.URL URL}
      *         object.  Otherwise, the package is not sealed.
      *
-     * @return  The newly defined {@code Package} object
+     * @return  The {@code Package} object for the given implementation
+     *          and specification title/version/vendor and seal-base
+     *          properties.
      *
      * @throws  NullPointerException
      *          if {@code name} is {@code null}.
      *
      * @throws  IllegalArgumentException
      *          if a package of the given {@code name} is already
-     *          defined by this class loader
+     *          defined by this class loader with non-equal values for
+     *          the package properties (implementation and specification
+     *          version, vendor, title) or a different {@code sealBase}
+     *          or module.
      *
      *
      * @since  1.2
