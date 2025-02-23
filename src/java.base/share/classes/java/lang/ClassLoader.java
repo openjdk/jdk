@@ -2067,8 +2067,28 @@ public abstract class ClassLoader {
         NamedPackage ex = packages.putIfAbsent(name, p);
         if (ex == null)
             return p;
-        if (ex.equals(p))
-            return (Package) ex;
+
+        // passing 'm==null' is fine here, because 'ex' is guaranteed to be non-null.
+        Package pEx = toPackage(name, ex, null);
+
+        if (Objects.equals(p.getImplementationTitle(), pEx.getImplementationTitle())
+                && Objects.equals(p.getImplementationVendor(), pEx.getImplementationVendor())
+                && Objects.equals(p.getImplementationVersion(), pEx.getImplementationVersion())
+                && Objects.equals(p.getSpecificationTitle(), pEx.getSpecificationTitle())
+                && Objects.equals(p.getSpecificationVendor(), pEx.getSpecificationVendor())
+                && Objects.equals(p.getSpecificationVersion(), pEx.getSpecificationVersion())
+                && p.module() == pEx.module()) {
+
+            boolean pSealed = p.isSealed();
+            boolean exSealed = pEx.isSealed();
+
+            if (pSealed == exSealed) {
+                if (!pSealed || pEx.isSealed(sealBase)) {
+                    return pEx;
+                }
+            }
+        }
+
         throw new IllegalArgumentException("Incompatible redefinition of package " + name);
     }
 
