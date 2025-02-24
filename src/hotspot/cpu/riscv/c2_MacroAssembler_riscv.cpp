@@ -1384,11 +1384,20 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 
 // Compare longwords
 void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Register str1, Register str2,
-                                                  Register cnt1, Register cnt2,
+                                                  const bool isLL, Register cnt1, Register cnt2,
                                                   Register tmp1, Register tmp2, Register tmp3,
-                                                  const bool isLL, const int base_offset, const int minCharsInWord,
                                                   const int STUB_THRESHOLD, Label *DONE, Label *STUB) {
   Label TAIL_CHECK, TAIL, NEXT_WORD, DIFFERENCE;
+
+  int base_offset1 = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+  int base_offset2 = arrayOopDesc::base_offset_in_bytes(T_CHAR);
+  assert((base_offset1 % (UseCompactObjectHeaders ? 4 :
+                          (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+  assert((base_offset2 % (UseCompactObjectHeaders ? 4 :
+                          (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+  const int base_offset = isLL ? base_offset1 : base_offset2;
+
+  const int minCharsInWord = isLL ? wordSize : wordSize / 2;
 
   // load first parts of strings and finish initialization while loading
   beq(str1, str2, *DONE);
@@ -1470,18 +1479,24 @@ void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Regis
 }
 
 // Compare longwords
-void C2_MacroAssembler::string_compare_long_different_encoding(Register result, Register strL, Register strU,
-                                               bool isUL, Register cnt1, Register cnt2,
+void C2_MacroAssembler::string_compare_long_different_encoding(Register result, Register str1, Register str2,
+                                               bool isLU, Register cnt1, Register cnt2,
                                                Register tmpL, Register tmpU, Register tmp3,
-                                               const int base_offset2, const int STUB_THRESHOLD,
-                                               Label *DONE, Label *STUB) {
+                                               const int STUB_THRESHOLD, Label *DONE, Label *STUB) {
   Label TAIL, NEXT_WORD, DIFFERENCE;
+
+  const int base_offset = arrayOopDesc::base_offset_in_bytes(T_CHAR);
+  assert((base_offset % (UseCompactObjectHeaders ? 4 :
+                          (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+
+  Register strL = isLU ? str1 : str2;
+  Register strU = isLU ? str2 : str1;
 
   // load first parts of strings and finish initialization while loading
   mv(t0, STUB_THRESHOLD);
   bge(cnt2, t0, *STUB);
   lwu(tmpL, Address(strL));
-  load_long_misaligned(tmpU, Address(strU), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
+  load_long_misaligned(tmpU, Address(strU), tmp3, (base_offset % 8) != 0 ? 4 : 8);
   subi(cnt2, cnt2, 4);
   add(strL, strL, cnt2);
   sub(cnt1, zr, cnt2);
@@ -1501,7 +1516,7 @@ void C2_MacroAssembler::string_compare_long_different_encoding(Register result, 
     add(t0, strL, cnt1);
     lwu(tmpL, Address(t0));
     add(t0, strU, cnt2);
-    load_long_misaligned(tmpU, Address(t0), tmp3, (base_offset2 % 8) != 0 ? 4 : 8);
+    load_long_misaligned(tmpU, Address(t0), tmp3, (base_offset % 8) != 0 ? 4 : 8);
     addi(cnt1, cnt1, 4);
     inflate_lo32(tmp3, tmpL);
     mv(tmpL, tmp3);
@@ -1528,10 +1543,10 @@ void C2_MacroAssembler::string_compare_long_different_encoding(Register result, 
   srl(tmpU, tmpU, result);
   zext(tmpL, tmpL, 16);
   zext(tmpU, tmpU, 16);
-  if (isUL) {
-    sub(result, tmpU, tmpL);
-  } else {
+  if (isLU) {
     sub(result, tmpL, tmpU);
+  } else {
+    sub(result, tmpU, tmpL);
   }
 
   j(*DONE);
@@ -1564,14 +1579,6 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   load_chr_insn str1_load_chr = str1_isL ? (load_chr_insn)&MacroAssembler::lbu : (load_chr_insn)&MacroAssembler::lhu;
   load_chr_insn str2_load_chr = str2_isL ? (load_chr_insn)&MacroAssembler::lbu : (load_chr_insn)&MacroAssembler::lhu;
 
-  int base_offset1 = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-  int base_offset2 = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-
-  assert((base_offset1 % (UseCompactObjectHeaders ? 4 :
-                          (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
-  assert((base_offset2 % (UseCompactObjectHeaders ? 4 :
-                          (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
-
   BLOCK_COMMENT("string_compare {");
 
   // Bizarrely, the counts are passed in bytes, regardless of whether they
@@ -1600,18 +1607,15 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   // Compare longwords
   {
     if (str1_isL == str2_isL) { // LL or UU
-      string_compare_long_same_encoding(result, str1, str2,
+      string_compare_long_same_encoding(result,
+                                str1, str2, isLL,
                                 cnt1, cnt2, tmp1, tmp2, tmp3,
-                                isLL, isLL ? base_offset1 : base_offset2, minCharsInWord,
                                 STUB_THRESHOLD, &DONE, &STUB);
     } else { // LU or UL
       string_compare_long_different_encoding(result,
-                             isLU ? str1 : str2,
-                             isLU ? str2 : str1,
-                             isUL,
-                             cnt1, cnt2, tmp1, tmp2, tmp3,
-                             base_offset2, STUB_THRESHOLD,
-                             &DONE, &STUB);
+                                str1, str2, isLU,
+                                cnt1, cnt2, tmp1, tmp2, tmp3,
+                                STUB_THRESHOLD, &DONE, &STUB);
     }
   }
 
