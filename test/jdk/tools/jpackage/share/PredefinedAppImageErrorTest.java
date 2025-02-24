@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.jpackage.test.TKit;
  * @summary Test jpackage output for erroneous input with --type "app-image" and --app-image
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile PredefinedAppImageErrorTest.java
+ * @compile -Xlint:all -Werror PredefinedAppImageErrorTest.java
  *
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=PredefinedAppImageErrorTest
@@ -56,7 +56,7 @@ public final class PredefinedAppImageErrorTest {
     private final JPackageCommand cmd;
 
     @Parameters
-    public static Collection input() throws IOException {
+    public static Collection<?> input() throws IOException {
         return List.of(new Object[][]{
             // --mac-sign is required
             {"Hello",
