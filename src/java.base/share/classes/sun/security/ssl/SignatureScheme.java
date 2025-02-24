@@ -218,16 +218,17 @@ enum SignatureScheme {
         }
     }
 
-    // Handshake signature scope
+    // Handshake signature scope.
     public static final Set<SSLCryptoScope> HANDSHAKE_SCOPE =
-            Collections.unmodifiableSet(EnumSet.of(SSLCryptoScope.HANDSHAKE));
+            Set.of(SSLCryptoScope.HANDSHAKE);
 
-    // Certificate signature scope
+    // Certificate signature scope.
     public static final Set<SSLCryptoScope> CERTIFICATE_SCOPE =
-            Collections.unmodifiableSet(EnumSet.of(SSLCryptoScope.CERTIFICATE));
+            Set.of(SSLCryptoScope.CERTIFICATE);
 
+    // Non-TLS specific SIGNATURE CryptoPrimitive.
     private static final Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
-            Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
+            Set.of(CryptoPrimitive.SIGNATURE);
 
     SignatureScheme(int id, String name,
             String algorithm, String keyAlgorithm,
