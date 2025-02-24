@@ -1479,7 +1479,7 @@ public class IRNode {
     static {
         trapNodes(SHORT_RUNNING_LOOP_TRAP, "short_running_loop");
     }
-    
+
     public static final String REINTERPRET_S2HF = PREFIX + "REINTERPRET_S2HF" + POSTFIX;
     static {
         beforeMatchingNameRegex(REINTERPRET_S2HF, "ReinterpretS2HF");
