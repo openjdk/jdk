@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,10 @@
  */
 package jdk.internal.net.quic;
 
-// TODO: document this internal interface
+/**
+ * Supplies contextual 1-RTT information that's available in the QUIC implementation of the
+ * {@code java.net.http} module, to the QUIC TLS layer in the {@code java.base} module.
+ */
 public interface QuicOneRttContext {
 
     /**
