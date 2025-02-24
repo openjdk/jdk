@@ -30,7 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 
-class AsyncLogWriter::Locker {
+class AsyncLogWriter::Locker : public StackObj {
   Thread*& _holder;
   PlatformMonitor& _lock;
 
@@ -107,7 +107,7 @@ void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecora
   assert(msg != nullptr, "enqueuing a null message!");
 
   size_t msg_len = strlen(msg);
-  void* stalled_message_ptr = nullptr;
+  void* stalled_message = nullptr;
   {
     ConsumerLocker clocker;
     if (_buffer->push_back(output, decorations, msg, msg_len)) {
@@ -118,14 +118,15 @@ void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecora
 
     if (LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Stall) {
       size_t size = Message::calc_size(msg_len);
-      stalled_message_ptr = os::malloc(size, mtLogging);
-      if (stalled_message_ptr == nullptr) {
+      stalled_message = os::malloc(size, mtLogging);
+      if (stalled_message == nullptr) {
         // Out of memory. We bail without any notice.
         // Some other part of the system will probably fail later.
         return;
       }
-      new (stalled_message_ptr) Message(output, decorations, msg, msg_len);
-      _stalled_message = (Message*)stalled_message_ptr;
+      new (stalled_message) Message(output, decorations, msg, msg_len);
+      _stalled_message = (Message*)stalled_message;
+      _data_available = true;
       clocker.notify();
       while (_stalled_message != nullptr) {
         clocker.wait();
@@ -136,7 +137,7 @@ void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecora
       *counter = *counter + 1;
     }
   } // ConsumerLocker out of scope
-  os::free(stalled_message_ptr);
+  os::free(stalled_message);
 }
 
 // This function checks for cases where continuing with asynchronous logging may lead to stability issues, such as a deadlock.
@@ -267,7 +268,7 @@ void AsyncLogWriter::run() {
     AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
     {
       ConsumerLocker clocker;
-      while (!_data_available && _stalled_message == nullptr) {
+      while (!_data_available) {
         clocker.wait();
       }
 
@@ -290,6 +291,8 @@ void AsyncLogWriter::run() {
 
     bool saw_flush_token = write(snapshot);
 
+    // Any stalled message must be written *after* the buffer has been written.
+    // This is because we try hard to output messages in program-order.
     if (_stalled_message != nullptr) {
       assert(LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Stall, "must be");
       ConsumerLocker clocker;
@@ -298,6 +301,7 @@ void AsyncLogWriter::run() {
       _stalled_message = nullptr;
       clocker.notify();
     }
+
     if (saw_flush_token) {
       _flush_sem.signal(1);
     }
