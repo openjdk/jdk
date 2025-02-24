@@ -625,6 +625,9 @@ class MacroAssembler: public Assembler {
     fsgnjn_d(Rd, Rs, Rs);
   }
 
+  void float16_to_float(FloatRegister dst, Register src, Register tmp);
+  void float_to_float16(Register dst, FloatRegister src, FloatRegister ftmp, Register xtmp);
+
   // Control and status pseudo instructions
   void csrr(Register Rd, unsigned csr);         // read csr
   void csrw(unsigned csr, Register Rs);         // write csr
@@ -1080,6 +1083,7 @@ public:
     }                                                                                              \
   }
 
+  INSN(flh);
   INSN(flw);
   INSN(fld);
 

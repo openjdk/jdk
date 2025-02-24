@@ -6160,6 +6160,37 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+
+  // x10 = input (float16)
+  // f10 = result (float)
+  // t1  = temporary register
+  address generate_float16ToFloat() {
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::hf2f_id;
+    StubCodeMark mark(this, stub_id);
+    address entry = __ pc();
+    BLOCK_COMMENT("float16ToFloat:");
+    __ float16_to_float(f10, x10, t1);
+    __ ret();
+    return entry;
+  }
+
+  // f10 = input (float)
+  // x10 = result (float16)
+  // f11 = temporary float register
+  // t1  = temporary register
+  address generate_floatToFloat16() {
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::f2hf_id;
+    StubCodeMark mark(this, stub_id);
+    address entry = __ pc();
+    BLOCK_COMMENT("floatToFloat16:");
+    __ float_to_float16(x10, f10, f11, t1);
+    __ ret();
+    return entry;
+  }
+
+
 #endif // COMPILER2_OR_JVMCI
 
 #ifdef COMPILER2
@@ -6528,6 +6559,12 @@ static const int64_t right_3_bits = right_n_bits(3);
       // set table address before stub generation which use it
       StubRoutines::_crc_table_adr = (address)StubRoutines::riscv::_crc_table;
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
+    }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_float16ToFloat) &&
+        vmIntrinsics::is_intrinsic_available(vmIntrinsics::_floatToFloat16)) {
+      StubRoutines::_hf2f = generate_float16ToFloat();
+      StubRoutines::_f2hf = generate_floatToFloat16();
     }
   }
 

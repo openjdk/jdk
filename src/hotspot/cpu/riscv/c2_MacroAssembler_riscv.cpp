@@ -2249,7 +2249,7 @@ void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister one, bool is_
   bind(done);
 }
 
-static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<FloatRegister, Register, Register>& stub) {
+static void float16_to_float_slow_path_c2(C2_MacroAssembler& masm, C2GeneralStub<FloatRegister, Register, Register>& stub) {
 #define __ masm.
   FloatRegister dst = stub.data<0>();
   Register src = stub.data<1>();
@@ -2272,8 +2272,8 @@ static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Fl
 }
 
 // j.l.Float.float16ToFloat
-void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Register tmp) {
-  auto stub = C2CodeStub::make<FloatRegister, Register, Register>(dst, src, tmp, 20, float16_to_float_slow_path);
+void C2_MacroAssembler::float16_to_float_c2(FloatRegister dst, Register src, Register tmp) {
+  auto stub = C2CodeStub::make<FloatRegister, Register, Register>(dst, src, tmp, 20, float16_to_float_slow_path_c2);
 
   // On riscv, NaN needs a special process as fcvt does not work in that case.
   // On riscv, Inf does not need a special process as fcvt can handle it correctly.
@@ -2295,7 +2295,7 @@ void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Regist
   bind(stub->continuation());
 }
 
-static void float_to_float16_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Register, FloatRegister, Register>& stub) {
+static void float_to_float16_slow_path_c2(C2_MacroAssembler& masm, C2GeneralStub<Register, FloatRegister, Register>& stub) {
 #define __ masm.
   Register dst = stub.data<0>();
   FloatRegister src = stub.data<1>();
@@ -2320,8 +2320,8 @@ static void float_to_float16_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Re
 }
 
 // j.l.Float.floatToFloat16
-void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatRegister ftmp, Register xtmp) {
-  auto stub = C2CodeStub::make<Register, FloatRegister, Register>(dst, src, xtmp, 130, float_to_float16_slow_path);
+void C2_MacroAssembler::float_to_float16_c2(Register dst, FloatRegister src, FloatRegister ftmp, Register xtmp) {
+  auto stub = C2CodeStub::make<Register, FloatRegister, Register>(dst, src, xtmp, 130, float_to_float16_slow_path_c2);
 
   // On riscv, NaN needs a special process as fcvt does not work in that case.
 
