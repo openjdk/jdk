@@ -45,7 +45,7 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"option.1.set.twice", "La opci\u00F3n %s se\u00A0ha especificado\u00A0varias veces. Se ignorar\u00E1n todas excepto la \u00FAltima."},
         {"multiple.commands.1.2", "Solo se permite un comando: se ha especificado tanto %1$s como %2$s"},
         {"Use.keytool.help.for.all.available.commands",
-                 "Utilice\"keytool -help\" para todos los comandos disponibles"},
+                 "Utilice \"keytool -help\" para todos los comandos disponibles"},
         {"Key.and.Certificate.Management.Tool",
                  "Herramienta de Gesti\u00F3n de Certificados y Claves"},
         {"Commands.", "Comandos:"},
