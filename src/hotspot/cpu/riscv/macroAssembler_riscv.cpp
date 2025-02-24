@@ -5484,21 +5484,31 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   const Register jdx = tmp1;
 
   if (AvoidUnalignedAccesses) {
-    // Check if x and y are both 8-byte aligned.
-    orr(t0, xlen, ylen);
-    test_bit(t0, t0, 0);
-    beqz(t0, L_multiply_64_x_64_loop);
+    int base_offset = arrayOopDesc::base_offset_in_bytes(T_INT);
+    assert((base_offset % (UseCompactObjectHeaders ? 4 :
+                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+
+    if ((base_offset % 8) == 0) {
+      // multiply_64_x_64_loop emits 8-byte load/store to access two elements
+      // at a time from int arrays x and y. When base_offset is 8 bytes, these
+      // accesses are naturally aligned if both xlen and ylen are even numbers.
+      orr(t0, xlen, ylen);
+      test_bit(t0, t0, 0);
+      beqz(t0, L_multiply_64_x_64_loop);
+    }
+
+    Label L_second_loop_unaligned, L_third_loop, L_third_loop_exit;
 
     multiply_32_x_32_loop(x, xstart, x_xstart, y, y_idx, z, carry, product, idx, kdx);
     shadd(t0, xstart, z, t0, LogBytesPerInt);
     sw(carry, Address(t0, 0));
 
-    Label L_second_loop_unaligned;
     bind(L_second_loop_unaligned);
     mv(carry, zr);
     mv(jdx, ylen);
     subiw(xstart, xstart, 1);
     bltz(xstart, L_done);
+
     subi(sp, sp, 2 * wordSize);
     sd(z, Address(sp, 0));
     sd(zr, Address(sp, wordSize));
@@ -5506,7 +5516,6 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
     addi(z, t0, 4);
     shadd(t0, xstart, x, t0, LogBytesPerInt);
     lwu(product, Address(t0, 0));
-    Label L_third_loop, L_third_loop_exit;
 
     blez(jdx, L_third_loop_exit);
 

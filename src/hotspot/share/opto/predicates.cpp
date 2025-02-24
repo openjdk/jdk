@@ -81,20 +81,20 @@ ParsePredicateNode* ParsePredicate::init_parse_predicate(const Node* parse_predi
   return nullptr;
 }
 
-ParsePredicate ParsePredicate::clone_to_unswitched_loop(Node* new_control, const bool is_true_path_loop,
+ParsePredicate ParsePredicate::clone_to_unswitched_loop(Node* new_control, const bool is_false_path_loop,
                                                         PhaseIdealLoop* phase) const {
   ParsePredicateSuccessProj* success_proj = phase->create_new_if_for_predicate(_success_proj, new_control,
                                                                                _parse_predicate_node->deopt_reason(),
-                                                                               Op_ParsePredicate, is_true_path_loop);
-  NOT_PRODUCT(trace_cloned_parse_predicate(is_true_path_loop, success_proj));
+                                                                               Op_ParsePredicate, is_false_path_loop);
+  NOT_PRODUCT(trace_cloned_parse_predicate(is_false_path_loop, success_proj));
   return ParsePredicate(success_proj, _parse_predicate_node->deopt_reason());
 }
 
 #ifndef PRODUCT
-void ParsePredicate::trace_cloned_parse_predicate(const bool is_true_path_loop,
+void ParsePredicate::trace_cloned_parse_predicate(const bool is_false_path_loop,
                                                   const ParsePredicateSuccessProj* success_proj) {
   if (TraceLoopPredicate) {
-    tty->print("Parse Predicate cloned to %s path loop: ", is_true_path_loop ? "true" : "false");
+    tty->print("Parse Predicate cloned to %s path loop: ", is_false_path_loop ? "false" : "true");
     success_proj->in(0)->dump();
   }
 }
@@ -1066,8 +1066,8 @@ void CloneUnswitchedLoopPredicatesVisitor::visit(const ParsePredicate& parse_pre
     _has_hoisted_check_parse_predicates = true;
   }
 
-  _clone_predicate_to_true_path_loop.clone_parse_predicate(parse_predicate, true);
-  _clone_predicate_to_false_path_loop.clone_parse_predicate(parse_predicate, false);
+  _clone_predicate_to_true_path_loop.clone_parse_predicate(parse_predicate, false);
+  _clone_predicate_to_false_path_loop.clone_parse_predicate(parse_predicate, true);
   parse_predicate.kill(_phase->igvn());
 }
 

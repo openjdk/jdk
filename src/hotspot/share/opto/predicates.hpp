@@ -296,7 +296,7 @@ class ParsePredicate : public Predicate {
   }
 
   static ParsePredicateNode* init_parse_predicate(const Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason);
-  NOT_PRODUCT(static void trace_cloned_parse_predicate(bool is_true_path_loop,
+  NOT_PRODUCT(static void trace_cloned_parse_predicate(bool is_false_path_loop,
                                                        const ParsePredicateSuccessProj* success_proj);)
 
  public:
@@ -327,7 +327,7 @@ class ParsePredicate : public Predicate {
     return _success_proj;
   }
 
-  ParsePredicate clone_to_unswitched_loop(Node* new_control, bool is_true_path_loop,
+  ParsePredicate clone_to_unswitched_loop(Node* new_control, bool is_false_path_loop,
                                           PhaseIdealLoop* phase) const;
 
   // Kills this Parse Predicate by marking it useless. Will be folded away in the next IGVN round.
@@ -1106,9 +1106,9 @@ public:
   ClonePredicateToTargetLoop(LoopNode* target_loop_head, const NodeInLoopBody& node_in_loop_body, PhaseIdealLoop* phase);
 
   // Clones the provided Parse Predicate to the head of the current predicate chain at the target loop.
-  void clone_parse_predicate(const ParsePredicate& parse_predicate, bool is_true_path_loop) {
+  void clone_parse_predicate(const ParsePredicate& parse_predicate, bool is_false_path_loop) {
     ParsePredicate cloned_parse_predicate = parse_predicate.clone_to_unswitched_loop(_old_target_loop_entry,
-                                                                                     is_true_path_loop, _phase);
+                                                                                     is_false_path_loop, _phase);
     _target_loop_predicate_chain.insert_predicate(cloned_parse_predicate);
   }
 
