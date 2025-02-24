@@ -72,6 +72,24 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   oop vthread() const;
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
+
+  ObjectWaiter* const badObjectWaiterPtr = (ObjectWaiter*) 0xBAD;
+  void set_bad_pointers() {
+#ifdef ASSERT
+    // Diagnostic hygiene ...
+    this->_prev  = badObjectWaiterPtr;
+    this->_next  = badObjectWaiterPtr;
+    this->TState = ObjectWaiter::TS_RUN;
+#endif
+  }
+  ObjectWaiter* next() {
+    assert (_next != badObjectWaiterPtr, "corrupted list!");
+    return _next;
+  }
+  ObjectWaiter* prev() {
+    assert (_prev != badObjectWaiterPtr, "corrupted list!");
+    return _prev;
+  }
 };
 
 // The ObjectMonitor class implements the heavyweight version of a
