@@ -119,11 +119,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ movptr(tmp, Address(thread, in_bytes(G1ThreadLocalData::card_table_base_offset())));
   __ addptr(addr, tmp);
 
-  // If the object starts in a young region, there is nothing to do. FIXME: worth keeping young gen cards for this?
-  //__ cmpb(Address(addr, 0), G1CardTable::g1_young_card_val());
-  //__ jcc(Assembler::equal, done);
-
-  // Caclulate address of card of last word in the array.
+  // Calculate address of card of last word in the array.
   __ subptr(count, 1);
   __ shrptr(count, CardTable::card_shift());
   __ addptr(count, tmp);
