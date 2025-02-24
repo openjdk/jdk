@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -474,5 +474,13 @@ public interface QuicTLSEngine {
      */
     void versionNegotiated(QuicVersion quicVersion);
 
+    /**
+     * Sets the {@link QuicOneRttContext} on the {@code QuicTLSEngine}.
+     * <p> The {@code ctx} will be used by the {@code QuicTLSEngine} to access contextual 1-RTT
+     * data that might be required for the TLS operations.
+     *
+     * @param ctx the 1-RTT context to set
+     * @throws NullPointerException if {@code ctx} is null
+     */
     void setOneRttContext(QuicOneRttContext ctx);
 }
