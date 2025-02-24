@@ -40,13 +40,14 @@ import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
+import compiler.lib.template_framework.Name;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.fuel;
-import static compiler.lib.template_framework.Template.defineName;
+import static compiler.lib.template_framework.Template.addName;
 import static compiler.lib.template_framework.Template.sampleName;
-import static compiler.lib.template_framework.Template.countNames;
+import static compiler.lib.template_framework.Template.weighNames;
 
 import compiler.lib.template_library.Library;
 
@@ -402,33 +403,49 @@ public class TestTutorial {
         return templateClass.withArgs().render();
     }
 
-    // Example with names, i.e. defineName, countNames, and sampleName.
-    // These can be used to define and sample variables from outer scopes.
+    // In the example below ("generateWithNames"), we see the use of Names to add
+    // variables and fields to code scopes, and then sample from those variables
+    // and fields. Every Name has a Name.Type, which we now define for int and long.
+    private record MyPrimitive(String name) implements Name.Type {
+        @Override
+        public boolean isSubtypeOf(Name.Type other) {
+            return other instanceof MyPrimitive(String n) && n == name();
+        }
+
+        @Override
+        public String toString() { return name(); }
+    }
+    private static final MyPrimitive myInt = new MyPrimitive("int");
+    private static final MyPrimitive myLong = new MyPrimitive("long");
+
+    // Example with names, i.e. addName, weighNames, and sampleName.
+    // These can be used to add variables and fields to code scopes, and then sample
+    // from the available variables and fields later.
     public static String generateWithNames() {
-        var templateSample = Template.make("type", (Object type) -> body(
-            let("name", sampleName(type, false)),
+        var templateSample = Template.make("type", (Name.Type type) -> body(
+            let("name", sampleName(type, false).name()),
             """
             System.out.println("Sampling type #type: #name = " + #name);
             """
         ));
 
-        var templateStaticField = Template.make("type", (Object type) -> body(
-            defineName($("field"), type, true),
+        var templateStaticField = Template.make("type", (Name.Type type) -> body(
+            addName(new Name($("field"), type, true, 1)),
             """
             public static #type $field = 0;
             """
         ));
 
-        var templateLocalVariable = Template.make("type", (Object type) -> body(
-            defineName($("var"), type, true),
+        var templateLocalVariable = Template.make("type", (Name.Type type) -> body(
+            addName(new Name($("var"), type, true, 1)),
             """
             #type $var = 0;
             """
         ));
 
         var templateStatus = Template.make(() -> body(
-            let("ints", countNames("int", false)),
-            let("longs", countNames("long", false)),
+            let("ints", weighNames(myInt, false)),
+            let("longs", weighNames(myLong, false)),
             """
             System.out.println("Status: #ints ints, #longs longs.");
             """
@@ -439,14 +456,14 @@ public class TestTutorial {
             System.out.println("Starting inside main...");
             """,
             templateStatus.withArgs(),
-            Library.METHOD_HOOK.insert(templateLocalVariable.withArgs("int")),
-            Library.METHOD_HOOK.insert(templateLocalVariable.withArgs("long")),
-            Library.CLASS_HOOK.insert(templateStaticField.withArgs("int")),
-            Library.CLASS_HOOK.insert(templateStaticField.withArgs("long")),
+            Library.METHOD_HOOK.insert(templateLocalVariable.withArgs(myInt)),
+            Library.METHOD_HOOK.insert(templateLocalVariable.withArgs(myLong)),
+            Library.CLASS_HOOK.insert(templateStaticField.withArgs(myInt)),
+            Library.CLASS_HOOK.insert(templateStaticField.withArgs(myLong)),
             templateStatus.withArgs(),
             // We should see a mix if fields and variables sampled.
-            Collections.nCopies(5, templateSample.withArgs("int")),
-            Collections.nCopies(5, templateSample.withArgs("long")),
+            Collections.nCopies(5, templateSample.withArgs(myInt)),
+            Collections.nCopies(5, templateSample.withArgs(myLong)),
             templateStatus.withArgs(),
             """
             System.out.println("Finishing inside main.");
@@ -459,8 +476,8 @@ public class TestTutorial {
             """,
             templateStatus.withArgs(),
             // We still have all the field definitions from main.
-            Collections.nCopies(5, templateSample.withArgs("int")),
-            Collections.nCopies(5, templateSample.withArgs("long")),
+            Collections.nCopies(5, templateSample.withArgs(myInt)),
+            Collections.nCopies(5, templateSample.withArgs(myLong)),
             templateStatus.withArgs(),
             """
             System.out.println("Finishing inside other.");
@@ -518,5 +535,4 @@ public class TestTutorial {
         // Render templateClass to String.
         return templateClass.withArgs().render();
     }
-
 }
