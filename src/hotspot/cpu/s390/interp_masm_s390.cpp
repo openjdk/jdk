@@ -578,8 +578,9 @@ void InterpreterMacroAssembler::prepare_to_jump_from_interpreted(Register method
   // Satisfy interpreter calling convention (see generate_normal_entry()).
   z_lgr(Z_R10, Z_SP); // Set sender sp (aka initial caller sp, aka unextended sp).
   // Record top_frame_sp, because the callee might modify it, if it's compiled.
+  assert_different_registers(Z_R1, method);
   z_sgrk(Z_R1, Z_SP, Z_fp);
-  z_srlg(Z_R1, Z_R1, Interpreter::logStackElementSize);
+  z_srag(Z_R1, Z_R1, Interpreter::logStackElementSize);
   z_stg(Z_R1, _z_ijava_state_neg(top_frame_sp), Z_fp);
   save_bcp();
   save_esp();
