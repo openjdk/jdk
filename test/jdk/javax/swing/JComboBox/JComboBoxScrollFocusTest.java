@@ -40,7 +40,6 @@ import javax.swing.plaf.basic.BasicComboPopup;
  * @test
  * @key headful
  * @bug 6672644
- * @requires os.family != "mac"
  * @summary Tests JComboBox scrollbar behavior when alt-tabbing
  * @run main JComboBoxScrollFocusTest
  */
