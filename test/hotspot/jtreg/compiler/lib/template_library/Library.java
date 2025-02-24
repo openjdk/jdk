@@ -68,4 +68,19 @@ public abstract class Library {
         ));
         return template.withArgs();
     }
+
+    public static TemplateWithArgs defineVariableWithComputation(String name, Type type) {
+        Name n = new Name(name, type, false, 1);
+        // TODO: more patterns
+        var define = Template.make(() -> body(
+            let("type", type),
+            let("name", name),
+            "#type #name = ", type.con(), ";\n",
+            addName(n)
+        ));
+        var template = Template.make(() -> body(
+            METHOD_HOOK.insert(define.withArgs())
+        ));
+        return template.withArgs();
+    }
 } 

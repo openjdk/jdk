@@ -94,6 +94,9 @@ public class TestFuzzExpression {
         // once in the test method that is compiled. Then we compare the results.
         // The argValues may want to define fields in "def" so that they can load from them in "use".
         // We only want to do the "def" part once, but the "use" part twice, so we have to split it.
+        //
+        // Note: we are using the "expression" in two separate methods, so we cannot generate any
+        // fields with "def", as we would have to generate them identically twice.
         var template1 = Template.make("type", (Type type)-> {
             Expression expression = Expression.make(type, Type.primitives(), 2);
             List<Value> argValues = expression.randomArgValues();
@@ -146,8 +149,25 @@ public class TestFuzzExpression {
         // Example 2:
         // We only use the "expression" once, and so we can conveniently just run it with
         // random arguments. Those may also generate their own fields under the hood.
-        var template2 = Template.make("type", (Type type)-> {
+        //
+        // Note: we put the expression in a separate Template so that the method and class
+        // hook are both already set before we call "expression.withRandomArgs", and so that
+        // we know we can generate fields and local variables.
+        var template2Body = Template.make("type", (Type type)-> {
             Expression expression = Expression.make(type, Type.primitives(), 2);
+            return body(
+                """
+                    try {
+                """,
+                "        return ", expression.withRandomArgs(), ";\n",
+                """
+                    } catch (Exception e) {
+                        return e;
+                    }
+                """
+            );
+        });
+        var template2 = Template.make("type", (Type type)-> {
             return body(
                 """
                 // --- $test start ---
@@ -161,13 +181,11 @@ public class TestFuzzExpression {
 
                     @Test
                     public static Object $test() {
-                        try {
                     """,
-                    "        return ", expression.withRandomArgs(), ";\n",
+                    Library.METHOD_HOOK.set(
+                        template2Body.withArgs(type)
+                    ),
                     """
-                        } catch (Exception e) {
-                            return e;
-                        }
                     }
 
                     @Check(test = "$test")

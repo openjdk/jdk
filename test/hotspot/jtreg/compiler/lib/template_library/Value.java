@@ -67,6 +67,11 @@ public record Value(Object defTokens, Object useTokens) {
             TemplateWithArgs def = Library.defineField(name, true, value);
             return new Value(def, fieldName);
         }
+        if (RANDOM.nextInt(4) == 0 && Library.METHOD_HOOK.isSet()) {
+            String varName = $("var") + "_" + (nextUniqueId++);
+            TemplateWithArgs def = Library.defineVariableWithComputation(varName, type);
+            return new Value(def, varName);
+        }
         return fromUseToken(type.con());
     }
 }
