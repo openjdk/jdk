@@ -32,7 +32,6 @@
  * @run main LazyJdkConsoleProvider
  */
 
-import java.io.IO;
 import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.terminal.Terminal;
 
@@ -44,8 +43,8 @@ public class LazyJdkConsoleProvider {
     public static void main(String... args) throws Throwable {
         switch (args.length > 0 ? args[0] : "default") {
             case "write" -> {
-                System.console().println("Hello!");
-                System.console().print("Hello!");
+                System.console().printf("Hello!\n");
+                System.console().printf("Hello!");
                 System.console().format("\nHello!\n");
                 System.console().flush();
                 IO.println("Hello!");
@@ -66,7 +65,7 @@ public class LazyJdkConsoleProvider {
         TestCase[] testCases = new TestCase[] {
             new TestCase("write", null, Terminal.class.getName()),
             new TestCase("read", LineReader.class.getName(), null),
-            new TestCase("IO-read", LineReader.class.getName(), null)
+            new TestCase("IO-read", null, Terminal.class.getName())
         };
         for (TestCase tc : testCases) {
             ProcessBuilder builder =
