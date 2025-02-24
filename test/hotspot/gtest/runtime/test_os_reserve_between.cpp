@@ -30,9 +30,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
-#ifndef LOG_PLEASE
 #define LOG_PLEASE
-#endif
 #include "testutils.hpp"
 #include "unittest.hpp"
 
