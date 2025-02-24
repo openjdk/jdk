@@ -214,9 +214,10 @@ public class CertReplace {
     public static X509Certificate[] createPath(String chain) throws Exception {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         List list = new ArrayList();
-        for (Certificate c: cf.generateCertificates(
-                new FileInputStream(chain))) {
-            list.add((X509Certificate)c);
+        try (final FileInputStream certInputStream = new FileInputStream(chain)) {
+            for (Certificate c : cf.generateCertificates(certInputStream)) {
+                list.add((X509Certificate) c);
+            }
         }
         return (X509Certificate[]) list.toArray(new X509Certificate[0]);
     }
