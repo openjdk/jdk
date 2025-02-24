@@ -340,20 +340,6 @@ public class TypeEnter implements Completer {
                     (cls.mods.flags & IMPLICIT_CLASS) != 0;
             if (isImplicitClass) {
                 doModuleImport(make.ModuleImport(make.QualIdent(syms.java_base)));
-                if (peekTypeExists(syms.ioType.tsym)) {
-                    doImport(make.Import(make.Select(make.QualIdent(syms.ioType.tsym),
-                            names.asterisk), true), false);
-                }
-            }
-        }
-
-        private boolean peekTypeExists(TypeSymbol type) {
-            try {
-                type.complete();
-                return !type.type.isErroneous();
-            } catch (CompletionFailure cf) {
-                //does not exist
-                return false;
             }
         }
 

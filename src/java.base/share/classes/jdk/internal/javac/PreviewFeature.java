@@ -68,8 +68,7 @@ public @interface PreviewFeature {
         // keeping the constant of a feature that has been integrated or dropped, serves the purpose of muting such warnings.
 
         //---
-        @JEP(number=495, title="Simple Source Files and Instance Main Methods", status="Fourth Preview")
-        IMPLICIT_CLASSES,
+        IMPLICIT_CLASSES, //to be removed when boot JDK is 25
         @JEP(number=487, title="Scoped Values", status="Fourth Preview")
         SCOPED_VALUES,
         @JEP(number=499, title="Structured Concurrency", status="Fourth Preview")

@@ -46,7 +46,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 25
  */
-@PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
 public final class IO {
 
     /*
