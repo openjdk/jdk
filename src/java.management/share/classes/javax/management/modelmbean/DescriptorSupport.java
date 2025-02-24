@@ -974,7 +974,7 @@ public class DescriptorSupport
      * field Names or field Values.  If the XML formatted string
      * construction fails for any reason, this exception will be
      * thrown.
-     * @deprecated This constructor exists for historical reasons.  If
+     * @deprecated This method exists for historical reasons.  If
      * reading from XML is required, it should be implemented externally.
      */
     @Deprecated(since="25", forRemoval=true)
