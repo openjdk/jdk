@@ -30,55 +30,47 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 
-class AsyncLogWriter::ProducerLocker : public StackObj {
-  static Thread* _holder;
+class AsyncLogWriter::Locker {
+  Thread*& _holder;
+  PlatformMonitor& _lock;
+
 public:
-  static Thread* current_holder() { return _holder; }
-  ProducerLocker() {
-    assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
-    _instance->_producer_lock.lock();
+  Locker(Thread*& holder, PlatformMonitor& lock)
+  : _holder(holder),
+    _lock(lock) {
+    _lock.lock();
     _holder = Thread::current_or_null();
   }
 
-  ~ProducerLocker() {
+  ~Locker() {
     assert(_holder == Thread::current_or_null(), "must be");
     _holder = nullptr;
-    _instance->_producer_lock.unlock();
+    _lock.unlock();
   }
 
-  void notify() { _instance->_consumer_lock.notify(); }
+  void notify() {
+    _lock.notify();
+  }
   void wait() {
     Thread* saved_holder = _holder;
     _holder = nullptr;
-    _instance->_producer_lock.wait(0/* no timeout */);
+    _lock.wait(0 /* no timeout */);
     _holder = saved_holder;
   }
 };
 
-class AsyncLogWriter::ConsumerLocker : public StackObj {
+class AsyncLogWriter::ProducerLocker : public Locker {
   static Thread* _holder;
-
 public:
   static Thread* current_holder() { return _holder; }
-  ConsumerLocker() {
-    assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
-    _instance->_consumer_lock.lock();
-    _holder = Thread::current_or_null();
-  }
+  ProducerLocker() : Locker(_holder, _instance->_producer_lock) {}
+};
 
-  ~ConsumerLocker() {
-    assert(_holder == Thread::current_or_null(), "must be");
-    _holder = nullptr;
-    _instance->_consumer_lock.unlock();
-  }
-
-  void notify() { _instance->_consumer_lock.notify(); }
-  void wait() {
-    Thread* saved_holder = _holder;
-    _holder = nullptr;
-    _instance->_consumer_lock.wait(0/* no timeout */);
-    _holder = saved_holder;
-  }
+class AsyncLogWriter::ConsumerLocker : public Locker {
+  static Thread* _holder;
+public:
+  static Thread* current_holder() { return _holder; }
+  ConsumerLocker() : Locker(_holder, _instance->_consumer_lock) {}
 };
 
 Thread* AsyncLogWriter::ProducerLocker::_holder = nullptr;

@@ -60,6 +60,7 @@ class LogFileStreamOutput;
 class AsyncLogWriter : public NonJavaThread {
   friend class AsyncLogTest;
   friend class AsyncLogTest_logBuffer_vm_Test;
+  class Locker;
   class ProducerLocker;
   class ConsumerLocker;
 
