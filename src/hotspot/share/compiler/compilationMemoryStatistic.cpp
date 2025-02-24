@@ -252,7 +252,6 @@ bool FullMethodName::operator== (const FullMethodName& b) const {
 bool FullMethodName::is_test_class() const {
   char tmp[1024];
   _k->as_C_string(tmp, sizeof(tmp));
-if (UseNewCode){ printf("%s\n",tmp); fflush(stdout);}
   return strstr(tmp, "CompileCommandPrintMemStat") != nullptr ||
          strstr(tmp, "CompileCommandMemLimit") != nullptr;
 }

@@ -130,8 +130,6 @@ static bool on_compiler_thread() {
   return false;
 }
 
-static volatile uint64_t xxx = 0;
-
 Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType alloc_failmode) {
   // - requested_size = sizeof(Chunk)
   // - length = payload size
