@@ -1257,20 +1257,18 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                               ThreadFactory threadFactory,
                               RejectedExecutionHandler handler) {
         if (corePoolSize < 0) {
-            throw new IllegalArgumentException("corePoolSize can't be negative, but got " + corePoolSize);
+            throw new IllegalArgumentException("corePoolSize must be non-negative, but got " + corePoolSize);
         } else if (maximumPoolSize <= 0) {
             throw new IllegalArgumentException("maximumPoolSize must be positive, but got " + maximumPoolSize);
         } else if (maximumPoolSize < corePoolSize) {
-            throw new IllegalArgumentException("maximumPoolSize must >= corePoolSize , " + "but got maximumPoolSize:" + maximumPoolSize + " corePoolSize :" + corePoolSize);
+            throw new IllegalArgumentException("maximumPoolSize must be greater than or equal to corePoolSize , " + "but got maximumPoolSize:" + maximumPoolSize + " ,corePoolSize:" + corePoolSize);
         } else if (keepAliveTime < 0) {
-            throw new IllegalArgumentException("keepAliveTime can't be negative, but got " + keepAliveTime);
-        } else if (workQueue == null) {
-            throw new NullPointerException("workQueue can't be null");
-        } else if (threadFactory == null) {
-            throw new NullPointerException("threadFactory can't be null");
-        } else if (handler == null) {
-            throw new NullPointerException("handler can't be null");
+            throw new IllegalArgumentException("keepAliveTime must be non-negative, but got " + keepAliveTime);
         }
+        Objects.requireNonNull(unit, "unit");
+        Objects.requireNonNull(workQueue, "workQueue");
+        Objects.requireNonNull(threadFactory, "threadFactory");
+        Objects.requireNonNull(handler, "handler");
         this.corePoolSize = corePoolSize;
         this.maximumPoolSize = maximumPoolSize;
         this.workQueue = workQueue;
@@ -1297,8 +1295,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @throws NullPointerException if {@code command} is null
      */
     public void execute(Runnable command) {
-        if (command == null)
-            throw new NullPointerException("command can't be null");
+        Objects.requireNonNull(command, "command");
         /*
          * Proceed in 3 steps:
          *
@@ -1459,8 +1456,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @see #getThreadFactory
      */
     public void setThreadFactory(ThreadFactory threadFactory) {
-        if (threadFactory == null)
-            throw new NullPointerException("threadFactory can't be null");
+        Objects.requireNonNull(threadFactory, "threadFactory");
         this.threadFactory = threadFactory;
     }
 
@@ -1482,8 +1478,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @see #getRejectedExecutionHandler
      */
     public void setRejectedExecutionHandler(RejectedExecutionHandler handler) {
-        if (handler == null)
-            throw new NullPointerException("handler can't be null");
+        Objects.requireNonNull(handler, "handler");
         this.handler = handler;
     }
 
@@ -1512,9 +1507,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
     public void setCorePoolSize(int corePoolSize) {
         if (corePoolSize < 0) {
-            throw new IllegalArgumentException("corePoolSize can't be negative, but got " + corePoolSize);
+            throw new IllegalArgumentException("corePoolSize must be non-negative, but got " + corePoolSize);
         } else if (corePoolSize > maximumPoolSize) {
-            throw new IllegalArgumentException("maximumPoolSize must >= corePoolSize , " +
+            throw new IllegalArgumentException("corePoolSize must be less than or equal to maximumPoolSize, " +
                 "but got maximumPoolSize:" + maximumPoolSize + " corePoolSize :" + corePoolSize);
         }
         int delta = corePoolSize - this.corePoolSize;
@@ -1643,7 +1638,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         if (maximumPoolSize <= 0) {
             throw new IllegalArgumentException("maximumPoolSize must be positive, but got " + maximumPoolSize);
         } else if (maximumPoolSize < corePoolSize) {
-            throw new IllegalArgumentException("maximumPoolSize must >= corePoolSize , " +
+            throw new IllegalArgumentException("maximumPoolSize must be greater than or equal to corePoolSize , " +
                 "but got maximumPoolSize:" + maximumPoolSize + " corePoolSize :" + corePoolSize);
         }
         this.maximumPoolSize = maximumPoolSize;
@@ -1679,7 +1674,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
     public void setKeepAliveTime(long time, TimeUnit unit) {
         if (time < 0)
-            throw new IllegalArgumentException("time can't be negative, but got " + time);
+            throw new IllegalArgumentException("time must be non-negative, but got " + time);
         if (time == 0 && allowsCoreThreadTimeOut())
             throw new IllegalArgumentException("Core threads must have nonzero keep alive times");
         long keepAliveTime = unit.toNanos(time);
