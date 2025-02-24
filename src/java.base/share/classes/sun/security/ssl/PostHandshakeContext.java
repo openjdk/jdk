@@ -43,7 +43,7 @@ final class PostHandshakeContext extends HandshakeContext {
                 "Post-handshake not supported in " + negotiatedProtocol.name);
         }
 
-        this.localSupportedSignAlgs = new ArrayList<>(
+        this.localSupportedCertSignAlgs = new ArrayList<>(
             context.conSession.getLocalSupportedSignatureSchemes());
 
         // Add the potential post-handshake consumers.
