@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,6 @@ import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
-import jdk.jfr.internal.SecuritySupport;
-import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.util.ValueFormatter;
 
 /**
@@ -134,7 +132,7 @@ abstract class AbstractDCmd {
         return JVM.getPid();
     }
 
-    protected final SafePath resolvePath(Recording recording, String filename) throws InvalidPathException {
+    protected Path resolvePath(Recording recording, String filename) throws InvalidPathException {
         if (filename == null) {
             return makeGenerated(recording, Paths.get("."));
         }
@@ -142,11 +140,11 @@ abstract class AbstractDCmd {
         if (Files.isDirectory(path)) {
             return makeGenerated(recording, path);
         }
-        return new SafePath(path.toAbsolutePath().normalize());
+        return path.toAbsolutePath().normalize();
     }
 
-    private SafePath makeGenerated(Recording recording, Path directory) {
-        return new SafePath(directory.toAbsolutePath().resolve(JVMSupport.makeFilename(recording)).normalize());
+    private Path makeGenerated(Recording recording, Path directory) {
+        return directory.toAbsolutePath().resolve(JVMSupport.makeFilename(recording)).normalize();
     }
 
     protected final Recording findRecording(String name) throws DCmdException {
@@ -158,7 +156,7 @@ abstract class AbstractDCmd {
         }
     }
 
-    protected final void reportOperationComplete(String actionPrefix, String name, SafePath file) {
+    protected final void reportOperationComplete(String actionPrefix, String name, Path file) {
         print(actionPrefix);
         print(" recording");
         if (name != null) {
@@ -168,7 +166,7 @@ abstract class AbstractDCmd {
             print(",");
             try {
                 print(" ");
-                long bytes = SecuritySupport.getFileSize(file);
+                long bytes = Files.size(file);
                 printBytes(bytes);
             } catch (IOException e) {
                 // Ignore, not essential
@@ -219,30 +217,17 @@ abstract class AbstractDCmd {
         print(ValueFormatter.formatTimespan(timespan, separator));
     }
 
-    protected final void printPath(SafePath path) {
+    protected final void printPath(Path path) {
         if (path == null) {
             print("N/A");
             return;
         }
-        try {
-            printPath(SecuritySupport.getAbsolutePath(path).toPath());
-        } catch (IOException ioe) {
-            printPath(path.toPath());
-        }
+        println(path.toAbsolutePath().toString());
     }
 
     protected final void printHelpText() {
         for (String line : getHelp()) {
             println(line);
-        }
-    }
-
-    protected final void printPath(Path path) {
-        try {
-            println(path.toAbsolutePath().toString());
-        } catch (SecurityException e) {
-            // fall back on filename
-            println(path.toString());
         }
     }
 

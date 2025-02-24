@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,16 @@
 # questions.
 #
 
+include MakeFileStart.gmk
+
 ################################################################################
 # This file builds the native component of the JTReg tests for Hotspot.
 # It also covers the test-image part, where the built files are copied to the
 # test image.
 ################################################################################
 
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
-
 include CopyFiles.gmk
 include TestFilesCompilation.gmk
-
-$(eval $(call IncludeCustomExtension, test/JtregNativeHotspot.gmk))
 
 ################################################################################
 # Targets for building the native tests themselves.
@@ -867,6 +862,7 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exestack-gap := -lpthread
   BUILD_TEST_exeinvoke_exeinvoke.c_OPTIMIZATION := NONE
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeFPRegs := -ldl
+  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit += -ldl
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
   BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libfast-math := -ffast-math
 else
@@ -880,7 +876,6 @@ endif
 
 
 BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exesigtest := java.base:libjvm
-BUILD_HOTSPOT_JTREG_LIBRARIES_JDK_LIBS_libatExit := java.base:libjvm
 BUILD_HOTSPOT_JTREG_EXECUTABLES_JDK_LIBS_exedaemonDestroy := java.base:libjvm
 
 ifeq ($(call isTargetOs, windows), true)
@@ -1588,4 +1583,8 @@ test-image-hotspot-jtreg-native: $(COPY_HOTSPOT_JTREG_NATIVE)
 all: build-test-hotspot-jtreg-native
 test-image: test-image-hotspot-jtreg-native
 
-.PHONY: default all build-test-hotspot-jtreg-native test-image-hotspot-jtreg-native test-image
+.PHONY: build-test-hotspot-jtreg-native test-image-hotspot-jtreg-native test-image
+
+################################################################################
+
+include MakeFileEnd.gmk

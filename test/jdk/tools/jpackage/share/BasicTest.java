@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -41,7 +43,9 @@ import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
 
 /*
@@ -49,12 +53,38 @@ import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
  * @summary jpackage basic testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile BasicTest.java
+ * @compile -Xlint:all -Werror BasicTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=BasicTest
  */
 
 public final class BasicTest {
+
+    public static Collection<?> addModulesParams() {
+        List<Object[][]> params = new ArrayList<>();
+        params.add(new Object[][] { new String[] { "--add-modules", "ALL-DEFAULT"  } });
+        params.add(new Object[][] { new String[] { "--add-modules", "java.desktop" } });
+        params.add(new Object[][] { new String[] { "--add-modules", "java.desktop,jdk.jartool" } });
+        params.add(new Object[][] { new String[] { "--add-modules", "java.desktop", "--add-modules", "jdk.jartool" } });
+        if (isAllModulePathCapable()) {
+            final Path jmods = Path.of(System.getProperty("java.home"), "jmods");
+            params.add(new Object[][] { new String[] { "--add-modules", "ALL-MODULE-PATH",
+                                                       // Since JDK-8345259 ALL-MODULE-PATH requires --module-path arg
+                                                       "--module-path", jmods.toString() } });
+        }
+        return Collections.unmodifiableList(params);
+    }
+
+    private static boolean isAllModulePathCapable() {
+        Path jmods = Path.of(System.getProperty("java.home"), "jmods");
+        boolean noJmods = Files.notExists(jmods);
+        if (LinkableRuntimeImage.isLinkableRuntime() && noJmods) {
+           TKit.trace("ALL-MODULE-PATH test skipped for linkable run-time image");
+           return false;
+        }
+        return true;
+    }
+
     @Test
     public void testNoArgs() {
         List<String> output =
@@ -78,7 +108,6 @@ public final class BasicTest {
                 .ignoreFakeRuntime();
 
         cmd.executeAndAssertImageCreated();
-        Path launcherPath = cmd.appLauncherPath();
 
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
 
@@ -306,17 +335,12 @@ public final class BasicTest {
     }
 
     @Test
-    @Parameter("ALL-MODULE-PATH")
-    @Parameter("ALL-DEFAULT")
-    @Parameter("java.desktop")
-    @Parameter("java.desktop,jdk.jartool")
-    @Parameter({ "java.desktop", "jdk.jartool" })
-    public void testAddModules(String... addModulesArg) {
+    @ParameterSupplier("addModulesParams")
+    public void testAddModules(String[] addModulesArg) {
         JPackageCommand cmd = JPackageCommand
                 .helloAppImage("goodbye.jar:com.other/com.other.Hello")
                 .ignoreDefaultRuntime(true); // because of --add-modules
-        Stream.of(addModulesArg).map(v -> Stream.of("--add-modules", v)).flatMap(
-                s -> s).forEachOrdered(cmd::addArgument);
+        Stream.of(addModulesArg).forEachOrdered(cmd::addArgument);
         cmd.executeAndAssertHelloAppImageCreated();
     }
 

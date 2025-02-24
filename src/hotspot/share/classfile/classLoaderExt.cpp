@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -342,7 +341,7 @@ void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* resu
     ResourceMark rm;
     log_warning(cds)("CDS heap objects cannot be written because class %s maybe modified by ClassFileLoadHook.",
                      result->external_name());
-    HeapShared::disable_writing();
+    CDSConfig::disable_heap_dumping();
   }
 #endif // INCLUDE_CDS_JAVA_HEAP
 }
