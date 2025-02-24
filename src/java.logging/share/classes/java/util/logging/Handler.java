@@ -43,8 +43,6 @@ import java.io.UnsupportedEncodingException;
  * and {@code Level}.  See the specific documentation for each concrete
  * {@code Handler} class.
  *
- * <h2>Subclass Implementation Notes</h2>
- *
  * @implNote When implementing new {@code Handler} subclasses, it is important
  * to understand the potential effects of synchronization.
  * <p>
@@ -62,9 +60,9 @@ import java.io.UnsupportedEncodingException;
  * {@link #isLoggable(LogRecord)} while allowing code synchronized on the
  * {@code Handler} instance to set a new log level.
  * <p>
- * @implNote Another principle is to avoid synchronizing {@code Handler}
- * instances (or holding any other locks) while processing user-provided
- * arguments, such as {@link LogRecord} parameters.
+ * Another principle is to avoid synchronizing {@code Handler} instances
+ * (or holding any other locks) while processing user-provided arguments,
+ * such as {@link LogRecord} parameters.
  * <p>
  * This applies most directly to the {@link #publish(LogRecord)} method, where
  * user arguments are processed. Holding a lock when calling {@code toString()}
