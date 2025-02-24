@@ -35,6 +35,7 @@ import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -226,11 +227,54 @@ final class TestCarrierLocalArenaPools {
     @MethodSource("pools")
     void outOfOrderUse(CarrierLocalArenaPools pool) {
         Arena firstArena = pool.take();
+        long first = firstArena.allocate(SMALL_ALLOC_SIZE).address();
         Arena secondArena = pool.take();
+        long second = firstArena.allocate(SMALL_ALLOC_SIZE).address();
         firstArena.close();
         Arena thirdArena = pool.take();
+        long third = thirdArena.allocate(SMALL_ALLOC_SIZE).address();
+
+        assertInOrder(first, second, third);
         secondArena.close();
         thirdArena.close();
+    }
+
+    @ParameterizedTest
+    @MethodSource("pools")
+    void outOfOrderUseVt(CarrierLocalArenaPools pool) {
+        VThreadRunner.run(() -> outOfOrderUseVtTask(pool));
+    }
+
+    void outOfOrderUseVtTask(CarrierLocalArenaPools pool) {
+        Arena firstArena = pool.take();
+        long first = firstArena.allocate(SMALL_ALLOC_SIZE).address();
+        Arena secondArena = pool.take();
+        long second = firstArena.allocate(SMALL_ALLOC_SIZE).address();
+        firstArena.close();
+        Arena thirdArena = pool.take();
+        long third = thirdArena.allocate(SMALL_ALLOC_SIZE).address();
+
+        assertNotEquals(first, second);
+        assertEquals(first, third);
+        secondArena.close();
+        thirdArena.close();
+    }
+
+    void assertInOrder(long first, long... rest) {
+        long current = first;
+        for (long x : rest) {
+            // Does x belong to the recycled segment?
+            if (x >= first && x < first + POOL_SIZE) {
+                // Is x in an area that's already handed out?
+                if (x <= current) {
+                    long[] deltas = Arrays.stream(rest)
+                            .map(v -> v - first)
+                            .toArray();
+                    throw new AssertionError("The value " + x + " is equal or less than " + current + ". Deltas: " + Arrays.toString(deltas));
+                }
+                current = x;
+            }
+        }
     }
 
     @ParameterizedTest
