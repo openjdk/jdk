@@ -156,8 +156,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
     /*
      * This only checks if the algorithm has been completely disabled.  If
-     * there are keysize, naming complexities (Ed & XDH), or other limit, this
-     * method will allow the algorithm.
+     * there are keysize or other limit, this method allow the algorithm.
      */
     @Override
     public final boolean permits(Set<CryptoPrimitive> primitives,
