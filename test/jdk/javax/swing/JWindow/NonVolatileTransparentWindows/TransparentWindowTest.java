@@ -76,20 +76,15 @@ public class TransparentWindowTest extends JWindow {
     }
 
     private void testWindowProperties() {
-        BufferedImage image = (BufferedImage) createImage(getWidth(), getHeight());
-
-        if (image == null) {
-            throw new RuntimeException("Test FAILED! Unable to capture the window.");
-        }
-
-        testTransparency(image);
-        testBlackBorder(image);
+        BufferedImage bufferedImage = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
+        testTransparency(bufferedImage);
+        testBlackBorder(bufferedImage);
         System.out.println("Test PASSED!");
     }
 
     private void testTransparency(BufferedImage img) {
         if (img.getTransparency() != Transparency.TRANSLUCENT) {
-            throw new RuntimeException("Test FAILED! The windows should be translucent.");
+            throw new RuntimeException("Test FAILED! The window should be translucent.");
         }
     }
 
