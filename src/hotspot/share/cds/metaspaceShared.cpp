@@ -967,18 +967,6 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
       HeapShared::reset_archived_object_states(CHECK);
     }
 
-    if (CDSConfig::is_dumping_method_handles()) {
-      // This assert means that the MethodType and MethodTypeForm tables won't be
-      // updated concurrently when we are saving their contents into a side table.
-      assert(CDSConfig::allow_only_single_java_thread(), "Required");
-
-      JavaValue result(T_VOID);
-      JavaCalls::call_static(&result, vmClasses::MethodType_klass(),
-                             vmSymbols::createArchivedObjects(),
-                             vmSymbols::void_method_signature(),
-                             CHECK);
-    }
-
     if (CDSConfig::is_initing_classes_at_dump_time()) {
       // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
       // to null, and it will be initialized again at runtime.

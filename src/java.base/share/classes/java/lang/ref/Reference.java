@@ -307,6 +307,10 @@ public abstract sealed class Reference<T>
     }
 
     static {
+        runtimeSetup();
+    }
+
+    private static void runtimeSetup() {
         // provide access in SharedSecrets
         SharedSecrets.setJavaLangRefAccess(new JavaLangRefAccess() {
             @Override
