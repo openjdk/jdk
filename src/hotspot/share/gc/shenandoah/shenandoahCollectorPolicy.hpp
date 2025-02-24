@@ -79,7 +79,7 @@ public:
   void record_shutdown();
   bool is_at_shutdown() const;
 
-  ShenandoahTracer* tracer() {return _tracer;}
+  ShenandoahTracer* tracer() const {return _tracer;}
 
   void print_gc_stats(outputStream* out) const;
 
@@ -90,23 +90,18 @@ public:
   // If the heuristics find that the number of consecutive degenerated cycles is above
   // ShenandoahFullGCThreshold, then they will initiate a Full GC upon an allocation
   // failure.
-  inline size_t consecutive_degenerated_gc_count() const {
+  size_t consecutive_degenerated_gc_count() const {
     return _consecutive_degenerated_gcs;
   }
 
-  static bool is_allocation_failure(GCCause::Cause cause) {
-    return cause == GCCause::_allocation_failure
-        || cause == GCCause::_shenandoah_allocation_failure_evac
-        || cause == GCCause::_shenandoah_humongous_allocation_failure;
-  }
-
+  static bool is_allocation_failure(GCCause::Cause cause);
   static bool is_shenandoah_gc(GCCause::Cause cause);
   static bool is_requested_gc(GCCause::Cause cause);
   static bool is_explicit_gc(GCCause::Cause cause);
   static bool should_run_full_gc(GCCause::Cause cause);
   static bool should_handle_requested_gc(GCCause::Cause cause);
 
-  inline size_t consecutive_young_gc_count() const {
+  size_t consecutive_young_gc_count() const {
     return _consecutive_young_gcs;
   }
 

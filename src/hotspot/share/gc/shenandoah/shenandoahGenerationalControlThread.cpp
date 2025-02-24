@@ -50,10 +50,10 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _control_lock(Mutex::nosafepoint - 2, "ShenandoahGCRequest_lock", true),
   _requested_gc_cause(GCCause::_no_gc),
   _requested_generation(nullptr),
+  _mode(none),
   _degen_point(ShenandoahGC::_degenerated_unset),
   _heap(ShenandoahGenerationalHeap::heap()),
-  _age_period(0),
-  _mode(none) {
+  _age_period(0) {
   shenandoah_assert_generational();
   set_name("Shenandoah Control Thread");
   create_and_start();
@@ -95,7 +95,7 @@ void ShenandoahGenerationalControlThread::run_service() {
     }
   }
 
-  // In case any threads are waiting for a cycle to happen, let them know it isn't.
+  // In case any threads are waiting for a cycle to happen, notify them so they observe the shutdown.
   notify_gc_waiters();
   notify_alloc_failure_waiters();
   set_gc_mode(stopped);

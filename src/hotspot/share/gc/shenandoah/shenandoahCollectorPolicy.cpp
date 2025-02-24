@@ -165,6 +165,13 @@ bool ShenandoahCollectorPolicy::is_shenandoah_gc(GCCause::Cause cause) {
       || cause == GCCause::_shenandoah_upgrade_to_full_gc;
 }
 
+
+bool ShenandoahCollectorPolicy::is_allocation_failure(GCCause::Cause cause) {
+  return cause == GCCause::_allocation_failure
+      || cause == GCCause::_shenandoah_allocation_failure_evac
+      || cause == GCCause::_shenandoah_humongous_allocation_failure;
+}
+
 bool ShenandoahCollectorPolicy::is_requested_gc(GCCause::Cause cause) {
   return is_explicit_gc(cause) || is_implicit_gc(cause);
 }

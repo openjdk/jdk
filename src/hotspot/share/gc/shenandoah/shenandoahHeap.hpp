@@ -440,8 +440,13 @@ private:
   bool try_cancel_gc(GCCause::Cause cause);
 
 public:
+  // Returns true if and only if cancellation request was successfully communicated.
   inline bool cancelled_gc() const;
+
+  // Used by workers in the GC cycle to detect cancellation and honor STS requirements
   inline bool check_cancelled_gc_and_yield(bool sts_active = true);
+
+  // This indicates the reason the last GC cycle was cancelled.
   inline GCCause::Cause cancelled_cause() const;
 
   inline void clear_cancelled_gc(bool clear_oom_handler = true);

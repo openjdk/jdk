@@ -64,16 +64,15 @@ private:
   // and _gc_mode. It is important that these be changed together and have a consistent view.
   Monitor _control_lock;
 
-  // This is true when the old generation cycle is in an interruptible phase (i.e., marking or
-  // preparing for mark).
-  ShenandoahSharedFlag _allow_old_preemption;
-
   // Represents a normal (non cancellation) gc request. This can be set by mutators (System.gc,
   // whitebox gc, etc.) or by the regulator thread when the heuristics want to start a cycle.
   GCCause::Cause  _requested_gc_cause;
 
   // This is the generation the request should operate on.
   ShenandoahGeneration* _requested_generation;
+
+  // The mode is read frequently by requesting threads and only ever written by the control thread.
+  volatile GCMode _mode;
 
   // Only the control thread knows the correct degeneration point. This is used to have the
   // control thread resume a STW cycle from the point where the concurrent cycle was cancelled.
@@ -85,10 +84,9 @@ private:
   // This is used to keep track of whether to age objects during the current cycle.
   uint _age_period;
 
-  // The mode is read frequently by requesting threads and only ever written by the control thread.
-  shenandoah_padding(0);
-  volatile GCMode _mode;
-  shenandoah_padding(1);
+  // This is true when the old generation cycle is in an interruptible phase (i.e., marking or
+  // preparing for mark).
+  ShenandoahSharedFlag _allow_old_preemption;
 
 public:
   ShenandoahGenerationalControlThread();
@@ -102,7 +100,7 @@ public:
   bool request_concurrent_gc(ShenandoahGeneration* generation);
 
   // Returns the current state of the control thread
-  GCMode gc_mode() {
+  GCMode gc_mode() const {
     return _mode;
   }
 private:

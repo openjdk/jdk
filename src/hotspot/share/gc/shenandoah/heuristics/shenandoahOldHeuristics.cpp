@@ -620,7 +620,7 @@ void ShenandoahOldHeuristics::evaluate_triggers(size_t first_old_region, size_t 
   set_trigger_if_old_is_overgrown();
 }
 
-bool ShenandoahOldHeuristics::resume_old_cycle() {
+bool ShenandoahOldHeuristics::should_resume_old_cycle() {
   // If we are preparing to mark old, or if we are already marking old, then try to continue that work.
   if (_old_generation->is_concurrent_mark_in_progress()) {
     log_trigger("Resume marking old");
