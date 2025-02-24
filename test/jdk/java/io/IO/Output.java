@@ -21,7 +21,7 @@
  * questions.
  */
 
-import static java.io.IO.*;
+import static java.lang.IO.*;
 import java.util.function.Consumer;
 
 public class Output {
