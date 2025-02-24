@@ -287,10 +287,12 @@ public final class CarrierLocalArenaPools {
                 LocalArenaPoolImpl.this.arenaClosed();
             }
 
+            @ForceInline
             long sp() {
                 return LocalArenaPoolImpl.this.sp;
             }
 
+            @ForceInline
             void sp(long sp) {
                 LocalArenaPoolImpl.this.sp = sp;
             }
@@ -300,20 +302,23 @@ public final class CarrierLocalArenaPools {
         private final class CarrierSlicingArena extends SlicingArena {
 
             // Use a local stack pointer here as this state cannot be held in
-            // a carrier thread local (VT may be remounted).
+            // a carrier thread local (a VT may be remounted at any time).
             private long sp;
 
+            @ForceInline
             private CarrierSlicingArena(Arena originalArena,
                                         ArenaImpl delegate,
                                         MemorySegment segment) {
                 super(originalArena, delegate, segment);
             }
 
+            @ForceInline
             @Override
             long sp() {
                 return this.sp;
             }
 
+            @ForceInline
             @Override
             void sp(long sp) {
                 this.sp = sp;
