@@ -56,7 +56,7 @@ class ConcurrentHashTable : public CHeapObj<MT> {
       _stats_rate->remove();
     }
   }
-  // Calculate statistics. Item sizes are calculated with VALUE_SIZE_FUNC, and accumloated in summary and literal_size.
+  // Calculate statistics. Item sizes are calculated with VALUE_SIZE_FUNC, and accumulated in summary and literal_size.
   template <typename VALUE_SIZE_FUNC>
   void internal_statistics_range(Thread* thread, size_t start, size_t stop,
                                  VALUE_SIZE_FUNC& sts_f, NumberSeq& summary, size_t& literal_size);
