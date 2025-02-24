@@ -839,11 +839,9 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     insert_mem_bar(ctrl, &out_mem, Op_MemBarCPUOrder, mem_bar_alias_idx);
   }
 
-  if (is_partial_array_copy) {
-    assert((*ctrl)->is_Proj(), "MemBar control projection");
-    assert((*ctrl)->in(0)->isa_MemBar(), "MemBar node");
-    (*ctrl)->in(0)->isa_MemBar()->set_trailing_partial_array_copy();
-  }
+  assert((*ctrl)->is_Proj(), "MemBar control projection");
+  assert((*ctrl)->in(0)->isa_MemBar(), "MemBar node");
+  (*ctrl)->in(0)->isa_MemBar()->set_trailing_expanded_array_copy();
 
   _igvn.replace_node(_callprojs.fallthrough_memproj, out_mem);
   if (_callprojs.fallthrough_ioproj != nullptr) {

@@ -686,6 +686,7 @@ bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseVal
       n->is_Call() &&
       n->as_Call()->may_modify(t_oop, phase) &&
       (n->as_Call()->is_ArrayCopy() || n->as_Call()->is_call_to_arraycopystub())) {
+    assert(n->as_Call()->is_call_to_arraycopystub(), "");
     call = n->as_Call();
     return true;
   }
@@ -693,6 +694,10 @@ bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseVal
 }
 
 bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseValues* phase, ArrayCopyNode*& ac) {
+  if (mb->trailing_expanded_array_copy()) {
+    return true;
+  }
+
   Node* c = mb->in(0);
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -719,8 +724,6 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseVal
       static_cast<CardTableBarrierSetC2*>(bs)->use_ReduceInitialCardMarks();
     assert(c == mb->in(0) || (ac != nullptr && ac->is_clonebasic() && !use_ReduceInitialCardMarks), "only for clone");
 #endif
-    return true;
-  } else if (mb->trailing_partial_array_copy()) {
     return true;
   }
 
