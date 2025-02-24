@@ -3648,6 +3648,7 @@ public final class String
         var delim = delimiter.toString();
         var elems = new String[8];
         int size = 0;
+        // implicit null check
         for (CharSequence cs: elements) {
             if (size >= elems.length) {
                 elems = Arrays.copyOf(elems, elems.length << 1);
