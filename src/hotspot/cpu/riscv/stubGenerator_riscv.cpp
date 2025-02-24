@@ -1,10 +1,6 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
-<<<<<<< HEAD
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
-=======
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
->>>>>>> master
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2453,17 +2449,36 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // code for comparing 8 characters of strings with Latin1 and Utf16 encoding
-  void compare_string_8_x_LU(Register tmpL, Register tmpU, Register strL, Register strU, Label& DIFF) {
+  void compare_string_8_x_LU(Register tmpL, Register tmpU,
+                             Register strL, Register strU, Label& DIFF) {
     const Register tmp = x30, tmpLval = x12;
+
+    int base_offset = arrayOopDesc::base_offset_in_bytes(T_CHAR);
+
+    assert((base_offset % (UseCompactObjectHeaders ? 4 :
+                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+
+#ifdef ASSERT
+    if (AvoidUnalignedAccesses) {
+      Label align_ok;
+      __ andi(t0, strL, 0x7);
+      __ beqz(t0, align_ok);
+      __ stop("bad alignment");
+      __ bind(align_ok);
+    }
+#endif
     __ ld(tmpLval, Address(strL));
     __ addi(strL, strL, wordSize);
-    __ ld(tmpU, Address(strU));
+
+    // compare first 4 characters
+    __ load_long_misaligned(tmpU, Address(strU), tmp, (base_offset % 8) != 0 ? 4 : 8);
     __ addi(strU, strU, wordSize);
     __ inflate_lo32(tmpL, tmpLval);
     __ xorr(tmp, tmpU, tmpL);
     __ bnez(tmp, DIFF);
 
-    __ ld(tmpU, Address(strU));
+    // compare second 4 characters
+    __ load_long_misaligned(tmpU, Address(strU), tmp, (base_offset % 8) != 0 ? 4 : 8);
     __ addi(strU, strU, wordSize);
     __ inflate_hi32(tmpL, tmpLval);
     __ xorr(tmp, tmpU, tmpL);
@@ -2497,35 +2512,34 @@ class StubGenerator: public StubCodeGenerator {
     const Register result = x10, str1 = x11, str2 = x13, cnt2 = x14,
                    tmp1 = x28, tmp2 = x29, tmp3 = x30, tmp4 = x12;
 
-    // cnt2 == amount of characters left to compare
-    // Check already loaded first 4 symbols
-    __ inflate_lo32(tmp3, isLU ? tmp1 : tmp2);
-    __ mv(isLU ? tmp1 : tmp2, tmp3);
-    __ addi(str1, str1, isLU ? wordSize / 2 : wordSize);
-    __ addi(str2, str2, isLU ? wordSize : wordSize / 2);
-    __ subi(cnt2, cnt2, wordSize / 2); // Already loaded 4 symbols
+    int base_offset1 = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+    int base_offset2 = arrayOopDesc::base_offset_in_bytes(T_CHAR);
 
-    __ xorr(tmp3, tmp1, tmp2);
-    __ bnez(tmp3, CALCULATE_DIFFERENCE);
+    assert((base_offset1 % (UseCompactObjectHeaders ? 4 :
+                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
+    assert((base_offset2 % (UseCompactObjectHeaders ? 4 :
+                            (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
     Register strU = isLU ? str2 : str1,
              strL = isLU ? str1 : str2,
              tmpU = isLU ? tmp2 : tmp1, // where to keep U for comparison
              tmpL = isLU ? tmp1 : tmp2; // where to keep L for comparison
 
-    // make sure main loop is 8 byte-aligned, we should load another 4 bytes from strL
-    // cnt2 is >= 68 here, no need to check it for >= 0
-    __ lwu(tmpL, Address(strL));
-    __ addi(strL, strL, wordSize / 2);
-    __ ld(tmpU, Address(strU));
-    __ addi(strU, strU, wordSize);
-    __ inflate_lo32(tmp3, tmpL);
-    __ mv(tmpL, tmp3);
-    __ xorr(tmp3, tmpU, tmpL);
-    __ bnez(tmp3, CALCULATE_DIFFERENCE);
-    __ addi(cnt2, cnt2, -wordSize / 2);
+    if (AvoidUnalignedAccesses && (base_offset1 % 8) != 0) {
+      // Load 4 bytes from strL to make sure main loop is 8-byte aligned
+      // cnt2 is >= 68 here, no need to check it for >= 0
+      __ lwu(tmpL, Address(strL));
+      __ addi(strL, strL, wordSize / 2);
+      __ load_long_misaligned(tmpU, Address(strU), tmp4, (base_offset2 % 8) != 0 ? 4 : 8);
+      __ addi(strU, strU, wordSize);
+      __ inflate_lo32(tmp3, tmpL);
+      __ mv(tmpL, tmp3);
+      __ xorr(tmp3, tmpU, tmpL);
+      __ bnez(tmp3, CALCULATE_DIFFERENCE);
+      __ subi(cnt2, cnt2, wordSize / 2);
+    }
 
-    // we are now 8-bytes aligned on strL
+    // we are now 8-bytes aligned on strL when AvoidUnalignedAccesses is true
     __ subi(cnt2, cnt2, wordSize * 2);
     __ bltz(cnt2, TAIL);
     __ bind(SMALL_LOOP); // smaller loop
@@ -3034,28 +3048,16 @@ class StubGenerator: public StubCodeGenerator {
       result         = x15,
       r_bitmap       = x16;
 
-<<<<<<< HEAD
     for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
       StubRoutines::_lookup_secondary_supers_table_stubs[slot] = __ pc();
       Label L_success;
       __ enter();
-      __ lookup_secondary_supers_table(r_sub_klass, r_super_klass, result,
-                                       r_array_base, r_array_length, r_array_index,
-                                       r_bitmap, slot, /*stub_is_near*/true);
+      __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass, result,
+                                             r_array_base, r_array_length, r_array_index,
+                                             r_bitmap, slot, /*stub_is_near*/true);
       __ leave();
       __ ret();
     }
-=======
-    Label L_success;
-    __ enter();
-    __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass, result,
-                                           r_array_base, r_array_length, r_array_index,
-                                           r_bitmap, super_klass_index, /*stub_is_near*/ true);
-    __ leave();
-    __ ret();
-
-    return start;
->>>>>>> master
   }
 
   // Slow path implementation for UseSecondarySupersTable.
@@ -4509,7 +4511,7 @@ class StubGenerator: public StubCodeGenerator {
 
       if (multi_block) {
         int total_adds = vset_sew == Assembler::e32 ? 240 : 608;
-        __ addi(consts, consts, -total_adds);
+        __ subi(consts, consts, total_adds);
         __ addi(ofs, ofs, vset_sew == Assembler::e32 ? 64 : 128);
         __ ble(ofs, limit, multi_block_loop);
         __ mv(c_rarg0, ofs); // return ofs

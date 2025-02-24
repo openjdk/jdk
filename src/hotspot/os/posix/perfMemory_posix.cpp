@@ -1088,7 +1088,7 @@ static void unmap_shared(char* addr, size_t bytes) {
     MemTracker::NmtVirtualMemoryLocker nvml;
     res = ::munmap(addr, bytes);
     if (res == 0) {
-      MemTracker::record_virtual_memory_release((address)addr, bytes);
+      MemTracker::record_virtual_memory_release(addr, bytes);
     }
   } else {
     res = ::munmap(addr, bytes);

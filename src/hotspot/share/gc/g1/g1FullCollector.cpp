@@ -246,7 +246,7 @@ void G1FullCollector::complete_collection() {
 
   _heap->resize_all_tlabs();
 
-  _heap->young_regions_cardset()->clear();
+  _heap->young_regions_cset_group()->clear();
 
   _heap->policy()->record_full_collection_end();
   _heap->gc_epilogue(true);
