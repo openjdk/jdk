@@ -225,6 +225,13 @@ public class TKitTest extends JUnitAdapter {
     record CreateTempTestSpec(String role, Path expectedPath, List<Path> existingFiles,
             Class<? extends Exception> expectedExceptionClass) {
 
+        CreateTempTestSpec {
+            Objects.requireNonNull(existingFiles);
+            if ((expectedExceptionClass == null) == (expectedPath == null)) {
+                throw new IllegalArgumentException("Only one of `expectedPath` and `expectedExceptionClass` can be null");
+            }
+        }
+
         void test(ThrowingFunction<String, Path> createTempPath, Consumer<Path> assertTempPathExists) throws Throwable {
             for (var existingFile : existingFiles) {
                 existingFile = TKit.workDir().resolve(existingFile);
@@ -251,6 +258,22 @@ public class TKitTest extends JUnitAdapter {
                 TKit.assertTrue(expectedPath.equals(relativeTempPath),
                         String.format("Check [%s]=[%s]", expectedPath, relativeTempPath));
             }
+        }
+
+        @Override
+        public String toString() {
+            final var sb = new StringBuilder();
+            sb.append("role=").append(role);
+            if (expectedPath != null) {
+                sb.append("; expected=").append(expectedPath);
+            }
+            if (!existingFiles.isEmpty()) {
+                sb.append("; exits=").append(existingFiles);
+            }
+            if (expectedExceptionClass != null) {
+                sb.append("; exception=").append(expectedExceptionClass);
+            }
+            return sb.toString();
         }
 
         static Builder role(String role) {
@@ -292,10 +315,15 @@ public class TKitTest extends JUnitAdapter {
     public static Collection<Object[]> testCreateTempPath() {
         return Stream.of(
                 CreateTempTestSpec.role("foo").expectedPath("foo"),
+                CreateTempTestSpec.role("foo.b").expectedPath("foo.b"),
                 CreateTempTestSpec.role("foo").expectedPath("foo-0").existingFiles("foo"),
+                CreateTempTestSpec.role("foo.b").expectedPath("foo-0.b").existingFiles("foo.b"),
+                CreateTempTestSpec.role("foo..b").expectedPath("foo.-0.b").existingFiles("foo..b"),
+                CreateTempTestSpec.role("a.b.c.d").expectedPath("a.b.c-0.d").existingFiles("a.b.c.d"),
                 CreateTempTestSpec.role("foo").expectedPath("foo-1").existingFiles("foo", "foo-0"),
                 CreateTempTestSpec.role("foo/bar/buz").expectedPath("foo/bar/buz"),
                 CreateTempTestSpec.role("foo/bar/buz").expectedPath("foo/bar/buz-0").existingFiles("foo/bar/buz"),
+                CreateTempTestSpec.role("foo/bar/buz.tmp").expectedPath("foo/bar/buz-0.tmp").existingFiles("foo/bar/buz.tmp"),
                 CreateTempTestSpec.role("foo/bar").expectedPath("foo/bar-0").existingFiles("foo/bar/buz"),
                 CreateTempTestSpec.role(Path.of("").toAbsolutePath().toString()).expectedExceptionClass(IllegalArgumentException.class),
                 CreateTempTestSpec.role(null).expectedExceptionClass(NullPointerException.class),
