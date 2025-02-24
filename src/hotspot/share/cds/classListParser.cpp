@@ -443,10 +443,9 @@ void ClassListParser::print_diagnostic_info(outputStream* st, const char* msg, v
     error_index = 0;
   }
 
-  jio_fprintf(defaultStream::error_stream(),
-              "An error has occurred while processing class list file %s %zu:%d.\n",
-              _classlist_file, lineno(), (error_index + 1));
-  jio_vfprintf(defaultStream::error_stream(), msg, ap);
+  st->print("An error has occurred while processing class list file %s %zu:%d.\n",
+            _classlist_file, lineno(), (error_index + 1));
+  st->vprint(msg, ap);
 
   if (_line_len <= 0) {
     st->print("\n");

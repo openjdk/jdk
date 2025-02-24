@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,14 @@
  */
 
 /*
-  @test
-  @key headful
-  @bug 4737732
-  @summary Tests that Toolkit.getScreenInsets() returns correct insets
-  @author artem.ananiev: area=awt.toplevel
-  @library ../../regtesthelpers
-  @build Util
-  @run main ScreenInsetsTest
-*/
+ * @test
+ * @key headful
+ * @bug 8020443 6899304 4737732
+ * @summary Tests that Toolkit.getScreenInsets() returns correct insets
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main ScreenInsetsTest
+ */
 
 import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
@@ -40,85 +39,77 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 
-import test.java.awt.regtesthelpers.Util;
+import jdk.test.lib.Platform;
 
-public class ScreenInsetsTest
-{
-    public static void main(String[] args)
-    {
-        boolean passed = true;
+public class ScreenInsetsTest {
+    private static final int SIZE = 100;
+    // Allow a margin tolerance of 1 pixel due to scaling
+    private static final int MARGIN_TOLERANCE = 1;
 
+    public static void main(String[] args) throws InterruptedException {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
-        for (GraphicsDevice gd : gds) {
+
+        for (int screen = 0; screen < gds.length; ++screen) {
+            GraphicsDevice gd = gds[screen];
             GraphicsConfiguration gc = gd.getDefaultConfiguration();
-            Rectangle gcBounds = gc.getBounds();
-            Insets gcInsets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
-            int left = gcInsets.left;
-            int right = gcInsets.right;
-            int bottom = gcInsets.bottom;
-            int top = gcInsets.top;
-            if (left < 0 || right < 0 || bottom < 0 || top < 0) {
-                throw new RuntimeException("Negative value: " + gcInsets);
-            }
-            int maxW = gcBounds.width / 3;
-            int maxH = gcBounds.height / 3;
-            if (left > maxW || right > maxW || bottom > maxH || top > maxH) {
-                throw new RuntimeException("Big value: " + gcInsets);
-            }
+            Rectangle bounds = gc.getBounds();
+            Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+            int workAreaWidth = bounds.width - insets.left - insets.right;
+            int workAreaHeight = bounds.height - insets.top - insets.bottom;
+            System.out.println("Screen #" + screen);
+            System.out.println("Screen Bounds: " + bounds);
+            System.out.println("Insets: " + insets);
 
-            if (!Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_BOTH))
-            {
-                // this state is used in the test - sorry
-                continue;
-            }
+            Frame frame = new Frame(gc);
+            frame.setLocation(bounds.x + (bounds.width - SIZE) / 2,
+                    bounds.y + (bounds.height - SIZE) / 2);
+            frame.setSize(SIZE, SIZE);
 
-            Frame f = new Frame("Test", gc);
-            f.setUndecorated(true);
-            f.setBounds(gcBounds.x + 100, gcBounds.y + 100, 320, 240);
-            f.setVisible(true);
-            Util.waitForIdle(null);
-
-            f.setExtendedState(Frame.MAXIMIZED_BOTH);
-            Util.waitForIdle(null);
-
-            Rectangle fBounds = f.getBounds();
-            // workaround: on Windows maximized windows have negative coordinates
-            if (fBounds.x < gcBounds.x)
-            {
-                fBounds.width -= (gcBounds.x - fBounds.x) * 2; // width is decreased
-                fBounds.x = gcBounds.x;
-            }
-            if (fBounds.y < gcBounds.y)
-            {
-                fBounds.height -= (gcBounds.y - fBounds.y) * 2; // height is decreased
-                fBounds.y = gcBounds.y;
-            }
-            Insets expected = new Insets(fBounds.y - gcBounds.y,
-                                         fBounds.x - gcBounds.x,
-                                         gcBounds.y + gcBounds.height - fBounds.y - fBounds.height,
-                                         gcBounds.x + gcBounds.width - fBounds.x - fBounds.width);
-
-            // On Windows 10 and up system allows undecorated maximized windows
-            // to be placed over the taskbar so calculated insets might
-            // be smaller than reported ones depending on the taskbar position
-            if (gcInsets.top < expected.top
-                    || gcInsets.bottom < expected.bottom
-                    || gcInsets.left < expected.left
-                    || gcInsets.right < expected.right)
-            {
-                passed = false;
-                System.err.println("Wrong insets for GraphicsConfig: " + gc);
-                System.err.println("\tExpected: " + expected);
-                System.err.println("\tActual: " + gcInsets);
+            /*
+             * On Windows, undecorated maximized frames are placed over the taskbar.
+             * Use a decorated frame instead.
+             */
+            if (Platform.isWindows()) {
+                frame.setUndecorated(false);
+            } else {
+                frame.setUndecorated(true);
             }
 
-            f.dispose();
+            frame.setVisible(true);
+
+            // Maximize Frame to reach the struts
+            frame.setExtendedState(java.awt.Frame.MAXIMIZED_BOTH);
+            Thread.sleep(2000);
+
+            Rectangle frameBounds = frame.getBounds();
+            System.out.println("Frame bounds: " + frameBounds);
+
+            frame.dispose();
+
+            /*
+             * On Windows, the top-left corner of an undecorated maximized frame
+             * may have negative coordinates (x, y).
+             * Adjust the frame bounds accordingly.
+             */
+            if (frameBounds.x < bounds.x) {
+                frameBounds.width -= (bounds.x - frameBounds.x) * 2;
+                frameBounds.x = bounds.x;
+            }
+            if (frameBounds.y < bounds.y) {
+                frameBounds.height -= (bounds.y - frameBounds.y) * 2;
+                frameBounds.y = bounds.y;
+            }
+            System.out.println("Adjusted Frame bounds: " + frameBounds);
+
+            if (bounds.x + insets.left != frameBounds.x
+                    || bounds.y + insets.top != frameBounds.y
+                    || Math.abs(workAreaWidth - frameBounds.width) > MARGIN_TOLERANCE
+                    || Math.abs(workAreaHeight - frameBounds.height) > MARGIN_TOLERANCE) {
+                throw new RuntimeException("Test FAILED! Wrong screen #" +
+                        screen + " insets: " + insets);
+            }
         }
-
-        if (!passed)
-        {
-            throw new RuntimeException("TEST FAILED: Toolkit.getScreenInsets() returns wrong value for some screens");
-        }
+        System.out.println("Test PASSED!");
     }
 }

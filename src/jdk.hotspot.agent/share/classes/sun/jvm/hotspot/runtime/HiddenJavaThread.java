@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@ package sun.jvm.hotspot.runtime;
 
 import sun.jvm.hotspot.debugger.Address;
 
-public class StringDedupThread extends JavaThread {
-    public StringDedupThread(Address addr) {
+public class HiddenJavaThread extends JavaThread {
+
+    public HiddenJavaThread(Address addr) {
         super(addr);
     }
 
-    public boolean isJavaThread() { return false; }
+    @Override
     public boolean isHiddenFromExternalView() { return true; }
+
 }
