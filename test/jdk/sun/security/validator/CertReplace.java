@@ -21,10 +21,6 @@
  * questions.
  */
 
-/*
- * This test is called by certreplace.sh
- */
-
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
@@ -40,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.test.lib.SecurityTools;
+import jdk.test.lib.security.CertUtils;
 import jdk.test.lib.security.KeyStoreUtils;
 import sun.security.validator.Validator;
 
@@ -69,6 +66,7 @@ public class CertReplace {
     private static final String SAMEDN_JKS = "samedn.jks";
     private static final String CERTREPLACE_JKS = "certreplace.jks";
     private static final String PASSWORD = "changeit";
+    private static final char[] PASSWORD_CHAR_ARR = PASSWORD.toCharArray();
 
     /**
      * This method creates certs for the Cert Replace test
@@ -76,12 +74,6 @@ public class CertReplace {
      * @throws Exception
      */
     private static void certReplace() throws Exception {
-
-        final String intAliase = "int";
-        final String userAlias = "user";
-        final String caAlias = "ca";
-
-        final String certplaceCerts = "certreplace.certs";
 
         final String ktBaseParameters = "-storepass " + PASSWORD + " " +
                                         "-keypass " + PASSWORD + " " +
@@ -93,58 +85,61 @@ public class CertReplace {
 
         // 1. Generate 3 aliases in a keystore: ca, int, user
         SecurityTools.keytool(ktBaseParameters +
-                              "-genkeypair -alias " + caAlias + " -dname CN=CA -keyalg rsa -sigalg md2withrsa -ext bc");
+                              "-genkeypair -alias ca -dname CN=CA -keyalg rsa -sigalg md2withrsa -ext bc");
         SecurityTools.keytool(ktBaseParameters +
-                              "-genkeypair -alias " + intAliase + " -dname CN=Int -keyalg rsa");
+                              "-genkeypair -alias int -dname CN=Int -keyalg rsa");
         SecurityTools.keytool(ktBaseParameters +
-                              "-genkeypair -alias " + userAlias + " -dname CN=User -keyalg rsa");
+                              "-genkeypair -alias user -dname CN=User -keyalg rsa");
 
         final KeyStore keyStore = KeyStoreUtils.loadKeyStore(CERTREPLACE_JKS, PASSWORD);
 
         // 2. Signing: ca -> int -> user
-        final String intReqFile = intAliase + ".req";
-        final String intCertFileName = intAliase + ".cert";
 
         SecurityTools.keytool(ktBaseParameters +
-                              "-certreq -alias " + intAliase + " -file " + intReqFile);
+                              "-certreq -alias int -file int.req");
         SecurityTools.keytool(ktBaseParameters +
-                              "-gencert -rfc -alias " + caAlias + " -ext bc -infile " + intReqFile + " " +
-                              "-outfile " + intCertFileName);
+                              "-gencert -rfc -alias ca -ext bc -infile int.req " +
+                              "-outfile int.cert");
 
         //putting the certificate in the keystore
         final CertificateFactory certificateFactory = CertificateFactory.getInstance("X509");
+
+        final FileInputStream certInputStream = new FileInputStream("int.cert");
         final Certificate[] certs = new Certificate[]{
-                certificateFactory.generateCertificate(
-                        new FileInputStream(intCertFileName)
+                CertUtils.getCertFromStream(
+                        certInputStream
                 )
         };
-        final PrivateKey privateKey = (PrivateKey) keyStore.getKey(intAliase, PASSWORD.toCharArray());
-        keyStore.setKeyEntry(intAliase, privateKey, PASSWORD.toCharArray(), certs);
-        keyStore.store(new FileOutputStream(CERTREPLACE_JKS), PASSWORD.toCharArray());
+        certInputStream.close();
+
+        final PrivateKey privateKey = (PrivateKey) keyStore.getKey("int", PASSWORD_CHAR_ARR);
+        keyStore.setKeyEntry("int", privateKey, PASSWORD_CHAR_ARR, certs);
+        keyStore.store(new FileOutputStream(CERTREPLACE_JKS), PASSWORD_CHAR_ARR);
 
 
-        final String userReqFile = userAlias + ".req";
         SecurityTools.keytool(ktBaseParameters +
-                              "-certreq -alias " + userAlias + " -file " + userReqFile);
+                              "-certreq -alias user -file user.req");
         SecurityTools.keytool(ktBaseParameters +
-                              "-gencert -rfc -alias " + intAliase + " " +
-                              "-infile " + userReqFile + " " +
-                              "-outfile " + certplaceCerts); // this will create certreplace.certs which is later appended
+                              "-gencert -rfc -alias int " +
+                              "-infile user.req " +
+                              "-outfile certreplace.certs"); // this will create certreplace.certs which is later appended
 
         // 3. Create the certchain file
-        final Path certPath = Paths.get(certplaceCerts);
+        final Path certPath = Paths.get("certreplace.certs");
 
-        Files.write(certPath, Files.readAllBytes(Path.of(intCertFileName)), StandardOpenOption.APPEND);
+        Files.write(certPath, Files.readAllBytes(Path.of("int.cert")), StandardOpenOption.APPEND);
 
         final String outputCa = SecurityTools.keytool(ktBaseParameters +
-                                                      "-export -rfc -alias " + caAlias).getOutput();
+                                                      "-export -rfc -alias ca").getOutput();
         Files.write(certPath, outputCa.getBytes(), StandardOpenOption.APPEND);
 
         // 4. Upgrade ca from MD2withRSA to SHA256withRSA, remove other aliases and make this keystore the cacerts file
+        keyStore.deleteEntry("int");
+        keyStore.deleteEntry("user");
+        keyStore.store(new FileOutputStream(CERTREPLACE_JKS), PASSWORD_CHAR_ARR);
+
         SecurityTools.keytool(ktBaseParameters +
-                              "-selfcert -alias " + caAlias);
-        keyStore.deleteEntry(intAliase);
-        keyStore.deleteEntry(userAlias);
+                              "-selfcert -alias ca");
     }
 
     /**
@@ -153,10 +148,6 @@ public class CertReplace {
      * @throws Exception
      */
     private static void sameDn() throws Exception {
-
-        final String ca1Alias = "ca1";
-        final String ca2Alias = "ca2";
-        final String userAlias = "user";
 
         final String ktBaseParameters = "-storepass " + PASSWORD + " " +
                                         "-keypass " + PASSWORD + " " +
@@ -169,13 +160,13 @@ public class CertReplace {
         // 1. Generate 3 aliases in a keystore: ca1, ca2, user. The CAs' startdate
         // is set to one year ago so that they are expired now
         SecurityTools.keytool(ktBaseParameters +
-                              "-genkeypair -alias " + ca1Alias + " -dname CN=CA -keyalg rsa " +
+                              "-genkeypair -alias ca1 -dname CN=CA -keyalg rsa " +
                               "-sigalg md5withrsa -ext bc -startdate -1y");
         SecurityTools.keytool(ktBaseParameters +
-                              "-genkeypair -alias " + ca2Alias + " -dname CN=CA -keyalg rsa " +
+                              "-genkeypair -alias ca2 -dname CN=CA -keyalg rsa " +
                               "-sigalg sha1withrsa -ext bc -startdate -1y");
         SecurityTools.keytool(ktBaseParameters +
-                              "-genkeypair -alias " + userAlias + " -dname CN=User -keyalg rsa");
+                              "-genkeypair -alias user -dname CN=User -keyalg rsa");
 
         final KeyStore keyStore = KeyStoreUtils.loadKeyStore(SAMEDN_JKS, PASSWORD);
 
@@ -183,18 +174,18 @@ public class CertReplace {
         // is valid at the time of validation and to prevent any issues with timing discrepancies
         // Automatically saves the certs to the certs files
 
-        final String userReqFile = userAlias + ".req";
         SecurityTools.keytool(ktBaseParameters +
-                              "-certreq -alias " + userAlias + " -file " + userReqFile);
+                              "-certreq -alias user -file user.req");
         SecurityTools.keytool(ktBaseParameters +
-                              "-gencert -rfc -alias " + ca1Alias + " " +
-                              "-startdate -1M -infile " + userReqFile + " -outfile samedn1.certs");
+                              "-gencert -rfc -alias ca1 " +
+                              "-startdate -1M -infile user.req -outfile samedn1.certs");
         SecurityTools.keytool(ktBaseParameters +
-                              "-gencert -rfc -alias " + ca2Alias + " " +
-                              "-startdate -1M -infile " + userReqFile + " -outfile samedn2.certs");
+                              "-gencert -rfc -alias ca2 " +
+                              "-startdate -1M -infile user.req -outfile samedn2.certs");
 
         // 3. Remove user for cacerts
-        keyStore.deleteEntry(userAlias);
+        keyStore.deleteEntry("user");
+        keyStore.store(new FileOutputStream(CERTREPLACE_JKS), PASSWORD_CHAR_ARR);
     }
 
     /**
