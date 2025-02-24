@@ -141,7 +141,7 @@ public class AccessZeroNKlassHitsProtectionZone {
                 }
             }
             if (forceBase >= end) {
-// testtest                throw new SkippedException("Failed to force ccs to any of the given bases. Skipping test.");
+                throw new SkippedException("Failed to force ccs to any of the given bases. Skipping test.");
             }
         }
 
