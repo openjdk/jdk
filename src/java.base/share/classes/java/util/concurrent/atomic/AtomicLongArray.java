@@ -51,6 +51,7 @@ public class AtomicLongArray implements java.io.Serializable {
     private static final long serialVersionUID = -2308431214976778248L;
     private static final VarHandle AA
         = MethodHandles.arrayElementVarHandle(long[].class);
+    /** @serial */
     private final long[] array;
 
     /**

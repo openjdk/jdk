@@ -152,7 +152,7 @@ public abstract class AbstractQueuedLongSynchronizer
     private transient volatile Node tail;
 
     /**
-     * The synchronization state.
+     * @serial The synchronization state.
      */
     private volatile long state;
 

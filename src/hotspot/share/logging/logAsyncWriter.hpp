@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,9 +164,6 @@ class AsyncLogWriter : public NonJavaThread {
   // Producers take both locks in the order producer lock and then consumer lock.
   // The consumer protects the buffers and performs all communication between producer and consumer via wait/notify.
   // This allows a producer to await progress from the consumer thread (by only releasing the producer lock)), whilst preventing all other producers from progressing.
-  // The _producer_lock_holder allows us to gracefully degrade to synchronous logging in the case of recursive logging inside
-  // of a producer's critical section.
-  Thread* _producer_lock_holder;
   PlatformMonitor _producer_lock;
   PlatformMonitor _consumer_lock;
   bool _data_available;
@@ -192,7 +189,7 @@ class AsyncLogWriter : public NonJavaThread {
   void run() override;
   void pre_run() override {
     NonJavaThread::pre_run();
-    log_debug(logging, thread)("starting AsyncLog Thread tid = " INTX_FORMAT, os::current_thread_id());
+    log_debug(logging, thread)("starting AsyncLog Thread tid = %zd", os::current_thread_id());
   }
   const char* type_name() const override { return "AsyncLogWriter"; }
   void print_on(outputStream* st) const override {
@@ -211,17 +208,14 @@ class AsyncLogWriter : public NonJavaThread {
     ~BufferUpdater();
   };
 
- public:
-  void enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg);
-  void enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator);
+  static bool is_enqueue_allowed();
+
+public:
+  static bool enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg);
+  static bool enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator);
 
   static AsyncLogWriter* instance();
   static void initialize();
-  // Returns true if initialized, otherwise false
-  static bool enqueue_if_initialized(LogFileStreamOutput& output, const LogDecorations& decorations,
-                                     const char* msg);
-  static bool enqueue_if_initialized(LogFileStreamOutput& output,
-                                     LogMessageBuffer::Iterator msg_iterator);
   static void flush();
 
   const char* name() const override { return "AsyncLog Thread"; }

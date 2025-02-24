@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1097,7 +1097,7 @@ public class CSS implements Serializable {
      * up a translation from StyleConstants (i.e. the <em>well known</em>
      * attributes) to the associated CSS attributes.
      */
-    private static final Hashtable<Object, Attribute> styleConstantToCssMap = new Hashtable<Object, Attribute>(17);
+    private static final Map<Object, Attribute> styleConstantToCssMap;
     /** Maps from HTML value to a CSS value. Used in internal mapping. */
     private static final Hashtable<String, CSS.Value> htmlValueToCssValueMap = new Hashtable<String, CSS.Value>(8);
     /** Maps from CSS value (string) to internal value. */
@@ -1167,38 +1167,40 @@ public class CSS implements Serializable {
         );
 
         // initialize StyleConstants mapping
-        styleConstantToCssMap.put(StyleConstants.FontFamily,
-                                  CSS.Attribute.FONT_FAMILY);
-        styleConstantToCssMap.put(StyleConstants.FontSize,
-                                  CSS.Attribute.FONT_SIZE);
-        styleConstantToCssMap.put(StyleConstants.Bold,
-                                  CSS.Attribute.FONT_WEIGHT);
-        styleConstantToCssMap.put(StyleConstants.Italic,
-                                  CSS.Attribute.FONT_STYLE);
-        styleConstantToCssMap.put(StyleConstants.Underline,
-                                  CSS.Attribute.TEXT_DECORATION);
-        styleConstantToCssMap.put(StyleConstants.StrikeThrough,
-                                  CSS.Attribute.TEXT_DECORATION);
-        styleConstantToCssMap.put(StyleConstants.Superscript,
-                                  CSS.Attribute.VERTICAL_ALIGN);
-        styleConstantToCssMap.put(StyleConstants.Subscript,
-                                  CSS.Attribute.VERTICAL_ALIGN);
-        styleConstantToCssMap.put(StyleConstants.Foreground,
-                                  CSS.Attribute.COLOR);
-        styleConstantToCssMap.put(StyleConstants.Background,
-                                  CSS.Attribute.BACKGROUND_COLOR);
-        styleConstantToCssMap.put(StyleConstants.FirstLineIndent,
-                                  CSS.Attribute.TEXT_INDENT);
-        styleConstantToCssMap.put(StyleConstants.LeftIndent,
-                                  CSS.Attribute.MARGIN_LEFT);
-        styleConstantToCssMap.put(StyleConstants.RightIndent,
-                                  CSS.Attribute.MARGIN_RIGHT);
-        styleConstantToCssMap.put(StyleConstants.SpaceAbove,
-                                  CSS.Attribute.MARGIN_TOP);
-        styleConstantToCssMap.put(StyleConstants.SpaceBelow,
-                                  CSS.Attribute.MARGIN_BOTTOM);
-        styleConstantToCssMap.put(StyleConstants.Alignment,
-                                  CSS.Attribute.TEXT_ALIGN);
+        styleConstantToCssMap = Map.ofEntries(
+                Map.entry(StyleConstants.FontFamily,
+                          CSS.Attribute.FONT_FAMILY),
+                Map.entry(StyleConstants.FontSize,
+                          CSS.Attribute.FONT_SIZE),
+                Map.entry(StyleConstants.Bold,
+                          CSS.Attribute.FONT_WEIGHT),
+                Map.entry(StyleConstants.Italic,
+                          CSS.Attribute.FONT_STYLE),
+                Map.entry(StyleConstants.Underline,
+                          CSS.Attribute.TEXT_DECORATION),
+                Map.entry(StyleConstants.StrikeThrough,
+                          CSS.Attribute.TEXT_DECORATION),
+                Map.entry(StyleConstants.Superscript,
+                          CSS.Attribute.VERTICAL_ALIGN),
+                Map.entry(StyleConstants.Subscript,
+                          CSS.Attribute.VERTICAL_ALIGN),
+                Map.entry(StyleConstants.Foreground,
+                          CSS.Attribute.COLOR),
+                Map.entry(StyleConstants.Background,
+                          CSS.Attribute.BACKGROUND_COLOR),
+                Map.entry(StyleConstants.FirstLineIndent,
+                          CSS.Attribute.TEXT_INDENT),
+                Map.entry(StyleConstants.LeftIndent,
+                          CSS.Attribute.MARGIN_LEFT),
+                Map.entry(StyleConstants.RightIndent,
+                          CSS.Attribute.MARGIN_RIGHT),
+                Map.entry(StyleConstants.SpaceAbove,
+                          CSS.Attribute.MARGIN_TOP),
+                Map.entry(StyleConstants.SpaceBelow,
+                          CSS.Attribute.MARGIN_BOTTOM),
+                Map.entry(StyleConstants.Alignment,
+                          CSS.Attribute.TEXT_ALIGN)
+        );
 
         // HTML->CSS
         htmlValueToCssValueMap.put("disc", CSS.Value.DISC);
@@ -3005,25 +3007,23 @@ public class CSS implements Serializable {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     static class LengthUnit implements Serializable {
-        static Hashtable<String, Float> lengthMapping = new Hashtable<String, Float>(6);
-        static Hashtable<String, Float> w3cLengthMapping = new Hashtable<String, Float>(6);
-        static {
-            lengthMapping.put("pt", 1f);
-            // Not sure about 1.3, determined by experimentation.
-            lengthMapping.put("px", 1.3f);
-            lengthMapping.put("mm", 2.83464f);
-            lengthMapping.put("cm", 28.3464f);
-            lengthMapping.put("pc", 12f);
-            lengthMapping.put("in", 72f);
-            // Mapping according to the CSS2.2 spec
-            // https://www.w3.org/TR/CSS22/syndata.html#x39
-            w3cLengthMapping.put("pt", 96f / 72f);         // 1/72 of 1in
-            w3cLengthMapping.put("px", 1f);                // 1/96 of 1in
-            w3cLengthMapping.put("mm", 96f / 2.54f / 10f); // 1/10 of 1cm
-            w3cLengthMapping.put("cm", 96f / 2.54f);       // 96px/2.54
-            w3cLengthMapping.put("pc", 96f / 6f);          // 1/6 of 1in
-            w3cLengthMapping.put("in", 96f);               // 96px
-        }
+        private static final Map<String, Float> lengthMapping = Map.of(
+                "pt", 1f,
+                // Not sure about 1.3, determined by experimentation.
+                "px", 1.3f,
+                "mm", 2.83464f,
+                "cm", 28.3464f,
+                "pc", 12f,
+                "in", 72f);
+        // Mapping according to the CSS2.2 spec
+        // https://www.w3.org/TR/CSS22/syndata.html#x39
+        private static final Map<String, Float> w3cLengthMapping = Map.of(
+                "pt", 96f / 72f,         // 1/72 of 1in
+                "px", 1f,                // 1/96 of 1in
+                "mm", 96f / 2.54f / 10f, // 1/10 of 1cm
+                "cm", 96f / 2.54f,       // 96px/2.54
+                "pc", 96f / 6f,          // 1/6 of 1in
+                "in", 96f);              // 96px
 
         LengthUnit(String value, short defaultType, float defaultValue) {
             parse(value, defaultType, defaultValue);
@@ -3088,27 +3088,15 @@ public class CSS implements Serializable {
         }
 
         float getValue(boolean w3cLengthUnits) {
-            Hashtable<String, Float> mapping = (w3cLengthUnits) ? w3cLengthMapping : lengthMapping;
-            float scale = 1;
-            if (units != null) {
-                Float scaleFloat = mapping.get(units);
-                if (scaleFloat != null) {
-                    scale = scaleFloat.floatValue();
-                }
-            }
-            return this.value * scale;
-
+            return getValue(value, units, w3cLengthUnits);
         }
 
-        static float getValue(float value, String units, Boolean w3cLengthUnits) {
-            Hashtable<String, Float> mapping = (w3cLengthUnits) ? w3cLengthMapping : lengthMapping;
-            float scale = 1;
-            if (units != null) {
-                Float scaleFloat = mapping.get(units);
-                if (scaleFloat != null) {
-                    scale = scaleFloat.floatValue();
-                }
+        static float getValue(float value, String units, boolean w3cLengthUnits) {
+            if (units == null) {
+                return value;
             }
+            Map<String, Float> mapping = (w3cLengthUnits) ? w3cLengthMapping : lengthMapping;
+            float scale = mapping.getOrDefault(units, 1f);
             return value * scale;
         }
 

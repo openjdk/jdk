@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
@@ -31,43 +30,59 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 
-#include <new>
-
 class AsyncLogWriter::ProducerLocker : public StackObj {
- public:
+  static Thread* _holder;
+public:
+  static Thread* current_holder() { return _holder; }
   ProducerLocker() {
     assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
-    assert(_instance->_producer_lock_holder != Thread::current_or_null() ||
-           Thread::current_or_null() == nullptr,
-           "Recursive locking not allowed");
-    _instance->_producer_lock.lock();
-    _instance->_producer_lock_holder = Thread::current_or_null();
+    _instance->_consumer_lock.lock();
+    _holder = Thread::current_or_null();
   }
 
   ~ProducerLocker() {
-    assert(_instance->_producer_lock_holder == Thread::current_or_null(), "Must be");
-    _instance->_producer_lock_holder = nullptr;
-    _instance->_producer_lock.unlock();
-  }
-
-  void notify() { _instance->_consumer_lock.notify(); }
-  void wait() { _instance->_consumer_lock.wait(0); }
-};
-
-class AsyncLogWriter::ConsumerLocker : public StackObj {
- public:
-  ConsumerLocker() {
-    assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
-    _instance->_consumer_lock.lock();
-  }
-
-  ~ConsumerLocker() {
+    assert(_holder == Thread::current_or_null(), "must be");
+    _holder = nullptr;
     _instance->_consumer_lock.unlock();
   }
 
   void notify() { _instance->_consumer_lock.notify(); }
-  void wait() { _instance->_consumer_lock.wait(0); }
+  void wait() {
+    Thread* saved_holder = _holder;
+    _holder = nullptr;
+    _instance->_consumer_lock.wait(0/* no timeout */);
+    _holder = saved_holder;
+  }
 };
+
+class AsyncLogWriter::ConsumerLocker : public StackObj {
+  static Thread* _holder;
+
+public:
+  static Thread* current_holder() { return _holder; }
+  ConsumerLocker() {
+    assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
+    _instance->_consumer_lock.lock();
+    _holder = Thread::current_or_null();
+  }
+
+  ~ConsumerLocker() {
+    assert(_holder == Thread::current_or_null(), "must be");
+    _holder = nullptr;
+    _instance->_consumer_lock.unlock();
+  }
+
+  void notify() { _instance->_consumer_lock.notify(); }
+  void wait() {
+    Thread* saved_holder = _holder;
+    _holder = nullptr;
+    _instance->_consumer_lock.wait(0/* no timeout */);
+    _holder = saved_holder;
+  }
+};
+
+Thread* AsyncLogWriter::ProducerLocker::_holder = nullptr;
+Thread* AsyncLogWriter::ConsumerLocker::_holder = nullptr;
 
 // LogDecorator::None applies to 'constant initialization' because of its constexpr constructor.
 const LogDecorations& AsyncLogWriter::None = LogDecorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
@@ -132,23 +147,77 @@ void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecora
   os::free(stalled_message_ptr);
 }
 
-void AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
+// This function checks for cases where continuing with asynchronous logging may lead to stability issues, such as a deadlock.
+// If this returns false then we give up on logging asynchronously and do so synchronously instead.
+bool AsyncLogWriter::is_enqueue_allowed() {
+  AsyncLogWriter* alw = AsyncLogWriter::instance();
+  Thread* holding_thread = AsyncLogWriter::ProducerLocker::current_holder();
+  Thread* this_thread = Thread::current_or_null();
+  if (this_thread == nullptr) {
+    // The current thread is unattached.
+    return false;
+  }
+
+  if (holding_thread == this_thread) {
+    // A thread, while enqueuing a message, has attempted to log something.
+    // Do not log while holding the Async log lock.
+    // Try to catch possible occurrences in debug builds.
+#ifdef ASSERT
+    if (!TestingAsyncLoggingDeathTestNoCrash) {
+      ShouldNotReachHere();
+    }
+#endif // ASSERT
+
+    return false;
+  }
+
+  if (alw == nullptr) {
+    // There is no AsyncLogWriter instance yet.
+    return false;
+  }
+
+  if (this_thread == alw) {
+    // The async log producer is attempting to log, leading to recursive logging.
+    return false;
+  }
+
+  return true;
+}
+
+bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
+  if (!is_enqueue_allowed()) {
+    return false;
+  }
+
   ProducerLocker plocker;
-  enqueue_locked(&output, decorations, msg);
+
+#ifdef ASSERT
+  if (TestingAsyncLoggingDeathTest || TestingAsyncLoggingDeathTestNoCrash) {
+    log_debug(deathtest)("Induce a recursive log for testing");
+  }
+#endif // ASSERT
+
+  AsyncLogWriter::instance()->enqueue_locked(&output, decorations, msg);
+  return true;
 }
 
 // LogMessageBuffer consists of a multiple-part/multiple-line message.
 // The lock here guarantees its integrity.
-void AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
-  ProducerLocker plocker;
-  for (; !msg_iterator.is_at_end(); msg_iterator++) {
-    enqueue_locked(&output, msg_iterator.decorations(), msg_iterator.message());
+bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
+  if (!is_enqueue_allowed()) {
+    return false;
   }
+
+  // If we get here we know the AsyncLogWriter is initialized.
+  ProducerLocker locker;
+  for (; !msg_iterator.is_at_end(); msg_iterator++) {
+    AsyncLogWriter::instance()->enqueue_locked(&output, msg_iterator.decorations(), msg_iterator.message());
+  }
+  return true;
 }
 
 AsyncLogWriter::AsyncLogWriter()
   : _flush_sem(0),
-    _producer_lock_holder(nullptr),
     _producer_lock(),
     _consumer_lock(),
     _data_available(false),
@@ -159,7 +228,7 @@ AsyncLogWriter::AsyncLogWriter()
   size_t size = AsyncLogBufferSize / 2;
   _buffer = new Buffer(size);
   _buffer_staging = new Buffer(size);
-  log_info(logging)("AsyncLogBuffer estimates memory use: " SIZE_FORMAT " bytes", size * 2);
+  log_info(logging)("AsyncLogBuffer estimates memory use: %zu bytes", size * 2);
   if (os::create_thread(this, os::asynclog_thread)) {
     _initialized = true;
   } else {
@@ -311,52 +380,4 @@ AsyncLogWriter::BufferUpdater::~BufferUpdater() {
     p->_buffer = _buf1;
     p->_buffer_staging = _buf2;
   }
-}
-
-bool AsyncLogWriter::enqueue_if_initialized(LogFileStreamOutput& output,
-                                            const LogDecorations& decorations, const char* msg) {
-  AsyncLogWriter* instance = AsyncLogWriter::instance();
-  Thread* current = Thread::current_or_null();
-  if (current == nullptr) {
-    return false;
-  }
-  if (instance != nullptr) {
-    if (static_cast<Thread*>(instance) == current ||
-        instance->_producer_lock_holder == current) {
-      // If logging from the consuming thread then fall back on synchronous logging.
-      // Otherwise, the consuming thread may wait on itself to print the message,
-      // this obviously leads to a deadlocked system.
-
-      // If the producer lock holder is set to the current thread, then this is a recursive log then fall back on synchronous logging.
-      // This avoids recursive locking and (possibly) infinite log recursion.
-      return false;
-    }
-    instance->enqueue(output, decorations, msg);
-    return true;
-  }
-  return false;
-}
-
-bool AsyncLogWriter::enqueue_if_initialized(LogFileStreamOutput& output,
-                                            LogMessageBuffer::Iterator msg_iterator) {
-  AsyncLogWriter* instance = AsyncLogWriter::instance();
-  Thread* current = Thread::current_or_null();
-  if (current == nullptr) {
-    return false;
-  }
-  if (instance != nullptr) {
-    if (static_cast<Thread*>(instance) == current ||
-        instance->_producer_lock_holder == current) {
-      // If logging from the consuming thread then fall back on synchronous logging.
-      // Otherwise, the consuming thread may wait on itself to print the message,
-      // this obviously leads to a deadlocked system.
-
-      // If the producer lock holder is set to the current thread, then this is a recursive log then fall back on synchronous logging.
-      // This avoids recursive locking and (possibly) infinite log recursion.
-      return false;
-    }
-    instance->enqueue(output, msg_iterator);
-    return true;
-  }
-  return false;
 }

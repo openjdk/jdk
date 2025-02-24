@@ -481,6 +481,10 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, ZapTLAB, trueInDebug,                                       \
           "Zap allocated TLABs")                                            \
+  develop(bool, TestingAsyncLoggingDeathTest, false,                        \
+          "Recursive logging death test")                                   \
+  develop(bool, TestingAsyncLoggingDeathTestNoCrash, false,                 \
+          "Recursive logging death test (no crash)")                        \
                                                                             \
   product(bool, ExecutingUnitTests, false,                                  \
           "Whether the JVM is running unit tests or not")                   \
