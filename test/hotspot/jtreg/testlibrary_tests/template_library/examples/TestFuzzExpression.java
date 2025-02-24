@@ -89,6 +89,11 @@ public class TestFuzzExpression {
                                                      List.of("compiler.lib.generators.*",
                                                              "compiler.lib.verify.*"));
 
+        // Example 1:
+        // We use the "expression" twice: once in a reference method that runs in the interpreter,
+        // once in the test method that is compiled. Then we compare the results.
+        // The argValues may want to define fields in "def" so that they can load from them in "use".
+        // We only want to do the "def" part once, but the "use" part twice, so we have to split it.
         var template1 = Template.make("type", (Type type)-> {
             Expression expression = Expression.make(type, Type.primitives(), 2);
             List<Value> argValues = expression.randomArgValues();
@@ -138,6 +143,9 @@ public class TestFuzzExpression {
             );
         });
 
+        // Example 2:
+        // We only use the "expression" once, and so we can conveniently just run it with
+        // random arguments. Those may also generate their own fields under the hood.
         var template2 = Template.make("type", (Type type)-> {
             Expression expression = Expression.make(type, Type.primitives(), 2);
             return body(
@@ -179,6 +187,9 @@ public class TestFuzzExpression {
             """
         ));
 
+        // Example 3:
+        // We use the expression to iterate over arrays, loading from a set of input arrays,
+        // and storing to an output array.
         var template3 = Template.make("type", (Type type)-> {
             int size = 10_000; // TODO: randomize
             Expression expression = Expression.make(type, Type.primitives(), 2);
