@@ -180,7 +180,8 @@ void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const 
     VirtualMemory* snap = snapshot->by_type(tag);
     // Only account the committed memory.
     snap->commit_memory(current->committed());
-  });}
+  });
+}
 
 void MemoryFileTracker::Instance::summary_snapshot(VirtualMemorySnapshot* snapshot) {
   _tracker->summary_snapshot(snapshot);
