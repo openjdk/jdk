@@ -87,8 +87,6 @@ public class ErrorRecovery extends TestRunner {
             .getOutputLines(OutputKind.DIRECT);
         List<String> expected = List.of(
             "Test.java:1:1: compiler.err.invalid.meth.decl.ret.type.req",
-            "- compiler.note.preview.filename: Test.java, DEFAULT",
-            "- compiler.note.preview.recompile",
             "1 error"
         );
         if (!Objects.equals(expected, log)) {
@@ -191,7 +189,7 @@ public class ErrorRecovery extends TestRunner {
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
         expected = List.of(
-                "Test.java:1:1: compiler.err.expected4: class, interface, enum, record",
+                "Test.java:1:1: compiler.err.class.method.or.field.expected",
                 "1 error"
         );
 

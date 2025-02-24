@@ -385,10 +385,8 @@ public class StartOptionTest {
                 System.out.println(\"suffix\");
                 /exit
                 """);
-        startCheckUserOutput(s -> assertEquals(s, "prefix\nsuffix\n"),
-                             fn2);
         startCheckUserOutput(s -> assertEquals(s, "prefix\ntest\nsuffix\n"),
-                             "--enable-preview", fn2);
+                             fn2);
     }
     public void testInput() {
         //readLine(String):

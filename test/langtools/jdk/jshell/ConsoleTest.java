@@ -70,13 +70,6 @@ public class ConsoleTest extends KullaTesting {
         assertEval("System.console().readLine(\"expected\")", "\"AB\"");
         console = new ThrowingJShellConsole() {
             @Override
-            public String readLine() throws IOError {
-                return "AB";
-            }
-        };
-        assertEval("System.console().readLine()", "\"AB\"");
-        console = new ThrowingJShellConsole() {
-            @Override
             public char[] readPassword(String prompt) throws IOError {
                 assertEquals(prompt, "expected");
                 return "AB".toCharArray();
@@ -218,10 +211,6 @@ public class ConsoleTest extends KullaTesting {
                 return console.readLine(prompt);
             }
             @Override
-            public String readLine() throws IOError {
-                return console.readLine();
-            }
-            @Override
             public char[] readPassword(String prompt) throws IOError {
                 return console.readPassword(prompt);
             }
@@ -249,10 +238,6 @@ public class ConsoleTest extends KullaTesting {
         }
         @Override
         public String readLine(String prompt) throws IOError {
-            throw new IllegalStateException("Not expected!");
-        }
-        @Override
-        public String readLine() throws IOError {
             throw new IllegalStateException("Not expected!");
         }
         @Override
