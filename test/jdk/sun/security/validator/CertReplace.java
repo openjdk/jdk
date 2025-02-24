@@ -57,8 +57,8 @@ import sun.security.validator.Validator;
  * @library /test/lib
  * @modules java.base/sun.security.validator
  *
- * @run main/othervm CertReplace samedn.jks samedn1.certs
- * @run main/othervm CertReplace samedn.jks samedn2.certs
+ * @run main CertReplace samedn.jks samedn1.certs
+ * @run main CertReplace samedn.jks samedn2.certs
  */
 
 public class CertReplace {
