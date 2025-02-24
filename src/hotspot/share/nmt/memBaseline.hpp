@@ -25,6 +25,7 @@
 #ifndef SHARE_NMT_MEMBASELINE_HPP
 #define SHARE_NMT_MEMBASELINE_HPP
 
+#include "memory/arena.hpp"
 #include "memory/metaspaceStats.hpp"
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/mallocTracker.hpp"
@@ -70,12 +71,14 @@ class MemBaseline : public CHeapObj<mtNMT> {
   // Malloc allocation sites
   GrowableArrayCHeap<MallocSite, mtNMT>                  _malloc_sites;
 
+
   // All virtual memory allocations
-  LinkedListImpl<ReservedMemoryRegion>        _virtual_memory_allocations;
+  Arena _arena;
+  LinkedListImpl<ReservedMemoryRegion, AnyObj::ARENA>        _virtual_memory_allocations;
 
   // Virtual memory allocations by allocation sites, always in by_address
   // order
-  LinkedListImpl<VirtualMemoryAllocationSite> _virtual_memory_sites;
+  LinkedListImpl<VirtualMemoryAllocationSite, AnyObj::ARENA> _virtual_memory_sites;
 
   SortingOrder         _malloc_sites_order;
   SortingOrder         _virtual_memory_sites_order;
@@ -86,6 +89,9 @@ class MemBaseline : public CHeapObj<mtNMT> {
   // create a memory baseline
   MemBaseline():
     _instance_class_count(0), _array_class_count(0), _thread_count(0),
+    _arena(mtNMT),
+    _virtual_memory_allocations(&_arena),
+    _virtual_memory_sites(&_arena),
     _baseline_type(Not_baselined) {
   }
 
