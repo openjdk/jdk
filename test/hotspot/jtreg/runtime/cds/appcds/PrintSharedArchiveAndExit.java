@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,10 @@ public class PrintSharedArchiveAndExit {
   public static void main(String[] args) throws Exception {
     String appJar = JarBuilder.getOrCreateHelloJar();
     String appJar2 = JarBuilder.build("PrintSharedArchiveAndExit-more", "HelloMore");
-
     String cp = appJar + File.pathSeparator + appJar2;
-    String lastCheckMsg = "checking shared classpath entry: " + appJar2; // the last JAR to check
+    String firstCheckShortMsg = "Checking 'hello.jar' file"; // the first JAR to check (without directory prefix)
+    String firstCheckMsg = "Checking '" + appJar + "' file"; // the first JAR to check
+    String lastCheckMsg = "Checking '" + appJar2 + "' file"; // the last JAR to check
 
     TestCommon.testDump(cp, TestCommon.list("Hello", "HelloMore"));
 
@@ -99,7 +100,7 @@ public class PrintSharedArchiveAndExit {
     TestCommon.run(
         "-cp", ".",
         "-XX:+PrintSharedArchiveAndExit")
-      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "Run time APP classpath is shorter than the one at dump time: ."));
+      .ifNoMappingFailure(output -> check(output, 1, true, firstCheckShortMsg, "app classpath has fewer elements than expected"));
 
     log("Use an invalid App CP -- all the JAR paths should be checked.\n" +
         "Non-existing jar files will be ignored.");
@@ -107,28 +108,27 @@ public class PrintSharedArchiveAndExit {
     TestCommon.run(
         "-cp", invalidCP,
         "-XX:+PrintSharedArchiveAndExit")
-      .ifNoMappingFailure(output -> check(output, 0, true, lastCheckMsg));
+      .ifNoMappingFailure(output -> check(output, 0, true, firstCheckShortMsg));
 
     log("Changed modification time of hello.jar -- all the JAR paths should be checked");
     (new File(appJar)).setLastModified(System.currentTimeMillis() + 2000);
     TestCommon.run(
         "-cp", cp,
         "-XX:+PrintSharedArchiveAndExit")
-      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "Timestamp mismatch"));
+      .ifNoMappingFailure(output -> check(output, 1, true, firstCheckMsg, "timestamp has changed"));
 
     log("Even if hello.jar is out of date, we should still be able to print the dictionary.");
     TestCommon.run(
         "-cp", cp,
         "-XX:+PrintSharedArchiveAndExit")
-      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "java.lang.Object"));
-
+      .ifNoMappingFailure(output -> check(output, 1, true, firstCheckMsg, "java.lang.Object"));
 
     log("Remove hello.jar -- all the JAR paths should be checked");
     (new File(appJar)).delete();
     TestCommon.run(
         "-cp", cp,
         "-XX:+PrintSharedArchiveAndExit")
-      .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "Required classpath entry does not exist: " + appJar));
+      .ifNoMappingFailure(output -> check(output, 1, true, firstCheckMsg, "Required classpath entry does not exist: " + appJar));
 
     log("Execution with major errors -- with 'major' errors like the JSA file\n" +
         "is missing, we should stop immediately to avoid crashing the JVM.");
