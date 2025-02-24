@@ -94,42 +94,46 @@ public class TestFuzzExpression {
             List<Object> def = argValues.stream().map(v -> v.defTokens()).toList();
             List<Object> use = argValues.stream().map(v -> v.useTokens()).toList();
             return body(
-                def,
                 """
                 // --- $test start ---
                 // Using $reference
                 // type: #type
-
-                @DontCompile
-                public static Object $reference() {
-                    try {
                 """,
-                "        return ", expression.withArgs(use), ";\n",
-                """
-                    } catch (Exception e) {
-                        return e;
+                Library.CLASS_HOOK.set(
+                    def,
+                    """
+
+                    @DontCompile
+                    public static Object $reference() {
+                        try {
+                    """,
+                    "        return ", expression.withArgs(use), ";\n",
+                    """
+                        } catch (Exception e) {
+                            return e;
+                        }
                     }
-                }
 
-                @Test
-                public static Object $test() {
-                    try {
-                """,
-                "        return ", expression.withArgs(use), ";\n",
-                """
-                    } catch (Exception e) {
-                        return e;
+                    @Test
+                    public static Object $test() {
+                        try {
+                    """,
+                    "        return ", expression.withArgs(use), ";\n",
+                    """
+                        } catch (Exception e) {
+                            return e;
+                        }
                     }
-                }
 
-                @Check(test = "$test")
-                public static void $check(Object result) {
-                    Object gold = $reference();
-                    Verify.checkEQ(result, gold);
-                }
+                    @Check(test = "$test")
+                    public static void $check(Object result) {
+                        Object gold = $reference();
+                        Verify.checkEQ(result, gold);
+                    }
 
-                // --- $test end   ---
-                """
+                    // --- $test end   ---
+                    """
+                )
             );
         });
 
@@ -140,27 +144,31 @@ public class TestFuzzExpression {
                 // --- $test start ---
                 // Using $GOLD
                 // type: #type
-
-                static final Object $GOLD = $test();
-
-                @Test
-                public static Object $test() {
-                    try {
                 """,
-                "        return ", expression.withRandomArgs(), ";\n",
-                """
-                    } catch (Exception e) {
-                        return e;
+                Library.CLASS_HOOK.set(
+                    """
+
+                    static final Object $GOLD = $test();
+
+                    @Test
+                    public static Object $test() {
+                        try {
+                    """,
+                    "        return ", expression.withRandomArgs(), ";\n",
+                    """
+                        } catch (Exception e) {
+                            return e;
+                        }
                     }
-                }
 
-                @Check(test = "$test")
-                public static void $check(Object result) {
-                    Verify.checkEQ(result, $GOLD);
-                }
+                    @Check(test = "$test")
+                    public static void $check(Object result) {
+                        Verify.checkEQ(result, $GOLD);
+                    }
 
-                // --- $test end   ---
-                """
+                    // --- $test end   ---
+                    """
+                )
             );
         });
 
