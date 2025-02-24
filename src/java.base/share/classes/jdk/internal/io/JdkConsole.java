@@ -40,8 +40,6 @@ public interface JdkConsole {
     Reader reader();
     JdkConsole println(Object obj);
     JdkConsole print(Object obj);
-    String readln(String prompt);
-    String readln();
     JdkConsole format(Locale locale, String format, Object ... args);
     String readLine(Locale locale, String format, Object ... args);
     String readLine();

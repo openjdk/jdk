@@ -94,16 +94,6 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         }
 
         @Override
-        public String readln(String prompt) {
-            return getDelegate(true).readln(prompt);
-        }
-
-        @Override
-        public String readln() {
-            return getDelegate(true).readln();
-        }
-
-        @Override
         public JdkConsole format(Locale locale, String format, Object... args) {
             JdkConsole delegate = getDelegate(false);
 
@@ -217,21 +207,6 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
             writer().print(obj);
             writer().flush();
             return this;
-        }
-
-        @Override
-        public String readln(String prompt) {
-            try {
-                initJLineIfNeeded();
-                return jline.readLine(prompt == null ? "null" : prompt.replace("%", "%%"));
-            } catch (EndOfFileException eofe) {
-                return null;
-            }
-        }
-
-        @Override
-        public String readln() {
-            return readLine();
         }
 
         @Override
