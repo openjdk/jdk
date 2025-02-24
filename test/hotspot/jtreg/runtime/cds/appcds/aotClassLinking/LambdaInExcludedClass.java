@@ -62,6 +62,7 @@ public class LambdaInExcludedClass {
         @Override
         public String[] vmArgs(RunMode runMode) {
             return new String[] {
+                "-Xmx128m",
                 "-XX:+AOTClassLinking",
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+UseEpsilonGC",
