@@ -675,7 +675,7 @@ void InterpreterMacroAssembler::get_monitors(Register reg) {
   bind(ok);
 #endif // ASSERT
   mem2reg_opt(reg, Address(Z_fp, _z_ijava_state_neg(monitors)));
-  z_sllg(reg, reg, Interpreter::logStackElementSize);
+  z_slag(reg, reg, Interpreter::logStackElementSize);
   z_agr(reg, Z_fp);
 }
 
@@ -688,7 +688,7 @@ void InterpreterMacroAssembler::save_monitors(Register reg) {
   bind(ok);
 #endif // ASSERT
   z_sgr(reg, Z_fp);
-  z_srlg(reg, reg, Interpreter::logStackElementSize);
+  z_srag(reg, reg, Interpreter::logStackElementSize);
   reg2mem_opt(reg, Address(Z_fp, _z_ijava_state_neg(monitors)));
 }
 

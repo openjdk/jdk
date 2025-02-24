@@ -1174,7 +1174,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
                          // in need for Z_R1's original content.
 
   __ z_sgrk(Z_R1, Z_esp, fp);
-  __ z_srlg(Z_R1, Z_R1, Interpreter::logStackElementSize);
+  __ z_srag(Z_R1, Z_R1, Interpreter::logStackElementSize);
   __ z_stg(Z_R1, _z_ijava_state_neg(monitors), fp);
 
   __ z_lgdr(Z_R1, Z_F1);
