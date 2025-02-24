@@ -212,6 +212,7 @@ private:
   // The "pz" region is used only during static dumps to reserve an unused space between SharedBaseAddress and
   // the bottom of the rw region. During runtime, this space will be filled with a reserved area that disallows
   // read/write/exec, so we can track for bad CompressedKlassPointers encoding.
+  // Note: this region does NOT exist in the cds archive.
   DumpRegion _pz_region;
 
   DumpRegion _rw_region;

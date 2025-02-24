@@ -808,7 +808,8 @@ void Metaspace::global_initialize() {
     CompressedKlassPointers::initialize((address)rs.base(), rs.size());
 
     // After narrowKlass encoding scheme is decided: if the encoding base points to class space start,
-    // establish a protection zone.
+    // establish a protection zone. Accidentally decoding a zero nKlass ID and then using it will result
+    // in an immediate segmentation fault instead of a delayed error much later.
     if (CompressedKlassPointers::base() == (address)rs.base()) {
       // Let the protection zone be a whole commit granule. Otherwise, buddy allocator may later place neighboring
       // chunks in the same granule, see that the granule is not yet committed, and commit it, which would replace
@@ -823,7 +824,10 @@ void Metaspace::global_initialize() {
       assert(protzone == (address)rs.base(), "The very first chunk should be located at the class space start?");
       assert(chunk->word_size() == protzone_wordsize, "Weird chunk size");
       CompressedKlassPointers::establish_protection_zone(protzone, protzone_size);
+    } else {
+      assert(CompressedKlassPointers::base() == nullptr, "Zero-based encoding expected");
     }
+
   }
 
 #endif // _LP64

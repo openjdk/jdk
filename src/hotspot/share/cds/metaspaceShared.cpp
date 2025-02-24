@@ -1253,6 +1253,9 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
     if (Metaspace::using_class_space()) {
       prot_zone_size = protection_zone_size();
 #ifdef ASSERT
+      // Before mapping the core regions into the newly established address space, we mark
+      // start and the end of the future protection zone with canaries. That way we easily
+      // catch mapping errors (accidentally mapping data into the future protection zone).
       os::commit_memory(mapped_base_address, prot_zone_size, false);
       *(mapped_base_address) = 'P';
       *(mapped_base_address + prot_zone_size - 1) = 'P';
@@ -1375,7 +1378,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
         // - every archived Klass' prototype   (only if +UseCompactObjectHeaders)
         //
         // In order for those IDs to still be valid, we need to dictate base and shift: base should be the
-        // mapping start (including protection zone), shift the shift used at archive generation time.
+        // mapping start (including protection zone), shift should be the shift used at archive generation time.
         CompressedKlassPointers::initialize_for_given_encoding(
           klass_range_start, klass_range_size,
           encoding_base, ArchiveBuilder::precomputed_narrow_klass_shift() // precomputed encoding, see ArchiveBuilder
