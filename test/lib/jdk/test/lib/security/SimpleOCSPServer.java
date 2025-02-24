@@ -25,6 +25,7 @@ package jdk.test.lib.security;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.CRLReason;
 import java.security.cert.X509Certificate;
@@ -61,7 +62,7 @@ public class SimpleOCSPServer {
     static final int FREE_PORT = 0;
 
     // CertStatus values
-    public static enum CertStatus {
+    public enum CertStatus {
         CERT_STATUS_GOOD,
         CERT_STATUS_REVOKED,
         CERT_STATUS_UNKNOWN,
@@ -69,14 +70,14 @@ public class SimpleOCSPServer {
 
     // Fields used for the networking portion of the responder
     private ServerSocket servSocket;
-    private InetAddress listenAddress;
+    private final InetAddress listenAddress;
     private int listenPort;
 
     // Keystore information (certs, keys, etc.)
-    private KeyStore keystore;
-    private X509Certificate issuerCert;
-    private X509Certificate signerCert;
-    private PrivateKey signerKey;
+    private final KeyStore keystore;
+    private final X509Certificate issuerCert;
+    private final X509Certificate signerCert;
+    private final PrivateKey signerKey;
 
     // Fields used for the operational portions of the server
     private boolean logEnabled = false;
@@ -91,9 +92,9 @@ public class SimpleOCSPServer {
     // Fields used in the generation of responses
     private long nextUpdateInterval = -1;
     private Date nextUpdate = null;
-    private ResponderId respId;
-    private AlgorithmId sigAlgId;
-    private Map<CertId, CertStatusInfo> statusDb =
+    private final ResponderId respId;
+    private String sigAlgName;
+    private final Map<CertId, CertStatusInfo> statusDb =
             Collections.synchronizedMap(new HashMap<>());
 
     /**
@@ -140,25 +141,24 @@ public class SimpleOCSPServer {
     public SimpleOCSPServer(InetAddress addr, int port, KeyStore ks,
             String password, String issuerAlias, String signerAlias)
             throws GeneralSecurityException, IOException {
-        Objects.requireNonNull(ks, "Null keystore provided");
+        keystore = Objects.requireNonNull(ks, "Null keystore provided");
         Objects.requireNonNull(issuerAlias, "Null issuerName provided");
 
         utcDateFmt.setTimeZone(TimeZone.getTimeZone("GMT"));
 
-        keystore = ks;
-        issuerCert = (X509Certificate)ks.getCertificate(issuerAlias);
+        issuerCert = (X509Certificate)keystore.getCertificate(issuerAlias);
         if (issuerCert == null) {
             throw new IllegalArgumentException("Certificate for alias " +
                     issuerAlias + " not found");
         }
 
         if (signerAlias != null) {
-            signerCert = (X509Certificate)ks.getCertificate(signerAlias);
+            signerCert = (X509Certificate)keystore.getCertificate(signerAlias);
             if (signerCert == null) {
                 throw new IllegalArgumentException("Certificate for alias " +
                     signerAlias + " not found");
             }
-            signerKey = (PrivateKey)ks.getKey(signerAlias,
+            signerKey = (PrivateKey)keystore.getKey(signerAlias,
                     password.toCharArray());
             if (signerKey == null) {
                 throw new IllegalArgumentException("PrivateKey for alias " +
@@ -166,14 +166,14 @@ public class SimpleOCSPServer {
             }
         } else {
             signerCert = issuerCert;
-            signerKey = (PrivateKey)ks.getKey(issuerAlias,
+            signerKey = (PrivateKey)keystore.getKey(issuerAlias,
                     password.toCharArray());
             if (signerKey == null) {
                 throw new IllegalArgumentException("PrivateKey for alias " +
                     issuerAlias + " not found");
             }
         }
-        sigAlgId = AlgorithmId.get(SignatureUtil.getDefaultSigAlgForKey(signerKey));
+        sigAlgName = SignatureUtil.getDefaultSigAlgForKey(signerKey);
         respId = new ResponderId(signerCert.getSubjectX500Principal());
         listenAddress = addr;
         listenPort = port;
@@ -495,8 +495,14 @@ public class SimpleOCSPServer {
     public void setSignatureAlgorithm(String algName)
             throws NoSuchAlgorithmException {
         if (!started) {
-            sigAlgId = AlgorithmId.get(algName);
-            log("Signature algorithm set to " + sigAlgId.getName());
+            // We don't care about the AlgorithmId object, we're just
+            // using it to validate the algName parameter.
+            AlgorithmId.get(algName);
+            sigAlgName = algName;
+            log("Signature algorithm set to " + algName);
+        } else {
+            log("Signature algorithm cannot be set on a running server, " +
+                    "stop the server first");
         }
     }
 
@@ -604,9 +610,9 @@ public class SimpleOCSPServer {
      * object may be used to construct OCSP responses.
      */
     public static class CertStatusInfo {
-        private CertStatus certStatusType;
+        private final CertStatus certStatusType;
         private CRLReason reason;
-        private Date revocationTime;
+        private final Date revocationTime;
 
         /**
          * Create a Certificate status object by providing the status only.
@@ -745,7 +751,7 @@ public class SimpleOCSPServer {
                 // This will be tokenized so we know if we are dealing with
                 // a GET or POST.
                 String[] headerTokens = readLine(in).split(" ");
-                LocalOcspRequest ocspReq = null;
+                LocalOcspRequest ocspReq;
                 LocalOcspResponse ocspResp = null;
                 ResponseStatus respStat = ResponseStatus.INTERNAL_ERROR;
                 try {
@@ -794,7 +800,7 @@ public class SimpleOCSPServer {
                 out.flush();
 
                 log("Closing " + ocspSocket);
-            } catch (IOException | CertificateException exc) {
+            } catch (IOException | GeneralSecurityException exc) {
                 err(exc);
             }
         }
@@ -826,10 +832,10 @@ public class SimpleOCSPServer {
                         append("\r\n");
             }
             sb.append("\r\n");
-
-            out.write(sb.toString().getBytes("UTF-8"));
-            out.write(respBytes);
             log(resp.toString());
+
+            out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+            out.write(respBytes);
         }
 
         /**
@@ -940,7 +946,7 @@ public class SimpleOCSPServer {
             // "/" off before decoding.
             return new LocalOcspRequest(Base64.getMimeDecoder().decode(
                     URLDecoder.decode(headerTokens[1].replaceAll("/", ""),
-                            "UTF-8")));
+                            StandardCharsets.UTF_8)));
         }
 
         /**
@@ -974,8 +980,7 @@ public class SimpleOCSPServer {
                     bos.write(b);
                 }
             }
-
-            return new String(bos.toByteArray(), "UTF-8");
+            return bos.toString(StandardCharsets.UTF_8);
         }
     }
 
@@ -1052,7 +1057,6 @@ public class SimpleOCSPServer {
 
             if (sigItems[2].isContextSpecific((byte)0)) {
                 DerValue[] certDerItems = sigItems[2].data.getSequence(4);
-                int i = 0;
                 for (DerValue dv : certDerItems) {
                     X509Certificate xc = new X509CertImpl(dv);
                     certificates.add(xc);
@@ -1131,7 +1135,7 @@ public class SimpleOCSPServer {
          * Return the list of X.509 Certificates in this OCSP request.
          *
          * @return an unmodifiable {@code List} of zero or more
-         * {@cpde X509Certificate} objects.
+         * {@code X509Certificate} objects.
          */
         private List<X509Certificate> getCertificates() {
             return Collections.unmodifiableList(certificates);
@@ -1295,7 +1299,8 @@ public class SimpleOCSPServer {
         private final Map<String, Extension> responseExtensions;
         private byte[] signature;
         private final List<X509Certificate> certificates;
-        private final byte[] encodedResponse;
+        private final Signature signEngine;
+        private final AlgorithmId sigAlgId;
 
         /**
          * Constructor for the generation of non-successful responses
@@ -1305,9 +1310,11 @@ public class SimpleOCSPServer {
          * @throws IOException if an error happens during encoding
          * @throws NullPointerException if {@code respStat} is {@code null}
          * or {@code respStat} is successful.
+         * @throws GeneralSecurityException if errors occur while obtaining
+         * the signature object or any algorithm identifier parameters.
          */
         public LocalOcspResponse(OCSPResponse.ResponseStatus respStat)
-                throws IOException {
+                throws IOException, GeneralSecurityException {
             this(respStat, null, null);
         }
 
@@ -1324,10 +1331,13 @@ public class SimpleOCSPServer {
          * @throws NullPointerException if {@code respStat} is {@code null}
          * or {@code respStat} is successful, and a {@code null} {@code itemMap}
          * has been provided.
+         * @throws GeneralSecurityException if errors occur while obtaining
+         * the signature object or any algorithm identifier parameters.
          */
         public LocalOcspResponse(OCSPResponse.ResponseStatus respStat,
                 Map<CertId, CertStatusInfo> itemMap,
-                Map<String, Extension> reqExtensions) throws IOException {
+                Map<String, Extension> reqExtensions)
+                throws IOException, GeneralSecurityException {
             responseStatus = Objects.requireNonNull(respStat,
                     "Illegal null response status");
             if (responseStatus == ResponseStatus.SUCCESSFUL) {
@@ -1348,13 +1358,18 @@ public class SimpleOCSPServer {
                     certificates.add(signerCert);
                 }
                 certificates.add(issuerCert);
+                // Create the signature object and AlgorithmId that we'll use
+                // later to create the signature on this response.
+                signEngine = SignatureUtil.fromKey(sigAlgName, signerKey, "");
+                sigAlgId = SignatureUtil.fromSignature(signEngine, signerKey);
             } else {
                 respItemMap = null;
                 producedAtDate = null;
                 responseExtensions = null;
                 certificates = null;
+                signEngine = null;
+                sigAlgId = null;
             }
-            encodedResponse = this.getBytes();
         }
 
         /**
@@ -1436,13 +1451,9 @@ public class SimpleOCSPServer {
             basicORItemStream.write(tbsResponseBytes);
 
             try {
-                // Create the signature
-                Signature sig = SignatureUtil.fromKey(
-                        sigAlgId.getName(), signerKey, (Provider)null);
-                sig.update(tbsResponseBytes);
-                signature = sig.sign();
-                // Rewrite signAlg, RSASSA-PSS needs some parameters.
-                sigAlgId = SignatureUtil.fromSignature(sig, signerKey);
+                // Create the signature with the initialized Signature object
+                signEngine.update(tbsResponseBytes);
+                signature = signEngine.sign();
                 sigAlgId.encode(basicORItemStream);
                 basicORItemStream.putBitString(signature);
             } catch (GeneralSecurityException exc) {
