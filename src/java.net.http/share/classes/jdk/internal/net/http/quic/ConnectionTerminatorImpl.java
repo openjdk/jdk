@@ -53,6 +53,7 @@ import static jdk.internal.net.http.quic.QuicConnectionImpl.QuicConnectionState.
 import static jdk.internal.net.http.quic.TerminationCause.appLayerClose;
 import static jdk.internal.net.http.quic.TerminationCause.forSilentTermination;
 import static jdk.internal.net.http.quic.TerminationCause.forTransportError;
+import static jdk.internal.net.quic.QuicTransportErrors.INTERNAL_ERROR;
 import static jdk.internal.net.quic.QuicTransportErrors.NO_ERROR;
 
 final class ConnectionTerminatorImpl implements ConnectionTerminator {
@@ -272,11 +273,12 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
                     .peerVisibleReason(reason)
                     .loggedAs(msg);
         } else {
-            final Optional<QuicTransportErrors> err = QuicTransportErrors.ofCode(
-                    incomingFrame.errorCode());
-            assert err.isPresent() : "unexpected error code in incoming connection close frame: "
-                    + closeCodeHex;
-            terminationCause = forTransportError(err.get())
+            final QuicTransportErrors err = QuicTransportErrors.ofCode(
+                    incomingFrame.errorCode())
+                    // fallback to INTERNAL_ERROR if the peer sends an unexpected error code
+                    // in the CONNECTION_CLOSE frame
+                    .orElse(INTERNAL_ERROR);
+            terminationCause = forTransportError(err)
                     .peerVisibleReason(reason)
                     .loggedAs(msg);
         }
