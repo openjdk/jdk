@@ -47,7 +47,7 @@ import sun.security.validator.Validator;
  * @library /test/lib
  * @modules java.base/sun.security.validator
  *
- * @run main/othervm CertReplace certreplace.jks certreplace.certs
+ * @run main CertReplace certreplace.jks certreplace.certs
  */
 
 /*
@@ -102,20 +102,17 @@ public class CertReplace {
                               "-outfile int.cert");
 
         //putting the certificate in the keystore
-        final CertificateFactory certificateFactory = CertificateFactory.getInstance("X509");
+        try (final FileInputStream certInputStream = new FileInputStream("int.cert")) {
+            final Certificate[] certs = new Certificate[]{
+                    CertUtils.getCertFromStream(
+                            certInputStream
+                    )
+            };
 
-        final FileInputStream certInputStream = new FileInputStream("int.cert");
-        final Certificate[] certs = new Certificate[]{
-                CertUtils.getCertFromStream(
-                        certInputStream
-                )
-        };
-        certInputStream.close();
-
-        final PrivateKey privateKey = (PrivateKey) keyStore.getKey("int", PASSWORD_CHAR_ARR);
-        keyStore.setKeyEntry("int", privateKey, PASSWORD_CHAR_ARR, certs);
-        keyStore.store(new FileOutputStream(CERTREPLACE_JKS), PASSWORD_CHAR_ARR);
-
+            final PrivateKey privateKey = (PrivateKey) keyStore.getKey("int", PASSWORD_CHAR_ARR);
+            keyStore.setKeyEntry("int", privateKey, PASSWORD_CHAR_ARR, certs);
+            keyStore.store(new FileOutputStream(CERTREPLACE_JKS), PASSWORD_CHAR_ARR);
+        }
 
         SecurityTools.keytool(ktBaseParameters +
                               "-certreq -alias user -file user.req");
@@ -168,8 +165,6 @@ public class CertReplace {
         SecurityTools.keytool(ktBaseParameters +
                               "-genkeypair -alias user -dname CN=User -keyalg rsa");
 
-        final KeyStore keyStore = KeyStoreUtils.loadKeyStore(SAMEDN_JKS, PASSWORD);
-
         // 2. Signing: ca -> user. The startdate is set to 1 minute in the past to ensure the certificate
         // is valid at the time of validation and to prevent any issues with timing discrepancies
         // Automatically saves the certs to the certs files
@@ -184,6 +179,7 @@ public class CertReplace {
                               "-startdate -1M -infile user.req -outfile samedn2.certs");
 
         // 3. Remove user for cacerts
+        final KeyStore keyStore = KeyStoreUtils.loadKeyStore(SAMEDN_JKS, PASSWORD);
         keyStore.deleteEntry("user");
         keyStore.store(new FileOutputStream(CERTREPLACE_JKS), PASSWORD_CHAR_ARR);
     }
@@ -202,7 +198,9 @@ public class CertReplace {
         }
 
         KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream(args[0]), "changeit".toCharArray());
+        try (final FileInputStream certInputStream = new FileInputStream(args[0])) {
+            ks.load(certInputStream, PASSWORD_CHAR_ARR);
+        }
         Validator v = Validator.getInstance
             (Validator.TYPE_PKIX, Validator.VAR_GENERIC, ks);
         X509Certificate[] chain = createPath(args[1]);
