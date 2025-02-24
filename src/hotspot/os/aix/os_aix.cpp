@@ -711,8 +711,12 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // Init thread attributes.
   pthread_attr_t attr;
   int rslt = pthread_attr_init(&attr);
-  guarantee(rslt == 0, "pthread_attr_init has to return 0");
-  guarantee(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0, "???");
+  if (rslt != 0) {
+    thread->set_osthread(nullptr);
+    delete osthread;
+    return false;
+  }
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   // Make sure we run in 1:1 kernel-user-thread mode.
   guarantee(pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM) == 0, "???");
