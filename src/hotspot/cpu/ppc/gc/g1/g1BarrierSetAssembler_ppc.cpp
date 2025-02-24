@@ -240,15 +240,15 @@ static void generate_post_barrier_fast_path(MacroAssembler* masm,
   assert_different_registers(store_addr, new_val, tmp1, R0);
   assert_different_registers(store_addr, tmp1, tmp2, R0);
 
-  __ xorr(R0, store_addr, new_val);                          // tmp1 := store address ^ new value
-  __ srdi_(R0, R0, G1HeapRegion::LogOfHRGrainBytes);         // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
+  __ xorr(R0, store_addr, new_val);                          // R0 := store address ^ new value
+  __ srdi_(R0, R0, G1HeapRegion::LogOfHRGrainBytes);         // R0 := ((store address ^ new value) >> LogOfHRGrainBytes)
   __ beq(CR0, done);
 
   // Crosses regions, storing null?
   if (!new_val_may_be_null) {
 #ifdef ASSERT
     __ cmpdi(CR0, new_val, 0);
-    __ asm_assert_ne("null oop not allowed (G1 post)"); // Checked by caller.
+    __ asm_assert_ne("null oop not allowed (G1 post)");      // Checked by caller.
 #endif
   } else {
     __ cmpdi(CR0, new_val, 0);
@@ -256,9 +256,9 @@ static void generate_post_barrier_fast_path(MacroAssembler* masm,
   }
 
   __ ld(tmp1, G1ThreadLocalData::card_table_base_offset(), thread);
-  __ srdi(tmp2, store_addr, CardTable::card_shift());        // tmp1 := card address relative to card table base
+  __ srdi(tmp2, store_addr, CardTable::card_shift());        // tmp2 := card address relative to card table base
   if (UseCondCardMark) {
-    __ lbzx(R0, tmp1, tmp2);                                 // tmp1 := card address
+    __ lbzx(R0, tmp1, tmp2);
     __ cmpwi(CR0, R0, (int)G1CardTable::clean_card_val());
     __ bne(CR0, done);
   }
