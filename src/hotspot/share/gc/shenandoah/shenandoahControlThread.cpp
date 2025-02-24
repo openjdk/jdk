@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
@@ -131,6 +130,8 @@ void ShenandoahControlThread::run_service() {
 
       // GC is starting, bump the internal ID
       update_gc_id();
+
+      heuristics->cancel_trigger_request();
 
       heap->reset_bytes_allocated_since_gc_start();
 
