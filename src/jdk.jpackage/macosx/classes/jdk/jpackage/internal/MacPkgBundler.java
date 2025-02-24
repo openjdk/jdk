@@ -30,9 +30,7 @@ import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
 import static jdk.jpackage.internal.MacApplicationBuilder.isValidBundleIdentifier;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -51,8 +49,11 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.OSVersion;
+import jdk.jpackage.internal.PackagingPipeline.PackageBuildEnv;
+import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.MacApplication;
+import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.FileUtils;
@@ -100,6 +101,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 },
             (s, p) -> s);
 
+    private static Path installLocation(MacPkgPackage pkg) {
+        return Path.of("/").resolve(pkg.relativeInstallDir()).getParent();
+    }
+
     public Path bundle(Map<String, ? super Object> params,
             Path outdir) throws PackagerException {
 
@@ -111,20 +116,25 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
         IOUtils.writableOutputDir(outdir);
 
-        try {
-            env = BuildEnv.withAppImageDir(env, prepareAppBundle(params));
+        MacPackagingPipeline.build(Optional.of(pkg))
+        .excludeDirFromCopying(outdir)
+        .excludeDirFromCopying(StandardBundlerParam.OUTPUT_DIR.fetchFrom(params))
+        .task(PackagingPipeline.PrimaryTaskID.PACKAGE)
+                .packageAction(this::buildPackage)
+                .add()
+        .create().execute(env, pkg, outdir);
 
-            prepareConfigFiles(pkg, env);
-            Path configScript = getConfig_Script(pkg, env);
-            if (IOUtils.exists(configScript)) {
-                IOUtils.run("bash", configScript);
-            }
+        return outdir.resolve(pkg.packageFileNameWithSuffix()).toAbsolutePath();
+    }
 
-            return createPKG(pkg, env, outdir);
-        } catch (IOException | PackagerException ex) {
-            Log.verbose(ex);
-            throw new PackagerException(ex);
+    private void buildPackage(PackageBuildEnv<MacPkgPackage, AppImageLayout> env) throws PackagerException, IOException {
+        prepareConfigFiles(env.pkg(), env.env());
+        Path configScript = getConfig_Script(env.pkg(), env.env());
+        if (IOUtils.exists(configScript)) {
+            IOUtils.run("bash", configScript);
         }
+
+        createPKG(env.pkg(), env.env(), env.outputDir());
     }
 
     private Path packagesRoot(BuildEnv env) {
@@ -366,49 +376,36 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     // based on doc "any .svn or CVS directories, and any .DS_Store files".
     // So easy approach will be to copy user provided app-image into temp folder
     // if root path contains other files.
-    private Path getRoot(MacPkgPackage pkg, BuildEnv env) throws IOException {
-        Path rootDir = env.appImageDir().getParent();
-
-        // Not needed for runtime installer and it might break runtime installer
+    private BuildEnv prepareAppImage(MacPkgPackage pkg, BuildEnv env) throws IOException {
+                // Not needed for runtime installer and it might break runtime installer
         // if parent does not have any other files
         if (!pkg.isRuntimeInstaller()) {
+            final Path rootDir = env.appImageDir().getParent();
             try (var fileList = Files.list(rootDir)) {
                 Path[] list = fileList.toArray(Path[]::new);
                 // We should only have app image and/or .DS_Store
                 if (list.length == 1) {
-                    return rootDir;
+                    return env;
                 } else if (list.length == 2) {
                     // Check case with app image and .DS_Store
                     if (list[0].toString().toLowerCase().endsWith(".ds_store") ||
                         list[1].toString().toLowerCase().endsWith(".ds_store")) {
-                        return rootDir; // Only app image and .DS_Store
+                        return env; // Only app image and .DS_Store
                     }
                 }
             }
+
+            // Copy to new root
+            Path newRoot = Files.createTempDirectory(env.buildRoot(), "root-");
+            Path source = env.appImageDir();
+            Path dest = newRoot.resolve(source.getFileName());
+
+            FileUtils.copyRecursive(source, dest);
+
+            return BuildEnv.withAppImageDir(env, dest);
         }
 
-        // Copy to new root
-        Path newRoot = Files.createTempDirectory(
-                env.buildRoot(), "root-");
-
-        Path source, dest;
-
-        if (pkg.isRuntimeInstaller()) {
-            // firs, is this already a runtime with
-            // <runtime>/Contents/Home - if so we need the Home dir
-            Path original = env.appImageDir();
-            Path home = original.resolve("Contents/Home");
-            source = (Files.exists(home)) ? home : original;
-
-            // Then we need to put back the <NAME>/Content/Home
-            dest = newRoot.resolve(((MacApplication)pkg.app()).bundleIdentifier() + "/Contents/Home");
-        } else {
-            source = env.appImageDir();
-            dest = newRoot.resolve(source.getFileName());
-        }
-        FileUtils.copyRecursive(source, dest);
-
-        return newRoot;
+        return env;
     }
 
     private boolean withServicesPkg(MacPkgPackage pkg, BuildEnv env) {
@@ -486,21 +483,21 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
             Files.createDirectories(packagesRoot(env));
 
-            Path root = getRoot(pkg, env);
+            env = prepareAppImage(pkg, env);
 
             if (withServicesPkg(pkg, env)) {
                 createServicesPkg(pkg, env);
             }
 
-            final var installDir = Path.of("/").resolve(pkg.relativeInstallDir()).toString();
+            final var installLocation = installLocation(pkg).toString();
 
             // Generate default CPL file
             Path cpl = env.configDir().resolve("cpl.plist");
             ProcessBuilder pb = new ProcessBuilder("/usr/bin/pkgbuild",
                     "--root",
-                    root.toString(),
+                    env.appImageDir().toString(),
                     "--install-location",
-                    installDir,
+                    installLocation,
                     "--analyze",
                     cpl.toAbsolutePath().toString());
 
@@ -512,22 +509,21 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             if (((MacApplication)pkg.app()).appStore()) {
                 pb = new ProcessBuilder("/usr/bin/pkgbuild",
                         "--root",
-                        root.toString(),
+                        env.appImageDir().toString(),
                         "--install-location",
-                        installDir,
+                        installLocation,
                         "--component-plist",
                         cpl.toAbsolutePath().toString(),
                         "--identifier",
                         ((MacApplication)pkg.app()).bundleIdentifier(),
                         appPKG.toAbsolutePath().toString());
-                IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
             } else {
                 preparePackageScripts(pkg, env);
                 pb = new ProcessBuilder("/usr/bin/pkgbuild",
                         "--root",
-                        root.toString(),
+                        env.appImageDir().toString(),
                         "--install-location",
-                        installDir,
+                        installLocation,
                         "--component-plist",
                         cpl.toAbsolutePath().toString(),
                         "--scripts",
@@ -535,8 +531,8 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                         "--identifier",
                         ((MacApplication)pkg.app()).bundleIdentifier(),
                         appPKG.toAbsolutePath().toString());
-                IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
             }
+            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
 
             // build final package
             Path finalPKG = outdir.resolve(pkg.packageFileNameWithSuffix());
@@ -571,9 +567,9 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 commandLine.add(getConfig_PDF(pkg, env)
                         .toAbsolutePath().toString());
                 commandLine.add("--component");
-                Path p = root.resolve(pkg.app().appImageDirName());
+                Path p = env.appImageDir().resolve(pkg.app().appImageDirName());
                 commandLine.add(p.toAbsolutePath().toString());
-                commandLine.add(installDir);
+                commandLine.add(installLocation);
             } else {
                 commandLine.add("--distribution");
                 commandLine.add(getConfig_DistributionXMLFile(pkg, env)
@@ -584,21 +580,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             commandLine.add(finalPKG.toAbsolutePath().toString());
 
             pb = new ProcessBuilder(commandLine);
-
-            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                 PrintStream ps = new PrintStream(baos)) {
-                try {
-                    IOUtils.exec(pb, false, ps, true, Executor.INFINITE_TIMEOUT);
-                } catch (IOException ioe) {
-                    // Log output of "productbuild" in case of
-                    // error. It should help user to diagnose
-                    // issue when using --mac-installer-sign-identity
-                    Log.info(MessageFormat.format(I18N.getString(
-                             "error.tool.failed.with.output"), "productbuild"));
-                    Log.info(baos.toString().strip());
-                    throw ioe;
-                }
-            }
+            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
 
             return finalPKG;
         } catch (Exception ignored) {
