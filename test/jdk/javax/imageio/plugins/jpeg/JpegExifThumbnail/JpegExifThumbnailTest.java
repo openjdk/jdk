@@ -130,9 +130,10 @@ public class JpegExifThumbnailTest {
                 2015,6,24,10,3,55,
                 new Dimension(160, 120)).run();
 
-        // this is big endian, and uses a compression type 0x00010000
-        new JpegExifThumbnailTest("exif-rgb-thumbnail-sony-d700.jpg",
-                1998,12,1,14,22,36,
+        // This Exif thumbnail is uncompressed (a TIFF). The exif marker uses
+        // a compression type of 0x00010000, and it is big endian
+        new JpegExifThumbnailTest("uncompressed-exif-thumbnail.jpg",
+                2025,2,24,14,22,36,
                 new Dimension(80, 60)).run();
 
         // This includes a JFIF thumbnail and an EXIF thumbnail.
