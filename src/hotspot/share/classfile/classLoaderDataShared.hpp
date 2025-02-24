@@ -34,7 +34,7 @@ class SerializeClosure;
 
 class ClassLoaderDataShared : AllStatic {
   static bool _full_module_graph_loaded;
-  static void ensure_module_entry_table_exist(oop class_loader);
+  static void ensure_module_entry_table_exists(oop class_loader);
 public:
   static void ensure_module_entry_tables_exist();
   static void allocate_archived_tables();

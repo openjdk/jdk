@@ -119,7 +119,7 @@ public:
 // To load the AOTCache in a production run, the JVM must be using a compatible set of
 // AOTClassLocations (subjected to AOTClassLocationConfig::validate()).
 //
-// In general, validation is performed on the AOTClassLocations to ensure the code sources used
+// In general, validation is performed on the AOTClassLocations to ensure the code locations used
 // during AOTCache creation are the same as when the AOTCache is used during runtime.
 // Non-existent entries are recorded during AOTCache creation. Those non-existent entries,
 // if they are specified at runtime, must not exist.

@@ -50,7 +50,7 @@
 AOTClassLocationConfig* AOTClassLocationConfig::_dumptime_instance = nullptr;
 const AOTClassLocationConfig* AOTClassLocationConfig::_runtime_instance = nullptr;
 
-// A ClassLocationStream represents a list of code sources, which can be iterated using
+// A ClassLocationStream represents a list of code locations, which can be iterated using
 // start() and has_next().
 class ClassLocationStream {
 protected:
@@ -130,7 +130,7 @@ public:
   bool has_non_jar_modules() { return _has_non_jar_modules; }
 };
 
-// AllClassLocationStreams is used to iterate over all the code sources that
+// AllClassLocationStreams is used to iterate over all the code locations that
 // are available to the application from -Xbootclasspath, -classpath and --module-path.
 // When creating an AOT cache, we store the contents from AllClassLocationStreams
 // into an array of AOTClassLocations. See AOTClassLocationConfig::dumptime_init_helper().

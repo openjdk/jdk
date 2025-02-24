@@ -150,11 +150,11 @@ static ClassLoaderData* java_system_loader_data_or_null() {
 // when outside of safepoints. Let's do that now.
 void ClassLoaderDataShared::ensure_module_entry_tables_exist() {
   assert(!SafepointSynchronize::is_at_safepoint(), "sanity");
-  ensure_module_entry_table_exist(SystemDictionary::java_platform_loader());
-  ensure_module_entry_table_exist(SystemDictionary::java_system_loader());
+  ensure_module_entry_table_exists(SystemDictionary::java_platform_loader());
+  ensure_module_entry_table_exists(SystemDictionary::java_system_loader());
 }
 
-void ClassLoaderDataShared::ensure_module_entry_table_exist(oop class_loader) {
+void ClassLoaderDataShared::ensure_module_entry_table_exists(oop class_loader) {
   Handle h_loader(JavaThread::current(), class_loader);
   ModuleEntryTable* met = Modules::get_module_entry_table(h_loader);
   assert(met != nullptr, "sanity");
