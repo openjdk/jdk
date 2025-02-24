@@ -63,8 +63,8 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
   uint _worker_id;
 
-  size_t _num_enqueued_as_dirty_cards;
-  size_t _num_enqueued_as_into_cset_cards;
+  size_t _num_marked_as_dirty_cards;
+  size_t _num_marked_as_into_cset_cards;
 
   // Upper and lower threshold to start and end work queue draining.
   uint const _stack_trim_upper_threshold;
@@ -102,13 +102,13 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   EvacuationFailedInfo _evacuation_failed_info;
   G1EvacFailureRegions* _evac_failure_regions;
   // Number of additional cards into evacuation failed regions.
-  size_t _evac_failure_enqueued_cards;
+  size_t _evac_failure_marked_cards;
 
-  // Enqueue the card if not already in the set; this is a best-effort attempt on
+  // Mark the card if not already in the set; this is a best-effort attempt on
   // detecting duplicates.
-  template <class T> bool enqueue_if_new(T* p, bool into_survivor);
-  // Enqueue the card of p into the (evacuation failed) region.
-  template <class T> void enqueue_card_into_evac_fail_region(T* p, oop obj);
+  template <class T> bool mark_if_new(T* p, bool into_survivor);
+  // Mark the card of p into the (evacuation failed) region.
+  template <class T> void mark_card_into_evac_fail_region(T* p, oop obj);
 
   bool inject_allocation_failure(uint region_idx) ALLOCATION_FAILURE_INJECTOR_RETURN_( return false; );
 
@@ -133,16 +133,16 @@ public:
 
   void push_on_queue(ScannerTask task);
 
-  // Apply the post barrier to the given reference field. Enqueues the card of p
+  // Apply the post barrier to the given reference field. Marks the card of p
   // if the barrier does not filter out the reference for some reason (e.g.
   // p and q are in the same region, p is in survivor, p is in collection set)
   // To be called during GC if nothing particular about p and obj are known.
   template <class T> void write_ref_field_post(T* p, oop obj);
 
-  // Enqueue the card if the reference's target region's remembered set is tracked.
+  // Mark the card if the reference's target region's remembered set is tracked.
   // Assumes that a significant amount of pre-filtering (like done by
   // write_ref_field_post() above) has already been performed.
-  template <class T> void enqueue_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o);
+  template <class T> void mark_card_if_tracked(G1HeapRegionAttr region_attr, T* p, oop o);
 
   G1EvacuationRootClosures* closures() { return _closures; }
   uint worker_id() { return _worker_id; }
@@ -151,8 +151,8 @@ public:
   size_t lab_undo_waste_words() const;
 
   size_t num_pending_cards() const;
-  size_t evac_failure_enqueued_cards() const;
-  size_t num_enqueued_cards() const;
+  size_t evac_failure_marked_cards() const;
+  size_t num_marked_cards() const;
 
   // Pass locally gathered statistics to global state. Returns the total number of
   // HeapWords copied.

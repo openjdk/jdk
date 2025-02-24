@@ -130,9 +130,9 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergePSS]->create_thread_work_items("LAB Waste:", MergePSSLABWasteBytes);
   _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste:", MergePSSLABUndoWasteBytes);
   _gc_par_phases[MergePSS]->create_thread_work_items("Pending Cards:", MergePSSPendingCards);
-  _gc_par_phases[MergePSS]->create_thread_work_items("To Young Gen Cards:", MergePSSToYoungGenCards);
-  _gc_par_phases[MergePSS]->create_thread_work_items("Enqueued Cards:", MergePSSEnqueued);
-  _gc_par_phases[MergePSS]->create_thread_work_items("Evac Fail Extra Cards:", MergePSSEvacFailExtra);
+  _gc_par_phases[MergePSS]->create_thread_work_items("To-Young-Gen Cards:", MergePSSToYoungGenCards);
+  _gc_par_phases[MergePSS]->create_thread_work_items("Evac-Fail Cards:", MergePSSEvacFail);
+  _gc_par_phases[MergePSS]->create_thread_work_items("Marked Cards:", MergePSSMarked);
 
   _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Evacuation Failed Regions:", RestoreEvacFailureRegionsEvacFailedNum);
   _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Pinned Regions:", RestoreEvacFailureRegionsPinnedNum);

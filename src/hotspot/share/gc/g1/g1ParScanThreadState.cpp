@@ -70,8 +70,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _tenuring_threshold(g1h->policy()->tenuring_threshold()),
     _scanner(g1h, this),
     _worker_id(worker_id),
-    _num_enqueued_as_dirty_cards(0),
-    _num_enqueued_as_into_cset_cards(0),
+    _num_marked_as_dirty_cards(0),
+    _num_marked_as_into_cset_cards(0),
     _stack_trim_upper_threshold(GCDrainStackTargetSize * 2 + 1),
     _stack_trim_lower_threshold(GCDrainStackTargetSize),
     _trim_ticks(),
@@ -87,7 +87,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     ALLOCATION_FAILURE_INJECTOR_ONLY(_allocation_failure_inject_counter(0) COMMA)
     _evacuation_failed_info(),
     _evac_failure_regions(evac_failure_regions),
-    _evac_failure_enqueued_cards(0)
+    _evac_failure_marked_cards(0)
 {
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
@@ -146,15 +146,15 @@ size_t G1ParScanThreadState::lab_undo_waste_words() const {
 }
 
 size_t G1ParScanThreadState::num_pending_cards() const {
-  return _num_enqueued_as_dirty_cards + _evac_failure_enqueued_cards;
+  return _num_marked_as_dirty_cards + _evac_failure_marked_cards;
 }
 
-size_t G1ParScanThreadState::num_enqueued_cards() const {
-  return num_pending_cards() + _num_enqueued_as_into_cset_cards;
+size_t G1ParScanThreadState::num_marked_cards() const {
+  return num_pending_cards() + _num_marked_as_into_cset_cards;
 }
 
-size_t G1ParScanThreadState::evac_failure_enqueued_cards() const {
-  return _evac_failure_enqueued_cards;
+size_t G1ParScanThreadState::evac_failure_marked_cards() const {
+  return _evac_failure_marked_cards;
 }
 
 #ifdef ASSERT
@@ -236,7 +236,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayState* state, bool stole
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, _task_queue, stolen);
   G1HeapRegionAttr dest_attr = _g1h->region_attr(to_array);
-  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor());
+  G1SkipCardMarkSetter x(&_scanner, dest_attr.is_new_survivor());
   // Process claimed task.
   to_array->oop_iterate_range(&_scanner,
                               checked_cast<int>(claim._start),
@@ -257,12 +257,12 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
     // The source array is unused when processing states.
     _partial_array_splitter.start(_task_queue, nullptr, to_array, array_length);
 
-  // Skip the card enqueue iff the object (to_array) is in survivor region.
+  // Skip the card mark iff the object (to_array) is in survivor region.
   // However, G1HeapRegion::is_survivor() is too expensive here.
   // Instead, we use dest_attr.is_young() because the two values are always
   // equal: successfully allocated young regions must be survivor regions.
   assert(dest_attr.is_young() == _g1h->heap_region_containing(to_array)->is_survivor(), "must be");
-  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
+  G1SkipCardMarkSetter x(&_scanner, dest_attr.is_young());
   // Process the initial chunk.  No need to process the type in the
   // klass, as it will already be handled by processing the built-in
   // module.
@@ -539,12 +539,12 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       _string_dedup_requests.add(old);
     }
 
-    // Skip the card enqueue iff the object (obj) is in survivor region.
+    // Skip the card mark iff the object (obj) is in survivor region.
     // However, G1HeapRegion::is_survivor() is too expensive here.
     // Instead, we use dest_attr.is_young() because the two values are always
     // equal: successfully allocated young regions must be survivor regions.
     assert(dest_attr.is_young() == _g1h->heap_region_containing(obj)->is_survivor(), "must be");
-    G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
+    G1SkipCardMarkSetter x(&_scanner, dest_attr.is_young());
     obj->oop_iterate_backwards(&_scanner, klass);
     return obj;
   } else {
@@ -593,17 +593,17 @@ void G1ParScanThreadStateSet::flush_stats() {
     size_t lab_undo_waste_bytes = pss->lab_undo_waste_words() * HeapWordSize;
     size_t copied_bytes = pss->flush_stats(_surviving_young_words_total, _num_workers) * HeapWordSize;
     size_t pending_cards = pss->num_pending_cards();
-    size_t to_young_gen_cards = pss->num_enqueued_cards() - pss->num_pending_cards();
-    size_t evac_fail_enqueued_cards = pss->evac_failure_enqueued_cards();
-    size_t enqueued_cards = pss->num_enqueued_cards();
+    size_t to_young_gen_cards = pss->num_marked_cards() - pss->num_pending_cards();
+    size_t evac_fail_marked_cards = pss->evac_failure_marked_cards();
+    size_t marked_cards = pss->num_marked_cards();
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, copied_bytes, G1GCPhaseTimes::MergePSSCopiedBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_waste_bytes, G1GCPhaseTimes::MergePSSLABWasteBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_undo_waste_bytes, G1GCPhaseTimes::MergePSSLABUndoWasteBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, pending_cards, G1GCPhaseTimes::MergePSSPendingCards);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, to_young_gen_cards, G1GCPhaseTimes::MergePSSToYoungGenCards);
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, evac_fail_enqueued_cards, G1GCPhaseTimes::MergePSSEvacFailExtra);
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, enqueued_cards, G1GCPhaseTimes::MergePSSEnqueued);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, evac_fail_marked_cards, G1GCPhaseTimes::MergePSSEvacFail);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, marked_cards, G1GCPhaseTimes::MergePSSMarked);
 
     delete pss;
     _states[worker_id] = nullptr;
@@ -647,7 +647,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // existing closure to scan evacuated objects; since we are iterating from a
     // collection set region (i.e. never a Survivor region), we always need to
     // gather cards for this case.
-    G1SkipCardEnqueueSetter x(&_scanner, false /* skip_card_enqueue */);
+    G1SkipCardMarkSetter x(&_scanner, false /* skip_card_mark */);
     old->oop_iterate_backwards(&_scanner);
 
     return old;

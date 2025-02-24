@@ -92,12 +92,11 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
 
   G1CardTableClaimTable _card_state;
   // The complete set of regions which card table needs to be cleared at the end
-  // of GC because we scribbled over these card tables.
+  // of GC because we scribbled over these card table entries.
   //
   // Regions may be added for two reasons:
-  // - they were part of the collection set: they may contain g1_young_card_val
-  // or regular card marks that we never scan so we must always clear their card
-  // table
+  // - they were part of the collection set: they may contain regular card marks
+  // that we never scan so we must always clear their card table.
   // - or in case g1 does an optional evacuation pass, g1 marks the cards in there
   // as g1_scanned_card_val. If G1 only did an initial evacuation pass, the
   // scanning already cleared these cards. In that case they are not in this set
@@ -1393,10 +1392,6 @@ G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_
   // the card being stale, we can't simply ignore it, because we've
   // already marked the card as cleaned, so taken responsibility for
   // ensuring the card gets scanned.
-  //
-  // However, the card might have gotten re-dirtied and re-enqueued
-  // while we worked.  (In fact, it's pretty likely.)
-
   return CouldNotParse;
 }
 

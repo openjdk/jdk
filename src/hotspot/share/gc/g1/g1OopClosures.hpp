@@ -86,19 +86,19 @@ public:
 
 // This closure is applied to the fields of the objects that have just been copied during evacuation.
 class G1ScanEvacuatedObjClosure : public G1ScanClosureBase {
-  friend class G1SkipCardEnqueueSetter;
+  friend class G1SkipCardMarkSetter;
 
-  enum SkipCardEnqueueTristate {
+  enum SkipCardMarkTristate {
     False = 0,
     True,
     Uninitialized
   };
 
-  SkipCardEnqueueTristate _skip_card_enqueue;
+  SkipCardMarkTristate _skip_card_mark;
 
 public:
   G1ScanEvacuatedObjClosure(G1CollectedHeap* g1h, G1ParScanThreadState* par_scan_state) :
-    G1ScanClosureBase(g1h, par_scan_state), _skip_card_enqueue(Uninitialized) { }
+    G1ScanClosureBase(g1h, par_scan_state), _skip_card_mark(Uninitialized) { }
 
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(oop* p)          { do_oop_work(p); }
@@ -109,18 +109,18 @@ public:
   }
 };
 
-// RAII object to properly set the _skip_card_enqueue field in G1ScanEvacuatedObjClosure.
-class G1SkipCardEnqueueSetter : public StackObj {
+// RAII object to properly set the _skip_card_mark field in G1ScanEvacuatedObjClosure.
+class G1SkipCardMarkSetter : public StackObj {
   G1ScanEvacuatedObjClosure* _closure;
 
 public:
-  G1SkipCardEnqueueSetter(G1ScanEvacuatedObjClosure* closure, bool skip_card_enqueue) : _closure(closure) {
-    assert(_closure->_skip_card_enqueue == G1ScanEvacuatedObjClosure::Uninitialized, "Must not be set");
-    _closure->_skip_card_enqueue = skip_card_enqueue ? G1ScanEvacuatedObjClosure::True : G1ScanEvacuatedObjClosure::False;
+  G1SkipCardMarkSetter(G1ScanEvacuatedObjClosure* closure, bool skip_card_mark) : _closure(closure) {
+    assert(_closure->_skip_card_mark == G1ScanEvacuatedObjClosure::Uninitialized, "Must not be set");
+    _closure->_skip_card_mark = skip_card_mark ? G1ScanEvacuatedObjClosure::True : G1ScanEvacuatedObjClosure::False;
   }
 
-  ~G1SkipCardEnqueueSetter() {
-    DEBUG_ONLY(_closure->_skip_card_enqueue = G1ScanEvacuatedObjClosure::Uninitialized;)
+  ~G1SkipCardMarkSetter() {
+    DEBUG_ONLY(_closure->_skip_card_mark = G1ScanEvacuatedObjClosure::Uninitialized;)
   }
 };
 
