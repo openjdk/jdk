@@ -94,6 +94,7 @@ public final class Verify {
             case long[]    x -> checkEQimpl(x, (long[])b,                  context);
             case float[]   x -> checkEQimpl(x, (float[])b,                 context);
             case double[]  x -> checkEQimpl(x, (double[])b,                context);
+            case boolean[] x -> checkEQimpl(x, (boolean[])b,               context);
             case MemorySegment x -> checkEQimpl(x, (MemorySegment) b,      context);
             case Exception x -> checkEQimpl(x, (Exception) b,              context);
             default -> {
@@ -286,6 +287,23 @@ public final class Verify {
      */
     private static void checkEQimpl(double[] a, double[] b, String context) {
         checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), context);
+    }
+
+    /**
+     * Verify that the content of two boolean arrays is identical.
+     */
+    private static void checkEQimpl(boolean[] a, boolean[] b, String context) {
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " " + context);
+            throw new VerifyException("Object array length mismatch.");
+        }
+
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + " " + context);
+                throw new VerifyException("Boolean array value mismatch.");
+            }
+        }
     }
 
     /**

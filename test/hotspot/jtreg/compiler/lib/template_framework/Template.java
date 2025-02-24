@@ -154,6 +154,45 @@ public interface Template {
     }
 
     /**
+     * Interface for function with three arguments.
+     *
+     * @param <T> Type of the first argument.
+     * @param <U> Type of the second argument.
+     * @param <V> Type of the third argument.
+     * @param <R> Type of the return value.
+     */
+    @FunctionalInterface
+    public interface TriFunction<T, U, V, R> {
+
+        /**
+         * Function definition for the three argument functions.
+         *
+         * @param t The first argument.
+         * @param u The second argument.
+         * @param v The third argument.
+         * @return Return value of the three argument function.
+         */
+        R apply(T t, U u, V v);
+    }
+
+    /**
+     * Creates a {@link Template} with three arguments.
+     * See {@link body} for more details about how to construct a {@link Template} with {@link Token}s.
+     *
+     * @param body The {@link TemplateBody} created by {@link Template#body}.
+     * @param <A> Type of the first argument.
+     * @param arg0Name The name of the first argument for hashtag replacement.
+     * @param <B> Type of the second argument.
+     * @param arg1Name The name of the second argument for hashtag replacement.
+     * @param <C> Type of the third argument.
+     * @param arg2Name The name of the third argument for hashtag replacement.
+     * @return A {@link Template} with three arguments.
+     */
+    static <A, B, C> ThreeArgs<A, B, C> make(String arg0Name, String arg1Name, String arg2Name, TriFunction<A, B, C, TemplateBody> body) {
+        return new ThreeArgs<>(arg0Name, arg1Name, arg2Name, body);
+    }
+
+    /**
      * A {@link Template} with no arguments.
      *
      * @param function The {@link Supplier} that creates the {@link TemplateBody}.
@@ -230,6 +269,39 @@ public interface Template {
          */
         public TemplateWithArgs withArgs(A a, B b) {
             return new TemplateWithArgs.TwoArgsUse<>(this, a, b);
+        }
+    }
+
+    /**
+     * A {@link Template} with three arguments.
+     *
+     * @param arg0Name The name of the first argument, used for hashtag replacements in the {@link Template}.
+     * @param arg1Name The name of the second argument, used for hashtag replacements in the {@link Template}.
+     * @param arg2Name The name of the third argument, used for hashtag replacements in the {@link Template}.
+     * @param <A> The type of the first argument.
+     * @param <B> The type of the second argument.
+     * @param <C> The type of the third argument.
+     * @param function The function with three arguments that creates the {@link TemplateBody} given the template arguments.
+     */
+    record ThreeArgs<A, B, C>(String arg0Name, String arg1Name, String arg2Name,
+                              TriFunction<A, B, C, TemplateBody> function) implements Template {
+        TemplateBody instantiate(A a, B b, C c) {
+            return function.apply(a, b, c);
+        }
+
+        /**
+         * Creates a {@link TemplateWithArgs} which can be used as a {@link Token} inside
+         * a {@link Template} for nested code generation, and it can also be used with
+         * {@link TemplateWithArgs#render} to render the template to a {@link String}
+         * directly.
+         *
+         * @param a The value for the first argument.
+         * @param b The value for the second argument.
+         * @param c The value for the third argument.
+         * @return The template all (three) arguments applied.
+         */
+        public TemplateWithArgs withArgs(A a, B b, C c) {
+            return new TemplateWithArgs.ThreeArgsUse<>(this, a, b, c);
         }
     }
 

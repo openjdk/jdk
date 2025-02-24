@@ -74,6 +74,7 @@ public class TestTemplate {
         testBodyTokens();
         testWithOneArguments();
         testWithTwoArguments();
+        testWithThreeArguments();
         testNested();
         testHookSimple();
         testHookIsSet();
@@ -204,6 +205,32 @@ public class TestTemplate {
         checkEQ(template4.withArgs(0,   1  ).render(), "start 0 1 end");
         checkEQ(template4.withArgs(22,  33 ).render(), "start 22 33 end");
         checkEQ(template4.withArgs(444, 555).render(), "start 444 555 end");
+    }
+
+    public static void testWithThreeArguments() {
+        // Capture 3 String arguments via String names.
+        var template1 = Template.make("a1", "a2", "a3", (String a1, String a2, String a3) -> body("start #a1 #a2 #a3 end"));
+        checkEQ(template1.withArgs("x", "y", "z").render(), "start x y z end");
+        checkEQ(template1.withArgs("a", "b", "c").render(), "start a b c end");
+        checkEQ(template1.withArgs("",  "", "" ).render(),  "start    end");
+
+        // Capture 3 String arguments via typed lambda arguments.
+        var template2 = Template.make("a1", "a2", "a3", (String a1, String a2, String a3) -> body("start ", a1, " ", a2, " ", a3, " end"));
+        checkEQ(template1.withArgs("x", "y", "z").render(), "start x y z end");
+        checkEQ(template1.withArgs("a", "b", "c").render(), "start a b c end");
+        checkEQ(template1.withArgs("",  "", "" ).render(),  "start    end");
+
+        // Capture 3 Integer arguments via String names.
+        var template3 = Template.make("a1", "a2", "a3", (Integer a1, Integer a2, Integer a3) -> body("start #a1 #a2 #a3 end"));
+        checkEQ(template3.withArgs(0,   1  , 2  ).render(), "start 0 1 2 end");
+        checkEQ(template3.withArgs(22,  33 , 44 ).render(), "start 22 33 44 end");
+        checkEQ(template3.withArgs(444, 555, 666).render(), "start 444 555 666 end");
+
+        // Capture 2 Integer arguments via templated lambda arguments.
+        var template4 = Template.make("a1", "a2", "a3", (Integer a1, Integer a2, Integer a3) -> body("start ", a1, " ", a2, " ", a3, " end"));
+        checkEQ(template3.withArgs(0,   1  , 2  ).render(), "start 0 1 2 end");
+        checkEQ(template3.withArgs(22,  33 , 44 ).render(), "start 22 33 44 end");
+        checkEQ(template3.withArgs(444, 555, 666).render(), "start 444 555 666 end");
     }
 
     public static void testNested() {

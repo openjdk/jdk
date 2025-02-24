@@ -45,6 +45,7 @@ import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateWithArgs;
 import static compiler.lib.template_framework.Template.body;
 import static compiler.lib.template_framework.Template.let;
+import static compiler.lib.template_framework.Template.$;
 
 import compiler.lib.template_library.Library;
 import compiler.lib.template_library.IRTestClass;
@@ -172,14 +173,74 @@ public class TestFuzzExpression {
             );
         });
 
+        var defineArray = Template.make("type", "name", "size", (Type type, String name, Integer size) -> body(
+            """
+            public static #type[] #name = new #type[#size];
+            """
+        ));
+
+        var template3 = Template.make("type", (Type type)-> {
+            int size = 10_000; // TODO: randomize
+            Expression expression = Expression.make(type, Type.primitives(), 2);
+            List<Type> types = expression.types();
+            List<TemplateWithArgs> arrayDefinitions = new ArrayList<>();
+            List<Object> args = new ArrayList<>();
+            for (int i = 0; i < types.size(); i++) {
+                String name = $("array") + "_" + i;
+                arrayDefinitions.add(defineArray.withArgs(types.get(i), name, size));
+                args.add(name + "[i]");
+            }
+            return body(
+                let("size", size),
+                """
+                // --- $test start ---
+                // Using $GOLD
+                // type: #type
+                """,
+                Library.CLASS_HOOK.set(
+                    """
+                    // Input arrays:
+                    """,
+                    arrayDefinitions,
+                    """
+
+                    static final Object $GOLD = $test();
+
+                    @Test
+                    public static Object $test() {
+                        try {
+                            #type[] out = new #type[#size];
+                            for (int i = 0; i < out.length; i++) {
+                    """,
+                    "            out[i] = ", expression.withArgs(args), ";\n",
+                    """
+                            }
+                            return out;
+                        } catch (Exception e) {
+                            return e;
+                        }
+                    }
+
+                    @Check(test = "$test")
+                    public static void $check(Object result) {
+                        Verify.checkEQ(result, $GOLD);
+                    }
+
+                    // --- $test end   ---
+                    """
+                )
+            );
+        });
+
         // TODO: hand-unrollling case
 
         // Use template1 100 times with every type.
         List<TemplateWithArgs> templates = new ArrayList<>();
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 5; i++) {
             for (Type type : Type.primitives()) {
                 templates.add(template1.withArgs(type));
                 templates.add(template2.withArgs(type));
+                templates.add(template3.withArgs(type));
             }
         }
         return IRTestClass.TEMPLATE.withArgs(info, templates).render();

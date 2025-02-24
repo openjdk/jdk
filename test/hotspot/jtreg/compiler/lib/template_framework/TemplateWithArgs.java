@@ -30,7 +30,8 @@ package compiler.lib.template_framework;
 public sealed abstract class TemplateWithArgs implements Token
                                               permits TemplateWithArgs.ZeroArgsUse,
                                                       TemplateWithArgs.OneArgsUse,
-                                                      TemplateWithArgs.TwoArgsUse
+                                                      TemplateWithArgs.TwoArgsUse,
+                                                      TemplateWithArgs.ThreeArgsUse
 {
     private TemplateWithArgs() {}
 
@@ -107,6 +108,40 @@ public sealed abstract class TemplateWithArgs implements Token
         public void visitArguments(ArgumentVisitor visitor) {
             visitor.visit(twoArgs.arg0Name(), a);
             visitor.visit(twoArgs.arg1Name(), b);
+        }
+    }
+
+    /**
+     * Represents a three-argument {@link Template} with applied arguments, ready for instantiation
+     * either as a {@link Token} inside another {@link Template} or with {@link render}.
+     *
+     * @param <A> The type of the first argument.
+     * @param <B> The type of the second argument.
+     * @param <C> The type of the second argument.
+     */
+    public static final class ThreeArgsUse<A, B, C> extends TemplateWithArgs implements Token {
+        private final Template.ThreeArgs<A, B, C> threeArgs;
+        private final A a;
+        private final B b;
+        private final C c;
+
+        ThreeArgsUse(Template.ThreeArgs<A, B, C> threeArgs, A a, B b, C c) {
+            this.threeArgs = threeArgs;
+            this.a = a;
+            this.b = b;
+            this.c = c;
+        }
+
+        @Override
+        public TemplateBody instantiate() {
+            return threeArgs.instantiate(a, b, c);
+        }
+
+        @Override
+        public void visitArguments(ArgumentVisitor visitor) {
+            visitor.visit(threeArgs.arg0Name(), a);
+            visitor.visit(threeArgs.arg1Name(), b);
+            visitor.visit(threeArgs.arg2Name(), c);
         }
     }
 
