@@ -76,6 +76,7 @@ public class TestTemplate {
         testWithTwoArguments();
         testNested();
         testHookSimple();
+        testHookIsSet();
         testHookNested();
         testHookWithNestedTemplates();
         testHookRecursion();
@@ -97,6 +98,7 @@ public class TestTemplate {
         expectRendererException(() -> setFuelCost(1.0f),                  "A Template method such as");
         expectRendererException(() -> weighNames(myInt, true),            "A Template method such as");
         expectRendererException(() -> sampleName(myInt, true),            "A Template method such as");
+        expectRendererException(() -> (new Hook("abc")).isSet(),          "A Template method such as");
         expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
         expectRendererException(() -> testFailingSample(), "No variable of type 'int'.");
         expectRendererException(() -> testFailingHashtag1(), "Duplicate hashtag replacement for #a");
@@ -266,6 +268,39 @@ public class TestTemplate {
             {
             Hello
             World
+            }""";
+        checkEQ(code, expected);
+    }
+
+    public static void testHookIsSet() {
+        var hook1 = new Hook("Hook1");
+
+        var template0 = Template.make(() -> body("isSet: ", hook1.isSet(), "\n"));
+
+        var template1 = Template.make(() -> body("Hello\n", template0.withArgs()));
+
+        var template2 = Template.make(() -> body(
+            "{\n",
+            template0.withArgs(),
+            hook1.set(
+                "World\n",
+                template0.withArgs(),
+                hook1.insert(template1.withArgs())
+	    ),
+            template0.withArgs(),
+            "}"
+        ));
+
+        String code = template2.withArgs().render();
+        String expected =
+            """
+            {
+            isSet: false
+            Hello
+            isSet: true
+            World
+            isSet: true
+            isSet: false
             }""";
         checkEQ(code, expected);
     }

@@ -89,4 +89,13 @@ public record Hook(String name) {
     public Token insert(TemplateWithArgs templateWithArgs) {
         return new HookInsertToken(this, templateWithArgs);
     }
+
+    /**
+     * Checks if the {@link Hook} was {@link Hook#set} for the current scope or an outer scope.
+     *
+     * @return If the {@link Hook} was {@link Hook#set} for the current scope or an outer scope.
+     */
+    public boolean isSet() {
+        return Renderer.getCurrent().isSet(this);
+    }
 }

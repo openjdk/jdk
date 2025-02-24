@@ -50,12 +50,15 @@ public record Value(Object defTokens, Object useTokens) {
 
     public static Value makeRandom(Type type) {
         // TODO: more cases
-        // Read existing Names
         // Method argument Names?
-        // Create new Name: field or variable
+
+        // Load from existing Name (e.g. variable or field).
         if (RANDOM.nextInt(3) == 0 && weighNames(type, false) > 0) {
             Name name = sampleName(type, false);
             return fromUseToken(name.name());
+        }
+        // Define new field, load from it.
+        if (RANDOM.nextInt(4) == 0 && Library.CLASS_HOOK.isSet()) {
         }
         return fromUseToken(type.con());
     }

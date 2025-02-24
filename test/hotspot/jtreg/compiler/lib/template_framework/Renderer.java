@@ -286,14 +286,15 @@ class Renderer {
         );
     }
 
+    boolean isSet(Hook hook) {
+        return currentCodeFrame.codeFrameForHook(hook) != null;
+    }
+
     private CodeFrame codeFrameForHook(Hook hook) {
-        CodeFrame codeFrame = currentCodeFrame;
-        while (codeFrame != null) {
-            if (codeFrame.hasHook(hook)) {
-                return codeFrame;
-            }
-            codeFrame = codeFrame.parent;
+        CodeFrame codeFrame = currentCodeFrame.codeFrameForHook(hook);
+        if (codeFrame == null) {
+            throw new RendererException("Hook '" + hook.name() + "' was referenced but not found!");
         }
-        throw new RendererException("Hook '" + hook.name() + "' was referenced but not found!");
+        return codeFrame;
     }
 }

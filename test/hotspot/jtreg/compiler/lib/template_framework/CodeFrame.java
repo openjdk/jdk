@@ -119,6 +119,17 @@ class CodeFrame {
         return hookCodeLists.containsKey(hook);
     }
 
+    CodeFrame codeFrameForHook(Hook hook) {
+        CodeFrame current = this;
+        while (current != null) {
+            if (current.hasHook(hook)) {
+                return current;
+            }
+            current = current.parent;
+        }
+        return null;
+    }
+
     void addName(Name name) {
         names.add(name);
     }
