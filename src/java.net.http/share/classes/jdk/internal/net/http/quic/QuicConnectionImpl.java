@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -331,7 +331,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         this.dbgTag = dbgTag(quicInstance, logTag);
         this.congestionController = new QuicRenoCongestionController(dbgTag);
         this.originalVersion = this.quicVersion = firstFlightVersion == null
-                ? QuicVersion.lowestOf(quicInstance.getAvailableVersions())
+                ? QuicVersion.firstFlightVersion(quicInstance.getAvailableVersions())
                 : firstFlightVersion;
         final boolean isClientConn = isClientConnection();
         this.peerConnIdManager = new PeerConnIdManager(this, dbgTag);

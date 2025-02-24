@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,14 +34,13 @@ import java.util.Optional;
  */
 public enum QuicVersion {
     // the version numbers are defined in their respective RFCs
-    QUIC_V1(1, 1), // RFC-9000
-    QUIC_V2(0x6b3343cf, 2); // RFC 9369
+    QUIC_V1(1), // RFC-9000
+    QUIC_V2(0x6b3343cf); // RFC 9369
 
     private final int versionNumber;
-    private final int inception;
-    private QuicVersion(final int versionNumber, final int inception) {
+
+    private QuicVersion(final int versionNumber) {
         this.versionNumber = versionNumber;
-        this.inception = inception;
     }
 
     /**
@@ -53,9 +52,9 @@ public enum QuicVersion {
 
     /**
      * @param versionNumber The version number
-     * {@return the QuicVersion corresponding to the {@code versionNumber} or
-     * {@link Optional#empty() an empty Optional} if the {@code versionNumber}
-     * doesn't correspond to a Quic version}
+     *                      {@return the QuicVersion corresponding to the {@code versionNumber} or
+     *                      {@link Optional#empty() an empty Optional} if the {@code versionNumber}
+     *                      doesn't correspond to a Quic version}
      */
     public static Optional<QuicVersion> of(int versionNumber) {
         for (QuicVersion qv : QuicVersion.values()) {
@@ -66,26 +65,32 @@ public enum QuicVersion {
         return Optional.empty();
     }
 
-    private int inception() {
-        return this.inception;
-    }
-
-    public static QuicVersion lowestOf(final Collection<QuicVersion> quicVersions) {
+    /**
+     * From among the {@code quicVersions}, selects a {@code QuicVersion} to be used in the
+     * first packet during connection initiation.
+     *
+     * @param quicVersions the available QUIC versions
+     * @return the QUIC version to use in the first packet
+     * @throws NullPointerException     if {@code quicVersions} is null or any element
+     *                                  in it is null
+     * @throws IllegalArgumentException if {@code quicVersions} is empty
+     */
+    public static QuicVersion firstFlightVersion(final Collection<QuicVersion> quicVersions) {
         Objects.requireNonNull(quicVersions);
         if (quicVersions.isEmpty()) {
             throw new IllegalArgumentException("Empty quic versions");
         }
-        final QuicVersion least;
         if (quicVersions.size() == 1) {
-            least = quicVersions.iterator().next();
-        } else {
-            least = quicVersions.stream().filter(Objects::nonNull)
-                    .min(Comparator.comparingInt(QuicVersion::inception)).orElse(null);
+            return quicVersions.iterator().next();
         }
-        if (least == null) {
-            // this means all items in that collection were null
-            throw new IllegalArgumentException("null quic versions");
+        for (final QuicVersion version : quicVersions) {
+            if (version == QUIC_V1) {
+                // we always prefer QUIC v1 for first flight version
+                return QUIC_V1;
+            }
         }
-        return least;
+        // the given versions did not have QUIC v1, which implies the
+        // only available first flight version is QUIC v2
+        return QUIC_V2;
     }
 }
