@@ -246,7 +246,7 @@ public class TKitTest extends JUnitAdapter {
                     TKit.assertUnexpected("Exception expected");
                 } catch (Exception ex) {
                     TKit.assertTrue(expectedExceptionClass.isInstance(ex),
-                            String.format("Check exception [%s] is instance of %s class", ex, expectedExceptionClass));
+                            String.format("Check exception [%s] is instance of %s", ex, expectedExceptionClass));
                 }
             } else {
                 final var tempPath = createTempPath.apply(role);
