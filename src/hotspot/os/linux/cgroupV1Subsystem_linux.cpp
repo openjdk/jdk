@@ -37,6 +37,8 @@
 /*
  * Set directory to subsystem specific files based
  * on the contents of the mountinfo and cgroup files.
+ * When runs in a container, the method handles the case
+ * when a process is moved between cgroups.
  */
 void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   if (_cgroup_path != nullptr) {
