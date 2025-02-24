@@ -45,8 +45,8 @@ import java.io.UnsupportedEncodingException;
  *
  * <h2>Subclass Implementation Notes</h2>
  *
- * When implementing new {@code Handler} subclasses, it is important to
- * understand the potential effects of synchronization.
+ * @implNote When implementing new {@code Handler} subclasses, it is important
+ * to understand the potential effects of synchronization.
  * <p>
  * Logging can occur concurrently in many threads, so a general principle
  * is to synchronize as little as necessary to minimize thread contention.
@@ -62,9 +62,9 @@ import java.io.UnsupportedEncodingException;
  * {@link #isLoggable(LogRecord)} while allowing code synchronized on the
  * {@code Handler} instance to set a new log level.
  * <p>
- * Another principle is to avoid synchronizing {@code Handler} instances (or
- * holding any other locks) while processing user-provided arguments, such as
- * {@link LogRecord} parameters.
+ * @implNote Another principle is to avoid synchronizing {@code Handler}
+ * instances (or holding any other locks) while processing user-provided
+ * arguments, such as {@link LogRecord} parameters.
  * <p>
  * This applies most directly to the {@link #publish(LogRecord)} method, where
  * user arguments are processed. Holding a lock when calling {@code toString()}
@@ -161,8 +161,8 @@ public abstract class Handler {
      * The {@code Handler}  is responsible for formatting the message, when and
      * if necessary.  The formatting should include localization.
      * <p>
-     * Implementations of this method should avoid holding any locks around the
-     * formatting of {@code LogRecord}.
+     * @implNote Implementations of this method should avoid holding any locks
+     * around the formatting of {@code LogRecord}.
      *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
