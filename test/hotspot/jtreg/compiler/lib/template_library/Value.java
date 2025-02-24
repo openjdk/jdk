@@ -26,15 +26,23 @@ package compiler.lib.template_library;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashSet;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.Name;
 import compiler.lib.template_framework.TemplateWithArgs;
 import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.addName;
+import static compiler.lib.template_framework.Template.weighNames;
+import static compiler.lib.template_framework.Template.sampleName;
 
 /**
  * TODO: description
+ * How are we allowed to use this? To make sure that the Names are available!
  */
 public record Value(Object defTokens, Object useTokens) {
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     public static Value fromUseToken(Object useToken) {
         return new Value("", useToken);
@@ -42,6 +50,13 @@ public record Value(Object defTokens, Object useTokens) {
 
     public static Value makeRandom(Type type) {
         // TODO: more cases
+        // Read existing Names
+        // Method argument Names?
+        // Create new Name: field or variable
+        if (RANDOM.nextInt(3) == 0 && weighNames(type, false) > 0) {
+            Name name = sampleName(type, false);
+            return fromUseToken(name.name());
+        }
         return fromUseToken(type.con());
     }
 }

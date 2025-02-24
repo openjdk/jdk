@@ -28,10 +28,9 @@ import java.util.List;
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.RestrictableGenerator;
 
-import compiler.lib.template_library.Type;
 import compiler.lib.template_library.Operation;
 
-public final class IntType extends Type {
+public final class IntType extends PrimitiveType {
     public static final IntType INSTANCE = new IntType();
     private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
 

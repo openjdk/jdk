@@ -25,6 +25,8 @@ package compiler.lib.template_library;
 
 import java.util.List;
 
+import compiler.lib.template_framework.Name;
+
 import compiler.lib.template_library.types.IntType;
 import compiler.lib.template_library.types.LongType;
 import compiler.lib.template_library.types.FloatType;
@@ -37,7 +39,7 @@ import compiler.lib.template_library.types.BooleanType;
  *
  * TODO
  */
-public abstract class Type {
+public abstract class Type implements Name.Type {
 
     public static final List<Type> primitives() {
         return List.of(

@@ -28,10 +28,9 @@ import java.util.List;
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.Generator;
 
-import compiler.lib.template_library.Type;
 import compiler.lib.template_library.Operation;
 
-public final class DoubleType extends Type {
+public final class DoubleType extends PrimitiveType {
     public static final DoubleType INSTANCE = new DoubleType();
     private static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
 

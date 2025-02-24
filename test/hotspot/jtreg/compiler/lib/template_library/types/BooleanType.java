@@ -28,10 +28,9 @@ import java.util.List;
 import java.util.Random;
 import jdk.test.lib.Utils;
 
-import compiler.lib.template_library.Type;
 import compiler.lib.template_library.Operation;
 
-public final class BooleanType extends Type {
+public final class BooleanType extends PrimitiveType {
     public static final BooleanType INSTANCE = new BooleanType();
     private static final Random RANDOM = Utils.getRandomInstance();
 

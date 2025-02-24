@@ -28,10 +28,9 @@ import java.util.List;
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.Generator;
 
-import compiler.lib.template_library.Type;
 import compiler.lib.template_library.Operation;
 
-public final class FloatType extends Type {
+public final class FloatType extends PrimitiveType {
     public static final FloatType INSTANCE = new FloatType();
     private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
 

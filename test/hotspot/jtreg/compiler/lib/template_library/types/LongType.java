@@ -28,10 +28,9 @@ import java.util.List;
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.RestrictableGenerator;
 
-import compiler.lib.template_library.Type;
 import compiler.lib.template_library.Operation;
 
-public final class LongType extends Type {
+public final class LongType extends PrimitiveType {
     public static final LongType INSTANCE = new LongType();
     private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
 
