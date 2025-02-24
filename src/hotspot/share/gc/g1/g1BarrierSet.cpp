@@ -116,8 +116,19 @@ void G1BarrierSet::write_region(JavaThread* thread, MemRegion mr) {
     return;
   }
 
-  volatile CardValue* byte = _card_table->byte_for(mr.start());
-  CardValue* last_byte = _card_table->byte_for(mr.last());
+  // We need to make sure that we get the start/end byte information for the area
+  // to mark from the same card table to avoid getting confused in the mark loop
+  // further below - we might execute while the global card table is being switched.
+  //
+  // It does not matter which card table we write to: at worst we may write to the
+  // new card table (after the switching), which means that we will catch the
+  // marks next time.
+  // If we write to the old card table (after the switching, then the refinement
+  // table) the oncoming handshake will do the memory synchronization.
+  CardTable* card_table = Atomic::load(&_card_table);
+
+  volatile CardValue* byte = card_table->byte_for(mr.start());
+  CardValue* last_byte = card_table->byte_for(mr.last());
 
   // Dirty cards only if necessary.
   for (; byte <= last_byte; byte++) {
