@@ -3532,7 +3532,9 @@ void LIR_Assembler::inc_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LI
   }
 
   int ratio_shift = exact_log2(profile_capture_ratio);
-  int threshold = (1ull << 32) >> profile_capture_ratio;
+  int threshold = (1ull << 32) >> ratio_shift;
+
+  assert(threshold > 0, "must be");
 
   if (getenv("APH_TRACE")) {
     __ lea(temp, ExternalAddress((address)&ifoo));
