@@ -33,6 +33,7 @@ import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.Name;
 import compiler.lib.template_framework.TemplateWithArgs;
 import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.addName;
 import static compiler.lib.template_framework.Template.weighNames;
 import static compiler.lib.template_framework.Template.sampleName;
@@ -43,6 +44,7 @@ import static compiler.lib.template_framework.Template.sampleName;
  */
 public record Value(Object defTokens, Object useTokens) {
     private static final Random RANDOM = Utils.getRandomInstance();
+    private static int nextUniqueId = 0;
 
     public static Value fromUseToken(Object useToken) {
         return new Value("", useToken);
@@ -59,6 +61,11 @@ public record Value(Object defTokens, Object useTokens) {
         }
         // Define new field, load from it.
         if (RANDOM.nextInt(4) == 0 && Library.CLASS_HOOK.isSet()) {
+            String fieldName = $("field") + "_" + (nextUniqueId++);
+            Name name = new Name(fieldName, type, false, 1);
+            Object value = type.con();
+            TemplateWithArgs def = Library.defineField(name, true, value);
+            return new Value(def, fieldName);
         }
         return fromUseToken(type.con());
     }

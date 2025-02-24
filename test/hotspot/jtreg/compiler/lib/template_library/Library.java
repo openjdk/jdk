@@ -28,6 +28,12 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 import compiler.lib.template_framework.Hook;
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.Name;
+import compiler.lib.template_framework.TemplateWithArgs;
+import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.let;
+import static compiler.lib.template_framework.Template.addName;
 
 /**
  * TODO
@@ -47,5 +53,19 @@ public abstract class Library {
         if (list.isEmpty()) { return null; }
         int i = RANDOM.nextInt(list.size());
         return list.get(i);
+    }
+
+    public static TemplateWithArgs defineField(Name name, boolean isStatic, Object valueToken) {
+        var define = Template.make(() -> body(
+            let("static", isStatic ? "static" : ""),
+            let("type", name.type()),
+            let("name", name.name()),
+            "public #static #type #name = ", valueToken, ";\n",
+            addName(name)
+        ));
+        var template = Template.make(() -> body(
+            CLASS_HOOK.insert(define.withArgs())
+        ));
+        return template.withArgs();
     }
 } 
