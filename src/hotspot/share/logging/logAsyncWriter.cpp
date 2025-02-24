@@ -36,21 +36,21 @@ public:
   static Thread* current_holder() { return _holder; }
   ProducerLocker() {
     assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
-    _instance->_consumer_lock.lock();
+    _instance->_producer_lock.lock();
     _holder = Thread::current_or_null();
   }
 
   ~ProducerLocker() {
     assert(_holder == Thread::current_or_null(), "must be");
     _holder = nullptr;
-    _instance->_consumer_lock.unlock();
+    _instance->_producer_lock.unlock();
   }
 
   void notify() { _instance->_consumer_lock.notify(); }
   void wait() {
     Thread* saved_holder = _holder;
     _holder = nullptr;
-    _instance->_consumer_lock.wait(0/* no timeout */);
+    _instance->_producer_lock.wait(0/* no timeout */);
     _holder = saved_holder;
   }
 };
