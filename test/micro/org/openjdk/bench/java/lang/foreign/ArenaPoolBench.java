@@ -49,9 +49,9 @@ import java.util.concurrent.TimeUnit;
         "--enable-native-access=ALL-UNNAMED"})
 public class ArenaPoolBench {
 
-    private static final CarrierLocalArenaPools POOLS = CarrierLocalArenaPools.create(64, 8);
+    private static final CarrierLocalArenaPools POOLS = CarrierLocalArenaPools.create(32, 8);
 
-    @Param({"4", "16", "64", "512"})
+    @Param({"4", "64"})
     public int ELEM_SIZE;
 
     @Benchmark
@@ -66,6 +66,31 @@ public class ArenaPoolBench {
         try (var arena = POOLS.take()) {
             return arena.allocate(ELEM_SIZE).address();
         }
+
+    }
+
+    @Benchmark
+    public long confined2() {
+        long x;
+        try (var arena = Arena.ofConfined()) {
+            x = arena.allocate(ELEM_SIZE).address();
+            try (var arena2 = Arena.ofConfined()) {
+                x += arena2.allocate(ELEM_SIZE).address();
+            }
+        }
+        return x;
+    }
+
+    @Benchmark
+    public long pooled2() {
+        long x;
+        try (var arena = POOLS.take()) {
+            x = arena.allocate(ELEM_SIZE).address();
+            try (var arena2 = POOLS.take()) {
+                x += arena2.allocate(ELEM_SIZE).address();
+            }
+        }
+        return x;
     }
 
     @Fork(value = 3, jvmArgsAppend = "-Djmh.executor=VIRTUAL")

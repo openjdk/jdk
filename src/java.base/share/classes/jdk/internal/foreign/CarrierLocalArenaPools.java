@@ -91,17 +91,13 @@ public final class CarrierLocalArenaPools {
 
     private static sealed abstract class LocalArenaPoolImpl {
 
-        static final int AVAILABLE = 0;
-        static final int TAKEN = 1;
-
         // Hold a reference so that the arena is not GC:ed before the thread dies.
         @Stable
-        private final Arena originalArena;
+        final Arena originalArena;
         @Stable
-        private final MemorySegment recyclableSegment;
+        final MemorySegment recyclableSegment;
 
-        // Used both directly and reflectively
-        int segmentAvailability;
+        long sp;
 
         private LocalArenaPoolImpl(Arena originalArena,
                                    long byteSize,
@@ -110,13 +106,7 @@ public final class CarrierLocalArenaPools {
             this.recyclableSegment = originalArena.allocate(byteSize, byteAlignment);
         }
 
-        @ForceInline
-        public final Arena take() {
-            final Arena delegate = Arena.ofConfined();
-            return tryAcquireSegment()
-                    ? new SlicingArena(originalArena, (ArenaImpl) delegate, recyclableSegment)
-                    : delegate;
-        }
+        public abstract Arena take();
 
         void close() {
             // Do not close an automatic arena
@@ -125,17 +115,7 @@ public final class CarrierLocalArenaPools {
             }
         }
 
-        /**
-         * {@return {@code true } if the segment was acquired for exclusive use, {@code
-         * false} otherwise}
-         */
-        abstract boolean tryAcquireSegment();
-
-        /**
-         * Unconditionally releases the acquired segment if it was previously acquired,
-         * otherwise this is a no-op.
-         */
-        abstract void releaseSegment();
+        abstract void arenaClosed();
 
         /**
          * Thread safe implementation.
@@ -143,11 +123,17 @@ public final class CarrierLocalArenaPools {
         public static final class OfCarrier
                 extends LocalArenaPoolImpl {
 
+            static final int AVAILABLE = 0;
+            static final int TAKEN = 1;
+
             // Unsafe allows earlier use in the init sequence and
             // better start and warmup properties.
             static final Unsafe UNSAFE = Unsafe.getUnsafe();
             static final long SEG_AVAIL_OFFSET =
-                    UNSAFE.objectFieldOffset(LocalArenaPoolImpl.class, "segmentAvailability");
+                    UNSAFE.objectFieldOffset(OfCarrier.class, "segmentAvailability");
+
+            // Used reflectively
+            private int segmentAvailability;
 
             public OfCarrier(Arena originalArena,
                              long byteSize,
@@ -155,13 +141,33 @@ public final class CarrierLocalArenaPools {
                 super(originalArena, byteSize, byteAlignment);
             }
 
+            // If we are on a carrier thread, we can only provide a single arena that
+            // is using the recyclable segment. This is because a VT might be re-mounted
+            // on another carrier thread at any time. Keeping track of the open/closed
+            // arenas in such situation is slow.
+            @ForceInline
+            public Arena take() {
+                final Arena delegate = Arena.ofConfined();
+                return tryAcquireSegment()
+                        ? new CarrierSlicingArena(originalArena, (ArenaImpl) delegate, recyclableSegment)
+                        : delegate;
+            }
+
+            /**
+             * {@return {@code true } if the segment was acquired for exclusive use, {@code
+             * false} otherwise}
+             */
             @ForceInline
             boolean tryAcquireSegment() {
                 return UNSAFE.compareAndSetInt(this, SEG_AVAIL_OFFSET, AVAILABLE, TAKEN);
             }
 
+            /**
+             * Unconditionally releases the acquired segment if it was previously acquired,
+             * otherwise this is a no-op.
+             */
             @ForceInline
-            void releaseSegment() {
+            void arenaClosed() {
                 UNSAFE.putIntVolatile(this, SEG_AVAIL_OFFSET, AVAILABLE);
             }
         }
@@ -173,25 +179,29 @@ public final class CarrierLocalArenaPools {
         public static final class OfPlatform
                 extends LocalArenaPoolImpl {
 
+            private int openArenas;
+
             public OfPlatform(Arena originalArena,
                               long byteSize,
                               long byteAlignment) {
                 super(originalArena, byteSize, byteAlignment);
             }
 
+            // If we are on a non-carrier thread, several arenas can share the same
+            // recyclable segment as the current thread will never move.
             @ForceInline
-            boolean tryAcquireSegment() {
-                if (segmentAvailability == TAKEN) {
-                    return false;
-                } else {
-                    segmentAvailability = TAKEN;
-                    return true;
-                }
+            public Arena take() {
+                final Arena delegate = Arena.ofConfined();
+                openArenas++;
+                return new SlicingArena(originalArena, (ArenaImpl) delegate, recyclableSegment);
             }
 
             @ForceInline
-            void releaseSegment() {
-                segmentAvailability = AVAILABLE;
+            @Override
+            void arenaClosed() {
+                if (--openArenas == 0) {
+                    sp = 0;
+                }
             }
         }
 
@@ -201,7 +211,7 @@ public final class CarrierLocalArenaPools {
          * means allocation never fails due to the size and alignment of the backing
          * segment.
          */
-        private final class SlicingArena implements Arena, NoInitSegmentAllocator {
+        private sealed class SlicingArena implements Arena, NoInitSegmentAllocator {
 
             // In order to prevent use-after-free issues, we make sure the original arena
             // is reachable until the dying moments of a carrier thread AND remains
@@ -220,8 +230,6 @@ public final class CarrierLocalArenaPools {
             private final ArenaImpl delegate;
             @Stable
             private final MemorySegment segment;
-
-            private long sp = 0L;
 
             @ForceInline
             private SlicingArena(Arena originalArena,
@@ -248,20 +256,20 @@ public final class CarrierLocalArenaPools {
             @ForceInline
             public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
                 final long min = segment.address();
-                final long start = Utils.alignUp(min + sp, byteAlignment) - min;
+                final long start = Utils.alignUp(min + sp(), byteAlignment) - min;
                 if (start + byteSize <= segment.byteSize()) {
                     Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
                     final MemorySegment slice = segment.asSlice(start, byteSize, byteAlignment);
 
                     // We only need to do this once for VTs
-                    if (sp == 0 && !(scope() instanceof ConfinedSession)) {
+                    if (sp() == 0 && !(scope() instanceof ConfinedSession)) {
                         // This prevents the automatic original arena from being collected before
                         // the SlicingArena is closed. This case might otherwise happen if a reference
                         // is held to a reusable segment and its arena is not closed.
                         ((MemorySessionImpl) scope())
                                 .addCloseAction(new ReferenceHolder(originalArena));
                     }
-                    sp = start + byteSize;
+                    sp(start + byteSize);
                     return fastReinterpret(delegate, (NativeMemorySegmentImpl) slice, byteSize);
                 } else {
                     return delegate.allocateNoInit(byteSize, byteAlignment);
@@ -276,10 +284,42 @@ public final class CarrierLocalArenaPools {
                 // the segment still is in play if close() initially fails (e.g. is closed
                 // from a non-owner thread). Later on the close() method might be
                 // successfully re-invoked (e.g. from its owner thread).
-                LocalArenaPoolImpl.this.releaseSegment();
+                LocalArenaPoolImpl.this.arenaClosed();
+            }
+
+            long sp() {
+                return LocalArenaPoolImpl.this.sp;
+            }
+
+            void sp(long sp) {
+                LocalArenaPoolImpl.this.sp = sp;
             }
 
         }
+
+        private final class CarrierSlicingArena extends SlicingArena {
+
+            // Use a local stack pointer here as this state cannot be held in
+            // a carrier thread local (VT may be remounted).
+            private long sp;
+
+            private CarrierSlicingArena(Arena originalArena,
+                                        ArenaImpl delegate,
+                                        MemorySegment segment) {
+                super(originalArena, delegate, segment);
+            }
+
+            @Override
+            long sp() {
+                return this.sp;
+            }
+
+            @Override
+            void sp(long sp) {
+                this.sp = sp;
+            }
+        }
+
     }
 
     private record ReferenceHolder(Object ref) implements Runnable {

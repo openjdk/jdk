@@ -27,12 +27,10 @@
  * @summary Test TestCarrierLocalArenaPoolsStress
  * @library /test/lib
  * @modules java.base/jdk.internal.foreign
- * @modules java.base/jdk.internal.misc
  * @run junit TestCarrierLocalArenaPoolsStress
  */
 
 import jdk.internal.foreign.CarrierLocalArenaPools;
-import jdk.internal.misc.Unsafe;
 import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Arena;
@@ -52,7 +50,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class TestCarrierLocalArenaPoolsStress {
 
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final long POOL_SIZE = 64;
     private static final VarHandle LONG_HANDLE = JAVA_LONG.varHandle();
 
@@ -83,32 +80,24 @@ final class TestCarrierLocalArenaPoolsStress {
         System.out.println(duration(begin) + "DONE EXPANDING");
 
         // Just use one pool variant as testing here is fairly expensive.
-        //final CarrierLocalArenaPools pool = CarrierLocalArenaPools.create(POOL_SIZE);
+        final CarrierLocalArenaPools pool = CarrierLocalArenaPools.create(POOL_SIZE);
         // Make sure it works for both virtual and platform threads (as they are handled differently)
         for (var threadBuilder : List.of(Thread.ofVirtual(), Thread.ofPlatform())) {
             final int noThreads = threadBuilder instanceof Thread.Builder.OfVirtual ? 1024 : 32;
             System.out.println(duration(begin) + "CREATING " + noThreads + " THREADS USING " + threadBuilder);
             final Thread[] threads = IntStream.range(0, noThreads).mapToObj(_ ->
                     threadBuilder.start(() -> {
-                        /*final var seg = Arena.ofConfined().allocate(100);
-                        final Arena arena = new ReusingArena(seg);*/
                         final long threadId = Thread.currentThread().threadId();
                         while (!Thread.interrupted()) {
                             for (int i = 0; i < 1_000_000; i++) {
-                                //try (Arena arena = Arena.ofConfined()) {
-                                //try (Arena arena = pool.take()) {
+                                try (Arena arena = pool.take()) {
                                     // Try to assert no two threads get allocated the same memory region.
-                                /*
+
                                     final MemorySegment segment = arena.allocate(JAVA_LONG);
                                     LONG_HANDLE.setVolatile(segment, 0L, threadId);
                                     assertEquals(threadId, (long) LONG_HANDLE.getVolatile(segment, 0L));
-                                    */
-                                final long adr = UNSAFE.allocateMemory(POOL_SIZE);
-                                UNSAFE.putLongVolatile(null, adr, threadId);
-                                long v = UNSAFE.getLongVolatile(null, adr);
-                                assertEquals(threadId, v);
-                                UNSAFE.freeMemory(adr);
-                                //}
+
+                               }
                             }
                             Thread.yield(); // make sure the driver thread gets a chance.
                         }
@@ -142,30 +131,6 @@ final class TestCarrierLocalArenaPoolsStress {
         int nanos = duration.toNanosPart();
         return (Thread.currentThread().isVirtual() ? "VT: " : "PT: ") +
                 String.format("%3d:%09d ", seconds, nanos);
-    }
-
-    static final class ReusingArena implements Arena {
-
-        private final MemorySegment segment;
-
-        public ReusingArena(MemorySegment segment) {
-            this.segment = segment;
-        }
-
-        @Override
-        public MemorySegment allocate(long byteSize, long byteAlignment) {
-            return segment.asSlice(0, byteSize, byteAlignment);
-        }
-
-        @Override
-        public MemorySegment.Scope scope() {
-            return Arena.global().scope();
-        }
-
-        @Override
-        public void close() {
-
-        }
     }
 
 }
