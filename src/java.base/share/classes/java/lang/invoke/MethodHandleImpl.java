@@ -1343,7 +1343,6 @@ abstract class MethodHandleImpl {
         ARRAY_STORE,
         ARRAY_LENGTH,
         IDENTITY,
-        CONSTANT,
         NONE // no intrinsic associated
     }
 
@@ -2233,6 +2232,29 @@ abstract class MethodHandleImpl {
         return selectedCase.invokeWithArguments(args);
     }
 
+    // type is validated, value is not
+    static MethodHandle makeConstantReturning(Class<?> type, Object value) {
+        var callType = MethodType.methodType(type);
+        var basicType = BasicType.basicType(type);
+        var form = constantForm(basicType);
+
+        if (type.isPrimitive()) {
+            assert type != void.class;
+            var wrapper = Wrapper.forPrimitiveType(type);
+            var v = wrapper.convert(value, type); // throws CCE
+            return switch (wrapper) {
+                case INT    -> BoundMethodHandle.bindSingleI(callType, form, (int) v);
+                case LONG   -> BoundMethodHandle.bindSingleJ(callType, form, (long) v);
+                case FLOAT  -> BoundMethodHandle.bindSingleF(callType, form, (float) v);
+                case DOUBLE -> BoundMethodHandle.bindSingleD(callType, form, (double) v);
+                default -> BoundMethodHandle.bindSingleI(callType, form, ValueConversions.widenSubword(v));
+            };
+        }
+
+        var v = type.cast(value); // throws CCE
+        return BoundMethodHandle.bindSingleL(callType, form, v);
+    }
+
     // Indexes into constant method handles:
     static final int
             MH_cast                  =              0,
@@ -2302,60 +2324,5 @@ abstract class MethodHandleImpl {
             throw newInternalError(ex);
         }
         throw newInternalError("Unknown function index: " + idx);
-    }
-
-    static MethodHandle makeConstantI(Wrapper type, int value) {
-        try {
-            return makeIntrinsic((MethodHandle) boundSpecies(BasicType.I_TYPE).factory().invokeBasic(
-                    MethodType.methodType(type.primitiveType()),
-                    constantForm(BasicType.I_TYPE),
-                    value), Intrinsic.CONSTANT, value);
-        } catch (Throwable ex) {
-            throw uncaughtException(ex);
-        }
-    }
-
-    static MethodHandle makeConstantJ(long value) {
-        try {
-            return makeIntrinsic((MethodHandle) boundSpecies(BasicType.J_TYPE).factory().invokeBasic(
-                    MethodType.methodType(long.class),
-                    constantForm(BasicType.J_TYPE),
-                    value), Intrinsic.CONSTANT, value);
-        } catch (Throwable ex) {
-            throw uncaughtException(ex);
-        }
-    }
-
-    static MethodHandle makeConstantF(float value) {
-        try {
-            return makeIntrinsic((MethodHandle) boundSpecies(BasicType.F_TYPE).factory().invokeBasic(
-                    MethodType.methodType(float.class),
-                    constantForm(BasicType.F_TYPE),
-                    value), Intrinsic.CONSTANT, value);
-        } catch (Throwable ex) {
-            throw uncaughtException(ex);
-        }
-    }
-
-    static MethodHandle makeConstantD(double value) {
-        try {
-            return makeIntrinsic((MethodHandle) boundSpecies(BasicType.D_TYPE).factory().invokeBasic(
-                    MethodType.methodType(double.class),
-                    constantForm(BasicType.D_TYPE),
-                    value), Intrinsic.CONSTANT, value);
-        } catch (Throwable ex) {
-            throw uncaughtException(ex);
-        }
-    }
-
-    static MethodHandle makeConstantL(Class<?> type, Object value) {
-        try {
-            return makeIntrinsic(BoundMethodHandle.bindSingle(
-                    MethodType.methodType(type),
-                    constantForm(BasicType.L_TYPE),
-                    value), Intrinsic.CONSTANT, value);
-        } catch (Throwable ex) {
-            throw uncaughtException(ex);
-        }
     }
 }

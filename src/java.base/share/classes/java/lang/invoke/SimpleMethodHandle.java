@@ -32,6 +32,8 @@ import static java.lang.invoke.MethodHandleStatics.*;
 
 /**
  * A method handle whose behavior is determined only by its LambdaForm.
+ * Access to SimpleMethodHandle should ensure BoundMethodHandle is initialized
+ * first.
  * @author jrose
  */
 final class SimpleMethodHandle extends BoundMethodHandle {
@@ -68,42 +70,30 @@ final class SimpleMethodHandle extends BoundMethodHandle {
     @Override
     /*non-public*/
     final BoundMethodHandle copyWithExtendL(MethodType mt, LambdaForm lf, Object narg) {
-        return BoundMethodHandle.bindSingle(mt, lf, narg); // Use known fast path.
+        return BoundMethodHandle.bindSingleL(mt, lf, narg); // Use known fast path.
     }
+
     @Override
     /*non-public*/
     final BoundMethodHandle copyWithExtendI(MethodType mt, LambdaForm lf, int narg) {
-        try {
-            return (BoundMethodHandle) BMH_SPECIES.extendWith(I_TYPE).factory().invokeBasic(mt, lf, narg);
-        } catch (Throwable ex) {
-            throw uncaughtException(ex);
-        }
+        return BoundMethodHandle.bindSingleI(mt, lf, narg);
     }
+
     @Override
     /*non-public*/
     final BoundMethodHandle copyWithExtendJ(MethodType mt, LambdaForm lf, long narg) {
-        try {
-            return (BoundMethodHandle) BMH_SPECIES.extendWith(J_TYPE).factory().invokeBasic(mt, lf, narg);
-        } catch (Throwable ex) {
-            throw uncaughtException(ex);
-        }
+        return BoundMethodHandle.bindSingleJ(mt, lf, narg);
     }
+
     @Override
     /*non-public*/
     final BoundMethodHandle copyWithExtendF(MethodType mt, LambdaForm lf, float narg) {
-        try {
-            return (BoundMethodHandle) BMH_SPECIES.extendWith(F_TYPE).factory().invokeBasic(mt, lf, narg);
-        } catch (Throwable ex) {
-            throw uncaughtException(ex);
-        }
+        return BoundMethodHandle.bindSingleF(mt, lf, narg);
     }
+
     @Override
     /*non-public*/
     final BoundMethodHandle copyWithExtendD(MethodType mt, LambdaForm lf, double narg) {
-        try {
-            return (BoundMethodHandle) BMH_SPECIES.extendWith(D_TYPE).factory().invokeBasic(mt, lf, narg);
-        } catch (Throwable ex) {
-            throw uncaughtException(ex);
-        }
+        return BoundMethodHandle.bindSingleD(mt, lf, narg);
     }
 }

@@ -631,11 +631,6 @@ class InvokerBytecodeGenerator {
                                     assert(name.arguments.length == 1);
                                     emitPushArguments(cob, name, 0);
                                     continue;
-                                case CONSTANT:
-                                    assert(name.arguments.length == 0);
-                                    var constant = name.function.intrinsicData();
-                                    emitPushArgument(cob, name.type.btClass, constant);
-                                    continue;
                                 case NONE:
                                     // no intrinsic associated
                                     break;

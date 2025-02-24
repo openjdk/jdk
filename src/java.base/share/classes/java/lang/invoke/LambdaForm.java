@@ -372,7 +372,7 @@ class LambdaForm {
     }
 
     private static LambdaForm createBlankForType(MethodType mt) {
-        // Make a blank lambda form, which returns a constant zero or null.
+        // Make a dummy blank lambda form.
         // It is used as a template for managing the invocation of similar forms that are non-empty.
         // Called only from getPreparedForm.
         LambdaForm form = new LambdaForm(0, 0, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, new Name[0], Kind.GENERIC);
@@ -1628,7 +1628,7 @@ class LambdaForm {
         if (form != null) {
             return form;
         }
-        createFormsFor(type);
+        createIdentityForm(type);
         return LF_identity[ord];
     }
 
@@ -1638,44 +1638,35 @@ class LambdaForm {
         if (function != null) {
             return function;
         }
-        createFormsFor(type);
+        createIdentityForm(type);
         return NF_identity[ord];
     }
 
     static LambdaForm constantForm(BasicType type) {
-        assert type != null && type != V_TYPE;
+        assert type != null && type != V_TYPE : type;
         var cached = LF_constant[type.ordinal()];
         if (cached != null)
             return cached;
-        return computeConstantForm(type);
+        return createConstantForm(type);
     }
 
-    private static LambdaForm computeConstantForm(BasicType type) {
-        var species = boundSpecies(type);
+    private static LambdaForm createConstantForm(BasicType type) {
+        UNSAFE.ensureClassInitialized(BoundMethodHandle.class); // defend access to SimpleMethodHandle
+        var species = SimpleMethodHandle.BMH_SPECIES.extendWith(type);
         var carrier = argument(0, L_TYPE).withConstraint(species); // BMH bound with data
         Name[] constNames = new Name[] { carrier, new Name(species.getterFunction(0), carrier) };
         return LF_constant[type.ordinal()] = create(1, constNames, Kind.CONSTANT);
     }
 
-    static BoundMethodHandle.SpeciesData boundSpecies(BasicType type) {
-        int ord = type.ordinal();
-        var cached = BASIC_SPECIES[ord];
-        if (cached != null)
-            return cached;
-        return BASIC_SPECIES[ord] = SimpleMethodHandle.BMH_SPECIES.extendWith(type);
-    }
-
     private static final @Stable LambdaForm[] LF_identity = new LambdaForm[TYPE_LIMIT];
     private static final @Stable NamedFunction[] NF_identity = new NamedFunction[TYPE_LIMIT];
-    // Initializes separately; constant has extra dependency on BMH$Species_T
-    private static final @Stable BoundMethodHandle.SpeciesData[] BASIC_SPECIES = new BoundMethodHandle.SpeciesData[ARG_TYPE_LIMIT];
     private static final @Stable LambdaForm[] LF_constant = new LambdaForm[ARG_TYPE_LIMIT]; // no void
 
-    private static final Object createFormsLock = new Object();
-    private static void createFormsFor(BasicType type) {
+    private static final Object createIdentityFormLock = new Object();
+    private static void createIdentityForm(BasicType type) {
         // Avoid racy initialization during bootstrap
         UNSAFE.ensureClassInitialized(BoundMethodHandle.class);
-        synchronized (createFormsLock) {
+        synchronized (createIdentityFormLock) {
             final int ord = type.ordinal();
             LambdaForm idForm = LF_identity[ord];
             if (idForm != null) {
@@ -1684,12 +1675,10 @@ class LambdaForm {
             char btChar = type.basicTypeChar();
             boolean isVoid = (type == V_TYPE);
             Class<?> btClass = type.btClass;
-            MethodType zeType = MethodType.methodType(btClass);
-            MethodType idType = (isVoid) ? zeType : MethodType.methodType(btClass, btClass);
+            MethodType idType = (isVoid) ? MethodType.methodType(btClass) : MethodType.methodType(btClass, btClass);
 
             // Look up symbolic names.  It might not be necessary to have these,
             // but if we need to emit direct references to bytecodes, it helps.
-            // Zero is built from a call to an identity function with a constant zero input.
             MemberName idMem = new MemberName(LambdaForm.class, "identity_"+btChar, idType, REF_invokeStatic);
             try {
                 idMem = IMPL_NAMES.resolveOrFail(REF_invokeStatic, idMem, null, LM_TRUSTED, NoSuchMethodException.class);
@@ -1710,7 +1699,7 @@ class LambdaForm {
                 Name[] idNames = new Name[] { argument(0, L_TYPE), argument(1, type) };
                 idForm = LambdaForm.create(2, idNames, 1, Kind.IDENTITY);
                 idForm.compileToBytecode();
-                idFun = new NamedFunction(idMem, MethodHandleImpl.makeIntrinsic(SimpleMethodHandle.make(idMem.getInvocationType(), idForm),
+                idFun = new NamedFunction(idMem, MethodHandleImpl.makeIntrinsic(idMem.getInvocationType(), idForm,
                             MethodHandleImpl.Intrinsic.IDENTITY));
             }
 
@@ -1728,12 +1717,6 @@ class LambdaForm {
     private static double identity_D(double x) { return x; }
     private static Object identity_L(Object x) { return x; }
     private static void identity_V() { return; }
-    private static int zero_I() { return 0; }
-    private static long zero_J() { return 0; }
-    private static float zero_F() { return 0; }
-    private static double zero_D() { return 0; }
-    private static Object zero_L() { return null; }
-
     /**
      * Internal marker for byte-compiled LambdaForms.
      */
@@ -1763,7 +1746,7 @@ class LambdaForm {
         UNSAFE.ensureClassInitialized(Holder.class);
     }
 
-    /* Placeholder class for zero, identity, and constant forms generated ahead of time */
+    /* Placeholder class for identity and constant forms generated ahead of time */
     final class Holder {}
 
     // The following hack is necessary in order to suppress TRACE_INTERPRETER

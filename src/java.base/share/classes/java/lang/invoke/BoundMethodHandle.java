@@ -62,8 +62,40 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
         return form.editor();
     }
 
-    static BoundMethodHandle bindSingle(MethodType type, LambdaForm form, Object x) {
+    static BoundMethodHandle bindSingleL(MethodType type, LambdaForm form, Object x) {
         return Species_L.make(type, form, x);
+    }
+
+    static BoundMethodHandle bindSingleI(MethodType type, LambdaForm form, int x) {
+        try {
+            return (BoundMethodHandle) SimpleMethodHandle.BMH_SPECIES.extendWith(I_TYPE).factory().invokeBasic(type, form, x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
+
+    static BoundMethodHandle bindSingleJ(MethodType type, LambdaForm form, long x) {
+        try {
+            return (BoundMethodHandle) SimpleMethodHandle.BMH_SPECIES.extendWith(J_TYPE).factory().invokeBasic(type, form, x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
+
+    static BoundMethodHandle bindSingleF(MethodType type, LambdaForm form, float x) {
+        try {
+            return (BoundMethodHandle) SimpleMethodHandle.BMH_SPECIES.extendWith(F_TYPE).factory().invokeBasic(type, form, x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
+
+    static BoundMethodHandle bindSingleD(MethodType type, LambdaForm form, double x) {
+        try {
+            return (BoundMethodHandle) SimpleMethodHandle.BMH_SPECIES.extendWith(D_TYPE).factory().invokeBasic(type, form, x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
     }
 
     @Override // there is a default binder in the super class, for 'L' types only
