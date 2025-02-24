@@ -1389,13 +1389,10 @@ void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Regis
                                                   const int STUB_THRESHOLD, Label *DONE, Label *STUB) {
   Label TAIL_CHECK, TAIL, NEXT_WORD, DIFFERENCE;
 
-  int base_offset1 = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-  int base_offset2 = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-  assert((base_offset1 % (UseCompactObjectHeaders ? 4 :
-                          (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
-  assert((base_offset2 % (UseCompactObjectHeaders ? 4 :
-                          (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
-  const int base_offset = isLL ? base_offset1 : base_offset2;
+  const int base_offset = isLL ? arrayOopDesc::base_offset_in_bytes(T_BYTE)
+                               : arrayOopDesc::base_offset_in_bytes(T_CHAR);
+  assert((base_offset % (UseCompactObjectHeaders ? 4 :
+                        (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
   const int minCharsInWord = isLL ? wordSize : wordSize / 2;
 
@@ -1447,9 +1444,8 @@ void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Regis
     add(t0, str2, cnt2);
     ld(tmp2, Address(t0));
     addi(cnt2, cnt2, 8);
-
-  bne(tmp1, tmp2, DIFFERENCE);
-  bltz(cnt2, NEXT_WORD);
+    bne(tmp1, tmp2, DIFFERENCE);
+    bltz(cnt2, NEXT_WORD);
 
   bind(TAIL);
   load_long_misaligned(tmp1, Address(str1), tmp3, isLL ? 1 : 2);
@@ -1521,9 +1517,8 @@ void C2_MacroAssembler::string_compare_long_different_encoding(Register result, 
     inflate_lo32(tmp3, tmpL);
     mv(tmpL, tmp3);
     addi(cnt2, cnt2, 8);
-
-  bne(tmpL, tmpU, DIFFERENCE);
-  bltz(cnt2, NEXT_WORD);
+    bne(tmpL, tmpU, DIFFERENCE);
+    bltz(cnt2, NEXT_WORD);
 
   bind(TAIL);
   load_int_misaligned(tmpL, Address(strL), tmp3, false);
