@@ -686,7 +686,7 @@ bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseVal
       n->is_Call() &&
       n->as_Call()->may_modify(t_oop, phase) &&
       (n->as_Call()->is_ArrayCopy() || n->as_Call()->is_call_to_arraycopystub())) {
-    assert(n->as_Call()->is_call_to_arraycopystub(), "");
+    assert(!n->as_Call()->is_call_to_arraycopystub(), "");
     call = n->as_Call();
     return true;
   }
