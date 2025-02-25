@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.LongFunction;
 
 import javax.net.ssl.SSLParameters;
 
@@ -97,6 +98,7 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
     private final Map<InitialTokenRecipient, byte[]> initialTokens = new ConcurrentHashMap<>();
     private final QuicConnectionIdFactory idFactory = QuicConnectionIdFactory.getClient();
     private final QuicEndpointFactory endpointFactory = new QuicEndpointFactory();
+    private final LongFunction<String> appErrorCodeToString;
 
     private QuicClient(final QuicClient.Builder builder) {
         Objects.requireNonNull(builder, "Quic client builder");
@@ -108,6 +110,9 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
         }
         this.clientId = builder.clientId == null ? nextName() : builder.clientId;
         this.name = "QuicClient(%s)".formatted(clientId);
+        this.appErrorCodeToString = builder.appErrorCodeToString == null
+                ? QuicInstance.super::appErrorToString
+                : builder.appErrorCodeToString;
         // verify that QUIC TLS supports all requested QUIC versions
         var test = new ArrayList<>(builder.availableVersions);
         test.removeAll(builder.tlsContext.createEngine().getSupportedQuicVersions());
@@ -125,6 +130,7 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
         this.transportParams = builder.transportParams;
         if (debug.on()) debug.log("created");
     }
+
 
     private static int computeMaxEndpoints() {
         // available processors may change according to the API doc,
@@ -155,6 +161,11 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
     }
 
     @Override
+    public String appErrorToString(long code) {
+        return appErrorCodeToString.apply(code);
+    }
+
+    @Override
     public QuicTransportParameters getTransportParameters() {
         if (this.transportParams == null) {
             return null;
@@ -171,7 +182,7 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
 
     /**
      * The address that the QuicEndpoint will bind to.
-     * @implNote By default this is wildcard:0
+     * @implNote By default, this is wildcard:0
      * @return the address that the QuicEndpoint will bind to.
      */
     public InetSocketAddress bindAddress() {
@@ -548,6 +559,7 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
         private QuicTLSContext tlsContext;
         private QuicTransportParameters transportParams;
         private InetSocketAddress bindAddr;
+        private LongFunction<String> appErrorCodeToString;
 
         public Builder availableVersions(final List<QuicVersion> versions) {
             Objects.requireNonNull(versions, "Quic versions");
@@ -555,6 +567,11 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
                 throw new IllegalArgumentException("Need at least one available Quic version");
             }
             this.availableVersions = List.copyOf(versions);
+            return this;
+        }
+
+        public Builder applicationErrors(LongFunction<String> errorCodeToString) {
+            this.appErrorCodeToString = errorCodeToString;
             return this;
         }
 

@@ -131,6 +131,7 @@ public final class Http3ClientImpl implements AutoCloseable {
                 .tlsContext(quicTLSContext)
                 .sslParameters(parameters)
                 .executor(executor)
+                .applicationErrors(Http3Error::stringForCode)
                 .clientId(client.dbgString());
         if (client.localAddress() != null) {
             builder.bindAddress(new InetSocketAddress(client.localAddress(), 0));

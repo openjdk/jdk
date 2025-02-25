@@ -53,6 +53,7 @@ import jdk.internal.net.http.quic.QuicFlowControlException;
 import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.http.quic.frames.StreamsBlockedFrame;
 import jdk.internal.net.quic.QuicTLSEngine;
+import jdk.internal.net.quic.QuicTLSEngine.KeySpace;
 import jdk.internal.net.quic.QuicTransportException;
 import jdk.internal.net.http.quic.frames.MaxStreamDataFrame;
 import jdk.internal.net.http.quic.frames.MaxStreamsFrame;
@@ -1317,7 +1318,8 @@ public final class QuicConnectionStreams {
      *         frames. This will not exceed the given {@code maxConnectionData}.
      */
     public long produceFramesToSend(QuicPacketEncoder encoder, long maxSize,
-                                    long maxConnectionData, List<QuicFrame> frames) {
+                                    long maxConnectionData, List<QuicFrame> frames)
+            throws QuicTransportException {
         long remaining = maxSize;
         long produced = 0;
         try {
@@ -1414,19 +1416,9 @@ public final class QuicConnectionStreams {
                         }
                     } while (remaining > 0 && maxConnectionData > 0);
                 } catch (RuntimeException | AssertionError x) {
-                    // we failed to handle the stream: let's reset it.
                     stillReady = false;
-                    if (debug.on())
-                        debug.log("Resetting stream " + streamId + " due to " + x, x);
-                    try {
-                        sender.reset(QuicTransportErrors.INTERNAL_ERROR.code());
-                    } catch (Throwable t) {
-                        if (debug.on()) {
-                            debug.log("Failed to reset stream");
-                        }
-                        Utils.addSuppressed(x, t);
-                    }
-                    throw x;
+                    throw new QuicTransportException("Failed to compose frames for stream " + streamId,
+                            KeySpace.ONE_RTT, 0, QuicTransportErrors.INTERNAL_ERROR.code(), x);
                 } finally {
                     if (stillReady) {
                         if (debug.on())
@@ -1446,7 +1438,8 @@ public final class QuicConnectionStreams {
                 Log.logError(connection.logTag()
                         + ": Failed to compose frames", x);
             }
-            throw x;
+            throw new QuicTransportException("Failed to compose frames",
+                    KeySpace.ONE_RTT, 0, QuicTransportErrors.INTERNAL_ERROR.code(), x);
         }
         return produced;
     }

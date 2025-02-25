@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
+import java.util.function.LongFunction;
 
 import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SSLContext;
@@ -127,6 +128,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
 
     private final ReentrantLock quickServerLock = new ReentrantLock();
     private final QuicConnectionIdFactory idFactory = QuicConnectionIdFactory.getServer();
+    private final LongFunction<String> appErrorCodeToString;
 
     record RetryData(QuicConnectionId originalServerConnId,
                      QuicConnectionId serverChosenConnId) {
@@ -147,6 +149,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
         protected ExecutorService executor;
         protected QuicVersion[] availableQuicVersions;
         protected boolean compatible;
+        protected LongFunction<String> appErrorCodeToString;
 
         protected ConnectionAcceptor connAcceptor =
                 (source, conn) -> {
@@ -172,6 +175,11 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
                 throw new IllegalArgumentException("Empty available versions");
             }
             this.availableQuicVersions = available;
+            return this;
+        }
+
+        public Builder<T> appErrorCodeToString(LongFunction<String> appErrorCodeToString) {
+            this.appErrorCodeToString = appErrorCodeToString;
             return this;
         }
 
@@ -232,12 +240,16 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
                       final ExecutorService executor, final QuicVersion[] availableQuicVersions,
                       boolean compatible, final QuicTLSContext quicTLSContext, final SNIMatcher sniMatcher,
                       final DatagramDeliveryPolicy incomingDeliveryPolicy,
-                      final DatagramDeliveryPolicy outgoingDeliveryPolicy, String alpn) {
+                      final DatagramDeliveryPolicy outgoingDeliveryPolicy, String alpn,
+                      final LongFunction<String> appErrorCodeToString) {
         this.bindAddress = bindAddress;
         this.sniMatcher = sniMatcher == null
                 ? new ServerNameMatcher(this.bindAddress.getHostName())
                 : sniMatcher;
         this.alpn = Objects.requireNonNull(alpn);
+        this.appErrorCodeToString = appErrorCodeToString == null
+                ? QuicInstance.super::appErrorToString
+                : appErrorCodeToString;
         if (executor != null) {
             this.executor = executor;
             this.ownExecutor = false;
@@ -266,6 +278,11 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
             debug.log("server created, incoming delivery policy %s, outgoing delivery policy %s",
                     this.incomingDeliveryPolicy, this.outgoingDeliveryPolicy);
         }
+    }
+
+    @Override
+    public String appErrorToString(long errorCode) {
+        return appErrorCodeToString.apply(errorCode);
     }
 
     static QuicEndpointFactory newQuicEndpointFactory() {

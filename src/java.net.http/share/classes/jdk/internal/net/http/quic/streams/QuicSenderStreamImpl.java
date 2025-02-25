@@ -35,7 +35,6 @@ import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
-import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.quic.QuicConnectionImpl;
 import jdk.internal.net.http.quic.TerminationCause;
 
@@ -105,7 +104,7 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
     public void reset(long errorCode) throws IOException {
         if (debug.on()) {
             debug.log("Resetting stream %s due to %s", streamId(),
-                    Http3Error.http3OrQuic(errorCode));
+                   connection().quicInstance().appErrorToString(errorCode));
         }
         setErrorCode(errorCode);
         if (switchSendingState(SendingStreamState.RESET_SENT)) {

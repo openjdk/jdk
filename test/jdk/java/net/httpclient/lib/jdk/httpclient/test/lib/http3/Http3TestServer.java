@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import jdk.httpclient.test.lib.quic.QuicServerConnection;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.http3.ConnectionSettings;
+import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.http3.frames.SettingsFrame;
 import jdk.internal.net.quic.QuicTLSContext;
 import jdk.internal.net.quic.QuicVersion;
@@ -333,7 +334,7 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
             final QuicTLSContext quicTLSContext = new QuicTLSContext(ctx);
             final String name = serverId == null ? nextName() : serverId;
             return new QuicServer(name, addr, executor, versions, compatible, quicTLSContext, sniMatcher,
-                    incomingDeliveryPolicy, outgoingDeliveryPolicy, alpn);
+                    incomingDeliveryPolicy, outgoingDeliveryPolicy, alpn, Http3Error::stringForCode);
         }
     }
 }

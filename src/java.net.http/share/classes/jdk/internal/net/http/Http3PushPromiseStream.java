@@ -527,7 +527,7 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
     @Override
     void onReaderReset() {
         long errorCode = stream.rcvErrorCode();
-        String resetReason = Http3Error.http3OrQuic(errorCode);
+        String resetReason = Http3Error.stringForCode(errorCode);
         Http3Error resetError = Http3Error.fromCode(errorCode)
                 .orElse(Http3Error.H3_REQUEST_CANCELLED);
         if (!responseReceived) {

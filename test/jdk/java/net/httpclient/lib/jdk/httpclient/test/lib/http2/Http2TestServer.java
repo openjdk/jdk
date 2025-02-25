@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import jdk.httpclient.test.lib.common.RequestPathMatcherUtil;
 import jdk.httpclient.test.lib.common.ServerNameMatcher;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.internal.net.http.frame.ErrorFrame;
+import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.httpclient.test.lib.quic.QuicServer;
 
@@ -317,6 +318,7 @@ public final class Http2TestServer implements AutoCloseable {
                     .sniMatcher(this.sniMatcher)
                     .availableVersions(quicVersions)
                     .compatibleNegotiation(compatible)
+                    .appErrorCodeToString(Http3Error::stringForCode)
                     .bindAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
             try {
                 this.h3Server = new Http3TestServer(quicServerBuilder.build(), this::getHandlerFor);

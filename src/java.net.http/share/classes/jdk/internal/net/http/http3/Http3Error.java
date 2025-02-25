@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package jdk.internal.net.http.http3;
 
+import java.util.HexFormat;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -292,18 +293,8 @@ public enum Http3Error {
         return fromCode(code).map(Http3Error::name).orElse(unknown(code));
     }
 
-    // TODO: Maybe we need a unifying interface for error codes and
-    //       stop using plain longs?
-    public static String http3OrQuic(long code) {
-        return fromCode(code)
-                .map(Http3Error::name)
-                .orElse(QuicTransportErrors.ofCode(code)
-                        .map(QuicTransportErrors::name)
-                        .orElse(unknown(code)));
-    }
-
     private static String unknown(long code) {
-        return "Unknown(code=" + code + ")";
+        return "UnknownError(code=0x" + HexFormat.of().withUpperCase().toHexDigits(code) + ")";
     }
 
     /**

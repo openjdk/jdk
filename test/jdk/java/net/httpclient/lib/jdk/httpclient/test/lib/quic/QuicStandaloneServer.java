@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.net.SocketAddress;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongFunction;
 
 import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SSLContext;
@@ -55,9 +56,10 @@ public final class QuicStandaloneServer extends QuicServer {
                          ExecutorService executor, QuicVersion[] supportedQuicVersions,
                          boolean compatible, QuicTLSContext quicTLSContext, SNIMatcher sniMatcher,
                          DatagramDeliveryPolicy incomingDeliveryPolicy,
-                         DatagramDeliveryPolicy outgoingDeliveryPolicy, String alpn) {
+                         DatagramDeliveryPolicy outgoingDeliveryPolicy, String alpn,
+                         LongFunction<String> appErrorCodeToString) {
         super(serverId, bindAddress, executor, supportedQuicVersions, compatible, quicTLSContext, sniMatcher,
-                incomingDeliveryPolicy, outgoingDeliveryPolicy, alpn);
+                incomingDeliveryPolicy, outgoingDeliveryPolicy, alpn, appErrorCodeToString);
         // set a connection acceptor
         setConnectionAcceptor(QuicStandaloneServer::acceptIncoming);
     }
@@ -176,7 +178,7 @@ public final class QuicStandaloneServer extends QuicServer {
             final QuicTLSContext quicTLSContext = new QuicTLSContext(ctx);
             final String name = serverId == null ? nextName() : serverId;
             return new QuicStandaloneServer(name, addr, executor, versions, compatible, quicTLSContext,
-                    sniMatcher, incomingDeliveryPolicy, outgoingDeliveryPolicy, alpn);
+                    sniMatcher, incomingDeliveryPolicy, outgoingDeliveryPolicy, alpn, appErrorCodeToString);
         }
     }
 

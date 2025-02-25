@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,10 +124,10 @@ public final class Http3Streams {
         }
         if (rcvErrorCode >= 0 || sndErrorCode >= 0) {
             Stream<String> rcv = rcvErrorCode >= 0
-                    ? Stream.of("RCV: " + Http3Error.http3OrQuic(rcvErrorCode))
+                    ? Stream.of("RCV: " + Http3Error.stringForCode(rcvErrorCode))
                     : Stream.empty();
             Stream<String> snd = sndErrorCode >= 0
-                    ? Stream.of("SND: " + Http3Error.http3OrQuic(sndErrorCode))
+                    ? Stream.of("SND: " + Http3Error.stringForCode(sndErrorCode))
                     : Stream.empty();
            return Optional.of(Stream.concat(rcv, snd)
                    .collect(Collectors.joining(",", "errorCode(", ")" )));
