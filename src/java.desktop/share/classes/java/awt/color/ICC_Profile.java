@@ -111,9 +111,9 @@ public sealed class ICC_Profile implements Serializable
     /**
      * Set to true for {@code BuiltInProfile}, false otherwise.
      * This check is used in {@link #setData(int, byte[])} to prevent modifying
-     * BuiltInProfile.
+     * Built-in profiles.
      */
-    private boolean isBuiltIn = false;
+    private boolean builtIn = false;
 
     /**
      * The lazy registry of singleton profile objects for specific built-in
@@ -134,23 +134,23 @@ public sealed class ICC_Profile implements Serializable
         static {
             SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
                     "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
-            SRGB.isBuiltIn = true;
+            SRGB.builtIn = true;
 
             LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
                     "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
-            LRGB.isBuiltIn = true;
+            LRGB.builtIn = true;
 
             XYZ = new ICC_Profile(new ProfileDeferralInfo(
                     "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
-            XYZ.isBuiltIn = true;
+            XYZ.builtIn = true;
 
             PYCC = new ICC_Profile(new ProfileDeferralInfo(
                     "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION));
-            PYCC.isBuiltIn = true;
+            PYCC.builtIn = true;
 
             GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
                     "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
-            GRAY.isBuiltIn = true;
+            GRAY.builtIn = true;
         }
     }
 
@@ -1177,7 +1177,7 @@ public sealed class ICC_Profile implements Serializable
      * @see ColorSpace
      */
     public void setData(int tagSignature, byte[] tagData) {
-        if (isBuiltIn) {
+        if (builtIn) {
             throw new IllegalArgumentException("Built-in profile"
                                                + " cannot be modified");
         }
