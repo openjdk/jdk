@@ -716,6 +716,17 @@ public class HtmlTree extends Content {
                 .setStyle(style)
                 .put(HtmlAttr.DISABLED, "");
     }
+
+    /**
+     * Creates a {@code KBD} element with the given content.
+     *
+     * @param body the content
+     * @return the element
+     */
+    public static HtmlTree KBD(Content body) {
+        return new HtmlTree(HtmlTag.KBD).add(body);
+    }
+
     /**
      * Creates an HTML {@code LABEL} element with the given content.
      *
