@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import static org.testng.Assert.*;
 
 /**
  * @test
- * @bug 8217375 8267319
+ * @bug 8217375 8267319 8339280
  * @library /test/lib
  * @modules jdk.jartool/sun.security.tools.jarsigner
  * @run testng/timeout=1200 PreserveRawManifestEntryAndDigest
@@ -246,7 +246,6 @@ public class PreserveRawManifestEntryAndDigest {
             String firstAddedFilename, String secondAddedFilename) {
         final String TS = ".{28,34}"; // matches a timestamp
         List<String> expLines = new ArrayList<>();
-        expLines.add("s k   *\\d+ " + TS + " META-INF/MANIFEST[.]MF");
         expLines.add("      *\\d+ " + TS + " META-INF/B[.]SF");
         expLines.add("      *\\d+ " + TS + " META-INF/B[.]DSA");
         expLines.add("      *\\d+ " + TS + " META-INF/A[.]SF");
@@ -257,6 +256,8 @@ public class PreserveRawManifestEntryAndDigest {
         if (secondAddedFilename != null) {
             expLines.add("smkX  *\\d+ " + TS + " " + secondAddedFilename);
         }
+
+        expLines.add("s k   *\\d+ " + TS + " META-INF/MANIFEST[.]MF");
         return expLines.toArray(new String[expLines.size()]);
     }
 

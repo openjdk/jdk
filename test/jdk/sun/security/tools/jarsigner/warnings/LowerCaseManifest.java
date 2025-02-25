@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.Collections;
 
 /**
  * @test
- * @bug 8273826
+ * @bug 8273826 8339280
  * @summary Test for signed jar file with lowercase META-INF files
  * @library /test/lib ../
  * @build jdk.test.lib.util.JarUtils
@@ -101,6 +101,8 @@ public class LowerCaseManifest extends Test {
         }
         fs.close();
 
+        // The ordering of the JAR entries is changed after the JAR file was re-written.
+        // The manifest.mf is not at the beginning, and jarsigner will treat it as unsigned.
         // verify signed jar in strict mode (with lower case META-INF names in place)
         analyzer = jarsigner(
                 "-verify",
@@ -113,8 +115,7 @@ public class LowerCaseManifest extends Test {
                 SIGNED_JARFILE,
                 KEY_ALIAS);
 
-        checkVerifying(analyzer, 0,
-                JAR_VERIFIED, "!not present in verifiedSigners");
+        checkVerifying(analyzer, 16, "!Warning");
         System.out.println("Test passed");
     }
 
