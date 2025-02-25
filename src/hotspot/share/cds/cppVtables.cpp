@@ -222,22 +222,28 @@ void CppVtableCloner<T>::init_orig_cpp_vtptr(int kind) {
 //     _index[InstanceKlass_Kind]->cloned_vtable() == ((intptr_t**)ik)[0]
 static CppVtableInfo* _index[_num_cloned_vtable_kinds];
 
-// Vtables are all fixed offsets from ArchiveBuilder::current()->mapped_base()
-// E.g. ConstantPool is at offset 0x58. We can archive these offsets in the
-// RO region and use them to alculate their location at runtime without storing
-// the pointers in the RW region
+// This marks the location in the archive where _index[0] is stored. This location
+// will be stored as FileMapHeader::_cloned_vtables_offset into the archive header.
+// Serviceability Agent uses this information to determine the vtables of
+// archived Metadata objects.
 char* CppVtables::_vtables_serialized_base = nullptr;
 
 void CppVtables::dumptime_init(ArchiveBuilder* builder) {
   assert(CDSConfig::is_dumping_static_archive(), "cpp tables are only dumped into static archive");
 
-  CPP_VTABLE_TYPES_DO(ALLOCATE_AND_INITIALIZE_VTABLE);
-
-  if (!CDSConfig::is_dumping_final_static_archive()) {
-    for (int kind = 0; kind < _num_cloned_vtable_kinds; kind++) {
-      _archived_cpp_vtptrs[kind] = _index[kind]->cloned_vtable();
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    // When dumping final archive, _index[kind] at this point is in the preimage.
+    // Remember these vtable pointers in _archived_cpp_vtptrs, as _index[kind] will now be rewritten
+    // to point to the runtime vtable data.
+    for (int i = 0; i < _num_cloned_vtable_kinds; i++) {
+      assert(_index[i] != nullptr, "must have been restored by CppVtables::serialize()");
+      _archived_cpp_vtptrs[i] = _index[i]->cloned_vtable();
     }
+  } else {
+    memset(_archived_cpp_vtptrs, 0, sizeof(_archived_cpp_vtptrs));
   }
+
+  CPP_VTABLE_TYPES_DO(ALLOCATE_AND_INITIALIZE_VTABLE);
 
   size_t cpp_tables_size = builder->rw_region()->top() - builder->rw_region()->base();
   builder->alloc_stats()->record_cpp_vtables((int)cpp_tables_size);
@@ -252,16 +258,6 @@ void CppVtables::serialize(SerializeClosure* soc) {
   }
   if (soc->reading()) {
     CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
-  }
-
-  if (soc->writing() && !CDSConfig::is_dumping_preimage_static_archive()) {
-    // This table is written only when creating the preimage. It will be used
-    // only when writing the final static archive.
-    memset(_archived_cpp_vtptrs, 0, sizeof(_archived_cpp_vtptrs));
-  }
-
-  for (int kind = 0; kind < _num_cloned_vtable_kinds; kind++) {
-    soc->do_ptr(&_archived_cpp_vtptrs[kind]);
   }
 }
 
@@ -322,5 +318,6 @@ void CppVtables::zero_archived_vtables() {
 
 bool CppVtables::is_valid_shared_method(const Method* m) {
   assert(MetaspaceShared::is_in_shared_metaspace(m), "must be");
-  return vtable_of(m) == _index[Method_Kind]->cloned_vtable();
+  return vtable_of(m) == _index[Method_Kind]->cloned_vtable() ||
+         vtable_of(m) == _archived_cpp_vtptrs[Method_Kind];
 }
