@@ -51,6 +51,7 @@ public:
   void notify() {
     _lock.notify();
   }
+
   void wait() {
     Thread* saved_holder = _holder;
     _holder = nullptr;
@@ -124,8 +125,7 @@ void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecora
         // Some other part of the system will probably fail later.
         return;
       }
-      new (stalled_message) Message(output, decorations, msg, msg_len);
-      _stalled_message = (Message*)stalled_message;
+      _stalled_message = new (stalled_message) Message(output, decorations, msg, msg_len);
       _data_available = true;
       clocker.notify();
       while (_stalled_message != nullptr) {
@@ -210,13 +210,13 @@ bool AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iter
 }
 
 AsyncLogWriter::AsyncLogWriter()
-  : _flush_sem(0),
-    _producer_lock(),
-    _consumer_lock(),
-    _data_available(false),
-    _initialized(false),
-    _stats(),
-    _stalled_message(nullptr) {
+: _flush_sem(0),
+  _producer_lock(),
+  _consumer_lock(),
+  _data_available(false),
+  _initialized(false),
+  _stats(),
+  _stalled_message(nullptr) {
 
   size_t size = AsyncLogBufferSize / 2;
   _buffer = new Buffer(size);
