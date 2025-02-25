@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1605,47 +1605,47 @@ const int ObjectAlignmentInBytes = 8;
   product(int, VMThreadPriority, -1,                                        \
           "The native priority at which the VM thread should run "          \
           "(-1 means no change)")                                           \
-          range(-1, 127)                                                    \
+          range(min_jint, max_jint)                                         \
                                                                             \
   product(int, JavaPriority1_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
-          range(-1, 127)                                                    \
+          range(min_jint, max_jint)                                         \
                                                                             \
   product(int, JavaPriority2_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
-          range(-1, 127)                                                    \
+          range(min_jint, max_jint)                                         \
                                                                             \
   product(int, JavaPriority3_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
-          range(-1, 127)                                                    \
+          range(min_jint, max_jint)                                         \
                                                                             \
   product(int, JavaPriority4_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
-          range(-1, 127)                                                    \
+          range(min_jint, max_jint)                                         \
                                                                             \
   product(int, JavaPriority5_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
-          range(-1, 127)                                                    \
+          range(min_jint, max_jint)                                         \
                                                                             \
   product(int, JavaPriority6_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
-          range(-1, 127)                                                    \
+          range(min_jint, max_jint)                                         \
                                                                             \
   product(int, JavaPriority7_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
-          range(-1, 127)                                                    \
+          range(min_jint, max_jint)                                         \
                                                                             \
   product(int, JavaPriority8_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
-          range(-1, 127)                                                    \
+          range(min_jint, max_jint)                                         \
                                                                             \
   product(int, JavaPriority9_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
-          range(-1, 127)                                                    \
+          range(min_jint, max_jint)                                         \
                                                                             \
   product(int, JavaPriority10_To_OSPriority,-1,                             \
           "Map Java priorities to OS priorities")                           \
-          range(-1, 127)                                                    \
+          range(min_jint, max_jint)                                         \
                                                                             \
   product(bool, UseCriticalJavaThreadPriority, false, EXPERIMENTAL,         \
           "Java thread priority 10 maps to critical scheduling priority")   \
