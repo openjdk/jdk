@@ -749,11 +749,13 @@ public:
   virtual void release_C_heap_structures(bool release_constant_pool = true);
 
  public:
-  // Compute out modifier flags from the original data, instead of relying
-  // on Java mirror field. This is also allows accessing modifier flags
-  // when Java mirror is already dead, e.g. during class unloading.
-  virtual u2 compute_modifier_flags() const = 0;
+  // Get modifier flags from Java mirror cache.
   int modifier_flags() const;
+
+  // Compute out modifier flags from the original data. This is also allows
+  // accessing modifier flags when Java mirror is already dead, e.g. during
+  // class unloading.
+  virtual u2 compute_modifier_flags() const = 0;
 
   // JVMTI support
   virtual jint jvmti_class_status() const;
