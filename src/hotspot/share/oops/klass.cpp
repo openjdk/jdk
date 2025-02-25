@@ -329,7 +329,7 @@ jint Klass::array_layout_helper(BasicType etype) {
 }
 
 int Klass::modifier_flags() const {
-  int mods = java_lang_Class::modifiers(java_mirror());
+  int mods = java_lang_Class::modifiers(java_mirror_no_keepalive());
   assert(mods == compute_modifier_flags(), "should be same");
   return mods;
 }
