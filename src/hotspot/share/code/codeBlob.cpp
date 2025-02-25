@@ -73,29 +73,29 @@ static_assert(!std::is_polymorphic<UncommonTrapBlob>::value,   "no virtual metho
 
 // Add proxy vtables.
 // We need only few for now - they are used only from prints.
-const nmethod::Vptr                  nmethod::_vptr;
-const BufferBlob::Vptr               BufferBlob::_vptr;
-const RuntimeStub::Vptr              RuntimeStub::_vptr;
-const SingletonBlob::Vptr            SingletonBlob::_vptr;
-const DeoptimizationBlob::Vptr       DeoptimizationBlob::_vptr;
-const UpcallStub::Vptr               UpcallStub::_vptr;
+const nmethod::Vptr                  nmethod::_vpntr;
+const BufferBlob::Vptr               BufferBlob::_vpntr;
+const RuntimeStub::Vptr              RuntimeStub::_vpntr;
+const SingletonBlob::Vptr            SingletonBlob::_vpntr;
+const DeoptimizationBlob::Vptr       DeoptimizationBlob::_vpntr;
+const UpcallStub::Vptr               UpcallStub::_vpntr;
 
 const CodeBlob::Vptr* CodeBlob::vptr() const {
   constexpr const CodeBlob::Vptr* array[(size_t)CodeBlobKind::Number_Of_Kinds] = {
       nullptr/* None */,
-      &nmethod::_vptr,
-      &BufferBlob::_vptr,
-      &AdapterBlob::_vptr,
-      &VtableBlob::_vptr,
-      &MethodHandlesAdapterBlob::_vptr,
-      &RuntimeStub::_vptr,
-      &DeoptimizationBlob::_vptr,
-      &SafepointBlob::_vptr,
+      &nmethod::_vpntr,
+      &BufferBlob::_vpntr,
+      &AdapterBlob::_vpntr,
+      &VtableBlob::_vpntr,
+      &MethodHandlesAdapterBlob::_vpntr,
+      &RuntimeStub::_vpntr,
+      &DeoptimizationBlob::_vpntr,
+      &SafepointBlob::_vpntr,
 #ifdef COMPILER2
-      &ExceptionBlob::_vptr,
-      &UncommonTrapBlob::_vptr,
+      &ExceptionBlob::_vpntr,
+      &UncommonTrapBlob::_vpntr,
 #endif
-      &UpcallStub::_vptr
+      &UpcallStub::_vpntr
   };
 
   return array[(size_t)_kind];

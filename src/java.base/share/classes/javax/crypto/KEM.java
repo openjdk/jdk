@@ -65,7 +65,7 @@ import java.util.Objects;
  * new shared secret and key encapsulation message.
  * <p>
  *
- * Example operation using a ficticious {@code KEM} algorithm {@code ABC}:
+ * Example operation using a fictitious {@code KEM} algorithm {@code ABC}:
  * {@snippet lang = java:
  *     // Receiver side
  *     KeyPairGenerator g = KeyPairGenerator.getInstance("ABC");

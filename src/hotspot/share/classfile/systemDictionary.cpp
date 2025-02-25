@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotClassLocation.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
@@ -962,14 +963,14 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
   int scp_index = ik->shared_classpath_index();
   assert(!ik->is_shared_unregistered_class(), "this function should be called for built-in classes only");
   assert(scp_index >= 0, "must be");
-  SharedClassPathEntry* scp_entry = FileMapInfo::shared_path(scp_index);
+  const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(scp_index);
   if (!Universe::is_module_initialized()) {
-    assert(scp_entry != nullptr, "must be");
+    assert(cl != nullptr, "must be");
     // At this point, no modules have been defined yet. KlassSubGraphInfo::check_allowed_klass()
     // has restricted the classes can be loaded at this step to be only:
-    // [1] scp_entry->is_modules_image(): classes in java.base, or,
+    // [1] cs->is_modules_image(): classes in java.base, or,
     // [2] HeapShared::is_a_test_class_in_unnamed_module(ik): classes in bootstrap/unnamed module
-    assert(scp_entry->is_modules_image() || HeapShared::is_a_test_class_in_unnamed_module(ik),
+    assert(cl->is_modules_image() || HeapShared::is_a_test_class_in_unnamed_module(ik),
            "only these classes can be loaded before the module system is initialized");
     assert(class_loader.is_null(), "sanity");
     return true;
@@ -986,7 +987,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
 
   ModuleEntry* mod_entry = (pkg_entry == nullptr) ? nullptr : pkg_entry->module();
   bool should_be_in_named_module = (mod_entry != nullptr && mod_entry->is_named());
-  bool was_archived_from_named_module = scp_entry->in_named_module();
+  bool was_archived_from_named_module = !cl->has_unnamed_module();
   bool visible;
 
   if (was_archived_from_named_module) {
@@ -1587,6 +1588,9 @@ void SystemDictionary::initialize(TRAPS) {
   PlaceholderTable::initialize();
 #if INCLUDE_CDS
   SystemDictionaryShared::initialize();
+  if (CDSConfig::is_dumping_archive()) {
+    AOTClassLocationConfig::dumptime_init(THREAD);
+  }
 #endif
   // Resolve basic classes
   vmClasses::resolve_all(CHECK);
