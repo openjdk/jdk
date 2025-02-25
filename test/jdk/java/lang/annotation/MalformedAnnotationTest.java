@@ -67,8 +67,8 @@ class MalformedAnnotationTest {
                                 AnnotationElement.of("value", AnnotationValue.ofClass(clb
                                         .constantPool().utf8Entry(badDescString))))
                 )));
-        var cl = ByteCodeLoader.load("Test", bytes);
+        var cl = new ByteCodeLoader("Test", bytes, MalformedAnnotationTest.class.getClassLoader()).loadClass("Test");
         var ex = assertThrows(GenericSignatureFormatError.class, () -> cl.getDeclaredAnnotation(ClassCarrier.class));
-        assertTrue(ex.getMessage().contains(badDescString));
+        assertTrue(ex.getMessage().contains(badDescString), () -> "Uninformative error: " + ex);
     }
 }

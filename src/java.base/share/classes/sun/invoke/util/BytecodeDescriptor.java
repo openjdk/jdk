@@ -95,6 +95,13 @@ public class BytecodeDescriptor {
     }
 
     /**
+     * Parse a single type in a descriptor. Results can be:
+     * <ul>
+     *     <li>A {@code Class} for successful parsing
+     *     <li>{@code null} for malformed descriptor format
+     *     <li>Throwing a {@link TypeNotPresentException} for valid class name,
+     *     but class cannot be discovered
+     * </ul>
      * @param loader the class loader in which to look up the types (null means
      *               bootstrap class loader)
      */
@@ -117,7 +124,8 @@ public class BytecodeDescriptor {
                 t = t.arrayType();
             return t;
         } else {
-            return Wrapper.forBasicType(c).primitiveType();
+            var w = Wrapper.forPrimitiveTypeOrNull(c);
+            return w == null ? null : w.primitiveType();
         }
     }
 
