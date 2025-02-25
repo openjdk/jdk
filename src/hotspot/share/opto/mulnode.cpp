@@ -1014,7 +1014,8 @@ Node* LShiftINode::Identity(PhaseGVN* phase) {
 // If the right input is a constant, and the left input is an add of a
 // constant, flatten the tree: (X+con1)<<con0 ==> X<<con0 + con1<<con0
 //
-// (X << con1) << con2 ==> X << (con1 + con2) (see collapse_nested_shift_left for details)
+// Also collapse nested left-shifts with constant rhs:
+// (X << con1) << con2 ==> X << (con1 + con2)
 Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaInteger);
   if (con == 0) {
@@ -1127,6 +1128,8 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(add1->in(2)) == TypeInt::make( bits_mask ) )
     return new LShiftINode( add1->in(1), in(2) );
 
+  // Performs:
+  // (X << con1) << con2 ==> X << (con1 + con2) (see implementation for subtleties)
   Node* doubleShift = collapse_nested_shift_left(phase, this, con, T_INT);
   if (doubleShift != nullptr) {
     return doubleShift;
@@ -1197,7 +1200,8 @@ Node* LShiftLNode::Identity(PhaseGVN* phase) {
 // If the right input is a constant, and the left input is an add of a
 // constant, flatten the tree: (X+con1)<<con0 ==> X<<con0 + con1<<con0
 //
-// (X << con1) << con2 ==> X << (con1 + con2) (see collapse_nested_shift_left for details)
+// Also collapse nested left-shifts with constant rhs:
+// (X << con1) << con2 ==> X << (con1 + con2)
 Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int con = maskShiftAmount(phase, this, BitsPerJavaLong);
   if (con == 0) {
@@ -1310,6 +1314,8 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(add1->in(2)) == TypeLong::make( bits_mask ) )
     return new LShiftLNode( add1->in(1), in(2) );
 
+  // Performs:
+  // (X << con1) << con2 ==> X << (con1 + con2) (see implementation for subtleties)
   Node* doubleShift = collapse_nested_shift_left(phase, this, con, T_LONG);
   if (doubleShift != nullptr) {
     return doubleShift;
