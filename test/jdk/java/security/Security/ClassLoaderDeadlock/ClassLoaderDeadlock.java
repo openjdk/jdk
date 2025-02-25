@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,15 @@
  * questions.
  */
 
-// See bug 5094825 / ClassLoadDeadlock.sh
+/*
+* @test
+* @bug 5094825
+* @summary verify no deadlock if crypto provider in other classloader is used to verify signed jars
+* @modules java.base/java.security
+* @library ./deadlock.jar
+* @compile -g provider/HashProvider.java
+* @run main/othervm/timeout=30 -Djava.awt.headless=true ClassLoaderDeadlock
+*/
 
 import java.net.*;
 
