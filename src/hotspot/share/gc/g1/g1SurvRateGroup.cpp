@@ -119,7 +119,7 @@ void G1SurvRateGroup::fill_in_last_surv_rates() {
 void G1SurvRateGroup::finalize_predictions(const G1Predictions& predictor) {
   double accum = 0.0;
   double pred = 0.0;
-  for (size_t i = 0; i < _stats_arrays_length; ++i) {
+  for (uint i = 0; i < _stats_arrays_length; ++i) {
     pred = predictor.predict_in_unit_interval(_surv_rate_predictors[i]);
     accum += pred;
     _accum_surv_rate_pred[i] = accum;

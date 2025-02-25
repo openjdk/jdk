@@ -45,10 +45,7 @@ G1ConcurrentRefineThreadsNeeded::G1ConcurrentRefineThreadsNeeded(G1Policy* polic
 //
 // 1. Minimize the number of refinement threads running at once.
 //
-// 2. Minimize the number of activations and deactivations for the
-// refinement threads that run.
-//
-// 3. Delay performing refinement work.  Having more dirty cards waiting to
+// 2. Delay performing refinement work.  Having more dirty cards waiting to
 // be refined can be beneficial, as further writes to the same card don't
 // create more work.
 void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
@@ -76,17 +73,12 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
     _predicted_time_until_next_gc_ms = MIN2(raw_time_ms, one_hour_ms);
   }
 
-  // Estimate number of cards that need to be processed before next GC.  There
-  // are no incoming cards when time is short, because in that case the
-  // controller activates refinement by mutator threads to stay on target even
-  // if threads deactivate in the meantime.  This also covers the case of not
-  // having a real prediction of time until GC.
-  size_t incoming_cards = 0;
-  if (_predicted_time_until_next_gc_ms > _update_period_ms) {
-    double incoming_rate = analytics->predict_dirtied_cards_rate_ms();
-    double raw_cards = incoming_rate * _predicted_time_until_next_gc_ms;
-    incoming_cards = static_cast<size_t>(raw_cards);
-  }
+  // Estimate number of cards that need to be processed before next GC.
+
+  double incoming_rate = analytics->predict_dirtied_cards_rate_ms();
+  double raw_cards = incoming_rate * _predicted_time_until_next_gc_ms;
+  size_t incoming_cards = static_cast<size_t>(raw_cards);
+
   size_t total_cards = num_cards + incoming_cards;
   _predicted_cards_at_next_gc = total_cards;
 
@@ -100,9 +92,8 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
   // The calculation of the number of threads needed isn't very stable when
   // time is short, and can lead to starting up lots of threads for not much
   // profit.  If we're in the last update period, don't change the number of
-  // threads running, other than to treat the current thread as running.  That
-  // might not be sufficient, but hopefully we were already reasonably close.
-  // We won't accumulate more because mutator refinement will be activated.
+  // threads needed.  That might not be sufficient, but hopefully we were
+  // already reasonably close.
   if (_predicted_time_until_next_gc_ms <= _update_period_ms) {
     _threads_needed = MAX2(active_threads, 1u);
     return;
@@ -133,11 +124,12 @@ void G1ConcurrentRefineThreadsNeeded::update(uint active_threads,
   // close to the next GC we want to drive toward the target, so round up
   // then.  The rest of the time we round to nearest, trying to remain near
   // the middle of the range.
+  double rthreads = nthreads;
   if (_predicted_time_until_next_gc_ms <= _update_period_ms * 5.0) {
-    nthreads = ::ceil(nthreads);
+    rthreads = ::ceil(nthreads);
   } else {
-    nthreads = ::round(nthreads);
+    rthreads = ::round(nthreads);
   }
 
-  _threads_needed = static_cast<uint>(MIN2<size_t>(nthreads, UINT_MAX));
+  _threads_needed = static_cast<uint>(MIN2<size_t>(rthreads, UINT_MAX));
 }
