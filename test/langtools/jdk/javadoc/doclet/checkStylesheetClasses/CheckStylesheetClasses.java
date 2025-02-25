@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,9 +138,9 @@ public class CheckStylesheetClasses {
 
         // used in search.js and search-page.js; may be worth documenting in HtmlStyle
         removeAll(styleSheetNames, "result-highlight", "result-item", "anchor-link",
-                "search-tag-desc-result", "search-tag-holder-result", "page-search-header",
-                "ui-autocomplete", "ui-autocomplete-category", "ui-state-active", "ui-menu",
-                "ui-menu-item-wrapper", "ui-static-link", "expanded", "search-result-link",
+                "page-search-header", "ui-autocomplete", "ui-autocomplete-category",
+                "ui-state-active", "ui-menu", "ui-menu-item-wrapper", "ui-static-link",
+                "expanded", "search-result-desc", "search-result-label", "search-result-link",
                 "two-column-search-results", "sort-asc", "sort-desc", "visible");
 
         // very JDK specific
