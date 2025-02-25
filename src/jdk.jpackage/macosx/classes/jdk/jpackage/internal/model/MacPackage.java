@@ -38,6 +38,10 @@ public interface MacPackage extends Package {
         }
     }
 
+    default Path installDir() {
+        return Path.of("/").resolve(relativeInstallDir());
+    }
+
     public static MacPackage create(Package pkg) {
         return CompositeProxy.create(MacPackage.class, pkg);
     }
