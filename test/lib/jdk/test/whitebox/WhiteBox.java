@@ -486,6 +486,15 @@ public class WhiteBox {
     Objects.requireNonNull(method);
     return getNMethod0(method, isOsr);
   }
+  private native void     replaceNMethod0(Executable method, boolean isOsr, int comp_level_override);
+  public         void     replaceNMethod(Executable method, boolean isOsr, int comp_level_override) {
+    Objects.requireNonNull(method);
+    replaceNMethod0(method, isOsr, comp_level_override);
+  }
+  public         void     replaceNMethod(Executable method, boolean isOsr) {
+    Objects.requireNonNull(method);
+    replaceNMethod0(method, isOsr, -1);
+  }
   public native long    allocateCodeBlob(int size, int type);
   public        long    allocateCodeBlob(long size, int type) {
       int intSize = (int) size;
