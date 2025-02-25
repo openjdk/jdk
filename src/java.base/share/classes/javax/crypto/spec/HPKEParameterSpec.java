@@ -183,6 +183,7 @@ import java.util.Objects;
  *      RFC 9180: Hybrid Public Key Encryption
  * @spec security/standard-names.html
  *      Java Security Standard Algorithm Names
+ * @since 25
  */
 public final class HPKEParameterSpec implements AlgorithmParameterSpec {
 
