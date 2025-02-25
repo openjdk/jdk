@@ -1434,7 +1434,7 @@ public final class Class<T> implements java.io.Serializable,
             // Descriptor already validated by VM
             List<Class<?>> types = BytecodeDescriptor.parseMethod(enclosingInfo.getDescriptor(), getClassLoader());
             Class<?>   returnType       = types.removeLast();
-            Class<?>[] parameterClasses   = types.toArray(GenericInfo.EMPTY_CLASS_ARRAY);
+            Class<?>[] parameterClasses = types.toArray(GenericInfo.EMPTY_CLASS_ARRAY);
 
             final Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
             Method[] candidates = enclosingCandidate.privateGetDeclaredMethods(false);

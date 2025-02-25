@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8333377
  * @summary Test behaviors with Signature attribute with any absent
  *          class or interface
  * @library /test/lib
@@ -82,15 +83,18 @@ class TypeNotPresentInSignatureTest {
     void testClass() {
         assertEquals(ArrayList.class, sampleClass.getSuperclass());
         assertArrayEquals(new Class<?>[] {Predicate.class}, sampleClass.getInterfaces());
-        assertThrows(TypeNotPresentException.class, sampleClass::getGenericSuperclass);
-        assertThrows(TypeNotPresentException.class, sampleClass::getGenericInterfaces);
+        var ex = assertThrows(TypeNotPresentException.class, sampleClass::getGenericSuperclass);
+        assertEquals("does.not.Exist", ex.typeName());
+        ex = assertThrows(TypeNotPresentException.class, sampleClass::getGenericInterfaces);
+        assertEquals("does.not.Exist", ex.typeName());
     }
 
     @Test
     void testField() throws ReflectiveOperationException {
         var field = sampleClass.getDeclaredField("field");
         assertEquals(Optional.class, field.getType());
-        assertThrows(TypeNotPresentException.class, field::getGenericType);
+        var ex = assertThrows(TypeNotPresentException.class, field::getGenericType);
+        assertEquals("does.not.Exist", ex.typeName());
     }
 
     @Test
@@ -98,9 +102,11 @@ class TypeNotPresentInSignatureTest {
         var constructor = sampleClass.getDeclaredConstructor(Optional.class);
         assertArrayEquals(new Class<?>[] {Optional.class}, constructor.getParameterTypes());
         assertArrayEquals(new Class<?>[] {RuntimeException.class}, constructor.getExceptionTypes());
-        assertThrows(TypeNotPresentException.class, constructor::getGenericParameterTypes);
+        var ex = assertThrows(TypeNotPresentException.class, constructor::getGenericParameterTypes);
+        assertEquals("does.not.Exist", ex.typeName());
         var typeVar = (TypeVariable<?>) constructor.getGenericExceptionTypes()[0];
-        assertThrows(TypeNotPresentException.class, typeVar::getBounds);
+        ex = assertThrows(TypeNotPresentException.class, typeVar::getBounds);
+        assertEquals("does.not.Exist", ex.typeName());
     }
 
     @Test
@@ -109,10 +115,13 @@ class TypeNotPresentInSignatureTest {
         assertEquals(Optional.class, method.getReturnType());
         assertArrayEquals(new Class<?>[] {Optional.class}, method.getParameterTypes());
         assertArrayEquals(new Class<?>[] {RuntimeException.class}, method.getExceptionTypes());
-        assertThrows(TypeNotPresentException.class, method::getGenericReturnType);
-        assertThrows(TypeNotPresentException.class, method::getGenericParameterTypes);
+        var ex = assertThrows(TypeNotPresentException.class, method::getGenericReturnType);
+        assertEquals("does.not.Exist", ex.typeName());
+        ex = assertThrows(TypeNotPresentException.class, method::getGenericParameterTypes);
+        assertEquals("does.not.Exist", ex.typeName());
         var typeVar = (TypeVariable<?>) method.getGenericExceptionTypes()[0];
-        assertThrows(TypeNotPresentException.class, typeVar::getBounds);
+        ex = assertThrows(TypeNotPresentException.class, typeVar::getBounds);
+        assertEquals("does.not.Exist", ex.typeName());
     }
 
     @Test
@@ -125,6 +134,7 @@ class TypeNotPresentInSignatureTest {
 
         assertEquals(Optional.class, rc.getType());
         assertEquals("Ljava/util/Optional<Ldoes/not/Exist;>;", rc.getGenericSignature());
-        assertThrows(TypeNotPresentException.class, rc::getGenericType);
+        var ex = assertThrows(TypeNotPresentException.class, rc::getGenericType);
+        assertEquals("does.not.Exist", ex.typeName());
     }
 }

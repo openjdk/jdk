@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8333377
  * @summary Test behaviors with malformed annotations (in class files)
  *          that should stay in refactors
  * @library /test/lib
@@ -44,6 +45,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.reflect.GenericSignatureFormatError;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MalformedAnnotationTest {
 
@@ -58,13 +60,15 @@ class MalformedAnnotationTest {
      */
     @Test
     void testMalformedClassValue() throws Exception {
+        var badDescString = "Not a_descriptor";
         var bytes = ClassFile.of().build(ClassDesc.of("Test"), clb -> clb
                 .with(RuntimeVisibleAnnotationsAttribute.of(
                         Annotation.of(ClassCarrier.class.describeConstable().orElseThrow(),
                                 AnnotationElement.of("value", AnnotationValue.ofClass(clb
-                                        .constantPool().utf8Entry("Not a descriptor"))))
+                                        .constantPool().utf8Entry(badDescString))))
                 )));
         var cl = ByteCodeLoader.load("Test", bytes);
-        assertThrows(GenericSignatureFormatError.class, () -> cl.getDeclaredAnnotation(ClassCarrier.class));
+        var ex = assertThrows(GenericSignatureFormatError.class, () -> cl.getDeclaredAnnotation(ClassCarrier.class));
+        assertTrue(ex.getMessage().contains(badDescString));
     }
 }

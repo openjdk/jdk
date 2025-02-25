@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8333377
  * @summary Test behaviors with bad EnclosingMethod attribute
  * @library /test/lib
  * @run junit BadEnclosingMethodTest
@@ -39,7 +40,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static java.lang.constant.ConstantDescs.INIT_NAME;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 class BadEnclosingMethodTest {
 
@@ -82,12 +83,14 @@ class BadEnclosingMethodTest {
         assertThrows(ClassFormatError.class, () -> loadTestClass(INIT_NAME, "(L[;)V"));
 
         var absentMethodType = loadTestClass("methodName", "(Ldoes/not/Exist;)V");
-        assertThrows(TypeNotPresentException.class,
+        var ex = assertThrows(TypeNotPresentException.class,
                 absentMethodType::getEnclosingMethod);
+        assertEquals("does.not.Exist", ex.typeName());
 
         var absentConstructorType = loadTestClass(INIT_NAME, "(Ldoes/not/Exist;)V");
-        assertThrows(TypeNotPresentException.class,
+        ex = assertThrows(TypeNotPresentException.class,
                 absentConstructorType::getEnclosingConstructor);
+        assertEquals("does.not.Exist", ex.typeName());
     }
 }
 

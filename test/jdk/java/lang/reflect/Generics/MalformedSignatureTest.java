@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @summary Test behaviors with malformed Signature attribute
+ * @bug 6832374 7052898 8333377
+ * @summary Test behaviors with malformed signature strings in Signature attribute.
  * @library /test/lib
  * @run junit MalformedSignatureTest
  */
@@ -31,18 +32,14 @@
 import jdk.test.lib.ByteCodeLoader;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.lang.classfile.ClassBuilder;
-import java.lang.classfile.ClassElement;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassTransform;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.FieldTransform;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.MethodTransform;
+import java.lang.classfile.*;
 import java.lang.classfile.attribute.RecordAttribute;
 import java.lang.classfile.attribute.RecordComponentInfo;
 import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.constant.ClassDesc;
 import java.lang.reflect.GenericSignatureFormatError;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -50,11 +47,12 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MalformedSignatureTest {
 
-    private static final String DUMMY_SIGNATURE_TEXT = "Not a signature";
+    private static final String BASIC_BAD_SIGNATURE_TEXT = "I_aM_NoT_A_Signature";
     static Class<?> sampleClass, sampleRecord;
 
     @BeforeAll
@@ -67,14 +65,13 @@ class MalformedSignatureTest {
 
             @Override
             public void atStart(ClassBuilder builder) {
-                badSignature = SignatureAttribute.of(builder.constantPool().utf8Entry(DUMMY_SIGNATURE_TEXT));
+                badSignature = SignatureAttribute.of(builder.constantPool().utf8Entry(BASIC_BAD_SIGNATURE_TEXT));
             }
 
             @Override
             public void accept(ClassBuilder builder, ClassElement element) {
                 switch (element) {
-                    case SignatureAttribute sig -> {
-                    } // dropping
+                    case SignatureAttribute _ -> {} // dropping
                     case FieldModel f -> builder
                             .transformField(f, FieldTransform.dropping(SignatureAttribute.class::isInstance)
                                     .andThen(FieldTransform.endHandler(fb -> fb.with(badSignature))));
@@ -104,42 +101,50 @@ class MalformedSignatureTest {
     }
 
     @Test
-    void testClass() {
+    void testBasicClass() {
         assertEquals(ArrayList.class, sampleClass.getSuperclass());
         assertArrayEquals(new Class<?>[] {Predicate.class}, sampleClass.getInterfaces());
-        assertThrows(GenericSignatureFormatError.class, sampleClass::getGenericSuperclass);
-        assertThrows(GenericSignatureFormatError.class, sampleClass::getGenericInterfaces);
+        var ex = assertThrows(GenericSignatureFormatError.class, sampleClass::getGenericSuperclass);
+        assertTrue(ex.getMessage().contains(BASIC_BAD_SIGNATURE_TEXT));
+        ex = assertThrows(GenericSignatureFormatError.class, sampleClass::getGenericInterfaces);
+        assertTrue(ex.getMessage().contains(BASIC_BAD_SIGNATURE_TEXT));
     }
 
     @Test
-    void testField() throws ReflectiveOperationException {
+    void testBasicField() throws ReflectiveOperationException {
         var field = sampleClass.getDeclaredField("field");
         assertEquals(Optional.class, field.getType());
-        assertThrows(GenericSignatureFormatError.class, field::getGenericType);
+        var ex = assertThrows(GenericSignatureFormatError.class, field::getGenericType);
+        assertTrue(ex.getMessage().contains(BASIC_BAD_SIGNATURE_TEXT));
     }
 
     @Test
-    void testConstructor() throws ReflectiveOperationException {
+    void testBasicConstructor() throws ReflectiveOperationException {
         var constructor = sampleClass.getDeclaredConstructors()[0];
         assertArrayEquals(new Class<?>[] {Optional.class}, constructor.getParameterTypes());
         assertArrayEquals(new Class<?>[] {RuntimeException.class}, constructor.getExceptionTypes());
-        assertThrows(GenericSignatureFormatError.class, constructor::getGenericParameterTypes);
-        assertThrows(GenericSignatureFormatError.class, constructor::getGenericExceptionTypes);
+        var ex = assertThrows(GenericSignatureFormatError.class, constructor::getGenericParameterTypes);
+        assertTrue(ex.getMessage().contains(BASIC_BAD_SIGNATURE_TEXT));
+        ex = assertThrows(GenericSignatureFormatError.class, constructor::getGenericExceptionTypes);
+        assertTrue(ex.getMessage().contains(BASIC_BAD_SIGNATURE_TEXT));
     }
 
     @Test
-    void testMethod() throws ReflectiveOperationException {
+    void testBasicMethod() throws ReflectiveOperationException {
         var method = sampleClass.getDeclaredMethods()[0];
         assertEquals(Optional.class, method.getReturnType());
         assertArrayEquals(new Class<?>[] {Optional.class}, method.getParameterTypes());
         assertArrayEquals(new Class<?>[] {RuntimeException.class}, method.getExceptionTypes());
-        assertThrows(GenericSignatureFormatError.class, method::getGenericReturnType);
-        assertThrows(GenericSignatureFormatError.class, method::getGenericParameterTypes);
-        assertThrows(GenericSignatureFormatError.class, method::getGenericExceptionTypes);
+        var ex = assertThrows(GenericSignatureFormatError.class, method::getGenericReturnType);
+        assertTrue(ex.getMessage().contains(BASIC_BAD_SIGNATURE_TEXT));
+        ex = assertThrows(GenericSignatureFormatError.class, method::getGenericParameterTypes);
+        assertTrue(ex.getMessage().contains(BASIC_BAD_SIGNATURE_TEXT));
+        ex = assertThrows(GenericSignatureFormatError.class, method::getGenericExceptionTypes);
+        assertTrue(ex.getMessage().contains(BASIC_BAD_SIGNATURE_TEXT));
     }
 
     @Test
-    void testRecordComponent() {
+    void testBasicRecordComponent() {
         var rcs = sampleRecord.getRecordComponents();
         assertNotNull(rcs);
         assertEquals(1, rcs.length);
@@ -147,8 +152,34 @@ class MalformedSignatureTest {
         assertNotNull(rc);
 
         assertEquals(Optional.class, rc.getType());
-        assertEquals(DUMMY_SIGNATURE_TEXT, rc.getGenericSignature());
-        assertThrows(GenericSignatureFormatError.class, rc::getGenericType);
+        assertEquals(BASIC_BAD_SIGNATURE_TEXT, rc.getGenericSignature());
+        var ex = assertThrows(GenericSignatureFormatError.class, rc::getGenericType);
+        assertTrue(ex.getMessage().contains(BASIC_BAD_SIGNATURE_TEXT));
+    }
+
+    static String[] badMethodSignatures() {
+        return new String[] {
+                // Missing ":" after first type bound
+                "<T:Lfoo/tools/nsc/symtab/Names;Lfoo/tools/nsc/symtab/Symbols;",
+
+                // Arrays improperly indicated for exception information
+                "<E:Ljava/lang/Exception;>(TE;[Ljava/lang/RuntimeException;)V^[TE;",
+        };
+    }
+
+    @MethodSource("badMethodSignatures")
+    @ParameterizedTest
+    void testSignatureForMethod(String badSig) throws Throwable {
+        var className = "BadSignature";
+        var bytes = ClassFile.of().build(ClassDesc.of(className), clb ->
+                clb.withMethod("test", MTD_void, 0, mb -> mb
+                        .withCode(CodeBuilder::return_)
+                        .with(SignatureAttribute.of(clb.constantPool().utf8Entry(badSig)))));
+
+        var cl = ByteCodeLoader.load(className, bytes);
+        var method = cl.getDeclaredMethod("test");
+        var ex = assertThrows(GenericSignatureFormatError.class, method::getGenericParameterTypes);
+        assertTrue(ex.getMessage().contains(badSig), "Missing bad signature in error message");
     }
 }
 
