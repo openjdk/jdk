@@ -494,7 +494,7 @@ public:
     for (int i = 0; i < num_nodes; i++) {
       RBTreeIntNode* node = tree.allocate_node(i, i);
       nodes[i] = node;
-      tree.insert(node, prev_node);
+      tree.insert(i, node, prev_node);
       prev_node = node;
     }
 

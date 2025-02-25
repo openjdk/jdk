@@ -265,8 +265,8 @@ public:
   }
 
   // Inserts the given node into the tree.
-  void insert(NodeType* node, const NodeType* hint_node = nullptr) {
-    Cursor node_cursor = cursor(node->key(), hint_node);
+  void insert(const K& key, NodeType* node, const NodeType* hint_node = nullptr) {
+    Cursor node_cursor = cursor(key, hint_node);
     insert_at_cursor(node, node_cursor);
   }
 
