@@ -239,6 +239,10 @@
                         int opc, BasicType bt, uint vector_length,
                         VectorMask vm = Assembler::unmasked);
 
+  void reduce_mul_integral_v(Register dst, Register src1, VectorRegister src2,
+                             VectorRegister vtmp1, VectorRegister vtmp2, BasicType bt,
+                             uint vector_length, VectorMask vm = Assembler::unmasked);
+
   void vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
 
   void compare_integral_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,

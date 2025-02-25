@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveUtils.hpp"
@@ -552,9 +553,9 @@ void SystemDictionaryShared::init_dumptime_info_from_preimage(InstanceKlass* k) 
   copy_linking_constraints_from_preimage(k);
 
   if (SystemDictionary::is_platform_class_loader(k->class_loader())) {
-    ClassLoaderExt::set_has_platform_classes();
+    AOTClassLocationConfig::dumptime_set_has_platform_classes();
   } else if (SystemDictionary::is_system_class_loader(k->class_loader())) {
-    ClassLoaderExt::set_has_app_classes();
+    AOTClassLocationConfig::dumptime_set_has_app_classes();
   }
 }
 
