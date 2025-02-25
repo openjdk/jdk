@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,16 @@
  */
 package com.sun.crypto.provider;
 
-import sun.security.ssl.HKDF;
 import sun.security.util.CurveDB;
+import sun.security.util.Debug;
 import sun.security.util.ECUtil;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.CipherSpi;
-import javax.crypto.DecapsulateException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KEM;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.ShortBufferException;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.HPKEParameterSpec;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.*;
+import javax.crypto.spec.*;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
 import java.security.AlgorithmParameters;
 import java.security.AsymmetricKey;
 import java.security.InvalidAlgorithmParameterException;
@@ -53,14 +41,12 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.PrivilegedAction;
 import java.security.ProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.interfaces.ECKey;
-import java.security.interfaces.XECKey;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.ECParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -132,12 +118,15 @@ public class HPKE extends CipherSpi {
     protected void engineInit(int opmode, Key key, AlgorithmParameterSpec params, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         impl = new Impl(opmode);
+        if (!(key instanceof AsymmetricKey ak)) {
+            throw new InvalidKeyException("Not asymmetric key");
+        }
         if (params == null) {
-            impl.init(key, HPKEParameterSpec.of(), random);
+            impl.init(ak, HPKEParameterSpec.of(), random);
         } else if (params instanceof IvParameterSpec iv) {
-            impl.init(key, HPKEParameterSpec.of().encapsulation(iv.getIV()), random);
+            impl.init(ak, HPKEParameterSpec.of().encapsulation(iv.getIV()), random);
         } else if (params instanceof HPKEParameterSpec hps) {
-            impl.init(key, hps, random);
+            impl.init(ak, hps, random);
         } else {
             throw new InvalidAlgorithmParameterException("Unsupported params type: " + params.getClass());
         }
@@ -276,7 +265,7 @@ public class HPKE extends CipherSpi {
         AEAD aead;
 
         byte[] suite_id;
-        HKDF hkdf;
+        String kdfAlg;
         int kdfNh;
 
         byte[] iv; // sender side
@@ -297,10 +286,11 @@ public class HPKE extends CipherSpi {
 
             SecretKey Export(byte[] exporter_context, String algorithm, int L) {
                 try {
-                    return new SecretKeySpec(DHKEM.LabeledExpand(hkdf, suite_id, exporter_secret,
-                            "sec".getBytes(StandardCharsets.UTF_8),
-                            exporter_context, L), algorithm);
-                } catch (InvalidKeyException e) {
+                    var kdf = KDF.getInstance(kdfAlg);
+                    return kdf.deriveKey(algorithm, HKDFParameterSpec.expandOnly(exporter_secret,
+                            DHKEM.labeledInfo(suite_id, "sec".getBytes(StandardCharsets.UTF_8),
+                                    exporter_context, L), L));
+                } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
                     throw new ProviderException("Internal error", e);
                 }
             }
@@ -331,7 +321,7 @@ public class HPKE extends CipherSpi {
             return params.aead_id() != 65535;
         }
 
-        public void init(Key key, HPKEParameterSpec p, SecureRandom rand)
+        public void init(AsymmetricKey key, HPKEParameterSpec p, SecureRandom rand)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
             if (opmode != Cipher.ENCRYPT_MODE && opmode != Cipher.DECRYPT_MODE) {
                 throw new UnsupportedOperationException("Can only be used for encryption and decryption");
@@ -340,7 +330,7 @@ public class HPKE extends CipherSpi {
             SecretKey shared_secret;
             if (opmode == Cipher.ENCRYPT_MODE) {
                 if (!(key instanceof PublicKey pk)) {
-                    throw new InvalidKeyException("Decrypt with private key");
+                    throw new InvalidKeyException("Cannot encrypt with private key");
                 }
                 if (p.encapsulation() != null) {
                     throw new InvalidAlgorithmParameterException(
@@ -362,7 +352,7 @@ public class HPKE extends CipherSpi {
                 shared_secret = enc.key();
             } else {
                 if (!(key instanceof PrivateKey sk)) {
-                    throw new InvalidKeyException("Encrypt with public key");
+                    throw new InvalidKeyException("Cannot decrypt with public key");
                 }
                 checkMatch(sk, params.kem_id());
                 try {
@@ -396,16 +386,17 @@ public class HPKE extends CipherSpi {
 
         private static void checkMatch(AsymmetricKey k, int kem_id)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
-            if (k instanceof ECKey eckey) {
-                if ((ECUtil.equals(eckey.getParams(), CurveDB.P_256) && kem_id == 0x10)
-                        || (ECUtil.equals(eckey.getParams(), CurveDB.P_384) && kem_id == 0x11)
-                        || (ECUtil.equals(eckey.getParams(), CurveDB.P_521) && kem_id == 0x12)) {
+            var p = k.getParams();
+            if (p instanceof ECParameterSpec ecp) {
+                if ((ECUtil.equals(ecp, CurveDB.P_256) && kem_id == 0x10)
+                        || (ECUtil.equals(ecp, CurveDB.P_384) && kem_id == 0x11)
+                        || (ECUtil.equals(ecp, CurveDB.P_521) && kem_id == 0x12)) {
                     return;
                 } else {
-                    var name = ECUtil.getCurveName(eckey.getParams());
+                    var name = ECUtil.getCurveName(ecp);
                     throw new InvalidAlgorithmParameterException(name + " does not match " + kem_id);
                 }
-            } else if (k instanceof XECKey xk && xk.getParams() instanceof NamedParameterSpec ns) {
+            } else if (p instanceof NamedParameterSpec ns) {
                 var name = ns.getName();
                 if ((name.equalsIgnoreCase("x25519") && kem_id == 0x20)
                         || (name.equalsIgnoreCase("x448") && kem_id == 0x21)) {
@@ -426,17 +417,17 @@ public class HPKE extends CipherSpi {
             }
         }
 
-        private int paramsFromKey(Key k) throws InvalidKeyException {
-            if (k instanceof ECKey eckey) {
-                if (ECUtil.equals(eckey.getParams(), CurveDB.P_256)) {
+        private int paramsFromKey(AsymmetricKey k) throws InvalidKeyException {
+            var p = k.getParams();
+            if (p instanceof ECParameterSpec ecp) {
+                if (ECUtil.equals(ecp, CurveDB.P_256)) {
                     return 0x10;
-                } else if (ECUtil.equals(eckey.getParams(), CurveDB.P_384)) {
+                } else if (ECUtil.equals(ecp, CurveDB.P_384)) {
                     return 0x11;
-                } else if (ECUtil.equals(eckey.getParams(), CurveDB.P_521)) {
+                } else if (ECUtil.equals(ecp, CurveDB.P_521)) {
                     return 0x12;
                 }
-            } else if (k instanceof XECKey xkey
-                    && xkey.getParams() instanceof NamedParameterSpec ns) {
+            } else if (p instanceof NamedParameterSpec ns) {
                 if (ns.getName().equalsIgnoreCase("X25519")) {
                     return 0x20;
                 } else if (ns.getName().equalsIgnoreCase("X448")) {
@@ -446,7 +437,7 @@ public class HPKE extends CipherSpi {
             throw new InvalidKeyException("Unsupported key");
         }
 
-        private void setParams(Key key, HPKEParameterSpec p)
+        private void setParams(AsymmetricKey key, HPKEParameterSpec p)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
             this.params = p;
             if (p.kem_id() == 0) {
@@ -472,10 +463,10 @@ public class HPKE extends CipherSpi {
                     DHKEM.I2OSP(params.kem_id(), 2),
                     DHKEM.I2OSP(params.kdf_id(), 2),
                     DHKEM.I2OSP(params.aead_id(), 2));
-            var kdfAlg = switch (params.kdf_id()) {
-                case 1 -> "SHA-256";
-                case 2 -> "SHA-384";
-                case 3 -> "SHA-512";
+            kdfAlg = switch (params.kdf_id()) {
+                case 1 -> "HKDF-SHA256";
+                case 2 -> "HKDF-SHA384";
+                case 3 -> "HKDF-SHA512";
                 default -> throw new InvalidAlgorithmParameterException();
             };
             kdfNh = switch (params.kdf_id()) {
@@ -484,11 +475,6 @@ public class HPKE extends CipherSpi {
                 case 3 -> 64;
                 default -> throw new InvalidAlgorithmParameterException();
             };
-            try {
-                hkdf = new HKDF(kdfAlg);
-            } catch (NoSuchAlgorithmException e) {
-                throw new InvalidAlgorithmParameterException("Cannot find HKDF for " + kdfAlg, e);
-            }
             aead = new AEAD(params.aead_id());
         }
 
@@ -498,14 +484,7 @@ public class HPKE extends CipherSpi {
             List<int[]> disabledKEMs = new ArrayList<>();
             List<int[]> disabledKDFs = new ArrayList<>();
             List<int[]> disabledAEADs = new ArrayList<>();
-            @SuppressWarnings("removal")
-            String property = AccessController.doPrivileged(
-                    new PrivilegedAction<String>() {
-                        @Override
-                        public String run() {
-                            return Security.getProperty("jdk.hpke.disabledAlgorithms");
-                        }
-                    });
+            String property = Security.getProperty("jdk.hpke.disabledAlgorithms");
             if (property != null) {
                 for (String rule : property.split(",")) {
                     if (rule == null) {
@@ -524,10 +503,10 @@ public class HPKE extends CipherSpi {
                     int[] range = new int[2];
                     try {
                         if (pos2 == -1) {
-                            range[0] = range[1] = Integer.parseInt(rule.substring(pos1 + 1).trim());
+                            range[0] = range[1] = Integer.decode(rule.substring(pos1 + 1).trim());
                         } else {
-                            range[0] = Integer.parseInt(rule.substring(pos1 + 1, pos2).trim());
-                            range[1] = Integer.parseInt(rule.substring(pos2 + 1).trim());
+                            range[0] = Integer.decode(rule.substring(pos1 + 1, pos2).trim());
+                            range[1] = Integer.decode(rule.substring(pos2 + 1).trim());
                             if (range[0] > range[1]) {
                                 throw new IllegalArgumentException(
                                         "Invalid jdk.hpke.disabledAlgorithms: " + property);
@@ -574,29 +553,38 @@ public class HPKE extends CipherSpi {
                 SecretKey psk,
                 byte[] psk_id) {
             try {
-                var psk_id_hash = DHKEM.LabeledExtract(hkdf, suite_id, null,
-                        "psk_id_hash".getBytes(StandardCharsets.UTF_8), psk_id).getEncoded();
-                var info_hash = DHKEM.LabeledExtract(hkdf, suite_id, null,
-                        "info_hash".getBytes(StandardCharsets.UTF_8), info).getEncoded();
-                var key_schedule_context = concat(new byte[]{(byte) mode}, psk_id_hash, info_hash);
-                var secret = DHKEM.LabeledExtract(hkdf, suite_id, Objects.requireNonNull(shared_secret.getEncoded()),
-                        "secret".getBytes(StandardCharsets.UTF_8),
-                        psk == null ? new byte[0] : Objects.requireNonNull(psk.getEncoded()));
+                var psk_id_hash_x = DHKEM.labeledBuilder(suite_id, "psk_id_hash".getBytes(StandardCharsets.UTF_8))
+                        .addIKM(psk_id);
+                var info_hash_x = DHKEM.labeledBuilder(suite_id, "info_hash".getBytes(StandardCharsets.UTF_8))
+                        .addIKM(info);
 
-                var exporter_secret = new SecretKeySpec(DHKEM.LabeledExpand(hkdf, suite_id, secret,
-                        "exp".getBytes(StandardCharsets.UTF_8), key_schedule_context, kdfNh), "EXPORTER_SECRET");
+                // deriveData must and can be called because all info are extractable.
+                // Any KDF impl can handle this.
+                var kdf = KDF.getInstance(kdfAlg);
+                var key_schedule_context = concat(new byte[]{(byte) mode},
+                        kdf.deriveData(psk_id_hash_x.extractOnly()),
+                        kdf.deriveData(info_hash_x.extractOnly()));
+                var secret_x = DHKEM.labeledBuilder(suite_id, "secret".getBytes(StandardCharsets.UTF_8))
+                        .addIKM(psk == null ? new byte[0] : Objects.requireNonNull(psk.getEncoded()))
+                        .addSalt(shared_secret);
+
+                // Create a new KDF object because secret_x might contain provider-specific keys
+                kdf = KDF.getInstance(kdfAlg);
+                var exporter_secret = kdf.deriveKey("Generic",
+                        secret_x.thenExpand(DHKEM.labeledInfo(suite_id, "exp".getBytes(StandardCharsets.UTF_8), key_schedule_context, kdfNh), kdfNh));
 
                 if (hasEncrypt()) {
                     // ChaCha20-Poly1305 does not care about algorithm name
-                    var key = new SecretKeySpec(DHKEM.LabeledExpand(hkdf, suite_id, secret, "key".getBytes(StandardCharsets.UTF_8),
-                            key_schedule_context, aead.Nk), "AES");
-                    var base_nonce = DHKEM.LabeledExpand(hkdf, suite_id, secret, "base_nonce".getBytes(StandardCharsets.UTF_8),
-                            key_schedule_context, aead.Nn);
+                    var key = kdf.deriveKey("AES", secret_x.thenExpand(DHKEM.labeledInfo(suite_id, "key".getBytes(StandardCharsets.UTF_8),
+                            key_schedule_context, aead.Nk), aead.Nk));
+                    // deriveData must be called because we need to increment nonce, the info must be allowed
+                    var base_nonce = kdf.deriveData(secret_x.thenExpand(DHKEM.labeledInfo(suite_id, "base_nonce".getBytes(StandardCharsets.UTF_8),
+                            key_schedule_context, aead.Nn), aead.Nn));
                     return new Context(key, base_nonce, exporter_secret);
                 } else {
                     return new Context(null, null, exporter_secret);
                 }
-            } catch (InvalidKeyException e) {
+            } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
                 throw new ProviderException("Internal error", e);
             }
         }

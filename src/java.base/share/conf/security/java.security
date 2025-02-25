@@ -657,12 +657,17 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
 # on both sides) are disabled. Initializing an HPKE cipher with disabled
 # algorithm identifier(s) will throw an InvalidAlgorithmParameterException.
 #
-# The numbers must be in decimal. All whitespaces around delimiters are ignored.
-# The names are case-sensitive.
+# The numbers can be in any format that Integer::decode accepts.
+# All whitespaces around delimiters are ignored. The names are case-sensitive.
 #
 # Note: This property is currently used by the JDK Reference
 # implementation. It is not guaranteed to be examined and used by other
 # implementations.
+#
+# Example:
+#   jdk.hpke.disabledAlgorithms=kem_id=16-18
+#   jdk.hpke.disabledAlgorithms=kem_id=0x10,kdf_id=0x01,aead_id=0xffff
+#
 jdk.hpke.disabledAlgorithms=
 
 #

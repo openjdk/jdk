@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,6 +181,8 @@ import java.util.Objects;
  *
  * @spec https://www.rfc-editor.org/info/rfc9180
  *      RFC 9180: Hybrid Public Key Encryption
+ * @spec security/standard-names.html
+ *      Java Security Standard Algorithm Names
  */
 public final class HPKEParameterSpec implements AlgorithmParameterSpec {
 
