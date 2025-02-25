@@ -118,9 +118,13 @@ protected:
   void op_final_update_refs();
   void op_final_roots();
   void op_cleanup_complete();
+  void op_reset_after_collect();
 
   // Check GC cancellation and abort concurrent GC
   bool check_cancellation_and_abort(ShenandoahDegenPoint point);
+
+  // Called when concurrent GC succeeds.
+  void entry_reset_after_collect();
 
 private:
   void start_mark();
@@ -134,6 +138,7 @@ private:
   const char* final_roots_event_message() const;
   const char* conc_mark_event_message() const;
   const char* conc_reset_event_message() const;
+  const char* conc_reset_after_collect_event_message() const;
   const char* conc_weak_refs_event_message() const;
   const char* conc_weak_roots_event_message() const;
   const char* conc_cleanup_event_message() const;

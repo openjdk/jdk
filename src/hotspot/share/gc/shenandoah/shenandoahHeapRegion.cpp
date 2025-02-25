@@ -76,10 +76,11 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _live_data(0),
   _critical_pins(0),
   _update_watermark(start),
-  _age(0)
+  _age(0),
 #ifdef SHENANDOAH_CENSUS_NOISE
-  , _youth(0)
+  _youth(0),
 #endif // SHENANDOAH_CENSUS_NOISE
+  _needs_bitmap_reset(false)
   {
 
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
