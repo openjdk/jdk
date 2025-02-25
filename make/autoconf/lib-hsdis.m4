@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,9 @@ AC_DEFUN([LIB_SETUP_HSDIS_CAPSTONE],
     HSDIS_CFLAGS="-I${CAPSTONE}/include/capstone"
     if test "x$OPENJDK_TARGET_OS" != xwindows; then
       HSDIS_LDFLAGS="-L${CAPSTONE}/lib"
+      if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" ; then
+        HSDIS_LDFLAGS="-L${CAPSTONE}/lib64 $HSDIS_LDFLAGS"
+      fi
       HSDIS_LIBS="-lcapstone"
     else
       HSDIS_LDFLAGS="-nodefaultlib:libcmt.lib"

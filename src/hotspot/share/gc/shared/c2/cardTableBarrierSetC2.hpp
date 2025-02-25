@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,9 @@
 class CardTableBarrierSetC2: public ModRefBarrierSetC2 {
 protected:
   virtual void post_barrier(GraphKit* kit,
-                            Node* ctl,
-                            Node* store,
                             Node* obj,
                             Node* adr,
-                            uint adr_idx,
                             Node* val,
-                            BasicType bt,
                             bool use_precise) const;
 
   Node* byte_map_base_node(GraphKit* kit) const;
@@ -45,7 +41,7 @@ public:
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const;
 
-  bool use_ReduceInitialCardMarks() const;
+  static bool use_ReduceInitialCardMarks();
 };
 
 #endif // SHARE_GC_SHARED_C2_CARDTABLEBARRIERSETC2_HPP

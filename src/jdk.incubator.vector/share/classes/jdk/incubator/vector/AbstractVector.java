@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,12 +194,43 @@ abstract class AbstractVector<E> extends Vector<E> {
 
     abstract AbstractMask<E> maskFromArray(boolean[] bits);
 
+    abstract <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp);
+
+    /*package-private*/
+    @ForceInline
+    final <F> VectorShuffle<F> bitsToShuffleTemplate(AbstractSpecies<F> dsp) {
+        Class<?> etype = vspecies().elementType();
+        Class<?> dvtype = dsp.shuffleType();
+        Class<?> dtype = dsp.asIntegral().elementType();
+        int dlength = dsp.dummyVector().length();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), etype, length(),
+                                     dvtype, dtype, dlength,
+                                     this, dsp,
+                                     AbstractVector::bitsToShuffle0);
+    }
+
+    abstract <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp);
+
+    abstract <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap);
+
     abstract AbstractShuffle<E> iotaShuffle();
 
     abstract AbstractShuffle<E> iotaShuffle(int start, int step, boolean wrap);
 
-    /*do not alias this byte array*/
-    abstract AbstractShuffle<E> shuffleFromBytes(byte[] reorder);
+    @ForceInline
+    final VectorShuffle<E> iotaShuffleTemplate(int start, int step, boolean wrap) {
+        if ((length() & (length() - 1)) != 0) {
+            // Uncommon path, the length is not a power of 2
+            return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, length())))
+                        : shuffleFromOp(i -> i * step + start);
+        }
+
+        AbstractVector<?> iota = vspecies().asIntegral().iota();
+        iota = (AbstractVector<?>) iota.lanewise(VectorOperators.MUL, step)
+                .lanewise(VectorOperators.ADD, start);
+        return iota.toShuffle(vspecies(), wrap);
+    }
 
     abstract AbstractShuffle<E> shuffleFromArray(int[] indexes, int i);
 

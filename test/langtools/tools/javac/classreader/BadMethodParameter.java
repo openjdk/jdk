@@ -31,7 +31,6 @@
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask
- * @enablePreview
  * @run main BadMethodParameter
  */
 
@@ -99,9 +98,7 @@ public class BadMethodParameter extends TestRunner {
         Path classDir = getClassDir();
         new JavacTask(tb)
                 .classpath(classes, classDir)
-                .options("--enable-preview",
-                         "-source", String.valueOf(Runtime.version().feature()),
-                         "-verbose", "-parameters", "-processor", P.class.getName())
+                .options("-verbose", "-parameters", "-processor", P.class.getName())
                 .classes(P.class.getName())
                 .outdir(classes)
                 .run(Task.Expect.SUCCESS);

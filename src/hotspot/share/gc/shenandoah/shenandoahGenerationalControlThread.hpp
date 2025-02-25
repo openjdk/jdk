@@ -48,7 +48,8 @@ public:
     stw_degenerated,
     stw_full,
     bootstrapping_old,
-    servicing_old
+    servicing_old,
+    stopped
   } GCMode;
 
 private:

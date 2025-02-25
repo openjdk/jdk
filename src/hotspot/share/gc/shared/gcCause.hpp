@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ class GCCause : public AllStatic {
     _scavenge_alot,
     _allocation_profiler,
     _jvmti_force_gc,
-    _gc_locker,
     _heap_inspection,
     _heap_dump,
     _wb_young_gc,

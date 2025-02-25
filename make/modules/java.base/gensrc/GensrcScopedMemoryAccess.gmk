@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 
 SCOPED_MEMORY_ACCESS_GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/misc
 SCOPED_MEMORY_ACCESS_SRC_DIR := $(MODULE_SRC)/share/classes/jdk/internal/misc
@@ -149,3 +154,8 @@ $(SCOPED_MEMORY_ACCESS_DEST): $(BUILD_TOOLS_JDK) $(SCOPED_MEMORY_ACCESS_TEMPLATE
 	$(PRINTF) "}\n" >> $(SCOPED_MEMORY_ACCESS_DEST)
 
 TARGETS += $(SCOPED_MEMORY_ACCESS_DEST)
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

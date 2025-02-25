@@ -25,7 +25,6 @@
  * @test
  * @bug 8255560
  * @summary Class::isRecord should check that the current class is final and not abstract
- * @enablePreview
  * @library /test/lib
  * @run testng/othervm IsRecordTest
  */

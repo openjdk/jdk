@@ -29,7 +29,6 @@
  *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.resources:open
  *          jdk.javadoc/jdk.javadoc.internal.doclets.toolkit.resources:open
  *          jdk.javadoc/jdk.javadoc.internal.tool.resources:open
- * @enablePreview
  */
 
 import java.io.*;

@@ -50,7 +50,6 @@ import tests.Result;
  * @bug 8252919 8327499
  * @library ../../lib
  * @summary Test --generate-jli-classes plugin
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins

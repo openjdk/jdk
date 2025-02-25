@@ -70,8 +70,8 @@ public class ML_KEM_Test {
                 var kp = g.generateKeyPair();
                 var pk = f.getKeySpec(kp.getPublic(), EncodedKeySpec.class).getEncoded();
                 var sk = f.getKeySpec(kp.getPrivate(), EncodedKeySpec.class).getEncoded();
-                Asserts.assertEqualsByteArray(pk, toByteArray(c.get("ek").asString()));
-                Asserts.assertEqualsByteArray(sk, toByteArray(c.get("dk").asString()));
+                Asserts.assertEqualsByteArray(toByteArray(c.get("ek").asString()), pk);
+                Asserts.assertEqualsByteArray(toByteArray(c.get("dk").asString()), sk);
             }
             System.out.println();
         }
@@ -97,9 +97,9 @@ public class ML_KEM_Test {
                             ek, new FixedSecureRandom(toByteArray(c.get("m").asString())));
                     var enc = e.encapsulate();
                     Asserts.assertEqualsByteArray(
-                            enc.encapsulation(), toByteArray(c.get("c").asString()));
+                            toByteArray(c.get("c").asString()), enc.encapsulation());
                     Asserts.assertEqualsByteArray(
-                            enc.key().getEncoded(), toByteArray(c.get("k").asString()));
+                            toByteArray(c.get("k").asString()), enc.key().getEncoded());
                 }
                 System.out.println();
             } else if (function.equals("decapsulation")) {
@@ -112,7 +112,7 @@ public class ML_KEM_Test {
                     System.out.print(c.get("tcId").asString() + " ");
                     var d = g.newDecapsulator(dk);
                     var k = d.decapsulate(toByteArray(c.get("c").asString()));
-                    Asserts.assertEqualsByteArray(k.getEncoded(), toByteArray(c.get("k").asString()));
+                    Asserts.assertEqualsByteArray(toByteArray(c.get("k").asString()), k.getEncoded());
                 }
                 System.out.println();
             }

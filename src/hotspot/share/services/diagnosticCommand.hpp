@@ -822,14 +822,14 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-#if defined(LINUX) || defined(_WIN64)
+#if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
 class SystemMapDCmd : public DCmd {
 public:
   SystemMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.map"; }
   static const char* description() {
-    return "Prints an annotated process memory map of the VM process (linux and Windows only).";
+    return "Prints an annotated process memory map of the VM process (linux, Windows and MacOS only).";
   }
   static const char* impact() { return "Medium; can be high for very large java heaps."; }
   virtual void execute(DCmdSource source, TRAPS);
@@ -842,12 +842,12 @@ public:
   SystemDumpMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.dump_map"; }
   static const char* description() {
-    return "Dumps an annotated process memory map to an output file (linux and Windows only).";
+    return "Dumps an annotated process memory map to an output file (linux, Windows and MacOS only).";
   }
   static const char* impact() { return "Medium; can be high for very large java heaps."; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-#endif // LINUX or WINDOWS
+#endif // LINUX, WINDOWS or MACOS
 
 #endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP
