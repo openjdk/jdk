@@ -99,10 +99,10 @@ public class CompileCommandMemLimit {
         //
         // C1 will allocate them in a single step from RA, leaked until end of compilation.
         //
-        // C2 will allocate them in two steps: first 2MB inside phase "testTimer1" in a temporary arena
+        // C2 will allocate them in two steps: first 2MB inside phase "testPhase1" in a temporary arena
         // that will be gone by phase end. So, in the phase timeline these 2MB must show up as
         // "significant temporary peak".
-        // In a second phase "testTimer2", we allocate 32MB from resource area, which is leaked until
+        // In a second phase "testPhase2", we allocate 32MB from resource area, which is leaked until
         // the end of the compilation. This means that these 32MB will show up as permanent memory
         // increase in the per-phase-timeline.
         //
@@ -176,9 +176,9 @@ public class CompileCommandMemLimit {
             oa.shouldMatch("--- Arena Usage by Arena Type and compilation phase, at arena usage peak of \\d+ ---");
             oa.shouldContain("--- Allocation timelime by phase ---");
             if (Platform.isDebugBuild()) {
-                oa.shouldMatch(".*testTimer2 +33554432 +33554432 +0 +0 +0 +0 +0.*");
-                oa.shouldMatch(" +>\\d+ +testTimer1.*significant temporary peak: \\d+ \\(\\+2098136\\)");
-                oa.shouldMatch(" +>\\d+ +testTimer2 +\\d+ +\\(\\+33554432\\).*");
+                oa.shouldMatch(".*testPhase2 +33554432 +33554432 +0 +0 +0 +0 +0.*");
+                oa.shouldMatch(" +>\\d+ +testPhase1.*significant temporary peak: \\d+ \\(\\+2098136\\)");
+                oa.shouldMatch(" +>\\d+ +testPhase2 +\\d+ +\\(\\+33554432\\).*");
             }
         }
 

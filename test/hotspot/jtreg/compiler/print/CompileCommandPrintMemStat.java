@@ -107,9 +107,9 @@ public class CompileCommandPrintMemStat {
             oa.shouldMatch("--- Arena Usage by Arena Type and compilation phase, at arena usage peak of \\d+ ---");
             oa.shouldContain("--- Allocation timelime by phase ---");
             if (Platform.isDebugBuild()) {
-                oa.shouldMatch(".*testTimer2 +33554432 +33554432 +0 +0 +0 +0 +0.*");
-                oa.shouldMatch(" +>\\d+ +testTimer1.*significant temporary peak: \\d+ \\(\\+2098136\\)");
-                oa.shouldMatch(" +>\\d+ +testTimer2 +\\d+ +\\(\\+33554432\\).*");
+                oa.shouldMatch(".*testPhase2 +33554432 +33554432 +0 +0 +0 +0 +0.*");
+                oa.shouldMatch(" +>\\d+ +testPhase1.*significant temporary peak: \\d+ \\(\\+2098136\\)");
+                oa.shouldMatch(" +>\\d+ +testPhase2 +\\d+ +\\(\\+33554432\\).*");
             }
         }
 

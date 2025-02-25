@@ -122,8 +122,8 @@ public:
     f(     _t_registerMethod,        "install_code")             \
     f(   _t_temporaryTimer1,         "tempTimer1")               \
     f(   _t_temporaryTimer2,         "tempTimer2")               \
-    f(   _t_testTimer1,              "testTimer1")               \
-    f(   _t_testTimer2,              "testTimer2")
+    f(   _t_testPhase1,              "testPhase1")               \
+    f(   _t_testPhase2,              "testPhase2")
 
   enum PhaseTraceId {
 #define DEFID(name, text) name,

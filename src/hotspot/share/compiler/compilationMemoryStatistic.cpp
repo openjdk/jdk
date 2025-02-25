@@ -132,7 +132,6 @@ void FootprintTimeline::copy_from(const FootprintTimeline& other) {
 }
 
 void FootprintTimeline::print_on(outputStream* st) const {
-  constexpr bool omit_empty_phases = false;
   const int start_indent = st->indentation();
   if (!_fifo.empty()) {
                // .123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789
@@ -146,9 +145,6 @@ void FootprintTimeline::print_on(outputStream* st) const {
     auto printer = [&](const Entry& e) {
       int col = start_indent;
       check_phase_trace_id(e.info.id);
-      if (omit_empty_phases && e._bytes.end_delta() == 0 && e._bytes.temporary_peak_size() == 0) {
-        return;
-      }
       st->print("%*s", e.level,
           ((e.level < last_level) ? "<" : ((e.level > last_level) ? ">" : " "))
       );
@@ -202,8 +198,8 @@ void FootprintTimeline::on_phase_start(PhaseInfo info, size_t cur_abs, unsigned 
   } else {
     // seed current entry
     Entry& e = _fifo.current();
-    e._bytes.start = e._bytes.cur = e._bytes.peak = cur_abs;
-    e._live_nodes.start = e._live_nodes.cur = e._live_nodes.peak = cur_nodes;
+    e._bytes.init(cur_abs);
+    e._live_nodes.init(cur_nodes);
     e.info = info;
     e.level = level;
   }
@@ -1087,12 +1083,12 @@ void CompilationMemoryStatistic::do_test_allocations() {
 #ifdef COMPILER2
   if (ctyp == CompilerType::compiler_c2) {
     {
-      Compile::TracePhase tp(Phase::_t_testTimer1);
+      Compile::TracePhase tp(Phase::_t_testPhase1);
       Arena ar(MemTag::mtCompiler, Arena::Tag::tag_reglive);
       ar.Amalloc(2 * M); // phase-local peak
     }
     {
-      Compile::TracePhase tp(Phase::_t_testTimer2);
+      Compile::TracePhase tp(Phase::_t_testPhase2);
       NEW_RESOURCE_ARRAY(char, 32 * M); // leaked (until compilation end)
     }
   } // C2

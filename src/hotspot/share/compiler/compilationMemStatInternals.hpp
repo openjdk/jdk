@@ -89,16 +89,16 @@ public:
 };
 
 // A very simple fixed-width FIFO buffer, used for the phase timeline
-template <typename T, int max>
+template <typename T, int size>
 class SimpleFifo {
-  STATIC_ASSERT((max * 2) < INT_MAX);
-  T _v[max];
+  STATIC_ASSERT((size * 2) < INT_MAX);
+  T _v[size];
   int _pos;
   int _oldest;
   uint64_t _lost;
 
   int current_pos() const           { return _pos; }
-  static int pos_to_index(int pos)  { return pos % max; }
+  static int pos_to_index(int pos)  { return pos % size; }
   T& at(int pos)                    { return *(_v + pos_to_index(pos)); }
 
 public:
@@ -110,13 +110,13 @@ public:
 
   void advance() {
     _pos ++;
-    if (_pos >= max) {
+    if (_pos >= size) {
       _oldest ++;
       _lost ++;
     }
     if (_pos == INT_MAX) {
-      _pos -= max;
-      _oldest -= max;
+      _pos -= size;
+      _oldest -= size;
     }
   }
 
