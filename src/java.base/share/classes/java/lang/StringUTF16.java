@@ -35,7 +35,6 @@ import java.util.stream.StreamSupport;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -43,6 +42,7 @@ import static java.lang.String.UTF16;
 import static java.lang.String.LATIN1;
 
 final class StringUTF16 {
+
     // Return a new byte array for a UTF16-coded string for len chars
     // Throw an exception if out of range
     public static byte[] newBytesFor(int len) {
@@ -1513,20 +1513,6 @@ final class StringUTF16 {
         return codePointCount(val, beginIndex, endIndex, true /* checked */);
     }
 
-    public static int getChars(int i, int begin, int end, byte[] value) {
-        checkBoundsBeginEnd(begin, end, value);
-        int pos = getChars(i, end, value);
-        assert begin == pos;
-        return pos;
-    }
-
-    public static int getChars(long l, int begin, int end, byte[] value) {
-        checkBoundsBeginEnd(begin, end, value);
-        int pos = getChars(l, end, value);
-        assert begin == pos;
-        return pos;
-    }
-
     public static boolean contentEquals(byte[] v1, byte[] v2, int len) {
         checkBoundsOffCount(0, len, v2);
         for (int i = 0; i < len; i++) {
@@ -1547,20 +1533,27 @@ final class StringUTF16 {
         return true;
     }
 
-    static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4) {
-        assert index >= 0 && index + 3 < length(val) : "Trusted caller missed bounds check";
-        putChar(val, index    , c1);
-        putChar(val, index + 1, c2);
-        putChar(val, index + 2, c3);
-        putChar(val, index + 3, c4);
+    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
+        int end = i + 4;
+        checkBoundsBeginEnd(i, end, value);
+        putChar(value, i++, c1);
+        putChar(value, i++, c2);
+        putChar(value, i++, c3);
+        putChar(value, i++, c4);
+        assert(i == end);
+        return end;
     }
 
-    static void putCharsAt(byte[] val, int index, int c1, int c2, int c3, int c4, int c5) {
-        putChar(val, index    , c1);
-        putChar(val, index + 1, c2);
-        putChar(val, index + 2, c3);
-        putChar(val, index + 3, c4);
-        putChar(val, index + 4, c5);
+    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
+        int end = i + 5;
+        checkBoundsBeginEnd(i, end, value);
+        putChar(value, i++, c1);
+        putChar(value, i++, c2);
+        putChar(value, i++, c3);
+        putChar(value, i++, c4);
+        putChar(value, i++, c5);
+        assert(i == end);
+        return end;
     }
 
     public static char charAt(byte[] value, int index) {
@@ -1661,109 +1654,6 @@ final class StringUTF16 {
     }
 
     static final int MAX_LENGTH = Integer.MAX_VALUE >> 1;
-
-    // Used by trusted callers.  Assumes all necessary bounds checks have
-    // been done by the caller.
-
-    /**
-     * This is a variant of {@link StringLatin1#getChars(int, int, byte[])}, but for
-     * UTF-16 coder.
-     *
-     * @param i     value to convert
-     * @param index next index, after the least significant digit
-     * @param buf   target buffer, UTF16-coded.
-     * @return index of the most significant digit or minus sign, if present
-     */
-    static int getChars(int i, int index, byte[] buf) {
-        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
-        int q, r;
-        int charPos = index;
-
-        boolean negative = (i < 0);
-        if (!negative) {
-            i = -i;
-        }
-
-        // Get 2 digits/iteration using ints
-        while (i <= -100) {
-            q = i / 100;
-            r = (q * 100) - i;
-            i = q;
-            charPos -= 2;
-            putPair(buf, charPos, r);
-        }
-
-        // We know there are at most two digits left at this point.
-        if (i < -9) {
-            charPos -= 2;
-            putPair(buf, charPos, -i);
-        } else {
-            putChar(buf, --charPos, '0' - i);
-        }
-
-        if (negative) {
-            putChar(buf, --charPos, '-');
-        }
-        return charPos;
-    }
-
-    /**
-     * This is a variant of {@link StringLatin1#getChars(long, int, byte[])}, but for
-     * UTF-16 coder.
-     *
-     * @param i     value to convert
-     * @param index next index, after the least significant digit
-     * @param buf   target buffer, UTF16-coded.
-     * @return index of the most significant digit or minus sign, if present
-     */
-    static int getChars(long i, int index, byte[] buf) {
-        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
-        long q;
-        int charPos = index;
-
-        boolean negative = (i < 0);
-        if (!negative) {
-            i = -i;
-        }
-
-        // Get 2 digits/iteration using longs until quotient fits into an int
-        while (i <= Integer.MIN_VALUE) {
-            q = i / 100;
-            charPos -= 2;
-            putPair(buf, charPos, (int)((q * 100) - i));
-            i = q;
-        }
-
-        // Get 2 digits/iteration using ints
-        int q2;
-        int i2 = (int)i;
-        while (i2 <= -100) {
-            q2 = i2 / 100;
-            charPos -= 2;
-            putPair(buf, charPos, (q2 * 100) - i2);
-            i2 = q2;
-        }
-
-        // We know there are at most two digits left at this point.
-        if (i2 < -9) {
-            charPos -= 2;
-            putPair(buf, charPos, -i2);
-        } else {
-            putChar(buf, --charPos, '0' - i2);
-        }
-
-        if (negative) {
-            putChar(buf, --charPos, '-');
-        }
-        return charPos;
-    }
-
-    private static void putPair(byte[] buf, int charPos, int v) {
-        int packed = (int) DecimalDigits.digitPair(v);
-        putChar(buf, charPos, packed & 0xFF);
-        putChar(buf, charPos + 1, packed >> 8);
-    }
-    // End of trusted methods.
 
     public static void checkIndex(int off, byte[] val) {
         String.checkIndex(off, length(val));

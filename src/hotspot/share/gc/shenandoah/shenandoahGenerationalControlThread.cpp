@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -317,6 +316,8 @@ void ShenandoahGenerationalControlThread::run_service() {
       lock.wait(ShenandoahControlIntervalMax);
     }
   }
+
+  set_gc_mode(stopped);
 
   // Wait for the actual stop(), can't leave run_service() earlier.
   while (!should_terminate()) {
@@ -813,6 +814,7 @@ const char* ShenandoahGenerationalControlThread::gc_mode_name(ShenandoahGenerati
     case stw_full:          return "full";
     case servicing_old:     return "old";
     case bootstrapping_old: return "bootstrap";
+    case stopped:           return "stopped";
     default:                return "unknown";
   }
 }

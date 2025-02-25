@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm.h"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logLevel.hpp"
@@ -78,7 +78,13 @@ void LogTagSet::log(LogLevelType level, const char* msg) {
   // the implied memory order of Atomic::add().
   LogOutputList::Iterator it = _output_list.iterator(level);
   LogDecorations decorations(level, *this, _decorators);
-
+#ifdef ASSERT
+  // If we log for tag deathtest2 then we're testing that recursive logging works.
+  // In this case, do not crash when detecting recursive logging.
+  if (this->contains(LogTagType::_deathtest2)) {
+    AsyncLogWriter::ignore_recursive_logging = true;
+  }
+#endif
   for (; it != _output_list.end(); it++) {
     (*it)->write(decorations, msg);
   }
