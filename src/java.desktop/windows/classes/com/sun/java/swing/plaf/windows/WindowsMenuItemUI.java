@@ -33,6 +33,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import javax.swing.ButtonModel;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -159,6 +160,32 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
         WindowsGraphicsUtils.paintText(g, menuItem, textRect, text, 0);
 
         g.setColor(oldColor);
+    }
+
+    @Override
+    protected Rectangle setTextPosition(Rectangle rect, JMenuItem menuItem,
+                                        Icon checkIcon, boolean useCheckAndArrow) {
+        if (WindowsMenuItemUI.isVistaPainting()) {
+            return WindowsMenuItemUI.setTextPosition(accessor, rect, menuItem,
+                                                     checkIcon, useCheckAndArrow);
+        }
+        return super.setTextPosition(rect, menuItem, checkIcon, useCheckAndArrow);
+    }
+
+
+    static Rectangle setTextPosition(WindowsMenuItemUIAccessor menuItemUI,
+                                     Rectangle rect, JMenuItem menuItem,
+                                     Icon checkIcon, boolean useCheckAndArrow) {
+        boolean isWindows11OrLater = Integer.parseInt(System.getProperty("os.name").
+                replaceAll("[^0-9]", "")) >= 11;
+        if (isWindows11OrLater && checkIcon != null && useCheckAndArrow) {
+            if (menuItem.getIcon() != null) {
+                rect.x = rect.x + checkIcon.getIconWidth() / 2;
+            } else {
+                rect.x = rect.x - checkIcon.getIconWidth() / 2;
+            }
+        }
+        return rect;
     }
 
     @Override
