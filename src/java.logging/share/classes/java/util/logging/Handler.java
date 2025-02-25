@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,41 @@ import java.io.UnsupportedEncodingException;
  * and {@code Level}.  See the specific documentation for each concrete
  * {@code Handler} class.
  *
+ * @implNote When implementing new {@code Handler} subclasses, it is important
+ * to understand the potential effects of synchronization.
+ * <p>
+ * Logging can occur concurrently in many threads, so a general principle
+ * is to synchronize as little as necessary to minimize thread contention.
+ * <p>
+ * As such, the following pattern is often used in the core {@code Handler}
+ * classes:
+ * <ul>
+ *     <li>Mutable state is held in {@code volatile} fields.
+ *     <li>These fields are read from unsynchronized getter methods.
+ *     <li>These fields are modified via synchronized setter methods.
+ * </ul>
+ * For example, this prevents thread contention around calls to
+ * {@link #isLoggable(LogRecord)} while allowing code synchronized on the
+ * {@code Handler} instance to set a new log level.
+ * <p>
+ * Another principle is to avoid synchronizing {@code Handler} instances
+ * (or holding any other locks) while processing user-provided arguments,
+ * such as {@link LogRecord} parameters.
+ * <p>
+ * This applies most directly to the {@link #publish(LogRecord)} method, where
+ * user arguments are processed. Holding a lock when calling {@code toString()}
+ * on log arguments creates an inevitable deadlock risk.
+ * <p>
+ * A consequence of this is that the {@link #publish(LogRecord)} method of
+ * {@code Handler} subclasses should typically never be synchronized. However,
+ * {@code Handler} subclasses can synchronize within their
+ * {@link #publish(LogRecord)} implementation to protect internal state.
+ * <p>
+ * If you have requirements for a {@code Handler} which do not match the
+ * synchronization behaviour in classes such as {@link StreamHandler},
+ * {@link FileHandler} or {@link Formatter} then, in order to have complete
+ * control of synchronization, it is recommended to subclass {@code Handler}
+ * directly.
  *
  * @since 1.4
  */
@@ -123,6 +158,9 @@ public abstract class Handler {
      * <p>
      * The {@code Handler}  is responsible for formatting the message, when and
      * if necessary.  The formatting should include localization.
+     * <p>
+     * @implNote Implementations of this method should avoid holding any locks
+     * around the formatting of {@code LogRecord}.
      *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,10 +184,14 @@ public class StreamHandler extends Handler {
      *                 silently ignored and is not published
      */
     @Override
-    public synchronized void publish(LogRecord record) {
-       if (!isLoggable(record)) {
+    public void publish(LogRecord record) {
+        if (!isLoggable(record)) {
             return;
         }
+        // JDK-8349206: To avoid deadlock risk, it is essential that the handler
+        // is not locked while formatting the log record. Methods such as
+        // reportError() and isLoggable() are defined to be thread safe, so we
+        // can restrict locking to just writing the message.
         String msg;
         try {
             msg = getFormatter().format(record);
@@ -199,12 +203,15 @@ public class StreamHandler extends Handler {
         }
 
         try {
-            Writer writer = this.writer;
-            if (!doneHeader) {
-                writer.write(getFormatter().getHead(this));
-                doneHeader = true;
+            synchronized(this) {
+                Writer writer = this.writer;
+                if (!doneHeader) {
+                    writer.write(getFormatter().getHead(this));
+                    doneHeader = true;
+                }
+                writer.write(msg);
+                synchronousPostWriteHook();
             }
-            writer.write(msg);
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -212,6 +219,15 @@ public class StreamHandler extends Handler {
         }
     }
 
+    /**
+     * Overridden by other handlers in this package to facilitate synchronous
+     * post-write behaviour. If other handlers need similar functionality, it
+     * might be feasible to make this method protected (see JDK-8349206), but
+     * please find a better name if you do ;).
+     */
+    void synchronousPostWriteHook() {
+        // Empty by default.
+    }
 
     /**
      * Check if this {@code Handler} would actually log a given {@code LogRecord}.
@@ -249,6 +265,7 @@ public class StreamHandler extends Handler {
         }
     }
 
+    // Called synchronously.
     private void flushAndClose() {
         Writer writer = this.writer;
         if (writer != null) {

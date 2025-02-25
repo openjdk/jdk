@@ -92,6 +92,7 @@ public class ConsoleHandler extends StreamHandler {
      */
     @Override
     public void publish(LogRecord record) {
+        // JDK-8349206: Do NOT synchronize around the parent's publish() method.
         super.publish(record);
         flush();
     }
