@@ -734,7 +734,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
 
     // After a successful realloc(3), we account the resized block with its new size
     // to NMT.
-    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, mem_tag, stack);
+    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, mem_tag, stack, memblock);
 
 #ifdef ASSERT
     assert(old_size == free_info.size, "Sanity");

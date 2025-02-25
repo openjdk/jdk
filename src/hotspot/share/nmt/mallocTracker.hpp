@@ -281,7 +281,7 @@ class MallocTracker : AllStatic {
 
   // Record  malloc on specified memory block
   static void* record_malloc(void* malloc_base, size_t size, MemTag mem_tag,
-    const NativeCallStack& stack);
+    const NativeCallStack& stack, void* old_base = nullptr);
 
   // Given a block returned by os::malloc() or os::realloc():
   // deaccount block from NMT, mark its header as dead and return pointer to header.
