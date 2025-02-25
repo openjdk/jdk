@@ -1,0 +1,616 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package com.sun.crypto.provider;
+
+import sun.security.util.CurveDB;
+import sun.security.util.Debug;
+import sun.security.util.ECUtil;
+
+import javax.crypto.*;
+import javax.crypto.spec.*;
+import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.AlgorithmParameters;
+import java.security.AsymmetricKey;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.ProviderException;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.NamedParameterSpec;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
+public class HPKE extends CipherSpi {
+
+    private static final int BEGIN = 1;
+    private static final int EXPORT_ONLY = 2; // init done with aead_id == 65535
+    private static final int ENCRYPT_AND_EXPORT = 3; // int done with AEAD
+    private static final int AFTER_FINAL = 4; // after doFinal, need reinit internal cipher
+
+    private int state = BEGIN;
+    private Impl impl;
+
+    @Override
+    protected void engineSetMode(String mode) throws NoSuchAlgorithmException {
+        throw new NoSuchAlgorithmException(mode);
+    }
+
+    @Override
+    protected void engineSetPadding(String padding) throws NoSuchPaddingException {
+        throw new NoSuchPaddingException(padding);
+    }
+
+    @Override
+    protected int engineGetBlockSize() {
+        if (state == ENCRYPT_AND_EXPORT || state == AFTER_FINAL) {
+            return impl.aead.cipher.getBlockSize();
+        } else {
+            throw new IllegalStateException("No AEAD cipher");
+        }
+    }
+
+    @Override
+    protected int engineGetOutputSize(int inputLen) {
+        if (state == ENCRYPT_AND_EXPORT || state == AFTER_FINAL) {
+            return impl.aead.cipher.getOutputSize(inputLen);
+        } else {
+            throw new IllegalStateException("No AEAD cipher");
+        }
+    }
+
+    @Override
+    protected byte[] engineGetIV() {
+        return state == BEGIN ? null : impl.iv;
+    }
+
+    @Override
+    protected AlgorithmParameters engineGetParameters() {
+        return null;
+    }
+
+    @Override
+    protected void engineInit(int opmode, Key key, SecureRandom random)
+            throws InvalidKeyException {
+        try {
+            engineInit(opmode, key, (AlgorithmParameterSpec) null, random);
+        } catch (InvalidAlgorithmParameterException e) {
+            // Parent spec says "throws InvalidKeyException if the given key
+            // requires algorithm parameters that cannot be determined from
+            // the given key"
+            throw new InvalidKeyException(e);
+        }
+    }
+
+    @Override
+    protected void engineInit(int opmode, Key key, AlgorithmParameterSpec params, SecureRandom random)
+            throws InvalidKeyException, InvalidAlgorithmParameterException {
+        impl = new Impl(opmode);
+        if (!(key instanceof AsymmetricKey ak)) {
+            throw new InvalidKeyException("Not asymmetric key");
+        }
+        if (params == null) {
+            impl.init(ak, HPKEParameterSpec.of(), random);
+        } else if (params instanceof IvParameterSpec iv) {
+            impl.init(ak, HPKEParameterSpec.of().encapsulation(iv.getIV()), random);
+        } else if (params instanceof HPKEParameterSpec hps) {
+            impl.init(ak, hps, random);
+        } else {
+            throw new InvalidAlgorithmParameterException("Unsupported params type: " + params.getClass());
+        }
+        if (impl.hasEncrypt()) {
+            impl.aead.start(impl.opmode, impl.context.k, impl.context.ComputeNonce());
+            state = ENCRYPT_AND_EXPORT;
+        } else {
+            state = EXPORT_ONLY;
+        }
+    }
+
+    @Override
+    protected void engineInit(int opmode, Key key, AlgorithmParameters params, SecureRandom random)
+            throws InvalidAlgorithmParameterException {
+        throw new InvalidAlgorithmParameterException();
+    }
+
+    // state is ENCRYPT_AND_EXPORT after this call succeeds
+    private void maybeReinitInternalCipher() {
+        if (state == BEGIN) {
+            throw new IllegalStateException();
+        }
+        if (state == EXPORT_ONLY) {
+            throw new UnsupportedOperationException();
+        }
+        if (state == AFTER_FINAL) {
+            impl.aead.start(impl.opmode, impl.context.k, impl.context.ComputeNonce());
+            state = ENCRYPT_AND_EXPORT;
+        }
+    }
+
+    @Override
+    protected byte[] engineUpdate(byte[] input, int inputOffset, int inputLen) {
+        maybeReinitInternalCipher();
+        return impl.aead.cipher.update(input, inputOffset, inputLen);
+    }
+
+    @Override
+    protected int engineUpdate(byte[] input, int inputOffset, int inputLen, byte[] output, int outputOffset) throws ShortBufferException {
+        maybeReinitInternalCipher();
+        return impl.aead.cipher.update(input, inputOffset, inputLen, output, outputOffset);
+    }
+
+    @Override
+    protected void engineUpdateAAD(byte[] src, int offset, int len) {
+        maybeReinitInternalCipher();
+        impl.aead.cipher.updateAAD(src, offset, len);
+    }
+
+    @Override
+    protected void engineUpdateAAD(ByteBuffer src) {
+        maybeReinitInternalCipher();
+        impl.aead.cipher.updateAAD(src);
+    }
+
+    @Override
+    protected byte[] engineDoFinal(byte[] input, int inputOffset, int inputLen) throws IllegalBlockSizeException, BadPaddingException {
+        maybeReinitInternalCipher();
+        impl.context.IncrementSeq();
+        state = AFTER_FINAL;
+        if (input == null) { // a bug in doFinal(null, ?, ?)
+            return impl.aead.cipher.doFinal();
+        } else {
+            return impl.aead.cipher.doFinal(input, inputOffset, inputLen);
+        }
+    }
+
+    @Override
+    protected int engineDoFinal(byte[] input, int inputOffset, int inputLen, byte[] output, int outputOffset) throws ShortBufferException, IllegalBlockSizeException, BadPaddingException {
+        maybeReinitInternalCipher();
+        impl.context.IncrementSeq();
+        state = AFTER_FINAL;
+        return impl.aead.cipher.doFinal(input, inputOffset, inputLen, output, outputOffset);
+    }
+
+    //@Override
+    protected SecretKey engineExportKey(byte[] context, String algorithm, int length) {
+        if (state == BEGIN) {
+            throw new IllegalStateException("State: " + state);
+        } else {
+            return impl.context.Export(context, algorithm, length);
+        }
+    }
+
+    private static class AEAD {
+        final Cipher cipher;
+        final int Nk, Nn, Nt;
+        final int id;
+        public AEAD(int id) throws InvalidAlgorithmParameterException {
+            this.id = id;
+            try {
+                switch (id) {
+                    case 1 -> {
+                        cipher = Cipher.getInstance("AES/GCM/NoPadding");
+                        Nk = 16;
+                    }
+                    case 2 -> {
+                        cipher = Cipher.getInstance("AES/GCM/NoPadding");
+                        Nk = 32;
+                    }
+                    case 3 -> {
+                        cipher = Cipher.getInstance("ChaCha20-Poly1305");
+                        Nk = 32;
+                    }
+                    case 65535 -> {
+                        cipher = null;
+                        Nk = -1;
+                    }
+                    default -> throw new InvalidAlgorithmParameterException();
+                }
+            } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+                throw new ProviderException(e);
+            }
+            Nn = 12; Nt = 16;
+        }
+
+        void start(int opmode, SecretKey key, byte[] nonce) {
+            try {
+                if (id == 3) {
+                    cipher.init(opmode, key, new IvParameterSpec(nonce));
+                } else {
+                    cipher.init(opmode, key, new GCMParameterSpec(Nt * 8, nonce));
+                }
+            } catch (InvalidAlgorithmParameterException | InvalidKeyException e) {
+                throw new ProviderException(e);
+            }
+        }
+    }
+
+    private static class Impl {
+
+        final int opmode;
+
+        HPKEParameterSpec params;
+        Context context;
+        AEAD aead;
+
+        byte[] suite_id;
+        String kdfAlg;
+        int kdfNh;
+
+        byte[] iv; // sender side
+
+        class Context {
+            final SecretKey k; // null if only export
+            final byte[] base_nonce;
+            final SecretKey exporter_secret;
+
+            long seq = 0;
+
+            public Context(SecretKey sk, byte[] base_nonce,
+                    SecretKey exporter_secret) {
+                this.k = sk;
+                this.base_nonce = base_nonce;
+                this.exporter_secret = exporter_secret;
+            }
+
+            SecretKey Export(byte[] exporter_context, String algorithm, int L) {
+                try {
+                    var kdf = KDF.getInstance(kdfAlg);
+                    return kdf.deriveKey(algorithm, HKDFParameterSpec.expandOnly(exporter_secret,
+                            DHKEM.labeledInfo(suite_id, "sec".getBytes(StandardCharsets.UTF_8),
+                                    exporter_context, L), L));
+                } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
+                    throw new ProviderException("Internal error", e);
+                }
+            }
+
+            private byte[] ComputeNonce() {
+                var result = I2OSP(seq, aead.Nn);
+                for (var i = 0; i < result.length; i++) {
+                    result[i] ^= base_nonce[i];
+                }
+                return result;
+            }
+
+            private void IncrementSeq() {
+                if (seq == Long.MAX_VALUE) {
+                    // Should check if (seq >= (1 << (8*aead.Nn)) - 1), but
+                    // when Nn == 12 this is too big
+                    throw new ProviderException("MessageLimitReachedError");
+                }
+                seq++;
+            }
+        }
+
+        public Impl(int opmode) {
+            this.opmode = opmode;
+        }
+
+        public boolean hasEncrypt() {
+            return params.aead_id() != 65535;
+        }
+
+        public void init(AsymmetricKey key, HPKEParameterSpec p, SecureRandom rand)
+                throws InvalidKeyException, InvalidAlgorithmParameterException {
+            if (opmode != Cipher.ENCRYPT_MODE && opmode != Cipher.DECRYPT_MODE) {
+                throw new UnsupportedOperationException("Can only be used for encryption and decryption");
+            }
+            setParams(key, p);
+            SecretKey shared_secret;
+            if (opmode == Cipher.ENCRYPT_MODE) {
+                if (!(key instanceof PublicKey pk)) {
+                    throw new InvalidKeyException("Cannot encrypt with private key");
+                }
+                if (p.encapsulation() != null) {
+                    throw new InvalidAlgorithmParameterException(
+                            "Must not provide key encapsulation message on sender side");
+                }
+                checkMatch(pk, params.kem_id());
+                KEM.Encapsulator e;
+                if (p.authKey() == null) {
+                    e = kem().newEncapsulator(pk, rand);
+                } else {
+                    if (p.authKey() instanceof PrivateKey) {
+                        throw new UnsupportedOperationException("auth mode not supported");
+                    } else {
+                        throw new InvalidAlgorithmParameterException("Cannot auth with public key");
+                    }
+                }
+                var enc = e.encapsulate();
+                iv = enc.encapsulation();
+                shared_secret = enc.key();
+            } else {
+                if (!(key instanceof PrivateKey sk)) {
+                    throw new InvalidKeyException("Cannot decrypt with public key");
+                }
+                checkMatch(sk, params.kem_id());
+                try {
+                    KEM.Decapsulator d;
+                    if (p.authKey() == null) {
+                        d = kem().newDecapsulator(sk);
+                    } else {
+                        if (p.authKey() instanceof PublicKey) {
+                            throw new UnsupportedOperationException("auth mode not supported");
+                        } else {
+                            throw new InvalidAlgorithmParameterException("Cannot auth with private key");
+                        }
+                    }
+                    if (p.encapsulation() == null) {
+                        throw new InvalidAlgorithmParameterException(
+                                "Must provide key encapsulation message on recipient side");
+                    }
+                    shared_secret = d.decapsulate(p.encapsulation());
+                } catch (DecapsulateException e) {
+                    throw new InvalidAlgorithmParameterException(e);
+                }
+            }
+
+            var usePSK = usePSK(params.psk(), params.psk_id());
+            int mode = params.authKey() == null ? (usePSK ? 1 : 0) : (usePSK ? 3 : 2);
+            context = KeySchedule(mode, shared_secret,
+                    params.info(),
+                    params.psk(),
+                    params.psk_id());
+        }
+
+        private static void checkMatch(AsymmetricKey k, int kem_id)
+                throws InvalidKeyException, InvalidAlgorithmParameterException {
+            var p = k.getParams();
+            if (p instanceof ECParameterSpec ecp) {
+                if ((ECUtil.equals(ecp, CurveDB.P_256) && kem_id == 0x10)
+                        || (ECUtil.equals(ecp, CurveDB.P_384) && kem_id == 0x11)
+                        || (ECUtil.equals(ecp, CurveDB.P_521) && kem_id == 0x12)) {
+                    return;
+                } else {
+                    var name = ECUtil.getCurveName(ecp);
+                    throw new InvalidAlgorithmParameterException(name + " does not match " + kem_id);
+                }
+            } else if (p instanceof NamedParameterSpec ns) {
+                var name = ns.getName();
+                if ((name.equalsIgnoreCase("x25519") && kem_id == 0x20)
+                        || (name.equalsIgnoreCase("x448") && kem_id == 0x21)) {
+                    return;
+                } else {
+                    throw new InvalidAlgorithmParameterException(name + " does not match " + kem_id);
+                }
+            } else {
+                throw new InvalidKeyException(k.getClass() + " does not match " + kem_id);
+            }
+        }
+
+        private KEM kem() {
+            try {
+                return KEM.getInstance("DHKEM");
+            } catch (NoSuchAlgorithmException e) {
+                throw new ProviderException(e);
+            }
+        }
+
+        private int paramsFromKey(AsymmetricKey k) throws InvalidKeyException {
+            var p = k.getParams();
+            if (p instanceof ECParameterSpec ecp) {
+                if (ECUtil.equals(ecp, CurveDB.P_256)) {
+                    return 0x10;
+                } else if (ECUtil.equals(ecp, CurveDB.P_384)) {
+                    return 0x11;
+                } else if (ECUtil.equals(ecp, CurveDB.P_521)) {
+                    return 0x12;
+                }
+            } else if (p instanceof NamedParameterSpec ns) {
+                if (ns.getName().equalsIgnoreCase("X25519")) {
+                    return 0x20;
+                } else if (ns.getName().equalsIgnoreCase("X448")) {
+                    return 0x21;
+                }
+            }
+            throw new InvalidKeyException("Unsupported key");
+        }
+
+        private void setParams(AsymmetricKey key, HPKEParameterSpec p)
+                throws InvalidKeyException, InvalidAlgorithmParameterException {
+            this.params = p;
+            if (p.kem_id() == 0) {
+                int kem_id = paramsFromKey(key);
+                int kdf_id = switch (kem_id) {
+                    case 0x10, 0x20 -> 0x1;
+                    case 0x11 -> 0x2;
+                    case 0x12, 0x21 -> 0x3;
+                    default -> throw new InvalidAlgorithmParameterException();
+                };
+                int aead_id = 0x2;
+                params = HPKEParameterSpec.of(kem_id, kdf_id, aead_id)
+                        .info(p.info())
+                        .psk(p.psk(), p.psk_id())
+                        .authKey(p.authKey())
+                        .encapsulation(p.encapsulation());
+            } else {
+                params = p;
+            }
+            checkDisabledAlgorithms(params);
+            suite_id = concat(
+                    "HPKE".getBytes(StandardCharsets.UTF_8),
+                    DHKEM.I2OSP(params.kem_id(), 2),
+                    DHKEM.I2OSP(params.kdf_id(), 2),
+                    DHKEM.I2OSP(params.aead_id(), 2));
+            kdfAlg = switch (params.kdf_id()) {
+                case 1 -> "HKDF-SHA256";
+                case 2 -> "HKDF-SHA384";
+                case 3 -> "HKDF-SHA512";
+                default -> throw new InvalidAlgorithmParameterException();
+            };
+            kdfNh = switch (params.kdf_id()) {
+                case 1 -> 32;
+                case 2 -> 48;
+                case 3 -> 64;
+                default -> throw new InvalidAlgorithmParameterException();
+            };
+            aead = new AEAD(params.aead_id());
+        }
+
+        private static int[][][] disabledIdentifiers;
+        static {
+            disabledIdentifiers = new int[3][][];
+            List<int[]> disabledKEMs = new ArrayList<>();
+            List<int[]> disabledKDFs = new ArrayList<>();
+            List<int[]> disabledAEADs = new ArrayList<>();
+            String property = Security.getProperty("jdk.hpke.disabledAlgorithms");
+            if (property != null) {
+                for (String rule : property.split(",")) {
+                    if (rule == null) {
+                        continue;
+                    }
+                    rule = rule.trim();
+                    if (rule.isEmpty()) {
+                        continue;
+                    }
+                    int pos1 = rule.indexOf("=");
+                    int pos2 = rule.indexOf("-", pos1);
+                    if (pos1 == -1) {
+                        throw new IllegalArgumentException(
+                                "Invalid jdk.hpke.disabledAlgorithms: " + property);
+                    }
+                    int[] range = new int[2];
+                    try {
+                        if (pos2 == -1) {
+                            range[0] = range[1] = Integer.decode(rule.substring(pos1 + 1).trim());
+                        } else {
+                            range[0] = Integer.decode(rule.substring(pos1 + 1, pos2).trim());
+                            range[1] = Integer.decode(rule.substring(pos2 + 1).trim());
+                            if (range[0] > range[1]) {
+                                throw new IllegalArgumentException(
+                                        "Invalid jdk.hpke.disabledAlgorithms: " + property);
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException(
+                                "Invalid jdk.hpke.disabledAlgorithms: " + property, e);
+                    }
+                    switch (rule.substring(0, pos1).trim()) {
+                        case "kem_id" -> disabledKEMs.add(range);
+                        case "kdf_id" -> disabledKDFs.add(range);
+                        case "aead_id" -> disabledAEADs.add(range);
+                        default -> throw new IllegalArgumentException(
+                                "Invalid jdk.hpke.disabledAlgorithms: " + property);
+                    }
+                }
+            }
+            disabledIdentifiers[0] = disabledKEMs.toArray(new int[0][]);
+            disabledIdentifiers[1] = disabledKDFs.toArray(new int[0][]);
+            disabledIdentifiers[2] = disabledAEADs.toArray(new int[0][]);
+        }
+
+        private static void checkDisabledAlgorithms(HPKEParameterSpec params)
+                throws InvalidAlgorithmParameterException {
+            checkDisabled("kem_id", disabledIdentifiers[0], params.kem_id());
+            checkDisabled("kdf_id", disabledIdentifiers[1], params.kdf_id());
+            checkDisabled("aead_id", disabledIdentifiers[2], params.aead_id());
+        }
+
+        private static void checkDisabled(String label, int[][] ranges, int id)
+                throws InvalidAlgorithmParameterException {
+            for (int[] range : ranges) {
+                if (id >= range[0] && id <= range[1]) {
+                    throw new InvalidAlgorithmParameterException(
+                            "Disabled " + label + ": " + id);
+                }
+            }
+        }
+
+        private Context KeySchedule(int mode,
+                SecretKey shared_secret,
+                byte[] info,
+                SecretKey psk,
+                byte[] psk_id) {
+            try {
+                var psk_id_hash_x = DHKEM.labeledBuilder(suite_id, "psk_id_hash".getBytes(StandardCharsets.UTF_8))
+                        .addIKM(psk_id);
+                var info_hash_x = DHKEM.labeledBuilder(suite_id, "info_hash".getBytes(StandardCharsets.UTF_8))
+                        .addIKM(info);
+
+                // deriveData must and can be called because all info are extractable.
+                // Any KDF impl can handle this.
+                var kdf = KDF.getInstance(kdfAlg);
+                var key_schedule_context = concat(new byte[]{(byte) mode},
+                        kdf.deriveData(psk_id_hash_x.extractOnly()),
+                        kdf.deriveData(info_hash_x.extractOnly()));
+                var secret_x = DHKEM.labeledBuilder(suite_id, "secret".getBytes(StandardCharsets.UTF_8))
+                        .addIKM(psk == null ? new byte[0] : Objects.requireNonNull(psk.getEncoded()))
+                        .addSalt(shared_secret);
+
+                // Create a new KDF object because secret_x might contain provider-specific keys
+                kdf = KDF.getInstance(kdfAlg);
+                var exporter_secret = kdf.deriveKey("Generic",
+                        secret_x.thenExpand(DHKEM.labeledInfo(suite_id, "exp".getBytes(StandardCharsets.UTF_8), key_schedule_context, kdfNh), kdfNh));
+
+                if (hasEncrypt()) {
+                    // ChaCha20-Poly1305 does not care about algorithm name
+                    var key = kdf.deriveKey("AES", secret_x.thenExpand(DHKEM.labeledInfo(suite_id, "key".getBytes(StandardCharsets.UTF_8),
+                            key_schedule_context, aead.Nk), aead.Nk));
+                    // deriveData must be called because we need to increment nonce, the info must be allowed
+                    var base_nonce = kdf.deriveData(secret_x.thenExpand(DHKEM.labeledInfo(suite_id, "base_nonce".getBytes(StandardCharsets.UTF_8),
+                            key_schedule_context, aead.Nn), aead.Nn));
+                    return new Context(key, base_nonce, exporter_secret);
+                } else {
+                    return new Context(null, null, exporter_secret);
+                }
+            } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
+                throw new ProviderException("Internal error", e);
+            }
+        }
+    }
+
+    private static boolean usePSK(SecretKey psk, byte[] psk_id) {
+        return psk != null;
+    }
+
+    private static byte[] concat(byte[]... inputs) {
+        var o = new ByteArrayOutputStream();
+        Arrays.stream(inputs).forEach(o::writeBytes);
+        return o.toByteArray();
+    }
+
+    private static byte[] I2OSP(long n, int w) {
+        var full = BigInteger.valueOf(n).toByteArray();
+        var fullLen = full.length;
+        if (fullLen == w) {
+            return full;
+        } else if (fullLen > w) {
+            return Arrays.copyOfRange(full, fullLen - w, fullLen);
+        } else {
+            var result = new byte[w];
+            System.arraycopy(full, 0, result, w - fullLen, fullLen);
+            return result;
+        }
+    }
+}
