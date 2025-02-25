@@ -89,6 +89,7 @@
   flags(AFTER_MACRO_EXPANSION_STEP,     "After Macro Expansion Step") \
   flags(AFTER_MACRO_EXPANSION,          "After Macro Expansion") \
   flags(BARRIER_EXPANSION,              "Barrier expand") \
+  flags(AFTER_LOWERING,                 "After Lowering") \
   flags(OPTIMIZE_FINISHED,              "Optimize finished") \
   flags(BEFORE_MATCHING,                "Before matching") \
   flags(MATCHING,                       "After matching") \
