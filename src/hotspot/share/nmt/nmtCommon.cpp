@@ -29,8 +29,8 @@ STATIC_ASSERT(NMT_off > NMT_unknown);
 STATIC_ASSERT(NMT_summary > NMT_off);
 STATIC_ASSERT(NMT_detail > NMT_summary);
 
-#define MEMORY_TAG_DECLARE_NAME(type, human_readable) \
-  { #type, human_readable },
+#define MEMORY_TAG_DECLARE_NAME(tag, human_readable) \
+  { #tag, human_readable },
 
 NMTUtil::S NMTUtil::_strings[] = {
   MEMORY_TAG_DO(MEMORY_TAG_DECLARE_NAME)
