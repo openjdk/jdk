@@ -70,8 +70,7 @@ public interface LinuxDebPackage extends LinuxPackage, LinuxDebPackageMixin {
     default Optional<Path> relativeCopyrightFilePath() {
         if (isRuntimeInstaller()) {
             return Optional.empty();
-        } else if (isInstallDirInUsrTree() || Path.of("/").resolve(relativeInstallDir()).startsWith(
-                "/usr/")) {
+        } else if (isInstallDirInUsrTree() || Path.of("/").resolve(relativeInstallDir()).startsWith("/usr/")) {
             return Optional.of(Path.of("/usr/share/doc/", packageName(), "copyright"));
         } else {
             return Optional.of(relativeInstallDir().resolve("share/doc/copyright"));
