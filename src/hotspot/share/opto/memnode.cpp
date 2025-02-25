@@ -3571,12 +3571,12 @@ Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
 // into
 // StoreB ... (RShiftI _ (LShiftI _ (LShiftI _ valIn (conIL - conIR)) conIR ) conIR)
 Node* StoreNode::Ideal_sign_extended_input(PhaseGVN* phase, int num_rejected_bits) {
-  Node *val = in(MemNode::ValueIn);
-  if( val->Opcode() == Op_RShiftI ) {
+  Node* val = in(MemNode::ValueIn);
+  if (val->Opcode() == Op_RShiftI) {
     const TypeInt* conIR = phase->type(val->in(2))->isa_int();
     if (conIR != nullptr && conIR->is_con() && (conIR->get_con() <= num_rejected_bits)) {
-      Node *shl = val->in(1);
-      if( shl->Opcode() == Op_LShiftI ) {
+      Node* shl = val->in(1);
+      if (shl->Opcode() == Op_LShiftI) {
         const TypeInt* conIL = phase->type(shl->in(2))->isa_int();
         if (conIL != nullptr && conIL->is_con()) {
           if (conIL->get_con() == conIR->get_con()) {
