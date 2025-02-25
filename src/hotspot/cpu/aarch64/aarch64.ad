@@ -6973,9 +6973,9 @@ instruct loadConD(vRegD dst, immD con) %{
 %}
 
 // Load Half Float Constant
-// ldr instruction has 32/64/128 bit variants but not a 16-bit variant. This
-// loads the 16-bit value from constant pool into a 32-bit register but only
-// the bottom half will be populated.
+// The "ldr" instruction loads a 32-bit word from the constant pool into a
+// 32-bit register but only the bottom half will be populated and the top
+// 16 bits are zero.
 instruct loadConH(vRegF dst, immH con) %{
   match(Set dst con);
   format %{
@@ -17271,8 +17271,8 @@ instruct reinterpretS2HF(vRegF dst, iRegINoSp src) %{
   ins_pipe(pipe_slow);
 %}
 
-// This pattern would result in the following instructions (the first two are for ConvF2HF
-// and the last instruction is for ReinterpretS2HF) -
+// Without this optimization, ReinterpretS2HF (ConvF2HF src) would result in the following
+// instructions (the first two are for ConvF2HF and the last instruction is for ReinterpretS2HF) -
 // fcvt $tmp1_fpr, $src_fpr    // Convert float to half-precision float
 // mov  $tmp2_gpr, $tmp1_fpr   // Move half-precision float in FPR to a GPR
 // mov  $dst_fpr,  $tmp2_gpr   // Move the result from a GPR to an FPR
@@ -17289,8 +17289,8 @@ instruct convF2HFAndS2HF(vRegF dst, vRegF src)
   ins_pipe(pipe_slow);
 %}
 
-// This pattern would result in the following instructions (the first one is for ReinterpretHF2S
-// and the last two are for ConvHF2F) -
+// Without this optimization, ConvHF2F (ReinterpretHF2S src) would result in the following
+// instructions (the first one is for ReinterpretHF2S and the last two are for ConvHF2F) -
 // mov  $tmp1_gpr, $src_fpr  // Move the half-precision float from an FPR to a GPR
 // mov  $tmp2_fpr, $tmp1_gpr // Move the same value from GPR to an FPR
 // fcvt $dst_fpr,  $tmp2_fpr // Convert the half-precision float to 32-bit float
