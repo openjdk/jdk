@@ -1403,6 +1403,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
                                                                             \
+  product(bool, PrintCompilerMemoryStatisticsAtExit, false, DIAGNOSTIC,     \
+          "Print compiler memory statistics upon VM exit.")                 \
+                                                                            \
   product(uintx, MinHeapFreeRatio, 40, MANAGEABLE,                          \
           "The minimum percentage of heap free after GC to avoid expansion."\
           " For most GCs this applies to the old generation. In G1 and"     \

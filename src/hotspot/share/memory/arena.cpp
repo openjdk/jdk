@@ -45,13 +45,13 @@ STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
 
 
 const char* Arena::tag_name[] = {
-#define ARENA_TAG_STRING(name, str, desc) XSTR(name),
+#define ARENA_TAG_STRING(name, desc) XSTR(name),
   DO_ARENA_TAG(ARENA_TAG_STRING)
 #undef ARENA_TAG_STRING
 };
 
 const char* Arena::tag_desc[] = {
-#define ARENA_TAG_DESC(name, str, desc) XSTR(desc),
+#define ARENA_TAG_DESC(name, desc) XSTR(desc),
   DO_ARENA_TAG(ARENA_TAG_DESC)
 #undef ARENA_TAG_DESC
 };
@@ -118,11 +118,19 @@ public:
   }
 
   // Returns an initialized and null-terminated Chunk of requested size
-  static Chunk* allocate_chunk(size_t length, AllocFailType alloc_failmode);
+  static Chunk* allocate_chunk(Arena* arena, size_t length, AllocFailType alloc_failmode);
   static void deallocate_chunk(Chunk* p);
 };
 
-Chunk* ChunkPool::allocate_chunk(size_t length, AllocFailType alloc_failmode) {
+static bool on_compiler_thread() {
+#if defined(COMPILER1) || defined(COMPILER2)
+  return Thread::current_or_null() != nullptr &&
+         Thread::current()->is_Compiler_thread();
+#endif // COMPILER1 || COMPILER2
+  return false;
+}
+
+Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType alloc_failmode) {
   // - requested_size = sizeof(Chunk)
   // - length = payload size
   // We must ensure that the boundaries of the payload (C and D) are aligned to 64-bit:
@@ -164,10 +172,27 @@ Chunk* ChunkPool::allocate_chunk(size_t length, AllocFailType alloc_failmode) {
   ::new(chunk) Chunk(length);
   // We rely on arena alignment <= malloc alignment.
   assert(is_aligned(chunk, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
+
+  if (CompilationMemoryStatistic::enabled() && on_compiler_thread()) {
+    uint64_t stamp = 0;
+    CompilationMemoryStatistic::on_arena_chunk_allocation(chunk->length(), (int)arena->get_tag(), &stamp);
+    chunk->set_stamp(stamp);
+  } else {
+    chunk->set_stamp(0);
+  }
+
   return chunk;
 }
 
 void ChunkPool::deallocate_chunk(Chunk* c) {
+
+  // Inform compilation memstat
+  if (CompilationMemoryStatistic::enabled() && c->stamp() != 0) {
+    assert(on_compiler_thread(), "we stamped this chunk");
+    CompilationMemoryStatistic::on_arena_chunk_deallocation(c->length(), c->stamp());
+    c->set_stamp(0);
+  }
+
   // If this is a standard-sized chunk, return it to its pool; otherwise free it.
   ChunkPool* pool = ChunkPool::get_pool_for_size(c->length());
   if (pool != nullptr) {
@@ -200,8 +225,8 @@ void Arena::start_chunk_pool_cleaner_task() {
   cleaner->enroll();
 }
 
-Chunk::Chunk(size_t length) : _len(length) {
-  _next = nullptr;         // Chain on the linked list
+Chunk::Chunk(size_t length) :
+    _next(nullptr), _len(length), _stamp(0) {
 }
 
 void Chunk::chop(Chunk* k) {
@@ -227,7 +252,7 @@ Arena::Arena(MemTag mem_tag, Tag tag, size_t init_size) :
   _hwm(nullptr), _max(nullptr)
 {
   init_size = ARENA_ALIGN(init_size);
-  _chunk = ChunkPool::allocate_chunk(init_size, AllocFailStrategy::EXIT_OOM);
+  _chunk = ChunkPool::allocate_chunk(this, init_size, AllocFailStrategy::EXIT_OOM);
   _first = _chunk;
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
@@ -258,12 +283,6 @@ void Arena::set_size_in_bytes(size_t size) {
     ssize_t delta = size - size_in_bytes();
     _size_in_bytes = size;
     MemTracker::record_arena_size_change(delta, _mem_tag);
-    if (CompilationMemoryStatistic::enabled() && _mem_tag == mtCompiler) {
-      Thread* const t = Thread::current();
-      if (t != nullptr && t->is_Compiler_thread()) {
-        CompilationMemoryStatistic::on_arena_change(delta, this);
-      }
-    }
   }
 }
 
@@ -289,7 +308,7 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   }
 
   Chunk* k = _chunk;            // Get filled-up chunk address
-  _chunk = ChunkPool::allocate_chunk(len, alloc_failmode);
+  _chunk = ChunkPool::allocate_chunk(this, len, alloc_failmode);
 
   if (_chunk == nullptr) {
     _chunk = k;                 // restore the previous value of _chunk
