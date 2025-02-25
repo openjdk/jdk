@@ -305,7 +305,6 @@ void ShenandoahConcurrentGC::entry_init_mark() {
                               "init marking");
 
   op_init_mark();
-  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void ShenandoahConcurrentGC::entry_final_mark() {
@@ -318,7 +317,6 @@ void ShenandoahConcurrentGC::entry_final_mark() {
                               "final marking");
 
   op_final_mark();
-  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void ShenandoahConcurrentGC::entry_init_update_refs() {
@@ -328,7 +326,6 @@ void ShenandoahConcurrentGC::entry_init_update_refs() {
 
   // No workers used in this phase, no setup required
   op_init_update_refs();
-  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void ShenandoahConcurrentGC::entry_final_update_refs() {
@@ -341,7 +338,6 @@ void ShenandoahConcurrentGC::entry_final_update_refs() {
                               "final reference update");
 
   op_final_update_refs();
-  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void ShenandoahConcurrentGC::entry_final_roots() {
@@ -350,7 +346,6 @@ void ShenandoahConcurrentGC::entry_final_roots() {
   EventMark em("%s", msg);
 
   op_final_roots();
-  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void ShenandoahConcurrentGC::entry_reset() {
@@ -693,6 +688,11 @@ void ShenandoahConcurrentGC::op_init_mark() {
   if (ShenandoahPacing) {
     heap->pacer()->setup_for_mark();
   }
+
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_propagate_gc_state);
+    ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
+  }
 }
 
 void ShenandoahConcurrentGC::op_mark_roots() {
@@ -759,6 +759,11 @@ void ShenandoahConcurrentGC::op_final_mark() {
         }
       }
     }
+  }
+
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_mark_propagate_gc_state);
+    ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
   }
 }
 
@@ -1073,6 +1078,10 @@ void ShenandoahConcurrentGC::op_init_update_refs() {
   if (ShenandoahPacing) {
     heap->pacer()->setup_for_update_refs();
   }
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_refs_propagate_gc_state);
+    ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
+  }
 }
 
 void ShenandoahConcurrentGC::op_update_refs() {
@@ -1163,6 +1172,11 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   }
 
   heap->rebuild_free_set(true /*concurrent*/);
+
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_propagate_gc_state);
+    ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
+  }
 }
 
 void ShenandoahConcurrentGC::op_final_roots() {
@@ -1186,6 +1200,11 @@ void ShenandoahConcurrentGC::op_final_roots() {
 
   if (VerifyAfterGC) {
     Universe::verify();
+  }
+
+  {
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_roots_propagate_gc_state);
+    ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
   }
 }
 
