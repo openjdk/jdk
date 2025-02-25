@@ -1042,9 +1042,64 @@ Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const Type
   }
 }
 
+bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
+  // Predicated vector operations are sensitive to ordering of inputs.
+  // When the mask corresponding to a vector lane is false then
+  // the result of the operation is corresponding lane of its first operand.
+  //   i.e. RES = VEC1.lanewise(OPER, VEC2, MASK) is semantically equivalent to
+  //        RES = BLEND(VEC1, VEC1.lanewise(OPER, VEC2), MASK)
+  if (is_predicated_vector()) {
+    return false;
+  }
+
+  switch(Opcode()) {
+    case Op_AddVB:
+    case Op_AddVS:
+    case Op_AddVI:
+    case Op_AddVL:
+    case Op_AddVF:
+    case Op_AddVD:
+
+    case Op_MulVB:
+    case Op_MulVS:
+    case Op_MulVI:
+    case Op_MulVL:
+    case Op_MulVF:
+    case Op_MulVD:
+
+    case Op_MaxV:
+    case Op_MinV:
+    case Op_XorV:
+    case Op_OrV:
+    case Op_AndV:
+    case Op_UMinV:
+    case Op_UMaxV:
+
+    case Op_AndVMask:
+    case Op_OrVMask:
+    case Op_XorVMask:
+
+    case Op_SaturatingAddV:
+      assert(req() == 3, "Must be a binary operation");
+      // For non-predicated commutative operations, sort the inputs in
+      // increasing order of node indices.
+      if (in(1)->_idx > in(2)->_idx) {
+        return true;
+      }
+      // fallthrough
+    default:
+      return false;
+  }
+}
+
 Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (Matcher::vector_needs_partial_operations(this, vect_type())) {
     return try_to_gen_masked_vector(phase, this, vect_type());
+  }
+
+  // Sort inputs of commutative non-predicated vector operations to help value numbering.
+  if (should_swap_inputs_to_help_global_value_numbering()) {
+    swap_edges(1, 2);
   }
   return nullptr;
 }
@@ -2076,7 +2131,7 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node* zero = phase->transform(phase->zerocon(bt));
     return VectorNode::scalar2vector(zero, length(), bt, bottom_type()->isa_vectmask() != nullptr);
   }
-  return nullptr;
+  return VectorNode::Ideal(phase, can_reshape);
 }
 
 Node* VectorBlendNode::Identity(PhaseGVN* phase) {
