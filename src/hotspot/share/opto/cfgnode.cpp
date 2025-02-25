@@ -2468,7 +2468,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       }
     }
 
-    if (split_must_terminate && merge_width > Compile::AliasIdxRaw) {
+    if (merge_width > Compile::AliasIdxRaw) {
       // found at least one non-empty MergeMem
       const TypePtr* at = adr_type();
       if (at != TypePtr::BOTTOM) {
@@ -2498,7 +2498,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             }
           }
         }
-      } else {
+      } else if (split_must_terminate) {
         // If all inputs reference this phi (directly or through data nodes) -
         // it is a dead loop.
         bool saw_safe_input = false;
