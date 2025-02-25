@@ -47,6 +47,7 @@ LogStderrOutput* LogConfiguration::StderrLog = nullptr;
 
 LogConfiguration::UpdateListenerFunction* LogConfiguration::_listener_callbacks = nullptr;
 size_t      LogConfiguration::_n_listener_callbacks = 0;
+jlong       LogConfiguration::_vm_start_time = 0;
 
 // LogFileOutput is the default type of output, its type prefix should be used if no type was specified
 static const char* implicit_output_prefix = LogFileOutput::Prefix;
@@ -106,7 +107,7 @@ void LogConfiguration::post_initialize() {
 void LogConfiguration::initialize(jlong vm_start_time) {
   StdoutLog = new LogStdoutOutput();
   StderrLog = new LogStderrOutput();
-  LogFileOutput::set_file_name_parameters(vm_start_time);
+  _vm_start_time = vm_start_time;
   assert(_outputs == nullptr, "Should not initialize _outputs before this function, initialize called twice?");
   _outputs = NEW_C_HEAP_ARRAY(LogOutput*, 2, mtLogging);
   _outputs[0] = StdoutLog;
@@ -189,7 +190,7 @@ LogOutput* LogConfiguration::new_output(const char* name,
                                         outputStream* errstream) {
   LogOutput* output;
   if (strncmp(name, LogFileOutput::Prefix, strlen(LogFileOutput::Prefix)) == 0) {
-    output = new LogFileOutput(name);
+    output = new LogFileOutput(name, _vm_start_time);
   } else {
     errstream->print_cr("Unsupported log output type: %s", name);
     return nullptr;
