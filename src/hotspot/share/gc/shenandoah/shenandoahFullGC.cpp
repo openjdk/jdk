@@ -102,6 +102,7 @@ void ShenandoahFullGC::entry_full(GCCause::Cause cause) {
                               "full gc");
 
   op_full(cause);
+  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void ShenandoahFullGC::op_full(GCCause::Cause cause) {

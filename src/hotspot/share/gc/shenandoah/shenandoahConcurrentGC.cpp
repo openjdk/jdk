@@ -305,6 +305,7 @@ void ShenandoahConcurrentGC::entry_init_mark() {
                               "init marking");
 
   op_init_mark();
+  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void ShenandoahConcurrentGC::entry_final_mark() {
@@ -317,6 +318,7 @@ void ShenandoahConcurrentGC::entry_final_mark() {
                               "final marking");
 
   op_final_mark();
+  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void ShenandoahConcurrentGC::entry_init_update_refs() {
@@ -326,6 +328,7 @@ void ShenandoahConcurrentGC::entry_init_update_refs() {
 
   // No workers used in this phase, no setup required
   op_init_update_refs();
+  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void ShenandoahConcurrentGC::entry_final_update_refs() {
@@ -338,6 +341,7 @@ void ShenandoahConcurrentGC::entry_final_update_refs() {
                               "final reference update");
 
   op_final_update_refs();
+  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void ShenandoahConcurrentGC::entry_final_roots() {
@@ -346,6 +350,7 @@ void ShenandoahConcurrentGC::entry_final_roots() {
   EventMark em("%s", msg);
 
   op_final_roots();
+  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void ShenandoahConcurrentGC::entry_reset() {
