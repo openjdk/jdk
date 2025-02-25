@@ -25,6 +25,8 @@
 
 package com.sun.tools.javac.code;
 
+import com.sun.tools.javac.code.DeferredLintHandler;
+import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
@@ -68,8 +70,8 @@ public class Preview {
     /** flag: are preview features enabled */
     private final boolean enabled;
 
-    /** flag: is the "preview" lint category enabled? */
-    private final boolean verbose;
+    /** the deferred lint warning handler */
+    private final DeferredLintHandler deferredLintHandler;
 
     /** the diag handler to manage preview feature usage diagnostics */
     private final MandatoryWarningHandler previewHandler;
@@ -84,6 +86,7 @@ public class Preview {
 
     private final Names names;
     private final Log log;
+    private final Lint rootLint;
     private final Source source;
 
     protected static final Context.Key<Preview> previewKey = new Context.Key<>();
@@ -103,9 +106,10 @@ public class Preview {
         names = Names.instance(context);
         enabled = options.isSet(PREVIEW);
         log = Log.instance(context);
+        rootLint = Lint.instance(context);
         source = Source.instance(context);
-        verbose = Lint.instance(context).isEnabled(LintCategory.PREVIEW);
-        previewHandler = new MandatoryWarningHandler(log, source, verbose, true, LintCategory.PREVIEW);
+        deferredLintHandler = DeferredLintHandler.instance(context);
+        previewHandler = new MandatoryWarningHandler(log, source, true, LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
         majorVersionToSource = initMajorVersionToSourceMap();
     }
@@ -161,24 +165,37 @@ public class Preview {
     /**
      * Report usage of a preview feature. Usages reported through this method will affect the
      * set of sourcefiles with dependencies on preview features.
+     *
+     * <p>
+     * This method is intended to be used during parsing, when declarations do not exist yet.
+     * The warning is deferred until the applicable {@lint Lint} configuration is known.
+     *
      * @param pos the position at which the preview feature was used.
      * @param feature the preview feature used.
      */
     public void warnPreview(int pos, Feature feature) {
-        warnPreview(new SimpleDiagnosticPosition(pos), feature);
+        DiagnosticPosition diagPos = new SimpleDiagnosticPosition(pos);
+        deferredLintHandler.push(pos);
+        try {
+            deferredLintHandler.report(lint -> warnPreview(lint, diagPos, feature));
+        } finally {
+            deferredLintHandler.pop();
+        }
     }
 
     /**
      * Report usage of a preview feature. Usages reported through this method will affect the
      * set of sourcefiles with dependencies on preview features.
+     *
+     * @param lint applicable lint configuration
      * @param pos the position at which the preview feature was used.
      * @param feature the preview feature used.
      */
-    public void warnPreview(DiagnosticPosition pos, Feature feature) {
+    public void warnPreview(Lint lint, DiagnosticPosition pos, Feature feature) {
         Assert.check(isEnabled());
         Assert.check(isPreview(feature));
         markUsesPreview(pos);
-        previewHandler.report(pos, feature.isPlural() ?
+        previewHandler.report(lint, pos, feature.isPlural() ?
                 LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
                 LintWarnings.PreviewFeatureUse(feature.nameFragment()));
     }
@@ -190,7 +207,7 @@ public class Preview {
      */
     public void warnPreview(JavaFileObject classfile, int majorVersion) {
         Assert.check(isEnabled());
-        if (verbose) {
+        if (rootLint.isEnabled(LintCategory.PREVIEW)) {
             log.mandatoryWarning(null,
                     LintWarnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
         }
@@ -206,7 +223,7 @@ public class Preview {
     }
 
     public void reportPreviewWarning(DiagnosticPosition pos, LintWarning warnKey) {
-        previewHandler.report(pos, warnKey);
+        previewHandler.report(rootLint, pos, warnKey);
     }
 
     public boolean usesPreview(JavaFileObject file) {
@@ -286,7 +303,7 @@ public class Preview {
         previewHandler.clear();
     }
 
-    public void checkSourceLevel(DiagnosticPosition pos, Feature feature) {
+    public void checkSourceLevel(Lint lint, DiagnosticPosition pos, Feature feature) {
         if (isPreview(feature) && !isEnabled()) {
             //preview feature without --preview flag, error
             log.error(JCDiagnostic.DiagnosticFlag.SOURCE_LEVEL, pos, disabledError(feature));
@@ -296,7 +313,7 @@ public class Preview {
                           feature.error(source.name));
             }
             if (isEnabled() && isPreview(feature)) {
-                warnPreview(pos, feature);
+                warnPreview(lint, pos, feature);
             }
         }
     }
