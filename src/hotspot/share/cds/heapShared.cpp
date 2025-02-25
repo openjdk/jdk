@@ -401,6 +401,11 @@ objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
   return (objArrayOop)_scratch_references_table->get_oop(src);
 }
 
+void HeapShared::init_dumping() {
+  _scratch_java_mirror_table = new (mtClass)MetaspaceObjToOopHandleTable();
+  _scratch_references_table = new (mtClass)MetaspaceObjToOopHandleTable();
+}
+
 void HeapShared::init_scratch_objects(TRAPS) {
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     BasicType bt = (BasicType)i;
@@ -409,8 +414,6 @@ void HeapShared::init_scratch_objects(TRAPS) {
       _scratch_basic_type_mirrors[i] = OopHandle(Universe::vm_global(), m);
     }
   }
-  _scratch_java_mirror_table = new (mtClass)MetaspaceObjToOopHandleTable();
-  _scratch_references_table = new (mtClass)MetaspaceObjToOopHandleTable();
 }
 
 // Given java_mirror that represents a (primitive or reference) type T,

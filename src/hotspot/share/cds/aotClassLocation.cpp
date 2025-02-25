@@ -989,8 +989,14 @@ bool AOTClassLocationConfig::validate(bool has_aot_linked_classes, bool* has_ext
     const char* hint_msg = log_is_enabled(Info, class, path) ?
         "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
     if (RequireSharedSpaces && !PrintSharedArchiveAndExit) {
-      log_error(cds)("%s%s", mismatch_msg, hint_msg);
-      MetaspaceShared::unrecoverable_loading_error();
+      if (CDSConfig::is_dumping_final_static_archive()) {
+        log_error(cds)("class path and/or module path are not compatible with the "
+                       "ones specified when the AOTConfiguration file was recorded%s", hint_msg);
+        vm_exit_during_initialization("Unable to use create AOT cache.", nullptr);
+      } else {
+        log_error(cds)("%s%s", mismatch_msg, hint_msg);
+        MetaspaceShared::unrecoverable_loading_error();
+      }
     } else {
       log_warning(cds)("%s%s", mismatch_msg, hint_msg);
     }
