@@ -277,16 +277,42 @@ public final class Verify {
 
     /**
      * Verify that the content of two float arrays is identical.
+     * Ideally, we would want to assert that the Float.floatToRawIntBits are identical.
+     * But the Java spec allows us to return different bits for a NaN, which allows swapping the inputs
+     * of an add or mul (NaN1 * NaN2 does not have same bits as NaN2 * NaN1, because the multiplication
+     * of two NaN values should always return the first of the two). So we verify that we have the same bit
+     * pattern in all cases, except for NaN we project to the canonical NaN, using Float.floatToIntBits.
      */
     private static void checkEQimpl(float[] a, float[] b, String context) {
-        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), context);
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " " + context);
+            throw new VerifyException("Float array length mismatch.");
+        }
+
+        for (int i = 0; i < a.length; i++) {
+            if (Float.floatToIntBits(a[i]) != Float.floatToIntBits(b[i])) {
+                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + " " + context);
+                throw new VerifyException("Float array value mismatch.");
+            }
+        }
     }
 
     /**
      * Verify that the content of two double arrays is identical.
+     * Same issue with NaN as above for floats.
      */
     private static void checkEQimpl(double[] a, double[] b, String context) {
-        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), context);
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " " + context);
+            throw new VerifyException("Double array length mismatch.");
+        }
+
+        for (int i = 0; i < a.length; i++) {
+            if (Double.doubleToLongBits(a[i]) != Double.doubleToLongBits(b[i])) {
+                System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + " " + context);
+                throw new VerifyException("Double array value mismatch.");
+            }
+        }
     }
 
     /**
@@ -295,7 +321,7 @@ public final class Verify {
     private static void checkEQimpl(boolean[] a, boolean[] b, String context) {
         if (a.length != b.length) {
             System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length + " " + context);
-            throw new VerifyException("Object array length mismatch.");
+            throw new VerifyException("Boolean array length mismatch.");
         }
 
         for (int i = 0; i < a.length; i++) {

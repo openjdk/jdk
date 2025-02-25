@@ -26,6 +26,8 @@ package compiler.lib.template_library;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashSet;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateWithArgs;
@@ -37,6 +39,8 @@ import static compiler.lib.template_framework.Template.setFuelCost;
  * Idea: generates a template that has a list of {@link Type} holes.
  */
 public final class Expression {
+    private static final Random RANDOM = Utils.getRandomInstance();
+
     private final Template.OneArgs<List<Object>> template;
     private final List<Type> types;
 
@@ -104,7 +108,7 @@ public final class Expression {
 
     private static final ExpressionGeneratorStep expressionGeneratorStep(Type resultType, HashSet<Type> allowedTypes, int maxDepth, List<Type> types) {
         List<Operation> ops = resultType.operations().stream().filter(o -> o.hasOnlyTypes(allowedTypes)).toList();
-        if (maxDepth <= 0 || ops.isEmpty()) {
+        if (maxDepth <= 0 || ops.isEmpty() || RANDOM.nextInt(2 * maxDepth) == 0) {
             // Remember which type we need to fill the ith argument with.
             int i = types.size();
             types.add(resultType);

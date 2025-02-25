@@ -98,7 +98,7 @@ public class TestFuzzExpression {
         // Note: we are using the "expression" in two separate methods, so we cannot generate any
         // fields with "def", as we would have to generate them identically twice.
         var template1 = Template.make("type", (Type type)-> {
-            Expression expression = Expression.make(type, Type.primitives(), 2);
+            Expression expression = Expression.make(type, Type.primitives(), 4);
             List<Value> argValues = expression.randomArgValues();
             List<Object> def = argValues.stream().map(v -> v.defTokens()).toList();
             List<Object> use = argValues.stream().map(v -> v.useTokens()).toList();
@@ -154,7 +154,7 @@ public class TestFuzzExpression {
         // hook are both already set before we call "expression.withRandomArgs", and so that
         // we know we can generate fields and local variables.
         var template2Body = Template.make("type", (Type type)-> {
-            Expression expression = Expression.make(type, Type.primitives(), 2);
+            Expression expression = Expression.make(type, Type.primitives(), 4);
             return body(
                 """
                     try {
@@ -210,7 +210,7 @@ public class TestFuzzExpression {
         // and storing to an output array.
         var template3 = Template.make("type", (Type type)-> {
             int size = 10_000; // TODO: randomize
-            Expression expression = Expression.make(type, Type.primitives(), 2);
+            Expression expression = Expression.make(type, Type.primitives(), 4);
             List<Type> types = expression.types();
             List<TemplateWithArgs> arrayDefinitions = new ArrayList<>();
             List<Object> args = new ArrayList<>();
