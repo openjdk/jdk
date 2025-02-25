@@ -114,7 +114,6 @@ class outputStream;
   f(init_update_refs_gross,                         "Pause Init Update Refs (G)")      \
   f(init_update_refs,                               "Pause Init Update Refs (N)")      \
   f(init_update_refs_manage_gclabs,                 "  Manage GCLABs")                 \
-  f(init_update_refs_propagate_gc_state,            "  Propagate GC state")            \
                                                                                        \
   f(conc_update_refs,                               "Concurrent Update Refs")          \
   f(conc_update_thread_roots,                       "Concurrent Update Thread Roots")  \

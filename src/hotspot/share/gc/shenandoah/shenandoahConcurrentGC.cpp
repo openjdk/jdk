@@ -1078,10 +1078,6 @@ void ShenandoahConcurrentGC::op_init_update_refs() {
   if (ShenandoahPacing) {
     heap->pacer()->setup_for_update_refs();
   }
-  {
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_refs_propagate_gc_state);
-    heap->propagate_gc_state_to_all_threads();
-  }
 }
 
 void ShenandoahConcurrentGC::op_update_refs() {
