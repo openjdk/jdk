@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +25,14 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
+import compiler.lib.generators.Generators;
 import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8276673 8280089
+ * @bug 8276673 8280089 8349563
  * @summary Test abs nodes optimization in C2.
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @key randomness
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestIRAbs
  */
@@ -103,7 +105,7 @@ public class TestIRAbs {
     }
 
     @Test
-    @IR(failOn = {IRNode.ABS_I, IRNode.ABS_L, IRNode.ABS_F, IRNode.ABS_D})
+    @IR(failOn = {IRNode.ABS_I, IRNode.ABS_L, IRNode.ABS_F, IRNode.ABS_D}, applyIfPlatform = { "64-bit", "true" })
     public void testAbsConstant() {
         // Test abs(constant) optimization for int
         Asserts.assertEquals(Integer.MAX_VALUE, Math.abs(Integer.MAX_VALUE));
@@ -160,14 +162,14 @@ public class TestIRAbs {
     }
 
     @Test
-    @IR(counts = {IRNode.ABS_L, "1"})
+    @IR(counts = {IRNode.ABS_L, "1"}, applyIfPlatform = { "64-bit", "true" })
     public long testLong0(long x) {
         return Math.abs(Math.abs(x)); // transformed to Math.abs(x)
     }
 
     @Test
-    @IR(failOn = {IRNode.SUB_L})
-    @IR(counts = {IRNode.ABS_L, "1"})
+    @IR(failOn = {IRNode.SUB_L}, applyIfPlatform = { "64-bit", "true" })
+    @IR(counts = {IRNode.ABS_L, "1"}, applyIfPlatform = { "64-bit", "true" })
     public long testLong1(long x) {
         return Math.abs(0 - x); // transformed to Math.abs(x)
     }
@@ -229,4 +231,104 @@ public class TestIRAbs {
             Asserts.assertEquals(cspecial[i], (char) Math.abs(cspecial[i]));
         }
     }
- }
+
+    @Run(test = {"testIntRange1", "testIntRange2", "testIntRange3", "testIntRange4"})
+    public void checkIntRanges(RunInfo info) {
+        for (int i : ispecial) {
+            checkIntRange(i);
+        }
+
+        for (int j = 0; j < 20; j++) {
+            int i = Generators.G.ints().next();
+            checkIntRange(i);
+        }
+    }
+
+    @DontCompile
+    public void checkIntRange(int i) {
+        Asserts.assertEquals(Math.abs((i & 7) - 4) > 4, testIntRange1(i));
+        Asserts.assertEquals(Math.abs((i & 7) - 4) < 0, testIntRange2(i));
+        Asserts.assertEquals(Math.abs(-((i & 7) + 2)) < 2, testIntRange3(i));
+        Asserts.assertEquals(Math.abs(-((i & 7) + 2)) > 9, testIntRange4(i));
+    }
+
+    @Run(test = {"testLongRange1", "testLongRange2", "testLongRange3", "testLongRange4"})
+    public void checkLongRanges(RunInfo info) {
+        for (long l : lspecial) {
+          checkLongRange(l);
+        }
+
+        for (int j = 0; j < 20; j++) {
+            long l = Generators.G.longs().next();
+            checkLongRange(l);
+        }
+    }
+
+    @DontCompile
+    public void checkLongRange(long l) {
+        Asserts.assertEquals(Math.abs((l & 7) - 4) > 4, testLongRange1(l));
+        Asserts.assertEquals(Math.abs((l & 7) - 4) < 0, testLongRange2(l));
+        Asserts.assertEquals(Math.abs(-((l & 7) + 2)) < 2, testLongRange3(l));
+        Asserts.assertEquals(Math.abs(-((l & 7) + 2)) > 9, testLongRange4(l));
+    }
+
+    // Int ranges
+
+    @Test
+    @IR(failOn = { IRNode.ABS_I })
+    public boolean testIntRange1(int in) {
+        // [-4, 3] => [0, 4]
+        return Math.abs((in & 7) - 4) > 4;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.ABS_I })
+    public boolean testIntRange2(int in) {
+        // [-4, 3] => [0, 4]
+        return Math.abs((in & 7) - 4) < 0;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.ABS_I })
+    public boolean testIntRange3(int in) {
+        // [-9, -2] => [2, 9]
+        return Math.abs(-((in & 7) + 2)) < 2;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.ABS_I })
+    public boolean testIntRange4(int in) {
+        // [-9, -2] => [2, 9]
+        return Math.abs(-((in & 7) + 2)) > 9;
+    }
+
+    // Long ranges
+
+    @Test
+    @IR(failOn = { IRNode.ABS_L }, applyIfPlatform = { "64-bit", "true" })
+    public boolean testLongRange1(long in) {
+        // [-4, 3] => [0, 4]
+        return Math.abs((in & 7) - 4) > 4;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.ABS_L }, applyIfPlatform = { "64-bit", "true" })
+    public boolean testLongRange2(long in) {
+        // [-4, 3] => [0, 4]
+        return Math.abs((in & 7) - 4) < 0;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.ABS_L }, applyIfPlatform = { "64-bit", "true" })
+    public boolean testLongRange3(long in) {
+        // [-9, -2] => [2, 9]
+        return Math.abs(-((in & 7) + 2)) < 2;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.ABS_L }, applyIfPlatform = { "64-bit", "true" })
+    public boolean testLongRange4(long in) {
+        // [-9, -2] => [2, 9]
+        return Math.abs(-((in & 7) + 2)) > 9;
+    }
+}
