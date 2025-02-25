@@ -433,8 +433,8 @@ public class TestSearch extends JavadocTester {
                     <li><a href="search.html">Search</a></li>""",
                 """
                     <div class="nav-list-search">
-                    <input type="text" id="search-input" disabled placeholder="Search" aria-label="S\
-                    earch in documentation" autocomplete="off">
+                    <input type="text" id="search-input" disabled placeholder="Search documentation \
+                    (type /)" aria-label="Search in documentation" autocomplete="off" spellcheck="false">
                     <input type="reset" id="reset-search" disabled value="Reset">
                     </div>""");
     }

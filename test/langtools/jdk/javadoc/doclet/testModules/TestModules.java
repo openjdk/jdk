@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -722,7 +722,7 @@ public class TestModules extends JavadocTester {
     void checkModuleSummary() {
         checkOutput("moduleA/module-summary.html", true,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#modules-summary" tabindex="0">Modules</a></li>
@@ -748,7 +748,7 @@ public class TestModules extends JavadocTester {
                     """);
         checkOutput("moduleB/module-summary.html", true,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#services-summary" tabindex="0">Services</a></li>
@@ -897,7 +897,7 @@ public class TestModules extends JavadocTester {
                     </div>""");
         checkOutput("moduleA/module-summary.html", true,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#modules-summary" tabindex="0">Modules</a></li>
@@ -912,7 +912,7 @@ public class TestModules extends JavadocTester {
                     -tab1"><a href="testpkgmdltags/package-summary.html">testpkgmdltags</a></div>
                     <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""",
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#modules-summary" tabindex="0">Modules</a></li>
@@ -960,7 +960,7 @@ public class TestModules extends JavadocTester {
                     <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#services-summary" tabindex="0">Services</a></li>
@@ -1037,7 +1037,7 @@ public class TestModules extends JavadocTester {
                     <div class="col-last even-row-color package-summary-table package-summary-table-tab3">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#modules-summary" tabindex="0">Modules</a></li>

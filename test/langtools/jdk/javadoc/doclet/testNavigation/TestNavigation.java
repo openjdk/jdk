@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="A.X.html" class="current-selection">X</a></li>
                     </ol>""",
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
                     <li><a href="#field-summary" tabindex="0">Field Summary</a></li>
@@ -216,7 +216,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="A.Y.html" class="current-selection">Y</a></li>
                     </ol>""",
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
                     <li><a href="#field-summary" tabindex="0">Field Summary</a></li>
@@ -238,7 +238,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="A.X.IC.html" class="current-selection">IC</a></li>
                     </ol>""",
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
                     <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
@@ -251,7 +251,7 @@ public class TestNavigation extends JavadocTester {
 
         checkOrder("pkg1/C.html",
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
                     <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
@@ -264,7 +264,7 @@ public class TestNavigation extends JavadocTester {
 
         checkOrder("pkg1/InterfaceWithNoMembers.html",
                 """
-                    <ol class="toc-list">
+                    <ol class="toc-list" tabindex="-1">
                     <li><a href="#" tabindex="0">Description</a></li>
                     </ol>""");
     }

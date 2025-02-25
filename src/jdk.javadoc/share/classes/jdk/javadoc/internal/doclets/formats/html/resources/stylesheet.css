@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
@@ -487,16 +487,12 @@ nav.toc > ol.toc-list {
 }
 nav.toc ol.toc-list {
     list-style: none;
+    font-size: var(--nav-font-size);
     padding-left: 8px;
     margin: 0;
 }
 nav.toc ol.toc-list ol.toc-list {
     margin-left: 8px;
-}
-nav.toc ol.toc-list li {
-    margin: 0;
-    font-size: var(--nav-font-size);
-    overflow-x: hidden;
 }
 a.current-selection {
     font-weight: bold;
@@ -507,6 +503,10 @@ nav.toc a {
 }
 nav.toc a.current-selection {
     background-color: var(--subnav-background-color);
+}
+nav.toc a:focus-visible {
+    outline: 2px solid -webkit-focus-ring-color;
+    outline-offset: -2px;
 }
 /*
  * Styles for lists.
@@ -961,9 +961,9 @@ input#search-input {
     max-width: 340px;
 }
 input.filter-input {
-    width: 40%;
-    max-width: 140px;
-    margin: 0 4px;
+    min-width: 40px;
+    width: 180px;
+    margin: 0 -8px 0 5px;
     padding-right: 18px;
 }
 input#reset-search, input.reset-filter {
@@ -975,8 +975,10 @@ input#reset-search, input.reset-filter {
     border-radius:0;
     width:12px;
     height:12px;
+    min-width:12px;
+    min-height:12px;
     font-size:0;
-    display:none;
+    visibility:hidden;
 }
 input#reset-search {
     position:absolute;
@@ -985,12 +987,24 @@ input#reset-search {
 }
 input.reset-filter {
     position: relative;
-    right: 20px;
+    right: 10px;
     top: 0;
 }
 input::placeholder {
     color:var(--search-input-placeholder-color);
     opacity: 1;
+}
+input:focus::placeholder {
+    color: transparent;
+}
+kbd {
+    background-color: #eeeeee;
+    border: 1px solid #b0b0b0;
+    border-radius: 3px;
+    padding: 0 4px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2), 0 2px 0 0 rgba(255, 255, 255, 0.6) inset;
+    font-size: 0.9em;
+    font-weight: bold;
 }
 .search-tag-desc-result {
     font-style:italic;
