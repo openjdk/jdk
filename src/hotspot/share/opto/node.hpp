@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
+ * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,11 +337,9 @@ protected:
   void out_grow( uint len );
 
  public:
-  // Each Node is assigned a unique small/dense number.  This number is used
+  // Each Node is assigned a unique small/dense number. This number is used
   // to index into auxiliary arrays of data and bit vectors.
-  // The field _idx is declared constant to defend against inadvertent assignments,
-  // since it is used by clients as a naked field. However, the field's value can be
-  // changed using the set_idx() method.
+  // The value of _idx can be changed using the set_idx() method.
   //
   // The PhaseRenumberLive phase renumbers nodes based on liveness information.
   // Therefore, it updates the value of the _idx field. The parse-time _idx is
