@@ -133,7 +133,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_propagate_gc_state);
-    ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
+    heap->propagate_gc_state_to_all_threads();
   }
 }
 
