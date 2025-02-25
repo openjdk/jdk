@@ -97,15 +97,15 @@ typedef struct ThreadList {
 /*
  * popFrameEventLock is used to notify that the event has been received
  */
-static jrawMonitorID popFrameEventLock = NULL;
+static DebugRawMonitor* popFrameEventLock = NULL;
 
 /*
  * popFrameProceedLock is used to assure that the event thread is
  * re-suspended immediately after the event is acknowledged.
  */
-static jrawMonitorID popFrameProceedLock = NULL;
+static DebugRawMonitor* popFrameProceedLock = NULL;
 
-static jrawMonitorID threadLock;
+static DebugRawMonitor* threadLock;
 
 static jvmtiError threadControl_removeDebugThread(jthread thread);
 
@@ -650,11 +650,17 @@ getLocks(void)
     eventHelper_lock();
     debugMonitorEnter(threadLock);
     commonRef_lock();
+    if (gdata->rankedMonitors) {
+        dbgRawMonitor_lock();
+    }
 }
 
 static void
 releaseLocks(void)
 {
+    if (gdata->rankedMonitors) {
+        dbgRawMonitor_unlock();
+    }
     commonRef_unlock();
     debugMonitorExit(threadLock);
     eventHelper_unlock();
@@ -672,7 +678,7 @@ threadControl_initialize(void)
     otherThreads.first = NULL;
     runningVThreads.first = NULL;
     debugThreadCount = 0;
-    threadLock = debugMonitorCreate("JDWP Thread Lock");
+    threadLock = debugMonitorCreate(threadLock_Rank, "JDWP Thread Lock");
 }
 
 void
@@ -1720,12 +1726,70 @@ threadControl_isDebugThread(jthread thread)
     return rc;
 }
 
+/*** Start of support for StackFrame.PopFrames ***/
+
+/*
+ * Synchronization with popFrameEventLock and popFrameProceedLock
+ *
+ * StackFrame.PopFrames support has some complicated synchronization because
+ * JVMTI PopFrame() is called on the JDWP Command Reader thread (that's where
+ * the StackFrame.PopFrames command arrived on), but it needs to co-ordinate
+ * with the PopFrames target thread. The Command Reader thread has to call JVMTI
+ * PopFrame() on the target thread one frame at a time, resume the target thread,
+ * and then know when the target thread is done with the PopFrame() so it can be
+ * suspended so the next PopFrame() can then be done. Part of what makes this
+ * complex is that the target thread needs to have SINGLE_STEP enabled so we
+ * can tell when the PopFrame() has completed. (For reasons I don't understand,
+ * we don't rely on FRAME_POP events).
+ *
+ * Synchronization is done via the popFrameProceedLock and popFrameEventLock. Both
+ * the JDWP Command Reader thread and the PopFrame() target thread will grab
+ * both of these locks. However, one curious trait of these two locks is that
+ * the two threads do not both grab them in the same order (and they need
+ * to do it this way). This seems like it should lead to a deadlock, but doesn't
+ * because of how each thread grabs these locks and waits or notifies on them.
+ *
+ * Command Reader Thread:
+ *  grab popFrameEventLock (which is always available)
+ *  for each frame
+ *    call PopFrame() on target thread
+ *    resume target thread
+ *    wait on popFrameEventLock (which releases it)
+ *    grab popFrameProceedLock
+ *    suspend target thread
+ *    notify on popFrameProceedLock
+ *    release popFrameProceedLock
+ *  }
+ *  release popFrameEventLock
+ *
+ * Target Thread:
+ *   for each frame pop (indicated by a SingleStep event)
+ *     grab popFrameProceedLock (which is always available)
+ *     grab popFrameEventLock (which Command Reader Thread is waiting on)
+ *     notify on popFrameEventLock
+ *     release popFrameEventLock
+ *     wait on popFrameProceedLock
+ *     release popFrameProceedLock
+ *   }
+ *
+ * The reason we don't get a deadlock is because the Reader thread always
+ * starts the process, so it always enters popFrameEventLock and then
+ * waits on it (which releases the lock). Therefore there is never a race for
+ * popFrameEventLock. Meanwhile when the target thread gets the SINGLE_STEP event,
+ * it always enters popFrameProceedLock first (which is always available), then
+ * popFrameEventLock second. It will always succeed because the Reader thread
+ * only entered popFrameEventLock, but is waiting on it, so doesn't currently hold
+ * either lock. The target thread then notifies on popFrameEventLock and releases
+ * it (unblocking the Reader thread), and then waits on popFrameProceedLock. The
+ * Reader thread resumes and can enter popFrameProceedLock and notify on it.
+*/
+
 static void
-initLocks(void)
+initPopFrameLocks(void)
 {
     if (popFrameEventLock == NULL) {
-        popFrameEventLock = debugMonitorCreate("JDWP PopFrame Event Lock");
-        popFrameProceedLock = debugMonitorCreate("JDWP PopFrame Proceed Lock");
+        popFrameEventLock = debugMonitorCreate(popFrameEventLock_Rank, "JDWP PopFrame Event Lock");
+        popFrameProceedLock = debugMonitorCreate(popFrameProceedLock_Rank, "JDWP PopFrame Proceed Lock");
     }
 }
 
@@ -1930,7 +1994,7 @@ threadControl_popFrames(jthread thread, FrameNumber fnum)
 
     log_debugee_location("threadControl_popFrames()", thread, NULL, 0);
 
-    initLocks();
+    initPopFrameLocks();
 
     /* compute the number of frames to pop */
     popCount = fnum+1;
@@ -2026,6 +2090,8 @@ checkForPopFrameEvents(JNIEnv *env, EventIndex ei, jthread thread)
     /* Pretend we were never called */
     return JNI_FALSE;
 }
+
+/*** End of support for StackFrame.PopFrames ***/
 
 struct bag *
 threadControl_onEventHandlerEntry(jbyte sessionID, EventInfo *evinfo, jobject currentException)
