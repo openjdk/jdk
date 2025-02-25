@@ -92,6 +92,8 @@ import java.time.temporal.ValueRange;
 import java.time.zone.ZoneRules;
 import java.util.Objects;
 
+import jdk.internal.util.DateTimeHelper;
+
 /**
  * A time with an offset from UTC/Greenwich in the ISO-8601 calendar system,
  * such as {@code 10:15:30+01:00}.
@@ -1400,7 +1402,7 @@ public final class OffsetTime
     public String toString() {
         var offsetStr = offset.toString();
         var buf = new StringBuilder(18 + offsetStr.length());
-        time.formatTo(buf);
+        DateTimeHelper.formatTo(buf, time);
         return buf.append(offsetStr).toString();
     }
 
