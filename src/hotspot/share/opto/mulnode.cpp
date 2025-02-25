@@ -982,8 +982,7 @@ static Node* collapse_nested_shift_left(PhaseGVN* phase, Node* outer_shift, int 
   assert(bt == T_LONG || bt == T_INT, "Unexpected type");
   int nbits = bt == T_LONG ? BitsPerJavaLong : BitsPerJavaInteger;
   Node* inner_shift = outer_shift->in(1);
-  int inner_shift_op = inner_shift->Opcode();
-  if (inner_shift_op != Op_LShift(bt)) {
+  if (inner_shift->Opcode() != Op_LShift(bt)) {
     return nullptr;
   }
 
