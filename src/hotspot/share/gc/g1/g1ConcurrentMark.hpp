@@ -973,14 +973,14 @@ class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;
 
-  size_t _young_cardset_bytes_per_region;
-
   // Accumulator for code roots memory size
   size_t _total_code_roots_bytes;
 
   static double bytes_to_mb(size_t val) {
     return (double) val / (double) M;
   }
+
+  void do_cset_groups();
 
 public:
   // The header and footer are printed in the constructor and

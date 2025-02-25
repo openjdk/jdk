@@ -328,6 +328,12 @@ jint Klass::array_layout_helper(BasicType etype) {
   return lh;
 }
 
+int Klass::modifier_flags() const {
+  int mods = java_lang_Class::modifiers(java_mirror());
+  assert(mods == compute_modifier_flags(), "should be same");
+  return mods;
+}
+
 bool Klass::can_be_primary_super_slow() const {
   if (super() == nullptr)
     return true;
