@@ -1477,7 +1477,7 @@ public:
       ldr(dest, const_addr);
     } else {
       uint64_t offset;
-      adrp(dest, InternalAddress(const_addr.target()), offset);
+      adrp(dest, const_addr, offset);
       ldr(dest, Address(dest, offset));
     }
   }
