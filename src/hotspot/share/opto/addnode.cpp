@@ -1049,6 +1049,7 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
   // At least one of the arguments is not constant
 
   if (r0->_lo >= 0 && r1->_lo >= 0) {
+      // Combine [0, lo_1] ^ [0, hi_1] -> [0, max]
       jint max = calc_xor_upper_bound_of_non_neg<jint, juint>(r0->_hi, r1->_hi);
       return TypeInt::make(0, max, MAX2(r0->_widen, r1->_widen));
   }

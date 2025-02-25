@@ -254,8 +254,8 @@ public class XorLNodeIdealizationTests {
         long b = G.next();
         checkXor(a, b);
 
-        for (a = 0; a < 16; a++) {
-            for (b = a; b < 16; b++) {
+        for (a = 0; a < 32; a++) {
+            for (b = a; b < 32; b++) {
                 checkXor(a, b);
                 checkXor(MAX_VALUE, MAX_VALUE - b);
             }
