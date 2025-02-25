@@ -184,7 +184,7 @@ class Deoptimization : AllStatic {
 
 #if INCLUDE_JVMCI
   static address deoptimize_for_missing_exception_handler(nmethod* nm);
-  static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, bool& cache_init_error, TRAPS);
+  static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, const RegisterMap* reg_map, bool& cache_init_error, TRAPS);
 #endif
 
   private:
@@ -200,10 +200,10 @@ class Deoptimization : AllStatic {
  public:
 
   // Support for restoring non-escaping objects
-  static bool realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS);
-  static void reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type);
-  static void reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj);
-  static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal);
+  static bool realloc_objects(JavaThread* thread, frame* fr, const RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS);
+  static void reassign_type_array_elements(frame* fr, const RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type);
+  static void reassign_object_array_elements(frame* fr, const RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj);
+  static void reassign_fields(frame* fr, const RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal);
   static bool relock_objects(JavaThread* thread, GrowableArray<MonitorInfo*>* monitors,
                              JavaThread* deoptee_thread, frame& fr, int exec_mode, bool realloc_failures);
   static void pop_frames_failed_reallocs(JavaThread* thread, vframeArray* array);
