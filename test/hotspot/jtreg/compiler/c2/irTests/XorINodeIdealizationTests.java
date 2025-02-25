@@ -26,6 +26,8 @@ import jdk.test.lib.Asserts;
 import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
 
+import static java.lang.Integer.MAX_VALUE;
+
 /*
  * @test
  * @bug 8281453
@@ -57,7 +59,7 @@ public class XorINodeIdealizationTests {
         int d = RunInfo.getRandom().nextInt();
 
         int min = Integer.MIN_VALUE;
-        int max = Integer.MAX_VALUE;
+        int max = MAX_VALUE;
 
         assertResult(0, 0, 0, 0);
         assertResult(a, b, c, d);
@@ -291,7 +293,8 @@ public class XorINodeIdealizationTests {
     }
 
     @Run(test = {
-            "testFoldableXor", "testFoldableXorPow2", "testUnfoldableXorPow2"
+            "testFoldableXor", "testFoldableXorPow2", "testUnfoldableXorPow2",
+            "testFoldableXorDifferingLength", "testXorMax"
     })
     public void runRangeTests() {
         int a = G.next();
@@ -301,6 +304,7 @@ public class XorINodeIdealizationTests {
         for (a = 0; a < 16; a++) {
             for (b = a; b < 16; b++) {
                 checkXor(a, b);
+                checkXor(MAX_VALUE, MAX_VALUE - b);
             }
         }
     }
@@ -310,6 +314,8 @@ public class XorINodeIdealizationTests {
         Asserts.assertEQ(true, testFoldableXor(a, b));
         Asserts.assertEQ(((a & 0b1000) ^ (b & 0b1000)) < 0b1000, testUnfoldableXorPow2(a, b));
         Asserts.assertEQ(true, testFoldableXorPow2(a, b));
+        Asserts.assertEQ(true, testFoldableXorDifferingLength(a, b));
+        Asserts.assertEQ((a & MAX_VALUE) ^ (b & 0b11), testXorMax(a, b));
     }
 
     @Test
@@ -331,5 +337,20 @@ public class XorINodeIdealizationTests {
     public boolean testFoldableXor(int x, int y) {
         var xor = (x & 0b111) ^ (y & 0b100);
         return xor < 0b1000;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"})
+    public boolean testFoldableXorDifferingLength(int x, int y) {
+        var xor = (x & 0b111) ^ (y & 0b11);
+        return xor < 0b1000;
+    }
+
+    @Test
+    public int testXorMax(int x, int y) {
+        return (x & MAX_VALUE) ^ (y & 0b11);
+        // can't do the folding range check here since xor <= MAX_VALUE is
+        // constant with or without the xor
     }
 }
