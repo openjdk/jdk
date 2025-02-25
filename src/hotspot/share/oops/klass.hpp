@@ -123,11 +123,6 @@ class Klass : public Metadata {
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
                                 // Some flags created by the JVM, not in the class file itself,
                                 // are in _misc_flags below.
-
-  // Java mirror carries the modifier flags. This cached field allows accessing
-  // modifiers when Java mirror is already dead, e.g. during class unloading.
-  u2 _cached_modifier_flags;
-
   KlassFlags  _misc_flags;
 
   // The fields _super_check_offset, _secondary_super_cache, _secondary_supers
@@ -754,8 +749,10 @@ public:
   virtual void release_C_heap_structures(bool release_constant_pool = true);
 
  public:
+  // Compute out modifier flags from the original data, instead of relying
+  // on Java mirror field. This is also allows accessing modifier flags
+  // when Java mirror is already dead, e.g. during class unloading.
   virtual u2 compute_modifier_flags() const = 0;
-  void cache_modifier_flags(int flags);
   int modifier_flags() const;
 
   // JVMTI support
