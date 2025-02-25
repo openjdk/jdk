@@ -87,7 +87,11 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
         }
 
         private Optional<Services> createServices() {
-            return Optional.empty();
+            if (pkg.app().isService()) {
+                return Optional.of(Services.create(pkg, env));
+            } else {
+                return Optional.empty();
+            }
         }
     }
 
@@ -102,7 +106,7 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
 
         private List<String> allPkgbuildArgs() {
             final List<String> args = new ArrayList<>();
-            args.add("-root");
+            args.add("--root");
             args.add(normalizedAbsolutePathString(srcRoot));
             args.addAll(otherPkgbuildArgs);
             args.add("--identifier");
@@ -116,6 +120,7 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
             cmdline.add("/usr/bin/pkgbuild");
             cmdline.addAll(allPkgbuildArgs());
             try {
+                Files.createDirectories(path.getParent());
                 IOUtils.exec(new ProcessBuilder(cmdline), false, null, true, Executor.INFINITE_TIMEOUT);
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
@@ -256,10 +261,18 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
                         .addDependencies(PkgPackageTaskID.PREPARE_MAIN_SCRIPTS)
                         .add();
 
-        if (pkg.app().isService()) {
-            for (var taskID : List.of(PkgPackageTaskID.PREPARE_SERVICES, InternalPackageType.SERVICES, InternalPackageType.SUPPORT)) {
-                pipelineBuilder.task(taskID).noaction().add();
-            }
+        final List<TaskID> disabledTasks = new ArrayList<>();
+
+        if (!pkg.app().isService()) {
+            disabledTasks.addAll(List.of(PkgPackageTaskID.PREPARE_SERVICES, InternalPackageType.SERVICES, InternalPackageType.SUPPORT));
+        }
+
+        if (pkg.isRuntimeInstaller()) {
+            disabledTasks.add(PkgPackageTaskID.PREPARE_MAIN_SCRIPTS);
+        }
+
+        for (final var taskID : disabledTasks) {
+            pipelineBuilder.task(taskID).noaction().add();
         }
     }
 
@@ -543,7 +556,7 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
             commandLine.add("--distribution");
             commandLine.add(normalizedAbsolutePathString(distributionXmlFile()));
             commandLine.add("--package-path");
-            // Assume all internal .pkg files reside in the same directory. 
+            // Assume all internal .pkg files reside in the same directory.
             commandLine.add(normalizedAbsolutePathString(mainPkg().path().getParent()));
         }
         commandLine.add(normalizedAbsolutePathString(finalPkg));
