@@ -112,7 +112,6 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         IOUtils.writableOutputDir(outdir);
 
         try {
-            env = BuildEnv.withAppImageDir(env, prepareAppBundle(params));
 
             prepareConfigFiles(pkg, env);
             Path configScript = getConfig_Script(pkg, env);
@@ -121,7 +120,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             }
 
             return createPKG(pkg, env, outdir);
-        } catch (IOException | PackagerException ex) {
+        } catch (IOException ex) {
             Log.verbose(ex);
             throw new PackagerException(ex);
         }
