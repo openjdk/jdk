@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2024, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -879,6 +879,16 @@ reg_class vectorx_reg(
     V29, V29_H, V29_J, V29_K,
     V30, V30_H, V30_J, V30_K,
     V31, V31_H, V31_J, V31_K
+);
+
+// Class for vector register V17
+reg_class v17_veca_reg(
+    V17, V17_H, V17_J, V17_K
+);
+
+// Class for vector register v18
+reg_class v18_veca_reg(
+    V18, V18_H, V18_J, V18_K
 );
 
 // Class for 128 bit register v0
@@ -4936,6 +4946,26 @@ operand vReg()
   match(VecA);
   match(VecD);
   match(VecX);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V17()
+%{
+  constraint(ALLOC_IN_RC(v17_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V18()
+%{
+  constraint(ALLOC_IN_RC(v18_veca_reg));
+  match(vReg);
 
   op_cost(0);
   format %{ %}

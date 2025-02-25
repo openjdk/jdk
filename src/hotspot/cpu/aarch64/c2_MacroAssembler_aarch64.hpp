@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,4 +186,11 @@
   void vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
                          FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T);
 
+  // Select from a table of two vectors
+  void select_from_two_vectors_SIFNeon(FloatRegister dst, FloatRegister src1, FloatRegister src2,
+                                       FloatRegister index, FloatRegister tmp1, FloatRegister tmp2,
+                                       BasicType bt, unsigned length_in_bytes);
+
+  void select_from_two_vectors(FloatRegister dst, FloatRegister src1, FloatRegister src2,
+                               FloatRegister index, BasicType bt, unsigned length_in_bytes);
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP
