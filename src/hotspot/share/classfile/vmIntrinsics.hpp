@@ -189,6 +189,8 @@ class methodHandle;
   do_intrinsic(_minF,                     java_lang_Math,         min_name,           float2_float_signature,    F_S)   \
   do_intrinsic(_maxD,                     java_lang_Math,         max_name,           double2_double_signature,  F_S)   \
   do_intrinsic(_minD,                     java_lang_Math,         min_name,           double2_double_signature,  F_S)   \
+  do_intrinsic(_maxL,                     java_lang_Math,         max_name,           long2_long_signature,      F_S)   \
+  do_intrinsic(_minL,                     java_lang_Math,         min_name,           long2_long_signature,      F_S)   \
   do_intrinsic(_roundD,                   java_lang_Math,         round_name,         double_long_signature,     F_S)   \
   do_intrinsic(_roundF,                   java_lang_Math,         round_name,         float_int_signature,       F_S)   \
   do_intrinsic(_dcopySign,                java_lang_Math,         copySign_name,      double2_double_signature,  F_S)   \
