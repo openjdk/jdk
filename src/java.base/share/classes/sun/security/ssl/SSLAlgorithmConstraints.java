@@ -30,7 +30,6 @@ import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
 import java.security.Key;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.net.ssl.*;
 import sun.security.util.DisabledAlgorithmConstraints;
 import static sun.security.util.DisabledAlgorithmConstraints.*;
@@ -275,11 +274,8 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     }
 
     // Checks if algorithm is disabled for the given TLS scopes.
-    boolean permits(String algorithm, Set<SSLCryptoScope> scopes) {
-        return tlsDisabledAlgConstraints.permits(algorithm,
-                scopes.stream()
-                .map(SSLCryptoScope::name)
-                .collect(Collectors.toSet()));
+    boolean permits(String algorithm, Set<SSLScope> scopes) {
+        return tlsDisabledAlgConstraints.permits(algorithm, scopes);
     }
 
     private static class SupportedSignatureAlgorithmConstraints

@@ -25,6 +25,7 @@
 
 package sun.security.util;
 
+import sun.security.ssl.SSLScope;
 import sun.security.validator.Validator;
 
 import java.lang.ref.SoftReference;
@@ -47,6 +48,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,7 +56,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -88,11 +89,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     private static final String PROPERTY_DISABLED_EC_CURVES =
             "jdk.disabled.namedCurves";
 
-    // These should match SSLCryptoScope enums which aren't public so
-    // we can't access them here directly.
-    private static final List<String> VALID_SCOPES = List.of(
-            "HANDSHAKE", "CERTIFICATE");
-
     private static final Pattern INCLUDE_PATTERN = Pattern.compile("include " +
             PROPERTY_DISABLED_EC_CURVES, Pattern.CASE_INSENSITIVE);
 
@@ -108,7 +104,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
     private final Set<String> disabledAlgorithms;
     private final List<Pattern> disabledPatterns;
-    private final Map<String, Set<String>> disabledAlgorithmScopes;
     private final Constraints algorithmConstraints;
     private volatile SoftReference<Map<String, Boolean>> cacheRef =
             new SoftReference<>(null);
@@ -147,10 +142,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         // Support patterns only for jdk.tls.disabledAlgorithms
         if (PROPERTY_TLS_DISABLED_ALGS.equals(propertyName)) {
             disabledPatterns = getDisabledPatterns();
-            disabledAlgorithmScopes = getDisabledAlgorithmScopes();
         } else {
             disabledPatterns = null;
-            disabledAlgorithmScopes = null;
         }
 
         // Check for alias
@@ -181,7 +174,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             throw new IllegalArgumentException("No algorithm name specified");
         }
 
-        if (!cachedCheckAlgorithm(algorithm, null)) {
+        if (!cachedCheckAlgorithm(algorithm)) {
             return false;
         }
 
@@ -190,6 +183,12 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         return true;
+    }
+
+    // Checks if algorithm is disabled for the given TLS scopes.
+    public boolean permits(String algorithm, Set<SSLScope> scopes) {
+        List<Constraint> list = algorithmConstraints.getConstraints(algorithm);
+        return list == null || list.stream().allMatch(c -> c.permits(scopes));
     }
 
     /*
@@ -214,11 +213,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         return checkConstraints(primitives, algorithm, key, parameters);
-    }
-
-    // Checks if algorithm is disabled for the given TLS scopes.
-    public boolean permits(String algorithm, Set<String> scopes) {
-        return cachedCheckAlgorithm(algorithm, scopes);
     }
 
     public final void permits(String algorithm, AlgorithmParameters ap,
@@ -269,7 +263,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             // Check if named curves in the key are disabled.
             for (Key key : cp.getKeys()) {
                 for (String curve : getNamedCurveFromKey(key)) {
-                    if (!cachedCheckAlgorithm(curve, null)) {
+                    if (!cachedCheckAlgorithm(curve)) {
                         throw new CertPathValidatorException(
                             "Algorithm constraints check failed on disabled " +
                                     "algorithm: " + curve,
@@ -446,7 +440,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                         denyAfterLimit = true;
                     } else if (entry.startsWith("usage")) {
                         String[] s = (entry.substring(5)).trim().split(" ");
-                        c = new UsageConstraint(algorithm, s);
+                        c = new UsageConstraint(algorithm, s, propertyName);
                         if (debug != null) {
                             debug.println("Constraints usage length is " + s.length);
                         }
@@ -614,6 +608,17 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
          *         'false' otherwise.
          */
         public boolean permits(AlgorithmParameters parameters) {
+            return true;
+        }
+
+        /**
+         * Check if the algorithm constraint permits the given TLS scopes.
+         *
+         * @param scopes TLS scopes
+         * @return 'true' if TLS scopes are allowed,
+         *         'false' otherwise.
+         */
+        public boolean permits(Set<SSLScope> scopes) {
             return true;
         }
 
@@ -794,14 +799,49 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
     /*
      * The usage constraint is for the "usage" keyword.  It checks against the
-     * variant value in ConstraintsParameters.
+     * variant value in ConstraintsParameters and against TLS scopes.
      */
     private static class UsageConstraint extends Constraint {
         String[] usages;
+        Set<SSLScope> scopes;
 
-        UsageConstraint(String algorithm, String[] usages) {
+        UsageConstraint(
+                String algorithm, String[] usages, String propertyName) {
             this.algorithm = algorithm;
-            this.usages = usages;
+
+            // Support TLS scopes only for jdk.tls.disabledAlgorithms property.
+            if (PROPERTY_TLS_DISABLED_ALGS.equals(propertyName)) {
+                for (String usage : usages) {
+                    SSLScope scope = SSLScope.nameOf(usage);
+
+                    if (scope != null) {
+                        if (this.scopes == null) {
+                            this.scopes = new HashSet<>(usages.length);
+                        }
+                        this.scopes.add(scope);
+                    }  else {
+                        this.usages = usages;
+                    }
+                }
+
+                if (this.scopes != null && this.usages != null) {
+                    throw new IllegalArgumentException(
+                            "Can't mix TLS protocol specific constraints"
+                            + " with other usage constraints");
+                }
+
+            } else {
+                this.usages = usages;
+            }
+        }
+
+        @Override
+        public boolean permits(Set<SSLScope> scopes) {
+            if (this.scopes == null || scopes == null) {
+                return true;
+            }
+
+            return Collections.disjoint(this.scopes, scopes);
         }
 
         @Override
@@ -975,10 +1015,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 
-    private boolean cachedCheckAlgorithm(
-            String algorithm, Set<String> scopes) {
+    private boolean cachedCheckAlgorithm(String algorithm) {
         Map<String, Boolean> cache;
-
         if ((cache = cacheRef.get()) == null) {
             synchronized (this) {
                 if ((cache = cacheRef.get()) == null) {
@@ -987,20 +1025,14 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 }
             }
         }
-
-        final String cacheKey = algorithm + ":" +
-                (scopes == null ? "null" : String.valueOf(scopes.hashCode()));
-        Boolean result = cache.get(cacheKey);
-
+        Boolean result = cache.get(algorithm);
         if (result != null) {
             return result;
         }
-
+        // We won't check patterns if algorithm check fails.
         result = checkAlgorithm(disabledAlgorithms, algorithm, decomposer)
-                && checkDisabledPatterns(algorithm)
-                && checkAlgorithmTlsScopes(algorithm, scopes);
-
-        cache.put(cacheKey, result);
+                && checkDisabledPatterns(algorithm);
+        cache.put(algorithm, result);
         return result;
     }
 
@@ -1036,71 +1068,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             }
         }
 
-        return ret;
-    }
-
-    private boolean checkAlgorithmTlsScopes(
-            final String algorithm, Set<String> scopes) {
-
-        if (disabledAlgorithmScopes == null || scopes == null) {
-            return true;
-        }
-
-        Set<String> constraintScopes = disabledAlgorithmScopes.get(algorithm);
-
-        if (constraintScopes == null) {
-            return true;
-        }
-
-        for (String scope : scopes) {
-            if (constraintScopes.contains(scope.toUpperCase(Locale.ENGLISH))) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private Map<String, Set<String>> getDisabledAlgorithmScopes() {
-        Map<String, Set<String>> ret = null;
-        List<String> entriesToRemove = new ArrayList<>(1);
-
-        for (String p : disabledAlgorithms) {
-            String[] arr = p.split(" ");
-
-            if (arr.length > 2 && arr[1].equalsIgnoreCase("usage")) {
-                boolean tlsUsages = false;
-                boolean nonTlsUsages = false;
-                String key = arr[0];
-
-                for (int i = 2; i < arr.length; i++) {
-                    String scope = arr[i].toUpperCase(Locale.ENGLISH);
-
-                    if (VALID_SCOPES.contains(scope)) {
-                        tlsUsages = true;
-
-                        if (ret == null) {
-                            ret = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-                        }
-                        ret.computeIfAbsent(key, _ -> new HashSet<>(1));
-                        ret.get(key).add(scope);
-                    } else {
-                        nonTlsUsages = true;
-                    }
-                }
-
-                if (tlsUsages) {
-                    if (nonTlsUsages) {
-                        throw new IllegalArgumentException(
-                                "Can't mix TLS protocol specific constraints"
-                                        + " with other usage constraints");
-                    }
-                    entriesToRemove.add(p);
-                }
-            }
-        }
-
-        entriesToRemove.forEach(disabledAlgorithms::remove);
         return ret;
     }
 

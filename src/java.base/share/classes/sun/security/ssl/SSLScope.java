@@ -29,9 +29,20 @@
 
 package sun.security.ssl;
 
-enum SSLCryptoScope {
+public enum SSLScope {
     // Handshake scope as in signature_algorithms extension.
     HANDSHAKE,
     // Certificate scope as in signature_algorithms_cert extension.
     CERTIFICATE;
+
+    // Note: the SSLScope is not case-sensitive.
+    public static SSLScope nameOf(String name) {
+        for (SSLScope scope : SSLScope.values()) {
+            if (scope.name().equalsIgnoreCase(name)) {
+                return scope;
+            }
+        }
+
+        return null;
+    }
 }

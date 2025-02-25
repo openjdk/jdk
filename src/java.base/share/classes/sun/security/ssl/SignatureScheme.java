@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -219,12 +218,12 @@ enum SignatureScheme {
     }
 
     // Handshake signature scope.
-    public static final Set<SSLCryptoScope> HANDSHAKE_SCOPE =
-            Set.of(SSLCryptoScope.HANDSHAKE);
+    public static final Set<SSLScope> HANDSHAKE_SCOPE =
+            Set.of(SSLScope.HANDSHAKE);
 
     // Certificate signature scope.
-    public static final Set<SSLCryptoScope> CERTIFICATE_SCOPE =
-            Set.of(SSLCryptoScope.CERTIFICATE);
+    public static final Set<SSLScope> CERTIFICATE_SCOPE =
+            Set.of(SSLScope.CERTIFICATE);
 
     // Non-TLS specific SIGNATURE CryptoPrimitive.
     private static final Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
@@ -363,7 +362,7 @@ enum SignatureScheme {
     }
 
     private boolean isPermitted(
-            SSLAlgorithmConstraints constraints, Set<SSLCryptoScope> scopes) {
+            SSLAlgorithmConstraints constraints, Set<SSLScope> scopes) {
         return constraints.permits(this.name, scopes)
                 && constraints.permits(this.keyAlgorithm, scopes)
                 && constraints.permits(this.algorithm, scopes)
@@ -376,7 +375,7 @@ enum SignatureScheme {
 
     // Wrapper method taking a HandshakeContext.
     static List<SignatureScheme> getSupportedAlgorithms(
-            HandshakeContext hc, Set<SSLCryptoScope> scopes) {
+            HandshakeContext hc, Set<SSLScope> scopes) {
         return getSupportedAlgorithms(
                 hc.sslConfig,
                 hc.algorithmConstraints,
@@ -392,7 +391,7 @@ enum SignatureScheme {
             SSLConfiguration config,
             SSLAlgorithmConstraints constraints,
             List<ProtocolVersion> activeProtocols,
-            Set<SSLCryptoScope> scopes) {
+            Set<SSLScope> scopes) {
         List<SignatureScheme> supported = new LinkedList<>();
 
         List<SignatureScheme> schemesToCheck =
@@ -438,7 +437,7 @@ enum SignatureScheme {
 
     // Wrapper method taking a HandshakeContext.
     static List<SignatureScheme> getSupportedAlgorithms(
-            HandshakeContext hc, int[] algorithmIds, Set<SSLCryptoScope> scopes) {
+            HandshakeContext hc, int[] algorithmIds, Set<SSLScope> scopes) {
         return getSupportedAlgorithms(
                 hc.sslConfig,
                 hc.algorithmConstraints,
@@ -452,7 +451,7 @@ enum SignatureScheme {
             SSLAlgorithmConstraints constraints,
             ProtocolVersion protocolVersion,
             int[] algorithmIds,
-            Set<SSLCryptoScope> scopes) {
+            Set<SSLScope> scopes) {
         List<SignatureScheme> supported = new LinkedList<>();
         for (int ssid : algorithmIds) {
             SignatureScheme ss = SignatureScheme.valueOf(ssid);
@@ -484,7 +483,7 @@ enum SignatureScheme {
             List<SignatureScheme> schemes,
             String keyAlgorithm,
             ProtocolVersion version,
-            Set<SSLCryptoScope> scopes) {
+            Set<SSLScope> scopes) {
 
         for (SignatureScheme ss : schemes) {
             if (ss.isAvailable &&
