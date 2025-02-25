@@ -168,11 +168,27 @@ endef
 # Setup a rule for generating a memory segment var handle view class
 # Param 1 - Variable declaration prefix
 # Param 2 - Type with first letter capitalized
+# TODO decide if CAS/Bitwise/AtomicAdd should be enabled for subints
+# Remove comments # before $1_ARGS += below to enable them
 define GenerateVarHandleMemorySegment
 
   $1_Type := $2
 
   $1_FILENAME := $(VARHANDLES_GENSRC_DIR)/VarHandleSegmentAs$$($1_Type)s.java
+
+  ifeq ($$($1_Type), Boolean)
+    $1_type := boolean
+    $1_BoxType := $$($1_Type)
+
+    $1_rawType := $$($1_type)
+    $1_RawType := $$($1_Type)
+    $1_RawBoxType := $$($1_BoxType)
+
+    $1_ARGS += -Kbyte
+    # $1_ARGS += -KCAS
+    # $1_ARGS += -KBitwise
+    $1_ARGS += -KShorterThanInt
+  endif
 
   ifeq ($$($1_Type), Byte)
     $1_type := byte
@@ -183,6 +199,10 @@ define GenerateVarHandleMemorySegment
     $1_RawBoxType := $$($1_BoxType)
 
     $1_ARGS += -Kbyte
+    # $1_ARGS += -KCAS
+    # $1_ARGS += -KAtomicAdd
+    # $1_ARGS += -KBitwise
+    $1_ARGS += -KShorterThanInt
   endif
 
   ifeq ($$($1_Type), Short)
@@ -192,6 +212,11 @@ define GenerateVarHandleMemorySegment
     $1_rawType := $$($1_type)
     $1_RawType := $$($1_Type)
     $1_RawBoxType := $$($1_BoxType)
+
+    # $1_ARGS += -KCAS
+    # $1_ARGS += -KAtomicAdd
+    # $1_ARGS += -KBitwise
+    $1_ARGS += -KShorterThanInt
   endif
 
   ifeq ($$($1_Type), Char)
@@ -201,6 +226,11 @@ define GenerateVarHandleMemorySegment
     $1_rawType := $$($1_type)
     $1_RawType := $$($1_Type)
     $1_RawBoxType := $$($1_BoxType)
+
+    # $1_ARGS += -KCAS
+    # $1_ARGS += -KAtomicAdd
+    # $1_ARGS += -KBitwise
+    $1_ARGS += -KShorterThanInt
   endif
 
   ifeq ($$($1_Type), Int)
@@ -277,7 +307,7 @@ $(foreach t, $(VARHANDLES_BYTE_ARRAY_TYPES), \
   $(eval $(call GenerateVarHandleByteArray,VAR_HANDLE_BYTE_ARRAY_$t,$t)))
 
 # List the types to generate source for, with capitalized first letter
-VARHANDLES_MEMORY_SEGMENT_TYPES := Byte Short Char Int Long Float Double
+VARHANDLES_MEMORY_SEGMENT_TYPES := Boolean Byte Short Char Int Long Float Double
 $(foreach t, $(VARHANDLES_MEMORY_SEGMENT_TYPES), \
   $(eval $(call GenerateVarHandleMemorySegment,VAR_HANDLE_MEMORY_SEGMENT_$t,$t)))
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  */
 package jdk.internal.foreign.layout;
 
+import jdk.internal.foreign.LayoutPath;
 import jdk.internal.foreign.Utils;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
@@ -38,10 +39,8 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A value layout. A value layout is used to model the memory layout associated with values of basic data types, such as <em>integral</em> types
@@ -159,19 +158,13 @@ public final class ValueLayouts {
 
         @ForceInline
         public final VarHandle varHandle() {
-            final class VarHandleCache {
-                private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+            var vh = handle;
+            if (vh == null) {
+                vh = varHandleInternal(LayoutPath.EMPTY_PATH_ELEMENTS);
+                // benign race stable field store is safe because VarHandle is thread safe
+                handle = vh;
             }
-            if (handle == null) {
-                // this store to stable field is safe, because return value of 'makeMemoryAccessVarHandle' has stable identity
-                handle = VarHandleCache.HANDLE_MAP.computeIfAbsent(self().withoutName(), _ -> varHandleInternal());
-            }
-            return handle;
-        }
-
-        @SuppressWarnings("unchecked")
-        final V self() {
-            return (V) this;
+            return vh;
         }
     }
 
