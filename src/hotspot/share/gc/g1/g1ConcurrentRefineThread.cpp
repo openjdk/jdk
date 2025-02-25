@@ -145,8 +145,11 @@ void G1ConcurrentRefineThread::do_refinement() {
   // Swap card tables.
 
   // 1. Global card table
-  state.swap_global_ct();
-  log_debug(gc,refine)("Concurrent Refine Global CT swap");
+  if (!state.swap_global_card_table()) {
+    log_debug(gc, refine)("GC pause after Global Card Table Swap");
+    return;
+  }
+  log_debug(gc, refine)("Concurrent Refine Global Card Table Swap");
 
   // 2. Java threads
   if (!state.swap_java_threads_ct()) {

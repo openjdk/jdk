@@ -181,14 +181,23 @@ void G1ConcurrentRefineWorkState::start_refine_work() {
   advance_state(State::SwapGlobalCT);
 }
 
-void G1ConcurrentRefineWorkState::swap_global_ct() {
+bool G1ConcurrentRefineWorkState::swap_global_card_table() {
   assert_state(State::SwapGlobalCT);
 
   set_state_start_time();
 
-  G1BarrierSet::g1_barrier_set()->swap_global_card_table();
+  {
+    // We can't have any new threads being in the process of created while we
+    // swap the card table because we read the current card table state during
+    // initialization.
+    // A safepoint may occur during that time, so leave the STS temporarily.
+    SuspendibleThreadSetLeaver sts_leave;
 
-  advance_state(State::SwapJavaThreadsCT);
+    MutexLocker mu(Threads_lock);
+    G1BarrierSet::g1_barrier_set()->swap_global_card_table();
+  }
+
+  return advance_state(State::SwapJavaThreadsCT);
 }
 
 class G1SwapThreadCardTableClosure : public HandshakeClosure {

@@ -46,8 +46,8 @@ private:
 
   G1ThreadLocalData() :
       _satb_mark_queue(&G1BarrierSet::satb_mark_queue_set()),
-      _byte_map_base(G1CollectedHeap::heap()->card_table_base()),
-      _pin_cache() { assert(_byte_map_base != nullptr, "must be"); }
+      _byte_map_base(nullptr),
+      _pin_cache() { }
 
   static G1ThreadLocalData* data(Thread* thread) {
     assert(UseG1GC, "Sanity");
@@ -85,10 +85,6 @@ public:
 
   static ByteSize card_table_base_offset() {
     return Thread::gc_data_offset() + byte_offset_of(G1ThreadLocalData, _byte_map_base);
-  }
-
-  static G1CardTable::CardValue* byte_map_base(Thread* thread) {
-    return data(thread)->_byte_map_base;
   }
 
   static void set_byte_map_base(Thread* thread, G1CardTable::CardValue* new_byte_map_base) {

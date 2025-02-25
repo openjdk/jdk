@@ -137,7 +137,7 @@ public:
 
   void start_refine_work();
 
-  void swap_global_ct();
+  bool swap_global_card_table();
   bool swap_java_threads_ct();
   bool swap_gc_threads_ct();
   void snapshot_heap();

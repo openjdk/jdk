@@ -160,10 +160,9 @@ void G1BarrierSet::on_thread_attach(Thread* thread) {
   // copying the global is_active value to this thread's queue.
   satbq.set_active(_satb_mark_queue_set.is_active());
 
-  // Between thread creation and attaching it to the (Java-)Thread there may be a
-  // safepoint (and/or the thread is not visible to the handshake), and might
-  // have changed, so (re-)do the card table base address assignment here.
-  G1ThreadLocalData::set_byte_map_base(thread, G1CollectedHeap::heap()->card_table_base());
+  if (thread->is_Java_thread()) {
+    G1ThreadLocalData::set_byte_map_base(thread, G1CollectedHeap::heap()->card_table_base());
+  }
 }
 
 void G1BarrierSet::on_thread_detach(Thread* thread) {
