@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,13 +378,7 @@ class GenerateJLIClassesHelper {
         ArrayList<String> names = new ArrayList<>();
         HashSet<String> dedupSet = new HashSet<>();
         for (LambdaForm.BasicType type : LambdaForm.BasicType.values()) {
-            LambdaForm zero = LambdaForm.zeroForm(type);
-            String name = zero.kind.defaultLambdaName
-                   + "_" + zero.returnType().basicTypeChar();
-            if (dedupSet.add(name)) {
-                names.add(name);
-                forms.add(zero);
-            }
+            String name;
 
             LambdaForm identity = LambdaForm.identityForm(type);
             name = identity.kind.defaultLambdaName
@@ -392,6 +386,16 @@ class GenerateJLIClassesHelper {
             if (dedupSet.add(name)) {
                 names.add(name);
                 forms.add(identity);
+            }
+
+            if (type != V_TYPE) {
+                LambdaForm constant = LambdaForm.constantForm(type);
+                name = constant.kind.defaultLambdaName
+                        + "_" + constant.returnType().basicTypeChar();
+                if (dedupSet.add(name)) {
+                    names.add(name);
+                    forms.add(constant);
+                }
             }
         }
         return generateCodeBytesForLFs(className,
