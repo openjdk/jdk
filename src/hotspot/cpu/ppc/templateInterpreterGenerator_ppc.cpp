@@ -1996,8 +1996,20 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   return start;
 }
 
+address TemplateInterpreterGenerator::generate_currentThread() {
+  address entry_point = __ pc();
+
+  __ ld(R3_RET, JavaThread::vthread_offset(), R16_thread);
+  __ resolve_oop_handle(R3_RET, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_FRAME_LR);
+
+  // restore caller sp for c2i case (from compiled) and for resized sender frame (from interpreted).
+  __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
+  __ blr();
+
+  return entry_point;
+}
+
 // Not supported
-address TemplateInterpreterGenerator::generate_currentThread() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
