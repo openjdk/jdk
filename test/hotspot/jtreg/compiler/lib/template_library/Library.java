@@ -83,4 +83,44 @@ public abstract class Library {
         ));
         return template.withArgs();
     }
+
+    public static TemplateWithArgs arrayFillMethods() {
+        var template = Template.make(() -> body(
+            """
+            private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
+            private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
+            private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
+            private static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
+            private static final RestrictableGenerator<Integer> GEN_BOOLEAN = Generators.G.safeRestrict(Generators.G.ints(), 0, 1);
+
+            public static int[] fill(int[] a) {
+                Generators.G.fill(GEN_INT, a);
+                return a;
+            }
+
+            public static long[] fill(long[] a) {
+                Generators.G.fill(GEN_LONG, a);
+                return a;
+            }
+
+            public static float[] fill(float[] a) {
+                Generators.G.fill(GEN_FLOAT, a);
+                return a;
+            }
+
+            public static double[] fill(double[] a) {
+                Generators.G.fill(GEN_DOUBLE, a);
+                return a;
+            }
+
+            public static boolean[] fill(boolean[] a) {
+                for (int i = 0; i < a.length; i++) {
+                    a[i] = GEN_BOOLEAN.next() == 1;
+                }
+                return a;
+            }
+            """
+        ));
+        return template.withArgs();
+    }
 } 
