@@ -3360,7 +3360,7 @@ By default logging messages are output synchronously - each log message is writt
 the designated output when the logging call is made. You can instead use asynchronous
 logging mode by specifying:
 
-`-Xlog:async:[stall|drop]`
+`-Xlog:async[:[stall|drop]]`
 :     Write all logging asynchronously.
 
 In asynchronous logging mode, log sites enqueue all logging messages to an intermediate buffer
