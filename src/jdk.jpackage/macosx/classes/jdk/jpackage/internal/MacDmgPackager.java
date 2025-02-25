@@ -133,7 +133,7 @@ record MacDmgPackager(MacDmgPackage pkg, BuildEnv env, Path hdiutil, Path output
         return Optional.empty();
     }
 
-    void applyToPipeline(PackagingPipeline.Builder pipelineBuilder) {
+    private void applyToPipeline(PackagingPipeline.Builder pipelineBuilder) {
         pipelineBuilder
                 .excludeDirFromCopying(outputDir)
                 .task(DmgPackageTaskID.COPY_DMG_CONTENT)
