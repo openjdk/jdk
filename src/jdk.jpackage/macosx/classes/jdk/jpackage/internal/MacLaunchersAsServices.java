@@ -24,11 +24,8 @@
  */
 package jdk.jpackage.internal;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.Package;
@@ -39,19 +36,10 @@ import jdk.jpackage.internal.util.PathUtils;
  */
 public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
 
-    private MacLaunchersAsServices(BuildEnv env, Package pkg) {
+    MacLaunchersAsServices(BuildEnv env, Package pkg) {
         super(env.appImageDir(), pkg.app(), List.of(), launcher -> {
             return new MacLauncherAsService(env, pkg, launcher);
         });
-    }
-
-    static Optional<? extends ShellCustomAction> create(BuildEnv env, Package pkg) {
-        if (pkg.isRuntimeInstaller()) {
-            return Optional.empty();
-        } else {
-            return Optional.of(new MacLaunchersAsServices(env, pkg))
-                    .filter(Predicate.not(MacLaunchersAsServices::isEmpty));
-        }
     }
 
     public static Path getServicePListFileName(String bundleIdentifier,
