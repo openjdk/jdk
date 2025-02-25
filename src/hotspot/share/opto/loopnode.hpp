@@ -83,7 +83,7 @@ protected:
          LoopNestLongOuterLoop = 1<<16,
          MultiversionFastLoop         = 1<<17,
          MultiversionSlowLoop         = 2<<17,
-         MultiversionStalledSlowLoop  = 3<<17,
+         MultiversionDelayedSlowLoop  = 3<<17,
          MultiversionFlagsMask        = 3<<17,
        };
   char _unswitch_count;
@@ -321,26 +321,30 @@ public:
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
 
-  // Multiversioning allows us to duplicate a CountedLoop, and have two versions:
-  // (1) fast_loop: we make speculative assumptions and add the corresponding
-  //                runtime-checks above the multiversion_if which is guarded
-  //                by a OpaqueMultiversioning.
-  // (2) slow_loop: we make no assumptions. This loop is taken if any of the
-  //                runtime-checks fails. We keep this loop stalled as long
-  //                as there are no runtime-checks added. As long as it is stalled,
-  //                we do not perform any loop-opts on the slow_loop. If no
-  //                runtime-checks are everadded, this slow_loop is folded away
-  //                after loop-opts. The stalling means we do not waste and cycles
-  //                on a loop that may eventually be folded away. Once a runtime-check
-  //                is added, the slow_loop is unstalled, and more loop-opts can
-  //                be performed on it (but still without any speculative assumptions).
+  // Multiversioning allows us to duplicate a CountedLoop, and have two versions, and the multiversion_if
+  // decides which one is taken:
+  // (1) fast_loop: We enter this loop by default, by default the multiversion_if has its condition set to
+  //                "true", guarded by a OpaqueMultiversioning. If we want to make a speculative assumption
+  //                for an optimization, we can add the runtime-check to the multiversion_if, and if the
+  //                assumption fails we take the slow_loop instead, where we do not make the same speculative
+  //                assumption.
+  //                We call it the "fast_loop" because it has more optimizations, enabled by the speculative
+  //                runtime-checks at the multiversion_if, and we expect the fast_loop to execute faster.
+  // (2) slow_loop: By default, it is not taken, until a runtime-check is added to the multiversion_if while
+  //                optimizing the fast_looop. If such a runtime-check is never added, then after loop-opts
+  //                the multiversion_if constant folds to true, and the slow_loop is folded away. To save
+  //                compile time, we delay the optimization of the slow_loop until a runtime-check is added
+  //                to the multiversion_if, at which point we resume optimizations for the slow_loop.
+  //                We call it the "slow_loop" because it has fewer optimizations, since this is the fall-back
+  //                loop where we do not make any of the speculative assumptions we make for the fast_loop.
+  //                Hence, we expect the slow_loop to execute slower.
   bool is_multiversion()                   const { return (_loop_flags & MultiversionFlagsMask) != Normal; }
   bool is_multiversion_fast_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionFastLoop; }
   bool is_multiversion_slow_loop()         const { return (_loop_flags & MultiversionFlagsMask) == MultiversionSlowLoop; }
-  bool is_multiversion_stalled_slow_loop() const { return (_loop_flags & MultiversionFlagsMask) == MultiversionStalledSlowLoop; }
+  bool is_multiversion_delayed_slow_loop() const { return (_loop_flags & MultiversionFlagsMask) == MultiversionDelayedSlowLoop; }
   void set_multiversion_fast_loop()         { assert(!is_multiversion(), ""); _loop_flags |= MultiversionFastLoop; }
   void set_multiversion_slow_loop()         { assert(!is_multiversion(), ""); _loop_flags |= MultiversionSlowLoop; }
-  void set_multiversion_stalled_slow_loop() { assert(!is_multiversion(), ""); _loop_flags |= MultiversionStalledSlowLoop; }
+  void set_multiversion_delayed_slow_loop() { assert(!is_multiversion(), ""); _loop_flags |= MultiversionDelayedSlowLoop; }
   void set_no_multiversion()                { assert( is_multiversion(), ""); _loop_flags &= ~MultiversionFlagsMask; }
 
   virtual LoopNode* skip_strip_mined(int expect_skeleton = 1);
@@ -1516,7 +1520,7 @@ public:
   void maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt, Node_List& old_new);
   void do_multiversioning(IdealLoopTree* lpt, Node_List& old_new);
   IfTrueNode* create_new_if_for_multiversion(IfTrueNode* multiversioning_fast_proj);
-  bool try_unstall_multiversion_stalled_slow_loop(IdealLoopTree* lpt);
+  bool try_resume_optimizations_for_delayed_slow_loop(IdealLoopTree* lpt);
 
   // Move an unordered Reduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);

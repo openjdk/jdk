@@ -434,7 +434,7 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
 
   CountedLoopNode* new_head = old_new[original_head->_idx]->as_CountedLoop();
   original_head->set_multiversion_fast_loop();
-  new_head->set_multiversion_stalled_slow_loop();
+  new_head->set_multiversion_delayed_slow_loop();
 
   NOT_PRODUCT(trace_loop_multiversioning_result(loop_selector, original_head, new_head);)
   C->print_method(PHASE_AFTER_LOOP_MULTIVERSIONING, 4, new_head);
@@ -487,9 +487,10 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multivers
   IfFalseNode* multiversion_slow_proj = multiversion_if->proj_out(0)->as_IfFalse();
   Node* slow_path = multiversion_slow_proj->unique_ctrl_out();
 
-  // Now that we have at least one condition for the multiversioning,
-  // we should unstall the slow loop.
-  opaque->unstall_slow_loop();
+  // The slow_loop may still be delayed, and waiting for runtime-checks to be added to the
+  // multiversion_if. Now that we have at least one condition for the multiversioning,
+  // we should resume optimizations for the slow loop.
+  opaque->notify_slow_loop_that_it_can_resume_optimizations();
 
   // Create new_if with its projections.
   IfNode* new_if = IfNode::make_with_same_profile(multiversion_if, entry, opaque);
@@ -530,9 +531,9 @@ OpaqueMultiversioningNode* find_multiversion_opaque_from_multiversion_if_false(N
   return multiversion_if->in(1)->isa_OpaqueMultiversioning();
 }
 
-bool PhaseIdealLoop::try_unstall_multiversion_stalled_slow_loop(IdealLoopTree* lpt) {
+bool PhaseIdealLoop::try_resume_optimizations_for_delayed_slow_loop(IdealLoopTree* lpt) {
   CountedLoopNode* cl = lpt->_head->as_CountedLoop();
-  assert(cl->is_multiversion_stalled_slow_loop(), "must currently be stalled");
+  assert(cl->is_multiversion_delayed_slow_loop(), "must currently be delayed");
 
   // Find multiversion_if.
   Node* entry = cl->skip_strip_mined()->in(LoopNode::EntryControl);
@@ -554,18 +555,18 @@ bool PhaseIdealLoop::try_unstall_multiversion_stalled_slow_loop(IdealLoopTree* l
   assert(opaque != nullptr, "must have found multiversion opaque node");
   if (opaque == nullptr) { return false; }
 
-  // We may still be stalled, if there were not yet any runtime-checks added
+  // We may still be delayed, if there were not yet any runtime-checks added
   // for the multiversioning. We may never add any, and then this loop would
   // fold away. So we wait until some runtime-checks are added, then we know
   // that this loop will be reachable and it is worth optimizing further.
-  if (opaque->is_stall_slow_loop()) { return false; }
+  if (opaque->is_delayed_slow_loop()) { return false; }
 
-  // Clear away the stalling.
+  // Clear away the "delayed" status, i.e. resume optimizations.
   cl->set_no_multiversion();
   cl->set_multiversion_slow_loop();
 #ifndef PRODUCT
   if (TraceLoopOpts) {
-    tty->print("Unstall ");
+    tty->print("Resume Optimizations ");
     lpt->dump_head();
   }
 #endif

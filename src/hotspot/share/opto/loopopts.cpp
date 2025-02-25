@@ -4511,13 +4511,13 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
 // we may end up not needing any speculative assumptions in the fast_loop
 // and then rejecting the slow_loop by constant folding the multiversion_if.
 //
-// Therefore, we "stall" the optimization of the slow_loop until we add
+// Therefore, we "delay" the optimization of the slow_loop until we add
 // at least one speculative assumption for the fast_loop. If we never
 // add such a speculative runtime check, the OpaqueMultiversioningNode
 // of the multiversion_if constant folds to true after loop opts, and the
-// multiversion_if folds away the "stalled" slow_loop. If we add any
-// speculative assumption, then we mark the OpaqueMultiversioningNode
-// with "unstall_slow_loop", so that the slow_loop can be optimized.
+// multiversion_if folds away the "delayed" slow_loop. If we add any
+// speculative assumption, then we notify the OpaqueMultiversioningNode
+// with "notify_slow_loop_that_it_can_resume_optimizations".
 //
 // Note: new runtime checks can be added to the multiversion_if with
 //       PhaseIdealLoop::create_new_if_for_multiversion

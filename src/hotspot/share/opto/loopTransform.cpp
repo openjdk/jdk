@@ -3360,13 +3360,20 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   // Do nothing special to pre- and post- loops
   if (cl->is_pre_loop() || cl->is_post_loop()) return true;
 
-  // If we are stalled, check if we can get unstalled.
-  if (cl->is_multiversion_stalled_slow_loop() &&
-      !phase->try_unstall_multiversion_stalled_slow_loop(this)) {
-    // We are still stalled, waiting for the fast_loop to add runtime-checks
-    // to the multiversion_if. We do not want to optimize, because we do not
-    // know if such a runtime-check will ever be added. If not, this loop is
-    // eventually folded away after loop-opts.
+  // With multiversioning, we create a fast_loop and a slow_loop, and a multiversion_if that
+  // decides which loop is taken at runtime. At first, the multiversion_if always takes the
+  // fast_loop, and we only optimize the fast_loop. Since we are not sure if we will ever use
+  // the slow_loop, we delay optimizations for it, so we do not waste compile time and code
+  // size. If we never change the condition of the multiversion_if, the slow_loop is eventually
+  // folded away after loop-opts. While optimizing the fast_loop, we may want to perform some
+  // speculative optimization, for which we need a runtime-check. We add this runtime-check
+  // condition to the multiversion_if. Now, it becomes possible to execute the slow_loop at
+  // runtime, and we resume optimizations for slow_loop ("un-delay" it).
+  // TLDR: If the slow_loop is still in "delay" mode, check if the multiversion_if was changed
+  //       and we should now resume optimizations for it.
+  if (cl->is_multiversion_delayed_slow_loop() &&
+      !phase->try_resume_optimizations_for_delayed_slow_loop(this)) {
+    // We are still delayed, so wait with further loop-opts.
     return true;
   }
 

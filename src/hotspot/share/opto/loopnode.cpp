@@ -2521,7 +2521,7 @@ void CountedLoopNode::dump_spec(outputStream *st) const {
   if (is_strip_mined()) st->print(" strip mined");
   if (is_multiversion_fast_loop())         { st->print(" multiversion_fast"); }
   if (is_multiversion_slow_loop())         { st->print(" multiversion_slow"); }
-  if (is_multiversion_stalled_slow_loop()) { st->print(" multiversion_stalled_slow"); }
+  if (is_multiversion_delayed_slow_loop()) { st->print(" multiversion_delayed_slow"); }
 }
 #endif
 
@@ -4316,7 +4316,7 @@ void IdealLoopTree::dump_head() {
     if (range_checks_present()) tty->print(" rc ");
     if (cl->is_multiversion_fast_loop())         { tty->print(" multiversion_fast"); }
     if (cl->is_multiversion_slow_loop())         { tty->print(" multiversion_slow"); }
-    if (cl->is_multiversion_stalled_slow_loop()) { tty->print(" multiversion_stalled_slow"); }
+    if (cl->is_multiversion_delayed_slow_loop()) { tty->print(" multiversion_delayed_slow"); }
   }
   if (_has_call) tty->print(" has_call");
   if (_has_sfpt) tty->print(" has_sfpt");
