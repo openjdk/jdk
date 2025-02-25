@@ -29,7 +29,7 @@
  * @summary Test the output for CountBytecodes and validate that the counter
  *          does not overflow for more than 2^32 bytecodes counted.
  * @library /test/lib
- * @run main/othervm/timeout=300 -Xint -XX:+CountBytecodes CountBytecodesTest
+ * @run main/othervm/timeout=300 CountBytecodesTest
  */
 
 import java.util.regex.Matcher;
@@ -44,8 +44,21 @@ public class CountBytecodesTest {
 
     public static void main(String args[]) throws Exception {
         if (args.length == 1 && args[0].equals("test")) {
-            for (long i = 0; i < iterations; i++) {
+            for (long i = 0; i < iterations / 9; i++) {
                 // Just iterating is enough to execute and count bytecodes.
+                // According to javap -c this translates to the following bytecodes:
+                // 19: lload_1
+                // 20: ldc2_w        #17
+                // 23: lcmp
+                // 24: ifge          34
+                // 27: lload_1
+                // 28: lconst_1
+                // 29: ladd
+                // 30: lstore_1
+                // 31: goto          19
+                //
+                // Thus we can divide the iterations by 9 to have a minimal runtime and still
+                // exceed 2^32 bytecodes.
             }
         } else {
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-Xint", "-XX:+CountBytecodes", "CountBytecodesTest", "test");
@@ -56,6 +69,8 @@ public class CountBytecodesTest {
             output.stdoutShouldContain("BytecodeCounter::counter_value");
             String bytecodesStr = output.firstMatch("BytecodeCounter::counter_value\s*=\s*(\\d+)", 1);
             long bytecodes = Long.parseLong(bytecodesStr);
+
+            System.out.println("Executed bytecodes: " + bytecodes);
 
             Asserts.assertGTE(bytecodes, 4294967296L);
         }
