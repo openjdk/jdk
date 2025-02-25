@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,6 +264,14 @@ public class TestTracePageSizes {
         if (Platform.getOsVersionMajor() < 3 ||
             (Platform.getOsVersionMajor() == 3 && Platform.getOsVersionMinor() < 8)) {
             throw new SkippedException("Kernel older than 3.8 - skipping this test.");
+        }
+
+        // Kernel versions before 5.0 lack the "THPeligible" field in /proc/self/smaps,
+        // causing incorrect page size comparisons when THP mode is set to "always".
+        if (Platform.getOsVersionMajor() < 5 && System.getenv("THP_MODE").equals("always")) {
+            if (System.getenv("THP_MODE").equals("always")) {
+                throw new SkippedException("Kernel older than 5.0 with THP mode \"always\" enabled - skipping this test.");
+            }
         }
 
         // Parse /proc/self/smaps to compare with values logged in the VM.
