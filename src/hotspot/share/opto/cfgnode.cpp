@@ -1117,6 +1117,7 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
     }
   }
   Compile *C = igvn->C;
+  ResourceMark rm;
   Node_Array node_map;
   Node_Stack stack(C->live_nodes() >> 4);
   PhiNode *nphi = slice_memory(at);
@@ -2358,9 +2359,38 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // It would make the parser's memory-merge logic sick.)
   // (MergeMemNode is not dead_loop_safe - need to check for dead loop.)
   if (progress == nullptr && can_reshape && type() == Type::MEMORY) {
-    // see if this phi should be sliced
+
+    // See if this Phi should be sliced. Determine the merge width of input
+    // MergeMems and check if there is a direct loop to self, as illustrated
+    // below.
+    //
+    //               +-------------+
+    //               |             |
+    // (base_memory) v             |
+    //              MergeMem       |
+    //                 |           |
+    //                 v           |
+    //                Phi (this)   |
+    //                 |           |
+    //                 +-----------+
+    //
+    // Generally, there are issues with non-termination with such circularity
+    // (see comment further below). However, if there is a direct loop to self,
+    // splitting the Phi through the MergeMem will result in the below.
+    //
+    //               +---+
+    //               |   |
+    //               v   |
+    //              Phi  |
+    //               |\  |
+    //               | +-+
+    // (base_memory) v
+    //              MergeMem
+    //
+    // This split breaks the circularity and consequently does not lead to
+    // non-termination.
     uint merge_width = 0;
-    bool saw_self = false;
+    bool split_must_terminate = false; // Is splitting guaranteed to terminate?
     for( uint i=1; i<req(); ++i ) {// For all paths in
       Node *ii = in(i);
       // TOP inputs should not be counted as safe inputs because if the
@@ -2372,12 +2402,71 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (ii->is_MergeMem()) {
         MergeMemNode* n = ii->as_MergeMem();
         merge_width = MAX2(merge_width, n->req());
-        saw_self = saw_self || (n->base_memory() == this);
+        if (n->base_memory() == this) {
+          split_must_terminate = true;
+        }
       }
     }
 
-    // This restriction is temporarily necessary to ensure termination:
-    if (!saw_self && adr_type() == TypePtr::BOTTOM)  merge_width = 0;
+    // There are cases with circular dependencies between bottom Phis
+    // and MergeMems. Below is a minimal example.
+    //
+    //               +------------+
+    //               |            |
+    // (base_memory) v            |
+    //              MergeMem      |
+    //                 |          |
+    //                 v          |
+    //                Phi (this)  |
+    //                 |          |
+    //                 v          |
+    //                Phi         |
+    //                 |          |
+    //                 +----------+
+    //
+    // Here, we cannot break the circularity through a self-loop as there
+    // are two Phis involved. Repeatedly splitting the Phis through the
+    // MergeMem leads to non-termination. We check for non-termination below.
+    // Only check for non-termination if necessary.
+    if (!split_must_terminate && adr_type() == TypePtr::BOTTOM &&
+        merge_width > Compile::AliasIdxRaw) {
+      ResourceMark rm;
+      VectorSet visited;
+      Node_List worklist;
+      worklist.push(this);
+      visited.set(this->_idx);
+      auto maybe_add_to_worklist = [&](Node* input) {
+        if (input != nullptr &&
+            (input->is_MergeMem() || input->is_memory_phi()) &&
+            !visited.test_set(input->_idx)) {
+          worklist.push(input);
+          assert(input->adr_type() == TypePtr::BOTTOM,
+                 "should only visit bottom memory");
+        }
+      };
+      split_must_terminate = true; // Assume no circularity until proven otherwise.
+      while (split_must_terminate && worklist.size() > 0) {
+        Node* n = worklist.pop();
+        if (n->is_MergeMem()) {
+          Node* input = n->as_MergeMem()->base_memory();
+          if (input == this) {
+            split_must_terminate = false;
+            break;
+          }
+          maybe_add_to_worklist(input);
+        } else {
+          assert(n->is_memory_phi(), "invariant");
+          for (uint i = PhiNode::Input; i < n->req(); i++) {
+            Node* input = n->in(i);
+            if (input == this) {
+              split_must_terminate = false;
+              break;
+            }
+            maybe_add_to_worklist(input);
+          }
+        }
+      }
+    }
 
     if (merge_width > Compile::AliasIdxRaw) {
       // found at least one non-empty MergeMem
@@ -2409,10 +2498,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             }
           }
         }
-      } else {
-        // We know that at least one MergeMem->base_memory() == this
-        // (saw_self == true). If all other inputs also references this phi
-        // (directly or through data nodes) - it is a dead loop.
+      } else if (split_must_terminate) {
+        // If all inputs reference this phi (directly or through data nodes) -
+        // it is a dead loop.
         bool saw_safe_input = false;
         for (uint j = 1; j < req(); ++j) {
           Node* n = in(j);
