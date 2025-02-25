@@ -37,7 +37,7 @@ public class RShiftLNodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9" })
+    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10" })
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -76,6 +76,7 @@ public class RShiftLNodeIdealizationTests {
         Asserts.assertEQ((x8 << test7Shift) >> test7Shift, test8(x));
         long x9 = Integer.max(Integer.min((int)x, (int)test7Max), (int)(test7Min-1));
         Asserts.assertEQ((x9 << test7Shift) >> test7Shift, test9(x));
+         Asserts.assertEQ(((x7 << test7Shift) >> test10Shift), test10(x));
     }
 
     @Test
@@ -120,6 +121,7 @@ public class RShiftLNodeIdealizationTests {
         return (x >> test6Shift);
     }
 
+    // See comment in RShiftINodeIdealizationTests
     final static int test7Shift = RunInfo.getRandom().nextInt(32) + 32;
     final static long test7Min = -1L << (64 - test7Shift -1);
     final static long test7Max = ~test7Min;
@@ -143,5 +145,12 @@ public class RShiftLNodeIdealizationTests {
     public long test9(long x) {
         x = Integer.max(Integer.min((int)x, (int)test7Max), (int)(test7Min-1));
         return ((x << test7Shift) >> test7Shift);
+    }
+
+    final static int test10Shift = RunInfo.getRandom().nextInt(64);
+    @Test
+    public long test10(long x) {
+        x = Integer.max(Integer.min((int)x, (int)test7Max), (int)test7Min);
+        return ((x << test7Shift) >> test10Shift);
     }
 }

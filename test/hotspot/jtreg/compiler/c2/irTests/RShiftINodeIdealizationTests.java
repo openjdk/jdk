@@ -37,7 +37,7 @@ public class RShiftINodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9" })
+    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10" })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -76,6 +76,7 @@ public class RShiftINodeIdealizationTests {
         Asserts.assertEQ((x8 << test7Shift) >> test7Shift, test8(x));
         int x9 = Integer.max(Integer.min(x, test7Max), test7Min-1);
         Asserts.assertEQ((x9 << test7Shift) >> test7Shift, test9(x));
+        Asserts.assertEQ((x7 << test7Shift) >> test10Shift, test10(x));
     }
 
     @Test
@@ -120,6 +121,18 @@ public class RShiftINodeIdealizationTests {
         return (x >> test6Shift);
     }
 
+
+    // test that (x << shift) >> shift) is a nop if upper bits of x
+    // that are shifted left and then right + one bit are all ones or
+    // zeroes. For instance:
+    // shift = 15, min = 0xffff0000, max=0x0000ffff
+    // min << shift = 0x80000000, (min << shift) >> shift = 0xffff0000
+    // (min+1) << shift = 0x80008000, ((min+1) << shift) >> shift = 0xffff0001
+    // (max-1) << shift = 0x7fff0000, ((max-1) << shift) >> shift = 0x0000fffe
+    // max << shift = 0x7fff8000, (min << shift) >> shift = 0x0000ffff
+    // But:
+    // (min-1) << shift = 7fff8000, ((min-1) << shift) >> shift = 0x0000ffff != 0xfffeffff
+    // (max+1) << shift = 0x80000000, ((max+1) << shift) >> shift = 0xffff0000 != 0x00010000
     final static int test7Shift = RunInfo.getRandom().nextInt(32);
     final static int test7Min = -1 << (32 - test7Shift -1);
     final static int test7Max = ~test7Min;
@@ -143,5 +156,13 @@ public class RShiftINodeIdealizationTests {
     public int test9(int x) {
         x = Integer.max(Integer.min(x, test7Max), test7Min-1);
         return ((x << test7Shift) >> test7Shift);
+    }
+
+    final static int test10Shift = RunInfo.getRandom().nextInt(32);
+
+    @Test
+    public int test10(int x) {
+        x = Integer.max(Integer.min(x, test7Max), test7Min);
+        return ((x << test7Shift) >> test10Shift);
     }
 }

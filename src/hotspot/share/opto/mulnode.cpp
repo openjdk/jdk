@@ -1333,6 +1333,54 @@ const Type* LShiftLNode::Value(PhaseGVN* phase) const {
   return TypeLong::make( (jlong)r1->get_con() << (jint)shift );
 }
 
+RShiftNode* RShiftNode::make(Node* in1, Node* in2, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new RShiftINode(in1, in2);
+    case T_LONG:
+      return new RShiftLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return nullptr;
+}
+
+
+//=============================================================================
+//------------------------------Identity---------------------------------------
+Node* RShiftNode::IdentityIL(PhaseGVN* phase, BasicType bt) {
+  int count = 0;
+  if (const_shift_count(phase, this, &count)) {
+    if ((count & (bits_per_java_integer(bt) - 1)) == 0) {
+      // Shift by a multiple of 32/64 does nothing
+      return in(1);
+    }
+    // Check for useless sign-masking
+    if (in(1)->Opcode() == Op_LShift(bt) &&
+        in(1)->req() == 3 &&
+        in(1)->in(2) == in(2)) {
+      count &= bits_per_java_integer(bt)-1; // semantics of Java shifts
+      // Compute masks for which this shifting doesn't change
+      jlong lo = (-1 << (bits_per_java_integer(bt) - ((uint)count)-1)); // FFFF8000
+      jlong hi = ~lo;               // 00007FFF
+      const TypeInteger* t11 = phase->type(in(1)->in(1))->isa_integer(bt);
+      if (t11 == nullptr) {
+        return this;
+      }
+      // Does actual value fit inside of mask?
+      if (lo <= t11->lo_as_long() && t11->hi_as_long() <= hi) {
+        return in(1)->in(1);      // Then shifting is a nop
+      }
+    }
+  }
+  return this;
+}
+
+Node* RShiftINode::Identity(PhaseGVN* phase) {
+  return IdentityIL(phase, T_INT);
+}
+
+//------------------------------Ideal------------------------------------------
 Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   // Inputs may be TOP if they are dead.
   const TypeInteger* t1 = phase->type(in(1))->isa_integer(bt);
@@ -1360,32 +1408,59 @@ Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   return nullptr;
 }
 
-Node* RShiftNode::IdentityIL(PhaseGVN* phase, BasicType bt) {
-  int count = 0;
-  if (const_shift_count(phase, this, &count)) {
-    if ((count & (bits_per_java_integer(bt) - 1)) == 0) {
-      // Shift by a multiple of 32/64 does nothing
-      return in(1);
+Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  Node* progress = IdealIL(phase, can_reshape, T_INT);
+  if (progress == NodeSentinel) {
+    return nullptr;
+  }
+  if (progress != nullptr) {
+    return progress;
+  }
+  int shift = maskShiftAmount(phase, this, BitsPerJavaInteger);
+  assert(shift != 0, "handled by IdealIL");
+
+  // Check for "(short[i] <<16)>>16" which simply sign-extends
+  const Node *shl = in(1);
+  if (shl->Opcode() != Op_LShiftI) {
+    return nullptr;
+  }
+
+  const TypeInt* left_shift_t;
+  if (shift == 16 &&
+      (left_shift_t = phase->type(shl->in(2))->isa_int()) &&
+      left_shift_t->is_con(16)) {
+    Node *ld = shl->in(1);
+    if (ld->Opcode() == Op_LoadS) {
+      // Sign extension is just useless here.  Return a RShiftI of zero instead
+      // returning 'ld' directly.  We cannot return an old Node directly as
+      // that is the job of 'Identity' calls and Identity calls only work on
+      // direct inputs ('ld' is an extra Node removed from 'this').  The
+      // combined optimization requires Identity only return direct inputs.
+      set_req_X(1, ld, phase);
+      set_req_X(2, phase->intcon(0), phase);
+      return this;
     }
-    // Check for useless sign-masking
-    if (in(1)->Opcode() == Op_LShift(bt) &&
-        in(1)->req() == 3 &&
-        in(1)->in(2) == in(2)) {
-      count &= bits_per_java_integer(bt)-1; // semantics of Java shifts
-      // Compute masks for which this shifting doesn't change
-      jlong lo = (-1 << (bits_per_java_integer(bt) - ((uint)count)-1)); // FFFF8000
-      jlong hi = ~lo;               // 00007FFF
-      const TypeInteger* t11 = phase->type(in(1)->in(1))->isa_integer(bt);
-      if (t11 == nullptr) {
-        return this;
-      }
-      // Does actual value fit inside of mask?
-      if (lo <= t11->lo_as_long() && t11->hi_as_long() <= hi) {
-        return in(1)->in(1);      // Then shifting is a nop
-      }
+    else if (can_reshape &&
+             ld->Opcode() == Op_LoadUS &&
+             ld->outcnt() == 1 && ld->unique_out() == shl)
+      // Replace zero-extension-load with sign-extension-load
+      return ld->as_Load()->convert_to_signed_load(*phase);
+  }
+
+  // Check for "(byte[i] <<24)>>24" which simply sign-extends
+  if (shift == 24 &&
+      (left_shift_t = phase->type(shl->in(2))->isa_int()) &&
+      left_shift_t->is_con(24)) {
+    Node *ld = shl->in(1);
+    if (ld->Opcode() == Op_LoadB) {
+      // Sign extension is just useless here
+      set_req_X(1, ld, phase);
+      set_req_X(2, phase->intcon(0), phase);
+      return this;
     }
   }
-  return this;
+
+  return nullptr;
 }
 
 const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
@@ -1455,81 +1530,6 @@ const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
 
   // Signed shift right
   return TypeInteger::make(r1->get_con_as_long(bt) >> (r2->get_con() & (bits_per_java_integer(bt) - 1)), bt);
-}
-
-RShiftNode* RShiftNode::make(Node* in1, Node* in2, BasicType bt) {
-  switch (bt) {
-    case T_INT:
-      return new RShiftINode(in1, in2);
-    case T_LONG:
-      return new RShiftLNode(in1, in2);
-    default:
-      fatal("Not implemented for %s", type2name(bt));
-  }
-  return nullptr;
-}
-
-
-//=============================================================================
-//------------------------------Identity---------------------------------------
-Node* RShiftINode::Identity(PhaseGVN* phase) {
-  return IdentityIL(phase, T_INT);
-}
-
-//------------------------------Ideal------------------------------------------
-Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  Node* progress = IdealIL(phase, can_reshape, T_INT);
-  if (progress == NodeSentinel) {
-    return nullptr;
-  }
-  if (progress != nullptr) {
-    return progress;
-  }
-  int shift = maskShiftAmount(phase, this, BitsPerJavaInteger);
-  assert(shift != 0, "handled by IdealIL");
-
-  // Check for "(short[i] <<16)>>16" which simply sign-extends
-  const Node *shl = in(1);
-  if (shl->Opcode() != Op_LShiftI) {
-    return nullptr;
-  }
-
-  const TypeInt* left_shift_t;
-  if (shift == 16 &&
-      (left_shift_t = phase->type(shl->in(2))->isa_int()) &&
-      left_shift_t->is_con(16)) {
-    Node *ld = shl->in(1);
-    if (ld->Opcode() == Op_LoadS) {
-      // Sign extension is just useless here.  Return a RShiftI of zero instead
-      // returning 'ld' directly.  We cannot return an old Node directly as
-      // that is the job of 'Identity' calls and Identity calls only work on
-      // direct inputs ('ld' is an extra Node removed from 'this').  The
-      // combined optimization requires Identity only return direct inputs.
-      set_req_X(1, ld, phase);
-      set_req_X(2, phase->intcon(0), phase);
-      return this;
-    }
-    else if (can_reshape &&
-             ld->Opcode() == Op_LoadUS &&
-             ld->outcnt() == 1 && ld->unique_out() == shl)
-      // Replace zero-extension-load with sign-extension-load
-      return ld->as_Load()->convert_to_signed_load(*phase);
-  }
-
-  // Check for "(byte[i] <<24)>>24" which simply sign-extends
-  if (shift == 24 &&
-      (left_shift_t = phase->type(shl->in(2))->isa_int()) &&
-      left_shift_t->is_con(24)) {
-    Node *ld = shl->in(1);
-    if (ld->Opcode() == Op_LoadB) {
-      // Sign extension is just useless here
-      set_req_X(1, ld, phase);
-      set_req_X(2, phase->intcon(0), phase);
-      return this;
-    }
-  }
-
-  return nullptr;
 }
 
 const Type* RShiftINode::Value(PhaseGVN* phase) const {
