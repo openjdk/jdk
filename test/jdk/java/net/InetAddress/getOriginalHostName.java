@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 8133196
  * @summary test functionality of getOriginalHostName(InetAddress)
  * @modules java.base/jdk.internal.access
+ * @library /test/lib
+ * @build jtreg.SkippedException
+ * @run main getOriginalHostName
  */
 
 import java.net.InetAddress;
@@ -38,19 +41,27 @@ public class getOriginalHostName {
     private static final JavaNetInetAddressAccess jna =
         SharedSecrets.getJavaNetInetAddressAccess();
 
-    public static void main(String[] args) throws Exception {
-        final String HOST = "dummyserver.java.net";
-        InetAddress ia = null;
-        ia = InetAddress.getByName(HOST);
-        testInetAddress(ia, HOST);
-        ia = InetAddress.getByName("255.255.255.0");
-        testInetAddress(ia, null);
-        ia = InetAddress.getByAddress(new byte[]{1,1,1,1});
-        testInetAddress(ia, null);
-        ia = InetAddress.getLocalHost();
-        testInetAddress(ia, ia.getHostName());
-        ia = InetAddress.getLoopbackAddress();
-        testInetAddress(ia, ia.getHostName());
+    public static void main(String[] args) {
+        try {
+            final String HOST = "dummyserver.java.net";
+            InetAddress ia = null;
+            ia = InetAddress.getByName(HOST);
+            testInetAddress(ia, HOST);
+            ia = InetAddress.getByName("255.255.255.0");
+            testInetAddress(ia, null);
+            ia = InetAddress.getByAddress(new byte[]{1,1,1,1});
+            testInetAddress(ia, null);
+            ia = InetAddress.getLocalHost();
+            testInetAddress(ia, ia.getHostName());
+            ia = InetAddress.getLoopbackAddress();
+            testInetAddress(ia, ia.getHostName());
+        } catch (java.net.UnknownHostException e) {
+            e.printStackTrace();
+            throw new jtreg.SkippedException("Network setup issue, skip this test");
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected exception:" + e);
+        }
+        System.out.println("getOriginalHostName EXIT");
     }
 
 
