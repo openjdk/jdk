@@ -1342,6 +1342,8 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
                 }
                 assert(!(i < imax), "sanity");
               }
+            } else if (dead->Opcode() == Op_Proj && static_cast<ProjNode*>(dead)->_con == TypeFunc::Parms && in->is_pure_function()) {
+              _worklist.push(in);
             } else {
               BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(this, in);
             }

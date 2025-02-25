@@ -42,7 +42,7 @@ public class ModDNodeTests {
     }
 
     @Run(test = {"constant", "notConstant", "veryNotConstant",
-            "unusedResult", "repeatedlyUnused"})
+            "unusedResult", "repeatedlyUnused", "unusedResultAfterLoopOpt1", "unusedResultAfterLoopOpt2"})
     public void runMethod() {
         Asserts.assertEQ(constant(), q % 72.0d % 30.0d);
         Asserts.assertEQ(alsoConstant(), q % 31.432d);
@@ -52,6 +52,8 @@ public class ModDNodeTests {
         Asserts.assertEQ(veryNotConstant(531.25d, 14.5d), 531.25d % 32.0d % 14.5d);
         unusedResult(1.1d, 2.2d);
         repeatedlyUnused(1.1d, 2.2d);
+        Asserts.assertEQ(unusedResultAfterLoopOpt1(1.1d, 2.2d), 0.d);
+        Asserts.assertEQ(unusedResultAfterLoopOpt2(1.1d, 2.2d), 0.d);
     }
 
     @Test
@@ -131,5 +133,39 @@ public class ModDNodeTests {
         for (int i = 0; i < 100_000; i++) {
             unused = x % y;
         }
+    }
+
+    @Test
+    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
+    public double unusedResultAfterLoopOpt1(double x, double y) {
+        double unused = x % y;
+
+        int a = 77;
+        int b = 0;
+        do {
+            a--;
+            b++;
+        } while (a > 0);
+
+        if (b == 78) { // dead
+            return unused;
+        }
+        return 0.d;
+    }
+
+    @Test
+    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
+    public double unusedResultAfterLoopOpt2(double x, double y) {
+        double unused = x % y;
+
+        int a = 77;
+        int b = 0;
+        do {
+            a--;
+            b++;
+        } while (a > 0);
+
+        int other = (b - 77) * (int)(x % y % 1.d);
+        return (double)other;
     }
 }

@@ -436,6 +436,9 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
         n->raw_del_out(j);
         --j;
         --max;
+        if (child->Opcode() == Op_Proj && static_cast<ProjNode*>(child)->_con == TypeFunc::Parms && n->is_pure_function()) {
+          worklist.push(n);
+        }
       }
     }
     if (n->outcnt() == 1 && n->has_special_unique_user()) {
