@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTypeTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.doctree.SnippetTree;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.DCTree;
 
@@ -261,6 +262,7 @@ public class JavadocLog extends Log implements Reporter {
             case DOC_TYPE -> ((DocTypeTree) t).getText();
             case REFERENCE -> ((ReferenceTree) t).getSignature();
             case TEXT -> ((TextTree) t).getBody();
+            case SNIPPET -> ((SnippetTree) t).getBody().getBody();
             default -> throw new IllegalArgumentException(t.getKind().toString());
         };
 
