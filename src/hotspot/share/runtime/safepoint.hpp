@@ -230,7 +230,7 @@ private:
   // Absolute
   static jlong _last_safepoint_begin_time_ns;
   static jlong _last_safepoint_sync_time_ns;
-  static jlong _last_leave_safepoint_time_ns;
+  static jlong _last_safepoint_leave_time_ns;
   static jlong _last_safepoint_end_time_ns;
 
   // Relative
@@ -252,7 +252,7 @@ public:
 
   static void begin(VM_Operation::VMOp_Type type);
   static void synchronized(int nof_threads, int nof_running, int traps);
-  static void end_vmop_evaluation();
+  static void leave();
   static void end();
 
   static void statistics_exit_log();
