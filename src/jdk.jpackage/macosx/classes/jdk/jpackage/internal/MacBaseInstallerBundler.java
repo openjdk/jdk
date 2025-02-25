@@ -25,9 +25,9 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.ConfigException;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Map;
@@ -35,15 +35,27 @@ import java.util.Optional;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
+import static jdk.jpackage.internal.StandardBundlerParam.OUTPUT_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import jdk.jpackage.internal.util.FileUtils;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
+    static final BundlerParamInfo<Path> IMAGES_ROOT =
+            new BundlerParamInfo<>(
+            "imagesRoot",
+            Path.class,
+            params -> {
+                final var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+                return env.buildRoot().resolve("images");
+            },
+            (s, p) -> null);
+
     private final BundlerParamInfo<Path> APP_IMAGE_TEMP_ROOT =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             "mac.app.imageRoot",
             Path.class,
             params -> {
@@ -61,28 +73,28 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             (s, p) -> Path.of(s));
 
     public static final BundlerParamInfo<String> SIGNING_KEY_USER =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             Arguments.CLIOptions.MAC_SIGNING_KEY_NAME.getId(),
             String.class,
             params -> "",
             null);
 
     public static final BundlerParamInfo<String> SIGNING_KEYCHAIN =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             Arguments.CLIOptions.MAC_SIGNING_KEYCHAIN.getId(),
             String.class,
             params -> "",
             null);
 
     public static final BundlerParamInfo<String> INSTALLER_SIGN_IDENTITY =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             Arguments.CLIOptions.MAC_INSTALLER_SIGN_IDENTITY.getId(),
             String.class,
             params -> "",
             null);
 
     public static final BundlerParamInfo<String> MAC_INSTALLER_NAME =
-            new StandardBundlerParam<> (
+            new BundlerParamInfo<> (
             "mac.installerName",
             String.class,
             params -> {
@@ -116,21 +128,8 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
         return returnValue;
     }
 
-    // Returns display name of installation directory. Display name is used to
-    // show user installation location and for well known (default only) we will
-    // use "Applications" or "JavaVirtualMachines".
-    static String getInstallDirDisplayName(
-            Map<String, ? super Object>  params) {
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            return "JavaVirtualMachines";
-        } else {
-            return "Applications";
-        }
-    }
-
     public MacBaseInstallerBundler() {
-        appImageBundler = new MacAppBundler()
-                .setDependentTask(true);
+        appImageBundler = new MacAppBundler();
     }
 
     protected void validateAppImageAndBundeler(
@@ -153,12 +152,14 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                         I18N.getString(
                             "message.app-image-requires-app-name.advice"));
             }
-            if (AppImageFile.load(applicationImage).isSigned()) {
+
+            if (new MacAppImageFileExtras(PREDEFINED_APP_IMAGE_FILE.fetchFrom(params)).signed()) {
+                var appLayout = ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT.resolveAt(applicationImage);
                 if (!Files.exists(
-                        PackageFile.getPathInAppImage(applicationImage))) {
+                        PackageFile.getPathInAppImage(appLayout))) {
                     Log.info(MessageFormat.format(I18N.getString(
                             "warning.per.user.app.image.signed"),
-                            PackageFile.getPathInAppImage(applicationImage)));
+                            PackageFile.getPathInAppImage(appLayout)));
                 }
             } else {
                 if (Optional.ofNullable(
@@ -172,36 +173,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
         } else {
             appImageBundler.validate(params);
         }
-    }
-
-    protected Path prepareAppBundle(Map<String, ? super Object> params)
-            throws PackagerException, IOException {
-        Path appDir;
-        Path appImageRoot = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
-        Path predefinedImage =
-                StandardBundlerParam.getPredefinedAppImage(params);
-        if (predefinedImage != null) {
-            appDir = appImageRoot.resolve(APP_NAME.fetchFrom(params) + ".app");
-            FileUtils.copyRecursive(predefinedImage, appDir,
-                    LinkOption.NOFOLLOW_LINKS);
-
-            // Create PackageFile if predefined app image is not signed
-            if (!StandardBundlerParam.isRuntimeInstaller(params) &&
-                    !AppImageFile.load(predefinedImage).isSigned()) {
-                new PackageFile(APP_NAME.fetchFrom(params)).save(
-                        ApplicationLayout.macAppImage().resolveAt(appDir));
-                // We need to re-sign app image after adding ".package" to it.
-                // We only do this if app image was not signed which means it is
-                // signed with ad-hoc signature. App bundles with ad-hoc
-                // signature are sealed, but without a signing identity, so we
-                // need to re-sign it after modification.
-                MacAppImageBuilder.signAppBundle(params, appDir, "-", null, null);
-            }
-        } else {
-            appDir = appImageBundler.execute(params, appImageRoot);
-        }
-
-        return appDir;
     }
 
     @Override

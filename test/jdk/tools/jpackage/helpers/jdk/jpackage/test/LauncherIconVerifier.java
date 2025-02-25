@@ -172,9 +172,9 @@ public final class LauncherIconVerifier {
                         "unlockResource", long.class);
                 unlockResource.setAccessible(true);
 
-                iconSwapWrapper = executableRebranderClass.getDeclaredMethod(
-                        "iconSwapWrapper", long.class, String.class);
-                iconSwapWrapper.setAccessible(true);
+                iconSwap = executableRebranderClass.getDeclaredMethod(
+                        "iconSwap", long.class, String.class);
+                iconSwap.setAccessible(true);
             } catch (ClassNotFoundException | NoSuchMethodException
                     | SecurityException ex) {
                 throw rethrowUnchecked(ex);
@@ -247,8 +247,14 @@ public final class LauncherIconVerifier {
                                     "Failed to lock [%s] executable",
                                     launcherPath));
                         }
-                        iconSwapWrapper.invoke(null, new Object[]{lock,
+                        var exitCode = (Integer) iconSwap.invoke(null, new Object[]{
+                            lock,
                             iconPath.toAbsolutePath().normalize().toString()});
+                        if (exitCode != 0) {
+                            throw new RuntimeException(String.format(
+                                    "Failed to swap icon of [%s] executable",
+                                    launcherPath));
+                        }
                     } finally {
                         if (lock != 0) {
                             unlockResource.invoke(null, new Object[]{lock});
@@ -267,7 +273,7 @@ public final class LauncherIconVerifier {
         private final Class<?> executableRebranderClass;
         private final Method lockResource;
         private final Method unlockResource;
-        private final Method iconSwapWrapper;
+        private final Method iconSwap;
     }
 
     private String launcherName;
