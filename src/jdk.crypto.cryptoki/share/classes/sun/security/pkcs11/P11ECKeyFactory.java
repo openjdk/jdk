@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,8 +267,14 @@ final class P11ECKeyFactory extends P11KeyFactory {
         try {
             session = token.getObjSession();
             long keyID = token.p11.C_CreateObject(session.id(), attributes);
+            PublicKey pk = null;
+            try {
+                pk = ECUtil.sArrayToPublicKey(ECUtil.sArray(s, params), params);
+            } catch (Exception e) {
+                // Happens when params is not supported. Ignore it.
+            }
             return P11Key.privateKey
-                (session, keyID, "EC", params.getCurve().getField().getFieldSize(), attributes);
+                    (session, keyID, "EC", params.getCurve().getField().getFieldSize(), attributes, pk);
         } finally {
             token.releaseSession(session);
         }
