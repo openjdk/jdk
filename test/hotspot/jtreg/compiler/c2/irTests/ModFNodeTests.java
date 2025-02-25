@@ -41,7 +41,8 @@ public class ModFNodeTests {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "notConstant", "veryNotConstant"})
+    @Run(test = {"constant", "notConstant", "veryNotConstant",
+            "unusedResult", "repeatedlyUnused", "unusedResultAfterLoopOpt1", "unusedResultAfterLoopOpt2"})
     public void runMethod() {
         Asserts.assertEQ(constant(), q % 72.0f % 30.0f);
         Asserts.assertEQ(alsoConstant(), q % 31.432f);
@@ -49,6 +50,10 @@ public class ModFNodeTests {
         Asserts.assertTrue(Float.isNaN(nanRightConstant()));
         Asserts.assertEQ(notConstant(37.5f), 37.5f % 32.0f);
         Asserts.assertEQ(veryNotConstant(531.25f, 14.5f), 531.25f % 32.0f % 14.5f);
+        unusedResult(1.1f, 2.2f);
+        repeatedlyUnused(1.1f, 2.2f);
+        Asserts.assertEQ(unusedResultAfterLoopOpt1(1.1f, 2.2f), 0.f);
+        Asserts.assertEQ(unusedResultAfterLoopOpt2(1.1f, 2.2f), 0.f);
     }
 
     @Test
@@ -113,5 +118,54 @@ public class ModFNodeTests {
     @IR(counts = {IRNode.CON_F, "1"})
     public float veryNotConstant(float x, float y) {
         return x % 32.0f % y;
+    }
+
+    @Test
+    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    public void unusedResult(float x, float y) {
+        float unused = x % y;
+    }
+
+    @Test
+    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    public void repeatedlyUnused(float x, float y) {
+        float unused = 1.f;
+        for (int i = 0; i < 100_000; i++) {
+            unused = x % y;
+        }
+    }
+
+    @Test
+    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    public float unusedResultAfterLoopOpt1(float x, float y) {
+        float unused = x % y;
+
+        int a = 77;
+        int b = 0;
+        do {
+            a--;
+            b++;
+        } while (a > 0);
+
+        if (b == 78) { // dead
+            return unused;
+        }
+        return 0.f;
+    }
+
+    @Test
+    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    public float unusedResultAfterLoopOpt2(float x, float y) {
+        float unused = x % y;
+
+        int a = 77;
+        int b = 0;
+        do {
+            a--;
+            b++;
+        } while (a > 0);
+
+        int other = (b - 77) * (int)(x % y % 1.f);
+        return (float)other;
     }
 }
