@@ -695,25 +695,22 @@ class LambdaForm {
      */
     boolean isTableSwitch(int pos) {
         // tableSwitch idiom:
-        //   t_{n}:L=MethodHandle.invokeBasic(...)     // args
-        //   t_{n+1}:L=MethodHandleImpl.tableSwitch(*, *, *, t_{n})
-        //   t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
-        if (pos + 2 >= names.length)  return false;
+        //   t_{n}:L=MethodHandleImpl.selectCase(*, *, *)
+        //   t_{n+1}:?=MethodHandle.invokeBasic(t_{n}, args)
 
-        final int POS_COLLECT_ARGS = pos;
-        final int POS_TABLE_SWITCH = pos + 1;
-        final int POS_UNBOX_RESULT = pos + 2;
+        final int SELECTED_MH  = pos;
+        final int INVOKE       = pos + 1;
+        assert INVOKE + 1 <= names.length;
 
-        Name collectArgs = names[POS_COLLECT_ARGS];
-        Name tableSwitch = names[POS_TABLE_SWITCH];
-        Name unboxResult = names[POS_UNBOX_RESULT];
-        return tableSwitch.refersTo(MethodHandleImpl.class, "tableSwitch") &&
-                collectArgs.isInvokeBasic() &&
-                unboxResult.isInvokeBasic() &&
-                tableSwitch.lastUseIndex(collectArgs) == 3 &&     // t_{n+1}:L=MethodHandleImpl.<invoker>(*, *, *, t_{n});
-                lastUseIndex(collectArgs) == POS_TABLE_SWITCH &&  // t_{n} is local: used only in t_{n+1}
-                unboxResult.lastUseIndex(tableSwitch) == 1 &&     // t_{n+2}:?=MethodHandle.invokeBasic(*, t_{n+1})
-                lastUseIndex(tableSwitch) == POS_UNBOX_RESULT;    // t_{n+1} is local: used only in t_{n+2}
+        Name selectCase = names[SELECTED_MH];
+        Name invocation = names[INVOKE];
+        return selectCase.refersTo(MethodHandleImpl.class, "selectCase") &&
+                selectCase.arguments[2] instanceof Name bmhGet &&
+                bmhGet.arguments.length == 1 &&
+                bmhGet.type == L_TYPE &&
+                BoundMethodHandle.class.isAssignableFrom(bmhGet.function.memberDeclaringClassOrNull()) &&
+                invocation.isInvokeBasic() &&
+                invocation.lastUseIndex(selectCase) == 0;
     }
 
     /**
@@ -1259,12 +1256,6 @@ class LambdaForm {
             return resolvedHandle != null
                 ? resolvedHandle.intrinsicName()
                 : MethodHandleImpl.Intrinsic.NONE;
-        }
-
-        public Object intrinsicData() {
-            return resolvedHandle != null
-                ? resolvedHandle.intrinsicData()
-                : null;
         }
     }
 

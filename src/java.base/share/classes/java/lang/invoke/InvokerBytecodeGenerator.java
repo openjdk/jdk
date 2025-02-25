@@ -609,10 +609,23 @@ class InvokerBytecodeGenerator {
                                     continue;
                                 case TABLE_SWITCH:
                                     assert lambdaForm.isTableSwitch(i);
-                                    int numCases = (Integer) name.function.intrinsicData();
-                                    onStack = emitTableSwitch(cob, i, numCases);
-                                    i += 2; // jump to the end of the TS idiom
-                                    continue;
+                                    var customized = lambdaForm.customized;
+                                    if (customized != null) {
+                                        List<MethodHandle> cases;
+                                        var gotList = (Name) lambdaForm.names[i].arguments[2];
+                                        var getter = gotList.function.resolvedHandle();
+                                        try {
+                                            @SuppressWarnings("unchecked")
+                                            var c0 = (List<MethodHandle>) getter.invokeBasic(customized);
+                                            cases = c0;
+                                        } catch (Throwable ex) {
+                                            throw uncaughtException(ex);
+                                        }
+                                        onStack = emitTableSwitch(cob, i, cases.size());
+                                        i += 1; // jump to the end of the TS idiom
+                                        continue;
+                                    }
+                                    break; // Only inline target MHs if this is customized
                                 case LOOP:
                                     assert lambdaForm.isLoop(i);
                                     onStack = emitLoop(cob, i);
@@ -1122,52 +1135,47 @@ class InvokerBytecodeGenerator {
     }
 
     private Name emitTableSwitch(CodeBuilder cob, int pos, int numCases) {
-        Name args    = lambdaForm.names[pos];
-        Name invoker = lambdaForm.names[pos + 1];
-        Name result  = lambdaForm.names[pos + 2];
+        Name selectCase = lambdaForm.names[pos];
+        Name invocation = lambdaForm.names[pos + 1];
 
-        Class<?> returnType = result.function.resolvedHandle().type().returnType();
-        MethodType caseType = args.function.resolvedHandle().type()
-            .dropParameterTypes(0, 1) // drop collector
-            .changeReturnType(returnType);
+        MethodType caseType = invocation.function.resolvedHandle().type()
+            .dropParameterTypes(0, 1); // drop MH receiver
         MethodTypeDesc caseDescriptor = methodDesc(caseType.basicType());
-
-        emitPushArgument(cob, invoker, 2); // push cases
-        cob.getfield(CD_CasesHolder, "cases", CD_MethodHandle_array);
-        int casesLocal = extendLocalsMap(new Class<?>[] { MethodHandle[].class });
-        emitStoreInsn(cob, TypeKind.REFERENCE, casesLocal);
+        var invokeBasic = cob.constantPool().methodRefEntry(CD_MethodHandle, "invokeBasic", caseDescriptor);
 
         Label endLabel = cob.newLabel();
         Label defaultLabel = cob.newLabel();
-        List<SwitchCase> cases = new ArrayList<>(numCases);
+        List<SwitchCase> switchItems = new ArrayList<>(numCases);
         for (int i = 0; i < numCases; i++) {
-            cases.add(SwitchCase.of(i, cob.newLabel()));
+            switchItems.add(SwitchCase.of(i, cob.newLabel()));
         }
 
-        emitPushArgument(cob, invoker, 0); // push switch input
-        cob.tableswitch(0, numCases - 1, defaultLabel, cases)
+        emitPushArgument(cob, selectCase, 0); // push switch input
+        cob.tableswitch(0, numCases - 1, defaultLabel, switchItems)
            .labelBinding(defaultLabel);
-        emitPushArgument(cob, invoker, 1); // push default handle
-        emitPushArguments(cob, args, 1); // again, skip collector
-        cob.invokevirtual(CD_MethodHandle, "invokeBasic", caseDescriptor)
+        emitPushArgument(cob, selectCase, 1); // push default handle
+        emitPushArguments(cob, invocation, 1); // again, skip collector
+        cob.invokevirtual(invokeBasic)
            .goto_(endLabel);
 
+        var listGet = cob.constantPool().interfaceMethodRefEntry(CD_List, "get", MTD_Object_int);
         for (int i = 0; i < numCases; i++) {
-            cob.labelBinding(cases.get(i).target());
+            cob.labelBinding(switchItems.get(i).target());
             // Load the particular case:
-            emitLoadInsn(cob, TypeKind.REFERENCE, casesLocal);
+            emitPushArgument(cob, selectCase, 2);
             cob.loadConstant(i)
-               .aaload();
+               .invokeinterface(listGet)
+               .checkcast(CD_MethodHandle);
 
             // invoke it:
-            emitPushArguments(cob, args, 1); // again, skip collector
-            cob.invokevirtual(CD_MethodHandle, "invokeBasic", caseDescriptor)
+            emitPushArguments(cob, invocation, 1); // again, skip collector
+            cob.invokevirtual(invokeBasic)
                .goto_(endLabel);
         }
 
         cob.labelBinding(endLabel);
 
-        return result;
+        return invocation;
     }
 
     /**

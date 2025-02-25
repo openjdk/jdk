@@ -7643,27 +7643,25 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      */
     public static MethodHandle tableSwitch(MethodHandle fallback, MethodHandle... targets) {
         Objects.requireNonNull(fallback);
-        Objects.requireNonNull(targets);
-        targets = targets.clone();
-        MethodType type = tableSwitchChecks(fallback, targets);
-        return MethodHandleImpl.makeTableSwitch(type, fallback, targets);
+        var targetList = List.of(targets); // deep null checks
+        MethodType type = tableSwitchChecks(fallback, targetList);
+        return MethodHandleImpl.makeTableSwitch(type, fallback, targetList);
     }
 
-    private static MethodType tableSwitchChecks(MethodHandle defaultCase, MethodHandle[] caseActions) {
-        if (caseActions.length == 0)
-            throw new IllegalArgumentException("Not enough cases: " + Arrays.toString(caseActions));
+    private static MethodType tableSwitchChecks(MethodHandle defaultCase, List<MethodHandle> caseActions) {
+        if (caseActions.isEmpty())
+            throw new IllegalArgumentException("Not enough cases: " + caseActions);
 
         MethodType expectedType = defaultCase.type();
 
         if (!(expectedType.parameterCount() >= 1) || expectedType.parameterType(0) != int.class)
             throw new IllegalArgumentException(
-                "Case actions must have int as leading parameter: " + Arrays.toString(caseActions));
+                "Case actions must have int as leading parameter: " + caseActions);
 
         for (MethodHandle mh : caseActions) {
-            Objects.requireNonNull(mh);
             if (mh.type() != expectedType)
                 throw new IllegalArgumentException(
-                    "Case actions must have the same type: " + Arrays.toString(caseActions));
+                    "Case actions must have the same type: " + caseActions);
         }
 
         return expectedType;
