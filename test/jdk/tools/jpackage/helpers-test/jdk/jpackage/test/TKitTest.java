@@ -228,7 +228,7 @@ public class TKitTest extends JUnitAdapter {
         CreateTempTestSpec {
             Objects.requireNonNull(existingFiles);
             if ((expectedExceptionClass == null) == (expectedPath == null)) {
-                throw new IllegalArgumentException("Only one of `expectedPath` and `expectedExceptionClass` can be null");
+                throw new IllegalArgumentException("Only one of `expectedPath` and `expectedExceptionClass` should be set");
             }
         }
 
