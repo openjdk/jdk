@@ -7650,18 +7650,18 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
 
     private static MethodType tableSwitchChecks(MethodHandle defaultCase, List<MethodHandle> caseActions) {
         if (caseActions.isEmpty())
-            throw new IllegalArgumentException("Not enough cases: " + caseActions);
+            throw new IllegalArgumentException("At least one target required");
 
         MethodType expectedType = defaultCase.type();
 
-        if (!(expectedType.parameterCount() >= 1) || expectedType.parameterType(0) != int.class)
+        if (expectedType.parameterCount() < 1 || expectedType.parameterType(0) != int.class)
             throw new IllegalArgumentException(
-                "Case actions must have int as leading parameter: " + caseActions);
+                "Switch method handles must have int as leading parameter: " + expectedType);
 
         for (MethodHandle mh : caseActions) {
             if (mh.type() != expectedType)
                 throw new IllegalArgumentException(
-                    "Case actions must have the same type: " + caseActions);
+                    "Some targets do not have the expected type " + expectedType + ": " + caseActions);
         }
 
         return expectedType;
