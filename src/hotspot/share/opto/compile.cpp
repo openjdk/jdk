@@ -436,7 +436,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
         n->raw_del_out(j);
         --j;
         --max;
-        if (child->Opcode() == Op_Proj && static_cast<ProjNode*>(child)->_con == TypeFunc::Parms && n->is_pure_function()) {
+        if (child->is_data_proj_of_pure_function(n)) {
           worklist.push(n);
         }
       }
