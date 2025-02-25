@@ -128,6 +128,7 @@ void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecora
       _stalled_message = new (stalled_message) Message(output, decorations, msg, msg_len);
       _data_available = true;
       clocker.notify();
+      // Note: we still hold the producer lock so cannot race against other threads trying to log a message
       while (_stalled_message != nullptr) {
         clocker.wait();
       }
