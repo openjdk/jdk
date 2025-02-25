@@ -77,7 +77,6 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       assert(leqA_n->val().out.type() != StateType::Released, "Should not use inplace the tag of a released region");
       MemTag tag = leqA_n->val().out.mem_tag();
       stA.out.set_tag(tag);
-      LEQ_A.state.out.set_tag(tag);
       stB.in.set_tag(tag);
     }
 
@@ -207,8 +206,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   }
 
   // Finally, we can register the new region [A, B)'s summary data.
-  MemTag tag_to_change = use_tag_inplace ? stA.out.mem_tag() : metadata.mem_tag;
-  SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(tag_to_change)];
+  SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(metadata.mem_tag)];
   if (state == StateType::Reserved) {
     rescom.reserve += B - A;
   } else if (state == StateType::Committed) {

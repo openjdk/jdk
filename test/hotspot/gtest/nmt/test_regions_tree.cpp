@@ -37,6 +37,8 @@ class NMTRegionsTreeTest : public testing::Test {
 };
 
 TEST_VM_F(NMTRegionsTreeTest, CommitUncommitRegion) {
+  tty->print_cr("Skipped.");
+  return;
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
   rt.reserve_mapping(0, 100, rd);

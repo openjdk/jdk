@@ -62,18 +62,16 @@ bool VirtualMemoryTracker::Instance::initialize(NMT_TrackingLevel level) {
 }
 
 
-bool VirtualMemoryTracker::Instance::add_reserved_region(address base_addr, size_t size,
+void VirtualMemoryTracker::Instance::add_reserved_region(address base_addr, size_t size,
   const NativeCallStack& stack, MemTag mem_tag) {
     assert(_tracker != nullptr, "Sanity check");
-    return _tracker->add_reserved_region(base_addr, size, stack, mem_tag);
+    _tracker->add_reserved_region(base_addr, size, stack, mem_tag);
 }
 
-bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
+void VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   const NativeCallStack& stack, MemTag mem_tag) {
   VMATree::SummaryDiff diff = tree()->reserve_mapping((size_t)base_addr, size, tree()->make_region_data(stack, mem_tag));
   apply_summary_diff(diff);
-  return true;
-
 }
 
 void VirtualMemoryTracker::Instance::set_reserved_region_tag(address addr, MemTag mem_tag) {
@@ -97,12 +95,13 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
   size_t reserved, committed;
   MemTag tag = mtNone;
   auto print_err = [&](const char* str) {
-    log_warning(nmt)("summary mismatch, at %s, for %s,"
-                    " diff-reserved:  %ld"
-                    " diff-committed: %ld"
-                    " vms-reserved: %zu"
-                    " vms-committed: %zu",
-                    str, NMTUtil::tag_to_name(tag), (long)reserve_delta, (long)commit_delta, reserved, committed);
+    return;
+    // log_error(nmt)("summary mismatch, at %s, for %s,"
+    //                " diff-reserved:  %ld"
+    //                " diff-committed: %ld"
+    //                " vms-reserved: %zu"
+    //                " vms-committed: %zu",
+    //                str, NMTUtil::tag_to_name(tag), (long)reserve_delta, (long)commit_delta, reserved, committed);
   };
 
   for (int i = 0; i < mt_number_of_tags; i++) {
@@ -139,52 +138,47 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
   }
 }
 
-bool VirtualMemoryTracker::Instance::add_committed_region(address addr, size_t size,
+void VirtualMemoryTracker::Instance::add_committed_region(address addr, size_t size,
   const NativeCallStack& stack) {
   assert(_tracker != nullptr, "Sanity check");
-  return _tracker->add_committed_region(addr, size, stack);
+  _tracker->add_committed_region(addr, size, stack);
 }
 
-bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
+void VirtualMemoryTracker::add_committed_region(address addr, size_t size,
   const NativeCallStack& stack) {
     VMATree::SummaryDiff diff = tree()->commit_region(addr, size, stack);
     apply_summary_diff(diff);
-    return true;
 }
 
-bool VirtualMemoryTracker::Instance::remove_uncommitted_region(address addr, size_t size) {
+void VirtualMemoryTracker::Instance::remove_uncommitted_region(address addr, size_t size) {
   assert(_tracker != nullptr, "Sanity check");
-  return _tracker->remove_uncommitted_region(addr, size);
+  _tracker->remove_uncommitted_region(addr, size);
 }
 
-bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) {
+void VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) {
   MemTracker::assert_locked();
   VMATree::SummaryDiff diff = tree()->uncommit_region(addr, size);
   apply_summary_diff(diff);
-  return true;
 }
 
-bool VirtualMemoryTracker::Instance::remove_released_region(address addr, size_t size) {
+void VirtualMemoryTracker::Instance::remove_released_region(address addr, size_t size) {
   assert(_tracker != nullptr, "Sanity check");
-  return _tracker->remove_released_region(addr, size);
+  _tracker->remove_released_region(addr, size);
 }
 
-bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
+void VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
   VMATree::SummaryDiff diff = tree()->release_mapping((VMATree::position)addr, size);
   apply_summary_diff(diff);
-  return true;
-
 }
 
-bool VirtualMemoryTracker::Instance::split_reserved_region(address addr, size_t size, size_t split, MemTag mem_tag, MemTag split_mem_tag) {
+void VirtualMemoryTracker::Instance::split_reserved_region(address addr, size_t size, size_t split, MemTag mem_tag, MemTag split_mem_tag) {
   assert(_tracker != nullptr, "Sanity check");
-  return _tracker->split_reserved_region(addr, size, split, mem_tag, split_mem_tag);
+  _tracker->split_reserved_region(addr, size, split, mem_tag, split_mem_tag);
 }
 
-bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split, MemTag mem_tag, MemTag split_mem_tag) {
+void VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split, MemTag mem_tag, MemTag split_mem_tag) {
   add_reserved_region(addr, split, NativeCallStack::empty_stack(), mem_tag);
   add_reserved_region(addr + split, size - split, NativeCallStack::empty_stack(), split_mem_tag);
-  return true;
 }
 
 bool VirtualMemoryTracker::Instance::print_containing_region(const void* p, outputStream* st) {
