@@ -187,8 +187,7 @@ Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType allo
 void ChunkPool::deallocate_chunk(Chunk* c) {
 
   // Inform compilation memstat
-  if (c->stamp() != 0) {
-    assert(CompilationMemoryStatistic::enabled(), "we stamped, so memstat was enabled already");
+  if (CompilationMemoryStatistic::enabled() && c->stamp() != 0) {
     assert(on_compiler_thread(), "we stamped this chunk");
     CompilationMemoryStatistic::on_arena_chunk_deallocation(c->length(), c->stamp());
     c->set_stamp(0);

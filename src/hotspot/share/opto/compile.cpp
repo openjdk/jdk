@@ -4329,7 +4329,9 @@ Compile::TracePhase::TracePhase(const char* name, PhaseTraceId id)
   }
 
   // Inform memory statistic, if enabled
-  CompilationMemoryStatistic::on_phase_start((int)id, name);
+  if (CompilationMemoryStatistic::enabled()) {
+    CompilationMemoryStatistic::on_phase_start((int)id, name);
+  }
 }
 
 Compile::TracePhase::TracePhase(PhaseTraceId id)
@@ -4338,7 +4340,9 @@ Compile::TracePhase::TracePhase(PhaseTraceId id)
 Compile::TracePhase::~TracePhase() {
 
   // Inform memory statistic, if enabled
-  CompilationMemoryStatistic::on_phase_end();
+  if (CompilationMemoryStatistic::enabled()) {
+    CompilationMemoryStatistic::on_phase_end();
+  }
 
   if (_compile->failing_internal()) {
     if (_log != nullptr) {

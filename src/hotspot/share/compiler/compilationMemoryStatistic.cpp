@@ -975,7 +975,7 @@ void CompilationMemoryStatistic::on_arena_chunk_deallocation(size_t size, uint64
   arena_stat->on_arena_chunk_deallocation(size, stamp);
 }
 
-void CompilationMemoryStatistic::on_phase_start_0(int phase_trc_id, const char* text) {
+void CompilationMemoryStatistic::on_phase_start(int phase_trc_id, const char* text) {
   assert(enabled(), "Not enabled?");
   assert(phase_trc_id >= 0 && phase_trc_id < phase_trc_id_max, "Phase trace id OOB (%d)", phase_trc_id);
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
@@ -990,7 +990,7 @@ void CompilationMemoryStatistic::on_phase_start_0(int phase_trc_id, const char* 
   arena_stat->on_phase_start(info);
 }
 
-void CompilationMemoryStatistic::on_phase_end_0() {
+void CompilationMemoryStatistic::on_phase_end() {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   ArenaStatCounter* const arena_stat = th->arena_stat();
