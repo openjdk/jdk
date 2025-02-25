@@ -151,6 +151,13 @@ FileMapInfo::~FileMapInfo() {
   }
 }
 
+void FileMapInfo::free_current_info() {
+  assert(CDSConfig::is_dumping_final_static_archive(), "only supported in this mode");
+  assert(_current_info != nullptr, "sanity");
+  delete _current_info;
+  assert(_current_info == nullptr, "sanity"); // Side effect expected from the above "delete" operator.
+}
+
 void FileMapInfo::populate_header(size_t core_region_alignment) {
   assert(_header == nullptr, "Sanity check");
   size_t c_header_size;
@@ -191,7 +198,13 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   set_header_size((unsigned int)header_size);
   set_base_archive_name_offset((unsigned int)base_archive_name_offset);
   set_base_archive_name_size((unsigned int)base_archive_name_size);
-  set_magic(CDSConfig::is_dumping_dynamic_archive() ? CDS_DYNAMIC_ARCHIVE_MAGIC : CDS_ARCHIVE_MAGIC);
+  if (CDSConfig::is_dumping_dynamic_archive()) {
+    set_magic(CDS_DYNAMIC_ARCHIVE_MAGIC);
+  } else if (CDSConfig::is_dumping_preimage_static_archive()) {
+    set_magic(CDS_PREIMAGE_ARCHIVE_MAGIC);
+  } else {
+    set_magic(CDS_ARCHIVE_MAGIC);
+  }
   set_version(CURRENT_CDS_ARCHIVE_VERSION);
 
   if (!info->is_static() && base_archive_name_size != 0) {
@@ -386,7 +399,7 @@ public:
     assert(_archive_name != nullptr, "Archive name is null");
     _fd = os::open(_archive_name, O_RDONLY | O_BINARY, 0);
     if (_fd < 0) {
-      log_info(cds)("Specified shared archive not found (%s)", _archive_name);
+      log_info(cds)("Specified %s not found (%s)", CDSConfig::type_of_archive_being_loaded(), _archive_name);
       return false;
     }
     return initialize(_fd);
@@ -397,30 +410,32 @@ public:
     assert(_archive_name != nullptr, "Archive name is null");
     assert(fd != -1, "Archive must be opened already");
     // First read the generic header so we know the exact size of the actual header.
+    const char* file_type = CDSConfig::type_of_archive_being_loaded();
     GenericCDSFileMapHeader gen_header;
     size_t size = sizeof(GenericCDSFileMapHeader);
     os::lseek(fd, 0, SEEK_SET);
     size_t n = ::read(fd, (void*)&gen_header, (unsigned int)size);
     if (n != size) {
-      log_warning(cds)("Unable to read generic CDS file map header from shared archive");
+      log_warning(cds)("Unable to read generic CDS file map header from %s", file_type);
       return false;
     }
 
     if (gen_header._magic != CDS_ARCHIVE_MAGIC &&
-        gen_header._magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
-      log_warning(cds)("The shared archive file has a bad magic number: %#x", gen_header._magic);
+        gen_header._magic != CDS_DYNAMIC_ARCHIVE_MAGIC &&
+        gen_header._magic != CDS_PREIMAGE_ARCHIVE_MAGIC) {
+      log_warning(cds)("The %s has a bad magic number: %#x", file_type, gen_header._magic);
       return false;
     }
 
     if (gen_header._version < CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION) {
-      log_warning(cds)("Cannot handle shared archive file version 0x%x. Must be at least 0x%x.",
-                                 gen_header._version, CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION);
+      log_warning(cds)("Cannot handle %s version 0x%x. Must be at least 0x%x.",
+                       file_type, gen_header._version, CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION);
       return false;
     }
 
     if (gen_header._version !=  CURRENT_CDS_ARCHIVE_VERSION) {
-      log_warning(cds)("The shared archive file version 0x%x does not match the required version 0x%x.",
-                                 gen_header._version, CURRENT_CDS_ARCHIVE_VERSION);
+      log_warning(cds)("The %s version 0x%x does not match the required version 0x%x.",
+                       file_type, gen_header._version, CURRENT_CDS_ARCHIVE_VERSION);
     }
 
     size_t filelen = os::lseek(fd, 0, SEEK_END);
@@ -435,7 +450,7 @@ public:
     os::lseek(fd, 0, SEEK_SET);
     n = ::read(fd, (void*)_header, (unsigned int)size);
     if (n != size) {
-      log_warning(cds)("Unable to read actual CDS file map header from shared archive");
+      log_warning(cds)("Unable to read file map header from %s", file_type);
       return false;
     }
 
@@ -460,6 +475,18 @@ public:
   const char* base_archive_name() {
     assert(_header != nullptr && _is_valid, "must be a valid archive file");
     return _base_archive_name;
+  }
+
+  bool is_static_archive() const {
+    return _header->_magic == CDS_ARCHIVE_MAGIC;
+  }
+
+  bool is_dynamic_archive() const {
+    return _header->_magic == CDS_DYNAMIC_ARCHIVE_MAGIC;
+  }
+
+  bool is_preimage_static_archive() const {
+    return _header->_magic == CDS_PREIMAGE_ARCHIVE_MAGIC;
   }
 
  private:
@@ -487,7 +514,8 @@ public:
                                  name_offset, name_size);
       return false;
     }
-    if (_header->_magic == CDS_ARCHIVE_MAGIC) {
+
+    if (is_static_archive() || is_preimage_static_archive()) {
       if (name_offset != 0) {
         log_warning(cds)("static shared archive must have zero _base_archive_name_offset");
         return false;
@@ -497,7 +525,7 @@ public:
         return false;
       }
     } else {
-      assert(_header->_magic == CDS_DYNAMIC_ARCHIVE_MAGIC, "must be");
+      assert(is_dynamic_archive(), "must be");
       if ((name_size == 0 && name_offset != 0) ||
           (name_size != 0 && name_offset == 0)) {
         // If either is zero, both must be zero. This indicates that we are using the default base archive.
@@ -545,7 +573,12 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
     return false;
   }
   GenericCDSFileMapHeader* header = file_helper.get_generic_file_header();
-  if (header->_magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
+  switch (header->_magic) {
+  case CDS_PREIMAGE_ARCHIVE_MAGIC:
+    return false; // This is a binary config file, not a proper archive
+  case CDS_DYNAMIC_ARCHIVE_MAGIC:
+    break;
+  default:
     assert(header->_magic == CDS_ARCHIVE_MAGIC, "must be");
     if (AutoCreateSharedArchive) {
      log_warning(cds)("AutoCreateSharedArchive is ignored because %s is a static archive", archive_name);
@@ -563,6 +596,14 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
   return true;
 }
 
+bool FileMapInfo::is_preimage_static_archive(const char* file) {
+  FileHeaderHelper file_helper(file, false);
+  if (!file_helper.initialize()) {
+    return false;
+  }
+  return file_helper.is_preimage_static_archive();
+}
+
 // Read the FileMapInfo information from the file.
 
 bool FileMapInfo::init_from_file(int fd) {
@@ -573,9 +614,17 @@ bool FileMapInfo::init_from_file(int fd) {
   }
   GenericCDSFileMapHeader* gen_header = file_helper.get_generic_file_header();
 
+  const char* file_type = CDSConfig::type_of_archive_being_loaded();
   if (_is_static) {
-    if (gen_header->_magic != CDS_ARCHIVE_MAGIC) {
-      log_warning(cds)("Not a base shared archive: %s", _full_path);
+    if ((gen_header->_magic == CDS_ARCHIVE_MAGIC) ||
+        (gen_header->_magic == CDS_PREIMAGE_ARCHIVE_MAGIC && CDSConfig::is_dumping_final_static_archive())) {
+      // Good
+    } else {
+      if (CDSConfig::new_aot_flags_used()) {
+        log_warning(cds)("Not a valid %s %s", file_type, _full_path);
+      } else {
+        log_warning(cds)("Not a base shared archive: %s", _full_path);
+      }
       return false;
     }
   } else {
@@ -597,7 +646,7 @@ bool FileMapInfo::init_from_file(int fd) {
   if (header()->version() != CURRENT_CDS_ARCHIVE_VERSION) {
     log_info(cds)("_version expected: 0x%x", CURRENT_CDS_ARCHIVE_VERSION);
     log_info(cds)("           actual: 0x%x", header()->version());
-    log_warning(cds)("The shared archive file has the wrong version.");
+    log_warning(cds)("The %s has the wrong version.", file_type);
     return false;
   }
 
@@ -609,7 +658,7 @@ bool FileMapInfo::init_from_file(int fd) {
       log_info(cds)("_header_size: " UINT32_FORMAT, header_size);
       log_info(cds)("base_archive_name_size: " UINT32_FORMAT, header()->base_archive_name_size());
       log_info(cds)("base_archive_name_offset: " UINT32_FORMAT, header()->base_archive_name_offset());
-      log_warning(cds)("The shared archive file has an incorrect header size.");
+      log_warning(cds)("The %s has an incorrect header size.", file_type);
       return false;
     }
   }
@@ -626,8 +675,8 @@ bool FileMapInfo::init_from_file(int fd) {
   if (strncmp(actual_ident, expected_ident, JVM_IDENT_MAX-1) != 0) {
     log_info(cds)("_jvm_ident expected: %s", expected_ident);
     log_info(cds)("             actual: %s", actual_ident);
-    log_warning(cds)("The shared archive file was created by a different"
-                  " version or build of HotSpot");
+    log_warning(cds)("The %s was created by a different"
+                  " version or build of HotSpot", file_type);
     return false;
   }
 
@@ -638,7 +687,7 @@ bool FileMapInfo::init_from_file(int fd) {
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     FileMapRegion* r = region_at(i);
     if (r->file_offset() > len || len - r->file_offset() < r->used()) {
-      log_warning(cds)("The shared archive file has been truncated.");
+      log_warning(cds)("The %s has been truncated.", file_type);
       return false;
     }
   }
@@ -658,18 +707,21 @@ bool FileMapInfo::open_for_read() {
   if (_file_open) {
     return true;
   }
-  log_info(cds)("trying to map %s", _full_path);
+  const char* file_type = CDSConfig::type_of_archive_being_loaded();
+  const char* info = CDSConfig::is_dumping_final_static_archive() ?
+    "AOTConfiguration file " : "";
+  log_info(cds)("trying to map %s%s", info, _full_path);
   int fd = os::open(_full_path, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
     if (errno == ENOENT) {
-      log_info(cds)("Specified shared archive not found (%s)", _full_path);
+      log_info(cds)("Specified %s not found (%s)", file_type, _full_path);
     } else {
-      log_warning(cds)("Failed to open shared archive file (%s)",
+      log_warning(cds)("Failed to open %s (%s)", file_type,
                     os::strerror(errno));
     }
     return false;
   } else {
-    log_info(cds)("Opened archive %s.", _full_path);
+    log_info(cds)("Opened %s %s.", file_type, _full_path);
   }
 
   _fd = fd;
@@ -682,20 +734,25 @@ bool FileMapInfo::open_for_read() {
 void FileMapInfo::open_for_write() {
   LogMessage(cds) msg;
   if (msg.is_info()) {
-    msg.info("Dumping shared data to file: ");
+    if (CDSConfig::is_dumping_preimage_static_archive()) {
+      msg.info("Writing binary AOTConfiguration file: ");
+    } else {
+      msg.info("Dumping shared data to file: ");
+    }
     msg.info("   %s", _full_path);
   }
 
 #ifdef _WINDOWS  // On Windows, need WRITE permission to remove the file.
-    chmod(_full_path, _S_IREAD | _S_IWRITE);
+  chmod(_full_path, _S_IREAD | _S_IWRITE);
 #endif
 
   // Use remove() to delete the existing file because, on Unix, this will
   // allow processes that have it open continued access to the file.
   remove(_full_path);
-  int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
+  int mode = CDSConfig::is_dumping_preimage_static_archive() ? 0666 : 0444;
+  int fd = os::open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, mode);
   if (fd < 0) {
-    log_error(cds)("Unable to create shared archive file %s: (%s).", _full_path,
+    log_error(cds)("Unable to create %s %s: (%s).", CDSConfig::type_of_archive_being_written(), _full_path,
                    os::strerror(errno));
     MetaspaceShared::writing_error();
     return;
@@ -951,7 +1008,14 @@ void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
     // If the shared archive is corrupted, close it and remove it.
     close();
     remove(_full_path);
-    MetaspaceShared::writing_error("Unable to write to shared archive file.");
+
+    if (CDSConfig::is_dumping_preimage_static_archive()) {
+      MetaspaceShared::writing_error("Unable to write to AOT configuration file.");
+    } else if (CDSConfig::new_aot_flags_used()) {
+      MetaspaceShared::writing_error("Unable to write to AOT cache.");
+    } else {
+      MetaspaceShared::writing_error("Unable to write to shared archive.");
+    }
   }
   _file_offset += nbytes;
 }
@@ -1793,15 +1857,16 @@ int FileMapHeader::compute_crc() {
 
 // This function should only be called during run time with UseSharedSpaces enabled.
 bool FileMapHeader::validate() {
+  const char* file_type = CDSConfig::type_of_archive_being_loaded();
   if (_obj_alignment != ObjectAlignmentInBytes) {
-    log_info(cds)("The shared archive file's ObjectAlignmentInBytes of %d"
+    log_info(cds)("The %s's ObjectAlignmentInBytes of %d"
                   " does not equal the current ObjectAlignmentInBytes of %d.",
-                  _obj_alignment, ObjectAlignmentInBytes);
+                  file_type, _obj_alignment, ObjectAlignmentInBytes);
     return false;
   }
   if (_compact_strings != CompactStrings) {
-    log_info(cds)("The shared archive file's CompactStrings setting (%s)"
-                  " does not equal the current CompactStrings setting (%s).",
+    log_info(cds)("The %s's CompactStrings setting (%s)"
+                  " does not equal the current CompactStrings setting (%s).", file_type,
                   _compact_strings ? "enabled" : "disabled",
                   CompactStrings   ? "enabled" : "disabled");
     return false;
@@ -1825,8 +1890,8 @@ bool FileMapHeader::validate() {
 
   if (!_verify_local && BytecodeVerificationLocal) {
     //  we cannot load boot classes, so there's no point of using the CDS archive
-    log_info(cds)("The shared archive file's BytecodeVerificationLocal setting (%s)"
-                               " does not equal the current BytecodeVerificationLocal setting (%s).",
+    log_info(cds)("The %s's BytecodeVerificationLocal setting (%s)"
+                               " does not equal the current BytecodeVerificationLocal setting (%s).", file_type,
                                _verify_local ? "enabled" : "disabled",
                                BytecodeVerificationLocal ? "enabled" : "disabled");
     return false;
@@ -1837,8 +1902,8 @@ bool FileMapHeader::validate() {
   if (_has_platform_or_app_classes
       && !_verify_remote // we didn't verify the archived platform/app classes
       && BytecodeVerificationRemote) { // but we want to verify all loaded platform/app classes
-    log_info(cds)("The shared archive file was created with less restrictive "
-                               "verification setting than the current setting.");
+    log_info(cds)("The %s was created with less restrictive "
+                               "verification setting than the current setting.", file_type);
     // Pretend that we didn't have any archived platform/app classes, so they won't be loaded
     // by SystemDictionaryShared.
     _has_platform_or_app_classes = false;
@@ -1850,32 +1915,32 @@ bool FileMapHeader::validate() {
   // while AllowArchivingWithJavaAgent is set during the current run.
   if (_allow_archiving_with_java_agent && !AllowArchivingWithJavaAgent) {
     log_warning(cds)("The setting of the AllowArchivingWithJavaAgent is different "
-                               "from the setting in the shared archive.");
+                               "from the setting in the %s.", file_type);
     return false;
   }
 
   if (_allow_archiving_with_java_agent) {
-    log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
-            "for testing purposes only and should not be used in a production environment");
+    log_warning(cds)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
+            "for testing purposes only and should not be used in a production environment", file_type);
   }
 
-  log_info(cds)("Archive was created with UseCompressedOops = %d, UseCompressedClassPointers = %d, UseCompactObjectHeaders = %d",
-                          compressed_oops(), compressed_class_pointers(), compact_headers());
+  log_info(cds)("The %s was created with UseCompressedOops = %d, UseCompressedClassPointers = %d, UseCompactObjectHeaders = %d",
+                          file_type, compressed_oops(), compressed_class_pointers(), compact_headers());
   if (compressed_oops() != UseCompressedOops || compressed_class_pointers() != UseCompressedClassPointers) {
-    log_warning(cds)("Unable to use shared archive.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
-                               "different from runtime, CDS will be disabled.");
+    log_warning(cds)("Unable to use %s.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
+                               "different from runtime, CDS will be disabled.", file_type);
     return false;
   }
 
   if (compact_headers() != UseCompactObjectHeaders) {
-    log_warning(cds)("Unable to use shared archive.\nThe shared archive file's UseCompactObjectHeaders setting (%s)"
-                     " does not equal the current UseCompactObjectHeaders setting (%s).",
+    log_warning(cds)("Unable to use %s.\nThe %s's UseCompactObjectHeaders setting (%s)"
+                     " does not equal the current UseCompactObjectHeaders setting (%s).", file_type, file_type,
                      _compact_headers          ? "enabled" : "disabled",
                      UseCompactObjectHeaders   ? "enabled" : "disabled");
     return false;
   }
 
-  if (!_use_optimized_module_handling) {
+  if (!_use_optimized_module_handling && !CDSConfig::is_dumping_final_static_archive()) {
     CDSConfig::stop_using_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
   }

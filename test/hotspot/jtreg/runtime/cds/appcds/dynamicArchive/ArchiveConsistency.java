@@ -188,7 +188,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         nonExistBaseFile.delete();
         runTwo(nonExistBase, topArchiveName,
                appJar, mainClass, isAuto ? 0 : 1,
-               "Specified shared archive not found (" + nonExistBase + ")");
+               "Specified shared archive file not found (" + nonExistBase + ")");
 
         startTest("9. Non-exist top archive");
         String nonExistTop = "non-exist-top.jsa";
@@ -196,11 +196,11 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         nonExistTopFile.delete();
         runTwo(baseArchiveName, nonExistTop,
                appJar, mainClass, isAuto ? 0 : 1,
-               "Specified shared archive not found (" + nonExistTop + ")");
+               "Specified shared archive file not found (" + nonExistTop + ")");
 
         startTest("10. nost-exist-base and non-exist-top");
         runTwo(nonExistBase, nonExistTop,
                appJar, mainClass, isAuto ? 0 : 1,
-               "Specified shared archive not found (" + nonExistBase + ")");
+               "Specified shared archive file not found (" + nonExistBase + ")");
     }
 }

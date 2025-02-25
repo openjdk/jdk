@@ -23,6 +23,7 @@
  */
 
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/classLoader.hpp"
@@ -440,6 +441,10 @@ void before_exit(JavaThread* thread, bool halt) {
 
 #if INCLUDE_CDS
   ClassListWriter::write_resolved_constants();
+
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    MetaspaceShared::preload_and_dump(thread);
+  }
 #endif
 
   // Hang forever on exit if we're reporting an error.
