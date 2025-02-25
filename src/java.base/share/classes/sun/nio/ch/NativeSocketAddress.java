@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.nio.ch;
 
+import java.lang.foreign.MemorySegment;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -37,8 +38,16 @@ import java.nio.channels.UnsupportedAddressTypeException;
 
 import jdk.internal.access.JavaNetInetAddressAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.Unsafe;
-import jdk.internal.util.ArraysSupport;
+import jdk.internal.ffi.generated.socket.in_addr;
+import jdk.internal.ffi.util.FFMUtils;
+import jdk.internal.ffi.generated.socket.sockaddr;
+import jdk.internal.ffi.generated.socket.sockaddr_in;
+import jdk.internal.ffi.generated.socket.sockaddr_in6;
+import jdk.internal.ffi.generated.socket.socket_address_h;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.SegmentBulkOperations;
+
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 /**
  * A native socket address that is the union of struct sockaddr, struct sockaddr_in,
@@ -47,36 +56,22 @@ import jdk.internal.util.ArraysSupport;
  * This class is not thread safe.
  */
 class NativeSocketAddress {
+
     private static final JavaNetInetAddressAccess JNINA = SharedSecrets.getJavaNetInetAddressAccess();
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static final long ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
+    private static final int AF_INET = socket_address_h.AF_INET();
+    private static final int AF_INET6 = socket_address_h.AF_INET6();
 
-    private static final int AF_INET  = AFINET();
-    private static final int AF_INET6 = AFINET6();
-
-    private static final int SIZEOF_SOCKADDR4     = sizeofSockAddr4();
-    private static final int SIZEOF_SOCKADDR6     = sizeofSockAddr6();
-    private static final int SIZEOF_SOCKETADDRESS = Math.max(SIZEOF_SOCKADDR4, SIZEOF_SOCKADDR6);
-    private static final int SIZEOF_FAMILY        = sizeofFamily();
-    private static final int OFFSET_FAMILY        = offsetFamily();
-    private static final int OFFSET_SIN4_PORT     = offsetSin4Port();
-    private static final int OFFSET_SIN4_ADDR     = offsetSin4Addr();
-    private static final int OFFSET_SIN6_PORT     = offsetSin6Port();
-    private static final int OFFSET_SIN6_ADDR     = offsetSin6Addr();
-    private static final int OFFSET_SIN6_SCOPE_ID = offsetSin6ScopeId();
-    private static final int OFFSET_SIN6_FLOWINFO = offsetSin6FlowInfo();
-
-    // SOCKETADDRESS
-    private final long address;
+    private final MemorySegment memory;
 
     long address() {
-        return address;
+        return memory.address();
     }
 
-    NativeSocketAddress() {
-        long base = UNSAFE.allocateMemory(SIZEOF_SOCKETADDRESS);
-        UNSAFE.setMemory(base, SIZEOF_SOCKETADDRESS, (byte) 0);
-        this.address = base;
+    private NativeSocketAddress(MemorySegment memory) {
+        if (memory.byteSize() != sockaddr_in6.layout().byteSize()) {
+            throw new IllegalArgumentException();
+        }
+        this.memory = memory;
     }
 
     /**
@@ -86,7 +81,9 @@ class NativeSocketAddress {
         NativeSocketAddress[] array = new NativeSocketAddress[count];
         for (int i = 0; i < count; i++) {
             try {
-                array[i] = new NativeSocketAddress();
+                MemorySegment addressMemory = sockaddr_in6.allocate(FFMUtils.SEGMENTS_ALLOCATOR);
+                addressMemory.fill((byte)0);
+                array[i] = new NativeSocketAddress(addressMemory);
             } catch (OutOfMemoryError e) {
                 freeAll(array);
                 throw e;
@@ -102,7 +99,7 @@ class NativeSocketAddress {
         for (int i = 0; i < array.length; i++) {
             NativeSocketAddress sa = array[i];
             if (sa != null) {
-                UNSAFE.freeMemory(sa.address);
+                FFMUtils.free(sa.memory);
             }
         }
     }
@@ -123,14 +120,14 @@ class NativeSocketAddress {
             putFamily(AF_INET);
             putAddress(AF_INET, ia);
             putPort(AF_INET, isa.getPort());
-            return SIZEOF_SOCKADDR4;
+            return (int) sockaddr_in.sizeof();
         } else {
             // struct sockaddr6
             putFamily(AF_INET6);
             putAddress(AF_INET6, isa.getAddress());
             putPort(AF_INET6, isa.getPort());
-            UNSAFE.putInt(address + OFFSET_SIN6_FLOWINFO, 0);
-            return SIZEOF_SOCKADDR6;
+            sockaddr_in6.sin6_flowinfo(memory, 0);
+            return (int) sockaddr_in6.sizeof();
         }
     }
 
@@ -141,48 +138,22 @@ class NativeSocketAddress {
     InetSocketAddress decode() throws SocketException {
         int family = family();
         if (family != AF_INET && family != AF_INET6)
-            throw new SocketException("Socket family not recognized");
-        return new InetSocketAddress(address(family), port(family));
-    }
-
-    /**
-     * Find a mismatch between this and another socket address
-     * @return the byte offset of the first mismatch or -1 if no mismatch
-     */
-    private int mismatch(NativeSocketAddress other) {
-        int i = ArraysSupport.vectorizedMismatch(null,
-                this.address,
-                null,
-                other.address,
-                SIZEOF_SOCKETADDRESS,
-                ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
-        if (i >= 0)
-            return i;
-        i = SIZEOF_SOCKETADDRESS - ~i;
-        for (; i < SIZEOF_SOCKETADDRESS; i++) {
-            if (UNSAFE.getByte(this.address + i) != UNSAFE.getByte(other.address + i)) {
-                return i;
-            }
-        }
-        return -1;
+            throw new SocketException("Socket family not recognized: " + family);
+        var address = new InetSocketAddress(address(family), port(family));
+        return address;
     }
 
     @Override
     public boolean equals(Object other) {
-        if (other instanceof NativeSocketAddress) {
-            return mismatch((NativeSocketAddress) other) < 0;
-        } else {
-            return false;
-        }
+        return (other instanceof NativeSocketAddress otherNSA) &&
+                memory.mismatch(otherNSA.memory) < 0;
     }
 
     @Override
     public int hashCode() {
-        int h = 0;
-        for (int offset = 0; offset < SIZEOF_SOCKETADDRESS; offset++) {
-            h = 31 * h + UNSAFE.getByte(address + offset);
-        }
-        return h;
+        return SegmentBulkOperations.contentHash(
+                (AbstractMemorySegmentImpl) memory,
+                0, memory.byteSize());
     }
 
     @Override
@@ -200,26 +171,14 @@ class NativeSocketAddress {
      * Return the value of the sa_family field.
      */
     private int family() {
-        if (SIZEOF_FAMILY == 1) {
-            return UNSAFE.getByte(address + OFFSET_FAMILY);
-        } else if (SIZEOF_FAMILY == 2) {
-            return UNSAFE.getShort(address + OFFSET_FAMILY);
-        } else {
-            throw new InternalError();
-        }
+        return sockaddr.sa_family(memory);
     }
 
     /**
      * Stores the given family in the sa_family field.
      */
     private void putFamily(int family) {
-        if (SIZEOF_FAMILY == 1) {
-            UNSAFE.putByte(address + OFFSET_FAMILY, (byte) family);
-        } else if (SIZEOF_FAMILY == 2) {
-            UNSAFE.putShort(address + OFFSET_FAMILY, (short) family);
-        } else {
-            throw new InternalError();
-        }
+        sockaddr_in.sin_family(memory, family);
     }
 
     /**
@@ -227,15 +186,14 @@ class NativeSocketAddress {
      * stored in network order.
      */
     private int port(int family) {
-        byte b1, b2;
+        short port;
         if (family == AF_INET) {
-            b1 = UNSAFE.getByte(address + OFFSET_SIN4_PORT);
-            b2 = UNSAFE.getByte(address + OFFSET_SIN4_PORT + 1);
+            port = sockaddr_in.sin_port(memory);
         } else {
-            b1 = UNSAFE.getByte(address + OFFSET_SIN6_PORT);
-            b2 = UNSAFE.getByte(address + OFFSET_SIN6_PORT + 1);
+            port = sockaddr_in6.sin6_port(memory);
         }
-        return (Byte.toUnsignedInt(b1) << 8) + Byte.toUnsignedInt(b2);
+        int res = Short.toUnsignedInt(port);
+        return ((res & 0xFF) << 8) + ((res & 0xFF00) >> 8);
     }
 
     /**
@@ -243,14 +201,10 @@ class NativeSocketAddress {
      * port is stored in network order.
      */
     private void putPort(int family, int port) {
-        byte b1 = (byte) ((port >> 8) & 0xff);
-        byte b2 = (byte) ((port >> 0) & 0xff);
         if (family == AF_INET) {
-            UNSAFE.putByte(address + OFFSET_SIN4_PORT, b1);
-            UNSAFE.putByte(address + OFFSET_SIN4_PORT + 1, b2);
+            sockaddr_in.sin_port(memory, Short.reverseBytes((short)port));
         } else {
-            UNSAFE.putByte(address + OFFSET_SIN6_PORT, b1);
-            UNSAFE.putByte(address + OFFSET_SIN6_PORT + 1, b2);
+            sockaddr_in6.sin6_port(memory, Short.reverseBytes((short)port));
         }
     }
 
@@ -260,20 +214,16 @@ class NativeSocketAddress {
      * created with the sin6_scope_id in the sockaddr_in6 structure.
      */
     private InetAddress address(int family) {
-        int len;
-        int offset;
         int scope_id;
+        MemorySegment sin_addr_ms;
         if (family == AF_INET) {
-            len = 4;
-            offset = OFFSET_SIN4_ADDR;
             scope_id = 0;
+            sin_addr_ms = sockaddr_in.sin_addr(memory);
         } else {
-            len = 16;
-            offset = OFFSET_SIN6_ADDR;
-            scope_id = UNSAFE.getInt(address + OFFSET_SIN6_SCOPE_ID);
+            scope_id = sockaddr_in6.sin6_scope_id(memory);
+            sin_addr_ms = sockaddr_in6.sin6_addr(memory);
         }
-        byte[] bytes = new byte[len];
-        UNSAFE.copyMemory(null, address + offset, bytes, ARRAY_BASE_OFFSET, len);
+        byte[] bytes = sin_addr_ms.toArray(JAVA_BYTE);
         try {
             if (scope_id == 0) {
                 return InetAddress.getByAddress(bytes);
@@ -284,63 +234,50 @@ class NativeSocketAddress {
             throw new InternalError(e);
         }
     }
+    // IPv4 portion offset inside an IPv4-mapped IPv6 address
+    private static final long IPV4_MAPPED_IPV6_OFFSET = 12L;
 
     /**
      * Stores the given InetAddress in the sin_addr or sin6_addr/sin6_scope_id
-     * fields. For IPv6 addresses, the sin6_addr will be popluated with an
+     * fields. For IPv6 addresses, the sin6_addr will be populated with an
      * IPv4-mapped IPv6 address when the given InetAddress is an IPv4 address.
      */
     private void putAddress(int family, InetAddress ia) {
         if (family == AF_INET) {
             // IPv4 address
-            putAddress(address + OFFSET_SIN4_ADDR, (Inet4Address) ia);
+            putAddress(memory, (Inet4Address) ia);
         } else {
             int scope_id;
             if (ia instanceof Inet4Address) {
                 // IPv4-mapped IPv6 address
-                UNSAFE.setMemory(address + OFFSET_SIN6_ADDR, 10, (byte) 0);
-                UNSAFE.putByte(address + OFFSET_SIN6_ADDR + 10, (byte) 0xff);
-                UNSAFE.putByte(address + OFFSET_SIN6_ADDR + 11, (byte) 0xff);
-                putAddress(address + OFFSET_SIN6_ADDR + 12, (Inet4Address) ia);
+                var sin6addrMs = sockaddr_in6.sin6_addr(memory);
+                sin6addrMs.asSlice(0, IPV4_MAPPED_IPV6_OFFSET - 2).fill((byte) 0);
+                byte[] ipv4address = ia.getAddress();
+                sin6addrMs.asSlice(IPV4_MAPPED_IPV6_OFFSET - 2, 2).fill((byte) 0xff);
+                MemorySegment.copy(ipv4address, 0, sin6addrMs,
+                                   JAVA_BYTE, IPV4_MAPPED_IPV6_OFFSET, ipv4address.length);
                 scope_id = 0;
             } else {
                 // IPv6 address
                 var inet6Address = (Inet6Address) ia;
-                putAddress(address + OFFSET_SIN6_ADDR, inet6Address);
+                putAddress(memory, inet6Address);
                 scope_id = inet6Address.getScopeId();
             }
-            UNSAFE.putInt(address + OFFSET_SIN6_SCOPE_ID, scope_id);
+            sockaddr_in6.sin6_scope_id(memory, scope_id);
         }
     }
 
-    private static void putAddress(long address, Inet4Address ia) {
+    private static void putAddress(MemorySegment sockaddr, Inet4Address ia) {
         int ipAddress = JNINA.addressValue(ia);
-        // network order
-        UNSAFE.putByte(address + 0, (byte) ((ipAddress >>> 24) & 0xFF));
-        UNSAFE.putByte(address + 1, (byte) ((ipAddress >>> 16) & 0xFF));
-        UNSAFE.putByte(address + 2, (byte) ((ipAddress >>> 8) & 0xFF));
-        UNSAFE.putByte(address + 3, (byte) (ipAddress & 0xFF));
+        int saddr = Integer.reverseBytes(ipAddress);
+        var sin_addrMemory = sockaddr_in.sin_addr(sockaddr);
+        in_addr.s_addr(sin_addrMemory, saddr);
     }
 
-    private static void putAddress(long address, Inet6Address ia) {
-        byte[] bytes = JNINA.addressBytes(ia);
-        UNSAFE.copyMemory(bytes, ARRAY_BASE_OFFSET, null, address, 16);
-    }
-
-    private static native int AFINET();
-    private static native int AFINET6();
-    private static native int sizeofSockAddr4();
-    private static native int sizeofSockAddr6();
-    private static native int sizeofFamily();
-    private static native int offsetFamily();
-    private static native int offsetSin4Port();
-    private static native int offsetSin4Addr();
-    private static native int offsetSin6Port();
-    private static native int offsetSin6Addr();
-    private static native int offsetSin6ScopeId();
-    private static native int offsetSin6FlowInfo();
-
-    static {
-        IOUtil.load();
+    private static void putAddress(MemorySegment address, Inet6Address ia) {
+        byte[] bytes = JNINA.addressBytes(ia); // network byte order
+        var sin6addrMs = sockaddr_in6.sin6_addr(address);
+        assert bytes.length == sin6addrMs.byteSize();
+        MemorySegment.copy(bytes, 0, sin6addrMs, JAVA_BYTE, 0, bytes.length);
     }
 }
