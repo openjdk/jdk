@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -61,8 +61,7 @@ public class CountBytecodesTest {
                 // while maintaining execution of more than 2^32 bytecodes.
             }
         } else {
-            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-Xint", "-XX:+CountBytecodes", "CountBytecodesTest", "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            OutputAnalyzer output = ProcessTools.executeTestJava("-Xint", "-XX:+CountBytecodes", "CountBytecodesTest", "test");
             output.shouldHaveExitValue(0);
 
             // Output format: [BytecodeCounter::counter_value = 38676232802]
