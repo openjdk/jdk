@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,26 @@
 
 /*
  * @test
- * @run testng/othervm -Xverify:all TestTableSwitch
+ * @bug 8263087 8350617
+ * @run junit/othervm -Xverify:all TableSwitchTest
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import javax.management.ObjectName;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-public class TestTableSwitch {
+import static org.junit.jupiter.api.Assertions.*;
+
+class TableSwitchTest {
 
     static final MethodHandle MH_IntConsumer_accept;
     static final MethodHandle MH_check;
@@ -50,7 +52,7 @@ public class TestTableSwitch {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
             MH_IntConsumer_accept = lookup.findVirtual(IntConsumer.class, "accept",
                     MethodType.methodType(void.class, int.class));
-            MH_check = lookup.findStatic(TestTableSwitch.class, "check",
+            MH_check = lookup.findStatic(TableSwitchTest.class, "check",
                     MethodType.methodType(void.class, List.class, Object[].class));
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
@@ -111,7 +113,6 @@ public class TestTableSwitch {
         return args;
     }
 
-    @DataProvider
     public static Object[][] nonVoidCases() {
         List<Object[]> tests = new ArrayList<>();
 
@@ -126,10 +127,11 @@ public class TestTableSwitch {
     }
 
     private static void check(List<Object> testValues, Object[] collectedValues) {
-        assertEquals(collectedValues, testValues.toArray());
+        assertEquals(testValues, Arrays.asList(collectedValues));
     }
 
-    @Test(dataProvider = "nonVoidCases")
+    @ParameterizedTest
+    @MethodSource("nonVoidCases")
     public void testNonVoidHandles(Class<?> type, int numCases, List<Class<?>> additionalTypes) throws Throwable {
         MethodHandle collector = MH_check;
         List<Object> testArguments = new ArrayList<>();
@@ -158,19 +160,19 @@ public class TestTableSwitch {
             testArguments.add(testValue(additionalType));
         }
 
-        assertEquals(mhSwitch.invokeWithArguments(testArguments(-1, testArguments)), defaultReturnValue);
+        assertEquals(defaultReturnValue, mhSwitch.invokeWithArguments(testArguments(-1, testArguments)));
 
         for (int i = 0; i < numCases; i++) {
-            assertEquals(mhSwitch.invokeWithArguments(testArguments(i, testArguments)), returnValues[i]);
+            assertEquals(returnValues[i], mhSwitch.invokeWithArguments(testArguments(i, testArguments)));
         }
 
-        assertEquals(mhSwitch.invokeWithArguments(testArguments(numCases, testArguments)), defaultReturnValue);
+        assertEquals(defaultReturnValue, mhSwitch.invokeWithArguments(testArguments(numCases, testArguments)));
     }
 
     @Test
     public void testVoidHandles() throws Throwable {
         IntFunction<MethodHandle> makeTestCase = expectedIndex -> {
-            IntConsumer test = actualIndex -> assertEquals(actualIndex, expectedIndex);
+            IntConsumer test = actualIndex -> assertEquals(expectedIndex, actualIndex);
             return MH_IntConsumer_accept.bindTo(test);
         };
 
@@ -187,48 +189,32 @@ public class TestTableSwitch {
         mhSwitch.invokeExact((int) 2);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullDefaultHandle() {
-        MethodHandles.tableSwitch(null, simpleTestCase("test"));
-    }
+    @Test
+    public void testNullPointers() {
+        assertThrows(NullPointerException.class, () -> MethodHandles.tableSwitch(null, simpleTestCase("test")), "defaultCase");
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullCases() {
         MethodHandle[] cases = null;
-        MethodHandles.tableSwitch(simpleTestCase("default"), cases);
+        assertThrows(NullPointerException.class, () -> MethodHandles.tableSwitch(simpleTestCase("default"), cases), "cases array");
+        assertThrows(NullPointerException.class, () -> MethodHandles.tableSwitch(simpleTestCase("default"), simpleTestCase("case"), null), "cases item");
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullCase() {
-        MethodHandles.tableSwitch(simpleTestCase("default"), simpleTestCase("case"), null);
-    }
+    @Test
+    public void testTableSwitchChecks() {
+        assertThrows(IllegalArgumentException.class, () -> MethodHandles.tableSwitch(simpleTestCase("default")), "zero cases");
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-          expectedExceptionsMessageRegExp = ".*Not enough cases.*")
-    public void testNotEnoughCases() {
-        MethodHandles.tableSwitch(simpleTestCase("default"));
-    }
+        MethodHandle tooFewArgsMh = MethodHandles.empty(MethodType.methodType(void.class));
+        var tooFewEx = assertThrows(IllegalArgumentException.class, () -> MethodHandles.tableSwitch(tooFewArgsMh, tooFewArgsMh, tooFewArgsMh), "too few args ex");
+        assertTrue(tooFewEx.getMessage().contains("int") && tooFewEx.getMessage().contains("leading"), "too few args message");
+        assertTrue(tooFewEx.getMessage().contains(tooFewArgsMh.type().toString()), "too few args message - bad type");
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-          expectedExceptionsMessageRegExp = ".*Case actions must have int as leading parameter.*")
-    public void testNotEnoughParameters() {
-        MethodHandle empty = MethodHandles.empty(MethodType.methodType(void.class));
-        MethodHandles.tableSwitch(empty, empty, empty);
-    }
+        var noIntMh = MethodHandles.empty(MethodType.methodType(void.class, double.class));
+        var noIntEx = assertThrows(IllegalArgumentException.class, () -> MethodHandles.tableSwitch(noIntMh, noIntMh, noIntMh), "no leading int ex");
+        assertTrue(noIntEx.getMessage().contains("int") && noIntEx.getMessage().contains("leading"), "leading int message");
+        assertTrue(noIntEx.getMessage().contains(noIntMh.type().toString()), "leading int message - bad type");
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-          expectedExceptionsMessageRegExp = ".*Case actions must have int as leading parameter.*")
-    public void testNoLeadingIntParameter() {
-        MethodHandle empty = MethodHandles.empty(MethodType.methodType(void.class, double.class));
-        MethodHandles.tableSwitch(empty, empty, empty);
+        var wrongTypeMh = MethodHandles.empty(MethodType.methodType(void.class, int.class));
+        var wrongTypeEx = assertThrows(IllegalArgumentException.class, () -> MethodHandles.tableSwitch(simpleTestCase("default"), simpleTestCase("case"), wrongTypeMh), "wrong MH types ex");
+        assertTrue(wrongTypeEx.getMessage().contains(simpleTestCase("default").type().toString()), "common case type");
+        assertTrue(wrongTypeEx.getMessage().contains(wrongTypeMh.type().toString()), "bad case type");
     }
-
-    @Test(expectedExceptions = IllegalArgumentException.class,
-          expectedExceptionsMessageRegExp = ".*Case actions must have the same type.*")
-    public void testWrongCaseType() {
-        // doesn't return a String
-        MethodHandle wrongType = MethodHandles.empty(MethodType.methodType(void.class, int.class));
-        MethodHandles.tableSwitch(simpleTestCase("default"), simpleTestCase("case"), wrongType);
-    }
-
 }
