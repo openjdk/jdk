@@ -137,7 +137,7 @@ public class JpegExifThumbnailTest {
                 new Dimension(80, 60)).run();
 
         // This includes a JFIF thumbnail and an EXIF thumbnail.
-        new JpegExifThumbnailTest("jfif_and_exif.jpg",
+        new JpegExifThumbnailTest("jfif-and-exif.jpg",
                 2025,2,21,1,14,51,
                 new Dimension(150, 200),
                 new Dimension(120, 160)).run();
@@ -171,7 +171,7 @@ public class JpegExifThumbnailTest {
         // grew too large.)
         // The expected behavior here is to stop after reading 2 IFDs, and
         // otherwise read the JPEG as usual
-        new JpegExifThumbnailTest("malicious_looping_IFD.jpg",
+        new JpegExifThumbnailTest("malicious-looping-IFD.jpg",
                 2025, 2, 16, 15, 48, 34,
                 new Dimension(60, 80)).run();
     }
