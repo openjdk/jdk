@@ -558,6 +558,7 @@ const intptr_t NULL_WORD = 0;
 // JVM spec restrictions
 
 const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (p.134)
+const int max_method_parameter_length = 255; // JVM spec, 22nd ed. section 4.3.3 (p.83)
 
 //----------------------------------------------------------------------------------------------------
 // old CDS options
@@ -1357,5 +1358,13 @@ std::add_rvalue_reference_t<T> declval() noexcept;
 // Quickly test to make sure IEEE-754 subnormal numbers are correctly
 // handled.
 bool IEEE_subnormal_handling_OK();
+
+//----------------------------------------------------------------------------------------------------
+// C2 limits
+
+// To avoid unbounded RegMask growth, we need to set a limit on the number of
+// stack slots used by BoxLockNodes. We reach this limit by deeply nesting
+// synchronized statements in Java.
+const int BoxLockNode_slot_limit = 200;
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
