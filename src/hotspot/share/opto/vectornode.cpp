@@ -1042,7 +1042,7 @@ Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const Type
   }
 }
 
-bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
+bool VectorNode::is_commutative() {
   // Predicated vector operations are sensitive to ordering of inputs.
   // When the mask corresponding to a vector lane is false then
   // the result of the operation is corresponding lane of its first operand.
@@ -1098,7 +1098,7 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Sort inputs of commutative non-predicated vector operations to help value numbering.
-  if (should_swap_inputs_to_help_global_value_numbering()) {
+  if (is_commutative()) {
     swap_edges(1, 2);
   }
   return nullptr;
@@ -2191,7 +2191,7 @@ bool MulVLNode::has_uint_inputs() const {
          has_vector_elements_fit_uint(in(2));
 }
 
-static Node* unsigned_min_max_xform(Node* n) {
+static Node* UMinMaxV_Ideal(Node* n, PhaseGVN* phase, bool can_reshape) {
   int vopc = n->Opcode();
   assert(vopc == Op_UMinV || vopc == Op_UMaxV, "Unexpected opcode");
 
@@ -2213,9 +2213,9 @@ static Node* unsigned_min_max_xform(Node* n) {
   // UMin (UMax(a, b), UMin(b, a))  => UMin(a, b)
   // UMax (UMin(a, b), UMax(a, b))  => UMax(a, b)
   // UMax (UMax(a, b), UMin(b, a))  => UMax(a, b)
-  if (umin && umax) {
+  if (umin != nullptr && umax != nullptr) {
     if ((umin->in(1) == umax->in(1) && umin->in(2) == umax->in(2)) ||
-         (umin->in(2) == umax->in(1) && umin->in(1) == umax->in(2))) {
+        (umin->in(2) == umax->in(1) && umin->in(1) == umax->in(2))) {
       if (vopc == Op_UMinV) {
         return new UMinVNode(umax->in(1), umax->in(2), n->bottom_type()->is_vect());
       } else {
@@ -2224,11 +2224,11 @@ static Node* unsigned_min_max_xform(Node* n) {
     }
   }
 
-  return nullptr;
+  return static_cast<VectorNode*>(n)->VectorNode::Ideal(phase, can_reshape);
 }
 
 Node* UMinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return unsigned_min_max_xform(this);
+  return UMinMaxV_Ideal(this, phase, can_reshape);
 }
 
 Node* UMinVNode::Identity(PhaseGVN* phase) {
@@ -2240,7 +2240,7 @@ Node* UMinVNode::Identity(PhaseGVN* phase) {
 }
 
 Node* UMaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return unsigned_min_max_xform(this);
+  return UMinMaxV_Ideal(this, phase, can_reshape);
 }
 
 Node* UMaxVNode::Identity(PhaseGVN* phase) {

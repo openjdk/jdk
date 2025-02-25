@@ -88,7 +88,7 @@ class VectorNode : public TypeNode {
   static bool is_convert_opcode(int opc);
   static bool is_minmax_opcode(int opc);
 
-  bool should_swap_inputs_to_help_global_value_numbering();
+  bool is_commutative();
 
   static bool is_vshift_cnt_opcode(int opc);
 
@@ -619,9 +619,6 @@ class UMinVNode : public VectorNode {
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
-  virtual uint hash() const {
-    return (uintptr_t)in(1) + (uintptr_t)in(2) + Opcode();
-  }
 };
 
 
@@ -641,9 +638,6 @@ class UMaxVNode : public VectorNode {
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
-  virtual uint hash() const {
-    return (uintptr_t)in(1) + (uintptr_t)in(2) + Opcode();
-  }
 };
 
 //------------------------------AbsVINode--------------------------------------

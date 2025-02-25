@@ -23,10 +23,9 @@
 
 /**
 * @test
-* @bug 8338201
-* @summary Support new unsigned and saturating vector operators in VectorAPI
+* @bug 8342676
+* @summary Unsigned Vector Min / Max transforms
 * @modules jdk.incubator.vector
-* @requires vm.compiler2.enabled
 * @library /test/lib /
 * @run driver compiler.vectorapi.VectorUnsignedMinMaxOperationsTest
 */
@@ -106,14 +105,14 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMAX_VB, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMAX_VB, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umax_byte() {
         for (int i = 0; i < COUNT; i += bspec.length()) {
             ByteVector.fromArray(bspec, byte_in1, i)
-                     .lanewise(VectorOperators.UMAX,
-                               ByteVector.fromArray(bspec, byte_in2, i))
-                     .intoArray(byte_out, i);
+                      .lanewise(VectorOperators.UMAX,
+                                ByteVector.fromArray(bspec, byte_in2, i))
+                      .intoArray(byte_out, i);
         }
     }
 
@@ -129,14 +128,14 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMAX_VS, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMAX_VS, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umax_short() {
         for (int i = 0; i < COUNT; i += sspec.length()) {
             ShortVector.fromArray(sspec, short_in1, i)
-                     .lanewise(VectorOperators.UMAX,
-                               ShortVector.fromArray(sspec, short_in2, i))
-                     .intoArray(short_out, i);
+                       .lanewise(VectorOperators.UMAX,
+                                 ShortVector.fromArray(sspec, short_in2, i))
+                       .intoArray(short_out, i);
         }
     }
 
@@ -152,7 +151,7 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMAX_VI, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMAX_VI, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umax_int() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -175,14 +174,14 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMAX_VL, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMAX_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umax_long() {
         for (int i = 0; i < COUNT; i += lspec.length()) {
             LongVector.fromArray(lspec, long_in1, i)
-                     .lanewise(VectorOperators.UMAX,
-                               LongVector.fromArray(lspec, long_in2, i))
-                     .intoArray(long_out, i);
+                      .lanewise(VectorOperators.UMAX,
+                                LongVector.fromArray(lspec, long_in2, i))
+                      .intoArray(long_out, i);
         }
     }
 
@@ -198,14 +197,14 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMIN_VB, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMIN_VB, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umin_byte() {
         for (int i = 0; i < COUNT; i += bspec.length()) {
             ByteVector.fromArray(bspec, byte_in1, i)
-                     .lanewise(VectorOperators.UMIN,
-                               ByteVector.fromArray(bspec, byte_in2, i))
-                     .intoArray(byte_out, i);
+                      .lanewise(VectorOperators.UMIN,
+                                ByteVector.fromArray(bspec, byte_in2, i))
+                      .intoArray(byte_out, i);
         }
     }
 
@@ -221,14 +220,14 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMIN_VS, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMIN_VS, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umin_short() {
         for (int i = 0; i < COUNT; i += sspec.length()) {
             ShortVector.fromArray(sspec, short_in1, i)
-                     .lanewise(VectorOperators.UMIN,
-                               ShortVector.fromArray(sspec, short_in2, i))
-                     .intoArray(short_out, i);
+                       .lanewise(VectorOperators.UMIN,
+                                 ShortVector.fromArray(sspec, short_in2, i))
+                       .intoArray(short_out, i);
         }
     }
 
@@ -244,7 +243,7 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMIN_VI, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMIN_VI, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umin_int() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -267,14 +266,14 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMIN_VL, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMIN_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umin_long() {
         for (int i = 0; i < COUNT; i += lspec.length()) {
             LongVector.fromArray(lspec, long_in1, i)
-                     .lanewise(VectorOperators.UMIN,
-                               LongVector.fromArray(lspec, long_in2, i))
-                     .intoArray(long_out, i);
+                      .lanewise(VectorOperators.UMIN,
+                                LongVector.fromArray(lspec, long_in2, i))
+                      .intoArray(long_out, i);
         }
     }
 
@@ -290,7 +289,7 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMIN_VI, " 0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMIN_VI, " 0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umin_ir_transform1() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -298,7 +297,7 @@ public class VectorUnsignedMinMaxOperationsTest {
                      .lanewise(VectorOperators.UMIN,
                                IntVector.fromArray(ispec, int_in1, i))
                      .intoArray(int_out, i);
-        }
+       }
     }
 
     @Check(test = "umin_ir_transform1", when = CheckAt.COMPILED)
@@ -313,7 +312,7 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMAX_VI, " 0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMAX_VI, " 0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umax_ir_transform1() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -336,7 +335,7 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMAX_VI, " 0 ", IRNode.UMIN_VI, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMAX_VI, " 0 ", IRNode.UMIN_VI, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umin_max_ir_transform1() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -363,14 +362,14 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMIN_VI, " 0 ", IRNode.UMAX_VI, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMIN_VI, " 0 ", IRNode.UMAX_VI, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umin_max_ir_transform2() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector vec1 = IntVector.fromArray(ispec, int_in1, i);
             IntVector vec2 = IntVector.fromArray(ispec, int_in2, i);
-            // UMinV (UMinV vec1, vec2) (UMaxV vec1, vec2) => UMinV vec1 vec2
-            vec1.lanewise(VectorOperators.UMIN, vec2)
+            // UMaxV (UMinV vec2, vec1) (UMaxV vec1, vec2) => UMinV vec1 vec2
+            vec2.lanewise(VectorOperators.UMIN, vec1)
                 .lanewise(VectorOperators.UMAX,
                           vec1.lanewise(VectorOperators.UMAX, vec2))
                 .intoArray(int_out, i);
@@ -381,7 +380,7 @@ public class VectorUnsignedMinMaxOperationsTest {
     public void umin_max_ir_transform2_verify() {
         for (int i = 0; i < COUNT; i++) {
             int actual = int_out[i];
-            int expected = VectorMath.maxUnsigned(VectorMath.minUnsigned(int_in1[i], int_in2[i]),
+            int expected = VectorMath.maxUnsigned(VectorMath.minUnsigned(int_in2[i], int_in1[i]),
                                                   VectorMath.maxUnsigned(int_in1[i], int_in2[i]));
             if (actual != expected) {
                 throw new AssertionError("Result Mismatch : actual (" +  actual + ") !=  expected (" + expected  + ")");
@@ -390,7 +389,7 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMAX_VI, " 0 ", IRNode.UMIN_VI, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMAX_VI, " 0 ", IRNode.UMIN_VI, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umin_max_ir_transform3() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -417,14 +416,14 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMIN_VI, " 0 ", IRNode.UMAX_VI, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMIN_VI, " 0 ", IRNode.UMAX_VI, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umin_max_ir_transform4() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector vec1 = IntVector.fromArray(ispec, int_in1, i);
             IntVector vec2 = IntVector.fromArray(ispec, int_in2, i);
-            // UMinV (UMaxV vec1, vec2) (UMaxV vec1, vec2) => UMaxV vec1 vec2
-            vec1.lanewise(VectorOperators.UMAX, vec2)
+            // UMinV (UMaxV vec2, vec1) (UMaxV vec1, vec2) => UMaxV vec1 vec2
+            vec2.lanewise(VectorOperators.UMAX, vec1)
                 .lanewise(VectorOperators.UMIN,
                           vec1.lanewise(VectorOperators.UMAX, vec2))
                 .intoArray(int_out, i);
@@ -435,7 +434,7 @@ public class VectorUnsignedMinMaxOperationsTest {
     public void umin_max_ir_transform4_verify() {
         for (int i = 0; i < COUNT; i++) {
             int actual = int_out[i];
-            int expected = VectorMath.minUnsigned(VectorMath.maxUnsigned(int_in1[i], int_in2[i]),
+            int expected = VectorMath.minUnsigned(VectorMath.maxUnsigned(int_in2[i], int_in1[i]),
                                                   VectorMath.maxUnsigned(int_in1[i], int_in2[i]));
             if (actual != expected) {
                 throw new AssertionError("Result Mismatch : actual (" +  actual + ") !=  expected (" + expected  + ")");
@@ -444,16 +443,16 @@ public class VectorUnsignedMinMaxOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.UMIN_VI, " 0 ", IRNode.UMAX_VI, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @IR(counts = {IRNode.UMIN_VI, " 0 ", IRNode.UMAX_VI, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void umin_max_ir_transform5() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector vec1 = IntVector.fromArray(ispec, int_in1, i);
             IntVector vec2 = IntVector.fromArray(ispec, int_in2, i);
-            // UMinV (UMinV vec1, vec2) (UMaxV vec1, vec2) => UMinV vec1 vec2
+            // UMaxV (UMinV vec1, vec2) (UMaxV vec2, vec1) => UMinV vec1 vec2
             vec1.lanewise(VectorOperators.UMIN, vec2)
                 .lanewise(VectorOperators.UMAX,
-                          vec1.lanewise(VectorOperators.UMAX, vec2))
+                          vec2.lanewise(VectorOperators.UMAX, vec1))
                 .intoArray(int_out, i);
         }
     }
@@ -463,10 +462,11 @@ public class VectorUnsignedMinMaxOperationsTest {
         for (int i = 0; i < COUNT; i++) {
             int actual = int_out[i];
             int expected = VectorMath.maxUnsigned(VectorMath.minUnsigned(int_in1[i], int_in2[i]),
-                                                  VectorMath.maxUnsigned(int_in1[i], int_in2[i]));
+                                                  VectorMath.maxUnsigned(int_in2[i], int_in1[i]));
             if (actual != expected) {
                 throw new AssertionError("Result Mismatch : actual (" +  actual + ") !=  expected (" + expected  + ")");
             }
         }
     }
 }
+

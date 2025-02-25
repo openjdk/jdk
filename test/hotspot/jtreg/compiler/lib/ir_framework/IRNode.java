@@ -1254,7 +1254,7 @@ public class IRNode {
         vectorNode(MUL_ADD_VS2VI, "MulAddVS2VI", TYPE_INT);
     }
 
-   public static final String UMIN_VB = VECTOR_PREFIX + "UMIN_VB" + POSTFIX;
+    public static final String UMIN_VB = VECTOR_PREFIX + "UMIN_VB" + POSTFIX;
     static {
         vectorNode(UMIN_VB, "UMinV", TYPE_BYTE);
     }
