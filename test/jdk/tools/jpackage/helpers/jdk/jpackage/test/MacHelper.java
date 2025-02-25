@@ -22,6 +22,8 @@
  */
 package jdk.jpackage.test;
 
+import static java.util.stream.Collectors.toSet;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -29,13 +31,12 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -43,13 +44,13 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+import jdk.jpackage.internal.RetryExecutor;
+import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
-import jdk.jpackage.internal.RetryExecutor;
-import jdk.jpackage.internal.util.PathUtils;
-import org.xml.sax.SAXException;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 public final class MacHelper {
 
@@ -298,9 +299,18 @@ public final class MacHelper {
 
     static Path getInstallationDirectory(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.MAC);
-        return Path.of(cmd.getArgumentValue("--install-dir",
-                () -> cmd.isRuntime() ? "/Library/Java/JavaVirtualMachines" : "/Applications")).resolve(
-                        cmd.name() + (cmd.isRuntime() ? "" : ".app"));
+
+        final var defaultInstallLocation = Path.of(
+                cmd.isRuntime() ? "/Library/Java/JavaVirtualMachines" : "/Applications");
+
+        final Path installLocation;
+        if (cmd.packageType() == PackageType.MAC_DMG) {
+            installLocation = defaultInstallLocation;
+        } else {
+            installLocation = cmd.getArgumentValue("--install-dir", () -> defaultInstallLocation, Path::of);
+        }
+
+        return installLocation.resolve(cmd.name() + (cmd.isRuntime() ? "" : ".app"));
     }
 
     static Path getUninstallCommand(JPackageCommand cmd) {
