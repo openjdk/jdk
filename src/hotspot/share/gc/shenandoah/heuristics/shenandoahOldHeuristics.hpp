@@ -186,6 +186,9 @@ public:
 
   bool should_start_gc() override;
 
+  // Returns true if the old generation needs to prepare for marking, or continue marking.
+  bool should_resume_old_cycle();
+
   void record_success_concurrent() override;
 
   void record_success_degenerated() override;

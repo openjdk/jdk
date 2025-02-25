@@ -430,35 +430,30 @@ public:
 private:
   void manage_satb_barrier(bool active);
 
-  enum CancelState {
-    // Normal state. GC has not been cancelled and is open for cancellation.
-    // Worker threads can suspend for safepoint.
-    CANCELLABLE,
-
-    // GC has been cancelled. Worker threads can not suspend for
-    // safepoint but must finish their work as soon as possible.
-    CANCELLED
-  };
-
   double _cancel_requested_time;
-  ShenandoahSharedEnumFlag<CancelState> _cancelled_gc;
+  ShenandoahSharedEnumFlag<GCCause::Cause> _cancelled_gc;
 
   // Returns true if cancel request was successfully communicated.
   // Returns false if some other thread already communicated cancel
   // request.  A true return value does not mean GC has been
   // cancelled, only that the process of cancelling GC has begun.
-  bool try_cancel_gc();
+  bool try_cancel_gc(GCCause::Cause cause);
 
 public:
+  // Returns true if and only if cancellation request was successfully communicated.
   inline bool cancelled_gc() const;
+
+  // Used by workers in the GC cycle to detect cancellation and honor STS requirements
   inline bool check_cancelled_gc_and_yield(bool sts_active = true);
+
+  // This indicates the reason the last GC cycle was cancelled.
+  inline GCCause::Cause cancelled_cause() const;
 
   inline void clear_cancelled_gc(bool clear_oom_handler = true);
 
   void cancel_concurrent_mark();
-  void cancel_gc(GCCause::Cause cause);
+  bool cancel_gc(GCCause::Cause cause);
 
-public:
   // Returns true if the soft maximum heap has been changed using management APIs.
   bool check_soft_max_changed();
 
@@ -689,6 +684,7 @@ private:
   HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
+  bool retry_allocation(size_t original_full_gc_count) const;
 
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);
