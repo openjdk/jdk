@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
@@ -408,9 +407,6 @@ void SafepointSynchronize::begin() {
     assert(cur->was_visited_for_critical_count(_safepoint_counter), "missed a thread");
   }
 #endif // ASSERT
-
-  // Update the count of active JNI critical regions
-  GCLocker::set_jni_lock_count(_current_jni_active_count);
 
   post_safepoint_synchronize_event(sync_event,
                                    _safepoint_id,

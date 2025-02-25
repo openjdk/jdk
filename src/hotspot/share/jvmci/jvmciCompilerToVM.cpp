@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -1000,7 +999,7 @@ C2V_VMENTRY_NULL(jobject, resolveFieldInPool, (JNIEnv* env, jobject, ARGUMENT_PA
   if (info.is_null() || JVMCIENV->get_length(info) != 4) {
     JVMCI_ERROR_NULL("info must not be null and have a length of 4");
   }
-  JVMCIENV->put_int_at(info, 0, fd.access_flags().as_int());
+  JVMCIENV->put_int_at(info, 0, fd.access_flags().as_field_flags());
   JVMCIENV->put_int_at(info, 1, fd.offset());
   JVMCIENV->put_int_at(info, 2, fd.index());
   JVMCIENV->put_int_at(info, 3, fd.field_flags().as_uint());
@@ -2725,7 +2724,7 @@ C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jb
     if (res == JNI_OK) {
       guarantee(peerJNIEnv != nullptr, "must be");
       runtime->init_JavaVM_info(javaVM_info, JVMCI_CHECK_0);
-      JVMCI_event_1("attached to JavaVM[%d] for JVMCI runtime %d", runtime->get_shared_library_javavm_id(), runtime->id());
+      JVMCI_event_1("attached to JavaVM[" JLONG_FORMAT "] for JVMCI runtime %d", runtime->get_shared_library_javavm_id(), runtime->id());
       return true;
     }
     JVMCI_THROW_MSG_0(InternalError, err_msg("Error %d while attaching %s", res, attach_args.name));
@@ -2758,7 +2757,7 @@ C2V_VMENTRY_PREFIX(jboolean, detachCurrentThread, (JNIEnv* env, jobject c2vm, jb
     if (res != JNI_OK) {
       JVMCI_THROW_MSG_0(InternalError, err_msg("Error %d while attaching %s", res, thread->name()));
     }
-    JVMCI_event_1("detached from JavaVM[%d] for JVMCI runtime %d",
+    JVMCI_event_1("detached from JavaVM[" JLONG_FORMAT "] for JVMCI runtime %d",
         runtime->get_shared_library_javavm_id(), runtime->id());
     if (release) {
       return runtime->detach_thread(thread, "user thread detach");

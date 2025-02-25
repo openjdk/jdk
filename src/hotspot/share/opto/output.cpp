@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
-#include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfo.hpp"
 #include "code/debugInfoRec.hpp"
@@ -34,7 +32,6 @@
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
-#include "memory/allocation.inline.hpp"
 #include "memory/allocation.hpp"
 #include "opto/ad.hpp"
 #include "opto/block.hpp"
@@ -48,10 +45,7 @@
 #include "opto/optoreg.hpp"
 #include "opto/output.hpp"
 #include "opto/regalloc.hpp"
-#include "opto/runtime.hpp"
-#include "opto/subnode.hpp"
 #include "opto/type.hpp"
-#include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -1352,7 +1346,7 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
     // Calculate the offsets of the constants and the size of the
     // constant table (including the padding to the next section).
     constant_table().calculate_offsets_and_size();
-    const_req = constant_table().size() + add_size;
+    const_req = constant_table().alignment() + constant_table().size() + add_size;
   }
 
   // Initialize the space for the BufferBlob used to find and verify
@@ -1392,6 +1386,7 @@ CodeBuffer* PhaseOutput::init_buffer() {
     total_req += deopt_handler_req;  // deopt MH handler
 
   CodeBuffer* cb = code_buffer();
+  cb->set_const_section_alignment(constant_table().alignment());
   cb->initialize(total_req, _buf_sizes._reloc);
 
   // Have we run out of code space?

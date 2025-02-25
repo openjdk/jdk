@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854 8071982 8162363 8175200 8186332
- *      8182765 8196202 8202626 8261976 8323698
+ *      8182765 8196202 8202626 8261976 8323698 8345770
  * @summary A simple test to ensure class-use files are correct.
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -107,7 +107,10 @@ public class TestUseOption extends JavadocTester {
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
            """
-               <a href="../AnAbstract.html" class="type-name-link" title="class in pkg1">AnAbstract</a>"""
+               <a href="../AnAbstract.html" class="type-name-link" title="class in pkg1">AnAbstract</a>""",
+           """
+               Link to interface method: <a href="../UsedInterface.html#doNothing()"><code>Use\
+               dInterface.doNothing()</code></a>."""
         );
         checkOutput("pkg1/class-use/UsedInterface.html", true,
             "../C10.html#withReturningTypeParameters()"
