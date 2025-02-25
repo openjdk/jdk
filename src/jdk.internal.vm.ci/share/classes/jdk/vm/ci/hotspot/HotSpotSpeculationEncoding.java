@@ -27,6 +27,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import jdk.vm.ci.common.JVMCIError;
@@ -49,15 +50,16 @@ final class HotSpotSpeculationEncoding extends ByteArrayOutputStream implements 
     // Also defined in C++ JVMCINMethodData class - keep in sync.
     static final int LENGTH_BITS = 5;
 
-    /**
-     * The maximum length of an encoded speculation.
-     */
-    static final int MAX_LENGTH = (1 << LENGTH_BITS) - 1;
+    static final int LENGTH_MASK =  (1 << LENGTH_BITS) - 1;
 
-    static final int LENGTH_MASK = MAX_LENGTH;
+    /**
+     * The maximum length of an encoded speculation excluding the size and id.
+     */
+    static final int MAX_LENGTH = LENGTH_MASK - 2;
 
     private DataOutputStream dos = new DataOutputStream(this);
     private byte[] result;
+    private byte id;
 
     HotSpotSpeculationEncoding() {
         super(SHA1_LENGTH);
@@ -72,6 +74,29 @@ final class HotSpotSpeculationEncoding extends ByteArrayOutputStream implements 
     private static final int NULL_METHOD = -1;
     private static final int NULL_TYPE = -2;
     private static final int NULL_STRING = -3;
+
+    static final ArrayList<String> groups = new ArrayList<>();
+
+    @Override
+    public void setId(byte groupId, String groupName) {
+        if (groupId != (groupId & 0xff)) {
+            throw new IllegalArgumentException("Only 256 groups are supported: " + groupId + " " + groupName);
+        }
+        this.id = groupId;
+        synchronized (groups) {
+            if (groupId >= groups.size()) {
+                while (groupId >= groups.size()) {
+                    groups.add(null);
+                }
+            }
+            if (groups.get(groupId) == null) {
+                groups.set(groupId, groupName);
+                CompilerToVM.compilerToVM().registerSpeculationName(groupId, groupName);
+            } else if (!groupName.equals(groups.get(groupId))) {
+                throw new IllegalArgumentException("id " + groupId + " corresponds to group " + groups.get(groupId) + " not " + groupName);
+            }
+        }
+    }
 
     @Override
     public void addByte(int value) {
@@ -211,12 +236,13 @@ final class HotSpotSpeculationEncoding extends ByteArrayOutputStream implements 
                     throw new InternalError(e);
                 }
             } else {
-                if (buf.length == count) {
-                    // No need to copy the byte array
-                    return buf;
-                }
                 result = Arrays.copyOf(buf, count);
             }
+            byte[] r = new byte[result.length + 2];
+            r[0] = (byte) r.length;
+            r[1] = id;
+            System.arraycopy(result, 0, r, 2, result.length);
+            result = r;
             dos = null;
         }
         return result;
