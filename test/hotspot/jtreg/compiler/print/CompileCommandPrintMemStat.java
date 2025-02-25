@@ -24,7 +24,7 @@
 
 /*
  * @test id=c2
- * @summary Checks that -XX:CompileCommand=PrintMemStat,... works
+ * @summary Checks that -XX:CompileCommand=MemStat,...,print works with C2
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @library /test/lib
  * @run driver compiler.print.CompileCommandPrintMemStat c2
@@ -32,7 +32,7 @@
 
 /*
  * @test id=c1
- * @summary Checks that -XX:CompileCommand=PrintMemStat,... works
+ * @summary Checks that -XX:CompileCommand=MemStat,...,print works with C1
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @library /test/lib
  * @run driver compiler.print.CompileCommandPrintMemStat c1
@@ -83,7 +83,7 @@ public class CompileCommandPrintMemStat {
         OutputAnalyzer oa = ProcessTools.executeTestJava(options);
         oa.reportDiagnosticSummary();
 
-        // We expect two printouts for "PrintMemStat". A line at compilation time, and a line in a summary report
+        // We expect two printouts for "MemStat". A line at compilation time, and a line in a summary report
         // that is printed when we exit. Both use the typical <class>::name format but use / as separator and also
         // print the signature.
         String expectedNameIncl = getTestMethod(include)

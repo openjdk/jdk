@@ -96,7 +96,6 @@ public:
   FN(node,        C2 Node arena) \
   FN(comp,        C2 Compile arena) \
   FN(type,        C2 Type arena) \
-  FN(index,       C2 Index arena) \
   FN(reglive,     C2 Register Allocation Live Arena) \
   FN(regsplit,    C2 Register Allocation Split Arena) \
   FN(cienv,       CI Env Arena) \

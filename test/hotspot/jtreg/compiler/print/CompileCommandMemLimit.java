@@ -99,10 +99,12 @@ public class CompileCommandMemLimit {
         //
         // C1 will allocate them in a single step from RA, leaked until end of compilation.
         //
-        // C2 will allocate them in two steps: first 2MB inside testPhase 1 in a temporary arena that will be gone
-        // by phase end. So, in the phase timeline these 2MB must show up as "significant temporary peak".
-        // In testPhase2, we allocate 32MB from resource area, which is leaked until the end of the compilation. This
-        // means that these 32MB will show up as permanent memory increase in the phasetimeline.
+        // C2 will allocate them in two steps: first 2MB inside phase "testTimer1" in a temporary arena
+        // that will be gone by phase end. So, in the phase timeline these 2MB must show up as
+        // "significant temporary peak".
+        // In a second phase "testTimer2", we allocate 32MB from resource area, which is leaked until
+        // the end of the compilation. This means that these 32MB will show up as permanent memory
+        // increase in the per-phase-timeline.
         //
         // We then set the limit to 31MB (just shy of the 32MB we allocate), which should reliably trigger the mem limit.
         // The 32MB are deliberately chosen to be large, because this will harden the test against normal allocation fluctuations

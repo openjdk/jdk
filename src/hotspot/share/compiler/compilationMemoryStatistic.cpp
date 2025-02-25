@@ -1089,7 +1089,7 @@ void CompilationMemoryStatistic::do_test_allocations() {
     {
       Compile::TracePhase tp(Phase::_t_testTimer1);
       Arena ar(MemTag::mtCompiler, Arena::Tag::tag_reglive);
-      ar.Amalloc(2 * M); // phase-local peak, should show up at MY-TESTPHASE-2
+      ar.Amalloc(2 * M); // phase-local peak
     }
     {
       Compile::TracePhase tp(Phase::_t_testTimer2);
