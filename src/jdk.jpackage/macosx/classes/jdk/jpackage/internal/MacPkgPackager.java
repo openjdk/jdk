@@ -27,8 +27,8 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.util.PathUtils.normalizedAbsolutePathString;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -44,6 +44,10 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.OSVersion;
 import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
@@ -53,6 +57,7 @@ import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.resources.ResourceLocator;
 import jdk.jpackage.internal.util.XmlUtils;
 
 record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> services, Path outputDir) {
@@ -457,29 +462,13 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
     }
 
     private void patchCPLFile(Path cpl) throws IOException {
-        String cplData = Files.readString(cpl);
-        String[] lines = cplData.split("\n");
-        try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(cpl))) {
-            int skip = 0;
-            // Used to skip Java.runtime bundle, since
-            // pkgbuild with --root will find two bundles app and Java runtime.
-            // We cannot generate component proprty list when using
-            // --component argument.
-            for (int i = 0; i < lines.length; i++) {
-                if (lines[i].trim().equals("<key>BundleIsRelocatable</key>")) {
-                    out.println(lines[i]);
-                    out.println("<false/>");
-                    i++;
-                } else if (lines[i].trim().equals("<key>ChildBundles</key>")) {
-                    ++skip;
-                } else if ((skip > 0) && lines[i].trim().equals("</array>")) {
-                    --skip;
-                } else {
-                    if (skip == 0) {
-                        out.println(lines[i]);
-                    }
-                }
-            }
+        try (final var xsltResource = ResourceLocator.class.getResourceAsStream("adjust-component-plist.xsl")) {
+            final var srcXml = new StreamSource(new ByteArrayInputStream(Files.readAllBytes(cpl)));
+            final var dstXml = new StreamResult(cpl.toFile());
+            final var xslt = TransformerFactory.newInstance().newTransformer(new StreamSource(xsltResource));
+            xslt.transform(srcXml, dstXml);
+        } catch (TransformerException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
