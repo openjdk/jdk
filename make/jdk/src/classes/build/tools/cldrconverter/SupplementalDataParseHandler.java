@@ -57,28 +57,21 @@ class SupplementalDataParseHandler extends AbstractLDMLHandler<Object> {
     // the weekData is listed using country code.
     //
     // weekData are generated per each country
-    private final Map<String, Object> firstDayMap;
-    private final Map<String, Object> minDaysMap;
+    private static final Map<String, Object> firstDayMap = new HashMap<>();
+    private static final Map<String, Object> minDaysMap = new HashMap<>();
 
     // Parent locales. These information will only be
     // generated towards the base meta info, with the format of
     //
     // parentLocale.<parent_locale_id>=<child_locale_id>(" "<child_locale_id>)+
-    private final Map<String, String> parentLocalesMap;
+    private static final Map<String, String> parentLocalesMap = new HashMap<>();
 
     // Input Skeleton map for "preferred" and "allowed"
     // Map<"preferred"/"allowed", Map<"skeleton", SortedSet<"regions">>>
-    private final Map<String, Map<String, SortedSet<String>>> inputSkeletonMap;
+    private static final Map<String, Map<String, SortedSet<String>>> inputSkeletonMap = new HashMap<>();
 
     // "component" specific to this parent locale chain
     private String currentParentLocaleComponent;
-
-    SupplementalDataParseHandler() {
-        firstDayMap = new HashMap<>();
-        minDaysMap = new HashMap<>();
-        parentLocalesMap = new HashMap<>();
-        inputSkeletonMap = new HashMap<>();
-    }
 
     /**
      * It returns Map that contains the firstDay and minDays information for
@@ -158,9 +151,15 @@ class SupplementalDataParseHandler extends AbstractLDMLHandler<Object> {
                 // Ignore component for now, otherwise "zh-Hant" falling back to "zh" would happen
                 // https://github.com/unicode-org/cldr/pull/2664
                 if (currentParentLocaleComponent == null) {
+                    var parent = attributes.getValue("parent").replaceAll("_", "-");
+
                     parentLocalesMap.put(
-                        attributes.getValue("parent").replaceAll("_", "-"),
+                        parent,
                         attributes.getValue("locales").replaceAll("_", "-"));
+
+                    if ("root".equals(parent)) {
+                        CLDRConverter.nonlikelyScript = "nonlikelyScript".equals(attributes.getValue("localeRules"));
+                    }
                 }
             }
             break;

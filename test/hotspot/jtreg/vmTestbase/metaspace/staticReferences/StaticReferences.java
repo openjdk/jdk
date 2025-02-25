@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,14 +53,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import vm.share.InMemoryJavaCompiler;
+import metaspace.share.TriggerUnloadingHelper;
+import metaspace.share.TriggerUnloadingWithFullGC;
 import nsk.share.gc.GCTestBase;
 import nsk.share.test.ExecutionController;
 import nsk.share.test.Stresser;
 import nsk.share.test.TestBase;
 import nsk.share.test.Tests;
-import vm.share.gc.TriggerUnloadingHelper;
-import vm.share.gc.TriggerUnloadingWithWhiteBox;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 /**
  * Test checks that static fields will be initialized in new loaded class. Test performs in loop the following routine:
@@ -86,7 +86,7 @@ public class StaticReferences extends GCTestBase {
 
     private Random random;
 
-    private TriggerUnloadingHelper triggerUnloadingHelper = new TriggerUnloadingWithWhiteBox();
+    private TriggerUnloadingHelper triggerUnloadingHelper = new TriggerUnloadingWithFullGC();
 
     private String[] typesArray = new String[] {"Object object", "boolean boolean", "byte byte", "char char", "double double", "float float", "int int", "long long", "short short"};
 
@@ -210,9 +210,7 @@ public class StaticReferences extends GCTestBase {
     }
 
     private byte[] generateAndCompile(int[] fieldQuantities) {
-        Map<String, CharSequence> sources = new HashMap<String, CharSequence>();
-        sources.put("A", generateSource(fieldQuantities));
-        return InMemoryJavaCompiler.compile(sources).values().iterator().next();
+        return InMemoryJavaCompiler.compile("A", generateSource(fieldQuantities));
     }
 
     private StringBuffer generateSource(int[] fieldQuantities) {

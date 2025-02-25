@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,40 +25,25 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.instruction.*;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
-import java.lang.classfile.instruction.ArrayLoadInstruction;
-import java.lang.classfile.instruction.ArrayStoreInstruction;
-import java.lang.classfile.instruction.BranchInstruction;
-import java.lang.classfile.instruction.ConstantInstruction;
-import java.lang.classfile.instruction.ConvertInstruction;
-import java.lang.classfile.instruction.DiscontinuedInstruction;
-import java.lang.classfile.instruction.FieldInstruction;
-import java.lang.classfile.instruction.IncrementInstruction;
-import java.lang.classfile.instruction.InvokeDynamicInstruction;
-import java.lang.classfile.instruction.InvokeInstruction;
-import java.lang.classfile.instruction.LoadInstruction;
-import java.lang.classfile.instruction.LookupSwitchInstruction;
-import java.lang.classfile.instruction.MonitorInstruction;
-import java.lang.classfile.instruction.NewMultiArrayInstruction;
-import java.lang.classfile.instruction.NewObjectInstruction;
-import java.lang.classfile.instruction.NewPrimitiveArrayInstruction;
-import java.lang.classfile.instruction.NewReferenceArrayInstruction;
-import java.lang.classfile.instruction.NopInstruction;
-import java.lang.classfile.instruction.OperatorInstruction;
-import java.lang.classfile.instruction.ReturnInstruction;
-import java.lang.classfile.instruction.StackInstruction;
-import java.lang.classfile.instruction.StoreInstruction;
-import java.lang.classfile.instruction.TableSwitchInstruction;
-import java.lang.classfile.instruction.ThrowInstruction;
-import java.lang.classfile.instruction.TypeCheckInstruction;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models an executable instruction in a method body.
+ * Models an executable instruction in the {@code code} array of the {@link
+ * CodeAttribute Code} attribute of a method.  The order of instructions in
+ * a {@link CodeModel} is significant.
+ * <p>
+ * The {@link #opcode() opcode} identifies the operation of an instruction.
+ * Each {@linkplain Opcode#kind() kind} of opcode has its own modeling interface
+ * for instructions.
  *
- * @since 22
+ * @see Opcode
+ * @jvms 6.5 Instructions
+ * @sealedGraph
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Instruction extends CodeElement
         permits ArrayLoadInstruction, ArrayStoreInstruction, BranchInstruction,
                 ConstantInstruction, ConvertInstruction, DiscontinuedInstruction,
@@ -71,12 +56,14 @@ public sealed interface Instruction extends CodeElement
                 ThrowInstruction, TypeCheckInstruction, AbstractInstruction {
 
     /**
-     * {@return the opcode of this instruction}
+     * {@return the operation of this instruction}
      */
     Opcode opcode();
 
     /**
      * {@return the size in bytes of this instruction}
+     * This value is equal to {@link Opcode#sizeIfFixed()
+     * opcode().sizeIfFixed()} if it is not {@code -1}.
      */
     int sizeInBytes();
 }

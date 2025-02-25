@@ -76,6 +76,7 @@ class os::Aix {
  public:
   static void init_thread_fpu_state();
   static pthread_t main_thread(void)                                { return _main_thread; }
+  static bool supports_64K_mmap_pages();
 
   // Given an address, returns the size of the page backing that address
   static size_t query_pagesize(void* p);

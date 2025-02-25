@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8216970
  * @summary Ensure escape analysis can handle an ldc of a dynamic
  *          constant whose return type is an array of boolean.
- * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile TestEscapeThroughInvokeWithCondy$A.jasm
@@ -43,7 +42,7 @@ public class TestEscapeCondy {
     public static void main(String args[]) throws Throwable {
         // 1. Test escape analysis of a method that contains
         //    a ldc instruction of a condy whose return type is an array of boolean
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
              "-XX:CompileCommand=dontinline,runtime.condy.TestEscapeThroughInvokeWithCondy::create",
              "runtime.condy.TestEscapeThroughInvokeWithCondy");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());

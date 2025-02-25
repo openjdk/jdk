@@ -21,7 +21,7 @@
 # questions.
 #
 
-        .globl SpinPause
+#include "defs.S.inc"
 
         # NOTE WELL!  The _Copy functions are called directly
         # from server-compiler-generated code via CallLeafNoFP,
@@ -29,29 +29,10 @@
         # point or use it in the same manner as does the server
         # compiler.
 
-        .globl _Copy_arrayof_conjoint_bytes
-        .globl _Copy_arrayof_conjoint_jshorts
-        .globl _Copy_conjoint_jshorts_atomic
-        .globl _Copy_arrayof_conjoint_jints
-        .globl _Copy_conjoint_jints_atomic
-        .globl _Copy_arrayof_conjoint_jlongs
-        .globl _Copy_conjoint_jlongs_atomic
-
-        .hidden SpinPause
-
-        .hidden _Copy_arrayof_conjoint_bytes
-        .hidden _Copy_arrayof_conjoint_jshorts
-        .hidden _Copy_conjoint_jshorts_atomic
-        .hidden _Copy_arrayof_conjoint_jints
-        .hidden _Copy_conjoint_jints_atomic
-        .hidden _Copy_arrayof_conjoint_jlongs
-        .hidden _Copy_conjoint_jlongs_atomic
-
         .text
 
         .align 16
-        .type  SpinPause,@function
-SpinPause:
+DECLARE_FUNC(SpinPause):
         rep
         nop
         movq   $1, %rax
@@ -65,8 +46,7 @@ SpinPause:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-        .type    _Copy_arrayof_conjoint_bytes,@function
-_Copy_arrayof_conjoint_bytes:
+DECLARE_FUNC(_Copy_arrayof_conjoint_bytes):
         movq     %rdx,%r8             # byte count
         shrq     $3,%rdx              # qword count
         cmpq     %rdi,%rsi
@@ -167,10 +147,8 @@ acb_CopyLeft:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-        .type    _Copy_arrayof_conjoint_jshorts,@function
-        .type    _Copy_conjoint_jshorts_atomic,@function
-_Copy_arrayof_conjoint_jshorts:
-_Copy_conjoint_jshorts_atomic:
+DECLARE_FUNC(_Copy_arrayof_conjoint_jshorts):
+DECLARE_FUNC(_Copy_conjoint_jshorts_atomic):
         movq     %rdx,%r8             # word count
         shrq     $2,%rdx              # qword count
         cmpq     %rdi,%rsi
@@ -257,10 +235,8 @@ acs_CopyLeft:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-        .type    _Copy_arrayof_conjoint_jints,@function
-        .type    _Copy_conjoint_jints_atomic,@function
-_Copy_arrayof_conjoint_jints:
-_Copy_conjoint_jints_atomic:
+DECLARE_FUNC(_Copy_arrayof_conjoint_jints):
+DECLARE_FUNC(_Copy_conjoint_jints_atomic):
         movq     %rdx,%r8             # dword count
         shrq     %rdx                 # qword count
         cmpq     %rdi,%rsi
@@ -336,10 +312,8 @@ aci_CopyLeft:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-        .type    _Copy_arrayof_conjoint_jlongs,@function
-        .type    _Copy_conjoint_jlongs_atomic,@function
-_Copy_arrayof_conjoint_jlongs:
-_Copy_conjoint_jlongs_atomic:
+DECLARE_FUNC(_Copy_arrayof_conjoint_jlongs):
+DECLARE_FUNC(_Copy_conjoint_jlongs_atomic):
         cmpq     %rdi,%rsi
         leaq     -8(%rdi,%rdx,8),%rax # from + count*8 - 8
         jbe      acl_CopyRight

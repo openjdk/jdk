@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      * @param layout the target layout
      * @return an address layout with same characteristics as this layout, but with the
      *          provided target layout
-     * @throws IllegalCallerException If the caller is in a module that does not have
+     * @throws IllegalCallerException if the caller is in a module that does not have
      *         native access enabled
      * @see #targetLayout()
      */

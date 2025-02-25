@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2017, the original author or authors.
+ * Copyright (c) 2002-2017, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -57,11 +57,7 @@ public class NonBlockingPumpInputStream extends NonBlockingInputStream {
                 throw new InterruptedIOException();
             }
         }
-        return buffer.hasRemaining()
-                ? 0
-                : closed
-                    ? EOF
-                    : READ_EXPIRED;
+        return buffer.hasRemaining() ? 0 : closed ? EOF : READ_EXPIRED;
     }
 
     private static boolean rewind(ByteBuffer buffer, ByteBuffer other) {
@@ -167,7 +163,7 @@ public class NonBlockingPumpInputStream extends NonBlockingInputStream {
 
         @Override
         public void write(int b) throws IOException {
-            NonBlockingPumpInputStream.this.write(new byte[] { (byte) b }, 0, 1);
+            NonBlockingPumpInputStream.this.write(new byte[] {(byte) b}, 0, 1);
         }
 
         @Override
@@ -184,7 +180,5 @@ public class NonBlockingPumpInputStream extends NonBlockingInputStream {
         public void close() throws IOException {
             NonBlockingPumpInputStream.this.close();
         }
-
     }
-
 }

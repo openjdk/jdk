@@ -23,30 +23,18 @@
  *
  */
 
-    .globl SafeFetchN_impl
-    .globl _SafeFetchN_fault
-    .globl _SafeFetchN_continuation
-    .globl SafeFetch32_impl
-    .globl _SafeFetch32_fault
-    .globl _SafeFetch32_continuation
-
-    .hidden SafeFetchN_impl
-    .hidden _SafeFetchN_fault
-    .hidden _SafeFetchN_continuation
-    .hidden SafeFetch32_impl
-    .hidden _SafeFetch32_fault
-    .hidden _SafeFetch32_continuation
+#include "defs.S.inc"
 
     # Support for int SafeFetch32(int* address, int defaultval);
     #
     #  r3 : address
     #  r4 : defaultval
     #  r3 : retval
-SafeFetch32_impl:
-_SafeFetch32_fault:
+DECLARE_FUNC(SafeFetch32_impl):
+DECLARE_FUNC(_SafeFetch32_fault):
     lwa      %r3, 0(%r3)
     blr
-_SafeFetch32_continuation:
+DECLARE_FUNC(_SafeFetch32_continuation):
     mr       %r3, %r4
     blr
 
@@ -55,10 +43,10 @@ _SafeFetch32_continuation:
     #  r3 : address
     #  r4 : defaultval
     #  r3 : retval
-SafeFetchN_impl:
-_SafeFetchN_fault:
+DECLARE_FUNC(SafeFetchN_impl):
+DECLARE_FUNC(_SafeFetchN_fault):
     ld     %r3, 0(%r3)
     blr
-_SafeFetchN_continuation:
+DECLARE_FUNC(_SafeFetchN_continuation):
     mr     %r3, %r4
     blr

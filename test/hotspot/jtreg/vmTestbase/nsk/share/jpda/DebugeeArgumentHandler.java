@@ -57,8 +57,6 @@ import java.net.ServerSocket;
  *   (this works only with <code>-connector=listening</code> and <code>-transport=socket</code>)
  * <li> <code>-debugee.suspend=[yes|no|default]</code> -
  *   should debugee start in suspend mode or not
- * <li> <code>-debugee.launch=[local|remote|manual]</code> -
- *   launch and bind to debugee VM locally, remotely (via BindSever) or manually
  * <li> <code>-debugee.vmhome=</code>&lt;<i>path</i>&gt; -
  *   path to JDK used for launching debugee VM
  * <li> <code>-debugee.vmkind=</code>&lt;<i>name</i>&gt; -
@@ -275,11 +273,8 @@ public class DebugeeArgumentHandler extends ArgumentParser {
      * @see #isDefaultDebugeeSuspendMode()
      */
     public boolean willDebugeeSuspended() {
-        if (isLaunchedLocally()) {
-            String mode = getDebugeeSuspendMode();
-            return mode.equals("no");
-        }
-        return true;
+        String mode = getDebugeeSuspendMode();
+        return mode.equals("no");
     }
 
     private boolean pipePortInited = false;
@@ -337,54 +332,6 @@ public class DebugeeArgumentHandler extends ArgumentParser {
         setOption("-", "pipe.port", value);
     }
 
-    /**
-     * Return debugee VM launching mode, specified by
-     * <code>-launch.mode</code> command line option, or
-     * "<i>local</i>" string by default.
-     *
-     * Possible values for this option are:
-     * <ul>
-     * <li> "<code>local</code>"
-     * <li> "<code>remote</code>"
-     * <li> "<code>manual</code>"
-     * </ul>
-     *
-     * @see #isLaunchedLocally()
-     * @see #isLaunchedRemotely()
-     * @see #isLaunchedManually()
-     * @see #setRawArguments(String[])
-     */
-    public String getLaunchMode() {
-        return options.getProperty("debugee.launch", "local");
-    }
-
-    /**
-     * Return <i>true</i> if debugee should be launched locally.
-     *
-     * @see #getLaunchMode()
-     */
-    public boolean isLaunchedLocally() {
-        return getLaunchMode().equals("local");
-    }
-
-    /**
-     * Return <i>true</i> if debugee should be launched remotely via
-     * BindServer.
-     *
-     * @see #getLaunchMode()
-     */
-    public boolean isLaunchedRemotely() {
-        return getLaunchMode().equals("remote");
-    }
-
-    /**
-     * Return <i>true</i> if debugee should be launched manually by user.
-     *
-     * @see #getLaunchMode()
-     */
-    public boolean isLaunchedManually() {
-        return getLaunchMode().equals("manual");
-    }
 
     /**
      * Return additional options for launching debugee VM, specified by
@@ -710,9 +657,7 @@ public class DebugeeArgumentHandler extends ArgumentParser {
         }
 
         // option with any nonempty string value
-        if (option.equals("test.host")
-            || option.equals("debugee.host")
-            || option.equals("debugee.vmkind")
+        if (option.equals("debugee.vmkind")
             || option.equals("debugee.vmhome")
             || option.equals("transport.shname")) {
             if (value.length() <= 0) {
@@ -748,14 +693,10 @@ public class DebugeeArgumentHandler extends ArgumentParser {
             return true;
         }
 
-        if (option.equals("debugee.launch")) {
-            if ((!value.equals("local"))
-                && (!value.equals("remote"))
-                && (!value.equals("manual"))) {
-                throw new BadOption(option + ": must be one of: "
-                                           + "local, remote, manual " + value);
-            }
-            return true;
+        if (option.equals("debugee.launch")
+                || option.equals("debugee.host")
+                || option.equals("test.host")) {
+            throw new RuntimeException("option " + option + " is not supported.");
         }
 
         if (option.equals("jvmdi.strict")) {

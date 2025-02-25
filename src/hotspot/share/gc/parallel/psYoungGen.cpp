@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/mutableNUMASpace.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/gcUtil.hpp"
 #include "gc/shared/genArguments.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
@@ -92,8 +91,8 @@ void PSYoungGen::initialize_work() {
   _to_space   = new MutableSpace(virtual_space()->alignment());
 
   // Generation Counters - generation 0, 3 subspaces
-  _gen_counters = new PSGenerationCounters("new", 0, 3, min_gen_size(),
-                                           max_gen_size(), virtual_space());
+  _gen_counters = new GenerationCounters("new", 0, 3, min_gen_size(),
+                                         max_gen_size(), virtual_space()->committed_size());
 
   // Compute maximum space sizes for performance counters
   size_t alignment = SpaceAlignment;
@@ -256,9 +255,9 @@ void PSYoungGen::resize(size_t eden_size, size_t survivor_size) {
     space_invariants();
 
     log_trace(gc, ergo)("Young generation size: "
-                        "desired eden: " SIZE_FORMAT " survivor: " SIZE_FORMAT
-                        " used: " SIZE_FORMAT " capacity: " SIZE_FORMAT
-                        " gen limits: " SIZE_FORMAT " / " SIZE_FORMAT,
+                        "desired eden: %zu survivor: %zu"
+                        " used: %zu capacity: %zu"
+                        " gen limits: %zu / %zu",
                         eden_size, survivor_size, used_in_bytes(), capacity_in_bytes(),
                         max_gen_size(), min_gen_size());
   }
@@ -315,15 +314,15 @@ bool PSYoungGen::resize_generation(size_t eden_size, size_t survivor_size) {
     }
   } else {
     if (orig_size == max_gen_size()) {
-      log_trace(gc)("PSYoung generation size at maximum: " SIZE_FORMAT "K", orig_size/K);
+      log_trace(gc)("PSYoung generation size at maximum: %zuK", orig_size/K);
     } else if (orig_size == min_gen_size()) {
-      log_trace(gc)("PSYoung generation size at minimum: " SIZE_FORMAT "K", orig_size/K);
+      log_trace(gc)("PSYoung generation size at minimum: %zuK", orig_size/K);
     }
   }
 
   if (size_changed) {
     post_resize();
-    log_trace(gc)("PSYoung generation size changed: " SIZE_FORMAT "K->" SIZE_FORMAT "K",
+    log_trace(gc)("PSYoung generation size changed: %zuK->%zuK",
                   orig_size/K, virtual_space()->committed_size()/K);
   }
 
@@ -420,21 +419,21 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
     return;
   }
 
-  log_trace(gc, ergo)("PSYoungGen::resize_spaces(requested_eden_size: " SIZE_FORMAT ", requested_survivor_size: " SIZE_FORMAT ")",
+  log_trace(gc, ergo)("PSYoungGen::resize_spaces(requested_eden_size: %zu, requested_survivor_size: %zu)",
                       requested_eden_size, requested_survivor_size);
-  log_trace(gc, ergo)("    eden: [" PTR_FORMAT ".." PTR_FORMAT ") " SIZE_FORMAT,
+  log_trace(gc, ergo)("    eden: [" PTR_FORMAT ".." PTR_FORMAT ") %zu",
                       p2i(eden_space()->bottom()),
                       p2i(eden_space()->end()),
                       pointer_delta(eden_space()->end(),
                                     eden_space()->bottom(),
                                     sizeof(char)));
-  log_trace(gc, ergo)("    from: [" PTR_FORMAT ".." PTR_FORMAT ") " SIZE_FORMAT,
+  log_trace(gc, ergo)("    from: [" PTR_FORMAT ".." PTR_FORMAT ") %zu",
                       p2i(from_space()->bottom()),
                       p2i(from_space()->end()),
                       pointer_delta(from_space()->end(),
                                     from_space()->bottom(),
                                     sizeof(char)));
-  log_trace(gc, ergo)("      to: [" PTR_FORMAT ".." PTR_FORMAT ") " SIZE_FORMAT,
+  log_trace(gc, ergo)("      to: [" PTR_FORMAT ".." PTR_FORMAT ") %zu",
                       p2i(to_space()->bottom()),
                       p2i(to_space()->end()),
                       pointer_delta(  to_space()->end(),
@@ -525,15 +524,15 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
 
     guarantee(to_start != to_end, "to space is zero sized");
 
-    log_trace(gc, ergo)("    [eden_start .. eden_end): [" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
+    log_trace(gc, ergo)("    [eden_start .. eden_end): [" PTR_FORMAT " .. " PTR_FORMAT ") %zu",
                         p2i(eden_start),
                         p2i(eden_end),
                         pointer_delta(eden_end, eden_start, sizeof(char)));
-    log_trace(gc, ergo)("    [from_start .. from_end): [" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
+    log_trace(gc, ergo)("    [from_start .. from_end): [" PTR_FORMAT " .. " PTR_FORMAT ") %zu",
                         p2i(from_start),
                         p2i(from_end),
                         pointer_delta(from_end, from_start, sizeof(char)));
-    log_trace(gc, ergo)("    [  to_start ..   to_end): [" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
+    log_trace(gc, ergo)("    [  to_start ..   to_end): [" PTR_FORMAT " .. " PTR_FORMAT ") %zu",
                         p2i(to_start),
                         p2i(to_end),
                         pointer_delta(  to_end,   to_start, sizeof(char)));
@@ -575,15 +574,15 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
     eden_end = MAX2(eden_end, eden_start + SpaceAlignment);
     to_start = MAX2(to_start, eden_end);
 
-    log_trace(gc, ergo)("    [eden_start .. eden_end): [" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
+    log_trace(gc, ergo)("    [eden_start .. eden_end): [" PTR_FORMAT " .. " PTR_FORMAT ") %zu",
                         p2i(eden_start),
                         p2i(eden_end),
                         pointer_delta(eden_end, eden_start, sizeof(char)));
-    log_trace(gc, ergo)("    [  to_start ..   to_end): [" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
+    log_trace(gc, ergo)("    [  to_start ..   to_end): [" PTR_FORMAT " .. " PTR_FORMAT ") %zu",
                         p2i(to_start),
                         p2i(to_end),
                         pointer_delta(  to_end,   to_start, sizeof(char)));
-    log_trace(gc, ergo)("    [from_start .. from_end): [" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
+    log_trace(gc, ergo)("    [from_start .. from_end): [" PTR_FORMAT " .. " PTR_FORMAT ") %zu",
                         p2i(from_start),
                         p2i(from_end),
                         pointer_delta(from_end, from_start, sizeof(char)));
@@ -622,20 +621,6 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
         mangle_survivors(to_space(), toMR, from_space(), fromMR);
       }
     }
-
-    // If not mangling the spaces, do some checking to verify that
-    // the spaces are already mangled.
-    // The spaces should be correctly mangled at this point so
-    // do some checking here. Note that they are not being mangled
-    // in the calls to initialize().
-    // Must check mangling before the spaces are reshaped.  Otherwise,
-    // the bottom or end of one space may have moved into an area
-    // covered by another space and a failure of the check may
-    // not correctly indicate which space is not properly mangled.
-    HeapWord* limit = (HeapWord*) virtual_space()->high();
-    eden_space()->check_mangled_unused_area(limit);
-    from_space()->check_mangled_unused_area(limit);
-      to_space()->check_mangled_unused_area(limit);
   }
 
   WorkerThreads* workers = &ParallelScavengeHeap::heap()->workers();
@@ -660,7 +645,7 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
 
   assert(from_space()->top() == old_from_top, "from top changed!");
 
-  log_trace(gc, ergo)("AdaptiveSizePolicy::survivor space sizes: collection: %d (" SIZE_FORMAT ", " SIZE_FORMAT ") -> (" SIZE_FORMAT ", " SIZE_FORMAT ") ",
+  log_trace(gc, ergo)("AdaptiveSizePolicy::survivor space sizes: collection: %d (%zu, %zu) -> (%zu, %zu) ",
                       ParallelScavengeHeap::heap()->total_collections(),
                       old_from, old_to,
                       from_space()->capacity_in_bytes(),
@@ -716,7 +701,7 @@ void PSYoungGen::object_iterate(ObjectClosure* blk) {
 void PSYoungGen::print() const { print_on(tty); }
 void PSYoungGen::print_on(outputStream* st) const {
   st->print(" %-15s", "PSYoungGen");
-  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
+  st->print(" total %zuK, used %zuK",
              capacity_in_bytes()/K, used_in_bytes()/K);
   virtual_space()->print_space_boundaries_on(st);
   st->print("  eden"); eden_space()->print_on(st);
@@ -824,7 +809,7 @@ void PSYoungGen::update_counters() {
     _eden_counters->update_all();
     _from_counters->update_all();
     _to_counters->update_all();
-    _gen_counters->update_all();
+    _gen_counters->update_all(_virtual_space->committed_size());
   }
 }
 
@@ -833,12 +818,3 @@ void PSYoungGen::verify() {
   from_space()->verify();
   to_space()->verify();
 }
-
-#ifndef PRODUCT
-void PSYoungGen::record_spaces_top() {
-  assert(ZapUnusedHeapArea, "Not mangling unused space");
-  eden_space()->set_top_for_allocations();
-  from_space()->set_top_for_allocations();
-  to_space()->set_top_for_allocations();
-}
-#endif

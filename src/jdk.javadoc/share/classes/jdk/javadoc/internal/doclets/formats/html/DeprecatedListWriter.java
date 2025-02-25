@@ -32,11 +32,13 @@ import javax.lang.model.element.Element;
 import com.sun.source.doctree.DeprecatedTree;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate File to list all the deprecated classes and class members with the
@@ -79,7 +81,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     protected void addContentSelectors(Content target) {
         List<String> releases = builder.releases;
         if (releases.size() > 1) {
-            Content tabs = HtmlTree.DIV(HtmlStyle.checkboxes, contents.getContent(
+            Content tabs = HtmlTree.DIV(HtmlStyles.checkboxes, contents.getContent(
                     "doclet.Deprecated_API_Checkbox_Label"));
             // Table column ids are 1-based
             int index = 1;
@@ -125,7 +127,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     protected void addTableTabs(Table<Element> table, String headingKey) {
         List<String> releases = builder.releases;
         if (!releases.isEmpty()) {
-            table.setGridStyle(HtmlStyle.threeColumnReleaseSummary);
+            table.setGridStyle(HtmlStyles.threeColumnReleaseSummary);
         }
         if (releases.size() > 1) {
             table.setDefaultTab(getTableCaption(headingKey))
@@ -170,7 +172,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
         if (releases.isEmpty()) {
             return super.getColumnStyles();
         }
-        return new HtmlStyle[]{ HtmlStyle.colSummaryItemName, HtmlStyle.colSecond, HtmlStyle.colLast };
+        return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
@@ -51,7 +50,7 @@ public:
   }
 };
 
-class G1AdjustRegionClosure : public HeapRegionClosure {
+class G1AdjustRegionClosure : public G1HeapRegionClosure {
   G1FullCollector* _collector;
   G1CMBitMap* _bitmap;
   uint _worker_id;
@@ -61,7 +60,7 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
     _bitmap(collector->mark_bitmap()),
     _worker_id(worker_id) { }
 
-  bool do_heap_region(HeapRegion* r) {
+  bool do_heap_region(G1HeapRegion* r) {
     G1AdjustClosure cl(_collector);
     if (r->is_humongous()) {
       // Special handling for humongous regions to get somewhat better

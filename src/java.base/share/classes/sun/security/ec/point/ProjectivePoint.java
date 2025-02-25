@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package sun.security.ec.point;
 
 import sun.security.util.math.*;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * Elliptic curve point in projective coordinates (X, Y, Z) where
@@ -145,6 +146,7 @@ public abstract class ProjectivePoint
             return conditionalSet(pp, set);
         }
 
+        @ForceInline
         private <T extends IntegerModuloP>
         Mutable conditionalSet(ProjectivePoint<T> pp, int set) {
 
@@ -157,9 +159,9 @@ public abstract class ProjectivePoint
 
         @Override
         public Mutable setValue(AffinePoint p) {
-            x.setValue(p.getX());
-            y.setValue(p.getY());
-            z.setValue(p.getX().getField().get1());
+            x.setValue(p.getX(false));
+            y.setValue(p.getY(false));
+            z.setValue(p.getX(false).getField().get1());
 
             return this;
         }

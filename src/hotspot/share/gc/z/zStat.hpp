@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -345,6 +345,7 @@ public:
 // Stat sample/increment
 //
 void ZStatSample(const ZStatSampler& sampler, uint64_t value);
+void ZStatDurationSample(const ZStatSampler& sampler, const Tickspan& duration);
 void ZStatInc(const ZStatCounter& counter, uint64_t increment = 1);
 void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment = 1);
 
@@ -383,7 +384,7 @@ public:
 //
 class ZStat : public ZThread {
 private:
-  static const uint64_t sample_hz = 1;
+  static const uint64_t SampleHz = 1;
 
   ZMetronome _metronome;
 
@@ -505,7 +506,6 @@ public:
                    size_t nterminateflush,
                    size_t ntrycomplete,
                    size_t ncontinue);
-  void at_mark_free(size_t mark_stack_usage);
 
   void print();
 };
@@ -587,7 +587,7 @@ public:
 struct ZStatHeapStats {
   size_t _live_at_mark_end;
   size_t _used_at_relocate_end;
-  size_t _reclaimed_avg;
+  double _reclaimed_avg;
 };
 
 //
@@ -698,7 +698,7 @@ public:
   size_t stalls_at_relocate_start() const;
   size_t stalls_at_relocate_end() const;
 
-  size_t reclaimed_avg();
+  double reclaimed_avg();
 
   ZStatHeapStats stats();
 

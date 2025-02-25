@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,7 +289,7 @@ public class DockerTestUtils {
         System.out.println("[ELAPSED: " + (System.currentTimeMillis() - started) + " ms]");
         System.out.println("[STDERR]\n" + output.getStderr());
         System.out.println("[STDOUT]\n" + stdoutLimited);
-        if (stdout != stdoutLimited) {
+        if (!stdout.equals(stdoutLimited)) {
             System.out.printf("Child process STDOUT is limited to %d lines\n",
                               max);
         }
@@ -321,9 +321,11 @@ public class DockerTestUtils {
 
     private static void generateDockerFile(Path dockerfile, String baseImage,
                                            String baseImageVersion) throws Exception {
-        String template =
-            "FROM %s:%s\n" +
-            "COPY /jdk /jdk\n" +
+        String template = "FROM %s:%s\n";
+        if (baseImage.contains("ubuntu") && DockerfileConfig.isUbsan()) {
+            template += "RUN apt-get update && apt-get install -y libubsan1\n";
+        }
+        template = template + "COPY /jdk /jdk\n" +
             "ENV JAVA_HOME=/jdk\n" +
             "CMD [\"/bin/bash\"]\n";
         String dockerFileStr = String.format(template, baseImage, baseImageVersion);

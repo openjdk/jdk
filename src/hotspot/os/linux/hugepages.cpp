@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2011, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,9 +23,7 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "hugepages.hpp"
-
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/globals_extension.hpp"
@@ -55,8 +53,7 @@ static size_t scan_default_hugepagesize() {
 
   // large_page_size on Linux is used to round up heap size. x86 uses either
   // 2M or 4M page, depending on whether PAE (Physical Address Extensions)
-  // mode is enabled. AMD64/EM64T uses 2M page in 64bit mode. IA64 can use
-  // page as large as 1G.
+  // mode is enabled. AMD64/EM64T uses 2M page in 64bit mode.
   //
   // Here we try to figure out page size by parsing /proc/meminfo and looking
   // for a line with the following format:
@@ -96,7 +93,7 @@ static bool read_number_file(const char* file, size_t* out) {
   bool rc = false;
   if (f != nullptr) {
     uint64_t i = 0;
-    if (::fscanf(f, SIZE_FORMAT, out) == 1) {
+    if (::fscanf(f, "%zu", out) == 1) {
       rc = true;
     }
     ::fclose(f);
@@ -156,7 +153,7 @@ void ExplicitHugePageSupport::scan_os() {
     // that only exposes /proc/meminfo but not /sys/kernel/mm/hugepages. In that case, we are not
     // sure about the state of hugepage support by the kernel, so we won't use explicit hugepages.
     if (!_pagesizes.contains(_default_hugepage_size)) {
-      log_info(pagesize)("Unexpected configuration: default pagesize (" SIZE_FORMAT ") "
+      log_info(pagesize)("Unexpected configuration: default pagesize (%zu) "
                          "has no associated directory in /sys/kernel/mm/hugepages..", _default_hugepage_size);
       _inconsistent = true;
     }

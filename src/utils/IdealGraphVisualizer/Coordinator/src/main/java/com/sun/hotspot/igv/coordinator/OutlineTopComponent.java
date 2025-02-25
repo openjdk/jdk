@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,20 +37,31 @@ import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.view.EditorTopComponent;
+import com.sun.hotspot.igv.view.PlaceholderTopComponent;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.HeadlessException;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDragEvent;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.dnd.DropTargetEvent;
+import java.awt.dnd.DropTargetListener;
 import java.io.*;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import java.util.zip.ZipInputStream;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
 import org.openide.ErrorManager;
@@ -66,6 +77,9 @@ import org.openide.util.NbBundle;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+
 
 /**
  *
@@ -76,17 +90,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     public static final String PREFERRED_ID = "OutlineTopComponent";
     private static final GraphDocument document = new GraphDocument();
     private static final int WORK_UNITS = 10000;
-    private static final FileFilter xmlFileFilter = new FileFilter() {
-        @Override
-        public boolean accept(File f) {
-            return f.getName().toLowerCase().endsWith(".xml") || f.isDirectory();
-        }
-
-        @Override
-        public String getDescription() {
-            return "Graph files (*.xml)";
-        }
-    };
+    private static final FileFilter graphFileFilter = new FileNameExtensionFilter("Graph files (*.xml, *.igv)", "xml", "igv");
     private static final Server server = new Server(document, OutlineTopComponent::loadContext);
     public static OutlineTopComponent instance;
     private final Set<FolderNode> selectedFolders = new HashSet<>();
@@ -98,6 +102,9 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private GraphNode[] selectedGraphs = new GraphNode[0];
     private Path documentPath = null;
 
+    private final DropTargetListener fileDropListener = new FileDropListener();
+    private final PlaceholderTopComponent editorPlaceholder = new PlaceholderTopComponent(fileDropListener);
+
     private OutlineTopComponent() {
         initComponents();
 
@@ -106,6 +113,17 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         initListView();
         initToolbar();
         server.startServer();
+
+        showEditorPlaceholder();
+
+        WindowManager.getDefault().invokeWhenUIReady(() -> {
+           new DropTarget(WindowManager.getDefault().getMainWindow(), fileDropListener);
+        });
+    }
+
+    private void showEditorPlaceholder() {
+        editorPlaceholder.open();
+        editorPlaceholder.requestActive();
     }
 
     public static GraphDocument getDocument() {
@@ -161,8 +179,26 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             }
         }
 
-        try (Writer writer = new OutputStreamWriter(new FileOutputStream(path))) {
-            Printer.exportGraphDocument(writer, doc, saveContexts);
+        if (path.endsWith(".igv")) {
+            File zipFile = new File(path);
+            String fileName = zipFile.getName();
+            try (FileOutputStream fos = new FileOutputStream(zipFile);
+                 ZipOutputStream zos = new ZipOutputStream(fos);
+                 Writer writer = new OutputStreamWriter(zos)) {
+
+                // Replace the '.igv' extension with '.xml's
+                String zipEntryName = fileName.substring(0, fileName.length() - 4) + ".xml";
+                ZipEntry zipEntry = new ZipEntry(zipEntryName);
+                zos.putNextEntry(zipEntry);
+
+                Printer.exportGraphDocument(writer, doc, saveContexts);
+
+                zos.closeEntry();
+            }
+        } else {
+            try (Writer writer = new OutputStreamWriter(new FileOutputStream(path))) {
+                Printer.exportGraphDocument(writer, doc, saveContexts);
+            }
         }
     }
 
@@ -224,6 +260,11 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         saveAction.setEnabled(enableButton);
         saveAsAction.setEnabled(enableButton);
         removeAllAction.setEnabled(enableButton);
+        if (document.getElements().isEmpty()) {
+            showEditorPlaceholder();
+        } else {
+            editorPlaceholder.close();
+        }
     }
 
     @Override
@@ -358,17 +399,22 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
      **/
     public void openFile() {
         JFileChooser fc = new JFileChooser(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT));
-        fc.setFileFilter(xmlFileFilter);
+        fc.setFileFilter(graphFileFilter);
         if (fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-            clearWorkspace();
-            String path = fc.getSelectedFile().getAbsolutePath();
-            Settings.get().put(Settings.DIRECTORY, path);
-            setDocumentPath(path);
-            try {
-                loadGraphDocument(path, true);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            handleOpen(fc.getSelectedFile());
+        }
+    }
+
+    private void handleOpen(File file) {
+        clearWorkspace();
+        editorPlaceholder.close();
+        String path = file.getAbsolutePath();
+        Settings.get().put(Settings.DIRECTORY, path);
+        setDocumentPath(path);
+        try {
+            loadGraphDocument(path, true);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -403,9 +449,22 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     public void saveAs() {
-        JFileChooser fc = new JFileChooser();
+        JFileChooser fc = new JFileChooser() {
+            @Override
+            public void approveSelection() {
+                File selectedFile = getSelectedFile();
+                if (selectedFile != null) {
+                    String fileName = selectedFile.getName().toLowerCase();
+                    if (!fileName.endsWith(".xml") && !fileName.endsWith(".igv")) {
+                        JOptionPane.showMessageDialog(this, "Please select a graph file with .xml or .igv extension.", "Invalid File", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                }
+                super.approveSelection();
+            }
+        };
         fc.setDialogTitle("Save As...");
-        fc.setFileFilter(xmlFileFilter);
+        fc.setFileFilter(graphFileFilter);
         fc.setCurrentDirectory(new File(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT)));
         if (fc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
             String path = fc.getSelectedFile().getAbsolutePath();
@@ -432,7 +491,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
      **/
     public void importFromXML() {
         JFileChooser fc = new JFileChooser();
-        fc.setFileFilter(xmlFileFilter);
+        fc.setFileFilter(graphFileFilter);
         fc.setCurrentDirectory(new File(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT)));
         fc.setMultiSelectionEnabled(true);
         if (fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
@@ -482,64 +541,146 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     /**
-     * Loads a graph document from the given file path, updating progress via a ProgressHandle.
-     * Parse the XML file, add the parsed document to the workspace, and load associated contexts if specified.
+     * Loads a graph document from the specified path, either as an XML file or from a ZIP archive.
+     * If loading the context is requested, it loads the context along with the document.
      */
     private void loadGraphDocument(String path, boolean loadContext) throws IOException {
         if (Files.notExists(Path.of(path))) {
             return;
         }
         File file = new File(path);
-        final FileChannel channel;
-        final long start;
-        try {
-            channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
-            start = channel.size();
-        } catch (Exception ex) {
-            Exceptions.printStackTrace(ex);
-            return;
+        if (file.getName().endsWith(".xml")) {
+            try (FileChannel channel = FileChannel.open(file.toPath(), StandardOpenOption.READ)) {
+                loadFile(channel, file, loadContext);
+            }
+        } else if (file.getName().endsWith(".igv")) {
+            try (ZipInputStream zis = new ZipInputStream(new FileInputStream(file))) {
+                ZipEntry entry = zis.getNextEntry();
+                if (entry != null && entry.getName().endsWith(".xml")) {
+                    loadFile(Channels.newChannel(zis), file, loadContext);
+                }
+            }
         }
+    }
 
+    /**
+     * Loads an XML or ZIP document from the provided channel, while monitoring the progress of the operation.
+     */
+    private void loadFile(ReadableByteChannel channel,  File file, boolean loadContext) throws IOException {
         final ProgressHandle handle = ProgressHandleFactory.createHandle("Opening file " + file.getName());
         handle.start(WORK_UNITS);
 
-        ParseMonitor monitor = new ParseMonitor() {
-            @Override
-            public void updateProgress() {
-                try {
-                    int prog = (int) (WORK_UNITS * (double) channel.position() / (double) start);
-                    handle.progress(prog);
-                } catch (IOException ignored) {
+        ParseMonitor monitor;
+        if (channel instanceof FileChannel fileChannel) {
+            final long start = fileChannel.size();
+            monitor = new ParseMonitor() {
+                @Override
+                public void updateProgress() {
+                    try {
+                        int prog = (int) (WORK_UNITS * (double) fileChannel.position() / (double) start);
+                        handle.progress(prog);
+                    } catch (IOException ignored) {}
                 }
-            }
 
-            @Override
-            public void setState(String state) {
-                updateProgress();
-                handle.progress(state);
-            }
-        };
+                @Override
+                public void setState(String state) {
+                    updateProgress();
+                    handle.progress(state);
+                }
+            };
+        } else {
+            monitor = new ParseMonitor() {
+                @Override
+                public void updateProgress() {
+                    handle.progress("Processing...");
+                }
+
+                @Override
+                public void setState(String state) {
+                    updateProgress();
+                    handle.progress(state);
+                }
+            };
+        }
+
         try {
-            if (file.getName().endsWith(".xml")) {
-                ArrayList<GraphContext> contexts = new ArrayList<>();
-                final Parser parser = new Parser(channel, monitor, document, loadContext ? contexts::add : null);
-                parser.parse();
-                SwingUtilities.invokeLater(() -> {
-                    for (Node child : manager.getRootContext().getChildren().getNodes(true)) {
-                        // Nodes are lazily created. By expanding and collapsing they are all initialized
-                        ((BeanTreeView) this.treeView).expandNode(child);
-                        ((BeanTreeView) this.treeView).collapseNode(child);
-                    }
-                    requestActive();
-                });
+            ArrayList<GraphContext> contexts = new ArrayList<>();
+            final Parser parser = new Parser(channel, monitor, document, loadContext ? contexts::add : null);
+            parser.parse();
+            SwingUtilities.invokeLater(() -> {
+                for (Node child : manager.getRootContext().getChildren().getNodes(true)) {
+                    // Nodes are lazily created. By expanding and collapsing they are all initialized
+                    ((BeanTreeView) this.treeView).expandNode(child);
+                    ((BeanTreeView) this.treeView).collapseNode(child);
+                }
+                requestActive();
                 for (GraphContext ctx : contexts) {
                     loadContext(ctx);
                 }
-            }
+            });
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);
         }
         handle.finish();
+    }
+
+    private class FileDropListener implements DropTargetListener {
+        @Override
+        public void dragEnter(DropTargetDragEvent dtde) {
+            if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                dtde.acceptDrag(DnDConstants.ACTION_COPY);
+            } else {
+                dtde.rejectDrag();
+            }
+        }
+
+        @Override
+        public void dragOver(DropTargetDragEvent dtde) {
+            dragEnter(dtde);
+        }
+
+        @Override
+        public void dropActionChanged(DropTargetDragEvent dtde) {}
+
+        @Override
+        public void dragExit(DropTargetEvent dte) {}
+
+        @Override
+        public void drop(DropTargetDropEvent dtde) {
+            try {
+                if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                    dtde.acceptDrop(DnDConstants.ACTION_COPY);
+
+                    List<File> droppedFiles = (List<File>) dtde.getTransferable()
+                            .getTransferData(DataFlavor.javaFileListFlavor);
+
+                    if (droppedFiles.isEmpty()) return;
+                    if (droppedFiles.size() > 1) {
+                        JOptionPane.showMessageDialog(null,
+                                "Please only drag and drop one file as only one file can be open at a time.",
+                                "Multiple Files Dropped", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+
+                    File file = droppedFiles.get(0);
+
+                    if (file.getName().endsWith(".xml") || file.getName().endsWith(".igv")) {
+                        handleOpen(file);
+                    } else {
+                        JOptionPane.showMessageDialog(null,
+                                "Unsupported file type: " + file.getName(),
+                                "Unsupported File", JOptionPane.WARNING_MESSAGE);
+                    }
+
+                    dtde.dropComplete(true);
+                } else {
+                    dtde.rejectDrop();
+                }
+            } catch (HeadlessException | UnsupportedFlavorException | IOException ex) {
+                ex.printStackTrace();
+                dtde.dropComplete(false);
+            }
+        }
     }
 
     /** This method is called from within the constructor to

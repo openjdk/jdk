@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,8 @@
  * @summary Test the new RSA provider can verify all the RSA certs in the cacerts file
  * @author Andreas Sterbenz
  * @library /test/lib ..
- * @library ../../../../java/security/testlibrary
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestCACerts
- * @run main/othervm -Djava.security.manager=allow TestCACerts sm TestCACerts.policy
  */
 
 // this test serves as our known answer test
@@ -43,6 +41,7 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
+import jdk.test.lib.security.Providers;
 
 public class TestCACerts extends PKCS11Test {
 

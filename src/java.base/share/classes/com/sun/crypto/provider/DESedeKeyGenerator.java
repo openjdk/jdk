@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public final class DESedeKeyGenerator extends KeyGeneratorSpi {
             java.util.Arrays.fill(tmpkey, (byte)0x00);
         }
 
-        DESedeKey desEdeKey = null;
+        DESedeKey desEdeKey;
         try {
             desEdeKey = new DESedeKey(rawkey);
         } catch (InvalidKeyException ike) {

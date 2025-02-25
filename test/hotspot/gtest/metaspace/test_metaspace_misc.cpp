@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace/chunklevel.hpp"
@@ -67,7 +66,7 @@ TEST_VM(metaspace, misc_max_alloc_size)   {
       ASSERT_NOT_NULL(p);
     }
     // And also, successfully deallocate it.
-    cld->metaspace_non_null()->deallocate(p, sz, in_class_space);
+    cld->metaspace_non_null()->deallocate(p, sz);
   }
 }
 
@@ -75,11 +74,11 @@ TEST_VM(metaspace, chunklevel_utils)   {
 
   // These tests seem to be really basic, but it is amazing what one can
   // break accidentally...
-  LOG(SIZE_FORMAT, MAX_CHUNK_BYTE_SIZE);
-  LOG(SIZE_FORMAT, MIN_CHUNK_BYTE_SIZE);
-  LOG(SIZE_FORMAT, MIN_CHUNK_WORD_SIZE);
-  LOG(SIZE_FORMAT, MAX_CHUNK_WORD_SIZE);
-  LOG(SIZE_FORMAT, MAX_CHUNK_BYTE_SIZE);
+  LOG("%zu", MAX_CHUNK_BYTE_SIZE);
+  LOG("%zu", MIN_CHUNK_BYTE_SIZE);
+  LOG("%zu", MIN_CHUNK_WORD_SIZE);
+  LOG("%zu", MAX_CHUNK_WORD_SIZE);
+  LOG("%zu", MAX_CHUNK_BYTE_SIZE);
   LOG("%u", (unsigned)ROOT_CHUNK_LEVEL);
   LOG("%u", (unsigned)HIGHEST_CHUNK_LEVEL);
   LOG("%u", (unsigned)LOWEST_CHUNK_LEVEL);

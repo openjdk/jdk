@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,6 @@ package java.nio.file;
 /**
  * Checked exception thrown when a file system operation is denied, typically
  * due to a file permission or other access check.
- *
- * <p> This exception is not related to the {@link
- * java.security.AccessControlException AccessControlException} or {@link
- * SecurityException} thrown by access controllers or security managers when
- * access to a file is denied.
  *
  * @since 1.7
  */

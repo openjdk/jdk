@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 
 import jdk.jfr.Recording;
 import jdk.jfr.internal.event.EventConfiguration;
+import jdk.jfr.internal.management.HiddenWait;
 import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.util.ValueFormatter;
 
@@ -55,7 +56,7 @@ public final class JVMSupport {
     private static boolean checkAvailability() {
         // set jfr.unsupported.vm to true to test API on an unsupported VM
         try {
-            if (SecuritySupport.getBooleanProperty("jfr.unsupported.vm")) {
+            if (Boolean.getBoolean("jfr.unsupported.vm")) {
                 return false;
             }
         } catch (NoClassDefFoundError cnfe) {
@@ -103,7 +104,6 @@ public final class JVMSupport {
 
     static long getChunkStartNanos() {
         long nanos = JVM.getChunkStartNanos();
-        // JVM::getChunkStartNanos() may return a bumped timestamp, +1 ns or +2 ns.
         // Spin here to give Instant.now() a chance to catch up.
         awaitUniqueTimestamp();
         return nanos;
@@ -119,11 +119,8 @@ public final class JVMSupport {
                 lastTimestamp = time;
                 return;
             }
-            try {
-                Thread.sleep(0, 100);
-            } catch (InterruptedException iex) {
-                // ignore
-            }
+            HiddenWait hiddenWait = new HiddenWait();
+            hiddenWait.takeNap(1);
         }
     }
 

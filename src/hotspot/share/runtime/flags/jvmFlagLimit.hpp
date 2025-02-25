@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ public:
   // dummy - no range or constraint. This object will not be emitted into the .o file
   // because we declare it as "const" but has no reference to it.
   constexpr JVMTypedFlagLimit(int type_enum) :
-  JVMFlagLimit(0, 0, JVMFlagConstraintPhase::AtParse, 0), _min(0), _max(0) {}
+  JVMFlagLimit(0, 0, JVMFlagConstraintPhase::AtParse, 0), _min(), _max() {}
 
   // range only
   constexpr JVMTypedFlagLimit(int type_enum, T min, T max) :
@@ -163,7 +163,7 @@ public:
 
   // constraint only
   constexpr JVMTypedFlagLimit(int type_enum, ConstraintMarker dummy2, short func, JVMFlagConstraintPhase phase) :
-    JVMFlagLimit(type_enum, func, phase, HAS_CONSTRAINT), _min(0), _max(0) {}
+    JVMFlagLimit(type_enum, func, phase, HAS_CONSTRAINT), _min(), _max() {}
 
   // range and constraint
   constexpr JVMTypedFlagLimit(int type_enum, T min, T max, ConstraintMarker dummy2, short func, JVMFlagConstraintPhase phase)  :

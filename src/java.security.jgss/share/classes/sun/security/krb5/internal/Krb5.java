@@ -31,7 +31,6 @@
 
 package sun.security.krb5.internal;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.util.Debug;
 
 import java.util.Hashtable;
@@ -134,6 +133,7 @@ public class Krb5 {
     // number of retries before giving up
 
     public static final int KDC_RETRY_LIMIT = 3;
+    public static final int KDC_TIMEOUT = 30000;
     public static final int KDC_DEFAULT_UDP_PREF_LIMIT = 1465;
     public static final int KDC_HARD_UDP_LIMIT = 32700;
 
@@ -316,11 +316,8 @@ public class Krb5 {
     }
 
     // Warning: used by NativeCreds.c
-    public static final Debug DEBUG = Debug.of("krb5", GetPropertyAction
-            .privilegedGetProperty("sun.security.krb5.debug"));
-
-    public static final sun.security.util.HexDumpEncoder hexDumper =
-        new sun.security.util.HexDumpEncoder();
+    public static final Debug DEBUG = Debug.of("krb5",
+            System.getProperty("sun.security.krb5.debug"));
 
     static {
         errMsgList = new Hashtable<Integer,String> ();

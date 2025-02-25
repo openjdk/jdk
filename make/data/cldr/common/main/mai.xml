@@ -155,6 +155,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="hax">दक्षिणी हैदा</language>
 			<language type="he">हीब्रू</language>
 			<language type="hi">हिन्दी</language>
+			<language type="hi_Latn">हिन्दी (ल्याटिन)</language>
 			<language type="hil">हिलिगेनन</language>
 			<language type="hmn">मौंग</language>
 			<language type="hr">क्रोशियाई</language>
@@ -433,6 +434,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yrl">एनहींगाटु</language>
 			<language type="yue">केंटोनी</language>
 			<language type="yue" alt="menu">चीनी, केंटोनी</language>
+			<language type="za">जा</language>
 			<language type="zgh">मानक मोरोक्कन टेमेजिग्थ</language>
 			<language type="zh">चीनी</language>
 			<language type="zh" alt="menu">चीनी, मैंडेरिन</language>
@@ -658,7 +660,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">इजरायल</territory>
 			<territory type="IM">आइल ऑफ मैन</territory>
 			<territory type="IN">भारत</territory>
-			<territory type="IO" draft="provisional">ब्रिटिश हिंद महासागरीय क्षेत्र</territory>
+			<territory type="IO">ब्रिटिश हिंद महासागरीय क्षेत्र</territory>
 			<territory type="IQ">इराक</territory>
 			<territory type="IR">ईरान</territory>
 			<territory type="IS">आइसलैंड</territory>
@@ -834,9 +836,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">ग्रेगोरियन कैलेंडर</type>
 			<type key="calendar" type="hebrew">हीब्रू कैलेंडर</type>
 			<type key="calendar" type="indian">भारतीय राष्ट्रीय कैलेंडर</type>
-			<type key="calendar" type="islamic" draft="provisional">इस्लामिक कैलेंडर</type>
-			<type key="calendar" type="islamic-civil" draft="provisional">इस्लामिक कैलेंडर (टैबुलर, सिविल एपेक)</type>
-			<type key="calendar" type="islamic-umalqura" draft="provisional">इस्लामिक कैलेंडर (उम अल कुरा)</type>
+			<type key="calendar" type="islamic">इस्लामिक कैलेंडर</type>
+			<type key="calendar" type="islamic-civil">इस्लामिक कैलेंडर (टैबुलर, सिविल एपेक)</type>
+			<type key="calendar" type="islamic-umalqura">इस्लामिक कैलेंडर (उम अल कुरा)</type>
 			<type key="calendar" type="iso8601">ISO-8601 कैलेंडर</type>
 			<type key="calendar" type="japanese">जापानी कैलेंडर</type>
 			<type key="calendar" type="persian">फारसी कैलेंडर</type>
@@ -1054,15 +1056,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="tue">मंगल</day>
 							<day type="wed">बुध</day>
 							<day type="thu">गुरु</day>
-							<day type="fri">शुक्र</day>
-							<day type="sat">शनि</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">रवि</day>
-							<day type="mon">सोम</day>
-							<day type="tue">मंगल</day>
-							<day type="wed">बुध</day>
-							<day type="thu">बृहस्पति</day>
 							<day type="fri">शुक्र</day>
 							<day type="sat">शनि</day>
 						</dayWidth>
@@ -2153,9 +2146,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>उलनबटोर</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>चोइबलसेन</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>मकाऊ</exemplarCity>
 			</zone>
@@ -2824,13 +2814,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>चीनी डेलाइट टाइम</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>चोइबलसेन टाइम</generic>
-					<standard>चोइबलसेन मानक टाइम</standard>
-					<daylight>चोइबलसेन समर टाइम</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>क्रिसमस द्वीप टाइम</standard>
@@ -3338,9 +3321,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
-		<currencyFormats numberSystem="latn">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
 		<currencies>
 			<currency type="BRL">
 				<displayName>ब्राज़ीली रियाल</displayName>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,12 @@ import java.io.*;
 import java.math.*;
 import java.util.*;
 import java.text.*;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 import javax.sql.rowset.*;
 import javax.sql.rowset.spi.*;
 import javax.sql.rowset.serial.*;
 import com.sun.rowset.internal.*;
 import com.sun.rowset.providers.*;
-import sun.reflect.misc.ReflectUtil;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -357,7 +353,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * <P>
      * @throws SQLException if an error occurs
      */
-    @SuppressWarnings("removal")
     public CachedRowSetImpl() throws SQLException {
 
         try {
@@ -367,16 +362,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         }
 
         // set the Reader, this maybe overridden latter
-        try {
-            provider = AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
-                @Override
-                public SyncProvider run() throws SyncFactoryException {
-                    return SyncFactory.getInstance(DEFAULT_SYNC_PROVIDER);
-                }
-            }, null, new RuntimePermission("accessClassInPackage.com.sun.rowset.providers"));
-        } catch (PrivilegedActionException pae) {
-            throw (SyncFactoryException) pae.getException();
-        }
+        provider = SyncFactory.getInstance(DEFAULT_SYNC_PROVIDER);
 
         if (!(provider instanceof RIOptimisticProvider)) {
             throw new SQLException(resBundle.handleGetObject("cachedrowsetimpl.invalidp").toString());
@@ -2976,7 +2962,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 // create new instance of the class
                 SQLData obj = null;
                 try {
-                    ReflectUtil.checkPackageAccess(c);
                     @SuppressWarnings("deprecation")
                     Object tmp = c.newInstance();
                     obj = (SQLData) tmp;
@@ -5726,7 +5711,6 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 // create new instance of the class
                 SQLData obj = null;
                 try {
-                    ReflectUtil.checkPackageAccess(c);
                     @SuppressWarnings("deprecation")
                     Object tmp = c.newInstance();
                     obj = (SQLData) tmp;

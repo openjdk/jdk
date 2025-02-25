@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/serialArguments.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/flagSetting.hpp"
@@ -63,13 +62,11 @@ class TestGenCollectorPolicy {
       AutoSaveRestore<size_t> FLAG_GUARD(MaxNewSize);
       AutoSaveRestore<size_t> FLAG_GUARD(MinHeapDeltaBytes);
       AutoSaveRestore<size_t> FLAG_GUARD(NewSize);
-      AutoSaveRestore<size_t> FLAG_GUARD(OldSize);
 
       MinHeapSize = 40 * M;
       FLAG_SET_ERGO(InitialHeapSize, 100 * M);
-      FLAG_SET_ERGO(OldSize, 4 * M);
       FLAG_SET_ERGO(NewSize, 1 * M);
-      FLAG_SET_ERGO(MaxNewSize, 80 * M);
+      FLAG_SET_ERGO(MaxNewSize, 50 * M);
 
       ASSERT_NO_FATAL_FAILURE(setter1->execute());
 
@@ -144,14 +141,6 @@ class TestGenCollectorPolicy {
     }
   };
 
-  class SetOldSizeCmd : public UnaryExecutor {
-   public:
-    SetOldSizeCmd(size_t param) : UnaryExecutor(param) { }
-    void execute() {
-      FLAG_SET_CMDLINE(OldSize, param);
-    }
-  };
-
   class SetMaxNewSizeCmd : public BinaryExecutor {
    public:
     SetMaxNewSizeCmd(size_t param1, size_t param2) : BinaryExecutor(param1, param2) { }
@@ -162,49 +151,6 @@ class TestGenCollectorPolicy {
       FLAG_SET_CMDLINE(MaxNewSize, new_size_value);
     }
   };
-
-  class CheckOldMin : public UnaryExecutor {
-   public:
-    CheckOldMin(size_t param) : UnaryExecutor(param) { }
-    void execute() {
-      SerialArguments sa;
-      sa.initialize_heap_sizes();
-      ASSERT_LE(MinOldSize, param);
-    }
-  };
-
-  class CheckOldInitial : public Executor {
-   public:
-    void execute() {
-      size_t heap_alignment = GCArguments::compute_heap_alignment();
-
-      SerialArguments sa;
-      sa.initialize_heap_sizes();
-
-      size_t expected_old_initial = align_up(InitialHeapSize, heap_alignment)
-              - MaxNewSize;
-
-      ASSERT_EQ(expected_old_initial, OldSize);
-    }
-  };
-
-  class CheckOldInitialMaxNewSize : public BinaryExecutor {
-   public:
-    CheckOldInitialMaxNewSize(size_t param1, size_t param2) : BinaryExecutor(param1, param2) { }
-    void execute() {
-      size_t heap_alignment = GCArguments::compute_heap_alignment();
-      size_t new_size_value = align_up(MaxHeapSize, heap_alignment)
-              - param1 + param2;
-
-      SerialArguments sa;
-      sa.initialize_heap_sizes();
-
-      size_t expected_old_initial = align_up(MaxHeapSize, heap_alignment)
-              - new_size_value;
-
-      ASSERT_EQ(expected_old_initial, OldSize);
-    }
-  };
 };
 
 
@@ -212,19 +158,16 @@ class TestGenCollectorPolicy {
 // depends on so many other configurable variables. These tests only try to
 // verify that there are some basic rules for NewSize honored by the policies.
 
-// If NewSize has been ergonomically set, the collector policy
-// should use it for min
-TEST_VM(CollectorPolicy, young_min_ergo) {
-  TestGenCollectorPolicy::SetNewSizeErgo setter(20 * M);
-  TestGenCollectorPolicy::CheckYoungMin checker(20 * M);
-
-  TestGenCollectorPolicy::TestWrapper::test(&setter, &checker);
-}
+// Tests require at least 128M of MaxHeap
+// otherwise ergonomic is different and generation sizes might be changed.
 
 // If NewSize has been ergonomically set, the collector policy
 // should use it for min but calculate the initial young size
 // using NewRatio.
 TEST_VM(CollectorPolicy, young_scaled_initial_ergo) {
+  if (MaxHeapSize < 128 * M) {
+      return;
+  }
   TestGenCollectorPolicy::SetNewSizeErgo setter(20 * M);
   TestGenCollectorPolicy::CheckScaledYoungInitial checker;
 
@@ -237,6 +180,9 @@ TEST_VM(CollectorPolicy, young_scaled_initial_ergo) {
 // the rest of the VM lifetime. This is an irreversible change and
 // could impact other tests so we use TEST_OTHER_VM
 TEST_OTHER_VM(CollectorPolicy, young_cmd) {
+  if (MaxHeapSize < 128 * M) {
+    return;
+  }
   // If NewSize is set on the command line, it should be used
   // for both min and initial young size if less than min heap.
   TestGenCollectorPolicy::SetNewSizeCmd setter(20 * M);
@@ -249,33 +195,7 @@ TEST_OTHER_VM(CollectorPolicy, young_cmd) {
 
   // If NewSize is set on command line, but is larger than the min
   // heap size, it should only be used for initial young size.
-  TestGenCollectorPolicy::SetNewSizeCmd setter_large(80 * M);
-  TestGenCollectorPolicy::CheckYoungInitial checker_large(80 * M);
+  TestGenCollectorPolicy::SetNewSizeCmd setter_large(50 * M);
+  TestGenCollectorPolicy::CheckYoungInitial checker_large(50 * M);
   TestGenCollectorPolicy::TestWrapper::test(&setter_large, &checker_large);
-}
-
-// Since a flag has been set with FLAG_SET_CMDLINE it
-// will be treated as it have been set on the command line for
-// the rest of the VM lifetime. This is an irreversible change and
-// could impact other tests so we use TEST_OTHER_VM
-TEST_OTHER_VM(CollectorPolicy, old_cmd) {
-  // If OldSize is set on the command line, it should be used
-  // for both min and initial old size if less than min heap.
-  TestGenCollectorPolicy::SetOldSizeCmd setter(20 * M);
-
-  TestGenCollectorPolicy::CheckOldMin checker_min(20 * M);
-  TestGenCollectorPolicy::TestWrapper::test(&setter, &checker_min);
-
-  TestGenCollectorPolicy::CheckOldInitial checker_initial;
-  TestGenCollectorPolicy::TestWrapper::test(&setter, &checker_initial);
-
-  // If MaxNewSize is large, the maximum OldSize will be less than
-  // what's requested on the command line and it should be reset
-  // ergonomically.
-  // We intentionally set MaxNewSize + OldSize > MaxHeapSize
-  TestGenCollectorPolicy::SetOldSizeCmd setter_old_size(30 * M);
-  TestGenCollectorPolicy::SetMaxNewSizeCmd setter_max_new_size(30 * M, 20 * M);
-  TestGenCollectorPolicy::CheckOldInitialMaxNewSize checker_large(30 * M, 20 * M);
-
-  TestGenCollectorPolicy::TestWrapper::test(&setter_old_size, &setter_max_new_size, &checker_large);
 }

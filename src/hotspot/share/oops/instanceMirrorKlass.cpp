@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -41,7 +40,7 @@
 int InstanceMirrorKlass::_offset_of_static_fields = 0;
 
 InstanceMirrorKlass::InstanceMirrorKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
 size_t InstanceMirrorKlass::instance_size(Klass* k) {
@@ -54,7 +53,7 @@ size_t InstanceMirrorKlass::instance_size(Klass* k) {
 instanceOop InstanceMirrorKlass::allocate_instance(Klass* k, TRAPS) {
   // Query before forming handle.
   size_t size = instance_size(k);
-  assert(size > 0, "total object size must be non-zero: " SIZE_FORMAT, size);
+  assert(size > 0, "total object size must be non-zero: %zu", size);
 
   // Since mirrors can be variable sized because of the static fields, store
   // the size in the mirror itself.

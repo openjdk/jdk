@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,11 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import java.nio.ByteBuffer;
-import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
@@ -380,14 +378,7 @@ enum SSLCipher {
 
     static  {
         final long max = 4611686018427387904L; // 2^62
-        @SuppressWarnings("removal")
-        String prop = AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-            @Override
-            public String run() {
-                return Security.getProperty("jdk.tls.keyLimits");
-            }
-        });
+        String prop = Security.getProperty("jdk.tls.keyLimits");
 
         if (prop != null) {
             String[] propvalue = prop.split(",");
@@ -1859,10 +1850,20 @@ enum SSLCipher {
                 }
 
                 if (bb.remaining() <= tagSize) {
-                    throw new BadPaddingException(
-                        "Insufficient buffer remaining for AEAD cipher " +
-                        "fragment (" + bb.remaining() + "). Needs to be " +
-                        "more than tag size (" + tagSize + ")");
+                    // Check for unexpected plaintext alert.
+                    if (contentType == ContentType.ALERT.id
+                            && bb.remaining() == 2) {
+                        throw new GeneralSecurityException(String.format(
+                            "Unexpected plaintext alert received: " +
+                            "Level: %s; Alert: %s",
+                            Alert.Level.nameOf(bb.get(bb.position())),
+                            Alert.nameOf(bb.get(bb.position() + 1))));
+                    } else {
+                        throw new BadPaddingException(
+                            "Insufficient buffer remaining for AEAD cipher " +
+                            "fragment (" + bb.remaining() + "). Needs to be " +
+                            "more than tag size (" + tagSize + ")");
+                    }
                 }
 
                 byte[] sn = sequence;

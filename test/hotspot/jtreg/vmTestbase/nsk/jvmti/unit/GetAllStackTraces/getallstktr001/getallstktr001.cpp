@@ -179,7 +179,7 @@ void compare_all_frames(int ti, int frames_count,
         printf("thr #%d: compare frame #%d: fields are the same: "
                " method: 0x%p, location: %#" LL "x\n",
                ti, fi, fr1->method, fr1->location);
-        fflush(0);
+        fflush(nullptr);
     }
 }
 
@@ -225,7 +225,7 @@ void compare_one_stack_trace(int ti,
            " jthread: 0x%p, state: %d, frame_count: %d\n",
            ti, stk1->thread, stk1->state, stk1->frame_count);
 
-    fflush(0);
+    fflush(nullptr);
     compare_all_frames(ti,
                        stk1->frame_count,
                        stk1->frame_buffer,
@@ -291,7 +291,7 @@ Java_nsk_jvmti_unit_GetAllStackTraces_getallstktr001_GetThreadsInfo(
             iGlobalStatus = STATUS_FAILED;
         }
         printf("GetThreadInfo %d: thread: %s\n", ti, thread_info[ti].name);
-        fflush(0);
+        fflush(nullptr);
     }
 }
 

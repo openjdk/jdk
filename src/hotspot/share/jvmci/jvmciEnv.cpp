@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -399,9 +398,11 @@ class ExceptionTranslation: public StackObj {
     _encoded_ok        = 0, // exception was successfully encoded into buffer
     _buffer_alloc_fail = 1, // native memory for buffer could not be allocated
     _encode_oome_fail  = 2, // OutOfMemoryError thrown during encoding
-    _encode_fail       = 3  // some other problem occured during encoding. If buffer != 0,
+    _encode_fail       = 3, // some other problem occured during encoding. If buffer != 0,
                             // buffer contains a `struct { u4 len; char[len] desc}`
                             // describing the problem
+    _encode_oome_in_vm = 4  // an OutOfMemoryError thrown from within VM code on a
+                            // thread that cannot call Java (OOME has no stack trace)
   };
 
   JVMCIEnv*  _from_env; // Source of translation. Can be null.
@@ -488,6 +489,12 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
 
   int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
     if (!THREAD->can_call_java()) {
+      Symbol *ex_name = _throwable->klass()->name();
+      if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+        JVMCI_event_1("translating exception: OutOfMemoryError within VM code");
+        decode(THREAD, _encode_oome_in_vm, 0L);
+        return 0;
+      }
       char* char_buffer = print_throwable_to_buffer(_throwable, buffer, buffer_size);
       const char* detail = log_is_enabled(Info, exceptions) ? "" : " (-Xlog:exceptions may give more detail)";
       JVMCI_event_1("cannot call Java to translate exception%s: %s", detail, char_buffer);
@@ -514,6 +521,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
   }
 
   void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) {
+    JVMCI_event_1("decoding exception from JVM heap (format: %d, buffer[%d]) ", format, buffer == 0L ? -1 : *((u4*) buffer));
     JNIAccessMark jni(_to_env, THREAD);
     jni()->CallStaticVoidMethod(JNIJVMCI::VMSupport::clazz(),
                                 JNIJVMCI::VMSupport::decodeAndThrowThrowable_method(),
@@ -545,6 +553,7 @@ class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
   }
 
   void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) {
+    JVMCI_event_1("decoding exception to JVM heap (format: %d, buffer[%d]) ", format, buffer == 0L ? -1 : *((u4*) buffer));
     Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, CHECK);
     JavaCallArguments jargs;
     jargs.push_int(format);
@@ -603,7 +612,7 @@ JVMCIEnv::~JVMCIEnv() {
   if (_init_error_msg != nullptr) {
     // The memory allocated in libjvmci was not allocated with os::malloc
     // so must not be freed with os::free.
-    ALLOW_C_FUNCTION(::free((void*) _init_error_msg));
+    ALLOW_C_FUNCTION(::free, ::free((void*) _init_error_msg);)
   }
   if (_init_error != JNI_OK) {
     return;
@@ -931,9 +940,8 @@ void JVMCIEnv::fthrow_error(const char* file, int line, const char* format, ...)
   va_end(ap);
   JavaThread* THREAD = JavaThread::current();
   if (is_hotspot()) {
-    Handle h_loader = Handle();
-    Handle h_protection_domain = Handle();
-    Exceptions::_throw_msg(THREAD, file, line, vmSymbols::jdk_vm_ci_common_JVMCIError(), msg, h_loader, h_protection_domain);
+    Handle h_loader;
+    Exceptions::_throw_msg(THREAD, file, line, vmSymbols::jdk_vm_ci_common_JVMCIError(), msg, h_loader );
   } else {
     JNIAccessMark jni(this, THREAD);
     jni()->ThrowNew(JNIJVMCI::JVMCIError::clazz(), msg);
@@ -958,6 +966,31 @@ jboolean JVMCIEnv::call_HotSpotJVMCIRuntime_isGCSupported (JVMCIObject runtime, 
                                                      JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
                                                      JNIJVMCI::HotSpotJVMCIRuntime::isGCSupported_method(),
                                                      gcIdentifier);
+    if (jni()->ExceptionCheck()) {
+      return false;
+    }
+    return result;
+  }
+}
+
+jboolean JVMCIEnv::call_HotSpotJVMCIRuntime_isIntrinsicSupported (JVMCIObject runtime, jint intrinsicIdentifier) {
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
+  if (is_hotspot()) {
+    JavaCallArguments jargs;
+    jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(runtime)));
+    jargs.push_int(intrinsicIdentifier);
+    JavaValue result(T_BOOLEAN);
+    JavaCalls::call_special(&result,
+                            HotSpotJVMCI::HotSpotJVMCIRuntime::klass(),
+                            vmSymbols::isIntrinsicSupported_name(),
+                            vmSymbols::int_bool_signature(), &jargs, CHECK_0);
+    return result.get_jboolean();
+  } else {
+    JNIAccessMark jni(this, THREAD);
+    jboolean result = jni()->CallNonvirtualBooleanMethod(runtime.as_jobject(),
+                                                     JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
+                                                     JNIJVMCI::HotSpotJVMCIRuntime::isIntrinsicSupported_method(),
+                                                     intrinsicIdentifier);
     if (jni()->ExceptionCheck()) {
       return false;
     }
@@ -1558,7 +1591,7 @@ JVMCIObject JVMCIEnv::new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS) {
     HotSpotJVMCI::FieldInfo::set_nameIndex(JVMCIENV, obj_h(), (jint)fieldinfo->name_index());
     HotSpotJVMCI::FieldInfo::set_signatureIndex(JVMCIENV, obj_h(), (jint)fieldinfo->signature_index());
     HotSpotJVMCI::FieldInfo::set_offset(JVMCIENV, obj_h(), (jint)fieldinfo->offset());
-    HotSpotJVMCI::FieldInfo::set_classfileFlags(JVMCIENV, obj_h(), (jint)fieldinfo->access_flags().as_int());
+    HotSpotJVMCI::FieldInfo::set_classfileFlags(JVMCIENV, obj_h(), (jint)fieldinfo->access_flags().as_field_flags());
     HotSpotJVMCI::FieldInfo::set_internalFlags(JVMCIENV, obj_h(), (jint)fieldinfo->field_flags().as_uint());
     HotSpotJVMCI::FieldInfo::set_initializerIndex(JVMCIENV, obj_h(), (jint)fieldinfo->initializer_index());
     return wrap(obj_h());
@@ -1569,7 +1602,7 @@ JVMCIObject JVMCIEnv::new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS) {
                                       (jint)fieldinfo->name_index(),
                                       (jint)fieldinfo->signature_index(),
                                       (jint)fieldinfo->offset(),
-                                      (jint)fieldinfo->access_flags().as_int(),
+                                      (jint)fieldinfo->access_flags().as_field_flags(),
                                       (jint)fieldinfo->field_flags().as_uint(),
                                       (jint)fieldinfo->initializer_index());
 

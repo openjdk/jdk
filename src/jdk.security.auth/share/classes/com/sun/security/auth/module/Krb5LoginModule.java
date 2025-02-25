@@ -43,7 +43,7 @@ import sun.security.krb5.*;
 import sun.security.jgss.krb5.Krb5Util;
 import sun.security.krb5.Credentials;
 import sun.security.util.Debug;
-import sun.security.util.HexDumpEncoder;
+
 import static sun.security.util.ResourcesMgr.getAuthResourceString;
 
 /**
@@ -769,15 +769,11 @@ public class Krb5LoginModule implements LoginModule {
 
                 if (debug != null) {
                     debug.println("principal is " + principal);
-                    HexDumpEncoder hd = new HexDumpEncoder();
                     if (ktab != null) {
                         debug.println("Will use keytab");
                     } else if (storeKey) {
                         for (int i = 0; i < encKeys.length; i++) {
-                            debug.println("EncryptionKey: keyType=" +
-                                encKeys[i].getEType() +
-                                " keyBytes (hex dump)=" +
-                                hd.encodeBuffer(encKeys[i].getBytes()));
+                            debug.println(encKeys[i].toString());
                         }
                     }
                 }
@@ -868,7 +864,7 @@ public class Krb5LoginModule implements LoginModule {
             }
             if (debug != null) {
                 debug.println
-                    ("password is " + new String(password));
+                    ("Get password from shared state");
             }
             return;
         }

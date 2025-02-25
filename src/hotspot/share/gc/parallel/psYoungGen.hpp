@@ -27,9 +27,10 @@
 
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/objectStartArray.hpp"
-#include "gc/parallel/psGenerationCounters.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/parallel/spaceCounters.hpp"
+
+class ReservedSpace;
 
 class PSYoungGen : public CHeapObj<mtGC> {
   friend class VMStructs;
@@ -49,7 +50,7 @@ class PSYoungGen : public CHeapObj<mtGC> {
   const size_t _max_gen_size;
 
   // Performance counters
-  PSGenerationCounters* _gen_counters;
+  GenerationCounters*   _gen_counters;
   SpaceCounters*        _eden_counters;
   SpaceCounters*        _from_counters;
   SpaceCounters*        _to_counters;
@@ -152,8 +153,6 @@ class PSYoungGen : public CHeapObj<mtGC> {
                         MemRegion s1MR,
                         MutableSpace* s2,
                         MemRegion s2MR) PRODUCT_RETURN;
-
-  void record_spaces_top() PRODUCT_RETURN;
 };
 
 #endif // SHARE_GC_PARALLEL_PSYOUNGGEN_HPP

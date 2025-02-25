@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,24 +114,19 @@ public final class HexDigits {
     }
 
     /**
-     * Return a little-endian packed integer for the 4 ASCII bytes for an input unsigned 2-byte integer.
-     * {@code b0} is the most significant byte and {@code b1} is the least significant byte.
-     * The integer is passed byte-wise to allow reordering of execution.
+     * Insert the unsigned 2-byte integer into the buffer as 4 hexadecimal digit ASCII bytes,
+     * only least significant 16 bits of {@code value} are used.
+     * @param buffer byte buffer to copy into
+     * @param index insert point
+     * @param value to convert
      */
-    public static int packDigits(int b0, int b1) {
-        return DIGITS[b0 & 0xff] | (DIGITS[b1 & 0xff] << 16);
-    }
-
-    /**
-     * Return a little-endian packed long for the 8 ASCII bytes for an input unsigned 4-byte integer.
-     * {@code b0} is the most significant byte and {@code b3} is the least significant byte.
-     * The integer is passed byte-wise to allow reordering of execution.
-     */
-    public static long packDigits(int b0, int b1, int b2, int b3) {
-        return DIGITS[b0 & 0xff]
-                | (DIGITS[b1 & 0xff] << 16)
-                | (((long) DIGITS[b2 & 0xff]) << 32)
-                | (((long) DIGITS[b3 & 0xff]) << 48);
+    public static void put4(byte[] buffer, int index, int value) {
+        // Prepare an int value so C2 generates a 4-byte write instead of two 2-byte writes
+        int v = (DIGITS[value & 0xff] << 16) | DIGITS[(value >> 8) & 0xff];
+        buffer[index]     = (byte)  v;
+        buffer[index + 1] = (byte) (v >> 8);
+        buffer[index + 2] = (byte) (v >> 16);
+        buffer[index + 3] = (byte) (v >> 24);
     }
 
     /**

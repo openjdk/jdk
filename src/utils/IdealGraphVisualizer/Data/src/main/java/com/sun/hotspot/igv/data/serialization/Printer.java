@@ -103,10 +103,15 @@ public class Printer {
             for (InputNode n : removed) {
                 writer.simpleTag(Parser.REMOVE_NODE_ELEMENT, new Properties(Parser.NODE_ID_PROPERTY, Integer.toString(n.getId())));
             }
-        }
-
-        for (InputNode n : graph.getNodes()) {
-            if (!difference || !equal.contains(n)) {
+            for (InputNode n : graph.getNodes()) {
+                if (!equal.contains(n)) {
+                    writer.startTag(Parser.NODE_ELEMENT, new Properties(Parser.NODE_ID_PROPERTY, Integer.toString(n.getId())));
+                    writer.writeProperties(n.getProperties());
+                    writer.endTag(); // Parser.NODE_ELEMENT
+                }
+            }
+        } else {
+            for (InputNode n : graph.getNodes()) {
                 writer.startTag(Parser.NODE_ELEMENT, new Properties(Parser.NODE_ID_PROPERTY, Integer.toString(n.getId())));
                 writer.writeProperties(n.getProperties());
                 writer.endTag(); // Parser.NODE_ELEMENT
@@ -227,6 +232,10 @@ public class Printer {
             b.append(code.getBci());
             b.append(" ");
             b.append(code.getName());
+            b.append(" ");
+            b.append(code.getOperands());
+            b.append(" ");
+            b.append(code.getComment());
             b.append("\n");
         }
 

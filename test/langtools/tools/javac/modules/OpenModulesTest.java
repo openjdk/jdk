@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
  * @test
  * @summary tests for multi-module mode compilation
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.ModuleBuilder ModuleTestBase
  * @run main OpenModulesTest
@@ -233,7 +231,7 @@ public class OpenModulesTest extends ModuleTestBase {
 
         Path miClass = m1Classes.resolve("module-info.class");
         ClassModel cm = ClassFile.of().parse(miClass);
-        ModuleAttribute module = cm.findAttribute(Attributes.MODULE).orElseThrow();
+        ModuleAttribute module = cm.findAttribute(Attributes.module()).orElseThrow();
         ModuleAttribute newModule = ModuleAttribute.of(module.moduleName(),
                                                           module.moduleFlagsMask() | ClassFile.ACC_OPEN,
                                                           module.moduleVersion().orElse(null),
@@ -243,7 +241,7 @@ public class OpenModulesTest extends ModuleTestBase {
                                                           module.uses(),
                                                           module.provides());
 
-        byte[] newBytes = ClassFile.of().transform(cm, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
+        byte[] newBytes = ClassFile.of().transformClass(cm, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
                 andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(newModule))));
         try (OutputStream out = Files.newOutputStream(miClass)) {
             out.write(newBytes);

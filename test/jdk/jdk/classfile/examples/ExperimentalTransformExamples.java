@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class ExperimentalTransformExamples {
     };
 
     public byte[] deleteAnnotations(ClassModel cm) {
-        return ClassFile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transformClass(cm, (cb, ce) -> {
             switch (ce) {
                 case MethodModel m -> cb.transformMethod(m, dropMethodAnnos);
                 case FieldModel f -> cb.transformField(f, dropFieldAnnos);

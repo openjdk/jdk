@@ -1,6 +1,10 @@
+#
+# Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
 # This file identifies the root of the test-suite hierarchy.
 # It also contains test-suite configuration information.
-
+#
 # The list of keywords supported in the entire test suite.  The
 # "intermittent" keyword marks tests known to fail intermittently.
 # The "randomness" keyword marks tests using randomness with test
@@ -11,7 +15,7 @@
 #
 # A test flagged with cgroups uses cgroups.
 #
-# Notes on "client" keywords : headful sound printer multimon 
+# Notes on "client" keywords : headful sound printer multimon
 # ===========================================================
 #
 # These keywords are there to help with test selection so that
@@ -31,7 +35,7 @@
 # Tests may not fail if there is none, instead just silently return.
 # But they also may legitimately throw an Exception depending on the test.
 # Also printer tests are not necessarily headful, but some are, and some are automated.
-# 
+#
 # "sound". Similarly, not all sound tests require audio devices, but many do.
 # A test flagged with key "sound" needs audio devices on the system.
 # Also they are not necessarily "headful", since they don't require a display etc.
@@ -43,7 +47,7 @@
 # tests which require two displays connected.
 
 keys=headful sound printer multimon \
-     i18n intermittent randomness jfr cgroups
+     i18n intermittent randomness cgroups
 
 # Tests that must run in othervm mode
 othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/swing javax/print \
@@ -70,13 +74,20 @@ requires.extraPropDefns.bootlibs = ../lib/jdk/test/whitebox
 requires.extraPropDefns.libs = \
     ../lib/jdk/test/lib/Platform.java \
     ../lib/jdk/test/lib/Container.java
-requires.extraPropDefns.javacOpts = --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
+requires.extraPropDefns.javacOpts = \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
 requires.extraPropDefns.vmOpts = \
-    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI \
-    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
+    -XX:+UnlockDiagnosticVMOptions \
+    -XX:+LogVMOutput -XX:-DisplayVMOutput -XX:LogFile=vmprops.flags.final.vm.log \
+    -XX:+PrintFlagsFinal \
+    -XX:+WhiteBoxAPI \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
 requires.properties= \
     sun.arch.data.model \
     java.runtime.name \
+    java.enablePreview \
     vm.flagless \
     vm.gc.G1 \
     vm.gc.Serial \
@@ -84,8 +95,6 @@ requires.properties= \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
-    vm.gc.ZGenerational \
-    vm.gc.ZSinglegen \
     vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
@@ -99,13 +108,18 @@ requires.properties= \
     vm.jvmci \
     vm.jvmci.enabled \
     vm.jvmti \
-    docker.support \
+    vm.cpu.features \
+    container.support \
+    systemd.support \
     release.implementor \
     jdk.containerized \
-    jdk.foreign.linker
+    jdk.foreign.linker \
+    jlink.runtime.linkable \
+    jlink.packagedModules \
+    jdk.static
 
 # Minimum jtreg version
-requiredVersion=7.3.1+1
+requiredVersion=7.5.1+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

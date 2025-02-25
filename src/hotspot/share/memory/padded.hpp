@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_MEMORY_PADDED_HPP
 #define SHARE_MEMORY_PADDED_HPP
 
-#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -89,7 +89,7 @@ class PaddedEnd : public PaddedEndImpl<T, PADDED_END_SIZE(T, alignment)> {
 
 // Helper class to create an array of PaddedEnd<T> objects. All elements will
 // start at a multiple of alignment and the size will be aligned to alignment.
-template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_PADDING_SIZE>
+template <class T, MemTag MT, size_t alignment = DEFAULT_PADDING_SIZE>
 class PaddedArray {
  public:
   // Creates an aligned padded array.
@@ -100,7 +100,7 @@ class PaddedArray {
 // Helper class to create an array of references to arrays of primitive types
 // Both the array of references and the data arrays are aligned to the given
 // alignment. The allocated memory is zero-filled.
-template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_PADDING_SIZE>
+template <class T, MemTag MT, size_t alignment = DEFAULT_PADDING_SIZE>
 class Padded2DArray {
  public:
   // Creates an aligned padded 2D array.
@@ -112,7 +112,7 @@ class Padded2DArray {
 
 // Helper class to create an array of T objects. The array as a whole will
 // start at a multiple of alignment and its size will be aligned to alignment.
-template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_PADDING_SIZE>
+template <class T, MemTag MT, size_t alignment = DEFAULT_PADDING_SIZE>
 class PaddedPrimitiveArray {
  public:
   static T* create_unfreeable(size_t length);

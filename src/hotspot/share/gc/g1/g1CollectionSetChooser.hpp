@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ class G1CollectionSetChooser : public AllStatic {
 
 public:
   static size_t mixed_gc_live_threshold_bytes() {
-    return HeapRegion::GrainBytes * (size_t) G1MixedGCLiveThresholdPercent / 100;
+    return G1HeapRegion::GrainBytes * (size_t)G1MixedGCLiveThresholdPercent / 100;
   }
 
   static bool region_occupancy_low_enough_for_evac(size_t live_bytes) {

@@ -1946,10 +1946,10 @@ class ciMethodData;
 class MethodData : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
-private:
   friend class ProfileData;
   friend class TypeEntriesAtCall;
   friend class ciMethodData;
+  friend class VM_ReinitializeMDO;
 
   // If you add a new field that points to any metaspace object, you
   // must add this field to MethodData::metaspace_pointers_do().
@@ -1966,11 +1966,18 @@ private:
   Mutex _extra_data_lock;
 
   MethodData(const methodHandle& method);
+
+  void initialize();
+
 public:
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
 
   virtual bool is_methodData() const { return true; }
-  void initialize();
+
+  // Safely reinitialize the data in the MDO.  This is intended as a testing facility as the
+  // reinitialization is performed at a safepoint so it's isn't cheap and it doesn't ensure that all
+  // readers will see consistent profile data.
+  void reinitialize();
 
   // Whole-method sticky bits and flags
   enum {
@@ -2070,11 +2077,6 @@ private:
   int               _invoke_mask;      // per-method Tier0InvokeNotifyFreqLog
   int               _backedge_mask;    // per-method Tier0BackedgeNotifyFreqLog
 
-#if INCLUDE_RTM_OPT
-  // State of RTM code generation during compilation of the method
-  int               _rtm_state;
-#endif
-
   // Number of loops and blocks is computed when compiling the first
   // time with C1. It is used to determine if method is trivial.
   short             _num_loops;
@@ -2085,8 +2087,8 @@ private:
 
 #if INCLUDE_JVMCI
   // Support for HotSpotMethodData.setCompiledIRSize(int)
-  int                _jvmci_ir_size;
   FailedSpeculation* _failed_speculations;
+  int                _jvmci_ir_size;
 #endif
 
   // Size of _data array in bytes.  (Excludes header and extra_data fields.)
@@ -2267,22 +2269,6 @@ public:
 #if INCLUDE_JVMCI
   FailedSpeculation** get_failed_speculations_address() {
     return &_failed_speculations;
-  }
-#endif
-
-#if INCLUDE_RTM_OPT
-  int rtm_state() const {
-    return _rtm_state;
-  }
-  void set_rtm_state(RTMState rstate) {
-    _rtm_state = (int)rstate;
-  }
-  void atomic_set_rtm_state(RTMState rstate) {
-    Atomic::store(&_rtm_state, (int)rstate);
-  }
-
-  static ByteSize rtm_state_offset() {
-    return byte_offset_of(MethodData, _rtm_state);
   }
 #endif
 
@@ -2525,7 +2511,7 @@ public:
 
   void clean_method_data(bool always_clean);
   void clean_weak_method_links();
-  Mutex* extra_data_lock() { return &_extra_data_lock; }
+  Mutex* extra_data_lock() const { return const_cast<Mutex*>(&_extra_data_lock); }
   void check_extra_data_locked() const NOT_DEBUG_RETURN;
 };
 

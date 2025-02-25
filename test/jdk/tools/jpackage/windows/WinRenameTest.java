@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,17 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 
 /*
  * @test
  * @summary jpackage test app can run after changing executable's extension
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build WinRenameTest
  * @requires (os.family == "windows")
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinRenameTest
  */
@@ -51,11 +49,16 @@ public class WinRenameTest {
 
         cmd.executeAndAssertImageCreated();
 
+        if (!cmd.canRunLauncher("Not running the test")) {
+            return;
+        }
+
+        HelloApp.executeLauncherAndVerifyOutput(cmd);
+
         Path launcherPath = cmd.appLauncherPath();
-        HelloApp.assertApp(launcherPath).executeAndVerifyOutput();
 
         String lp = launcherPath.toString();
-        TKit.assertTrue(lp.endsWith(".exe"), "UNexpected launcher path: " + lp);
+        TKit.assertTrue(lp.endsWith(".exe"), "Unexpected launcher path: " + lp);
 
         Path newLauncherPath = Path.of(lp.replaceAll(".exe", ".anything"));
         Files.move(launcherPath, newLauncherPath);

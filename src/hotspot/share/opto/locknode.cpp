@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/locknode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
@@ -192,22 +191,6 @@ uint FastUnlockNode::hash() const { return NO_HASH; }
 //------------------------------cmp--------------------------------------------
 bool FastUnlockNode::cmp( const Node &n ) const {
   return (&n == this);                // Always fail except on self
-}
-
-void FastLockNode::create_rtm_lock_counter(JVMState* state) {
-#if INCLUDE_RTM_OPT
-  Compile* C = Compile::current();
-  if (C->profile_rtm() || (PrintPreciseRTMLockingStatistics && C->use_rtm())) {
-    RTMLockingNamedCounter* rlnc = (RTMLockingNamedCounter*)
-           OptoRuntime::new_named_counter(state, NamedCounter::RTMLockingCounter);
-    _rtm_counters = rlnc->counters();
-    if (UseRTMForStackLocks) {
-      rlnc = (RTMLockingNamedCounter*)
-           OptoRuntime::new_named_counter(state, NamedCounter::RTMLockingCounter);
-      _stack_rtm_counters = rlnc->counters();
-    }
-  }
-#endif
 }
 
 //=============================================================================

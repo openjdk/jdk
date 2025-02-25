@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,68 +26,111 @@
  * @summary Attempt to provoke error 316 on OS X in NativeSignal.signal()
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
+import java.util.concurrent.CountDownLatch;
 
 public class StressNativeSignal {
     private UDPThread udpThread;
     private ServerSocketThread serverSocketThread;
 
     StressNativeSignal() {
-        try {
-            serverSocketThread = new ServerSocketThread();
+        serverSocketThread = initServerSocketThread();
+        if (serverSocketThread != null) {
             serverSocketThread.start();
+        }
 
-            udpThread = new UDPThread();
+        udpThread = initUDPThread();
+        if (udpThread != null) {
             udpThread.start();
+        }
+    }
+
+    private UDPThread initUDPThread() {
+        UDPThread aUDPThread = null;
+        try {
+            aUDPThread = new UDPThread();
         } catch (Exception z) {
+            System.err.println("failed to create and start a UDPThread");
             z.printStackTrace();
         }
+        return aUDPThread;
+    }
+
+    private ServerSocketThread initServerSocketThread() {
+        ServerSocketThread aServerSocketThread = null;
+        try {
+            aServerSocketThread = new ServerSocketThread();
+
+        } catch (Exception z) {
+            System.err.println("failed to create and start a ServerSocketThread");
+            z.printStackTrace();
+        }
+        return aServerSocketThread;
     }
 
     public static void main(String[] args) throws Throwable {
         StressNativeSignal test = new StressNativeSignal();
-        try {
-            Thread.sleep(3000);
-        } catch (Exception z) {
-            z.printStackTrace(System.err);
-        }
-
+        test.waitForTestThreadsToStart();
         test.shutdown();
     }
 
     public void shutdown() {
-        udpThread.terminate();
-        try {
-            udpThread.join();
-        } catch (Exception z) {
-            z.printStackTrace(System.err);
+        if ((udpThread != null) && udpThread.isAlive()) {
+            udpThread.terminate();
+            try {
+                udpThread.join();
+            } catch (Exception z) {
+                z.printStackTrace(System.err);
+            }
+        } else {
+            System.out.println("UDPThread test scenario was not run");
         }
 
-        serverSocketThread.terminate();
-        try {
-            serverSocketThread.join();
-        } catch (Exception z) {
-            z.printStackTrace(System.err);
+        if ((serverSocketThread != null) && (serverSocketThread.isAlive())) {
+            serverSocketThread.terminate();
+            try {
+                serverSocketThread.join();
+            } catch (Exception z) {
+                z.printStackTrace(System.err);
+            }
+        } else {
+            System.out.println("ServerSocketThread test scenario was not run");
+        }
+    }
+
+    public void waitForTestThreadsToStart() {
+        if ((udpThread != null) && udpThread.isAlive()) {
+            udpThread.waitTestThreadStart();
+        }
+        if ((serverSocketThread != null) && (serverSocketThread.isAlive())) {
+            serverSocketThread.waitTestThreadStart();
         }
     }
 
     public class ServerSocketThread extends Thread {
         private volatile boolean shouldTerminate;
         private ServerSocket socket;
+        private final CountDownLatch threadStarted = new CountDownLatch(1);
+
+        public ServerSocketThread () throws Exception {
+            socket = new ServerSocket(1122);
+        }
 
         public void run() {
+
             try {
-                socket = new ServerSocket(1122);
+                threadStarted.countDown();
                 Socket client = socket.accept();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-                shouldTerminate = false;
-                while (!shouldTerminate) {
-                    String msg = reader.readLine();
-                }
+                client.close();
+                throw new RuntimeException("Unexpected return from accept call");
             } catch (Exception z) {
+                System.err.println("ServerSocketThread: caught exception " + z.getClass().getName());
                 if (!shouldTerminate) {
                     z.printStackTrace(System.err);
                 }
@@ -103,40 +146,61 @@ public class StressNativeSignal {
                 // ignore
             }
         }
+
+        public void waitTestThreadStart() {
+            try {
+                threadStarted.await();
+            } catch (Exception z) {
+                z.printStackTrace(System.err);
+                // ignore
+            }
+        }
     }
 
     public class UDPThread extends Thread {
         private DatagramChannel channel;
         private volatile boolean shouldTerminate;
+        private final CountDownLatch threadStarted = new CountDownLatch(1);
+
+        public UDPThread () throws Exception {
+
+            channel = DatagramChannel.open();
+            channel.setOption(StandardSocketOptions.SO_RCVBUF, 6553600);
+            channel.bind(new InetSocketAddress(19870));
+        }
 
         @Override
         public void run() {
-            try {
-                channel = DatagramChannel.open();
-                channel.setOption(StandardSocketOptions.SO_RCVBUF, 6553600);
-                channel.bind(new InetSocketAddress(19870));
-            } catch (IOException z) {
-                z.printStackTrace(System.err);
-            }
 
             ByteBuffer buf = ByteBuffer.allocate(6553600);
-            shouldTerminate = false;
-            while (!shouldTerminate) {
+            threadStarted.countDown();
+            do {
                 try {
                     buf.rewind();
                     channel.receive(buf);
                 } catch (IOException z) {
+                    System.err.println("UDPThread: caught exception " + z.getClass().getName());
                     if (!shouldTerminate) {
                         z.printStackTrace(System.err);
                     }
                 }
-            }
+            } while (!shouldTerminate);
         }
 
         public void terminate() {
             shouldTerminate = true;
             try {
                 channel.close();
+            } catch (Exception z) {
+                System.err.println("UDPThread: caught exception " + z.getClass().getName());
+                z.printStackTrace(System.err);
+                // ignore
+            }
+        }
+
+        public void waitTestThreadStart() {
+            try {
+                threadStarted.await();
             } catch (Exception z) {
                 z.printStackTrace(System.err);
                 // ignore

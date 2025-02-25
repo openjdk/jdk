@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class ZIndexDistributorStriped : public CHeapObj<mtGC> {
   }
 
   volatile int* claim_addr(int index) {
-    return (volatile int*)(align_up(_mem, ZCacheLineSize) + index * ZCacheLineSize);
+    return (volatile int*)(align_up(_mem, ZCacheLineSize) + (size_t)index * ZCacheLineSize);
   }
 
 public:
@@ -136,7 +136,7 @@ private:
 
   // Total size used to hold all claim variables
   static size_t claim_variables_size() {
-    return sizeof(int) * claim_level_end_index(ClaimLevels);
+    return sizeof(int) * (size_t)claim_level_end_index(ClaimLevels);
   }
 
   // Returns the index of the start of the current segment of the current level
@@ -274,7 +274,7 @@ public:
     assert((levels_size(ClaimLevels - 1) << _last_level_segment_size_shift) == count, "Incorrectly setup");
 
 #if 0
-    tty->print_cr("ZIndexDistributorClaimTree count: %d byte size: " SIZE_FORMAT, count, claim_variables_size() + os::vm_page_size());
+    tty->print_cr("ZIndexDistributorClaimTree count: %d byte size: %zu", count, claim_variables_size() + os::vm_page_size());
 #endif
 
     memset(_malloced, 0, claim_variables_size() + os::vm_page_size());

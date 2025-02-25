@@ -45,9 +45,7 @@ import java.io.ObjectOutputStream;
  * Since serialization must override java access rules in order to
  * access private, protected and package accessible Serializable fields,
  * only trusted classes are allowed to subclass AbstractObjectOutputStream.
- * Subclasses of AbstractObjectOututStream must have SerializablePermission
- * "enableAbstractSubclass" or this constructor will throw a
- * SecurityException.Implementations of this class should protect themselves
+ * Implementations of this class should protect themselves
  * from being subclassed in a way that will provide access to object
  * references and other sensitive info. Specifically, writeObjectOverride()
  * should be made final.
@@ -142,13 +140,6 @@ public abstract class AbstractObjectOutputStream extends ObjectOutputStream
     /**
      * Creates an ObjectOutputStream that writes to the specified OutputStream.
      *
-     * Add the following line to the security policy file to enable
-     * subclassing.
-     *
-     * <PRE>
-     *     permission SerializablePermission "enableAbstractSubclass" ;
-     * </PRE><p>
-     *
      * @exception IOException Any exception thrown by the underlying OutputStream.
      * @see java.io.ObjectOutputStream#writeStreamHeader()
      */
@@ -231,7 +222,7 @@ public abstract class AbstractObjectOutputStream extends ObjectOutputStream
      */
     public abstract void writeFields() throws IOException;
 
-    protected abstract boolean enableReplaceObject(boolean enable) throws SecurityException;
+    protected abstract boolean enableReplaceObject(boolean enable);
 
     /*******************************************************************/
     /* Write Primitive Data to stream.  DataOutput methods. */

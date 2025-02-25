@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,10 @@ import java.util.Arrays;
  * size, and optionally an initialization vector (IV) (only in feedback mode).
  *
  * <p> This class can be used to initialize a {@code Cipher} object that
- * implements the <i>RC5</i> algorithm as supplied by
- * <a href="http://www.rsa.com">RSA Security LLC</a>,
- * or any parties authorized by RSA Security.
+ * implements the <i>RC5</i> algorithm.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2040
+ *      RFC 2040: The RC5, RC5-CBC, RC5-CBC-Pad, and RC5-CTS Algorithms
  * @author Jan Luehe
  *
  * @since 1.4
@@ -106,9 +106,9 @@ public class RC5ParameterSpec implements AlgorithmParameterSpec {
      * bytes of the buffer beginning at {@code offset}
      * inclusive are copied to protect against subsequent modification.
      * @param offset the offset in {@code iv} where the IV starts.
-     * @exception IllegalArgumentException if {@code iv} is
-     * {@code null} or
-     * {@code (iv.length - offset < 2 * (wordSize / 8))}
+     * @exception ArrayIndexOutOfBoundsException if {@code offset} is negative.
+     * @exception IllegalArgumentException if {@code iv} is {@code null}
+     * or {@code (iv.length - offset < 2 * (wordSize / 8))}
      */
     public RC5ParameterSpec(int version, int rounds, int wordSize,
                             byte[] iv, int offset) {

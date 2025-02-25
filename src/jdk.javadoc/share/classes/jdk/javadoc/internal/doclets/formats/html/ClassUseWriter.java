@@ -38,11 +38,8 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
@@ -50,6 +47,10 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
 
 
 /**
@@ -105,7 +106,6 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             pkgToPackageAnnotations = new TreeSet<>(comparators.classUseComparator());
             pkgToPackageAnnotations.addAll(mapper.classToPackageAnnotations.get(typeElement));
         }
-        configuration.currentTypeElement = typeElement;
         this.pkgSet = new TreeSet<>(comparators.packageComparator());
         this.pkgToClassTypeParameter = pkgDivide(mapper.classToClassTypeParam);
         this.pkgToSubclassTypeParameter = pkgDivide(mapper.classToSubclassTypeParam);
@@ -142,7 +142,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
 
         methodSubWriter = new MethodWriter(this);
         constrSubWriter = new ConstructorWriter(this);
-        constrSubWriter.setFoundNonPubConstructor(true);
+        constrSubWriter.setShowConstructorModifiers(true);
         fieldSubWriter = new FieldWriter(this);
         classSubWriter = new NestedClassWriter(this);
     }
@@ -244,10 +244,10 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 "doclet.ClassUse_Packages.that.use.0",
                 getLink(new HtmlLinkInfo(configuration,
                         HtmlLinkInfo.Kind.PLAIN, typeElement)));
-        var table = new Table<Void>(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyles.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast);
         for (PackageElement pkg : pkgSet) {
             addPackageUse(pkg, table);
         }
@@ -270,10 +270,10 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                 getLink(new HtmlLinkInfo(configuration,
                         HtmlLinkInfo.Kind.PLAIN, typeElement)));
 
-        var table = new Table<Void>(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyles.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast);
         for (PackageElement pkg : pkgToPackageAnnotations) {
             Content summary = new ContentBuilder();
             addSummaryComment(pkg, summary);
@@ -288,9 +288,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param content the content to which the class elements will be added
      */
     protected void addClassList(Content content) {
-        var ul = HtmlTree.UL(HtmlStyle.blockList);
+        var ul = HtmlTree.UL(HtmlStyles.blockList);
         for (PackageElement pkg : pkgSet) {
-            var section = HtmlTree.SECTION(HtmlStyle.detail)
+            var section = HtmlTree.SECTION(HtmlStyles.detail)
                     .setId(htmlIds.forPackage(pkg));
             Content link = contents.getContent("doclet.ClassUse_Uses.of.0.in.1",
                     getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN,
@@ -301,7 +301,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             addClassUse(pkg, section);
             ul.add(HtmlTree.LI(section));
         }
-        var li = HtmlTree.SECTION(HtmlStyle.classUses, ul);
+        var li = HtmlTree.SECTION(HtmlStyles.classUses, ul);
         content.add(li);
     }
 
@@ -422,29 +422,13 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         HtmlTree body = getBody(getWindowTitle(title));
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", cltype));
-        headingContent.add(new HtmlTree(TagName.BR));
+        headingContent.add(HtmlTree.BR());
         headingContent.add(clname);
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, headingContent);
-        var div = HtmlTree.DIV(HtmlStyle.header, heading);
+                HtmlStyles.title, headingContent);
+        var div = HtmlTree.DIV(HtmlStyles.header, heading);
         bodyContents.setHeader(getHeader(PageMode.USE, typeElement)).addMainContent(div);
         return body;
-    }
-
-    @Override
-    protected Navigation getNavBar(PageMode pageMode, Element element) {
-        List<Content> subnavLinks = new ArrayList<>();
-        if (configuration.showModules) {
-            subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(typeElement), false));
-        }
-        // We may generate a class-use page for an otherwise undocumented page in the condition below.
-        boolean isUndocumented = options.noDeprecated() && utils.isDeprecated(typeElement);
-        subnavLinks.add(getBreadcrumbLink(utils.containingPackage(typeElement), isUndocumented));
-        if (!isUndocumented) {
-            subnavLinks.add(getBreadcrumbLink(typeElement, true));
-        }
-
-        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 }
 

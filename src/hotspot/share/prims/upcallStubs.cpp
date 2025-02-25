@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -50,7 +49,7 @@ static JNINativeMethod UH_methods[] = {
  */
 JVM_LEAF(void, JVM_RegisterUpcallHandlerMethods(JNIEnv *env, jclass UH_class))
   int status = env->RegisterNatives(UH_class, UH_methods, sizeof(UH_methods)/sizeof(JNINativeMethod));
-  guarantee(status == JNI_OK && !env->ExceptionOccurred(),
+  guarantee(status == JNI_OK && !env->ExceptionCheck(),
             "register jdk.internal.foreign.abi.UpcallStubs natives");
 JVM_END
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,6 +185,7 @@ public class Properties extends Hashtable<Object,Object> {
      *         accommodate this many elements
      * @throws IllegalArgumentException if the initial capacity is less than
      *         zero.
+     * @since 10
      */
     public Properties(int initialCapacity) {
         this(null, initialCapacity);
@@ -948,9 +949,6 @@ public class Properties extends Hashtable<Object,Object> {
     }
 
     private static void writeDateComment(BufferedWriter bw) throws IOException {
-        // value of java.properties.date system property isn't sensitive
-        // and so doesn't need any security manager checks to make the value accessible
-        // to the callers
         String sysPropVal = StaticProperty.javaPropertiesDate();
         if (sysPropVal != null && !sysPropVal.isEmpty()) {
             writeComments(bw, sysPropVal);

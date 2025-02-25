@@ -28,7 +28,6 @@ package sun.nio.ch;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -87,11 +86,6 @@ class WEPollSelectorImpl extends SelectorImpl {
 
         // register one end of the pipe for wakeups
         WEPoll.ctl(eph, EPOLL_CTL_ADD, fd0Val, WEPoll.EPOLLIN);
-    }
-
-    private void ensureOpen() {
-        if (!isOpen())
-            throw new ClosedSelectorException();
     }
 
     @Override
@@ -228,7 +222,6 @@ class WEPollSelectorImpl extends SelectorImpl {
 
     @Override
     public void setEventOps(SelectionKeyImpl ski) {
-        ensureOpen();
         synchronized (updateLock) {
             updateKeys.addLast(ski);
         }

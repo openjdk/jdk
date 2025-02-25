@@ -62,7 +62,8 @@ inline uint8_t* G1BlockOffsetTable::entry_for_addr(const void* const p) const {
 }
 
 inline HeapWord* G1BlockOffsetTable::addr_for_entry(const uint8_t* const p) const {
-  size_t delta = pointer_delta(p, _offset_base, sizeof(uint8_t));
+  // _offset_base can be "negative", so can't use pointer_delta().
+  size_t delta = p - _offset_base;
   HeapWord* result = (HeapWord*) (delta << CardTable::card_shift());
   assert(_reserved.contains(result),
          "out of bounds accessor from block offset table");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,13 @@ import java.util.HashMap;
 import sun.print.IPPPrintService;
 import sun.print.CustomMediaSizeName;
 import sun.print.CustomMediaTray;
+import sun.print.CustomOutputBin;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaTray;
 import javax.print.attribute.standard.MediaPrintableArea;
+import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.Size2DSyntax;
 import javax.print.attribute.Attribute;
@@ -60,6 +62,7 @@ public class CUPSPrinter  {
     // CUPS does not support multi-threading.
     private static synchronized native String[] getMedia(String printer);
     private static synchronized native float[] getPageSizes(String printer);
+    private static synchronized native String[] getOutputBins(String printer);
     private static synchronized native void
         getResolutions(String printer, ArrayList<Integer> resolutionList);
     //public static boolean useIPPMedia = false; will be used later
@@ -68,10 +71,12 @@ public class CUPSPrinter  {
     private MediaSizeName[] cupsMediaSNames;
     private CustomMediaSizeName[] cupsCustomMediaSNames;
     private MediaTray[] cupsMediaTrays;
+    private OutputBin[] cupsOutputBins;
 
     public  int nPageSizes = 0;
     public  int nTrays = 0;
     private  String[] media;
+    private  String[] outputBins;
     private  float[] pageSizes;
     int[]   resolutionsArray;
     private String printer;
@@ -85,16 +90,10 @@ public class CUPSPrinter  {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings("restricted")
     private static void initStatic() {
         // load awt library to access native code
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("awt");
-                    return null;
-                }
-            });
+        System.loadLibrary("awt");
         libFound = initIDs();
         if (libFound) {
            cupsServer = getCupsServer();
@@ -144,6 +143,8 @@ public class CUPSPrinter  {
             for (int i=0; i < resolutionList.size(); i++) {
                 resolutionsArray[i] = resolutionList.get(i);
             }
+
+            outputBins = getOutputBins(printer);
         }
     }
 
@@ -183,6 +184,14 @@ public class CUPSPrinter  {
     MediaTray[] getMediaTrays() {
         initMedia();
         return cupsMediaTrays;
+    }
+
+    /**
+     * Returns array of OutputBins derived from PPD.
+     */
+    OutputBin[] getOutputBins() {
+        initMedia();
+        return cupsOutputBins;
     }
 
     /**
@@ -261,6 +270,15 @@ public class CUPSPrinter  {
             cupsMediaTrays[i] = mt;
         }
 
+        if (outputBins == null) {
+            cupsOutputBins = new OutputBin[0];
+        } else {
+            int nBins = outputBins.length / 2;
+            cupsOutputBins = new OutputBin[nBins];
+            for (int i = 0; i < nBins; i++) {
+                cupsOutputBins[i] = CustomOutputBin.createOutputBin(outputBins[i*2], outputBins[i*2+1]);
+            }
+        }
     }
 
     /**
@@ -284,18 +302,12 @@ public class CUPSPrinter  {
                 IPPPrintService.getIPPConnection(url);
 
             if (urlConnection != null) {
-                @SuppressWarnings("removal")
-                OutputStream os = java.security.AccessController.
-                    doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
-                        public OutputStream run() {
-                            try {
-                                return urlConnection.getOutputStream();
-                            } catch (Exception e) {
-                               IPPPrintService.debug_println(debugPrefix+e);
-                            }
-                            return null;
-                        }
-                    });
+                OutputStream os = null;
+                try {
+                    os = urlConnection.getOutputStream();
+                } catch (Exception e) {
+                   IPPPrintService.debug_println(debugPrefix+e);
+                }
 
                 if (os == null) {
                     return null;
@@ -400,17 +412,11 @@ public class CUPSPrinter  {
                 IPPPrintService.getIPPConnection(url);
 
             if (urlConnection != null) {
-                @SuppressWarnings("removal")
-                OutputStream os = java.security.AccessController.
-                    doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
-                        public OutputStream run() {
-                            try {
-                                return urlConnection.getOutputStream();
-                            } catch (Exception e) {
-                            }
-                            return null;
-                        }
-                    });
+                OutputStream os = null;
+                try {
+                    os = urlConnection.getOutputStream();
+                } catch (Exception e) {
+                }
 
                 if (os == null) {
                     return null;
@@ -483,12 +489,9 @@ public class CUPSPrinter  {
         return domainSocketPathname;
     }
 
-    @SuppressWarnings("removal")
     private static boolean isSandboxedApp() {
         if (PrintServiceLookupProvider.isMac()) {
-            return java.security.AccessController
-                    .doPrivileged((java.security.PrivilegedAction<Boolean>) () ->
-                            System.getenv("APP_SANDBOX_CONTAINER_ID") != null);
+            return (System.getenv("APP_SANDBOX_CONTAINER_ID") != null);
         }
         return false;
     }

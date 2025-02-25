@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,10 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.List;
-import java.util.Objects;
 import java.lang.classfile.Label;
 import java.lang.classfile.TypeAnnotation.*;
-import static java.lang.classfile.ClassFile.*;
+import java.util.List;
+
 import static java.util.Objects.requireNonNull;
 
 public final class TargetInfoImpl {
@@ -37,7 +36,6 @@ public final class TargetInfoImpl {
     }
 
     private static TargetType checkValid(TargetType targetType, int rangeFrom, int rangeTo) {
-        Objects.requireNonNull(targetType);
         if (targetType.targetTypeValue() < rangeFrom || targetType.targetTypeValue() > rangeTo)
             throw new IllegalArgumentException("Wrong target type specified " + targetType);
         return targetType;
@@ -47,7 +45,7 @@ public final class TargetInfoImpl {
             implements TypeParameterTarget {
 
         public TypeParameterTargetImpl(TargetType targetType, int typeParameterIndex) {
-            this.targetType = checkValid(targetType, TAT_CLASS_TYPE_PARAMETER, TAT_METHOD_TYPE_PARAMETER);
+            this.targetType = checkValid(targetType, TARGET_CLASS_TYPE_PARAMETER, TARGET_METHOD_TYPE_PARAMETER);
             this.typeParameterIndex = typeParameterIndex;
         }
     }
@@ -63,7 +61,7 @@ public final class TargetInfoImpl {
             implements TypeParameterBoundTarget {
 
         public TypeParameterBoundTargetImpl(TargetType targetType, int typeParameterIndex, int boundIndex) {
-            this.targetType = checkValid(targetType, TAT_CLASS_TYPE_PARAMETER_BOUND, TAT_METHOD_TYPE_PARAMETER_BOUND);
+            this.targetType = checkValid(targetType, TARGET_CLASS_TYPE_PARAMETER_BOUND, TARGET_METHOD_TYPE_PARAMETER_BOUND);
             this.typeParameterIndex = typeParameterIndex;
             this.boundIndex = boundIndex;
         }
@@ -72,7 +70,7 @@ public final class TargetInfoImpl {
     public record EmptyTargetImpl(TargetType targetType) implements EmptyTarget {
 
         public EmptyTargetImpl(TargetType targetType) {
-            this.targetType = checkValid(targetType, TAT_FIELD, TAT_METHOD_RECEIVER);
+            this.targetType = checkValid(targetType, TARGET_FIELD, TARGET_METHOD_RECEIVER);
         }
     }
 
@@ -94,7 +92,7 @@ public final class TargetInfoImpl {
             implements LocalVarTarget {
 
         public LocalVarTargetImpl(TargetType targetType, List<LocalVarTargetInfo> table) {
-            this.targetType = checkValid(targetType, TAT_LOCAL_VARIABLE, TAT_RESOURCE_VARIABLE);
+            this.targetType = checkValid(targetType, TARGET_LOCAL_VARIABLE, TARGET_RESOURCE_VARIABLE);
             this.table = List.copyOf(table);
         }
         @Override
@@ -122,7 +120,7 @@ public final class TargetInfoImpl {
     public record OffsetTargetImpl(TargetType targetType, Label target) implements OffsetTarget {
 
         public OffsetTargetImpl(TargetType targetType, Label target) {
-            this.targetType = checkValid(targetType, TAT_INSTANCEOF, TAT_METHOD_REFERENCE);
+            this.targetType = checkValid(targetType, TARGET_INSTANCEOF, TARGET_METHOD_REFERENCE);
             this.target = requireNonNull(target);
         }
     }
@@ -131,7 +129,7 @@ public final class TargetInfoImpl {
             implements TypeArgumentTarget {
 
         public TypeArgumentTargetImpl(TargetType targetType, Label target, int typeArgumentIndex) {
-            this.targetType = checkValid(targetType, TAT_CAST, TAT_METHOD_REFERENCE_TYPE_ARGUMENT);
+            this.targetType = checkValid(targetType, TARGET_CAST, TARGET_METHOD_REFERENCE_TYPE_ARGUMENT);
             this.target = requireNonNull(target);
             this.typeArgumentIndex = typeArgumentIndex;
         }

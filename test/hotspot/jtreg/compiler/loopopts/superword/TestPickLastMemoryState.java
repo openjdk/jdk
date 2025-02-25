@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
 
 /**
  * @test
- * @requires vm.compiler2.enabled
  * @bug 8290910 8293216
  * @summary Test which needs to select the memory state of the last load in a load pack in SuperWord::co_locate_pack.
  *

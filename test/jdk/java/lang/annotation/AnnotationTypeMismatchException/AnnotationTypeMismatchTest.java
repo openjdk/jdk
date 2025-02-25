@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8228988 8266598
  * @summary An annotation-typed property of an annotation that is represented as an
  *          incompatible property of another type should yield an AnnotationTypeMismatchException.
- * @enablePreview
  * @run main AnnotationTypeMismatchTest
  */
 

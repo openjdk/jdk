@@ -79,13 +79,17 @@ class OopClosure;
 class ShenandoahParallelCodeHeapIterator;
 class NativePostCallNop;
 class DeoptimizationScope;
+class ReservedSpace;
+
+#ifdef LINUX
+#define DEFAULT_PERFMAP_FILENAME "/tmp/perf-%p.map"
+#endif
 
 class CodeCache : AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   template <class T, class Filter, bool is_relaxed> friend class CodeBlobIterator;
   friend class WhiteBox;
-  friend class CodeCacheLoader;
   friend class ShenandoahParallelCodeHeapIterator;
  private:
   // CodeHeaps of the cache
@@ -118,7 +122,7 @@ class CodeCache : AllStatic {
   static CodeHeap* get_code_heap(CodeBlobType code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
   // Returns the name of the VM option to set the size of the corresponding CodeHeap
   static const char* get_code_heap_flag_name(CodeBlobType code_blob_type);
-  static ReservedCodeSpace reserve_heap_memory(size_t size, size_t rs_ps); // Reserves one continuous chunk of memory for the CodeHeaps
+  static ReservedSpace reserve_heap_memory(size_t size, size_t rs_ps); // Reserves one continuous chunk of memory for the CodeHeaps
 
   // Iteration
   static CodeBlob* first_blob(CodeHeap* heap);                // Returns the first CodeBlob on the given CodeHeap
@@ -223,7 +227,7 @@ class CodeCache : AllStatic {
   static void print_trace(const char* event, CodeBlob* cb, uint size = 0) PRODUCT_RETURN;
   static void print_summary(outputStream* st, bool detailed = true); // Prints a summary of the code cache usage
   static void log_state(outputStream* st);
-  LINUX_ONLY(static void write_perf_map(const char* filename = nullptr);)
+  LINUX_ONLY(static void write_perf_map(const char* filename, outputStream* st);) // Prints warnings and error messages to outputStream
   static const char* get_code_heap_name(CodeBlobType code_blob_type)  { return (heap_available(code_blob_type) ? get_code_heap(code_blob_type)->name() : "Unused"); }
   static void report_codemem_full(CodeBlobType code_blob_type, bool print);
 
@@ -294,9 +298,6 @@ class CodeCache : AllStatic {
   static void mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_scope);
   static void mark_for_deoptimization(DeoptimizationScope* deopt_scope, Method* dependee);
   static void make_marked_nmethods_deoptimized();
-
-  static void mark_directives_matches(bool top_only = false);
-  static void recompile_marked_directives_matches();
 
   // Marks dependents during classloading
   static void mark_dependents_on(DeoptimizationScope* deopt_scope, InstanceKlass* dependee);

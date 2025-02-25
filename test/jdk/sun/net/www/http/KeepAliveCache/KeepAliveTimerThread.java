@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,26 @@
 
 /*
  * @test
- * @library /test/lib
  * @bug 4701299
  * @summary Keep-Alive-Timer thread management in KeepAliveCache causes memory leak
+ * @library /test/lib
  * @run main KeepAliveTimerThread
  * @run main/othervm -Djava.net.preferIPv6Addresses=true KeepAliveTimerThread
  */
 
-import java.net.*;
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.net.URL;
+
 import jdk.test.lib.net.URIBuilder;
+
 import static java.net.Proxy.NO_PROXY;
 
 public class KeepAliveTimerThread {
@@ -131,8 +141,5 @@ public class KeepAliveTimerThread {
         if (grp.activeCount() > 0) {
             throw new RuntimeException("Keep-alive thread started in wrong thread group");
         }
-
-        grp.destroy();
     }
-
 }

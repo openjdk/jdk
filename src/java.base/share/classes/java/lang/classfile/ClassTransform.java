@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,31 @@
  */
 package java.lang.classfile;
 
+import java.lang.classfile.attribute.CodeAttribute;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import java.lang.classfile.attribute.CodeAttribute;
 import jdk.internal.classfile.impl.TransformImpl;
-import jdk.internal.javac.PreviewFeature;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A transformation on streams of {@link ClassElement}.
+ * <p>
+ * Refer to {@link ClassFileTransform} for general guidance and caution around
+ * the use of transforms for structures in the {@code class} file format.
  *
- * @see ClassFileTransform
- *
- * @since 22
+ * @see ClassModel
+ * @see ClassFile#transformClass(ClassModel, ClassTransform)
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public non-sealed interface ClassTransform
         extends ClassFileTransform<ClassTransform, ClassElement, ClassBuilder> {
 
     /**
-     * A class transform that sends all elements to the builder.
+     * A class transform that passes all elements to the builder.
      */
     static final ClassTransform ACCEPT_ALL = new ClassTransform() {
         @Override
@@ -55,7 +58,7 @@ public non-sealed interface ClassTransform
     };
 
     /**
-     * Create a stateful class transform from a {@link Supplier}.  The supplier
+     * Creates a stateful class transform from a {@link Supplier}.  The supplier
      * will be invoked for each transformation.
      *
      * @param supplier a {@link Supplier} that produces a fresh transform object
@@ -63,17 +66,18 @@ public non-sealed interface ClassTransform
      * @return the stateful class transform
      */
     static ClassTransform ofStateful(Supplier<ClassTransform> supplier) {
-        return new TransformImpl.SupplierClassTransform(supplier);
+        return new TransformImpl.SupplierClassTransform(requireNonNull(supplier));
     }
 
     /**
-     * Create a class transform that passes each element through to the builder,
+     * Creates a class transform that passes each element through to the builder,
      * and calls the specified function when transformation is complete.
      *
      * @param finisher the function to call when transformation is complete
      * @return the class transform
      */
     static ClassTransform endHandler(Consumer<ClassBuilder> finisher) {
+        requireNonNull(finisher);
         return new ClassTransform() {
             @Override
             public void accept(ClassBuilder builder, ClassElement element) {
@@ -88,13 +92,14 @@ public non-sealed interface ClassTransform
     }
 
     /**
-     * Create a class transform that passes each element through to the builder,
-     * except for those that the supplied {@link Predicate} is true for.
+     * Creates a class transform that passes each element through to the builder,
+     * except for those that the supplied {@link Predicate} returns true for.
      *
      * @param filter the predicate that determines which elements to drop
      * @return the class transform
      */
     static ClassTransform dropping(Predicate<ClassElement> filter) {
+        requireNonNull(filter);
         return (b, e) -> {
             if (!filter.test(e))
                 b.with(e);
@@ -102,8 +107,10 @@ public non-sealed interface ClassTransform
     }
 
     /**
-     * Create a class transform that transforms {@link MethodModel} elements
-     * with the supplied method transform.
+     * Creates a class transform that transforms {@link MethodModel} elements
+     * with the supplied method transform for methods that the supplied {@link
+     * Predicate} returns true for, passing other elements through to the
+     * builder.
      *
      * @param filter a predicate that determines which methods to transform
      * @param xform the method transform
@@ -111,23 +118,26 @@ public non-sealed interface ClassTransform
      */
     static ClassTransform transformingMethods(Predicate<MethodModel> filter,
                                               MethodTransform xform) {
-        return new TransformImpl.ClassMethodTransform(xform, filter);
+        return new TransformImpl.ClassMethodTransform(requireNonNull(xform), requireNonNull(filter));
     }
 
     /**
-     * Create a class transform that transforms {@link MethodModel} elements
-     * with the supplied method transform.
+     * Creates a class transform that transforms {@link MethodModel} elements
+     * with the supplied method transform, passing other elements through to the
+     * builder.
      *
      * @param xform the method transform
      * @return the class transform
      */
     static ClassTransform transformingMethods(MethodTransform xform) {
-        return transformingMethods(mm -> true, xform);
+        return transformingMethods(_ -> true, xform);
     }
 
     /**
-     * Create a class transform that transforms the {@link CodeAttribute} (method body)
-     * of {@link MethodModel} elements with the supplied code transform.
+     * Creates a class transform that transforms the {@link CodeAttribute} (method body)
+     * of {@link MethodModel} elements with the supplied code transform for
+     * methods that the supplied {@link Predicate} returns true for, passing
+     * other elements through to the builder.
      *
      * @param filter a predicate that determines which methods to transform
      * @param xform the code transform
@@ -139,8 +149,9 @@ public non-sealed interface ClassTransform
     }
 
     /**
-     * Create a class transform that transforms the {@link CodeAttribute} (method body)
-     * of {@link MethodModel} elements with the supplied code transform.
+     * Creates a class transform that transforms the {@link CodeAttribute} (method body)
+     * of {@link MethodModel} elements with the supplied code transform, passing
+     * other elements through to the builder.
      *
      * @param xform the code transform
      * @return the class transform
@@ -150,14 +161,15 @@ public non-sealed interface ClassTransform
     }
 
     /**
-     * Create a class transform that transforms {@link FieldModel} elements
-     * with the supplied field transform.
+     * Creates a class transform that transforms {@link FieldModel} elements
+     * with the supplied field transform, passing other elements through to the
+     * builder.
      *
      * @param xform the field transform
      * @return the class transform
      */
     static ClassTransform transformingFields(FieldTransform xform) {
-        return new TransformImpl.ClassFieldTransform(xform, f -> true);
+        return new TransformImpl.ClassFieldTransform(requireNonNull(xform), _ -> true);
     }
 
     /**
@@ -169,17 +181,6 @@ public non-sealed interface ClassTransform
      */
     @Override
     default ClassTransform andThen(ClassTransform t) {
-        return new TransformImpl.ChainedClassTransform(this, t);
-    }
-
-    /**
-     * @implSpec The default implementation returns a resolved transform bound
-     *           to the given class builder.
-     */
-    @Override
-    default ResolvedTransform<ClassElement> resolve(ClassBuilder builder) {
-        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
-                                                         () -> atEnd(builder),
-                                                         () -> atStart(builder));
+        return new TransformImpl.ChainedClassTransform(this, requireNonNull(t));
     }
 }

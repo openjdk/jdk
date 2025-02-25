@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeBehaviours.hpp"
@@ -90,13 +89,13 @@ public:
 class ZCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
   virtual bool lock(nmethod* nm) {
-    ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
+    ZReentrantLock* const lock = ZNMethod::ic_lock_for_nmethod(nm);
     lock->lock();
     return true;
   }
 
   virtual void unlock(nmethod* nm) {
-    ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
+    ZReentrantLock* const lock = ZNMethod::ic_lock_for_nmethod(nm);
     lock->unlock();
   }
 
@@ -105,7 +104,7 @@ public:
       return true;
     }
 
-    ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
+    ZReentrantLock* const lock = ZNMethod::ic_lock_for_nmethod(nm);
     return lock->is_owned();
   }
 };

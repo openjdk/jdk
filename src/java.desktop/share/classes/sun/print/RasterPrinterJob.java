@@ -25,8 +25,6 @@
 
 package sun.print;
 
-import java.io.FilePermission;
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
@@ -81,6 +79,7 @@ import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
+import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.standard.PrinterState;
@@ -173,9 +172,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
          * use a particular pipeline. Either the raster
          * pipeline or the pdl pipeline can be forced.
          */
-        @SuppressWarnings("removal")
-        String forceStr = java.security.AccessController.doPrivileged(
-                   new sun.security.action.GetPropertyAction(FORCE_PIPE_PROP));
+        String forceStr = System.getProperty(FORCE_PIPE_PROP);
 
         if (forceStr != null) {
             if (forceStr.equalsIgnoreCase(FORCE_PDL)) {
@@ -185,9 +182,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             }
         }
 
-        @SuppressWarnings("removal")
-        String shapeTextStr =java.security.AccessController.doPrivileged(
-                   new sun.security.action.GetPropertyAction(SHAPE_TEXT_PROP));
+        String shapeTextStr = System.getProperty(SHAPE_TEXT_PROP);
 
         if (shapeTextStr != null) {
             shapeTextProp = true;
@@ -259,11 +254,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
  // MacOSX - made protected so subclasses can reference it.
     protected boolean userCancelled = false;
 
-   /**
-    * Print to file permission variables.
-    */
-    private FilePermission printToFilePermission;
-
     /**
      * List of areas & the graphics state for redrawing
      */
@@ -279,6 +269,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     private PageRanges pageRangesAttr;
     protected PrinterResolution printerResAttr;
     protected Sides sidesAttr;
+    protected OutputBin outputBinAttr;
     protected String destinationAttr;
     protected boolean noJobSheet = false;
     protected int mDestType = RasterPrinterJob.FILE;
@@ -729,20 +720,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
           GraphicsEnvironment.getLocalGraphicsEnvironment().
           getDefaultScreenDevice().getDefaultConfiguration();
 
-        @SuppressWarnings("removal")
-        PrintService service = java.security.AccessController.doPrivileged(
-                               new java.security.PrivilegedAction<PrintService>() {
-                public PrintService run() {
-                    PrintService service = getPrintService();
-                    if (service == null) {
-                        ServiceDialog.showNoPrintService(gc);
-                        return null;
-                    }
-                    return service;
-                }
-            });
-
+        PrintService service = getPrintService();
         if (service == null) {
+            ServiceDialog.showNoPrintService(gc);
             return page;
         }
         updatePageAttributes(service, page);
@@ -810,20 +790,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
         final GraphicsConfiguration gc = grCfg;
 
-        @SuppressWarnings("removal")
-        PrintService service = java.security.AccessController.doPrivileged(
-                               new java.security.PrivilegedAction<PrintService>() {
-                public PrintService run() {
-                    PrintService service = getPrintService();
-                    if (service == null) {
-                        ServiceDialog.showNoPrintService(gc);
-                        return null;
-                    }
-                    return service;
-                }
-            });
-
+        PrintService service = getPrintService();
         if (service == null) {
+            ServiceDialog.showNoPrintService(gc);
             return null;
         }
 
@@ -847,10 +816,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                                            DocFlavor.SERVICE_FORMATTED.PAGEABLE,
                                            attributes, w);
         if (setOnTop) {
-            try {
-                pageDialog.setAlwaysOnTop(true);
-            } catch (SecurityException e) {
-            }
+            pageDialog.setAlwaysOnTop(true);
         }
 
         Rectangle dlgBounds = pageDialog.getBounds();
@@ -951,7 +917,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
-    @SuppressWarnings("removal")
     public boolean printDialog(final PrintRequestAttributeSet attributes)
         throws HeadlessException {
         if (GraphicsEnvironment.isHeadless()) {
@@ -980,15 +945,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
         }
 
-        /* A security check has already been performed in the
-         * java.awt.print.printerJob.getPrinterJob method.
-         * So by the time we get here, it is OK for the current thread
-         * to print either to a file (from a Dialog we control!) or
-         * to a chosen printer.
-         *
-         * We raise privilege when we put up the dialog, to avoid
-         * the "warning applet window" banner.
-         */
         GraphicsConfiguration grCfg = null;
         Window w = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
         if (w != null) {
@@ -1006,19 +962,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
         final GraphicsConfiguration gc = grCfg;
 
-        PrintService service = java.security.AccessController.doPrivileged(
-                               new java.security.PrivilegedAction<PrintService>() {
-                public PrintService run() {
-                    PrintService service = getPrintService();
-                    if (service == null) {
-                        ServiceDialog.showNoPrintService(gc);
-                        return null;
-                    }
-                    return service;
-                }
-            });
-
+        PrintService service = getPrintService();
         if (service == null) {
+            ServiceDialog.showNoPrintService(gc);
             return false;
         }
 
@@ -1031,13 +977,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                 services[i] = spsFactories[i].getPrintService(null);
             }
         } else {
-            services = java.security.AccessController.doPrivileged(
-                       new java.security.PrivilegedAction<PrintService[]>() {
-                public PrintService[] run() {
-                    PrintService[] services = PrinterJob.lookupPrintServices();
-                    return services;
-                }
-            });
+            services = PrinterJob.lookupPrintServices();
 
             if ((services == null) || (services.length == 0)) {
                 /*
@@ -1228,6 +1168,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         /*  reset all values to defaults */
         setCollated(false);
         sidesAttr = null;
+        outputBinAttr = null;
         printerResAttr = null;
         pageRangesAttr = null;
         copiesAttr = 0;
@@ -1272,6 +1213,11 @@ public abstract class RasterPrinterJob extends PrinterJob {
         sidesAttr = (Sides)attributes.get(Sides.class);
         if (!isSupportedValue(sidesAttr,  attributes)) {
             sidesAttr = Sides.ONE_SIDED;
+        }
+
+        outputBinAttr = (OutputBin)attributes.get(OutputBin.class);
+        if (!isSupportedValue(outputBinAttr,  attributes)) {
+            outputBinAttr = null;
         }
 
         printerResAttr = (PrinterResolution)attributes.get(PrinterResolution.class);
@@ -1353,11 +1299,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             (!fidelity && userName != null)) {
             userNameAttr = userName.getValue();
         } else {
-            try {
-                userNameAttr = getUserName();
-            } catch (SecurityException e) {
-                userNameAttr = "";
-            }
+            userNameAttr = getUserName();
         }
 
         /* OpenBook is used internally only when app uses Printable.
@@ -1696,11 +1638,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
         } catch (IOException ioe) {
             throw new PrinterException("Cannot write to file:"+
                                        dest);
-        } catch (SecurityException se) {
-            //There is already file read/write access so at this point
-            // only delete access is denied.  Just ignore it because in
-            // most cases the file created in createNewFile gets overwritten
-            // anyway.
         }
 
         File pFile = f.getParentFile();
@@ -1860,7 +1797,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
     /**
      * Get the name of the printing user.
-     * The caller must have security permission to read system properties.
      */
     public String getUserName() {
         return System.getProperty("user.name");
@@ -1873,11 +1809,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         if  (userNameAttr != null) {
             return userNameAttr;
         } else {
-            try {
-                return  getUserName();
-            } catch (SecurityException e) {
-                return "";
-            }
+            return getUserName();
         }
     }
 
@@ -2466,11 +2398,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
     }
 
-    /**
-     * Returns true is a print job is ongoing but will
-     * be cancelled and the next opportunity. false is
-     * returned otherwise.
-     */
+    @Override
     public boolean isCancelled() {
 
         boolean cancelled = false;
@@ -2540,37 +2468,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
         g.setPaint(Color.black);
     }
 
-
-   /**
-    * User dialogs should disable "File" buttons if this returns false.
-    *
-    */
-    public boolean checkAllowedToPrintToFile() {
-        try {
-            throwPrintToFile();
-            return true;
-        } catch (SecurityException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Break this out as it may be useful when we allow API to
-     * specify printing to a file. In that case its probably right
-     * to throw a SecurityException if the permission is not granted
-     */
-    private void throwPrintToFile() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            if (printToFilePermission == null) {
-                printToFilePermission =
-                    new FilePermission("<<ALL FILES>>", "read,write");
-            }
-            security.checkPermission(printToFilePermission);
-        }
-    }
-
     /* On-screen drawString renders most control chars as the missing glyph
      * and have the non-zero advance of that glyph.
      * Exceptions are \t, \n and \r which are considered zero-width.
@@ -2616,5 +2513,27 @@ public abstract class RasterPrinterJob extends PrinterJob {
         if (onTop != null) {
             parentWindowID = DialogOwnerAccessor.getID(onTop);
         }
+    }
+
+    protected String getOutputBinValue(Attribute attr) {
+        if (attr instanceof CustomOutputBin customOutputBin) {
+            return customOutputBin.getChoiceName();
+        } else if (attr instanceof OutputBin) {
+            PrintService ps = getPrintService();
+            if (ps == null) {
+                return null;
+            }
+            String name = attr.toString();
+            OutputBin[] outputBins = (OutputBin[]) ps
+                    .getSupportedAttributeValues(OutputBin.class, null, null);
+            for (OutputBin outputBin : outputBins) {
+                String choice = ((CustomOutputBin) outputBin).getChoiceName();
+                if (name.equalsIgnoreCase(choice) || name.replaceAll("-", "").equalsIgnoreCase(choice)) {
+                    return choice;
+                }
+            }
+            return null;
+        }
+        return null;
     }
 }

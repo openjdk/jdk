@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import jdk.jfr.internal.util.Utils;
  */
 public final class EventType {
     private static final String UNKNOWN = new String();
-    private static final List<String> UNCATEGORIZED = List.of("Uncategorized");
+    private static final String[] UNCATEGORIZED = { "Uncategorized" };
     private final PlatformEventType platformEventType;
     private Map<String, ValueDescriptor> cache; // create lazy to avoid memory overhead
     private String label = UNKNOWN;
@@ -235,11 +235,8 @@ public final class EventType {
      * @see Category
      */
     public List<String> getCategoryNames() {
-        Category c = platformEventType.getAnnotation(Category.class);
-        if (c == null) {
-            return UNCATEGORIZED;
-        }
-        return List.of(c.value());
+        String[] categories = platformEventType.getAnnotationValue(Category.class, UNCATEGORIZED);
+        return List.of(categories);
     }
 
     // package private

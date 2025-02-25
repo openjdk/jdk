@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,23 @@ public interface Metrics {
      *
      */
     public String getProvider();
+
+    /**
+     * Determines whether or not the underlying system
+     * has useful metrics (a.k.a. is containerized).
+     *
+     * @implNote
+     * Note that Metrics on some systems aren't useful.
+     * For example on a regular Linux system with cgroups
+     * present, with no limits enforced and not running in
+     * a container, Metric aren't useful. This can be used
+     * in order to determine if the system is containerized.
+     *
+     * @return true when the JVM runs in containerized mode.
+     *         false otherwise.
+     *
+     */
+    public boolean isContainerized();
 
 
     /* ***************************************************************

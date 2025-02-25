@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,6 +401,148 @@ DocComment[DOC_COMMENT, pos:1
       attributes: empty
     ]
     Text[TEXT, pos:8, _def._ghi_jkl]
+  block tags: empty
+]
+*/
+    ///Abc.
+    ///Def.
+    void simpleMarkdown() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, Abc.]
+  body: 1
+    RawText[MARKDOWN, pos:5, Def.]
+  block tags: empty
+]
+*/
+/*
+BREAK_ITERATOR
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, Abc.]
+  body: 1
+    RawText[MARKDOWN, pos:5, Def.]
+  block tags: empty
+]
+*/
+
+    ///Abc `p.q` def.
+    ///Ghi.
+    void markdownWithCodeSpan() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, Abc_`p.q`_def.]
+  body: 1
+    RawText[MARKDOWN, pos:15, Ghi.]
+  block tags: empty
+]
+*/
+/*
+BREAK_ITERATOR
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, Abc_`p.q`_def.]
+  body: 1
+    RawText[MARKDOWN, pos:15, Ghi.]
+  block tags: empty
+]
+*/
+
+    ///Abc {@code p.q} def.
+    ///Ghi.
+    void markdownWithCodeTag() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 3
+    RawText[MARKDOWN, pos:0, Abc_]
+    Literal[CODE, pos:4, p.q]
+    RawText[MARKDOWN, pos:15, _def.]
+  body: 1
+    RawText[MARKDOWN, pos:21, Ghi.]
+  block tags: empty
+]
+*/
+/*
+BREAK_ITERATOR
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 3
+    RawText[MARKDOWN, pos:0, Abc_]
+    Literal[CODE, pos:4, p.q]
+    RawText[MARKDOWN, pos:15, _def.]
+  body: 1
+    RawText[MARKDOWN, pos:21, Ghi.]
+  block tags: empty
+]
+*/
+
+    ///Abc <a href="example.com">example</a> def.
+    ///Ghi.
+    void markdownWithHtml() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, Abc_<a_href="example.com">example</a>_def.]
+  body: 1
+    RawText[MARKDOWN, pos:43, Ghi.]
+  block tags: empty
+]
+*/
+/*
+BREAK_ITERATOR
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, Abc_<a_href="example.com">example</a>_def.]
+  body: 1
+    RawText[MARKDOWN, pos:43, Ghi.]
+  block tags: empty
+]
+*/
+
+    ///Abc [example.com][example] def.
+    ///Ghi.
+    void markdownWithLinks() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, Abc_[example.com][example]_def.]
+  body: 1
+    RawText[MARKDOWN, pos:32, Ghi.]
+  block tags: empty
+]
+*/
+/*
+BREAK_ITERATOR
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, Abc_[example.com][example]_def.]
+  body: 1
+    RawText[MARKDOWN, pos:32, Ghi.]
+  block tags: empty
+]
+*/
+
+    ///Abc
+    ///
+    ///Def.
+    void markdownEndParaNoPeriod() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, Abc]
+  body: 1
+    RawText[MARKDOWN, pos:5, Def.]
+  block tags: empty
+]
+*/
+/*
+BREAK_ITERATOR
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, Abc]
+  body: 1
+    RawText[MARKDOWN, pos:5, Def.]
   block tags: empty
 ]
 */

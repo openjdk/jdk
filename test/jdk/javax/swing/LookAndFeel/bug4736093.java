@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 4736093
+ * @bug 4736093 8155030
  * @requires (os.family == "windows")
  * @summary REGRESSION: Menu and controls shortcuts are not visible in Win L&F in jdk1.4.1
- * @modules java.desktop/com.sun.java.swing.plaf.windows
+ * @modules java.desktop/sun.swing
  * @key headful
  */
 
@@ -42,7 +42,7 @@ import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
+import sun.swing.MnemonicHandler;
 
 public class bug4736093 {
     static volatile boolean passed = true;
@@ -62,7 +62,7 @@ public class bug4736093 {
                     winlaf = false;
                 }
 
-                if (winlaf && WindowsLookAndFeel.isMnemonicHidden()) {
+                if (winlaf && MnemonicHandler.isMnemonicHidden()) {
                     mainFrame = new JFrame("Bug 4736093");
                     mainFrame.addWindowListener(new TestStateListener());
                     mainFrame.setSize(200, 400);
@@ -100,7 +100,7 @@ public class bug4736093 {
 
 
     public static void checkForMnemonics(boolean expected) {
-        if (expected != WindowsLookAndFeel.isMnemonicHidden()) {
+        if (expected != MnemonicHandler.isMnemonicHidden()) {
             passed = false;
         }
     }
