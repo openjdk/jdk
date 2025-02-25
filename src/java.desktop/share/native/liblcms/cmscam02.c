@@ -1,36 +1,7 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-// This file is available under and governed by the GNU General Public
-// License version 2 only, as published by the Free Software Foundation.
-// However, the following notice accompanied the original version of this
-// file:
-//
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2024 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -117,16 +88,15 @@ cmsFloat64Number computeFL(cmsCIECAM02* pMod)
     return FL;
 }
 
-static
-cmsFloat64Number computeD(cmsCIECAM02* pMod)
+static cmsFloat64Number computeD(cmsCIECAM02* pMod)
 {
-    cmsFloat64Number D;
+    cmsFloat64Number D, temp;
 
-    D = pMod->F - (1.0/3.6)*(exp(((-pMod ->LA-42) / 92.0)));
+    temp = 1.0 - ((1.0 / 3.6) * exp((-pMod->LA - 42) / 92.0));
 
+    D = pMod->F * temp;
     return D;
 }
-
 
 static
 CAM02COLOR XYZtoCAT02(CAM02COLOR clr)

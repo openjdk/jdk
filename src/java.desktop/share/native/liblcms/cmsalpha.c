@@ -1,36 +1,7 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-// This file is available under and governed by the GNU General Public
-// License version 2 only, as published by the Free Software Foundation.
-// However, the following notice accompanied the original version of this
-// file:
-//
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2024 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -612,8 +583,8 @@ void _cmsHandleExtraChannels(_cmsTRANSFORM* p, const void* in,
         cmsUInt8Number* SourcePtr;
         cmsUInt8Number* DestPtr;
 
-        cmsUInt32Number SourceStrideIncrement = 0;
-        cmsUInt32Number DestStrideIncrement = 0;
+        size_t SourceStrideIncrement = 0;
+        size_t DestStrideIncrement = 0;
 
         // The loop itself
         for (i = 0; i < LineCount; i++) {
@@ -640,8 +611,8 @@ void _cmsHandleExtraChannels(_cmsTRANSFORM* p, const void* in,
         cmsUInt8Number* SourcePtr[cmsMAXCHANNELS];
         cmsUInt8Number* DestPtr[cmsMAXCHANNELS];
 
-        cmsUInt32Number SourceStrideIncrements[cmsMAXCHANNELS];
-        cmsUInt32Number DestStrideIncrements[cmsMAXCHANNELS];
+        size_t SourceStrideIncrements[cmsMAXCHANNELS];
+        size_t DestStrideIncrements[cmsMAXCHANNELS];
 
         memset(SourceStrideIncrements, 0, sizeof(SourceStrideIncrements));
         memset(DestStrideIncrements, 0, sizeof(DestStrideIncrements));
