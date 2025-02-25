@@ -210,6 +210,7 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
     scan_oops_in_instance_class(ik);
     if (ik->is_hidden() && CDSConfig::is_initing_classes_at_dump_time()) {
       bool succeed = AOTClassLinker::try_add_candidate(ik);
+      assert(CDSConfig::is_dumping_method_handles(), "sanity");
       guarantee(succeed, "All cached hidden classes must be aot-linkable");
       add_aot_inited_class(ik);
     }
