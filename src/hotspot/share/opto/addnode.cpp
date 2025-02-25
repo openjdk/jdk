@@ -1074,6 +1074,7 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   // At least one of the arguments is not constant
 
   if (r0->_lo >= 0 && r1->_lo >= 0) {
+      // Combine [0, lo_1] ^ [0, hi_1] -> [0, max]
       julong max = calc_xor_upper_bound_of_non_neg<jlong, julong>(r0->_hi, r1->_hi);
       return TypeLong::make(0, max, MAX2(r0->_widen, r1->_widen));
   }
