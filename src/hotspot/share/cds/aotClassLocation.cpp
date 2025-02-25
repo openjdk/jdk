@@ -270,7 +270,7 @@ AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* pa
   cs->_manifest_length = manifest_length;
   cs->_check_time = check_time;
   cs->_from_cpattr = from_cpattr;
-  cs->_timestamp = timestamp;
+  cs->_timestamp = check_time ? timestamp : 0;
   cs->_filesize = filesize;
   cs->_file_type = type;
   cs->_group = group;
