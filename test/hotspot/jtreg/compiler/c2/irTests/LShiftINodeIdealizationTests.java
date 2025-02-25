@@ -45,6 +45,8 @@ public class LShiftINodeIdealizationTests {
             "testDoubleShift5",
             "testDoubleShift6",
             "testDoubleShift7",
+            "testDoubleShift8",
+            "testDoubleShift9",
             "testDoubleShiftSliceAndStore",
     })
     public void runMethod() {
@@ -146,12 +148,31 @@ public class LShiftINodeIdealizationTests {
     @DontCompile
     public void assertDoubleShiftResult(int a) {
         Asserts.assertEQ((a << 2) << 3, testDoubleShift1(a));
+        Asserts.assertEQ(a << 5, testDoubleShift1(a));
+
         Asserts.assertEQ(((a << 2) << 3) << 1, testDoubleShift2(a));
+        Asserts.assertEQ(a << 6, testDoubleShift2(a));
+
         Asserts.assertEQ((a << 31) << 1, testDoubleShift3(a));
+        Asserts.assertEQ(0, testDoubleShift3(a));
+
         Asserts.assertEQ((a << 1) << 31, testDoubleShift4(a));
+        Asserts.assertEQ(0, testDoubleShift4(a));
+
         Asserts.assertEQ(((a << 30) << 1) << 1, testDoubleShift5(a));
+        Asserts.assertEQ(0, testDoubleShift5(a));
+
         Asserts.assertEQ((a * 4) << 3, testDoubleShift6(a));
+        Asserts.assertEQ(a << 5, testDoubleShift6(a));
+
         Asserts.assertEQ((a << 3) * 4, testDoubleShift7(a));
+        Asserts.assertEQ(a << 5, testDoubleShift7(a));
+
+        Asserts.assertEQ(a << 33, testDoubleShift8(a));
+        Asserts.assertEQ(a << 1, testDoubleShift8(a));
+
+        Asserts.assertEQ((a << 30) << 3, testDoubleShift9(a));
+        Asserts.assertEQ(0, testDoubleShift9(a));
 
         short[] arr = new short[1];
         arr[0] = (short)1;
@@ -207,6 +228,20 @@ public class LShiftINodeIdealizationTests {
     // Checks (x << 3) * 4 => x << 5
     public int testDoubleShift7(int x) {
         return (x << 3) * 4;
+    }
+
+    @Test
+    @IR(counts = {IRNode.LSHIFT, "1"})
+    // Checks x << 33 => x << 1
+    public int testDoubleShift8(int x) {
+        return x << 33;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.LSHIFT})
+    // Checks (x << 30) << 3 => 0
+    public int testDoubleShift9(int x) {
+        return (x << 30) << 3;
     }
 
     @Test

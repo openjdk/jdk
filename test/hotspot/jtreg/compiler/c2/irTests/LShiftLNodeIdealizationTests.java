@@ -45,6 +45,8 @@ public class LShiftLNodeIdealizationTests {
             "testDoubleShift5",
             "testDoubleShift6",
             "testDoubleShift7",
+            "testDoubleShift8",
+            "testDoubleShift9",
     })
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
@@ -127,12 +129,31 @@ public class LShiftLNodeIdealizationTests {
     @DontCompile
     public void assertDoubleShiftResult(long a) {
         Asserts.assertEQ((a << 2L) << 3L, testDoubleShift1(a));
+        Asserts.assertEQ(a << 5L, testDoubleShift1(a));
+
         Asserts.assertEQ(((a << 2L) << 3L) << 1L, testDoubleShift2(a));
+        Asserts.assertEQ(a << 6L, testDoubleShift2(a));
+
         Asserts.assertEQ((a << 63L) << 1L, testDoubleShift3(a));
+        Asserts.assertEQ(0L, testDoubleShift3(a));
+
         Asserts.assertEQ((a << 1L) << 63L, testDoubleShift4(a));
+        Asserts.assertEQ(0L, testDoubleShift4(a));
+
         Asserts.assertEQ(((a << 62L) << 1L) << 1L, testDoubleShift5(a));
+        Asserts.assertEQ(0L, testDoubleShift5(a));
+
         Asserts.assertEQ((a * 4L) << 3L, testDoubleShift6(a));
+        Asserts.assertEQ(a << 5L, testDoubleShift6(a));
+
         Asserts.assertEQ((a << 3L) * 4L, testDoubleShift7(a));
+        Asserts.assertEQ(a << 5L, testDoubleShift7(a));
+
+        Asserts.assertEQ(a << 65L, testDoubleShift8(a));
+        Asserts.assertEQ(a << 1L, testDoubleShift8(a));
+
+        Asserts.assertEQ((a << 62L) << 3L, testDoubleShift9(a));
+        Asserts.assertEQ(0L, testDoubleShift9(a));
     }
 
     @Test
@@ -184,5 +205,19 @@ public class LShiftLNodeIdealizationTests {
     // Checks (x << 3) * 4 => x << 5
     public long testDoubleShift7(long x) {
         return (x << 3L) * 4L;
+    }
+
+    @Test
+    @IR(counts = {IRNode.LSHIFT, "1"})
+    // Checks x << 65 => x << 1
+    public long testDoubleShift8(long x) {
+        return x << 65L;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.LSHIFT})
+    // Checks (x << 62) << 3 => 0
+    public long testDoubleShift9(long x) {
+        return (x << 62L) << 3L;
     }
 }
