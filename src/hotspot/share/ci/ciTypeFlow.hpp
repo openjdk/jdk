@@ -216,6 +216,7 @@ public:
     // Cell creation
     Cell      local(int lnum) const {
       assert(lnum < outer()->max_locals(), "index check");
+      assert(Cell_0 <= lnum && lnum <= Cell_max, "out of Cell's range");
       return (Cell)(lnum);
     }
 
