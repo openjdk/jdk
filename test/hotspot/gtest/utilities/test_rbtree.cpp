@@ -74,20 +74,28 @@ struct ArrayAllocator {
 
   using RBTreeInt = RBTreeCHeap<int, int, Cmp, mtTest>;
   using RBTreeIntNode = RBNode<int, int>;
-  using IntrusiveTreeInt = IntrusiveRBTree<int, Cmp>;
-  using IntrusiveTreeNode = IntrusiveNode<int>;
-  using IntrusiveCursor = IntrusiveTreeInt::Cursor;
+  using IntrusiveTreeNode = IntrusiveRBNode;
 
   struct IntrusiveHolder {
     IntrusiveTreeNode node;
+    int key;
     int data;
 
     IntrusiveTreeNode* get_node() { return &node; }
 
     IntrusiveHolder() {}
-    IntrusiveHolder(int data) : data(data) {}
-    static IntrusiveHolder* cast_to_self(IntrusiveTreeNode* node) { return (IntrusiveHolder*)node; }
+    IntrusiveHolder(int key, int data) : key(key), data(data) {}
+    static IntrusiveHolder* cast_to_self(const IntrusiveTreeNode* node) { return (IntrusiveHolder*)node; }
   };
+
+  struct IntrusiveCmp {
+    static int cmp(int a, const IntrusiveTreeNode* b) {
+      return a - IntrusiveHolder::cast_to_self(b)->key;
+    }
+  };
+
+  using IntrusiveTreeInt = IntrusiveRBTree<int, IntrusiveCmp>;
+  using IntrusiveCursor = IntrusiveTreeInt::Cursor;
 
 public:
   void inserting_duplicates_results_in_one_value() {
@@ -533,7 +541,7 @@ public:
 
     for (int n = 0; n <= num_nodes; n++) {
       IntrusiveHolder* place = (IntrusiveHolder*)os::malloc(sizeof(IntrusiveHolder), mtTest);
-      new (place) IntrusiveHolder(n);
+      new (place) IntrusiveHolder(n, n);
 
       tree.insert_at_cursor(place->get_node(), tree.cursor(n));
       nodes.push(place);
@@ -677,7 +685,7 @@ public:
 
       // Custom allocation here is just malloc
       IntrusiveHolder* place = (IntrusiveHolder*)os::malloc(sizeof(IntrusiveHolder), mtTest);
-      new (place) IntrusiveHolder(n);
+      new (place) IntrusiveHolder(n, n);
 
       intrusive_tree.insert_at_cursor(place->get_node(), cursor);
       IntrusiveCursor cursor2 = intrusive_tree.cursor(n);
@@ -921,6 +929,8 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
         rbtree.verify_self();
       }
     }
+    RBTreeInt::Cursor cursor = rbtree.cursor(10);
+    RBTreeInt::Cursor cursor2 = rbtree.next(cursor);
     for (int i = 0; i < ten_thousand; i++) {
       int r = os::random();
       if (r % 2 == 0) {
