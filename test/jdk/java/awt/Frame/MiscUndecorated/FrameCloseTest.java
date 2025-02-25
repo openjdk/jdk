@@ -28,7 +28,6 @@
  * @author Jitender(jitender.singh@eng.sun.com) area=AWT*
  * @author yan
  * @library /lib/client
- * @build ExtendedRobot
  * @run main FrameCloseTest
  */
 
@@ -43,7 +42,7 @@ public class FrameCloseTest {
     private Frame frame, frame2;
     private Component button, dummyButton;
     private int eventType, eventType1, eventType2;
-    private ExtendedRobot robot;
+    private Robot robot;
     private Object lock1 = new Object();
     private Object lock2 = new Object();
     private Object lock3 = new Object();
@@ -156,7 +155,7 @@ public class FrameCloseTest {
             throw new RuntimeException("Interrupted or unexpected Exception occured");
         }
         try {
-            robot = new ExtendedRobot();
+            robot = new Robot();
             robot.waitForIdle(1000);
         } catch (Exception e) {
             e.printStackTrace();

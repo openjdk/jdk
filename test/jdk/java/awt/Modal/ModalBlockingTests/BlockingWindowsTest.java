@@ -34,7 +34,7 @@ public class BlockingWindowsTest {
     private TestWindow window, childWindow;
 
     private static final int delay = 500;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     private List<Window> allWindows;
 
@@ -50,7 +50,7 @@ public class BlockingWindowsTest {
                                 DialogOwner         owner) throws Exception {
 
         modalityType = modType;
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(() -> {
             createGUI(setModal, owner);
         });

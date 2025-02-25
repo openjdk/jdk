@@ -30,7 +30,7 @@ public class UnblockedDialogTest {
     private TestDialog dialog;
 
     private static final int delay = 500;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     private Dialog parentDialog;
     private Frame  parentFrame;
@@ -43,7 +43,7 @@ public class UnblockedDialogTest {
     private UnblockedDialogTest(Dialog.ModalityType modType,
                                 boolean             set) throws Exception {
 
-        robot = new ExtendedRobot();
+        robot = new Robot();
         modalityType = modType;
         setModal = set;
     }
