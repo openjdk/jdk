@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,15 +290,16 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
                 if (algorithm.startsWith("Hmac")) {
                     String digest = algorithm.substring(4);
                     keySize = adjustKeySize(switch (digest) {
-                        case "MD5" -> 512;
-                        case "SHA1" -> 160;
-                        case "SHA224", "SHA512/224", "SHA3-224" -> 224;
-                        case "SHA256", "SHA512/256", "SHA3-256" -> 256;
-                        case "SHA384", "SHA3-384" -> 384;
-                        case "SHA512", "SHA3-512" -> 512;
+                        case "MD5", "SHA1", "SHA224", "SHA256" -> 512;
+                        case "SHA384", "SHA512", "SHA512/224", "SHA512/256"
+                                -> 1024;
+                        case "SHA3-224" -> 1152;
+                        case "SHA3-256" -> 1088;
+                        case "SHA3-384" -> 832;
+                        case "SHA3-512" -> 576;
                         default -> {
-                            throw new ProviderException("Unsupported algorithm " +
-                                    algorithm);
+                            throw new ProviderException("Unsupported algorithm "
+                                    + algorithm);
                         }
                     }, range);
                 } else {
