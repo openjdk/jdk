@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -913,8 +913,8 @@ public:
   bool copy_node_notes_to(Node* dest, Node* source);
 
   // Workhorse function to sort out the blocked Node_Notes array:
-  inline Node_Notes* locate_node_notes(GrowableArray<Node_Notes*>* arr,
-                                       int idx, bool can_grow = false);
+  Node_Notes* locate_node_notes(GrowableArray<Node_Notes*>* arr,
+                                int idx, bool can_grow = false);
 
   void grow_node_notes(GrowableArray<Node_Notes*>* arr, int grow_by);
 
