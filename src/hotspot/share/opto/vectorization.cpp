@@ -93,9 +93,9 @@ VStatus VLoop::check_preconditions_helper() {
     return VStatus::make_failure(VLoop::FAILURE_BACKEDGE);
   }
 
-  // To align vector memory accesses in the main-loop, we will have to adjust
-  // the pre-loop limit.
   if (_cl->is_main_loop()) {
+    // To align vector memory accesses in the main-loop, we will have to adjust
+    // the pre-loop limit.
     CountedLoopEndNode* pre_end = _cl->find_pre_loop_end();
     if (pre_end == nullptr) {
       return VStatus::make_failure(VLoop::FAILURE_PRE_LOOP_LIMIT);
@@ -105,6 +105,41 @@ VStatus VLoop::check_preconditions_helper() {
       return VStatus::make_failure(VLoop::FAILURE_PRE_LOOP_LIMIT);
     }
     _pre_loop_end = pre_end;
+
+    // See if we find the infrastructure for speculative runtime-checks.
+    //  (1) Auto Vectorization Parse Predicate
+    Node* pre_ctrl = pre_loop_head()->in(LoopNode::EntryControl);
+    const Predicates predicates(pre_ctrl);
+    const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
+    if (predicate_block->has_parse_predicate()) {
+      _auto_vectorization_parse_predicate_proj = predicate_block->parse_predicate_success_proj();
+    }
+
+    //  (2) Multiversioning fast-loop projection
+    IfTrueNode* before_predicates = predicates.entry()->isa_IfTrue();
+    if (before_predicates != nullptr &&
+        before_predicates->in(0)->is_If() &&
+        before_predicates->in(0)->in(1)->is_OpaqueMultiversioning()) {
+      _multiversioning_fast_proj = before_predicates;
+    }
+#ifndef PRODUCT
+    if (is_trace_preconditions() || is_trace_speculative_runtime_checks()) {
+      tty->print_cr(" Infrastructure for speculative runtime-checks:");
+      if (_auto_vectorization_parse_predicate_proj != nullptr) {
+        tty->print_cr("  auto_vectorization_parse_predicate_proj: speculate and trap");
+        _auto_vectorization_parse_predicate_proj->dump_bfs(5,0,"");
+      } else if (_multiversioning_fast_proj != nullptr) {
+        tty->print_cr("  multiversioning_fast_proj: speculate and multiversion");
+        _multiversioning_fast_proj->dump_bfs(5,0,"");
+      } else {
+        tty->print_cr("  Not found.");
+      }
+    }
+#endif
+    assert(_auto_vectorization_parse_predicate_proj == nullptr ||
+           _multiversioning_fast_proj == nullptr, "we should only have at most one of these");
+    assert(_cl->is_multiversion_fast_loop() == (_multiversioning_fast_proj != nullptr),
+           "must find the multiversion selector IFF loop is a multiversion fast loop");
   }
 
   return VStatus::make_success();
@@ -472,15 +507,28 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //        + con                   + con                                     + C_const                   (sum of constant terms)
   //
   // We describe the 6 terms:
-  //   1) The "base" of the address is the address of a Java object (e.g. array),
-  //      and as such ObjectAlignmentInBytes (a power of 2) aligned. We have
-  //      defined aw = MIN(vector_width, ObjectAlignmentInBytes), which is also
+  //   1) The "base" of the address:
+  //        - For heap objects, this is the base of the object, and as such
+  //          ObjectAlignmentInBytes (a power of 2) aligned.
+  //        - For off-heap / native memory, the "base" has no alignment
+  //          gurantees. To ensure alignment we can do either of these:
+  //          - Add a runtime check to verify ObjectAlignmentInBytes alignment,
+  //            i.e. we can speculatively compile with an alignment assumption.
+  //            If we pass the check, we can go into the loop with the alignment
+  //            assumption, if we fail we have to trap/deopt or take the other
+  //            loop version without alignment assumptions.
+  //          - If runtime checks are not possible, then we return an empty
+  //            solution, i.e. we do not vectorize the corresponding pack.
+  //
+  //      Let us assume we have an object "base", or passed the alignment
+  //      runtime check for native "bases", hence we know:
+  //
+  //        base % ObjectAlignmentInBytes = 0
+  //
+  //      We defined aw = MIN(vector_width, ObjectAlignmentInBytes), which is
   //      a power of 2. And hence we know that "base" is thus also aw-aligned:
   //
-  //        base % ObjectAlignmentInBytes = 0     ==>    base % aw = 0
-  //
-  //      TODO: Note: we have been assuming that this also holds for native memory base
-  //                  addresses. This is incorrect, see JDK-8323582.
+  //        base % ObjectAlignmentInBytes = 0     ==>    base % aw = 0              (BASE_ALIGNED)
   //
   //   2) The "C_const" term is the sum of all constant terms. This is "con",
   //      plus "iv_scale * init" if it is constant.
@@ -505,6 +553,13 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   6) The "C_main * main_iter" term represents how much the iv is increased
   //      during "main_iter" main-loop iterations.
 
+  // For native memory, we must add a runtime-check that "base % ObjectAlignmentInBytes = ",
+  // to ensure (BASE_ALIGNED). If we cannot add this runtime-check, we have no guarantee on
+  // its alignment.
+  if (!_vpointer.mem_pointer().base().is_object() && !_are_speculative_checks_possible) {
+    return new EmptyAlignmentSolution("Cannot add speculative check for native memory alignment.");
+  }
+
   // Attribute init (i.e. _init_node) either to C_const or to C_init term.
   const int C_const_init = _init_node->is_ConI() ? _init_node->as_ConI()->get_int() : 0;
   const int C_const =      _vpointer.con() + C_const_init * iv_scale();
@@ -521,8 +576,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0. Note, that we are defining the
   // modulo operator "%" such that the remainder is always positive, see AlignmentSolution::mod(i, q).
   //
-  // TODO: Note: the following assumption is incorrect for native memory bases, see JDK-8323582.
-  // Since "base % aw = 0", we only need to ensure alignment of the other 5 terms:
+  // Since "base % aw = 0" (BASE_ALIGNED), we only need to ensure alignment of the other 5 terms:
   //
   //   (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter + C_main * main_iter) % aw = 0      (1)
   //
@@ -878,8 +932,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //         + iv_scale * pre_stride * pre_iter
   //         + iv_scale * main_stride * main_iter)) % aw =
   //
-  //   -> base aligned: base % aw = 0
-  //        TODO: Note: this assumption is incorrect for native memory bases, see JDK-8323582.
+  //   -> apply (BASE_ALIGNED): base % aw = 0
   //   -> main-loop iterations aligned (2): C_main % aw = (iv_scale * main_stride) % aw = 0
   //   (con + invar + iv_scale * init + iv_scale * pre_stride * pre_iter) % aw =
   //
@@ -958,7 +1011,7 @@ void AlignmentSolver::trace_start_solve() const {
                   _pre_stride, _main_stride);
     // adr = base + con + invar + iv_scale * iv
     tty->print("  adr = base[%d]", base().object_or_native()->_idx);
-    tty->print(" + invar + iv_scale(%d) * iv + con(%d)", iv_scale(), _vpointer.con());
+    tty->print_cr(" + invar + iv_scale(%d) * iv + con(%d)", iv_scale(), _vpointer.con());
   }
 }
 

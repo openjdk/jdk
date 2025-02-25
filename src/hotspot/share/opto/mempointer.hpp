@@ -229,9 +229,12 @@
 //     Even if we could know that there is some base address to which we add index offsets, we cannot know
 //     if this reference address points to the beginning of a native memory allocation or into the middle,
 //     or outside it. We also have no guarantee for alignment with such a base address.
+//
 //     Still: we would like to find such a base if possible, and if two pointers are similar (i.e. have the
 //     same summands), we would like to find the same base. Further, it is reasonable to speculatively
-//     assume that such base addresses are aligned (TODO: need to add this speculative check in JDK-8323582).
+//     assume that such base addresses are aligned. We performs such a speculative alignment runtime check
+//     in VTransform::add_speculative_alignment_check.
+//
 //     A base pointer must have scale = 1, and be accepted byMemPointer::is_native_memory_base_candidate.
 //     It can thus be one of these:
 //      (1) CastX2P

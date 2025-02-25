@@ -734,6 +734,8 @@ class PredicateIterator : public StackObj {
     Node* current = _start_node;
     PredicateBlockIterator loop_limit_check_predicate_iterator(current, Deoptimization::Reason_loop_limit_check);
     current = loop_limit_check_predicate_iterator.for_each(predicate_visitor);
+    PredicateBlockIterator auto_vectorization_check_iterator(current, Deoptimization::Reason_auto_vectorization_check);
+    current = auto_vectorization_check_iterator.for_each(predicate_visitor);
     if (UseLoopPredicate) {
       if (UseProfiledLoopPredicate) {
         PredicateBlockIterator profiled_loop_predicate_iterator(current, Deoptimization::Reason_profile_predicate);
@@ -906,6 +908,7 @@ class PredicateBlock : public StackObj {
 class Predicates : public StackObj {
   Node* const _tail;
   const PredicateBlock _loop_limit_check_predicate_block;
+  const PredicateBlock _auto_vectorization_check_block;
   const PredicateBlock _profiled_loop_predicate_block;
   const PredicateBlock _loop_predicate_block;
   Node* const _entry;
@@ -914,7 +917,9 @@ class Predicates : public StackObj {
   explicit Predicates(Node* loop_entry)
       : _tail(loop_entry),
         _loop_limit_check_predicate_block(loop_entry, Deoptimization::Reason_loop_limit_check),
-        _profiled_loop_predicate_block(_loop_limit_check_predicate_block.entry(),
+        _auto_vectorization_check_block(_loop_limit_check_predicate_block.entry(),
+                                        Deoptimization::Reason_auto_vectorization_check),
+        _profiled_loop_predicate_block(_auto_vectorization_check_block.entry(),
                                        Deoptimization::Reason_profile_predicate),
         _loop_predicate_block(_profiled_loop_predicate_block.entry(),
                               Deoptimization::Reason_predicate),
@@ -933,6 +938,10 @@ class Predicates : public StackObj {
 
   const PredicateBlock* profiled_loop_predicate_block() const {
     return &_profiled_loop_predicate_block;
+  }
+
+  const PredicateBlock* auto_vectorization_check_block() const {
+    return &_auto_vectorization_check_block;
   }
 
   const PredicateBlock* loop_limit_check_predicate_block() const {
