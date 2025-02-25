@@ -1386,7 +1386,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Register str1, Register str2,
                                                   const bool isLL, Register cnt1, Register cnt2,
                                                   Register tmp1, Register tmp2, Register tmp3,
-                                                  const int STUB_THRESHOLD, Label *DONE, Label *STUB) {
+                                                  const int STUB_THRESHOLD, Label *STUB, Label *DONE) {
   Label TAIL_CHECK, TAIL, NEXT_WORD, DIFFERENCE;
 
   const int base_offset = isLL ? arrayOopDesc::base_offset_in_bytes(T_BYTE)
@@ -1431,7 +1431,6 @@ void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Regis
   add(str2, str2, cnt2);
   add(str1, str1, cnt2);
   sub(cnt2, zr, cnt2);
-
   addi(cnt2, cnt2, 8);
   bne(tmp1, tmp2, DIFFERENCE);
   bgez(cnt2, TAIL);
@@ -1478,7 +1477,7 @@ void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Regis
 void C2_MacroAssembler::string_compare_long_different_encoding(Register result, Register str1, Register str2,
                                                bool isLU, Register cnt1, Register cnt2,
                                                Register tmpL, Register tmpU, Register tmp3,
-                                               const int STUB_THRESHOLD, Label *DONE, Label *STUB) {
+                                               const int STUB_THRESHOLD, Label *STUB, Label *DONE) {
   Label TAIL, NEXT_WORD, DIFFERENCE;
 
   const int base_offset = arrayOopDesc::base_offset_in_bytes(T_CHAR);
@@ -1502,7 +1501,6 @@ void C2_MacroAssembler::string_compare_long_different_encoding(Register result, 
   mv(tmpL, tmp3);
   sub(cnt2, zr, cnt2);
   addi(cnt1, cnt1, 4);
-
   addi(cnt2, cnt2, 8);
   bne(tmpL, tmpU, DIFFERENCE);
   bgez(cnt2, TAIL);
@@ -1591,10 +1589,6 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   mv(cnt2, cnt1);
   bind(L);
 
-  // Load 4 bytes once to compare for alignment before main loop. Note that this
-  // is only possible for LL/UU case. We need to resort to load_long_misaligned
-  // for both LU and UL cases.
-
   // A very short string
   mv(t0, minCharsInWord);
   ble(cnt2, t0, SHORT_STRING);
@@ -1605,12 +1599,12 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       string_compare_long_same_encoding(result,
                                 str1, str2, isLL,
                                 cnt1, cnt2, tmp1, tmp2, tmp3,
-                                STUB_THRESHOLD, &DONE, &STUB);
+                                STUB_THRESHOLD, &STUB, &DONE);
     } else { // LU or UL
       string_compare_long_different_encoding(result,
                                 str1, str2, isLU,
                                 cnt1, cnt2, tmp1, tmp2, tmp3,
-                                STUB_THRESHOLD, &DONE, &STUB);
+                                STUB_THRESHOLD, &STUB, &DONE);
     }
   }
 

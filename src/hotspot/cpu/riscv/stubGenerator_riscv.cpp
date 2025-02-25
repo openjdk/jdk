@@ -2644,24 +2644,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // code for comparing 16 bytes of strings with same encoding
-  void compare_string_16_bytes_same(Label &DIFF1, Label &DIFF2,
-                    const Register result, const Register str1, const Register cnt1, const Register str2,
-                    const Register tmp1, const Register tmp2, const Register tmp4, const Register tmp5) {
-    __ ld(tmp5, Address(str1));
-    __ addi(str1, str1, 8);
-    __ xorr(tmp4, tmp1, tmp2);
-    __ ld(cnt1, Address(str2));
-    __ addi(str2, str2, 8);
-    __ bnez(tmp4, DIFF1);
-    __ ld(tmp1, Address(str1));
-    __ addi(str1, str1, 8);
-    __ xorr(tmp4, tmp5, cnt1);
-    __ ld(tmp2, Address(str2));
-    __ addi(str2, str2, 8);
-    __ bnez(tmp4, DIFF2);
-  }
-
   // x10  = result
   // x11  = str1
   // x12  = cnt1
@@ -2703,7 +2685,20 @@ class StubGenerator: public StubCodeGenerator {
     __ push_reg(spilled_regs, sp);
     __ bltz(cnt2, TAIL);
     __ bind(SMALL_LOOP);
-      compare_string_16_bytes_same(DIFF, DIFF2, result, str1, cnt1, str2, tmp1, tmp2, tmp4, tmp5);
+      // compare 16 bytes of strings with same encoding
+      __ ld(tmp5, Address(str1));
+      __ addi(str1, str1, 8);
+      __ xorr(tmp4, tmp1, tmp2);
+      __ ld(cnt1, Address(str2));
+      __ addi(str2, str2, 8);
+      __ bnez(tmp4, DIFF);
+      __ ld(tmp1, Address(str1));
+      __ addi(str1, str1, 8);
+      __ xorr(tmp4, tmp5, cnt1);
+      __ ld(tmp2, Address(str2));
+      __ addi(str2, str2, 8);
+      __ bnez(tmp4, DIFF2);
+
       __ subi(cnt2, cnt2, isLL ? 16 : 8);
       __ bgez(cnt2, SMALL_LOOP);
     __ bind(TAIL);
