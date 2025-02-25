@@ -60,9 +60,9 @@ public:
     }
   }
 
-  virtual void update_all() {
+  void update_all() {
     size_t committed = _monitoring_support->young_gen_committed();
-    _current_size->set_value(committed);
+    GenerationCounters::update_all(committed);
   }
 };
 
@@ -81,9 +81,9 @@ public:
     }
   }
 
-  virtual void update_all() {
+  void update_all() {
     size_t committed = _monitoring_support->old_gen_committed();
-    _current_size->set_value(committed);
+    GenerationCounters::update_all(committed);
   }
 };
 
