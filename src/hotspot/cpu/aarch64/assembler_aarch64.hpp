@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3663,6 +3663,18 @@ public:
   INSN(sve_bic,  0b00, 0b0, 0b1);
 #undef INSN
 
+// SVE aliases
+#define INSN(ALIAS, REFERENT)                            \
+  void ALIAS(PRegister Pd, PRegister Pg, PRegister Pn) { \
+    REFERENT(Pd, Pg, Pn, Pg);                            \
+  }
+
+  INSN(sve_mov,  sve_and);  // Move predicates (zeroing); an alias of sve_and
+  INSN(sve_movs, sve_ands); // Move predicates (zeroing), setting the condition flags; an alias of sve_ands
+  INSN(sve_not,  sve_eor);  // Bitwise invert predicate; an alias of sve_eor
+  INSN(sve_nots, sve_eors); // Bitwise invert predicate, setting the condition flags; an alias of sve_eors
+#undef INSN
+
   // SVE increment register by predicate count
   void sve_incp(const Register rd, SIMD_RegVariant T, PRegister pg) {
     starti;
@@ -4000,6 +4012,13 @@ public:
   INSN(sve_brka, 0b00); // Break after first true condition
   INSN(sve_brkb, 0b10); // Break before first true condition
 #undef INSN
+
+  // SVE move prefix (unpredicated)
+  void sve_movprfx(FloatRegister Zd, FloatRegister Zn) {
+    starti;
+    f(0b00000100, 31, 24), f(0b00, 23, 22), f(0b1, 21), f(0b00000, 20, 16);
+    f(0b101111, 15, 10), rf(Zn, 5), rf(Zd, 0);
+  }
 
 // Element count and increment scalar (SVE)
 #define INSN(NAME, TYPE)                                                             \
