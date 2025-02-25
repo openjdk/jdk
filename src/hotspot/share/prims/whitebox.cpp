@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds.h"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConstants.hpp"
@@ -46,11 +45,12 @@
 #include "compiler/methodMatcher.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcConfig.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genArguments.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspace/testHelpers.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -287,8 +287,8 @@ WB_ENTRY(jlong, WB_GetCompressedOopsMaxHeapSize(JNIEnv* env, jobject o)) {
 WB_END
 
 WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
-  tty->print_cr("Minimum heap " SIZE_FORMAT " Initial heap " SIZE_FORMAT " "
-                "Maximum heap " SIZE_FORMAT " Space alignment " SIZE_FORMAT " Heap alignment " SIZE_FORMAT,
+  tty->print_cr("Minimum heap %zu Initial heap %zu "
+                "Maximum heap %zu Space alignment %zu Heap alignment %zu",
                 MinHeapSize,
                 InitialHeapSize,
                 MaxHeapSize,
@@ -299,12 +299,10 @@ WB_END
 
 WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(100 * granularity, granularity, os::vm_page_size());
-  VirtualSpace vs;
-  vs.initialize(rhs, 50 * granularity);
+  ReservedHeapSpace rhs = HeapReserver::reserve(100 * granularity, granularity, os::vm_page_size(), nullptr);
 
   // Check if constraints are complied
-  if (!( UseCompressedOops && rhs.base() != nullptr &&
+  if (!( UseCompressedOops && rhs.is_reserved() &&
          CompressedOops::base() != nullptr &&
          CompressedOops::use_implicit_null_checks() )) {
     tty->print_cr("WB_ReadFromNoaccessArea method is useless:\n "
@@ -318,6 +316,10 @@ WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
                   CompressedOops::use_implicit_null_checks());
     return;
   }
+
+  VirtualSpace vs;
+  vs.initialize(rhs, 50 * granularity);
+
   tty->print_cr("Reading from no access area... ");
   tty->print_cr("*(vs.low_boundary() - rhs.noaccess_prefix() / 2 ) = %c",
                 *(vs.low_boundary() - rhs.noaccess_prefix() / 2 ));
@@ -326,7 +328,12 @@ WB_END
 static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
                                            size_t magnitude, size_t iterations) {
   size_t granularity = os::vm_allocation_granularity();
-  ReservedHeapSpace rhs(reserved_space_size * granularity, granularity, os::vm_page_size());
+  ReservedHeapSpace rhs = HeapReserver::reserve(reserved_space_size * granularity, granularity, os::vm_page_size(), nullptr);
+  if (!rhs.is_reserved()) {
+    tty->print_cr("Failed to initialize ReservedSpace. Can't proceed.");
+    return 3;
+  }
+
   VirtualSpace vs;
   if (!vs.initialize(rhs, 0)) {
     tty->print_cr("Failed to initialize VirtualSpace. Can't proceed.");
@@ -919,14 +926,19 @@ WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject metho
   if (compLevel < CompLevel_none || compLevel > CompilationPolicy::highest_compile_level()) {
     return false; // Intrinsic is not available on a non-existent compilation level.
   }
+  AbstractCompiler* comp = CompileBroker::compiler((int)compLevel);
+  if (comp == nullptr) {
+    // Could have compLevel == 0, or !TieredCompilation and incompatible values of TieredStopAtLevel and compLevel.
+    tty->print_cr("WB error: no compiler for requested compilation level %d", compLevel);
+    return false;
+  }
+
   jmethodID method_id, compilation_context_id;
   method_id = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(method_id));
 
   DirectiveSet* directive;
-  AbstractCompiler* comp = CompileBroker::compiler((int)compLevel);
-  assert(comp != nullptr, "compiler not available");
   if (compilation_context != nullptr) {
     compilation_context_id = reflected_method_to_jmid(thread, env, compilation_context);
     CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
@@ -1792,6 +1804,10 @@ WB_ENTRY(jlong, WB_RootChunkWordSize(JNIEnv* env))
   return (jlong)Metaspace::reserve_alignment_words();
 WB_END
 
+WB_ENTRY(jboolean, WB_IsStaticallyLinked(JNIEnv* env, jobject wb))
+  return JVM_IsStaticallyLinked();
+WB_END
+
 //////////////
 
 WB_ENTRY(jlong, WB_AllocateMetaspace(JNIEnv* env, jobject wb, jobject class_loader, jlong size))
@@ -2176,7 +2192,7 @@ WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
 WB_END
 
 WB_ENTRY(jboolean, WB_CanWriteJavaHeapArchive(JNIEnv* env))
-  return HeapShared::can_write();
+  return !CDSConfig::are_vm_options_incompatible_with_dumping_heap();
 WB_END
 
 
@@ -2632,14 +2648,6 @@ WB_ENTRY(jstring, WB_GetLibcName(JNIEnv* env, jobject o))
   return info_string;
 WB_END
 
-WB_ENTRY(void, WB_LockCritical(JNIEnv* env, jobject wb))
-  GCLocker::lock_critical(thread);
-WB_END
-
-WB_ENTRY(void, WB_UnlockCritical(JNIEnv* env, jobject wb))
-  GCLocker::unlock_critical(thread);
-WB_END
-
 WB_ENTRY(void, WB_PinObject(JNIEnv* env, jobject wb, jobject o))
 #if INCLUDE_G1GC
   if (!UseG1GC) {
@@ -2980,8 +2988,6 @@ static JNINativeMethod methods[] = {
   {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
   {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},
 
-  {CC"lockCritical",    CC"()V",                      (void*)&WB_LockCritical},
-  {CC"unlockCritical",  CC"()V",                      (void*)&WB_UnlockCritical},
   {CC"pinObject",       CC"(Ljava/lang/Object;)V",    (void*)&WB_PinObject},
   {CC"unpinObject",     CC"(Ljava/lang/Object;)V",    (void*)&WB_UnpinObject},
   {CC"setVirtualThreadsNotifyJvmtiMode", CC"(Z)Z",    (void*)&WB_SetVirtualThreadsNotifyJvmtiMode},
@@ -2991,7 +2997,8 @@ static JNINativeMethod methods[] = {
   {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
   {CC"lockAndStuckInSafepoint", CC"()V", (void*)&WB_TakeLockAndHangInSafepoint},
   {CC"wordSize", CC"()J",                             (void*)&WB_WordSize},
-  {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize}
+  {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize},
+  {CC"isStatic", CC"()Z",                             (void*)&WB_IsStaticallyLinked}
 };
 
 

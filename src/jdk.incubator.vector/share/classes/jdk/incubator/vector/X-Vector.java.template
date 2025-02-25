@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2824,6 +2824,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     final
     <S extends VectorShuffle<$Boxtype$>>
     $abstractvectortype$ rearrangeTemplate(Class<S> shuffletype, S shuffle) {
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, $type$.class, length(),
             this, shuffle, null,
@@ -2849,7 +2850,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, $type$.class, length(),
@@ -5347,7 +5348,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {
-        return (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
+        return Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
     }
 
     // ================================================

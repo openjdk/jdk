@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -522,20 +522,18 @@ public:
 //------------------------------LoadKlassNode----------------------------------
 // Load a Klass from an object
 class LoadKlassNode : public LoadPNode {
-protected:
-  // In most cases, LoadKlassNode does not have the control input set. If the control
-  // input is set, it must not be removed (by LoadNode::Ideal()).
-  virtual bool can_remove_control() const;
+private:
+  LoadKlassNode(Node* mem, Node* adr, const TypePtr* at, const TypeKlassPtr* tk, MemOrd mo)
+    : LoadPNode(nullptr, mem, adr, at, tk, mo) {}
+
 public:
-  LoadKlassNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeKlassPtr *tk, MemOrd mo)
-    : LoadPNode(c, mem, adr, at, tk, mo) {}
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual bool depends_only_on_test() const { return true; }
 
   // Polymorphic factory method:
-  static Node* make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* at,
+  static Node* make(PhaseGVN& gvn, Node* mem, Node* adr, const TypePtr* at,
                     const TypeKlassPtr* tk = TypeInstKlassPtr::OBJECT);
 };
 
@@ -548,9 +546,12 @@ public:
 // extract the actual class pointer. C2's type system is agnostic on whether the
 // input address directly points into the class pointer.
 class LoadNKlassNode : public LoadNNode {
+private:
+  friend Node* LoadKlassNode::make(PhaseGVN&, Node*, Node*, const TypePtr*, const TypeKlassPtr*);
+  LoadNKlassNode(Node* mem, Node* adr, const TypePtr* at, const TypeNarrowKlass* tk, MemOrd mo)
+    : LoadNNode(nullptr, mem, adr, at, tk, mo) {}
+
 public:
-  LoadNKlassNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeNarrowKlass *tk, MemOrd mo)
-    : LoadNNode(c, mem, adr, at, tk, mo) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegN; }
   virtual int store_Opcode() const { return Op_StoreNKlass; }

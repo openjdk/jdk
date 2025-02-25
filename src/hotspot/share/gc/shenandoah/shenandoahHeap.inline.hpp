@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015, 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,10 +63,6 @@ inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
   size_t new_index = Atomic::add(&_index, (size_t) 1, memory_order_relaxed);
   // get_region() provides the bounds-check and returns null on OOB.
   return _heap->get_region(new_index - 1);
-}
-
-inline bool ShenandoahHeap::has_forwarded_objects() const {
-  return _gc_state.is_set(HAS_FORWARDED);
 }
 
 inline WorkerThreads* ShenandoahHeap::workers() const {
@@ -382,7 +379,7 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
     // Old regions are in old and global collections, not in young collections
     return !gen->is_young();
   default:
-    assert(false, "Bad affiliation (%d) for region " SIZE_FORMAT, region_affiliation(index), index);
+    assert(false, "Bad affiliation (%d) for region %zu", region_affiliation(index), index);
     return false;
   }
 }
@@ -450,28 +447,36 @@ inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
   return collection_set()->is_in_loc(p);
 }
 
-inline bool ShenandoahHeap::is_stable() const {
-  return _gc_state.is_clear();
+inline bool ShenandoahHeap::is_idle() const {
+  return _gc_state_changed ? _gc_state.is_clear() : ShenandoahThreadLocalData::gc_state(Thread::current()) == 0;
 }
 
-inline bool ShenandoahHeap::is_idle() const {
-  return _gc_state.is_unset(MARKING | EVACUATION | UPDATEREFS);
+inline bool ShenandoahHeap::has_forwarded_objects() const {
+  return is_gc_state(HAS_FORWARDED);
 }
 
 inline bool ShenandoahHeap::is_concurrent_mark_in_progress() const {
-  return _gc_state.is_set(MARKING);
+  return is_gc_state(MARKING);
 }
 
 inline bool ShenandoahHeap::is_concurrent_young_mark_in_progress() const {
-  return _gc_state.is_set(YOUNG_MARKING);
+  return is_gc_state(YOUNG_MARKING);
 }
 
 inline bool ShenandoahHeap::is_concurrent_old_mark_in_progress() const {
-  return _gc_state.is_set(OLD_MARKING);
+  return is_gc_state(OLD_MARKING);
 }
 
 inline bool ShenandoahHeap::is_evacuation_in_progress() const {
-  return _gc_state.is_set(EVACUATION);
+  return is_gc_state(EVACUATION);
+}
+
+inline bool ShenandoahHeap::is_update_refs_in_progress() const {
+  return is_gc_state(UPDATE_REFS);
+}
+
+inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
+  return is_gc_state(WEAK_ROOTS);
 }
 
 inline bool ShenandoahHeap::is_degenerated_gc_in_progress() const {
@@ -486,20 +491,12 @@ inline bool ShenandoahHeap::is_full_gc_move_in_progress() const {
   return _full_gc_move_in_progress.is_set();
 }
 
-inline bool ShenandoahHeap::is_update_refs_in_progress() const {
-  return _gc_state.is_set(UPDATEREFS);
-}
-
 inline bool ShenandoahHeap::is_stw_gc_in_progress() const {
   return is_full_gc_in_progress() || is_degenerated_gc_in_progress();
 }
 
 inline bool ShenandoahHeap::is_concurrent_strong_root_in_progress() const {
   return _concurrent_strong_root_in_progress.is_set();
-}
-
-inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
-  return _gc_state.is_set(WEAK_ROOTS);
 }
 
 template<class T>

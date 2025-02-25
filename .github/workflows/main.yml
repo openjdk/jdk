@@ -325,17 +325,6 @@ jobs:
       bootjdk-platform: linux-x64
       runs-on: ubuntu-22.04
 
-  test-macos-x64:
-    name: macos-x64
-    needs:
-      - build-macos-x64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: macos-x64
-      bootjdk-platform: macos-x64
-      runs-on: macos-13
-      xcode-toolset-version: '14.3.1'
-
   test-macos-aarch64:
     name: macos-aarch64
     needs:

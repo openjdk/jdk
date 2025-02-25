@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public class MouseWheelEvent extends MouseEvent {
     @Native public static final int WHEEL_BLOCK_SCROLL = 1;
 
     /**
-     * Indicates what sort of scrolling should take place in response to this
+     * @serial Indicates what sort of scrolling should take place in response to this
      * event, based on platform settings.  Legal values are:
      * <ul>
      * <li> WHEEL_UNIT_SCROLL
@@ -130,7 +130,7 @@ public class MouseWheelEvent extends MouseEvent {
     int scrollType;
 
     /**
-     * Only valid for scrollType WHEEL_UNIT_SCROLL.
+     * @serial Only valid for scrollType WHEEL_UNIT_SCROLL.
      * Indicates number of units that should be scrolled per
      * click of mouse wheel rotation, based on platform settings.
      *
@@ -140,14 +140,14 @@ public class MouseWheelEvent extends MouseEvent {
     int scrollAmount;
 
     /**
-     * Indicates how far the mouse wheel was rotated.
+     * @serial Indicates how far the mouse wheel was rotated.
      *
      * @see #getWheelRotation
      */
     int wheelRotation;
 
     /**
-     * Indicates how far the mouse wheel was rotated.
+     * @serial Indicates how far the mouse wheel was rotated.
      *
      * @see #getPreciseWheelRotation
      */
