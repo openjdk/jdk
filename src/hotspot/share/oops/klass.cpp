@@ -291,7 +291,8 @@ static markWord make_prototype(const Klass* kls) {
   return prototype;
 }
 
-Klass::Klass() : _kind(UnknownKlassKind) {
+Klass::Klass() : _kind(UnknownKlassKind),
+                 _cached_modifier_flags(max_jushort) {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for cds");
 }
 
@@ -300,6 +301,7 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
 Klass::Klass(KlassKind kind) : _kind(kind),
+                               _cached_modifier_flags(max_jushort),
                                _prototype_header(make_prototype(this)),
                                _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
@@ -328,10 +330,15 @@ jint Klass::array_layout_helper(BasicType etype) {
   return lh;
 }
 
+void Klass::cache_modifier_flags(int flags) {
+  _cached_modifier_flags = checked_cast<u2>(flags);
+}
+
 int Klass::modifier_flags() const {
-  int mods = java_lang_Class::modifiers(java_mirror_no_keepalive());
-  assert(mods == compute_modifier_flags(), "should be same");
-  return mods;
+  int flags = checked_cast<int>(_cached_modifier_flags);
+  assert(flags != max_jushort, "should be initialized");
+  assert(flags == compute_modifier_flags(), "should be same");
+  return flags;
 }
 
 bool Klass::can_be_primary_super_slow() const {

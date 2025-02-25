@@ -1064,6 +1064,7 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
   // Set the modifiers flag.
   int computed_modifiers = k->compute_modifier_flags();
   set_modifiers(mirror(), computed_modifiers);
+  k->cache_modifier_flags(computed_modifiers);
 
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
   assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
