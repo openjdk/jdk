@@ -30,7 +30,7 @@ import java.awt.color.ICC_Profile;
  * @summary Test checks behavior of the ICC_Profile.setData(int, byte[])
  */
 public final class ICC_ProfileSetNullDataTest {
-    private static final int[] colorSpace = new int [] {
+    private static final int[] colorSpace = {
             ColorSpace.CS_sRGB, ColorSpace.CS_LINEAR_RGB,
             ColorSpace.CS_PYCC, ColorSpace.CS_GRAY,
             ColorSpace.CS_CIEXYZ
@@ -43,10 +43,10 @@ public final class ICC_ProfileSetNullDataTest {
             ICC_Profile profile = ICC_Profile.getInstance(builtInProfile.getData());
             try {
                 profile.setData(ICC_Profile.icSigCmykData, tagData);
+                throw new RuntimeException("IllegalArgumentException expected");
             } catch (IllegalArgumentException e) {
-                return;
+                // IAE expected
             }
-            throw new RuntimeException("IllegalArgumentException expected");
         }
     }
 }

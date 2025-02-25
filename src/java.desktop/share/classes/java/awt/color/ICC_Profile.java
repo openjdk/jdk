@@ -111,7 +111,7 @@ public sealed class ICC_Profile implements Serializable
     /**
      * Set to true for {@code BuiltInProfile}, false otherwise.
      * This check is used in {@link #setData(int, byte[])} to prevent modifying
-     * Built-in profiles.
+     * built-in profiles.
      */
     private boolean builtIn = false;
 

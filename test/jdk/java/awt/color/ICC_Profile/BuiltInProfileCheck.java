@@ -39,11 +39,11 @@ public class BuiltInProfileCheck {
     public static void main(String[] args) {
         System.out.println("CASE 1: Testing BuiltIn Profile");
         updateProfile(true);
-        System.out.println("Passed \n");
+        System.out.println("Passed\n");
 
         System.out.println("CASE 2: Testing Custom Profile");
         updateProfile(false);
-        System.out.println("Passed \n");
+        System.out.println("Passed\n");
     }
 
     private static void updateProfile(boolean isBuiltIn) {
@@ -67,7 +67,7 @@ public class BuiltInProfileCheck {
                 iccProfile.setData(HEADER_TAG, headerData);
                 throw new RuntimeException("Test Failed! IAE NOT thrown.");
             } catch (IllegalArgumentException iae) {
-                if (!iae.getMessage().equalsIgnoreCase(EXCEPTION_MSG)) {
+                if (!iae.getMessage().equals(EXCEPTION_MSG)) {
                     throw new RuntimeException("Test Failed! IAE with exception msg \""
                                                + EXCEPTION_MSG + "\" NOT thrown.");
                 }
