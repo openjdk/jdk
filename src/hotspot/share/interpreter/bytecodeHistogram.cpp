@@ -34,7 +34,7 @@
 // Implementation of BytecodeCounter
 
 uintx BytecodeCounter::_counter_value = 0;
-jlong  BytecodeCounter::_reset_time    = 0;
+jlong BytecodeCounter::_reset_time    = 0;
 
 
 void BytecodeCounter::reset() {

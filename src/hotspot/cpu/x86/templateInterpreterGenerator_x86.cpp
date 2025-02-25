@@ -54,7 +54,6 @@
 #include "runtime/vframeArray.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->

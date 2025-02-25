@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025 Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,13 +40,13 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class CountBytecodesTest {
-    private final static long iterations = 1L << 32;
+    private final static long iterations = (1L << 32) / 9;
 
     public static void main(String args[]) throws Exception {
         if (args.length == 1 && args[0].equals("test")) {
-            for (long i = 0; i < iterations / 9; i++) {
+            for (long i = 0; i < iterations; i++) {
                 // Just iterating is enough to execute and count bytecodes.
-                // According to javap -c this translates to the following bytecodes:
+                // According to javap -c this loop translates to the following 9 bytecodes:
                 // 19: lload_1
                 // 20: ldc2_w        #17
                 // 23: lcmp
@@ -57,8 +57,8 @@ public class CountBytecodesTest {
                 // 30: lstore_1
                 // 31: goto          19
                 //
-                // Thus we can divide the iterations by 9 to have a minimal runtime and still
-                // exceed 2^32 bytecodes.
+                // Thus we can divide the 2^32 by 9 to set the minimum number of iterations
+                // while maintaining execution of more than 2^32 bytecodes.
             }
         } else {
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-Xint", "-XX:+CountBytecodes", "CountBytecodesTest", "test");
