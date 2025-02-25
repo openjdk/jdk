@@ -303,7 +303,7 @@ bool FileMapInfo::validate_class_location() {
   assert(CDSConfig::is_using_archive(), "runtime only");
 
   AOTClassLocationConfig* config = header()->class_location_config();
-  bool has_extra_module_paths;
+  bool has_extra_module_paths = false;
   if (!config->validate(header()->has_aot_linked_classes(), &has_extra_module_paths)) {
     if (PrintSharedArchiveAndExit) {
       MetaspaceShared::set_archive_loading_failed();
