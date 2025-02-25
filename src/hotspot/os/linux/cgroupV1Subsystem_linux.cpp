@@ -37,6 +37,8 @@
 /*
  * Set directory to subsystem specific files based
  * on the contents of the mountinfo and cgroup files.
+ * When runs in a container, the method handles the case
+ * when a process is moved between cgroups.
  */
 void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   if (_cgroup_path != nullptr) {
@@ -49,28 +51,35 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   _cgroup_path = os::strdup(cgroup_path);
   stringStream ss;
   if (_root != nullptr && cgroup_path != nullptr) {
+    ss.print_raw(_mount_point);
     if (strcmp(_root, "/") == 0) {
-      ss.print_raw(_mount_point);
+      // host processes and containers with cgroupns=private
       if (strcmp(cgroup_path,"/") != 0) {
         ss.print_raw(cgroup_path);
       }
-      _path = os::strdup(ss.base());
     } else {
-      if (strcmp(_root, cgroup_path) == 0) {
-        ss.print_raw(_mount_point);
-        _path = os::strdup(ss.base());
-      } else {
-        char *p = strstr((char*)cgroup_path, _root);
-        if (p != nullptr && p == _root) {
-          if (strlen(cgroup_path) > strlen(_root)) {
-            ss.print_raw(_mount_point);
-            const char* cg_path_sub = cgroup_path + strlen(_root);
-            ss.print_raw(cg_path_sub);
-            _path = os::strdup(ss.base());
+      // containers with cgroupns=host, default setting is _root==cgroup_path
+      if (strcmp(_root, cgroup_path) != 0) {
+        if (*cgroup_path != '\0' && strcmp(cgroup_path, "/") != 0) {
+          // When moved to a subgroup, between subgroups, the path suffix will change.
+          const char *suffix = cgroup_path;
+          while (suffix != nullptr) {
+            stringStream pp;
+            pp.print_raw(_mount_point);
+            pp.print_raw(suffix);
+            if (os::file_exists(pp.base())) {
+              ss.print_raw(suffix);
+              if (suffix != cgroup_path) {
+                log_trace(os, container)("set_subsystem_path: cgroup v1 path reduced to: %s.", suffix);
+              }
+              break;
+            }
+            suffix = strchr(suffix + 1, '/');
           }
         }
       }
     }
+    _path = os::strdup(ss.base());
   }
 }
 
