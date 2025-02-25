@@ -796,6 +796,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // OSThread::thread_id is the pthread id.
   osthread->set_thread_id(tid);
 
+  // child thread synchronization is not done here on AIX, a thread is started in suspended state
+
   return true;
 }
 
