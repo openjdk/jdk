@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2024, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,8 +272,9 @@ public:
   }
 };
 
-void ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
+bool ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
   C1ShenandoahPreBarrierCodeGenClosure pre_code_gen_cl;
+  bool reference_barrier_success = true;
   _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID,
                                                               "shenandoah_pre_barrier_slow",
                                                               false, &pre_code_gen_cl);
@@ -296,7 +298,12 @@ void ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) 
     _load_reference_barrier_phantom_rt_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID,
                                                                            "shenandoah_load_reference_barrier_phantom_slow",
                                                                            false, &lrb_phantom_code_gen_cl);
+    reference_barrier_success = _load_reference_barrier_strong_rt_code_blob != nullptr &&
+                                _load_reference_barrier_strong_native_rt_code_blob != nullptr &&
+                                _load_reference_barrier_weak_rt_code_blob != nullptr &&
+                                _load_reference_barrier_phantom_rt_code_blob != nullptr;
   }
+  return _pre_barrier_c1_runtime_code_blob != nullptr && reference_barrier_success;
 }
 
 void ShenandoahBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val) {
