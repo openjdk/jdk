@@ -28,6 +28,8 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 
+#include "logging/logStream.hpp"
+
 G1SurvRateGroup::G1SurvRateGroup() :
   _stats_arrays_length(0),
   _num_added_regions(0),
@@ -79,8 +81,13 @@ void G1SurvRateGroup::stop_adding_regions() {
     for (size_t i = _stats_arrays_length; i < _num_added_regions; ++i) {
       // Initialize predictors and accumulated survivor rate predictions.
       _surv_rate_predictors[i] = new TruncatedSeq(10);
-      _surv_rate_predictors[i]->add(new_pred);
-      _accum_surv_rate_pred[i] = ((i == 0) ? 0.0 : _accum_surv_rate_pred[i-1]) + new_pred;
+      if (i == 0) {
+        _surv_rate_predictors[i]->add(InitialSurvivorRate);
+        _accum_surv_rate_pred[i] = 0.0;
+      } else {
+        _surv_rate_predictors[i]->add(_surv_rate_predictors[i-1]->last());
+        _accum_surv_rate_pred[i] = _accum_surv_rate_pred[i-1] + new_pred;
+      }
     }
     _last_pred = new_pred;
 
@@ -118,7 +125,7 @@ double G1SurvRateGroup::accum_surv_rate_pred(uint age) const {
 void G1SurvRateGroup::fill_in_last_surv_rates() {
   if (_num_added_regions > 0) { // conservative
     double surv_rate = _surv_rate_predictors[_num_added_regions-1]->last();
-    for (uint i = _num_added_regions; i < _stats_arrays_length; ++i) {
+    for (size_t i = _num_added_regions; i < _stats_arrays_length; ++i) {
       _surv_rate_predictors[i]->add(surv_rate);
     }
   }
