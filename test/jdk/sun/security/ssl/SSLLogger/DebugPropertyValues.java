@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8210430
+ * @bug 8350582
  * @library /test/lib /javax/net/ssl/templates ../../
  * @summary javax.net.debug "ssl" option parsed incorrectly
  * @run junit DebugPropertyValues
