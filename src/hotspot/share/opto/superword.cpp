@@ -2347,8 +2347,17 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def) cons
            type2aelembytes(use_bt) == 4;
   }
 
-  // Default case: input size of use equals output size of def.
-  return type2aelembytes(use_bt) == type2aelembytes(def_bt);
+  // Input size of use equals output size of def
+  if (type2aelembytes(use_bt) == type2aelembytes(def_bt)) {
+    return true;
+  }
+
+  // Input sizes differ, but platform supports a cast to change the def shape to the use shape
+  if (Matcher::is_vector_cast_supported(def_bt, use_bt)) {
+    return true;
+  }
+
+  return false;
 }
 
 // Return nullptr if success, else failure message
