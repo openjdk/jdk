@@ -499,7 +499,6 @@ java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 m
 
 # Wayland related
 
-java/awt/FullScreen/FullscreenWindowProps/FullscreenWindowProps.java 8280991 linux-x64
 java/awt/FullScreen/SetFullScreenTest.java 8332155 linux-x64
 
 ############################################################################
