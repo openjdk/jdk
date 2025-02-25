@@ -43,7 +43,7 @@ import java.util.Objects;
  * <p>
  * The HTTP/2 and HTTP/3 protocols provide a means for HTTP servers to control
  * how many streams a client is allowed to open on a particular connection. If an
- * application attempts to open too many concurrent streams, and the
+ * application attempts to open too many streams, and the
  * server doesn't allow more streams to be opened, a {@code StreamLimitException}
  * may be raised. See
  * <a href="https://www.rfc-editor.org/rfc/rfc7540.html#section-5.1.2">
@@ -70,7 +70,7 @@ import java.util.Objects;
  *     </li>
  *     <li>
  *         retire the connection on which the limit was reached, and attempt
- *         to send the request on a new connection, or
+ *         to send the request on a new connection, up to a certain limit, or
  *     </li>
  *     <li>
  *         ...
