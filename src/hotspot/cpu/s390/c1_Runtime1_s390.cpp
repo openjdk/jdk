@@ -632,7 +632,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       __ load_on_condition_imm_32(result, 1, Assembler::bcondEqual);
       __ z_bcr(Assembler::bcondEqual, Z_R14);
 
-      // Z_R10 and Z_R11 are caller saved, so we must need to preserve them before any use
+      // Z_R10 and Z_R11 are callee saved, so we must need to preserve them before any use
       __ z_ldgr(Z_F1, Z_R10);
       __ z_ldgr(Z_F3, Z_R11);
 
