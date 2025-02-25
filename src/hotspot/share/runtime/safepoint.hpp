@@ -230,7 +230,7 @@ private:
   // Absolute
   static jlong _last_safepoint_begin_time_ns;
   static jlong _last_safepoint_sync_time_ns;
-  static jlong _last_vmop_evaluation_end_time_ns;
+  static jlong _last_leave_safepoint_time_ns;
   static jlong _last_safepoint_end_time_ns;
 
   // Relative

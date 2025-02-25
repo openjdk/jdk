@@ -867,7 +867,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
 jlong SafepointTracing::_last_safepoint_begin_time_ns = 0;
 jlong SafepointTracing::_last_safepoint_sync_time_ns = 0;
-jlong SafepointTracing::_last_vmop_evaluation_end_time_ns = 0;
+jlong SafepointTracing::_last_leave_safepoint_time_ns = 0;
 jlong SafepointTracing::_last_safepoint_end_time_ns = 0;
 jlong SafepointTracing::_last_app_time_ns = 0;
 int SafepointTracing::_nof_threads = 0;
@@ -970,7 +970,7 @@ void SafepointTracing::synchronized(int nof_threads, int nof_running, int traps)
 }
 
 void SafepointTracing::end_vmop_evaluation() {
-  _last_vmop_evaluation_end_time_ns = os::javaTimeNanos();
+  _last_leave_safepoint_time_ns = os::javaTimeNanos();
 }
 
 void SafepointTracing::end() {
@@ -995,10 +995,10 @@ void SafepointTracing::end() {
      "Total: " JLONG_FORMAT " ns",
       VM_Operation::name(_current_type),
       _last_app_time_ns,
-      _last_safepoint_sync_time_ns      - _last_safepoint_begin_time_ns,
-      _last_vmop_evaluation_end_time_ns - _last_safepoint_sync_time_ns,
-      _last_safepoint_end_time_ns       - _last_vmop_evaluation_end_time_ns,
-      _last_safepoint_end_time_ns       - _last_safepoint_begin_time_ns
+      _last_safepoint_sync_time_ns  - _last_safepoint_begin_time_ns,
+      _last_leave_safepoint_time_ns - _last_safepoint_sync_time_ns,
+      _last_safepoint_end_time_ns   - _last_leave_safepoint_time_ns,
+      _last_safepoint_end_time_ns   - _last_safepoint_begin_time_ns
      );
 
   RuntimeService::record_safepoint_end(_last_safepoint_end_time_ns - _last_safepoint_sync_time_ns);
