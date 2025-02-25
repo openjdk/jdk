@@ -38,7 +38,7 @@
 
 #ifdef _LP64
 
-#define LOG_PLEASE
+// #define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestContexts.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"
