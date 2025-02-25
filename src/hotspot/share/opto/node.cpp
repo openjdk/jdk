@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
+ * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2425,9 +2425,9 @@ void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   bool is_new = C->node_arena()->contains(this);
   if (align) { // print prefix empty spaces$
     // +1 for leading digit, +1 for "o"
-    uint max_width = static_cast<uint>(log10(static_cast<double>(C->unique()))) + 2;
+    uint max_width = (C->unique() == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(C->unique())))) + 2;
     // +1 for leading digit, maybe +1 for "o"
-    uint width = static_cast<uint>(log10(static_cast<double>(_idx))) + 1 + (is_new ? 0 : 1);
+    uint width = (_idx == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(_idx)))) + 1 + (is_new ? 0 : 1);
     while (max_width > width) {
       st->print(" ");
       width++;

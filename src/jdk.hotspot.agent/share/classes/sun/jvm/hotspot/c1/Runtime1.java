@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,6 @@ public class Runtime1 {
   /** FIXME: consider making argument "type-safe" in Java port */
   public CodeBlob blobFor(int id) {
     Address blobAddr = blobsField.getStaticFieldAddress().getAddressAt(id * VM.getVM().getAddressSize());
-    return VM.getVM().getCodeCache().createCodeBlobWrapper(blobAddr);
+    return VM.getVM().getCodeCache().createCodeBlobWrapper(blobAddr, blobAddr);
   }
 }
