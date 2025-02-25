@@ -1154,9 +1154,9 @@ public sealed class ICC_Profile implements Serializable
      *
      * <p>
      * Note: JDK built-in ICC Profiles cannot be updated using this method
-     * as it will result in IAE. JDK built-in profiles are those obtained by
-     * {@code ICC_Profile.getInstance(int colorSpaceID)} where colorSpaceID
-     * is one of the following:
+     * as it will result in {@code IllegalArgumentException}. JDK built-in
+     * profiles are those obtained by {@code ICC_Profile.getInstance(int colorSpaceID)}
+     * where {@code colorSpaceID} is one of the following:
      * {@link ColorSpace#CS_sRGB}, {@link ColorSpace#CS_LINEAR_RGB},
      * {@link ColorSpace#CS_PYCC}, {@link ColorSpace#CS_GRAY} or
      * {@link ColorSpace#CS_CIEXYZ}.
@@ -1170,15 +1170,15 @@ public sealed class ICC_Profile implements Serializable
      * @throws IllegalArgumentException if a content of the {@code tagData}
      *         array can not be interpreted as valid tag data, corresponding to
      *         the {@code tagSignature}
-     * @throws IllegalArgumentException if this is a profile for one of the
-     *         built-in pre-defined ColorSpaces, i.e. those which can be obtained
+     * @throws IllegalArgumentException if this is a built-in profile for one
+     *         of the pre-defined ColorSpaces, i.e. those which can be obtained
      *         by calling {@code ICC_Profile.getInstance(int colorSpaceID)}
      * @see #getData
      * @see ColorSpace
      */
     public void setData(int tagSignature, byte[] tagData) {
         if (isBuiltIn) {
-            throw new IllegalArgumentException("BuiltIn profile"
+            throw new IllegalArgumentException("Built-in profile"
                                                + " cannot be modified");
         }
 

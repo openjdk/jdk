@@ -34,7 +34,7 @@ public class BuiltInProfileCheck {
     private static final int HEADER_TAG = ICC_Profile.icSigHead;
     private static final int PROFILE_CLASS_START_INDEX =
                                        ICC_Profile.icHdrDeviceClass;
-    private static final String EXCEPTION_MSG = "BuiltIn profile cannot be modified";
+    private static final String EXCEPTION_MSG = "Built-in profile cannot be modified";
 
     public static void main(String[] args) {
         System.out.println("CASE 1: Testing BuiltIn Profile");
@@ -48,14 +48,14 @@ public class BuiltInProfileCheck {
 
     private static void updateProfile(boolean isBuiltIn) {
         ICC_Profile builtInProfile = ICC_Profile.getInstance(ColorSpace.CS_sRGB);
-        //create a copy of the BuiltIn profile
+        // Create a copy of the built-in profile
         ICC_Profile customProfile = ICC_Profile.getInstance(builtInProfile.getData());
 
         ICC_Profile iccProfile = isBuiltIn ? builtInProfile : customProfile;
 
         byte[] headerData = iccProfile.getData(HEADER_TAG);
         int index = PROFILE_CLASS_START_INDEX;
-        //set profile class to valid icSigInputClass = 0x73636E72
+        // Set profile class to valid icSigInputClass = 0x73636E72
         headerData[index] = 0x73;
         headerData[index + 1] = 0x63;
         headerData[index + 2] = 0x6E;
@@ -63,17 +63,17 @@ public class BuiltInProfileCheck {
 
         if (isBuiltIn) {
             try {
-                //try updating a BuiltIn Profile, the following stmt should throw IAE
+                // Try updating a built-in profile, IAE is expected
                 iccProfile.setData(HEADER_TAG, headerData);
-                throw new RuntimeException("Test Failed ! IAE NOT thrown.");
+                throw new RuntimeException("Test Failed! IAE NOT thrown.");
             } catch (IllegalArgumentException iae) {
-                if (!iae.getMessage().equals(EXCEPTION_MSG)) {
-                    throw new RuntimeException("Test Failed ! IAE with exception msg \""
+                if (!iae.getMessage().equalsIgnoreCase(EXCEPTION_MSG)) {
+                    throw new RuntimeException("Test Failed! IAE with exception msg \""
                                                + EXCEPTION_MSG + "\" NOT thrown.");
                 }
             }
         } else {
-            //modifying custom profile should NOT throw IAE
+            // Modifying custom profile should NOT throw IAE
             iccProfile.setData(HEADER_TAG, headerData);
         }
     }
