@@ -151,7 +151,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 break;
             }
         }
-        algorithmConstraints = new Constraints(disabledAlgorithms);
+        algorithmConstraints = new Constraints(propertyName, disabledAlgorithms);
     }
 
     /*
@@ -335,7 +335,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     "denyAfter\\s+(\\d{4})-(\\d{2})-(\\d{2})");
         }
 
-        public Constraints(Set<String> constraintSet) {
+        public Constraints(String propertyName, Set<String> constraintSet) {
             for (String constraintEntry : constraintSet) {
                 if (constraintEntry == null || constraintEntry.isEmpty()) {
                     continue;

@@ -38,8 +38,6 @@ import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 
 import sun.security.jca.JCAUtil;
-import sun.security.pkcs.NamedPKCS8Key;
-import sun.security.provider.ML_DSA;
 
 /**
  * A utility class to get key length, validate keys, etc.
@@ -182,14 +180,14 @@ public final class KeyUtil {
      * returns "EdDSA", but the underlying key may be "Ed448".  For
      * DisabledAlgorithmConstraints (DAC), this distinction is important.
      * "EdDSA" means all curves for DAC, but when using it with
-     * KeyPairGenerator, EdDSA means Ed25519.
+     * KeyPairGenerator, "EdDSA" means "Ed25519".
      */
     public static String getAlgorithm(Key key) {
-        return switch (key) {
-            case EdECKey ed -> ed.getParams().getName();
-            case XECKey xe -> ((NamedParameterSpec) xe.getParams()).getName();
-            default -> key.getAlgorithm();
-        };
+        if (key instanceof AsymmetricKey ak &&
+            ak.getParams() instanceof NamedParameterSpec nps) {
+            return nps.getName();
+        }
+        return key.getAlgorithm();
     }
 
     /**

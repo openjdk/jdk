@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,26 +70,14 @@ public abstract class AbstractAlgorithmConstraints
         return algorithmsInPropertySet;
     }
 
-    /**
-     * This checks a given `algorithm' against the list of 'algorithms' from
-     * the DisabledAlgorithmConstraints or LegacyAlgorithmConstraints.
-     *
-     * @param algorithms List of algorithms from the constraints list
-     * @param algorithm algorithm being checked against list
-     * @param decomposer class the decomposing names into sub-elements
-     * @return
-     */
     static boolean checkAlgorithm(Set<String> algorithms, String algorithm,
             AlgorithmDecomposer decomposer) {
         if (algorithm == null || algorithm.isEmpty()) {
             throw new IllegalArgumentException("No algorithm name specified");
         }
 
-        // Check `algorithm` against disabled algorithms
-        for (String a : algorithms) {
-            if (algorithm.equalsIgnoreCase(a)) {
-                return false;
-            }
+        if (algorithms.contains(algorithm)) {
+            return false;
         }
 
         // decompose the algorithm into sub-elements
