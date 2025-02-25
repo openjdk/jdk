@@ -22,8 +22,8 @@
  */
 
 // key: compiler.misc.feature.implicit.classes
-// key: compiler.warn.preview.feature.use.plural
-// options: -source ${jdk.version} --enable-preview -Xlint:preview
+// key: compiler.err.feature.not.supported.in.source.plural
+// options: --release 24
 
 public static void main(String... args) {
 }

@@ -183,6 +183,7 @@ public class IO {
         var file = Path.of("PrintlnNoParams.java");
         try (Writer w = Files.newBufferedWriter(file)) {
             w.write("""
+                    import static java.lang.IO.*;
                     void main() {
                         print("1 ");
                         print("2 ");

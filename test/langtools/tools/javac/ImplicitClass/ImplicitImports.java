@@ -141,6 +141,7 @@ public class ImplicitImports extends TestRunner {
         Path classes = current.resolve("classes");
         tb.writeFile(src.resolve("Test.java"),
                      """
+                     import static java.lang.IO.*;
                      public static void main(String... args) {
                          println("Hello, World!");
                      }

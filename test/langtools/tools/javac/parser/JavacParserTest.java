@@ -1010,7 +1010,7 @@ public class JavacParserTest extends TestCase {
     @Test //JDK-8065753
     void testWrongFirstToken() throws IOException {
         String code = "<";
-        String expectedErrors = "Test.java:1:1: compiler.err.expected4: class, interface, enum, record\n" +
+        String expectedErrors = "Test.java:1:1: compiler.err.class.method.or.field.expected\n" +
                                 "1 error\n";
         StringWriter out = new StringWriter();
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null,

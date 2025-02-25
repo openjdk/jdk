@@ -4098,7 +4098,7 @@ public class JavacParser implements Parser {
                 // it is parsed. Otherwise, parsing continues as though
                 // implicitly declared classes did not exist and error reporting
                 // is the same as in the past.
-                if (!isDeclaration()) {
+                if (!isDeclaration(true)) {
                     final JCModifiers finalMods = mods;
                     JavacParser speculative = new VirtualParser(this);
                     List<JCTree> speculativeResult =
@@ -4941,6 +4941,10 @@ public class JavacParser implements Parser {
     }
 
     protected boolean isDeclaration() {
+        return isDeclaration(allowRecords);
+    }
+
+    private boolean isDeclaration(boolean allowRecords) {
         return token.kind == CLASS ||
                token.kind == INTERFACE ||
                token.kind == ENUM ||
@@ -5606,6 +5610,7 @@ public class JavacParser implements Parser {
     }
 
     private void updateUnexpectedTopLevelDefinitionStartError(boolean hasPackageDecl) {
+        //TODO: proper tests for this logic (and updates):
         if (parseModuleInfo) {
             unexpectedTopLevelDefinitionStartError = Errors.ExpectedModuleOrOpen;
         } else if (Feature.IMPLICIT_CLASSES.allowedInSource(source) && !hasPackageDecl) {

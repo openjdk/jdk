@@ -23,6 +23,7 @@
 
 // key: compiler.err.illegal.start.of.stmt
 // key: compiler.err.expected4
+// options: --release 24
 
 class IllegalStartOfStmt {
     void m() {
