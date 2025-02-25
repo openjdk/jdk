@@ -28,6 +28,8 @@
 #include "memory/allocation.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/java.hpp"
+#include "utilities/macros.hpp"
 
 #if defined(LINUX) || defined(__APPLE__)
 
