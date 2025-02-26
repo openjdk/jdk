@@ -334,7 +334,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     document.querySelector("main").addEventListener("click", collapse);
     const searchInput = document.getElementById("search-input");
     if (searchInput) searchInput.addEventListener("focus", collapse);
-    document.querySelectorAll("h1, h2, h3, h4, h5, h6")
+    document.querySelectorAll("h1, h2, :not(.inherited-list) > h3, h4, h5, h6")
         .forEach((hdr, idx) => {
             // Create anchor links for headers with an associated id attribute
             var id = hdr.parentElement.getAttribute("id") || hdr.getAttribute("id")

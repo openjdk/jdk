@@ -25,7 +25,7 @@
  * @test
  * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743 8177417
  *           8175218 8176452 8181215 8182263 8183511 8169819 8183037 8185369 8182765 8196201 8184205 8223378 8241544
- *           8253117 8263528 8289334 8292594 8347058
+ *           8253117 8263528 8289334 8292594 8347058 8344301
  * @summary  Run tests on doclet stylesheet.
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -81,46 +81,6 @@ public class TestStylesheet extends JavadocTester {
                     ul {
                         list-style-type:disc;
                     }""",
-                """
-                    .caption {
-                        position:relative;
-                        text-align:left;
-                        background-repeat:no-repeat;
-                        color:var(--selected-text-color);
-                        clear:none;
-                        overflow:hidden;
-                        padding: 10px 0 0 1px;
-                        margin:0;
-                    }""",
-                """
-                    .caption span {
-                        font-size: var(--nav-font-size);
-                        font-weight:bold;
-                        white-space:nowrap;
-                        padding:5px 12px 7px 12px;
-                        display:inline-block;
-                        float:left;
-                        background-color:var(--selected-background-color);
-                        border: none;
-                        height:16px;
-                    }""",
-                """
-                    div.table-tabs > button {
-                        font-size: var(--nav-font-size);
-                        border: none;
-                        cursor: pointer;
-                        padding: 5px 12px 7px 12px;
-                        font-weight: bold;
-                        margin-right: 8px;
-                    }
-                    div.table-tabs > .active-table-tab {
-                        background: var(--selected-background-color);
-                        color: var(--selected-text-color);
-                    }
-                    div.table-tabs > button.table-tab {
-                        background: var(--navbar-background-color);
-                        color: var(--navbar-text-color);
-                    }""",
                 // Test the formatting styles for proper content display in use and constant values pages.
                 """
                     .summary-table > div, .details-table > div {
@@ -150,7 +110,7 @@ public class TestStylesheet extends JavadocTester {
                         font-family:var(--block-font-family);
                         border-style:solid;
                         border-width:thin;
-                        border-radius:10px;
+                        border-radius:6px;
                         padding:10px;
                         margin-bottom:10px;
                         margin-right:10px;

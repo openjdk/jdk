@@ -21,13 +21,13 @@
     --block-font-family: 'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
     --code-font-family: 'DejaVu Sans Mono', monospace;
     /* Base font sizes for body and code elements */
-    --body-font-size: 14px;
+    --body-font-size: 14.2px;
     --block-font-size: 14.4px;
     --code-font-size: 14px;
     --nav-font-size: 13.4px;
     /* Line height for continuous text blocks */
-    --block-line-height: 1.46;
-    --code-line-height: 1.43;
+    --block-line-height: 1.5;
+    --code-line-height: 1.55;
     /* Text colors for body and block elements */
     --body-text-color: #282828;
     --block-text-color: #282828;
@@ -44,14 +44,13 @@
     /* Background color for subnavigation and various headers */
     --subnav-background-color: #dee3e9;
     --member-heading-background-color: var(--subnav-background-color);
-    --inherited-heading-background-color: #ebecee;
     /* Background and text colors for selected tabs and navigation items */
     --selected-background-color: #f8981d;
     --selected-text-color: #253441;
-    --selected-link-color: #1f389c;
+    --selected-link-color: #4a698a;
     /* Background colors for generated tables */
     --even-row-color: #ffffff;
-    --odd-row-color: #eeeeef;
+    --odd-row-color: #f0f0f2;
     /* Text color for page title */
     --title-color: #2c4557;
     /* Text colors for links */
@@ -60,6 +59,8 @@
     /* Table of contents */
     --toc-background-color: #f8f8f8;
     --toc-link-color: #4a698a;
+    --toc-highlight-color: var(--subnav-background-color);
+    --toc-hover-color: #e9ecf0;
     /* Snippet and pre colors */
     --snippet-background-color: #f0f0f2;
     --snippet-text-color: var(--block-text-color);
@@ -69,6 +70,8 @@
     /* Border colors for structural elements and user defined tables */
     --border-color: #e6e6e6;
     --table-border-color: #000000;
+    /* Styles for table tabs */
+    --tab-border-radius: 2px 2px 0 0;
     /* Search input colors */
     --search-input-background-color: #ffffff;
     --search-input-text-color: #000000;
@@ -83,7 +86,7 @@
     --invalid-tag-text-color: #000000;
     /* Navigation bar dimensions */
     --top-nav-height: 44px;
-    --sub-nav-height: 34px;
+    --sub-nav-height: 36px;
     --nav-height: calc(var(--top-nav-height) + var(--sub-nav-height));
     --max-content-width: 1500px;
     --content-margin: 0 auto;
@@ -128,10 +131,10 @@ pre {
     line-height: var(--code-line-height);
 }
 h1 {
-    font-size:1.428em;
+    font-size:1.425em;
 }
 h2 {
-    font-size:1.285em;
+    font-size:1.28em;
 }
 h3 {
     font-size:1.14em;
@@ -291,6 +294,7 @@ ol.sub-nav-list a {
     background-color:var(--selected-background-color);
     color:var(--selected-text-color);
     margin: 0 5px;
+    border-radius: 1px;
 }
 .skip-nav {
     position:absolute;
@@ -328,21 +332,22 @@ body.module-declaration-page .block-list h2 {
     margin:15px 0;
     overflow-x:auto;
 }
-body.class-declaration-page .summary h3,
-body.class-declaration-page .details h3,
-ul.block-list li h3 {
+body.class-declaration-page .details h3 {
     background-color:var(--member-heading-background-color);
     border:1px solid var(--border-color);
     margin:6px 0;
-    padding:7px 5px;
-    overflow-x:auto;
-    font-size: 1.09em;
-}
-body.class-declaration-page .summary h3 {
-    background-color:var(--inherited-heading-background-color);
-    margin: 8px 0;
     padding:7px;
-    font-size: 1.07em;
+    overflow-x:auto;
+    font-size: 1.08em;
+}
+body.class-declaration-page section.detail:target > h3,
+body.class-declaration-page section.detail > h3:target {
+    background-color: var(--navbar-background-color);
+    color: var(--navbar-text-color);
+}
+body.class-declaration-page section.detail:target > h3 > a.anchor-link > img,
+body.class-declaration-page section.detail > h3:target > a.anchor-link > img {
+    filter: invert(100%) sepia(4%) saturate(98%) hue-rotate(212deg) brightness(160%) contrast(160%);
 }
 h1 > sup {
     font-size: small;
@@ -381,7 +386,7 @@ dl.notes > dt {
     color:var(--body-text-color);
 }
 dl.notes > dd {
-    margin:5px 10px 10px 15px;
+    margin:6px 10px 10px 15px;
     font-size:var(--block-font-size);
     font-family:var(--block-font-family);
     line-height:var(--block-line-height);
@@ -491,11 +496,8 @@ nav.toc > ol.toc-list {
 }
 nav.toc ol.toc-list {
     list-style: none;
-    padding-left: 8px;
+    padding-left: 0;
     margin: 0;
-}
-nav.toc ol.toc-list ol.toc-list {
-    margin-left: 8px;
 }
 nav.toc ol.toc-list li {
     margin: 0;
@@ -510,8 +512,14 @@ nav.toc a {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+nav.toc ol.toc-list ol.toc-list a {
+    padding-left: 24px;
+}
+nav.toc a:hover {
+    background-color: var(--toc-hover-color);
+}
 nav.toc a.current-selection {
-    background-color: var(--subnav-background-color);
+    background-color: var(--toc-highlight-color);
 }
 /*
  * Styles for lists.
@@ -589,47 +597,53 @@ ul.preview-feature-list {
     border-top:0;
     padding:0;
 }
-.caption {
-    position:relative;
-    text-align:left;
-    background-repeat:no-repeat;
-    color:var(--selected-text-color);
-    clear:none;
-    overflow:hidden;
+.caption,
+body.class-declaration-page .inherited-list h3 {
+    overflow: auto hidden;
     padding: 10px 0 0 1px;
-    margin:0;
 }
 .caption a:link, .caption a:visited {
-    color:var(--selected-link-color);
+    color:var(--selected-background-color);
 }
 .caption a:hover,
 .caption a:active {
-    color:var(--navbar-text-color);
+    color:var(--link-color-active);
 }
-.caption span {
-    font-size: var(--nav-font-size);
+.caption span,
+body.class-declaration-page .inherited-list h3 {
+    font-size: 0.98em;
     font-weight:bold;
     white-space:nowrap;
     padding:5px 12px 7px 12px;
-    display:inline-block;
-    float:left;
-    background-color:var(--selected-background-color);
-    border: none;
+    border-radius: var(--tab-border-radius);
     height:16px;
+    margin: 0;
+}
+.caption span {
+    background-color: var(--navbar-background-color);
+    color:var(--navbar-text-color);
+    display:inline-block;
+}
+body.class-declaration-page .inherited-list h3 {
+    background-color: var(--subnav-background-color);
+    border: 1px solid var(--subnav-background-color);
+    overflow: auto hidden;
+    width: fit-content;
+    max-width: 93%;
 }
 div.table-tabs {
     padding: 10px 0 0 1px;
-    margin: 0;
     white-space: nowrap;
     overflow-x: auto;
 }
 div.table-tabs > button {
-    font-size: var(--nav-font-size);
+    font-size: 0.98em;
     border: none;
     cursor: pointer;
-    padding: 5px 12px 7px 12px;
+    padding: 6px 12px;
     font-weight: bold;
     margin-right: 8px;
+    border-radius: var(--tab-border-radius);
 }
 div.table-tabs > .active-table-tab {
     background: var(--selected-background-color);
@@ -856,7 +870,7 @@ sup.restricted-mark > a:link {
     font-family:var(--block-font-family);
     border-style:solid;
     border-width:thin;
-    border-radius:10px;
+    border-radius:6px;
     padding:10px;
     margin-bottom:10px;
     margin-right:10px;
@@ -963,14 +977,14 @@ input[type="text"] {
     background-image:url('glass.png');
     background-size:13px;
     background-repeat:no-repeat;
-    background-position:2px 3px;
+    background-position:3px 5px;
     background-color: var(--search-input-background-color);
     color: var(--search-input-text-color);
     border-color: var(--border-color);
     border-radius: 4px;
     padding-left:20px;
     font-size: var(--nav-font-size);
-    height: 17px;
+    height: 19px;
 }
 input#page-search-input {
     width: calc(180px + 10vw);
@@ -1002,7 +1016,7 @@ input#reset-search, input.reset-filter {
 input#reset-search {
     position:absolute;
     right:5px;
-    top:5px;
+    top:7px;
 }
 input.reset-filter {
     position: relative;
@@ -1031,11 +1045,6 @@ h1 > span:target {
 section.class-description dd > span:target,
 section.class-description h1 > span:target {
     scroll-margin-top: 20em;
-}
-section.detail:target > h3:first-child,
-section.detail > h3:target {
-    background-color: var(--navbar-background-color);
-    color: var(--navbar-text-color);
 }
 details.page-search-details {
     display: inline-block;
@@ -1098,7 +1107,11 @@ section.class-description {
     margin-bottom: 24px;
     background-color: var(--section-background-color);
 }
-.class-uses section.detail, section.serialized-class-details {
+body.class-uses section.detail {
+    padding: 0 25px 5px 10px;
+    margin: 25px 0;
+}
+section.serialized-class-details {
     padding: 0 20px 5px 10px;
     border: 1px solid var(--border-color);
     background-color: var(--detail-block-color);
@@ -1114,14 +1127,17 @@ section[class$="-details"] .detail > div {
     padding-left: 8px;
 }
 .inherited-list {
-    margin:16px 0;
+    margin:20px 0;
     padding-bottom:4px;
     background-color:var(--detail-background-color);
 }
 .inherited-list > code {
-    background-color: inherit;
-    padding: 0 0 0 8px;
+    padding: 8px;
     display: block;
+    background-color: var(--code-background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0;
+    line-height: var(--code-line-height);
 }
 .vertical-separator {
     padding: 0 5px;
@@ -1188,10 +1204,6 @@ a.anchor-link.visible {
 a.anchor-link > img {
     width: 0.9em;
     height: 0.9em;
-}
-section.detail:target > h3:first-child > a.anchor-link > img,
-section.detail > h3:target > a.anchor-link > img {
-    filter: invert(100%) sepia(4%) saturate(98%) hue-rotate(212deg) brightness(160%) contrast(160%);
 }
 /*
  * Styles for copy-to-clipboard buttons
