@@ -2818,7 +2818,7 @@ void os::jvm_path(char *buf, jint buflen) {
         if (0 == access(buf, F_OK)) {
           // Use current module name "libjvm.so"
           len = (int)strlen(buf);
-          snprintf(buf + len, buflen-len, "/server/libjvm.so");
+          snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
         } else {
           // Go back to path of .so
           rp = os::realpath(dli_fname, buf, buflen);

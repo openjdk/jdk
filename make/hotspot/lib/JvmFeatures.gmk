@@ -33,6 +33,8 @@ ifeq ($(INCLUDE), true)
 # jvm features are selected for this jvm variant.
 ################################################################################
 
+JVM_CFLAGS_FEATURES += -DJVM_VARIANT=\"$(JVM_VARIANT)\"
+
 ifeq ($(call check-jvm-feature, compiler1), true)
   JVM_CFLAGS_FEATURES += -DCOMPILER1
 else

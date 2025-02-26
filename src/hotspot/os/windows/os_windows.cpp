@@ -2225,7 +2225,7 @@ void os::jvm_path(char *buf, jint buflen) {
         jio_snprintf(jrebin_p, buflen-len, "\\bin\\");
       }
       len = strlen(buf);
-      jio_snprintf(buf + len, buflen-len, "server\\jvm.dll");
+      jio_snprintf(buf + len, buflen-len, "hotspot\\jvm.dll");
     }
   }
 
