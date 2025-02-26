@@ -45,7 +45,7 @@
                                   const int STUB_THRESHOLD, Label *STUB, Label *DONE);
   void string_compare_long_different_encoding(Register result, Register str1, Register str2,
                                   bool isLU, Register cnt1, Register cnt2,
-                                  Register tmpL, Register tmpU, Register tmp3,
+                                  Register tmp1, Register tmp2, Register tmp3,
                                   const int STUB_THRESHOLD, Label *STUB, Label *DONE);
 
  public:

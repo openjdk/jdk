@@ -1476,7 +1476,7 @@ void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Regis
 // Compare longwords
 void C2_MacroAssembler::string_compare_long_different_encoding(Register result, Register str1, Register str2,
                                                bool isLU, Register cnt1, Register cnt2,
-                                               Register tmpL, Register tmpU, Register tmp3,
+                                               Register tmp1, Register tmp2, Register tmp3,
                                                const int STUB_THRESHOLD, Label *STUB, Label *DONE) {
   Label TAIL, NEXT_WORD, DIFFERENCE;
 
@@ -1486,6 +1486,7 @@ void C2_MacroAssembler::string_compare_long_different_encoding(Register result, 
 
   Register strL = isLU ? str1 : str2;
   Register strU = isLU ? str2 : str1;
+  Register tmpL = tmp1, tmpU = tmp2;
 
   // load first parts of strings and finish initialization while loading
   mv(t0, STUB_THRESHOLD);
