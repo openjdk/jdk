@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -672,7 +672,7 @@ final class VirtualThread extends BaseVirtualThread {
 
         // notify container
         if (notifyContainer) {
-            threadContainer().onExit(this);
+            threadContainer().remove(this);
         }
 
         // clear references to thread locals
@@ -700,7 +700,7 @@ final class VirtualThread extends BaseVirtualThread {
         boolean addedToContainer = false;
         boolean started = false;
         try {
-            container.onStart(this);  // may throw
+            container.add(this);  // may throw
             addedToContainer = true;
 
             // scoped values may be inherited
