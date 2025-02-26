@@ -752,7 +752,7 @@ public:
   // Get modifier flags from Java mirror cache.
   int modifier_flags() const;
 
-  // Compute modifier flags from the original data. This is also allows
+  // Compute modifier flags from the original data. This also allows
   // accessing flags when Java mirror is already dead, e.g. during class
   // unloading.
   virtual u2 compute_modifier_flags() const = 0;
