@@ -50,6 +50,13 @@ public final class FloatType extends PrimitiveType {
         new Operation.Binary("(", FloatType.INSTANCE, " / ",   FloatType.INSTANCE, ")"),
         new Operation.Binary("(", FloatType.INSTANCE, " % ",   FloatType.INSTANCE, ")"),
 
+        // TODO: check about float 16 type!
+        new Operation.Unary("Float.float16ToFloat(", ShortType.INSTANCE, ")"),
+        new Operation.Unary("Float.intBitsToFloat(", IntType.INSTANCE, ")"),
+        new Operation.Binary("Float.max(", FloatType.INSTANCE, ", ", FloatType.INSTANCE, ")"),
+        new Operation.Binary("Float.min(", FloatType.INSTANCE, ", ", FloatType.INSTANCE, ")"),
+        new Operation.Binary("Float.sum(", FloatType.INSTANCE, ", ", FloatType.INSTANCE, ")"),
+
         new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", FloatType.INSTANCE, " : ", FloatType.INSTANCE, ")")
     );
 

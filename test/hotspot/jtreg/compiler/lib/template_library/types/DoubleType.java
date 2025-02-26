@@ -51,6 +51,11 @@ public final class DoubleType extends PrimitiveType {
         new Operation.Binary("(", DoubleType.INSTANCE, " / ",   DoubleType.INSTANCE, ")"),
         new Operation.Binary("(", DoubleType.INSTANCE, " % ",   DoubleType.INSTANCE, ")"),
 
+        new Operation.Unary("Double.longBitsToDouble(", IntType.INSTANCE, ")"),
+        new Operation.Binary("Double.max(", DoubleType.INSTANCE, ", ", DoubleType.INSTANCE, ")"),
+        new Operation.Binary("Double.min(", DoubleType.INSTANCE, ", ", DoubleType.INSTANCE, ")"),
+        new Operation.Binary("Double.sum(", DoubleType.INSTANCE, ", ", DoubleType.INSTANCE, ")"),
+
         new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", DoubleType.INSTANCE, " : ", DoubleType.INSTANCE, ")")
     );
 

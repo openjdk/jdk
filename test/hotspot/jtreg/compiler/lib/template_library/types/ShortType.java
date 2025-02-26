@@ -53,6 +53,8 @@ public final class ShortType extends PrimitiveType {
 
         new Operation.Unary("Short.reverseBytes(", ShortType.INSTANCE, ")"),
 
+        new Operation.Unary("Float.floatToFloat16(", FloatType.INSTANCE, ")"),
+
         new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", ShortType.INSTANCE, " : ", ShortType.INSTANCE, ")")
     );
 

@@ -43,6 +43,20 @@ public final class BooleanType extends PrimitiveType {
         new Operation.Binary("(", BooleanType.INSTANCE, " && ",   BooleanType.INSTANCE, ")"),
         new Operation.Binary("(", BooleanType.INSTANCE, " ^ ",    BooleanType.INSTANCE, ")"),
 
+        new Operation.Binary("Boolean.logicalAnd(", BooleanType.INSTANCE, ", ",   BooleanType.INSTANCE, ")"),
+        new Operation.Binary("Boolean.logicalOr(", BooleanType.INSTANCE, ", ",   BooleanType.INSTANCE, ")"),
+        new Operation.Binary("Boolean.logicalXor(", BooleanType.INSTANCE, ", ",   BooleanType.INSTANCE, ")"),
+
+        // Note: For now, we are omitting all the Character.is<...> methods. We can add them in the future.
+
+        new Operation.Unary("Float.isFinite(", FloatType.INSTANCE, ")"),
+        new Operation.Unary("Float.isInfinite(", FloatType.INSTANCE, ")"),
+        new Operation.Unary("Float.isNaN(", FloatType.INSTANCE, ")"),
+
+        new Operation.Unary("Double.isFinite(", DoubleType.INSTANCE, ")"),
+        new Operation.Unary("Double.isInfinite(", DoubleType.INSTANCE, ")"),
+        new Operation.Unary("Double.isNaN(", DoubleType.INSTANCE, ")"),
+
         new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", BooleanType.INSTANCE, " : ", BooleanType.INSTANCE, ")")
     );
 

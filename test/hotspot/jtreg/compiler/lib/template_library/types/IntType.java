@@ -68,6 +68,42 @@ public final class IntType extends PrimitiveType {
         new Operation.Binary("Short.compareUnsigned(", ShortType.INSTANCE, ", ", ShortType.INSTANCE, ")"),
         new Operation.Unary("Short.toUnsignedInt(", ShortType.INSTANCE, ")"),
 
+        new Operation.Unary("Integer.bitCount(", IntType.INSTANCE, ")"),
+        new Operation.Binary("Integer.compare(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
+        new Operation.Binary("Integer.compareUnsigned(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
+        new Operation.Binary("Integer.compress(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
+        new Operation.Binary("Integer.divideUnsigned(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
+        new Operation.Binary("Integer.expand(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
+        new Operation.Unary("Integer.highestOneBit(", IntType.INSTANCE, ")"),
+        new Operation.Unary("Integer.lowestOneBit(", IntType.INSTANCE, ")"),
+        new Operation.Binary("Integer.min(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
+        new Operation.Binary("Integer.max(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
+        new Operation.Unary("Integer.numberOfLeadingZeros(", IntType.INSTANCE, ")"),
+        new Operation.Unary("Integer.numberOfTrailingZeros(", IntType.INSTANCE, ")"),
+        new Operation.Binary("Integer.remainderUnsigned(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
+        new Operation.Unary("Integer.reverse(", IntType.INSTANCE, ")"),
+        new Operation.Unary("Integer.reverseBytes(", IntType.INSTANCE, ")"),
+        new Operation.Binary("Integer.rotateLeft(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
+        new Operation.Binary("Integer.rotateRight(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
+        new Operation.Unary("Integer.signum(", IntType.INSTANCE, ")"),
+        new Operation.Binary("Integer.sum(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
+
+        new Operation.Unary("Long.bitCount(", LongType.INSTANCE, ")"),
+        new Operation.Binary("Long.compare(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
+        new Operation.Binary("Long.compareUnsigned(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
+        new Operation.Unary("Long.numberOfLeadingZeros(", LongType.INSTANCE, ")"),
+        new Operation.Unary("Long.numberOfTrailingZeros(", LongType.INSTANCE, ")"),
+        new Operation.Unary("Long.signum(", LongType.INSTANCE, ")"),
+
+        new Operation.Binary("Float.compare(", FloatType.INSTANCE, ", ", FloatType.INSTANCE, ")"),
+        new Operation.Unary("Float.floatToIntBits(", FloatType.INSTANCE, ")"),
+        // Note: Float.floatToRawIntBits can lead to issues, because the NaN values are not always
+        //       represented by the same int bits.
+
+        new Operation.Binary("Double.compare(", DoubleType.INSTANCE, ", ", DoubleType.INSTANCE, ")"),
+
+        new Operation.Binary("Boolean.compare(", BooleanType.INSTANCE, ", ", BooleanType.INSTANCE, ")"),
+
         new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", IntType.INSTANCE, " : ", IntType.INSTANCE, ")")
     );
 

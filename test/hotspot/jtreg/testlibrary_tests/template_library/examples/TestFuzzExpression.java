@@ -263,7 +263,6 @@ public class TestFuzzExpression {
 
         // TODO: hand-unrollling case
 
-
         // Use template1 100 times with every type.
         List<TemplateWithArgs> templates = new ArrayList<>();
         templates.add(Library.arrayFillMethods());

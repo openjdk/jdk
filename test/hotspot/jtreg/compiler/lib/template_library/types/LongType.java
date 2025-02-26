@@ -62,6 +62,26 @@ public final class LongType extends PrimitiveType {
 
         new Operation.Unary("Short.toUnsignedLong(", ShortType.INSTANCE, ")"),
 
+        new Operation.Unary("Integer.toUnsignedLong(", IntType.INSTANCE, ")"),
+
+        new Operation.Binary("Long.compress(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
+        new Operation.Binary("Long.divideUnsigned(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
+        new Operation.Binary("Long.expand(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
+        new Operation.Unary("Long.highestOneBit(", LongType.INSTANCE, ")"),
+        new Operation.Unary("Long.lowestOneBit(", LongType.INSTANCE, ")"),
+        new Operation.Binary("Long.min(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
+        new Operation.Binary("Long.max(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
+        new Operation.Binary("Long.remainderUnsigned(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
+        new Operation.Unary("Long.reverse(", LongType.INSTANCE, ")"),
+        new Operation.Unary("Long.reverseBytes(", LongType.INSTANCE, ")"),
+        new Operation.Binary("Long.rotateLeft(", LongType.INSTANCE, ", ", IntType.INSTANCE, ")"),
+        new Operation.Binary("Long.rotateRight(", LongType.INSTANCE, ", ", IntType.INSTANCE, ")"),
+        new Operation.Binary("Long.sum(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
+
+        new Operation.Unary("Double.doubleToLongBits(", DoubleType.INSTANCE, ")"),
+        // Note: Double.doubleToRawLongBits can lead to issues, because the NaN values are not always
+        //       represented by the same long bits.
+
         new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", LongType.INSTANCE, " : ", LongType.INSTANCE, ")")
     );
 
