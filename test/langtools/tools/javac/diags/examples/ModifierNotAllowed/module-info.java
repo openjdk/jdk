@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key:  compiler.err.feature.not.supported.in.source.plural
+// key: compiler.err.feature.not.supported.in.source.plural
 // key: compiler.misc.feature.java.base.transitive
 // options: --release 24
 

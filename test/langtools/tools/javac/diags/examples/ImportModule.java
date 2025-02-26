@@ -22,7 +22,7 @@
  */
 
  // key: compiler.misc.feature.module.imports
- // key:  compiler.err.feature.not.supported.in.source.plural
+ // key: compiler.err.feature.not.supported.in.source.plural
  // options: --release 24 -Xlint:preview
 
 import module java.base;
