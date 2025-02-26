@@ -336,7 +336,7 @@ public final class Http3Connection implements AutoCloseable {
     }
 
     private static CompletableFuture<Void> checkSSLConfig(HttpQuicConnection quic) {
-        // HTTP2 checks ALPN here; with HTTP3, we only offer one ALPN,
+        // HTTP/2 checks ALPN here; with HTTP/3, we only offer one ALPN,
         // and TLS verifies that it's negotiated.
 
         // We can examine the negotiated parameters here and possibly fail

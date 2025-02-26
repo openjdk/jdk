@@ -93,7 +93,7 @@ public class ValidatingHeadersConsumer {
             pseudoHeadersEnded = true;
             // Check for prohibited connection-specific headers.
             // Some servers (Jetty, Tomcat) echo request headers in push promises.
-            // If the request was a HTTP1 upgrade, it included some prohibited headers.
+            // If the request was a HTTP/1.1 upgrade, it included some prohibited headers.
             // For compatibility, we ignore prohibited headers in push promises.
             if (context != Context.REQUEST) {
                 if (PROHIBITED_HEADERS.contains(n)) {

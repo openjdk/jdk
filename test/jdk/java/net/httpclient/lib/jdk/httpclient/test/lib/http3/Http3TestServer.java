@@ -104,7 +104,7 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
      * Same as calling {@code Http3TestServer(sslContext, null)}
      *
      * @param sslContext SSLContext
-     * @throws IOException
+     * @throws IOException if the server could not be created
      */
     public Http3TestServer(final SSLContext sslContext) throws IOException {
         this(sslContext, null);
@@ -122,7 +122,7 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
                            final Function<String, ThrowingConsumer<Http2TestExchange, IOException>> handlerProvider)
             throws IOException {
         Objects.requireNonNull(quicServer);
-        this.debug = Utils.getDebugLogger(() -> quicServer.name());
+        this.debug = Utils.getDebugLogger(quicServer::name);
         this.quicServer = quicServer;
         this.handlerProvider = handlerProvider;
         this.quicServer.setConnectionAcceptor(this);

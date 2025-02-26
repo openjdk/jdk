@@ -65,10 +65,10 @@ public final class Http3Streams {
     /**
      * {@return true if the given stream has errors}
      * @apiNote {@link QuicStream#hasError()} will return true
-     *          if the error code is {@code HTTP3_NO_ERROR}, since
+     *          if the error code is {@code H3_NO_ERROR}, since
      *          the Quic layer doesn't know about the semantic of
      *          HTTP/3 code. This method will return fixes that by
-     *          returning false if the error is HTTP3_NO_ERROR.
+     *          returning false if the error is {@code H3_NO_ERROR}.
      * @param stream a stream that may have errors
      */
     public static boolean hasError(QuicStream stream) {
