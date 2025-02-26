@@ -147,18 +147,18 @@ public class SnippetTaglet extends BaseTaglet {
                         case Style.Link l -> {
                             if (linkTarget != null) {
                                 var body = tag.getBody().toString();
-                                var pos = ((DCSnippet) tag).getStartPosition()
-                                        + Math.max(body.indexOf(linkTarget), body.indexOf(l.target()));
+                                var startPos = ((DCSnippet) tag).getStartPosition();
+                                var endPos = startPos + Math.max(body.indexOf(linkTarget), body.indexOf(l.target()));
 
                                 messages.error(
                                         utils.getCommentHelper(element).getDocTreePath(tag),
-                                        pos,
-                                        pos,
-                                        pos,
+                                        startPos,
+                                        endPos,
+                                        endPos,
                                         "doclet.error.snippet.ambiguous.link",
                                         linkTarget,
                                         l.target(),
-                                        content.asCharSequence().toString().split("\\R", 2)[0]);
+                                        content.asCharSequence().toString());
                             }
                             linkTarget = l.target();
                             e = getLinkedElement(element, linkTarget);
