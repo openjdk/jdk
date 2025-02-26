@@ -1285,6 +1285,7 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   Handshake::execute(&prepare_for_update_refs);
 
   _update_refs_iterator.reset();
+  _gc_state_changed = false;
 }
 
 oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
