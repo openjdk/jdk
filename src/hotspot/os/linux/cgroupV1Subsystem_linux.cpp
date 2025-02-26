@@ -37,8 +37,47 @@
 /*
  * Set directory to subsystem specific files based
  * on the contents of the mountinfo and cgroup files.
- * When runs in a container, the method handles the case
- * when a process is moved between cgroups.
+ *
+ * The method determines whether it runs in
+ * - host mode
+ * - container mode
+ *
+ * In the host mode, _root is equal to "/" and
+ * the subsystem path is equal to the _mount_point path
+ * joined with cgroup_path.
+ *
+ * In the container mode, it can be two possibilities:
+ * - private namespace (cgroupns=private)
+ * - host namespace (cgroupns=host, default mode in cgroup V1 hosts)
+ *
+ * Private namespace is equivalent to the host mode, i.e.
+ * the subsystem path is set by concatenating
+ * _mount_point and cgroup_path.
+ *
+ * In the host namespace, _root is equal to host's cgroup path
+ * of the control group to which the containerized process
+ * belongs to at the moment of creation. The mountinfo and
+ * cgroup files are mirrored from the host, while the subsystem
+ * specific files are mapped directly at _mount_point, i.e.
+ * at /sys/fs/cgroup/<controller>/, the subsystem path is
+ * then set equal to _mount_point.
+ *
+ * A special case of the subsystem path is when a cgroup path
+ * includes a subgroup, when a containerized process was associated
+ * with an existing cgroup, that is different from cgroup
+ * in which the process has been created.
+ * Here, the _root is equal to the host's initial cgroup path,
+ * cgroup_path will be equal to host's new cgroup path.
+ * As host cgroup hierarchies are not accessible in the container,
+ * it needs to be determined which part of cgroup path
+ * is accessible inside container, i.e. mapped under
+ * /sys/fs/cgroup/<controller>/<subgroup>.
+ * In Docker default setup, host's cgroup path can be
+ * of the form: /docker/<CONTAINER_ID>/<subgroup>,
+ * from which only <subgroup> is mapped.
+ * The method trims cgroup path from left, until the subgroup
+ * component is found. The subsystem path will be set to
+ * the _mount_point joined with the subgroup path.
  */
 void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   if (_cgroup_path != nullptr) {
@@ -74,6 +113,7 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
               }
               break;
             }
+            log_trace(os, container)("set_subsystem_path: skipped non-existent directory: %s.", suffix);
             suffix = strchr(suffix + 1, '/');
           }
         }
