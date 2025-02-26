@@ -1297,15 +1297,15 @@ run-test-report: post-run-test
 	  , \
 	    $(eval TEST_NAME := $(test)) \
 	  ) \
-	  $(if $(filter $($(TEST_ID)_PASSED), $($(TEST_ID)_TOTAL)), \
-	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %5d %2s\n" \
-	        "  " "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
-	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) $($(TEST_ID)_SKIPPED) "  " $(NEWLINE) \
-	  , \
+	  $(if $(filter-out 0, $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR)), \
 	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %5d %2s\n" \
 	         ">>" "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
 	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) $($(TEST_ID)_SKIPPED) "<<" $(NEWLINE) \
 	    $(eval TEST_FAILURE := true) \
+	  , \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %5d %2s\n" \
+	        "  " "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
+	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) $($(TEST_ID)_SKIPPED) "  " $(NEWLINE) \
 	  ) \
 	)
 	$(ECHO) >> $(TEST_SUMMARY) ==============================
