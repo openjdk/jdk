@@ -3017,27 +3017,30 @@ MergePrimitiveStores::ValueOrder MergePrimitiveStores::find_adjacent_input_value
 bool MergePrimitiveStores::is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size) const {
   ValueOrder input_value_order = find_adjacent_input_value_order(n1, n2, memory_size);
 
-  if (input_value_order == ValueOrder::NotAdjacent) {
-    return false;
+  switch (input_value_order) {
+    case ValueOrder::NotAdjacent:
+      return false;
+    case ValueOrder::Reverse:
+      if (memory_size != 1 ||
+          !Matcher::match_rule_supported(Op_ReverseBytesS) ||
+          !Matcher::match_rule_supported(Op_ReverseBytesI) ||
+          !Matcher::match_rule_supported(Op_ReverseBytesL)) {
+        // ReverseBytes are not supported by platform
+        return false;
+      }
+    case ValueOrder::Const:
+    case ValueOrder::Platform:
+      if (_value_order == ValueOrder::Unknown) {
+        // Initial state is Unknown, and we find a valid input value order
+        return true;
+      }
+      // The value order can not be changed
+      return _value_order == input_value_order;
+    case ValueOrder::Unknown:
+    default:
+      ShouldNotReachHere();
   }
-
-  if (input_value_order == ValueOrder::Reverse &&
-      (memory_size != 1 ||
-       !Matcher::match_rule_supported(Op_ReverseBytesI) ||
-       !Matcher::match_rule_supported(Op_ReverseBytesL) ||
-       !Matcher::match_rule_supported(Op_ReverseBytesS)
-      )) {
-    // ReverseBytes are not supported by platform
-    return false;
-  }
-
-  if (_value_order == ValueOrder::Unknown) {
-    // Initial state is Unknown, and we find a valid input value order
-    return true;
-  }
-
-  // The value order can not be changed
-  return _value_order == input_value_order;
+  return false;
 }
 
 // Detect pattern: n = base_out >> shift_out
