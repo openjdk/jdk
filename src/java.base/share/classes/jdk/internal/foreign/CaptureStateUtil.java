@@ -25,6 +25,7 @@ package jdk.internal.foreign;
 
 import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
@@ -49,46 +50,6 @@ public final class CaptureStateUtil {
     private static final StructLayout CAPTURE_LAYOUT = Linker.Option.captureStateLayout();
     private static final CarrierLocalArenaPools POOL = CarrierLocalArenaPools.create(CAPTURE_LAYOUT);
 
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-
-    // The method handles below are bound to static methods residing in this class
-
-    private static final MethodHandle NON_NEGATIVE_INT_MH =
-            MhUtil.findStatic(LOOKUP, "nonNegative",
-                    MethodType.methodType(boolean.class, int.class));
-
-    private static final MethodHandle SUCCESS_INT_MH =
-            MhUtil.findStatic(LOOKUP, "success",
-                    MethodType.methodType(int.class, int.class, MemorySegment.class));
-
-    private static final MethodHandle ERROR_INT_MH =
-            MhUtil.findStatic(LOOKUP, "error",
-                    MethodType.methodType(int.class, MethodHandle.class, int.class, MemorySegment.class));
-
-    private static final MethodHandle NON_NEGATIVE_LONG_MH =
-            MhUtil.findStatic(LOOKUP, "nonNegative",
-                    MethodType.methodType(boolean.class, long.class));
-
-    private static final MethodHandle SUCCESS_LONG_MH =
-            MhUtil.findStatic(LOOKUP, "success",
-                    MethodType.methodType(long.class, long.class, MemorySegment.class));
-
-    private static final MethodHandle ERROR_LONG_MH =
-            MhUtil.findStatic(LOOKUP, "error",
-                    MethodType.methodType(long.class, MethodHandle.class, long.class, MemorySegment.class));
-
-    private static final MethodHandle ACQUIRE_ARENA_MH =
-            MhUtil.findStatic(LOOKUP, "acquireArena",
-                    MethodType.methodType(Arena.class));
-
-    private static final MethodHandle ALLOCATE_MH =
-            MhUtil.findStatic(LOOKUP, "allocate",
-                    MethodType.methodType(MemorySegment.class, Arena.class));
-
-    private static final MethodHandle ARENA_CLOSE_MH =
-            MhUtil.findVirtual(LOOKUP, Arena.class, "close",
-                    MethodType.methodType(void.class));
-
     // The `BASIC_HANDLE_CACHE` contains the common "basic handles" that can be reused for
     // all adapted method handles. Keeping as much as possible reusable reduces the number
     // of combinators needed to form an adapted method handle.
@@ -99,9 +60,9 @@ public final class CaptureStateUtil {
 
     // A key that holds both the `returnType` and the `stateName` needed to look up a
     // specific "basic handle" in the `BASIC_HANDLE_CACHE`.
-    //   returnType E {int.class | long.class}
-    //   stateName can be anything non-null but should E {"GetLastError" | "WSAGetLastError"} | "errno")}
-    record BasicKey(Class<?> returnType, String stateName) {
+    //   returnType in {int.class | long.class}
+    //   stateName can be anything non-null but should be in {"GetLastError" | "WSAGetLastError"} | "errno")}
+    private record BasicKey(Class<?> returnType, String stateName) {
 
         BasicKey(MethodHandle target, String stateName) {
             this(returnType(target), Objects.requireNonNull(stateName));
@@ -233,7 +194,7 @@ public final class CaptureStateUtil {
 
         // Use an `Arena` for the first argument instead and extract a segment from it.
         // (C0=Arena, C1-Cn)(int|long)
-        innerAdapted = MethodHandles.collectArguments(innerAdapted, 0, ALLOCATE_MH);
+        innerAdapted = MethodHandles.collectArguments(innerAdapted, 0, handleFor(ALLOCATE));
 
         // Add an identity function for the result of the cleanup action.
         // ((int|long))(int|long)
@@ -246,7 +207,7 @@ public final class CaptureStateUtil {
         // cleanup action and invoke `Arena::close` when it is run. The `cleanup` handle
         // does not have to have all parameters. It can have zero or more.
         // (Throwable, (int|long), Arena)(int|long)
-        cleanup = MethodHandles.collectArguments(cleanup, 2, ARENA_CLOSE_MH);
+        cleanup = MethodHandles.collectArguments(cleanup, 2, handleFor(ARENA_CLOSE));
 
         // Combine the `innerAdapted` and `cleanup` action into a try/finally block.
         // (Arena, C1-Cn)(int|long)
@@ -255,7 +216,7 @@ public final class CaptureStateUtil {
         // Acquire the arena from the global pool.
         // With this, we finally arrive at the intended method handle:
         // (C1-Cn)(int|long)
-        return MethodHandles.collectArguments(tryFinally, 0, ACQUIRE_ARENA_MH);
+        return MethodHandles.collectArguments(tryFinally, 0, handleFor(ACQUIRE_ARENA));
     }
 
     private static MethodHandle basicHandleFor(BasicKey basicKey) {
@@ -285,15 +246,15 @@ public final class CaptureStateUtil {
         if (basicKey.returnType().equals(int.class)) {
             // (int, MemorySegment)int
             return MethodHandles.guardWithTest(
-                    NON_NEGATIVE_INT_MH,
-                    SUCCESS_INT_MH,
-                    ERROR_INT_MH.bindTo(intExtractor));
+                    handleFor(NON_NEGATIVE_INT),
+                    handleFor(SUCCESS_INT),
+                    handleFor(ERROR_INT).bindTo(intExtractor));
         } else {
             // (long, MemorySegment)long
             return MethodHandles.guardWithTest(
-                    NON_NEGATIVE_LONG_MH,
-                    SUCCESS_LONG_MH,
-                    ERROR_LONG_MH.bindTo(intExtractor));
+                    handleFor(NON_NEGATIVE_LONG),
+                    handleFor(SUCCESS_LONG),
+                    handleFor(ERROR_LONG).bindTo(intExtractor));
         }
     }
 
@@ -345,6 +306,71 @@ public final class CaptureStateUtil {
                               long value,
                               MemorySegment segment) throws Throwable {
         return -(int) errorHandle.invokeExact(segment);
+    }
+
+    // The method handles below are bound to static methods residing in this class
+
+    // Todo: Replace the cache below with a stable value Map
+
+    private static final int
+            NON_NEGATIVE_INT  = 0,
+            SUCCESS_INT       = 1,
+            ERROR_INT         = 2,
+            NON_NEGATIVE_LONG = 3,
+            SUCCESS_LONG      = 4,
+            ERROR_LONG        = 5,
+            ACQUIRE_ARENA     = 6,
+            ALLOCATE          = 7,
+            ARENA_CLOSE       = 8;
+
+    private static final @Stable MethodHandle[] HANDLES = new MethodHandle[ARENA_CLOSE + 1];
+
+    private static MethodHandle handleFor(int index) {
+        MethodHandle handle = HANDLES[index];
+        if (handle == null) {
+            synchronized (HANDLES) {
+                handle = HANDLES[index];
+                if (handle == null) {
+                    HANDLES[index] = (handle = makeHandle(index));
+                }
+            }
+        }
+        return handle;
+    }
+
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
+    private static MethodHandle makeHandle(int index) {
+        switch (index) {
+            case NON_NEGATIVE_INT:
+                return MhUtil.findStatic(LOOKUP, "nonNegative",
+                        MethodType.methodType(boolean.class, int.class));
+            case SUCCESS_INT:
+                return MhUtil.findStatic(LOOKUP, "success",
+                        MethodType.methodType(int.class, int.class, MemorySegment.class));
+            case ERROR_INT:
+                return MhUtil.findStatic(LOOKUP, "error",
+                        MethodType.methodType(int.class, MethodHandle.class, int.class, MemorySegment.class));
+            case NON_NEGATIVE_LONG:
+                return MhUtil.findStatic(LOOKUP, "nonNegative",
+                        MethodType.methodType(boolean.class, long.class));
+            case SUCCESS_LONG:
+                return MhUtil.findStatic(LOOKUP, "success",
+                        MethodType.methodType(long.class, long.class, MemorySegment.class));
+            case ERROR_LONG:
+                return MhUtil.findStatic(LOOKUP, "error",
+                        MethodType.methodType(long.class, MethodHandle.class, long.class, MemorySegment.class));
+            case ACQUIRE_ARENA:
+                return MhUtil.findStatic(LOOKUP, "acquireArena",
+                        MethodType.methodType(Arena.class));
+            case ALLOCATE:
+                return MhUtil.findStatic(LOOKUP, "allocate",
+                        MethodType.methodType(MemorySegment.class, Arena.class));
+            case ARENA_CLOSE:
+                return MhUtil.findVirtual(LOOKUP, Arena.class, "close",
+                        MethodType.methodType(void.class));
+        }
+        throw new InternalError("Unknown index: " + index);
     }
 
 }
