@@ -2456,6 +2456,24 @@ XXX Code for transations where no currency is involved
 		<language type="zza" scripts="Latn"/>
 		<language type="zza" territories="TR" alt="secondary"/>
 	</languageData>
+	<scriptData>
+		<scriptVariant type="compound" id='Hanb' base='Hani Bopo'/> <!-- Han with Bopomofo (alias for Han + Bopomofo) -->
+		<scriptVariant type="compound" id='Jpan' base='Hani Hira Kana'/> <!-- Japanese (alias for Han + Hiragana + Katakana) -->
+		<scriptVariant type="compound" id='Hrkt' base='Hira Kana'/> <!-- Japanese syllabaries (alias for Hiragana + Katakana) -->
+		<scriptVariant type="compound" id='Kore' base='Hang Hani'/> <!-- Korean (alias for Hangul + Han) -->
+	
+		<scriptVariant type="visual" id='Aran' base='Arab'/> <!-- Arabic (Nastaliq variant) -->
+		<scriptVariant type="visual" id='Cyrs' base='Cyrl'/> <!-- Cyrillic (Old Church Slavonic variant) -->
+		<scriptVariant type="visual" id='Latf' base='Latn'/> <!-- Latin (Fraktur variant) -->
+		<scriptVariant type="visual" id='Latg' base='Latn'/> <!-- Latin (Gaelic variant) -->
+		<scriptVariant type="visual" id='Syrn' base='Syrc'/> <!-- Syriac (Eastern variant) -->
+		<scriptVariant type="visual" id='Syre' base='Syrc'/> <!-- Syriac (Estrangelo variant) -->
+		<scriptVariant type="visual" id='Syrj' base='Syrc'/> <!-- Syriac (Western variant) -->
+	
+		<scriptVariant type="subset" id='Jamo' base='Hang'/> <!-- Jamo (alias for Jamo subset of Hangul) -->
+		<scriptVariant type="subset" id='Hans' base='Hani'/> <!-- Han (Simplified variant) -->
+		<scriptVariant type="subset" id='Hant' base='Hani'/> <!-- Han (Traditional variant) -->
+	</scriptData>
  <!-- See http://unicode.org/cldr/data/diff/supplemental/territory_language_information.html for more information on territoryInfo. -->
 	<territoryInfo>
 		<territory type="AC" gdp="50800000" literacyPercent="99" population="940">	<!--Ascension Island-->
@@ -3149,7 +3167,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="fr" populationPercent="27" officialStatus="official" references="R1352"/>	<!--French-->
 			<languagePopulation type="ff" populationPercent="26"/>	<!--Fula-->
 			<languagePopulation type="man" populationPercent="23"/>	<!--Mandingo-->
-			<languagePopulation type="man_Nkoo" literacyPercent="50" populationPercent="23" references="R1021"/>	<!--Mandingo (N’Ko)-->
+			<languagePopulation type="man_Nkoo" literacyPercent="25" populationPercent="23" references="R1021"/>	<!--Mandingo (N’Ko)-->
 			<languagePopulation type="sus" populationPercent="11"/>	<!--Susu-->
 			<languagePopulation type="nqo" populationPercent="5" references="R1286"/>	<!--N’Ko-->
 			<languagePopulation type="kpe" populationPercent="3.8"/>	<!--Kpelle-->
@@ -4047,7 +4065,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="mrj" populationPercent="0.021"/>	<!--Western Mari-->
 			<languagePopulation type="alt" populationPercent="0.014"/>	<!--Southern Altai-->
 			<languagePopulation type="fi" populationPercent="0.012"/>	<!--Finnish-->
-			<languagePopulation type="sr_Latn" populationPercent="0.0036"/>	<!--Serbian (Latin)-->
+			<languagePopulation type="sr" populationPercent="0.0041" references="R1040"/>	<!--Serbian-->
 			<languagePopulation type="vep" populationPercent="0.0026"/>	<!--Veps-->
 			<languagePopulation type="mn" populationPercent="0.0015"/>	<!--Mongolian-->
 			<languagePopulation type="kaa" populationPercent="0.0006" references="R1199"/>	<!--Kara-Kalpak-->
@@ -5574,6 +5592,7 @@ XXX Code for transations where no currency is involved
 		<reference type="R1037" uri="http://en.wikipedia.org/wiki/Kiribati">English official; Kiribati widespread</reference>
 		<reference type="R1038" uri="https://www.cia.gov/cia/publications/factbook/fields/2098.html">[missing]</reference>
 		<reference type="R1039" uri="https://www.cia.gov/cia/publications/factbook/geos/ls.html">German official</reference>
+		<reference type="R1040" uri="http://rosstat.gov.ru/vpn_popul">2020 Russian Census</reference>
 		<reference type="R1042" uri="https://www.cia.gov/cia/publications/factbook/geos/nl.html">Used CIA literacy figure times population, added 'Vlaams' population</reference>
 		<reference type="R1043" uri="http://www.cso.ie/census/documents/Final%20Principal%20Demographic%20Results%202006.pdf">[missing]</reference>
 		<reference type="R1044" uri="http://www.ethnologue.com/show_language.asp?code=mri">70,000 in 1991, 100,000 who understand it, but do not speak it ; ethnic pop 530,000 in 2002</reference>

@@ -5,7 +5,7 @@ SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 
-<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitIdComponents?, unitPrefixes?, unitConstants*, unitQuantities*, convertUnits*, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales*, personNamesDefaults?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope?, languageGroups?, grammaticalData? ) >
+<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, scriptData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitIdComponents?, unitPrefixes?, unitConstants*, unitQuantities*, convertUnits*, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales*, personNamesDefaults?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope?, languageGroups?, grammaticalData? ) >
 
 <!ELEMENT version EMPTY >
     <!--@METADATA-->
@@ -156,6 +156,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@METADATA-->
 <!ATTLIST language alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/secondary, variant-->
+
+<!ELEMENT scriptData ( scriptVariant* ) >
+
+<!ELEMENT scriptVariant EMPTY >
+<!ATTLIST scriptVariant type NMTOKEN #REQUIRED >
+    <!--@MATCH:literal/compound, visual, subset-->
+<!ATTLIST scriptVariant id NMTOKEN #REQUIRED >
+    <!--@MATCH:validity/script-->
+<!ATTLIST scriptVariant base NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+    <!--@MATCH:set/validity/script-->
 
 <!ELEMENT territoryInfo ( territory* ) >
 <!ATTLIST territoryInfo draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >

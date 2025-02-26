@@ -451,7 +451,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="mai" to="mai_Deva_IN"/>		<!--Maithili‧?‧?	➡ Maithili‧Devanagari‧India-->
 		<likelySubtag from="mak" to="mak_Latn_ID"/>		<!--Makasar‧?‧?	➡ Makasar‧Latin‧Indonesia-->
 		<likelySubtag from="man" to="man_Latn_GM"/>		<!--Mandingo‧?‧?	➡ Mandingo‧Latin‧Gambia-->
-		<likelySubtag from="man_GN" to="man_Nkoo_GN"/>		<!--Mandingo‧?‧Guinea	➡ Mandingo‧N’Ko‧Guinea-->
 		<likelySubtag from="man_Nkoo" to="man_Nkoo_GN"/>		<!--Mandingo‧N’Ko‧?	➡ Mandingo‧N’Ko‧Guinea-->
 		<likelySubtag from="mas" to="mas_Latn_KE"/>		<!--Masai‧?‧?	➡ Masai‧Latin‧Kenya-->
 		<likelySubtag from="maz" to="maz_Latn_MX"/>		<!--Central Mazahua‧?‧?	➡ Central Mazahua‧Latin‧Mexico-->
@@ -677,7 +676,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="sr" to="sr_Cyrl_RS"/>		<!--Serbian‧?‧?	➡ Serbian‧Cyrillic‧Serbia-->
 		<likelySubtag from="sr_ME" to="sr_Latn_ME"/>		<!--Serbian‧?‧Montenegro	➡ Serbian‧Latin‧Montenegro-->
 		<likelySubtag from="sr_RO" to="sr_Latn_RO"/>		<!--Serbian‧?‧Romania	➡ Serbian‧Latin‧Romania-->
-		<likelySubtag from="sr_RU" to="sr_Latn_RU"/>		<!--Serbian‧?‧Russia	➡ Serbian‧Latin‧Russia-->
 		<likelySubtag from="sr_TR" to="sr_Latn_TR"/>		<!--Serbian‧?‧Türkiye	➡ Serbian‧Latin‧Türkiye-->
 		<likelySubtag from="srb" to="srb_Sora_IN"/>		<!--Sora‧?‧?	➡ Sora‧Sora Sompeng‧India-->
 		<likelySubtag from="srn" to="srn_Latn_SR"/>		<!--Sranan Tongo‧?‧?	➡ Sranan Tongo‧Latin‧Suriname-->
