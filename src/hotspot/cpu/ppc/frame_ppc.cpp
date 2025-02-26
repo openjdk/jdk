@@ -196,8 +196,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
   }
 
   if (sender_pc() == nullptr) {
-    // Likely the return pc was not yet stored to stack.  We rather discard this
-    // sample also because we would hit an assertion in frame::setup().  We can
+    // Likely the return pc was not yet stored to stack. We rather discard this
+    // sample also because we would hit an assertion in frame::setup(). We can
     // find any other random value if the return pc was not yet stored to
     // stack. We rely on consistency checks to handle this (see
     // e.g. find_initial_Java_frame())
