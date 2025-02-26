@@ -529,10 +529,10 @@ public final class AltServicesRegistry {
 
                     });
             // additionally keep track of this as an invalid alt service, so that it cannot be
-            // registered again in the future.
-            // we currently ban the alt-service for the origin permanently. In future,
-            // if necessary, we can decide if this needs to be banned for only some
-            // duration of time.
+            // registered again in the future. Banning is temporary.
+            // Banned alt services may get removed from the set at some point due to
+            // implementation constraints. In which case they may get registered again
+            // and banned again, if connecting to the endpoint fails again.
             this.invalidAltServices.addUnique(new InvalidAltSvc(origin, id));
             if (debug.on()) {
                 debug.log("AltService marked invalid: " + id + " for origin " + origin);
