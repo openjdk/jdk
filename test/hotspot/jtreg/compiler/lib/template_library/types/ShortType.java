@@ -30,36 +30,38 @@ import compiler.lib.generators.RestrictableGenerator;
 
 import compiler.lib.template_library.Operation;
 
-public final class ByteType extends PrimitiveType {
-    public static final ByteType INSTANCE = new ByteType();
-    private static final RestrictableGenerator<Integer> GEN_BYTE = Generators.G.safeRestrict(Generators.G.ints(), Byte.MIN_VALUE, Byte.MAX_VALUE);
+public final class ShortType extends PrimitiveType {
+    public static final ShortType INSTANCE = new ShortType();
+    private static final RestrictableGenerator<Integer> GEN_SHORT = Generators.G.safeRestrict(Generators.G.ints(), Short.MIN_VALUE, Short.MAX_VALUE);
 
     private static final List<Operation> OPERATIONS = List.of(
         // Note: the standard integer arithmetic operations are only defined for int/long.
         //       They can be used for smaller types only via automatic promotion to int,
-        //       and then a cast back to byte, e.g:
-        //           byte a = (byte)(b + c)
+        //       and then a cast back to short, e.g:
+        //           short a = (short)(b + c)
         //
         //       Instead of adding these operations explicitly, we just add the conversion
-        //       from int to byte, and let the IntType generate all the integer arithmetic
+        //       from int to short, and let the IntType generate all the integer arithmetic
         //       operations.
-        new Operation.Unary("((byte)", CharType.INSTANCE, ")"),
-        new Operation.Unary("((byte)", ShortType.INSTANCE, ")"),
-        new Operation.Unary("((byte)", IntType.INSTANCE, ")"),
-        new Operation.Unary("((byte)", LongType.INSTANCE, ")"),
-        new Operation.Unary("((byte)", FloatType.INSTANCE, ")"),
-        new Operation.Unary("((byte)", DoubleType.INSTANCE, ")"),
+        new Operation.Unary("((short)", ByteType.INSTANCE, ")"),
+        new Operation.Unary("((short)", CharType.INSTANCE, ")"),
+        new Operation.Unary("((short)", IntType.INSTANCE, ")"),
+        new Operation.Unary("((short)", LongType.INSTANCE, ")"),
+        new Operation.Unary("((short)", FloatType.INSTANCE, ")"),
+        new Operation.Unary("((short)", DoubleType.INSTANCE, ")"),
         // Note: There is no cast from boolean
 
-        new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", ByteType.INSTANCE, " : ", ByteType.INSTANCE, ")")
+        new Operation.Unary("Short.reverseBytes(", ShortType.INSTANCE, ")"),
+
+        new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", ShortType.INSTANCE, " : ", ShortType.INSTANCE, ")")
     );
 
     @Override
-    public final String name() { return "byte"; }
+    public final String name() { return "short"; }
 
     @Override
     public final Object con() {
-        return "(byte)" + GEN_BYTE.next();
+        return "(short)" + GEN_SHORT.next();
     }
 
     @Override

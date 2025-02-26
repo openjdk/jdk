@@ -35,6 +35,14 @@ public final class LongType extends PrimitiveType {
     private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
 
     private static final List<Operation> OPERATIONS = List.of(
+        new Operation.Unary("((long)", ByteType.INSTANCE, ")"),
+        new Operation.Unary("((long)", CharType.INSTANCE, ")"),
+        new Operation.Unary("((long)", ShortType.INSTANCE, ")"),
+        new Operation.Unary("((long)", IntType.INSTANCE, ")"),
+        new Operation.Unary("((long)", FloatType.INSTANCE, ")"),
+        new Operation.Unary("((long)", DoubleType.INSTANCE, ")"),
+        // Note: There is no cast from boolean
+
         new Operation.Unary("(-(", LongType.INSTANCE, "))"),
         new Operation.Unary("(~", LongType.INSTANCE, ")"),
 
@@ -50,8 +58,9 @@ public final class LongType extends PrimitiveType {
         new Operation.Binary("(", LongType.INSTANCE, " >> ",  LongType.INSTANCE, ")"),
         new Operation.Binary("(", LongType.INSTANCE, " >>> ", LongType.INSTANCE, ")"),
 
-        // From Byte:
         new Operation.Unary("Byte.toUnsignedLong(", ByteType.INSTANCE, ")"),
+
+        new Operation.Unary("Short.toUnsignedLong(", ShortType.INSTANCE, ")"),
 
         new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", LongType.INSTANCE, " : ", LongType.INSTANCE, ")")
     );

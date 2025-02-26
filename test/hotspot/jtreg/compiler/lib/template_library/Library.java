@@ -88,6 +88,8 @@ public abstract class Library {
         var template = Template.make(() -> body(
             """
             private static final RestrictableGenerator<Integer> GEN_BYTE = Generators.G.safeRestrict(Generators.G.ints(), Byte.MIN_VALUE, Byte.MAX_VALUE);
+            private static final RestrictableGenerator<Integer> GEN_CHAR = Generators.G.safeRestrict(Generators.G.ints(), Character.MIN_VALUE, Character.MAX_VALUE);
+            private static final RestrictableGenerator<Integer> GEN_SHORT = Generators.G.safeRestrict(Generators.G.ints(), Short.MIN_VALUE, Short.MAX_VALUE);
             private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
             private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
             private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
@@ -97,6 +99,20 @@ public abstract class Library {
             public static byte[] fill(byte[] a) {
                 for (int i = 0; i < a.length; i++) {
                     a[i] = GEN_BYTE.next().byteValue();
+                }
+                return a;
+            }
+
+            public static char[] fill(char[] a) {
+                for (int i = 0; i < a.length; i++) {
+                    a[i] = (char)GEN_CHAR.next().intValue();
+                }
+                return a;
+            }
+
+            public static short[] fill(short[] a) {
+                for (int i = 0; i < a.length; i++) {
+                    a[i] = GEN_SHORT.next().shortValue();
                 }
                 return a;
             }

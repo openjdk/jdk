@@ -35,6 +35,14 @@ public final class DoubleType extends PrimitiveType {
     private static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
 
     private static final List<Operation> OPERATIONS = List.of(
+        new Operation.Unary("((double)", ByteType.INSTANCE, ")"),
+        new Operation.Unary("((double)", CharType.INSTANCE, ")"),
+        new Operation.Unary("((double)", ShortType.INSTANCE, ")"),
+        new Operation.Unary("((double)", IntType.INSTANCE, ")"),
+        new Operation.Unary("((double)", LongType.INSTANCE, ")"),
+        new Operation.Unary("((double)", FloatType.INSTANCE, ")"),
+        // Note: There is no cast from boolean
+
         new Operation.Unary("(-(", DoubleType.INSTANCE, "))"),
 
         new Operation.Binary("(", DoubleType.INSTANCE, " + ",   DoubleType.INSTANCE, ")"),

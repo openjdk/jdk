@@ -35,6 +35,13 @@ public final class FloatType extends PrimitiveType {
     private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
 
     private static final List<Operation> OPERATIONS = List.of(
+        new Operation.Unary("((float)", ByteType.INSTANCE, ")"),
+        new Operation.Unary("((float)", CharType.INSTANCE, ")"),
+        new Operation.Unary("((float)", ShortType.INSTANCE, ")"),
+        new Operation.Unary("((float)", IntType.INSTANCE, ")"),
+        new Operation.Unary("((float)", LongType.INSTANCE, ")"),
+        new Operation.Unary("((float)", DoubleType.INSTANCE, ")"),
+
         new Operation.Unary("(-(", FloatType.INSTANCE, "))"),
 
         new Operation.Binary("(", FloatType.INSTANCE, " + ",   FloatType.INSTANCE, ")"),

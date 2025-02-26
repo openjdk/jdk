@@ -35,6 +35,8 @@ public final class BooleanType extends PrimitiveType {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     private static final List<Operation> OPERATIONS = List.of(
+        // Note: there is no casting / conversion from an to boolean directly.
+
         new Operation.Unary("(!(", BooleanType.INSTANCE, "))"),
 
         new Operation.Binary("(", BooleanType.INSTANCE, " || ",   BooleanType.INSTANCE, ")"),

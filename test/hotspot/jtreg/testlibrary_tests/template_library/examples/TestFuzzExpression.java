@@ -267,12 +267,10 @@ public class TestFuzzExpression {
         // Use template1 100 times with every type.
         List<TemplateWithArgs> templates = new ArrayList<>();
         templates.add(Library.arrayFillMethods());
-        for (int i = 0; i < 5; i++) {
-            for (Type type : Type.primitives()) {
-                templates.add(template1.withArgs(type));
-                templates.add(template2.withArgs(type));
-                templates.add(template3.withArgs(type));
-            }
+        for (Type type : Type.primitives()) {
+            for (int i = 0; i < 20; i++) { templates.add(template1.withArgs(type)); }
+            for (int i = 0; i < 20; i++) { templates.add(template2.withArgs(type)); }
+            for (int i = 0; i < 5; i++) { templates.add(template3.withArgs(type)); }
         }
         return IRTestClass.TEMPLATE.withArgs(info, templates).render();
     }

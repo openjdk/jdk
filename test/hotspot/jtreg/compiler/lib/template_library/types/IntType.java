@@ -36,6 +36,8 @@ public final class IntType extends PrimitiveType {
 
     private static final List<Operation> OPERATIONS = List.of(
         new Operation.Unary("((int)", ByteType.INSTANCE, ")"),
+        new Operation.Unary("((int)", CharType.INSTANCE, ")"),
+        new Operation.Unary("((int)", ShortType.INSTANCE, ")"),
         new Operation.Unary("((int)", LongType.INSTANCE, ")"),
         new Operation.Unary("((int)", FloatType.INSTANCE, ")"),
         new Operation.Unary("((int)", DoubleType.INSTANCE, ")"),
@@ -56,10 +58,15 @@ public final class IntType extends PrimitiveType {
         new Operation.Binary("(", IntType.INSTANCE, " >> ",  IntType.INSTANCE, ")"),
         new Operation.Binary("(", IntType.INSTANCE, " >>> ", IntType.INSTANCE, ")"),
 
-        // From Byte:
         new Operation.Binary("Byte.compare(", ByteType.INSTANCE, ", ", ByteType.INSTANCE, ")"),
         new Operation.Binary("Byte.compareUnsigned(", ByteType.INSTANCE, ", ", ByteType.INSTANCE, ")"),
         new Operation.Unary("Byte.toUnsignedInt(", ByteType.INSTANCE, ")"),
+
+        new Operation.Binary("Character.compare(", CharType.INSTANCE, ", ", CharType.INSTANCE, ")"),
+
+        new Operation.Binary("Short.compare(", ShortType.INSTANCE, ", ", ShortType.INSTANCE, ")"),
+        new Operation.Binary("Short.compareUnsigned(", ShortType.INSTANCE, ", ", ShortType.INSTANCE, ")"),
+        new Operation.Unary("Short.toUnsignedInt(", ShortType.INSTANCE, ")"),
 
         new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", IntType.INSTANCE, " : ", IntType.INSTANCE, ")")
     );

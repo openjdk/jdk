@@ -28,6 +28,8 @@ import java.util.List;
 import compiler.lib.template_framework.Name;
 
 import compiler.lib.template_library.types.ByteType;
+import compiler.lib.template_library.types.CharType;
+import compiler.lib.template_library.types.ShortType;
 import compiler.lib.template_library.types.IntType;
 import compiler.lib.template_library.types.LongType;
 import compiler.lib.template_library.types.FloatType;
@@ -45,6 +47,8 @@ public abstract class Type implements Name.Type {
     public static final List<Type> primitives() {
         return List.of(
             ByteType.INSTANCE,
+            CharType.INSTANCE,
+            ShortType.INSTANCE,
             IntType.INSTANCE,
             LongType.INSTANCE,
             FloatType.INSTANCE,
