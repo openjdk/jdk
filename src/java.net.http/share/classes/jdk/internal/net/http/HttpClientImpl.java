@@ -101,6 +101,7 @@ import jdk.internal.net.quic.QuicTLSContext;
 
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
+import static jdk.internal.net.quic.QuicTLSContext.isQuicCompatible;
 
 /**
  * Client implementation. Contains all configuration information and also
@@ -456,17 +457,15 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 throw new UncheckedIOException(new IOException(ex));
             }
         });
-        final boolean sslCtxSupportedForH3 = QuicTLSContext.isSslContextSupported(sslContext);
+        final boolean sslCtxSupportedForH3 = isQuicCompatible(sslContext);
         if (version == Version.HTTP_3 && !sslCtxSupportedForH3) {
             throw new UncheckedIOException(new UnsupportedProtocolVersionException(
                     "HTTP3 is not supported"));
         }
         sslParams = requireNonNullElseGet(builder.sslParams, sslContext::getDefaultSSLParameters);
-        boolean sslParamsSupportedForH3 = QuicTLSContext.isSslParametersSupported(
-                sslParams,
-                // These are user-provided `SSLParameters`. If they are empty, it means that the user isn't explicitly
-                // opting for any protocol. Hence, allowing empty `SSLParameters`:
-                true);
+        boolean sslParamsSupportedForH3 = sslParams.getProtocols() == null
+                || sslParams.getProtocols().length == 0
+                || isQuicCompatible(sslParams);
         if (version == Version.HTTP_3 && !sslParamsSupportedForH3) {
             throw new UncheckedIOException(new UnsupportedProtocolVersionException(
                     "HTTP3 is not supported - TLSv1.3 isn't configured on SSLParameters"));
