@@ -295,7 +295,8 @@ public class XorINodeIdealizationTests {
 
     @Run(test = {
             "testFoldableXor", "testFoldableXorPow2", "testUnfoldableXorPow2",
-            "testFoldableXorDifferingLength", "testXorMax"
+            "testFoldableXorDifferingLength", "testXorMax",
+            "testFoldableRange","testRandomLimits"
     })
     public void runRangeTests() {
         int a = G.next();
@@ -317,6 +318,8 @@ public class XorINodeIdealizationTests {
         Asserts.assertEQ(true, testFoldableXorPow2(a, b));
         Asserts.assertEQ(true, testFoldableXorDifferingLength(a, b));
         Asserts.assertEQ((a & MAX_VALUE) ^ (b & 0b11), testXorMax(a, b));
+        Asserts.assertEQ(testRandomLimitsInterpreted(a, b), testRandomLimits(a, b));
+        Asserts.assertEQ(true, testFoldableRange(a, b));
     }
 
     @Test
@@ -353,5 +356,91 @@ public class XorINodeIdealizationTests {
         return (x & MAX_VALUE) ^ (y & 0b11);
         // can't do the folding range check here since xor <= MAX_VALUE is
         // constant with or without the xor
+    }
+
+    private static final Range RANGE_1 = Range.generate(G.restricted(0, MAX_VALUE));
+    private static final Range RANGE_2 = Range.generate(G.restricted(0, MAX_VALUE));
+    private static final int UPPER_BOUND = Integer.max(0, Integer.highestOneBit(RANGE_1.hi() | RANGE_2.hi()) * 2 - 1);
+
+    private static final int LIMIT_1 = G.next();
+    private static final int LIMIT_2 = G.next();
+    private static final int LIMIT_3 = G.next();
+    private static final int LIMIT_4 = G.next();
+    private static final int LIMIT_5 = G.next();
+    private static final int LIMIT_6 = G.next();
+    private static final int LIMIT_7 = G.next();
+    private static final int LIMIT_8 = G.next();
+
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"})
+    public boolean testFoldableRange(int x, int y) {
+        return (RANGE_1.clamp(x) ^ RANGE_2.clamp(y)) <= UPPER_BOUND;
+    }
+
+    @Test
+    public int testRandomLimits(int x, int y) {
+        x = RANGE_1.clamp(x);
+        y = RANGE_2.clamp(y);
+
+        int z = x ^ y;
+        // This should now have a new range, possibly some [0, max]
+        // Now let's test the range with some random if branches.
+        int sum = 0;
+        if (z < LIMIT_1) { sum += 1; }
+        if (z < LIMIT_2) { sum += 2; }
+        if (z < LIMIT_3) { sum += 4; }
+        if (z < LIMIT_4) { sum += 8; }
+        if (z < LIMIT_5) { sum += 16; }
+        if (z < LIMIT_6) { sum += 32; }
+        if (z < LIMIT_7) { sum += 64; }
+        if (z < LIMIT_8) { sum += 128; }
+
+        return sum;
+    }
+
+    @DontCompile
+    private int testRandomLimitsInterpreted(int x,int y) {
+        x = RANGE_1.clamp(x);
+        y = RANGE_2.clamp(y);
+
+        int z = x ^ y;
+        // This should now have a new range, possibly some [0, max]
+        // Now let's test the range with some random if branches.
+        int sum = 0;
+        if (z < LIMIT_1) { sum += 1; }
+        if (z < LIMIT_2) { sum += 2; }
+        if (z < LIMIT_3) { sum += 4; }
+        if (z < LIMIT_4) { sum += 8; }
+        if (z < LIMIT_5) { sum += 16; }
+        if (z < LIMIT_6) { sum += 32; }
+        if (z < LIMIT_7) { sum += 64; }
+        if (z < LIMIT_8) { sum += 128; }
+
+        return sum;
+    }
+
+    record Range(int lo, int hi) {
+        Range {
+            if (lo > hi) {
+                throw new IllegalArgumentException("lo > hi");
+            }
+        }
+
+        int clamp(int v) {
+            return Math.min(hi, Math.max(v, lo));
+        }
+
+        static Range generate(Generator<Integer> g) {
+            var a = g.next();
+            var b = g.next();
+            if (a > b) {
+                var tmp = a;
+                a = b;
+                b = tmp;
+            }
+            return new Range(a, b);
+        }
     }
 }
