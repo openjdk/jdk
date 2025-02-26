@@ -35,8 +35,12 @@ import org.w3c.dom.Node;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Iterator;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.event.IIOReadProgressListener;
@@ -176,15 +180,16 @@ public class JpegExifThumbnailTest {
                 new Dimension(60, 80)).run();
     }
 
-    final String filename;
+    final String imageName;
     final Dimension[] thumbnailSizes;
     final int year, month, day, hour, minute, second;
+    final File zipFile;
 
-    JpegExifThumbnailTest(String filename,
+    JpegExifThumbnailTest(String imageName,
                           int year, int month, int day,
                           int hour, int minute, int second,
-                          Dimension... thumbnailSizes) {
-        this.filename = filename;
+                          Dimension... thumbnailSizes) throws IOException {
+        this.imageName = imageName;
         this.thumbnailSizes = thumbnailSizes;
         this.year = year;
         this.month = month;
@@ -192,20 +197,35 @@ public class JpegExifThumbnailTest {
         this.hour = hour;
         this.minute = minute;
         this.second = second;
+
+        // the sample images are bundled in a zip archive
+        // because a github script labeled two of them as
+        // executable files (which are not allowed)
+        String sep = System.getProperty("file.separator");
+        String dir = System.getProperty("test.src", ".");
+        String filePath = dir+sep+"test-files.zip";
+        zipFile = new File(filePath);
+        if (!zipFile.exists())
+            throw new IOException("missing test file: " + zipFile.getPath());
     }
 
     public void run() throws IOException {
-        String sep = System.getProperty("file.separator");
-        String dir = System.getProperty("test.src", ".");
-        String filePath = dir+sep+filename;
-        File file = new File(filePath);
+        try (FileInputStream fileIn = new FileInputStream(zipFile);
+             ZipInputStream zipIn = new ZipInputStream(fileIn)) {
+            ZipEntry entry = zipIn.getNextEntry();
+            while (entry != null && !entry.getName().equals(imageName)) {
+                entry = zipIn.getNextEntry();
+            }
+            if (entry == null) {
+                throw new IOException("missing test image: " + imageName);
+            }
+            run(zipIn);
+        }
+    }
 
-        if (!file.exists())
-            throw new IOException("missing test file: " + file.getPath());
-        System.out.println("Testing " + file.getPath());
-
+    private void run(InputStream in) throws IOException {
         ImageReader reader = getJPEGImageReader();
-        ImageInputStream stream = ImageIO.createImageInputStream(file);
+        ImageInputStream stream = ImageIO.createImageInputStream(in);
         reader.setInput(stream);
 
         int thumbnailCount = reader.getNumThumbnails(0);
