@@ -27,6 +27,7 @@ import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
 
 import static java.lang.Integer.MAX_VALUE;
+import static java.lang.Integer.MIN_VALUE;
 
 /*
  * @test
@@ -58,7 +59,7 @@ public class XorINodeIdealizationTests {
         int c = RunInfo.getRandom().nextInt();
         int d = RunInfo.getRandom().nextInt();
 
-        int min = Integer.MIN_VALUE;
+        int min = MIN_VALUE;
         int max = MAX_VALUE;
 
         assertResult(0, 0, 0, 0);

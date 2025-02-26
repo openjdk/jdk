@@ -27,6 +27,7 @@ import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
 
 import static java.lang.Long.MAX_VALUE;
+import static java.lang.Long.MIN_VALUE;
 
 /*
  * @test
@@ -58,7 +59,7 @@ public class XorLNodeIdealizationTests {
         long c = RunInfo.getRandom().nextLong();
         long d = RunInfo.getRandom().nextLong();
 
-        long min = Long.MIN_VALUE;
+        long min = MIN_VALUE;
         long max = MAX_VALUE;
 
         assertResult(0, 0, 0, 0);
