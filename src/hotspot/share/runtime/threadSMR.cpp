@@ -366,7 +366,7 @@ class ScanHazardPtrPrintMatchingThreadsClosure : public ThreadClosure {
   }
 };
 
-#ifdef DEBUG
+#ifdef ASSERT
 // Closure to validate hazard ptrs.
 //
 class ValidateHazardPtrsClosure : public ThreadClosure {
@@ -952,7 +952,7 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
     log_debug(thread, smr)("tid=%zu: ThreadsSMRSupport::free_list: threads=" INTPTR_FORMAT " is not freed.", os::current_thread_id(), p2i(threads));
   }
 
-#ifdef DEBUG
+#ifdef ASSERT
   ValidateHazardPtrsClosure validate_cl;
   threads_do(&validate_cl);
 #endif
