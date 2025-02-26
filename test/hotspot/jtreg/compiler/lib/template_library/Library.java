@@ -87,11 +87,19 @@ public abstract class Library {
     public static TemplateWithArgs arrayFillMethods() {
         var template = Template.make(() -> body(
             """
+            private static final RestrictableGenerator<Integer> GEN_BYTE = Generators.G.safeRestrict(Generators.G.ints(), Byte.MIN_VALUE, Byte.MAX_VALUE);
             private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
             private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
             private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
             private static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
             private static final RestrictableGenerator<Integer> GEN_BOOLEAN = Generators.G.safeRestrict(Generators.G.ints(), 0, 1);
+
+            public static byte[] fill(byte[] a) {
+                for (int i = 0; i < a.length; i++) {
+                    a[i] = GEN_BYTE.next().byteValue();
+                }
+                return a;
+            }
 
             public static int[] fill(int[] a) {
                 Generators.G.fill(GEN_INT, a);

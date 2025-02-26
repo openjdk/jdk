@@ -35,6 +35,12 @@ public final class IntType extends PrimitiveType {
     private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
 
     private static final List<Operation> OPERATIONS = List.of(
+        new Operation.Unary("((int)", ByteType.INSTANCE, ")"),
+        new Operation.Unary("((int)", LongType.INSTANCE, ")"),
+        new Operation.Unary("((int)", FloatType.INSTANCE, ")"),
+        new Operation.Unary("((int)", DoubleType.INSTANCE, ")"),
+        // Note: There is no cast from boolean
+
         new Operation.Unary("(-(", IntType.INSTANCE, "))"),
         new Operation.Unary("(~", IntType.INSTANCE, ")"),
 
@@ -49,6 +55,11 @@ public final class IntType extends PrimitiveType {
         new Operation.Binary("(", IntType.INSTANCE, " << ",  IntType.INSTANCE, ")"),
         new Operation.Binary("(", IntType.INSTANCE, " >> ",  IntType.INSTANCE, ")"),
         new Operation.Binary("(", IntType.INSTANCE, " >>> ", IntType.INSTANCE, ")"),
+
+        // From Byte:
+        new Operation.Binary("Byte.compare(", ByteType.INSTANCE, ", ", ByteType.INSTANCE, ")"),
+        new Operation.Binary("Byte.compareUnsigned(", ByteType.INSTANCE, ", ", ByteType.INSTANCE, ")"),
+        new Operation.Unary("Byte.toUnsignedInt(", ByteType.INSTANCE, ")"),
 
         new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", IntType.INSTANCE, " : ", IntType.INSTANCE, ")")
     );

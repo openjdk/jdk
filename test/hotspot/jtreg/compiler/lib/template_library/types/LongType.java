@@ -50,6 +50,9 @@ public final class LongType extends PrimitiveType {
         new Operation.Binary("(", LongType.INSTANCE, " >> ",  LongType.INSTANCE, ")"),
         new Operation.Binary("(", LongType.INSTANCE, " >>> ", LongType.INSTANCE, ")"),
 
+        // From Byte:
+        new Operation.Unary("Byte.toUnsignedLong(", ByteType.INSTANCE, ")"),
+
         new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", LongType.INSTANCE, " : ", LongType.INSTANCE, ")")
     );
 
