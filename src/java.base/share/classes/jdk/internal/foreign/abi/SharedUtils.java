@@ -329,6 +329,9 @@ public final class SharedUtils {
 
     @ForceInline
     public static int unboxSegment32(MemorySegment segment) {
+        // This cast to 'int' is safe, because we only call this method on 32-bit
+        // platforms, where we know the address of a segment is truncated to 32-bits.
+        // There's a similar cast for 4-byte addresses in Unsafe.putAddress.
         return (int) unboxSegment(segment);
     }
 
