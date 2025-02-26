@@ -639,17 +639,13 @@ final class CertificateRequest {
             if (shc.localSupportedSignAlgs == null) {
                 shc.localSupportedSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
-                                shc.sslConfig,
-                                shc.algorithmConstraints, shc.activeProtocols,
-                                HANDSHAKE_SCOPE);
+                                shc, HANDSHAKE_SCOPE);
             }
 
             if (shc.localSupportedCertSignAlgs == null) {
                 shc.localSupportedCertSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
-                                shc.sslConfig,
-                                shc.algorithmConstraints, shc.activeProtocols,
-                                CERTIFICATE_SCOPE);
+                                shc, CERTIFICATE_SCOPE);
             }
 
             // According to TLSv1.2 RFC, CertificateRequest message must
@@ -751,10 +747,7 @@ final class CertificateRequest {
 
             List<SignatureScheme> signAlgs =
                     SignatureScheme.getSupportedAlgorithms(
-                            chc.sslConfig,
-                            chc.algorithmConstraints, chc.negotiatedProtocol,
-                            crm.algorithmIds,
-                            HANDSHAKE_SCOPE);
+                            chc, crm.algorithmIds, HANDSHAKE_SCOPE);
 
             if (signAlgs.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
@@ -763,10 +756,7 @@ final class CertificateRequest {
 
             List<SignatureScheme> signCertAlgs =
                     SignatureScheme.getSupportedAlgorithms(
-                            chc.sslConfig,
-                            chc.algorithmConstraints, chc.negotiatedProtocol,
-                            crm.algorithmIds,
-                            CERTIFICATE_SCOPE);
+                            chc, crm.algorithmIds, CERTIFICATE_SCOPE);
 
             if (signCertAlgs.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
