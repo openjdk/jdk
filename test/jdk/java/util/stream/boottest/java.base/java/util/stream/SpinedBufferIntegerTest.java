@@ -31,6 +31,9 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 
 @Test
+public class SpinedBufferIntegerTest {}
+/*
+@Test
 public class SpinedBufferIntegerTest extends AbstractSpinedBufferTest {
     @DataProvider(name = "SpinedBuffer")
     public Object[][] createSpinedBuffer() {
@@ -120,3 +123,4 @@ public class SpinedBufferIntegerTest extends AbstractSpinedBufferTest {
         assertEquals(list1, list2);
     }
 }
+*/

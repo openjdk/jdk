@@ -39,6 +39,8 @@ import tools.javac.combo.*;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
+ * @test
+ * @comment
  * BridgeMethodTestCase -- used for asserting linkage to bridges under separate compilation.
  *
  * Example test case:
@@ -53,6 +55,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  * that C.m()Number eventually invokes B.m()Number, recompiles B, and then asserts
  * that the result of calling C.m()Object now arrives at A.
  *
+ * @library /lib/combo
+ * @run junit/timeout=480 BridgeMethodTestCase
  * @author Brian Goetz
  */
 

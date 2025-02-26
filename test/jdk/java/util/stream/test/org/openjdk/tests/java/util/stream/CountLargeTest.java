@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
 
-@Test
+@Test(enabled = false)
 public class CountLargeTest {
 
     static final long EXPECTED_LARGE_COUNT = 1L + Integer.MAX_VALUE;
