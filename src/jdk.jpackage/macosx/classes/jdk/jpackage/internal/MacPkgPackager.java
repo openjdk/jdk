@@ -46,6 +46,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.internal.util.Architecture;
@@ -59,6 +60,7 @@ import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import jdk.jpackage.internal.util.XmlUtils;
+import org.xml.sax.SAXException;
 
 record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> services, Path outputDir) {
 
@@ -463,11 +465,12 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
 
     private void patchCPLFile(Path cpl) throws IOException {
         try (final var xsltResource = ResourceLocator.class.getResourceAsStream("adjust-component-plist.xsl")) {
-            final var srcXml = new StreamSource(new ByteArrayInputStream(Files.readAllBytes(cpl)));
+            final var srcXml =  new DOMSource(XmlUtils.initDocumentBuilder().parse(
+                    new ByteArrayInputStream(Files.readAllBytes(cpl))));
             final var dstXml = new StreamResult(cpl.toFile());
             final var xslt = TransformerFactory.newInstance().newTransformer(new StreamSource(xsltResource));
             xslt.transform(srcXml, dstXml);
-        } catch (TransformerException ex) {
+        } catch (TransformerException|SAXException ex) {
             throw new RuntimeException(ex);
         }
     }
