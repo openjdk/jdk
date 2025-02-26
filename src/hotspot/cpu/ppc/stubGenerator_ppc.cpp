@@ -705,11 +705,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_unaligned_loop);
       __ addi(data, data, 16);
       __ lvx(vLow, temp1, data);
-#ifdef VM_LITTLE_ENDIAN
       __ vec_perm(vH, vHigh, vLow, vPerm);
-#else
-      __ vec_perm(vH, vLow, vHigh, vPerm);
-#endif
       computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
                     vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11);
       __ vmr(vHigh, vLow);
