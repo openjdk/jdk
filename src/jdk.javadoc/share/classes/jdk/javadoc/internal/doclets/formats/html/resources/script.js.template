@@ -239,14 +239,13 @@ function makeFilterWidget(sidebar, updateToc) {
         }
         if (e.key === "ArrowUp" || e.key === "ArrowDown") {
             handleTocFocus(e);
-        } else if (filterInput && e.target !== filterInput && (e.key === "Enter" || e.key === "Backspace")) {
-            if (e.key === "Enter") {
-                if (isTocLink(sidebar, e.target))
-                    filterInput.value = "";
-            } else if (e.key === "Backspace") {
-                filterInput.value = filterInput.value ? filterInput.value.slice(0, -1) : "";
+        } else if (filterInput && e.target !== filterInput) {
+            if (e.key === "Enter" && isTocLink(sidebar, e.target)) {
+                filterInput.value = "";
+                filterInput.dispatchEvent(new InputEvent("input"));
+            } else if (e.key.length === 1 || e.key === "Backspace") {
+                filterInput.focus();
             }
-            filterInput.dispatchEvent(new InputEvent("input"));
         }
     });
     if (filterInput) {

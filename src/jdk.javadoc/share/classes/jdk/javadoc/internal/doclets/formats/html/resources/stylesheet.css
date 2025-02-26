@@ -507,8 +507,9 @@ nav.toc a.current-selection {
     background-color: var(--subnav-background-color);
 }
 nav.toc a:focus-visible {
-    outline: 2px solid -webkit-focus-ring-color;
-    outline-offset: -2px;
+    background-color: var(--selected-background-color);
+    color: var(--selected-text-color);
+    outline: none;
 }
 /*
  * Styles for lists.
