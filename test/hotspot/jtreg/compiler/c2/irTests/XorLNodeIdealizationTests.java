@@ -31,8 +31,8 @@ import static java.lang.Long.MIN_VALUE;
 
 /*
  * @test
- * @bug 8281453
- * @summary Convert ~x into -1-x when ~x is used in an arithmetic expression
+ * @bug 8281453 8347645 8261008 8267332
+ * @summary Test correctness of optimizations of xor
  * @library /test/lib /
  * @run driver compiler.c2.irTests.XorLNodeIdealizationTests
  */
