@@ -63,10 +63,9 @@ public class TestAvailableProcessors {
         String systeminfoPath = "systeminfo.exe";
 
         List<String> command = new ArrayList<>();
-        //Execution command to prevent garbled characters
+        // Force language to English before running systeminfo to get the OS version
         command.addAll(List.of("cmd.exe", "/c", "set", "PATH=%PATH%;C:\\Windows\\System32;C:\\Windows\\System32\\wbem", "&&"));
         command.addAll(List.of("chcp", "437", ">nul", "2>&1", "&&"));
-        //Execute command to obtain OS Version
         command.add(systeminfoPath);
 
         var processBuilder = new ProcessBuilder(command);
