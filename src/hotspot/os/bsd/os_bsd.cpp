@@ -242,16 +242,6 @@ static char cpu_arch[] = "ppc";
   #error Add appropriate cpu_arch setting
 #endif
 
-// JVM variant
-#if   defined(ZERO)
-  #define JVM_VARIANT "zero"
-#elif defined(COMPILER2)
-  #define JVM_VARIANT "server"
-#else
-  #define JVM_VARIANT "client"
-#endif
-
-
 void os::Bsd::initialize_system_info() {
   int mib[2];
   size_t len;

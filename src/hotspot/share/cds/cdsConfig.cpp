@@ -86,10 +86,6 @@ void CDSConfig::initialize() {
 
 char* CDSConfig::default_archive_path() {
   if (_default_archive_path == nullptr) {
-    char jvm_path[JVM_MAXPATHLEN];
-    os::jvm_path(jvm_path, sizeof(jvm_path));
-    char *end = strrchr(jvm_path, *os::file_separator());
-    if (end != nullptr) *end = '\0';
     stringStream tmp;
     const char* subdir = WINDOWS_ONLY("bin") NOT_WINDOWS("lib");
     tmp.print("%s%s%s%s%s%sclasses", Arguments::get_java_home(), os::file_separator(), subdir,
