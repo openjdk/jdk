@@ -80,7 +80,7 @@ void ShenandoahOldGC::op_final_mark() {
     }
 
     {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_mark_propagate_gc_state);
+      ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_mark_propagate_gc_state);
       heap->propagate_gc_state_to_all_threads();
     }
   }
