@@ -87,6 +87,8 @@
 #define LD_FORMAT2 "%'10ld"
 #endif
 
+static void* raw_realloc(void* old, size_t s)   { ALLOW_C_FUNCTION(::realloc, return ::realloc(old, s);) }
+
 NMT_MemoryLogRecorder NMT_MemoryLogRecorder::_recorder;
 NMT_VirtualMemoryLogRecorder NMT_VirtualMemoryLogRecorder::_recorder;
 
@@ -136,7 +138,7 @@ void NMT_LogRecorder::init() {
   // TODO: NMT_LogRecorder::init
 #endif
   _threads_names_size = 1;
-  _threads_names = (thread_name_info*)ALLOW_C_FUNCTION(::realloc, realloc((void*)_threads_names, _threads_names_size*sizeof(thread_name_info));)
+  _threads_names = (thread_name_info*)raw_realloc(_threads_names, _threads_names_size*sizeof(thread_name_info));
   _done = true;
   _count = 0;
 }
@@ -217,7 +219,7 @@ void NMT_LogRecorder::logThreadName() {
       _threads_names[i].thread = tid;
       _threads_names[i].name[0] = 0;
       _threads_names_size++;
-      _threads_names = (thread_name_info*)ALLOW_C_FUNCTION(::realloc, realloc((void*)_threads_names, _threads_names_size*sizeof(thread_name_info));)
+      _threads_names = (thread_name_info*)raw_realloc(_threads_names, _threads_names_size*sizeof(thread_name_info));
     }
   }
   NMT_LogRecorder::unlock();
