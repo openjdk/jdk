@@ -29,6 +29,7 @@
 #include "opto/opcodes.hpp"
 #include "subnode.hpp"
 
+enum class PredicateState;
 //------------------------------Opaque1Node------------------------------------
 // A node to prevent unwanted optimizations.  Allows constant folding.
 // Stops value-numbering, Ideal calls or Identity functions.
@@ -149,10 +150,11 @@ class OpaqueNotNullNode : public Node {
 // after loop opts and thus is never converted to actual code. In the post loop opts IGVN phase, the
 // OpaqueTemplateAssertionPredicateNode is replaced by true in order to fold the Template Assertion Predicate away.
 class OpaqueTemplateAssertionPredicateNode : public Node {
+
   // When splitting a loop or when the associated loop dies, the Template Assertion Predicate with this
   // OpaqueTemplateAssertionPredicateNode also needs to be removed. We set this flag and then clean this node up in the
   // next IGVN phase by checking this flag in Value().
-  bool _useless;
+  PredicateState _predicate_state;
 
   // OpaqueTemplateAssertionPredicateNodes are unique to a Template Assertion Predicate expression and should never
   // common up. We still make sure of that by returning NO_HASH here.
@@ -161,10 +163,7 @@ class OpaqueTemplateAssertionPredicateNode : public Node {
   }
 
  public:
-  OpaqueTemplateAssertionPredicateNode(BoolNode* bol) : Node(nullptr, bol),
-      _useless(false) {
-    init_class_id(Class_OpaqueTemplateAssertionPredicate);
-  }
+  OpaqueTemplateAssertionPredicateNode(BoolNode* bol);
 
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
@@ -172,11 +171,12 @@ class OpaqueTemplateAssertionPredicateNode : public Node {
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 
-  bool is_useless() const {
-    return _useless;
-  }
-
+  bool is_useless() const;
   void mark_useless(PhaseIterGVN& igvn);
+  void mark_maybe_useful();
+  bool is_useful() const;
+  void mark_useful();
+
   NOT_PRODUCT(void dump_spec(outputStream* st) const);
 };
 

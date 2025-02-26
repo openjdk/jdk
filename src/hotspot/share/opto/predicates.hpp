@@ -210,6 +210,18 @@ enum class AssertionPredicateType {
   FinalIv
 };
 
+enum class PredicateState {
+  // The Predicate is useless and will be cleaned up in the next round of IGVN. A useless Predicate is not visited
+  // anymore by PredicateVisitors. If a Predicate loses its connection to a loop head, it will be marked useless by
+  // EliminateUselessPredicates and cleaned up by Value().
+  Useless,
+  // This state is used by EliminateUselessPredicates to temporarily mark a Predicate as neither useless nor useful.
+  // Outside EliminateUselessPredicates, a Predicate should never be MaybeUseful.
+  MaybeUseful,
+  // Default state: The Predicate is useful and will be visited by PredicateVisitors.
+  Useful
+};
+
 // Interface to represent a C2 predicate. A predicate is always represented by two CFG nodes:
 // - An If node (head)
 // - An IfProj node representing the success projection of the If node (tail).
@@ -273,9 +285,10 @@ class AssertionPredicates : public StackObj {
 // - An Initialized Assertion Predicate.
 class AssertionPredicate : public StackObj {
   static bool has_assertion_predicate_opaque(const Node* predicate_proj);
-  static bool has_halt(const Node* success_proj);
  public:
+
   static bool is_predicate(const Node* maybe_success_proj);
+  static bool has_halt(const IfTrueNode* success_proj);
 };
 
 // Utility class representing a Regular Predicate which is either a Runtime Predicate or an Assertion Predicate.
@@ -311,10 +324,11 @@ class ParsePredicate : public Predicate {
     return _entry;
   }
 
-  // This Parse Predicate is valid if the node passed to the constructor is a projection of a ParsePredicateNode and the
-  // deopt_reason of the uncommon trap of the ParsePredicateNode matches the passed deopt_reason to the constructor.
+  // This Parse Predicate is valid if the node passed to the constructor is a projection of a ParsePredicateNode, the
+  // deopt_reason of the uncommon trap of the ParsePredicateNode matches the passed deopt_reason to the constructor and
+  // it is not marked useless.
   bool is_valid() const {
-    return _parse_predicate_node != nullptr;
+    return _parse_predicate_node != nullptr && !_parse_predicate_node->is_useless();
   }
 
   ParsePredicateNode* head() const override {
@@ -330,11 +344,7 @@ class ParsePredicate : public Predicate {
   ParsePredicate clone_to_unswitched_loop(Node* new_control, bool is_false_path_loop,
                                           PhaseIdealLoop* phase) const;
 
-  // Kills this Parse Predicate by marking it useless. Will be folded away in the next IGVN round.
-  void kill(const PhaseIterGVN& igvn) const {
-    _parse_predicate_node->mark_useless();
-    igvn._worklist.push(_parse_predicate_node);
-  }
+  void kill(PhaseIterGVN& igvn) const;
 };
 
 // Class to represent a Runtime Predicate which always has an associated UCT on the failing path.
@@ -432,6 +442,8 @@ class TemplateAssertionPredicate : public Predicate {
 class InitializedAssertionPredicate : public Predicate {
   IfTrueNode* const _success_proj;
   IfNode* const _if_node;
+
+  DEBUG_ONLY(static bool has_halt(const IfTrueNode* success_proj);)
 
  public:
   explicit InitializedAssertionPredicate(IfTrueNode* success_proj)
@@ -1237,4 +1249,37 @@ class UpdateStrideForAssertionPredicates : public PredicateVisitor {
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
   void visit(const InitializedAssertionPredicate& initialized_assertion_predicate) override;
 };
+
+// Eliminate all useless Parse and Template Assertion Predicates. They become useless when they can no longer be found
+// from a loop head. We mark these useless to clean them up later during IGVN. A predicate that is marked useless will
+// no longer be visited by a PredicateVisitor.
+class EliminateUselessPredicates : public StackObj {
+  Compile* const C;
+  const GrowableArray<ParsePredicateNode*>& _parse_predicates;
+  const GrowableArray<OpaqueTemplateAssertionPredicateNode*>& _template_assertion_predicate_opaques;
+  PhaseIterGVN& _igvn;
+  IdealLoopTree* const _ltree_root;
+
+  void mark_all_predicates_non_useful() const;
+  template <class PredicateList>
+  static void mark_predicates_on_list_maybe_useful(const PredicateList& predicate_list);
+
+  void mark_loop_associated_predicates_useful() const;
+  static void mark_useful_predicates_for_loop(IdealLoopTree* loop);
+
+  void add_useless_predicates_to_igvn_worklist() const;
+  template <class PredicateList>
+  void add_useless_predicates_on_list_to_ignv_worklist(const PredicateList& predicate_list) const;
+
+ public:
+  EliminateUselessPredicates(PhaseIterGVN& igvn, IdealLoopTree* ltree_root)
+      : C(igvn.C), _parse_predicates(igvn.C->parse_predicates()),
+        _template_assertion_predicate_opaques(igvn.C->template_assertion_predicate_opaques()),
+        _igvn(igvn),
+        _ltree_root(ltree_root) {}
+
+  void eliminate() const;
+};
+
+
 #endif // SHARE_OPTO_PREDICATES_HPP

@@ -58,6 +58,7 @@ class       JumpProjNode;
 class     SCMemProjNode;
 class PhaseIdealLoop;
 enum class AssertionPredicateType;
+enum class PredicateState;
 
 // The success projection of a Parse Predicate is always an IfTrueNode and the uncommon projection an IfFalseNode
 typedef IfTrueNode ParsePredicateSuccessProj;
@@ -486,7 +487,11 @@ public:
 // More information about predicates can be found in loopPredicate.cpp.
 class ParsePredicateNode : public IfNode {
   Deoptimization::DeoptReason _deopt_reason;
-  bool _useless; // If the associated loop dies, this parse predicate becomes useless and can be cleaned up by Value().
+
+  // When a Parse Predicate loses its connection to a loop head, it will be marked useless by
+  // EliminateUselessPredicates and cleaned up by Value(). It can also become useless when cloning it to both loops
+  // during loop multiversioning - we no longer use the old version.
+  PredicateState _predicate_state;
  public:
   ParsePredicateNode(Node* control, Deoptimization::DeoptReason deopt_reason, PhaseGVN* gvn);
   virtual int Opcode() const;
@@ -496,17 +501,11 @@ class ParsePredicateNode : public IfNode {
     return _deopt_reason;
   }
 
-  bool is_useless() const {
-    return _useless;
-  }
-
-  void mark_useless() {
-    _useless = true;
-  }
-
-  void mark_useful() {
-    _useless = false;
-  }
+  bool is_useless() const;
+  void mark_useless(PhaseIterGVN& igvn);
+  void mark_maybe_useful();
+  bool is_useful() const;
+  void mark_useful();
 
   // Return the uncommon trap If projection of this Parse Predicate.
   ParsePredicateUncommonProj* uncommon_proj() const {
