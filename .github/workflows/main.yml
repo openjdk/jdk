@@ -168,10 +168,10 @@ jobs:
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.prepare.outputs.linux-x64 == 'true'
 
-  build-linux-x64-static:
-    name: linux-x64-static
+  build-linux-x64-static-jdk:
+    name: linux-x64-static-jdk
     needs: prepare
-    uses: ./.github/workflows/build-linux-static.yml
+    uses: ./.github/workflows/build-linux.yml
     with:
       platform: linux-x64
       make-target: 'static-jdk-image'
