@@ -23,6 +23,7 @@
  */
 
 #include "asm/macroAssembler.hpp"
+#include "assembler_x86.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
@@ -1874,7 +1875,11 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 }
 
 void TemplateInterpreterGenerator::count_bytecode() {
-  __ increment(ExternalAddress((address) &BytecodeCounter::_counter_value), rscratch1);
+  #ifndef _LP64
+  __ incrementl(ExternalAddress((address) &BytecodeCounter::_counter_value), rscratch1);
+  #else
+  __ incrementq(ExternalAddress((address) &BytecodeCounter::_counter_value), rscratch1);
+  #endif
 }
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
@@ -1920,7 +1925,7 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
            rscratch1);
   #else
   __ mov64(rscratch1, StopInterpreterAt);
-  __ cmpq((address) &BytecodeCounter::_counter_value, rscratch1);
+  __ cmp64(rscratch1, ExternalAddress((address) &BytecodeCounter::_counter_value), rscratch2);
   #endif
   __ jcc(Assembler::notEqual, L);
   __ int3();
