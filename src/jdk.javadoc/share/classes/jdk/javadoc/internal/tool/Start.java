@@ -555,9 +555,10 @@ public class Start {
         if (options.modules().isEmpty()) {
             if (options.subpackages().isEmpty()) {
                 if (javaNames.isEmpty() && isEmpty(fileObjects)) {
-                    showLinesUsingKey("main.usage.short");
-                    showLinesUsingKey("main.for-more-details-see-usage");
-                    return OK;
+                    String text = log.getText("main.usage.short")
+                            + "\n"
+                            + log.getText("main.for-more-details-see-usage");
+                    throw new ToolException(CMDERR, text);
                 }
             }
         }
