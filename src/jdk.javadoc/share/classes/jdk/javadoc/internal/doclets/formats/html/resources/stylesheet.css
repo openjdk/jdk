@@ -442,7 +442,8 @@ dl.name-value > dd {
 .main-grid nav.toc button span {
     display: none;
 }
-.main-grid nav.toc button:hover {
+.main-grid nav.toc button:hover,
+.main-grid nav.toc button:focus {
     color: var(--body-text-color);
     border: 1px solid var(--subnav-background-color);
 }
@@ -451,10 +452,11 @@ dl.name-value > dd {
     color: var(--link-color-active);
 }
 .main-grid nav.toc button:hover span,
-.main-grid nav.toc button:active span  {
+.main-grid nav.toc button:focus span  {
     display: inline;
 }
-.main-grid nav.toc button:hover {
+.main-grid nav.toc button:hover,
+.main-grid nav.toc button:focus {
     box-shadow: 1px 1px 5px rgba(0,0,0,0.2);
 }
 .main-grid nav.toc.hide-sidebar {

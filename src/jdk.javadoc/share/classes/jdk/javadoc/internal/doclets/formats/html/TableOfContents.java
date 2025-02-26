@@ -104,14 +104,14 @@ public class TableOfContents {
                             .put(HtmlAttr.VALUE, writer.resources.getText("doclet.filter_reset")));
         }
         content.add(header);
+        content.add(listBuilder);
         content.add(HtmlTree.BUTTON(HtmlStyles.hideSidebar)
-                .put(HtmlAttr.TABINDEX, "-1")
                 .add(HtmlTree.SPAN(writer.contents.hideSidebar).add(Entity.NO_BREAK_SPACE))
                 .add(Entity.LEFT_POINTING_ANGLE));
         content.add(HtmlTree.BUTTON(HtmlStyles.showSidebar)
                 .add(Entity.RIGHT_POINTING_ANGLE)
                 .add(HtmlTree.SPAN(Entity.NO_BREAK_SPACE).add(writer.contents.showSidebar)));
-        return content.add(listBuilder);
+        return content;
     }
 
 }
