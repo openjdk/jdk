@@ -2006,8 +2006,19 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   return __ addr_at(entry_off);
 }
 
+address TemplateInterpreterGenerator::generate_currentThread() {
+  address entry_point = __ pc();
+  __ z_lg(Z_RET, Address(Z_thread, JavaThread::threadObj_offset()));
+  __ resolve_oop_handle(Z_RET);
+
+  // Restore caller sp for c2i case.
+  __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
+  __ z_br(Z_R14);
+
+  return entry_point;
+}
+
 // Not supported
-address TemplateInterpreterGenerator::generate_currentThread() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
