@@ -156,6 +156,8 @@ public interface QuicInstance {
      * such as HTTP/3, may override this method to return more
      * specific names, such as for instance, {@code "H3_REQUEST_CANCELLED"}
      * for {@code 0x010c}.
+     * @apiNote This method is typically used for logging and/or debugging
+     * purposes, to generate a more user-friendly log message.
      */
     default String appErrorToString(long errorCode) {
         return "ApplicationError(code=0x" + HexFormat.of().toHexDigits(errorCode) + ")";
