@@ -25,52 +25,19 @@
 
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.ConfigException;
-import java.io.IOException;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
+import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Optional;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
-import static jdk.jpackage.internal.StandardBundlerParam.OUTPUT_DIR;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
-import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.model.ConfigException;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
-
-    static final BundlerParamInfo<Path> IMAGES_ROOT =
-            new BundlerParamInfo<>(
-            "imagesRoot",
-            Path.class,
-            params -> {
-                final var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
-                return env.buildRoot().resolve("images");
-            },
-            (s, p) -> null);
-
-    private final BundlerParamInfo<Path> APP_IMAGE_TEMP_ROOT =
-            new BundlerParamInfo<>(
-            "mac.app.imageRoot",
-            Path.class,
-            params -> {
-                Path imageDir = IMAGES_ROOT.fetchFrom(params);
-                try {
-                    if (!IOUtils.exists(imageDir)) {
-                        Files.createDirectories(imageDir);
-                    }
-                    return Files.createTempDirectory(
-                            imageDir, "image-");
-                } catch (IOException e) {
-                    return imageDir.resolve(getID()+ ".image");
-                }
-            },
-            (s, p) -> Path.of(s));
 
     public static final BundlerParamInfo<String> SIGNING_KEY_USER =
             new BundlerParamInfo<>(
@@ -85,48 +52,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             String.class,
             params -> "",
             null);
-
-    public static final BundlerParamInfo<String> INSTALLER_SIGN_IDENTITY =
-            new BundlerParamInfo<>(
-            Arguments.CLIOptions.MAC_INSTALLER_SIGN_IDENTITY.getId(),
-            String.class,
-            params -> "",
-            null);
-
-    public static final BundlerParamInfo<String> MAC_INSTALLER_NAME =
-            new BundlerParamInfo<> (
-            "mac.installerName",
-            String.class,
-            params -> {
-                String nm = INSTALLER_NAME.fetchFrom(params);
-                if (nm == null) return null;
-
-                String version = VERSION.fetchFrom(params);
-                if (version == null) {
-                    return nm;
-                } else {
-                    return nm + "-" + version;
-                }
-            },
-            (s, p) -> s);
-
-     // Returns full path to installation directory
-     static String getInstallDir(
-            Map<String, ? super Object>  params, boolean defaultOnly) {
-        String returnValue = INSTALL_DIR.fetchFrom(params);
-        if (defaultOnly && returnValue != null) {
-            Log.info(I18N.getString("message.install-dir-ignored"));
-            returnValue = null;
-        }
-        if (returnValue == null) {
-            if (StandardBundlerParam.isRuntimeInstaller(params)) {
-                returnValue = "/Library/Java/JavaVirtualMachines";
-            } else {
-               returnValue = "/Applications";
-            }
-        }
-        return returnValue;
-    }
 
     public MacBaseInstallerBundler() {
         appImageBundler = new MacAppBundler();
