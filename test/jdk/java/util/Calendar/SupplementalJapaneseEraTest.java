@@ -72,7 +72,7 @@ public class SupplementalJapaneseEraTest {
         try {
             new Calendar.Builder()
                     .setCalendarType("japanese")
-                    .setFields(ERA, 7)
+                    .setFields(ERA, JapaneseEra.values().length + 2)
                     .build();
             System.err.println("Out of range era should have thrown IAE");
             errors++;
