@@ -170,8 +170,8 @@ public final class AltServicesRegistry {
 
         static Origin fromRequest(final HttpRequestImpl request) {
             final String scheme = request.uri().getScheme();
-            final InetSocketAddress requestAddr = request.getAddress();
-            return Origin.of(scheme, requestAddr);
+            final HttpRequestImpl.HostPort hostPort = request.getHostPort();
+            return new Origin(scheme, hostPort.host(), hostPort.port());
         }
     }
 
