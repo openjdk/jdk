@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,18 +36,9 @@ class LogFileOutput : public LogFileStreamOutput {
   static const char* const FileOpenMode;
   static const char* const FileCountOptionKey;
   static const char* const FileSizeOptionKey;
-  static const char* const PidFilenamePlaceholder;
-  static const char* const TimestampFilenamePlaceholder;
-  static const char* const TimestampFormat;
-  static const char* const HostnameFilenamePlaceholder;
   static const size_t DefaultFileCount = 5;
   static const size_t DefaultFileSize = 20 * M;
-  static const size_t StartTimeBufferSize = 20;
-  static const size_t PidBufferSize = 21;
-  static const size_t HostnameBufferSize = 512;
   static const uint   MaxRotationFileCount = 1000;
-  static char         _pid_str[PidBufferSize];
-  static char         _vm_start_time_str[StartTimeBufferSize];
 
   const char* _name;
   char* _file_name;
@@ -67,7 +58,6 @@ class LogFileOutput : public LogFileStreamOutput {
 
   void archive();
   void rotate();
-  char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string);
 
   bool should_rotate() {
     return _file_count > 0 && _rotate_size > 0 && _current_size >= _rotate_size;
@@ -81,7 +71,8 @@ class LogFileOutput : public LogFileStreamOutput {
   }
 
  public:
-  LogFileOutput(const char *name);
+  // Pass 0 timestamp for current time
+  LogFileOutput(const char *name, jlong timestamp = 0);
   virtual ~LogFileOutput();
   virtual bool initialize(const char* options, outputStream* errstream);
   virtual bool set_option(const char* key, const char* value, outputStream* errstream);
@@ -97,7 +88,6 @@ class LogFileOutput : public LogFileStreamOutput {
 
   const char* cur_log_file_name();
   static const char* const Prefix;
-  static void set_file_name_parameters(jlong start_time);
 };
 
 #endif // SHARE_LOGGING_LOGFILEOUTPUT_HPP
