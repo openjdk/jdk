@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Test that Thread.sleep emits a JFR jdk.ThreadSleep event
+ * @requires vm.hasJFR
  * @modules jdk.jfr
  * @run junit ThreadSleepEvent
  */

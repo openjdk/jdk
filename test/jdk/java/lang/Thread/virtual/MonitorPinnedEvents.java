@@ -25,7 +25,7 @@
  * @test
  * @summary Test JFR jdk.VirtualThreadPinned event recorded for contended monitor enter
  *     and Object.wait when pinned
- * @requires vm.continuations
+ * @requires vm.continuations & vm.hasJFR
  * @modules jdk.jfr jdk.management
  * @library /test/lib
  * @run junit/othervm --enable-native-access=ALL-UNNAMED MonitorPinnedEvents
