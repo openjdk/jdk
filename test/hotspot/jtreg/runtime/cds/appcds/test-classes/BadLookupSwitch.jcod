@@ -1,0 +1,118 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+class BadLookupSwitch {
+  0xCAFEBABE;
+  0;
+  50;
+  [] { // Constant Pool
+    ; // first element is empty
+    class #12; // #1 at 0x0A
+    class #15; // #2 at 0x0D
+    Method #2 #4; // #3 at 0x10
+    NameAndType #6 #5; // #4 at 0x15
+    Utf8 "()V"; // #5 at 0x1A
+    Utf8 "<init>"; // #6 at 0x20
+    Utf8 "Code"; // #7 at 0x29
+    Utf8 "ConstantValue"; // #8 at 0x30
+    Utf8 "Exceptions"; // #9 at 0x40
+    Utf8 "LineNumberTable"; // #10 at 0x4D
+    Utf8 "LocalVariables"; // #11 at 0x5F
+    Utf8 "BadLookupSwitch"; // #12 at 0x70
+    Utf8 "SourceFile"; // #13 at 0x76
+    Utf8 "f.java"; // #14 at 0x83
+    Utf8 "java/lang/Object"; // #15 at 0x8C
+    Utf8 "m"; // #16 at 0x9F
+    Utf8 "StackMapTable"; // #17    
+  } // Constant Pool
+
+  0x0020; // access
+  #1;// this_cpx
+  #2;// super_cpx
+
+  [0] { // Interfaces
+  } // Interfaces
+
+  [0] { // fields
+  } // fields
+
+  [2] { // methods
+    { // Member at 0xAF
+      0x0001; // access
+      #16; // name_cpx
+      #5; // sig_cpx
+      [] {  // Attributes
+        Attr(#7) { // Code at 0xB7
+          1; // max_stack
+          1; // max_locals
+          Bytes[29] {
+            0x04AB00000000001B; // iconst_1;
+/* right:
+            0x0000000200000001; // lookupswitch 27 2 1 27 2 27;
+            0x0000001B00000002;
+            0x0000001B;
+end right */
+// wrong:
+            0x0000000200000002; // lookupswitch 27 2 2 27 1 27;
+            0x0000001B00000001;
+            0x0000001B;
+// end wrong
+            0xB1;               // return
+          };
+          [0] { // Traps
+          } // end Traps
+          [] {  // Attributes
+            Attr(#17) { // StackMap
+              [] { // 
+                255b,  28, []{O,1}, []{};
+              }
+            } // end StackMap
+          } // Attributes
+        } // end Code
+      } // Attributes
+    } // Member
+    ;
+    { // Member at 0xD6
+      0x0000; // access
+      #6; // name_cpx
+      #5; // sig_cpx
+      [1] {  // Attributes
+        Attr(#7) { // Code at 0xDE
+          1; // max_stack
+          1; // max_locals
+          Bytes[5] {
+            0x2AB70003B1;
+          };
+          [0] { // Traps
+          } // end Traps
+          [] {  // Attributes
+          } // Attributes
+        } // end Code
+      } // Attributes
+    } // Member
+  } // methods
+
+  [] {  // Attributes
+  } // Attributes
+} // end class

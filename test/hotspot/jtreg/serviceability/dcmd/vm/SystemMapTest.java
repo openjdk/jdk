@@ -28,15 +28,28 @@ import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 
 /*
- * @test
+ * @test id=normal
  * @summary Test of diagnostic command System.map
  * @library /test/lib
- * @requires (os.family == "linux" | os.family == "windows" | os.family == "mac")
+ * @requires (vm.gc != "Z") & (os.family == "linux" | os.family == "windows" | os.family == "mac")
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run testng/othervm -XX:+UsePerfData SystemMapTest
+ */
+
+/*
+ * @test id=zgc
+ * @bug 8346717
+ * @summary Test of diagnostic command System.map using ZGC
+ * @library /test/lib
+ * @requires vm.gc.Z & (os.family == "linux" | os.family == "windows" | os.family == "mac")
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -XX:+UsePerfData -XX:+UseZGC SystemMapTest
  */
 public class SystemMapTest extends SystemMapTestBase {
     public void run(CommandExecutor executor) {

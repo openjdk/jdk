@@ -4611,6 +4611,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public static final class KeySetView<K,V> extends CollectionView<K,V,K>
         implements Set<K>, java.io.Serializable {
         private static final long serialVersionUID = 7249069246763182397L;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final V value;
         KeySetView(ConcurrentHashMap<K,V> map, V value) {  // non-public
@@ -6382,7 +6383,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         = U.objectFieldOffset(ConcurrentHashMap.class, "cellsBusy");
     private static final long CELLVALUE
         = U.objectFieldOffset(CounterCell.class, "value");
-    private static final int ABASE = U.arrayBaseOffset(Node[].class);
+    private static final long ABASE = U.arrayBaseOffset(Node[].class);
     private static final int ASHIFT;
 
     static {
