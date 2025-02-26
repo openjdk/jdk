@@ -49,19 +49,19 @@ public class ReproducibleSnippetTest extends JavadocTester {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 """
-                package p;
-                public interface One {
-                    /**
-                     * {@code One obj1}
-                     * {@snippet lang = java:
-                     * // @link substring="ab" target="One#ab" :
-                     * obj1.ab(a()); // @link substring="a" target="#a"
-                     *} class comment
-                     */
-                    int a();
-                    void ab(int i);
-                }
-                """);
+                        package p;
+                        public interface One {
+                            /**
+                             * {@code One obj1}
+                             * {@snippet lang = java:
+                             * // @link substring="ab" target="One#ab" :
+                             * obj1.ab(a()); // @link substring="a" target="#a"
+                             *} class comment
+                             */
+                            int a();
+                            void ab(int i);
+                        }
+                        """);
         javadoc("-d",
                 "out",
                 "-sourcepath",
@@ -69,14 +69,10 @@ public class ReproducibleSnippetTest extends JavadocTester {
                 "p");
         checkExit(Exit.ERROR);
 
-        checkOutput(Output.OUT,
-                true,
-                "error: snippet link tags:",
+        checkOutput(Output.OUT, true,
+                "One.java:5: error: snippet link tags:",
                 "#a",
                 "One#ab",
-                """
-                overlap in\s
-                     * // @link substring="ab" target="One#ab" :
-                                                      ^""");
+                "overlap in obj1.ab(a());\n     * {@snippet lang = java:\n       ^");
     }
 }

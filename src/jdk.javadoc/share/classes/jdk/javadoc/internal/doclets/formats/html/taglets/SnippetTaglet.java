@@ -46,7 +46,6 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SnippetTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreePath;
-import com.sun.tools.javac.tree.DCTree.DCSnippet;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
@@ -146,19 +145,11 @@ public class SnippetTaglet extends BaseTaglet {
                         case Style.Name n -> classes.add(n.name());
                         case Style.Link l -> {
                             if (linkTarget != null) {
-                                var body = tag.getBody().toString();
-                                var startPos = ((DCSnippet) tag).getStartPosition();
-                                var endPos = startPos + Math.max(body.indexOf(linkTarget), body.indexOf(l.target()));
-
-                                messages.error(
-                                        utils.getCommentHelper(element).getDocTreePath(tag),
-                                        startPos,
-                                        endPos,
-                                        endPos,
+                                messages.error(utils.getCommentHelper(element).getDocTreePath(tag),
                                         "doclet.error.snippet.ambiguous.link",
                                         linkTarget,
                                         l.target(),
-                                        content.asCharSequence().toString());
+                                        content.asCharSequence().toString().trim());
                             }
                             linkTarget = l.target();
                             e = getLinkedElement(element, linkTarget);
