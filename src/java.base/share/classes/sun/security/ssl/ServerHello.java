@@ -275,13 +275,17 @@ final class ServerHello {
                 if (shc.localSupportedSignAlgs == null) {
                     shc.localSupportedSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
-                                shc, HANDSHAKE_SCOPE);
+                                shc.sslConfig,
+                                shc.algorithmConstraints, shc.activeProtocols,
+                                HANDSHAKE_SCOPE);
                 }
 
                 if (shc.localSupportedCertSignAlgs == null) {
                     shc.localSupportedCertSignAlgs =
                             SignatureScheme.getSupportedAlgorithms(
-                                    shc, CERTIFICATE_SCOPE);
+                                    shc.sslConfig,
+                                    shc.algorithmConstraints, shc.activeProtocols,
+                                    CERTIFICATE_SCOPE);
                 }
 
                 SSLSessionImpl session =
@@ -521,13 +525,17 @@ final class ServerHello {
                 if (shc.localSupportedSignAlgs == null) {
                     shc.localSupportedSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
-                                shc, HANDSHAKE_SCOPE);
+                                shc.sslConfig,
+                                shc.algorithmConstraints, shc.activeProtocols,
+                                HANDSHAKE_SCOPE);
                 }
 
                 if (shc.localSupportedCertSignAlgs == null) {
                     shc.localSupportedCertSignAlgs =
                             SignatureScheme.getSupportedAlgorithms(
-                                    shc, CERTIFICATE_SCOPE);
+                                    shc.sslConfig,
+                                    shc.algorithmConstraints, shc.activeProtocols,
+                                    CERTIFICATE_SCOPE);
                 }
 
                 SSLSessionImpl session =

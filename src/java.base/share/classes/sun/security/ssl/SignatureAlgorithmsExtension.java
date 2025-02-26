@@ -190,7 +190,9 @@ final class SignatureAlgorithmsExtension {
             if (chc.localSupportedSignAlgs == null) {
                 chc.localSupportedSignAlgs =
                     SignatureScheme.getSupportedAlgorithms(
-                            chc, HANDSHAKE_SCOPE);
+                            chc.sslConfig,
+                            chc.algorithmConstraints, chc.activeProtocols,
+                            HANDSHAKE_SCOPE);
             }
 
             int vectorLen = SignatureScheme.sizeInRecord() *
@@ -277,7 +279,10 @@ final class SignatureAlgorithmsExtension {
             // update the context
             List<SignatureScheme> sss =
                     SignatureScheme.getSupportedAlgorithms(
-                            shc, spec.signatureSchemes, HANDSHAKE_SCOPE);
+                            shc.sslConfig,
+                            shc.algorithmConstraints, shc.negotiatedProtocol,
+                            spec.signatureSchemes,
+                            HANDSHAKE_SCOPE);
 
             if (sss == null || sss.isEmpty()) {
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
@@ -414,7 +419,10 @@ final class SignatureAlgorithmsExtension {
             // Produce the extension.
             List<SignatureScheme> sigAlgs =
                     SignatureScheme.getSupportedAlgorithms(
-                            shc, HANDSHAKE_SCOPE);
+                            shc.sslConfig,
+                            shc.algorithmConstraints,
+                            List.of(shc.negotiatedProtocol),
+                            HANDSHAKE_SCOPE);
 
             int vectorLen = SignatureScheme.sizeInRecord() * sigAlgs.size();
             byte[] extData = new byte[vectorLen + 2];
@@ -502,7 +510,10 @@ final class SignatureAlgorithmsExtension {
             // update the context
             List<SignatureScheme> sss =
                     SignatureScheme.getSupportedAlgorithms(
-                            chc, spec.signatureSchemes, HANDSHAKE_SCOPE);
+                            chc.sslConfig,
+                            chc.algorithmConstraints, chc.negotiatedProtocol,
+                            spec.signatureSchemes,
+                            HANDSHAKE_SCOPE);
 
             if (sss == null || sss.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,

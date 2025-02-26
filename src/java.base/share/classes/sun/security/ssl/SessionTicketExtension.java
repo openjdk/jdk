@@ -356,7 +356,9 @@ final class SessionTicketExtension {
             if (chc.localSupportedCertSignAlgs == null) {
                 chc.localSupportedCertSignAlgs =
                         SignatureScheme.getSupportedAlgorithms(
-                                chc, CERTIFICATE_SCOPE);
+                                chc.sslConfig,
+                                chc.algorithmConstraints, chc.activeProtocols,
+                                CERTIFICATE_SCOPE);
             }
 
             return chc.resumingSession.getPskIdentity();
