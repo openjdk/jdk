@@ -106,7 +106,7 @@ public final class CarrierLocalArenaPools {
             this.recyclableSegment = originalArena.allocate(byteSize, byteAlignment);
         }
 
-        public abstract Arena take();
+        abstract Arena take();
 
         void close() {
             // Do not close an automatic arena
@@ -120,7 +120,7 @@ public final class CarrierLocalArenaPools {
         /**
          * Thread safe implementation.
          */
-        public static final class OfCarrier
+        private static final class OfCarrier
                 extends LocalArenaPoolImpl {
 
             static final int AVAILABLE = 0;
@@ -135,7 +135,7 @@ public final class CarrierLocalArenaPools {
             // Used reflectively
             private int segmentAvailability;
 
-            public OfCarrier(Arena originalArena,
+            private OfCarrier(Arena originalArena,
                              long byteSize,
                              long byteAlignment) {
                 super(originalArena, byteSize, byteAlignment);
@@ -146,6 +146,7 @@ public final class CarrierLocalArenaPools {
             // on another carrier thread at any time. Keeping track of the open/closed
             // arenas in such situation is slow.
             @ForceInline
+            @Override
             public Arena take() {
                 final Arena delegate = Arena.ofConfined();
                 return tryAcquireSegment()
@@ -176,12 +177,12 @@ public final class CarrierLocalArenaPools {
          * No need for thread-safe implementation here as a platform thread is exclusively
          * mounted on a particular carrier thread.
          */
-        public static final class OfPlatform
+        private static final class OfPlatform
                 extends LocalArenaPoolImpl {
 
             private int openArenas;
 
-            public OfPlatform(Arena originalArena,
+            private OfPlatform(Arena originalArena,
                               long byteSize,
                               long byteAlignment) {
                 super(originalArena, byteSize, byteAlignment);
@@ -346,6 +347,8 @@ public final class CarrierLocalArenaPools {
         return SegmentFactories.makeNativeSegmentUnchecked(segment.address(), byteSize,
                 MemorySessionImpl.toMemorySession(arena), false, null);
     }
+
+    // Factories
 
     public static CarrierLocalArenaPools create(long byteSize) {
         if (byteSize < 0) {
