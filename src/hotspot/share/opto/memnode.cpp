@@ -3028,6 +3028,7 @@ bool MergePrimitiveStores::is_adjacent_input_pair(const Node* n1, const Node* n2
         // ReverseBytes are not supported by platform
         return false;
       }
+      // fall-through.
     case ValueOrder::Const:
     case ValueOrder::Platform:
       if (_value_order == ValueOrder::Unknown) {
