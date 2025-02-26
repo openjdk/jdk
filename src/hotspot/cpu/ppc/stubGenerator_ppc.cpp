@@ -656,7 +656,11 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef VM_LITTLE_ENDIAN
     __ vspltisb(vTmp12, 0xf);
     __ vxor(loadOrder, loadOrder, vTmp12);
+#define LE_swap_bytes(x) __ vec_perm(x, x, x, loadOrder)
+#else
+#define LE_swap_bytes(x)
 #endif
+
     // This code performs Karatsuba multiplication in Galois fields to compute the GHASH operation.
     //
     // The Karatsuba method breaks the multiplication of two 128-bit numbers into smaller parts,
@@ -683,7 +687,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(L_aligned_loop);
       __ lvx(vH, temp1, data);
-      __ vec_perm(vH, vH, vH, loadOrder);
+      LE_swap_bytes(vH);
       computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
                     vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11);
       __ addi(data, data, 16);
@@ -694,13 +698,18 @@ class StubGenerator: public StubCodeGenerator {
     __ li(temp1,0);
     __ lvsl(vPerm, temp1, data);
     __ lvx(vHigh, temp1, data);
-
+#ifdef VM_LITTLE_ENDIAN
+    __ xxspltib(vTmp12->to_vsr(), 31);
+    __ vxor(vPerm, vPerm, vTmp12);
+#endif
     __ bind(L_unaligned_loop);
       __ addi(data, data, 16);
       __ lvx(vLow, temp1, data);
-      __ vec_perm(vTmp4, vHigh, vHigh, loadOrder);
-      __ vec_perm(vTmp5, vLow, vLow, loadOrder);
-      __ vec_perm(vH, vTmp5, vTmp4, vPerm);
+#ifdef VM_LITTLE_ENDIAN
+      __ vec_perm(vH, vHigh, vLow, vPerm);
+#else
+      __ vec_perm(vH, vLow, vHigh, vPerm);
+#endif
       computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
                     vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11);
       __ vmr(vHigh, vLow);
