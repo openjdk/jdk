@@ -34,12 +34,12 @@ ifneq ($(NO_CUSTOM_EXTENSIONS), true)
 endif
 
 # Pop our helper name off the stack
-HELPER_STACK := $(wordlist 2, $(words $(HELPER_STACK)), $(HELPER_STACK))
+SNIPPET_STACK := $(wordlist 2, $(words $(SNIPPET_STACK)), $(SNIPPET_STACK))
 
 # Print an indented message, also counting the top-level makefile as a level
 ifeq ($(LOG_FLOW), true)
-  $(info :$(foreach s, top $(HELPER_STACK),    )Leave $(THIS_SNIPPET))
+  $(info :$(foreach s, top $(INCLUDE_STACK) $(SNIPPET_STACK),    )Leave $(THIS_SNIPPET))
 endif
 
 # Restore the previous helper name
-THIS_SNIPPET := $(firstword $(HELPER_STACK))
+THIS_SNIPPET := $(firstword $(SNIPPET_STACK))
