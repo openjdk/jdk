@@ -119,7 +119,7 @@ public:
 #endif //ASSERT
   LoopStatus loop_status() const { return _loop_status; };
   void set_loop_status(LoopStatus status);
-  DEBUG_ONLY(void verify_can_be_irreducible_entry() const;)
+  bool can_be_irreducible_entry() const;
 
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }

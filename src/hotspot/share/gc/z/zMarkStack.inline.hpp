@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,142 +26,30 @@
 
 #include "gc/z/zMarkStack.hpp"
 
+#include "gc/z/zAttachedArray.inline.hpp"
 #include "gc/z/zMarkTerminate.inline.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
-template <typename T, size_t S>
-inline ZStack<T, S>::ZStack()
-  : _top(0),
-    _next(nullptr) {}
-
-template <typename T, size_t S>
-inline bool ZStack<T, S>::is_empty() const {
+inline bool ZMarkStack::is_empty() const {
   return _top == 0;
 }
 
-template <typename T, size_t S>
-inline bool ZStack<T, S>::is_full() const {
-  return _top == S;
+inline bool ZMarkStack::is_full() const {
+  return _top == _entries.length();
 }
 
-template <typename T, size_t S>
-inline bool ZStack<T, S>::push(T value) {
-  if (is_full()) {
-    return false;
-  }
-
-  _slots[_top++] = value;
-  return true;
+inline ZMarkStackEntry* ZMarkStack::slots() {
+  return _entries(this);
 }
 
-template <typename T, size_t S>
-inline bool ZStack<T, S>::pop(T& value) {
-  if (is_empty()) {
-    return false;
-  }
-
-  value = _slots[--_top];
-  return true;
+inline void ZMarkStack::push(ZMarkStackEntry value) {
+  assert(!is_full(), "can't push to full stack");
+  slots()[_top++] = value;
 }
 
-template <typename T, size_t S>
-inline ZStack<T, S>* ZStack<T, S>::next() const {
-  return _next;
-}
-
-template <typename T, size_t S>
-inline ZStack<T, S>** ZStack<T, S>::next_addr() {
-  return &_next;
-}
-
-template <typename T>
-inline ZStackList<T>::ZStackList(uintptr_t base)
-  : _base(base),
-    _head(encode_versioned_pointer(nullptr, 0)) {}
-
-template <typename T>
-inline T* ZStackList<T>::encode_versioned_pointer(const T* stack, uint32_t version) const {
-  uint64_t addr;
-
-  if (stack == nullptr) {
-    addr = (uint32_t)-1;
-  } else {
-    addr = ((uint64_t)stack - _base) >> ZMarkStackSizeShift;
-  }
-
-  return (T*)((addr << 32) | (uint64_t)version);
-}
-
-template <typename T>
-inline void ZStackList<T>::decode_versioned_pointer(const T* vstack, T** stack, uint32_t* version) const {
-  const uint64_t addr = (uint64_t)vstack >> 32;
-
-  if (addr == (uint32_t)-1) {
-    *stack = nullptr;
-  } else {
-    *stack = (T*)((addr << ZMarkStackSizeShift) + _base);
-  }
-
-  *version = (uint32_t)(uint64_t)vstack;
-}
-
-template <typename T>
-inline bool ZStackList<T>::is_empty() const {
-  const T* vstack = _head;
-  T* stack = nullptr;
-  uint32_t version = 0;
-
-  decode_versioned_pointer(vstack, &stack, &version);
-  return stack == nullptr;
-}
-
-template <typename T>
-inline void ZStackList<T>::push(T* stack) {
-  T* vstack = _head;
-  uint32_t version = 0;
-
-  for (;;) {
-    decode_versioned_pointer(vstack, stack->next_addr(), &version);
-    T* const new_vstack = encode_versioned_pointer(stack, version + 1);
-    T* const prev_vstack = Atomic::cmpxchg(&_head, vstack, new_vstack);
-    if (prev_vstack == vstack) {
-      // Success
-      break;
-    }
-
-    // Retry
-    vstack = prev_vstack;
-  }
-}
-
-template <typename T>
-inline T* ZStackList<T>::pop() {
-  T* vstack = _head;
-  T* stack = nullptr;
-  uint32_t version = 0;
-
-  for (;;) {
-    decode_versioned_pointer(vstack, &stack, &version);
-    if (stack == nullptr) {
-      return nullptr;
-    }
-
-    T* const new_vstack = encode_versioned_pointer(stack->next(), version + 1);
-    T* const prev_vstack = Atomic::cmpxchg(&_head, vstack, new_vstack);
-    if (prev_vstack == vstack) {
-      // Success
-      return stack;
-    }
-
-    // Retry
-    vstack = prev_vstack;
-  }
-}
-
-template <typename T>
-inline void ZStackList<T>::clear() {
-  _head = encode_versioned_pointer(nullptr, 0);
+inline ZMarkStackEntry ZMarkStack::pop() {
+  assert(!is_empty(), "can't pop from empty stack");
+  return slots()[--_top];
 }
 
 inline bool ZMarkStripe::is_empty() const {
@@ -175,6 +63,8 @@ inline void ZMarkStripe::publish_stack(ZMarkStack* stack, ZMarkTerminate* termin
   // to publish stacks that overflowed. The intention here is to avoid
   // contention between mutators and GC workers as much as possible, while
   // still allowing GC workers to help out and steal work from each other.
+  assert(!stack->is_empty(), "we never publish empty stacks");
+
   if (publish) {
     _published.push(stack);
   } else {
@@ -182,16 +72,6 @@ inline void ZMarkStripe::publish_stack(ZMarkStack* stack, ZMarkTerminate* termin
   }
 
   terminate->wake_up();
-}
-
-inline ZMarkStack* ZMarkStripe::steal_stack() {
-  // Steal overflowed stacks first, then published stacks
-  ZMarkStack* const stack = _overflowed.pop();
-  if (stack != nullptr) {
-    return stack;
-  }
-
-  return _published.pop();
 }
 
 inline size_t ZMarkStripeSet::stripe_id(const ZMarkStripe* stripe) const {
@@ -236,32 +116,63 @@ inline ZMarkStack* ZMarkThreadLocalStacks::steal(ZMarkStripeSet* stripes,
   return stack;
 }
 
-inline bool ZMarkThreadLocalStacks::push(ZMarkStackAllocator* allocator,
-                                         ZMarkStripeSet* stripes,
+inline void ZMarkThreadLocalStacks::push(ZMarkStripeSet* stripes,
                                          ZMarkStripe* stripe,
                                          ZMarkTerminate* terminate,
                                          ZMarkStackEntry entry,
                                          bool publish) {
-  ZMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
-  ZMarkStack* const stack = *stackp;
-  if (stack != nullptr && stack->push(entry)) {
-    return true;
+  const size_t stripe_id = stripes->stripe_id(stripe);
+  ZMarkStack** const stackp = &_stacks[stripe_id];
+  ZMarkStack* const prev_stack = *stackp;
+
+  if (prev_stack != nullptr) {
+    if (!prev_stack->is_full()) {
+      // There's a stack and it isn't full: just push
+      prev_stack->push(entry);
+      return;
+    }
+
+    // Publish full stacks
+    stripe->publish_stack(prev_stack, terminate, publish);
+    *stackp = nullptr;
   }
 
-  return push_slow(allocator, stripe, stackp, terminate, entry, publish);
+  // If no stack was available, allocate one and push to it
+  const bool first_stack = prev_stack == nullptr;
+  ZMarkStack* const new_stack = ZMarkStack::create(first_stack);
+  *stackp = new_stack;
+
+  new_stack->push(entry);
 }
 
-inline bool ZMarkThreadLocalStacks::pop(ZMarkStackAllocator* allocator,
+inline bool ZMarkThreadLocalStacks::pop(ZMarkingSMR* marking_smr,
                                         ZMarkStripeSet* stripes,
                                         ZMarkStripe* stripe,
-                                        ZMarkStackEntry& entry) {
+                                        ZMarkStackEntry* entry) {
   ZMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
-  ZMarkStack* const stack = *stackp;
-  if (stack != nullptr && stack->pop(entry)) {
-    return true;
+  ZMarkStack* stack = *stackp;
+
+  // First make sure there is a stack to pop from
+  if (stack == nullptr) {
+    // If we have no stack, try to steal one
+    stack = stripe->steal_stack(marking_smr);
+    *stackp = stack;
+
+    if (stack == nullptr) {
+      // Out of stacks to pop from
+      return false;
+    }
   }
 
-  return pop_slow(allocator, stripe, stackp, entry);
+  *entry = stack->pop();
+
+  if (stack->is_empty()) {
+    // Eagerly free empty stacks while on a worker thread
+    ZMarkStack::destroy(stack);
+    *stackp = nullptr;
+  }
+
+  return true;
 }
 
 #endif // SHARE_GC_Z_ZMARKSTACK_INLINE_HPP

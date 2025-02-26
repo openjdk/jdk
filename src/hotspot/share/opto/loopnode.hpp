@@ -1358,9 +1358,9 @@ public:
                                       bool* p_short_scale, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  IfTrueNode* create_new_if_for_predicate(
-    ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason, int opcode,
-    bool rewire_uncommon_proj_phi_inputs = false);
+  IfTrueNode* create_new_if_for_predicate(const ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
+                                          Deoptimization::DeoptReason reason, int opcode,
+                                          bool rewire_uncommon_proj_phi_inputs = false);
 
  private:
   // Helper functions for create_new_if_for_predicate()

@@ -22,7 +22,6 @@
  */
 
 #include "downcallLinker.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 
 #include <cerrno>

@@ -724,7 +724,7 @@ public class Flow {
                 // Warn about fall-through if lint switch fallthrough enabled.
                 if (alive == Liveness.ALIVE &&
                     c.stats.nonEmpty() && l.tail.nonEmpty())
-                    lint.logIfEnabled(log, l.tail.head.pos(),
+                    lint.logIfEnabled(l.tail.head.pos(),
                                 LintWarnings.PossibleFallThroughIntoCase);
             }
             tree.isExhaustive = tree.hasUnconditionalPattern ||
@@ -1232,7 +1232,7 @@ public class Flow {
                 scanStat(tree.finalizer);
                 tree.finallyCanCompleteNormally = alive != Liveness.DEAD;
                 if (alive == Liveness.DEAD) {
-                    lint.logIfEnabled(log, TreeInfo.diagEndPos(tree.finalizer),
+                    lint.logIfEnabled(TreeInfo.diagEndPos(tree.finalizer),
                                 LintWarnings.FinallyCannotComplete);
                 } else {
                     while (exits.nonEmpty()) {
