@@ -388,14 +388,14 @@ public class XorINodeIdealizationTests {
         // This should now have a new range, possibly some [0, max]
         // Now let's test the range with some random if branches.
         int sum = 0;
-        if (z < LIMIT_1) { sum += 1; }
-        if (z < LIMIT_2) { sum += 2; }
-        if (z < LIMIT_3) { sum += 4; }
-        if (z < LIMIT_4) { sum += 8; }
-        if (z < LIMIT_5) { sum += 16; }
-        if (z < LIMIT_6) { sum += 32; }
-        if (z < LIMIT_7) { sum += 64; }
-        if (z < LIMIT_8) { sum += 128; }
+        if (z > LIMIT_1) { sum += 1; }
+        if (z > LIMIT_2) { sum += 2; }
+        if (z > LIMIT_3) { sum += 4; }
+        if (z > LIMIT_4) { sum += 8; }
+        if (z > LIMIT_5) { sum += 16; }
+        if (z > LIMIT_6) { sum += 32; }
+        if (z > LIMIT_7) { sum += 64; }
+        if (z > LIMIT_8) { sum += 128; }
 
         return sum;
     }
@@ -409,14 +409,14 @@ public class XorINodeIdealizationTests {
         // This should now have a new range, possibly some [0, max]
         // Now let's test the range with some random if branches.
         int sum = 0;
-        if (z < LIMIT_1) { sum += 1; }
-        if (z < LIMIT_2) { sum += 2; }
-        if (z < LIMIT_3) { sum += 4; }
-        if (z < LIMIT_4) { sum += 8; }
-        if (z < LIMIT_5) { sum += 16; }
-        if (z < LIMIT_6) { sum += 32; }
-        if (z < LIMIT_7) { sum += 64; }
-        if (z < LIMIT_8) { sum += 128; }
+        if (z > LIMIT_1) { sum += 1; }
+        if (z > LIMIT_2) { sum += 2; }
+        if (z > LIMIT_3) { sum += 4; }
+        if (z > LIMIT_4) { sum += 8; }
+        if (z > LIMIT_5) { sum += 16; }
+        if (z > LIMIT_6) { sum += 32; }
+        if (z > LIMIT_7) { sum += 64; }
+        if (z > LIMIT_8) { sum += 128; }
 
         return sum;
     }
