@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -38,12 +37,6 @@ static size_t address_space_limit() {
 
   // No limit
   return SIZE_MAX;
-}
-
-size_t ZAddressSpaceLimit::mark_stack() {
-  // Allow mark stacks to occupy 10% of the address space
-  const size_t limit = address_space_limit() / 10;
-  return align_up(limit, ZMarkStackSpaceExpandSize);
 }
 
 size_t ZAddressSpaceLimit::heap() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public final class PortConfig {
                 break;
             case AIX:
                 // The ephemeral port is OS version dependent on AIX:
-                // http://publib.boulder.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.rsct315.admin/bl503_ephport.htm
+                // https://www.ibm.com/support/pages/node/886227
                 // However, on AIX 5.3 / 6.1 / 7.1 we always see the
                 // settings below by using:
                 // /usr/sbin/no -a | fgrep ephemeral

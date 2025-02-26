@@ -39,7 +39,7 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @bug 8313251
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.runtime.TestNativeLibraryLoadEvent

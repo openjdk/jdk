@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
@@ -424,47 +424,40 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
 
   assert(next_name != nullptr, "null superclass for resolving");
   assert(!Signature::is_array(next_name), "invalid superclass name");
-#if INCLUDE_CDS
-  if (CDSConfig::is_dumping_static_archive()) {
-    // Special processing for handling UNREGISTERED shared classes.
-    InstanceKlass* k = SystemDictionaryShared::lookup_super_for_unregistered_class(class_name,
-                           next_name, is_superclass);
-    if (k) {
-      return k;
-    }
-  }
-#endif // INCLUDE_CDS
-
-  // If class_name is already loaded, just return the superclass or superinterface.
-  // Make sure there's a placeholder for the class_name before resolving.
-  // This is used as a claim that this thread is currently loading superclass/classloader
-  // and for ClassCircularity checks.
 
   ClassLoaderData* loader_data = class_loader_data(class_loader);
-  Dictionary* dictionary = loader_data->dictionary();
+
+  if (is_superclass) {
+    InstanceKlass* klassk = loader_data->dictionary()->find_class(THREAD, class_name);
+    if (klassk != nullptr) {
+      // We can come here for two reasons:
+      // (a) RedefineClasses -- the class is already loaded
+      // (b) Rarely, the class might have been loaded by a parallel thread
+      // We can do a quick check against the already assigned superclass's name and loader.
+      InstanceKlass* superk = klassk->java_super();
+      if (superk != nullptr &&
+          superk->name() == next_name &&
+          superk->class_loader() == class_loader()) {
+        return superk;
+      }
+    }
+  }
 
   // can't throw error holding a lock
   bool throw_circularity_error = false;
   {
     MutexLocker mu(THREAD, SystemDictionary_lock);
-    InstanceKlass* klassk = dictionary->find_class(THREAD, class_name);
-    InstanceKlass* quicksuperk;
-    // To support parallel loading: if class is done loading, just return the superclass
-    // if the next_name matches class->super()->name() and if the class loaders match.
-    if (klassk != nullptr && is_superclass &&
-       ((quicksuperk = klassk->java_super()) != nullptr) &&
-       ((quicksuperk->name() == next_name) &&
-         (quicksuperk->class_loader() == class_loader()))) {
-      return quicksuperk;
-    } else {
-      // Must check ClassCircularity before checking if superclass is already loaded.
-      PlaceholderEntry* probe = PlaceholderTable::get_entry(class_name, loader_data);
-      if (probe && probe->check_seen_thread(THREAD, PlaceholderTable::DETECT_CIRCULARITY)) {
-          log_circularity_error(class_name, probe);
-          throw_circularity_error = true;
-      }
+
+    // Must check ClassCircularity before resolving next_name (superclass or interface).
+    PlaceholderEntry* probe = PlaceholderTable::get_entry(class_name, loader_data);
+    if (probe != nullptr && probe->check_seen_thread(THREAD, PlaceholderTable::DETECT_CIRCULARITY)) {
+        log_circularity_error(class_name, probe);
+        throw_circularity_error = true;
     }
 
+    // Make sure there's a placeholder for the class_name before resolving.
+    // This is used as a claim that this thread is currently loading superclass/classloader
+    // and for ClassCircularity checks.
     if (!throw_circularity_error) {
       // Be careful not to exit resolve_with_circularity_detection without removing this placeholder.
       PlaceholderEntry* newprobe = PlaceholderTable::find_and_add(class_name,
@@ -512,12 +505,11 @@ static void handle_parallel_super_load(Symbol* name,
                                        TRAPS) {
 
   // The result superk is not used; resolve_with_circularity_detection is called for circularity check only.
-  // This passes true to is_superclass even though it might not be the super class in order to perform the
-  // optimization anyway.
+  // This passes false to is_superclass to skip doing the unlikely optimization.
   Klass* superk = SystemDictionary::resolve_with_circularity_detection(name,
                                                                        superclassname,
                                                                        class_loader,
-                                                                       true,
+                                                                       false,
                                                                        CHECK);
 }
 
@@ -971,14 +963,14 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
   int scp_index = ik->shared_classpath_index();
   assert(!ik->is_shared_unregistered_class(), "this function should be called for built-in classes only");
   assert(scp_index >= 0, "must be");
-  SharedClassPathEntry* scp_entry = FileMapInfo::shared_path(scp_index);
+  const AOTClassLocation* cl = AOTClassLocationConfig::runtime()->class_location_at(scp_index);
   if (!Universe::is_module_initialized()) {
-    assert(scp_entry != nullptr, "must be");
+    assert(cl != nullptr, "must be");
     // At this point, no modules have been defined yet. KlassSubGraphInfo::check_allowed_klass()
     // has restricted the classes can be loaded at this step to be only:
-    // [1] scp_entry->is_modules_image(): classes in java.base, or,
+    // [1] cs->is_modules_image(): classes in java.base, or,
     // [2] HeapShared::is_a_test_class_in_unnamed_module(ik): classes in bootstrap/unnamed module
-    assert(scp_entry->is_modules_image() || HeapShared::is_a_test_class_in_unnamed_module(ik),
+    assert(cl->is_modules_image() || HeapShared::is_a_test_class_in_unnamed_module(ik),
            "only these classes can be loaded before the module system is initialized");
     assert(class_loader.is_null(), "sanity");
     return true;
@@ -995,7 +987,7 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
 
   ModuleEntry* mod_entry = (pkg_entry == nullptr) ? nullptr : pkg_entry->module();
   bool should_be_in_named_module = (mod_entry != nullptr && mod_entry->is_named());
-  bool was_archived_from_named_module = scp_entry->in_named_module();
+  bool was_archived_from_named_module = !cl->has_unnamed_module();
   bool visible;
 
   if (was_archived_from_named_module) {
@@ -1185,6 +1177,10 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
 
   // notify a class loaded from shared object
   ClassLoadingService::notify_class_loaded(ik, true /* shared class */);
+
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    SystemDictionaryShared::init_dumptime_info_from_preimage(ik);
+  }
 }
 
 #endif // INCLUDE_CDS
@@ -1596,6 +1592,9 @@ void SystemDictionary::initialize(TRAPS) {
   PlaceholderTable::initialize();
 #if INCLUDE_CDS
   SystemDictionaryShared::initialize();
+  if (CDSConfig::is_dumping_archive()) {
+    AOTClassLocationConfig::dumptime_init(THREAD);
+  }
 #endif
   // Resolve basic classes
   vmClasses::resolve_all(CHECK);

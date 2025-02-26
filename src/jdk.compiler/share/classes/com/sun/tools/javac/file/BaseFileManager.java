@@ -94,6 +94,12 @@ public abstract class BaseFileManager implements JavaFileManager {
         // Initialize locations
         locations.update(log, lint, FSInfo.instance(context));
 
+        // Apply options
+        options.whenReady(this::applyOptions);
+    }
+
+    protected void applyOptions(Options options) {
+
         // Setting this option is an indication that close() should defer actually closing
         // the file manager until after a specified period of inactivity.
         // This is to accommodate clients which save references to Symbols created for use
@@ -106,16 +112,14 @@ public abstract class BaseFileManager implements JavaFileManager {
         // in seconds, of the period of inactivity to wait for, before the file manager
         // is actually closed.
         // See also deferredClose().
-        options.whenReady(options -> {
-            String s = options.get("fileManager.deferClose");
-            if (s != null) {
-                try {
-                    deferredCloseTimeout = (int) (Float.parseFloat(s) * 1000);
-                } catch (NumberFormatException e) {
-                    deferredCloseTimeout = 60 * 1000;  // default: one minute, in millis
-                }
+        String s = options.get("fileManager.deferClose");
+        if (s != null) {
+            try {
+                deferredCloseTimeout = (int) (Float.parseFloat(s) * 1000);
+            } catch (NumberFormatException e) {
+                deferredCloseTimeout = 60 * 1000;  // default: one minute, in millis
             }
-        });
+        }
     }
 
     protected Locations createLocations() {

@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "cds/archiveHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -167,7 +166,11 @@ static ReservedSpace reserve(size_t size, size_t preferred_page_size) {
     size = align_up(size, alignment);
   }
 
-  return MemoryReserver::reserve(size, alignment, preferred_page_size);
+  const ReservedSpace reserved = MemoryReserver::reserve(size, alignment, preferred_page_size);
+  if (!reserved.is_reserved()) {
+    vm_exit_during_initialization("Could not reserve space");
+  }
+  return reserved;
 }
 
 jint ShenandoahHeap::initialize() {
@@ -387,6 +390,10 @@ jint ShenandoahHeap::initialize() {
 
     if (_collection_set == nullptr) {
       cset_rs = MemoryReserver::reserve(cset_size, cset_align, os::vm_page_size());
+      if (!cset_rs.is_reserved()) {
+        vm_exit_during_initialization("Cannot reserve memory for collection set");
+      }
+
       _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
     }
     os::trace_page_sizes_for_requested_size("Collection Set",
@@ -1255,11 +1262,18 @@ void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
 }
 
 void ShenandoahHeap::concurrent_prepare_for_update_refs() {
-  // It's possible that evacuation succeeded, but we could still be cancelled when we get here.
-  // A cancellation at this point means the degenerated cycle must resume from update-refs.
-  set_gc_state_concurrent(EVACUATION, false);
-  set_gc_state_concurrent(WEAK_ROOTS, false);
-  set_gc_state_concurrent(UPDATE_REFS, true);
+  {
+    // Java threads take this lock while they are being attached and added to the list of thread.
+    // If another thread holds this lock before we update the gc state, it will receive a stale
+    // gc state, but they will have been added to the list of java threads and so will be corrected
+    // by the following handshake.
+    MutexLocker lock(Threads_lock);
+
+    // A cancellation at this point means the degenerated cycle must resume from update-refs.
+    set_gc_state_concurrent(EVACUATION, false);
+    set_gc_state_concurrent(WEAK_ROOTS, false);
+    set_gc_state_concurrent(UPDATE_REFS, true);
+  }
 
   // This will propagate the gc state and retire gclabs and plabs for threads that require it.
   ShenandoahPrepareForUpdateRefs prepare_for_update_refs(_gc_state.raw_value());
@@ -1498,6 +1512,18 @@ size_t ShenandoahHeap::max_tlab_size() const {
   return ShenandoahHeapRegion::max_tlab_size_words();
 }
 
+void ShenandoahHeap::collect_as_vm_thread(GCCause::Cause cause) {
+  // These requests are ignored because we can't easily have Shenandoah jump into
+  // a synchronous (degenerated or full) cycle while it is in the middle of a concurrent
+  // cycle. We _could_ cancel the concurrent cycle and then try to run a cycle directly
+  // on the VM thread, but this would confuse the control thread mightily and doesn't
+  // seem worth the trouble. Instead, we will have the caller thread run (and wait for) a
+  // concurrent cycle in the prologue of the heap inspect/dump operation. This is how
+  // other concurrent collectors in the JVM handle this scenario as well.
+  assert(Thread::current()->is_VM_thread(), "Should be the VM thread");
+  guarantee(cause == GCCause::_heap_dump || cause == GCCause::_heap_inspection, "Invalid cause");
+}
+
 void ShenandoahHeap::collect(GCCause::Cause cause) {
   control_thread()->request_gc(cause);
 }
@@ -1582,7 +1608,9 @@ void ShenandoahHeap::set_active_generation() {
 void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation) {
   shenandoah_policy()->record_collection_cause(cause);
 
-  assert(gc_cause()  == GCCause::_no_gc, "Over-writing cause");
+  const GCCause::Cause current = gc_cause();
+  assert(current == GCCause::_no_gc, "Over-writing cause: %s, with: %s",
+         GCCause::to_string(current), GCCause::to_string(cause));
   assert(_gc_generation == nullptr, "Over-writing _gc_generation");
 
   set_gc_cause(cause);
@@ -2004,6 +2032,12 @@ void ShenandoahHeap::set_gc_state_at_safepoint(uint mask, bool value) {
 }
 
 void ShenandoahHeap::set_gc_state_concurrent(uint mask, bool value) {
+  // Holding the thread lock here assures that any thread created after we change the gc
+  // state will have the correct state. It also prevents attaching threads from seeing
+  // an inconsistent state. See ShenandoahBarrierSet::on_thread_attach for reference. Established
+  // threads will use their thread local copy of the gc state (changed by a handshake, or on a
+  // safepoint).
+  assert(Threads_lock->is_locked(), "Must hold thread lock for concurrent gc state change");
   _gc_state.set_cond(mask, value);
 }
 
