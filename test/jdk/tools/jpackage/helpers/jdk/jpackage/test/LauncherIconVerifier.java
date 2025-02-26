@@ -23,15 +23,9 @@
 
 package jdk.jpackage.test;
 
-import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
-import javax.imageio.ImageIO;
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 
 public final class LauncherIconVerifier {
     public LauncherIconVerifier() {
@@ -68,7 +62,7 @@ public final class LauncherIconVerifier {
 
         if (TKit.isWindows()) {
             TKit.assertPathExists(iconPath, false);
-            WinIconVerifier.instance.verifyLauncherIcon(cmd, launcherName,
+            WinExecutableIconVerifier.verifyLauncherIcon(cmd, launcherName,
                     expectedIcon, expectedDefault);
         } else if (expectedDefault) {
             TKit.assertPathExists(iconPath, true);

@@ -846,6 +846,14 @@ void ClassListParser::parse_constant_pool_tag() {
     }
   }
 
+  if (SystemDictionaryShared::should_be_excluded(ik)) {
+    if (log_is_enabled(Warning, cds, resolve)) {
+      ResourceMark rm;
+      log_warning(cds, resolve)("Cannot aot-resolve constants for %s because it is excluded", ik->external_name());
+    }
+    return;
+  }
+
   if (preresolve_class) {
     AOTConstantPoolResolver::preresolve_class_cp_entries(THREAD, ik, &preresolve_list);
   }
