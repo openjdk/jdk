@@ -4587,10 +4587,11 @@ class StubGenerator: public StubCodeGenerator {
   // 2x16 32-bit Montgomery multiplications in parallel
   // See the montMul() method of the sun.security.provider.ML_DSA class.
   // Here MONT_R_BITS is 32, so the right shift by it is implicit.
-  // The constants MONT_Q_INV_MOD_R and MONT_Q are loaded in (all 32-bit
-  // chunks of) vector registers v30 and v31, resp.
-  // The inputs are in v0-v7 and v16-v23 and the results go to v16-v23,
-  // four 32-bit values in each register
+  // The constants qInv = MONT_Q_INV_MOD_R and q = MONT_Q are loaded in
+  // (all 32-bit chunks of) vector registers v30 and v31, resp.
+  // The inputs are b[i]s in v0-v7 and c[i]s v16-v23 and
+  // the results are a[i]s in v16-v23, four 32-bit values in each register
+  // and we do a_i = b_i * c_i * 2^-32 mod MONT_Q for all
   void dilithium_montmul32(bool by_constant) {
     FloatRegister vr0 = by_constant ? v29 : v0;
     FloatRegister vr1 = by_constant ? v29 : v1;
@@ -4601,8 +4602,8 @@ class StubGenerator: public StubCodeGenerator {
     FloatRegister vr6 = by_constant ? v29 : v6;
     FloatRegister vr7 = by_constant ? v29 : v7;
 
-    __ sqdmulh(v24, __ T4S, vr0, v16);
-    __ mulv(v16, __ T4S, vr0, v16);
+    __ sqdmulh(v24, __ T4S, vr0, v16); // aHigh = hi32(2 * b * c)
+    __ mulv(v16, __ T4S, vr0, v16);    // aLow = lo32(b * c)
     __ sqdmulh(v25, __ T4S, vr1, v17);
     __ mulv(v17, __ T4S, vr1, v17);
     __ sqdmulh(v26, __ T4S, vr2, v18);
@@ -4610,17 +4611,17 @@ class StubGenerator: public StubCodeGenerator {
     __ sqdmulh(v27, __ T4S, vr3, v19);
     __ mulv(v19, __ T4S, vr3, v19);
 
-    __ mulv(v16, __ T4S, v16, v30);
+    __ mulv(v16, __ T4S, v16, v30);     // m = aLow * qinv
     __ mulv(v17, __ T4S, v17, v30);
     __ mulv(v18, __ T4S, v18, v30);
     __ mulv(v19, __ T4S, v19, v30);
 
-    __ sqdmulh(v16, __ T4S, v16, v31);
+    __ sqdmulh(v16, __ T4S, v16, v31);  // n = hi32(2 * m * q)
     __ sqdmulh(v17, __ T4S, v17, v31);
     __ sqdmulh(v18, __ T4S, v18, v31);
     __ sqdmulh(v19, __ T4S, v19, v31);
 
-    __ shsubv(v16, __ T4S, v24, v16);
+    __ shsubv(v16, __ T4S, v24, v16);   // a = (aHigh - n) / 2
     __ shsubv(v17, __ T4S, v25, v17);
     __ shsubv(v18, __ T4S, v26, v18);
     __ shsubv(v19, __ T4S, v27, v19);
@@ -4650,8 +4651,10 @@ class StubGenerator: public StubCodeGenerator {
     __ shsubv(v23, __ T4S, v27, v23);
   }
 
+ // Do the addition and subtraction done in the ntt algorithm.
+ // See sun.security.provider.ML_DSA.implDilithiumAlmostNttJava()
   void dilithium_add_sub32() {
-    __ addv(v24, __ T4S, v0, v16);
+    __ addv(v24, __ T4S, v0, v16); // coeffs[j] = coeffs[j] + tmp;
     __ addv(v25, __ T4S, v1, v17);
     __ addv(v26, __ T4S, v2, v18);
     __ addv(v27, __ T4S, v3, v19);
@@ -4660,7 +4663,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addv(v30, __ T4S, v6, v22);
     __ addv(v31, __ T4S, v7, v23);
 
-    __ subv(v0, __ T4S, v0, v16);
+    __ subv(v0, __ T4S, v0, v16);  // coeffs[j + l] = coeffs[j] - tmp;
     __ subv(v1, __ T4S, v1, v17);
     __ subv(v2, __ T4S, v2, v18);
     __ subv(v3, __ T4S, v3, v19);
@@ -4670,6 +4673,10 @@ class StubGenerator: public StubCodeGenerator {
     __ subv(v7, __ T4S, v7, v23);
   }
 
+  // Do the same computation that
+  // dilithium_montmul32() and dilithium_add_sub32() does,
+  // except for only 4x4 32-bit vector elements and with
+  // different register usage.
   void dilithium_montmul_sub_add16() {
     __ sqdmulh(v24, __ T4S, v1, v16);
     __ mulv(v16, __ T4S, v1, v16);
@@ -4739,7 +4746,7 @@ class StubGenerator: public StubCodeGenerator {
       }
 
       for (int i = 0; i < 4; i++) {
-        __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+        __ ldpq(v30, v31, Address(dilithiumConsts, 0)); // qInv, q
         __ ldpq(v0, v1, Address(coeffs, c2Start));
         __ ldpq(v2, v3, Address(coeffs, c2Start + incr1));
         __ ldpq(v4, v5, Address(coeffs, c2Start + incr2));
@@ -4810,7 +4817,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // level 5
     for (int i = 0; i < 1024; i += 256) {
-      __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+      __ ldpq(v30, v31, Address(dilithiumConsts, 0));  // qInv, q
       __ ldr(v0, __ Q, Address(coeffs, i + 16));
       __ ldr(v1, __ Q, Address(coeffs, i + 48));
       __ ldr(v2, __ Q, Address(coeffs, i + 80));
@@ -4850,7 +4857,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // level 6
     for (int i = 0; i < 1024; i += 128) {
-      __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+      __ ldpq(v30, v31, Address(dilithiumConsts, 0));  // qInv, q
       __ add(tmpAddr, coeffs, i);
       __ ld2(v0, v1, __ T2D, tmpAddr);
       __ add(tmpAddr, coeffs, i + 32);
@@ -4873,7 +4880,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // level 7
     for (int i = 0; i < 1024; i += 128) {
-      __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+      __ ldpq(v30, v31, Address(dilithiumConsts, 0));  // qInv, q
       __ add(tmpAddr, coeffs, i);
       __ ld2(v0, v1, __ T4S, tmpAddr);
       __ add(tmpAddr, coeffs, i + 32);
@@ -4901,6 +4908,15 @@ class StubGenerator: public StubCodeGenerator {
 
   }
 
+  // Do the computations that can be found in the body of the loop in
+  // sun.security.provider.ML_DSA.implDilithiumAlmostInverseNttJava()
+  // for 16 coefficients in parallel:
+  // tmp = coeffs[j];
+  // coeffs[j] = (tmp + coeffs[j + l]);
+  // coeffs[j + l] = montMul(tmp - coeffs[j + l], -MONT_ZETAS_FOR_NTT[m]);
+  // coefss[j]s are loaded in v0, v2, v4 and v6,
+  // coeffs[j + l]s in v1, v3, v5 and v7,
+  // the corresponding zetas in v16, v17, v18 and v19.
   void dilithium_sub_add_montmul16() {
     __ subv(v20, __ T4S, v0, v1);
     __ subv(v21, __ T4S, v2, v3);
@@ -4912,8 +4928,8 @@ class StubGenerator: public StubCodeGenerator {
     __ addv(v4, __ T4S, v4, v5);
     __ addv(v6, __ T4S, v6, v7);
 
-    __ sqdmulh(v24, __ T4S, v20, v16);
-    __ mulv(v1, __ T4S, v20, v16);
+    __ sqdmulh(v24, __ T4S, v20, v16); // aHigh = hi32(2 * b * c)
+    __ mulv(v1, __ T4S, v20, v16);     // aLow = lo32(b * c)
     __ sqdmulh(v25, __ T4S, v21, v17);
     __ mulv(v3, __ T4S, v21, v17);
     __ sqdmulh(v26, __ T4S, v22, v18);
@@ -4921,17 +4937,17 @@ class StubGenerator: public StubCodeGenerator {
     __ sqdmulh(v27, __ T4S, v23, v19);
     __ mulv(v7, __ T4S, v23, v19);
 
-    __ mulv(v1, __ T4S, v1, v30);
+    __ mulv(v1, __ T4S, v1, v30);      // m = (aLow * q)
     __ mulv(v3, __ T4S, v3, v30);
     __ mulv(v5, __ T4S, v5, v30);
     __ mulv(v7, __ T4S, v7, v30);
 
-    __ sqdmulh(v1, __ T4S, v1, v31);
+    __ sqdmulh(v1, __ T4S, v1, v31);  // n = hi32(2 * m * q)
     __ sqdmulh(v3, __ T4S, v3, v31);
     __ sqdmulh(v5, __ T4S, v5, v31);
     __ sqdmulh(v7, __ T4S, v7, v31);
 
-    __ shsubv(v1, __ T4S, v24, v1);
+    __ shsubv(v1, __ T4S, v24, v1);  // a = (aHigh  - n) / 2
     __ shsubv(v3, __ T4S, v25, v3);
     __ shsubv(v5, __ T4S, v26, v5);
     __ shsubv(v7, __ T4S, v27, v7);
@@ -4987,7 +5003,7 @@ class StubGenerator: public StubCodeGenerator {
         __ stpq(v26, v27, Address(coeffs, c1Start + incr1));
         __ stpq(v28, v29, Address(coeffs, c1Start + incr2));
         __ stpq(v30, v31, Address(coeffs, c1Start + incr3));
-        __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+        __ ldpq(v30, v31, Address(dilithiumConsts, 0));   // qInv, q
         dilithium_load32zetas(zetas);
         dilithium_montmul32(false);
         __ stpq(v16, v17, Address(coeffs, c2Start));
@@ -5041,7 +5057,7 @@ class StubGenerator: public StubCodeGenerator {
     // Each level represents one iteration of the outer for loop of the Java version
     // level0
     for (int i = 0; i < 1024; i += 128) {
-      __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+      __ ldpq(v30, v31, Address(dilithiumConsts, 0));  // qInv, q
       __ add(tmpAddr, coeffs, i);
       __ ld2(v0, v1, __ T4S, tmpAddr);
       __ add(tmpAddr, coeffs, i + 32);
@@ -5112,7 +5128,7 @@ class StubGenerator: public StubCodeGenerator {
       __ str(v30, __ Q, Address(coeffs, i + 192));
       __ str(v31, __ Q, Address(coeffs, i + 224));
       dilithium_load32zetas(zetas);
-      __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+      __ ldpq(v30, v31, Address(dilithiumConsts, 0));  // qInv, q
       dilithium_montmul32(false);
       __ str(v16, __ Q, Address(coeffs, i + 16));
       __ str(v17, __ Q, Address(coeffs, i + 48));
@@ -5163,8 +5179,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
 
-    __ ldpq(v30, v31, Address(dilithiumConsts, 0));
-    __ ldr(v29, __ Q, Address(dilithiumConsts, 48));
+    __ ldpq(v30, v31, Address(dilithiumConsts, 0));   // qInv, q
+    __ ldr(v29, __ Q, Address(dilithiumConsts, 48));  // rSquare
 
     __ mov(len, zr);
     __ add(len, len, 1024);
@@ -5225,7 +5241,7 @@ class StubGenerator: public StubCodeGenerator {
     __ add(result, coeffs, 0);
     __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
 
-    __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+    __ ldpq(v30, v31, Address(dilithiumConsts, 0));   // qInv, q
     __ dup(v29, __ T4S, constant);
     __ mov(len, zr);
     __ add(len, len, 1024);
