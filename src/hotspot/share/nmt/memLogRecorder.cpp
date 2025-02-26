@@ -50,6 +50,7 @@
 #include "nmt/memReporter.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/memTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
@@ -869,7 +870,6 @@ void NMT_VirtualMemoryLogRecorder::replay(const int pid) {
   long int count = (long int)(records_fi.size / sizeof(Entry));
 
   long int total = 0;
-  //VirtualMemoryTracker::Instance::initialize(NMTUtil::parse_tracking_level(NativeMemoryTracking));
   for (off_t i = 0; i < count; i++) {
     Entry *e = &records_file_entries[i];
 
@@ -885,6 +885,7 @@ void NMT_VirtualMemoryLogRecorder::replay(const int pid) {
       stack = NativeCallStack(e->stack, frameCount);
     }
 
+    //VirtualMemoryTracker::initialize(NMTUtil::parse_tracking_level(NativeMemoryTracking));
     long int start = os::javaTimeNanos();
     {
       switch (e->type) {
@@ -953,8 +954,8 @@ void NMT_VirtualMemoryLogRecorder::replay(const int pid) {
 }
 
 void NMT_VirtualMemoryLogRecorder::_record(NMT_VirtualMemoryLogRecorder::Type type, MemTag mem_tag, MemTag mem_tag_split, size_t size, size_t size_split, address ptr, const NativeCallStack *stack) {
-  //fprintf(stderr, "NMT_VirtualMemoryLogRecorder::record (%s, %hhu, %hhu, %ld, %ld, %p, %p)\n",
-  //        type_to_name(type), mem_tag, mem_tag_split, size, size_split, ptr, stack);fflush(stderr);
+//  fprintf(stderr, "NMT_VirtualMemoryLogRecorder::record (%s, %hhu, %hhu, %ld, %ld, %p, %p)\n",
+//          type_to_name(type), mem_tag, mem_tag_split, size, size_split, ptr, stack);fflush(stderr);
   NMT_VirtualMemoryLogRecorder *recorder = NMT_VirtualMemoryLogRecorder::instance();
   if (recorder->lockIfNotDone()) {
     volatile long int count = recorder->_count++;

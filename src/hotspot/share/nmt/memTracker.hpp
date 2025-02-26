@@ -227,6 +227,7 @@ class MemTracker : AllStatic {
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::split_reserved_region((address)addr, size, split, mem_tag, split_tag);
+      NMT_VirtualMemoryLogRecorder::record_virtual_memory_split_reserved((address)addr, size, split, mem_tag, split_tag);
     }
   }
 
@@ -236,6 +237,7 @@ class MemTracker : AllStatic {
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::set_reserved_region_type((address)addr, mem_tag);
+      NMT_VirtualMemoryLogRecorder::record_virtual_memory_tag((address)addr, mem_tag);
     }
   }
 
