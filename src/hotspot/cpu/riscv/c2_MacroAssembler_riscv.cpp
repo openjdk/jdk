@@ -1386,7 +1386,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Register str1, Register str2,
                                                   const bool isLL, Register cnt1, Register cnt2,
                                                   Register tmp1, Register tmp2, Register tmp3,
-                                                  const int STUB_THRESHOLD, Label *STUB, Label *DONE) {
+                                                  const int STUB_THRESHOLD, Label *STUB, Label *SHORT_STRING, Label *DONE) {
   Label TAIL_CHECK, TAIL, NEXT_WORD, DIFFERENCE;
 
   const int base_offset = isLL ? arrayOopDesc::base_offset_in_bytes(T_BYTE)
@@ -1406,6 +1406,10 @@ void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Regis
     addi(str1, str1, 4);
     addi(str2, str2, 4);
     subi(cnt2, cnt2, minCharsInWord / 2);
+
+    // A very short string
+    mv(t0, minCharsInWord);
+    ble(cnt2, t0, *SHORT_STRING);
   }
 #ifdef ASSERT
   if (AvoidUnalignedAccesses) {
@@ -1600,7 +1604,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       string_compare_long_same_encoding(result,
                                 str1, str2, isLL,
                                 cnt1, cnt2, tmp1, tmp2, tmp3,
-                                STUB_THRESHOLD, &STUB, &DONE);
+                                STUB_THRESHOLD, &STUB, &SHORT_STRING, &DONE);
     } else { // LU or UL
       string_compare_long_different_encoding(result,
                                 str1, str2, isLU,
