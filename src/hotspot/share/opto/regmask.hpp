@@ -392,7 +392,6 @@ public:
     Insert(reg);
     DEBUG_ONLY(this->orig_const = orig_const;)
   }
-#endif
   RegMask(OptoReg::Name reg) : RegMask(reg, nullptr) {}
 
   RegMask(const RegMask& rm, Arena* arena)
