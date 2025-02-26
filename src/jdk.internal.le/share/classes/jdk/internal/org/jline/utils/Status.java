@@ -48,13 +48,18 @@ public class Status {
         this.supported = terminal.getStringCapability(Capability.change_scroll_region) != null
                 && terminal.getStringCapability(Capability.save_cursor) != null
                 && terminal.getStringCapability(Capability.restore_cursor) != null
-                && terminal.getStringCapability(Capability.cursor_address) != null;
+                && terminal.getStringCapability(Capability.cursor_address) != null
+                && isValid(terminal.getSize());
         if (supported) {
             display = new MovingCursorDisplay(terminal);
             resize();
             display.reset();
             scrollRegion = display.rows - 1;
         }
+    }
+
+    private boolean isValid(Size size) {
+        return size.getRows() > 0 && size.getRows() < 1000 && size.getColumns() > 0 && size.getColumns() < 1000;
     }
 
     public void close() {
@@ -147,6 +152,7 @@ public class Status {
         if (newScrollRegion < scrollRegion) {
             // We need to scroll up to grow the status bar
             terminal.puts(Capability.save_cursor);
+            terminal.puts(Capability.cursor_address, scrollRegion, 0);
             for (int i = newScrollRegion; i < scrollRegion; i++) {
                 terminal.puts(Capability.cursor_down);
             }

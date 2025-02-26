@@ -10,7 +10,6 @@ package jdk.internal.org.jline.reader.impl;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.Flushable;
 import java.io.IOError;
@@ -1131,16 +1130,16 @@ public class LineReaderImpl implements LineReader, Flushable {
     }
 
     @Override
-    public void editAndAddInBuffer(File file) throws Exception {
+    public void editAndAddInBuffer(Path file) throws Exception {
         if (isSet(Option.BRACKETED_PASTE)) {
             terminal.writer().write(BRACKETED_PASTE_OFF);
         }
-        Constructor<?> ctor = Class.forName("org.jline.builtins.Nano").getConstructor(Terminal.class, File.class);
-        Editor editor = (Editor) ctor.newInstance(terminal, new File(file.getParent()));
+        Constructor<?> ctor = Class.forName("org.jline.builtins.Nano").getConstructor(Terminal.class, Path.class);
+        Editor editor = (Editor) ctor.newInstance(terminal, file.getParent());
         editor.setRestricted(true);
-        editor.open(Collections.singletonList(file.getName()));
+        editor.open(Collections.singletonList(file.getFileName().toString()));
         editor.run();
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader br = Files.newBufferedReader(file)) {
             String line;
             commandsBuffer.clear();
             while ((line = br.readLine()) != null) {
@@ -3529,7 +3528,7 @@ public class LineReaderImpl implements LineReader, Flushable {
             buf.move(1);
             putString(yankBuffer);
             buf.move(-yankBuffer.length());
-        } else if (yankBuffer.length() != 0) {
+        } else if (!yankBuffer.isEmpty()) {
             if (buf.cursor() < buf.length()) {
                 buf.move(1);
             }
@@ -3547,7 +3546,7 @@ public class LineReaderImpl implements LineReader, Flushable {
                 ;
             putString(yankBuffer);
             buf.move(-yankBuffer.length());
-        } else if (yankBuffer.length() != 0) {
+        } else if (!yankBuffer.isEmpty()) {
             if (buf.cursor() > 0) {
                 buf.move(-1);
             }

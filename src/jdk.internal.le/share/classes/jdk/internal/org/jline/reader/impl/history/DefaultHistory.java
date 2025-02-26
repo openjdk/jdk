@@ -200,7 +200,7 @@ public class DefaultHistory implements History {
     public void write(Path file, boolean incremental) throws IOException {
         Path path = file != null ? file : getPath();
         if (path != null && Files.exists(path)) {
-            path.toFile().delete();
+            Files.deleteIfExists(path);
         }
         internalWrite(path, incremental ? getLastLoaded(path) : 0);
     }
