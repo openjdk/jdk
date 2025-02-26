@@ -200,7 +200,6 @@ public final class AltServicesRegistry {
 
         private record AltServiceData(Identity id,  Origin origin, Deadline deadline,
                                              boolean persist, boolean advertised,
-                                             List<SNIServerName> originSNIServerNames,
                                              String authority,
                                              boolean sameAuthorityAsOrigin) {
             public String pretty() {
@@ -209,7 +208,6 @@ public final class AltServicesRegistry {
                         "; deadline=" + deadline +
                         "; persist=" + persist +
                         "; advertised=" + advertised +
-                        "; originSNIServerNames=" + originSNIServerNames +
                         "; sameAuthorityAsOrigin=" + sameAuthorityAsOrigin +
                         ';';
             }
@@ -221,14 +219,12 @@ public final class AltServicesRegistry {
          * @param origin         the {@link Origin} for this alternate service
          * @param deadline       the deadline until which this endpoint is valid
          * @param persist        whether that information can be persisted (we don't use this)
-         * @param sniServerNames The list of server names to use in the SNI extension, when this alt
-         *                       service is used
          * @param advertised     Whether or not this alt service was advertised as an alt service.
          *                       In certain cases, an alt service is created when no origin server
          *                       has advertised it. In those cases, this param is {@code false}
          */
         private AltService(final Identity id, final Origin origin, Deadline deadline,
-                           final boolean persist, final List<SNIServerName> sniServerNames,
+                           final boolean persist,
                            final boolean advertised) {
             Objects.requireNonNull(id);
             Objects.requireNonNull(origin);
@@ -239,21 +235,11 @@ public final class AltServicesRegistry {
             // of the origin
             final boolean sameAuthorityAsOrigin = authority.equals(originAuthority);
             svc = new AltServiceData(id, origin, deadline, persist, advertised,
-                    List.copyOf(sniServerNames), authority, sameAuthorityAsOrigin);
+                    authority, sameAuthorityAsOrigin);
         }
 
         public Identity identity() {
             return svc.id;
-        }
-
-        /**
-         * Returns the SNI names of the origin. These are the SNI names that must be used
-         * in the TLS handshake when establishing a connection with this alt service.
-         *
-         * @return the SNI names of the origin.
-         */
-        public List<SNIServerName> originSNIServerNames() {
-            return svc.originSNIServerNames;
         }
 
         /**
@@ -323,21 +309,13 @@ public final class AltServicesRegistry {
         }
 
         public static Optional<AltService> create(final Identity id, final Origin origin,
-                                                  final List<SNIServerName> sniServerNames,
                                                   final Deadline deadline, final boolean persist) {
             Objects.requireNonNull(id);
             Objects.requireNonNull(origin);
-            if (sniServerNames == null || sniServerNames.isEmpty()) {
-                if (DEBUG.on()) {
-                    DEBUG.log("Skipping altsvc creation for %s due to no SNI", id);
-                }
-                return Optional.empty();
-            }
             if (DEBUG.on()) {
-                DEBUG.log("Creating AltService for id=%s, origin=%s, SNI=%s%n",
-                        id, origin, sniServerNames);
+                DEBUG.log("Creating AltService for id=%s, origin=%s%n", id, origin);
             }
-            var service = new AltService(id, origin, deadline, persist, sniServerNames, true);
+            var service = new AltService(id, origin, deadline, persist, true);
             if (Log.altsvc()) {
                 Log.logAltSvc("Creating AltService: {0}", service);
             }
@@ -357,7 +335,7 @@ public final class AltServicesRegistry {
                 }
                 return Optional.empty();
             }
-            return Optional.of(new AltService(id, origin, deadline, persist, sniServerNames, false));
+            return Optional.of(new AltService(id, origin, deadline, persist, false));
         }
 
     }

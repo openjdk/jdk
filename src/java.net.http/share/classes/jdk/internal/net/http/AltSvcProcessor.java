@@ -122,7 +122,7 @@ final class AltSvcProcessor {
 
         Origin origin = Origin.fromRequest(request);
         String altSvcValue = altSvcHeaderVal.get();
-        processValueAndUpdateRegistry(client, origin, altSvcValue, sniServerNames);
+        processValueAndUpdateRegistry(client, origin, altSvcValue);
         return fnResponse;
     }
 
@@ -185,14 +185,13 @@ final class AltSvcProcessor {
             final String scheme = "https";
             origin = Origin.of(scheme, conn.address);
         }
-        processValueAndUpdateRegistry(client, origin, value, sniServerNames);
+        processValueAndUpdateRegistry(client, origin, value);
     }
 
     private static void processValueAndUpdateRegistry(HttpClientImpl client,
                                                       Origin origin,
-                                                      String altSvcValue,
-                                                      List<SNIServerName> sniServerNames) {
-        final List<AltService> altServices = processHeaderValue(origin, altSvcValue, sniServerNames);
+                                                      String altSvcValue) {
+        final List<AltService> altServices = processHeaderValue(origin, altSvcValue);
         // intentional identity check
         if (altServices == CLEAR_ALL_ALT_SVCS) {
             // clear all existing alt services for this origin
@@ -253,8 +252,7 @@ final class AltSvcProcessor {
     // AltService[origin=https://localhost:64077/, alpn=h3-34, endpoint=localhost/127.0.0.1:5678,
     //            deadline=2021-04-11T01:41:01.369912Z, persist=true]
     private static List<AltService> processHeaderValue(final Origin origin,
-                                                       final String headerValue,
-                                                       final List<SNIServerName> originSNIServerNames) {
+                                                       final String headerValue) {
         final List<AltService> altServices = new ArrayList<>();
         // multiple alternate services can be specified with comma as a delimiter
         final var altSvcs = headerValue.split(",");
@@ -285,7 +283,7 @@ final class AltSvcProcessor {
             final var persist = getPersist(parsed.parameters().get("persist"));
             final AltService.Identity altSvcId = new AltService.Identity(parsed.alpnName(),
                     parsed.host(), parsed.port());
-            AltService.create(altSvcId, origin, originSNIServerNames, deadline, persist)
+            AltService.create(altSvcId, origin, deadline, persist)
                     .ifPresent(altServices::add);
         }
         return altServices;
