@@ -246,7 +246,7 @@ public class BuilderTest {
         checkException(calb, IllegalArgumentException.class);
         calb = builder().setCalendarType("japanese").setWeekDate(2013, 1, MONDAY);
         checkException(calb, IllegalArgumentException.class);
-        // JDK-8350646 : Ensure IAE (instead of AIOOBE) for ERA over REIWA
+        // JDK-8350646 : Ensure IAE (instead of AIOOBE) for ERA over largest supported
         calb = builder().setCalendarType("japanese").setFields(ERA, 6);
         checkException(calb, IllegalArgumentException.class);
         // Note that we don't check ERAs under BEFORE_MEIJI, i.e. -1, -2, ... as

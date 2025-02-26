@@ -1858,8 +1858,9 @@ class JapaneseImperialCalendar extends Calendar {
             era = internalGet(ERA);
             // Don't check under, historically we have allowed values under
             // BEFORE_MEIJI to be ignored during normalization
-            // We check against eras.length over Reiwa ERA due to possibility
-            // of additional eras via "jdk.calendar.japanese.supplemental.era"
+            // We check against eras.length (not the highest constant ERA value)
+            // due to future added eras, or additional eras via
+            // "jdk.calendar.japanese.supplemental.era"
             if (era >= eras.length) {
                 throw new IllegalArgumentException("Invalid era");
             }
