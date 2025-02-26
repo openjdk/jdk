@@ -93,7 +93,7 @@ final class PackageBuilder {
         name = v;
         return this;
     }
-    
+
     Optional<String> name() {
         return Optional.ofNullable(name);
     }
@@ -102,7 +102,7 @@ final class PackageBuilder {
         fileName = v;
         return this;
     }
-    
+
     Optional<Path> fileName() {
         return Optional.ofNullable(fileName);
     }
