@@ -286,16 +286,12 @@ function makeFilterWidget(sidebar, updateToc) {
         let current = links.indexOf(document.activeElement);
         if (event.key === "ArrowUp") {
             if (current > 0) {
-                links[current - 1].focus();
+                links[current - 1].focus({focusVisible: true});
             } else if (filterInput) {
                 filterInput.focus();
             }
-        } else if (event.key === "ArrowDown") {
-            if (event.target === filterInput) {
-                links[0].focus();
-            } else if (current < links.length - 1) {
-                links[current + 1].focus();
-            }
+        } else if (event.key === "ArrowDown" && current < links.length - 1) {
+            links[current + 1].focus({focusVisible: true});
         }
         event.preventDefault();
     }
