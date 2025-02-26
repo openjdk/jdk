@@ -122,7 +122,7 @@ public abstract class ThreadContainer extends StackableScope {
      * thread has terminated (or failed to start).
      */
     public final void remove(Thread thread) {
-        / Prevent a virtual thread from being preempted as this could potentially
+        // Prevent a virtual thread from being preempted as this could potentially
         // deadlock with a carrier that is accessing this thread container.
         boolean disabled = tryDisablePreempt();
         try {
