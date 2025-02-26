@@ -23,7 +23,6 @@
  */
 
 #include "asm/macroAssembler.hpp"
-#include "assembler_x86.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
