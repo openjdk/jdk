@@ -76,7 +76,7 @@ public @interface PreviewFeature {
         STRUCTURED_CONCURRENCY,
         CLASSFILE_API,
         STREAM_GATHERERS,
-//        MODULE_IMPORTS, //remove when the boot JDK is JDK 25
+        MODULE_IMPORTS, //remove when the boot JDK is JDK 25
         @JEP(number=478, title="Key Derivation Function API", status="Preview")
         KEY_DERIVATION,
         LANGUAGE_MODEL,
