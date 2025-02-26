@@ -308,30 +308,10 @@ bool InitializedAssertionPredicate::is_predicate(const Node* maybe_success_proj)
   }
   IfNode* if_node = maybe_success_proj->in(0)->as_If();
   bool is_initialized_assertion_predicate = if_node->in(1)->is_OpaqueInitializedAssertionPredicate();
-  assert(!is_initialized_assertion_predicate || has_halt(maybe_success_proj->as_IfTrue()),
+  assert(!is_initialized_assertion_predicate || AssertionPredicate::has_halt(maybe_success_proj->as_IfTrue()),
          "Initialized Assertion Predicate must have a Halt Node on the failing path");
   return is_initialized_assertion_predicate;
 }
-
-#ifdef ASSERT
-bool InitializedAssertionPredicate::has_halt(const IfTrueNode* success_proj) {
-  ProjNode* other_proj = success_proj->other_if_proj();
-  if (other_proj->outcnt() != 1) {
-    return false;
-  }
-
-  Node* out = other_proj->unique_out();
-  // Either the Halt node is directly the unique output.
-  if (out->is_Halt()) {
-    return true;
-  }
-  // Or we have a Region that merges serval paths to a single Halt node.
-  if (out->is_Region() && out->outcnt() == 2) {
-    return out->find_out_with(Op_Halt);
-  }
-  return false;
-}
-#endif // ASSERT
 
 // Kills this Initialized Assertion Predicate by marking the associated OpaqueInitializedAssertionPredicate node useless.
 // It will then be folded away in the next IGVN round.
@@ -1166,20 +1146,22 @@ void UpdateStrideForAssertionPredicates::connect_initialized_assertion_predicate
   }
 }
 
-// First do the following to find useless Parse and Template Assertion Predicates:
-// 1. Mark all predicates useless
-// 2. Walk through the loop tree and iterate over all predicates above each head. All found predicates are marked
-//    useful.
-// 3. Those predicates that are still useless are removed in the next round of IGVN.
+// Do the following to find and eliminate useless Parse and Template Assertion Predicates:
+// 1. Mark all Parse and Template Assertion Predicates "maybe useful".
+// 2. Walk through the loop tree and iterate over all Predicates above each loop head. All found Parse and Template
+//    Assertion Predicates are marked "useful"
+// 3. Those Parse and Template Assertion Predicates that are still marked "maybe useful" are now marked "useless" and
+//    removed in the next round of IGVN.
 //
-// Note that we only mark predicates useless and not actually replace them now. We leave this work for IGVN which is
-// better suited for graph surgery.
+// Note that we only mark Predicates useless and not actually replace them now. We leave this work for IGVN which is
+// better suited for this kind of graph surgery. We also not want to replace conditions with a constant to avoid
+// interference with Predicate matching code when iterating through them.
 void EliminateUselessPredicates::eliminate() const {
   mark_all_predicates_non_useful();
   if (C->has_loops()) {
     mark_loop_associated_predicates_useful();
   }
-  add_useless_predicates_to_igvn_worklist();
+  mark_non_useful_predicates_useless();
 }
 
 void EliminateUselessPredicates::mark_all_predicates_non_useful() const {
@@ -1204,8 +1186,8 @@ void EliminateUselessPredicates::mark_loop_associated_predicates_useful() const 
 }
 
 // This visitor marks all visited Parse and Template Assertion Predicates useful.
-class PredicateUsefulMarker : public PredicateVisitor {
-  public:
+class PredicateUsefulMarkerVisitor : public PredicateVisitor {
+ public:
   using PredicateVisitor::visit;
 
   void visit(const ParsePredicate& parse_predicate) override {
@@ -1219,20 +1201,20 @@ class PredicateUsefulMarker : public PredicateVisitor {
 };
 
 void EliminateUselessPredicates::mark_useful_predicates_for_loop(IdealLoopTree* loop) {
-  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
-  const PredicateIterator predicate_iterator(entry);
-  PredicateUsefulMarker useful_marker;
-  predicate_iterator.for_each(useful_marker);
+  Node* loop_entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
+  const PredicateIterator predicate_iterator(loop_entry);
+  PredicateUsefulMarkerVisitor predicate_useful_marker_visitor;
+  predicate_iterator.for_each(predicate_useful_marker_visitor);
 }
 
-void EliminateUselessPredicates::add_useless_predicates_to_igvn_worklist() const {
-  add_useless_predicates_on_list_to_ignv_worklist(_parse_predicates);
-  add_useless_predicates_on_list_to_ignv_worklist(_template_assertion_predicate_opaques);
+void EliminateUselessPredicates::mark_non_useful_predicates_useless() const {
+  mark_non_useful_predicates_on_list_useless(_parse_predicates);
+  mark_non_useful_predicates_on_list_useless(_template_assertion_predicate_opaques);
 }
 
 template<class PredicateList>
-void EliminateUselessPredicates::add_useless_predicates_on_list_to_ignv_worklist(
-  const PredicateList& predicate_list) const {
+void EliminateUselessPredicates::mark_non_useful_predicates_on_list_useless(
+    const PredicateList& predicate_list) const {
   for (int i = 0; i < predicate_list.length(); i++) {
     auto predicate_node = predicate_list.at(i);
     if (!predicate_node->is_useful()) {

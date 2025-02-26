@@ -451,7 +451,8 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
 
   remove_useless_nodes(_macro_nodes,        useful); // remove useless macro nodes
   remove_useless_nodes(_parse_predicates,   useful); // remove useless Parse Predicate nodes
-  remove_useless_nodes(_template_assertion_predicate_opaques, useful); // remove useless Assertion Predicate opaque nodes
+  // Remove useless Template Assertion Predicate opaque nodes
+  remove_useless_nodes(_template_assertion_predicate_opaques, useful);
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps

@@ -2223,9 +2223,8 @@ const Type* ParsePredicateNode::Value(PhaseGVN* phase) const {
   }
   if (_predicate_state == PredicateState::Useless || phase->C->post_loop_opts_phase()) {
     return TypeTuple::IFTRUE;
-  } else {
-    return bottom_type();
   }
+  return bottom_type();
 }
 
 #ifndef PRODUCT

@@ -26,10 +26,10 @@
 #define SHARE_OPTO_OPAQUENODE_HPP
 
 #include "opto/node.hpp"
-#include "opto/opcodes.hpp"
-#include "subnode.hpp"
+#include "opto/subnode.hpp"
 
 enum class PredicateState;
+
 //------------------------------Opaque1Node------------------------------------
 // A node to prevent unwanted optimizations.  Allows constant folding.
 // Stops value-numbering, Ideal calls or Identity functions.
