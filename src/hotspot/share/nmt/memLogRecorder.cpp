@@ -88,6 +88,13 @@
 #endif
 
 static void* raw_realloc(void* old, size_t s)   { ALLOW_C_FUNCTION(::realloc, return ::realloc(old, s);) }
+#if defined(LINUX)
+  static size_t raw_malloc_size(void* ptr)   { ALLOW_C_FUNCTION(::malloc_usable_size, return ::malloc_usable_size(ptr);) }
+#elif defined(_WIN64)
+  static size_t raw_malloc_size(void* ptr)   { ALLOW_C_FUNCTION(::_msize, return ::_msize(ptr);) }
+#elif defined(__APPLE__)
+  static size_t raw_malloc_size(void* ptr)   { ALLOW_C_FUNCTION(::malloc_size, return ::malloc_size(ptr);) }
+#endif
 
 NMT_MemoryLogRecorder NMT_MemoryLogRecorder::_recorder;
 NMT_VirtualMemoryLogRecorder NMT_VirtualMemoryLogRecorder::_recorder;
@@ -227,14 +234,7 @@ void NMT_LogRecorder::logThreadName() {
 
 size_t NMT_LogRecorder::mallocSize(void* ptr)
 {
-#if defined(LINUX)
-  return ALLOW_C_FUNCTION(::malloc_usable_size, malloc_usable_size(ptr);)
-#elif defined(_WIN64)
-  return ALLOW_C_FUNCTION(::_msize, _msize(ptr);)
-#elif defined(__APPLE__)
-  return ALLOW_C_FUNCTION(::malloc_size, malloc_size(ptr);)
-#endif
-  return 0;
+  return raw_malloc_size(ptr);
 }
 
 #define IS_FREE(e)           ((e->requested == 0) && (e->old == nullptr))
