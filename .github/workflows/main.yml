@@ -168,19 +168,6 @@ jobs:
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.prepare.outputs.linux-x64 == 'true'
 
-  build-linux-x64-static-jdk:
-    name: linux-x64-static-jdk
-    needs: prepare
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-x64
-      make-target: 'static-jdk-image'
-      debug-levels: '[ "release" ]'
-      gcc-major-version: '10'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-    if: needs.prepare.outputs.linux-x64 == 'true'
-
   build-linux-x64-hs-nopch:
     name: linux-x64-hs-nopch
     needs: prepare
@@ -237,6 +224,21 @@ jobs:
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.prepare.outputs.linux-x64-variants == 'true'
+
+  build-linux-x64-static:
+    name: linux-x64-static
+    needs: prepare
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-x64
+      make-target: 'static-jdk-image'
+      # There are issues with fastdebug static build in GHA due to space limit.
+      # Only do release build for now.
+      debug-levels: '[ "release" ]'
+      gcc-major-version: '10'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+    if: needs.prepare.outputs.linux-x64 == 'true'
 
   build-linux-x64-static-libs:
     name: linux-x64-static-libs
