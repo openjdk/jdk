@@ -28,8 +28,6 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 
-#include "logging/logStream.hpp"
-
 G1SurvRateGroup::G1SurvRateGroup() :
   _stats_arrays_length(0),
   _num_added_regions(0),
