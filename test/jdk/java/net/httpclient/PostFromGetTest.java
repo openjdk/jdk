@@ -444,26 +444,27 @@ public class PostFromGetTest implements HttpServerAdapters {
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
+
         // HTTP/1.1
         HttpTestHandler h1_chunkHandler = new H1GetPostHandler();
         httpTestServer = HttpTestServer.create(HTTP_1_1, null, serverExecutor);
-        httpTestServer.addHandler(h1_chunkHandler, "/http1/x/");
-        httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/x/";
+        httpTestServer.addHandler(h1_chunkHandler, "/http1/PostFromGet/");
+        httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/PostFromGet/";
 
         httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext, serverExecutor);
-        httpsTestServer.addHandler(h1_chunkHandler, "/https1/x/");
-        httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/x/";
+        httpsTestServer.addHandler(h1_chunkHandler, "/https1/PostFromGet/");
+        httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/PostFromGet/";
 
         // HTTP/2
         HttpTestHandler h2_chunkedHandler = new H2GetPostHandler();
 
         http2TestServer = HttpTestServer.create(HTTP_2, null, serverExecutor);
-        http2TestServer.addHandler(h2_chunkedHandler, "/http2/x/");
-        http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/x/";
+        http2TestServer.addHandler(h2_chunkedHandler, "/http2/PostFromGet/");
+        http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/PostFromGet/";
 
         https2TestServer = HttpTestServer.create(HTTP_2, sslContext, serverExecutor);
-        https2TestServer.addHandler(h2_chunkedHandler, "/https2/x/");
-        https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/x/";
+        https2TestServer.addHandler(h2_chunkedHandler, "/https2/PostFromGet/");
+        https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/PostFromGet/";
 
         serverCount.addAndGet(4);
         httpTestServer.start();

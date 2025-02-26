@@ -402,6 +402,11 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 // start
                 bodySubscriber.whenSubscribed
                         .thenAccept(this::cancelIfFailed)
+                        // This dependent action might get executed from
+                        // within a call to subscribe/onSubscribe:
+                        // make sure requestMoreBody is not executed in
+                        // the same thread, as it triggers a scheduler loop
+                        // that might in turn invoke blocking code.
                         .thenAcceptAsync((s) -> requestMoreBody(),
                                 exchange.executor().safeDelegate());
             }
@@ -700,6 +705,10 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                     if (debug.on()) debug.log("initiating completion of bodySentCF");
                     bodySentCF.completeAsync(() -> this, exec);
                 } else {
+                    // make sure requestMoreBody is not executed in
+                    // the same thread, as it triggers a scheduler loop
+                    // that might in turn invoke blocking code, preventing
+                    // this method from returning immediately
                     exec.ensureExecutedAsync(this::requestMoreBody);
                 }
                 break;

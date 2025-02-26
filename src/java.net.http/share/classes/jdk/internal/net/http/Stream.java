@@ -1121,6 +1121,10 @@ class Stream<T> extends ExchangeImpl<T> {
             this.subscription = subscription;
             if (debug.on())
                 debug.log("RequestSubscriber: onSubscribe, request 1");
+            // make sure requestMoreBody is not executed in
+            // the same thread, as it triggers a scheduler loop
+            // that might in turn invoke blocking code, and prevent
+            // onSubscribe from returning immediately
             exchange.executor().safeDelegate().execute(this::tryRequestMore);
         }
 
