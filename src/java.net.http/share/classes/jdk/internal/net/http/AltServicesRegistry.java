@@ -28,13 +28,12 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -65,7 +64,7 @@ public final class AltServicesRegistry {
     // alt services which were marked invalid in context of an origin. the reason for
     // them being invalid can be connection issues (for example: the alt service didn't present the
     // certificate of the origin)
-    private final Set<InvalidAltSvc> invalidAltServices = new HashSet<>();
+    private final InvalidAltServices invalidAltServices = new InvalidAltServices();
 
     // used while dealing with both altServices Map and the invalidAltServices Set
     private final ReentrantLock registryLock = new ReentrantLock();
@@ -340,6 +339,36 @@ public final class AltServicesRegistry {
 
     }
 
+    // A size limited collection which keeps track of unique InvalidAltSvc instances.
+    // Upon reaching a pre-defined size limit, after adding newer entries, the collection
+    // then removes the eldest (the least recently added) entry from the collection.
+    // The implementation of this class is not thread safe and any concurrent access
+    // to instances of this class should be guarded externally.
+    private static final class InvalidAltServices extends LinkedHashMap<InvalidAltSvc, Void> {
+
+        private static final long serialVersionUID = 2772562283544644819L;
+
+        // we track only a reasonably small number of invalid alt services
+        private static final int MAX_TRACKED_INVALID_ALT_SVCS = 20;
+
+        @Override
+        protected boolean removeEldestEntry(final Map.Entry<InvalidAltSvc, Void> eldest) {
+            return size() > MAX_TRACKED_INVALID_ALT_SVCS;
+        }
+
+        private boolean contains(final InvalidAltSvc invalidAltSvc) {
+            return this.containsKey(invalidAltSvc);
+        }
+
+        private boolean addUnique(final InvalidAltSvc invalidAltSvc) {
+            if (contains(invalidAltSvc)) {
+                return false;
+            }
+            this.put(invalidAltSvc, null);
+            return true;
+        }
+    }
+
     // An alt-service is invalid for a particular origin
     private record InvalidAltSvc(Origin origin, AltService.Identity id) {
     }
@@ -504,7 +533,7 @@ public final class AltServicesRegistry {
             // we currently ban the alt-service for the origin permanently. In future,
             // if necessary, we can decide if this needs to be banned for only some
             // duration of time.
-            this.invalidAltServices.add(new InvalidAltSvc(origin, id));
+            this.invalidAltServices.addUnique(new InvalidAltSvc(origin, id));
             if (debug.on()) {
                 debug.log("AltService marked invalid: " + id + " for origin " + origin);
             }
