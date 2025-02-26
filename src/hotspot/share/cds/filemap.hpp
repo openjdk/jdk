@@ -270,12 +270,15 @@ public:
   FileMapHeader *header() const       { return _header; }
   static bool get_base_archive_name_from_header(const char* archive_name,
                                                 char** base_archive_name);
+  static bool is_preimage_static_archive(const char* file);
+
   bool init_from_file(int fd);
 
   void log_paths(const char* msg, int start_idx, int end_idx);
 
   FileMapInfo(const char* full_apth, bool is_static);
   ~FileMapInfo();
+  static void free_current_info();
 
   // Accessors
   int    compute_header_crc()  const { return header()->compute_crc(); }
@@ -397,7 +400,7 @@ public:
   // The offset of the (exclusive) end of the last core region in this archive, relative to SharedBaseAddress
   size_t mapping_end_offset()  const { return last_core_region()->mapping_end_offset(); }
 
-  char* mapped_base()    const { return first_core_region()->mapped_base(); }
+  char* mapped_base()    const { return header()->mapped_base_address();    }
   char* mapped_end()     const { return last_core_region()->mapped_end();   }
 
   // Non-zero if the archive needs to be mapped a non-default location due to ASLR.
