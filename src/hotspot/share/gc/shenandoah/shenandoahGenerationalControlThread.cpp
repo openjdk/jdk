@@ -50,7 +50,7 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _control_lock(Mutex::nosafepoint - 2, "ShenandoahGCRequest_lock", true),
   _requested_gc_cause(GCCause::_no_gc),
   _requested_generation(nullptr),
-  _mode(none),
+  _gc_mode(none),
   _degen_point(ShenandoahGC::_degenerated_unset),
   _heap(ShenandoahGenerationalHeap::heap()),
   _age_period(0) {
@@ -140,16 +140,16 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
 
   GCMode mode;
   if (ShenandoahCollectorPolicy::is_allocation_failure(request.cause)) {
-    mode = prepare_for_allocation_failure_request(request);
+    mode = prepare_for_allocation_failure_gc(request);
   } else if (ShenandoahCollectorPolicy::is_explicit_gc(request.cause)) {
-    mode = prepare_for_explicit_gc_request(request);
+    mode = prepare_for_explicit_gc(request);
   } else {
-    mode = prepare_for_concurrent_gc_request(request);
+    mode = prepare_for_concurrent_gc(request);
   }
   set_gc_mode(ml, mode);
 }
 
-ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_allocation_failure_request(ShenandoahGCRequest &request) {
+ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_allocation_failure_gc(ShenandoahGCRequest &request) {
 
   if (_degen_point == ShenandoahGC::_degenerated_unset) {
     _degen_point = ShenandoahGC::_degenerated_outside_cycle;
@@ -179,7 +179,7 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
   }
 }
 
-ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_explicit_gc_request(ShenandoahGCRequest &request) {
+ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
   ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
   request.generation = _heap->global_generation();
   global_heuristics->log_trigger("GC request (%s)", GCCause::to_string(request.cause));
@@ -195,7 +195,7 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
   }
 }
 
-ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_concurrent_gc_request(ShenandoahGCRequest &request) {
+ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_concurrent_gc(const ShenandoahGCRequest &request) const {
   assert(!(request.generation->is_old() && _heap->old_generation()->is_doing_mixed_evacuations()),
              "Old heuristic should not request cycles while it waits for mixed evacuations");
 
@@ -219,7 +219,7 @@ void ShenandoahGenerationalControlThread::maybe_set_aging_cycle() {
   }
 }
 
-void ShenandoahGenerationalControlThread::run_gc_cycle(ShenandoahGCRequest request) {
+void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest& request) {
 
   log_debug(gc, thread)("Starting GC (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name());
   assert(gc_mode() != none, "GC mode cannot be none here");
@@ -331,7 +331,7 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(ShenandoahGCRequest reque
     gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name(), GCCause::to_string(_heap->cancelled_cause()));
 }
 
-void ShenandoahGenerationalControlThread::process_phase_timings() {
+void ShenandoahGenerationalControlThread::process_phase_timings() const {
   // Commit worker statistics to cycle data
   _heap->phase_timings()->flush_par_workers_to_cycle();
   if (ShenandoahPacing) {
@@ -385,7 +385,7 @@ void ShenandoahGenerationalControlThread::process_phase_timings() {
 //      |        v                                   v       |
 //      +--->  Global Degen +--------------------> Full <----+
 //
-void ShenandoahGenerationalControlThread::service_concurrent_normal_cycle(ShenandoahGCRequest request) {
+void ShenandoahGenerationalControlThread::service_concurrent_normal_cycle(const ShenandoahGCRequest& request) {
   GCIdMark gc_id_mark;
   log_info(gc, ergo)("Start GC cycle (%s)", request.generation->name());
   if (request.generation->is_old()) {
@@ -395,7 +395,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_normal_cycle(Shenan
   }
 }
 
-void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(ShenandoahGCRequest request) {
+void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const ShenandoahGCRequest& request) {
   ShenandoahOldGeneration* old_generation = _heap->old_generation();
   ShenandoahYoungGeneration* young_generation = _heap->young_generation();
   ShenandoahOldGeneration::State original_state = old_generation->state();
@@ -629,7 +629,7 @@ void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause 
   _degen_point = ShenandoahGC::_degenerated_unset;
 }
 
-void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(ShenandoahGCRequest request) {
+void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const ShenandoahGCRequest& request) {
   assert(_degen_point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
 
   GCIdMark gc_id_mark;
@@ -790,10 +790,10 @@ void ShenandoahGenerationalControlThread::set_gc_mode(GCMode new_mode) {
 }
 
 void ShenandoahGenerationalControlThread::set_gc_mode(MonitorLocker& ml, GCMode new_mode) {
-  if (_mode != new_mode) {
-    log_debug(gc, thread)("Transition from: %s to: %s", gc_mode_name(_mode), gc_mode_name(new_mode));
-    EventMark event("Control thread transition from: %s, to %s", gc_mode_name(_mode), gc_mode_name(new_mode));
-    _mode = new_mode;
+  if (_gc_mode != new_mode) {
+    log_debug(gc, thread)("Transition from: %s to: %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
+    EventMark event("Control thread transition from: %s, to %s", gc_mode_name(_gc_mode), gc_mode_name(new_mode));
+    _gc_mode = new_mode;
     ml.notify_all();
   }
 }

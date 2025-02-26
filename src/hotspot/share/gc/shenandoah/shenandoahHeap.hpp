@@ -430,7 +430,11 @@ public:
 private:
   void manage_satb_barrier(bool active);
 
+  // Records the time of the first successful cancellation request. This is used to measure
+  // the responsiveness of the heuristic when starting a cycle.
   double _cancel_requested_time;
+
+  // Indicates the reason the current GC has been cancelled (GCCause::_no_gc means the gc is not cancelled).
   ShenandoahSharedEnumFlag<GCCause::Cause> _cancelled_gc;
 
   // Returns true if cancel request was successfully communicated.
@@ -440,7 +444,7 @@ private:
   bool try_cancel_gc(GCCause::Cause cause);
 
 public:
-  // Returns true if and only if cancellation request was successfully communicated.
+  // True if gc has been cancelled
   inline bool cancelled_gc() const;
 
   // Used by workers in the GC cycle to detect cancellation and honor STS requirements
@@ -449,9 +453,13 @@ public:
   // This indicates the reason the last GC cycle was cancelled.
   inline GCCause::Cause cancelled_cause() const;
 
+  // Clears the cancellation cause and optionally resets the oom handler (cancelling an
+  // old mark does _not_ touch the oom handler).
   inline void clear_cancelled_gc(bool clear_oom_handler = true);
 
   void cancel_concurrent_mark();
+
+  // Returns true if and only if this call caused a gc to be cancelled.
   bool cancel_gc(GCCause::Cause cause);
 
   // Returns true if the soft maximum heap has been changed using management APIs.
@@ -684,7 +692,9 @@ private:
   HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
-  bool retry_allocation(size_t original_full_gc_count) const;
+
+  // We want to retry an unsuccessful attempt at allocation until at least a full gc.
+  bool should_retry_allocation(size_t original_full_gc_count) const;
 
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);

@@ -29,7 +29,6 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
-#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "runtime/mutexLocker.hpp"
 
@@ -72,7 +71,9 @@ private:
   ShenandoahGeneration* _requested_generation;
 
   // The mode is read frequently by requesting threads and only ever written by the control thread.
-  volatile GCMode _mode;
+  // This may be read without taking the _control_lock, but should be read again under the lock
+  // before making any state changes (double-checked locking idiom).
+  volatile GCMode _gc_mode;
 
   // Only the control thread knows the correct degeneration point. This is used to have the
   // control thread resume a STW cycle from the point where the concurrent cycle was cancelled.
@@ -101,22 +102,24 @@ public:
 
   // Returns the current state of the control thread
   GCMode gc_mode() const {
-    return _mode;
+    return _gc_mode;
   }
 private:
   // Returns true if the cycle has been cancelled or degenerated.
   bool check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point);
 
   // Executes one GC cycle
-  void run_gc_cycle(ShenandoahGCRequest request);
+  void run_gc_cycle(const ShenandoahGCRequest& request);
 
   // Returns true if the old generation marking completed (i.e., final mark executed for old generation).
   bool resume_concurrent_old_cycle(ShenandoahOldGeneration* generation, GCCause::Cause cause);
+
+  // Various service methods handle different gc cycle types
   void service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause, bool reset_old_bitmap_specially);
   void service_stw_full_cycle(GCCause::Cause cause);
-  void service_stw_degenerated_cycle(ShenandoahGCRequest request);
-  void service_concurrent_normal_cycle(ShenandoahGCRequest request);
-  void service_concurrent_old_cycle(ShenandoahGCRequest cause);
+  void service_stw_degenerated_cycle(const ShenandoahGCRequest& request);
+  void service_concurrent_normal_cycle(const ShenandoahGCRequest& request);
+  void service_concurrent_old_cycle(const ShenandoahGCRequest& request);
 
   void notify_gc_waiters();
 
@@ -126,28 +129,37 @@ private:
   // Returns true if the old generation marking was interrupted to allow a young cycle.
   bool preempt_old_marking(ShenandoahGeneration* generation);
 
-  void process_phase_timings();
+  // Flushes cycle timings to global timings and prints the phase timings for the last completed cycle.
+  void process_phase_timings() const;
 
+  // Set the gc mode and post a notification if it has changed. The overloaded variant should be used
+  // when the _control_lock is already held.
   void set_gc_mode(GCMode new_mode);
   void set_gc_mode(MonitorLocker& ml, GCMode new_mode);
+
+  // Return printable name for the given gc mode.
   static const char* gc_mode_name(GCMode mode);
 
   // Takes the request lock and updates the requested cause and generation, then notifies the control thread.
+  // The overloaded variant should be used when the _control_lock is already held.
   void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
   void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
 
   // Notifies the control thread, but does not update the requested cause or generation.
+  // The overloaded variant should be used when the _control_lock is already held.
   void notify_cancellation(GCCause::Cause cause);
   void notify_cancellation(MonitorLocker& ml, GCCause::Cause cause);
 
+  // Configure the heap to age objects and regions if the aging period has elapsed.
   void maybe_set_aging_cycle();
+
+  // Take the _control_lock and check for a request to run a gc cycle. If a request is found,
+  // the `prepare` methods are used to configure the heap and update heuristics accordingly.
   void check_for_request(ShenandoahGCRequest& request);
 
-  GCMode prepare_for_allocation_failure_request(ShenandoahGCRequest &request);
-
-  GCMode prepare_for_explicit_gc_request(ShenandoahGCRequest &request);
-
-  GCMode prepare_for_concurrent_gc_request(ShenandoahGCRequest &request);
+  GCMode prepare_for_allocation_failure_gc(ShenandoahGCRequest &request);
+  GCMode prepare_for_explicit_gc(ShenandoahGCRequest &request) const;
+  GCMode prepare_for_concurrent_gc(const ShenandoahGCRequest &request) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP
