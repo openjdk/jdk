@@ -2033,16 +2033,14 @@ void ShenandoahHeap::stw_weak_refs(bool full_gc) {
   gc_generation()->ref_processor()->process_references(phase, workers(), false /* concurrent */);
 }
 
-void ShenandoahHeap::prepare_update_heap_references(bool concurrent) {
+void ShenandoahHeap::prepare_update_heap_references() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
 
   // Evacuation is over, no GCLABs are needed anymore. GCLABs are under URWM, so we need to
   // make them parsable for update code to work correctly. Plus, we can compute new sizes
   // for future GCLABs here.
   if (UseTLAB) {
-    ShenandoahGCPhase phase(concurrent ?
-                            ShenandoahPhaseTimings::init_update_refs_manage_gclabs :
-                            ShenandoahPhaseTimings::degen_gc_init_update_refs_manage_gclabs);
+    ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_init_update_refs_manage_gclabs);
     gclabs_retire(ResizeTLAB);
   }
 

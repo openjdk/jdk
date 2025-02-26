@@ -478,7 +478,7 @@ private:
   // Concurrent class unloading support
   void do_class_unloading();
   // Reference updating
-  void prepare_update_heap_references(bool concurrent);
+  void prepare_update_heap_references();
 
   // Retires LABs used for evacuation
   void concurrent_prepare_for_update_refs();

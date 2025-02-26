@@ -102,6 +102,16 @@ ShenandoahGC::ShenandoahDegenPoint ShenandoahConcurrentGC::degen_point() const {
   return _degen_point;
 }
 
+void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap* const heap) {
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+  const char* msg = "Concurrent Update Refs Prepare";
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_update_refs_prepare);
+  EventMark em("%s", msg);
+
+  // Evacuation is complete, retire gc labs and change gc state
+  heap->concurrent_prepare_for_update_refs();
+}
+
 bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
@@ -191,8 +201,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       return false;
     }
 
-    // Evacuation is complete, retire gc labs
-    heap->concurrent_prepare_for_update_refs();
+    entry_concurrent_update_refs_prepare(heap);
 
     // Perform update-refs phase.
     if (ShenandoahVerify || ShenandoahPacing) {
@@ -215,7 +224,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     // Update references freed up collection set, kick the cleanup to reclaim the space.
     entry_cleanup_complete();
   } else {
-    if (!op_final_roots()) {
+    if (!entry_final_roots()) {
       assert(_degen_point != _degenerated_unset, "Need to know where to start degenerated cycle");
       return false;
     }
@@ -235,7 +244,9 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 }
 
 bool ShenandoahConcurrentGC::complete_abbreviated_cycle() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  shenandoah_assert_generational();
+
+  ShenandoahGenerationalHeap* const heap = ShenandoahGenerationalHeap::heap();
 
   // We chose not to evacuate because we found sufficient immediate garbage.
   // However, there may still be regions to promote in place, so do that now.
@@ -256,7 +267,7 @@ bool ShenandoahConcurrentGC::complete_abbreviated_cycle() {
   // At this point, the cycle is effectively complete. If the cycle has been cancelled here,
   // the control thread will detect it on its next iteration and run a degenerated young cycle.
   if (!_generation->is_old()) {
-    ShenandoahGenerationalHeap::heap()->update_region_ages(_generation->complete_marking_context());
+    heap->update_region_ages(_generation->complete_marking_context());
   }
 
   if (!heap->is_concurrent_old_mark_in_progress()) {
@@ -563,16 +574,9 @@ void ShenandoahConcurrentGC::entry_evacuate() {
 void ShenandoahConcurrentGC::entry_promote_in_place() const {
   shenandoah_assert_generational();
 
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-
-  static const char* msg = "Promote in place";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::promote_in_place);
-  EventMark em("%s", msg);
-
-  ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
-                              "promote in place");
+  ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::promote_in_place);
+  ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::promote_in_place);
+  EventMark em("%s", "Promote in place");
 
   ShenandoahGenerationalHeap::heap()->promote_regions_in_place(true);
 }
@@ -682,6 +686,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
   }
 
   if (ShenandoahVerify) {
+    ShenandoahGCPhase v(ShenandoahPhaseTimings::init_mark_verify);
     heap->verifier()->verify_before_concmark();
   }
 
@@ -765,6 +770,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
       }
 
       if (ShenandoahVerify) {
+        ShenandoahGCPhase v(ShenandoahPhaseTimings::final_mark_verify);
         heap->verifier()->verify_before_evacuation();
       }
 
@@ -781,6 +787,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
       }
     } else {
       if (ShenandoahVerify) {
+        ShenandoahGCPhase v(ShenandoahPhaseTimings::final_mark_verify);
         if (has_in_place_promotions(heap)) {
           heap->verifier()->verify_after_concmark_with_promotions();
         } else {
@@ -1097,6 +1104,7 @@ void ShenandoahConcurrentGC::op_evacuate() {
 void ShenandoahConcurrentGC::op_init_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (ShenandoahVerify) {
+    ShenandoahGCPhase v(ShenandoahPhaseTimings::init_update_refs_verify);
     heap->verifier()->verify_before_update_refs();
   }
   if (ShenandoahPacing) {
@@ -1184,6 +1192,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   }
 
   if (ShenandoahVerify) {
+    ShenandoahGCPhase v(ShenandoahPhaseTimings::final_update_refs_verify);
     heap->verifier()->verify_after_update_refs();
   }
 
@@ -1194,11 +1203,17 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   heap->rebuild_free_set(true /*concurrent*/);
 }
 
-bool ShenandoahConcurrentGC::op_final_roots() {
+bool ShenandoahConcurrentGC::entry_final_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+
+
   const char* msg = conc_final_roots_event_message();
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::final_roots);
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_final_roots);
   EventMark em("%s", msg);
+  ShenandoahWorkerScope scope(heap->workers(),
+                              ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
+                              msg);
 
   if (!heap->mode()->is_generational()) {
     heap->concurrent_final_roots();
@@ -1274,9 +1289,9 @@ const char* ShenandoahConcurrentGC::conc_reset_event_message() const {
 
 const char* ShenandoahConcurrentGC::final_roots_event_message() const {
   if (ShenandoahHeap::heap()->unload_classes()) {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Final Roots", " (unload classes)");
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Verify Final Roots", " (unload classes)");
   } else {
-    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Final Roots", "");
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Verify Final Roots", "");
   }
 }
 

@@ -60,6 +60,8 @@ public:
   bool collect(GCCause::Cause cause) override;
   ShenandoahDegenPoint degen_point() const;
 
+  void entry_concurrent_update_refs_prepare(ShenandoahHeap* heap);
+
   // Return true if this cycle found enough immediate garbage to skip evacuation
   bool abbreviated() const { return _abbreviated; }
 
@@ -97,6 +99,9 @@ protected:
   void entry_update_refs();
   void entry_cleanup_complete();
 
+  // This is the last phase of a cycle which performs no evacuations
+  bool entry_final_roots();
+
   // Called when the collection set is empty, but the generational mode has regions to promote in place
   void entry_promote_in_place() const;
 
@@ -118,7 +123,6 @@ protected:
   void op_update_thread_roots();
   void op_final_update_refs();
 
-  bool op_final_roots();
   void op_verify_final_roots();
   void op_cleanup_complete();
 
