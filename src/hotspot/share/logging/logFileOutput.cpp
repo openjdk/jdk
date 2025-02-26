@@ -467,12 +467,14 @@ void LogFileOutput::describe(outputStream *out) {
 }
 
 void LogFileOutput::write_file_unique_time_message(const char* message) {
-  LogTagSet& tagset = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
-  LogDecorations decorations(LogLevel::Info, tagset, tagset.decorators());
+  if (LogDateInFileOnStartAndRotation) {
+    LogTagSet& tagset = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
+    LogDecorations decorations(LogLevel::Info, tagset, tagset.decorators());
 
-  stringStream st(os::iso8601_timestamp_size);
-  char buf[os::iso8601_timestamp_size];
-  char* result = os::iso8601_time(os::javaTimeMillis(), buf, os::iso8601_timestamp_size, true);
-  st.print("%s %s", message, result);
-  this->write_internal(decorations, st.freeze());
+    stringStream st(os::iso8601_timestamp_size);
+    char buf[os::iso8601_timestamp_size];
+    char* result = os::iso8601_time(os::javaTimeMillis(), buf, os::iso8601_timestamp_size, true);
+    st.print("%s %s", message, result);
+    this->write_internal(decorations, st.freeze());
+  }
 }

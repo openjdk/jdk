@@ -1868,6 +1868,9 @@ const int ObjectAlignmentInBytes = 8;
              "Use the FP register for holding the frame pointer "           \
              "and not as a general purpose register.")                      \
                                                                             \
+  product(bool, LogDateInFileOnStartAndRotation, true,                      \
+          "When a new log file is created by Unified Logging, log the "     \
+          "current date and time inside the file as a ISO8601 timestamp.")  \
   product(size_t, AsyncLogBufferSize, 2*M,                                  \
           "Memory budget (in bytes) for the buffer of Asynchronous "        \
           "Logging (-Xlog:async).")                                         \
