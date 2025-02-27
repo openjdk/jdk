@@ -42,9 +42,9 @@ import java.io.UnsupportedEncodingException;
  * default values for the {@code Handler}'s {@code Filter}, {@code Formatter},
  * and {@code Level}.  See the specific documentation for each concrete
  * {@code Handler} class.
- *
- * @implNote Implementations of {@code Handler} should be thread-safe. Handlers
- * are expected to be invoked concurrently from arbitrary threads. However,
+ * <p>
+ * Implementations of {@code Handler} should be thread-safe. Handlers are
+ * expected to be invoked concurrently from arbitrary threads. However,
  * over-use of synchronization may result in unwanted thread contention,
  * performance issues or even deadlocking.
  *
