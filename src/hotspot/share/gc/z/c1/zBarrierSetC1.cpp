@@ -532,16 +532,22 @@ static address generate_c1_store_runtime_stub(BufferBlob* blob, bool self_healin
 
 bool ZBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* blob) {
   _load_barrier_on_oop_field_preloaded_runtime_stub =
-    generate_c1_load_runtime_stub(blob, ON_STRONG_OOP_REF, "load_barrier_on_oop_field_preloaded_runtime_stub");
+      generate_c1_load_runtime_stub(blob, ON_STRONG_OOP_REF, "load_barrier_on_oop_field_preloaded_runtime_stub");
+  if (_load_barrier_on_oop_field_preloaded_runtime_stub == nullptr) {
+    return false;
+  }
   _load_barrier_on_weak_oop_field_preloaded_runtime_stub =
-    generate_c1_load_runtime_stub(blob, ON_WEAK_OOP_REF, "load_barrier_on_weak_oop_field_preloaded_runtime_stub");
+      generate_c1_load_runtime_stub(blob, ON_WEAK_OOP_REF, "load_barrier_on_weak_oop_field_preloaded_runtime_stub");
+  if (_load_barrier_on_weak_oop_field_preloaded_runtime_stub == nullptr) {
+    return false;
+  }
 
   _store_barrier_on_oop_field_with_healing =
-    generate_c1_store_runtime_stub(blob, true /* self_healing */, "store_barrier_on_oop_field_with_healing");
+      generate_c1_store_runtime_stub(blob, true /* self_healing */, "store_barrier_on_oop_field_with_healing");
+  if (_store_barrier_on_oop_field_with_healing == nullptr) {
+    return false;
+  }
   _store_barrier_on_oop_field_without_healing =
-    generate_c1_store_runtime_stub(blob, false /* self_healing */, "store_barrier_on_oop_field_without_healing");
-  return _load_barrier_on_oop_field_preloaded_runtime_stub != nullptr &&
-         _load_barrier_on_weak_oop_field_preloaded_runtime_stub != nullptr &&
-         _store_barrier_on_oop_field_with_healing != nullptr &&
-         _store_barrier_on_oop_field_without_healing != nullptr;
+      generate_c1_store_runtime_stub(blob, false /* self_healing */, "store_barrier_on_oop_field_without_healing");
+  return _store_barrier_on_oop_field_without_healing != nullptr;
 }
