@@ -725,7 +725,6 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
   }
 }
 
-
 TEST_VM_F(NMTVMATreeTest, CommitUseFlagInplace) {
   Tree tree;
   VMATree::RegionData rd1(si[0], mtTest);
