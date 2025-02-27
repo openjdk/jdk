@@ -22,22 +22,6 @@
  */
 
 /*
- * @test id=testScenario1
- * @bug 8071693 8347826
- * @summary Verify that the Introspector finds default methods inherited
- *          from interfaces
- * @run main DefaultMethodBeanPropertyTest testScenario1
- */
-
-/*
- * @test id=testScenario2
- * @bug 8071693 8347826
- * @summary Verify that the Introspector finds default methods inherited
- *          from interfaces
- * @run main DefaultMethodBeanPropertyTest testScenario2
- */
-
-/*
  * @test
  * @bug 8071693 8347826
  * @summary Verify that the Introspector finds default methods inherited
