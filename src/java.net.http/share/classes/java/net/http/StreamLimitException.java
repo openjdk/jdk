@@ -94,6 +94,11 @@ public final class StreamLimitException extends IOException {
 
     @java.io.Serial
     private static final long serialVersionUID = 2614981180406031159L;
+
+    /**
+     * The version of the HTTP protocol on which the stream limit exception occurred
+     * @serial
+     */
     private final Version version;
 
     /**
