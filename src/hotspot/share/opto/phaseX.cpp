@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
@@ -1731,7 +1730,9 @@ void PhaseIterGVN::remove_speculative_types()  {
 bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
   switch (n->Opcode()) {
     case Op_DivI:
-    case Op_ModI: {
+    case Op_ModI:
+    case Op_UDivI:
+    case Op_UModI: {
       // Type of divisor includes 0?
       if (type(n->in(2)) == Type::TOP) {
         // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
@@ -1741,7 +1742,9 @@ bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
       return (type_divisor->_hi < 0 || type_divisor->_lo > 0);
     }
     case Op_DivL:
-    case Op_ModL: {
+    case Op_ModL:
+    case Op_UDivL:
+    case Op_UModL: {
       // Type of divisor includes 0?
       if (type(n->in(2)) == Type::TOP) {
         // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.

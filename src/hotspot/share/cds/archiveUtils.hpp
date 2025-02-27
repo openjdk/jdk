@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "runtime/nonJavaThread.hpp"
+#include "runtime/semaphore.hpp"
 
 class BootstrapInfo;
 class ReservedSpace;
@@ -253,11 +255,23 @@ public:
 };
 
 class ArchiveUtils {
+  template <typename T> static Array<T>* archive_non_ptr_array(GrowableArray<T>* tmp_array);
+  template <typename T> static Array<T>* archive_ptr_array(GrowableArray<T>* tmp_array);
+
 public:
   static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
   static bool has_aot_initialized_mirror(InstanceKlass* src_ik);
-  template <typename T> static Array<T>* archive_array(GrowableArray<T>* tmp_array);
+
+  template <typename T, ENABLE_IF(!std::is_pointer<T>::value)>
+  static Array<T>* archive_array(GrowableArray<T>* tmp_array) {
+    return archive_non_ptr_array(tmp_array);
+  }
+
+  template <typename T, ENABLE_IF(std::is_pointer<T>::value)>
+  static Array<T>* archive_array(GrowableArray<T>* tmp_array) {
+    return archive_ptr_array(tmp_array);
+  }
 
   // The following functions translate between a u4 offset and an address in the
   // the range of the mapped CDS archive (e.g., Metaspace::is_in_shared_metaspace()).
@@ -342,6 +356,76 @@ public:
   // This class is trivially copyable and assignable.
   HeapRootSegments(const HeapRootSegments&) = default;
   HeapRootSegments& operator=(const HeapRootSegments&) = default;
+};
+
+class ArchiveWorkers;
+
+// A task to be worked on by worker threads
+class ArchiveWorkerTask : public CHeapObj<mtInternal> {
+  friend class ArchiveWorkers;
+private:
+  const char* _name;
+  int _max_chunks;
+  volatile int _chunk;
+
+  void run();
+
+  void configure_max_chunks(int max_chunks);
+
+public:
+  ArchiveWorkerTask(const char* name) :
+      _name(name), _max_chunks(0), _chunk(0) {}
+  const char* name() const { return _name; }
+  virtual void work(int chunk, int max_chunks) = 0;
+};
+
+class ArchiveWorkerThread : public NamedThread {
+  friend class ArchiveWorkers;
+private:
+  ArchiveWorkers* const _pool;
+
+  void post_run() override;
+
+public:
+  ArchiveWorkerThread(ArchiveWorkers* pool);
+  const char* type_name() const override { return "Archive Worker Thread"; }
+  void run() override;
+};
+
+// Special archive workers. The goal for this implementation is to startup fast,
+// distribute spiky workloads efficiently, and shutdown immediately after use.
+// This makes the implementation quite different from the normal GC worker pool.
+class ArchiveWorkers : public StackObj {
+  friend class ArchiveWorkerThread;
+private:
+  // Target number of chunks per worker. This should be large enough to even
+  // out work imbalance, and small enough to keep bookkeeping overheads low.
+  static constexpr int CHUNKS_PER_WORKER = 4;
+  static int max_workers();
+
+  Semaphore _end_semaphore;
+
+  int _num_workers;
+  int _started_workers;
+  int _finish_tokens;
+
+  typedef enum { UNUSED, WORKING, SHUTDOWN } State;
+  volatile State _state;
+
+  ArchiveWorkerTask* _task;
+
+  void run_as_worker();
+  void start_worker_if_needed();
+
+  void run_task_single(ArchiveWorkerTask* task);
+  void run_task_multi(ArchiveWorkerTask* task);
+
+  bool is_parallel();
+
+public:
+  ArchiveWorkers();
+  ~ArchiveWorkers();
+  void run_task(ArchiveWorkerTask* task);
 };
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP

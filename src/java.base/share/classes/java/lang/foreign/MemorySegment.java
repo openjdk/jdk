@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,14 @@
 
 package java.lang.foreign;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentBulkOperations;
+import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.javac.Restricted;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.vm.annotation.ForceInline;
+
 import java.io.UncheckedIOException;
 import java.lang.foreign.ValueLayout.OfInt;
 import java.nio.Buffer;
@@ -41,13 +49,6 @@ import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.SegmentBulkOperations;
-import jdk.internal.foreign.SegmentFactories;
-import jdk.internal.javac.Restricted;
-import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * A memory segment provides access to a contiguous region of memory.
@@ -755,14 +756,14 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Returns a new memory segment with the same address and size as this segment, but
-     * with the provided scope. As such, the returned segment cannot be accessed after
-     * the provided arena has been closed. Moreover, the returned segment can be
+     * with the provided arena's scope. As such, the returned segment cannot be accessed
+     * after the provided arena has been closed. Moreover, the returned segment can be
      * accessed compatibly with the confinement restrictions associated with the provided
      * arena: that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
      * the returned segment can only be accessed by the arena's owner thread, regardless
      * of the confinement restrictions associated with this segment. In other words, this
      * method returns a segment that can be used as any other segment allocated using the
-     * provided arena. However, The returned segment is backed by the same memory region
+     * provided arena. However, the returned segment is backed by the same memory region
      * as that of the original segment. As such, the region of memory backing the
      * returned segment is deallocated only when this segment's arena is closed.
      * This might lead to <em>use-after-free</em> issues, as the returned segment can be
@@ -770,15 +771,15 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * segment's arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
-     * provided scope becomes invalid. This cleanup action receives a fresh memory
+     * provided arena's scope becomes invalid. This cleanup action receives a fresh memory
      * segment that is obtained from this segment as follows:
      * {@snippet lang=java :
      * MemorySegment cleanupSegment = MemorySegment.ofAddress(this.address())
      *                                             .reinterpret(byteSize());
      * }
      * That is, the cleanup action receives a segment that is associated with the global
-     * scope, and is accessible from any thread. The size of the segment accepted by the
-     * cleanup action is {@link #byteSize()}.
+     * arena's scope, and is accessible from any thread. The size of the segment accepted
+     * by the cleanup action is {@link #byteSize()}.
      * <p>
      * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
      * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
@@ -789,8 +790,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @apiNote The cleanup action (if present) should take care not to leak the received
      *          segment to external clients that might access the segment after its
      *          backing region of memory is no longer available. Furthermore, if the
-     *          provided scope is the scope of an {@linkplain Arena#ofAuto() automatic arena},
-     *          the cleanup action must not prevent the scope from becoming
+     *          provided arena is an {@linkplain Arena#ofAuto() automatic arena},
+     *          the cleanup action must not prevent the arena from becoming
      *          {@linkplain java.lang.ref##reachability unreachable}.
      *          A failure to do so will permanently prevent the regions of memory
      *          allocated by the automatic arena from being deallocated.
@@ -811,14 +812,14 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Returns a new segment with the same address as this segment, but with the provided
-     * size and scope. As such, the returned segment cannot be accessed after the
-     * provided arena has been closed. Moreover, if the returned segment can be accessed
-     * compatibly with the confinement restrictions associated with the provided arena:
-     * that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
+     * size and the provided arena's scope. As such, the returned segment cannot be
+     * accessed after the provided arena has been closed. Moreover, if the returned
+     * segment can be accessed compatibly with the confinement restrictions associated
+     * with the provided arena: that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
      * the returned segment can only be accessed by the arena's owner thread, regardless
      * of the confinement restrictions associated with this segment. In other words, this
      * method returns a segment that can be used as any other segment allocated using the
-     * provided arena. However, The returned segment is backed by the same memory region
+     * provided arena. However, the returned segment is backed by the same memory region
      * as that of the original segment. As such, the region of memory backing the
      * returned segment is deallocated only when this segment's arena is closed.
      * This might lead to <em>use-after-free</em> issues, as the returned segment can be
@@ -826,15 +827,15 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * segment's arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
-     * provided scope becomes invalid. This cleanup action receives a fresh memory
+     * provided arena's scope becomes invalid. This cleanup action receives a fresh memory
      * segment that is obtained from this segment as follows:
      * {@snippet lang=java :
      * MemorySegment cleanupSegment = MemorySegment.ofAddress(this.address())
      *                                             .reinterpret(newSize);
      * }
      * That is, the cleanup action receives a segment that is associated with the global
-     * scope, and is accessible from any thread. The size of the segment accepted by the
-     * cleanup action is {@code newSize}.
+     * arena's scope, and is accessible from any thread. The size of the segment accepted
+     * by the cleanup action is {@code newSize}.
      * <p>
      * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
      * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
@@ -845,8 +846,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @apiNote The cleanup action (if present) should take care not to leak the received
      *          segment to external clients that might access the segment after its
      *          backing region of memory is no longer available. Furthermore, if the
-     *          provided scope is the scope of an {@linkplain Arena#ofAuto() automatic arena},
-     *          the cleanup action must not prevent the scope from becoming
+     *          provided arena is an {@linkplain Arena#ofAuto() automatic arena},
+     *          the cleanup action must not prevent the arena from becoming
      *          {@linkplain java.lang.ref##reachability unreachable}.
      *          A failure to do so will permanently prevent the regions of memory
      *          allocated by the automatic arena from being deallocated.
@@ -1277,9 +1278,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if the size of the string is greater than the
      *         largest string supported by the platform
      * @throws IndexOutOfBoundsException if {@code offset < 0}
-     * @throws IndexOutOfBoundsException if {@code offset > byteSize() - (B + 1)}, where
-     *         {@code B} is the size, in bytes, of the string encoded using UTF-8 charset
-     *         {@code str.getBytes(StandardCharsets.UTF_8).length})
+     * @throws IndexOutOfBoundsException if no string terminator (e.g. {@code '\0'}) is
+     *         present in this segment between the given {@code offset} and the end of
+     *         this segment.
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1315,14 +1316,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException  if the size of the string is greater than the
      *         largest string supported by the platform
      * @throws IndexOutOfBoundsException if {@code offset < 0}
-     * @throws IndexOutOfBoundsException if {@code offset > byteSize() - (B + N)}, where:
-     *         <ul>
-     *             <li>{@code B} is the size, in bytes, of the string encoded using the
-     *             provided charset (e.g. {@code str.getBytes(charset).length});</li>
-     *             <li>{@code N} is the size (in bytes) of the terminator char according
-     *             to the provided charset. For instance, this is 1 for
-     *             {@link StandardCharsets#US_ASCII} and 2 for {@link StandardCharsets#UTF_16}.</li>
-     *         </ul>
+     * @throws IndexOutOfBoundsException if no string terminator (e.g. {@code '\0'}) is
+     *         present in this segment between the given {@code offset} and the end of
+     *         this segment. The byte size of the string terminator depends on the
+     *         selected {@code charset}. For instance, this is 1 for
+     *         {@link StandardCharsets#US_ASCII} and 2 for {@link StandardCharsets#UTF_16}
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},

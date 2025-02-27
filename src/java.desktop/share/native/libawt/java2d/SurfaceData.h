@@ -60,7 +60,7 @@ typedef struct {
 
 #define UNSAFE_TO_SUB(a, b) \
     (((b >= 0) && (a < 0) && (a < (INT_MIN + b))) || \
-     ((b < 0) && (a >= 0) && (-b > (INT_MAX - a)))) \
+     ((b < 0) && (a >= 0) && (a > (INT_MAX + b)))) \
 
 /*
  * The SurfaceDataRasInfo structure is used to pass in and return various

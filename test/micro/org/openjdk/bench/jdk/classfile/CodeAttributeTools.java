@@ -56,7 +56,6 @@ import org.openjdk.jmh.infra.Blackhole;
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
 @Fork(value = 1, jvmArgs = {
-        "--enable-preview",
         "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
 @Warmup(iterations = 2)
 @Measurement(iterations = 8)

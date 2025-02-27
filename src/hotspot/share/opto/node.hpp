@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ class CallNode;
 class CallRuntimeNode;
 class CallStaticJavaNode;
 class CastFFNode;
+class CastHHNode;
 class CastDDNode;
 class CastVVNode;
 class CastIINode;
@@ -138,6 +139,7 @@ class NeverBranchNode;
 class Opaque1Node;
 class OpaqueLoopInitNode;
 class OpaqueLoopStrideNode;
+class OpaqueMultiversioningNode;
 class OpaqueNotNullNode;
 class OpaqueInitializedAssertionPredicateNode;
 class OpaqueTemplateAssertionPredicateNode;
@@ -336,16 +338,14 @@ protected:
   void out_grow( uint len );
 
  public:
-  // Each Node is assigned a unique small/dense number.  This number is used
+  // Each Node is assigned a unique small/dense number. This number is used
   // to index into auxiliary arrays of data and bit vectors.
-  // The field _idx is declared constant to defend against inadvertent assignments,
-  // since it is used by clients as a naked field. However, the field's value can be
-  // changed using the set_idx() method.
+  // The value of _idx can be changed using the set_idx() method.
   //
   // The PhaseRenumberLive phase renumbers nodes based on liveness information.
   // Therefore, it updates the value of the _idx field. The parse-time _idx is
   // preserved in _parse_idx.
-  const node_idx_t _idx;
+  node_idx_t _idx;
   DEBUG_ONLY(const node_idx_t _parse_idx;)
   // IGV node identifier. Two nodes, possibly in different compilation phases,
   // have the same IGV identifier if (and only if) they are the very same node
@@ -586,8 +586,7 @@ public:
 
   // Set this node's index, used by cisc_version to replace current node
   void set_idx(uint new_idx) {
-    const node_idx_t* ref = &_idx;
-    *(node_idx_t*)ref = new_idx;
+    _idx = new_idx;
   }
   // Swap input edge order.  (Edge indexes i1 and i2 are usually 1 and 2.)
   void swap_edges(uint i1, uint i2) {
@@ -725,6 +724,7 @@ public:
         DEFINE_CLASS_ID(CastDD, ConstraintCast, 4)
         DEFINE_CLASS_ID(CastVV, ConstraintCast, 5)
         DEFINE_CLASS_ID(CastPP, ConstraintCast, 6)
+        DEFINE_CLASS_ID(CastHH, ConstraintCast, 7)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
       DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)
@@ -801,6 +801,7 @@ public:
     DEFINE_CLASS_ID(Opaque1,  Node, 16)
       DEFINE_CLASS_ID(OpaqueLoopInit, Opaque1, 0)
       DEFINE_CLASS_ID(OpaqueLoopStride, Opaque1, 1)
+      DEFINE_CLASS_ID(OpaqueMultiversioning, Opaque1, 2)
     DEFINE_CLASS_ID(OpaqueNotNull,  Node, 17)
     DEFINE_CLASS_ID(OpaqueInitializedAssertionPredicate,  Node, 18)
     DEFINE_CLASS_ID(OpaqueTemplateAssertionPredicate,  Node, 19)
@@ -909,6 +910,7 @@ public:
   DEFINE_CLASS_QUERY(CheckCastPP)
   DEFINE_CLASS_QUERY(CastII)
   DEFINE_CLASS_QUERY(CastLL)
+  DEFINE_CLASS_QUERY(CastFF)
   DEFINE_CLASS_QUERY(ConI)
   DEFINE_CLASS_QUERY(CastPP)
   DEFINE_CLASS_QUERY(ConstraintCast)
@@ -982,6 +984,7 @@ public:
   DEFINE_CLASS_QUERY(OpaqueTemplateAssertionPredicate)
   DEFINE_CLASS_QUERY(OpaqueLoopInit)
   DEFINE_CLASS_QUERY(OpaqueLoopStride)
+  DEFINE_CLASS_QUERY(OpaqueMultiversioning)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
   DEFINE_CLASS_QUERY(Parm)
@@ -1126,7 +1129,6 @@ public:
   // Check if 'this' node dominates or equal to 'sub'.
   DomResult dominates(Node* sub, Node_List &nlist);
 
-protected:
   bool remove_dead_region(PhaseGVN *phase, bool can_reshape);
 public:
 
@@ -1167,6 +1169,7 @@ public:
 
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
+  void add_prec_from(Node* n);
 
   // Visit boundary uses of the node and apply a callback function for each.
   // Recursively traverse uses, stopping and applying the callback when
@@ -1257,6 +1260,7 @@ public:
   intptr_t get_narrowcon() const;
   jdouble getd() const;
   jfloat getf() const;
+  jshort geth() const;
 
   // Nodes which are pinned into basic blocks
   virtual bool pinned() const { return false; }
@@ -1277,6 +1281,8 @@ public:
 
   // Whether this is a memory phi node
   bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
+
+  bool is_div_or_mod(BasicType bt) const;
 
 //----------------- Printing, etc
 #ifndef PRODUCT
@@ -2000,6 +2006,10 @@ Compile::locate_node_notes(GrowableArray<Node_Notes*>* arr,
   return arr->at(block_idx) + (idx & (_node_notes_block_size-1));
 }
 
+inline Node_Notes* Compile::node_notes_at(int idx) {
+  return locate_node_notes(_node_note_array, idx, false);
+}
+
 inline bool
 Compile::set_node_notes_at(int idx, Node_Notes* value) {
   if (value == nullptr || value->is_clear())
@@ -2057,6 +2067,10 @@ Op_IL(URShift)
 Op_IL(LShift)
 Op_IL(Xor)
 Op_IL(Cmp)
+Op_IL(Div)
+Op_IL(Mod)
+Op_IL(UDiv)
+Op_IL(UMod)
 
 inline int Op_ConIL(BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "only for int or longs");

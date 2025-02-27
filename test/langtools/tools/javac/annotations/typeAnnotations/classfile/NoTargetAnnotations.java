@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ import java.lang.classfile.attribute.*;
  * @test NoTargetAnnotations
  * @summary test that annotations with no Target meta type is emitted
  *          only once as declaration annotation
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 public class NoTargetAnnotations extends ClassfileTestHelper {
 

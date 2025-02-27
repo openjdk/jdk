@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
@@ -627,16 +626,6 @@ JVM_END
 
 JVM_ENTRY(void, JVM_MonitorWait(JNIEnv* env, jobject handle, jlong ms))
   Handle obj(THREAD, JNIHandles::resolve_non_null(handle));
-  JavaThreadInObjectWaitState jtiows(thread, ms != 0);
-  if (JvmtiExport::should_post_monitor_wait()) {
-    JvmtiExport::post_monitor_wait(thread, obj(), ms);
-
-    // The current thread already owns the monitor and it has not yet
-    // been added to the wait queue so the current thread cannot be
-    // made the successor. This means that the JVMTI_EVENT_MONITOR_WAIT
-    // event handler cannot accidentally consume an unpark() meant for
-    // the ParkEvent associated with this ObjectMonitor.
-  }
   ObjectSynchronizer::wait(obj, ms, CHECK);
 JVM_END
 
@@ -1198,20 +1187,6 @@ JVM_ENTRY(jobjectArray, JVM_GetClassInterfaces(JNIEnv *env, jclass cls))
 JVM_END
 
 
-JVM_ENTRY(jboolean, JVM_IsInterface(JNIEnv *env, jclass cls))
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  if (java_lang_Class::is_primitive(mirror)) {
-    return JNI_FALSE;
-  }
-  Klass* k = java_lang_Class::as_Klass(mirror);
-  jboolean result = k->is_interface();
-  assert(!result || k->is_instance_klass(),
-         "all interfaces are instance types");
-  // The compiler intrinsic for isInterface tests the
-  // Klass::_access_flags bits in the same way.
-  return result;
-JVM_END
-
 JVM_ENTRY(jboolean, JVM_IsHiddenClass(JNIEnv *env, jclass cls))
   oop mirror = JNIHandles::resolve_non_null(cls);
   if (java_lang_Class::is_primitive(mirror)) {
@@ -1219,22 +1194,6 @@ JVM_ENTRY(jboolean, JVM_IsHiddenClass(JNIEnv *env, jclass cls))
   }
   Klass* k = java_lang_Class::as_Klass(mirror);
   return k->is_hidden();
-JVM_END
-
-
-JVM_ENTRY(jobject, JVM_GetProtectionDomain(JNIEnv *env, jclass cls))
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  if (mirror == nullptr) {
-    THROW_(vmSymbols::java_lang_NullPointerException(), nullptr);
-  }
-
-  if (java_lang_Class::is_primitive(mirror)) {
-    // Primitive types does not have a protection domain.
-    return nullptr;
-  }
-
-  oop pd = java_lang_Class::protection_domain(mirror);
-  return (jobject) JNIHandles::make_local(THREAD, pd);
 JVM_END
 
 
@@ -1285,34 +1244,6 @@ JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
 
   return nullptr;
 JVM_END
-
-JVM_ENTRY(jboolean, JVM_IsArrayClass(JNIEnv *env, jclass cls))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  return (k != nullptr) && k->is_array_klass() ? true : false;
-JVM_END
-
-
-JVM_ENTRY(jboolean, JVM_IsPrimitiveClass(JNIEnv *env, jclass cls))
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  return (jboolean) java_lang_Class::is_primitive(mirror);
-JVM_END
-
-
-JVM_ENTRY(jint, JVM_GetClassModifiers(JNIEnv *env, jclass cls))
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  if (java_lang_Class::is_primitive(mirror)) {
-    // Primitive type
-    return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
-  }
-
-  Klass* k = java_lang_Class::as_Klass(mirror);
-  debug_only(int computed_modifiers = k->compute_modifier_flags());
-  assert(k->modifier_flags() == computed_modifiers, "modifiers cache is OK");
-  return k->modifier_flags();
-JVM_END
-
-
-// Inner class reflection ///////////////////////////////////////////////////////////////////////////////
 
 JVM_ENTRY(jobjectArray, JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass))
   JvmtiVMObjectAllocEventCollector oam;
@@ -1817,7 +1748,7 @@ JVM_ENTRY(jint, JVM_GetClassAccessFlags(JNIEnv *env, jclass cls))
   }
 
   Klass* k = java_lang_Class::as_Klass(mirror);
-  return k->access_flags().as_int() & JVM_ACC_WRITTEN_FLAGS;
+  return k->access_flags().as_class_flags();
 }
 JVM_END
 
@@ -2348,7 +2279,23 @@ JVM_END
 // The function returns a Klass* of the _scratch_class if the verifier
 // was invoked in the middle of the class redefinition.
 // Otherwise it returns its argument value which is the _the_class Klass*.
-// Please, refer to the description in the jvmtiThreadSate.hpp.
+// Please, refer to the description in the jvmtiThreadState.hpp.
+
+JVM_ENTRY(jboolean, JVM_IsInterface(JNIEnv *env, jclass cls))
+  oop mirror = JNIHandles::resolve_non_null(cls);
+  if (java_lang_Class::is_primitive(mirror)) {
+    return JNI_FALSE;
+  }
+  Klass* k = java_lang_Class::as_Klass(mirror);
+  // This isn't necessary since answer is the same since redefinition
+  // has already checked this matches for the scratch class.
+  // k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
+  jboolean result = k->is_interface();
+  assert(!result || k->is_instance_klass(),
+         "all interfaces are instance types");
+  return result;
+JVM_END
+
 
 JVM_ENTRY(const char*, JVM_GetClassNameUTF(JNIEnv *env, jclass cls))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
@@ -2460,14 +2407,14 @@ JVM_ENTRY(jint, JVM_GetMethodIxModifiers(JNIEnv *env, jclass cls, int method_ind
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
   Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
-  return method->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
+  return method->access_flags().as_method_flags();
 JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetFieldIxModifiers(JNIEnv *env, jclass cls, int field_index))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  return InstanceKlass::cast(k)->field_access_flags(field_index) & JVM_RECOGNIZED_FIELD_MODIFIERS;
+  return InstanceKlass::cast(k)->field_access_flags(field_index);
 JVM_END
 
 
@@ -2657,7 +2604,7 @@ JVM_ENTRY(jint, JVM_GetCPFieldModifiers(JNIEnv *env, jclass cls, int cp_index, j
       InstanceKlass* ik = InstanceKlass::cast(k_called);
       for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
         if (fs.name() == name && fs.signature() == signature) {
-          return fs.access_flags().as_short() & JVM_RECOGNIZED_FIELD_MODIFIERS;
+          return fs.access_flags().as_field_flags();
         }
       }
       return -1;
@@ -2686,7 +2633,7 @@ JVM_ENTRY(jint, JVM_GetCPMethodModifiers(JNIEnv *env, jclass cls, int cp_index, 
       for (int i = 0; i < methods_count; i++) {
         Method* method = methods->at(i);
         if (method->name() == name && method->signature() == signature) {
-            return method->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
+            return method->access_flags().as_method_flags();
         }
       }
       return -1;
@@ -2977,8 +2924,8 @@ JVM_ENTRY(void, JVM_SetCurrentThread(JNIEnv* env, jobject thisThread,
   oop threadObj = JNIHandles::resolve(theThread);
   thread->set_vthread(threadObj);
 
-  // Set lock id of new current Thread
-  thread->set_lock_id(java_lang_Thread::thread_id(threadObj));
+  // Set _monitor_owner_id of new current Thread
+  thread->set_monitor_owner_id(java_lang_Thread::thread_id(threadObj));
 
   JFR_ONLY(Jfr::on_set_current_thread(thread, threadObj);)
 JVM_END
@@ -3299,7 +3246,7 @@ JVM_LEAF(jboolean, JVM_IsForeignLinkerSupported(void))
   return ForeignGlobals::is_foreign_linker_supported() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
-JVM_ENTRY_NO_ENV(jboolean, JVM_IsStaticallyLinked(void))
+JVM_LEAF(jboolean, JVM_IsStaticallyLinked(void))
   return is_vm_statically_linked() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
@@ -3319,8 +3266,9 @@ JVM_END
 // VM Raw monitors (not to be confused with JvmtiRawMonitors) are a simple mutual exclusion
 // lock (not actually monitors: no wait/notify) that is exported by the VM for use by JDK
 // library code. They may be used by JavaThreads and non-JavaThreads and do not participate
-// in the safepoint protocol, thread suspension, thread interruption, or anything of that
-// nature. JavaThreads will be "in native" when using this API from JDK code.
+// in the safepoint protocol, thread suspension, thread interruption, or most things of that
+// nature, except JavaThreads will be blocked by VM_Exit::block_if_vm_exited if the VM has
+// shutdown. JavaThreads will be "in native" when using this API from JDK code.
 
 
 JNIEXPORT void* JNICALL JVM_RawMonitorCreate(void) {

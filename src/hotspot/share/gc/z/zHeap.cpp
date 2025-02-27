@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
@@ -69,13 +68,13 @@ ZHeap::ZHeap()
   assert(_heap == nullptr, "Already initialized");
   _heap = this;
 
-  if (!_page_allocator.is_initialized() || !_young.is_initialized() || !_old.is_initialized()) {
+  if (!_page_allocator.is_initialized()) {
     return;
   }
 
   // Prime cache
   if (!_page_allocator.prime_cache(_old.workers(), InitialHeapSize)) {
-    ZInitialize::error("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", InitialHeapSize / M);
+    ZInitialize::error("Failed to allocate initial Java heap (%zuM)", InitialHeapSize / M);
     return;
   }
 
@@ -238,7 +237,7 @@ void ZHeap::undo_alloc_page(ZPage* page) {
   assert(page->is_allocating(), "Invalid page state");
 
   ZStatInc(ZCounterUndoPageAllocation);
-  log_trace(gc)("Undo page allocation, thread: " PTR_FORMAT " (%s), page: " PTR_FORMAT ", size: " SIZE_FORMAT,
+  log_trace(gc)("Undo page allocation, thread: " PTR_FORMAT " (%s), page: " PTR_FORMAT ", size: %zu",
                 p2i(Thread::current()), ZUtils::thread_name(), p2i(page), page->size());
 
   free_page(page, false /* allow_defragment */);
@@ -272,9 +271,9 @@ void ZHeap::keep_alive(oop obj) {
   ZBarrier::mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
 }
 
-void ZHeap::mark_flush_and_free(Thread* thread) {
-  _young.mark_flush_and_free(thread);
-  _old.mark_flush_and_free(thread);
+void ZHeap::mark_flush(Thread* thread) {
+  _young.mark_flush(thread);
+  _old.mark_flush(thread);
 }
 
 bool ZHeap::is_allocating(zaddress addr) const {
@@ -320,7 +319,7 @@ ZServiceabilityCounters* ZHeap::serviceability_counters() {
 }
 
 void ZHeap::print_on(outputStream* st) const {
-  st->print_cr(" ZHeap           used " SIZE_FORMAT "M, capacity " SIZE_FORMAT "M, max capacity " SIZE_FORMAT "M",
+  st->print_cr(" ZHeap           used %zuM, capacity %zuM, max capacity %zuM",
                used() / M,
                capacity() / M,
                max_capacity() / M);

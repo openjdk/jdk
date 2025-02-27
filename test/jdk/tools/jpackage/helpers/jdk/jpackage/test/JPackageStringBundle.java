@@ -56,7 +56,12 @@ public enum JPackageStringBundle {
     }
 
     private String getFormattedString(String key, Object[] args) {
-        return MessageFormat.format(getString(key), args);
+        var str = getString(key);
+        if (args.length != 0) {
+            return MessageFormat.format(str, args);
+        } else {
+            return str;
+        }
     }
 
     public CannedFormattedString cannedFormattedString(String key, String ... args) {

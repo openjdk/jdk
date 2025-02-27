@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import static jdk.jpackage.test.TKit.assertFalse;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest == null)
- * @compile RuntimePackageTest.java
+ * @compile -Xlint:all -Werror RuntimePackageTest.java
  * @run main/othervm/timeout=1400 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest
  */
@@ -71,7 +71,7 @@ import static jdk.jpackage.test.TKit.assertFalse;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest != null)
- * @compile RuntimePackageTest.java
+ * @compile -Xlint:all -Werror RuntimePackageTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest.test
  */
@@ -101,6 +101,7 @@ public class RuntimePackageTest {
         .forTypes(types)
         .addInitializer(cmd -> {
             final Path runtimeImageDir;
+
             if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
                 runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
             } else {
@@ -111,7 +112,7 @@ public class RuntimePackageTest {
                 .dumpOutput()
                 .addArguments(
                         "--output", runtimeImageDir.toString(),
-                        "--add-modules", "ALL-MODULE-PATH",
+                        "--add-modules", "java.desktop",
                         "--strip-debug",
                         "--no-header-files",
                         "--no-man-pages")

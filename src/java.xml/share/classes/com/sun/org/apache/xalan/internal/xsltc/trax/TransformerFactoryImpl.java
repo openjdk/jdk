@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -75,7 +75,6 @@ import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.JdkProperty.ImplPropMap;
 import jdk.xml.internal.JdkProperty.State;
-import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.TransformErrorListener;
 import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.InputSource;
@@ -88,7 +87,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Santiago Pericas-Geertsen
- * @LastModified: Nov 2024
+ * @LastModified: Feb 2025
  */
 public class TransformerFactoryImpl
     extends SAXTransformerFactory implements SourceLoader
@@ -216,7 +215,7 @@ public class TransformerFactoryImpl
     /**
      * <p>State of secure processing feature.</p>
      */
-    private boolean _isNotSecureProcessing = true;
+    private boolean _isNotSecureProcessing = false;
     /**
      * <p>State of secure mode.</p>
      */
@@ -1000,9 +999,6 @@ public class TransformerFactoryImpl
         // Set the attributes for translet generation
         int outputType = XSLTC.BYTEARRAY_OUTPUT;
         if (_generateTranslet || _autoTranslet) {
-            // Set the translet name
-            xsltc.setClassName(getTransletBaseName(source));
-
             if (_destinationDirectory != null)
                 xsltc.setDestDirectory(_destinationDirectory);
             else {
@@ -1016,8 +1012,11 @@ public class TransformerFactoryImpl
                 }
             }
 
+            // set package name
             if (_packageName != null)
                 xsltc.setPackageName(_packageName);
+            // Set the translet name
+            xsltc.setClassName(getTransletBaseName(source));
 
             if (_jarFileName != null) {
                 xsltc.setJarFileName(_jarFileName);

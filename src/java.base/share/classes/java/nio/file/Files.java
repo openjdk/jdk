@@ -1509,7 +1509,7 @@ public final class Files {
     }
 
     // lazy loading of default and installed file type detectors
-    private static class FileTypeDetectors{
+    private static class FileTypeDetectors {
         static final FileTypeDetector defaultFileTypeDetector =
             createDefaultFileTypeDetector();
         static final List<FileTypeDetector> installedDetectors =
@@ -1522,13 +1522,11 @@ public final class Files {
 
         // loads all installed file type detectors
         private static List<FileTypeDetector> loadInstalledDetectors() {
-            List<FileTypeDetector> list = new ArrayList<>();
-            ServiceLoader<FileTypeDetector> loader = ServiceLoader
-                .load(FileTypeDetector.class, ClassLoader.getSystemClassLoader());
-            for (FileTypeDetector detector: loader) {
-                list.add(detector);
-            }
-            return list;
+            return ServiceLoader.load(FileTypeDetector.class,
+                                      ClassLoader.getSystemClassLoader())
+                .stream()
+                .map(ServiceLoader.Provider::get)
+                .toList();
         }
     }
 

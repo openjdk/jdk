@@ -26,10 +26,8 @@
  * @bug 8171355
  * @summary Test behavior of javax.lang.model.util.Elements.getOrigin.
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.TestRunner
  * @build TestOrigin
  * @run main TestOrigin

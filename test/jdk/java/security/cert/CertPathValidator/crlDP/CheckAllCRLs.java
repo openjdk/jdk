@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.PublicKey;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
@@ -54,7 +53,7 @@ import sun.security.x509.X500Name;
 import sun.security.x509.X509CRLEntryImpl;
 import sun.security.x509.X509CRLImpl;
 import static sun.security.x509.X509CRLImpl.TBSCertList;
-import sun.security.testlibrary.CertificateBuilder;
+import jdk.test.lib.security.CertificateBuilder;
 
 /*
  * @test
@@ -65,8 +64,7 @@ import sun.security.testlibrary.CertificateBuilder;
  *          fresh or stale.
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
- * @library ../../../../../java/security/testlibrary
- * @build CertificateBuilder CheckAllCRLs
+ * @library /test/lib
  * @run main/othervm -Dcom.sun.security.enableCRLDP=true CheckAllCRLs
  */
 public class CheckAllCRLs {

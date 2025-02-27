@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
@@ -88,6 +87,14 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators, Basi
   return (on_weak_ref || unknown) && keep_alive;
 }
 
+void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
+#if COMPILER2_OR_JVMCI
+  assert(!ReduceInitialCardMarks || !ShenandoahCardBarrier || ShenandoahGenerationalHeap::heap()->is_in_young(new_obj),
+         "Error: losing card mark on initialzing store to old gen");
+#endif // COMPILER2_OR_JVMCI
+  assert(thread->deferred_card_mark().is_empty(), "We don't use this");
+}
+
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {
   // Create thread local data
   ShenandoahThreadLocalData::create(thread);
@@ -106,8 +113,10 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
   assert(queue.buffer() == nullptr, "SATB queue should not have a buffer");
   assert(queue.index() == 0, "SATB queue index should be zero");
   queue.set_active(_satb_mark_queue_set.is_active());
+
+  ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
+
   if (thread->is_Java_thread()) {
-    ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
     ShenandoahThreadLocalData::initialize_gclab(thread);
 
     BarrierSetNMethod* bs_nm = barrier_set_nmethod();

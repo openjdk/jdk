@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,9 @@
           constraint(AOTModeConstraintFunc, AtParse)                        \
                                                                             \
   product(ccstr, AOTConfiguration, nullptr,                                 \
-          "Configuration information used by CreateAOTCache")               \
+          "The configuration file written by -XX:AOTMode=record, and "      \
+          "loaded by -XX:AOTMode=create. This file contains profiling data "\
+          "for deciding what contents should be added to AOTCache. ")       \
                                                                             \
   product(ccstr, AOTCache, nullptr,                                         \
           "Cache for improving start up and warm up")                       \
@@ -117,7 +119,10 @@
   product(bool, AOTClassLinking, false,                                     \
           "Load/link all archived classes for the boot/platform/app "       \
           "loaders before application main")                                \
-
+                                                                            \
+  product(bool, AOTCacheParallelRelocation, true, DIAGNOSTIC,               \
+          "Use parallel relocation code to speed up startup.")              \
+                                                                            \
 // end of CDS_FLAGS
 
 DECLARE_FLAGS(CDS_FLAGS)

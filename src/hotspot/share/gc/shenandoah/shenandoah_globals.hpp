@@ -134,7 +134,6 @@
           "GC mode to use.  Among other things, this defines which "        \
           "barriers are in in use. Possible values are:"                    \
           " satb - snapshot-at-the-beginning concurrent GC (three pass mark-evac-update);"  \
-          " iu - incremental-update concurrent GC (three pass mark-evac-update);"  \
           " passive - stop the world GC only (either degenerated or full);" \
           " generational - generational concurrent GC")                     \
                                                                             \
@@ -183,7 +182,7 @@
           range(0,100)                                                      \
                                                                             \
   product(uintx, ShenandoahInitFreeThreshold, 70, EXPERIMENTAL,             \
-          "When less than this amount of memory is free within the"         \
+          "When less than this amount of memory is free within the "        \
           "heap or generation, trigger a learning cycle if we are "         \
           "in learning mode.  Learning mode happens during initialization " \
           "and following a drastic state change, such as following a "      \
