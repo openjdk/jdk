@@ -160,28 +160,8 @@ public class PStack extends Tool {
                                     out.println("<Unknown compiled code>");
                                   }
                                }
-                            } else if (cb.isBufferBlob()) {
-                               out.println("<StubRoutines>");
-                            } else if (cb.isAdapterBlob()) {
-                               out.println("<AdapterBlob>");
-                            } else if (cb.isVtableBlob()) {
-                               out.println("<VtableBlob>");
-                            } else if (cb.isMHAdapterBlob()) {
-                               out.println("<MethodHandlesAdapterBlob>");
-                            } else if (cb.isRuntimeStub()) {
-                               out.println("<RuntimeStub>");
-                            } else if (cb.isUpcallStub()) {
-                               out.println("<UpcallStub>");
-                            } else if (cb.isDeoptimizationBlob()) {
-                               out.println("<DeoptimizationBlob>");
-                            } else if (cb.isUncommonTrapBlob()) {
-                               out.println("<UncommonTrapBlob>");
-                            } else if (cb.isExceptionBlob()) {
-                               out.println("<ExceptionBlob>");
-                            } else if (cb.isSafepointBlob()) {
-                               out.println("<SafepointBlob>");
                             } else {
-                               out.println("<Unknown code blob>");
+                               out.println("<" + cb.getName() + ">");
                             }
                          } else {
                             printUnknown(out);
