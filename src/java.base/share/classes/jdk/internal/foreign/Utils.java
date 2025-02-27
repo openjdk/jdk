@@ -1,42 +1,38 @@
 /*
- *  Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.  Oracle designates this
- *  particular file as subject to the "Classpath" exception as provided
- *  by Oracle in the LICENSE file that accompanied this code.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *   Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
- *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package jdk.internal.foreign;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
@@ -59,45 +55,34 @@ public final class Utils {
     // Suppresses default constructor, ensuring non-instantiability.
     private Utils() {}
 
-    private static final int
-            FILTER_ADDRESS_TO_LONG = 0,
-            FILTER_LONG_TO_POINTER = 1,
-            FILTER_LONG_TO_SEGMENT_WITH_LAYOUT = 2,
-            FILTER_LIMIT = 3;
-    private static final @Stable MethodHandle[] VH_FILTERS = new MethodHandle[FILTER_LIMIT];
+    private static final Class<?> ADDRESS_CARRIER_TYPE;
+    private static final MethodHandle LONG_TO_CARRIER;
+    private static final MethodHandle LONG_TO_ADDRESS_TARGET;
+    private static final MethodHandle LONG_TO_ADDRESS_NO_TARGET;
 
-    private static MethodHandle filterHandle(int index) {
-        var ret = VH_FILTERS[index];
-        if (ret != null)
-            return ret;
-        return computeFilterHandle(index);
-    }
-
-    private static MethodHandle computeFilterHandle(int index) {
+    static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
-        MethodHandle handle;
+        String unboxSegmentName;
+        Class<?> rawAddressType;
         if (Unsafe.getUnsafe().addressSize() == 8) {
-            handle = switch (index) {
-                case FILTER_ADDRESS_TO_LONG -> MhUtil.findStatic(lookup, SharedUtils.class, "unboxSegment",
-                        MethodType.methodType(long.class, MemorySegment.class));
-                case FILTER_LONG_TO_SEGMENT_WITH_LAYOUT -> MhUtil.findStatic(lookup, "longToAddress",
-                        MethodType.methodType(MemorySegment.class, long.class, AddressLayout.class));
-                case FILTER_LONG_TO_POINTER -> MhUtil.findStatic(lookup, "longToAddress",
-                        MethodType.methodType(MemorySegment.class, long.class));
-                default -> throw new IllegalArgumentException(String.valueOf(index));
-            };
+            unboxSegmentName = "unboxSegment";
+            rawAddressType = long.class;
         } else {
-            handle = switch (index) {
-                case FILTER_ADDRESS_TO_LONG -> MhUtil.findStatic(lookup, SharedUtils.class, "unboxSegment32",
-                        MethodType.methodType(int.class, MemorySegment.class));
-                case FILTER_LONG_TO_SEGMENT_WITH_LAYOUT -> MhUtil.findStatic(lookup, "longToAddress",
-                        MethodType.methodType(MemorySegment.class, int.class, AddressLayout.class));
-                case FILTER_LONG_TO_POINTER -> MhUtil.findStatic(lookup, "longToAddress",
-                        MethodType.methodType(MemorySegment.class, int.class));
-                default -> throw new IllegalArgumentException(String.valueOf(index));
-            };
+            assert Unsafe.getUnsafe().addressSize() == 4 : Unsafe.getUnsafe().addressSize();
+            unboxSegmentName = "unboxSegment32";
+            rawAddressType = int.class;
         }
-        return VH_FILTERS[index] = handle;
+        ADDRESS_CARRIER_TYPE = rawAddressType;
+        try {
+            LONG_TO_CARRIER = lookup.findStatic(SharedUtils.class, unboxSegmentName,
+                    MethodType.methodType(rawAddressType, MemorySegment.class));
+            LONG_TO_ADDRESS_TARGET = lookup.findStatic(Utils.class, "longToAddress",
+                    MethodType.methodType(MemorySegment.class, rawAddressType, AddressLayout.class));
+            LONG_TO_ADDRESS_NO_TARGET = lookup.findStatic(Utils.class, "longToAddress",
+                    MethodType.methodType(MemorySegment.class, rawAddressType));
+        } catch (Throwable ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
     }
 
     public static long alignUp(long n, long alignment) {
@@ -146,11 +131,7 @@ public final class Utils {
     private static VarHandle makeRawSegmentViewVarHandleInternal(MemoryLayout enclosing, ValueLayout layout, boolean noStride, long offset) {
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
-            baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
-                case Long.BYTES -> long.class;
-                case Integer.BYTES -> int.class;
-                default -> throw new UnsupportedOperationException("Unsupported address layout");
-            };
+            baseCarrier = ADDRESS_CARRIER_TYPE;
         }
 
         VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
@@ -158,9 +139,9 @@ public final class Utils {
 
         if (layout instanceof AddressLayout addressLayout) {
             MethodHandle longToAddressAdapter = addressLayout.targetLayout().isPresent() ?
-                    MethodHandles.insertArguments(filterHandle(FILTER_LONG_TO_SEGMENT_WITH_LAYOUT), 1, addressLayout) :
-                    filterHandle(FILTER_LONG_TO_POINTER);
-            handle = MethodHandles.filterValue(handle, filterHandle(FILTER_ADDRESS_TO_LONG), longToAddressAdapter);
+                    MethodHandles.insertArguments(LONG_TO_ADDRESS_TARGET, 1, addressLayout) :
+                    LONG_TO_ADDRESS_NO_TARGET;
+            handle = MethodHandles.filterValue(handle, LONG_TO_CARRIER, longToAddressAdapter);
         }
         return handle;
     }
