@@ -95,7 +95,7 @@ public final class PropertyInfo {
                     this.write = info;
                     writeType = info.type;
                 } else if (writeType.isAssignableFrom(info.type)) {
-                    if ((this.write == null) || this.write.type.isAssignableFrom(info.type)) {
+                    if ((this.write == null) || (!info.method.isDefault() && this.write.type.isAssignableFrom(info.type))) {
                         this.write = info;
                         writeType = info.type;
                     }
