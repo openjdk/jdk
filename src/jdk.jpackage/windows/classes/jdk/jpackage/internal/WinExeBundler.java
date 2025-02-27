@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,17 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.WinExePackage;
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.PackagerException;
+import static jdk.jpackage.internal.StandardBundlerParam.ICON;
+import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
+
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
-import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
-import static jdk.jpackage.internal.StandardBundlerParam.ICON;
-import jdk.jpackage.internal.resources.ResourceLocator;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.WinExePackage;
 
 @SuppressWarnings("restricted")
 public class WinExeBundler extends AbstractBundler {
@@ -114,9 +113,11 @@ public class WinExeBundler extends AbstractBundler {
 
         // Copy template msi wrapper next to msi file
         final Path exePath = msi.getParent().resolve(pkg.packageFileNameWithSuffix());
-        try (InputStream is = ResourceLocator.class.getResourceAsStream("msiwrapper.exe")) {
-            Files.copy(is, exePath);
-        }
+
+        env.createResource("msiwrapper.exe")
+                .setCategory(I18N.getString("resource.installer-exe"))
+                .setPublicName("installer.exe")
+                .saveToFile(exePath);
 
         new ExecutableRebrander(pkg, env::createResource, resourceLock -> {
             // Embed msi in msi wrapper exe.
