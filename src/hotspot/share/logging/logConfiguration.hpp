@@ -62,7 +62,14 @@ class LogConfiguration : public AllStatic {
 
   static UpdateListenerFunction*    _listener_callbacks;
   static size_t                     _n_listener_callbacks;
-  static bool                       _async_mode;
+
+public:
+  enum class AsyncMode {
+    Off, Stall, Drop
+  };
+
+private:
+  static AsyncMode _async_mode;
 
   // Create a new output. Returns null if failed.
   static LogOutput* new_output(const char* name, const char* options, outputStream* errstream);
@@ -120,6 +127,8 @@ class LogConfiguration : public AllStatic {
                                   const char* output_options,
                                   outputStream* errstream);
 
+  static bool parse_async_argument(const char* async_tail);
+
   // Prints log configuration to outputStream, used by JCmd/MBean.
   static void describe(outputStream* out);
 
@@ -129,9 +138,10 @@ class LogConfiguration : public AllStatic {
   // Rotates all LogOutput
   static void rotate_all_outputs();
 
-  static bool is_async_mode() { return _async_mode; }
-  static void set_async_mode(bool value) {
-    _async_mode = value;
+  static AsyncMode async_mode() { return _async_mode; }
+  static bool is_async_mode() { return _async_mode != AsyncMode::Off; }
+  static void set_async_mode(AsyncMode mode) {
+    _async_mode = mode;
   }
 };
 
