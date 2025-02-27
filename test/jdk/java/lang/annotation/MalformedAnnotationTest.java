@@ -27,7 +27,6 @@
  * @summary Test behaviors with malformed annotations (in class files)
  *          that should stay in refactors
  * @library /test/lib
- * @comment
  * @run junit MalformedAnnotationTest
  */
 
