@@ -159,9 +159,6 @@ final class MethodInfo {
                     return cmp;
                 }
             }
-            if (a.isDefault() != b.isDefault()) {
-                return a.isDefault() ? -1 : 1; // default methods go first
-            }
             final Class<?> aret = a.getReturnType();
             final Class<?> bret = b.getReturnType();
             return aret == bret ? 0 : aret.getName().compareTo(bret.getName());

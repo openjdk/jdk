@@ -1052,8 +1052,11 @@ public class Introspector {
             }
         }
         if (match) {
-            MethodDescriptor composite = new MethodDescriptor(old, md);
-            methods.put(name, composite);
+            // Discarding 'default' method as it is already overridden by the 'old'.
+            if (!md.getMethod().isDefault()) {
+                MethodDescriptor composite = new MethodDescriptor(old, md);
+                methods.put(name, composite);
+            }
             return;
         }
 

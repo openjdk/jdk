@@ -38,46 +38,14 @@
  */
 
 /*
- * @test id=testScenario3
+ * @test
  * @bug 8071693 8347826
  * @summary Verify that the Introspector finds default methods inherited
  *          from interfaces
  * @run main DefaultMethodBeanPropertyTest testScenario3
  */
 
-/*
- * @test id=testScenario4
- * @bug 8071693 8347826
- * @summary Verify that the Introspector finds default methods inherited
- *          from interfaces
- * @run main DefaultMethodBeanPropertyTest testScenario4
- */
-
-/*
- * @test id=testScenario5
- * @bug 8071693 8347826
- * @summary Verify that the Introspector finds default methods inherited
- *          from interfaces
- * @run main DefaultMethodBeanPropertyTest testScenario5
- */
-
-/*
- * @test id=testScenario6
- * @bug 8071693 8347826
- * @summary Verify that the Introspector finds default methods inherited
- *          from interfaces
- * @run main DefaultMethodBeanPropertyTest testScenario6
- */
-
-/*
- * @test id=testScenario7
- * @bug 8071693 8347826
- * @summary Verify that the Introspector finds default methods inherited
- *          from interfaces
- * @run main DefaultMethodBeanPropertyTest testScenario7
- */
-
- import java.beans.IntrospectionException;
+import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.MethodDescriptor;
 import java.beans.PropertyDescriptor;
@@ -425,6 +393,12 @@ public class DefaultMethodBeanPropertyTest {
 // Main method
 
     public static void main(String[] args) throws Exception {
-        DefaultMethodBeanPropertyTest.class.getMethod(args[0]).invoke(null);
+        testScenario1();
+        testScenario2();
+        testScenario3();
+        testScenario4();
+        testScenario5();
+        testScenario6();
+        testScenario7();
     }
 }
