@@ -862,7 +862,7 @@ public final class Files {
      * than one attribute of the same name is included in the array then all but
      * the last occurrence is ignored. When no file attributes are specified,
      * then the resulting directory may have more restrictive access
-     * permissions to (non-temporary) directories created by the
+     * permissions to directories created by the
      * {@linkplain Files#createDirectory(Path, FileAttribute<?>...)} method.
      *
      * @param   dir
