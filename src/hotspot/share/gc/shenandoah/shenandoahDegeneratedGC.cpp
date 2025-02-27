@@ -49,7 +49,8 @@ ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point, Shenandoa
   ShenandoahGC(),
   _degen_point(degen_point),
   _generation(generation),
-  _abbreviated(false) {
+  _abbreviated(false),
+  _consecutive_degen_with_bad_progress(0) {
 }
 
 bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
@@ -305,9 +306,24 @@ void ShenandoahDegenGC::op_degenerated() {
 
   metrics.snap_after();
 
-  // Check for futility and fail. There is no reason to do several back-to-back Degenerated cycles,
-  // because that probably means the heap is overloaded and/or fragmented.
+  // The most common scenario for lack of good progress following a degenerated GC is an accumulation of floating
+  // garbage during the most recently aborted concurrent GC effort.  With generational GC, it is far more effective to
+  // reclaim this floating garbage with another degenerated cycle (which focuses on young generation and might require
+  // a pause of 200 ms) rather than a full GC cycle (which may require over 2 seconds with a 10 GB old generation).
+  //
+  // In generational mode, we'll only upgrade to full GC if we've done two degen cycles in a row and both indicated
+  // bad progress.  In non-generational mode, we'll preserve the original behavior, which is to upgrade to full
+  // immediately following a degenerated cycle with bad progress.  This preserves original behavior of non-generational
+  // Shenandoah so as to avoid introducing "surprising new behavior."  It also makes less sense with non-generational
+  // Shenandoah to replace a full GC with a degenerated GC, because both have similar pause times in non-generational
+  // mode.
   if (!metrics.is_good_progress(_generation)) {
+    _consecutive_degen_with_bad_progress++;
+  } else {
+    _consecutive_degen_with_bad_progress = 0;
+  }
+  if (!heap->mode()->is_generational() ||
+      ((heap->shenandoah_policy()->consecutive_degenerated_gc_count() > 1) && (_consecutive_degen_with_bad_progress >= 2))) {
     heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
     op_degenerated_futile();
   } else {
