@@ -686,7 +686,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
   }
 
   if (ShenandoahVerify) {
-    ShenandoahGCPhase v(ShenandoahPhaseTimings::init_mark_verify);
+    ShenandoahTimingsTracker v(ShenandoahPhaseTimings::init_mark_verify);
     heap->verifier()->verify_before_concmark();
   }
 
@@ -775,7 +775,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
       }
 
       if (ShenandoahVerify) {
-        ShenandoahGCPhase v(ShenandoahPhaseTimings::final_mark_verify);
+        ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_mark_verify);
         heap->verifier()->verify_before_evacuation();
       }
 
@@ -792,7 +792,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
       }
     } else {
       if (ShenandoahVerify) {
-        ShenandoahGCPhase v(ShenandoahPhaseTimings::final_mark_verify);
+        ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_mark_verify);
         if (has_in_place_promotions(heap)) {
           heap->verifier()->verify_after_concmark_with_promotions();
         } else {
@@ -1114,7 +1114,7 @@ void ShenandoahConcurrentGC::op_evacuate() {
 void ShenandoahConcurrentGC::op_init_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (ShenandoahVerify) {
-    ShenandoahGCPhase v(ShenandoahPhaseTimings::init_update_refs_verify);
+    ShenandoahTimingsTracker v(ShenandoahPhaseTimings::init_update_refs_verify);
     heap->verifier()->verify_before_update_refs();
   }
   if (ShenandoahPacing) {
@@ -1202,7 +1202,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   }
 
   if (ShenandoahVerify) {
-    ShenandoahGCPhase v(ShenandoahPhaseTimings::final_update_refs_verify);
+    ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_update_refs_verify);
     heap->verifier()->verify_after_update_refs();
   }
 
