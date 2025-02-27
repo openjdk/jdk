@@ -27,15 +27,6 @@ import java.util.List;
 
 import compiler.lib.template_framework.Name;
 
-import compiler.lib.template_library.types.ByteType;
-import compiler.lib.template_library.types.CharType;
-import compiler.lib.template_library.types.ShortType;
-import compiler.lib.template_library.types.IntType;
-import compiler.lib.template_library.types.LongType;
-import compiler.lib.template_library.types.FloatType;
-import compiler.lib.template_library.types.DoubleType;
-import compiler.lib.template_library.types.BooleanType;
-
 /**
  * The {@link Type} abstract class defines the basic functionalities that any {@link Type}
  * must provide, such as generating random expressions.
@@ -44,16 +35,25 @@ import compiler.lib.template_library.types.BooleanType;
  */
 public abstract class Type implements Name.Type {
 
+    public static final Type bytes() { return PrimitiveType.ByteType.INSTANCE; }
+    public static final Type chars() { return PrimitiveType.CharType.INSTANCE; }
+    public static final Type shorts() { return PrimitiveType.ShortType.INSTANCE; }
+    public static final Type ints() { return PrimitiveType.IntType.INSTANCE; }
+    public static final Type longs() { return PrimitiveType.LongType.INSTANCE; }
+    public static final Type floats() { return PrimitiveType.FloatType.INSTANCE; }
+    public static final Type doubles() { return PrimitiveType.DoubleType.INSTANCE; }
+    public static final Type booleans() { return PrimitiveType.BooleanType.INSTANCE; }
+
     public static final List<Type> primitives() {
         return List.of(
-            ByteType.INSTANCE,
-            CharType.INSTANCE,
-            ShortType.INSTANCE,
-            IntType.INSTANCE,
-            LongType.INSTANCE,
-            FloatType.INSTANCE,
-            DoubleType.INSTANCE,
-            BooleanType.INSTANCE
+            bytes(),
+            chars(),
+            shorts(),
+            ints(),
+            longs(),
+            floats(),
+            doubles(),
+            booleans()
         );
     }
 
