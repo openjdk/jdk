@@ -1156,11 +1156,12 @@ public class Check {
      *  Warning: we can't use flags() here since this method
      *  is called during class enter, when flags() would cause a premature
      *  completion.
-     *  @param pos           Position to be used for error reporting.
      *  @param flags         The set of modifiers given in a definition.
      *  @param sym           The defined symbol.
+     *  @param tree          The declaration
      */
-    long checkFlags(DiagnosticPosition pos, long flags, Symbol sym, JCTree tree) {
+    long checkFlags(long flags, Symbol sym, JCTree tree) {
+        final DiagnosticPosition pos = tree.pos();
         long mask;
         long implicit = 0;
 
@@ -1204,7 +1205,7 @@ public class Check {
                 mask = MethodFlags;
             }
             if ((flags & STRICTFP) != 0) {
-                warnOnExplicitStrictfp(pos);
+                warnOnExplicitStrictfp(tree);
             }
             // Imply STRICTFP if owner has STRICTFP set.
             if (((flags|implicit) & Flags.ABSTRACT) == 0 ||
@@ -1248,7 +1249,7 @@ public class Check {
                 implicit |= FINAL;
             }
             if ((flags & STRICTFP) != 0) {
-                warnOnExplicitStrictfp(pos);
+                warnOnExplicitStrictfp(tree);
             }
             // Imply STRICTFP if owner has STRICTFP set.
             implicit |= sym.owner.flags_field & STRICTFP;
@@ -1312,12 +1313,12 @@ public class Check {
         return flags & (mask | ~ExtendedStandardFlags) | implicit;
     }
 
-    private void warnOnExplicitStrictfp(DiagnosticPosition pos) {
-        DiagnosticPosition prevLintPos = deferredLintHandler.setPos(pos);
+    private void warnOnExplicitStrictfp(JCTree tree) {
+        deferredLintHandler.push(tree);
         try {
-            deferredLintHandler.report(_ -> lint.logIfEnabled(pos, LintWarnings.Strictfp));
+            deferredLintHandler.report(_ -> lint.logIfEnabled(tree.pos(), LintWarnings.Strictfp));
         } finally {
-            deferredLintHandler.setPos(prevLintPos);
+            deferredLintHandler.pop();
         }
     }
 
@@ -2373,7 +2374,12 @@ public class Check {
                 return;
             if (seenClasses.contains(c)) {
                 errorFound = true;
-                noteCyclic(pos, (ClassSymbol)c);
+                log.error(pos, Errors.CyclicInheritance(c));
+                seenClasses.stream()
+                  .filter(s -> !s.type.isErroneous())
+                  .filter(ClassSymbol.class::isInstance)
+                  .map(ClassSymbol.class::cast)
+                  .forEach(Check.this::handleCyclic);
             } else if (!c.type.isErroneous()) {
                 try {
                     seenClasses.add(c);
@@ -2450,7 +2456,8 @@ public class Check {
         if ((c.flags_field & ACYCLIC) != 0) return true;
 
         if ((c.flags_field & LOCKED) != 0) {
-            noteCyclic(pos, (ClassSymbol)c);
+            log.error(pos, Errors.CyclicInheritance(c));
+            handleCyclic((ClassSymbol)c);
         } else if (!c.type.isErroneous()) {
             try {
                 c.flags_field |= LOCKED;
@@ -2477,9 +2484,10 @@ public class Check {
         return complete;
     }
 
-    /** Note that we found an inheritance cycle. */
-    private void noteCyclic(DiagnosticPosition pos, ClassSymbol c) {
-        log.error(pos, Errors.CyclicInheritance(c));
+    /** Handle finding an inheritance cycle on a class by setting
+     *  the class' and its supertypes' types to the error type.
+     **/
+    private void handleCyclic(ClassSymbol c) {
         for (List<Type> l=types.interfaces(c.type); l.nonEmpty(); l=l.tail)
             l.head = types.createErrorType((ClassSymbol)l.head.tsym, Type.noType);
         Type st = types.supertype(c.type);

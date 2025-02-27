@@ -83,6 +83,10 @@ void ShenandoahDegenGC::entry_degenerated() {
   heap->set_degenerated_gc_in_progress(true);
   op_degenerated();
   heap->set_degenerated_gc_in_progress(false);
+  {
+    ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::degen_gc_propagate_gc_state);
+    heap->propagate_gc_state_to_all_threads();
+  }
 }
 
 void ShenandoahDegenGC::op_degenerated() {
@@ -303,7 +307,7 @@ void ShenandoahDegenGC::op_degenerated() {
 
   // Check for futility and fail. There is no reason to do several back-to-back Degenerated cycles,
   // because that probably means the heap is overloaded and/or fragmented.
-  if (!metrics.is_good_progress()) {
+  if (!metrics.is_good_progress(_generation)) {
     heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
     op_degenerated_futile();
   } else {

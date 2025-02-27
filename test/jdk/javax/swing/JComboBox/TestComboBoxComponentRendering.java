@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.image.BufferedImage;
+import java.awt.Font;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
@@ -137,6 +138,7 @@ class ComboBoxCustomRenderer extends JLabel
         implements ListCellRenderer {
 
     public ComboBoxCustomRenderer() {
+        setFont(new Font("SansSerif", Font.BOLD, 32));
         setOpaque(true);
         setHorizontalAlignment(CENTER);
         setVerticalAlignment(CENTER);
