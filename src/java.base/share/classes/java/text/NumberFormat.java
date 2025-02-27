@@ -884,15 +884,22 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Returns true if grouping is used in this format. This applies to both
-     * formatting and parsing. For example, in the English locale, with grouping on,
-     * the number 1234567 might be formatted as "1,234,567". For the same format
-     * with grouping off, the String "1,234,567" might be parsed as 1.
-     * The grouping separator as well as the size of each group
-     * is locale dependent and is determined by sub-classes of NumberFormat.
+     * formatting and parsing. The grouping separator as well as the size of each
+     * group is locale dependent and is determined by sub-classes of NumberFormat.
+     * For example, consider a {@code NumberFormat} that expects a "{@code ,}"
+     * grouping separator symbol with a grouping size of 3.
+     * <ul>
+     *   <li> Formatting {@code 1234567} with grouping on returns {@code "1,234,567"}
+     *   <li> Parsing {@code "1,234,567"} with grouping off returns {@code 1}
+     *   <li> Parsing {@code "1,234,567"} with grouping off and an implementation that
+     *        implements strict parsing with {@link #isStrict()} returning {@code true}
+     *        throws {@code ParseException}
+     * </ul>
      *
      * @return {@code true} if grouping is used;
      *         {@code false} otherwise
      * @see #setGroupingUsed
+     * @see ##leniency Leniency Section
      */
     public boolean isGroupingUsed() {
         return groupingUsed;
