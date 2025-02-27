@@ -3194,10 +3194,10 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
         if (iloop->get_loop(iloop->get_ctrl(in)) != outer_loop_ilt) {
           continue;
         }
-        assert(!loop->_body.contains(in), "");
-        loop->_body.push(in);
         wq.push(in);
       }
+      assert(!loop->_body.contains(n), "Shouldn't append node to body twice");
+      loop->_body.push(n);
     }
     iloop->set_loop(safepoint, loop);
     loop->_body.push(safepoint);
