@@ -132,7 +132,8 @@ public class Operations {
         new Operation.Unary(Type.ints(), "Integer.bitCount(", Type.ints(), ")"),
         new Operation.Binary(Type.ints(), "Integer.compare(", Type.ints(), ", ", Type.ints(), ")"),
         new Operation.Binary(Type.ints(), "Integer.compareUnsigned(", Type.ints(), ", ", Type.ints(), ")"),
-        new Operation.Binary(Type.ints(), "Integer.compress(", Type.ints(), ", ", Type.ints(), ")"),
+        //new Operation.Binary(Type.ints(), "Integer.compress(", Type.ints(), ", ", Type.ints(), ")"),
+        // TODO: add back after JDK-8350896
         new Operation.Binary(Type.ints(), "Integer.divideUnsigned(", Type.ints(), ", ", Type.ints(), ")"),
         new Operation.Binary(Type.ints(), "Integer.expand(", Type.ints(), ", ", Type.ints(), ")"),
         new Operation.Unary(Type.ints(), "Integer.highestOneBit(", Type.ints(), ")"),
@@ -198,7 +199,8 @@ public class Operations {
 
         new Operation.Unary(Type.longs(), "Integer.toUnsignedLong(", Type.ints(), ")"),
 
-        new Operation.Binary(Type.longs(), "Long.compress(", Type.longs(), ", ", Type.longs(), ")"),
+        // new Operation.Binary(Type.longs(), "Long.compress(", Type.longs(), ", ", Type.longs(), ")"),
+        // TODO: add back after JDK-8350896
         new Operation.Binary(Type.longs(), "Long.divideUnsigned(", Type.longs(), ", ", Type.longs(), ")"),
         new Operation.Binary(Type.longs(), "Long.expand(", Type.longs(), ", ", Type.longs(), ")"),
         new Operation.Unary(Type.longs(), "Long.highestOneBit(", Type.longs(), ")"),
@@ -235,7 +237,8 @@ public class Operations {
         new Operation.Binary(Type.floats(), "(", Type.floats(), " / ",   Type.floats(), ")"),
         new Operation.Binary(Type.floats(), "(", Type.floats(), " % ",   Type.floats(), ")"),
 
-        new Operation.Unary(Type.floats(), "Float.float16ToFloat(", Type.shorts(), ")"),
+        //new Operation.Unary(Type.floats(), "Float.float16ToFloat(", Type.shorts(), ")"),
+        // TODO: add back after JDK-8350835
         new Operation.Unary(Type.floats(), "Float.intBitsToFloat(", Type.ints(), ")"),
         new Operation.Binary(Type.floats(), "Float.max(", Type.floats(), ", ", Type.floats(), ")"),
         new Operation.Binary(Type.floats(), "Float.min(", Type.floats(), ", ", Type.floats(), ")"),
