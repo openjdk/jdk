@@ -101,6 +101,7 @@ import jdk.internal.vm.vector.Float16Math;
 public final class Float16
     extends Number
     implements Comparable<Float16> {
+    /** @serial */
     private final short value;
     private static final long serialVersionUID = 16; // May not be needed when a value class?
 

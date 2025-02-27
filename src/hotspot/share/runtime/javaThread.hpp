@@ -935,6 +935,9 @@ private:
     assert(_jni_active_critical >= 0, "JNI critical nesting problem?");
   }
 
+  // Atomic version; invoked by a thread other than the owning thread.
+  bool in_critical_atomic() { return Atomic::load(&_jni_active_critical) > 0; }
+
   // Checked JNI: is the programmer required to check for exceptions, if so specify
   // which function name. Returning to a Java frame should implicitly clear the
   // pending check, this is done for Native->Java transitions (i.e. user JNI code).

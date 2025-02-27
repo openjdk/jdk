@@ -53,6 +53,19 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. BulkLoaderTest DYNAMIC
  */
 
+/*
+ * @test id=aot
+ * @requires vm.cds.supports.aot.class.linking
+ * @comment work around JDK-8345635
+ * @requires !vm.jvmci.enabled
+ * @library /test/jdk/lib/testlibrary /test/lib
+ * @build InitiatingLoaderTester BadOldClassA BadOldClassB
+ * @build BulkLoaderTest
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
+ *                 BadOldClassA BadOldClassB
+ * @run driver BulkLoaderTest AOT
+ */
+
 import java.io.File;
 import java.lang.StackWalker.StackFrame;
 import java.util.List;
@@ -121,6 +134,13 @@ public class BulkLoaderTest {
             return new String[] {
                 mainClass,
             };
+        }
+
+        @Override
+        public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
+            if (isAOTWorkflow() && runMode == RunMode.TRAINING) {
+                out.shouldContain("Skipping BadOldClassA: Unlinked class not supported by AOTConfiguration");
+            }
         }
     }
 }

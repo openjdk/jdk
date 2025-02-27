@@ -102,8 +102,6 @@ ciField::ciField(ciInstanceKlass* klass, int index, Bytecodes::Code bc) :
     _type = ciType::make(field_type);
   }
 
-  _name = (ciSymbol*)ciEnv::current(THREAD)->get_symbol(name);
-
   // Get the field's declared holder.
   //
   // Note: we actually create a ciInstanceKlass for this klass,
