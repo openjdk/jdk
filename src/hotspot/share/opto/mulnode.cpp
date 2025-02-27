@@ -992,6 +992,10 @@ static Node* collapse_nested_shift_left(PhaseGVN* phase, Node* outer_shift, int 
   }
 
   if (con0 + con1 >= nbits) {
+    // While it might be tempting to use
+    // phase->zerocon(bt);
+    // it would be incorrect: zerocon caches nodes, while Ideal is only allowed
+    // to return a new node, this or nullptr, but not an old (cached) node.
     return ConNode::make(TypeInteger::zero(bt));
   }
 
