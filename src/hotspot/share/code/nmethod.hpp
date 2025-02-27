@@ -140,10 +140,10 @@ public:
 //    - Code body
 //    - Exception handler
 //    - Stub code
+//    - OOP table
 //
 // As a CodeBlob, an nmethod references [mutable data] allocated on the C heap:
 //  - CodeBlob relocation data
-//  - OOP table
 //  - Metainfo
 //  - JVMCI data
 //
@@ -532,11 +532,11 @@ public:
   address deopt_handler_begin   () const { return           header_begin() + _deopt_handler_offset    ; }
   address deopt_mh_handler_begin() const { return           header_begin() + _deopt_mh_handler_offset ; }
   address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (insts_end() - _unwind_handler_offset) : nullptr; }
+  oop*    oops_begin            () const { return (oop*)    data_begin(); }
+  oop*    oops_end              () const { return (oop*)    data_end(); }
 
   // mutable data
-  oop*    oops_begin            () const { return (oop*)       (mutable_data_begin() + _relocation_size); }
-  oop*    oops_end              () const { return (oop*)       (mutable_data_begin() + _relocation_size + _oops_size); }
-  Metadata** metadata_begin     () const { return (Metadata**) (mutable_data_begin() + _relocation_size + _oops_size); }
+  Metadata** metadata_begin     () const { return (Metadata**) (mutable_data_begin() + _relocation_size); }
 #if INCLUDE_JVMCI
   Metadata** metadata_end       () const { return (Metadata**) (mutable_data_end() - _jvmci_data_size); }
   address jvmci_data_begin      () const { return               mutable_data_end() - _jvmci_data_size; }

@@ -5529,7 +5529,8 @@ void MacroAssembler::movoop(Register dst, jobject obj) {
   if (BarrierSet::barrier_set()->barrier_set_assembler()->supports_instruction_patching()) {
     mov(dst, Address((address)obj, rspec));
   } else {
-    ldr_patchable(dst, Address((address)obj, rspec));
+    address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
+    ldr(dst, Address(dummy, rspec)); // relocate_code_to replaces dummy with a real address
   }
 }
 
