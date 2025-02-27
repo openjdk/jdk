@@ -239,6 +239,7 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("InitialHeapSize");
         excludeTestMaxRange("MaxHeapSize");
         excludeTestMaxRange("MaxRAM");
+        excludeTestMaxRange("MinHeapDeltaBytes");
         excludeTestMaxRange("NewSize");
         excludeTestMaxRange("ParallelGCThreads");
         excludeTestMaxRange("TLABSize");

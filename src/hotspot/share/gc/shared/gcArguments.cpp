@@ -142,13 +142,13 @@ void GCArguments::initialize_heap_flags_and_sizes() {
   // User inputs from -Xmx and -Xms must be aligned
   // Write back to flags if the values changed
   if (!is_aligned(MinHeapSize, HeapAlignment)) {
-    FLAG_SET_ERGO(MinHeapSize, align_up_or_min(MinHeapSize, HeapAlignment));
+    FLAG_SET_ERGO(MinHeapSize, align_up(MinHeapSize, HeapAlignment));
   }
   if (!is_aligned(InitialHeapSize, HeapAlignment)) {
-    FLAG_SET_ERGO(InitialHeapSize, align_up_or_min(InitialHeapSize, HeapAlignment));
+    FLAG_SET_ERGO(InitialHeapSize, align_up(InitialHeapSize, HeapAlignment));
   }
   if (!is_aligned(MaxHeapSize, HeapAlignment)) {
-    FLAG_SET_ERGO(MaxHeapSize, align_up_or_min(MaxHeapSize, HeapAlignment));
+    FLAG_SET_ERGO(MaxHeapSize, align_up(MaxHeapSize, HeapAlignment));
   }
 
   if (!FLAG_IS_DEFAULT(InitialHeapSize) && InitialHeapSize > MaxHeapSize) {
@@ -164,7 +164,7 @@ void GCArguments::initialize_heap_flags_and_sizes() {
     FLAG_SET_ERGO(SoftMaxHeapSize, MaxHeapSize);
   }
 
-  FLAG_SET_ERGO(MinHeapDeltaBytes, align_up_or_min(MinHeapDeltaBytes, SpaceAlignment));
+  FLAG_SET_ERGO(MinHeapDeltaBytes, align_up(MinHeapDeltaBytes, SpaceAlignment));
 
   if (checked_cast<uint>(ObjectAlignmentInBytes) > GCCardSizeInBytes) {
     err_msg message("ObjectAlignmentInBytes %u is larger than GCCardSizeInBytes %u",
