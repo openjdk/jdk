@@ -29,7 +29,6 @@
 
 class ZAddressSpaceLimit : public AllStatic {
 public:
-  static size_t mark_stack();
   static size_t heap();
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,17 @@ public class CompilerThread extends JavaThread {
     super(addr);
   }
 
-  public boolean isJavaThread() { return false; }
-  public boolean isHiddenFromExternalView() { return true; }
-  public boolean isCompilerThread() { return true; }
+  @Override
+  public boolean isHiddenFromExternalView() {
+      /*
+       * See JDK-8348317. CompilerThreads are sometimes hidden and sometimes not. They
+       * are not when JVMCI is enabled and a compiler implemented in java is running
+       * on the CompilerThread. This is hard for SA to determine, and not something a customer
+       * is likely to ever run across or care about, so by default all CompilerThreads
+       * are considered to be hidden. However, we allow this behaviour to be overridden
+       * in case the user has a need to make the CompilerThreads visible.
+       */
+      return !Boolean.getBoolean("sun.jvm.hotspot.runtime.CompilerThread.visible");
+  }
 
 }

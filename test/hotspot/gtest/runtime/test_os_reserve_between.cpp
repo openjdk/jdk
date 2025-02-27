@@ -284,7 +284,7 @@ TEST_VM(os, attempt_reserve_memory_between_combos) {
   for (size_t range_size = allocation_granularity(); range_size <= large_end; range_size *= 2) {
     for (size_t start_offset = 0; start_offset <= large_end; start_offset += (large_end / 2)) {
       char* const min = (char*)(uintptr_t)start_offset;
-      char* const max = min + range_size;
+      char* const max = (char*)(p2u(min) + range_size);
       for (size_t bytes = os::vm_page_size(); bytes < large_end; bytes *= 2) {
         for (size_t alignment = allocation_granularity(); alignment < large_end; alignment *= 2) {
           test_attempt_reserve_memory_between(min, max, bytes, alignment, true, Expect::dontcare(), __LINE__);
