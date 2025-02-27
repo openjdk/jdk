@@ -118,30 +118,30 @@ import java.util.Objects;
  * Example:
  * {@snippet lang = java:
  * // Key pair generation
- * var g = KeyPairGenerator.getInstance("X25519");
- * var kp = g.generateKeyPair();
+ * KeyPairGenerator g = KeyPairGenerator.getInstance("X25519");
+ * KeyPair kp = g.generateKeyPair();
  *
  * // The HPKE sender side is initialized with the recipient's public key
- * var sender = Cipher.getInstance("HPKE");
- * var ps = HPKEParameterSpec.of()
+ * Cipher sender = Cipher.getInstance("HPKE");
+ * HPKEParameterSpec ps = HPKEParameterSpec.of()
  *         .info("this_info".getBytes(StandardCharsets.UTF_8));
  * sender.init(Cipher.ENCRYPT_MODE, kp.getPublic(), ps);
  *
  * // Retrieve the key encapsulation message (the KEM output) from the sender
- * var kemEncap = sender.getIV();
+ * byte[] kemEncap = sender.getIV();
  *
  * // The HPKE recipient side is initialized with its own private key
  * // and the key encapsulation message from the sender
- * var recipient = Cipher.getInstance("HPKE");
- * var pr = HPKEParameterSpec.of()
+ * Cipher recipient = Cipher.getInstance("HPKE");
+ * HPKEParameterSpec pr = HPKEParameterSpec.of()
  *         .info("this_info".getBytes(StandardCharsets.UTF_8))
  *         .encapsulation(kemEncap);
  * recipient.init(Cipher.DECRYPT_MODE, kp.getPrivate(), pr);
  *
  * // Secure communication between the 2 sides
- * var msg = "Hello World".getBytes(StandardCharsets.UTF_8);
- * var ct = sender.doFinal(msg);
- * var pt = recipient.doFinal(ct);
+ * byte[] msg = "Hello World".getBytes(StandardCharsets.UTF_8);
+ * byte[] ct = sender.doFinal(msg);
+ * byte[] pt = recipient.doFinal(ct);
  *
  * assert Arrays.equals(msg, pt);
  * }

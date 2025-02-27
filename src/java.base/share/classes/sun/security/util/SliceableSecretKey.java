@@ -35,9 +35,6 @@ import javax.crypto.SecretKey;
 public interface SliceableSecretKey {
     /// Returns a slice as a new `SecretKey`.
     ///
-    /// This method may return the original object if `from` is 0 and
-    /// `to` is the length of the original key.
-    ///
     /// @param alg the new algorithm name
     /// @param from the byte offset of the new key in the full key
     /// @param to the to offset (exclusive) of the new key in the full key
