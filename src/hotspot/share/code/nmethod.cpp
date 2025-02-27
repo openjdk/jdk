@@ -187,7 +187,7 @@ struct java_nmethod_stats_struct {
       tty->print_cr("   stub code     = %u (%f%%)", stub_size, (stub_size * 100.0f)/total_nm_size);
     }
     if (oops_size != 0) {
-      tty->print_cr("   oops          = %u (%f%%)", oops_size, (oops_size * 100.0f)/total_mut_size);
+      tty->print_cr("   oops          = %u (%f%%)", oops_size, (oops_size * 100.0f)/total_nm_size);
     }
     if (total_mut_size != 0) {
       tty->print_cr(" mutable data    = %u (%f%%)", total_mut_size, (total_mut_size * 100.0f)/total_size);
@@ -195,14 +195,14 @@ struct java_nmethod_stats_struct {
     if (relocation_size != 0) {
       tty->print_cr("   relocation    = %u (%f%%)", relocation_size, (relocation_size * 100.0f)/total_mut_size);
     }
+#if INCLUDE_JVMCI
+    if (jvmci_data_size != 0) {
+      tty->print_cr("   JVMCI data    = %u (%f%%)", jvmci_data_size, (jvmci_data_size * 100.0f)/total_mut_size);
+    }
+#endif
     if (metadata_size != 0) {
       tty->print_cr("   metadata      = %u (%f%%)", metadata_size, (metadata_size * 100.0f)/total_mut_size);
     }
-#if INCLUDE_JVMCI
-    if (jvmci_data_size != 0) {
-      tty->print_cr("   JVMCI data    = %u (%f%%)", jvmci_data_size, (jvmci_data_size * 100.0f)/total_nm_size);
-    }
-#endif
     if (total_immut_size != 0) {
       tty->print_cr(" immutable data  = %u (%f%%)", total_immut_size, (total_immut_size * 100.0f)/total_size);
     }
@@ -3084,6 +3084,10 @@ void nmethod::print_on_impl(outputStream* st) const {
                                              p2i(stub_begin()),
                                              p2i(stub_end()),
                                              stub_size());
+  if (oops_size         () > 0) st->print_cr(" oops           [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(oops_begin()),
+                                             p2i(oops_end()),
+                                             oops_size());
   if (mutable_data_size() > 0) st->print_cr(" mutable data [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(mutable_data_begin()),
                                              p2i(mutable_data_end()),
@@ -3092,20 +3096,16 @@ void nmethod::print_on_impl(outputStream* st) const {
                                              p2i(relocation_begin()),
                                              p2i(relocation_end()),
                                              relocation_size());
-  if (oops_size         () > 0) st->print_cr(" oops           [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(oops_begin()),
-                                             p2i(oops_end()),
-                                             oops_size());
-  if (metadata_size     () > 0) st->print_cr(" metadata       [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(metadata_begin()),
-                                             p2i(metadata_end()),
-                                             metadata_size());
 #if INCLUDE_JVMCI
   if (jvmci_data_size   () > 0) st->print_cr(" JVMCI data     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(jvmci_data_begin()),
                                              p2i(jvmci_data_end()),
                                              jvmci_data_size());
 #endif
+  if (metadata_size     () > 0) st->print_cr(" metadata       [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(metadata_begin()),
+                                             p2i(metadata_end()),
+                                             metadata_size());
   if (immutable_data_size() > 0) st->print_cr(" immutable data [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(immutable_data_begin()),
                                              p2i(immutable_data_end()),

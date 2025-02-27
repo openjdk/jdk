@@ -1435,7 +1435,6 @@ public:
   void subw(Register Rd, Register Rn, RegisterOrConstant decrement);
 
   void adrp(Register reg1, const Address &dest, uint64_t &byte_offset);
-  void adrp_movk(Register reg1, const Address &dest, uint64_t &byte_offset);
 
   void tableswitch(Register index, jint lowbound, jint highbound,
                    Label &jumptable, Label &jumptable_end, int stride = 1) {
@@ -1472,6 +1471,16 @@ public:
   //
 
   public:
+
+  void ldr_constant(Register dest, const Address &const_addr) {
+    if (NearCpool) {
+      ldr(dest, const_addr);
+    } else {
+      uint64_t offset;
+      adrp(dest, InternalAddress(const_addr.target()), offset);
+      ldr(dest, Address(dest, offset));
+    }
+  }
 
   address read_polling_page(Register r, relocInfo::relocType rtype);
   void get_polling_page(Register dest, relocInfo::relocType rtype);

@@ -235,7 +235,6 @@ class nmethod : public CodeBlob {
   // Number of arguments passed on the stack
   uint16_t _num_stack_arg_slots;
 
-  // mutable data section
   uint16_t _oops_size;
 #if INCLUDE_JVMCI
   uint16_t _jvmci_data_size;

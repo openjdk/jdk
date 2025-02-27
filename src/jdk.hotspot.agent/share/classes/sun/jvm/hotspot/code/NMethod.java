@@ -51,7 +51,6 @@ public class NMethod extends CodeBlob {
   private static CIntegerField deoptMhHandlerOffsetField;
   private static CIntegerField origPCOffsetField;
   private static CIntegerField stubOffsetField;
-
   private static CIntField     handlerTableOffsetField;
   private static CIntField     nulChkTableOffsetField;
   private static CIntegerField scopesPCsOffsetField;

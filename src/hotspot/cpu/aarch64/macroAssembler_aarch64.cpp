@@ -323,17 +323,6 @@ public:
     offset >>= 2;
     Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
     Instruction_aarch64::patch(insn_addr, 30, 29, offset_lo);
-
-    // Maybe we have a third instruction: adrp + movk + ldr with offset (e.g. ldr_patchable)
-    uint32_t insn3 = insn_at(insn_addr, 2);
-    bool adrpMemInsn3 = Instruction_aarch64::extract(insn3, 29, 24) == 0b111001 &&
-      Instruction_aarch64::extract(_insn, 4, 0) == Instruction_aarch64::extract(insn3, 9, 5);
-    bool insn2_is_movk = nativeInstruction_at(insn_addr+4)->is_movk();
-    if (adrpMemInsn3 && insn2_is_movk) {
-      adrpMem_impl(insn_addr + 4, target);
-      instructions = 3;
-    }
-
     return instructions;
   }
   static int adrpMem_impl(address insn_addr, address &target) {
@@ -475,7 +464,8 @@ public:
       ((uint64_t)Instruction_aarch64::extract(insn2, 20, 5) << 32);
     target = address(dest);
 
-    // We know the destination 4k page. Maybe we have a third instruction.
+    // We know the destination 4k page. Maybe we have a third
+    // instruction.
     uint32_t insn = insn_at(insn_addr, 0);
     uint32_t insn3 = insn_at(insn_addr, 2);
     ptrdiff_t byte_offset;
@@ -5530,8 +5520,9 @@ void MacroAssembler::movoop(Register dst, jobject obj) {
     mov(dst, Address((address)obj, rspec));
   } else {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
-    ldr(dst, Address(dummy, rspec)); // relocate_code_to replaces dummy with a real address
+    ldr_constant(dst, Address(dummy, rspec));
   }
+
 }
 
 // Move a metadata address into a register.
@@ -5679,43 +5670,30 @@ address MacroAssembler::read_polling_page(Register r, relocInfo::relocType rtype
 }
 
 void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) {
-  assert(is_valid_AArch64_address(dest.target()), "bad address");
-  assert(dest.getMode() == Address::literal, "ADRP must be applied to a literal address");
-
-  // 8143067: Ensure that the adrp can reach the dest from anywhere within
-  // the code cache so that if it is relocated we know it will still reach
+  relocInfo::relocType rtype = dest.rspec().reloc()->type();
   uint64_t low_page = (uint64_t)CodeCache::low_bound() >> 12;
   uint64_t high_page = (uint64_t)(CodeCache::high_bound()-1) >> 12;
   uint64_t dest_page = (uint64_t)dest.target() >> 12;
   int64_t offset_low = dest_page - low_page;
   int64_t offset_high = dest_page - high_page;
-  bool is_adrp_reachable = offset_high >= -(1<<20) && offset_low < (1<<20);
-  if (!is_adrp_reachable) {
-    adrp_movk(reg1, dest, byte_offset);
-    return;
-  }
 
-  InstructionMark im(this);
-  relocInfo::relocType rtype = dest.rspec().reloc()->type();
-  code_section()->relocate(inst_mark(), dest.rspec());
-  _adrp(reg1, dest.target());
-
-  byte_offset = (uint64_t)dest.target() & 0xfff;
-}
-
-// Variant using an additional MOVK instruction to support targets located more than 4GB away.
-void MacroAssembler::adrp_movk(Register reg1, const Address &dest, uint64_t &byte_offset) {
   assert(is_valid_AArch64_address(dest.target()), "bad address");
   assert(dest.getMode() == Address::literal, "ADRP must be applied to a literal address");
 
   InstructionMark im(this);
-  relocInfo::relocType rtype = dest.rspec().reloc()->type();
   code_section()->relocate(inst_mark(), dest.rspec());
-  uint64_t target = (uint64_t)dest.target();
-  uint64_t adrp_target = (target & 0xffffffffULL) | ((uint64_t)pc() & 0xffff00000000ULL);
-  _adrp(reg1, (address)adrp_target);
-  movk(reg1, target >> 32, 32);
+  // 8143067: Ensure that the adrp can reach the dest from anywhere within
+  // the code cache so that if it is relocated we know it will still reach
+  if (offset_high >= -(1<<20) && offset_low < (1<<20)) {
+    _adrp(reg1, dest.target());
+  } else {
+    uint64_t target = (uint64_t)dest.target();
+    uint64_t adrp_target
+      = (target & 0xffffffffULL) | ((uint64_t)pc() & 0xffff00000000ULL);
 
+    _adrp(reg1, (address)adrp_target);
+    movk(reg1, target >> 32, 32);
+  }
   byte_offset = (uint64_t)dest.target() & 0xfff;
 }
 
