@@ -35,7 +35,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class StressAsyncUL {
-    static void analyze_output(bool stalling_mode, String... args) throws Exception {
+    static void analyze_output(boolean stalling_mode, String... args) throws Exception {
         ProcessBuilder pb =
             ProcessTools.createLimitedTestJavaProcessBuilder(args);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
