@@ -446,6 +446,7 @@ public final class FileUtils {
     }
 
     // Create a link from "junction" to the real path of "target"
+    @SuppressWarnings("restricted")
     public static boolean createDirectoryJunction(String junction, String target)
         throws IOException
     {
