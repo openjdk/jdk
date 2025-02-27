@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -749,16 +749,11 @@ final class CertificateRequest {
                     SignatureScheme.getSupportedAlgorithms(
                             chc, crm.algorithmIds, HANDSHAKE_SCOPE);
 
-            if (signAlgs.isEmpty()) {
-                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                        "No supported signature algorithm");
-            }
-
             List<SignatureScheme> signCertAlgs =
                     SignatureScheme.getSupportedAlgorithms(
                             chc, crm.algorithmIds, CERTIFICATE_SCOPE);
 
-            if (signCertAlgs.isEmpty()) {
+            if (signAlgs.isEmpty() || signCertAlgs.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No supported signature algorithm");
             }
@@ -816,8 +811,7 @@ final class CertificateRequest {
                     .filter(ka -> SignatureScheme.getPreferableAlgorithm(   // Don't select a signature scheme unless
                             hc.algorithmConstraints,                        //  we will be able to produce
                             hc.peerRequestedSignatureSchemes,               //  a CertificateVerify message later
-                            ka, hc.negotiatedProtocol,
-                            HANDSHAKE_SCOPE) != null
+                            ka, hc.negotiatedProtocol) != null
                             || SSLLogger.logWarning("ssl,handshake",
                                     "Unable to produce CertificateVerify for key algorithm: " + ka))
                     .filter(ka -> {

@@ -41,10 +41,10 @@ public class DisableSignatureSchemePerScopeTLS12 extends
         AbstractCheckSignatureSchemes {
 
     // Disabled for Handshake scope.
-    protected static final String HANDSHAKE_DISABLED_SIG = "rsa_pkcs1_sha1";
+    protected static final String HANDSHAKE_DISABLED_SIG = "rsa_pss_rsae_sha384";
 
     // Disabled for Certificate scope.
-    protected static final String CERTIFICATE_DISABLED_SIG = "rsa_pkcs1_sha384";
+    protected static final String CERTIFICATE_DISABLED_SIG = "ecdsa_secp384r1_sha384";
 
     // jdk.tls.disabledAlgorithms value
     protected static final String DISABLED_CONSTRAINTS =
