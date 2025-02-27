@@ -1083,6 +1083,7 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       assert(IncrementalInlineMH, "required");
       assert(cg->call_node() == this, "mismatch");
       assert(cg->method()->is_method_handle_intrinsic(), "required");
+
       // Check whether this MH handle call becomes a candidate for inlining.
       ciMethod* callee = cg->method();
       vmIntrinsics::ID iid = callee->intrinsic_id();
