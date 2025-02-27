@@ -76,7 +76,6 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   ObjectWaiter* const badObjectWaiterPtr = (ObjectWaiter*) 0xBAD;
   void set_bad_pointers() {
 #ifdef ASSERT
-    // Diagnostic hygiene ...
     this->_prev  = badObjectWaiterPtr;
     this->_next  = badObjectWaiterPtr;
     this->TState = ObjectWaiter::TS_RUN;
@@ -158,7 +157,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static OopStorage* _oop_storage;
 
   // List of j.l.VirtualThread waiting to be unblocked by unblocker thread.
-  static OopHandle _vthread_cxq_head;
+  static OopHandle _vthread_list_head;
   // ParkEvent of unblocker thread.
   static ParkEvent* _vthread_unparker_ParkEvent;
 
@@ -192,7 +191,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
   ObjectWaiter* volatile _entry_list;  // Threads blocked on entry or reentry.
-                                       // The list is actually composed of WaitNodes,
+                                       // The list is actually composed of wait-nodes,
                                        // acting as proxies for Threads.
   ObjectWaiter* volatile _entry_list_tail; // _entry_list is the head, this is the tail.
   int64_t volatile _succ;           // Heir presumptive thread - used for futile wakeup throttling
@@ -216,7 +215,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static void Initialize();
   static void Initialize2();
 
-  static OopHandle& vthread_cxq_head() { return _vthread_cxq_head; }
+  static OopHandle& vthread_list_head() { return _vthread_list_head; }
   static ParkEvent* vthread_unparker_ParkEvent() { return _vthread_unparker_ParkEvent; }
 
   // Only perform a PerfData operation if the PerfData object has been
