@@ -454,7 +454,11 @@ void ShenandoahOldGeneration::concurrent_transfer_pointers_from_satb() const {
   assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
   log_debug(gc)("Transfer SATB buffers");
 
-  // Step 2. Use worker threads to transfer the completed SATB buffers to old generation mark queues.
+  // Step 1. All threads need to 'complete' partially filled, thread local buffers. This
+  // is accomplished in ShenandoahConcurrentGC::complete_abbreviated_cycle using a Handshake
+  // operation.
+  // Step 2. Use worker threads to transfer oops from old, active regions in the completed
+  // SATB buffers to old generation mark queues.
   ShenandoahSATBMarkQueueSet& satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
   ShenandoahTransferOldSATBTask transfer_task(satb_queues, task_queues());
   heap->workers()->run_task(&transfer_task);
