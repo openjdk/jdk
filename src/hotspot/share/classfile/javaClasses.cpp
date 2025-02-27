@@ -867,6 +867,7 @@ int java_lang_Class::_source_file_offset;
 int java_lang_Class::_classData_offset;
 int java_lang_Class::_classRedefinedCount_offset;
 int java_lang_Class::_reflectionData_offset;
+int java_lang_Class::_modifiers_offset;
 
 bool java_lang_Class::_offsets_computed = false;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = nullptr;
@@ -1059,6 +1060,10 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
 
   // Setup indirection from mirror->klass
   set_klass(mirror(), k);
+
+  // Set the modifiers flag.
+  int computed_modifiers = k->compute_modifier_flags();
+  set_modifiers(mirror(), computed_modifiers);
 
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(mirror->klass());
   assert(oop_size(mirror()) == mk->instance_size(k), "should have been set");
@@ -1355,6 +1360,7 @@ oop java_lang_Class::create_basic_type_mirror(const char* basic_type_name, Basic
   InstanceMirrorKlass* mk = InstanceMirrorKlass::cast(vmClasses::Class_klass());
   assert(static_oop_field_count(java_class) == 0, "should have been zeroed by allocation");
 #endif
+  set_modifiers(java_class, JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
   return java_class;
 }
 
@@ -1493,7 +1499,8 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
   macro(_name_offset,                k, "name",                string_signature,       false); \
   macro(_classData_offset,           k, "classData",           object_signature,       false); \
   macro(_reflectionData_offset,      k, "reflectionData",      java_lang_ref_SoftReference_signature, false); \
-  macro(_signers_offset,             k, "signers",             object_array_signature, false);
+  macro(_signers_offset,             k, "signers",             object_array_signature, false); \
+  macro(_modifiers_offset,           k, vmSymbols::modifiers_name(), int_signature,    false);
 
 void java_lang_Class::compute_offsets() {
   if (_offsets_computed) {
@@ -1525,6 +1532,16 @@ int java_lang_Class::classRedefinedCount(oop the_class_mirror) {
 void java_lang_Class::set_classRedefinedCount(oop the_class_mirror, int value) {
   assert(_classRedefinedCount_offset != 0, "offsets should have been initialized");
   the_class_mirror->int_field_put(_classRedefinedCount_offset, value);
+}
+
+int java_lang_Class::modifiers(oop the_class_mirror) {
+  assert(_modifiers_offset != 0, "offsets should have been initialized");
+  return the_class_mirror->int_field(_modifiers_offset);
+}
+
+void java_lang_Class::set_modifiers(oop the_class_mirror, int value) {
+  assert(_modifiers_offset != 0, "offsets should have been initialized");
+  the_class_mirror->int_field_put(_modifiers_offset, value);
 }
 
 

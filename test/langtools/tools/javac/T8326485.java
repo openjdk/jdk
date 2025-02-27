@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,19 +20,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package metaspace.share;
 
+/*
+ * @test
+ * @bug 8326485
+ * @compile/fail/ref=T8326485.out -XDrawDiagnostics -XDdev T8326485.java
+ * @summary Assertion due to Type.addMetadata adding annotations to already-annotated type
+ */
 
-import jdk.test.whitebox.WhiteBox;
-import nsk.share.test.ExecutionController;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-public class TriggerUnloadingWithWhiteBox implements TriggerUnloadingHelper {
-
-        private final static WhiteBox wb = WhiteBox.getWhiteBox();
-
-        @Override
-        public void triggerUnloading(ExecutionController stresser) {
-                wb.fullGC();
-        }
-
+public class T8326485 {
+    @Ann
+    not.java.lang.@Ann String f;
 }
+
+@Target({ElementType.TYPE_USE, ElementType.FIELD})
+@interface Ann {}

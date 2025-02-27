@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,16 @@
  * questions.
  */
 
-#include "export.h"
+package metaspace.share;
 
-typedef struct { double x, y, z; } HVAPoint3D;
+import jdk.test.lib.classloader.ClassUnloadCommon;
+import nsk.share.test.ExecutionController;
 
-EXPORT HVAPoint3D recurse(int depth, HVAPoint3D (*cb)(int)) {
-  if (depth == 0) {
-    HVAPoint3D result = { 2, 1, 0};
-    return result;
-  }
+public class TriggerUnloadingWithFullGC implements TriggerUnloadingHelper {
 
-  HVAPoint3D result = cb(depth - 1);
-  result.x += 1;
-  result.y += 1;
-  result.z += 1;
-  return result;
+        @Override
+        public void triggerUnloading(ExecutionController stresser) {
+                ClassUnloadCommon.triggerUnloading();
+        }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,18 @@
  * questions.
  */
 
-#include "export.h"
+package jdk.test.lib.security;
 
-typedef struct {
-    double x;
-    double y;
-} DoublePoint;
+import java.security.Provider;
+import java.security.Security;
 
-EXPORT DoublePoint unit() {
-    DoublePoint result = { 1, 0 };
-    return result;
-}
-
-EXPORT void unit_ptr(DoublePoint* out) {
-  *out = unit();
+public class Providers {
+    public static void setAt(Provider p, int pos) throws Exception {
+        if (Security.getProvider(p.getName()) != null) {
+            Security.removeProvider(p.getName());
+        }
+        if (Security.insertProviderAt(p, pos) == -1) {
+            throw new Exception("cannot setAt");
+        }
+    }
 }
