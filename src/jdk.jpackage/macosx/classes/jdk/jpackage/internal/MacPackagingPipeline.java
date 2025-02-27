@@ -24,12 +24,12 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.util.PListUtils.writeArray;
-import static jdk.jpackage.internal.util.PListUtils.writeBoolean;
-import static jdk.jpackage.internal.util.PListUtils.writeDict;
-import static jdk.jpackage.internal.util.PListUtils.writeKey;
-import static jdk.jpackage.internal.util.PListUtils.writeString;
-import static jdk.jpackage.internal.util.PListUtils.writeStringArray;
+import static jdk.jpackage.internal.util.PListWriter.writeArray;
+import static jdk.jpackage.internal.util.PListWriter.writeBoolean;
+import static jdk.jpackage.internal.util.PListWriter.writeDict;
+import static jdk.jpackage.internal.util.PListWriter.writeKey;
+import static jdk.jpackage.internal.util.PListWriter.writeString;
+import static jdk.jpackage.internal.util.PListWriter.writeStringArray;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
