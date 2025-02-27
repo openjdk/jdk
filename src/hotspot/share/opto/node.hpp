@@ -240,7 +240,6 @@ typedef ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompi
 // whenever I have phase-specific information.
 
 class Node {
-  friend class VMStructs;
 
   // Lots of restrictions on cloning Nodes
   NONCOPYABLE(Node);
@@ -1612,7 +1611,6 @@ class SimpleDUIterator : public StackObj {
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
 class Node_Array : public AnyObj {
-  friend class VMStructs;
 protected:
   Arena* _a;                    // Arena to allocate in
   uint   _max;
@@ -1657,7 +1655,6 @@ public:
 };
 
 class Node_List : public Node_Array {
-  friend class VMStructs;
   uint _cnt;
 public:
   Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
@@ -1724,7 +1721,6 @@ void Node::visit_uses(Callback callback, Check is_boundary) const {
 
 //------------------------------Unique_Node_List-------------------------------
 class Unique_Node_List : public Node_List {
-  friend class VMStructs;
   VectorSet _in_worklist;
   uint _clock_index;            // Index in list where to pop from next
 public:
@@ -1864,7 +1860,6 @@ inline void Compile::remove_for_igvn(Node* n) {
 
 //------------------------------Node_Stack-------------------------------------
 class Node_Stack {
-  friend class VMStructs;
 protected:
   struct INode {
     Node *node; // Processed node
@@ -1940,7 +1935,6 @@ public:
 // Debugging or profiling annotations loosely and sparsely associated
 // with some nodes.  See Compile::node_notes_at for the accessor.
 class Node_Notes {
-  friend class VMStructs;
   JVMState* _jvms;
 
 public:
