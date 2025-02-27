@@ -107,13 +107,13 @@ public final class Utils {
      *
      * @param enclosing the enclosing context of the value layout
      * @param layout the value layout for which a raw memory segment var handle is to be created
-     * @param noStride if there is no stride, the VH uses the fixed offset instead of taking an offset
-     * @param offset the offset in case there is no stride
+     * @param constantOffset if the VH uses a constant offset instead of taking an offset
+     * @param offset the offset if it is a constant
      * @return a raw memory segment var handle
      */
-    public static VarHandle makeRawSegmentViewVarHandle(MemoryLayout enclosing, ValueLayout layout, boolean noStride, long offset) {
+    public static VarHandle makeRawSegmentViewVarHandle(MemoryLayout enclosing, ValueLayout layout, boolean constantOffset, long offset) {
         if (enclosing instanceof ValueLayout direct) {
-            assert direct.equals(layout) && noStride && offset == 0;
+            assert direct.equals(layout) && constantOffset && offset == 0;
             record VarHandleCache() implements Function<ValueLayout, VarHandle> {
                 private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
                 private static final VarHandleCache INSTANCE = new VarHandleCache();
@@ -125,17 +125,17 @@ public final class Utils {
             }
             return VarHandleCache.HANDLE_MAP.computeIfAbsent(direct.withoutName(), VarHandleCache.INSTANCE);
         }
-        return makeRawSegmentViewVarHandleInternal(enclosing, layout, noStride, offset);
+        return makeRawSegmentViewVarHandleInternal(enclosing, layout, constantOffset, offset);
     }
 
-    private static VarHandle makeRawSegmentViewVarHandleInternal(MemoryLayout enclosing, ValueLayout layout, boolean noStride, long offset) {
+    private static VarHandle makeRawSegmentViewVarHandleInternal(MemoryLayout enclosing, ValueLayout layout, boolean constantOffset, long offset) {
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = ADDRESS_CARRIER_TYPE;
         }
 
         VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
-                enclosing, layout.byteAlignment() - 1, layout.order(), noStride, offset);
+                enclosing, layout.byteAlignment() - 1, layout.order(), constantOffset, offset);
 
         if (layout instanceof AddressLayout addressLayout) {
             MethodHandle longToAddressAdapter = addressLayout.targetLayout().isPresent() ?

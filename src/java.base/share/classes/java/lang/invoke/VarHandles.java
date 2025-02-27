@@ -305,13 +305,13 @@ final class VarHandles {
      * @param carrier the Java carrier type of the element
      * @param enclosing the enclosing layout to perform bound and alignment checks against
      * @param alignmentMask alignment of this accessed element in the enclosing layout
-     * @param noStride if access path to this element has no stride; we can use fixed offset if there is none
-     * @param offset the fixed offset, if there is no strides
+     * @param constantOffset if access path has a constant offset value, i.e. it has no strides
+     * @param offset the constant offset, if there is one
      * @param byteOrder the byte order
      * @return the created var handle
      */
     static VarHandle memorySegmentViewHandle(Class<?> carrier, MemoryLayout enclosing, long alignmentMask,
-                                             boolean noStride, long offset, ByteOrder byteOrder) {
+                                             boolean constantOffset, long offset, ByteOrder byteOrder) {
         if (!carrier.isPrimitive() || carrier == void.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
@@ -321,21 +321,21 @@ final class VarHandles {
         // All carrier types must persist across MethodType erasure
         VarForm form;
         if (carrier == byte.class) {
-            form = VarHandleSegmentAsBytes.selectForm(alignmentMask, noStride);
+            form = VarHandleSegmentAsBytes.selectForm(alignmentMask, constantOffset);
         } else if (carrier == char.class) {
-            form = VarHandleSegmentAsChars.selectForm(alignmentMask, noStride);
+            form = VarHandleSegmentAsChars.selectForm(alignmentMask, constantOffset);
         } else if (carrier == short.class) {
-            form = VarHandleSegmentAsShorts.selectForm(alignmentMask, noStride);
+            form = VarHandleSegmentAsShorts.selectForm(alignmentMask, constantOffset);
         } else if (carrier == int.class) {
-            form = VarHandleSegmentAsInts.selectForm(alignmentMask, noStride);
+            form = VarHandleSegmentAsInts.selectForm(alignmentMask, constantOffset);
         } else if (carrier == float.class) {
-            form = VarHandleSegmentAsFloats.selectForm(alignmentMask, noStride);
+            form = VarHandleSegmentAsFloats.selectForm(alignmentMask, constantOffset);
         } else if (carrier == long.class) {
-            form = VarHandleSegmentAsLongs.selectForm(alignmentMask, noStride);
+            form = VarHandleSegmentAsLongs.selectForm(alignmentMask, constantOffset);
         } else if (carrier == double.class) {
-            form = VarHandleSegmentAsDoubles.selectForm(alignmentMask, noStride);
+            form = VarHandleSegmentAsDoubles.selectForm(alignmentMask, constantOffset);
         } else if (carrier == boolean.class) {
-            form = VarHandleSegmentAsBooleans.selectForm(alignmentMask, noStride);
+            form = VarHandleSegmentAsBooleans.selectForm(alignmentMask, constantOffset);
         } else {
             throw new IllegalStateException("Cannot get here");
         }

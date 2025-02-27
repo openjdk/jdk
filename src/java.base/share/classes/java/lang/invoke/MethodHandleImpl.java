@@ -1553,8 +1553,8 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public VarHandle memorySegmentViewHandle(Class<?> carrier, MemoryLayout enclosing, long alignmentMask, ByteOrder order, boolean noStride, long offset) {
-                return VarHandles.memorySegmentViewHandle(carrier, enclosing, alignmentMask, noStride, offset, order);
+            public VarHandle memorySegmentViewHandle(Class<?> carrier, MemoryLayout enclosing, long alignmentMask, ByteOrder order, boolean constantOffset, long offset) {
+                return VarHandles.memorySegmentViewHandle(carrier, enclosing, alignmentMask, constantOffset, offset, order);
             }
 
             @Override
