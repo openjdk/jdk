@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,18 +62,10 @@ import static jdk.internal.net.quic.QuicTLSEngine.KeySpace.INITIAL;
 import static jdk.internal.net.quic.QuicTLSEngine.KeySpace.ONE_RTT;
 import static jdk.internal.net.quic.QuicTransportErrors.AEAD_LIMIT_REACHED;
 import static jdk.internal.net.quic.QuicTransportErrors.KEY_UPDATE_ERROR;
-import static
-        sun.security.ssl.QuicTLS13KeyLogger.Label.CLIENT_HANDSHAKE_TRAFFIC_SECRET;
-import static sun.security.ssl.QuicTLS13KeyLogger.Label.CLIENT_TRAFFIC_SECRET;
-import static
-        sun.security.ssl.QuicTLS13KeyLogger.Label.SERVER_HANDSHAKE_TRAFFIC_SECRET;
-import static sun.security.ssl.QuicTLS13KeyLogger.Label.SERVER_TRAFFIC_SECRET;
 
 sealed abstract class QuicKeyManager
         permits QuicKeyManager.HandshakeKeyManager,
         QuicKeyManager.InitialKeyManager, QuicKeyManager.OneRttKeyManager {
-
-    private static final QuicTLS13KeyLogger tlsKeyLogger = QuicTLS13KeyLogger.INSTANCE;
 
     private record QuicKeys(SecretKey key, SecretKey iv, SecretKey hp) {
     }
@@ -411,13 +403,6 @@ sealed abstract class QuicKeyManager
                         "TlsServerHandshakeTrafficSecret", null);
                 final QuicKeys serverKeys = deriveQuicKeys(quicVersion,
                         handshakeContext.negotiatedCipherSuite,
-                        server_handshake_traffic_secret);
-                // log the keys
-                tlsKeyLogger.log(CLIENT_HANDSHAKE_TRAFFIC_SECRET,
-                        handshakeContext.clientHelloRandom.randomBytes,
-                        client_handshake_traffic_secret);
-                tlsKeyLogger.log(SERVER_HANDSHAKE_TRAFFIC_SECRET,
-                        handshakeContext.clientHelloRandom.randomBytes,
                         server_handshake_traffic_secret);
 
                 final CipherSuite negotiatedCipherSuite =
@@ -854,13 +839,6 @@ sealed abstract class QuicKeyManager
                 SecretKey server_application_traffic_secret_0 = kd.deriveKey(
                         "TlsServerAppTrafficSecret", null);
 
-                tlsKeyLogger.log(CLIENT_TRAFFIC_SECRET,
-                        clientHelloRandom,
-                        client_application_traffic_secret_0);
-                tlsKeyLogger.log(SERVER_TRAFFIC_SECRET,
-                        clientHelloRandom,
-                        server_application_traffic_secret_0);
-
                 deriveOneRttKeys(this.negotiatedVersion,
                         client_application_traffic_secret_0,
                         server_application_traffic_secret_0,
@@ -1036,16 +1014,6 @@ sealed abstract class QuicKeyManager
                         null);
                 // update the key series
                 this.keySeries = newSeries;
-                // log the keys
-                final int keyUpdateCount =
-                        this.keyUpdateCount.incrementAndGet();
-                tlsKeyLogger.log(CLIENT_TRAFFIC_SECRET, this.clientHelloRandom,
-                        this.keySeries.current.writeCipher.getSecret(),
-                        keyUpdateCount);
-                tlsKeyLogger.log(SERVER_TRAFFIC_SECRET, this.clientHelloRandom,
-                        this.keySeries.current.readCipher.getSecret(),
-                        keyUpdateCount);
-
                 if (oldReadCipher != null) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                         SSLLogger.finest(
