@@ -75,7 +75,8 @@ inline void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
   const size_t garbage = size - live;
 
   // Pre-filter out pages that are guaranteed to not be selected
-  if (!page->is_large() && garbage > _page_fragmentation_limit) {
+  if ((page->is_small() && garbage > _page_fragmentation_limit) ||
+      (page->is_medium() && percent_of(garbage, size) > _fragmentation_limit)) {
     _live_pages.append(page);
   } else if (page->is_young()) {
     _not_selected_pages.append(page);

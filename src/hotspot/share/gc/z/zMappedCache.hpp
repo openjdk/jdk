@@ -100,6 +100,7 @@ public:
   void insert(const ZVirtualMemory& vmem);
 
   ZVirtualMemory remove_contiguous(size_t size);
+  ZVirtualMemory remove_contiguous_power_of_2(size_t min_size, size_t max_size);
   size_t remove_discontiguous(size_t size, ZArray<ZVirtualMemory>* out);
 
   size_t reset_min();

@@ -78,9 +78,12 @@ public:
 
 class ZRelocationSetSelectorGroup {
 private:
+  static constexpr int NumPartitionsShift = 11;
+  static constexpr int NumPartitions = int(1) << NumPartitionsShift;
+
   const char* const                _name;
   const ZPageType                  _page_type;
-  const size_t                     _page_size;
+  const size_t                     _max_page_size;
   const size_t                     _object_size_limit;
   const double                     _fragmentation_limit;
   const size_t                     _page_fragmentation_limit;
@@ -91,13 +94,15 @@ private:
 
   bool is_disabled();
   bool is_selectable();
+
+  size_t partition_index(const ZPage* page) const;
   void semi_sort();
   void select_inner();
 
 public:
   ZRelocationSetSelectorGroup(const char* name,
                               ZPageType page_type,
-                              size_t page_size,
+                              size_t max_page_size,
                               size_t object_size_limit,
                               double fragmentation_limit);
 

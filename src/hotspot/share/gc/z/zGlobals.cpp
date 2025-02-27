@@ -24,7 +24,9 @@
 #include "gc/z/zGlobals.hpp"
 
 size_t     ZPageSizeMediumShift;
-size_t     ZPageSizeMedium;
+size_t     ZPageSizeMediumMax;
+size_t     ZPageSizeMediumMin;
+bool       ZPageSizeMediumEnabled;
 
 size_t     ZObjectSizeLimitMedium;
 
