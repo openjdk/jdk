@@ -23,89 +23,12 @@
 
 package compiler.lib.template_library.types;
 
-import java.util.List;
-
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.RestrictableGenerator;
-
-import compiler.lib.template_library.Operation;
 
 public final class IntType extends PrimitiveType {
     public static final IntType INSTANCE = new IntType();
     private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
-
-    private static final List<Operation> OPERATIONS = List.of(
-        new Operation.Unary("((int)", ByteType.INSTANCE, ")"),
-        new Operation.Unary("((int)", CharType.INSTANCE, ")"),
-        new Operation.Unary("((int)", ShortType.INSTANCE, ")"),
-        new Operation.Unary("((int)", LongType.INSTANCE, ")"),
-        new Operation.Unary("((int)", FloatType.INSTANCE, ")"),
-        new Operation.Unary("((int)", DoubleType.INSTANCE, ")"),
-        // Note: There is no cast from boolean
-
-        new Operation.Unary("(-(", IntType.INSTANCE, "))"),
-        new Operation.Unary("(~", IntType.INSTANCE, ")"),
-
-        new Operation.Binary("(", IntType.INSTANCE, " + ",   IntType.INSTANCE, ")"),
-        new Operation.Binary("(", IntType.INSTANCE, " - ",   IntType.INSTANCE, ")"),
-        new Operation.Binary("(", IntType.INSTANCE, " * ",   IntType.INSTANCE, ")"),
-        new Operation.Binary("(", IntType.INSTANCE, " / ",   IntType.INSTANCE, ")"),
-        new Operation.Binary("(", IntType.INSTANCE, " % ",   IntType.INSTANCE, ")"),
-        new Operation.Binary("(", IntType.INSTANCE, " & ",   IntType.INSTANCE, ")"),
-        new Operation.Binary("(", IntType.INSTANCE, " | ",   IntType.INSTANCE, ")"),
-        new Operation.Binary("(", IntType.INSTANCE, " ^ ",   IntType.INSTANCE, ")"),
-        new Operation.Binary("(", IntType.INSTANCE, " << ",  IntType.INSTANCE, ")"),
-        new Operation.Binary("(", IntType.INSTANCE, " >> ",  IntType.INSTANCE, ")"),
-        new Operation.Binary("(", IntType.INSTANCE, " >>> ", IntType.INSTANCE, ")"),
-
-        new Operation.Binary("Byte.compare(", ByteType.INSTANCE, ", ", ByteType.INSTANCE, ")"),
-        new Operation.Binary("Byte.compareUnsigned(", ByteType.INSTANCE, ", ", ByteType.INSTANCE, ")"),
-        new Operation.Unary("Byte.toUnsignedInt(", ByteType.INSTANCE, ")"),
-
-        new Operation.Binary("Character.compare(", CharType.INSTANCE, ", ", CharType.INSTANCE, ")"),
-
-        new Operation.Binary("Short.compare(", ShortType.INSTANCE, ", ", ShortType.INSTANCE, ")"),
-        new Operation.Binary("Short.compareUnsigned(", ShortType.INSTANCE, ", ", ShortType.INSTANCE, ")"),
-        new Operation.Unary("Short.toUnsignedInt(", ShortType.INSTANCE, ")"),
-
-        new Operation.Unary("Integer.bitCount(", IntType.INSTANCE, ")"),
-        new Operation.Binary("Integer.compare(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
-        new Operation.Binary("Integer.compareUnsigned(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
-        new Operation.Binary("Integer.compress(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
-        new Operation.Binary("Integer.divideUnsigned(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
-        new Operation.Binary("Integer.expand(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
-        new Operation.Unary("Integer.highestOneBit(", IntType.INSTANCE, ")"),
-        new Operation.Unary("Integer.lowestOneBit(", IntType.INSTANCE, ")"),
-        new Operation.Binary("Integer.min(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
-        new Operation.Binary("Integer.max(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
-        new Operation.Unary("Integer.numberOfLeadingZeros(", IntType.INSTANCE, ")"),
-        new Operation.Unary("Integer.numberOfTrailingZeros(", IntType.INSTANCE, ")"),
-        new Operation.Binary("Integer.remainderUnsigned(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
-        new Operation.Unary("Integer.reverse(", IntType.INSTANCE, ")"),
-        new Operation.Unary("Integer.reverseBytes(", IntType.INSTANCE, ")"),
-        new Operation.Binary("Integer.rotateLeft(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
-        new Operation.Binary("Integer.rotateRight(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
-        new Operation.Unary("Integer.signum(", IntType.INSTANCE, ")"),
-        new Operation.Binary("Integer.sum(", IntType.INSTANCE, ", ", IntType.INSTANCE, ")"),
-
-        new Operation.Unary("Long.bitCount(", LongType.INSTANCE, ")"),
-        new Operation.Binary("Long.compare(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
-        new Operation.Binary("Long.compareUnsigned(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
-        new Operation.Unary("Long.numberOfLeadingZeros(", LongType.INSTANCE, ")"),
-        new Operation.Unary("Long.numberOfTrailingZeros(", LongType.INSTANCE, ")"),
-        new Operation.Unary("Long.signum(", LongType.INSTANCE, ")"),
-
-        new Operation.Binary("Float.compare(", FloatType.INSTANCE, ", ", FloatType.INSTANCE, ")"),
-        new Operation.Unary("Float.floatToIntBits(", FloatType.INSTANCE, ")"),
-        // Note: Float.floatToRawIntBits can lead to issues, because the NaN values are not always
-        //       represented by the same int bits.
-
-        new Operation.Binary("Double.compare(", DoubleType.INSTANCE, ", ", DoubleType.INSTANCE, ")"),
-
-        new Operation.Binary("Boolean.compare(", BooleanType.INSTANCE, ", ", BooleanType.INSTANCE, ")"),
-
-        new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", IntType.INSTANCE, " : ", IntType.INSTANCE, ")")
-    );
 
     @Override
     public final String name() { return "int"; }
@@ -113,10 +36,5 @@ public final class IntType extends PrimitiveType {
     @Override
     public final Object con() {
         return GEN_INT.next();
-    }
-
-    @Override
-    public final List<Operation> operations() {
-        return OPERATIONS;
     }
 }

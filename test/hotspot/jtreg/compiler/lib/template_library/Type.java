@@ -68,6 +68,4 @@ public abstract class Type implements Name.Type {
     public final String toString() { return name(); }
 
     public abstract Object con();
-
-    public abstract List<Operation> operations();
 }

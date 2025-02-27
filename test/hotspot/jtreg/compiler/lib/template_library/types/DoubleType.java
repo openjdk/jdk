@@ -23,41 +23,12 @@
 
 package compiler.lib.template_library.types;
 
-import java.util.List;
-
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.Generator;
-
-import compiler.lib.template_library.Operation;
 
 public final class DoubleType extends PrimitiveType {
     public static final DoubleType INSTANCE = new DoubleType();
     private static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
-
-    private static final List<Operation> OPERATIONS = List.of(
-        new Operation.Unary("((double)", ByteType.INSTANCE, ")"),
-        new Operation.Unary("((double)", CharType.INSTANCE, ")"),
-        new Operation.Unary("((double)", ShortType.INSTANCE, ")"),
-        new Operation.Unary("((double)", IntType.INSTANCE, ")"),
-        new Operation.Unary("((double)", LongType.INSTANCE, ")"),
-        new Operation.Unary("((double)", FloatType.INSTANCE, ")"),
-        // Note: There is no cast from boolean
-
-        new Operation.Unary("(-(", DoubleType.INSTANCE, "))"),
-
-        new Operation.Binary("(", DoubleType.INSTANCE, " + ",   DoubleType.INSTANCE, ")"),
-        new Operation.Binary("(", DoubleType.INSTANCE, " - ",   DoubleType.INSTANCE, ")"),
-        new Operation.Binary("(", DoubleType.INSTANCE, " * ",   DoubleType.INSTANCE, ")"),
-        new Operation.Binary("(", DoubleType.INSTANCE, " / ",   DoubleType.INSTANCE, ")"),
-        new Operation.Binary("(", DoubleType.INSTANCE, " % ",   DoubleType.INSTANCE, ")"),
-
-        new Operation.Unary("Double.longBitsToDouble(", IntType.INSTANCE, ")"),
-        new Operation.Binary("Double.max(", DoubleType.INSTANCE, ", ", DoubleType.INSTANCE, ")"),
-        new Operation.Binary("Double.min(", DoubleType.INSTANCE, ", ", DoubleType.INSTANCE, ")"),
-        new Operation.Binary("Double.sum(", DoubleType.INSTANCE, ", ", DoubleType.INSTANCE, ")"),
-
-        new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", DoubleType.INSTANCE, " : ", DoubleType.INSTANCE, ")")
-    );
 
     @Override
     public final String name() { return "double"; }
@@ -65,10 +36,5 @@ public final class DoubleType extends PrimitiveType {
     @Override
     public final Object con() {
         return GEN_DOUBLE.next();
-    }
-
-    @Override
-    public final List<Operation> operations() {
-        return OPERATIONS;
     }
 }

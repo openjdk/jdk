@@ -23,41 +23,12 @@
 
 package compiler.lib.template_library.types;
 
-import java.util.List;
-
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.RestrictableGenerator;
-
-import compiler.lib.template_library.Operation;
 
 public final class ShortType extends PrimitiveType {
     public static final ShortType INSTANCE = new ShortType();
     private static final RestrictableGenerator<Integer> GEN_SHORT = Generators.G.safeRestrict(Generators.G.ints(), Short.MIN_VALUE, Short.MAX_VALUE);
-
-    private static final List<Operation> OPERATIONS = List.of(
-        // Note: the standard integer arithmetic operations are only defined for int/long.
-        //       They can be used for smaller types only via automatic promotion to int,
-        //       and then a cast back to short, e.g:
-        //           short a = (short)(b + c)
-        //
-        //       Instead of adding these operations explicitly, we just add the conversion
-        //       from int to short, and let the IntType generate all the integer arithmetic
-        //       operations.
-        new Operation.Unary("((short)", ByteType.INSTANCE, ")"),
-        new Operation.Unary("((short)", CharType.INSTANCE, ")"),
-        new Operation.Unary("((short)", IntType.INSTANCE, ")"),
-        new Operation.Unary("((short)", LongType.INSTANCE, ")"),
-        new Operation.Unary("((short)", FloatType.INSTANCE, ")"),
-        new Operation.Unary("((short)", DoubleType.INSTANCE, ")"),
-        // Note: There is no cast from boolean
-
-        new Operation.Unary("Short.reverseBytes(", ShortType.INSTANCE, ")"),
-
-        // Note: Float.floatToFloat16 can lead to issues, because NaN values are not always
-        //       represented by the same short bits.
-
-        new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", ShortType.INSTANCE, " : ", ShortType.INSTANCE, ")")
-    );
 
     @Override
     public final String name() { return "short"; }
@@ -65,10 +36,5 @@ public final class ShortType extends PrimitiveType {
     @Override
     public final Object con() {
         return "(short)" + GEN_SHORT.next();
-    }
-
-    @Override
-    public final List<Operation> operations() {
-        return OPERATIONS;
     }
 }

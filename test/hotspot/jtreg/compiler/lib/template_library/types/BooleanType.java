@@ -23,42 +23,12 @@
 
 package compiler.lib.template_library.types;
 
-import java.util.List;
-
 import java.util.Random;
 import jdk.test.lib.Utils;
-
-import compiler.lib.template_library.Operation;
 
 public final class BooleanType extends PrimitiveType {
     public static final BooleanType INSTANCE = new BooleanType();
     private static final Random RANDOM = Utils.getRandomInstance();
-
-    private static final List<Operation> OPERATIONS = List.of(
-        // Note: there is no casting / conversion from an to boolean directly.
-
-        new Operation.Unary("(!(", BooleanType.INSTANCE, "))"),
-
-        new Operation.Binary("(", BooleanType.INSTANCE, " || ",   BooleanType.INSTANCE, ")"),
-        new Operation.Binary("(", BooleanType.INSTANCE, " && ",   BooleanType.INSTANCE, ")"),
-        new Operation.Binary("(", BooleanType.INSTANCE, " ^ ",    BooleanType.INSTANCE, ")"),
-
-        new Operation.Binary("Boolean.logicalAnd(", BooleanType.INSTANCE, ", ",   BooleanType.INSTANCE, ")"),
-        new Operation.Binary("Boolean.logicalOr(", BooleanType.INSTANCE, ", ",   BooleanType.INSTANCE, ")"),
-        new Operation.Binary("Boolean.logicalXor(", BooleanType.INSTANCE, ", ",   BooleanType.INSTANCE, ")"),
-
-        // Note: For now, we are omitting all the Character.is<...> methods. We can add them in the future.
-
-        new Operation.Unary("Float.isFinite(", FloatType.INSTANCE, ")"),
-        new Operation.Unary("Float.isInfinite(", FloatType.INSTANCE, ")"),
-        new Operation.Unary("Float.isNaN(", FloatType.INSTANCE, ")"),
-
-        new Operation.Unary("Double.isFinite(", DoubleType.INSTANCE, ")"),
-        new Operation.Unary("Double.isInfinite(", DoubleType.INSTANCE, ")"),
-        new Operation.Unary("Double.isNaN(", DoubleType.INSTANCE, ")"),
-
-        new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", BooleanType.INSTANCE, " : ", BooleanType.INSTANCE, ")")
-    );
 
     @Override
     public final String name() { return "boolean"; }
@@ -67,10 +37,5 @@ public final class BooleanType extends PrimitiveType {
     public final Object con() {
         // TODO: generator for boolean? Could have different probabilities!
         return RANDOM.nextInt() % 2 == 0;
-    }
-
-    @Override
-    public final List<Operation> operations() {
-        return OPERATIONS;
     }
 }

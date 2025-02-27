@@ -107,7 +107,7 @@ public final class Expression {
     }
 
     private static final ExpressionGeneratorStep expressionGeneratorStep(Type resultType, HashSet<Type> allowedTypes, int maxDepth, List<Type> types) {
-        List<Operation> ops = resultType.operations().stream().filter(o -> o.hasOnlyTypes(allowedTypes)).toList();
+        List<Operation> ops = Operations.PRIMITIVE_OPERATIONS.stream().filter(o -> o.matchesTypes(resultType, allowedTypes)).toList();
         if (maxDepth <= 0 || ops.isEmpty() || RANDOM.nextInt(2 * maxDepth) == 0) {
             // Remember which type we need to fill the ith argument with.
             int i = types.size();
@@ -118,7 +118,7 @@ public final class Expression {
             };
         }
         switch (Library.choice(ops)) {
-            case Operation.Unary(String s0, Type t0, String s1) -> {
+            case Operation.Unary(Type r, String s0, Type t0, String s1) -> {
                 ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, allowedTypes, maxDepth-1, types);
                 return (List<Object> tokens, List<Object> args) -> {
                     tokens.add(s0);
@@ -126,7 +126,7 @@ public final class Expression {
                     tokens.add(s1);
                 };
             }
-            case Operation.Binary(String s0, Type t0, String s1, Type t1, String s2) -> {
+            case Operation.Binary(Type r, String s0, Type t0, String s1, Type t1, String s2) -> {
                 ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, allowedTypes, maxDepth-1, types);
                 ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, allowedTypes, maxDepth-1, types);
                 return (List<Object> tokens, List<Object> args) -> {
@@ -137,7 +137,7 @@ public final class Expression {
                     tokens.add(s2);
                 };
             }
-            case Operation.Ternary(String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3) -> {
+            case Operation.Ternary(Type r, String s0, Type t0, String s1, Type t1, String s2, Type t2, String s3) -> {
                 ExpressionGeneratorStep step0 = expressionGeneratorStep(t0, allowedTypes, maxDepth-1, types);
                 ExpressionGeneratorStep step1 = expressionGeneratorStep(t1, allowedTypes, maxDepth-1, types);
                 ExpressionGeneratorStep step2 = expressionGeneratorStep(t1, allowedTypes, maxDepth-1, types);

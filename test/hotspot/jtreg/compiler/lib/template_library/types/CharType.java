@@ -23,38 +23,12 @@
 
 package compiler.lib.template_library.types;
 
-import java.util.List;
-
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.RestrictableGenerator;
-
-import compiler.lib.template_library.Operation;
 
 public final class CharType extends PrimitiveType {
     public static final CharType INSTANCE = new CharType();
     private static final RestrictableGenerator<Integer> GEN_CHAR = Generators.G.safeRestrict(Generators.G.ints(), Character.MIN_VALUE, Character.MAX_VALUE);
-
-    private static final List<Operation> OPERATIONS = List.of(
-        // Note: the standard integer arithmetic operations are only defined for int/long.
-        //       They can be used for smaller types only via automatic promotion to int,
-        //       and then a cast back to char, e.g:
-        //           char a = (char)(b + c)
-        //
-        //       Instead of adding these operations explicitly, we just add the conversion
-        //       from int to char, and let the IntType generate all the integer arithmetic
-        //       operations.
-        new Operation.Unary("((char)", ByteType.INSTANCE, ")"),
-        new Operation.Unary("((char)", ShortType.INSTANCE, ")"),
-        new Operation.Unary("((char)", IntType.INSTANCE, ")"),
-        new Operation.Unary("((char)", LongType.INSTANCE, ")"),
-        new Operation.Unary("((char)", FloatType.INSTANCE, ")"),
-        new Operation.Unary("((char)", DoubleType.INSTANCE, ")"),
-        // Note: There is no cast from boolean
-
-        new Operation.Unary("Character.reverseBytes(", CharType.INSTANCE, ")"),
-
-        new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", CharType.INSTANCE, " : ", CharType.INSTANCE, ")")
-    );
 
     @Override
     public final String name() { return "char"; }
@@ -62,10 +36,5 @@ public final class CharType extends PrimitiveType {
     @Override
     public final Object con() {
         return "(char)" + GEN_CHAR.next();
-    }
-
-    @Override
-    public final List<Operation> operations() {
-        return OPERATIONS;
     }
 }

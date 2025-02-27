@@ -23,36 +23,12 @@
 
 package compiler.lib.template_library.types;
 
-import java.util.List;
-
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.RestrictableGenerator;
-
-import compiler.lib.template_library.Operation;
 
 public final class ByteType extends PrimitiveType {
     public static final ByteType INSTANCE = new ByteType();
     private static final RestrictableGenerator<Integer> GEN_BYTE = Generators.G.safeRestrict(Generators.G.ints(), Byte.MIN_VALUE, Byte.MAX_VALUE);
-
-    private static final List<Operation> OPERATIONS = List.of(
-        // Note: the standard integer arithmetic operations are only defined for int/long.
-        //       They can be used for smaller types only via automatic promotion to int,
-        //       and then a cast back to byte, e.g:
-        //           byte a = (byte)(b + c)
-        //
-        //       Instead of adding these operations explicitly, we just add the conversion
-        //       from int to byte, and let the IntType generate all the integer arithmetic
-        //       operations.
-        new Operation.Unary("((byte)", CharType.INSTANCE, ")"),
-        new Operation.Unary("((byte)", ShortType.INSTANCE, ")"),
-        new Operation.Unary("((byte)", IntType.INSTANCE, ")"),
-        new Operation.Unary("((byte)", LongType.INSTANCE, ")"),
-        new Operation.Unary("((byte)", FloatType.INSTANCE, ")"),
-        new Operation.Unary("((byte)", DoubleType.INSTANCE, ")"),
-        // Note: There is no cast from boolean
-
-        new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", ByteType.INSTANCE, " : ", ByteType.INSTANCE, ")")
-    );
 
     @Override
     public final String name() { return "byte"; }
@@ -60,10 +36,5 @@ public final class ByteType extends PrimitiveType {
     @Override
     public final Object con() {
         return "(byte)" + GEN_BYTE.next();
-    }
-
-    @Override
-    public final List<Operation> operations() {
-        return OPERATIONS;
     }
 }

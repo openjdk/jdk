@@ -23,41 +23,12 @@
 
 package compiler.lib.template_library.types;
 
-import java.util.List;
-
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.Generator;
-
-import compiler.lib.template_library.Operation;
 
 public final class FloatType extends PrimitiveType {
     public static final FloatType INSTANCE = new FloatType();
     private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
-
-    private static final List<Operation> OPERATIONS = List.of(
-        new Operation.Unary("((float)", ByteType.INSTANCE, ")"),
-        new Operation.Unary("((float)", CharType.INSTANCE, ")"),
-        new Operation.Unary("((float)", ShortType.INSTANCE, ")"),
-        new Operation.Unary("((float)", IntType.INSTANCE, ")"),
-        new Operation.Unary("((float)", LongType.INSTANCE, ")"),
-        new Operation.Unary("((float)", DoubleType.INSTANCE, ")"),
-
-        new Operation.Unary("(-(", FloatType.INSTANCE, "))"),
-
-        new Operation.Binary("(", FloatType.INSTANCE, " + ",   FloatType.INSTANCE, ")"),
-        new Operation.Binary("(", FloatType.INSTANCE, " - ",   FloatType.INSTANCE, ")"),
-        new Operation.Binary("(", FloatType.INSTANCE, " * ",   FloatType.INSTANCE, ")"),
-        new Operation.Binary("(", FloatType.INSTANCE, " / ",   FloatType.INSTANCE, ")"),
-        new Operation.Binary("(", FloatType.INSTANCE, " % ",   FloatType.INSTANCE, ")"),
-
-        new Operation.Unary("Float.float16ToFloat(", ShortType.INSTANCE, ")"),
-        new Operation.Unary("Float.intBitsToFloat(", IntType.INSTANCE, ")"),
-        new Operation.Binary("Float.max(", FloatType.INSTANCE, ", ", FloatType.INSTANCE, ")"),
-        new Operation.Binary("Float.min(", FloatType.INSTANCE, ", ", FloatType.INSTANCE, ")"),
-        new Operation.Binary("Float.sum(", FloatType.INSTANCE, ", ", FloatType.INSTANCE, ")"),
-
-        new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", FloatType.INSTANCE, " : ", FloatType.INSTANCE, ")")
-    );
 
     @Override
     public final String name() { return "float"; }
@@ -65,10 +36,5 @@ public final class FloatType extends PrimitiveType {
     @Override
     public final Object con() {
         return GEN_FLOAT.next();
-    }
-
-    @Override
-    public final List<Operation> operations() {
-        return OPERATIONS;
     }
 }

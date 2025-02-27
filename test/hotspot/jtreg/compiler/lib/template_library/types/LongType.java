@@ -23,67 +23,12 @@
 
 package compiler.lib.template_library.types;
 
-import java.util.List;
-
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.RestrictableGenerator;
-
-import compiler.lib.template_library.Operation;
 
 public final class LongType extends PrimitiveType {
     public static final LongType INSTANCE = new LongType();
     private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
-
-    private static final List<Operation> OPERATIONS = List.of(
-        new Operation.Unary("((long)", ByteType.INSTANCE, ")"),
-        new Operation.Unary("((long)", CharType.INSTANCE, ")"),
-        new Operation.Unary("((long)", ShortType.INSTANCE, ")"),
-        new Operation.Unary("((long)", IntType.INSTANCE, ")"),
-        new Operation.Unary("((long)", FloatType.INSTANCE, ")"),
-        new Operation.Unary("((long)", DoubleType.INSTANCE, ")"),
-        // Note: There is no cast from boolean
-
-        new Operation.Unary("(-(", LongType.INSTANCE, "))"),
-        new Operation.Unary("(~", LongType.INSTANCE, ")"),
-
-        new Operation.Binary("(", LongType.INSTANCE, " + ",   LongType.INSTANCE, ")"),
-        new Operation.Binary("(", LongType.INSTANCE, " - ",   LongType.INSTANCE, ")"),
-        new Operation.Binary("(", LongType.INSTANCE, " * ",   LongType.INSTANCE, ")"),
-        new Operation.Binary("(", LongType.INSTANCE, " / ",   LongType.INSTANCE, ")"),
-        new Operation.Binary("(", LongType.INSTANCE, " % ",   LongType.INSTANCE, ")"),
-        new Operation.Binary("(", LongType.INSTANCE, " & ",   LongType.INSTANCE, ")"),
-        new Operation.Binary("(", LongType.INSTANCE, " | ",   LongType.INSTANCE, ")"),
-        new Operation.Binary("(", LongType.INSTANCE, " ^ ",   LongType.INSTANCE, ")"),
-        new Operation.Binary("(", LongType.INSTANCE, " << ",  LongType.INSTANCE, ")"),
-        new Operation.Binary("(", LongType.INSTANCE, " >> ",  LongType.INSTANCE, ")"),
-        new Operation.Binary("(", LongType.INSTANCE, " >>> ", LongType.INSTANCE, ")"),
-
-        new Operation.Unary("Byte.toUnsignedLong(", ByteType.INSTANCE, ")"),
-
-        new Operation.Unary("Short.toUnsignedLong(", ShortType.INSTANCE, ")"),
-
-        new Operation.Unary("Integer.toUnsignedLong(", IntType.INSTANCE, ")"),
-
-        new Operation.Binary("Long.compress(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
-        new Operation.Binary("Long.divideUnsigned(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
-        new Operation.Binary("Long.expand(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
-        new Operation.Unary("Long.highestOneBit(", LongType.INSTANCE, ")"),
-        new Operation.Unary("Long.lowestOneBit(", LongType.INSTANCE, ")"),
-        new Operation.Binary("Long.min(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
-        new Operation.Binary("Long.max(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
-        new Operation.Binary("Long.remainderUnsigned(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
-        new Operation.Unary("Long.reverse(", LongType.INSTANCE, ")"),
-        new Operation.Unary("Long.reverseBytes(", LongType.INSTANCE, ")"),
-        new Operation.Binary("Long.rotateLeft(", LongType.INSTANCE, ", ", IntType.INSTANCE, ")"),
-        new Operation.Binary("Long.rotateRight(", LongType.INSTANCE, ", ", IntType.INSTANCE, ")"),
-        new Operation.Binary("Long.sum(", LongType.INSTANCE, ", ", LongType.INSTANCE, ")"),
-
-        new Operation.Unary("Double.doubleToLongBits(", DoubleType.INSTANCE, ")"),
-        // Note: Double.doubleToRawLongBits can lead to issues, because the NaN values are not always
-        //       represented by the same long bits.
-
-        new Operation.Ternary("(", BooleanType.INSTANCE, " ? ", LongType.INSTANCE, " : ", LongType.INSTANCE, ")")
-    );
 
     @Override
     public final String name() { return "long"; }
@@ -91,10 +36,5 @@ public final class LongType extends PrimitiveType {
     @Override
     public final Object con() {
         return GEN_LONG.next();
-    }
-
-    @Override
-    public final List<Operation> operations() {
-        return OPERATIONS;
     }
 }
