@@ -127,7 +127,6 @@ Agent_OnAttach(JavaVM *vm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
   JNIEnv *env;
-  jsize nVMs;
   jint res;
   jclass clazz;
   jmethodID mid;
