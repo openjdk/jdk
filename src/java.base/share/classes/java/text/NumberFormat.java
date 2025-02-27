@@ -891,9 +891,8 @@ public abstract class NumberFormat extends Format  {
      * <ul>
      *   <li> Formatting {@code 1234567} with grouping on returns {@code "1,234,567"}
      *   <li> Parsing {@code "1,234,567"} with grouping off returns {@code 1}
-     *   <li> Parsing {@code "1,234,567"} with grouping off and an implementation that
-     *        implements strict parsing with {@link #isStrict()} returning {@code true}
-     *        throws {@code ParseException}
+     *   <li> Parsing {@code "1,234,567"} with grouping off when {@link #isStrict()}
+     *        returns {@code true} throws {@code ParseException}
      * </ul>
      *
      * @return {@code true} if grouping is used;
