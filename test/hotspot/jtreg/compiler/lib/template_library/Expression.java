@@ -109,13 +109,21 @@ public final class Expression {
     private static final ExpressionGeneratorStep expressionGeneratorStep(Type resultType, HashSet<Type> allowedTypes, int maxDepth, List<Type> types) {
         List<Operation> ops = Operations.PRIMITIVE_OPERATIONS.stream().filter(o -> o.matchesTypes(resultType, allowedTypes)).toList();
         if (maxDepth <= 0 || ops.isEmpty() || RANDOM.nextInt(2 * maxDepth) == 0) {
-            // Remember which type we need to fill the ith argument with.
-            int i = types.size();
-            types.add(resultType);
-            return (List<Object> tokens, List<Object> args) -> {
-                // Extract the ith argument.
-                tokens.add(args.get(i));
-            };
+            if (RANDOM.nextInt(3) == 0) {
+                // Fill with random constant value.
+                Object c = resultType.con();
+                return (List<Object> tokens, List<Object> args) -> {
+                    tokens.add(c);
+                };
+            } else {
+                // Remember which type we need to fill the ith argument with.
+                int i = types.size();
+                types.add(resultType);
+                return (List<Object> tokens, List<Object> args) -> {
+                    // Extract the ith argument.
+                    tokens.add(args.get(i));
+                };
+            }
         }
         switch (Library.choice(ops)) {
             case Operation.Unary(Type r, String s0, Type t0, String s1) -> {
