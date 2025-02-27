@@ -83,6 +83,10 @@ void ShenandoahDegenGC::entry_degenerated() {
   heap->set_degenerated_gc_in_progress(true);
   op_degenerated();
   heap->set_degenerated_gc_in_progress(false);
+  {
+    ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::degen_gc_propagate_gc_state);
+    heap->propagate_gc_state_to_all_threads();
+  }
 }
 
 void ShenandoahDegenGC::op_degenerated() {

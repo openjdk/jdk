@@ -2269,6 +2269,7 @@
   declare_constant(Deoptimization::Reason_age)                            \
   declare_constant(Deoptimization::Reason_predicate)                      \
   declare_constant(Deoptimization::Reason_loop_limit_check)               \
+  declare_constant(Deoptimization::Reason_auto_vectorization_check)       \
   declare_constant(Deoptimization::Reason_speculate_class_check)          \
   declare_constant(Deoptimization::Reason_speculate_null_check)           \
   declare_constant(Deoptimization::Reason_speculate_null_assert)          \
