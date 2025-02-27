@@ -1078,12 +1078,12 @@ bool CallStaticJavaNode::cmp( const Node &n ) const {
 
 Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   CallGenerator* cg = generator();
-  if (cg != nullptr && can_reshape) {
+  if (can_reshape && cg != nullptr) {
     if (cg->is_mh_late_inline()) {
-      // Check whether this MH handle call becomes a candidate for inlining.
       assert(IncrementalInlineMH, "required");
       assert(cg->call_node() == this, "mismatch");
       assert(cg->method()->is_method_handle_intrinsic(), "required");
+      // Check whether this MH handle call becomes a candidate for inlining.
       ciMethod* callee = cg->method();
       vmIntrinsics::ID iid = callee->intrinsic_id();
       if (iid == vmIntrinsics::_invokeBasic) {
@@ -1177,7 +1177,7 @@ bool CallDynamicJavaNode::cmp( const Node &n ) const {
 
 Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   CallGenerator* cg = generator();
-  if (cg != nullptr && can_reshape) {
+  if (can_reshape && cg != nullptr) {
     if (cg->is_virtual_late_inline()) {
       assert(IncrementalInlineVirtual, "required");
       assert(cg->call_node() == this, "mismatch");
