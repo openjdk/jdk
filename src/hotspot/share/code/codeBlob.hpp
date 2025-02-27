@@ -112,6 +112,7 @@ protected:
   int      _relocation_size;       // size of relocation (could be bigger than 64Kb)
   int      _content_offset;        // offset to where content region begins (this includes consts, insts, stubs)
   int      _code_offset;           // offset to where instructions region begins (this includes insts, stubs)
+  int      _data_offset;           // offset to where data region begins
   int      _frame_size;            // size of stack frame in words (NOT slots. On x64 these are 64bit words)
   int      _mutable_data_size;
 
@@ -194,15 +195,18 @@ public:
   address    header_begin() const             { return (address)    this; }
   address    header_end() const               { return ((address)   this) + _header_size; }
   address    content_begin() const            { return (address)    header_begin() + _content_offset; }
-  address    content_end() const              { return (address)    header_begin() + _size; }
+  address    content_end() const              { return (address)    header_begin() + _data_offset; }
   address    code_begin() const               { return (address)    header_begin() + _code_offset; }
-  address    code_end() const                 { return (address)    header_begin() + _size; }
+  address    code_end() const                 { return (address)    header_begin() + _data_offset; }
+  address    data_begin() const               { return (address)    header_begin() + _data_offset; }
+  address    data_end() const                 { return (address)    header_begin() + _size; }
   address    blob_end() const                 { return (address)    header_begin() + _size; }
   // code_end == content_end is true for all types of blobs for now, it is also checked in the constructor
 
+  int mutable_data_size() const               { return _mutable_data_size; }
   address mutable_data_begin() const          { return _mutable_data; }
   address mutable_data_end() const            { return _mutable_data + _mutable_data_size; }
-  int mutable_data_size() const               { return _mutable_data_size; }
+
   relocInfo* relocation_begin() const         { return (relocInfo*)_mutable_data; }
   relocInfo* relocation_end() const           { return (relocInfo*)((address)relocation_begin() + _relocation_size); }
 
@@ -226,6 +230,7 @@ public:
   // Only used from CodeCache::free_unused_tail() after the Interpreter blob was trimmed
   void adjust_size(size_t used) {
     _size = (int)used;
+    _data_offset = _size;
   }
 
   // Containment

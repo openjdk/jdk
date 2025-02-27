@@ -49,6 +49,7 @@ public class CodeBlob extends VMObject {
   private static CIntegerField contentOffsetField;
   private static CIntegerField codeOffsetField;
   private static CIntField     frameCompleteOffsetField;
+  private static CIntegerField dataOffsetField;
   private static CIntegerField frameSizeField;
   private static AddressField  oopMapsField;
   private static AddressField  mutableDataField;
@@ -77,6 +78,7 @@ public class CodeBlob extends VMObject {
     contentOffsetField       = type.getCIntegerField("_content_offset");
     codeOffsetField          = type.getCIntegerField("_code_offset");
     frameCompleteOffsetField = new CIntField(type.getCIntegerField("_frame_complete_offset"), 0);
+    dataOffsetField          = type.getCIntegerField("_data_offset");
     frameSizeField           = type.getCIntegerField("_frame_size");
     oopMapsField             = type.getAddressField("_oop_maps");
     callerMustGCArgumentsField = type.getCIntegerField("_caller_must_gc_arguments");
@@ -116,16 +118,15 @@ public class CodeBlob extends VMObject {
 
   public Address contentBegin()   { return headerBegin().addOffsetTo(getContentOffset()); }
 
-  public Address contentEnd()     { return headerBegin().addOffsetTo(getSize()); }
+  public Address contentEnd()     { return headerBegin().addOffsetTo(getDataOffset()); }
 
   public Address codeBegin()      { return headerBegin().addOffsetTo(getCodeOffset()); }
 
-  public Address codeEnd()        { return headerBegin().addOffsetTo(getSize()); }
+  public Address codeEnd()        { return headerBegin().addOffsetTo(getDataOffset()); }
 
-  public Address dataBegin()      { return mutableDataField.getValue(addr); }
+  public Address dataBegin()      { return headerBegin().addOffsetTo(getDataOffset()); }
 
-  public Address dataEnd()        { return (dataBegin() == null) ? dataBegin() :
-                                        dataBegin().addOffsetTo(mutableDataSizeField.getValue(addr)); }
+  public Address dataEnd()        { return headerBegin().addOffsetTo(getSize()); }
 
   // Offsets
   public int getContentOffset()   { return (int) contentOffsetField.getValue(addr); }
@@ -134,10 +135,21 @@ public class CodeBlob extends VMObject {
 
   public long getFrameCompleteOffset() { return frameCompleteOffsetField.getValue(addr); }
 
+  public int getDataOffset()      { return (int) dataOffsetField.getValue(addr); }
+
   // Sizes
   public int getSize()            { return (int) sizeField.getValue(addr); }
 
   public int getHeaderSize()      { return (int) headerSizeField.getValue(addr); }
+
+
+  // Mutable data
+  public int getMutableDataSize()   { return (int) mutableDataSizeField.getValue(addr); }
+
+  public Address mutableDataBegin() { return mutableDataField.getValue(addr); }
+
+  public Address mutableDataEnd()   { return mutableDataBegin().addOffsetTo(getMutableDataSize());  }
+
 
   public long getFrameSizeWords() {
     return (int) frameSizeField.getValue(addr);
@@ -178,23 +190,23 @@ public class CodeBlob extends VMObject {
     return null;
   }
 
-  // FIXME: add getRelocationSize()
   public int getContentSize()      { return (int) contentEnd().minus(contentBegin()); }
 
   public int getCodeSize()         { return (int) codeEnd()   .minus(codeBegin());    }
 
   public int getDataSize()         { return (int) dataEnd()   .minus(dataBegin());    }
 
+  public int getRelocationSize()   { return (int) relocationSizeField.getValue(addr); }
+
   // Containment
-  public boolean blobContains(Address addr)    { return headerBegin() .lessThanOrEqual(addr) && codeEnd()   .greaterThan(addr); }
+  public boolean blobContains(Address addr)    { return headerBegin() .lessThanOrEqual(addr) && dataEnd()   .greaterThan(addr); }
 
   // FIXME: add relocationContains
   public boolean contentContains(Address addr) { return contentBegin().lessThanOrEqual(addr) && contentEnd().greaterThan(addr); }
 
   public boolean codeContains(Address addr)    { return codeBegin()   .lessThanOrEqual(addr) && codeEnd()   .greaterThan(addr); }
 
-  public boolean dataContains(Address addr)    { return (dataBegin() == null) ? false :
-                                                        dataBegin()   .lessThanOrEqual(addr) && dataEnd()   .greaterThan(addr); }
+  public boolean dataContains(Address addr)    { return dataBegin()   .lessThanOrEqual(addr) && dataEnd()   .greaterThan(addr); }
 
   public boolean contains(Address addr)        { return contentContains(addr);                                                  }
 

@@ -186,14 +186,14 @@ struct java_nmethod_stats_struct {
     if (stub_size != 0) {
       tty->print_cr("   stub code     = %u (%f%%)", stub_size, (stub_size * 100.0f)/total_nm_size);
     }
+    if (oops_size != 0) {
+      tty->print_cr("   oops          = %u (%f%%)", oops_size, (oops_size * 100.0f)/total_mut_size);
+    }
     if (total_mut_size != 0) {
       tty->print_cr(" mutable data    = %u (%f%%)", total_mut_size, (total_mut_size * 100.0f)/total_size);
     }
     if (relocation_size != 0) {
       tty->print_cr("   relocation    = %u (%f%%)", relocation_size, (relocation_size * 100.0f)/total_mut_size);
-    }
-    if (oops_size != 0) {
-      tty->print_cr("   oops          = %u (%f%%)", oops_size, (oops_size * 100.0f)/total_mut_size);
     }
     if (metadata_size != 0) {
       tty->print_cr("   metadata      = %u (%f%%)", metadata_size, (metadata_size * 100.0f)/total_mut_size);
@@ -1080,7 +1080,6 @@ static void assert_no_oops_or_metadata(nmethod* nm) {
 static int required_mutable_data_size(CodeBuffer* code_buffer,
                                       int jvmci_data_size = 0) {
   return align_up(code_buffer->total_relocation_size(), oopSize) +
-         align_up(code_buffer->total_oop_size(), oopSize) +
          align_up(jvmci_data_size, oopSize) +
          align_up(code_buffer->total_metadata_size(), oopSize);
 }
@@ -1330,9 +1329,9 @@ nmethod::nmethod(
     CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
     int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
     JVMCI_ONLY( _jvmci_data_size = 0; )
-    assert(_mutable_data_size == _relocation_size + _oops_size + metadata_size,
-           "wrong mutable data size: %d != %d + %d + %d",
-           _mutable_data_size, _relocation_size, _oops_size, metadata_size);
+    assert(_mutable_data_size == _relocation_size + metadata_size,
+           "wrong mutable data size: %d != %d + %d",
+           _mutable_data_size, _relocation_size, metadata_size);
 
     // native wrapper does not have read-only data but we need unique not null address
     _immutable_data          = blob_end();
@@ -1505,10 +1504,10 @@ nmethod::nmethod(
     uint16_t metadata_size = (uint16_t)align_up(code_buffer->total_metadata_size(), wordSize);
     JVMCI_ONLY(CHECKED_CAST(_jvmci_data_size, uint16_t, align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize)));
     int jvmci_data_size = 0 JVMCI_ONLY(+ _jvmci_data_size);
-    assert(_mutable_data_size == _relocation_size + _oops_size + metadata_size + jvmci_data_size,
-           "wrong mutable data size: %d != %d + %d + %d + %d",
-           _mutable_data_size, _relocation_size, _oops_size, metadata_size, jvmci_data_size);
-    assert(nmethod_size == code_end() - header_begin(), "wrong nmethod size: %d != %d",
+    assert(_mutable_data_size == _relocation_size + metadata_size + jvmci_data_size,
+           "wrong mutable data size: %d != %d + %d + %d",
+           _mutable_data_size, _relocation_size, metadata_size, jvmci_data_size);
+    assert(nmethod_size == data_end() - header_begin(), "wrong nmethod size: %d != %d",
            nmethod_size, (int)(code_end() - header_begin()));
 
     _immutable_data_size  = immutable_data_size;

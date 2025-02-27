@@ -516,6 +516,7 @@
   nonstatic_field(CodeBlob,                    _code_offset,                                  int)                                   \
   nonstatic_field(CodeBlob,                    _frame_complete_offset,                        int16_t)                               \
   nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
+  nonstatic_field(CodeBlob,                    _data_offset,                                  int)                                   \
   nonstatic_field(CodeBlob,                    _oop_maps,                                     ImmutableOopMapSet*)                   \
   nonstatic_field(CodeBlob,                    _caller_must_gc_arguments,                     bool)                                  \
   nonstatic_field(CodeBlob,                    _mutable_data,                                 address)                               \
@@ -542,7 +543,6 @@
   nonstatic_field(nmethod,                     _deopt_mh_handler_offset,                      int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
-  nonstatic_field(nmethod,                     _oops_size,                                    u2)                                    \
   nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                   \
   nonstatic_field(nmethod,                     _scopes_data_offset,                           int)                                   \
   nonstatic_field(nmethod,                     _handler_table_offset,                         u2)                                    \

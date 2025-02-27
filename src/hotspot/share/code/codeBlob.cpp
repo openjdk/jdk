@@ -112,6 +112,7 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
   // align the size to CodeEntryAlignment
   unsigned int size = align_code_offset(header_size);
   size += align_up(cb->total_content_size(), oopSize);
+  size += align_up(cb->total_oop_size(), oopSize);
   return size;
 }
 
@@ -125,6 +126,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
   _relocation_size(align_up(cb->total_relocation_size(), oopSize)),
   _content_offset(CodeBlob::align_code_offset(header_size)),
   _code_offset(_content_offset + cb->total_offset_of(cb->insts())),
+  _data_offset(_content_offset + align_up(cb->total_content_size(), oopSize)),
   _frame_size(frame_size),
   _mutable_data_size(mutable_data_size),
   S390_ONLY(_ctable_offset(0) COMMA)
@@ -136,9 +138,8 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
   assert(is_aligned(_size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,      oopSize), "unaligned size");
   assert(is_aligned(_relocation_size, oopSize), "unaligned size");
+  assert(_data_offset <= _size, "codeBlob is too small: %d > %d", _data_offset, _size);
   assert(is_nmethod() || (cb->total_oop_size() + cb->total_metadata_size() == 0), "must be nmethod");
-  int code_end_offset = _content_offset + align_up(cb->total_content_size(), oopSize);
-  assert(code_end_offset == _size, "wrong codeBlob size: %d != %d", _size, code_end_offset);
   assert(code_end() == content_end(), "must be the same - see code_end()");
 #ifdef COMPILER1
   // probably wrong for tiered
@@ -164,6 +165,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   _relocation_size(0),
   _content_offset(CodeBlob::align_code_offset(header_size)),
   _code_offset(_content_offset),
+  _data_offset(size),
   _frame_size(0),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),

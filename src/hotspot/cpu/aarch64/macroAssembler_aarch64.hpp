@@ -1473,12 +1473,6 @@ public:
 
   public:
 
-  void ldr_patchable(Register dest, const Address &const_addr) {
-    uint64_t offset;
-    adrp_movk(dest, const_addr, offset);
-    ldr(dest, Address(dest, offset));
-  }
-
   address read_polling_page(Register r, relocInfo::relocType rtype);
   void get_polling_page(Register dest, relocInfo::relocType rtype);
 
