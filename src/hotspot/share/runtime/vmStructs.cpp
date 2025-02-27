@@ -549,6 +549,7 @@
                                                                                                                                      \
   nonstatic_field(CodeBlob,                    _name,                                         const char*)                           \
   nonstatic_field(CodeBlob,                    _size,                                         int)                                   \
+  nonstatic_field(CodeBlob,                    _kind,                                         CodeBlobKind)                          \
   nonstatic_field(CodeBlob,                    _header_size,                                  u2)                                    \
   nonstatic_field(CodeBlob,                    _relocation_size,                              int)                                   \
   nonstatic_field(CodeBlob,                    _content_offset,                               int)                                   \
@@ -1916,6 +1917,7 @@
                                                                           \
   declare_integer_type(CompLevel)                                         \
   declare_integer_type(ByteSize)                                          \
+  declare_integer_type(CodeBlobKind)                                      \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo))                       \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo*))                      \
   declare_toplevel_type(CodeBlob*)                                        \
@@ -2267,6 +2269,7 @@
   declare_constant(Deoptimization::Reason_age)                            \
   declare_constant(Deoptimization::Reason_predicate)                      \
   declare_constant(Deoptimization::Reason_loop_limit_check)               \
+  declare_constant(Deoptimization::Reason_auto_vectorization_check)       \
   declare_constant(Deoptimization::Reason_speculate_class_check)          \
   declare_constant(Deoptimization::Reason_speculate_null_check)           \
   declare_constant(Deoptimization::Reason_speculate_null_assert)          \
@@ -2372,6 +2375,23 @@
   declare_constant(CompLevel_limited_profile)                             \
   declare_constant(CompLevel_full_profile)                                \
   declare_constant(CompLevel_full_optimization)                           \
+                                                                          \
+  /****************/                                                      \
+  /* CodeBlobKind */                                                      \
+  /****************/                                                      \
+                                                                          \
+  declare_constant(CodeBlobKind::Nmethod)                                 \
+  declare_constant(CodeBlobKind::Buffer)                                  \
+  declare_constant(CodeBlobKind::Adapter)                                 \
+  declare_constant(CodeBlobKind::Vtable)                                  \
+  declare_constant(CodeBlobKind::MHAdapter)                               \
+  declare_constant(CodeBlobKind::RuntimeStub)                             \
+  declare_constant(CodeBlobKind::Deoptimization)                          \
+  declare_constant(CodeBlobKind::Safepoint)                               \
+  COMPILER2_PRESENT(declare_constant(CodeBlobKind::Exception))            \
+  COMPILER2_PRESENT(declare_constant(CodeBlobKind::UncommonTrap))         \
+  declare_constant(CodeBlobKind::Upcall)                                  \
+  declare_constant(CodeBlobKind::Number_Of_Kinds)                         \
                                                                           \
   /***************/                                                       \
   /* OopMapValue */                                                       \

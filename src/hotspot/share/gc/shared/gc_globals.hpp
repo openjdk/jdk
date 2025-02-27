@@ -155,11 +155,6 @@
           "A System.gc() request invokes a concurrent collection; "         \
           "(effective only when using concurrent collectors)")              \
                                                                             \
-  product(uintx, GCLockerRetryAllocationCount, 2, DIAGNOSTIC,               \
-          "Number of times to retry allocations when "                      \
-          "blocked by the GC locker")                                       \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(uint, ParallelGCBufferWastePct, 10,                               \
           "Wasted fraction of parallel allocation buffer")                  \
           range(0, 100)                                                     \
