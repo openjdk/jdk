@@ -26,7 +26,7 @@
  * @bug 8071693 8347826
  * @summary Verify that the Introspector finds default methods inherited
  *          from interfaces
- * @run main DefaultMethodBeanPropertyTest testScenario3
+ * @run main DefaultMethodBeanPropertyTest
  */
 
 import java.beans.IntrospectionException;
