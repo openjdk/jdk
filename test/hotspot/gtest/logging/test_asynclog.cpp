@@ -260,7 +260,8 @@ TEST_VM_F(AsyncLogTest, stdoutOutput) {
     return;
   }
 
-  bool async = AsyncLogWriter::instance() != nullptr;
+  bool async = AsyncLogWriter::instance() != nullptr
+               && LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Drop;
   if (async) {
     test_asynclog_drop_messages();
     AsyncLogWriter::flush();
@@ -289,7 +290,8 @@ TEST_VM_F(AsyncLogTest, stderrOutput) {
     return;
   }
 
-  bool async = AsyncLogWriter::instance() != nullptr;
+  bool async = AsyncLogWriter::instance() != nullptr
+               && LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Drop;
   if (async) {
     test_asynclog_drop_messages();
     AsyncLogWriter::flush();
