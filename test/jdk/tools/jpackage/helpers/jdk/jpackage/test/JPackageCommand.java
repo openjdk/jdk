@@ -25,6 +25,8 @@ package jdk.jpackage.test;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
@@ -1000,6 +1002,13 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public Optional<Path> winMsiLogFile() {
         return Optional.ofNullable(winMsiLogFile);
+    }
+
+    public Optional<Stream<String>> winMsiLogFileContents() {
+        return winMsiLogFile().map(ThrowingFunction.toFunction(msiLog -> {
+            // MSI log files are UTF16LE-encoded
+            return Files.lines(msiLog, StandardCharsets.UTF_16LE);
+        }));
     }
 
     private JPackageCommand adjustArgumentsBeforeExecution() {

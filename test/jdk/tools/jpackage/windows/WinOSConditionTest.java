@@ -22,9 +22,9 @@
  */
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.RunnablePackageTest.Action;
@@ -50,12 +50,13 @@ public class WinOSConditionTest {
         // This way the test covers:
         //  1. If jpackage picks custom OS version condition from the resource directory;
         //  2. If the installer created by jpackage uses OS version condition.
-        new PackageTest()
+        new PackageTest().ignoreBundleOutputDir()
         .forTypes(PackageType.WINDOWS)
         .configureHelloApp()
+        .addInitializer(JPackageCommand::setFakeRuntime)
         .addInitializer(cmd -> {
             final var resourceDir = TKit.createTempDirectory("resource-dir");
-            Files.copy(TKit.TEST_SRC_ROOT.resolve("apps/fail-os-condition.wxf"), resourceDir.resolve("os-condition.wxf"));
+            Files.copy(TKit.TEST_SRC_ROOT.resolve("resources/fail-os-condition.wxf"), resourceDir.resolve("os-condition.wxf"));
             // Create a per-user installer to let user without admin privileges install it.
             cmd.addArguments("--win-per-user-install",
                     "--resource-dir", resourceDir.toString()).setFakeRuntime();
@@ -63,15 +64,14 @@ public class WinOSConditionTest {
         .addUninstallVerifier(cmd -> {
             // MSI error code 1603 is generic.
             // Dig into the last msi log file for log messages specific to failed condition.
-            final var msiLog = cmd.winMsiLogFile().orElseThrow();
-            // MSI log files are UTF16LE-encoded
-            try (final var lines = Files.lines(msiLog, StandardCharsets.UTF_16LE)) {
+            try (final var lines = cmd.winMsiLogFileContents().orElseThrow()) {
                 TKit.assertTextStream("Doing action: LaunchConditions").predicate(String::endsWith)
                     .andThen(TKit.assertTextStream("Not supported on this version of Windows").predicate(String::endsWith)).apply(lines);
             }
         })
         .createMsiLog(true)
         .setExpectedInstallExitCode(1603)
+        // Create, try install the package (installation should fail) and verify it is not installed.
         .run(Action.CREATE, Action.INSTALL, Action.VERIFY_UNINSTALL);
     }
 }

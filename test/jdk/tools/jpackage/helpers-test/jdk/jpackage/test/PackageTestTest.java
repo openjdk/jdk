@@ -272,7 +272,7 @@ public class PackageTestTest extends JUnitAdapter {
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
-            servedPaths.add(path);
+            unpackPaths.add(path);
             return path;
         }
 
@@ -285,11 +285,11 @@ public class PackageTestTest extends JUnitAdapter {
             super(expectedTicks);
         }
 
-        List<Path> servedPaths() {
-            return servedPaths;
+        List<Path> unpackPaths() {
+            return unpackPaths;
         }
 
-        private final List<Path> servedPaths = new ArrayList<>();
+        private final List<Path> unpackPaths = new ArrayList<>();
     }
 
     record BundleVerifierSpec(Optional<CountingConsumer> verifier, Optional<CountingBundleVerifier> verifierWithExitCode) {
@@ -662,7 +662,7 @@ public class PackageTestTest extends JUnitAdapter {
     }
 
     @Test
-    @ParameterSupplier("test")
+    @ParameterSupplier
     public void test(TestSpec spec) {
         spec.run();
     }
@@ -712,7 +712,7 @@ public class PackageTestTest extends JUnitAdapter {
     }
 
     @Test
-    @ParameterSupplier("testDisableInstallerUninstaller")
+    @ParameterSupplier
     public void testDisableInstallerUninstaller(TestSpec spec, boolean disableInstaller, boolean disableUninstaller) {
         spec.run(test -> {
             if (disableInstaller) {
@@ -749,7 +749,7 @@ public class PackageTestTest extends JUnitAdapter {
         return verifiers.stream()
                 .filter(CountingUnpacker.class::isInstance)
                 .map(CountingUnpacker.class::cast)
-                .map(CountingUnpacker::servedPaths)
+                .map(CountingUnpacker::unpackPaths)
                 .reduce((x , y) -> {
                     throw new UnsupportedOperationException();
                 }).orElseThrow();
@@ -764,11 +764,11 @@ public class PackageTestTest extends JUnitAdapter {
                 .installVerifiers(TWICE)
                 .create();
 
-        final var servedPaths = getUnpackPaths(testSpec.run());
+        final var unpackPaths = getUnpackPaths(testSpec.run());
 
-        TKit.assertEquals(2, servedPaths.size(), "Check the bundle was unpacked in different directories");
+        TKit.assertEquals(2, unpackPaths.size(), "Check the bundle was unpacked in different directories");
 
-        servedPaths.forEach(dir -> {
+        unpackPaths.forEach(dir -> {
             TKit.assertTrue(dir.startsWith(TKit.workDir()), "Check unpack directory is inside of the test work directory");
         });
     }
@@ -812,17 +812,17 @@ public class PackageTestTest extends JUnitAdapter {
                 .initializers(ONCE)
                 .create();
 
-        final var servedPaths = getUnpackPaths(testSpec.run());
+        final var unpackPaths = getUnpackPaths(testSpec.run());
 
-        TKit.assertEquals(unpackActionCount, servedPaths.size(), "Check the bundle was unpacked in different directories");
+        TKit.assertEquals(unpackActionCount, unpackPaths.size(), "Check the bundle was unpacked in different directories");
 
         // Unpack directories within the test work directory must exist.
-        TKit.assertDirectoryExists(servedPaths.get(0));
-        TKit.assertDirectoryExists(servedPaths.get(2));
+        TKit.assertDirectoryExists(unpackPaths.get(0));
+        TKit.assertDirectoryExists(unpackPaths.get(2));
 
         // Unpack directories outside of the test work directory must be deleted.
-        TKit.assertPathExists(servedPaths.get(1), false);
-        TKit.assertPathExists(servedPaths.get(3), false);
+        TKit.assertPathExists(unpackPaths.get(1), false);
+        TKit.assertPathExists(unpackPaths.get(3), false);
     }
 
     @Test
