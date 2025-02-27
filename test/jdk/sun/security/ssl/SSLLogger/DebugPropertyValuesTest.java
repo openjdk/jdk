@@ -26,7 +26,7 @@
  * @bug 8350582
  * @library /test/lib /javax/net/ssl/templates ../../
  * @summary javax.net.debug "ssl" option parsed incorrectly
- * @run junit DebugPropertyValues
+ * @run junit DebugPropertyValuesTest
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -44,13 +44,12 @@ import java.util.stream.Stream;
 
 import jdk.test.lib.process.OutputAnalyzer;
 
-public class DebugPropertyValues extends SSLSocketTemplate {
+public class DebugPropertyValuesTest extends SSLSocketTemplate {
 
-    static Path LOG_FILE;
+    private static final Path LOG_FILE = Path.of("logging.conf");
 
     @BeforeAll
     static void setup() throws Exception {
-        LOG_FILE = Path.of(System.getProperty("test.classes"), "logging.conf");
         Files.writeString(LOG_FILE, ".level = ALL\n" +
                 "handlers= java.util.logging.ConsoleHandler\n" +
                 "java.util.logging.ConsoleHandler.level = ALL\n");
@@ -149,7 +148,7 @@ public class DebugPropertyValues extends SSLSocketTemplate {
                                  List<String> notExpected) throws Exception {
 
         List<String> args = new ArrayList<>(params);
-        args.add("DebugPropertyValues");
+        args.add("DebugPropertyValuesTest");
         OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(args);
         outputAnalyzer.shouldHaveExitValue(0);
         if (expected != null) {
@@ -167,6 +166,6 @@ public class DebugPropertyValues extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
-        new DebugPropertyValues().run();
+        new DebugPropertyValuesTest().run();
     }
 }
