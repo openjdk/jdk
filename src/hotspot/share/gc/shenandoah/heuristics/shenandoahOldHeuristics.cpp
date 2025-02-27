@@ -622,11 +622,13 @@ void ShenandoahOldHeuristics::evaluate_triggers(size_t first_old_region, size_t 
 bool ShenandoahOldHeuristics::should_resume_old_cycle() {
   // If we are preparing to mark old, or if we are already marking old, then try to continue that work.
   if (_old_generation->is_concurrent_mark_in_progress()) {
+    assert(_old_generation->state() == ShenandoahOldGeneration::MARKING, "Unexpected old gen state: %s", _old_generation->state_name());
     log_trigger("Resume marking old");
     return true;
   }
 
   if (_old_generation->is_preparing_for_mark()) {
+    assert(_old_generation->state() == ShenandoahOldGeneration::FILLING, "Unexpected old gen state: %s", _old_generation->state_name());
     log_trigger("Resume preparing to mark old");
     return true;
   }
