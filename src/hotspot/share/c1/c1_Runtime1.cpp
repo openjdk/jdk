@@ -230,7 +230,7 @@ CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, C1StubId id, const ch
                                                  frame_size,
                                                  oop_maps,
                                                  must_gc_arguments,
-                                                 false);
+                                                 false /* alloc_fail_is_fatal */ );
   return blob;
 }
 
