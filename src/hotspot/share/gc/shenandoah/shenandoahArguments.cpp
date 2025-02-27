@@ -189,10 +189,8 @@ void ShenandoahArguments::initialize() {
   }
 
   if (GCCardSizeInBytes < ShenandoahMinCardSizeInBytes) {
-    char buf[512];
-    os::snprintf(buf, (size_t) 512, "GCCardSizeInBytes ( %u ) must be >= %u\n",
-                 GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes);
-    vm_exit_during_initialization(buf);
+    vm_exit_during_initialization(
+      err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes));
   }
 
   FullGCForwarding::initialize_flags(MaxHeapSize);
