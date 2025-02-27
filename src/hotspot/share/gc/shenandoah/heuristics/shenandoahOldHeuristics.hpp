@@ -53,7 +53,6 @@ private:
   static uint NOT_FOUND;
 
   ShenandoahGenerationalHeap* _heap;
-  ShenandoahOldGeneration* _old_gen;
 
   // After final marking of the old generation, this heuristic will select
   // a set of candidate regions to be included in subsequent mixed collections.
