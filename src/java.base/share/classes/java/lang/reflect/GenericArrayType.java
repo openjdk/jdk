@@ -26,10 +26,10 @@
 package java.lang.reflect;
 
 /**
- * {@code GenericArrayType} represents an array type whose element
- * type is either a parameterized type, such as {@code Comparable<?>} for the
- * array type {@code Comparable<?>[]}, or a type variable, such as {@code T}
- * for the array type {@code T[][]}.
+ * {@code GenericArrayType} represents an array type whose element type is
+ * either a parameterized type, such as {@code Comparable<?>} for the array type
+ * {@code Comparable<?>[]}, or a type variable, such as {@code T} for the array
+ * type {@code T[][]}.
  * <p>
  * Two {@code GenericArrayType} objects should be compared using the {@link
  * Object#equals equals} method.

@@ -26,14 +26,20 @@
 package java.lang.reflect;
 
 /**
- * TypeVariable is the common superinterface for type variables of kinds.
+ * {@code TypeVariable} represents a type variable (JLS {@jls 4.4}) and its
+ * declaration, known as a {@index "type parameter"}, such as {@code <T extends
+ * Comparable<? super T>>}.  The first occurrence of {@code T} is the declaration
+ * of the type variable, and the second occurrence in {@code ? super T} is a use
+ * of the type variable.
+ * <p>
  * A type variable is created the first time it is needed by a reflective
- * method, as specified in this package.  If a type variable t is referenced
- * by a type (i.e, class, interface or annotation type) T, and T is declared
- * by the n<sup>th</sup> enclosing class of T (see JLS {@jls 8.1.2}), then the creation of t
- * requires the resolution (see JVMS {@jvms 5}) of the i<sup>th</sup> enclosing class of T,
- * for i = 0 to n, inclusive. Creating a type variable must not cause the
- * creation of its bounds. Repeated creation of a type variable has no effect.
+ * method, as specified in this package.  If a type variable {@code T} is
+ * referenced by a class {@code C}, and {@code T} is declared by the n<sup>th</sup>
+ * enclosing class of {@code C} (see JLS {@jls 8.1.2}), then the creation of
+ * {@code T} requires the resolution (see JVMS {@jvms 5}) of the i<sup>th</sup>
+ * enclosing class of {@code C}, for i = 0 to n, inclusive.  Creating a type
+ * variable must not cause the creation of its bounds. Repeated creation of a
+ * type variable has no effect.
  * <p>
  * Two {@code TypeVariable} objects should be compared using the {@link
  * Object#equals equals} method.

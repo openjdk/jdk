@@ -27,7 +27,8 @@ package java.lang.reflect;
 
 /**
  * {@code AnnotatedTypeVariable} represents the potentially annotated use of a
- * type variable.
+ * type variable.  Its {@linkplain #getType() underlying} {@code TypeVariable}
+ * represents the type parameter declaration.
  * <p>
  * For example, an annotated use {@code @TA T} has an annotation {@code @TA}
  * and represents the type variable {@code T}.
@@ -42,8 +43,8 @@ package java.lang.reflect;
 public interface AnnotatedTypeVariable extends AnnotatedType {
 
     /**
-     * {@return the potentially annotated use of upper bounds of the type
-     * variable}
+     * {@return the potentially annotated use of upper bounds of the underlying
+     * type parameter declaration}
      * <p>
      * Given an {@code AnnotatedTypeVariable tv}, the call {@code
      * tv.getAnnotatedBounds()} is equivalent to:
