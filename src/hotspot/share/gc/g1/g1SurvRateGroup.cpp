@@ -73,7 +73,7 @@ void G1SurvRateGroup::stop_adding_regions() {
       _surv_rate_predictors[i] = new TruncatedSeq(10);
       if (i == 0) {
         _surv_rate_predictors[i]->add(InitialSurvivorRate);
-        _accum_surv_rate_pred[i] = 0.0;
+        _accum_surv_rate_pred[i] = InitialSurvivorRate;
       } else {
         // Assume that the prediction for the newly added regions is the same as the
         // ones at the (current) end of the array. Particularly predictions at the end
