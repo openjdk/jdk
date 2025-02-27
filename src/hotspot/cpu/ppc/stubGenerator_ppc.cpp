@@ -556,25 +556,25 @@ class StubGenerator: public StubCodeGenerator {
   static void computeGCMProduct(MacroAssembler* masm,
                               VectorRegister vLowerH, VectorRegister vH, VectorRegister vHigherH,
                               VectorRegister vConstC2, VectorRegister vZero, VectorRegister vState,
-                              VectorRegister vTmp4, VectorRegister vTmp5, VectorRegister vTmp6,
-                              VectorRegister vTmp7, VectorRegister vTmp8, VectorRegister vTmp9,
-                              VectorRegister vTmp10, VectorRegister vTmp11) {
+                              VectorRegister vLowProduct, VectorRegister vMidProduct, VectorRegister vHighProduct,
+                              VectorRegister vReducedLow, VectorRegister vTmp8, VectorRegister vTmp9,
+                              VectorRegister vCombinedResult, VectorRegister vSwappedH) {
     assert(masm != nullptr, "MacroAssembler pointer is null");
     masm->vxor(vH, vH, vState);
-    masm->vpmsumd(vTmp4, vLowerH, vH);            // L : Lower Half of subkey H
-    masm->vpmsumd(vTmp5, vTmp11, vH);             // M : Combined halves of subkey H
-    masm->vpmsumd(vTmp6, vHigherH, vH);           // H : Higher Half of subkey H
-    masm->vpmsumd(vTmp7, vTmp4, vConstC2);        // Reduction
-    masm->vsldoi(vTmp8, vTmp5, vZero, 8);         // mL : Extract the lower 64 bits of M
-    masm->vsldoi(vTmp9, vZero, vTmp5, 8);         // mH : Extract the higher 64 bits of M
-    masm->vxor(vTmp4, vTmp4, vTmp8);              // LL + LL : Partial result for lower half
-    masm->vxor(vTmp6, vTmp6, vTmp9);              // HH + HH : Partial result for upper half
-    masm->vsldoi(vTmp4, vTmp4, vTmp4, 8);         // Swap
-    masm->vxor(vTmp4, vTmp4, vTmp7);              // Reduction using constant
-    masm->vsldoi(vTmp10, vTmp4, vTmp4, 8);        // Swap
-    masm->vpmsumd(vTmp4, vTmp4, vConstC2);        // Reduction
-    masm->vxor(vTmp10, vTmp10, vTmp6);            // Combine reduced Low & High products
-    masm->vxor(vState, vTmp4, vTmp10);
+    masm->vpmsumd(vLowProduct, vLowerH, vH);                          // L : Lower Half of subkey H
+    masm->vpmsumd(vMidProduct, vSwappedH, vH);                        // M : Combined halves of subkey H
+    masm->vpmsumd(vHighProduct, vHigherH, vH);                        // H : Higher Half of subkey H
+    masm->vpmsumd(vReducedLow, vLowProduct, vConstC2);                // Reduction
+    masm->vsldoi(vTmp8, vMidProduct, vZero, 8);                       // mL : Extract the lower 64 bits of M
+    masm->vsldoi(vTmp9, vZero, vMidProduct, 8);                       // mH : Extract the higher 64 bits of M
+    masm->vxor(vLowProduct, vLowProduct, vTmp8);                      // LL + LL : Partial result for lower half
+    masm->vxor(vHighProduct, vHighProduct, vTmp9);                    // HH + HH : Partial result for upper half
+    masm->vsldoi(vLowProduct, vLowProduct, vLowProduct, 8);           // Swap
+    masm->vxor(vLowProduct, vLowProduct, vReducedLow);                // Reduction using constant
+    masm->vsldoi(vCombinedResult, vLowProduct, vLowProduct, 8);       // Swap
+    masm->vpmsumd(vLowProduct, vLowProduct, vConstC2);                // Reduction
+    masm->vxor(vCombinedResult, vCombinedResult, vHighProduct);       // Combine reduced Low & High products
+    masm->vxor(vState, vLowProduct, vCombinedResult);
   }
 
   // Generate stub for ghash process blocks.
@@ -610,20 +610,21 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vH = VR1;
     VectorRegister vLowerH = VR2;
     VectorRegister vHigherH = VR3;
-    VectorRegister vTmp4 = VR4;
-    VectorRegister vTmp5 = VR5;
-    VectorRegister vTmp6 = VR6;
-    VectorRegister vTmp7 = VR7;
+    VectorRegister vLowProduct = VR4;
+    VectorRegister vMidProduct = VR5;
+    VectorRegister vHighProduct = VR6;
+    VectorRegister vReducedLow = VR7;
     VectorRegister vTmp8 = VR8;
     VectorRegister vTmp9 = VR9;
     VectorRegister vTmp10 = VR10;
-    VectorRegister vTmp11 = VR11;
+    VectorRegister vSwappedH = VR11;
     VectorRegister vTmp12 = VR12;
     VectorRegister loadOrder = VR13;
     VectorRegister vHigh = VR14;
     VectorRegister vLow = VR15;
     VectorRegister vState = VR16;
     VectorRegister vPerm = VR17;
+    VectorRegister vCombinedResult = VR18;
     VectorRegister vConstC2 = VR19;
 
     __ li(temp1, 0xc2);
@@ -633,21 +634,21 @@ class StubGenerator: public StubCodeGenerator {
     __ lxvd2x(vH->to_vsr(), subkeyH);
     __ lxvd2x(vState->to_vsr(), state);
     // Operations to obtain lower and higher bytes of subkey H.
-    __ vspltisb(vTmp7, 1);
+    __ vspltisb(vReducedLow, 1);
     __ vspltisb(vTmp10, 7);
-    __ vsldoi(vTmp8, vZero, vTmp7, 1);            // 0x1
-    __ vor(vTmp8, vConstC2, vTmp8);               // 0xC2...1
-    __ vsplt(vTmp9, 0, vH);                       // MSB of H
-    __ vsl(vH, vH, vTmp7);                        // Carry = H<<7
+    __ vsldoi(vTmp8, vZero, vReducedLow, 1);            // 0x1
+    __ vor(vTmp8, vConstC2, vTmp8);                     // 0xC2...1
+    __ vsplt(vTmp9, 0, vH);                             // MSB of H
+    __ vsl(vH, vH, vReducedLow);                        // Carry = H<<7
     __ vsrab(vTmp9, vTmp9, vTmp10);
-    __ vand(vTmp9, vTmp9, vTmp8);                 // Carry
+    __ vand(vTmp9, vTmp9, vTmp8);                       // Carry
     __ vxor(vTmp10, vH, vTmp9);
     __ vsldoi(vConstC2, vZero, vConstC2, 8);
-    __ vsldoi(vTmp11, vTmp10, vTmp10, 8);         // swap Lower and Higher Halves of subkey H
-    __ vsldoi(vLowerH, vZero, vTmp11, 8);         // H.L
-    __ vsldoi(vHigherH, vTmp11, vZero, 8);        // H.H
+    __ vsldoi(vSwappedH, vTmp10, vTmp10, 8);            // swap Lower and Higher Halves of subkey H
+    __ vsldoi(vLowerH, vZero, vSwappedH, 8);            // H.L
+    __ vsldoi(vHigherH, vSwappedH, vZero, 8);           // H.H
 #ifdef ASSERT
-    __ cmpwi(CR0, blocks, 0);                     // Compare 'blocks' (R6_ARG4) with zero
+    __ cmpwi(CR0, blocks, 0);                           // Compare 'blocks' (R6_ARG4) with zero
     __ asm_assert_ne("blocks should NOT be zero");
 #endif
     __ clrldi(blocks, blocks, 32);
@@ -689,7 +690,7 @@ class StubGenerator: public StubCodeGenerator {
       __ lvx(vH, temp1, data);
       LE_swap_bytes(vH);
       computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
-                    vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11);
+                    vLowProduct, vMidProduct, vHighProduct, vReducedLow, vTmp8, vTmp9, vCombinedResult, vSwappedH);
       __ addi(data, data, 16);
     __ bdnz(L_aligned_loop);
     __ b(L_store);
@@ -699,7 +700,7 @@ class StubGenerator: public StubCodeGenerator {
     __ lvsl(vPerm, temp1, data);
     __ lvx(vHigh, temp1, data);
 #ifdef VM_LITTLE_ENDIAN
-    __ xxspltib(vTmp12->to_vsr(), 31);
+    __ vspltisb(vTmp12, -1);
     __ vxor(vPerm, vPerm, vTmp12);
 #endif
     __ bind(L_unaligned_loop);
@@ -707,7 +708,7 @@ class StubGenerator: public StubCodeGenerator {
       __ lvx(vLow, temp1, data);
       __ vec_perm(vH, vHigh, vLow, vPerm);
       computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
-                    vTmp4, vTmp5, vTmp6, vTmp7, vTmp8, vTmp9, vTmp10, vTmp11);
+                    vLowProduct, vMidProduct, vHighProduct, vReducedLow, vTmp8, vTmp9, vCombinedResult, vSwappedH);
       __ vmr(vHigh, vLow);
     __ bdnz(L_unaligned_loop);
 
