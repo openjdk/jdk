@@ -240,6 +240,10 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   log_debug(gc)("should_start_gc? available: %zu, soft_max_capacity: %zu"
                 ", allocated: %zu", available, capacity, allocated);
 
+  if (_start_gc_is_pending) {
+    return true;
+  }
+
   // Track allocation rate even if we decide to start a cycle for other reasons.
   double rate = _allocation_rate.sample(allocated);
   _last_trigger = OTHER;
@@ -249,6 +253,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
                  byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                  byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
+    accept_trigger_with_type(OTHER);
     return true;
   }
 
@@ -261,6 +266,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                    _gc_times_learned + 1, max_learn,
                    byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
                    byte_size_in_proper_unit(init_threshold), proper_unit_for_byte_size(init_threshold));
+      accept_trigger_with_type(OTHER);
       return true;
     }
   }
@@ -292,7 +298,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                        byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
                        byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties),
                        byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom));
-    _last_trigger = RATE;
+    accept_trigger_with_type(RATE);
     return true;
   }
 
@@ -303,11 +309,16 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                  byte_size_in_proper_unit(rate), proper_unit_for_byte_size(rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
                  _spike_threshold_sd);
-    _last_trigger = SPIKE;
+    accept_trigger_with_type(SPIKE);
     return true;
   }
 
-  return ShenandoahHeuristics::should_start_gc();
+  if (ShenandoahHeuristics::should_start_gc()) {
+    _start_gc_is_pending = true;
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void ShenandoahAdaptiveHeuristics::adjust_last_trigger_parameters(double amount) {

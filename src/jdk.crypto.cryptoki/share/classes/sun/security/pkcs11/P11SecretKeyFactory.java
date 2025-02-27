@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,21 +67,12 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
     }
 
     private static final Map<String, KeyInfo> keyInfo = new HashMap<>();
-    private static final KeyInfo HMAC = new KeyInfo("HMAC", PCKK_HMAC);
-    private static final KeyInfo SSLMAC = new KeyInfo("SSLMAC", PCKK_SSLMAC);
 
     static KeyInfo getKeyInfo(String algo) {
         KeyInfo ki = keyInfo.get(algo);
         if (ki == null) {
             String algoUpper = algo.toUpperCase(Locale.ENGLISH);
             ki = keyInfo.get(algoUpper);
-            if (ki == null) {
-                if (algoUpper.startsWith("HMAC")) {
-                    return HMAC;
-                } else if (algoUpper.startsWith("SSLMAC")) {
-                    return SSLMAC;
-                }
-            }
         }
         return ki;
     }
@@ -93,12 +84,26 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         return null;
     }
 
+    static HMACKeyInfo getHMACKeyInfo(String algo) {
+        if (getKeyInfo(algo) instanceof HMACKeyInfo hmacKi) {
+            return hmacKi;
+        }
+        return null;
+    }
+
+    static HKDFKeyInfo getHKDFKeyInfo(String algo) {
+        if (getKeyInfo(algo) instanceof HKDFKeyInfo hkdfKi) {
+            return hkdfKi;
+        }
+        return null;
+    }
+
     private static void putKeyInfo(KeyInfo ki) {
         keyInfo.put(ki.algo, ki);
         keyInfo.put(ki.algo.toUpperCase(Locale.ENGLISH), ki);
     }
 
-    static sealed class KeyInfo permits PBEKeyInfo {
+    static sealed class KeyInfo permits PBEKeyInfo, HMACKeyInfo, HKDFKeyInfo {
         public final String algo;
         public final long keyType;
 
@@ -126,6 +131,29 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             // RC4 vs ARCFOUR) and mixed PBE - non-PBE cases (i.e.: a
             // PBE-derived AES key used in an AES Cipher service).
             return ki.keyType == si.keyType;
+        }
+    }
+
+    static final class HMACKeyInfo extends KeyInfo {
+        public final long mech;
+        public final int keyLen;
+
+        HMACKeyInfo(String algo, long mech, int keyLen) {
+            super(algo, CKK_GENERIC_SECRET);
+            this.mech = mech;
+            this.keyLen = keyLen;
+        }
+    }
+
+    static final class HKDFKeyInfo extends KeyInfo {
+        public static final long UNKNOWN_KEY_TYPE = -1;
+        public final long hmacMech;
+        public final int prkLen;
+
+        HKDFKeyInfo(String algo, HMACKeyInfo hmacKi) {
+            super(algo, UNKNOWN_KEY_TYPE);
+            hmacMech = hmacKi.mech;
+            prkLen = hmacKi.keyLen;
         }
     }
 
@@ -169,9 +197,9 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         private static final CK_ATTRIBUTE[] attr = new CK_ATTRIBUTE[] {
                 CK_ATTRIBUTE.SIGN_TRUE};
 
-        P12MacPBEKeyInfo(String algo, long kdfMech, int keyLen) {
+        P12MacPBEKeyInfo(String algo, long kdfMech, HMACKeyInfo hmacKi) {
             super(algo, kdfMech, PBEKeyInfo.INVALID_PRF,
-                    CKK_GENERIC_SECRET, keyLen, attr);
+                    CKK_GENERIC_SECRET, hmacKi.keyLen, attr);
         }
     }
 
@@ -194,6 +222,36 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         putKeyInfo(new KeyInfo("TlsRsaPremasterSecret", PCKK_TLSRSAPREMASTER));
         putKeyInfo(new KeyInfo("TlsMasterSecret", PCKK_TLSMASTER));
         putKeyInfo(new KeyInfo("Generic", CKK_GENERIC_SECRET));
+
+        HMACKeyInfo hmacSHA1 =
+                new HMACKeyInfo("HmacSHA1", CKM_SHA_1_HMAC, 160);
+        HMACKeyInfo hmacSHA224 =
+                new HMACKeyInfo("HmacSHA224", CKM_SHA224_HMAC, 224);
+        HMACKeyInfo hmacSHA256 =
+                new HMACKeyInfo("HmacSHA256", CKM_SHA256_HMAC, 256);
+        HMACKeyInfo hmacSHA384 =
+                new HMACKeyInfo("HmacSHA384", CKM_SHA384_HMAC, 384);
+        HMACKeyInfo hmacSHA512 =
+                new HMACKeyInfo("HmacSHA512", CKM_SHA512_HMAC, 512);
+
+        putKeyInfo(hmacSHA1);
+        putKeyInfo(hmacSHA224);
+        putKeyInfo(hmacSHA256);
+        putKeyInfo(hmacSHA384);
+        putKeyInfo(hmacSHA512);
+        putKeyInfo(new HMACKeyInfo("HmacMD5", CKM_MD5_HMAC, 128));
+        putKeyInfo(new HMACKeyInfo("HmacSHA512/224", CKM_SHA512_224_HMAC, 224));
+        putKeyInfo(new HMACKeyInfo("HmacSHA3-224", CKM_SHA3_224_HMAC, 224));
+        putKeyInfo(new HMACKeyInfo("HmacSHA512/256", CKM_SHA512_256_HMAC, 256));
+        putKeyInfo(new HMACKeyInfo("HmacSHA3-256", CKM_SHA3_256_HMAC, 256));
+        putKeyInfo(new HMACKeyInfo("HmacSHA3-384", CKM_SHA3_384_HMAC, 384));
+        putKeyInfo(new HMACKeyInfo("HmacSHA3-512", CKM_SHA3_512_HMAC, 512));
+        putKeyInfo(new HMACKeyInfo("SslMacMD5", CKM_SSL3_MD5_MAC, 128));
+        putKeyInfo(new HMACKeyInfo("SslMacSHA1", CKM_SSL3_SHA1_MAC, 160));
+
+        putKeyInfo(new HKDFKeyInfo("HKDF-SHA256", hmacSHA256));
+        putKeyInfo(new HKDFKeyInfo("HKDF-SHA384", hmacSHA384));
+        putKeyInfo(new HKDFKeyInfo("HKDF-SHA512", hmacSHA512));
 
         putKeyInfo(new AESPBEKeyInfo("PBEWithHmacSHA1AndAES_128",
                 CKP_PKCS5_PBKD2_HMAC_SHA1, 128));
@@ -228,15 +286,15 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
                 CKP_PKCS5_PBKD2_HMAC_SHA512));
 
         putKeyInfo(new P12MacPBEKeyInfo("HmacPBESHA1",
-                CKM_PBA_SHA1_WITH_SHA1_HMAC, 160));
+                CKM_PBA_SHA1_WITH_SHA1_HMAC, hmacSHA1));
         putKeyInfo(new P12MacPBEKeyInfo("HmacPBESHA224",
-                CKM_NSS_PKCS12_PBE_SHA224_HMAC_KEY_GEN, 224));
+                CKM_NSS_PKCS12_PBE_SHA224_HMAC_KEY_GEN, hmacSHA224));
         putKeyInfo(new P12MacPBEKeyInfo("HmacPBESHA256",
-                CKM_NSS_PKCS12_PBE_SHA256_HMAC_KEY_GEN, 256));
+                CKM_NSS_PKCS12_PBE_SHA256_HMAC_KEY_GEN, hmacSHA256));
         putKeyInfo(new P12MacPBEKeyInfo("HmacPBESHA384",
-                CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN, 384));
+                CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN, hmacSHA384));
         putKeyInfo(new P12MacPBEKeyInfo("HmacPBESHA512",
-                CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN, 512));
+                CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN, hmacSHA512));
     }
 
     // No pseudo key types
@@ -287,8 +345,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         }
         // Check if the key can be used for the service.
         // Any key can be used for a MAC service.
-        if (svcAlgo != keyAlgo &&
-                si.keyType != PCKK_HMAC && si.keyType != PCKK_SSLMAC) {
+        if (svcAlgo != keyAlgo && !(si instanceof HMACKeyInfo)) {
             ki = getKeyInfo(keyAlgo);
             if (ki == null || !KeyInfo.checkUse(ki, si)) {
                 throw new InvalidKeyException("Cannot use a " + keyAlgo +
@@ -348,8 +405,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             }
             byte[] encoded = key.getEncoded();
             try {
-                p11Key = createKey(token, encoded, svcAlgo, si.keyType,
-                        extraAttrs);
+                p11Key = createKey(token, encoded, svcAlgo, si, extraAttrs);
             } finally {
                 Arrays.fill(encoded, (byte) 0);
             }
@@ -486,10 +542,11 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
     }
 
     private static P11Key createKey(Token token, byte[] encoded,
-            String algorithm, long keyType, CK_ATTRIBUTE[] extraAttrs)
+            String algorithm, KeyInfo ki, CK_ATTRIBUTE[] extraAttrs)
             throws InvalidKeyException {
         int n = encoded.length << 3;
         int keyLength = n;
+        long keyType = ki.keyType;
         try {
             switch ((int) keyType) {
                 case (int) CKK_DES -> {
@@ -520,15 +577,11 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
                         CKM_CHACHA20_KEY_GEN, n, token);
                 case (int) CKK_GENERIC_SECRET, (int) PCKK_TLSPREMASTER, (int) PCKK_TLSRSAPREMASTER, (int) PCKK_TLSMASTER ->
                         keyType = CKK_GENERIC_SECRET;
-                case (int) PCKK_SSLMAC, (int) PCKK_HMAC -> {
-                    if (n == 0) {
-                        throw new InvalidKeyException
-                                ("MAC keys must not be empty");
-                    }
-                    keyType = CKK_GENERIC_SECRET;
-                }
                 default -> throw new InvalidKeyException("Unknown algorithm " +
                         algorithm);
+            }
+            if (ki instanceof HMACKeyInfo && n == 0) {
+                throw new InvalidKeyException("MAC keys must not be empty");
             }
         } catch (InvalidAlgorithmParameterException iape) {
             throw new InvalidKeyException("Invalid key for " + algorithm,
