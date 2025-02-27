@@ -180,6 +180,13 @@ public class StreamHandler extends Handler {
      * {@code OutputStream}, the {@code Formatter}'s "head" string is
      * written to the stream before the {@code LogRecord} is written.
      *
+     * @implSpec this method avoids acquiring locks during {@code LogRecord}
+     * formatting, but {@code this} instance is synchronized when writing to the
+     * output stream. To avoid deadlock risk, subclasses must not hold locks
+     * while calling {@code super.publish()}. Specifically, subclasses must
+     * not define the overridden {@code publish()} method to be
+     * {@code synchronized}.
+     *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
      */
@@ -188,13 +195,16 @@ public class StreamHandler extends Handler {
         if (!isLoggable(record)) {
             return;
         }
+        // Read once for consistency (whether in or outside the locked region
+        // is not important).
+        Formatter formatter = getFormatter();
         // JDK-8349206: To avoid deadlock risk, it is essential that the handler
         // is not locked while formatting the log record. Methods such as
         // reportError() and isLoggable() are defined to be thread safe, so we
         // can restrict locking to just writing the message.
         String msg;
         try {
-            msg = getFormatter().format(record);
+            msg = formatter.format(record);
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -206,7 +216,7 @@ public class StreamHandler extends Handler {
             synchronized(this) {
                 Writer writer = this.writer;
                 if (!doneHeader) {
-                    writer.write(getFormatter().getHead(this));
+                    writer.write(formatter.getHead(this));
                     doneHeader = true;
                 }
                 writer.write(msg);
@@ -269,12 +279,13 @@ public class StreamHandler extends Handler {
     private void flushAndClose() {
         Writer writer = this.writer;
         if (writer != null) {
+            Formatter formatter = getFormatter();
             try {
                 if (!doneHeader) {
-                    writer.write(getFormatter().getHead(this));
+                    writer.write(formatter.getHead(this));
                     doneHeader = true;
                 }
-                writer.write(getFormatter().getTail(this));
+                writer.write(formatter.getTail(this));
                 writer.flush();
                 writer.close();
             } catch (Exception ex) {

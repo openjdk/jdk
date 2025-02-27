@@ -67,12 +67,6 @@ public abstract class Formatter {
      * <p>
      * This base class returns an empty string, but this may be
      * overridden by subclasses.
-     * <p>
-     * @implNote Note that this method is often called with an associated
-     * {@link Handler} instance locked so, to avoid deadlock risk, it is
-     * important to avoid making callbacks to unknown user-provided arguments
-     * (e.g. log record parameters captured from previous calls to
-     * {@link #format(LogRecord)}.
      *
      * @param   h  The target handler (can be null)
      * @return  header string
@@ -86,12 +80,6 @@ public abstract class Formatter {
      * <p>
      * This base class returns an empty string, but this may be
      * overridden by subclasses.
-     * <p>
-     * @implNote Note that this method is often called with an associated
-     * {@link Handler} instance locked so, to avoid deadlock risk, it is
-     * important to avoid making callbacks to unknown user-provided arguments
-     * (e.g. log record parameters captured from previous calls to
-     * {@link #format(LogRecord)}.
      *
      * @param   h  The target handler (can be null)
      * @return  tail string
