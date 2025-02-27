@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @bug      8322708
- * @summary  Test to make sure global tags work properly
+ * @bug      8346128 8346659
+ * @summary  Check that snippet generation is reproducible
  * @library  /tools/lib ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
  * @build    toolbox.ToolBox javadoc.tester.*
- * @run main TestGlobalHtml
+ * @run main ReproducibleSnippetTest
  */
 
 import javadoc.tester.JavadocTester;
@@ -36,55 +36,43 @@ import toolbox.ToolBox;
 
 import java.nio.file.Path;
 
-public class TestGlobalHtml extends JavadocTester {
+public class ReproducibleSnippetTest extends JavadocTester {
     ToolBox tb = new ToolBox();
 
     public static void main(String... args) throws Exception {
-        var tester = new TestGlobalHtml();
+        var tester = new ReproducibleSnippetTest();
         tester.runTests();
     }
 
     @Test
-    public void testGlobalTags() {
-        javadoc("--allow-script-in-comments",
-                "-d",
-                "out-global",
-                "-sourcepath",
-                testSrc,
-                "pkg1");
-        checkExit(Exit.OK);
-    }
-
-    @Test
-    public void testNegative(Path base) throws Exception {
+    public void test(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 """
-                package p;
-                /**
-                 * class comment
-                 * <a href="https://openjdk.org/">Hyperlink to the OpenJDK website</a>
-                 */
-                public class C {
-                    /**
-                     * <form>
-                     *   <label for="methodname">Method name:</label><br>
-                     *   <input type="text" id="methodname" name="methodname"><br>
-                     *   <label for="paramname">Method Parameter:</label><br>
-                     *   <input type="text" id="paramname" name="paramname">
-                     * </form>
-                     */
-                    public C() {
-                    }
-                }
-                """);
-
-        javadoc("--allow-script-in-comments",
-                "-d",
-                "out-negative",
+                        package p;
+                        public interface One {
+                            /**
+                             * {@code One obj1}
+                             * {@snippet lang = java:
+                             * // @link substring="ab" target="One#ab" :
+                             * obj1.ab(a()); // @link substring="a" target="#a"
+                             *} class comment
+                             */
+                            int a();
+                            void ab(int i);
+                        }
+                        """);
+        javadoc("-d",
+                "out",
                 "-sourcepath",
                 src.toString(),
                 "p");
         checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true,
+                "One.java:5: error: snippet link tags:",
+                "#a",
+                "One#ab",
+                "overlap in obj1.ab(a());\n     * {@snippet lang = java:\n       ^");
     }
 }
