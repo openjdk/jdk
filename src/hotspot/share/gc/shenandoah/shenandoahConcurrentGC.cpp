@@ -104,7 +104,7 @@ ShenandoahGC::ShenandoahDegenPoint ShenandoahConcurrentGC::degen_point() const {
 
 void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap* const heap) {
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  const char* msg = "Concurrent Update Refs Prepare";
+  const char* msg = conc_init_update_refs_event_message();
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_update_refs_prepare);
   EventMark em("%s", msg);
 
@@ -386,7 +386,7 @@ void ShenandoahConcurrentGC::entry_final_update_refs() {
 }
 
 void ShenandoahConcurrentGC::entry_verify_final_roots() {
-  const char* msg = final_roots_event_message();
+  const char* msg = verify_final_roots_event_message();
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_roots);
   EventMark em("%s", msg);
 
@@ -1302,7 +1302,7 @@ const char* ShenandoahConcurrentGC::conc_reset_event_message() const {
   }
 }
 
-const char* ShenandoahConcurrentGC::final_roots_event_message() const {
+const char* ShenandoahConcurrentGC::verify_final_roots_event_message() const {
   if (ShenandoahHeap::heap()->unload_classes()) {
     SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Verify Final Roots", " (unload classes)");
   } else {
@@ -1339,5 +1339,13 @@ const char* ShenandoahConcurrentGC::conc_cleanup_event_message() const {
     SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent cleanup", " (unload classes)");
   } else {
     SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent cleanup", "");
+  }
+}
+
+const char* ShenandoahConcurrentGC::conc_init_update_refs_event_message() const {
+  if (ShenandoahHeap::heap()->unload_classes()) {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Init Update Refs", " (unload classes)");
+  } else {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent Init Update Refs", "");
   }
 }
