@@ -692,9 +692,11 @@ const Type *AndINode::mul_ring( const Type *t0, const Type *t1 ) const {
   return and_value<TypeInt>(r0, r1);
 }
 
+static bool AndIL_is_zero_element_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt);
+
 const Type* AndINode::Value(PhaseGVN* phase) const {
-  // patterns similar to (v << 2) & 3
-  if (AndIL_shift_and_mask_is_always_zero(phase, in(1), in(2), T_INT, true)) {
+  if (AndIL_is_zero_element_under_mask(phase, in(1), in(2), T_INT) ||
+      AndIL_is_zero_element_under_mask(phase, in(2), in(1), T_INT)) {
     return TypeInt::ZERO;
   }
 
@@ -740,8 +742,8 @@ Node* AndINode::Identity(PhaseGVN* phase) {
 
 //------------------------------Ideal------------------------------------------
 Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // pattern similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
-  Node* progress = AndIL_add_shift_and_mask(phase, T_INT);
+  // Simplify (v1 + v2) & mask to v1 & mask or v2 & mask when possible.
+  Node* progress = AndIL_sum_and_mask(phase, T_INT);
   if (progress != nullptr) {
     return progress;
   }
@@ -824,8 +826,8 @@ const Type *AndLNode::mul_ring( const Type *t0, const Type *t1 ) const {
 }
 
 const Type* AndLNode::Value(PhaseGVN* phase) const {
-  // patterns similar to (v << 2) & 3
-  if (AndIL_shift_and_mask_is_always_zero(phase, in(1), in(2), T_LONG, true)) {
+  if (AndIL_is_zero_element_under_mask(phase, in(1), in(2), T_LONG) ||
+      AndIL_is_zero_element_under_mask(phase, in(2), in(1), T_LONG)) {
     return TypeLong::ZERO;
   }
 
@@ -872,8 +874,8 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
 
 //------------------------------Ideal------------------------------------------
 Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // pattern similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
-  Node* progress = AndIL_add_shift_and_mask(phase, T_LONG);
+  // Simplify (v1 + v2) & mask to v1 & mask or v2 & mask when possible.
+  Node* progress = AndIL_sum_and_mask(phase, T_LONG);
   if (progress != nullptr) {
     return progress;
   }
@@ -2096,99 +2098,109 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
   }
 }
 
-// Given an expression (AndX shift mask) or (AndX mask shift),
-// determine if the AndX must always produce zero, because the
-// the shift (x<<N) is bitwise disjoint from the mask #M.
-// The X in AndX must be I or L, depending on bt.
-// Specifically, the following cases fold to zero,
-// when the shift value N is large enough to zero out
-// all the set positions of the and-mask M.
-//   (AndI (LShiftI _ #N) #M) => #0
-//   (AndL (LShiftL _ #N) #M) => #0
-//   (AndL (ConvI2L (LShiftI _ #N)) #M) => #0
-// The M and N values must satisfy ((-1 << N) & M) == 0.
-// Because the optimization might work for a non-constant
-// mask M, we check the AndX for both operand orders.
-bool MulNode::AndIL_shift_and_mask_is_always_zero(PhaseGVN* phase, Node* shift, Node* mask, BasicType bt, bool check_reverse) {
-  if (mask == nullptr || shift == nullptr) {
-    return false;
+//------------------------------ Sum & Mask ------------------------------
+
+// Returns a lower bound on the number of trailing zeros in expr.
+static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, BasicType bt) {
+  expr = expr->uncast();
+  const TypeInteger* type = phase->type(expr)->isa_integer(bt);
+  if (type == nullptr) {
+    return 0;
   }
-  const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
-  if (mask_t == nullptr || phase->type(shift)->isa_integer(bt) == nullptr) {
-    return false;
+
+  if (type->is_con()) {
+    jlong con = type->get_con_as_long(bt);
+    return con == 0L ? (type2aelembytes(bt) * BitsPerByte) : count_trailing_zeros(con);
   }
-  shift = shift->uncast();
-  if (shift == nullptr) {
-    return false;
-  }
-  if (phase->type(shift)->isa_integer(bt) == nullptr) {
-    return false;
-  }
-  BasicType shift_bt = bt;
-  if (bt == T_LONG && shift->Opcode() == Op_ConvI2L) {
+
+  if (expr->Opcode() == Op_ConvI2L) {
+    expr = expr->in(1)->uncast();
     bt = T_INT;
-    Node* val = shift->in(1);
-    if (val == nullptr) {
-      return false;
-    }
-    val = val->uncast();
-    if (val == nullptr) {
-      return false;
-    }
-    if (val->Opcode() == Op_LShiftI) {
-      shift_bt = T_INT;
-      shift = val;
-      if (phase->type(shift)->isa_integer(bt) == nullptr) {
-        return false;
-      }
-    }
-  }
-  if (shift->Opcode() != Op_LShift(shift_bt)) {
-    if (check_reverse &&
-        (mask->Opcode() == Op_LShift(bt) ||
-         (bt == T_LONG && mask->Opcode() == Op_ConvI2L))) {
-      // try it the other way around
-      return AndIL_shift_and_mask_is_always_zero(phase, mask, shift, bt, false);
-    }
-    return false;
-  }
-  Node* shift2 = shift->in(2);
-  if (shift2 == nullptr) {
-    return false;
-  }
-  const Type* shift2_t = phase->type(shift2);
-  if (!shift2_t->isa_int() || !shift2_t->is_int()->is_con()) {
-    return false;
+    type = phase->type(expr)->isa_int();
   }
 
-  jint shift_con = shift2_t->is_int()->get_con() & ((shift_bt == T_INT ? BitsPerJavaInteger : BitsPerJavaLong) - 1);
-  if ((((jlong)1) << shift_con) > mask_t->hi_as_long() && mask_t->lo_as_long() >= 0) {
-    return true;
+  // Pattern: expr = (x << shift)
+  if (expr->Opcode() == Op_LShift(bt)) {
+    const TypeInt* shift_t = phase->type(expr->in(2))->isa_int();
+    if (shift_t == nullptr || !shift_t->is_con()) {
+      return 0;
+    }
+    // We need to truncate the shift, as it may not have been canonicalized yet.
+    // T_INT:  0..31 -> shift_mask = 4 * 8 - 1 = 31
+    // T_LONG: 0..63 -> shift_mask = 8 * 8 - 1 = 63
+    // (JLS: "Shift Operators")
+    jint shift_mask = type2aelembytes(bt) * BitsPerByte - 1;
+    return shift_t->get_con() & shift_mask;
   }
 
-  return false;
+  return 0;
 }
 
-// Given an expression (AndX (AddX v1 (LShiftX v2 #N)) #M)
-// determine if the AndX must always produce (AndX v1 #M),
-// because the shift (v2<<N) is bitwise disjoint from the mask #M.
-// The X in AndX will be I or L, depending on bt.
-// Specifically, the following cases fold,
-// when the shift value N is large enough to zero out
-// all the set positions of the and-mask M.
-//   (AndI (AddI v1 (LShiftI _ #N)) #M) => (AndI v1 #M)
-//   (AndL (AddI v1 (LShiftL _ #N)) #M) => (AndL v1 #M)
-//   (AndL (AddL v1 (ConvI2L (LShiftI _ #N))) #M) => (AndL v1 #M)
-// The M and N values must satisfy ((-1 << N) & M) == 0.
-// Because the optimization might work for a non-constant
-// mask M, and because the AddX operands can come in either
-// order, we check for every operand order.
-Node* MulNode::AndIL_add_shift_and_mask(PhaseGVN* phase, BasicType bt) {
+// Checks whether expr is neutral additive element (zero) under mask,
+// i.e. whether an expression of the form:
+//   (AndX (AddX (expr addend) mask)
+//   (expr + addend) & mask
+// is equivalent to
+//   (AndX addend mask)
+//   addend & mask
+// for any addend.
+// (The X in AndX must be I or L, depending on bt).
+//
+// We check for the sufficient condition when the lowest set bit in expr is higher than
+// the highest set bit in mask, i.e.:
+// expr: eeeeee0000000000000
+// mask: 000000mmmmmmmmmmmmm
+//             <--w bits--->
+// We do not test for other cases.
+//
+// Correctness:
+//   Given "expr" with at least "w" trailing zeros,
+//   let "mod = 2^w", "suffix_mask = mod - 1"
+//
+//   Since "mask" only has bits set where "suffix_mask" does, we have:
+//     mask = suffix_mask & mask     (SUFFIX_MASK)
+//
+//   And since expr only has bits set above w, and suffix_mask only below:
+//     expr & suffix_mask == 0     (NO_BIT_OVERLAP)
+//
+//   From unsigned modular arithmetic (with unsigned modulo %), and since mod is
+//   a power of 2, and we are computing in a ring of powers of 2, we know that
+//     (x + y) % mod         = (x % mod         + y) % mod
+//     (x + y) & suffix_mask = (x & suffix_mask + y) & suffix_mask       (MOD_ARITH)
+//
+//   We can now prove the equality:
+//     (expr               + addend)               & mask
+//   = (expr               + addend) & suffix_mask & mask    (SUFFIX_MASK)
+//   = (expr & suffix_mask + addend) & suffix_mask & mask    (MOD_ARITH)
+//   = (0                  + addend) & suffix_mask & mask    (NO_BIT_OVERLAP)
+//   =                       addend                & mask    (SUFFIX_MASK)
+//
+// Hence, an expr with at least w trailing zeros is a neutral additive element under any mask with bit width w.
+static bool AndIL_is_zero_element_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt) {
+  // When the mask is negative, it has the most significant bit set.
+  const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
+  if (mask_t == nullptr || mask_t->lo_as_long() < 0) {
+    return false;
+  }
+
+  // When the mask is constant zero, we defer to MulNode::Value to eliminate the entire AndX operation.
+  if (mask_t->hi_as_long() == 0) {
+    assert(mask_t->lo_as_long() == 0, "checked earlier");
+    return false;
+  }
+
+  jint mask_bit_width = BitsPerLong - count_leading_zeros(mask_t->hi_as_long());
+  jint expr_trailing_zeros = AndIL_min_trailing_zeros(phase, expr, bt);
+  return expr_trailing_zeros >= mask_bit_width;
+}
+
+// Reduces the pattern:
+//   (AndX (AddX add1 add2) mask)
+// to
+//   (AndX add1 mask), if add2 is neutral wrt mask (see above), and vice versa.
+Node* MulNode::AndIL_sum_and_mask(PhaseGVN* phase, BasicType bt) {
   Node* add = in(1);
   Node* mask = in(2);
-  if (add == nullptr || mask == nullptr) {
-    return nullptr;
-  }
   int addidx = 0;
   if (add->Opcode() == Op_Add(bt)) {
     addidx = 1;
@@ -2200,14 +2212,12 @@ Node* MulNode::AndIL_add_shift_and_mask(PhaseGVN* phase, BasicType bt) {
   if (addidx > 0) {
     Node* add1 = add->in(1);
     Node* add2 = add->in(2);
-    if (add1 != nullptr && add2 != nullptr) {
-      if (AndIL_shift_and_mask_is_always_zero(phase, add1, mask, bt, false)) {
-        set_req_X(addidx, add2, phase);
-        return this;
-      } else if (AndIL_shift_and_mask_is_always_zero(phase, add2, mask, bt, false)) {
-        set_req_X(addidx, add1, phase);
-        return this;
-      }
+    if (AndIL_is_zero_element_under_mask(phase, add1, mask, bt)) {
+      set_req_X(addidx, add2, phase);
+      return this;
+    } else if (AndIL_is_zero_element_under_mask(phase, add2, mask, bt)) {
+      set_req_X(addidx, add1, phase);
+      return this;
     }
   }
   return nullptr;

@@ -31,7 +31,6 @@
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zLargePages.hpp"
-#include "gc/z/zMarkStackAllocator.hpp"
 #include "gc/z/zNMT.hpp"
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zStat.hpp"
