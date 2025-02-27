@@ -41,6 +41,7 @@ package java.lang.reflect;
  * Two {@code ParameterizedType} objects should be compared using the {@link
  * #equals equals} method.
  *
+ * @see AnnotatedParameterizedType
  * @jls 4.5 Parameterized Types
  * @since 1.5
  */

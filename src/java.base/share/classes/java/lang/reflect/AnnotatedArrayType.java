@@ -41,6 +41,8 @@ package java.lang.reflect;
  * Two {@code AnnotatedArrayType} objects should be compared using the {@link
  * Object#equals equals} method.
  *
+ * @see Class
+ * @see GenericArrayType
  * @jls 10.1 Array Types
  * @since 1.8
  */

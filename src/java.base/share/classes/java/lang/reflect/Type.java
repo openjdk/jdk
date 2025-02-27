@@ -122,6 +122,7 @@ package java.lang.reflect;
  * @jls 4.1 The Kinds of Types and Values
  * @jls 4.11 Where Types Are Used
  * @see java.compiler/javax.lang.model
+ * @see AnnotatedType
  * @since 1.5
  */
 @SuppressWarnings("doclint:reference")

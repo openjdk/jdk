@@ -45,7 +45,7 @@ package java.lang.reflect;
  * Object#equals equals} method.
  *
  * @param <D> the type of generic declaration that declares this type variable
- *
+ * @see AnnotatedTypeVariable
  * @jls 4.4 Type Variables
  * @since 1.5
  */

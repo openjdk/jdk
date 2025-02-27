@@ -35,6 +35,7 @@ package java.lang.reflect;
  * Two {@code WildcardType} objects should be compared using the {@link
  * Object#equals equals} method.
  *
+ * @see AnnotatedWildcardType
  * @jls 4.5.1 Type Arguments of Parameterized Types
  * @since 1.5
  */
