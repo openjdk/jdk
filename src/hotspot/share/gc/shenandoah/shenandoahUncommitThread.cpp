@@ -143,6 +143,7 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
   EventMark em("%s", msg);
   log_info(gc, start)("%s", msg);
 
+  // This is the number of regions uncommitted during this increment of uncommit work.
   const size_t uncommitted_region_count = do_uncommit_work(shrink_before, shrink_until);
 
   {
