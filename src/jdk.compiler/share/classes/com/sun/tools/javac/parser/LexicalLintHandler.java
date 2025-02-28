@@ -206,9 +206,8 @@ public class LexicalLintHandler {
             int endPos = declNode.endPos();
             if (pos() < startPos)
                 return Direction.BEFORE;
-            if (pos() == startPos || (pos() > startPos && pos() < endPos)) {
+            if (pos() == startPos || (pos() > startPos && pos() < endPos))
                 return Direction.WITHIN;
-            }
             return Direction.AFTER;
         }
     }
