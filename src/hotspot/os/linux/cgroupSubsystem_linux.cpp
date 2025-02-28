@@ -286,9 +286,8 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
      */
     if ((p = fgets(buf, MAXPATHLEN, controllers)) != nullptr) {
       char* controller = nullptr;
-      char* buf_ptr = buf;
       int i;
-      while ((controller = strsep(&buf_ptr, " \n\t\r\f\v")) != nullptr) {
+      while ((controller = strsep(&p, " \n\t\r\f\v")) != nullptr) {
         // Skip empty string due to line ending in delimiter, '\n'.
         if (strcmp(controller, "") == 0) {
           continue;
