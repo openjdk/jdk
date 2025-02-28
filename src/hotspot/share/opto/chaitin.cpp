@@ -366,8 +366,8 @@ void PhaseChaitin::Register_Allocate() {
   _alternate = 0;
   _matcher._allocation_started = true;
 
-  ResourceArea split_arena(mtCompiler);     // Arena for Split local resources
-  ResourceArea live_arena(mtCompiler);      // Arena for liveness & IFG info
+  ResourceArea split_arena(mtCompiler, Arena::Tag::tag_regsplit);     // Arena for Split local resources
+  ResourceArea live_arena(mtCompiler, Arena::Tag::tag_reglive);     // Arena for liveness & IFG info
   ResourceMark rm(&live_arena);
 
   // Need live-ness for the IFG; need the IFG for coalescing.  If the

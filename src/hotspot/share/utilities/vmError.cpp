@@ -27,6 +27,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationFailureInfo.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
@@ -1000,6 +1001,11 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP_IF("printing pending compilation failure",
           _verbose && _thread != nullptr && _thread->is_Compiler_thread())
     CompilationFailureInfo::print_pending_compilation_failure(st);
+  if (CompilationMemoryStatistic::enabled() && CompilationMemoryStatistic::in_oom_crash()) {
+    st->cr();
+    st->print_cr(">> Please see below for a detailed breakdown of compiler memory usage.");
+    st->cr();
+  }
 #endif
 
   STEP_IF("printing registers", _verbose && _context != nullptr)
@@ -1260,6 +1266,10 @@ void VMError::report(outputStream* st, bool _verbose) {
     MemTracker::error_report(st);
     st->cr();
 
+  STEP_IF("printing compiler memory info, if any", _verbose)
+    CompilationMemoryStatistic::print_error_report(st);
+    st->cr();
+
   STEP_IF("printing periodic trim state", _verbose)
     NativeHeapTrimmer::print_state(st);
     st->cr();
@@ -1436,9 +1446,11 @@ void VMError::print_vm_info(outputStream* st) {
   st->cr();
 
   // STEP("Native Memory Tracking")
-
   MemTracker::error_report(st);
   st->cr();
+
+  // STEP("Compiler Memory Statistic")
+  CompilationMemoryStatistic::print_final_report(st);
 
   // STEP("printing periodic trim state")
   NativeHeapTrimmer::print_state(st);

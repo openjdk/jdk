@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,9 +238,9 @@ class Compile : public Phase {
   // (The time collection itself is always conditionalized on CITime.)
   class TracePhase : public TraceTime {
    private:
-    Compile*    _compile;
+    Compile* const _compile;
     CompileLog* _log;
-    bool _dolog;
+    const bool _dolog;
    public:
     TracePhase(PhaseTraceId phaseTraceId);
     TracePhase(const char* name, PhaseTraceId phaseTraceId);
