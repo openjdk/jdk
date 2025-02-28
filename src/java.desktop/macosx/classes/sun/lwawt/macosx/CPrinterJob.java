@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.print.*;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.Media;
@@ -72,6 +73,8 @@ public final class CPrinterJob extends RasterPrinterJob {
     private String outputBin = null;
 
     private Throwable printerAbortExcpn;
+
+    private boolean monochrome = false;
 
     // This is the NSPrintInfo for this PrinterJob. Protect multi thread
     //  access to it. It is used by the pageDialog, jobDialog, and printLoop.
@@ -212,6 +215,11 @@ public final class CPrinterJob extends RasterPrinterJob {
                 setPageRange(-1, -1);
             }
         }
+
+        PrintService service = getPrintService();
+        Chromaticity chromaticity = (Chromaticity)attributes.get(Chromaticity.class);
+        monochrome = chromaticity == Chromaticity.MONOCHROME && service != null &&
+                service.isAttributeCategorySupported(Chromaticity.class);
     }
 
     private void setPageRangeAttribute(int from, int to, boolean isRangeSet) {
@@ -788,6 +796,9 @@ public final class CPrinterJob extends RasterPrinterJob {
                 Graphics2D pathGraphics = new CPrinterGraphics(delegate, printerJob); // Just stores delegate into an ivar
                 Rectangle2D pageFormatArea = getPageFormatArea(page);
                 initPrinterGraphics(pathGraphics, pageFormatArea);
+                if (monochrome) {
+                    pathGraphics = new GrayscaleProxyGraphics2D(pathGraphics, printerJob);
+                }
                 painter.print(pathGraphics, FlipPageFormat.getOriginal(page), pageIndex);
                 delegate.dispose();
                 delegate = null;
