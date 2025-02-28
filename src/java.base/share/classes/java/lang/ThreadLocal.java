@@ -68,8 +68,8 @@ import jdk.internal.misc.TerminatingThreadLocal;
  * }
  * </pre>
  * <p>Each thread holds an implicit reference to its copy of a thread-local
- * variable as long as the thread is alive and the {@code ThreadLocal}
- * instance is accessible; after a thread goes away, all of its copies of
+ * variable as long as the thread is alive and the thread-local variable is
+ * accessible (referenced); after a thread goes away, all of its copies of
  * thread-local instances are subject to garbage collection (unless other
  * references to these copies exist).
  * @param <T> the type of the thread local's value
