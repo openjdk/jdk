@@ -122,6 +122,8 @@ class Compilation: public StackObj {
   CFGPrinterOutput*  _cfg_printer_output;
 #endif // PRODUCT
 
+  static void check_current_compiler_c1() NOT_DEBUG({});
+
  public:
   // creation
   Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* method,
@@ -130,6 +132,7 @@ class Compilation: public StackObj {
 
 
   static Compilation* current() {
+    check_current_compiler_c1();
     return (Compilation*) ciEnv::current()->compiler_data();
   }
 
