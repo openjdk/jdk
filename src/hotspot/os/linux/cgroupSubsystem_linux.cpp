@@ -289,10 +289,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       int i;
       #define ISSPACE_CHARS " \n\t\r\f\v"
       while ((controller = strsep(&p, ISSPACE_CHARS)) != nullptr) {
-        // Skip empty string due to line ending in delimiter, '\n'.
-        if (strcmp(controller, "") == 0) {
-          continue;
-        }
         if ((i = cg_v2_controller_index(controller)) != -1) {
           cg_infos[i]._name = os::strdup(controller);
           cg_infos[i]._enabled = true;
