@@ -26,7 +26,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>Security-Related System Property</title>
+    <title>The java.security.debug system property</title>
     <style>
         #debug {
          border: 1px solid black;
@@ -48,18 +48,16 @@
     </style>
 </head>
 <body LANG="en-US" DIR="LTR">
-<H1 style="text-align:center">Security-Related System Property</H1>
-<p>
-    There are several system properties used to
-    alter the mechanisms and behavior of the various classes of the
-    <code>java.security</code> package. Some are checked only once at startup of the VM,
-    and therefore are best set using the <code>-D</code> option of the java command,
-    while others have a more dynamic nature and can also be changed using
-    the <a href="../../lang/System.html#setProperty(java.lang.String,java.lang.String)"><code>System.setProperty()</code></a> API.
-    </P>
+<H1 style="text-align:center">The java.security.debug system property</H1>
 <a id="security.debug"></a>
 <H2>Debug</H2>
 <p><B>{@systemProperty java.security.debug}</B><BR></p>
+<p> To monitor security access, you can set the <code>java.security.debug</code> system property,
+    which determines what trace messages are printed during execution. The value of the property is one or more options separated by a comma.
+    Some options also have additional sub-options. Sub-options are specified by appending a ":" to the option, followed by a list of one more sub-options separated by a comma.
+    For example, to specify the <code>ocsp</code> and <code>verbose</code> options with the <code>certpath</code> option: set the property to "<code>certpath:ocsp,verbose</code>".
+</p>
+
 <H3>Printing Thread and Timestamp Information</H3>
 <p>
     You can append the following strings to the value specified in the <code>java.security.debug</code>
@@ -72,12 +70,8 @@
     For example, to add thread, caller, and timestamp information to all debuging output,
     set the <code>java.security.debug</code> system property on the command line as follows:
     <pre><code>java -Djava.security.debug=all+thread+timestamp MyApp</code></pre>
-        <p> To monitor security access, you can set the <code>java.security.debug</code> system property,
-            which determines what trace messages are printed during execution. The value of the property is one or more options separated by a comma.
-            Some options also have additional sub-options. Sub-options are specified by appending a ":" to the option, followed by a list of one more sub-options separated by a comma.
-            For example, to specify the <code>ocsp</code> and <code>verbose</code> options with the <code>certpath</code> option: set the property to "<code>certpath:ocsp,verbose</code>".
-            See the list below for more details on the syntax of each.
-            The following table lists <code>java.security.debug</code> options table:</p>
+
+<p>The following table lists <code>java.security.debug</code> options table:</p>
 
 <table id="debug">
     <caption><b>Security Debug Options</b></caption>
