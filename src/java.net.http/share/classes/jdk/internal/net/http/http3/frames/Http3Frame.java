@@ -42,7 +42,7 @@ import static jdk.internal.net.http.http3.frames.Http3FrameType.isIllegalType;
 /**
  * An HTTP/3 frame
  */
-public sealed interface Http3Frame permits AbstractHttp3Frame, PartialFrame {
+public sealed interface Http3Frame permits AbstractHttp3Frame {
 
     /**
      * {@return the type of this frame}

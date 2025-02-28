@@ -28,6 +28,7 @@ package jdk.internal.net.http.http3.frames;
 import java.nio.ByteBuffer;
 import java.util.List;
 
+import jdk.internal.net.http.quic.VariableLengthEncoder;
 import jdk.internal.net.http.quic.streams.QuicStreamReader;
 import jdk.internal.net.http.quic.BuffersReader;
 
@@ -36,7 +37,7 @@ import jdk.internal.net.http.quic.BuffersReader;
  * This class is not multi-thread safe.
  */
 public abstract sealed class PartialFrame
-        extends AbstractHttp3Frame implements Http3Frame
+        extends AbstractHttp3Frame
         permits HeadersFrame,
                 DataFrame,
                 PushPromiseFrame,
@@ -109,6 +110,39 @@ public abstract sealed class PartialFrame
             } else return buffer == QuicStreamReader.EOF ? buffer : buffer.slice();
         }
         return null;
+    }
+
+    /**
+     * Write the frame headers to the given buffer.
+     *
+     * @apiNote
+     * The caller will be responsible for writing the
+     * remaining {@linkplain #length() length} bytes of
+     * the frame content after writing the frame headers.
+     *
+     * @implSpec
+     * Usually the header of a frame is assumed to simply
+     * contain the frame type and frame length.
+     * Some subclasses of {@code AbstractHttp3Frame} may
+     * however include some additional information.
+     * For instance, {@link PushPromiseFrame} may consider
+     * the {@link PushPromiseFrame#getPushId() pushId} as
+     * being in part of the headers, and write it along
+     * in this method after the frame type and length.
+     * In such a case, a subclass would also need to
+     * override {@link #headersSize()} in order to add
+     * the size of the additional information written
+     * by {@link #writeHeaders(ByteBuffer)}.
+     *
+     * @param buf a buffer to write the headers into
+     */
+    public void writeHeaders(ByteBuffer buf) {
+        long len = length();
+        int pos0 = buf.position();
+        VariableLengthEncoder.encode(buf, type());
+        VariableLengthEncoder.encode(buf, len);
+        int pos1 = buf.position();
+        assert pos1 - pos0 == super.headersSize();
     }
 
     @Override
