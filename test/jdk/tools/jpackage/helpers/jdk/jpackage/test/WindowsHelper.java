@@ -107,7 +107,7 @@ public class WindowsHelper {
         final Optional<Path> msiLogFile;
         if (createMsiLog) {
             msiLogFile = Optional.of(TKit.createTempFile(String.format("logs\\%s-msi.log",
-                    cmd.packageType().getName())));
+                    cmd.packageType().getType())));
         } else {
             msiLogFile = Optional.empty();
         }

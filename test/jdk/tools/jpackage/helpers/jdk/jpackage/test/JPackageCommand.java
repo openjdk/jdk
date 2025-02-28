@@ -1238,7 +1238,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             () -> {
                 Map<String, PackageType> reply = new HashMap<>();
                 for (PackageType type : PackageType.values()) {
-                    reply.put(type.getName(), type);
+                    reply.put(type.getType(), type);
                 }
                 return reply;
             }).get();
