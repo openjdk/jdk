@@ -1020,8 +1020,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     /** Implementation for put and putIfAbsent */
     final V putVal(K key, V value, boolean onlyIfAbsent) {
-        Objects.requireNonNull(key, "key cannot be null!");
-        Objects.requireNonNull(value, "value cannot be null!");
+        Objects.requireNonNull(key, "Provided key cannot be null!");
+        Objects.requireNonNull(value, "Provided value cannot be null!");
         int hash = spread(key.hashCode());
         int binCount = 0;
         for (Node<K,V>[] tab = table;;) {
