@@ -270,7 +270,7 @@ void G1ConcurrentRefineWorkState::snapshot_heap(bool concurrent) {
 
     set_state_start_time();
   } else {
-    assert(is_in_progress() && _state < State::SnapshotHeap, "Must be before %s but is %s", state_name(State::SnapshotHeap), state_name(_state));
+    assert_state(State::Idle);
   }
 
   snapshot_heap_into(_sweep_table);
