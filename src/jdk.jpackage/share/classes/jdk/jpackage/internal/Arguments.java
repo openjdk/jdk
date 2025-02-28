@@ -547,9 +547,6 @@ public class Arguments {
                 }
                 usedNames.add(slName);
             }
-            if (runtimeInstaller && bp.getName() == null) {
-                throw new PackagerException("ERR_NoJreInstallerName");
-            }
 
             generateBundle(bp.getBundleParamsAsMap());
             return true;
