@@ -315,9 +315,9 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     }
   } else {
     /*
-     * cgroups v2 is not enabled.  Read /proc/cgroups; for cgroups v1 hierarchy (hybrid or
-     * legacy), cpu, cpuacct, cpuset, and memory controllers must have non-zero for the
-     * hierarchy ID field and relevant controllers mounted.
+     * The /sys/fs/cgroup filesystem magic hint suggests we have cg v1.  Read /proc/cgroups; for
+     * cgroups v1 hierarchy (hybrid or legacy), cpu, cpuacct, cpuset, and memory controllers must
+     * have non-zero for the hierarchy ID field and relevant controllers mounted.
      */
     while ((p = fgets(buf, MAXPATHLEN, controllers)) != nullptr) {
       char name[MAXPATHLEN+1];
