@@ -264,20 +264,30 @@ bool G1ConcurrentRefineWorkState::swap_gc_threads_ct() {
   return advance_state(State::SnapshotHeap);
 }
 
-void G1ConcurrentRefineWorkState::snapshot_heap() {
-  assert_state(State::SnapshotHeap);
+void G1ConcurrentRefineWorkState::snapshot_heap(bool concurrent) {
+  if (concurrent) {
+    assert_state(State::SnapshotHeap);
 
-  set_state_start_time();
+    set_state_start_time();
+  } else {
+    assert(is_in_progress() && _state < State::SnapshotHeap, "Must be before %s but is %s", state_name(State::SnapshotHeap), state_name(_state));
+  }
 
   snapshot_heap_into(_sweep_table);
 
-  advance_state(State::SweepRT);
+  if (concurrent) {
+    advance_state(State::SweepRT);
+  }
+}
+
+void G1ConcurrentRefineWorkState::sweep_rt_start() {
+  assert_state(State::SweepRT);
+
+  set_state_start_time();
 }
 
 bool G1ConcurrentRefineWorkState::sweep_rt_step() {
   assert_state(State::SweepRT);
-
-  set_state_start_time();
 
   G1ConcurrentRefine* cr = G1CollectedHeap::heap()->concurrent_refine();
 
@@ -387,6 +397,23 @@ G1ConcurrentRefine::G1ConcurrentRefine(G1CollectedHeap* g1h) :
 
 jint G1ConcurrentRefine::initialize() {
   return _thread_control.initialize(this);
+}
+
+G1ConcurrentRefineWorkState& G1ConcurrentRefine::refine_state_for_merge() {
+  bool has_sweep_claims = refine_state().complete(false);
+  if (has_sweep_claims) {
+    log_debug(gc, refine)("Continue existing work");
+  } else {
+    // Refinement has been interrupted without having a snapshot. There may
+    // be a mix of already swapped and not-swapped card tables assigned to threads,
+    // so they might have already dirtied the swapped card tables.
+    // Conservatively scan all (non-free, non-committed) region's card tables,
+    // creating the snapshot right now.
+    log_debug(gc, refine)("Create work from scratch");
+
+    refine_state().snapshot_heap(false /* concurrent */);
+  }
+  return refine_state();
 }
 
 void G1ConcurrentRefine::run_with_refinement_workers(WorkerTask* task) {

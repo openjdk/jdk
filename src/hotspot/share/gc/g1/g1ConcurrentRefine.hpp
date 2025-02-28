@@ -140,7 +140,8 @@ public:
   bool swap_global_card_table();
   bool swap_java_threads_ct();
   bool swap_gc_threads_ct();
-  void snapshot_heap();
+  void snapshot_heap(bool concurrent = true);
+  void sweep_rt_start();
   bool sweep_rt_step();
 
   bool complete(bool concurrent, bool print_log = true);
@@ -230,6 +231,8 @@ public:
   ~G1ConcurrentRefine();
 
   G1ConcurrentRefineWorkState& refine_state() { return _refine_state; }
+
+  G1ConcurrentRefineWorkState& refine_state_for_merge();
 
   void run_with_refinement_workers(WorkerTask* task);
 

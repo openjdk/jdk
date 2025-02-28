@@ -1230,30 +1230,10 @@ public:
 static void merge_refinement_table() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  G1CardTableClaimTable* claim;
-  G1CardTableClaimTable constructed(G1CollectedHeap::get_chunks_per_region_for_merge());
-
-  G1ConcurrentRefineWorkState& state = g1h->concurrent_refine()->refine_state();
-  bool has_sweep_claims = state.complete(false);
-  if (has_sweep_claims) {
-    log_debug(gc, refine)("Continue existing work");
-    claim = state.sweep_table();
-  } else {
-    // Refinement has been interrupted without having a snapshot. There may
-    // be a mix of already swapped and not-swapped card tables assigned to threads,
-    // so they might have already dirtied the swapped card tables.
-    // Conservatively scan all (non-free, non-committed) region's card tables,
-    // creating the snapshot right now.
-    log_debug(gc, refine)("Create work from scratch");
-
-    constructed.initialize(g1h->max_reserved_regions());
-    G1ConcurrentRefineWorkState::snapshot_heap_into(&constructed);
-    claim = &constructed;
-  }
-
+  G1ConcurrentRefineWorkState& state = g1h->concurrent_refine()->refine_state_for_merge();
   WorkerThreads* workers = g1h->workers();
 
-  MergeRefinementTableTask cl(claim, workers->active_workers());
+  MergeRefinementTableTask cl(state.sweep_table(), workers->active_workers());
   log_debug(gc, ergo)("Running %s using %u workers", cl.name(), workers->active_workers());
   workers->run_task(&cl);
 }

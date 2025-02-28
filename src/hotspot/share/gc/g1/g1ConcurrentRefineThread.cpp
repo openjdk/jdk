@@ -177,6 +177,8 @@ void G1ConcurrentRefineThread::do_refinement() {
 
   // 5. Sweep refinement table until done
   bool interrupted_by_gc = false;
+
+  state.sweep_rt_start();
   while (true) {
     bool completed = state.sweep_rt_step();
 
