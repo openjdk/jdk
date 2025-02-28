@@ -32,7 +32,7 @@ import compiler.lib.generators.RestrictableGenerator;
 
 import compiler.lib.template_framework.Name;
 
-abstract class PrimitiveType extends Type {
+public abstract class PrimitiveType extends Type {
     private static final Random RANDOM = Utils.getRandomInstance();
     private static final RestrictableGenerator<Integer> GEN_BYTE = Generators.G.safeRestrict(Generators.G.ints(), Byte.MIN_VALUE, Byte.MAX_VALUE);
     private static final RestrictableGenerator<Integer> GEN_CHAR = Generators.G.safeRestrict(Generators.G.ints(), Character.MIN_VALUE, Character.MAX_VALUE);
@@ -48,6 +48,10 @@ abstract class PrimitiveType extends Type {
         return this.getClass() == other.getClass();
     }
 
+    public abstract int sizeInBits();
+    public abstract String boxedTypeName();
+    public abstract String vectorAPITypeName();
+
     static final class ByteType extends PrimitiveType {
         public static final ByteType INSTANCE = new ByteType();
 
@@ -55,9 +59,18 @@ abstract class PrimitiveType extends Type {
         public final String name() { return "byte"; }
 
         @Override
+        public String boxedTypeName() { return "Byte"; }
+
+        @Override
+        public String vectorAPITypeName() { return "ByteVector"; }
+
+        @Override
         public final Object con() {
             return "(byte)" + GEN_BYTE.next();
         }
+
+        @Override
+        public int sizeInBits() { return 8; }
     }
 
     static final class CharType extends PrimitiveType {
@@ -67,9 +80,18 @@ abstract class PrimitiveType extends Type {
         public final String name() { return "char"; }
 
         @Override
+        public String boxedTypeName() { return "Character"; }
+
+        @Override
+        public String vectorAPITypeName() { throw new UnsupportedOperationException("VectorAPI has no char vector type."); }
+
+        @Override
         public final Object con() {
             return "(char)" + GEN_CHAR.next();
         }
+
+        @Override
+        public int sizeInBits() { return 16; }
     }
 
     static final class ShortType extends PrimitiveType {
@@ -79,9 +101,18 @@ abstract class PrimitiveType extends Type {
         public final String name() { return "short"; }
 
         @Override
+        public String boxedTypeName() { return "Short"; }
+
+        @Override
+        public String vectorAPITypeName() { return "ShortVector"; }
+
+        @Override
         public final Object con() {
             return "(short)" + GEN_SHORT.next();
         }
+
+        @Override
+        public int sizeInBits() { return 16; }
     }
 
     static final class IntType extends PrimitiveType {
@@ -91,9 +122,18 @@ abstract class PrimitiveType extends Type {
         public final String name() { return "int"; }
 
         @Override
+        public String boxedTypeName() { return "Integer"; }
+
+        @Override
+        public String vectorAPITypeName() { return "IntVector"; }
+
+        @Override
         public final Object con() {
             return GEN_INT.next();
         }
+
+        @Override
+        public int sizeInBits() { return 32; }
     }
 
     static final class LongType extends PrimitiveType {
@@ -103,9 +143,18 @@ abstract class PrimitiveType extends Type {
         public final String name() { return "long"; }
 
         @Override
+        public String boxedTypeName() { return "Long"; }
+
+        @Override
+        public String vectorAPITypeName() { return "LongVector"; }
+
+        @Override
         public final Object con() {
             return GEN_LONG.next();
         }
+
+        @Override
+        public int sizeInBits() { return 64; }
     }
 
     static final class FloatType extends PrimitiveType {
@@ -115,9 +164,18 @@ abstract class PrimitiveType extends Type {
         public final String name() { return "float"; }
 
         @Override
+        public String boxedTypeName() { return "Float"; }
+
+        @Override
+        public String vectorAPITypeName() { return "FloatVector"; }
+
+        @Override
         public final Object con() {
             return GEN_FLOAT.next();
         }
+
+        @Override
+        public int sizeInBits() { return 32; }
     }
 
     static final class DoubleType extends PrimitiveType {
@@ -127,9 +185,18 @@ abstract class PrimitiveType extends Type {
         public final String name() { return "double"; }
 
         @Override
+        public String boxedTypeName() { return "Double"; }
+
+        @Override
+        public String vectorAPITypeName() { return "DoubleVector"; }
+
+        @Override
         public final Object con() {
             return GEN_DOUBLE.next();
         }
+
+        @Override
+        public int sizeInBits() { return 64; }
     }
 
     static final class BooleanType extends PrimitiveType {
@@ -139,9 +206,18 @@ abstract class PrimitiveType extends Type {
         public final String name() { return "boolean"; }
 
         @Override
+        public String boxedTypeName() { return "Boolean"; }
+
+        @Override
+        public String vectorAPITypeName() { throw new UnsupportedOperationException("VectorAPI has no boolean vector type."); }
+
+        @Override
         public final Object con() {
             // TODO: generator for boolean? Could have different probabilities!
             return RANDOM.nextInt() % 2 == 0;
         }
+
+        @Override
+        public int sizeInBits() { throw new UnsupportedOperationException("boolean does not have number of bits"); }
     }
 }

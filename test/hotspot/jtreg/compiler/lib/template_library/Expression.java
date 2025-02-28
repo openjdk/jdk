@@ -85,8 +85,8 @@ public final class Expression {
         void addTokens(List<Object> tokens, List<Object> args);
     }
 
-    public static final Expression make(Type resultType, List<Type> allowedTypes, int maxDepth) {
-        HashSet<Type> allowedTypesSet = new HashSet(allowedTypes);
+    public static final <T extends Type> Expression make(Type resultType, List<T> allowedTypes, int maxDepth) {
+        HashSet<Type> allowedTypesSet = new HashSet<Type>(allowedTypes);
 
         List<Type> types = new ArrayList<Type>();
         ExpressionGenerator generator = expressionGenerator(resultType, allowedTypesSet, maxDepth, types);

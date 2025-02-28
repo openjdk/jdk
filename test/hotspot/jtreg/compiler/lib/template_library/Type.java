@@ -35,27 +35,57 @@ import compiler.lib.template_framework.Name;
  */
 public abstract class Type implements Name.Type {
 
-    public static final Type bytes() { return PrimitiveType.ByteType.INSTANCE; }
-    public static final Type chars() { return PrimitiveType.CharType.INSTANCE; }
-    public static final Type shorts() { return PrimitiveType.ShortType.INSTANCE; }
-    public static final Type ints() { return PrimitiveType.IntType.INSTANCE; }
-    public static final Type longs() { return PrimitiveType.LongType.INSTANCE; }
-    public static final Type floats() { return PrimitiveType.FloatType.INSTANCE; }
-    public static final Type doubles() { return PrimitiveType.DoubleType.INSTANCE; }
-    public static final Type booleans() { return PrimitiveType.BooleanType.INSTANCE; }
+    public static final PrimitiveType bytes() { return PrimitiveType.ByteType.INSTANCE; }
+    public static final PrimitiveType chars() { return PrimitiveType.CharType.INSTANCE; }
+    public static final PrimitiveType shorts() { return PrimitiveType.ShortType.INSTANCE; }
+    public static final PrimitiveType ints() { return PrimitiveType.IntType.INSTANCE; }
+    public static final PrimitiveType longs() { return PrimitiveType.LongType.INSTANCE; }
+    public static final PrimitiveType floats() { return PrimitiveType.FloatType.INSTANCE; }
+    public static final PrimitiveType doubles() { return PrimitiveType.DoubleType.INSTANCE; }
+    public static final PrimitiveType booleans() { return PrimitiveType.BooleanType.INSTANCE; }
 
-    public static final List<Type> primitives() {
-        return List.of(
-            bytes(),
-            chars(),
-            shorts(),
-            ints(),
-            longs(),
-            floats(),
-            doubles(),
-            booleans()
-        );
-    }
+    public static final List<PrimitiveType> PRIMITIVE_TYPES = List.of(
+        bytes(),
+        chars(),
+        shorts(),
+        ints(),
+        longs(),
+        floats(),
+        doubles(),
+        booleans()
+    );
+
+    public static final List<Type> VECTOR_API_TYPES = List.of(
+        VectorAPIType.BYTE_64,
+        VectorAPIType.BYTE_128,
+        VectorAPIType.BYTE_256,
+        VectorAPIType.BYTE_512,
+
+        VectorAPIType.SHORT_64,
+        VectorAPIType.SHORT_128,
+        VectorAPIType.SHORT_256,
+        VectorAPIType.SHORT_512,
+
+        VectorAPIType.INT_64,
+        VectorAPIType.INT_128,
+        VectorAPIType.INT_256,
+        VectorAPIType.INT_512,
+
+        VectorAPIType.LONG_64,
+        VectorAPIType.LONG_128,
+        VectorAPIType.LONG_256,
+        VectorAPIType.LONG_512,
+
+        VectorAPIType.FLOAT_64,
+        VectorAPIType.FLOAT_128,
+        VectorAPIType.FLOAT_256,
+        VectorAPIType.FLOAT_512,
+
+        VectorAPIType.DOUBLE_64,
+        VectorAPIType.DOUBLE_128,
+        VectorAPIType.DOUBLE_256,
+        VectorAPIType.DOUBLE_512
+    );
 
     /**
      * Returns name of the type that can be used in Java code.
