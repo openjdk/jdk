@@ -245,6 +245,26 @@ final class TestCarrierLocalArenaPools {
         VThreadRunner.run(() -> outOfOrderUseVtTask(pool));
     }
 
+    @ParameterizedTest
+    @MethodSource("pools")
+    void outOfOrderUse2(CarrierLocalArenaPools pool) {
+        Arena firstArena = pool.take();
+        long first = firstArena.allocate(SMALL_ALLOC_SIZE).address();
+        Arena secondArena = pool.take();
+        long second = firstArena.allocate(SMALL_ALLOC_SIZE).address();
+        long thirdFromFirstArena = firstArena.allocate(SMALL_ALLOC_SIZE).address();
+
+        assertInOrder(first, second, thirdFromFirstArena);
+        firstArena.close();
+        secondArena.close();
+    }
+
+    @ParameterizedTest
+    @MethodSource("pools")
+    void outOfOrderUseVt2(CarrierLocalArenaPools pool) {
+        VThreadRunner.run(() -> outOfOrderUseVtTask(pool));
+    }
+
     void outOfOrderUseVtTask(CarrierLocalArenaPools pool) {
         Arena firstArena = pool.take();
         long first = firstArena.allocate(SMALL_ALLOC_SIZE).address();
