@@ -535,9 +535,7 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
     }
 
     private void notifyTerminalState(SendingStreamState state) {
-        assert state == SendingStreamState.DATA_RECVD
-                || state == SendingStreamState.DATA_RECVD
-                : state;
+        assert state.isTerminal() : state;
         connection().notifyTerminalState(streamId(), state);
     }
 
