@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ void OptoRuntime::generate_exception_blob() {
   __ call_c((address) OptoRuntime::handle_exception_C);
   address calls_return_pc = __ last_calls_return_pc();
 # ifdef ASSERT
-  __ cmpdi(CCR0, R3_RET, 0);
+  __ cmpdi(CR0, R3_RET, 0);
   __ asm_assert_ne("handle_exception_C must not return null");
 # endif
 
