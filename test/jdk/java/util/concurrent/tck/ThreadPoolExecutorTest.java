@@ -66,6 +66,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.junit.Assert;
 
 public class ThreadPoolExecutorTest extends JSR166TestCase {
     public static void main(String[] args) {
@@ -304,7 +305,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 p.setThreadFactory(null);
                 shouldThrow();
-            } catch (NullPointerException success) {}
+            } catch (NullPointerException success) {
+                Assert.assertEquals("threadFactory", success.getMessage());
+            }
         }
     }
 
@@ -364,7 +367,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 p.setRejectedExecutionHandler(null);
                 shouldThrow();
-            } catch (NullPointerException success) {}
+            } catch (NullPointerException success) {
+                Assert.assertEquals("handler", success.getMessage());
+            }
         }
     }
 
@@ -737,7 +742,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             new ThreadPoolExecutor(-1, 1, 1L, SECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("corePoolSize must be non-negative, but got -1", success.getMessage());
+        }
     }
 
     /**
@@ -748,7 +755,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             new ThreadPoolExecutor(1, -1, 1L, SECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("maximumPoolSize must be positive, but got -1", success.getMessage());
+        }
     }
 
     /**
@@ -759,7 +768,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             new ThreadPoolExecutor(1, 0, 1L, SECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("maximumPoolSize must be positive, but got 0", success.getMessage());
+        }
     }
 
     /**
@@ -770,7 +781,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             new ThreadPoolExecutor(1, 2, -1L, SECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("keepAliveTime must be non-negative, but got -1", success.getMessage());
+        }
     }
 
     /**
@@ -781,7 +794,13 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             new ThreadPoolExecutor(2, 1, 1L, SECONDS,
                                    new ArrayBlockingQueue<Runnable>(10));
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals(
+                "maximumPoolSize must be greater than or equal to corePoolSize ,but got maximumPoolSize:1 ," +
+                    "corePoolSize:2",
+                success.getMessage()
+            );
+        }
     }
 
     /**
@@ -792,7 +811,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             new ThreadPoolExecutor(1, 2, 1L, SECONDS,
                                    (BlockingQueue<Runnable>) null);
             shouldThrow();
-        } catch (NullPointerException success) {}
+        } catch (NullPointerException success) {
+            Assert.assertEquals("workQueue", success.getMessage());
+        }
     }
 
     /**
@@ -804,7 +825,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10),
                                    new SimpleThreadFactory());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("corePoolSize must be non-negative, but got -1", success.getMessage());
+        }
     }
 
     /**
@@ -816,7 +839,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10),
                                    new SimpleThreadFactory());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("maximumPoolSize must be positive, but got -1", success.getMessage());
+        }
     }
 
     /**
@@ -828,7 +853,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10),
                                    new SimpleThreadFactory());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("maximumPoolSize must be positive, but got 0", success.getMessage());
+        }
     }
 
     /**
@@ -840,7 +867,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10),
                                    new SimpleThreadFactory());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("keepAliveTime must be non-negative, but got -1", success.getMessage());
+        }
     }
 
     /**
@@ -852,7 +881,13 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10),
                                    new SimpleThreadFactory());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals(
+                "maximumPoolSize must be greater than or equal to corePoolSize ,but got maximumPoolSize:1 ," +
+                    "corePoolSize:2",
+                success.getMessage()
+            );
+        }
     }
 
     /**
@@ -864,7 +899,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    (BlockingQueue<Runnable>) null,
                                    new SimpleThreadFactory());
             shouldThrow();
-        } catch (NullPointerException success) {}
+        } catch (NullPointerException success) {
+            Assert.assertEquals("workQueue", success.getMessage());
+        }
     }
 
     /**
@@ -876,7 +913,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10),
                                    (ThreadFactory) null);
             shouldThrow();
-        } catch (NullPointerException success) {}
+        } catch (NullPointerException success) {
+            Assert.assertEquals("threadFactory", success.getMessage());
+        }
     }
 
     /**
@@ -888,7 +927,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10),
                                    new NoOpREHandler());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("corePoolSize must be non-negative, but got -1", success.getMessage());
+        }
     }
 
     /**
@@ -900,7 +941,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10),
                                    new NoOpREHandler());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("maximumPoolSize must be positive, but got -1", success.getMessage());
+        }
     }
 
     /**
@@ -912,7 +955,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10),
                                    new NoOpREHandler());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("maximumPoolSize must be positive, but got 0", success.getMessage());
+        }
     }
 
     /**
@@ -924,7 +969,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10),
                                    new NoOpREHandler());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("keepAliveTime must be non-negative, but got -1", success.getMessage());
+        }
     }
 
     /**
@@ -936,7 +983,13 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10),
                                    new NoOpREHandler());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals(
+                "maximumPoolSize must be greater than or equal to corePoolSize ,but got maximumPoolSize:1 ," +
+                    "corePoolSize:2",
+                success.getMessage()
+            );
+        }
     }
 
     /**
@@ -948,7 +1001,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    (BlockingQueue<Runnable>) null,
                                    new NoOpREHandler());
             shouldThrow();
-        } catch (NullPointerException success) {}
+        } catch (NullPointerException success) {
+            Assert.assertEquals("workQueue", success.getMessage());
+        }
     }
 
     /**
@@ -960,7 +1015,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new ArrayBlockingQueue<Runnable>(10),
                                    (RejectedExecutionHandler) null);
             shouldThrow();
-        } catch (NullPointerException success) {}
+        } catch (NullPointerException success) {
+            Assert.assertEquals("handler", success.getMessage());
+        }
     }
 
     /**
@@ -973,7 +1030,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new SimpleThreadFactory(),
                                    new NoOpREHandler());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("corePoolSize must be non-negative, but got -1", success.getMessage());
+        }
     }
 
     /**
@@ -986,7 +1045,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new SimpleThreadFactory(),
                                    new NoOpREHandler());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("maximumPoolSize must be positive, but got -1", success.getMessage());
+        }
     }
 
     /**
@@ -999,7 +1060,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new SimpleThreadFactory(),
                                    new NoOpREHandler());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("maximumPoolSize must be positive, but got 0", success.getMessage());
+        }
     }
 
     /**
@@ -1012,7 +1075,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new SimpleThreadFactory(),
                                    new NoOpREHandler());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals("keepAliveTime must be non-negative, but got -1", success.getMessage());
+        }
     }
 
     /**
@@ -1025,7 +1090,13 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new SimpleThreadFactory(),
                                    new NoOpREHandler());
             shouldThrow();
-        } catch (IllegalArgumentException success) {}
+        } catch (IllegalArgumentException success) {
+            Assert.assertEquals(
+                "maximumPoolSize must be greater than or equal to corePoolSize ,but got maximumPoolSize:1 ," +
+                    "corePoolSize:2",
+                success.getMessage()
+            );
+        }
     }
 
     /**
@@ -1038,7 +1109,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new SimpleThreadFactory(),
                                    new NoOpREHandler());
             shouldThrow();
-        } catch (NullPointerException success) {}
+        } catch (NullPointerException success) {
+            Assert.assertEquals("workQueue", success.getMessage());
+        }
     }
 
     /**
@@ -1051,7 +1124,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    new SimpleThreadFactory(),
                                    (RejectedExecutionHandler) null);
             shouldThrow();
-        } catch (NullPointerException success) {}
+        } catch (NullPointerException success) {
+            Assert.assertEquals("handler", success.getMessage());
+        }
     }
 
     /**
@@ -1064,7 +1139,24 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                                    (ThreadFactory) null,
                                    new NoOpREHandler());
             shouldThrow();
-        } catch (NullPointerException success) {}
+        } catch (NullPointerException success) {
+            Assert.assertEquals("threadFactory", success.getMessage());
+        }
+    }
+
+    /**
+     * Constructor throws if unit is null
+     */
+    public void testConstructorNullPointerException9() {
+        try {
+            new ThreadPoolExecutor(1, 2, 1L, (TimeUnit) null,
+                new ArrayBlockingQueue<Runnable>(10),
+                new SimpleThreadFactory(),
+                new NoOpREHandler());
+            shouldThrow();
+        } catch (NullPointerException success) {
+            Assert.assertEquals("threadFactory", success.getMessage());
+        }
     }
 
     /**
@@ -1228,7 +1320,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 p.setCorePoolSize(-1);
                 shouldThrow();
-            } catch (IllegalArgumentException success) {}
+            } catch (IllegalArgumentException success) {
+                Assert.assertEquals("corePoolSize must be non-negative, but got -1", success.getMessage());
+            }
         }
     }
 
@@ -1245,7 +1339,13 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 p.setMaximumPoolSize(1);
                 shouldThrow();
-            } catch (IllegalArgumentException success) {}
+            } catch (IllegalArgumentException success) {
+                Assert.assertEquals(
+                    "maximumPoolSize must be greater than or equal to corePoolSize ,but got maximumPoolSize:1 ," +
+                        "corePoolSize:2",
+                    success.getMessage()
+                );
+            }
         }
     }
 
@@ -1262,7 +1362,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 p.setMaximumPoolSize(-1);
                 shouldThrow();
-            } catch (IllegalArgumentException success) {}
+            } catch (IllegalArgumentException success) {
+                Assert.assertEquals("maximumPoolSize must be positive, but got -1", success.getMessage());
+            }
         }
     }
 
@@ -1279,16 +1381,30 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             for (int s = 1; s < 5; s++) {
                 p.setMaximumPoolSize(s);
                 p.setCorePoolSize(s);
+                int s1 = s - 1;
                 try {
-                    p.setMaximumPoolSize(s - 1);
+                    p.setMaximumPoolSize(s1);
                     shouldThrow();
-                } catch (IllegalArgumentException success) {}
+                } catch (IllegalArgumentException success) {
+                    Assert.assertEquals(
+                        "maximumPoolSize must be greater than or equal to corePoolSize ,but got maximumPoolSize:" +
+                            s1 + " ,corePoolSize:" + s,
+                        success.getMessage()
+                    );
+                }
                 assertEquals(s, p.getCorePoolSize());
                 assertEquals(s, p.getMaximumPoolSize());
+                int s2 = s + 1;
                 try {
-                    p.setCorePoolSize(s + 1);
+                    p.setCorePoolSize(s2);
                     shouldThrow();
-                } catch (IllegalArgumentException success) {}
+                } catch (IllegalArgumentException success) {
+                    Assert.assertEquals(
+                        "maximumPoolSize must be greater than or equal to corePoolSize ,but got maximumPoolSize:" +
+                            s + " ,corePoolSize:" + s2,
+                        success.getMessage()
+                    );
+                }
                 assertEquals(s, p.getCorePoolSize());
                 assertEquals(s, p.getMaximumPoolSize());
             }
@@ -1308,7 +1424,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 p.setKeepAliveTime(-1, MILLISECONDS);
                 shouldThrow();
-            } catch (IllegalArgumentException success) {}
+            } catch (IllegalArgumentException success) {
+                Assert.assertEquals("keepAliveTime must be non-negative, but got -1", success.getMessage());
+            }
         }
     }
 
@@ -1399,7 +1517,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 e.invokeAny(null);
                 shouldThrow();
-            } catch (NullPointerException success) {}
+            } catch (NullPointerException success) {
+                Assert.assertEquals("tasks", success.getMessage());
+            }
         }
     }
 
@@ -1415,7 +1535,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 e.invokeAny(new ArrayList<Callable<String>>());
                 shouldThrow();
-            } catch (IllegalArgumentException success) {}
+            } catch (IllegalArgumentException success) {
+                Assert.assertEquals("tasks is empty", success.getMessage());
+            }
         }
     }
 
@@ -1435,7 +1557,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 e.invokeAny(l);
                 shouldThrow();
-            } catch (NullPointerException success) {}
+            } catch (NullPointerException success) {
+                Assert.assertEquals("tasks", success.getMessage());
+            }
             latch.countDown();
         }
     }
@@ -1489,7 +1613,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 e.invokeAll(null);
                 shouldThrow();
-            } catch (NullPointerException success) {}
+            } catch (NullPointerException success) {
+                Assert.assertEquals("tasks", success.getMessage());
+            }
         }
     }
 
@@ -1524,7 +1650,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 e.invokeAll(l);
                 shouldThrow();
-            } catch (NullPointerException success) {}
+            } catch (NullPointerException success) {
+                Assert.assertEquals("tasks", success.getMessage());
+            }
         }
     }
 
@@ -1581,7 +1709,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 e.invokeAny(null, randomTimeout(), randomTimeUnit());
                 shouldThrow();
-            } catch (NullPointerException success) {}
+            } catch (NullPointerException success) {
+                Assert.assertEquals("tasks", success.getMessage());
+            }
         }
     }
 
@@ -1599,7 +1729,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 e.invokeAny(l, randomTimeout(), null);
                 shouldThrow();
-            } catch (NullPointerException success) {}
+            } catch (NullPointerException success) {
+                Assert.assertEquals("tasks", success.getMessage());
+            }
         }
     }
 
@@ -1616,7 +1748,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                 e.invokeAny(new ArrayList<Callable<String>>(),
                             randomTimeout(), randomTimeUnit());
                 shouldThrow();
-            } catch (IllegalArgumentException success) {}
+            } catch (IllegalArgumentException success) {
+                Assert.assertEquals("tasks is empty", success.getMessage());
+            }
         }
     }
 
@@ -1636,7 +1770,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 e.invokeAny(l, randomTimeout(), randomTimeUnit());
                 shouldThrow();
-            } catch (NullPointerException success) {}
+            } catch (NullPointerException success) {
+                Assert.assertEquals("task", success.getMessage());
+            }
             latch.countDown();
         }
     }
@@ -1694,7 +1830,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 e.invokeAll(null, randomTimeout(), randomTimeUnit());
                 shouldThrow();
-            } catch (NullPointerException success) {}
+            } catch (NullPointerException success) {
+                Assert.assertEquals("tasks", success.getMessage());
+            }
         }
     }
 
@@ -1712,7 +1850,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 e.invokeAll(l, randomTimeout(), null);
                 shouldThrow();
-            } catch (NullPointerException success) {}
+            } catch (NullPointerException success) {
+                Assert.assertEquals("unit", success.getMessage());
+            }
         }
     }
 
@@ -1748,7 +1888,9 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             try {
                 e.invokeAll(l, randomTimeout(), randomTimeUnit());
                 shouldThrow();
-            } catch (NullPointerException success) {}
+            } catch (NullPointerException success) {
+                Assert.assertEquals("task", success.getMessage());
+            }
         }
     }
 
