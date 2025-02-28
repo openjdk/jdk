@@ -28,6 +28,8 @@ package sun.security.tools.jarsigner;
 import java.io.*;
 import java.net.UnknownHostException;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.spec.ECParameterSpec;
@@ -1124,6 +1126,189 @@ public class Main {
         } finally { // close the resource
             if (jf != null) {
                 jf.close();
+            }
+        }
+
+        System.out.println();
+        crossCheckEntries(jarName);
+    }
+
+    private void crossCheckEntries(String jarName) throws Exception {
+
+        try (JarFile jarFile = new JarFile(jarName);
+             JarInputStream jis = new JarInputStream(
+                     Files.newInputStream(Path.of(jarName)))) {
+
+            // Validate Manifest first
+            Manifest cenManifest = jarFile.getManifest();
+            Manifest locManifest = jis.getManifest();
+            if (!compareManifest(cenManifest, locManifest)) {
+                return;
+            }
+
+            Enumeration<JarEntry> cenEntries = jarFile.entries();
+            JarEntry locEntry;
+
+            // Skip the first entry "META-INF/MANIFEST.MF" in CEN
+            if (cenEntries.hasMoreElements()) {
+                JarEntry firstCenEntry = cenEntries.nextElement();
+                if (!"META-INF/MANIFEST.MF".equals(firstCenEntry.getName())) {
+                    System.out.println(rb.getString(
+                            "First.entry.in.CEN.is.not.MANIFEST.MF"));
+                    return;
+                }
+            }
+
+            Set<String> cenEntrySet = new HashSet<>();
+            Set<String> locEntrySet = new HashSet<>();
+
+            JarEntry cenEntry = null;
+            while (cenEntries.hasMoreElements() &&
+                    (locEntry = jis.getNextJarEntry()) != null) {
+                cenEntry = cenEntries.nextElement();
+
+                cenEntrySet.add(cenEntry.getName());
+                locEntrySet.add(locEntry.getName());
+
+                // Check if entries match in order
+                if (!cenEntry.getName().equals(locEntry.getName())) {
+                    System.out.println(rb.getString(
+                            "The.order.of.entries.in.CEN.and.LOC.does.not.match"));
+                    return;
+                }
+
+                // Compare sizes
+                long cenSize = cenEntry.getSize();
+                long locSize = locEntry.getSize() == -1 ? calculateEntrySize(jis) : locEntry.getSize();
+
+                if (cenSize != -1 && cenSize != locSize) {
+                    System.out.println(String.format(rb.getString("Size.mismatch.for.jar.entry.1"),
+                            cenEntry.getName()));
+                }
+
+                // Skip signature files in META-INF
+                if (cenEntry.getName().startsWith("META-INF/")) {
+                    continue;
+                }
+
+                // Read entry for signature verification
+                readEntry(jis);
+                readEntry(jarFile.getInputStream(cenEntry));
+
+                // Compare signers
+                compareSigners(cenEntry, locEntry);
+            }
+
+            // Remaining entries if any
+            while (cenEntries.hasMoreElements()) {
+                cenEntrySet.add(cenEntries.nextElement().getName());
+            }
+            while ((locEntry = jis.getNextJarEntry()) != null) {
+                locEntrySet.add(locEntry.getName());
+            }
+
+            // Find if an entry is present in LOC but missing in CEN, and vice versa.
+            if (!cenEntrySet.equals(locEntrySet)) {
+                System.out.println(rb.getString(
+                        "Mismatch.in.number.of.entries.between.CEN.and.LOC"));
+
+                Set<String> cenMissingEntry = new HashSet<>(locEntrySet);
+                cenMissingEntry.removeAll(cenEntrySet);
+
+                Set<String> locMissingEntry = new HashSet<>(cenEntrySet);
+                locMissingEntry.removeAll(locEntrySet);
+
+                if (!cenMissingEntry.isEmpty()) {
+                    for (String entry : cenMissingEntry) {
+                        System.out.println(String.format(rb.getString(
+                                "Jar.entry.in.LOC.but.missing.in.CEN.1"),
+                                entry));
+                    }
+                }
+
+                if (!locMissingEntry.isEmpty()) {
+                    for (String entry : locMissingEntry) {
+                        System.out.println(String.format(rb.getString(
+                                "Jar.entry.in.CEN.but.missing.in.LOC.1"),
+                                entry));
+                    }
+                }
+            }
+        }
+    }
+
+    private long calculateEntrySize(JarInputStream jis) throws IOException {
+        long size = 0;
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        while ((bytesRead = jis.read(buffer)) != -1) {
+            size += bytesRead;
+        }
+        return size;
+    }
+
+    private void readEntry(InputStream is) throws IOException {
+        byte[] buffer = new byte[8192];
+        while (is.read(buffer) != -1) {
+        }
+    }
+
+    private boolean compareManifest(Manifest cenManifest, Manifest locManifest) {
+        if (cenManifest == null) {
+            System.out.println(rb.getString(
+                    "CEN.manifest.is.missing"));
+            return false;
+        }
+        if (locManifest == null) {
+            System.out.println(rb.getString(
+                    "LOC.manifest.is.missing"));
+            return false;
+        }
+
+        Attributes cenMainAttrs = cenManifest.getMainAttributes();
+        Attributes locMainAttrs = locManifest.getMainAttributes();
+
+        for (Object key : cenMainAttrs.keySet()) {
+            Object cenValue = cenMainAttrs.get(key);
+            Object locValue = locMainAttrs.get(key);
+
+            if (locValue == null) {
+                System.out.println(String.format(
+                        rb.getString("main.attribute.key.1.in.CEN.but.missing.in.LOC"),
+                        key));
+                return false;
+            } else if (!cenValue.equals(locValue)) {
+                System.out.println(String.format(
+                        rb.getString("main.atrribute.key.1.mismatch.CEN.2.LOC.3"),
+                        key, cenValue, locValue));
+                return false;
+            }
+        }
+
+        for (Object key : locMainAttrs.keySet()) {
+            if (!cenMainAttrs.containsKey(key)) {
+                System.out.println(String.format(
+                        rb.getString("main.attribute.key.1.in.LOC.but.missing.in.CEN"),
+                        key));
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void compareSigners(JarEntry cenEntry, JarEntry locEntry) {
+        CodeSigner[] cenSigners = cenEntry.getCodeSigners();
+        CodeSigner[] locSigners = locEntry.getCodeSigners();
+
+        boolean cenHasSigners = cenSigners != null;
+        boolean locHasSigners = locSigners != null;
+
+        if (cenHasSigners && locHasSigners) {
+            List<CodeSigner> cenSignerList = Arrays.asList(cenSigners);
+            List<CodeSigner> locSignerList = Arrays.asList(locSigners);
+
+            if (!cenSignerList.equals(locSignerList)) {
+                System.out.printf(rb.getString("Signature.mismatch.for.entry.1"), cenEntry.getName());
             }
         }
     }
