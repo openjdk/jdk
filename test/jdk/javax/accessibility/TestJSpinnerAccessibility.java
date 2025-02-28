@@ -44,7 +44,7 @@ public class TestJSpinnerAccessibility {
                 Test UI contains a JSpinner with minimum value 0, maximum value 20
                 and current value 5. On press of up / down arrow, value will be
                 incremented / decremented by 1.
-                
+
                 Follow these steps to test the behaviour:
 
                 1. Start the VoiceOver (Press Commaand + F5) application
