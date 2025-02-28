@@ -582,16 +582,6 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
     static void copyPredefinedRuntimeImage(Map<String, ? super Object> params,
             ApplicationLayout appLayout) throws IOException, ConfigException {
         Path topImage = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
-        if (!IOUtils.exists(topImage)) {
-            throw new ConfigException(
-                    MessageFormat.format(I18N.getString(
-                    "message.runtime-image-dir-does-not-exist"),
-                    PREDEFINED_RUNTIME_IMAGE.getID(),
-                    topImage.toString()),
-                    MessageFormat.format(I18N.getString(
-                    "message.runtime-image-dir-does-not-exist.advice"),
-                    PREDEFINED_RUNTIME_IMAGE.getID()));
-        }
 
         if (OperatingSystem.isMacOS()) {
             // On Mac topImage can be runtime root or runtime home.
