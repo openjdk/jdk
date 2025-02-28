@@ -25,9 +25,10 @@
 
 package com.sun.tools.javac.parser;
 
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.ListIterator;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.sun.tools.javac.code.DeferredLintHandler;
 import com.sun.tools.javac.code.DeferredLintHandler.LintLogger;
@@ -37,7 +38,6 @@ import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
-import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 
 /**
  * Stashes lint warnings suppressible via {@code @SuppressWarnings} and their source code
@@ -51,10 +51,8 @@ import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 public class LexicalLintHandler {
 
     private final LinkedList<Report> reports = new LinkedList<>();
-    private final ArrayDeque<DeclNode> declNodes = new ArrayDeque<>();
+    private final ArrayList<DeclNode> declNodes = new ArrayList<>();
 
-    private int lastFlushedStartPos;
-    private int lastFlushedEndPos;
     private boolean flushed;
 
 // Public API
@@ -87,13 +85,29 @@ public class LexicalLintHandler {
      * @return the given {@code decl} (for fluent chaining)
      */
     public <T extends JCTree> T endDecl(T decl, int endPos) {
+
+        // Basic sanity checks
         Assert.check(!flushed);
         Assert.check(decl.getTag() == Tag.MODULEDEF
                   || decl.getTag() == Tag.PACKAGEDEF
                   || decl.getTag() == Tag.CLASSDEF
                   || decl.getTag() == Tag.METHODDEF
                   || decl.getTag() == Tag.VARDEF);
-        declNodes.addLast(new DeclNode(decl, endPos));
+
+        // Create new declaration node
+        DeclNode declNode = new DeclNode(decl, endPos);
+
+        // Verify our assumptions about declarations:
+        //  1. If two declarations overlap, then one of them must nest within the other
+        //  2. endDecl() is invoked in order of increasing declaration ending position
+        if (!declNodes.isEmpty()) {
+            DeclNode prevNode = declNodes.get(declNodes.size() - 1);
+            Assert.check(declNode.endPos() >= prevNode.endPos());
+            Assert.check(declNode.startPos() >= prevNode.endPos() || declNode.startPos() <= prevNode.startPos());
+        }
+
+        // Add node to the list
+        declNodes.add(declNode);
         return decl;
     }
 
@@ -109,13 +123,33 @@ public class LexicalLintHandler {
         Assert.check(!flushed);
         flushed = true;
 
-        // Flush reports contained within any of the declaration nodes we have gathered
-        declNodes.forEach(declNode -> flushDeclReports(deferredLintHandler, declNode));
-        declNodes.clear();
+        // Assign the innermost containing declaration, if any, to each report
+        ListIterator<Report> reportIterator = reports.listIterator(0);
+      declLoop:
+        for (DeclNode declNode : declNodes) {
+            while (true) {
+                if (!reportIterator.hasNext())
+                    break declLoop;
+                Report report = reportIterator.next();
+                switch (report.relativeTo(declNode)) {
+                case BEFORE:        // report is contained by some outer declaration, or is "top level"
+                    continue;
+                case WITHIN:        // assign to this declaration, unless contained by an inner declaration
+                    report.decl().compareAndSet(null, declNode.decl());
+                    continue;
+                case AFTER:         // we've gone too far, backup one step and go to the next declaration
+                    reportIterator.previous();
+                    continue declLoop;
+                }
+            }
+        }
 
-        // Flush the remaining reports, which must be "top level" (i.e., not contained within any declaration)
-        reports.forEach(report -> flushReport(deferredLintHandler, report));
+        // Now flush all the reports
+        reports.forEach(report -> report.flushTo(deferredLintHandler));
+
+        // Clean up
         reports.clear();
+        declNodes.clear();
     }
 
 // Internal Methods
@@ -134,73 +168,45 @@ public class LexicalLintHandler {
         i.add(report);
     }
 
-    // Flush all reports contained within the given declaration
-    private void flushDeclReports(DeferredLintHandler deferredLintHandler, DeclNode declNode) {
-
-        // Get declaration's starting position so we know its lexical range
-        int startPos = TreeInfo.getStartPos(declNode.decl());
-        int endPos = declNode.endPos();
-
-        // Sanity check our assumptions about declarations:
-        //  1. If two declarations overlap, then one of them must nest within the other
-        //  2. endDecl() is always invoked in order of increasing declaration ending position
-        Assert.check(endPos >= lastFlushedEndPos);
-        Assert.check(startPos >= lastFlushedEndPos || startPos <= lastFlushedStartPos);
-
-        // Find all reports contained by the declaration; they should all be at or near the end of the list
-        ListIterator<Report> i = reports.listIterator(reports.size());
-        int count = 0;
-        while (i.hasPrevious()) {
-            switch (i.previous().compareToRange(startPos, endPos)) {
-            case AFTER:     // unusual; e.g., report is contained in the next token after declaration
-                continue;
-            case WITHIN:    // report is contained in the declaration, so we will flush it
-                count++;
-                continue;
-            case BEFORE:    // we've gone too far, backup one step and start here
-                i.next();
-                break;
-            }
-            break;
-        }
-
-        // Flush the reports contained by the declaration (in order). Note, we know that it is the innermost
-        // containing declaration because any more deeply nested declarations must have already been flushed
-        // by now; this follows from the above assumptions.
-        deferredLintHandler.push(declNode.decl());
-        try {
-            while (count-- > 0) {
-                flushReport(deferredLintHandler, i.next());
-                i.remove();
-            }
-        } finally {
-            deferredLintHandler.pop();
-        }
-
-        // Update markers
-        lastFlushedStartPos = startPos;
-        lastFlushedEndPos = endPos;
-    }
-
-    private void flushReport(DeferredLintHandler deferredLintHandler, Report report) {
-        deferredLintHandler.report(report.logger());
-    }
-
 // DeclNode
 
     // A declaration that has been created and whose starting and ending positions are known
-    private record DeclNode(JCTree decl, int endPos) { }
+    private record DeclNode(JCTree decl, int startPos, int endPos) {
+
+        DeclNode(JCTree decl, int endPos) {
+            this(decl, TreeInfo.getStartPos(decl), endPos);
+        }
+    }
 
 // Report
 
     // A warning report that has not yet been flushed to the DeferredLintHandler
-    private record Report(int pos, LintLogger logger) {
+    private record Report(int pos, LintLogger logger, AtomicReference<JCTree> decl) {
 
-        // Compare our position to the given range
-        Direction compareToRange(int minPos, int maxPos) {
-            if (pos() < minPos)
+        Report(int pos, LintLogger logger) {
+            this(pos, logger, new AtomicReference<>());
+        }
+
+        // Flush this report to the DeferredLintHandler using our assigned declaration (if any)
+        void flushTo(DeferredLintHandler deferredLintHandler) {
+            JCTree decl = decl().get();
+            if (decl != null)
+                deferredLintHandler.push(decl);
+            try {
+                deferredLintHandler.report(logger());
+            } finally {
+                if (decl != null)
+                    deferredLintHandler.pop();
+            }
+        }
+
+        // Determine our position relative to the range spanned by the given declaration
+        Direction relativeTo(DeclNode declNode) {
+            int startPos = declNode.startPos();
+            int endPos = declNode.endPos();
+            if (pos() < startPos)
                 return Direction.BEFORE;
-            if (pos() == minPos || (pos() > minPos && pos() < maxPos)) {
+            if (pos() == startPos || (pos() > startPos && pos() < endPos)) {
                 return Direction.WITHIN;
             }
             return Direction.AFTER;
