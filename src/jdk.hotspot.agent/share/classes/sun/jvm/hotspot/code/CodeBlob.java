@@ -65,8 +65,6 @@ public class CodeBlob extends VMObject {
     super(addr);
   }
 
-  protected static       int     matcherInterpreterFramePointerReg;
-
   private static void initialize(TypeDataBase db) {
     Type type = db.lookupType("CodeBlob");
 
@@ -82,11 +80,6 @@ public class CodeBlob extends VMObject {
     frameSizeField           = type.getCIntegerField("_frame_size");
     oopMapsField             = type.getAddressField("_oop_maps");
     callerMustGCArgumentsField = type.getCIntegerField("_caller_must_gc_arguments");
-
-    if (VM.getVM().isServerCompiler()) {
-      matcherInterpreterFramePointerReg =
-          db.lookupIntConstant("Matcher::interpreter_frame_pointer_reg").intValue();
-    }
 
     NMethodKind        = db.lookupIntConstant("CodeBlobKind::Nmethod").intValue();
     RuntimeStubKind    = db.lookupIntConstant("CodeBlobKind::RuntimeStub").intValue();

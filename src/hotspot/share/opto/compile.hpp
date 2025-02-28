@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,6 @@ class CloneMap {
 
 class Options {
   friend class Compile;
-  friend class VMStructs;
  private:
   const bool _subsume_loads;         // Load can be matched as part of a larger op.
   const bool _do_escape_analysis;    // Do escape analysis.
@@ -222,7 +221,6 @@ class Options {
 // This class defines a top-level Compiler invocation.
 
 class Compile : public Phase {
-  friend class VMStructs;
 
  public:
   // Fixed alias indexes.  (See also MergeMemNode.)
