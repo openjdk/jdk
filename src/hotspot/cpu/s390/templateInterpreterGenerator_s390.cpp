@@ -2007,7 +2007,8 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
 }
 
 address TemplateInterpreterGenerator::generate_currentThread() {
-  address entry_point = __ pc();
+  uint64_t entry_off = __ offset();
+
   __ z_lg(Z_RET, Address(Z_thread, JavaThread::threadObj_offset()));
   __ resolve_oop_handle(Z_RET);
 
@@ -2015,7 +2016,7 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
   __ z_br(Z_R14);
 
-  return entry_point;
+  return __ addr_at(entry_off);
 }
 
 // Not supported
