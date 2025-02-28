@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,18 +125,6 @@ public class WindowsMenuUI extends BasicMenuUI {
 
         Object obj      = UIManager.get("MenuBar.rolloverEnabled");
         hotTrackingOn = (obj instanceof Boolean) ? (Boolean)obj : true;
-    }
-
-    /**
-     * Sets the text position in popup MenuItem.
-     */
-    protected Rectangle setTextPosition(Rectangle rect, JMenuItem menuItem,
-                                        Icon checkIcon, boolean useCheckAndArrow) {
-        if (WindowsMenuItemUI.isVistaPainting()) {
-            return WindowsMenuItemUI.setTextPosition(accessor, rect, menuItem,
-                                                     checkIcon, useCheckAndArrow);
-        }
-        return super.setTextPosition(rect, menuItem, checkIcon, useCheckAndArrow);
     }
 
     /**

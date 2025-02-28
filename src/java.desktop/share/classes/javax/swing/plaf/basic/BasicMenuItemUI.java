@@ -625,24 +625,6 @@ public class BasicMenuItemUI extends MenuItemUI
     }
 
     /**
-     * Modifies start position of the text rectangle depending on presence of
-     * RadiobuttonMenuItem bullet or JCheckboxMenuItem checkmark along with
-     * ImageIcon
-     * Some LookAndFeel can chose to return the default position.
-     *
-     * @param rect the text rectangle
-     * @param menuItem Current menuItem
-     * @param checkIcon ImageIcon to be used
-     * @param useCheckAndArrow presence of bullet/checkmark
-     * @return rect modified text rectangle
-     */
-    protected Rectangle setTextPosition(Rectangle rect, JMenuItem menuItem,
-                                        Icon checkIcon,
-                                        boolean useCheckAndArrow) {
-        return rect;
-    }
-
-    /**
      * Paints a menu item.
      *
      * @param g an instance of {@code Graphics}
@@ -677,10 +659,22 @@ public class BasicMenuItemUI extends MenuItemUI
         paintBackground(g, mi, background);
         paintCheckIcon(g, lh, lr, holdc, foreground);
         paintIcon(g, lh, lr, holdc);
-        Rectangle rect = lr.getTextRect();
-        rect = setTextPosition(rect, menuItem, lh.getCheckIcon(),
-                               lh.useCheckAndArrow());
-        lr.setTextRect(rect);
+        if (UIManager.getLookAndFeel().getName().equals("Windows")
+            && (Integer.parseInt(System.getProperty("os.name").
+                replaceAll("[^0-9]", "")) >= 11)
+            && lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
+            Rectangle rect = lr.getTextRect();
+
+            // If ImageIcon is present, place menuItem text slightly ahead
+            // else place text slightly before so that text appears
+            // to be at the same line as ImageIcon if it was present
+            if (menuItem.getIcon() != null) {
+                rect.x = rect.x + checkIcon.getIconWidth() / 2;
+            } else {
+                rect.x = rect.x - checkIcon.getIconWidth() / 2;
+            }
+            lr.setTextRect(rect);
+        }
         paintText(g, lh, lr);
         paintAccText(g, lh, lr);
         paintArrowIcon(g, lh, lr, foreground);
