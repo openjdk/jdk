@@ -69,7 +69,7 @@ int CDSConfig::get_status() {
 void CDSConfig::initialize() {
   if (is_dumping_static_archive() && !is_dumping_final_static_archive()) {
     // Note: -Xshare and -XX:AOTMode flags are mutually exclusive.
-    // - Class workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
+    // - Classic workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
     // - JEP 483 workflow: -XX:AOTMode:record and -XX:AOTMode=on cannot take effect at the same time.
     // So we can never come to here with RequireSharedSpaces==true.
     assert(!RequireSharedSpaces, "sanity");
