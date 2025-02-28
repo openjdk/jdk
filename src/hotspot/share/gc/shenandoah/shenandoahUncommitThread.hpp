@@ -61,6 +61,7 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   bool is_uncommit_allowed() const;
 
   // Iterate and uncommit eligible regions. Return the number of regions uncommitted.
+  // This operation may be interrupted if the GC calls `forbid_uncommit`.
   size_t do_uncommit_work(double shrink_before, size_t shrink_until) const;
 
 public:
