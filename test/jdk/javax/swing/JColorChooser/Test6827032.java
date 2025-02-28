@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,24 @@
 /*
  * @test
  * @key headful
- * @bug 6827032 8197825
+ * @bug 6827032
  * @summary Color chooser with drag enabled shouldn't throw NPE
- * @author Peter Zhelezniakov
  * @library ../regtesthelpers
  */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Component;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
 
-import javax.swing.*;
+import javax.swing.JColorChooser;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
 
 public class Test6827032 {
-    private static volatile Point point;
     private static JFrame frame;
     private static JColorChooser cc;
 
@@ -49,30 +52,31 @@ public class Test6827032 {
             Robot robot = new Robot();
             robot.setAutoDelay(100);
 
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    createAndShowGUI();
-                }
-            });
+            SwingUtilities.invokeAndWait(Test6827032::createAndShowGUI);
 
             robot.waitForIdle();
             robot.delay(1000);
 
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    Component previewPanel = Util.findSubComponent(cc, "javax.swing.colorchooser.DefaultPreviewPanel");
-                    point = previewPanel.getLocationOnScreen();
-                }
+            Point point = Util.invokeOnEDT(() -> {
+                Component previewPanel = Util.findSubComponent(cc, "javax.swing.colorchooser.DefaultPreviewPanel");
+                return previewPanel.getLocationOnScreen();
             });
 
             point.translate(5, 5);
 
             robot.mouseMove(point.x, point.y);
             robot.waitForIdle();
+
+            // NullPointerException shouldn't be thrown
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+
+            // Drag mouse
+            for (int dx = 0; dx < 20; dx += 2) {
+                robot.mouseMove(point.x + dx, point.y);
+            }
+
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
-            robot.delay(1000);
         } finally {
             if (frame != null) {
                 SwingUtilities.invokeAndWait(() -> frame.dispose());
